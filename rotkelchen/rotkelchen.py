@@ -60,7 +60,6 @@ class Rotkelchen(object):
                 args,
                 self.save_file,
                 self.logger,
-                self.google
             )
         if 'kraken_api_key' in self.secret_data:
             self.kraken = Kraken(
@@ -260,3 +259,10 @@ class Rotkelchen(object):
         thread = threading.Thread(target=main_loop)
         thread.setDaemon(True)
         thread.start()
+
+
+# For testing purposes only
+if __name__ == '__main__':
+    from args import app_args
+    args = app_args()
+    r = Rotkelchen(args)

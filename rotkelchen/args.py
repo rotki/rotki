@@ -34,6 +34,12 @@ def app_args():
         default=default_data_directory()
     )
 
+    p.add_argument(
+        '--zerorpc-port',
+        help='The port on which to open a zerorpc server for communication with the UI',
+        default=4242
+    )
+
     args = p.parse_args()
 
     return args

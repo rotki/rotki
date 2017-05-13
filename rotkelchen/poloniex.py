@@ -42,11 +42,10 @@ class Poloniex(Exchange):
         'watched_currencies'
     ]
 
-    def __init__(self, api_key, secret, args, save_file, logger, google):
+    def __init__(self, api_key, secret, args, save_file, logger):
         super(Poloniex, self).__init__('poloniex', api_key, secret)
 
         self.args = args
-        self.google = google
         # Set default setting values
         self.watched_currencies = {
             'BTC_DASH': WatchedCurrency(0.0, 0.5, 0.000500),
@@ -74,29 +73,9 @@ class Poloniex(Exchange):
         self.log = logger
         self.usdprice = {}
 
-        if args.lending:
-            self.lender = Lender(
-                self,
-                args.lending_history,
-                data.get('lending') if data else None,
-                self.log
-            )
-
         fees_resp = self.returnFeeInfo()
         self.maker_fee = float(fees_resp['makerFee'])
         self.taker_fee = float(fees_resp['takerFee'])
-
-    def set(self, *args):
-        if args[0] == 'lending':
-            return self.lender.set(*args[1:])
-        else:
-            raise Exception(
-                "Requested to set unknown attribute '{}' in Poloniex".format(
-                    args[0])
-            )
-
-    def get_settings(self):
-        return {'lending': self.lender.get_settings()}
 
     def post_process(self, before):
         after = before
@@ -453,18 +432,12 @@ class Poloniex(Exchange):
             # set last price
             watched_settings.last = price
 
-    def test(self):
-        return self.google.main()
-
     def main_logic(self):
         try:
             self.market_watcher()
 
             if self.args.price_notify:
                 self.price_notifier()
-
-            if self.args.lending:
-                self.lender.main_logic()
 
         except PoloniexError as e:
             self.log.output("Poloniex error at main loop: {}".format(str(e)))

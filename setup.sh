@@ -18,5 +18,10 @@ rm -rf ./node_modules
 # install everything based on the package.json
 npm install
 
+# If when running you get a different node.js version error
+# just like here: https://github.com/fyears/electron-python-example/issues/9
+# then do the following as seen in SO: http://stackoverflow.com/questions/42616008/node-module-version-conflict-when-installing-modules-for-electron/42616189#42616189
+# ./node_modules/.bin/electron-rebuild
+
 # run
 ./node_modules/.bin/electron .
