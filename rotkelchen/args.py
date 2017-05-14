@@ -17,7 +17,7 @@ def app_args():
     p.add_argument(
         '--sleep-secs',
         type=int,
-        default=120,
+        default=20,
         help="Seconds to sleep during the main loop"
     )
     p.add_argument(

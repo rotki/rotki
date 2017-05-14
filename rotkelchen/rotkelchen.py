@@ -37,9 +37,6 @@ class Rotkelchen(object):
         if os.path.isfile(self.secret_name):
             with open(self.secret_name, 'r') as f:
                 self.secret_data = json.loads(f.read())
-        else:
-            print("Could not find secret.json. Unable to load API keys")
-            sys.exit(1)
 
         # turn all secret key values from unicode to string
         for k, v in self.secret_data.iteritems():
@@ -83,6 +80,22 @@ class Rotkelchen(object):
             self.bittrex,
             data_dir
         )
+
+        self.lock = threading.Lock()
+        self.condition_lock = threading.Condition()
+        self.shutdown_event = threading.Event()
+        self.worker_thread = threading.Thread(target=self.main_loop, args=())
+        self.worker_thread.start()
+
+    def main_loop(self):
+        while True and not self.shutdown_event.is_set():
+            with self.lock:
+                self.poloniex.main_logic()
+                self.kraken.main_logic()
+
+            with self.condition_lock:
+                if self.condition_lock.wait(self.sleep_secs):
+                    break
 
     def get_settings(self):
         return {'poloniex': self.poloniex.get_settings()}
@@ -220,10 +233,11 @@ class Rotkelchen(object):
 
     def shutdown(self):
         print("Shutting Down...")
-        self.daemon.shutdown()
+        self.shutdown_event.set()
+        with self.condition_lock:
+            self.condition_lock.notify_all()
+        self.worker_thread.join()
         self.logger.destroy()
-
-        return sys.exit(0)
 
     def set(self, *args):
         if len(args) < 2:
@@ -244,21 +258,6 @@ class Rotkelchen(object):
         current_settings = self.get_settings()
         with open(self.save_file, "w") as f:
             f.write(json.dumps(current_settings))
-
-    def run(self):
-        def main_loop():
-            while True:
-                self.poloniex.main_logic()
-                self.kraken.main_logic()
-
-                if self.args.arbitrage:
-                    self.arbitrage.check_all()
-
-                time.sleep(self.sleep_secs)
-
-        thread = threading.Thread(target=main_loop)
-        thread.setDaemon(True)
-        thread.start()
 
 
 # For testing purposes only

@@ -3,6 +3,8 @@
 from __future__ import print_function
 import traceback
 import sys
+import gevent
+import signal
 
 import zerorpc
 
@@ -18,11 +20,25 @@ class RotkelchenServer(object):
     def port(self):
         return self.args.zerorpc_port
 
+    def shutdown(self):
+        self.rotkelchen.shutdown()
+        print("Shutting down zerorpc server")
+        self.zerorpc.stop()
+
     def echo(self, text):
         return text
 
+    def main(self):
+        gevent.hub.signal(signal.SIGINT, self.shutdown)
+        gevent.hub.signal(signal.SIGTERM, self.shutdown)
+        self.zerorpc = zerorpc.Server(rotkelchen_server)
+        addr = 'tcp://127.0.0.1:' + str(self.port())
+        self.zerorpc.bind(addr)
+        print('start running on {}'.format(addr))
+        self.zerorpc.run()
 
-def main():
+
+if __name__ == '__main__':
     try:
         rotkelchen_server = RotkelchenServer()
     except:
@@ -32,13 +48,4 @@ def main():
             f.write(tb)
         print("Failed to start rotkelchen backend")
         sys.exit(1)
-
-    s = zerorpc.Server(rotkelchen_server)
-    addr = 'tcp://127.0.0.1:' + str(rotkelchen_server.port())
-    s.bind(addr)
-    print('start running on {}'.format(addr))
-    s.run()
-
-
-if __name__ == '__main__':
-    main()
+    rotkelchen_server.main()

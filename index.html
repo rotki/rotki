@@ -24,8 +24,11 @@
     <!-- Morris Charts CSS -->
     <link href="node_modules/startbootstrap-sb-admin-2/vendor/morrisjs/morris.css" rel="stylesheet">
 
-    <!-- Custom Fonts -->
+    <!-- Custom Fonts of the Bootstrap template -->
     <link href="node_modules/startbootstrap-sb-admin-2/vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+	<!-- Our own custom CSS -->
+    <link href="ui/rotkelchen.css" rel="stylesheet" type="text/css">
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -370,6 +373,13 @@
             <!-- /.navbar-static-side -->
         </nav>
 
+		<!-- Wrapper div only for loading purposes -->
+		<div class="loadingwrapper">
+			<div class="loadingwrapper_text"></div>
+		</div>
+		<!-- / Wrapper div only for loading purposes -->
+
+		<!-- Main page start -->
         <div id="page-wrapper">
             <div class="row">
                 <div class="col-lg-12">
@@ -379,28 +389,8 @@
             </div>
             <!-- /.row -->
             <div class="row">
-                <div class="col-lg-3 col-md-6">
-                    <div class="panel panel-primary">
-                        <div class="panel-heading" id="status_box">
-                            <div class="row">
-                                <div class="col-xs-3">
-                                    <i class="fa fa-plug fa-5x"></i>
-                                </div>
-                                <div class="col-xs-9 text-right">
-                                    <div class="huge">26</div>
-                                    <div id="status_box_text">AAAAA</div>
-                                </div>
-                            </div>
-                        </div>
-                        <a href="#">
-                            <div class="panel-footer">
-                                <span class="pull-left">View Details</span>
-                                <span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>
-                                <div class="clearfix"></div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
+                <div id="leftest-column" class="col-lg-3 col-md-6">
+					<!-- Boxes go in here -->
             </div>
             <!-- /.row -->
             <div class="row">

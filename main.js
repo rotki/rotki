@@ -52,7 +52,6 @@ const createPyProc = () => {
     });
     
     if (pyProc != null) {
-	//console.log(pyProc)
 	console.log('child process success on port ' + port);
     }
     console.log("CREATED PYPROCESS");
