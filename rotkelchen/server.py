@@ -25,6 +25,9 @@ class RotkelchenServer(object):
         print("Shutting down zerorpc server")
         self.zerorpc.stop()
 
+    def set_main_currency(self, currency_text):
+        self.rotkelchen.set_main_currency(currency_text)
+
     def echo(self, text):
         return text
 

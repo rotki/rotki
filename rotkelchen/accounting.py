@@ -8,7 +8,7 @@ from order_formatting import (
 )
 
 
-FIAT_CURRENCIES = ('EUR', 'USD', 'GBP')
+FIAT_CURRENCIES = ('EUR', 'USD', 'GBP', 'JPY', 'CNY')
 YEAR_IN_SECONDS = 31536000  # 60 * 60 * 24 * 365
 
 
@@ -23,11 +23,19 @@ class Accountant(object):
 
         self.log = logger
         self.price_historian = price_historian
-        self.profit_currency = profit_currency
+        self.set_profit_currency(profit_currency)
         self.ignored_assets = ignored_assets
 
         self.general_profit_loss = 0
         self.taxable_profit_loss = 0
+
+    def set_profit_currency(self, currency):
+        if currency not in FIAT_CURRENCIES:
+            raise ValueError(
+                'Attempted to set unsupported "{}" as main currency.'.format(currency)
+            )
+
+        self.profit_currency = currency
 
     def query_historical_price(self, from_asset, to_asset, timestamp):
         return self.price_historian.query_historical_price(from_asset, to_asset, timestamp)
