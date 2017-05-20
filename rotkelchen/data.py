@@ -41,7 +41,7 @@ class DataHandler(object):
         self.accountant = Accountant(
             logger=logger,
             price_historian=self.price_historian,
-            profit_currency=self.personal.get('profit_currency', 'EUR')
+            profit_currency=self.personal.get('main_currency', 'EUR')
         )
 
         # open the statsfile if existing
@@ -67,6 +67,12 @@ class DataHandler(object):
         self.stats.append(data)
         with open(self.personal['statsfile_path'], 'w') as f:
             f.write(json.dumps(self.stats))
+
+    def set_main_currency(self, currency):
+        self.accountant.set_main_currency(currency)
+        with open(os.path.join(self.data_directory, 'personal.json'), 'w') as f:
+            self.personal['main_currency'] = currency
+            f.write(json.dumps(self.personal))
 
     def process_history(self, resync):
         history = self.trades_historian.get_history(resync)

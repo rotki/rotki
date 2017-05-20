@@ -28,6 +28,12 @@ class RotkelchenServer(object):
     def set_main_currency(self, currency_text):
         self.rotkelchen.set_main_currency(currency_text)
 
+    def get_settings(self):
+        return {
+            'exchanges': self.rotkelchen.get_exchanges(),
+            'main_currency': self.rotkelchen.get_main_currency()
+        }
+
     def echo(self, text):
         return text
 
@@ -49,6 +55,6 @@ if __name__ == '__main__':
         # open a file and dump the stack trace
         with open("error.log", "w") as f:
             f.write(tb)
-        print("Failed to start rotkelchen backend")
+        print("Failed to start rotkelchen backend:\n{}".format(tb))
         sys.exit(1)
     rotkelchen_server.main()

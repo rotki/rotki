@@ -232,10 +232,20 @@ class Rotkelchen(object):
         return pretty_json_dumps(result_dict)
 
     def set_main_currency(self, currency):
-        self.data.accountant.set_profit_currency(currency)
+        self.data.set_main_currency(currency)
 
     def get_main_currency(self):
         return self.data.accountant.profit_currency
+
+    def get_exchanges(self):
+        exchanges = list()
+        if 'polo_api_key' in self.secret_data:
+            exchanges.append('poloniex')
+        if 'kraken_api_key' in self.secret_data:
+            exchanges.append('kraken')
+        if 'bittrex_api_key' in self.secret_data:
+            exchanges.append('bittrex')
+        return exchanges
 
     def shutdown(self):
         print("Shutting Down...")

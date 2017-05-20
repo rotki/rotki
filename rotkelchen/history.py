@@ -262,8 +262,6 @@ class TradesHistorian(object):
         else:
             self.external_trade = list()
 
-
-
     def create_history(self):
         kraken_history = self.kraken.query_trade_history(
             start_ts=self.start_ts,

@@ -23,13 +23,13 @@ class Accountant(object):
 
         self.log = logger
         self.price_historian = price_historian
-        self.set_profit_currency(profit_currency)
+        self.set_main_currency(profit_currency)
         self.ignored_assets = ignored_assets
 
         self.general_profit_loss = 0
         self.taxable_profit_loss = 0
 
-    def set_profit_currency(self, currency):
+    def set_main_currency(self, currency):
         if currency not in FIAT_CURRENCIES:
             raise ValueError(
                 'Attempted to set unsupported "{}" as main currency.'.format(currency)
