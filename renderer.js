@@ -27,12 +27,14 @@ function create_box(id, icon, number, text) {
     return $(str);
 }
 
-function create_exchange_box(exchange, number, text) {
+function create_exchange_box(exchange, number, currency_icon) {
     css_class = 'exchange-icon-inverted';
     if (exchange == 'poloniex') {
 	css_class = 'exchange-icon';
     }
-    var str = '<div class="panel panel-primary"><div class="panel-heading" id="'+exchange+'_box"><div class="row"><div class="col-xs-3"><i><img class="' + css_class + '" src="ui/images/'+ exchange +'.png"  /></i></div><div class="col-xs-9 text-right"><div class="huge">'+ number +'</div><div id="status_box_text">'+text+'</div></div></div></div><a href="#"><div class="panel-footer"><span class="pull-left">View Details</span><span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span><div class="clearfix"></div></div></a></div>';
+    // only show 2 decimal digits
+    number = number.toFixed(2);
+    var str = '<div class="panel panel-primary"><div class="panel-heading" id="'+exchange+'_box"><div class="row"><div class="col-xs-3"><i><img class="' + css_class + '" src="ui/images/'+ exchange +'.png"  /></i></div><div class="col-xs-9 text-right"><div class="huge">'+ number +'</div><div id="status_box_text"><i class="fa '+ currency_icon + ' fa-fw"></i></div></div></div></div><a href="#"><div class="panel-footer"><span class="pull-left">View Details</span><span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span><div class="clearfix"></div></div></a></div>';
     return $(str);
 }
 
@@ -81,13 +83,15 @@ client.invoke("get_settings", (error, res) => {
       for (var i = 0; i < currencies.length; i ++) {
 	  if (main_currency == currencies[i].ticker_symbol) {
 	      set_ui_main_currency(currencies[i]);
+	      main_currency = currencies[i];
 	      break;
 	  }
       }
       
       exchanges = res['exchanges'];
+      exchange_balances = res['exchange_balances'];
       for (i = 0; i < exchanges.length; i ++) {
-	  create_exchange_box(exchanges[i], "2", "TEXT2").appendTo($('#leftest-column'));
+	  create_exchange_box(exchanges[i], exchange_balances[i], main_currency.icon).appendTo($('#leftest-column'));
       }
       body.removeClass("loading");
   }

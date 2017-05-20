@@ -66,12 +66,12 @@ def floatToPerc(f):
     return '{:.5%}'.format(f)
 
 
-def get_euro_usd_price(timestamp=None):
+def query_fiat_pair(base, quote, timestamp=None):
     if timestamp is None:
-        querystr = 'http://api.fixer.io/latest'
+        querystr = 'http://api.fixer.io/latest?base={}'.format(base)
     else:
-        querystr = 'http://api.fixer.io/{}'.format(
-            tsToDate(timestamp, formatstr='%Y-%m-%d')
+        querystr = 'http://api.fixer.io/{}?base={}'.format(
+            tsToDate(timestamp, formatstr='%Y-%m-%d'), base
         )
 
     tries = 5
@@ -85,7 +85,11 @@ def get_euro_usd_price(timestamp=None):
                 raise ValueError('Timeout while trying to query euro price')
             time.sleep(0.05)
             tries -= 1
-    return resp['rates']['USD']
+
+    try:
+        return resp['rates'][quote]
+    except:
+        raise ValueError('Could not find a "{}" price for "{}"'.format(base, quote))
 
 
 def from_wei(wei_value):

@@ -107,6 +107,21 @@ class Bittrex(Exchange):
             raise ValueError(json_ret['message'])
         return json_ret['result']
 
+    def get_btc_price(self, asset):
+        if asset == 'BTC':
+            return None
+        btc_price = None
+        btc_pair = 'BTC-' + asset
+        for market in self.markets:
+            if market['MarketName'] == btc_pair:
+                btc_price = market['Last']
+                break
+
+        if btc_price is None:
+            raise ValueError('Bittrex: Could not find BTC market for "{}"'.format(asset))
+
+        return btc_price
+
     def query_balances(self):
         self.markets = self.api_query('getmarketsummaries')
 
@@ -114,9 +129,14 @@ class Bittrex(Exchange):
         returned_balances = dict()
         for entry in resp:
             currency = entry['Currency']
+            usd_price = self.inquirer.find_usd_price(
+                asset=currency,
+                asset_btc_price=self.get_btc_price(currency)
+            )
+
             balance = dict()
             balance['amount'] = entry['Balance']
-            balance['usd_value'] = balance['amount'] * self.inquirer.find_usd_price(currency)
+            balance['usd_value'] = balance['amount'] * usd_price
             returned_balances[currency] = balance
 
         return returned_balances

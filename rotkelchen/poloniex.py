@@ -356,7 +356,7 @@ class Poloniex(Exchange):
     def query_balances(self):
         resp = self.api_query('returnCompleteBalances', {"account": "all"})
 
-        balances = {}
+        balances = dict()
         for currency, v in resp.iteritems():
             available = float(v['available'])
             on_orders = float(v['onOrders'])

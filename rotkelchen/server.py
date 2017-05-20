@@ -29,9 +29,22 @@ class RotkelchenServer(object):
         self.rotkelchen.set_main_currency(currency_text)
 
     def get_settings(self):
+        exchanges = self.rotkelchen.get_exchanges()
+        main_currency = self.rotkelchen.main_currency
+        exchange_balances = list()
+        for exchange in exchanges:
+            balances = getattr(self.rotkelchen, exchange).query_balances()
+            total = 0
+            for _, entry in balances.iteritems():
+                total += entry['usd_value']
+
+            total = self.rotkelchen.usd_to_main_currency(total)
+            exchange_balances.append(total)
+
         return {
-            'exchanges': self.rotkelchen.get_exchanges(),
-            'main_currency': self.rotkelchen.get_main_currency()
+            'exchanges': exchanges,
+            'main_currency': main_currency,
+            'exchange_balances': exchange_balances
         }
 
     def echo(self, text):

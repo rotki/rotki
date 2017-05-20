@@ -24,6 +24,7 @@ from kraken import Kraken
 from bittrex import Bittrex
 from data import DataHandler
 from inquirer import Inquirer
+from utils import query_fiat_pair
 
 
 class Rotkelchen(object):
@@ -79,6 +80,7 @@ class Rotkelchen(object):
             self.bittrex,
             data_dir
         )
+        self.main_currency = self.data.accountant.profit_currency
 
         self.lock = threading.Lock()
         self.condition_lock = threading.Condition()
@@ -220,9 +222,14 @@ class Rotkelchen(object):
 
     def set_main_currency(self, currency):
         self.data.set_main_currency(currency)
+        if currency != 'USD':
+            self.usd_to_main_currency_rate = query_fiat_pair('USD', currency)
 
-    def get_main_currency(self):
-        return self.data.accountant.profit_currency
+    def usd_to_main_currency(self, amount):
+        if self.main_currency != 'USD' and not hasattr(self, 'usd_to_main_currency_rate'):
+            self.usd_to_main_currency_rate = query_fiat_pair('USD', self.main_currency)
+
+        return self.usd_to_main_currency_rate * amount
 
     def get_exchanges(self):
         exchanges = list()

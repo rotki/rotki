@@ -11,7 +11,7 @@ import hashlib
 import base64
 import time
 
-from utils import get_euro_usd_price
+from utils import query_fiat_pair
 from exchange import Exchange
 
 
@@ -205,7 +205,7 @@ class Kraken(Exchange):
         old_balances = self.query_private('Balance', req={})
 
         # find USD price of EUR
-        self.usdprice['EUR'] = get_euro_usd_price()
+        self.usdprice['EUR'] = query_fiat_pair('EUR', 'USD')
 
         balances = dict()
         for k, v in old_balances.iteritems():

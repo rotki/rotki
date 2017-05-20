@@ -6,22 +6,14 @@ class Inquirer(object):
     def __init__(self, kraken=None):
         self.kraken = kraken
 
-    def query_kraken_for_price(self, asset):
+    def query_kraken_for_price(self, asset, asset_btc_price):
         if asset == 'BTC':
             return self.kraken.usdprice['BTC']
+        return asset_btc_price * self.kraken.usdprice['BTC']
 
-        btc_pair = 'BTC-' + asset
-        for market in self.markets:
-            if market['MarketName'] == btc_pair:
-                btc_price = market['Last']
-                return btc_price * self.kraken.usdprice['BTC']
-
-        # if we get here we did not find a price
-        raise ValueError('Could not find a BTC market for "{}"'.format(asset))
-
-    def find_usd_price(self, asset):
+    def find_usd_price(self, asset, asset_btc_price=None):
         if self.kraken:
-            return self.query_kraken_for_price(asset)
+            return self.query_kraken_for_price(asset, asset_btc_price)
         else:
             coinmarketcap_resp = urllib2.urlopen(
                 urllib2.Request('https://api.coinmarketcap.com/v1/ticker/')
