@@ -23,13 +23,13 @@ from poloniex import Poloniex
 from kraken import Kraken
 from bittrex import Bittrex
 from data import DataHandler
+from inquirer import Inquirer
 
 
 class Rotkelchen(object):
     def __init__(self, args):
         self.sleep_secs = args.sleep_secs
         data_dir = args.data_dir
-        self.save_file = os.path.join(data_dir, 'save.json')
 
         # read the secret data (api keys e.t.c)
         self.secret_name = os.path.join(data_dir, 'secret.json')
@@ -55,7 +55,6 @@ class Rotkelchen(object):
                 self.secret_data['polo_api_key'],
                 self.secret_data['polo_secret'],
                 args,
-                self.save_file,
                 self.logger,
             )
         if 'kraken_api_key' in self.secret_data:
@@ -63,14 +62,14 @@ class Rotkelchen(object):
                 self.secret_data['kraken_api_key'],
                 self.secret_data['kraken_secret'],
                 args,
-                self.save_file,
                 self.logger
             )
+        self.inquirer = Inquirer(kraken=self.kraken if hasattr(self, 'kraken') else None)
         if 'bittrex_api_key' in self.secret_data:
             self.bittrex = Bittrex(
                 self.secret_data['bittrex_api_key'],
                 self.secret_data['bittrex_secret'],
-                self.kraken
+                self.inquirer
             )
 
         self.data = DataHandler(
@@ -96,18 +95,6 @@ class Rotkelchen(object):
             with self.condition_lock:
                 if self.condition_lock.wait(self.sleep_secs):
                     break
-
-    def get_settings(self):
-        return {'poloniex': self.poloniex.get_settings()}
-
-    def query_settings(self):
-        s = json.dumps(
-            self.get_settings(),
-            sort_keys=True,
-            indent=4,
-            separators=(',', ': ')
-        )
-        return s
 
     def plot(self):
         plot.show(self.data.stats)
@@ -269,11 +256,6 @@ class Rotkelchen(object):
 
         self.save_data()
         return resp
-
-    def save_data(self):
-        current_settings = self.get_settings()
-        with open(self.save_file, "w") as f:
-            f.write(json.dumps(current_settings))
 
 
 # For testing purposes only

@@ -42,7 +42,7 @@ class Poloniex(Exchange):
         'watched_currencies'
     ]
 
-    def __init__(self, api_key, secret, args, save_file, logger):
+    def __init__(self, api_key, secret, args, logger):
         super(Poloniex, self).__init__('poloniex', api_key, secret)
 
         self.args = args
@@ -61,14 +61,6 @@ class Poloniex(Exchange):
             'USDT_BTC': WatchedCurrency(0.0, 1000.0, 1.0),
             'ETH_REP': WatchedCurrency(0.0, 0.435, 0.01),
         }
-
-        self.save_file = save_file
-        data = None
-        if os.path.isfile(self.save_file):
-            with open(self.save_file, 'r') as f:
-                data = sfjson_loads(f.read())
-                if 'poloniex' in data:
-                    data = data['poloniex']
 
         self.log = logger
         self.usdprice = {}

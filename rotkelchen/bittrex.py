@@ -71,14 +71,11 @@ def trade_from_bittrex(bittrex_trade):
 
 
 class Bittrex(Exchange):
-    def __init__(self, api_key, secret, kraken):
+    def __init__(self, api_key, secret, inquirer):
         super(Bittrex, self).__init__('bittrex', api_key, secret)
         self.apiversion = 'v1.1'
         self.uri = 'https://bittrex.com/api/{}/'.format(self.apiversion)
-        # TODO: Remove this dependency. This is just to query the BTC/USD value
-        #       easily and without further calls to other APIs. But this should go
-        #       away since a user may not have a kraken account
-        self.kraken = kraken
+        self.inquirer = inquirer
 
     def api_query(self, method, options=None):
         """
@@ -100,11 +97,6 @@ class Bittrex(Exchange):
             request_url += 'apikey=' + self.api_key + "&nonce=" + nonce + '&'
 
         request_url += urllib.urlencode(options)
-        # signature = hmac.new(
-        #     base64.b64decode(self.secret),
-        #     request_url.encode(),
-        #     hashlib.sha512
-        # )
         signature = hmac.new(self.secret.encode(), request_url.encode(), hashlib.sha512).hexdigest()
         headers = {'apisign': signature}
         ret = urllib2.urlopen(
@@ -115,19 +107,6 @@ class Bittrex(Exchange):
             raise ValueError(json_ret['message'])
         return json_ret['result']
 
-    def find_usd_price(self, asset):
-        if asset == 'BTC':
-            return self.kraken.usdprice['BTC']
-
-        btc_pair = 'BTC-' + asset
-        for market in self.markets:
-            if market['MarketName'] == btc_pair:
-                btc_price = market['Last']
-                return btc_price * self.kraken.usdprice['BTC']
-
-        # if we get here we did not find a price
-        raise ValueError('Could not find a BTC market for "{}"'.format(asset))
-
     def query_balances(self):
         self.markets = self.api_query('getmarketsummaries')
 
@@ -137,7 +116,7 @@ class Bittrex(Exchange):
             currency = entry['Currency']
             balance = dict()
             balance['amount'] = entry['Balance']
-            balance['usd_value'] = balance['amount'] * self.find_usd_price(currency)
+            balance['usd_value'] = balance['amount'] * self.inquirer.find_usd_price(currency)
             returned_balances[currency] = balance
 
         return returned_balances

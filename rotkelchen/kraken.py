@@ -46,7 +46,6 @@ def from_dict_converter(class_name, dictionary):
         raise ValueError('Unrecognized class')
 
 
-
 KRAKEN_TO_WORLD = {
     'XDAO': 'DAO',
     'XETC': 'ETC',
@@ -83,7 +82,7 @@ def kraken_to_world_pair(pair):
 
 
 class Kraken(Exchange):
-    def __init__(self, api_key, secret, args, save_file, logger):
+    def __init__(self, api_key, secret, args, logger):
         super(Kraken, self).__init__('kraken', api_key, secret)
         self.uri = 'https://api.kraken.com'
         self.apiversion = '0'
