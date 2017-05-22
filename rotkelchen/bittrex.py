@@ -77,6 +77,9 @@ class Bittrex(Exchange):
         self.uri = 'https://bittrex.com/api/{}/'.format(self.apiversion)
         self.inquirer = inquirer
 
+    def first_connection(self):
+        self.first_connection_made = True
+
     def api_query(self, method, options=None):
         """
         Queries Bittrex with given method and options
@@ -122,7 +125,7 @@ class Bittrex(Exchange):
 
         return btc_price
 
-    def query_balances(self):
+    def query_balances(self, ignore_cache=False):
         self.markets = self.api_query('getmarketsummaries')
 
         resp = self.api_query('getbalances')

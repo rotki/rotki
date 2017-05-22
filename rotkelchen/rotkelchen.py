@@ -29,6 +29,9 @@ from utils import query_fiat_pair
 
 class Rotkelchen(object):
     def __init__(self, args):
+        self.lock = threading.Lock()
+        self.lock.acquire()
+
         self.sleep_secs = args.sleep_secs
         data_dir = args.data_dir
 
@@ -50,6 +53,8 @@ class Rotkelchen(object):
             outfile = open(args.output, 'w+')
         self.logger = Logger(outfile, args.notify)
 
+        self.cache_data_filename = os.path.join(data_dir, 'cache_data.json')
+
         # initialize exchanges for which we have keys
         if 'polo_api_key' in self.secret_data:
             self.poloniex = Poloniex(
@@ -57,6 +62,7 @@ class Rotkelchen(object):
                 self.secret_data['polo_secret'],
                 args,
                 self.logger,
+                self.cache_data_filename
             )
         if 'kraken_api_key' in self.secret_data:
             self.kraken = Kraken(
@@ -82,7 +88,7 @@ class Rotkelchen(object):
         )
         self.main_currency = self.data.accountant.profit_currency
 
-        self.lock = threading.Lock()
+        self.lock.release()
         self.condition_lock = threading.Condition()
         self.shutdown_event = threading.Event()
         self.worker_thread = threading.Thread(target=self.main_loop, args=())
@@ -105,11 +111,7 @@ class Rotkelchen(object):
     def process_history(self, resync=False):
         return self.data.process_history(resync)
 
-    def query_balances(self, save_data=False):
-        polo = self.poloniex.query_balances()
-        kraken = self.kraken.query_balances()
-        bittrex = self.bittrex.query_balances()
-
+    def query_blockchain_balances(self):
         # Find balance of eth Accounts
         eth_resp = urllib2.urlopen(
             urllib2.Request(
@@ -125,8 +127,9 @@ class Rotkelchen(object):
         for account_entry in eth_resp:
             eth_sum += from_wei(float(account_entry['balance']))
 
-        eth_accounts_usd_amount = eth_sum * self.poloniex.usdprice['ETH']
-        general_crypto = {
+        eth_usd_price = self.inquirer.find_usd_price('ETH')
+        eth_accounts_usd_amount = eth_sum * eth_usd_price
+        blockchain_balances = {
             'ETH': {
                 'amount': eth_sum, 'usd_value': eth_accounts_usd_amount}
         }
@@ -156,23 +159,35 @@ class Rotkelchen(object):
             if resp['status'] != '1':
                 raise ValueError('Failed to query etherscan for token balance')
             amount = float(resp['result']) / data['digits_divisor']
-            general_crypto[token_name] = {
+            blockchain_balances[token_name] = {
                 'amount': amount, 'usd_value': amount * data['usd_price']
             }
 
-        # add in the approximate bank/cash EUR I own
-        banks = {
+        return blockchain_balances
+
+    def query_bank_balances(self):
+        eur_usd_price = query_fiat_pair('EUR', 'USD')
+        return {
             'EUR': {
                 'amount': self.data.personal['euros'],
-                'usd_value': self.data.personal['euros'] * self.kraken.usdprice['EUR']}
+                'usd_value': self.data.personal['euros'] * eur_usd_price
+            }
         }
 
-        combined = combine_stat_dicts(polo, kraken, bittrex, general_crypto, banks)
+
+    def query_balances(self, save_data=False):
+        polo = self.poloniex.query_balances()
+        kraken = self.kraken.query_balances()
+        bittrex = self.bittrex.query_balances()
+        blockchain_balances = self.query_blockchain_balances()
+        bank_balances = self.query_bank_balances()
+
+        combined = combine_stat_dicts(polo, kraken, bittrex, blockchain_balances, bank_balances)
 
         polo_net_usd = dict_get_sumof(polo, 'usd_value')
         kraken_net_usd = dict_get_sumof(kraken, 'usd_value')
         bittrex_net_usd = dict_get_sumof(bittrex, 'usd_value')
-        crypto_net_usd = dict_get_sumof(general_crypto, 'usd_value')
+        crypto_net_usd = dict_get_sumof(blockchain_balances, 'usd_value')
 
         # calculate net usd value
         net_usd = 0
@@ -185,7 +200,7 @@ class Rotkelchen(object):
                 'percentage_of_net_usd_in_kraken': floatToPerc(kraken_net_usd / net_usd),
                 'percentage_of_net_usd_in_bittrex': floatToPerc(bittrex_net_usd / net_usd),
                 'percentage_of_net_usd_in_normal_crypto_account': floatToPerc(crypto_net_usd / net_usd),
-                'percentage_of_net_usd_in_banksncash': floatToPerc(banks['EUR']['usd_value'] / net_usd)
+                'percentage_of_net_usd_in_banksncash': floatToPerc(bank_balances['EUR']['usd_value'] / net_usd)
             },
             'net_usd': net_usd
         }

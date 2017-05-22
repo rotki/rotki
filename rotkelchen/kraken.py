@@ -90,6 +90,10 @@ class Kraken(Exchange):
         self.usdprice = {}
         self.eurprice = {}
 
+    def first_connection(self):
+        if self.first_connection_made:
+            return
+
         resp = self.query_private(
             'TradeVolume',
             req={'pair': 'XETHXXBT', 'fee-info': True}
@@ -99,6 +103,9 @@ class Kraken(Exchange):
         self.taker_fee = float(resp['fees']['XETHXXBT']['fee'])
         self.maker_fee = float(resp['fees_maker']['XETHXXBT']['fee'])
         self.tradeable_pairs = self.query_public('AssetPairs')
+        self.first_connection_made = True
+        # Also need to do at least a single pass of the main logic for the ticker
+        self.main_logic()
 
     def query_public(self, method, req={}):
         """API queries that do not require a valid key/secret pair.
@@ -145,7 +152,7 @@ class Kraken(Exchange):
         }
         ret = urllib2.urlopen(
             urllib2.Request(
-                'https://api.kraken.com'+urlpath,
+                'https://api.kraken.com' + urlpath,
                 post_data,
                 headers)
         )
@@ -173,6 +180,9 @@ class Kraken(Exchange):
         return resp[currencyPair]
 
     def main_logic(self):
+        if not self.first_connection_made:
+            return
+
         self.ticker = self.query_public('Ticker', req={'pair': ','.join(self.tradeable_pairs.keys())})
         self.eurprice['BTC'] = float(self.ticker['XXBTZEUR']['c'][0])
         self.usdprice['BTC'] = float(self.ticker['XXBTZUSD']['c'][0])
@@ -201,7 +211,7 @@ class Kraken(Exchange):
         self.eurprice[common_name] = btc_price * self.eurprice['BTC']
         return self.usdprice[common_name]
 
-    def query_balances(self):
+    def query_balances(self, ignore_cache=False):
         old_balances = self.query_private('Balance', req={})
 
         # find USD price of EUR

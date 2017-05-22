@@ -7,6 +7,7 @@ class Exchange(object):
         self.name = name
         self.api_key = api_key
         self.secret = secret
+        self.first_connection_made = False
 
     def orderBook(self, currency):
         raise NotImplementedError("Should only be implemented by subclasses")
@@ -22,5 +23,11 @@ class Exchange(object):
         }
 
         The name must be the canonical name used by leftrader
+        """
+        raise NotImplementedError("Should only be implemented by subclasses")
+
+    def first_connection(self):
+        """Performs actions that should be done in the first time coming online
+        and attempting to query data from an exchange.
         """
         raise NotImplementedError("Should only be implemented by subclasses")

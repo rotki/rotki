@@ -16,7 +16,8 @@ from utils import (
     dateToTs,
     pretty_json_dumps,
     floatToStr,
-    percToStr
+    percToStr,
+    ts_now
 )
 from exchange import Exchange
 from lender import Lender
@@ -42,9 +43,10 @@ class Poloniex(Exchange):
         'watched_currencies'
     ]
 
-    def __init__(self, api_key, secret, args, logger):
+    def __init__(self, api_key, secret, args, logger, cache_filename):
         super(Poloniex, self).__init__('poloniex', api_key, secret)
 
+        self.cache_filename = cache_filename
         self.args = args
         # Set default setting values
         self.watched_currencies = {
@@ -65,9 +67,16 @@ class Poloniex(Exchange):
         self.log = logger
         self.usdprice = {}
 
+    def first_connection(self):
+        if self.first_connection_made:
+            return
+
         fees_resp = self.returnFeeInfo()
         self.maker_fee = float(fees_resp['makerFee'])
         self.taker_fee = float(fees_resp['takerFee'])
+        self.first_connection_made = True
+        # Also need to do at least a single pass of the market watcher for the ticker
+        self.market_watcher()
 
     def post_process(self, before):
         after = before
@@ -334,6 +343,9 @@ class Poloniex(Exchange):
         self.usdprice['FCT'] = float(self.ticker['BTC_FCT']['last']) * self.usdprice['BTC']
 
     def main_logic(self):
+        if not self.first_connection_made:
+            return
+
         try:
             self.market_watcher()
 
@@ -353,7 +365,18 @@ class Poloniex(Exchange):
             {'currencyPair': currencyPair}
         )
 
-    def query_balances(self):
+    def query_balances(self, ignore_cache=False):
+        cache_data = dict()
+        if not ignore_cache and os.path.isfile(self.cache_filename):
+            with open(self.cache_filename, 'r') as f:
+                try:
+                    cache_data = json.loads(f.read())
+                except:
+                    pass
+
+                if 'poloniex' in cache_data:
+                    return cache_data['poloniex']['balances']
+
         resp = self.api_query('returnCompleteBalances', {"account": "all"})
 
         balances = dict()
@@ -370,5 +393,11 @@ class Poloniex(Exchange):
                     usd_value = btc_value * self.usdprice['BTC']
                 entry['usd_value'] = usd_value
                 balances[currency] = entry
+
+        with open(self.cache_filename, 'w') as f:
+            cache_data['poloniex'] = dict()
+            cache_data['poloniex']['balances'] = balances
+            cache_data['poloniex']['time'] = ts_now()
+            f.write(json.dumps(cache_data))
 
         return balances

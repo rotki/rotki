@@ -26,26 +26,47 @@ class RotkelchenServer(object):
         self.zerorpc.stop()
 
     def set_main_currency(self, currency_text):
-        self.rotkelchen.set_main_currency(currency_text)
+        with self.rotkelchen.lock:
+            self.rotkelchen.set_main_currency(currency_text)
 
-    def get_settings(self):
-        exchanges = self.rotkelchen.get_exchanges()
-        main_currency = self.rotkelchen.main_currency
-        exchange_balances = list()
-        for exchange in exchanges:
-            balances = getattr(self.rotkelchen, exchange).query_balances()
-            total = 0
-            for _, entry in balances.iteritems():
-                total += entry['usd_value']
+    def get_total_in_main_currency(self, balances):
+        total = 0
+        for _, entry in balances.iteritems():
+            total += entry['usd_value']
 
-            total = self.rotkelchen.usd_to_main_currency(total)
-            exchange_balances.append(total)
+        return self.rotkelchen.usd_to_main_currency(total)
 
-        return {
-            'exchanges': exchanges,
-            'main_currency': main_currency,
-            'exchange_balances': exchange_balances
-        }
+    # def get_registered_exchanges(self):
+    def get_initial_settings(self):
+        with self.rotkelchen.lock:
+            return {
+                'exchanges': self.rotkelchen.get_exchanges(),
+                'main_currency': self.rotkelchen.main_currency
+            }
+
+    def query_exchange_total(self, name, first_time):
+        with self.rotkelchen.lock:
+            if first_time:
+                getattr(self.rotkelchen, name).first_connection()
+            balances = getattr(self.rotkelchen, name).query_balances(ignore_cache=True)
+            return {
+                'name': name,
+                'total': self.get_total_in_main_currency(balances)
+            }
+
+    def query_blockchain_total(self):
+        with self.rotkelchen.lock:
+            balances = self.rotkelchen.query_blockchain_balances()
+            return {
+                'total': self.get_total_in_main_currency(balances)
+            }
+
+    def query_banks_total(self):
+        with self.rotkelchen.lock:
+            balances = self.rotkelchen.query_bank_balances()
+            return {
+                'total': self.get_total_in_main_currency(balances)
+            }
 
     def echo(self, text):
         return text
