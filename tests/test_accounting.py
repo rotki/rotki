@@ -56,6 +56,6 @@ def test_simple_history1():
     price_historian = PriceHistorian('/home/lefteris/ew/leftrader/data/', {})
     logger = Logger(None, False)
     accountant = Accountant(logger, price_historian, 'EUR')
-    accountant.process_history(trades_from_dictlist(history1))
+    accountant.process_history(trades_from_dictlist(history1), [], [])
     assert isclose(accountant.general_profit_loss, 562.76426759)
     assert isclose(accountant.taxable_profit_loss, 562.76426759)

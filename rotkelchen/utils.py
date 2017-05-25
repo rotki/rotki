@@ -7,6 +7,7 @@ import datetime
 import subprocess
 import operator
 import urllib2
+import os
 # from exception import ConnectionError
 
 
@@ -20,11 +21,11 @@ def sfjson_loads(s):
 
 def pretty_json_dumps(data):
     return json.dumps(
-                data,
-                sort_keys=True,
-                indent=4,
-                separators=(',', ': ')
-            )
+        data,
+        sort_keys=True,
+        indent=4,
+        separators=(',', ': ')
+    )
 
 
 def ts_now():
@@ -140,6 +141,37 @@ def merge_dicts(*dict_args):
     for dictionary in dict_args:
         result.update(dictionary)
     return result
+
+
+def retry_calls(times, location, method, function, *args):
+    tries = times
+    while True:
+        try:
+            result = function(*args)
+            return result
+        except urllib2.URLError as e:
+            tries -= 1
+            if tries == 0:
+                raise ValueError(
+                    "{} query for {} failed after {} tries. Reason: {}".format(
+                        location,
+                        method,
+                        times,
+                        e
+                    ))
+
+
+def get_jsonfile_contents_or_empty_list(filepath):
+    if not os.path.isfile(filepath):
+        return list()
+
+    with open(filepath, 'r') as infile:
+        try:
+            data = json.load(infile)
+        except:
+            data = list()
+
+    return data
 
 
 LOG_NOTHING = 0

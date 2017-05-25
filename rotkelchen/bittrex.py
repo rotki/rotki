@@ -71,11 +71,12 @@ def trade_from_bittrex(bittrex_trade):
 
 
 class Bittrex(Exchange):
-    def __init__(self, api_key, secret, inquirer):
+    def __init__(self, api_key, secret, inquirer, data_dir):
         super(Bittrex, self).__init__('bittrex', api_key, secret)
         self.apiversion = 'v1.1'
         self.uri = 'https://bittrex.com/api/{}/'.format(self.apiversion)
         self.inquirer = inquirer
+        self.data_dir = data_dir
 
     def first_connection(self):
         self.first_connection_made = True
@@ -152,20 +153,30 @@ class Bittrex(Exchange):
             count=None):
 
         options = dict()
+        cache = self.check_trades_cache(start_ts, end_ts)
         if market is not None:
             options['market'] = world_pair_to_bittrex(market)
+        elif cache is not None:
+            return cache
+
         if count is not None:
             options['count'] = count
         order_history = self.api_query('getorderhistory', options)
 
+        print("---> {}".format(order_history))
         returned_history = list()
         for order in order_history:
             order_timestamp = createTimeStamp(order['TimeStamp'], formatstr="%Y-%m-%dT%H:%M:%S.%f")
             if start_ts is not None and order_timestamp < start_ts:
+                print("type(order_timestamp), type(start_ts) -- {}, {}".format(type(order_timestamp), type(start_ts)))
+                print("start_ts is not None  -- {}".format(start_ts is not None))
+                print("order_timestamp < start_ts  -- {} < {} = {}".format(order_timestamp, start_ts, order_timestamp < start_ts))
                 continue
             if end_ts is not None and order_timestamp > end_ts:
+                print("> end_ts")
                 break
             order['TimeStamp'] = order_timestamp
             returned_history.append(trade_from_bittrex(order))
 
+        self.update_trades_cache(returned_history, start_ts, end_ts)
         return returned_history

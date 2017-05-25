@@ -328,12 +328,12 @@ class Accountant(object):
             self.details[asset] = (tax_free_amount_left, average / amount_sum)
         return self.details
 
-    def process_history(self, history):
+    def process_history(self, trade_history, margin_history):
         self.events = dict()
         self.general_profit_loss = 0
         self.taxable_profit_loss = 0
 
-        for trade in history:
+        for trade in trade_history:
             asset1, asset2 = trade_get_assets(trade)
             if asset1 in self.ignored_assets or asset2 in self.ignored_assets:
                 print("Ignoring trade with {} {}".format(asset1, asset2))
@@ -377,6 +377,13 @@ class Accountant(object):
                     rate_in_profit_currency=selling_rate,
                     timestamp=trade.timestamp
                 )
+            elif trade.type == 'settlement_sell':
+                # in poloniex settlements sell some asset to get BTC to repay a loan
+
+                pass
+            elif trade.type == 'settlement_buy':
+                # in poloniex settlements you buy some asset with BTC to repay a loan
+                pass
             else:
                 raise ValueError('Unknown trade type "{}" encountered'.format(trade.type))
 

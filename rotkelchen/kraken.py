@@ -10,8 +10,9 @@ import hmac
 import hashlib
 import base64
 import time
+import os
 
-from utils import query_fiat_pair
+from utils import query_fiat_pair, ts_now, retry_calls
 from exchange import Exchange
 
 
@@ -82,11 +83,12 @@ def kraken_to_world_pair(pair):
 
 
 class Kraken(Exchange):
-    def __init__(self, api_key, secret, args, logger):
+    def __init__(self, api_key, secret, args, logger, data_dir):
         super(Kraken, self).__init__('kraken', api_key, secret)
         self.uri = 'https://api.kraken.com'
         self.apiversion = '0'
         self.log = logger
+        self.data_dir = data_dir
         self.usdprice = {}
         self.eurprice = {}
 
@@ -107,7 +109,7 @@ class Kraken(Exchange):
         # Also need to do at least a single pass of the main logic for the ticker
         self.main_logic()
 
-    def query_public(self, method, req={}):
+    def _query_public(self, method, req={}):
         """API queries that do not require a valid key/secret pair.
 
         Arguments:
@@ -127,7 +129,13 @@ class Kraken(Exchange):
             raise ValueError(json_ret['error'])
         return json_ret['result']
 
+    def query_public(self, method, req={}):
+        return retry_calls(5, 'kraken', method, self._query_public, method, req)
+
     def query_private(self, method, req={}):
+        return retry_calls(5, 'kraken', method, self._query_private, method, req)
+
+    def _query_private(self, method, req={}):
         """API queries that require a valid key/secret pair.
 
         Arguments:
@@ -236,6 +244,10 @@ class Kraken(Exchange):
         return balances
 
     def query_trade_history(self, start_ts=None, end_ts=None):
+        cache = self.check_trades_cache(start_ts, end_ts)
+        if cache is not None:
+            return cache
+
         result = list()
 
         response = self._query_trade_history(start_ts=start_ts, end_ts=end_ts)
@@ -253,6 +265,8 @@ class Kraken(Exchange):
             offset += len(response['trades'])
             result.extend(response['trades'].values())
 
+        # before returning save it in the disk for future reference
+        self.update_trades_cache(result, start_ts, end_ts)
         return result
 
     def _query_trade_history(self, start_ts=None, end_ts=None, offset=None):

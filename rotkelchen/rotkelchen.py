@@ -55,6 +55,10 @@ class Rotkelchen(object):
 
         self.cache_data_filename = os.path.join(data_dir, 'cache_data.json')
 
+        self.poloniex = None
+        self.kraken = None
+        self.bittrex = None
+
         # initialize exchanges for which we have keys
         if 'polo_api_key' in self.secret_data:
             self.poloniex = Poloniex(
@@ -62,21 +66,24 @@ class Rotkelchen(object):
                 self.secret_data['polo_secret'],
                 args,
                 self.logger,
-                self.cache_data_filename
+                self.cache_data_filename,
+                data_dir
             )
         if 'kraken_api_key' in self.secret_data:
             self.kraken = Kraken(
                 self.secret_data['kraken_api_key'],
                 self.secret_data['kraken_secret'],
                 args,
-                self.logger
+                self.logger,
+                data_dir
             )
         self.inquirer = Inquirer(kraken=self.kraken if hasattr(self, 'kraken') else None)
         if 'bittrex_api_key' in self.secret_data:
             self.bittrex = Bittrex(
                 self.secret_data['bittrex_api_key'],
                 self.secret_data['bittrex_secret'],
-                self.inquirer
+                self.inquirer,
+                data_dir
             )
 
         self.data = DataHandler(
@@ -173,7 +180,6 @@ class Rotkelchen(object):
                 'usd_value': self.data.personal['euros'] * eur_usd_price
             }
         }
-
 
     def query_balances(self, save_data=False):
         polo = self.poloniex.query_balances()

@@ -68,6 +68,19 @@ class RotkelchenServer(object):
                 'total': self.get_total_in_main_currency(balances)
             }
 
+    def query_trade_history(self, location, start_ts, end_ts):
+        start_ts = int(start_ts)
+        end_ts = int(end_ts)
+        if location == 'all':
+            return self.rotkelchen.data.trades_historian.get_history(start_ts, end_ts)
+
+        try:
+            exchange = getattr(self.rotkelchen, location)
+        except:
+            raise "Unknown location {} given".format(location)
+
+        return exchange.query_trade_history(start_ts, end_ts)
+
     def echo(self, text):
         return text
 

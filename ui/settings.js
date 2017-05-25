@@ -18,6 +18,9 @@ let main_currency = default_currency;
 let page_index = null;
 let page_external_trades = null;
 
+let history_start = null;
+let history_end = null;
+
 module.exports = {
     EXCHANGES: EXCHANGES,
     CURRENCIES: CURRENCIES,
