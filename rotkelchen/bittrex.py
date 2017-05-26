@@ -148,12 +148,13 @@ class Bittrex(Exchange):
     def query_trade_history(
             self,
             start_ts=None,
-            end_ts=ts_now(),
+            end_ts=None,
+            end_at_least_ts=None,
             market=None,
             count=None):
 
         options = dict()
-        cache = self.check_trades_cache(start_ts, end_ts)
+        cache = self.check_trades_cache(start_ts, end_at_least_ts)
         if market is not None:
             options['market'] = world_pair_to_bittrex(market)
         elif cache is not None:

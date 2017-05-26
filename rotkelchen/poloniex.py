@@ -420,8 +420,8 @@ class Poloniex(Exchange):
 
         return balances
 
-    def query_trade_history(self, start_ts, end_ts):
-        cache = self.check_trades_cache(start_ts, end_ts)
+    def query_trade_history(self, start_ts, end_ts, end_at_least_ts):
+        cache = self.check_trades_cache(start_ts, end_at_least_ts)
         if cache is not None:
             return cache
 
@@ -452,7 +452,7 @@ class Poloniex(Exchange):
                 })
         return lending_history
 
-    def query_loan_history(self, start_ts, end_ts, from_csv=False):
+    def query_loan_history(self, start_ts, end_ts, end_at_least_ts=None, from_csv=False):
         """
         WARNING: Querying from returnLendingHistory endpoing instead of reading from
         the CSV file can potentially  return unexpected/wrong results.
@@ -469,7 +469,7 @@ class Poloniex(Exchange):
         except:
             pass
 
-        cache = self.check_trades_cache(start_ts, end_ts, special_name='loan_history')
+        cache = self.check_trades_cache(start_ts, end_at_least_ts, special_name='loan_history')
         if cache is not None:
             return cache
 

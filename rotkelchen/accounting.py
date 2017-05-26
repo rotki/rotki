@@ -277,12 +277,16 @@ class Accountant(object):
             general_profit_loss -= gain_in_profit_currency
             taxable_profit_loss -= gain_in_profit_currency
 
-        self.general_profit_loss += general_profit_loss
-        self.taxable_profit_loss += taxable_profit_loss
-        self.log.logdebug('General Profit/Loss: {}\nTaxable Profit/Loss:{}'.format(
-            general_profit_loss,
-            taxable_profit_loss
-        ))
+        # should never happen, should be stopped at the main loop
+        assert timestamp <= self.query_end_ts
+        # count profits if we are inside the query period
+        if timestamp >= self.query_start_ts:
+            self.general_profit_loss += general_profit_loss
+            self.taxable_profit_loss += taxable_profit_loss
+            self.log.logdebug('General Profit/Loss: {}\nTaxable Profit/Loss:{}'.format(
+                general_profit_loss,
+                taxable_profit_loss
+            ))
 
     def add_sell_to_events_and_corresponding_buy(
             self,
@@ -390,12 +394,22 @@ class Accountant(object):
                 loan_settlement=True,
             )
 
-    def process_history(self, trade_history, margin_history):
+    def process_loans(self, loan_history):
+        # for loan in loan_history:
+        pass
+
+    def process_history(self, start_ts, end_ts, trade_history, margin_history, loan_history):
         self.events = dict()
         self.general_profit_loss = 0
         self.taxable_profit_loss = 0
+        self.query_start_ts = start_ts
+        self.query_end_ts = end_ts
 
         for trade in trade_history:
+
+            if trade.timestamp > self.query_end_ts:
+                break
+
             asset1, asset2 = trade_get_assets(trade)
             if asset1 in self.ignored_assets or asset2 in self.ignored_assets:
                 print("Ignoring trade with {} {}".format(asset1, asset2))
@@ -449,6 +463,7 @@ class Accountant(object):
             else:
                 raise ValueError('Unknown trade type "{}" encountered'.format(trade.type))
 
+        self.process_loans(loan_history)
         self.calculate_asset_details()
 
         return 'Taxable Profit/Loss: {} "{}"\nProfit/Loss: {} "{}"'.format(

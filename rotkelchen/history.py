@@ -327,20 +327,32 @@ class TradesHistorian(object):
             history_date_start = personal_data['historical_data_start_date']
         self.historical_data_start = createTimeStamp(history_date_start, formatstr="%d/%m/%Y")
 
-    def create_history(self, start_ts, end_ts):
+    def create_history(self, start_ts, end_ts, end_at_least_ts):
+        """Creates trades and loans history from start_ts to end_ts or if
+        `end_at_least` is given and we have a cache history for that particular source
+        which satisfies it we return the cache
+        """
         kraken_history = self.kraken.query_trade_history(
             start_ts=start_ts,
-            end_ts=end_ts
+            end_ts=end_ts,
+            end_at_least_ts=end_at_least_ts
         )
         polo_history = self.poloniex.query_trade_history(
             start_ts=start_ts,
-            end_ts=end_ts
+            end_ts=end_ts,
+            end_at_least_ts=end_at_least_ts
         )
-        polo_loans = self.poloniex.returnLendingHistory(start_ts, end_ts)
+        polo_loans = self.poloniex.query_loan_history(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            end_at_least_ts=end_at_least_ts,
+            from_csv=True
+        )
         polo_loans = process_polo_loans(polo_loans, start_ts, end_ts)
         bittrex_history = self.bittrex.query_trade_history(
             start_ts=start_ts,
-            end_ts=end_ts
+            end_ts=end_ts,
+            end_at_least_ts=end_at_least_ts
         )
         # open the external trades file if existing
         external_trades = get_jsonfile_contents_or_empty_list(
@@ -348,7 +360,7 @@ class TradesHistorian(object):
         )
         external_trades = trades_from_dictlist(external_trades, start_ts, end_ts)
 
-        # start creating the history list
+        # start creating the all trades history list
         history = list(external_trades)
 
         for trade in kraken_history:
@@ -361,7 +373,7 @@ class TradesHistorian(object):
         for pair, trades in polo_history.iteritems():
             for trade in trades:
                 category = trade['category']
-                # Do not count margin trading
+
                 if category == 'exchange' or category == 'settlement':
                     history.append(trade_from_poloniex(trade, pair))
                 elif category == 'marginTrade':
@@ -389,7 +401,14 @@ class TradesHistorian(object):
 
         return history, poloniex_margin_trades, polo_loans
 
-    def get_history(self, start_ts, end_ts):
+    def get_history(self, start_ts, end_ts, end_at_least_ts=None):
+        """Gets or creates trades and loans history from start_ts to end_ts or if
+        `end_at_least` is given and we have a cache history which satisfies it we
+        return the cache
+        """
+        if end_at_least_ts is None:
+            end_at_least_ts = end_ts
+
         historyfile_path = os.path.join(self.data_directory, TRADES_HISTORYFILE)
         if os.path.isfile(historyfile_path):
             with open(historyfile_path, 'r') as infile:
@@ -398,27 +417,35 @@ class TradesHistorian(object):
                 except:
                     pass
 
-                all_history_okay = data_up_todate(history_json_data, start_ts, end_ts)
+                all_history_okay = data_up_todate(history_json_data, start_ts, end_at_least_ts)
                 poloniex_history_okay = True
                 if self.poloniex is not None:
                     poloniex_history_okay = self.poloniex.check_trades_cache(
-                        start_ts, end_ts
+                        start_ts, end_at_least_ts
                     ) is not None
                 kraken_history_okay = True
                 if self.kraken is not None:
                     kraken_history_okay = self.kraken.check_trades_cache(
-                        start_ts, end_ts
+                        start_ts, end_at_least_ts
                     ) is not None
                 bittrex_history_okay = True
                 if self.bittrex is not None:
                     bittrex_history_okay = self.bittrex.check_trades_cache(
-                        start_ts, end_ts
+                        start_ts, end_at_least_ts
                     ) is not None
 
                 margin_file_contents = get_jsonfile_contents_or_empty_dict(MARGIN_HISTORYFILE)
-                margin_history_is_okay = data_up_todate(margin_file_contents, start_ts, end_ts)
+                margin_history_is_okay = data_up_todate(
+                    margin_file_contents,
+                    start_ts,
+                    end_at_least_ts
+                )
                 loan_file_contents = get_jsonfile_contents_or_empty_dict(LOANS_HISTORYFILE)
-                loan_history_is_okay = data_up_todate(loan_file_contents, start_ts, end_ts)
+                loan_history_is_okay = data_up_todate(
+                    loan_file_contents,
+                    start_ts,
+                    end_at_least_ts
+                )
 
                 if (
                         all_history_okay and
@@ -439,6 +466,6 @@ class TradesHistorian(object):
                         end_ts
                     )
 
-                    return history_trades, margin_trades
+                    return history_trades, margin_trades, loan_file_contents['data']
 
-        return self.create_history(start_ts, end_ts)
+        return self.create_history(start_ts, end_ts, end_at_least_ts)

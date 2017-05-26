@@ -2,7 +2,7 @@ import json
 import os
 import time
 
-from utils import createTimeStamp
+from utils import createTimeStamp, ts_now
 
 from history import TradesHistorian, PriceHistorian
 from accounting import Accountant
@@ -75,5 +75,15 @@ class DataHandler(object):
             f.write(json.dumps(self.personal))
 
     def process_history(self, start_ts, end_ts):
-        history, margin_history, loan_history = self.trades_historian.get_history(start_ts, end_ts)
-        return self.accountant.process_history(history, margin_history, loan_history)
+        history, margin_history, loan_history = self.trades_historian.get_history(
+            start_ts=0,  # For entire history processing we need to have full history available
+            end_ts=ts_now(),
+            end_at_least_ts=end_ts
+        )
+        return self.accountant.process_history(
+            start_ts,
+            end_ts,
+            history,
+            margin_history,
+            loan_history
+        )

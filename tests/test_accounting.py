@@ -9,7 +9,8 @@ def init_accounting_tests(history_list, margin_list, start_ts, end_ts):
     accountant = Accountant(logger, price_historian, 'EUR')
     accountant.process_history(
         trades_from_dictlist(history_list, start_ts, end_ts),
-        trades_from_dictlist(margin_list, start_ts, end_ts)
+        trades_from_dictlist(margin_list, start_ts, end_ts),
+        []
     )
     return accountant
 
@@ -92,17 +93,6 @@ history2 = [
         "fee_currency": "EUR",
         "amount": 40056,
         "location": "external",
-    }, {
-        "timestamp": 1454284800,  # ETH/BTC: 0.00598, ETH/EUR: 2.04, BTC/EUR: 342.69
-        "pair": "BTC_ETH",
-        "type": "settlement_sell",
-        "rate": 0.00598,
-        "cost": 0.897,
-        "cost_currency": "BTC",
-        "fee": 0.0013455,
-        "fee_currency": "BTC",
-        "amount": 50.0,
-        "location": "poloniex"
     }, {
         "timestamp": 1454284800,  # ETH/BTC: 0.00598, ETH/EUR: 2.04, BTC/EUR: 342.69
         "pair": "BTC_ETH",

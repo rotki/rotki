@@ -243,8 +243,8 @@ class Kraken(Exchange):
 
         return balances
 
-    def query_trade_history(self, start_ts=None, end_ts=None):
-        cache = self.check_trades_cache(start_ts, end_ts)
+    def query_trade_history(self, start_ts=None, end_ts=None, end_at_least_ts=None):
+        cache = self.check_trades_cache(start_ts, end_at_least_ts)
         if cache is not None:
             return cache
 

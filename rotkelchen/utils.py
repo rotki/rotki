@@ -40,7 +40,7 @@ def dateToTs(s):
     return int(calendar.timegm(datetime.datetime.strptime(s, '%d/%m/%Y').timetuple()))
 
 
-def tsToDate(ts, formatstr='%d/%m/%Y'):
+def tsToDate(ts, formatstr='%d/%m/%Y %H:%M:%S'):
     return datetime.datetime.utcfromtimestamp(ts).strftime(formatstr)
 
 
