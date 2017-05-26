@@ -22,8 +22,14 @@ class Exchange(object):
         self.secret = secret
         self.first_connection_made = False
 
-    def check_trades_cache(self, start_ts, end_ts):
-        trades_file = os.path.join(self.data_dir, "%s_trades.json" % self.name)
+    def _get_cachefile_name(self, special_name=None):
+        if special_name is None:
+            return os.path.join(self.data_dir, "%s_trades.json" % self.name)
+        else:
+            return os.path.join(self.data_dir, "%s_%s.json" % (self.name, special_name))
+
+    def check_trades_cache(self, start_ts, end_ts, special_name=None):
+        trades_file = self._get_cachefile_name(special_name)
         trades = dict()
         if os.path.isfile(trades_file):
             with open(trades_file, 'r') as f:
@@ -38,8 +44,8 @@ class Exchange(object):
 
         return None
 
-    def update_trades_cache(self, data, start_ts, end_ts):
-        trades_file = os.path.join(self.data_dir, "%s_trades.json" % self.name)
+    def update_trades_cache(self, data, start_ts, end_ts, special_name=None):
+        trades_file = self._get_cachefile_name(special_name)
         trades = dict()
         with open(trades_file, 'w') as f:
             trades['start_time'] = start_ts

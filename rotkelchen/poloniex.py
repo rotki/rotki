@@ -9,19 +9,16 @@ import hashlib
 import datetime
 import os
 import traceback
+import csv
 
 from utils import (
-    sfjson_loads,
     createTimeStamp,
-    dateToTs,
-    pretty_json_dumps,
-    floatToStr,
-    percToStr,
     ts_now,
     retry_calls
 )
 from exchange import Exchange
 from errors import PoloniexError
+
 
 def tsToDate(s):
     return datetime.datetime.fromtimestamp(s).strftime('%Y-%m-%d %H:%M:%S')
@@ -96,7 +93,14 @@ class Poloniex(Exchange):
         return after
 
     def api_query(self, command, req={}):
-        return retry_calls(5, 'poloniex', command, self._api_query, command, req)
+        result = retry_calls(5, 'poloniex', command, self._api_query, command, req)
+        if 'error' in result:
+            raise ValueError(
+                'Poloniex query for "{}" returned error: {}'.format(
+                    command,
+                    result['error']
+                ))
+        return result
 
     def _api_query(self, command, req={}):
         if(command == "returnTicker" or command == "return24Volume"):
@@ -166,6 +170,22 @@ class Poloniex(Exchange):
 
     def returnFeeInfo(self):
         return self.api_query("returnFeeInfo")
+
+    def returnLendingHistory(self, start_ts=None, end_ts=None, limit=None):
+        """Default limit for this endpoint seems to be 500 when I tried.
+        So to be sure all your loans are included put a very high limit per call
+        and also check if the limit was reached after each call.
+
+        Also maximum limit seems to be 12660
+        """
+        req = dict()
+        if start_ts is not None:
+            req['start'] = start_ts
+        if end_ts is not None:
+            req['end'] = end_ts
+        if limit is not None:
+            req['limit'] = limit
+        return self.api_query("returnLendingHistory", req)
 
     def returnMarketTradeHistory(self, currencyPair):
         return self.api_query(
@@ -413,3 +433,76 @@ class Poloniex(Exchange):
 
         self.update_trades_cache(result, start_ts, end_ts)
         return result
+
+    def parseLoanCSV(self):
+        # the default filename, and should be (if at all) inside the data directory
+        path = os.path.join(self.data_dir, "lendingHistory.csv")
+        lending_history = list()
+        with open(path, 'rb') as csvfile:
+            history = csv.reader(csvfile, delimiter=',', quotechar='|')
+            next(history)  # skip header row
+            for row in history:
+                lending_history.append({
+                    'currency': row[0],
+                    'earned': float(row[6]),
+                    'amount': float(row[2]),
+                    'fee': float(row[5]),
+                    'open': row[7],
+                    'close': row[8]
+                })
+        return lending_history
+
+    def query_loan_history(self, start_ts, end_ts, from_csv=False):
+        """
+        WARNING: Querying from returnLendingHistory endpoing instead of reading from
+        the CSV file can potentially  return unexpected/wrong results.
+
+        That is because the `returnLendingHistory` endpoint has a hidden limit
+        of 12660 results. In our code we use the limit of 12000 but poloniex may change
+        the endpoint to have a lower limit at which case this code will break.
+
+        To be safe compare results of both CSV and endpoint to make sure they agree!
+        """
+        try:
+            if from_csv:
+                return self.parseLoanCSV()
+        except:
+            pass
+
+        cache = self.check_trades_cache(start_ts, end_ts, special_name='loan_history')
+        if cache is not None:
+            return cache
+
+        loans_query_return_limit = 12000
+        result = self.returnLendingHistory(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            limit=loans_query_return_limit
+        )
+        data = list(result)
+
+        # since I don't think we have any guarantees about order of results
+        # using a set of loan ids is one way to make sure we get no duplicates
+        # if poloniex can guarantee me that the order is going to be ascending/descending
+        # per open/close time then this can be improved
+        id_set = set()
+
+        while len(result) == loans_query_return_limit:
+            # Find earliest timestamp to re-query the next batch
+            min_ts = end_ts
+            for loan in result:
+                ts = createTimeStamp(loan['close'], formatstr="%Y-%m-%d %H:%M:%S")
+                min_ts = min(min_ts, ts)
+                id_set.add(loan['id'])
+
+            result = self.returnLendingHistory(
+                start_ts=start_ts,
+                end_ts=min_ts,
+                limit=loans_query_return_limit
+            )
+            for loan in result:
+                if loan['id'] not in id_set:
+                    data.append(loan)
+
+        self.update_trades_cache(data, start_ts, end_ts, special_name='loan_history')
+        return data

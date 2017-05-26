@@ -8,7 +8,7 @@ import subprocess
 import operator
 import urllib2
 import os
-# from exception import ConnectionError
+import calendar
 
 
 def sfjson_loads(s):
@@ -33,11 +33,11 @@ def ts_now():
 
 
 def createTimeStamp(datestr, formatstr="%Y-%m-%d %H:%M:%S"):
-    return int(time.mktime(time.strptime(datestr, formatstr)))
+    return int(calendar.timegm(time.strptime(datestr, formatstr)))
 
 
 def dateToTs(s):
-    return int(time.mktime(datetime.datetime.strptime(s, '%d/%m/%Y').timetuple()))
+    return int(calendar.timegm(datetime.datetime.strptime(s, '%d/%m/%Y').timetuple()))
 
 
 def tsToDate(ts, formatstr='%d/%m/%Y'):

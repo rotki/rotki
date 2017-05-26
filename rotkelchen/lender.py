@@ -172,6 +172,7 @@ class Lender:
                 self.lending_history.append({
                     'currency': row[0],
                     'earned': float(row[6]),
+                    'amount': float(row[2]),
                     'opened': createTimeStamp(row[7]),
                     'closed': createTimeStamp(row[8])
                 })

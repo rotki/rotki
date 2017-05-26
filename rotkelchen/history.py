@@ -22,6 +22,7 @@ from order_formatting import Trade
 DEFAULT_START_DATE = "01/08/2015"
 TRADES_HISTORYFILE = 'trades_history.json'
 MARGIN_HISTORYFILE = 'margin_trades_history.json'
+LOANS_HISTORYFILE = 'loans_history.json'
 
 
 def trade_from_kraken(kraken_trade):
@@ -109,14 +110,18 @@ def trades_from_dictlist(given_trades, start_ts, end_ts):
     return returned_trades
 
 
-def write_trades_history_in_file(history, filepath, start_ts, end_ts):
-    out_history = [tr._asdict() for tr in history]
+def write_history_data_in_file(data, filepath, start_ts, end_ts):
     with open(filepath, 'w') as outfile:
         history_dict = dict()
-        history_dict['data'] = out_history
+        history_dict['data'] = data
         history_dict['start_time'] = start_ts
         history_dict['end_time'] = end_ts
         json.dump(history_dict, outfile)
+
+
+def write_trades_history_in_file(history, filepath, start_ts, end_ts):
+    out_history = [tr._asdict() for tr in history]
+    write_history_data_in_file(out_history, filepath, start_ts, end_ts)
 
 
 def limit_trade_list_to_period(trades_list, start_ts, end_ts):
@@ -156,6 +161,27 @@ def check_hourly_data_sanity(data):
             return False
         index += 2
     return True
+
+
+def process_polo_loans(data, start_ts, end_ts):
+    new_data = list()
+    for loan in reversed(data):
+        close_time = createTimeStamp(loan['close'], formatstr="%Y-%m-%d %H:%M:%S")
+        open_time = createTimeStamp(loan['open'], formatstr="%Y-%m-%d %H:%M:%S")
+        if open_time < start_ts:
+            continue
+        if close_time > end_ts:
+            break
+        new_data.append({
+            'open_time': open_time,
+            'close_time': close_time,
+            'currency': loan['currency'],
+            'fee': float(loan['fee']),
+            'profit/loss': float(loan['earned']),
+        })
+
+    new_data.sort(key=lambda loan: loan['open_time'])
+    return new_data
 
 
 class PriceHistorian(object):
@@ -310,6 +336,8 @@ class TradesHistorian(object):
             start_ts=start_ts,
             end_ts=end_ts
         )
+        polo_loans = self.poloniex.returnLendingHistory(start_ts, end_ts)
+        polo_loans = process_polo_loans(polo_loans, start_ts, end_ts)
         bittrex_history = self.bittrex.query_trade_history(
             start_ts=start_ts,
             end_ts=end_ts
@@ -345,15 +373,21 @@ class TradesHistorian(object):
         history = limit_trade_list_to_period(history, start_ts, end_ts)
 
         poloniex_margin_trades.sort(key=lambda trade: trade.timestamp)
-        poloniex_margin_trades = limit_trade_list_to_period(poloniex_margin_trades, start_ts, end_ts)
+        poloniex_margin_trades = limit_trade_list_to_period(
+            poloniex_margin_trades,
+            start_ts,
+            end_ts
+        )
 
         # Write to files
         historyfile_path = os.path.join(self.data_directory, TRADES_HISTORYFILE)
         write_trades_history_in_file(history, historyfile_path, start_ts, end_ts)
         marginfile_path = os.path.join(self.data_directory, MARGIN_HISTORYFILE)
         write_trades_history_in_file(poloniex_margin_trades, marginfile_path, start_ts, end_ts)
+        loansfile_path = os.path.join(self.data_directory, LOANS_HISTORYFILE)
+        write_history_data_in_file(polo_loans, loansfile_path, start_ts, end_ts)
 
-        return history, poloniex_margin_trades
+        return history, poloniex_margin_trades, polo_loans
 
     def get_history(self, start_ts, end_ts):
         historyfile_path = os.path.join(self.data_directory, TRADES_HISTORYFILE)
@@ -383,13 +417,16 @@ class TradesHistorian(object):
 
                 margin_file_contents = get_jsonfile_contents_or_empty_dict(MARGIN_HISTORYFILE)
                 margin_history_is_okay = data_up_todate(margin_file_contents, start_ts, end_ts)
+                loan_file_contents = get_jsonfile_contents_or_empty_dict(LOANS_HISTORYFILE)
+                loan_history_is_okay = data_up_todate(loan_file_contents, start_ts, end_ts)
 
                 if (
                         all_history_okay and
                         poloniex_history_okay and
                         kraken_history_okay and
                         bittrex_history_okay and
-                        margin_history_is_okay):
+                        margin_history_is_okay and
+                        loan_history_is_okay):
 
                     history_trades = trades_from_dictlist(
                         history_json_data['data'],

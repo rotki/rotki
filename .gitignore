@@ -2,3 +2,4 @@ node_modules/
 *.pyc
 /tests/.cache
 error.log
+.cache/
