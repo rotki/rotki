@@ -4,6 +4,9 @@ import os
 
 
 def data_up_todate(json_data, start_ts, end_ts):
+    if 'data' not in json_data or 'start_time' not in json_data or 'end_time' not in json_data:
+        return False
+
     start_ts_ok = (
         (start_ts is None and json_data['start_time'] is None) or
         start_ts >= json_data['start_time']

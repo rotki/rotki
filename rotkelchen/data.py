@@ -74,6 +74,6 @@ class DataHandler(object):
             self.personal['main_currency'] = currency
             f.write(json.dumps(self.personal))
 
-    def process_history(self, resync):
-        history, margin_history = self.trades_historian.get_history(resync)
+    def process_history(self, start_ts, end_ts):
+        history, margin_history = self.trades_historian.get_history(start_ts, end_ts)
         return self.accountant.process_history(history, margin_history)

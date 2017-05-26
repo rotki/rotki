@@ -59,7 +59,8 @@ class Accountant(object):
             trade_rate,
             trade_fee,
             fee_currency,
-            timestamp):
+            timestamp,
+            loan_settlement=False):
 
         paid_with_asset_rate = self.get_rate_in_profit_currency(paid_with_asset, timestamp)
         buy_rate = paid_with_asset_rate * trade_rate
@@ -85,7 +86,7 @@ class Accountant(object):
                 cost=cost
             )
         )
-        self.log.logdebug('Buying {} "{}" for {} "{}" ({} "{}" per "{}" or {} "{}" per "{}") at {}'.format(            
+        self.log.logdebug('Buying {} "{}" for {} "{}" ({} "{}" per "{}" or {} "{}" per "{}") at {}'.format(
             bought_amount,
             bought_asset,
             bought_amount * trade_rate,
@@ -150,7 +151,8 @@ class Accountant(object):
             total_fee_in_profit_currency,
             trade_rate,
             rate_in_profit_currency,
-            timestamp):
+            timestamp,
+            loan_settlement=False):
 
         if selling_asset not in self.events:
             self.events[selling_asset] = Events(list(), list())
@@ -165,21 +167,30 @@ class Accountant(object):
             )
         )
 
-        self.log.logdebug('Selling {} of "{}" for {} "{}" ({} "{}" per "{}" or {} "{}" per "{}") for total gain of {} "{}" at {}'.format(
-            selling_amount,
-            selling_asset,
-            receiving_amount,
-            receiving_asset,
-            trade_rate,
-            receiving_asset,
-            selling_asset,
-            rate_in_profit_currency,
-            self.profit_currency,
-            selling_asset,
-            gain_in_profit_currency,
-            self.profit_currency,
-            tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
-        ))
+        if loan_settlement:
+            self.log.logdebug('Loan Settlement Selling {} of "{}" for {} "{}" at {}'.format(
+                selling_amount,
+                selling_asset,
+                gain_in_profit_currency,
+                self.profit_currency,
+                tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
+            ))
+        else:
+            self.log.logdebug('Selling {} of "{}" for {} "{}" ({} "{}" per "{}" or {} "{}" per "{}") for total gain of {} "{}" at {}'.format(
+                selling_amount,
+                selling_asset,
+                receiving_amount,
+                receiving_asset,
+                trade_rate,
+                receiving_asset,
+                selling_asset,
+                rate_in_profit_currency,
+                self.profit_currency,
+                selling_asset,
+                gain_in_profit_currency,
+                self.profit_currency,
+                tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
+            ))
 
         # now search the buys for `paid_with_asset` and  calculate profit/loss
         remaining_sold_amount = selling_amount
@@ -261,6 +272,11 @@ class Accountant(object):
 
         general_profit_loss = gain_in_profit_currency - (taxfree_bought_cost + taxable_bought_cost)
         taxable_profit_loss = taxable_gain - taxable_bought_cost
+
+        if loan_settlement:
+            general_profit_loss -= gain_in_profit_currency
+            taxable_profit_loss -= gain_in_profit_currency
+
         self.general_profit_loss += general_profit_loss
         self.taxable_profit_loss += taxable_profit_loss
         self.log.logdebug('General Profit/Loss: {}\nTaxable Profit/Loss:{}'.format(
@@ -325,8 +341,54 @@ class Accountant(object):
                     tax_free_amount_left += buy_event.amount
                 amount_sum += buy_event.amount
                 average += buy_event.amount * buy_event.rate
-            self.details[asset] = (tax_free_amount_left, average / amount_sum)
+
+            if amount_sum == 0:
+                self.details[asset] = (0, 0)
+            else:
+                self.details[asset] = (tax_free_amount_left, average / amount_sum)
+
         return self.details
+
+    def trade_add_to_sell_events(self, trade, loan_settlement):
+        selling_asset = trade_get_other_pair(trade, trade.cost_currency)
+        selling_asset_rate = self.get_rate_in_profit_currency(
+            trade.cost_currency,
+            trade.timestamp
+        )
+        selling_rate = selling_asset_rate * trade.rate
+        fee_rate = self.query_historical_price(
+            trade.fee_currency,
+            self.profit_currency,
+            trade.timestamp
+        )
+        total_sell_fee_cost = fee_rate * trade.fee
+        gain_in_profit_currency = selling_rate * trade.amount - total_sell_fee_cost
+
+        if not loan_settlement:
+            self.add_sell_to_events_and_corresponding_buy(
+                selling_asset=selling_asset,
+                selling_amount=trade.amount,
+                receiving_asset=trade.cost_currency,
+                receiving_amount=trade.cost,
+                gain_in_profit_currency=gain_in_profit_currency,
+                total_fee_in_profit_currency=total_sell_fee_cost,
+                trade_rate=trade.rate,
+                rate_in_profit_currency=selling_rate,
+                timestamp=trade.timestamp
+            )
+        else:
+            self.add_sell_to_events(
+                selling_asset=selling_asset,
+                selling_amount=trade.amount,
+                receiving_asset=None,
+                receiving_amount=None,
+                gain_in_profit_currency=gain_in_profit_currency,
+                total_fee_in_profit_currency=total_sell_fee_cost,
+                trade_rate=trade.rate,
+                rate_in_profit_currency=selling_rate,
+                timestamp=trade.timestamp,
+                loan_settlement=True,
+            )
 
     def process_history(self, trade_history, margin_history):
         self.events = dict()
@@ -352,9 +414,16 @@ class Accountant(object):
                     timestamp=trade.timestamp
                 )
             elif trade.type == 'sell':
-                selling_asset = trade_get_other_pair(trade, trade.cost_currency)
+                self.trade_add_to_sell_events(trade, False)
+            elif trade.type == 'settlement_sell':
+                # in poloniex settlements sell some asset to get BTC to repay a loan
+                self.trade_add_to_sell_events(trade, True)
+            elif trade.type == 'settlement_buy':
+                # in poloniex settlements you buy some asset with BTC to repay a loan
+                # so in essense you sell BTC to repay the loan
+                selling_asset = 'BTC'
                 selling_asset_rate = self.get_rate_in_profit_currency(
-                    trade.cost_currency,
+                    selling_asset,
                     trade.timestamp
                 )
                 selling_rate = selling_asset_rate * trade.rate
@@ -365,25 +434,18 @@ class Accountant(object):
                 )
                 total_sell_fee_cost = fee_rate * trade.fee
                 gain_in_profit_currency = selling_rate * trade.amount - total_sell_fee_cost
-
-                self.add_sell_to_events_and_corresponding_buy(
+                self.add_sell_to_events(
                     selling_asset=selling_asset,
-                    selling_amount=trade.amount,
-                    receiving_asset=trade.cost_currency,
-                    receiving_amount=trade.cost,
+                    selling_amount=trade.cost,
+                    receiving_asset=None,
+                    receiving_amount=None,
                     gain_in_profit_currency=gain_in_profit_currency,
                     total_fee_in_profit_currency=total_sell_fee_cost,
                     trade_rate=trade.rate,
                     rate_in_profit_currency=selling_rate,
-                    timestamp=trade.timestamp
+                    timestamp=trade.timestamp,
+                    loan_settlement=True
                 )
-            elif trade.type == 'settlement_sell':
-                # in poloniex settlements sell some asset to get BTC to repay a loan
-
-                pass
-            elif trade.type == 'settlement_buy':
-                # in poloniex settlements you buy some asset with BTC to repay a loan
-                pass
             else:
                 raise ValueError('Unknown trade type "{}" encountered'.format(trade.type))
 

@@ -168,15 +168,11 @@ class Bittrex(Exchange):
         for order in order_history:
             order_timestamp = createTimeStamp(order['TimeStamp'], formatstr="%Y-%m-%dT%H:%M:%S.%f")
             if start_ts is not None and order_timestamp < start_ts:
-                print("type(order_timestamp), type(start_ts) -- {}, {}".format(type(order_timestamp), type(start_ts)))
-                print("start_ts is not None  -- {}".format(start_ts is not None))
-                print("order_timestamp < start_ts  -- {} < {} = {}".format(order_timestamp, start_ts, order_timestamp < start_ts))
                 continue
             if end_ts is not None and order_timestamp > end_ts:
-                print("> end_ts")
                 break
             order['TimeStamp'] = order_timestamp
-            returned_history.append(trade_from_bittrex(order))
+            returned_history.append(order)
 
         self.update_trades_cache(returned_history, start_ts, end_ts)
         return returned_history

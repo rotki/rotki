@@ -174,6 +174,18 @@ def get_jsonfile_contents_or_empty_list(filepath):
     return data
 
 
+def get_jsonfile_contents_or_empty_dict(filepath):
+    if not os.path.isfile(filepath):
+        return dict()
+
+    with open(filepath, 'r') as infile:
+        try:
+            data = json.load(infile)
+        except:
+            data = dict()
+
+    return data
+
 LOG_NOTHING = 0
 LOG_NOTIFY = 1
 LOG_DEBUG = 2
@@ -200,7 +212,7 @@ class Logger():
             subprocess.call([
                 "notify-send",
                 "-t", str(duration * 1000),
-                "-a", "leftrader",
+                "-a", "rotkelchen",
                 title,
                 message
             ])

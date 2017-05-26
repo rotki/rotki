@@ -115,8 +115,8 @@ class Rotkelchen(object):
         plot.show(self.data.stats)
         return pretty_json_dumps(self.data.stats)
 
-    def process_history(self, resync=False):
-        return self.data.process_history(resync)
+    def process_history(self, start_ts, end_ts):
+        return self.data.process_history(start_ts, end_ts)
 
     def query_blockchain_balances(self):
         # Find balance of eth Accounts

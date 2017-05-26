@@ -8,11 +8,13 @@ from itertools import izip
 
 from exchange import data_up_todate
 from kraken import kraken_to_world_pair
+from bittrex import trade_from_bittrex
 from utils import (
     createTimeStamp,
     tsToDate,
     get_pair_position,
-    get_jsonfile_contents_or_empty_list
+    get_jsonfile_contents_or_empty_list,
+    get_jsonfile_contents_or_empty_dict
 )
 from order_formatting import Trade
 
@@ -105,6 +107,32 @@ def trades_from_dictlist(given_trades, start_ts, end_ts):
             location=given_trade['location']
         ))
     return returned_trades
+
+
+def write_trades_history_in_file(history, filepath, start_ts, end_ts):
+    out_history = [tr._asdict() for tr in history]
+    with open(filepath, 'w') as outfile:
+        history_dict = dict()
+        history_dict['data'] = out_history
+        history_dict['start_time'] = start_ts
+        history_dict['end_time'] = end_ts
+        json.dump(history_dict, outfile)
+
+
+def limit_trade_list_to_period(trades_list, start_ts, end_ts):
+    """Accepts a SORTED by timestamp trades_list and returns a shortened version
+    of that list limited to a specific time period"""
+
+    start_idx = None
+    end_idx = -1
+    for idx, trade in enumerate(trades_list):
+        if start_idx is None and trade.timestamp >= start_ts:
+            start_idx = idx
+        elif end_idx == -1 and trade.timestamp > end_ts:
+            end_idx = idx - 1 if idx >= 1 else 0
+            break
+
+    return trades_list[start_idx:end_idx] if start_idx is not None else list()
 
 
 def pairwise(iterable):
@@ -266,19 +294,12 @@ class TradesHistorian(object):
         self.bittrex = bittrex
         self.start_ts = createTimeStamp(start_date, formatstr="%d/%m/%Y")
         self.data_directory = data_directory
+        self.personal_data = personal_data
         # get the start date for historical data
         history_date_start = DEFAULT_START_DATE
         if 'historical_data_start_date' in personal_data:
             history_date_start = personal_data['historical_data_start_date']
         self.historical_data_start = createTimeStamp(history_date_start, formatstr="%d/%m/%Y")
-
-        # open the external trades file if existing
-        if os.path.isfile(personal_data['external_trades_path']):
-            with open(personal_data['external_trades_path'], 'r') as f:
-                self.external_trades = json.loads(f.read())
-            self.external_trades = trades_from_dictlist(self.external_trades)
-        else:
-            self.external_trade = list()
 
     def create_history(self, start_ts, end_ts):
         kraken_history = self.kraken.query_trade_history(
@@ -293,10 +314,20 @@ class TradesHistorian(object):
             start_ts=start_ts,
             end_ts=end_ts
         )
-        history = list(self.external_trades)
+        # open the external trades file if existing
+        external_trades = get_jsonfile_contents_or_empty_list(
+            self.personal_data['external_trades_path']
+        )
+        external_trades = trades_from_dictlist(external_trades, start_ts, end_ts)
+
+        # start creating the history list
+        history = list(external_trades)
 
         for trade in kraken_history:
             history.append(trade_from_kraken(trade))
+
+        for trade in bittrex_history:
+            history.append(trade_from_bittrex(trade))
 
         poloniex_margin_trades = list()
         for pair, trades in polo_history.iteritems():
@@ -310,23 +341,17 @@ class TradesHistorian(object):
                 else:
                     raise ValueError("Unexpected poloniex trade category: {}".format(category))
 
-        history.extend(bittrex_history)
         history.sort(key=lambda trade: trade.timestamp)
+        history = limit_trade_list_to_period(history, start_ts, end_ts)
 
-        # Write to a file
-        out_history = [tr._asdict() for tr in history]
+        poloniex_margin_trades.sort(key=lambda trade: trade.timestamp)
+        poloniex_margin_trades = limit_trade_list_to_period(poloniex_margin_trades, start_ts, end_ts)
+
+        # Write to files
         historyfile_path = os.path.join(self.data_directory, TRADES_HISTORYFILE)
-        with open(historyfile_path, 'w') as outfile:
-            history_dict = dict()
-            history_dict['data'] = out_history
-            history_dict['start_time'] = start_ts
-            history_dict['end_time'] = end_ts
-            json.dump(history_dict, outfile)
-
-        out_margin = [tr._asdict() for tr in poloniex_margin_trades]
+        write_trades_history_in_file(history, historyfile_path, start_ts, end_ts)
         marginfile_path = os.path.join(self.data_directory, MARGIN_HISTORYFILE)
-        with open(marginfile_path, 'w') as outfile:
-            json.dump(out_margin, outfile)
+        write_trades_history_in_file(poloniex_margin_trades, marginfile_path, start_ts, end_ts)
 
         return history, poloniex_margin_trades
 
@@ -356,11 +381,15 @@ class TradesHistorian(object):
                         start_ts, end_ts
                     ) is not None
 
+                margin_file_contents = get_jsonfile_contents_or_empty_dict(MARGIN_HISTORYFILE)
+                margin_history_is_okay = data_up_todate(margin_file_contents, start_ts, end_ts)
+
                 if (
                         all_history_okay and
                         poloniex_history_okay and
                         kraken_history_okay and
-                        bittrex_history_okay):
+                        bittrex_history_okay and
+                        margin_history_is_okay):
 
                     history_trades = trades_from_dictlist(
                         history_json_data['data'],
@@ -368,10 +397,11 @@ class TradesHistorian(object):
                         end_ts
                     )
                     margin_trades = trades_from_dictlist(
-                        get_jsonfile_contents_or_empty_list(MARGIN_HISTORYFILE),
+                        margin_file_contents['data'],
                         start_ts,
                         end_ts
                     )
+
                     return history_trades, margin_trades
 
         return self.create_history(start_ts, end_ts)

@@ -81,6 +81,12 @@ class RotkelchenServer(object):
 
         return exchange.query_trade_history(start_ts, end_ts)
 
+    def process_trade_history(self, start_ts, end_ts):
+        start_ts = int(start_ts)
+        end_ts = int(end_ts)
+        with self.rotkelchen.lock:
+            return self.rotkelchen.process_history(start_ts, end_ts)
+
     def echo(self, text):
         return text
 
