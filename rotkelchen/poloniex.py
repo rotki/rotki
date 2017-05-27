@@ -17,6 +17,7 @@ from utils import (
     retry_calls
 )
 from exchange import Exchange
+from order_formatting import AssetMovement
 from errors import PoloniexError
 
 
@@ -61,7 +62,6 @@ class Poloniex(Exchange):
             'USDT_BTC': WatchedCurrency(0.0, 1000.0, 1.0),
             'ETH_REP': WatchedCurrency(0.0, 0.435, 0.01),
         }
-
         self.log = logger
         self.usdprice = {}
 
@@ -231,6 +231,9 @@ class Poloniex(Exchange):
             'start': start,
             'end': end
         })
+
+    def returnDepositsWithdrawals(self, start_ts, end_ts):
+        return self.api_query('returnDepositsWithdrawals', {'start': start_ts, 'end': end_ts})
 
     def returnActiveLoans(self):
         return self.api_query('returnActiveLoans')
@@ -506,3 +509,43 @@ class Poloniex(Exchange):
 
         self.update_trades_cache(data, start_ts, end_ts, special_name='loan_history')
         return data
+
+    def query_deposits_withdrawals(self, start_ts, end_ts, end_at_least_ts):
+        cache = self.check_trades_cache(
+            start_ts,
+            end_at_least_ts,
+            special_name='deposits_withdrawals'
+        )
+        if cache is None:
+            result = self.returnDepositsWithdrawals(start_ts, end_ts)
+            self.update_trades_cache(
+                result,
+                start_ts,
+                end_ts,
+                special_name='deposits_withdrawals'
+            )
+        else:
+            result = cache
+
+        movements = list()
+        for withdrawal in result['withdrawals']:
+            movements.append(AssetMovement(
+                exchange='poloniex',
+                category='withdrawal',
+                timestamp=withdrawal['timestamp'],
+                asset=withdrawal['currency'],
+                amount=float(withdrawal['amount']),
+                fee=float(withdrawal['fee'])
+            ))
+
+        for deposit in result['deposits']:
+            movements.append(AssetMovement(
+                exchange='poloniex',
+                category='deposit',
+                timestamp=deposit['timestamp'],
+                asset=deposit['currency'],
+                amount=float(deposit['amount']),
+                fee=0
+            ))
+
+        return movements

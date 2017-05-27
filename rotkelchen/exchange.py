@@ -70,6 +70,9 @@ class Exchange(object):
         """
         raise NotImplementedError("Should only be implemented by subclasses")
 
+    def query_deposits_withdrawals(self, start_ts, end_ts):
+        raise NotImplementedError("Should only be implemented by subclasses")
+
     def first_connection(self):
         """Performs actions that should be done in the first time coming online
         and attempting to query data from an exchange.

@@ -131,31 +131,11 @@ class RotkelchenServer(object):
         start_ts = 1451606400 # 01/01/2016
         end_ts = 1483228799 # 31/12/2016
         with self.rotkelchen.lock:
-            result = self.rotkelchen.poloniex.query_trade_history(
+            result = self.rotkelchen.poloniex.returnDepositsWithdrawals(
                 start_ts,
                 end_ts
             )
-
-            from history import trade_from_poloniex
-            new_result = list()
-            # for pair, trades in result.iteritems():
-            #     for trade in trades:
-            #         new_result.append(trade_from_poloniex(trade, pair))
-            for trade in result['ETH_BTC']:
-                if trade['category'] == 'marginTrade':
-                    new_result.append(trade_from_poloniex(trade, 'ETH_BTC'))
-
-            new_result.sort(key=lambda trade: trade.timestamp)
-
-            from utils import tsToDate
-            print("Number of results returned {}".format(len(new_result)))
-            print("First trade time: {}".format(
-                tsToDate(new_result[0].timestamp, formatstr='%d/%m/%Y %H:%M:%S')
-            ))
-            print("Last trade time: {}".format(
-                tsToDate(new_result[-1].timestamp, formatstr='%d/%m/%Y %H:%M:%S')
-            ))
-        return True
+        return result['deposits']
 
     def echo(self, text):
         return text

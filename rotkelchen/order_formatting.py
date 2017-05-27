@@ -32,6 +32,18 @@ Trade = namedtuple(
     )
 )
 
+AssetMovement = namedtuple(
+    'AssetMovement',
+    (
+        'exchange',
+        'category',
+        'timestamp',
+        'asset',
+        'amount',
+        'fee',
+    )
+)
+
 
 def trade_get_other_pair(trade, asset):
     currencies = trade.pair.split('_')

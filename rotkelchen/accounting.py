@@ -5,7 +5,8 @@ from order_formatting import (
     SellEvent,
     trade_get_other_pair,
     trade_get_assets,
-    Trade
+    Trade,
+    AssetMovement
 )
 
 
@@ -13,10 +14,21 @@ FIAT_CURRENCIES = ('EUR', 'USD', 'GBP', 'JPY', 'CNY')
 YEAR_IN_SECONDS = 31536000  # 60 * 60 * 24 * 365
 
 
-def loan_or_trade_timestamp(loan_or_trade):
-    if isinstance(loan_or_trade, Trade):
-        return loan_or_trade.timestamp
-    return loan_or_trade['close_time']
+def action_get_timestamp(action):
+    if isinstance(action, Trade) or isinstance(action, AssetMovement):
+        return action.timestamp
+    return action['close_time']
+
+
+def action_get_type(action):
+    if isinstance(action, Trade):
+        return 'trade'
+    elif isinstance(action, AssetMovement):
+        return 'asset_movement'
+    elif isinstance(action, dict):
+        return 'loan'
+    else:
+        raise ValueError('Unexpected action type found.')
 
 
 class Accountant(object):
@@ -134,6 +146,12 @@ class Accountant(object):
         # count profits if we are inside the query period
         if timestamp >= self.query_start_ts:
             self.loan_profit += gain_in_profit_currency
+
+    def add_asset_movement_to_events(self, category, asset, amount, timestamp, fee):
+        rate = self.get_rate_in_profit_currency(asset, timestamp)
+        self.asset_movement_fees += fee * rate
+        if category == 'withdrawal':
+            assert fee != 0, "So far all exchanges charge you for withdrawing"
 
     def add_buy_to_events_and_corresponding_sell(
             self,
@@ -329,7 +347,7 @@ class Accountant(object):
         # count profit/losses if we are inside the query period
         if timestamp >= self.query_start_ts:
             if loan_settlement:
-                self.settlement_losses -= gain_in_profit_currency
+                self.settlement_losses += gain_in_profit_currency
 
             self.general_trade_profit_loss += general_profit_loss
             self.taxable_trade_profit_loss += taxable_profit_loss
@@ -440,9 +458,15 @@ class Accountant(object):
                 loan_settlement=True,
             )
 
-    def process_history(self, start_ts, end_ts, trade_history, margin_history, loan_history):
-        """Processes the entire history of trades, loans and losses from settlements
-        in order to determine the price and time at which every asset was obtained and also
+    def process_history(self,
+                        start_ts,
+                        end_ts,
+                        trade_history,
+                        margin_history,
+                        loan_history,
+                        asset_movements):
+        """Processes the entire history of cryptoworld actions in order to determine
+        the price and time at which every asset was obtained and also
         the general and taxable profit/loss.
         """
         self.events = dict()
@@ -450,22 +474,28 @@ class Accountant(object):
         self.taxable_trade_profit_loss = 0
         self.settlement_losses = 0
         self.loan_profit = 0
+        self.asset_movement_fees = 0
         self.query_start_ts = start_ts
         self.query_end_ts = end_ts
 
+        actions = list(trade_history)
+
         # If we got loans, we need to interleave them with the full history and re-sort
         if len(loan_history) != 0:
-            trade_history.extend(loan_history)
+            actions.extend(loan_history)
 
-            trade_history.sort(
-                key=lambda loan_or_trade: loan_or_trade_timestamp(loan_or_trade)
-            )
+        if len(asset_movements) != 0:
+            actions.extend(asset_movements)
+
+        actions.sort(
+            key=lambda action: action_get_timestamp(action)
+        )
 
         prev_time = 0
-        for trade in trade_history:
+        for action in actions:
 
             # Assert we are sorted in ascending time order.
-            timestamp = loan_or_trade_timestamp(trade)
+            timestamp = action_get_timestamp(action)
             assert timestamp >= prev_time, (
                 "During history processing the trades/loans are not in ascending order"
             )
@@ -474,15 +504,28 @@ class Accountant(object):
             if timestamp > self.query_end_ts:
                 break
 
-            if not isinstance(trade, Trade):
-                # then it has to be a loan
+            action_type = action_get_type(action)
+
+            if action_type == 'loan':
                 self.add_loan_gain_to_events(
-                    gained_asset=trade['currency'],
-                    gained_amount=trade['earned'],
-                    fee_in_asset=trade['fee'],
+                    gained_asset=action['currency'],
+                    gained_amount=action['earned'],
+                    fee_in_asset=action['fee'],
                     timestamp=timestamp,
                 )
                 continue
+            elif action_type == 'asset_movement':
+                self.add_asset_movement_to_events(
+                    category=action.category,
+                    asset=action.asset,
+                    amount=action.amount,
+                    timestamp=action.timestamp,
+                    fee=action.fee
+                )
+                continue
+
+            # if we get here it's a trade
+            trade = action
 
             asset1, asset2 = trade_get_assets(trade)
             if asset1 in self.ignored_assets or asset2 in self.ignored_assets:
@@ -539,12 +582,13 @@ class Accountant(object):
 
         self.calculate_asset_details()
 
-        sum_actions = self.loan_profit + self.settlement_losses
+        sum_other_actions = self.loan_profit - self.settlement_losses - self.asset_movement_fees
         return {
             'loan_profit': self.loan_profit,
             'settlement_losses': self.settlement_losses,
+            'asset_movement_fees': self.asset_movement_fees,
             'general_trade_profit_loss': self.general_trade_profit_loss,
             'taxable_trade_profit_loss': self.taxable_trade_profit_loss,
-            'total_taxable_profit_loss': self.taxable_trade_profit_loss + sum_actions,
-            'total_profit_loss': self.general_trade_profit_loss + sum_actions,
+            'total_taxable_profit_loss': self.taxable_trade_profit_loss + sum_other_actions,
+            'total_profit_loss': self.general_trade_profit_loss + sum_other_actions,
         }

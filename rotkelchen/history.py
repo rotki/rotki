@@ -23,6 +23,7 @@ DEFAULT_START_DATE = "01/08/2015"
 TRADES_HISTORYFILE = 'trades_history.json'
 MARGIN_HISTORYFILE = 'margin_trades_history.json'
 LOANS_HISTORYFILE = 'loans_history.json'
+ASSETMOVEMENTS_HISTORYFILE = 'asset_movements_history.json'
 
 
 def trade_from_kraken(kraken_trade):
@@ -332,28 +333,6 @@ class TradesHistorian(object):
         `end_at_least` is given and we have a cache history for that particular source
         which satisfies it we return the cache
         """
-        kraken_history = self.kraken.query_trade_history(
-            start_ts=start_ts,
-            end_ts=end_ts,
-            end_at_least_ts=end_at_least_ts
-        )
-        polo_history = self.poloniex.query_trade_history(
-            start_ts=start_ts,
-            end_ts=end_ts,
-            end_at_least_ts=end_at_least_ts
-        )
-        polo_loans = self.poloniex.query_loan_history(
-            start_ts=start_ts,
-            end_ts=end_ts,
-            end_at_least_ts=end_at_least_ts,
-            from_csv=True
-        )
-        polo_loans = process_polo_loans(polo_loans, start_ts, end_ts)
-        bittrex_history = self.bittrex.query_trade_history(
-            start_ts=start_ts,
-            end_ts=end_ts,
-            end_at_least_ts=end_at_least_ts
-        )
         # open the external trades file if existing
         external_trades = get_jsonfile_contents_or_empty_list(
             self.personal_data['external_trades_path']
@@ -362,34 +341,70 @@ class TradesHistorian(object):
 
         # start creating the all trades history list
         history = list(external_trades)
+        asset_movements = list()
 
-        for trade in kraken_history:
-            history.append(trade_from_kraken(trade))
+        if self.kraken is not None:
+            kraken_history = self.kraken.query_trade_history(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                end_at_least_ts=end_at_least_ts
+            )
 
-        for trade in bittrex_history:
-            history.append(trade_from_bittrex(trade))
+            for trade in kraken_history:
+                history.append(trade_from_kraken(trade))
 
-        poloniex_margin_trades = list()
-        for pair, trades in polo_history.iteritems():
-            for trade in trades:
-                category = trade['category']
+        if self.poloniex is not None:
+            polo_history = self.poloniex.query_trade_history(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                end_at_least_ts=end_at_least_ts
+            )
+            poloniex_margin_trades = list()
+            for pair, trades in polo_history.iteritems():
+                for trade in trades:
+                    category = trade['category']
 
-                if category == 'exchange' or category == 'settlement':
-                    history.append(trade_from_poloniex(trade, pair))
-                elif category == 'marginTrade':
-                    poloniex_margin_trades.append(trade_from_poloniex(trade, pair))
-                else:
-                    raise ValueError("Unexpected poloniex trade category: {}".format(category))
+                    if category == 'exchange' or category == 'settlement':
+                        history.append(trade_from_poloniex(trade, pair))
+                    elif category == 'marginTrade':
+                        poloniex_margin_trades.append(trade_from_poloniex(trade, pair))
+                    else:
+                        raise ValueError("Unexpected poloniex trade category: {}".format(category))
 
+            poloniex_margin_trades.sort(key=lambda trade: trade.timestamp)
+            poloniex_margin_trades = limit_trade_list_to_period(
+                poloniex_margin_trades,
+                start_ts,
+                end_ts
+            )
+            polo_loans = self.poloniex.query_loan_history(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                end_at_least_ts=end_at_least_ts,
+                from_csv=True
+            )
+            polo_loans = process_polo_loans(polo_loans, start_ts, end_ts)
+            polo_asset_movements = self.poloniex.query_deposits_withdrawals(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                end_at_least_ts=end_at_least_ts,
+            )
+            asset_movements.extend(polo_asset_movements)
+
+        if self.bittrex is not None:
+            bittrex_history = self.bittrex.query_trade_history(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                end_at_least_ts=end_at_least_ts
+            )
+            for trade in bittrex_history:
+                history.append(trade_from_bittrex(trade))
+
+        # We sort it here ... but when accounting runs through the entire actions list,
+        # it resorts, so unless the fact that we sort is used somewhere else too, perhaps
+        # we can skip it?
         history.sort(key=lambda trade: trade.timestamp)
         history = limit_trade_list_to_period(history, start_ts, end_ts)
-
-        poloniex_margin_trades.sort(key=lambda trade: trade.timestamp)
-        poloniex_margin_trades = limit_trade_list_to_period(
-            poloniex_margin_trades,
-            start_ts,
-            end_ts
-        )
 
         # Write to files
         historyfile_path = os.path.join(self.data_directory, TRADES_HISTORYFILE)
@@ -398,8 +413,9 @@ class TradesHistorian(object):
         write_trades_history_in_file(poloniex_margin_trades, marginfile_path, start_ts, end_ts)
         loansfile_path = os.path.join(self.data_directory, LOANS_HISTORYFILE)
         write_history_data_in_file(polo_loans, loansfile_path, start_ts, end_ts)
-
-        return history, poloniex_margin_trades, polo_loans
+        assetmovementsfile_path = os.path.join(self.data_directory, ASSETMOVEMENTS_HISTORYFILE)
+        write_history_data_in_file(asset_movements, assetmovementsfile_path, start_ts, end_ts)
+        return history, poloniex_margin_trades, polo_loans, asset_movements
 
     def get_history(self, start_ts, end_ts, end_at_least_ts=None):
         """Gets or creates trades and loans history from start_ts to end_ts or if
@@ -446,6 +462,14 @@ class TradesHistorian(object):
                     start_ts,
                     end_at_least_ts
                 )
+                asset_movements_contents = get_jsonfile_contents_or_empty_dict(
+                    ASSETMOVEMENTS_HISTORYFILE
+                )
+                asset_movements_history_is_okay = data_up_todate(
+                    asset_movements_contents,
+                    start_ts,
+                    end_at_least_ts
+                )
 
                 if (
                         all_history_okay and
@@ -453,7 +477,8 @@ class TradesHistorian(object):
                         kraken_history_okay and
                         bittrex_history_okay and
                         margin_history_is_okay and
-                        loan_history_is_okay):
+                        loan_history_is_okay and
+                        asset_movements_history_is_okay):
 
                     history_trades = trades_from_dictlist(
                         history_json_data['data'],
@@ -466,6 +491,11 @@ class TradesHistorian(object):
                         end_ts
                     )
 
-                    return history_trades, margin_trades, loan_file_contents['data']
+                    return (
+                        history_trades,
+                        margin_trades,
+                        loan_file_contents['data'],
+                        asset_movements_contents['data']
+                    )
 
         return self.create_history(start_ts, end_ts, end_at_least_ts)
