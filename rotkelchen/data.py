@@ -9,6 +9,10 @@ from accounting import Accountant
 
 DEFAULT_START_DATE = "01/08/2015"
 
+empty_settings = {
+    'statsfile_path': ''
+}
+
 
 class DataHandler(object):
 
@@ -21,8 +25,11 @@ class DataHandler(object):
             data_directory):
 
         self.data_directory = data_directory
-        with open(os.path.join(self.data_directory, 'personal.json')) as f:
-            self.personal = json.loads(f.read())
+        try:
+            with open(os.path.join(self.data_directory, 'personal.json')) as f:
+                self.personal = json.loads(f.read())
+        except:  # No file found or contents are not json
+            self.personal = empty_settings
 
         self.log = logger
         self.poloniex = poloniex

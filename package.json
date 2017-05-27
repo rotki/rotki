@@ -11,7 +11,7 @@
     "zerorpc": "latest"
   },
   "devDependencies": {
-    "electron": "^1.4.1",
+    "electron": "1.6.10",
     "electron-packager": "^8.5.1",
     "electron-rebuild": "^1.5.7"
   }

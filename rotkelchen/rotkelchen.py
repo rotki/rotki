@@ -104,8 +104,10 @@ class Rotkelchen(object):
     def main_loop(self):
         while True and not self.shutdown_event.is_set():
             with self.lock:
-                self.poloniex.main_logic()
-                self.kraken.main_logic()
+                if self.poloniex is not None:
+                    self.poloniex.main_logic()
+                if self.kraken is not None:
+                    self.kraken.main_logic()
 
             with self.condition_lock:
                 if self.condition_lock.wait(self.sleep_secs):
