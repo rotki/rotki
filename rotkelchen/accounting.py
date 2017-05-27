@@ -32,10 +32,10 @@ class Accountant(object):
         self.price_historian = price_historian
         self.set_main_currency(profit_currency)
         self.ignored_assets = ignored_assets
+        # If this flag is True when your asset is being forcefully sold as a
+        # loan/margin settlement then profit/loss is also calculated before the entire
+        # amount is taken as a loss
         self.count_profit_for_settlements = False
-
-        self.general_profit_loss = 0
-        self.taxable_profit_loss = 0
 
     def set_main_currency(self, currency):
         if currency not in FIAT_CURRENCIES:
@@ -133,8 +133,7 @@ class Accountant(object):
         )
         # count profits if we are inside the query period
         if timestamp >= self.query_start_ts:
-            self.general_profit_loss += gain_in_profit_currency
-            self.taxable_profit_loss += gain_in_profit_currency
+            self.loan_profit += gain_in_profit_currency
 
     def add_buy_to_events_and_corresponding_sell(
             self,
@@ -323,22 +322,17 @@ class Accountant(object):
             )
             taxable_profit_loss = taxable_gain - taxable_bought_cost
 
-        if loan_settlement:
-            general_profit_loss -= gain_in_profit_currency
-            taxable_profit_loss -= gain_in_profit_currency
-
         # should never happen, should be stopped at the main loop
         assert timestamp <= self.query_end_ts, (
             "Trade time > query_end_ts found in adding to sell event"
         )
-        # count profits if we are inside the query period
+        # count profit/losses if we are inside the query period
         if timestamp >= self.query_start_ts:
-            self.general_profit_loss += general_profit_loss
-            self.taxable_profit_loss += taxable_profit_loss
-            self.log.logdebug('General Profit/Loss: {}\nTaxable Profit/Loss:{}'.format(
-                general_profit_loss,
-                taxable_profit_loss
-            ))
+            if loan_settlement:
+                self.settlement_losses -= gain_in_profit_currency
+
+            self.general_trade_profit_loss += general_profit_loss
+            self.taxable_trade_profit_loss += taxable_profit_loss
 
     def add_sell_to_events_and_corresponding_buy(
             self,
@@ -452,8 +446,10 @@ class Accountant(object):
         the general and taxable profit/loss.
         """
         self.events = dict()
-        self.general_profit_loss = 0
-        self.taxable_profit_loss = 0
+        self.general_trade_profit_loss = 0
+        self.taxable_trade_profit_loss = 0
+        self.settlement_losses = 0
+        self.loan_profit = 0
         self.query_start_ts = start_ts
         self.query_end_ts = end_ts
 
@@ -543,9 +539,12 @@ class Accountant(object):
 
         self.calculate_asset_details()
 
-        return 'Taxable Profit/Loss: {} "{}"\nProfit/Loss: {} "{}"'.format(
-            self.taxable_profit_loss,
-            self.profit_currency,
-            self.general_profit_loss,
-            self.profit_currency,
-        )
+        sum_actions = self.loan_profit + self.settlement_losses
+        return {
+            'loan_profit': self.loan_profit,
+            'settlement_losses': self.settlement_losses,
+            'general_trade_profit_loss': self.general_trade_profit_loss,
+            'taxable_trade_profit_loss': self.taxable_trade_profit_loss,
+            'total_taxable_profit_loss': self.taxable_trade_profit_loss + sum_actions,
+            'total_profit_loss': self.general_trade_profit_loss + sum_actions,
+        }
