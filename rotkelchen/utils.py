@@ -186,13 +186,16 @@ def get_jsonfile_contents_or_empty_dict(filepath):
 
     return data
 
+
 LOG_NOTHING = 0
 LOG_NOTIFY = 1
-LOG_DEBUG = 2
+LOG_ERROR = 2
+LOG_DEBUG = 3
+LOG_ALERT = 4
 
 
 class Logger():
-    def __init__(self, outfile, should_notify, log_level=LOG_DEBUG):
+    def __init__(self, outfile, should_notify, log_level=LOG_ALERT):
         # TODO: Make log level configurable
         self.outfile = outfile
         self.should_notify = should_notify
@@ -220,11 +223,16 @@ class Logger():
             self.output("Notification:{}\n{}".format(title, message))
 
     def lognotify(self, title, message):
-        self.output(message)
-        self.notify(title, message)
+        if self.log_level <= LOG_NOTIFY:
+            self.output(message)
+            self.notify(title, message)
 
     def logdebug(self, message):
-        if self.log_level >= LOG_DEBUG:
+        if self.log_level <= LOG_DEBUG:
+            self.output(message)
+
+    def logalert(self, message):
+        if self.log_level <= LOG_ALERT:
             self.output(message)
 
     def destroy(self):

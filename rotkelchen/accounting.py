@@ -4,12 +4,19 @@ from order_formatting import (
     BuyEvent,
     SellEvent,
     trade_get_other_pair,
-    trade_get_assets
+    trade_get_assets,
+    Trade
 )
 
 
 FIAT_CURRENCIES = ('EUR', 'USD', 'GBP', 'JPY', 'CNY')
 YEAR_IN_SECONDS = 31536000  # 60 * 60 * 24 * 365
+
+
+def loan_or_trade_timestamp(loan_or_trade):
+    if isinstance(loan_or_trade, Trade):
+        return loan_or_trade.timestamp
+    return loan_or_trade['close_time']
 
 
 class Accountant(object):
@@ -25,6 +32,7 @@ class Accountant(object):
         self.price_historian = price_historian
         self.set_main_currency(profit_currency)
         self.ignored_assets = ignored_assets
+        self.count_profit_for_settlements = False
 
         self.general_profit_loss = 0
         self.taxable_profit_loss = 0
@@ -59,8 +67,7 @@ class Accountant(object):
             trade_rate,
             trade_fee,
             fee_currency,
-            timestamp,
-            loan_settlement=False):
+            timestamp):
 
         paid_with_asset_rate = self.get_rate_in_profit_currency(paid_with_asset, timestamp)
         buy_rate = paid_with_asset_rate * trade_rate
@@ -99,6 +106,35 @@ class Accountant(object):
             bought_asset,
             tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
         ))
+
+    def add_loan_gain_to_events(
+            self,
+            gained_asset,
+            gained_amount,
+            fee_in_asset,
+            timestamp):
+
+        rate = self.get_rate_in_profit_currency(gained_asset, timestamp)
+
+        if gained_asset not in self.events:
+            self.events[gained_asset] = Events(list(), list())
+
+        net_gain_amount = gained_amount - fee_in_asset
+        gain_in_profit_currency = net_gain_amount * rate
+        assert gain_in_profit_currency > 0, "Loan profit is negative. Should never happen"
+        self.events[gained_asset].buys.append(
+            BuyEvent(
+                amount=net_gain_amount,
+                timestamp=timestamp,
+                rate=rate,
+                fee_rate=0,
+                cost=0
+            )
+        )
+        # count profits if we are inside the query period
+        if timestamp >= self.query_start_ts:
+            self.general_profit_loss += gain_in_profit_currency
+            self.taxable_profit_loss += gain_in_profit_currency
 
     def add_buy_to_events_and_corresponding_sell(
             self,
@@ -141,58 +177,7 @@ class Accountant(object):
                 timestamp=timestamp,
             )
 
-    def add_sell_to_events(
-            self,
-            selling_asset,
-            selling_amount,
-            receiving_asset,
-            receiving_amount,
-            gain_in_profit_currency,
-            total_fee_in_profit_currency,
-            trade_rate,
-            rate_in_profit_currency,
-            timestamp,
-            loan_settlement=False):
-
-        if selling_asset not in self.events:
-            self.events[selling_asset] = Events(list(), list())
-
-        self.events[selling_asset].sells.append(
-            SellEvent(
-                amount=selling_amount,
-                timestamp=timestamp,
-                rate=rate_in_profit_currency,
-                fee_rate=total_fee_in_profit_currency / selling_amount,
-                gain=gain_in_profit_currency,
-            )
-        )
-
-        if loan_settlement:
-            self.log.logdebug('Loan Settlement Selling {} of "{}" for {} "{}" at {}'.format(
-                selling_amount,
-                selling_asset,
-                gain_in_profit_currency,
-                self.profit_currency,
-                tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
-            ))
-        else:
-            self.log.logdebug('Selling {} of "{}" for {} "{}" ({} "{}" per "{}" or {} "{}" per "{}") for total gain of {} "{}" at {}'.format(
-                selling_amount,
-                selling_asset,
-                receiving_amount,
-                receiving_asset,
-                trade_rate,
-                receiving_asset,
-                selling_asset,
-                rate_in_profit_currency,
-                self.profit_currency,
-                selling_asset,
-                gain_in_profit_currency,
-                self.profit_currency,
-                tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
-            ))
-
-        # now search the buys for `paid_with_asset` and  calculate profit/loss
+    def search_buys_calculate_profit(self, selling_amount, selling_asset, timestamp):
         remaining_sold_amount = selling_amount
         stop_index = -1
         taxfree_bought_cost = 0
@@ -250,12 +235,13 @@ class Accountant(object):
                     ))
 
         if stop_index == -1:
-            self.log.logdebug('No documented buy found for "{}" before {}'.format(
+            self.log.logalert('No documented buy found for "{}" before {}'.format(
                 selling_asset, tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
             ))
-            # That means we had no documented buy for that asset.
-            # It can happen, so for this sell no profit/loss is calculated.
-            return
+            # That means we had no documented buy for that asset. This is not good
+            # because we can't prove a corresponding buy and as such we are burdened
+            # calculating the entire sell as profit which needs to be taxed
+            return selling_amount, 0, 0
 
         # Otherwise, delete all the used up buys from the list
         del self.events[selling_asset].buys[:stop_index]
@@ -264,21 +250,87 @@ class Accountant(object):
             amount=remaining_amount_from_last_buy
         )
 
-        # and then calculate profit/loss
-        taxable_gain = (
-            rate_in_profit_currency * taxable_amount -
-            total_fee_in_profit_currency * (taxable_amount / selling_amount)
+        return taxable_amount, taxable_bought_cost, taxfree_bought_cost
+
+    def add_sell_to_events(
+            self,
+            selling_asset,
+            selling_amount,
+            receiving_asset,
+            receiving_amount,
+            gain_in_profit_currency,
+            total_fee_in_profit_currency,
+            trade_rate,
+            rate_in_profit_currency,
+            timestamp,
+            loan_settlement=False):
+
+        if selling_asset not in self.events:
+            self.events[selling_asset] = Events(list(), list())
+
+        self.events[selling_asset].sells.append(
+            SellEvent(
+                amount=selling_amount,
+                timestamp=timestamp,
+                rate=rate_in_profit_currency,
+                fee_rate=total_fee_in_profit_currency / selling_amount,
+                gain=gain_in_profit_currency,
+            )
         )
 
-        general_profit_loss = gain_in_profit_currency - (taxfree_bought_cost + taxable_bought_cost)
-        taxable_profit_loss = taxable_gain - taxable_bought_cost
+        if loan_settlement:
+            self.log.logdebug('Loan Settlement Selling {} of "{}" for {} "{}" at {}'.format(
+                selling_amount,
+                selling_asset,
+                gain_in_profit_currency,
+                self.profit_currency,
+                tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
+            ))
+        else:
+            self.log.logdebug('Selling {} of "{}" for {} "{}" ({} "{}" per "{}" or {} "{}" per "{}") for total gain of {} "{}" at {}'.format(
+                selling_amount,
+                selling_asset,
+                receiving_amount,
+                receiving_asset,
+                trade_rate,
+                receiving_asset,
+                selling_asset,
+                rate_in_profit_currency,
+                self.profit_currency,
+                selling_asset,
+                gain_in_profit_currency,
+                self.profit_currency,
+                tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
+            ))
+
+        # now search the buys for `paid_with_asset` and  calculate profit/loss
+        taxable_amount, taxable_bought_cost, taxfree_bought_cost = self.search_buys_calculate_profit(
+            selling_amount, selling_asset, timestamp
+        )
+        general_profit_loss = 0
+        taxable_profit_loss = 0
+
+        # and then calculate profit/loss
+        if not loan_settlement or (loan_settlement and self.count_profit_for_settlements):
+            taxable_gain = (
+                rate_in_profit_currency * taxable_amount -
+                total_fee_in_profit_currency * (taxable_amount / selling_amount)
+            )
+
+            general_profit_loss = gain_in_profit_currency - (
+                taxfree_bought_cost +
+                taxable_bought_cost
+            )
+            taxable_profit_loss = taxable_gain - taxable_bought_cost
 
         if loan_settlement:
             general_profit_loss -= gain_in_profit_currency
             taxable_profit_loss -= gain_in_profit_currency
 
         # should never happen, should be stopped at the main loop
-        assert timestamp <= self.query_end_ts
+        assert timestamp <= self.query_end_ts, (
+            "Trade time > query_end_ts found in adding to sell event"
+        )
         # count profits if we are inside the query period
         if timestamp >= self.query_start_ts:
             self.general_profit_loss += general_profit_loss
@@ -394,25 +446,51 @@ class Accountant(object):
                 loan_settlement=True,
             )
 
-    def process_loans(self, loan_history):
-        # for loan in loan_history:
-        pass
-
     def process_history(self, start_ts, end_ts, trade_history, margin_history, loan_history):
+        """Processes the entire history of trades, loans and losses from settlements
+        in order to determine the price and time at which every asset was obtained and also
+        the general and taxable profit/loss.
+        """
         self.events = dict()
         self.general_profit_loss = 0
         self.taxable_profit_loss = 0
         self.query_start_ts = start_ts
         self.query_end_ts = end_ts
 
+        # If we got loans, we need to interleave them with the full history and re-sort
+        if len(loan_history) != 0:
+            trade_history.extend(loan_history)
+
+            trade_history.sort(
+                key=lambda loan_or_trade: loan_or_trade_timestamp(loan_or_trade)
+            )
+
+        prev_time = 0
         for trade in trade_history:
 
-            if trade.timestamp > self.query_end_ts:
+            # Assert we are sorted in ascending time order.
+            timestamp = loan_or_trade_timestamp(trade)
+            assert timestamp >= prev_time, (
+                "During history processing the trades/loans are not in ascending order"
+            )
+            prev_time = timestamp
+
+            if timestamp > self.query_end_ts:
                 break
+
+            if not isinstance(trade, Trade):
+                # then it has to be a loan
+                self.add_loan_gain_to_events(
+                    gained_asset=trade['currency'],
+                    gained_amount=trade['earned'],
+                    fee_in_asset=trade['fee'],
+                    timestamp=timestamp,
+                )
+                continue
 
             asset1, asset2 = trade_get_assets(trade)
             if asset1 in self.ignored_assets or asset2 in self.ignored_assets:
-                print("Ignoring trade with {} {}".format(asset1, asset2))
+                self.log.logdebug("Ignoring trade with {} {}".format(asset1, asset2))
                 continue
 
             # When you buy, you buy with the cost_currency and receive the other one
@@ -463,7 +541,6 @@ class Accountant(object):
             else:
                 raise ValueError('Unknown trade type "{}" encountered'.format(trade.type))
 
-        self.process_loans(loan_history)
         self.calculate_asset_details()
 
         return 'Taxable Profit/Loss: {} "{}"\nProfit/Loss: {} "{}"'.format(

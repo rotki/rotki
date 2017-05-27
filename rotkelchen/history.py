@@ -177,7 +177,7 @@ def process_polo_loans(data, start_ts, end_ts):
             'close_time': close_time,
             'currency': loan['currency'],
             'fee': float(loan['fee']),
-            'profit/loss': float(loan['earned']),
+            'earned': float(loan['earned']),
         })
 
     new_data.sort(key=lambda loan: loan['open_time'])

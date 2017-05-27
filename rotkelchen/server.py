@@ -87,6 +87,76 @@ class RotkelchenServer(object):
         with self.rotkelchen.lock:
             return self.rotkelchen.process_history(start_ts, end_ts)
 
+    def test(self, from_csv):
+        if from_csv == "True":
+            from_csv = True
+        elif from_csv == "False":
+            from_csv = False
+        else:
+            raise ValueError("Illegal value {} for argument from_csv".format(from_csv))
+
+        start_ts = 1451606400  # 01/01/2016
+        end_ts = 1483228799  # 31/12/2016
+        with self.rotkelchen.lock:
+            result = self.rotkelchen.poloniex.query_loan_history(
+                start_ts,
+                end_ts,
+                from_csv=from_csv
+            )
+            from history import process_polo_loans
+            result = process_polo_loans(result, start_ts, end_ts)
+
+            # september_1st = 1472774399
+            for loan in result:
+                if loan['profit/loss'] < 0:
+                    print(loan)
+
+            from utils import tsToDate
+            print("Number of results returned {}".format(len(result)))
+            print("First loan open/close_time: {} - {}".format(
+                tsToDate(result[0]['open_time'], formatstr='%d/%m/%Y %H:%M:%S'),
+                tsToDate(result[0]['close_time'], formatstr='%d/%m/%Y %H:%M:%S'),
+            ))
+            print("Second loan open/close_time: {} - {}".format(
+                tsToDate(result[1]['open_time'], formatstr='%d/%m/%Y %H:%M:%S'),
+                tsToDate(result[1]['close_time'], formatstr='%d/%m/%Y %H:%M:%S'),
+            ))
+            print("Last loan open/close_time: {} - {}".format(
+                tsToDate(result[-1]['open_time'], formatstr='%d/%m/%Y %H:%M:%S'),
+                tsToDate(result[-1]['close_time'], formatstr='%d/%m/%Y %H:%M:%S'),
+            ))
+        return True
+
+    def test2(self):
+        start_ts = 1451606400 # 01/01/2016
+        end_ts = 1483228799 # 31/12/2016
+        with self.rotkelchen.lock:
+            result = self.rotkelchen.poloniex.query_trade_history(
+                start_ts,
+                end_ts
+            )
+
+            from history import trade_from_poloniex
+            new_result = list()
+            # for pair, trades in result.iteritems():
+            #     for trade in trades:
+            #         new_result.append(trade_from_poloniex(trade, pair))
+            for trade in result['ETH_BTC']:
+                if trade['category'] == 'marginTrade':
+                    new_result.append(trade_from_poloniex(trade, 'ETH_BTC'))
+
+            new_result.sort(key=lambda trade: trade.timestamp)
+
+            from utils import tsToDate
+            print("Number of results returned {}".format(len(new_result)))
+            print("First trade time: {}".format(
+                tsToDate(new_result[0].timestamp, formatstr='%d/%m/%Y %H:%M:%S')
+            ))
+            print("Last trade time: {}".format(
+                tsToDate(new_result[-1].timestamp, formatstr='%d/%m/%Y %H:%M:%S')
+            ))
+        return True
+
     def echo(self, text):
         return text
 
