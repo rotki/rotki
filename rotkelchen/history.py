@@ -370,9 +370,14 @@ class TradesHistorian(object):
                 end_ts=end_ts,
                 end_at_least_ts=end_at_least_ts
             )
-
             for trade in kraken_history:
                 history.append(trade_from_kraken(trade))
+            kraken_asset_movements = self.kraken.query_deposits_withdrawals(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                end_at_least_ts=end_at_least_ts,
+            )
+            asset_movements.extend(kraken_asset_movements)
 
         if self.poloniex is not None:
             polo_history = self.poloniex.query_trade_history(

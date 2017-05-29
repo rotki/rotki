@@ -13,6 +13,7 @@ import time
 import os
 
 from utils import query_fiat_pair, ts_now, retry_calls
+from order_formatting import AssetMovement
 from exchange import Exchange
 
 
@@ -243,42 +244,98 @@ class Kraken(Exchange):
 
         return balances
 
+    def query_until_finished(self, endpoint, keyname, start_ts, end_ts, extra_dict=None):
+        """ Abstracting away the functionality of querying a kraken endpoint where
+        you neen to check the 'count' of the returned results and provide sufficient
+        calls with enough offset to gather all the data of your query.
+        """
+        result = list()
+
+        response = self._query_endpoint_for_period(
+            endpoint=endpoint,
+            start_ts=start_ts,
+            end_ts=end_ts,
+            extra_dict=extra_dict
+        )
+        count = response['count']
+        offset = len(response[keyname])
+        result.extend(response[keyname].values())
+
+        while offset < count:
+            response = self._query_endpoint_for_period(
+                endpoint=endpoint,
+                start_ts=start_ts,
+                end_ts=end_ts,
+                offset=offset,
+                extra_dict=extra_dict
+            )
+            assert count == response['count']
+            offset += len(response[keyname])
+            result.extend(response[keyname].values())
+
+        return result
+
     def query_trade_history(self, start_ts=None, end_ts=None, end_at_least_ts=None):
         cache = self.check_trades_cache(start_ts, end_at_least_ts)
         if cache is not None:
             return cache
-
-        result = list()
-
-        response = self._query_trade_history(start_ts=start_ts, end_ts=end_ts)
-        count = response['count']
-        offset = len(response['trades'])
-        result.extend(response['trades'].values())
-
-        while offset < count:
-            response = self._query_trade_history(
-                start_ts=start_ts,
-                end_ts=end_ts,
-                offset=offset
-            )
-            assert count == response['count']
-            offset += len(response['trades'])
-            result.extend(response['trades'].values())
-
+        result = self.query_until_finished('TradesHistory', 'trades', start_ts, end_ts)
         # before returning save it in the disk for future reference
         self.update_trades_cache(result, start_ts, end_ts)
         return result
 
-    def _query_trade_history(self, start_ts=None, end_ts=None, offset=None):
+    def _query_endpoint_for_period(self, endpoint, start_ts, end_ts, offset=None, extra_dict=None):
         request = dict()
-        if start_ts is not None:
-            request['start'] = start_ts
-        if end_ts is not None:
-            request['end'] = end_ts
+        request['start'] = start_ts
+        request['end'] = end_ts
         if offset is not None:
             request['ofs'] = offset
-        result = self.query_private('TradesHistory', request)
+        if extra_dict is not None:
+            request.update(extra_dict)
+        result = self.query_private(endpoint, request)
         return result
+
+    def query_deposits_withdrawals(self, start_ts, end_ts, end_at_least_ts):
+        cache = self.check_trades_cache(
+            start_ts,
+            end_at_least_ts,
+            special_name='deposits_withdrawals'
+        )
+        if cache is not None:
+            result = cache
+        else:
+            result = self.query_until_finished(
+                endpoint='Ledgers',
+                keyname='ledger',
+                start_ts=start_ts,
+                end_ts=end_ts,
+                extra_dict=dict(type='deposit')
+            )
+            result.extend(self.query_until_finished(
+                endpoint='Ledgers',
+                keyname='ledger',
+                start_ts=start_ts,
+                end_ts=end_ts,
+                extra_dict=dict(type='withdrawal')
+            ))
+            self.update_trades_cache(
+                result,
+                start_ts,
+                end_ts,
+                special_name='deposits_withdrawals'
+            )
+
+        movements = list()
+        for movement in result:
+            movements.append(AssetMovement(
+                exchange='kraken',
+                category=movement['type'],
+                timestamp=int(movement['time']),
+                asset=KRAKEN_TO_WORLD[movement['asset']],
+                amount=float(movement['amount']),
+                fee=float(movement['fee'])
+            ))
+        return movements
 
     def set_buy(self, pair, amount, price):
         pair = WORLD_TO_KRAKEN(pair)
