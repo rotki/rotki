@@ -8,6 +8,7 @@ from order_formatting import (
     Trade,
     AssetMovement
 )
+from history import NoPriceForGivenTimestamp
 
 
 FIAT_CURRENCIES = ('EUR', 'USD', 'GBP', 'JPY', 'CNY')
@@ -161,7 +162,8 @@ class Accountant(object):
             trade_rate,
             trade_fee,
             fee_currency,
-            timestamp):
+            timestamp
+    ):
 
         self.log.logdebug('\nBUY EVENT:')
         self.add_buy_to_events(
@@ -176,20 +178,49 @@ class Accountant(object):
 
         if paid_with_asset not in FIAT_CURRENCIES:
             # then you are also selling some other asset to buy the bought asset
-            bought_asset_rate_in_profit_currency = self.get_rate_in_profit_currency(bought_asset, timestamp)
+            try:
+                bought_asset_rate_in_profit_currency = self.get_rate_in_profit_currency(
+                    bought_asset,
+                    timestamp
+                )
+            except NoPriceForGivenTimestamp:
+                bought_asset_rate_in_profit_currency = -1
+
+            if bought_asset_rate_in_profit_currency != -1:
+                with_bought_asset_gain = bought_asset_rate_in_profit_currency * bought_amount
+                receiving_asset = bought_asset
+                receiving_amount = bought_amount
+                rate_in_profit_currency = bought_asset_rate_in_profit_currency / trade_rate
+                gain_in_profit_currency = with_bought_asset_gain
+
             sold_amount = trade_rate * bought_amount
+            sold_asset_rate_in_profit_currency = self.get_rate_in_profit_currency(
+                paid_with_asset,
+                timestamp
+            )
+            with_sold_asset_gain = sold_asset_rate_in_profit_currency * sold_amount
+
+
+            # Consider as value of the sell what would give the least profit
+            if (bought_asset_rate_in_profit_currency == -1 or
+                    with_sold_asset_gain < with_bought_asset_gain):
+                receiving_asset = self.profit_currency
+                receiving_amount = with_sold_asset_gain
+                trade_rate = sold_asset_rate_in_profit_currency
+                rate_in_profit_currency = sold_asset_rate_in_profit_currency
+                gain_in_profit_currency = with_sold_asset_gain
+
             # TODO: Here also check if the fee_currency is same as paid with asset
             #       and then add it to the sold_amount
             self.add_sell_to_events(
                 selling_asset=paid_with_asset,
                 selling_amount=sold_amount,
-                receiving_asset=bought_asset,
-                receiving_amount=bought_amount,
+                receiving_asset=receiving_asset,
+                receiving_amount=receiving_amount,
                 # trade_rate=1 / trade_rate,
                 trade_rate=trade_rate,
-                rate_in_profit_currency=bought_asset_rate_in_profit_currency / trade_rate,
-                # rate_in_profit_currency=bought_asset_rate_in_profit_currency,
-                gain_in_profit_currency=bought_asset_rate_in_profit_currency * bought_amount,
+                rate_in_profit_currency=rate_in_profit_currency,
+                gain_in_profit_currency=gain_in_profit_currency,
                 total_fee_in_profit_currency=0,  # fee is done on the buy if at all
                 timestamp=timestamp,
             )
@@ -533,7 +564,8 @@ class Accountant(object):
                 continue
 
             # When you buy, you buy with the cost_currency and receive the other one
-            # When you sell, you sell the amount in non-cost_currency and receive costs in cost_currency
+            # When you sell, you sell the amount in non-cost_currency and receive
+            # costs in cost_currency
             if trade.type == 'buy':
                 self.add_buy_to_events_and_corresponding_sell(
                     bought_asset=trade_get_other_pair(trade, trade.cost_currency),

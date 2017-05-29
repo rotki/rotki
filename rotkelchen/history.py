@@ -26,6 +26,15 @@ LOANS_HISTORYFILE = 'loans_history.json'
 ASSETMOVEMENTS_HISTORYFILE = 'asset_movements_history.json'
 
 
+class NoPriceForGivenTimestamp(Exception):
+    def __init__(self, from_asset, to_asset, timestamp):
+        super(NoPriceForGivenTimestamp, self).__init__(
+            'Unable to query a historical price for "{}" to "{}" at {}'.format(
+                from_asset, to_asset, timestamp
+            )
+        )
+
+
 def trade_from_kraken(kraken_trade):
     """Turn a kraken trade returned from kraken trade history to our common trade
     history format"""
@@ -230,9 +239,10 @@ class PriceHistorian(object):
             resp = urllib2.urlopen(urllib2.Request(query_string))
             resp = json.loads(resp.read())
             if 'Response' not in resp or resp['Response'] != 'Success':
-                raise ValueError(
-                    'Failed to query cryptocompare for: "{}"'.format(query_string)
-                )
+                error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
+                if 'Message' in resp:
+                    error_message += ". Error: {}".format(resp['Message'])
+                raise ValueError(error_message)
 
             if pr_end_date != resp['TimeFrom']:
                 # If we get more than we needed, since we are close to the now_ts
@@ -289,18 +299,29 @@ class PriceHistorian(object):
         price = (data[index]['high'] + data[index]['low']) / 2
 
         if price == 0:
-            if from_asset != 'BTC':
+            if from_asset != 'BTC' and to_asset != 'BTC':
                 # Just get the BTC price
                 asset_btc_price = self.query_historical_price(from_asset, 'BTC', timestamp)
                 btc_to_asset_price = self.query_historical_price('BTC', to_asset, timestamp)
                 price = asset_btc_price * btc_to_asset_price
             else:
-                raise ValueError(
-                    "Can't query a historical price for '{}' to '{}' at {}".format(
-                        from_asset,
-                        to_asset,
-                        tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'))
-                )
+                # attempt to get the daily price by timestamp
+                query_string = (
+                    'https://min-api.cryptocompare.com/data/pricehistorical?'
+                    'fsym={}&tsyms={}&ts={}'.format(
+                        from_asset, to_asset, timestamp
+                    ))
+                resp = urllib2.urlopen(urllib2.Request(query_string))
+                resp = json.loads(resp.read())
+                print(resp)
+                if from_asset not in resp:
+                    error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
+                    raise ValueError(error_message)
+                price = resp[from_asset][to_asset]
+
+                if price == 0:
+                    raise NoPriceForGivenTimestamp(from_asset, to_asset, tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'))
+
         return price
 
 
