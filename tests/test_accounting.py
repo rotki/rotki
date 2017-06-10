@@ -4,8 +4,8 @@ from rotkelchen.utils import Logger, isclose
 
 
 def init_accounting_tests(history_list, margin_list, start_ts, end_ts):
-    price_historian = PriceHistorian('/home/lefteris/.rotkelchen', {})
     logger = Logger(None, False)
+    price_historian = PriceHistorian('/home/lefteris/.rotkelchen', {}, logger)
     accountant = Accountant(logger, price_historian, 'EUR')
     accountant.process_history(
         trades_from_dictlist(history_list, start_ts, end_ts),

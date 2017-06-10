@@ -24,6 +24,7 @@ TRADES_HISTORYFILE = 'trades_history.json'
 MARGIN_HISTORYFILE = 'margin_trades_history.json'
 LOANS_HISTORYFILE = 'loans_history.json'
 ASSETMOVEMENTS_HISTORYFILE = 'asset_movements_history.json'
+FIAT_CURRENCIES = ('EUR', 'USD', 'GBP', 'JPY', 'CNY')
 
 
 class NoPriceForGivenTimestamp(Exception):
@@ -32,6 +33,13 @@ class NoPriceForGivenTimestamp(Exception):
             'Unable to query a historical price for "{}" to "{}" at {}'.format(
                 from_asset, to_asset, timestamp
             )
+        )
+
+
+class PriceQueryUnknownFromAsset(Exception):
+    def __init__(self, from_asset):
+        super(PriceQueryUnknownFromAsset, self).__init__(
+            'Unable to query historical price for Unknown Asset: "{}"'.format(from_asset)
         )
 
 
@@ -156,7 +164,7 @@ def pairwise(iterable):
     return izip(a, a)
 
 
-def check_hourly_data_sanity(data):
+def check_hourly_data_sanity(data, from_asset, to_asset):
     """Check that the hourly data is an array of objects having timestamps
     increasing by 1 hour.
     """
@@ -165,10 +173,11 @@ def check_hourly_data_sanity(data):
         diff = n2['time'] - n1['time']
         if diff != 3600:
             print(
-                "Problem at indices {} and {}. Time difference is: {}".format(
-                    index, index + 1, diff)
+                "Problem at indices {} and {} of {}_to_{} prices. Time difference is: {}".format(
+                    index, index + 1, from_asset, to_asset, diff)
             )
             return False
+
         index += 2
     return True
 
@@ -196,8 +205,9 @@ def process_polo_loans(data, start_ts, end_ts):
 
 class PriceHistorian(object):
 
-    def __init__(self, data_directory, personal_data):
+    def __init__(self, data_directory, personal_data, logger):
         self.data_directory = data_directory
+        self.log = logger
         # get the start date for historical data
         history_date_start = DEFAULT_START_DATE
         if 'historical_data_start_date' in personal_data:
@@ -215,13 +225,41 @@ class PriceHistorian(object):
             assert match
             cache_key = match.group(1)
             with open(file_, 'r') as f:
-                self.price_history[cache_key] = json.loads(f.read())
+                data = json.loads(f.read())
+                self.price_history[cache_key] = data
 
-    def get_historical_data(self, from_asset, to_asset):
+        # Get coin list of crypto compare. TODO: Cache this?
+        query_string = 'https://www.cryptocompare.com/api/data/coinlist/'
+        resp = urllib2.urlopen(urllib2.Request(query_string))
+        resp = json.loads(resp.read())
+        if 'Response' not in resp or resp['Response'] != 'Success':
+            error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
+            if 'Message' in resp:
+                error_message += ". Error: {}".format(resp['Message'])
+            raise ValueError(error_message)
+        self.cryptocompare_coin_list = resp['Data']
+        # For some reason even though price for the following assets is returned
+        # it's not in the coinlist so let's add them here.
+        self.cryptocompare_coin_list['DAO'] = object()
+        self.cryptocompare_coin_list['USDT'] = object()
+
+    def get_historical_data(self, from_asset, to_asset, timestamp):
         """Get historical price data from cryptocompare"""
+        if from_asset not in self.cryptocompare_coin_list:
+            raise ValueError(
+                'Attempted to query historical price data for '
+                'unknown asset "{}"'.format(from_asset)
+            )
+
+        if to_asset not in self.cryptocompare_coin_list and to_asset not in FIAT_CURRENCIES:
+            raise ValueError(
+                'Attempted to query historical price data for '
+                'unknown asset "{}"'.format(to_asset)
+            )
+
         cache_key = from_asset + '_' + to_asset
-        if cache_key in self.price_history:
-            return self.price_history[cache_key]
+        if cache_key in self.price_history and self.price_history[cache_key]['end_time'] > timestamp:
+            return self.price_history[cache_key]['data']
 
         now_ts = int(time.time())
         cryptocompare_hourquerylimit = 2000
@@ -271,12 +309,19 @@ class PriceHistorian(object):
                 break
 
         # Let's always check for data sanity for the hourly prices.
-        assert check_hourly_data_sanity(calculated_history)
-        self.price_history[cache_key] = calculated_history
+        assert check_hourly_data_sanity(calculated_history, from_asset, to_asset)
+        self.price_history[cache_key] = {
+            'data': calculated_history,
+            'start_time': self.historical_data_start,
+            'end_time': now_ts
+        }
         # and now since we actually queried the data let's also save them locally
-        out_filepath = os.path.join(self.data_directory, 'price_history_' + cache_key + '.json')
-        with open(out_filepath, 'w') as outfile:
-            json.dump(calculated_history, outfile)
+        write_history_data_in_file(
+            calculated_history,
+            os.path.join(self.data_directory, 'price_history_' + cache_key + '.json'),
+            self.historical_data_start,
+            now_ts
+        )
 
         return calculated_history
 
@@ -284,19 +329,30 @@ class PriceHistorian(object):
         if from_asset == to_asset:
             return 1
 
-        data = self.get_historical_data(from_asset, to_asset)
+        if from_asset not in self.cryptocompare_coin_list:
+            raise PriceQueryUnknownFromAsset(from_asset)
+
+        data = self.get_historical_data(from_asset, to_asset, timestamp)
 
         # all data are sorted and timestamps are always increasing by 1 hour
         # find the closest entry to the provided timestamp
+        # print("loaded {}_{}".format(from_asset, to_asset))
         assert timestamp > data[0]['time']
         index = int((timestamp - data[0]['time']) / 3600)
+        # print("timestamp: {} index: {} data_length: {}".format(timestamp, index, len(data)))
         diff = abs(data[index]['time'] - timestamp)
         if index + 1 <= len(data) - 1:
             diff_p1 = abs(data[index + 1]['time'] - timestamp)
             if diff_p1 < diff:
                 index = index + 1
 
-        price = (data[index]['high'] + data[index]['low']) / 2
+        if data[index]['high'] is None or data[index]['low'] is None:
+            # If we get some None in the hourly set price to 0 so that we check daily price
+            # import pdb
+            # pdb.set_trace()
+            price = 0
+        else:
+            price = (data[index]['high'] + data[index]['low']) / 2
 
         if price == 0:
             if from_asset != 'BTC' and to_asset != 'BTC':
@@ -311,16 +367,22 @@ class PriceHistorian(object):
                     'fsym={}&tsyms={}&ts={}'.format(
                         from_asset, to_asset, timestamp
                     ))
+                if to_asset == 'BTC':
+                    query_string += '&tryConversion=false'
                 resp = urllib2.urlopen(urllib2.Request(query_string))
                 resp = json.loads(resp.read())
-                print(resp)
+                print('DAILY PRICE OF ASSET: "{}"'.format(resp))
                 if from_asset not in resp:
                     error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
                     raise ValueError(error_message)
                 price = resp[from_asset][to_asset]
 
                 if price == 0:
-                    raise NoPriceForGivenTimestamp(from_asset, to_asset, tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'))
+                    raise NoPriceForGivenTimestamp(
+                        from_asset,
+                        to_asset,
+                        tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
+                    )
 
         return price
 

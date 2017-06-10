@@ -12,7 +12,7 @@ class Inquirer(object):
         return asset_btc_price * self.kraken.usdprice['BTC']
 
     def find_usd_price(self, asset, asset_btc_price=None):
-        if self.kraken and self.kraken.first_connection_made:
+        if self.kraken and self.kraken.first_connection_made and asset_btc_price is not None:
             return self.query_kraken_for_price(asset, asset_btc_price)
         else:
             coinmarketcap_resp = urllib2.urlopen(

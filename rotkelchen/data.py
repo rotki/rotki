@@ -43,7 +43,7 @@ class DataHandler(object):
             self.personal
         )
         self.price_historian = PriceHistorian(
-            self.data_directory, self.personal
+            self.data_directory, self.personal, logger
         )
         self.accountant = Accountant(
             logger=logger,

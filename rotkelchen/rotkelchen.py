@@ -227,21 +227,25 @@ class Rotkelchen(object):
         # is not required to be saved in the history file
         try:
             details = self.data.accountant.details
-            for asset, (tax_free_amount, average_buy_vale) in details.iteritems():
+            for asset, (tax_free_amount, average_buy_value) in details.iteritems():
                 if asset not in result_dict:
                     continue
 
                 result_dict[asset]['tax_free_amount'] = tax_free_amount
-                result_dict[asset]['average_buy_value'] = average_buy_vale
+                result_dict[asset]['average_buy_value'] = average_buy_value
 
                 current_price = result_dict[asset]['usd_value'] / result_dict[asset]['amount']
-                result_dict[asset]['percent_change'] = (
-                    ((current_price - average_buy_vale) / average_buy_vale) * 100
-                )
+                if average_buy_value != 0:
+                    result_dict[asset]['percent_change'] = (
+                        ((current_price - average_buy_value) / average_buy_value) * 100
+                    )
+                else:
+                    result_dict[asset]['percent_change'] = 'INF'
+
         except AttributeError:
             pass
 
-        return pretty_json_dumps(result_dict)
+        return result_dict
 
     def set_main_currency(self, currency):
         self.data.set_main_currency(currency)

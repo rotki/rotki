@@ -221,6 +221,8 @@ class Kraken(Exchange):
         return self.usdprice[common_name]
 
     def query_balances(self, ignore_cache=False):
+        self.first_connection()
+
         old_balances = self.query_private('Balance', req={})
 
         # find USD price of EUR

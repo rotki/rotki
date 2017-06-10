@@ -8,10 +8,12 @@ from order_formatting import (
     Trade,
     AssetMovement
 )
-from history import NoPriceForGivenTimestamp
+from history import (
+    NoPriceForGivenTimestamp,
+    PriceQueryUnknownFromAsset,
+    FIAT_CURRENCIES
+)
 
-
-FIAT_CURRENCIES = ('EUR', 'USD', 'GBP', 'JPY', 'CNY')
 YEAR_IN_SECONDS = 31536000  # 60 * 60 * 24 * 365
 
 
@@ -183,7 +185,7 @@ class Accountant(object):
                     bought_asset,
                     timestamp
                 )
-            except NoPriceForGivenTimestamp:
+            except (NoPriceForGivenTimestamp, PriceQueryUnknownFromAsset):
                 bought_asset_rate_in_profit_currency = -1
 
             if bought_asset_rate_in_profit_currency != -1:
@@ -199,7 +201,6 @@ class Accountant(object):
                 timestamp
             )
             with_sold_asset_gain = sold_asset_rate_in_profit_currency * sold_amount
-
 
             # Consider as value of the sell what would give the least profit
             if (bought_asset_rate_in_profit_currency == -1 or
