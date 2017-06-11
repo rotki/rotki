@@ -10,9 +10,8 @@ import hmac
 import hashlib
 import base64
 import time
-import os
 
-from utils import query_fiat_pair, ts_now, retry_calls
+from utils import query_fiat_pair, retry_calls
 from order_formatting import AssetMovement
 from exchange import Exchange
 
@@ -192,7 +191,10 @@ class Kraken(Exchange):
         if not self.first_connection_made:
             return
 
-        self.ticker = self.query_public('Ticker', req={'pair': ','.join(self.tradeable_pairs.keys())})
+        self.ticker = self.query_public(
+            'Ticker',
+            req={'pair': ','.join(self.tradeable_pairs.keys())}
+        )
         self.eurprice['BTC'] = float(self.ticker['XXBTZEUR']['c'][0])
         self.usdprice['BTC'] = float(self.ticker['XXBTZUSD']['c'][0])
         self.eurprice['ETH'] = float(self.ticker['XETHZEUR']['c'][0])

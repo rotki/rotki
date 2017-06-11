@@ -22,6 +22,7 @@ from order_formatting import Trade
 DEFAULT_START_DATE = "01/08/2015"
 TRADES_HISTORYFILE = 'trades_history.json'
 MARGIN_HISTORYFILE = 'margin_trades_history.json'
+MANUAL_MARGINS_LOGFILE = 'manual_margin_positions_log.json'
 LOANS_HISTORYFILE = 'loans_history.json'
 ASSETMOVEMENTS_HISTORYFILE = 'asset_movements_history.json'
 FIAT_CURRENCIES = ('EUR', 'USD', 'GBP', 'JPY', 'CNY')
@@ -348,8 +349,6 @@ class PriceHistorian(object):
 
         if data[index]['high'] is None or data[index]['low'] is None:
             # If we get some None in the hourly set price to 0 so that we check daily price
-            # import pdb
-            # pdb.set_trace()
             price = 0
         else:
             price = (data[index]['high'] + data[index]['low']) / 2
@@ -410,6 +409,8 @@ class TradesHistorian(object):
         if 'historical_data_start_date' in personal_data:
             history_date_start = personal_data['historical_data_start_date']
         self.historical_data_start = createTimeStamp(history_date_start, formatstr="%d/%m/%Y")
+        # If this flag is true we attempt to read from the manually logged margin positions file
+        self.read_manual_margin_positions = True
 
     def create_history(self, start_ts, end_ts, end_at_least_ts):
         """Creates trades and loans history from start_ts to end_ts or if
@@ -454,10 +455,34 @@ class TradesHistorian(object):
 
                     if category == 'exchange' or category == 'settlement':
                         history.append(trade_from_poloniex(trade, pair))
-                    elif category == 'marginTrade':
+                    elif category == 'marginTrade' and not self.read_manual_margin_positions:
                         poloniex_margin_trades.append(trade_from_poloniex(trade, pair))
                     else:
                         raise ValueError("Unexpected poloniex trade category: {}".format(category))
+
+            if self.read_manual_margin_positions:
+                # Just read the manual positions log and make virtual trades that
+                # correspond to the profits
+                assert poloniex_margin_trades == list(), (
+                    "poloniex margin trades list should be empty here"
+                )
+                if os.path.isfile(MANUAL_MARGINS_LOGFILE):
+                    with open(MANUAL_MARGINS_LOGFILE, 'r') as f:
+                        margin_data = json.load(f)
+                        main_currency = self.personal_data.get('main_currency', 'EUR')
+                        for trade in margin_data:
+                            poloniex_margin_trades.append(Trade(
+                                type='margin_position',
+                                timestamp=trade['time'],
+                                pair='BTC_{}'.format(main_currency),
+                                rate=0,
+                                cost=0,
+                                cost_currency=main_currency,
+                                fee=0,
+                                fee_currency=0,
+                                amount=trade['btc_profit_loss'],
+                                location='poloniex'
+                            ))
 
             poloniex_margin_trades.sort(key=lambda trade: trade.timestamp)
             poloniex_margin_trades = limit_trade_list_to_period(
@@ -538,12 +563,16 @@ class TradesHistorian(object):
                         start_ts, end_at_least_ts
                     ) is not None
 
-                margin_file_contents = get_jsonfile_contents_or_empty_dict(MARGIN_HISTORYFILE)
-                margin_history_is_okay = data_up_todate(
-                    margin_file_contents,
-                    start_ts,
-                    end_at_least_ts
-                )
+                if self.read_manual_margin_positions:
+                    pass
+                else:
+                    margin_file_contents = get_jsonfile_contents_or_empty_dict(MARGIN_HISTORYFILE)
+                    margin_history_is_okay = data_up_todate(
+                        margin_file_contents,
+                        start_ts,
+                        end_at_least_ts
+                    )
+
                 loan_file_contents = get_jsonfile_contents_or_empty_dict(LOANS_HISTORYFILE)
                 loan_history_is_okay = data_up_todate(
                     loan_file_contents,

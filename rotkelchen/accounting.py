@@ -108,19 +108,21 @@ class Accountant(object):
                 cost=cost
             )
         )
-        self.log.logdebug('Buying {} "{}" for {} "{}" ({} "{}" per "{}" or {} "{}" per "{}") at {}'.format(
-            bought_amount,
-            bought_asset,
-            bought_amount * trade_rate,
-            paid_with_asset,
-            trade_rate,
-            paid_with_asset,
-            bought_asset,
-            buy_rate,
-            self.profit_currency,
-            bought_asset,
-            tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
-        ))
+        self.log.logdebug(
+            'Buying {} "{}" for {} "{}" ({} "{}" per "{}" or {} "{}" per '
+            '"{}") at {}'.format(
+                bought_amount,
+                bought_asset,
+                bought_amount * trade_rate,
+                paid_with_asset,
+                trade_rate,
+                paid_with_asset,
+                bought_asset,
+                buy_rate,
+                self.profit_currency,
+                bought_asset,
+                tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
+            ))
 
     def add_loan_gain_to_events(
             self,
@@ -149,6 +151,34 @@ class Accountant(object):
         # count profits if we are inside the query period
         if timestamp >= self.query_start_ts:
             self.loan_profit += gain_in_profit_currency
+
+    def add_margin_positions_to_events(
+            self,
+            gained_asset,
+            gained_amount,
+            fee_in_asset,
+            timestamp):
+
+        rate = self.get_rate_in_profit_currency(gained_asset, timestamp)
+
+        if gained_asset not in self.events:
+            self.events[gained_asset] = Events(list(), list())
+
+        net_gain_amount = gained_amount - fee_in_asset
+        gain_in_profit_currency = net_gain_amount * rate
+        assert gain_in_profit_currency > 0, "Loan profit is negative. Should never happen"
+        self.events[gained_asset].buys.append(
+            BuyEvent(
+                amount=net_gain_amount,
+                timestamp=timestamp,
+                rate=rate,
+                fee_rate=0,
+                cost=0
+            )
+        )
+        # count profits if we are inside the query period
+        if timestamp >= self.query_start_ts:
+            self.margin_positions_profit += gain_in_profit_currency
 
     def add_asset_movement_to_events(self, category, asset, amount, timestamp, fee):
         rate = self.get_rate_in_profit_currency(asset, timestamp)
@@ -336,21 +366,23 @@ class Accountant(object):
                 tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
             ))
         else:
-            self.log.logdebug('Selling {} of "{}" for {} "{}" ({} "{}" per "{}" or {} "{}" per "{}") for total gain of {} "{}" at {}'.format(
-                selling_amount,
-                selling_asset,
-                receiving_amount,
-                receiving_asset,
-                trade_rate,
-                receiving_asset,
-                selling_asset,
-                rate_in_profit_currency,
-                self.profit_currency,
-                selling_asset,
-                gain_in_profit_currency,
-                self.profit_currency,
-                tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
-            ))
+            self.log.logdebug(
+                'Selling {} of "{}" for {} "{}" ({} "{}" per "{}" or {} "{}" '
+                'per "{}") for total gain of {} "{}" at {}'.format(
+                    selling_amount,
+                    selling_asset,
+                    receiving_amount,
+                    receiving_asset,
+                    trade_rate,
+                    receiving_asset,
+                    selling_asset,
+                    rate_in_profit_currency,
+                    self.profit_currency,
+                    selling_asset,
+                    gain_in_profit_currency,
+                    self.profit_currency,
+                    tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
+                ))
 
         # now search the buys for `paid_with_asset` and  calculate profit/loss
         taxable_amount, taxable_bought_cost, taxfree_bought_cost = self.search_buys_calculate_profit(
@@ -506,6 +538,7 @@ class Accountant(object):
         self.taxable_trade_profit_loss = 0
         self.settlement_losses = 0
         self.loan_profit = 0
+        self.margin_positions_profit = 0
         self.asset_movement_fees = 0
         self.query_start_ts = start_ts
         self.query_end_ts = end_ts
@@ -615,9 +648,15 @@ class Accountant(object):
 
         self.calculate_asset_details()
 
-        sum_other_actions = self.loan_profit - self.settlement_losses - self.asset_movement_fees
+        sum_other_actions = (
+            self.margin_positions_profit +
+            self.loan_profit -
+            self.settlement_losses -
+            self.asset_movement_fees
+        )
         return {
             'loan_profit': self.loan_profit,
+            'margin_positions_profit': self.margin_positions_profit,
             'settlement_losses': self.settlement_losses,
             'asset_movement_fees': self.asset_movement_fees,
             'general_trade_profit_loss': self.general_trade_profit_loss,
