@@ -39,8 +39,9 @@ class DataHandler(object):
             poloniex,
             kraken,
             bittrex,
+            logger,
             self.data_directory,
-            self.personal
+            self.personal,
         )
         self.price_historian = PriceHistorian(
             self.data_directory, self.personal, logger

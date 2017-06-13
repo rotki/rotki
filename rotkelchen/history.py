@@ -129,6 +129,19 @@ def trades_from_dictlist(given_trades, start_ts, end_ts):
     return returned_trades
 
 
+def do_read_manual_margin_positions(data_directory, logger):
+    manual_margin_path = os.path.join(data_directory, MANUAL_MARGINS_LOGFILE)
+    if os.path.isfile(manual_margin_path):
+        with open(manual_margin_path, 'r') as f:
+            margin_data = json.load(f)
+    else:
+        margin_data = []
+        logger.logerror(
+            'Could not find manual margins log file at {}'.format(manual_margin_path)
+        )
+    return margin_data
+
+
 def write_history_data_in_file(data, filepath, start_ts, end_ts):
     with open(filepath, 'w') as outfile:
         history_dict = dict()
@@ -393,6 +406,7 @@ class TradesHistorian(object):
             poloniex,
             kraken,
             bittrex,
+            logger,
             data_directory,
             personal_data,
             start_date='01/11/2015',
@@ -404,6 +418,7 @@ class TradesHistorian(object):
         self.start_ts = createTimeStamp(start_date, formatstr="%d/%m/%Y")
         self.data_directory = data_directory
         self.personal_data = personal_data
+        self.log = logger
         # get the start date for historical data
         history_date_start = DEFAULT_START_DATE
         if 'historical_data_start_date' in personal_data:
@@ -455,8 +470,9 @@ class TradesHistorian(object):
 
                     if category == 'exchange' or category == 'settlement':
                         history.append(trade_from_poloniex(trade, pair))
-                    elif category == 'marginTrade' and not self.read_manual_margin_positions:
-                        poloniex_margin_trades.append(trade_from_poloniex(trade, pair))
+                    elif category == 'marginTrade':
+                        if not self.read_manual_margin_positions:
+                            poloniex_margin_trades.append(trade_from_poloniex(trade, pair))
                     else:
                         raise ValueError("Unexpected poloniex trade category: {}".format(category))
 
@@ -466,30 +482,17 @@ class TradesHistorian(object):
                 assert poloniex_margin_trades == list(), (
                     "poloniex margin trades list should be empty here"
                 )
-                if os.path.isfile(MANUAL_MARGINS_LOGFILE):
-                    with open(MANUAL_MARGINS_LOGFILE, 'r') as f:
-                        margin_data = json.load(f)
-                        main_currency = self.personal_data.get('main_currency', 'EUR')
-                        for trade in margin_data:
-                            poloniex_margin_trades.append(Trade(
-                                type='margin_position',
-                                timestamp=trade['time'],
-                                pair='BTC_{}'.format(main_currency),
-                                rate=0,
-                                cost=0,
-                                cost_currency=main_currency,
-                                fee=0,
-                                fee_currency=0,
-                                amount=trade['btc_profit_loss'],
-                                location='poloniex'
-                            ))
+                poloniex_margin_trades = do_read_manual_margin_positions(
+                    self.data_directory, self.log
+                )
+            else:
+                poloniex_margin_trades.sort(key=lambda trade: trade.timestamp)
+                poloniex_margin_trades = limit_trade_list_to_period(
+                    poloniex_margin_trades,
+                    start_ts,
+                    end_ts
+                )
 
-            poloniex_margin_trades.sort(key=lambda trade: trade.timestamp)
-            poloniex_margin_trades = limit_trade_list_to_period(
-                poloniex_margin_trades,
-                start_ts,
-                end_ts
-            )
             polo_loans = self.poloniex.query_loan_history(
                 start_ts=start_ts,
                 end_ts=end_ts,
@@ -522,8 +525,9 @@ class TradesHistorian(object):
         # Write to files
         historyfile_path = os.path.join(self.data_directory, TRADES_HISTORYFILE)
         write_trades_history_in_file(history, historyfile_path, start_ts, end_ts)
-        marginfile_path = os.path.join(self.data_directory, MARGIN_HISTORYFILE)
-        write_trades_history_in_file(poloniex_margin_trades, marginfile_path, start_ts, end_ts)
+        if not self.read_manual_margin_positions:
+            marginfile_path = os.path.join(self.data_directory, MARGIN_HISTORYFILE)
+            write_trades_history_in_file(poloniex_margin_trades, marginfile_path, start_ts, end_ts)
         loansfile_path = os.path.join(self.data_directory, LOANS_HISTORYFILE)
         write_history_data_in_file(polo_loans, loansfile_path, start_ts, end_ts)
         assetmovementsfile_path = os.path.join(self.data_directory, ASSETMOVEMENTS_HISTORYFILE)
@@ -563,14 +567,18 @@ class TradesHistorian(object):
                         start_ts, end_at_least_ts
                     ) is not None
 
-                if self.read_manual_margin_positions:
-                    pass
-                else:
+                if not self.read_manual_margin_positions:
                     margin_file_contents = get_jsonfile_contents_or_empty_dict(MARGIN_HISTORYFILE)
                     margin_history_is_okay = data_up_todate(
                         margin_file_contents,
                         start_ts,
                         end_at_least_ts
+                    )
+                else:
+                    margin_history_is_okay = True
+                    margin_file_contents = do_read_manual_margin_positions(
+                        self.data_directory,
+                        self.log
                     )
 
                 loan_file_contents = get_jsonfile_contents_or_empty_dict(LOANS_HISTORYFILE)

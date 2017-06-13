@@ -20,6 +20,8 @@ YEAR_IN_SECONDS = 31536000  # 60 * 60 * 24 * 365
 def action_get_timestamp(action):
     if isinstance(action, Trade) or isinstance(action, AssetMovement):
         return action.timestamp
+
+    # For loans and manual margin positions
     return action['close_time']
 
 
@@ -29,6 +31,8 @@ def action_get_type(action):
     elif isinstance(action, AssetMovement):
         return 'asset_movement'
     elif isinstance(action, dict):
+        if 'btc_profit_loss' in action:
+            return 'margin_position'
         return 'loan'
     else:
         raise ValueError('Unexpected action type found.')
@@ -166,7 +170,10 @@ class Accountant(object):
 
         net_gain_amount = gained_amount - fee_in_asset
         gain_in_profit_currency = net_gain_amount * rate
-        assert gain_in_profit_currency > 0, "Loan profit is negative. Should never happen"
+        print gain_in_profit_currency
+        assert gain_in_profit_currency > 0, (
+            'Margin profit is negative. Should never happen for the hacky way I use em now'
+        )
         self.events[gained_asset].buys.append(
             BuyEvent(
                 amount=net_gain_amount,
@@ -552,6 +559,9 @@ class Accountant(object):
         if len(asset_movements) != 0:
             actions.extend(asset_movements)
 
+        if len(margin_history) != 0:
+            actions.extend(margin_history)
+
         actions.sort(
             key=lambda action: action_get_timestamp(action)
         )
@@ -586,6 +596,14 @@ class Accountant(object):
                     amount=action.amount,
                     timestamp=action.timestamp,
                     fee=action.fee
+                )
+                continue
+            elif action_type == 'margin_position':
+                self.add_margin_positions_to_events(
+                    gained_asset='BTC',
+                    gained_amount=action['btc_profit_loss'],
+                    fee_in_asset=0,
+                    timestamp=timestamp
                 )
                 continue
 

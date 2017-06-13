@@ -236,6 +236,10 @@ class Logger():
         if self.log_level <= LOG_DEBUG:
             self.output(message)
 
+    def logerror(self, message):
+        if self.log_level <= LOG_ERROR:
+            self.output(message)
+
     def logalert(self, message):
         if self.log_level <= LOG_ALERT:
             self.output(message)
