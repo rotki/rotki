@@ -9,6 +9,7 @@ from itertools import izip
 from exchange import data_up_todate
 from kraken import kraken_to_world_pair
 from bittrex import trade_from_bittrex
+from transactions import query_etherscan_for_transactions, transactions_from_dictlist
 from utils import (
     createTimeStamp,
     tsToDate,
@@ -24,6 +25,7 @@ TRADES_HISTORYFILE = 'trades_history.json'
 MARGIN_HISTORYFILE = 'margin_trades_history.json'
 MANUAL_MARGINS_LOGFILE = 'manual_margin_positions_log.json'
 LOANS_HISTORYFILE = 'loans_history.json'
+ETHEREUM_TX_LOGFILE = 'ethereum_tx_log.json'
 ASSETMOVEMENTS_HISTORYFILE = 'asset_movements_history.json'
 FIAT_CURRENCIES = ('EUR', 'USD', 'GBP', 'JPY', 'CNY')
 
@@ -151,7 +153,7 @@ def write_history_data_in_file(data, filepath, start_ts, end_ts):
         json.dump(history_dict, outfile)
 
 
-def write_trades_history_in_file(history, filepath, start_ts, end_ts):
+def write_tupledata_history_in_file(history, filepath, start_ts, end_ts):
     out_history = [tr._asdict() for tr in history]
     write_history_data_in_file(out_history, filepath, start_ts, end_ts)
 
@@ -516,6 +518,9 @@ class TradesHistorian(object):
             for trade in bittrex_history:
                 history.append(trade_from_bittrex(trade))
 
+        eth_accounts = self.personal_data['eth_accounts']
+        eth_transactions = query_etherscan_for_transactions(eth_accounts)
+
         # We sort it here ... but when accounting runs through the entire actions list,
         # it resorts, so unless the fact that we sort is used somewhere else too, perhaps
         # we can skip it?
@@ -524,15 +529,18 @@ class TradesHistorian(object):
 
         # Write to files
         historyfile_path = os.path.join(self.data_directory, TRADES_HISTORYFILE)
-        write_trades_history_in_file(history, historyfile_path, start_ts, end_ts)
+        write_tupledata_history_in_file(history, historyfile_path, start_ts, end_ts)
         if not self.read_manual_margin_positions:
             marginfile_path = os.path.join(self.data_directory, MARGIN_HISTORYFILE)
-            write_trades_history_in_file(poloniex_margin_trades, marginfile_path, start_ts, end_ts)
+            write_tupledata_history_in_file(poloniex_margin_trades, marginfile_path, start_ts, end_ts)
         loansfile_path = os.path.join(self.data_directory, LOANS_HISTORYFILE)
         write_history_data_in_file(polo_loans, loansfile_path, start_ts, end_ts)
         assetmovementsfile_path = os.path.join(self.data_directory, ASSETMOVEMENTS_HISTORYFILE)
         write_history_data_in_file(asset_movements, assetmovementsfile_path, start_ts, end_ts)
-        return history, poloniex_margin_trades, polo_loans, asset_movements
+        eth_tx_log_path = os.path.join(self.data_directory, ETHEREUM_TX_LOGFILE)
+        write_tupledata_history_in_file(eth_transactions, eth_tx_log_path, start_ts, end_ts)
+
+        return history, poloniex_margin_trades, polo_loans, asset_movements, eth_transactions
 
     def get_history(self, start_ts, end_ts, end_at_least_ts=None):
         """Gets or creates trades and loans history from start_ts to end_ts or if
@@ -568,7 +576,8 @@ class TradesHistorian(object):
                     ) is not None
 
                 if not self.read_manual_margin_positions:
-                    margin_file_contents = get_jsonfile_contents_or_empty_dict(MARGIN_HISTORYFILE)
+                    marginfile_path = os.path.join(self.data_directory, MARGIN_HISTORYFILE)
+                    margin_file_contents = get_jsonfile_contents_or_empty_dict(marginfile_path)
                     margin_history_is_okay = data_up_todate(
                         margin_file_contents,
                         start_ts,
@@ -581,17 +590,28 @@ class TradesHistorian(object):
                         self.log
                     )
 
-                loan_file_contents = get_jsonfile_contents_or_empty_dict(LOANS_HISTORYFILE)
+                loansfile_path = os.path.join(self.data_directory, LOANS_HISTORYFILE)
+                loan_file_contents = get_jsonfile_contents_or_empty_dict(loansfile_path)
                 loan_history_is_okay = data_up_todate(
                     loan_file_contents,
                     start_ts,
                     end_at_least_ts
                 )
+
+                assetmovementsfile_path = os.path.join(self.data_directory, ASSETMOVEMENTS_HISTORYFILE)
                 asset_movements_contents = get_jsonfile_contents_or_empty_dict(
-                    ASSETMOVEMENTS_HISTORYFILE
+                    assetmovementsfile_path
                 )
                 asset_movements_history_is_okay = data_up_todate(
                     asset_movements_contents,
+                    start_ts,
+                    end_at_least_ts
+                )
+
+                eth_tx_log_path = os.path.join(self.data_directory, ETHEREUM_TX_LOGFILE)
+                eth_tx_log_contents = get_jsonfile_contents_or_empty_dict(eth_tx_log_path)
+                eth_tx_log_history_history_is_okay = data_up_todate(
+                    eth_tx_log_contents,
                     start_ts,
                     end_at_least_ts
                 )
@@ -603,7 +623,8 @@ class TradesHistorian(object):
                         bittrex_history_okay and
                         margin_history_is_okay and
                         loan_history_is_okay and
-                        asset_movements_history_is_okay):
+                        asset_movements_history_is_okay and
+                        eth_tx_log_history_history_is_okay):
 
                     history_trades = trades_from_dictlist(
                         history_json_data['data'],
@@ -616,11 +637,18 @@ class TradesHistorian(object):
                         end_ts
                     )
 
+                    eth_transactions = transactions_from_dictlist(
+                        eth_tx_log_contents['data'],
+                        start_ts,
+                        end_ts
+                    )
+
                     return (
                         history_trades,
                         margin_trades,
                         loan_file_contents['data'],
-                        asset_movements_contents['data']
+                        asset_movements_contents['data'],
+                        eth_transactions
                     )
 
         return self.create_history(start_ts, end_ts, end_at_least_ts)
