@@ -1,4 +1,4 @@
-from utils import tsToDate, ts_now
+from utils import tsToDate, ts_now, output_to_csv
 from order_formatting import (
     Events,
     BuyEvent,
@@ -66,6 +66,7 @@ class Accountant(object):
         # loan/margin settlement then profit/loss is also calculated before the entire
         # amount is taken as a loss
         self.count_profit_for_settlements = False
+        self.create_csv = True
 
     def set_main_currency(self, currency):
         if currency not in FIAT_CURRENCIES:
@@ -139,6 +140,15 @@ class Accountant(object):
                 tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
             ))
 
+        if self.create_csv:
+            self.trades_csv.append({
+                'type': 'buy',
+                'asset': bought_asset,
+                "price_in_{}".format(self.profit_currency): buy_rate,
+                "amount": bought_amount,
+                "time": timestamp
+            })
+
     def add_loan_gain_to_events(
             self,
             gained_asset,
@@ -167,6 +177,14 @@ class Accountant(object):
         if timestamp >= self.query_start_ts:
             self.loan_profit += gain_in_profit_currency
 
+            if self.create_csv:
+                self.loan_profits_csv.append({
+                    'time': timestamp,
+                    'gained_asset': gained_asset,
+                    'gained_amount': gained_amount,
+                    'profit_in_{}'.format(self.profit_currency): gain_in_profit_currency
+                })
+
     def add_margin_positions_to_events(
             self,
             gained_asset,
@@ -181,7 +199,6 @@ class Accountant(object):
 
         net_gain_amount = gained_amount - fee_in_asset
         gain_in_profit_currency = net_gain_amount * rate
-        print gain_in_profit_currency
         assert gain_in_profit_currency > 0, (
             'Margin profit is negative. Should never happen for the hacky way I use em now'
         )
@@ -198,11 +215,27 @@ class Accountant(object):
         if timestamp >= self.query_start_ts:
             self.margin_positions_profit += gain_in_profit_currency
 
+        if self.create_csv:
+            self.margin_positions_csv.append({
+                'time': timestamp,
+                'gained_asset': gained_asset,
+                'gained_amount': net_gain_amount,
+                'profit_in_{}'.format(self.profit_currency): gain_in_profit_currency
+            })
+
     def add_asset_movement_to_events(self, category, asset, amount, timestamp, fee):
         rate = self.get_rate_in_profit_currency(asset, timestamp)
         self.asset_movement_fees += fee * rate
         if category == 'withdrawal':
             assert fee != 0, "So far all exchanges charge you for withdrawing"
+
+        if self.create_csv:
+            self.asset_movements_csv.append({
+                'time': timestamp,
+                'moving_asset': asset,
+                'fee_in_asset': fee,
+                'fee_in_{}'.format(self.profit_currency): fee * rate,
+            })
 
     def account_for_gas_costs(self, transaction):
 
@@ -219,6 +252,13 @@ class Accountant(object):
         #     transaction.from_address, transaction.to_address, transaction.block_number, transaction.hash, eth_burned_as_gas, eth_burned_as_gas * rate
         # ))
         self.eth_transactions_gas_costs += eth_burned_as_gas * rate
+
+        if self.create_csv:
+            self.tx_gas_costs_csv.append({
+                'time': transaction.timestamp,
+                'eth_burned_as_gas': eth_burned_as_gas,
+                'cost_in_{}'.format(self.profit_currency): eth_burned_as_gas * rate,
+            })
 
     def add_buy_to_events_and_corresponding_sell(
             self,
@@ -451,14 +491,23 @@ class Accountant(object):
                 ))
             else:
                 self.log.logdebug("Taxable P/L: {} {} General P/L: {} {}".format(
-                    general_profit_loss,
-                    self.profit_currency,
                     taxable_profit_loss,
+                    self.profit_currency,
+                    general_profit_loss,
                     self.profit_currency,
                 ))
 
             self.general_trade_profit_loss += general_profit_loss
             self.taxable_trade_profit_loss += taxable_profit_loss
+
+            if self.create_csv:
+                self.trades_csv.append({
+                    'type': 'sell' if not loan_settlement else 'loan_settlement',
+                    'asset': selling_asset,
+                    "price_in_{}".format(self.profit_currency): rate_in_profit_currency,
+                    "amount": selling_amount,
+                    "time": timestamp
+                })
 
     def add_sell_to_events_and_corresponding_buy(
             self,
@@ -590,6 +639,12 @@ class Accountant(object):
         self.query_start_ts = start_ts
         self.query_end_ts = end_ts
 
+        self.trades_csv = list()
+        self.loan_profits_csv = list()
+        self.asset_movements_csv = list()
+        self.tx_gas_costs_csv = list()
+        self.margin_positions_csv = list()
+
         actions = list(trade_history)
 
         # If we got loans, we need to interleave them with the full history and re-sort
@@ -711,6 +766,16 @@ class Accountant(object):
                 raise ValueError('Unknown trade type "{}" encountered'.format(trade.type))
 
         self.calculate_asset_details()
+
+        if self.create_csv:
+            output_to_csv(
+                out_dir='/home/lefteris/.rotkelchen/CSV/',
+                trades=self.trades_csv,
+                loan_profits=self.loan_profits_csv,
+                asset_movements=self.asset_movements_csv,
+                tx_gas_costs=self.tx_gas_costs_csv,
+                margin_positions=self.margin_positions_csv
+            )
 
         # TODO: When everything is decimal, get rid of the conversions here
         sum_other_actions = (
