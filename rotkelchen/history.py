@@ -15,9 +15,14 @@ from utils import (
     tsToDate,
     get_pair_position,
     get_jsonfile_contents_or_empty_list,
-    get_jsonfile_contents_or_empty_dict
+    get_jsonfile_contents_or_empty_dict,
+    DecimalEncoder
 )
-from order_formatting import Trade
+from order_formatting import (
+    Trade,
+    trades_from_dictlist,
+    asset_movements_from_dictlist
+)
 
 
 DEFAULT_START_DATE = "01/08/2015"
@@ -105,32 +110,6 @@ def trade_from_poloniex(poloniex_trade, pair):
     )
 
 
-def trades_from_dictlist(given_trades, start_ts, end_ts):
-    """ Gets a list of dict trades, most probably read from the json files and
-    a time period. Returns it as a list of the Trade tuples that are inside the time period
-    """
-    returned_trades = list()
-    for given_trade in given_trades:
-        if given_trade['timestamp'] < start_ts:
-            continue
-        if given_trade['timestamp'] > end_ts:
-            break
-
-        returned_trades.append(Trade(
-            timestamp=given_trade['timestamp'],
-            pair=given_trade['pair'],
-            type=given_trade['type'],
-            rate=float(given_trade['rate']),
-            cost=float(given_trade['cost']),
-            cost_currency=given_trade['cost_currency'],
-            fee=float(given_trade['fee']),
-            fee_currency=given_trade['fee_currency'],
-            amount=float(given_trade['amount']),
-            location=given_trade['location']
-        ))
-    return returned_trades
-
-
 def do_read_manual_margin_positions(data_directory, logger):
     manual_margin_path = os.path.join(data_directory, MANUAL_MARGINS_LOGFILE)
     if os.path.isfile(manual_margin_path):
@@ -150,7 +129,7 @@ def write_history_data_in_file(data, filepath, start_ts, end_ts):
         history_dict['data'] = data
         history_dict['start_time'] = start_ts
         history_dict['end_time'] = end_ts
-        json.dump(history_dict, outfile)
+        json.dump(history_dict, outfile, cls=DecimalEncoder)
 
 
 def write_tupledata_history_in_file(history, filepath, start_ts, end_ts):
@@ -536,7 +515,7 @@ class TradesHistorian(object):
         loansfile_path = os.path.join(self.data_directory, LOANS_HISTORYFILE)
         write_history_data_in_file(polo_loans, loansfile_path, start_ts, end_ts)
         assetmovementsfile_path = os.path.join(self.data_directory, ASSETMOVEMENTS_HISTORYFILE)
-        write_history_data_in_file(asset_movements, assetmovementsfile_path, start_ts, end_ts)
+        write_tupledata_history_in_file(asset_movements, assetmovementsfile_path, start_ts, end_ts)
         eth_tx_log_path = os.path.join(self.data_directory, ETHEREUM_TX_LOGFILE)
         write_tupledata_history_in_file(eth_transactions, eth_tx_log_path, start_ts, end_ts)
 
@@ -631,14 +610,22 @@ class TradesHistorian(object):
                         start_ts,
                         end_ts
                     )
-                    margin_trades = trades_from_dictlist(
-                        margin_file_contents['data'],
-                        start_ts,
-                        end_ts
-                    )
+                    if not self.read_manual_margin_positions:
+                        margin_trades = trades_from_dictlist(
+                            margin_file_contents['data'],
+                            start_ts,
+                            end_ts
+                        )
+                    else:
+                        margin_trades = margin_file_contents
 
                     eth_transactions = transactions_from_dictlist(
                         eth_tx_log_contents['data'],
+                        start_ts,
+                        end_ts
+                    )
+                    asset_movements = asset_movements_from_dictlist(
+                        asset_movements_contents['data'],
                         start_ts,
                         end_ts
                     )
@@ -647,7 +634,7 @@ class TradesHistorian(object):
                         history_trades,
                         margin_trades,
                         loan_file_contents['data'],
-                        asset_movements_contents['data'],
+                        asset_movements,
                         eth_transactions
                     )
 

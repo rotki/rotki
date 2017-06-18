@@ -58,3 +58,51 @@ def trade_get_assets(trade):
         raise ValueError("Could not split {} pair".format(trade.pair))
 
     return currencies[0], currencies[1]
+
+
+def trades_from_dictlist(given_trades, start_ts, end_ts):
+    """ Gets a list of dict trades, most probably read from the json files and
+    a time period. Returns it as a list of the Trade tuples that are inside the time period
+    """
+    returned_trades = list()
+    for given_trade in given_trades:
+        if given_trade['timestamp'] < start_ts:
+            continue
+        if given_trade['timestamp'] > end_ts:
+            break
+
+        returned_trades.append(Trade(
+            timestamp=given_trade['timestamp'],
+            pair=given_trade['pair'],
+            type=given_trade['type'],
+            rate=float(given_trade['rate']),
+            cost=float(given_trade['cost']),
+            cost_currency=given_trade['cost_currency'],
+            fee=float(given_trade['fee']),
+            fee_currency=given_trade['fee_currency'],
+            amount=float(given_trade['amount']),
+            location=given_trade['location']
+        ))
+    return returned_trades
+
+
+def asset_movements_from_dictlist(given_data, start_ts, end_ts):
+    """ Gets a list of dict asset movements, most probably read from the json files and
+    a time period. Returns it as a list of the AssetMovement tuples that are inside the time period
+    """
+    returned_movements = list()
+    for movement in given_data:
+        if movement['timestamp'] < start_ts:
+            continue
+        if movement['timestamp'] > end_ts:
+            break
+
+        returned_movements.append(AssetMovement(
+            exchange=movement['exchange'],
+            category=movement['category'],
+            timestamp=movement['timestamp'],
+            asset=movement['asset'],
+            amount=movement['amount'],
+            fee=movement['fee'],
+        ))
+    return returned_movements

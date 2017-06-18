@@ -2,6 +2,7 @@ import json
 import urllib2
 from collections import namedtuple
 from utils import retry_calls
+from decimal import Decimal
 
 EthereumTransaction = namedtuple(
     'EthereumTransaction',
@@ -9,7 +10,6 @@ EthereumTransaction = namedtuple(
         'timestamp',
         'block_number',
         'hash',
-        'nonce',
         'from_address',
         'to_address',
         'value',
@@ -40,23 +40,30 @@ def query_txlist(address, internal, from_block=None, to_block=None):
     resp = urllib2.urlopen(urllib2.Request(reqstring))
     resp = json.loads(resp.read())
 
-    if 'status' not in resp or resp['status'] != 1:
+    if 'status' not in resp or int(resp['status']) != 1:
+        status = int(resp['status'])
+        if status == 0 and resp['message'] == 'No transactions found':
+            return list()
+
+        # else unknown error
         raise ValueError(
-            'Failed to query txlist from etherscan. Response was: {}'.format(resp)
+            'Failed to query txlist from etherscan with query: {} . '
+            'Response was: {}'.format(reqstring, resp)
         )
 
-    for _, v in resp['result'].iteritems():
+    for v in resp['result']:
+        # internal tx list contains no gasprice
+        gas_price = -1 if internal else Decimal(v['gasPrice'])
         result.append(EthereumTransaction(
-            timestamp=int(v['timestamp']),
-            block_number=int(v['blockNumber']),
+            timestamp=Decimal(v['timeStamp']),
+            block_number=Decimal(v['blockNumber']),
             hash=v['hash'],
-            nonce=int(v['nonce']),
             from_address=v['from'],
             to_address=v['to'],
-            value=int(v['value']),
-            gas=int(v['gas']),
-            gas_price=int(v['gasPrice']),
-            gas_used=int(v['gasUsed']),
+            value=Decimal(v['value']),
+            gas=Decimal(v['gas']),
+            gas_price=gas_price,
+            gas_used=Decimal(v['gasUsed']),
         ))
 
     return result
@@ -89,15 +96,14 @@ def transactions_from_dictlist(given_transactions, start_ts, end_ts):
 
         returned_transactions.append(EthereumTransaction(
             timestamp=given_tx['timestamp'],
-            block_number=given_tx['block_number'],
+            block_number=Decimal(given_tx['block_number']),
             hash=given_tx['hash'],
-            nonce=given_tx['nonce'],
-            from_address=given_tx['from'],
-            to_address=given_tx['to'],
-            value=given_tx['value'],
-            gas=given_tx['gas'],
-            gas_price=given_tx['gasPrice'],
-            gas_used=given_tx['gasUsed'],
+            from_address=given_tx['from_address'],
+            to_address=given_tx['to_address'],
+            value=Decimal(given_tx['value']),
+            gas=Decimal(given_tx['gas']),
+            gas_price=Decimal(given_tx['gas_price']),
+            gas_used=Decimal(given_tx['gas_used']),
         ))
 
     return returned_transactions

@@ -10,6 +10,33 @@ import zerorpc
 
 from args import app_args
 from rotkelchen import Rotkelchen
+from utils import pretty_json_dumps
+from transactions import query_txlist
+from decimal import Decimal
+
+
+def _process_entry(entry):
+    if isinstance(entry, Decimal):
+        return str(entry)
+    elif isinstance(entry, list):
+        new_list = list()
+        for new_entry in entry:
+            new_list.append(_process_entry(entry))
+        return new_list
+    elif isinstance(entry, dict):
+        new_dict = dict()
+        for k, v in entry.iteritems():
+            new_dict[k] = _process_entry(v)
+        return new_dict
+    else:
+        return entry
+
+
+def process_result(result):
+    """Before sending out a result a dictionary via the server we are turning
+    all Decimals to strings so that the serialization to float/big number is handled
+    by the client application and we lose nothing in the transfer"""
+    return _process_entry(result)
 
 
 class RotkelchenServer(object):
@@ -85,7 +112,10 @@ class RotkelchenServer(object):
         start_ts = int(start_ts)
         end_ts = int(end_ts)
         with self.rotkelchen.lock:
-            return self.rotkelchen.process_history(start_ts, end_ts)
+            result = self.rotkelchen.process_history(start_ts, end_ts)
+
+        print('process_trade_history() done')
+        return process_result(result)
 
     def test(self, from_csv):
         if from_csv == "True":
@@ -131,11 +161,38 @@ class RotkelchenServer(object):
         start_ts = 1451606400 # 01/01/2016
         end_ts = 1483228799 # 31/12/2016
         with self.rotkelchen.lock:
-            result = self.rotkelchen.poloniex.returnDepositsWithdrawals(
-                start_ts,
-                end_ts
-            )
-        return result['deposits']
+            _, margin_trades, _, _ = self.rotkelchen.data.trades_historian.get_history(start_ts, end_ts, end_ts)
+            total_buy = 0
+            total_sell = 0
+            # TODO you have to also sum up all fees and add them as loss
+
+            first_long_end = 1472860799
+            for trade in margin_trades:
+                if trade.timestamp > first_long_end:
+                    break
+                if trade.type == 'buy':
+                    total_buy += trade.cost
+                elif trade.type == 'sell':
+                    total_sell += trade.cost
+                else:
+                    raise ValueError('Unknown margin trade type {}'.format(trade.type))
+
+        result = {
+            'total_buy': total_buy,
+            'total_sell': total_sell,
+            'total_cost': total_sell - total_buy
+        }
+        return pretty_json_dumps(result)
+
+    def test3(self):
+        with self.rotkelchen.lock:
+            result = query_txlist("0xd1b8d347fd50dc7838a8ceb4294b6621b0b300f6", False)
+        return result
+
+    def test4(self):
+        with self.rotkelchen.lock:
+            result = self.rotkelchen.poloniex.returnLendingHistory()
+        return result
 
     def echo(self, text):
         return text

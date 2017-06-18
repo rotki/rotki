@@ -83,7 +83,7 @@ class DataHandler(object):
             f.write(json.dumps(self.personal))
 
     def process_history(self, start_ts, end_ts):
-        history, margin_history, loan_history, asset_movements = self.trades_historian.get_history(
+        history, margin_history, loan_history, asset_movements, eth_transactions = self.trades_historian.get_history(
             start_ts=0,  # For entire history processing we need to have full history available
             end_ts=ts_now(),
             end_at_least_ts=end_ts
@@ -94,5 +94,6 @@ class DataHandler(object):
             history,
             margin_history,
             loan_history,
-            asset_movements
+            asset_movements,
+            eth_transactions
         )

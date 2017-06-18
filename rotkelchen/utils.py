@@ -9,6 +9,7 @@ import operator
 import urllib2
 import os
 import calendar
+from decimal import Decimal
 
 
 def sfjson_loads(s):
@@ -26,6 +27,13 @@ def pretty_json_dumps(data):
         indent=4,
         separators=(',', ': ')
     )
+
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, Decimal):
+            return float(o)
+        return super(DecimalEncoder, self).default(o)
 
 
 def ts_now():
