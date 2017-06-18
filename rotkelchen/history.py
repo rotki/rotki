@@ -51,6 +51,16 @@ class PriceQueryUnknownFromAsset(Exception):
         )
 
 
+def include_external_trades(personal, start_ts, end_ts, history):
+    external_trades = get_jsonfile_contents_or_empty_list(
+        personal['external_trades_path']
+    )
+    external_trades = trades_from_dictlist(external_trades, start_ts, end_ts)
+    history.extend(external_trades)
+    history.sort(key=lambda trade: trade.timestamp)
+    return history
+
+
 def trade_from_kraken(kraken_trade):
     """Turn a kraken trade returned from kraken trade history to our common trade
     history format"""
@@ -413,14 +423,9 @@ class TradesHistorian(object):
         `end_at_least` is given and we have a cache history for that particular source
         which satisfies it we return the cache
         """
-        # open the external trades file if existing
-        external_trades = get_jsonfile_contents_or_empty_list(
-            self.personal_data['external_trades_path']
-        )
-        external_trades = trades_from_dictlist(external_trades, start_ts, end_ts)
 
         # start creating the all trades history list
-        history = list(external_trades)
+        history = list()
         asset_movements = list()
 
         if self.kraken is not None:
@@ -518,6 +523,9 @@ class TradesHistorian(object):
         write_tupledata_history_in_file(asset_movements, assetmovementsfile_path, start_ts, end_ts)
         eth_tx_log_path = os.path.join(self.data_directory, ETHEREUM_TX_LOGFILE)
         write_tupledata_history_in_file(eth_transactions, eth_tx_log_path, start_ts, end_ts)
+
+        # After writting everything to files include the external trades in the history
+        history = include_external_trades(self.personal_data, start_ts, end_ts, history)
 
         return history, poloniex_margin_trades, polo_loans, asset_movements, eth_transactions
 
@@ -628,6 +636,13 @@ class TradesHistorian(object):
                         asset_movements_contents['data'],
                         start_ts,
                         end_ts
+                    )
+
+                    history_trades = include_external_trades(
+                        self.personal_data,
+                        start_ts,
+                        end_ts,
+                        history_trades
                     )
 
                     return (

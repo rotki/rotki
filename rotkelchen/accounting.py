@@ -446,6 +446,16 @@ class Accountant(object):
         if timestamp >= self.query_start_ts:
             if loan_settlement:
                 self.settlement_losses += gain_in_profit_currency
+                self.log.logdebug("Loan Profit: {} {}".format(
+                    gain_in_profit_currency, self.profit_currency
+                ))
+            else:
+                self.log.logdebug("Taxable P/L: {} {} General P/L: {} {}".format(
+                    general_profit_loss,
+                    self.profit_currency,
+                    taxable_profit_loss,
+                    self.profit_currency,
+                ))
 
             self.general_trade_profit_loss += general_profit_loss
             self.taxable_trade_profit_loss += taxable_profit_loss

@@ -204,7 +204,7 @@ LOG_ALERT = 4
 
 
 class Logger():
-    def __init__(self, outfile, should_notify, log_level=LOG_ALERT):
+    def __init__(self, outfile, should_notify, log_level=LOG_INFO):
         # TODO: Make log level configurable
         self.outfile = outfile
         self.should_notify = should_notify
