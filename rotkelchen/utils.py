@@ -11,6 +11,7 @@ import os
 import calendar
 import csv
 from decimal import Decimal
+from errors import KrakenAPIRateLimitExceeded
 
 
 def sfjson_loads(s):
@@ -158,7 +159,10 @@ def retry_calls(times, location, method, function, *args):
         try:
             result = function(*args)
             return result
-        except urllib2.URLError as e:
+        except (urllib2.URLError, KrakenAPIRateLimitExceeded) as e:
+            if isinstance(e, KrakenAPIRateLimitExceeded):
+                time.sleep(5)
+
             tries -= 1
             if tries == 0:
                 raise ValueError(
@@ -194,6 +198,23 @@ def get_jsonfile_contents_or_empty_dict(filepath):
             data = dict()
 
     return data
+
+
+def safe_urllib_read(urlobj):
+    # Attempting to circumvent the httplib incomplete read error
+    # https://stackoverflow.com/questions/14149100/incompleteread-using-httplib
+
+    # try:
+    #     ret = urlobj.read()
+    # except httplib.IncompleteRead, e:
+    #     ret = e.partial
+    return urlobj.read()
+
+
+def safe_urllib_read_to_json(urlobj):
+    string = safe_urllib_read(urlobj)
+    ret = json.loads(string)
+    return ret
 
 
 LOG_NOTHING = 0

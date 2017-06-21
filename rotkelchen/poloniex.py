@@ -2,6 +2,7 @@
 
 import urllib
 import urllib2
+import httplib
 import json
 import time
 import hmac
@@ -14,7 +15,8 @@ import csv
 from utils import (
     createTimeStamp,
     ts_now,
-    retry_calls
+    retry_calls,
+    safe_urllib_read_to_json
 )
 from exchange import Exchange
 from order_formatting import AssetMovement
@@ -103,19 +105,24 @@ class Poloniex(Exchange):
         return result
 
     def _api_query(self, command, req={}):
+        # Attempting to circumvent the httplib incomplete read error
+        # https://stackoverflow.com/questions/14149100/incompleteread-using-httplib
+        httplib.HTTPConnection._http_vsn = 10
+        httplib.HTTPConnection._http_vsn_str = 'HTTP/1.0'
+
         if(command == "returnTicker" or command == "return24Volume"):
             ret = urllib2.urlopen(
                 urllib2.Request(
                     'https://poloniex.com/public?command=' + command
                 ))
-            return json.loads(ret.read())
+            return safe_urllib_read_to_json(ret)
         elif(command == "returnOrderBook"):
             ret = urllib2.urlopen(
                 urllib2.Request(
                     'https://poloniex.com/public?command=' +
                     command + '&currencyPair=' + str(req['currencyPair']))
             )
-            return json.loads(ret.read())
+            ret = safe_urllib_read_to_json(ret)
         elif(command == "returnMarketTradeHistory"):
             ret = urllib2.urlopen(
                 urllib2.Request(
@@ -124,7 +131,7 @@ class Poloniex(Exchange):
                     '&currencyPair=' +
                     str(req['currencyPair']))
             )
-            return json.loads(ret.read())
+            ret = safe_urllib_read_to_json(ret)
         elif(command == "returnLoanOrders"):
             ret = urllib2.urlopen(
                 urllib2.Request(
@@ -133,7 +140,7 @@ class Poloniex(Exchange):
                     '&currency=' +
                     str(req['currency']))
             )
-            return json.loads(ret.read())
+            ret = safe_urllib_read_to_json(ret)
         else:
             req['command'] = command
             req['nonce'] = int(time.time() * 1000)
@@ -150,8 +157,13 @@ class Poloniex(Exchange):
                 post_data,
                 headers)
             )
-            jsonRet = json.loads(ret.read())
-            return self.post_process(jsonRet)
+            jsonRet = safe_urllib_read_to_json(ret)
+            ret = self.post_process(jsonRet)
+
+        # back to 1.1. connection
+        httplib.HTTPConnection._http_vsn = 11
+        httplib.HTTPConnection._http_vsn_str = 'HTTP/1.1'
+        return ret
 
     def returnAvailableAccountBalances(self, account='all'):
         req = {}

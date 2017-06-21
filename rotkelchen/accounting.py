@@ -190,6 +190,7 @@ class Accountant(object):
             gained_asset,
             gained_amount,
             fee_in_asset,
+            margin_notes,
             timestamp):
 
         rate = self.get_rate_in_profit_currency(gained_asset, timestamp)
@@ -217,13 +218,14 @@ class Accountant(object):
 
         if self.create_csv:
             self.margin_positions_csv.append({
+                'name': margin_notes,
                 'time': timestamp,
                 'gained_asset': gained_asset,
                 'gained_amount': net_gain_amount,
                 'profit_in_{}'.format(self.profit_currency): gain_in_profit_currency
             })
 
-    def add_asset_movement_to_events(self, category, asset, amount, timestamp, fee):
+    def add_asset_movement_to_events(self, category, asset, amount, timestamp, exchange, fee):
         rate = self.get_rate_in_profit_currency(asset, timestamp)
         self.asset_movement_fees += fee * rate
         if category == 'withdrawal':
@@ -232,6 +234,8 @@ class Accountant(object):
         if self.create_csv:
             self.asset_movements_csv.append({
                 'time': timestamp,
+                'exchange': exchange,
+                'type': category,
                 'moving_asset': asset,
                 'fee_in_asset': fee,
                 'fee_in_{}'.format(self.profit_currency): fee * rate,
@@ -256,6 +260,7 @@ class Accountant(object):
         if self.create_csv:
             self.tx_gas_costs_csv.append({
                 'time': transaction.timestamp,
+                'transaction_hash': transaction.hash,
                 'eth_burned_as_gas': eth_burned_as_gas,
                 'cost_in_{}'.format(self.profit_currency): eth_burned_as_gas * rate,
             })
@@ -693,6 +698,7 @@ class Accountant(object):
                     asset=action.asset,
                     amount=action.amount,
                     timestamp=action.timestamp,
+                    exchange=action.exchange,
                     fee=action.fee
                 )
                 continue
@@ -701,6 +707,7 @@ class Accountant(object):
                     gained_asset='BTC',
                     gained_amount=action['btc_profit_loss'],
                     fee_in_asset=0,
+                    margin_notes=action['notes'],
                     timestamp=timestamp
                 )
                 continue

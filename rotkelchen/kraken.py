@@ -14,6 +14,7 @@ import time
 from utils import query_fiat_pair, retry_calls
 from order_formatting import AssetMovement
 from exchange import Exchange
+from errors import KrakenAPIRateLimitExceeded
 
 
 # TODO: Figure out why registering the exception class here
@@ -126,7 +127,15 @@ class Kraken(Exchange):
         )
         json_ret = json.loads(ret.read())
         if json_ret['error']:
-            raise ValueError(json_ret['error'])
+            if isinstance(json_ret['error'], list):
+                error = json_ret['error'][0]
+            else:
+                error = json_ret['error']
+            if 'Rate limit exceeded' in error:
+                raise KrakenAPIRateLimitExceeded(method)
+            else:
+                raise ValueError(error)
+
         return json_ret['result']
 
     def query_public(self, method, req={}):
@@ -166,7 +175,14 @@ class Kraken(Exchange):
         )
         json_ret = json.loads(ret.read())
         if json_ret['error']:
-            raise ValueError(json_ret['error'])
+            if isinstance(json_ret['error'], list):
+                error = json_ret['error'][0]
+            else:
+                error = json_ret['error']
+            if 'Rate limit exceeded' in error:
+                raise KrakenAPIRateLimitExceeded(method)
+            else:
+                raise ValueError(error)
 
         return json_ret['result']
 
