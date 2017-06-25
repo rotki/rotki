@@ -3,8 +3,6 @@ from __future__ import division
 
 import os
 import json
-import time
-import sys
 import threading
 import urllib2
 import plot
@@ -15,8 +13,8 @@ from utils import (
     pretty_json_dumps,
     from_wei,
     dict_get_sumof,
-    floatToPerc,
     merge_dicts,
+    rlk_jsonloads,
 )
 
 from poloniex import Poloniex
@@ -25,6 +23,7 @@ from bittrex import Bittrex
 from data import DataHandler
 from inquirer import Inquirer
 from utils import query_fiat_pair
+from fval import FVal
 
 
 class Rotkelchen(object):
@@ -40,7 +39,7 @@ class Rotkelchen(object):
         self.secret_data = {}
         if os.path.isfile(self.secret_name):
             with open(self.secret_name, 'r') as f:
-                self.secret_data = json.loads(f.read())
+                self.secret_data = rlk_jsonloads(f.read())
 
         # turn all secret key values from unicode to string
         for k, v in self.secret_data.iteritems():
@@ -128,13 +127,13 @@ class Rotkelchen(object):
                 ','.join(self.data.personal['eth_accounts'])
             )
         )
-        eth_resp = json.loads(eth_resp.read())
+        eth_resp = rlk_jsonloads(eth_resp.read())
         if eth_resp['status'] != '1':
             raise ValueError('Failed to query etherscan for accounts balance')
         eth_resp = eth_resp['result']
         eth_sum = 0
         for account_entry in eth_resp:
-            eth_sum += from_wei(float(account_entry['balance']))
+            eth_sum += from_wei(FVal(account_entry['balance']))
 
         eth_usd_price = self.inquirer.find_usd_price('ETH')
         eth_accounts_usd_amount = eth_sum * eth_usd_price
@@ -147,14 +146,14 @@ class Rotkelchen(object):
         coinmarketcap_resp = urllib2.urlopen(
             urllib2.Request('https://api.coinmarketcap.com/v1/ticker/')
         )
-        coinmarketcap_resp = json.loads(coinmarketcap_resp.read())
+        coinmarketcap_resp = rlk_jsonloads(coinmarketcap_resp.read())
         # For now I only have one address holding a token. In the future if I
         # spread them in different addresses gotta search for token balance in
         # each address
         tokens = self.data.personal['tokens']
         for result in coinmarketcap_resp:
             if result['symbol'] in tokens:
-                tokens[result['symbol']]['usd_price'] = float(result['price_usd'])
+                tokens[result['symbol']]['usd_price'] = FVal(result['price_usd'])
 
         for token_name, data in tokens.iteritems():
             resp = urllib2.urlopen(
@@ -164,10 +163,10 @@ class Rotkelchen(object):
                         data['token_address'],
                         data['holding_address']
                     )))
-            resp = json.loads(resp.read())
+            resp = rlk_jsonloads(resp.read())
             if resp['status'] != '1':
                 raise ValueError('Failed to query etherscan for token balance')
-            amount = float(resp['result']) / data['digits_divisor']
+            amount = FVal(resp['result']) / data['digits_divisor']
             blockchain_balances[token_name] = {
                 'amount': amount, 'usd_value': amount * data['usd_price']
             }
@@ -178,7 +177,7 @@ class Rotkelchen(object):
         eur_usd_price = query_fiat_pair('EUR', 'USD')
         return {
             'EUR': {
-                'amount': self.data.personal['euros'],
+                'amount': FVal(self.data.personal['euros']),
                 'usd_value': self.data.personal['euros'] * eur_usd_price
             }
         }
@@ -198,24 +197,24 @@ class Rotkelchen(object):
         crypto_net_usd = dict_get_sumof(blockchain_balances, 'usd_value')
 
         # calculate net usd value
-        net_usd = 0
+        net_usd = FVal(0)
         for k, v in combined.iteritems():
-            net_usd += float(v['usd_value'])
+            net_usd += FVal(v['usd_value'])
 
         stats = {
             'location': {
-                'percentage_of_net_usd_in_poloniex': floatToPerc(polo_net_usd/ net_usd),
-                'percentage_of_net_usd_in_kraken': floatToPerc(kraken_net_usd / net_usd),
-                'percentage_of_net_usd_in_bittrex': floatToPerc(bittrex_net_usd / net_usd),
-                'percentage_of_net_usd_in_normal_crypto_account': floatToPerc(crypto_net_usd / net_usd),
-                'percentage_of_net_usd_in_banksncash': floatToPerc(bank_balances['EUR']['usd_value'] / net_usd)
+                'percentage_of_net_usd_in_poloniex': (polo_net_usd / net_usd).to_percentage(),
+                'percentage_of_net_usd_in_kraken': (kraken_net_usd / net_usd).to_percentage(),
+                'percentage_of_net_usd_in_bittrex': (bittrex_net_usd / net_usd).to_percentage(),
+                'percentage_of_net_usd_in_normal_crypto_account': (crypto_net_usd / net_usd).to_percentage(),
+                'percentage_of_net_usd_in_banksncash': (bank_balances['EUR']['usd_value'] / net_usd).to_percentage(),
             },
             'net_usd': net_usd
         }
 
         currencies = {}
         for k, v in combined.iteritems():
-            currencies['percentage_of_net_usd_in_{}'.format(k.lower())] = floatToPerc(v['usd_value'] / net_usd)
+            currencies['percentage_of_net_usd_in_{}'.format(k.lower())] = (v['usd_value'] / net_usd).to_percentage(),
         stats['currencies'] = currencies
 
         result_dict = merge_dicts(combined, stats)
@@ -235,7 +234,7 @@ class Rotkelchen(object):
                 result_dict[asset]['average_buy_value'] = average_buy_value
 
                 current_price = result_dict[asset]['usd_value'] / result_dict[asset]['amount']
-                if average_buy_value != 0:
+                if average_buy_value != FVal(0):
                     result_dict[asset]['percent_change'] = (
                         ((current_price - average_buy_value) / average_buy_value) * 100
                     )

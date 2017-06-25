@@ -10,14 +10,14 @@ import urllib2
 import os
 import calendar
 import csv
-from decimal import Decimal
 from errors import KrakenAPIRateLimitExceeded
+from fval import FVal
 
 
 def sfjson_loads(s):
     """Exception safe json.loads()"""
     try:
-        return json.loads(s)
+        return rlk_jsonloads(s)
     except:
         return {}
 
@@ -27,15 +27,9 @@ def pretty_json_dumps(data):
         data,
         sort_keys=True,
         indent=4,
-        separators=(',', ': ')
+        separators=(',', ': '),
+        cls=RKLEncoder,
     )
-
-
-class DecimalEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, Decimal):
-            return float(o)
-        return super(DecimalEncoder, self).default(o)
 
 
 def ts_now():
@@ -58,23 +52,11 @@ def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
     return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
 
-def percToStr(perc):
-    return "{:6.4}".format(perc * 100)
-
-
-def floatToStr(f):
-    return "{:10.8f}".format(f)
-
-
 def add_entries(a, b):
     return {
         'amount': a['amount'] + b['amount'],
         'usd_value': a['usd_value'] + b['usd_value']
     }
-
-
-def floatToPerc(f):
-    return '{:.5%}'.format(f)
 
 
 def query_fiat_pair(base, quote, timestamp=None):
@@ -89,7 +71,7 @@ def query_fiat_pair(base, quote, timestamp=None):
     while True:
         try:
             resp = urllib2.urlopen(urllib2.Request(querystr))
-            resp = json.loads(resp.read())
+            resp = rlk_jsonloads(resp.read())
             break
         except:
             if tries == 0:
@@ -98,7 +80,7 @@ def query_fiat_pair(base, quote, timestamp=None):
             tries -= 1
 
     try:
-        return resp['rates'][quote]
+        return FVal(resp['rates'][quote])
     except:
         raise ValueError('Could not find a "{}" price for "{}"'.format(base, quote))
 
@@ -180,7 +162,7 @@ def get_jsonfile_contents_or_empty_list(filepath):
 
     with open(filepath, 'r') as infile:
         try:
-            data = json.load(infile)
+            data = rlk_jsonloads(infile.read())
         except:
             data = list()
 
@@ -193,7 +175,7 @@ def get_jsonfile_contents_or_empty_dict(filepath):
 
     with open(filepath, 'r') as infile:
         try:
-            data = json.load(infile)
+            data = rlk_jsonloads(infile.read())
         except:
             data = dict()
 
@@ -213,7 +195,7 @@ def safe_urllib_read(urlobj):
 
 def safe_urllib_read_to_json(urlobj):
     string = safe_urllib_read(urlobj)
-    ret = json.loads(string)
+    ret = rlk_jsonloads(string)
     return ret
 
 
@@ -234,7 +216,7 @@ class Logger():
 
     def output(self, s):
         if isinstance(s, dict):
-            s = json.dumps(s, sort_keys=True, indent=4, separators=(',', ': '))
+            s = json.dumps(s, sort_keys=True, indent=4, separators=(',', ': '), cls=RKLEncoder)
         if self.outfile:
             self.outfile.write(str(s) + '\n')
             self.outfile.flush()
@@ -303,3 +285,66 @@ def output_to_csv(
     dict_to_csv_file(os.path.join(out_dir, 'asset_movements.csv'), asset_movements)
     dict_to_csv_file(os.path.join(out_dir, 'tx_gas_costs.csv'), tx_gas_costs)
     dict_to_csv_file(os.path.join(out_dir, 'margin_positions.csv'), margin_positions)
+
+
+def convert_to_int(val):
+    """Try to convert to an int. Either from an FVal or a string. If it's a float
+    and it's not whole (like 42.0) then raise"""
+    if isinstance(val, FVal):
+        return val.to_exact_int()
+    elif isinstance(val, (str, unicode)):
+        return int(val)
+    elif isinstance(val, int):
+        return val
+    elif isinstance(val, float):
+        if val.is_integer():
+            return int(val)
+
+    raise ValueError('Can not convert {} which is of type {} to int.'.format(val, type(val)))
+
+
+def rkl_decode_value(val):
+    if isinstance(val, dict):
+        new_val = dict()
+        for k, v in val.iteritems():
+            new_val[k] = rkl_decode_value(v)
+        return new_val
+    elif isinstance(val, list):
+        return [rkl_decode_value(x) for x in val]
+    elif isinstance(val, float):
+        return FVal(val)
+    elif isinstance(val, (str, unicode)):
+        try:
+            val = float(val)
+            return FVal(val)
+        except:
+            pass
+
+    return val
+
+
+class RKLDecoder(json.JSONDecoder):
+
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+
+    def object_hook(self, obj):
+        return rkl_decode_value(obj)
+
+
+class RKLEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, FVal):
+            return str(obj)
+        if isinstance(obj, float):
+            raise ValueError("Trying to json encode a float.")
+
+        return json.JSONEncoder.default(self, obj)
+
+
+def rlk_jsonloads(data):
+    return json.loads(data, cls=RKLDecoder)
+
+
+def rlk_jsondumps(data):
+    return json.dumps(data, cls=RKLEncoder)

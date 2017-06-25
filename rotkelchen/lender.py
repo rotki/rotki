@@ -8,6 +8,7 @@ from datetime import datetime
 
 from utils import createTimeStamp, dateToTs, isclose
 from errors import PoloniexError
+from fval import FVal
 
 
 def rateToStr(f):
@@ -171,8 +172,8 @@ class Lender:
             for row in history:
                 self.lending_history.append({
                     'currency': row[0],
-                    'earned': float(row[6]),
-                    'amount': float(row[2]),
+                    'earned': FVal(row[6]),
+                    'amount': FVal(row[2]),
                     'opened': createTimeStamp(row[7]),
                     'closed': createTimeStamp(row[8])
                 })

@@ -1,4 +1,3 @@
-import json
 import time
 import urllib2
 import os
@@ -10,13 +9,16 @@ from exchange import data_up_todate
 from kraken import kraken_to_world_pair
 from bittrex import trade_from_bittrex
 from transactions import query_etherscan_for_transactions, transactions_from_dictlist
+from fval import FVal
 from utils import (
     createTimeStamp,
     tsToDate,
     get_pair_position,
     get_jsonfile_contents_or_empty_list,
     get_jsonfile_contents_or_empty_dict,
-    DecimalEncoder
+    rlk_jsonloads,
+    rlk_jsondumps,
+    convert_to_int,
 )
 from order_formatting import (
     Trade,
@@ -67,15 +69,15 @@ def trade_from_kraken(kraken_trade):
     currency_pair = kraken_to_world_pair(kraken_trade['pair'])
     quote_currency = get_pair_position(currency_pair, 'second')
     return Trade(
-        timestamp=int(kraken_trade['time']),
+        timestamp=convert_to_int(kraken_trade['time']),
         pair=currency_pair,
         type=kraken_trade['type'],
-        rate=float(kraken_trade['price']),
-        cost=float(kraken_trade['cost']),
+        rate=FVal(kraken_trade['price']),
+        cost=FVal(kraken_trade['cost']),
         cost_currency=quote_currency,
-        fee=float(kraken_trade['fee']),
+        fee=FVal(kraken_trade['fee']),
         fee_currency=quote_currency,
-        amount=float(kraken_trade['vol']),
+        amount=FVal(kraken_trade['vol']),
         location='kraken'
     )
 
@@ -85,9 +87,9 @@ def trade_from_poloniex(poloniex_trade, pair):
     history format"""
 
     trade_type = poloniex_trade['type']
-    amount = float(poloniex_trade['amount'])
-    rate = float(poloniex_trade['rate'])
-    perc_fee = float(poloniex_trade['fee'])
+    amount = FVal(poloniex_trade['amount'])
+    rate = FVal(poloniex_trade['rate'])
+    perc_fee = FVal(poloniex_trade['fee'])
     base_currency = get_pair_position(pair, 'first')
     quote_currency = get_pair_position(pair, 'second')
     if trade_type == 'buy':
@@ -124,7 +126,7 @@ def do_read_manual_margin_positions(data_directory, logger):
     manual_margin_path = os.path.join(data_directory, MANUAL_MARGINS_LOGFILE)
     if os.path.isfile(manual_margin_path):
         with open(manual_margin_path, 'r') as f:
-            margin_data = json.load(f)
+            margin_data = rlk_jsonloads(f.read())
     else:
         margin_data = []
         logger.logerror(
@@ -139,7 +141,7 @@ def write_history_data_in_file(data, filepath, start_ts, end_ts):
         history_dict['data'] = data
         history_dict['start_time'] = start_ts
         history_dict['end_time'] = end_ts
-        json.dump(history_dict, outfile, cls=DecimalEncoder)
+        outfile.write(rlk_jsondumps(history_dict))
 
 
 def write_tupledata_history_in_file(history, filepath, start_ts, end_ts):
@@ -200,8 +202,8 @@ def process_polo_loans(data, start_ts, end_ts):
             'open_time': open_time,
             'close_time': close_time,
             'currency': loan['currency'],
-            'fee': float(loan['fee']),
-            'earned': float(loan['earned']),
+            'fee': FVal(loan['fee']),
+            'earned': FVal(loan['earned']),
         })
 
     new_data.sort(key=lambda loan: loan['open_time'])
@@ -230,13 +232,13 @@ class PriceHistorian(object):
             assert match
             cache_key = match.group(1)
             with open(file_, 'r') as f:
-                data = json.loads(f.read())
+                data = rlk_jsonloads(f.read())
                 self.price_history[cache_key] = data
 
         # Get coin list of crypto compare. TODO: Cache this?
         query_string = 'https://www.cryptocompare.com/api/data/coinlist/'
         resp = urllib2.urlopen(urllib2.Request(query_string))
-        resp = json.loads(resp.read())
+        resp = rlk_jsonloads(resp.read())
         if 'Response' not in resp or resp['Response'] != 'Success':
             error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
             if 'Message' in resp:
@@ -280,7 +282,7 @@ class PriceHistorian(object):
                     from_asset, to_asset, cryptocompare_hourquerylimit, end_date
                 ))
             resp = urllib2.urlopen(urllib2.Request(query_string))
-            resp = json.loads(resp.read())
+            resp = rlk_jsonloads(resp.read())
             if 'Response' not in resp or resp['Response'] != 'Success':
                 error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
                 if 'Message' in resp:
@@ -343,7 +345,7 @@ class PriceHistorian(object):
         # find the closest entry to the provided timestamp
         # print("loaded {}_{}".format(from_asset, to_asset))
         assert timestamp > data[0]['time']
-        index = int((timestamp - data[0]['time']) / 3600)
+        index = convert_to_int((timestamp - data[0]['time']) / 3600)
         # print("timestamp: {} index: {} data_length: {}".format(timestamp, index, len(data)))
         diff = abs(data[index]['time'] - timestamp)
         if index + 1 <= len(data) - 1:
@@ -353,9 +355,9 @@ class PriceHistorian(object):
 
         if data[index]['high'] is None or data[index]['low'] is None:
             # If we get some None in the hourly set price to 0 so that we check daily price
-            price = 0
+            price = FVal(0)
         else:
-            price = (data[index]['high'] + data[index]['low']) / 2
+            price = FVal((data[index]['high'] + data[index]['low'])) / 2
 
         if price == 0:
             if from_asset != 'BTC' and to_asset != 'BTC':
@@ -373,12 +375,12 @@ class PriceHistorian(object):
                 if to_asset == 'BTC':
                     query_string += '&tryConversion=false'
                 resp = urllib2.urlopen(urllib2.Request(query_string))
-                resp = json.loads(resp.read())
+                resp = rlk_jsonloads(resp.read())
                 print('DAILY PRICE OF ASSET: "{}"'.format(resp))
                 if from_asset not in resp:
                     error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
                     raise ValueError(error_message)
-                price = resp[from_asset][to_asset]
+                price = FVal(resp[from_asset][to_asset])
 
                 if price == 0:
                     raise NoPriceForGivenTimestamp(
@@ -541,7 +543,7 @@ class TradesHistorian(object):
         if os.path.isfile(historyfile_path):
             with open(historyfile_path, 'r') as infile:
                 try:
-                    history_json_data = json.load(infile)
+                    history_json_data = rlk_jsonloads(infile.read())
                 except:
                     pass
 

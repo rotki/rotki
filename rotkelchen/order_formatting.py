@@ -1,4 +1,5 @@
 from collections import namedtuple
+from fval import FVal
 
 Events = namedtuple('Events', ('buys', 'sells'))
 BuyEvent = namedtuple(
@@ -75,12 +76,12 @@ def trades_from_dictlist(given_trades, start_ts, end_ts):
             timestamp=given_trade['timestamp'],
             pair=given_trade['pair'],
             type=given_trade['type'],
-            rate=float(given_trade['rate']),
-            cost=float(given_trade['cost']),
+            rate=FVal(given_trade['rate']),
+            cost=FVal(given_trade['cost']),
             cost_currency=given_trade['cost_currency'],
-            fee=float(given_trade['fee']),
+            fee=FVal(given_trade['fee']),
             fee_currency=given_trade['fee_currency'],
-            amount=float(given_trade['amount']),
+            amount=FVal(given_trade['amount']),
             location=given_trade['location']
         ))
     return returned_trades
@@ -102,7 +103,7 @@ def asset_movements_from_dictlist(given_data, start_ts, end_ts):
             category=movement['category'],
             timestamp=movement['timestamp'],
             asset=movement['asset'],
-            amount=movement['amount'],
-            fee=movement['fee'],
+            amount=FVal(movement['amount']),
+            fee=FVal(movement['fee']),
         ))
     return returned_movements

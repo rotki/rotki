@@ -5,16 +5,16 @@
 
 import urllib
 import urllib2
-import json
 import hmac
 import hashlib
 import base64
 import time
 
-from utils import query_fiat_pair, retry_calls
+from utils import query_fiat_pair, retry_calls, rlk_jsonloads, convert_to_int
 from order_formatting import AssetMovement
 from exchange import Exchange
 from errors import KrakenAPIRateLimitExceeded
+from fval import FVal
 
 
 # TODO: Figure out why registering the exception class here
@@ -103,8 +103,8 @@ class Kraken(Exchange):
         )
         # Assuming all fees are the same for all pairs that we trade here,
         # as long as they are normal orders on normal pairs.
-        self.taker_fee = float(resp['fees']['XETHXXBT']['fee'])
-        self.maker_fee = float(resp['fees_maker']['XETHXXBT']['fee'])
+        self.taker_fee = FVal(resp['fees']['XETHXXBT']['fee'])
+        self.maker_fee = FVal(resp['fees_maker']['XETHXXBT']['fee'])
         self.tradeable_pairs = self.query_public('AssetPairs')
         self.first_connection_made = True
         # Also need to do at least a single pass of the main logic for the ticker
@@ -125,7 +125,7 @@ class Kraken(Exchange):
                 post_data
             )
         )
-        json_ret = json.loads(ret.read())
+        json_ret = rlk_jsonloads(ret.read())
         if json_ret['error']:
             if isinstance(json_ret['error'], list):
                 error = json_ret['error'][0]
@@ -173,7 +173,7 @@ class Kraken(Exchange):
                 post_data,
                 headers)
         )
-        json_ret = json.loads(ret.read())
+        json_ret = rlk_jsonloads(ret.read())
         if json_ret['error']:
             if isinstance(json_ret['error'], list):
                 error = json_ret['error'][0]
@@ -211,16 +211,16 @@ class Kraken(Exchange):
             'Ticker',
             req={'pair': ','.join(self.tradeable_pairs.keys())}
         )
-        self.eurprice['BTC'] = float(self.ticker['XXBTZEUR']['c'][0])
-        self.usdprice['BTC'] = float(self.ticker['XXBTZUSD']['c'][0])
-        self.eurprice['ETH'] = float(self.ticker['XETHZEUR']['c'][0])
-        self.usdprice['ETH'] = float(self.ticker['XETHZUSD']['c'][0])
-        self.eurprice['REP'] = float(self.ticker['XREPZEUR']['c'][0])
-        self.usdprice['REP'] = float(self.ticker['XREPZUSD']['c'][0])
-        self.eurprice['XMR'] = float(self.ticker['XXMRZEUR']['c'][0])
-        self.usdprice['XMR'] = float(self.ticker['XXMRZUSD']['c'][0])
-        self.eurprice['ETC'] = float(self.ticker['XETCZEUR']['c'][0])
-        self.usdprice['ETC'] = float(self.ticker['XETCZUSD']['c'][0])
+        self.eurprice['BTC'] = FVal(self.ticker['XXBTZEUR']['c'][0])
+        self.usdprice['BTC'] = FVal(self.ticker['XXBTZUSD']['c'][0])
+        self.eurprice['ETH'] = FVal(self.ticker['XETHZEUR']['c'][0])
+        self.usdprice['ETH'] = FVal(self.ticker['XETHZUSD']['c'][0])
+        self.eurprice['REP'] = FVal(self.ticker['XREPZEUR']['c'][0])
+        self.usdprice['REP'] = FVal(self.ticker['XREPZUSD']['c'][0])
+        self.eurprice['XMR'] = FVal(self.ticker['XXMRZEUR']['c'][0])
+        self.usdprice['XMR'] = FVal(self.ticker['XXMRZUSD']['c'][0])
+        self.eurprice['ETC'] = FVal(self.ticker['XETCZEUR']['c'][0])
+        self.usdprice['ETC'] = FVal(self.ticker['XETCZUSD']['c'][0])
 
     def find_fiat_price(self, asset):
         """Find USD/EUR price of asset. The asset should be in the kraken style.
@@ -232,7 +232,7 @@ class Kraken(Exchange):
             raise ValueError(
                 'Could not find a BTC tradeable pair in kraken for "{}"'.format(asset)
             )
-        btc_price = float(self.ticker[pair]['c'][0])
+        btc_price = FVal(self.ticker[pair]['c'][0])
         common_name = KRAKEN_TO_WORLD[asset]
         self.usdprice[common_name] = btc_price * self.usdprice['BTC']
         self.eurprice[common_name] = btc_price * self.eurprice['BTC']
@@ -248,8 +248,8 @@ class Kraken(Exchange):
 
         balances = dict()
         for k, v in old_balances.iteritems():
-            v = float(v)
-            if v == 0.0:
+            v = FVal(v)
+            if v == FVal(0):
                 continue
 
             common_name = KRAKEN_TO_WORLD[k]
@@ -350,10 +350,10 @@ class Kraken(Exchange):
             movements.append(AssetMovement(
                 exchange='kraken',
                 category=movement['type'],
-                timestamp=int(movement['time']),
+                timestamp=convert_to_int(movement['time']),
                 asset=KRAKEN_TO_WORLD[movement['asset']],
-                amount=float(movement['amount']),
-                fee=float(movement['fee'])
+                amount=FVal(movement['amount']),
+                fee=FVal(movement['fee'])
             ))
         return movements
 

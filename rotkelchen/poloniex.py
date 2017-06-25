@@ -3,7 +3,6 @@
 import urllib
 import urllib2
 import httplib
-import json
 import time
 import hmac
 import hashlib
@@ -12,11 +11,14 @@ import os
 import traceback
 import csv
 
+from fval import FVal
 from utils import (
     createTimeStamp,
     ts_now,
     retry_calls,
-    safe_urllib_read_to_json
+    safe_urllib_read_to_json,
+    rlk_jsonloads,
+    rlk_jsondumps,
 )
 from exchange import Exchange
 from order_formatting import AssetMovement
@@ -72,8 +74,8 @@ class Poloniex(Exchange):
             return
 
         fees_resp = self.returnFeeInfo()
-        self.maker_fee = float(fees_resp['makerFee'])
-        self.taker_fee = float(fees_resp['takerFee'])
+        self.maker_fee = FVal(fees_resp['makerFee'])
+        self.taker_fee = FVal(fees_resp['takerFee'])
         self.first_connection_made = True
         # Also need to do at least a single pass of the market watcher for the ticker
         self.market_watcher()
@@ -367,13 +369,13 @@ class Poloniex(Exchange):
 
     def market_watcher(self):
         self.ticker = self.returnTicker()
-        self.usdprice['BTC'] = float(self.ticker['USDT_BTC']['last'])
-        self.usdprice['ETH'] = float(self.ticker['USDT_ETH']['last'])
-        self.usdprice['DASH'] = float(self.ticker['USDT_DASH']['last'])
-        self.usdprice['XMR'] = float(self.ticker['USDT_XMR']['last'])
-        self.usdprice['LTC'] = float(self.ticker['USDT_LTC']['last'])
-        self.usdprice['MAID'] = float(self.ticker['BTC_MAID']['last']) * self.usdprice['BTC']
-        self.usdprice['FCT'] = float(self.ticker['BTC_FCT']['last']) * self.usdprice['BTC']
+        self.usdprice['BTC'] = FVal(self.ticker['USDT_BTC']['last'])
+        self.usdprice['ETH'] = FVal(self.ticker['USDT_ETH']['last'])
+        self.usdprice['DASH'] = FVal(self.ticker['USDT_DASH']['last'])
+        self.usdprice['XMR'] = FVal(self.ticker['USDT_XMR']['last'])
+        self.usdprice['LTC'] = FVal(self.ticker['USDT_LTC']['last'])
+        self.usdprice['MAID'] = FVal(self.ticker['BTC_MAID']['last']) * self.usdprice['BTC']
+        self.usdprice['FCT'] = FVal(self.ticker['BTC_FCT']['last']) * self.usdprice['BTC']
 
     def main_logic(self):
         if not self.first_connection_made:
@@ -403,7 +405,7 @@ class Poloniex(Exchange):
         if not ignore_cache and os.path.isfile(self.cache_filename):
             with open(self.cache_filename, 'r') as f:
                 try:
-                    cache_data = json.loads(f.read())
+                    cache_data = rlk_jsonloads(f.read())
                 except:
                     pass
 
@@ -414,10 +416,10 @@ class Poloniex(Exchange):
 
         balances = dict()
         for currency, v in resp.iteritems():
-            available = float(v['available'])
-            on_orders = float(v['onOrders'])
-            btc_value = float(v['btcValue'])
-            if (available != 0.0 or on_orders != 0.0):
+            available = FVal(v['available'])
+            on_orders = FVal(v['onOrders'])
+            btc_value = FVal(v['btcValue'])
+            if (available != FVal(0) or on_orders != FVal(0)):
                 entry = {}
                 entry['amount'] = available + on_orders
                 try:
@@ -431,7 +433,7 @@ class Poloniex(Exchange):
             cache_data['poloniex'] = dict()
             cache_data['poloniex']['balances'] = balances
             cache_data['poloniex']['time'] = ts_now()
-            f.write(json.dumps(cache_data))
+            f.write(rlk_jsondumps(cache_data))
 
         return balances
 
@@ -459,9 +461,9 @@ class Poloniex(Exchange):
             for row in history:
                 lending_history.append({
                     'currency': row[0],
-                    'earned': float(row[6]),
-                    'amount': float(row[2]),
-                    'fee': float(row[5]),
+                    'earned': FVal(row[6]),
+                    'amount': FVal(row[2]),
+                    'fee': FVal(row[5]),
                     'open': row[7],
                     'close': row[8]
                 })
@@ -546,8 +548,8 @@ class Poloniex(Exchange):
                 category='withdrawal',
                 timestamp=withdrawal['timestamp'],
                 asset=withdrawal['currency'],
-                amount=float(withdrawal['amount']),
-                fee=float(withdrawal['fee'])
+                amount=FVal(withdrawal['amount']),
+                fee=FVal(withdrawal['fee'])
             ))
 
         for deposit in result['deposits']:
@@ -556,7 +558,7 @@ class Poloniex(Exchange):
                 category='deposit',
                 timestamp=deposit['timestamp'],
                 asset=deposit['currency'],
-                amount=float(deposit['amount']),
+                amount=FVal(deposit['amount']),
                 fee=0
             ))
 

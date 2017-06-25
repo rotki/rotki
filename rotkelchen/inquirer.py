@@ -1,5 +1,6 @@
-import json
 import urllib2
+from fval import FVal
+from utils import rlk_jsonloads
 
 
 class Inquirer(object):
@@ -18,9 +19,9 @@ class Inquirer(object):
             coinmarketcap_resp = urllib2.urlopen(
                 urllib2.Request('https://api.coinmarketcap.com/v1/ticker/')
             )
-            coinmarketcap_resp = json.loads(coinmarketcap_resp.read())
+            coinmarketcap_resp = rlk_jsonloads(coinmarketcap_resp.read())
             for result in coinmarketcap_resp:
                 if result['symbol'] == asset:
-                    return float(result['price_usd'])
+                    return FVal(result['price_usd'])
 
             raise ValueError('Could not find a USD price for "{}"'.format(asset))

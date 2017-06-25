@@ -1,8 +1,7 @@
-import json
 import urllib2
 from collections import namedtuple
-from utils import retry_calls
-from decimal import Decimal
+from utils import retry_calls, rlk_jsonloads, convert_to_int
+from fval import FVal
 
 EthereumTransaction = namedtuple(
     'EthereumTransaction',
@@ -38,7 +37,7 @@ def query_txlist(address, internal, from_block=None, to_block=None):
         reqstring += '&endblock={}'.format(to_block)
 
     resp = urllib2.urlopen(urllib2.Request(reqstring))
-    resp = json.loads(resp.read())
+    resp = rlk_jsonloads(resp.read())
 
     if 'status' not in resp or int(resp['status']) != 1:
         status = int(resp['status'])
@@ -53,17 +52,17 @@ def query_txlist(address, internal, from_block=None, to_block=None):
 
     for v in resp['result']:
         # internal tx list contains no gasprice
-        gas_price = -1 if internal else Decimal(v['gasPrice'])
+        gas_price = -1 if internal else FVal(v['gasPrice'])
         result.append(EthereumTransaction(
-            timestamp=Decimal(v['timeStamp']),
-            block_number=Decimal(v['blockNumber']),
+            timestamp=convert_to_int(v['timeStamp']),
+            block_number=convert_to_int(v['blockNumber']),
             hash=v['hash'],
             from_address=v['from'],
             to_address=v['to'],
-            value=Decimal(v['value']),
-            gas=Decimal(v['gas']),
+            value=FVal(v['value']),
+            gas=FVal(v['gas']),
             gas_price=gas_price,
-            gas_used=Decimal(v['gasUsed']),
+            gas_used=FVal(v['gasUsed']),
         ))
 
     return result
@@ -95,15 +94,15 @@ def transactions_from_dictlist(given_transactions, start_ts, end_ts):
             break
 
         returned_transactions.append(EthereumTransaction(
-            timestamp=given_tx['timestamp'],
-            block_number=Decimal(given_tx['block_number']),
+            timestamp=convert_to_int(given_tx['timestamp']),
+            block_number=convert_to_int(given_tx['block_number']),
             hash=given_tx['hash'],
             from_address=given_tx['from_address'],
             to_address=given_tx['to_address'],
-            value=Decimal(given_tx['value']),
-            gas=Decimal(given_tx['gas']),
-            gas_price=Decimal(given_tx['gas_price']),
-            gas_used=Decimal(given_tx['gas_used']),
+            value=FVal(given_tx['value']),
+            gas=FVal(given_tx['gas']),
+            gas_price=FVal(given_tx['gas_price']),
+            gas_used=FVal(given_tx['gas_used']),
         ))
 
     return returned_transactions

@@ -14,7 +14,7 @@ from history import (
     PriceQueryUnknownFromAsset,
     FIAT_CURRENCIES
 )
-from decimal import Decimal
+from fval import FVal
 
 YEAR_IN_SECONDS = 31536000  # 60 * 60 * 24 * 365
 
@@ -88,6 +88,7 @@ class Accountant(object):
                 self.profit_currency,
                 timestamp
             )
+        assert isinstance(rate, (FVal, int))  # TODO Remove. Is temporary assert
         return rate
 
     def add_buy_to_events(
@@ -114,7 +115,7 @@ class Accountant(object):
             self.events[bought_asset] = Events(list(), list())
 
         fee_cost = fee_price_in_profit_currency * trade_fee
-        cost = bought_amount * buy_rate + fee_cost
+        cost = bought_amount.fma(buy_rate, fee_cost)
         self.events[bought_asset].buys.append(
             BuyEvent(
                 amount=bought_amount,
@@ -249,9 +250,8 @@ class Accountant(object):
             gas_price = transaction.gas_price
             self.last_gas_price = transaction.gas_price
 
-        # TODO When everything is decimal get rid of this conversion here
-        rate = Decimal(self.get_rate_in_profit_currency('ETH', transaction.timestamp))
-        eth_burned_as_gas = (transaction.gas_used * gas_price) / Decimal(10 ** 18)
+        rate = self.get_rate_in_profit_currency('ETH', transaction.timestamp)
+        eth_burned_as_gas = (transaction.gas_used * gas_price) / FVal(10 ** 18)
         # print("from: {} to: {} block_number: {} hash: {} eth_burned_as_gas: {} EUR burned:{}".format(
         #     transaction.from_address, transaction.to_address, transaction.block_number, transaction.hash, eth_burned_as_gas, eth_burned_as_gas * rate
         # ))
@@ -347,8 +347,8 @@ class Accountant(object):
 
             if remaining_sold_amount < buy_event.amount:
                 stop_index = idx
-                buying_cost = (
-                    remaining_sold_amount * buy_event.rate +
+                buying_cost = remaining_sold_amount.fma(
+                    buy_event.rate,
                     buy_event.fee_rate * remaining_sold_amount
                 )
                 if sell_after_year:
@@ -633,14 +633,14 @@ class Accountant(object):
         the general and taxable profit/loss.
         """
         self.events = dict()
-        self.general_trade_profit_loss = 0
-        self.taxable_trade_profit_loss = 0
-        self.settlement_losses = 0
-        self.loan_profit = 0
-        self.margin_positions_profit = 0
-        self.last_gas_price = Decimal("2000000000")
-        self.eth_transactions_gas_costs = 0
-        self.asset_movement_fees = 0
+        self.general_trade_profit_loss = FVal(0)
+        self.taxable_trade_profit_loss = FVal(0)
+        self.settlement_losses = FVal(0)
+        self.loan_profit = FVal(0)
+        self.margin_positions_profit = FVal(0)
+        self.last_gas_price = FVal("2000000000")
+        self.eth_transactions_gas_costs = FVal(0)
+        self.asset_movement_fees = FVal(0)
         self.query_start_ts = start_ts
         self.query_end_ts = end_ts
 
@@ -786,20 +786,20 @@ class Accountant(object):
 
         # TODO: When everything is decimal, get rid of the conversions here
         sum_other_actions = (
-            Decimal(self.margin_positions_profit) +
-            Decimal(self.loan_profit) -
-            Decimal(self.settlement_losses) -
-            Decimal(self.asset_movement_fees) -
-            Decimal(self.eth_transactions_gas_costs)
+            self.margin_positions_profit +
+            self.loan_profit -
+            self.settlement_losses -
+            self.asset_movement_fees -
+            self.eth_transactions_gas_costs
         )
         return {
-            'loan_profit': self.loan_profit,
-            'margin_positions_profit': self.margin_positions_profit,
-            'settlement_losses': self.settlement_losses,
-            'ethereum_transaction_gas_costs': self.eth_transactions_gas_costs,
-            'asset_movement_fees': self.asset_movement_fees,
-            'general_trade_profit_loss': self.general_trade_profit_loss,
-            'taxable_trade_profit_loss': self.taxable_trade_profit_loss,
-            'total_taxable_profit_loss': Decimal(self.taxable_trade_profit_loss) + sum_other_actions,
-            'total_profit_loss': Decimal(self.general_trade_profit_loss) + sum_other_actions,
+            'loan_profit': str(self.loan_profit),
+            'margin_positions_profit': str(self.margin_positions_profit),
+            'settlement_losses': str(self.settlement_losses),
+            'ethereum_transaction_gas_costs': str(self.eth_transactions_gas_costs),
+            'asset_movement_fees': str(self.asset_movement_fees),
+            'general_trade_profit_loss': str(self.general_trade_profit_loss),
+            'taxable_trade_profit_loss': str(self.taxable_trade_profit_loss),
+            'total_taxable_profit_loss': str(self.taxable_trade_profit_loss + sum_other_actions),
+            'total_profit_loss': str(self.general_trade_profit_loss + sum_other_actions),
         }

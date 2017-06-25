@@ -194,6 +194,11 @@ class RotkelchenServer(object):
             result = self.rotkelchen.poloniex.returnLendingHistory()
         return result
 
+    def test5(self):
+        with self.rotkelchen.lock:
+            result = self.rotkelchen.kraken.query_balances()
+        return result
+
     def echo(self, text):
         return text
 

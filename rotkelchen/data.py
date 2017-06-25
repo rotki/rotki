@@ -1,8 +1,7 @@
-import json
 import os
 import time
 
-from utils import createTimeStamp, ts_now
+from utils import createTimeStamp, ts_now, rlk_jsonloads, rlk_jsondumps
 
 from history import TradesHistorian, PriceHistorian
 from accounting import Accountant
@@ -27,7 +26,7 @@ class DataHandler(object):
         self.data_directory = data_directory
         try:
             with open(os.path.join(self.data_directory, 'personal.json')) as f:
-                self.personal = json.loads(f.read())
+                self.personal = rlk_jsonloads(f.read())
         except:  # No file found or contents are not json
             self.personal = empty_settings
 
@@ -56,7 +55,7 @@ class DataHandler(object):
         self.stats = list()
         if os.path.isfile(self.personal['statsfile_path']):
             with open(self.personal['statsfile_path'], 'r') as f:
-                self.stats = json.loads(f.read())
+                self.stats = rlk_jsonloads(f.read())
 
             # Change all timestamp entries from string to timestamp if needed
             if isinstance(self.stats[0]['date'], basestring):
@@ -68,19 +67,19 @@ class DataHandler(object):
                     new_stats.append(entry)
                 self.stats = new_stats
                 with open(self.personal['statsfile_path'], 'w') as f:
-                    f.write(json.dumps(self.stats))
+                    f.write(rlk_jsondumps(self.stats))
 
     def append_to_stats(self, entry):
         data = {'date': int(time.time()), 'data': entry}
         self.stats.append(data)
         with open(self.personal['statsfile_path'], 'w') as f:
-            f.write(json.dumps(self.stats))
+            f.write(rlk_jsondumps(self.stats))
 
     def set_main_currency(self, currency):
         self.accountant.set_main_currency(currency)
         with open(os.path.join(self.data_directory, 'personal.json'), 'w') as f:
             self.personal['main_currency'] = currency
-            f.write(json.dumps(self.personal))
+            f.write(rlk_jsondumps(self.personal))
 
     def process_history(self, start_ts, end_ts):
         history, margin_history, loan_history, asset_movements, eth_transactions = self.trades_historian.get_history(

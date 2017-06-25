@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-import json
 import os
+from utils import rlk_jsonloads, rlk_jsondumps
 
 
 def data_up_todate(json_data, start_ts, end_ts):
@@ -34,7 +34,7 @@ class Exchange(object):
         if os.path.isfile(trades_file):
             with open(trades_file, 'r') as f:
                 try:
-                    trades = json.loads(f.read())
+                    trades = rlk_jsonloads(f.read())
                 except:
                     pass
 
@@ -51,7 +51,7 @@ class Exchange(object):
             trades['start_time'] = start_ts
             trades['end_time'] = end_ts
             trades['data'] = data
-            f.write(json.dumps(trades))
+            f.write(rlk_jsondumps(trades))
 
     def orderBook(self, currency):
         raise NotImplementedError("Should only be implemented by subclasses")

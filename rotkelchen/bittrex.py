@@ -3,11 +3,11 @@ import hmac
 import urllib
 import urllib2
 import hashlib
-import json
 
-from utils import createTimeStamp, ts_now, get_pair_position
+from utils import createTimeStamp, get_pair_position, rlk_jsonloads
 from exchange import Exchange
 from order_formatting import Trade
+from fval import FVal
 
 
 BITTREX_MARKET_METHODS = {
@@ -38,11 +38,11 @@ def world_pair_to_bittrex(pair):
 def trade_from_bittrex(bittrex_trade):
     """Turn a bittrex trade returned from bittrex trade history to our common trade
     history format"""
-    amount = float(bittrex_trade['Quantity']) - float(bittrex_trade['QuantityRemaining'])
-    rate = float(bittrex_trade['PricePerUnit'])
+    amount = FVal(bittrex_trade['Quantity']) - FVal(bittrex_trade['QuantityRemaining'])
+    rate = FVal(bittrex_trade['PricePerUnit'])
     order_type = bittrex_trade['OrderType']
-    bittrex_price = float(bittrex_trade['Price'])
-    bittrex_commission = float(bittrex_trade['Commission'])
+    bittrex_price = FVal(bittrex_trade['Price'])
+    bittrex_commission = FVal(bittrex_trade['Commission'])
     pair = bittrex_pair_to_world(bittrex_trade['Exchange'])
     base_currency = get_pair_position(pair, 'first')
     if order_type == 'LIMIT_BUY':
@@ -101,12 +101,16 @@ class Bittrex(Exchange):
             request_url += 'apikey=' + self.api_key + "&nonce=" + nonce + '&'
 
         request_url += urllib.urlencode(options)
-        signature = hmac.new(self.secret.encode(), request_url.encode(), hashlib.sha512).hexdigest()
+        signature = hmac.new(
+            self.secret.encode(),
+            request_url.encode(),
+            hashlib.sha512
+        ).hexdigest()
         headers = {'apisign': signature}
         ret = urllib2.urlopen(
             urllib2.Request(request_url, headers=headers)
         )
-        json_ret = json.loads(ret.read())
+        json_ret = rlk_jsonloads(ret.read())
         if json_ret['success'] is not True:
             raise ValueError(json_ret['message'])
         return json_ret['result']
@@ -118,7 +122,7 @@ class Bittrex(Exchange):
         btc_pair = 'BTC-' + asset
         for market in self.markets:
             if market['MarketName'] == btc_pair:
-                btc_price = market['Last']
+                btc_price = FVal(market['Last'])
                 break
 
         if btc_price is None:
@@ -139,8 +143,8 @@ class Bittrex(Exchange):
             )
 
             balance = dict()
-            balance['amount'] = entry['Balance']
-            balance['usd_value'] = balance['amount'] * usd_price
+            balance['amount'] = FVal(entry['Balance'])
+            balance['usd_value'] = FVal(balance['amount']) * usd_price
             returned_balances[currency] = balance
 
         return returned_balances
@@ -164,7 +168,6 @@ class Bittrex(Exchange):
             options['count'] = count
         order_history = self.api_query('getorderhistory', options)
 
-        print("---> {}".format(order_history))
         returned_history = list()
         for order in order_history:
             order_timestamp = createTimeStamp(order['TimeStamp'], formatstr="%Y-%m-%dT%H:%M:%S.%f")
