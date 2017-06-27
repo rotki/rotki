@@ -90,9 +90,9 @@ class FVal(object):
     def to_percentage(self):
         return '{:.5%}'.format(self.num)
 
-    def to_exact_int(self):
-        """Tries to convert to int only if it is a whole decimal number;
-        i.e.: if it has got nothing after the decimal point"""
-        if self.num.to_integral_exact() != self.num:
+    def to_int(self, exact):
+        """Tries to convert to int, If `exact` is true then it will convert only if
+        it is a whole decimal number; i.e.: if it has got nothing after the decimal point"""
+        if exact and self.num.to_integral_exact() != self.num:
             raise ValueError('Tried to ask for exact int from {}'.format(self.num))
         return int(self.num)

@@ -39,8 +39,8 @@ def query_txlist(address, internal, from_block=None, to_block=None):
     resp = urllib2.urlopen(urllib2.Request(reqstring))
     resp = rlk_jsonloads(resp.read())
 
-    if 'status' not in resp or int(resp['status']) != 1:
-        status = int(resp['status'])
+    if 'status' not in resp or convert_to_int(resp['status']) != 1:
+        status = convert_to_int(resp['status'])
         if status == 0 and resp['message'] == 'No transactions found':
             return list()
 

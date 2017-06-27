@@ -69,7 +69,8 @@ def trade_from_kraken(kraken_trade):
     currency_pair = kraken_to_world_pair(kraken_trade['pair'])
     quote_currency = get_pair_position(currency_pair, 'second')
     return Trade(
-        timestamp=convert_to_int(kraken_trade['time']),
+        # Kraken timestamps have floating point ...
+        timestamp=convert_to_int(kraken_trade['time'], accept_only_exact=False),
         pair=currency_pair,
         type=kraken_trade['type'],
         rate=FVal(kraken_trade['price']),
@@ -204,6 +205,7 @@ def process_polo_loans(data, start_ts, end_ts):
             'currency': loan['currency'],
             'fee': FVal(loan['fee']),
             'earned': FVal(loan['earned']),
+            'amount_lent': FVal(loan['amount']),
         })
 
     new_data.sort(key=lambda loan: loan['open_time'])

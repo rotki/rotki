@@ -99,7 +99,8 @@ class Accountant(object):
             trade_rate,
             trade_fee,
             fee_currency,
-            timestamp):
+            timestamp,
+            is_virtual=False):
 
         paid_with_asset_rate = self.get_rate_in_profit_currency(paid_with_asset, timestamp)
         buy_rate = paid_with_asset_rate * trade_rate
@@ -146,8 +147,12 @@ class Accountant(object):
                 'type': 'buy',
                 'asset': bought_asset,
                 "price_in_{}".format(self.profit_currency): buy_rate,
+                "fee_in_{}".format(self.profit_currency): fee_cost,
                 "amount": bought_amount,
-                "time": timestamp
+                "exchanged_for": paid_with_asset,
+                "exchanged_asset_euro_exchange_rate": paid_with_asset_rate,
+                "time": tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'),
+                "is_virtual": is_virtual
             })
 
     def add_loan_gain_to_events(
@@ -155,8 +160,11 @@ class Accountant(object):
             gained_asset,
             gained_amount,
             fee_in_asset,
-            timestamp):
+            lent_amount,
+            open_time,
+            close_time):
 
+        timestamp = close_time
         rate = self.get_rate_in_profit_currency(gained_asset, timestamp)
 
         if gained_asset not in self.events:
@@ -180,9 +188,11 @@ class Accountant(object):
 
             if self.create_csv:
                 self.loan_profits_csv.append({
-                    'time': timestamp,
+                    'open_time': tsToDate(open_time, formatstr='%d/%m/%Y, %H:%M:%S'),
+                    'close_time': tsToDate(close_time, formatstr='%d/%m/%Y, %H:%M:%S'),
                     'gained_asset': gained_asset,
                     'gained_amount': gained_amount,
+                    'lent_amount': lent_amount,
                     'profit_in_{}'.format(self.profit_currency): gain_in_profit_currency
                 })
 
@@ -220,7 +230,7 @@ class Accountant(object):
         if self.create_csv:
             self.margin_positions_csv.append({
                 'name': margin_notes,
-                'time': timestamp,
+                'time': tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'),
                 'gained_asset': gained_asset,
                 'gained_amount': net_gain_amount,
                 'profit_in_{}'.format(self.profit_currency): gain_in_profit_currency
@@ -234,7 +244,7 @@ class Accountant(object):
 
         if self.create_csv:
             self.asset_movements_csv.append({
-                'time': timestamp,
+                'time': tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'),
                 'exchange': exchange,
                 'type': category,
                 'moving_asset': asset,
@@ -259,7 +269,7 @@ class Accountant(object):
 
         if self.create_csv:
             self.tx_gas_costs_csv.append({
-                'time': transaction.timestamp,
+                'time': tsToDate(transaction.timestamp, formatstr='%d/%m/%Y, %H:%M:%S'),
                 'transaction_hash': transaction.hash,
                 'eth_burned_as_gas': eth_burned_as_gas,
                 'cost_in_{}'.format(self.profit_currency): eth_burned_as_gas * rate,
@@ -284,7 +294,8 @@ class Accountant(object):
             trade_rate=trade_rate,
             trade_fee=trade_fee,
             fee_currency=fee_currency,
-            timestamp=timestamp
+            timestamp=timestamp,
+            is_virtual=False,
         )
 
         if paid_with_asset not in FIAT_CURRENCIES:
@@ -333,6 +344,7 @@ class Accountant(object):
                 gain_in_profit_currency=gain_in_profit_currency,
                 total_fee_in_profit_currency=0,  # fee is done on the buy if at all
                 timestamp=timestamp,
+                is_virtual=True,
             )
 
     def search_buys_calculate_profit(self, selling_amount, selling_asset, timestamp):
@@ -421,7 +433,8 @@ class Accountant(object):
             trade_rate,
             rate_in_profit_currency,
             timestamp,
-            loan_settlement=False):
+            loan_settlement=False,
+            is_virtual=False):
 
         if selling_asset not in self.events:
             self.events[selling_asset] = Events(list(), list())
@@ -506,13 +519,29 @@ class Accountant(object):
             self.taxable_trade_profit_loss += taxable_profit_loss
 
             if self.create_csv:
-                self.trades_csv.append({
-                    'type': 'sell' if not loan_settlement else 'loan_settlement',
-                    'asset': selling_asset,
-                    "price_in_{}".format(self.profit_currency): rate_in_profit_currency,
-                    "amount": selling_amount,
-                    "time": timestamp
-                })
+                if loan_settlement:
+                    self.loan_settlements_csv.append({
+                        'asset': selling_asset,
+                        "amount": selling_amount,
+                        "price_in_{}".format(self.profit_currency): rate_in_profit_currency,
+                        "fee_in_{}".format(self.profit_currency): total_fee_in_profit_currency,
+                        "time": tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'),
+                    })
+                else:
+                    self.trades_csv.append({
+                        'type': 'sell',
+                        'asset': selling_asset,
+                        "price_in_{}".format(self.profit_currency): rate_in_profit_currency,
+                        "fee_in_{}".format(self.profit_currency): total_fee_in_profit_currency,
+                        "amount": selling_amount,
+                        "exchanged_for": receiving_asset,
+                        "exchanged_asset_euro_exchange_rate": self.get_rate_in_profit_currency(
+                            receiving_asset,
+                            timestamp
+                        ),
+                        "time": tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'),
+                        "is_virtual": is_virtual,
+                    })
 
     def add_sell_to_events_and_corresponding_buy(
             self,
@@ -536,7 +565,8 @@ class Accountant(object):
             total_fee_in_profit_currency,
             trade_rate,
             rate_in_profit_currency,
-            timestamp
+            timestamp,
+            is_virtual=False,
         )
 
         if receiving_asset not in FIAT_CURRENCIES:
@@ -550,7 +580,8 @@ class Accountant(object):
                 # trade_rate=trade_rate,
                 trade_fee=0,  # fee should have already been acccounted on the sell side
                 fee_currency=receiving_amount,  # does not matter
-                timestamp=timestamp
+                timestamp=timestamp,
+                is_virtual=True,
             )
 
     def save_events(self):
@@ -604,7 +635,7 @@ class Accountant(object):
                 total_fee_in_profit_currency=total_sell_fee_cost,
                 trade_rate=trade.rate,
                 rate_in_profit_currency=selling_rate,
-                timestamp=trade.timestamp
+                timestamp=trade.timestamp,
             )
         else:
             self.add_sell_to_events(
@@ -618,6 +649,7 @@ class Accountant(object):
                 rate_in_profit_currency=selling_rate,
                 timestamp=trade.timestamp,
                 loan_settlement=True,
+                is_virtual=False
             )
 
     def process_history(self,
@@ -649,6 +681,7 @@ class Accountant(object):
         self.asset_movements_csv = list()
         self.tx_gas_costs_csv = list()
         self.margin_positions_csv = list()
+        self.loan_settlements_csv = list()
 
         actions = list(trade_history)
 
@@ -687,9 +720,11 @@ class Accountant(object):
             if action_type == 'loan':
                 self.add_loan_gain_to_events(
                     gained_asset=action['currency'],
+                    lent_amount=action['amount_lent'],
                     gained_amount=action['earned'],
                     fee_in_asset=action['fee'],
-                    timestamp=timestamp,
+                    open_time=action['open_time'],
+                    close_time=timestamp,
                 )
                 continue
             elif action_type == 'asset_movement':
@@ -781,7 +816,8 @@ class Accountant(object):
                 loan_profits=self.loan_profits_csv,
                 asset_movements=self.asset_movements_csv,
                 tx_gas_costs=self.tx_gas_costs_csv,
-                margin_positions=self.margin_positions_csv
+                margin_positions=self.margin_positions_csv,
+                loan_settlements=self.loan_settlements_csv,
             )
 
         # TODO: When everything is decimal, get rid of the conversions here

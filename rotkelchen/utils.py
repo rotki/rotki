@@ -275,7 +275,8 @@ def output_to_csv(
         loan_profits,
         asset_movements,
         tx_gas_costs,
-        margin_positions):
+        margin_positions,
+        loan_settlements):
 
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -285,13 +286,14 @@ def output_to_csv(
     dict_to_csv_file(os.path.join(out_dir, 'asset_movements.csv'), asset_movements)
     dict_to_csv_file(os.path.join(out_dir, 'tx_gas_costs.csv'), tx_gas_costs)
     dict_to_csv_file(os.path.join(out_dir, 'margin_positions.csv'), margin_positions)
+    dict_to_csv_file(os.path.join(out_dir, 'loan_settlements.csv'), loan_settlements)
 
 
-def convert_to_int(val):
+def convert_to_int(val, accept_only_exact=True):
     """Try to convert to an int. Either from an FVal or a string. If it's a float
     and it's not whole (like 42.0) then raise"""
     if isinstance(val, FVal):
-        return val.to_exact_int()
+        return val.to_int(accept_only_exact)
     elif isinstance(val, (str, unicode)):
         return int(val)
     elif isinstance(val, int):

@@ -350,7 +350,8 @@ class Kraken(Exchange):
             movements.append(AssetMovement(
                 exchange='kraken',
                 category=movement['type'],
-                timestamp=convert_to_int(movement['time']),
+                # Kraken timestamps have floating point
+                timestamp=convert_to_int(movement['time'], accept_only_exact=False),
                 asset=KRAKEN_TO_WORLD[movement['asset']],
                 amount=FVal(movement['amount']),
                 fee=FVal(movement['fee'])
