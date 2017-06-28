@@ -45,6 +45,21 @@ def action_get_type(action):
         if 'btc_profit_loss' in action:
             return 'margin_position'
         return 'loan'
+
+
+def action_get_assets(action):
+    if isinstance(action, Trade):
+        return trade_get_assets(action)
+    elif isinstance(action, AssetMovement):
+        return action.asset, None
+    elif isinstance(action, EthereumTransaction):
+        return 'ETH', None
+    elif isinstance(action, dict):
+        if 'btc_profit_loss' in action:
+            return 'BTC', None
+
+        # else a loan
+        return action['currency'], None
     else:
         raise ValueError('Unexpected action type found.')
 
@@ -116,7 +131,8 @@ class Accountant(object):
             self.events[bought_asset] = Events(list(), list())
 
         fee_cost = fee_price_in_profit_currency * trade_fee
-        cost = bought_amount.fma(buy_rate, fee_cost)
+        gross_cost = bought_amount * buy_rate
+        cost = gross_cost + fee_cost
         self.events[bought_asset].buys.append(
             BuyEvent(
                 amount=bought_amount,
@@ -139,7 +155,7 @@ class Accountant(object):
                 buy_rate,
                 self.profit_currency,
                 bought_asset,
-                tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
+                tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
             ))
 
         if self.create_csv:
@@ -149,9 +165,11 @@ class Accountant(object):
                 "price_in_{}".format(self.profit_currency): buy_rate,
                 "fee_in_{}".format(self.profit_currency): fee_cost,
                 "amount": bought_amount,
+                "gross_gained_or_invested_{}".format(self.profit_currency): gross_cost,
+                "net_gained_or_invested_{}".format(self.profit_currency): cost,
                 "exchanged_for": paid_with_asset,
                 "exchanged_asset_euro_exchange_rate": paid_with_asset_rate,
-                "time": tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'),
+                "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
                 "is_virtual": is_virtual
             })
 
@@ -188,8 +206,8 @@ class Accountant(object):
 
             if self.create_csv:
                 self.loan_profits_csv.append({
-                    'open_time': tsToDate(open_time, formatstr='%d/%m/%Y, %H:%M:%S'),
-                    'close_time': tsToDate(close_time, formatstr='%d/%m/%Y, %H:%M:%S'),
+                    'open_time': tsToDate(open_time, formatstr='%d/%m/%Y %H:%M:%S'),
+                    'close_time': tsToDate(close_time, formatstr='%d/%m/%Y %H:%M:%S'),
                     'gained_asset': gained_asset,
                     'gained_amount': gained_amount,
                     'lent_amount': lent_amount,
@@ -230,7 +248,7 @@ class Accountant(object):
         if self.create_csv:
             self.margin_positions_csv.append({
                 'name': margin_notes,
-                'time': tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'),
+                'time': tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
                 'gained_asset': gained_asset,
                 'gained_amount': net_gain_amount,
                 'profit_in_{}'.format(self.profit_currency): gain_in_profit_currency
@@ -244,7 +262,7 @@ class Accountant(object):
 
         if self.create_csv:
             self.asset_movements_csv.append({
-                'time': tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'),
+                'time': tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
                 'exchange': exchange,
                 'type': category,
                 'moving_asset': asset,
@@ -269,7 +287,7 @@ class Accountant(object):
 
         if self.create_csv:
             self.tx_gas_costs_csv.append({
-                'time': tsToDate(transaction.timestamp, formatstr='%d/%m/%Y, %H:%M:%S'),
+                'time': tsToDate(transaction.timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
                 'transaction_hash': transaction.hash,
                 'eth_burned_as_gas': eth_burned_as_gas,
                 'cost_in_{}'.format(self.profit_currency): eth_burned_as_gas * rate,
@@ -380,7 +398,7 @@ class Accountant(object):
                         buy_event.rate,
                         self.profit_currency,
                         selling_asset,
-                        tsToDate(buy_event.timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
+                        tsToDate(buy_event.timestamp, formatstr='%d/%m/%Y %H:%M:%S')
                     ))
                 # stop iterating since we found all buys to satisfy this sell
                 break
@@ -401,12 +419,12 @@ class Accountant(object):
                         buy_event.rate,
                         self.profit_currency,
                         selling_asset,
-                        tsToDate(buy_event.timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
+                        tsToDate(buy_event.timestamp, formatstr='%d/%m/%Y %H:%M:%S')
                     ))
 
         if stop_index == -1:
             self.log.logalert('No documented buy found for "{}" before {}'.format(
-                selling_asset, tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
+                selling_asset, tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
             ))
             # That means we had no documented buy for that asset. This is not good
             # because we can't prove a corresponding buy and as such we are burdened
@@ -455,7 +473,7 @@ class Accountant(object):
                 selling_asset,
                 gain_in_profit_currency,
                 self.profit_currency,
-                tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
+                tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
             ))
         else:
             self.log.logdebug(
@@ -473,7 +491,7 @@ class Accountant(object):
                     selling_asset,
                     gain_in_profit_currency,
                     self.profit_currency,
-                    tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
+                    tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
                 ))
 
         # now search the buys for `paid_with_asset` and  calculate profit/loss
@@ -525,7 +543,7 @@ class Accountant(object):
                         "amount": selling_amount,
                         "price_in_{}".format(self.profit_currency): rate_in_profit_currency,
                         "fee_in_{}".format(self.profit_currency): total_fee_in_profit_currency,
-                        "time": tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'),
+                        "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
                     })
                 else:
                     self.trades_csv.append({
@@ -533,13 +551,15 @@ class Accountant(object):
                         'asset': selling_asset,
                         "price_in_{}".format(self.profit_currency): rate_in_profit_currency,
                         "fee_in_{}".format(self.profit_currency): total_fee_in_profit_currency,
+                        "gross_gained_or_invested_{}".format(self.profit_currency): gain_in_profit_currency + total_fee_in_profit_currency,
+                        "net_gained_or_invested_{}".format(self.profit_currency): gain_in_profit_currency,
                         "amount": selling_amount,
                         "exchanged_for": receiving_asset,
                         "exchanged_asset_euro_exchange_rate": self.get_rate_in_profit_currency(
                             receiving_asset,
                             timestamp
                         ),
-                        "time": tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'),
+                        "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
                         "is_virtual": is_virtual,
                     })
 
@@ -717,6 +737,11 @@ class Accountant(object):
 
             action_type = action_get_type(action)
 
+            asset1, asset2 = action_get_assets(action)
+            if asset1 in self.ignored_assets or asset2 in self.ignored_assets:
+                self.log.logdebug("Ignoring {} with {} {}".format(action_type, asset1, asset2))
+                continue
+
             if action_type == 'loan':
                 self.add_loan_gain_to_events(
                     gained_asset=action['currency'],
@@ -752,11 +777,6 @@ class Accountant(object):
 
             # if we get here it's a trade
             trade = action
-
-            asset1, asset2 = trade_get_assets(trade)
-            if asset1 in self.ignored_assets or asset2 in self.ignored_assets:
-                self.log.logdebug("Ignoring trade with {} {}".format(asset1, asset2))
-                continue
 
             # When you buy, you buy with the cost_currency and receive the other one
             # When you sell, you sell the amount in non-cost_currency and receive
