@@ -276,7 +276,8 @@ def output_to_csv(
         asset_movements,
         tx_gas_costs,
         margin_positions,
-        loan_settlements):
+        loan_settlements,
+        all_events):
 
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -287,6 +288,7 @@ def output_to_csv(
     dict_to_csv_file(os.path.join(out_dir, 'tx_gas_costs.csv'), tx_gas_costs)
     dict_to_csv_file(os.path.join(out_dir, 'margin_positions.csv'), margin_positions)
     dict_to_csv_file(os.path.join(out_dir, 'loan_settlements.csv'), loan_settlements)
+    dict_to_csv_file(os.path.join(out_dir, 'all_events.csv'), all_events)
 
 
 def convert_to_int(val, accept_only_exact=True):

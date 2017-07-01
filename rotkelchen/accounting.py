@@ -702,6 +702,7 @@ class Accountant(object):
         self.tx_gas_costs_csv = list()
         self.margin_positions_csv = list()
         self.loan_settlements_csv = list()
+        self.all_events_csv = list()
 
         actions = list(trade_history)
 
@@ -838,6 +839,7 @@ class Accountant(object):
                 tx_gas_costs=self.tx_gas_costs_csv,
                 margin_positions=self.margin_positions_csv,
                 loan_settlements=self.loan_settlements_csv,
+                all_events=self.all_events_csv,
             )
 
         # TODO: When everything is decimal, get rid of the conversions here

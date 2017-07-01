@@ -167,8 +167,11 @@ class Rotkelchen(object):
             if resp['status'] != '1':
                 raise ValueError('Failed to query etherscan for token balance')
             amount = FVal(resp['result']) / data['digits_divisor']
+            token_usd_price = data.get('usd_price', 0)
+            if token_usd_price == 0:
+                print("-------> Etherscan has no USD price for token: {}".format(token_name))
             blockchain_balances[token_name] = {
-                'amount': amount, 'usd_value': amount * data['usd_price']
+                'amount': amount, 'usd_value': amount * token_usd_price
             }
 
         return blockchain_balances
