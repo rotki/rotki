@@ -245,9 +245,11 @@ class PriceHistorian(object):
             with open(coinlist_cache_path, 'rb') as f:
                 data = rlk_jsonloads(f.read())
                 now = ts_now()
+                invalidate_cache = False
+
                 # If we got a cache and its' over a month old then requery cryptocompare
                 if data['time'] < now and now - data['time'] > 2629800:
-                    invalidate_cache = False
+                    invalidate_cache = True
                 data = data['data']
 
         if invalidate_cache:
