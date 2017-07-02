@@ -19,6 +19,7 @@ from utils import (
     rlk_jsonloads,
     rlk_jsondumps,
     convert_to_int,
+    ts_now,
 )
 from order_formatting import (
     Trade,
@@ -233,20 +234,39 @@ class PriceHistorian(object):
             match = regex.match(file_)
             assert match
             cache_key = match.group(1)
-            with open(file_, 'r') as f:
+            with open(file_, 'rb') as f:
                 data = rlk_jsonloads(f.read())
                 self.price_history[cache_key] = data
 
-        # Get coin list of crypto compare. TODO: Cache this?
-        query_string = 'https://www.cryptocompare.com/api/data/coinlist/'
-        resp = urllib2.urlopen(urllib2.Request(query_string))
-        resp = rlk_jsonloads(resp.read())
-        if 'Response' not in resp or resp['Response'] != 'Success':
-            error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
-            if 'Message' in resp:
-                error_message += ". Error: {}".format(resp['Message'])
-            raise ValueError(error_message)
-        self.cryptocompare_coin_list = resp['Data']
+        # Get coin list of crypto compare
+        invalidate_cache = True
+        coinlist_cache_path = os.path.join(self.data_directory, 'cryptocompare_coinlist.json')
+        if os.path.isfile(coinlist_cache_path):
+            with open(coinlist_cache_path, 'rb') as f:
+                data = rlk_jsonloads(f.read())
+                now = ts_now()
+                # If we got a cache and its' over a month old then requery cryptocompare
+                if data['time'] < now and now - data['time'] > 2629800:
+                    invalidate_cache = False
+                data = data['data']
+
+        if invalidate_cache:
+            query_string = 'https://www.cryptocompare.com/api/data/coinlist/'
+            resp = urllib2.urlopen(urllib2.Request(query_string))
+            resp = rlk_jsonloads(resp.read())
+            if 'Response' not in resp or resp['Response'] != 'Success':
+                error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
+                if 'Message' in resp:
+                    error_message += ". Error: {}".format(resp['Message'])
+                raise ValueError(error_message)
+            data = resp['Data']
+
+            # Also save the cache
+            with open(coinlist_cache_path, 'wb') as f:
+                write_data = {'time': ts_now(), 'data': data}
+                f.write(rlk_jsondumps(write_data))
+
+        self.cryptocompare_coin_list = data
         # For some reason even though price for the following assets is returned
         # it's not in the coinlist so let's add them here.
         self.cryptocompare_coin_list['DAO'] = object()

@@ -1,16 +1,25 @@
 from rotkelchen.accounting import Accountant
 from rotkelchen.history import PriceHistorian, trades_from_dictlist
-from rotkelchen.utils import Logger, isclose
+from rotkelchen.utils import Logger
 
 
 def init_accounting_tests(history_list, margin_list, start_ts, end_ts):
     logger = Logger(None, False)
     price_historian = PriceHistorian('/home/lefteris/.rotkelchen', {}, logger)
-    accountant = Accountant(logger, price_historian, 'EUR')
+    accountant = Accountant(
+        logger=logger,
+        price_historian=price_historian,
+        profit_currency='EUR',
+        create_csv=False
+    )
     accountant.process_history(
-        trades_from_dictlist(history_list, start_ts, end_ts),
-        trades_from_dictlist(margin_list, start_ts, end_ts),
-        []
+        start_ts=start_ts,
+        end_ts=end_ts,
+        trade_history=trades_from_dictlist(history_list, start_ts, end_ts),
+        margin_history=trades_from_dictlist(margin_list, start_ts, end_ts),
+        loan_history=list(),
+        asset_movements=list(),
+        eth_transactions=list()
     )
     return accountant
 
@@ -24,7 +33,7 @@ history1 = [
         "cost": 22031.6220644,
         "cost_currency": "EUR",
         "fee": 0,
-        "fee_currency": "ETH",
+        "fee_currency": "BTC",
         "amount": 82,
         "location": "external",
     }, {
@@ -39,8 +48,8 @@ history1 = [
         "amount": 40056,
         "location": "external",
     }, {
-        "timestamp": 1473505138,
-        "pair": "BTC_ETH",
+        "timestamp": 1473505138,  # cryptocompare hourly BTC/EUR price: 556.435
+        "pair": "BTC_ETH",  # cryptocompare hourly ETH/EUR price: 10.365
         "type": "buy",
         "rate": 0.01858275,
         "cost": 0.9291375,
@@ -50,8 +59,8 @@ history1 = [
         "amount": 50.0,
         "location": "poloniex"
     }, {
-        "timestamp": 1475042230,
-        "pair": "BTC_ETH",
+        "timestamp": 1475042230,  # cryptocompare hourly BTC/EUR price: 537.805
+        "pair": "BTC_ETH",  # # cryptocompare hourly ETH/EUR price: 11.925
         "type": "sell",
         "rate": 0.02209898,
         "cost": 0.5524745,
@@ -66,8 +75,8 @@ history1 = [
 
 def test_simple_history1():
     accountant = init_accounting_tests(history1, [], 1436979735, 1495751688)
-    assert isclose(accountant.general_profit_loss, 562.76426759)
-    assert isclose(accountant.taxable_profit_loss, 562.76426759)
+    assert accountant.general_trade_profit_loss.is_close("559.95935843")
+    assert accountant.taxable_trade_profit_loss.is_close("559.95935843")
 
 
 history2 = [
@@ -111,5 +120,5 @@ history2 = [
 def test_history_with_loan_settlements():
     accountant = init_accounting_tests(history2, [], 1436979735, 1495751688)
 
-    assert isclose(accountant.general_profit_loss, -6.7169579465)
-    assert isclose(accountant.taxable_profit_loss, -6.7169579465)
+    assert accountant.general_trade_profit_loss.is_close("-6.7169579465")
+    assert accountant.taxable_trade_profit_loss.is_close("-6.7169579465")

@@ -48,7 +48,8 @@ class DataHandler(object):
         self.accountant = Accountant(
             logger=logger,
             price_historian=self.price_historian,
-            profit_currency=self.personal.get('main_currency', 'EUR')
+            profit_currency=self.personal.get('main_currency', 'EUR'),
+            create_csv=True
         )
 
         # open the statsfile if existing

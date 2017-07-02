@@ -71,6 +71,7 @@ class Accountant(object):
             logger,
             price_historian,
             profit_currency,
+            create_csv,
             ignored_assets=['DAO']):
 
         self.log = logger
@@ -81,7 +82,7 @@ class Accountant(object):
         # loan/margin settlement then profit/loss is also calculated before the entire
         # amount is taken as a loss
         self.count_profit_for_settlements = False
-        self.create_csv = True
+        self.create_csv = create_csv
 
     def set_main_currency(self, currency):
         if currency not in FIAT_CURRENCIES:
@@ -334,6 +335,7 @@ class Accountant(object):
                 gain_in_profit_currency = with_bought_asset_gain
 
             sold_amount = trade_rate * bought_amount
+
             sold_asset_rate_in_profit_currency = self.get_rate_in_profit_currency(
                 paid_with_asset,
                 timestamp
@@ -349,18 +351,19 @@ class Accountant(object):
                 rate_in_profit_currency = sold_asset_rate_in_profit_currency
                 gain_in_profit_currency = with_sold_asset_gain
 
-            # TODO: Here also check if the fee_currency is same as paid with asset
-            #       and then add it to the sold_amount
+            # add the fee
+            fee_rate = self.get_rate_in_profit_currency(fee_currency, timestamp)
+            fee_in_profit_currency = fee_rate * trade_fee
+
             self.add_sell_to_events(
                 selling_asset=paid_with_asset,
                 selling_amount=sold_amount,
                 receiving_asset=receiving_asset,
                 receiving_amount=receiving_amount,
-                # trade_rate=1 / trade_rate,
                 trade_rate=trade_rate,
                 rate_in_profit_currency=rate_in_profit_currency,
                 gain_in_profit_currency=gain_in_profit_currency,
-                total_fee_in_profit_currency=0,  # fee is done on the buy if at all
+                total_fee_in_profit_currency=fee_in_profit_currency,
                 timestamp=timestamp,
                 is_virtual=True,
             )
@@ -478,7 +481,7 @@ class Accountant(object):
         else:
             self.log.logdebug(
                 'Selling {} of "{}" for {} "{}" ({} "{}" per "{}" or {} "{}" '
-                'per "{}") for total gain of {} "{}" at {}'.format(
+                'per "{}") for a gain of {} "{}" and a fee of {} "{} at {}'.format(
                     selling_amount,
                     selling_asset,
                     receiving_amount,
@@ -490,6 +493,8 @@ class Accountant(object):
                     self.profit_currency,
                     selling_asset,
                     gain_in_profit_currency,
+                    self.profit_currency,
+                    total_fee_in_profit_currency,
                     self.profit_currency,
                     tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
                 ))
@@ -510,7 +515,8 @@ class Accountant(object):
 
             general_profit_loss = gain_in_profit_currency - (
                 taxfree_bought_cost +
-                taxable_bought_cost
+                taxable_bought_cost +
+                total_fee_in_profit_currency
             )
             taxable_profit_loss = taxable_gain - taxable_bought_cost
 
@@ -574,6 +580,24 @@ class Accountant(object):
             trade_rate,
             rate_in_profit_currency,
             timestamp):
+        """
+        Add and process a selling event to the events list
+
+        Args:
+            selling_asset (str): The ticker representation of the asset we sell.
+            selling_amount (FVal): The amount of `selling_asset` for sale.
+            receiving_asset (str): The ticker representation of the asset we receive
+                                   in exchange for `selling_asset`.
+            receiving_amount (FVal): The amount of `receiving_asset` we receive.
+            gain_in_profit_currency (FVal): This is the amount of `profit_currency` equivalent
+                                            we receive after doing this trade. Fees are not counted
+                                            in this.
+            total_fee_in_profit_currency (FVal): This is the amount of `profit_currency` equivalent
+                                                 we pay in fees after doing this trade.
+            trade_rate (FVal): How much does 1 unit of `receiving_asset` cost in `selling_asset`
+            rate_in_profit_currency (FVal): The equivalent of `trade_rate` in `profit_currency`
+            timestamp (int): The timestamp for the trade
+        """
 
         self.log.logdebug('\nSELL EVENT:')
         self.add_sell_to_events(
@@ -591,14 +615,14 @@ class Accountant(object):
 
         if receiving_asset not in FIAT_CURRENCIES:
             # then you are also buying some other asset through your sell
+
+            # TODO: Account for trade fees in the virtual buy too
             self.add_buy_to_events(
                 bought_asset=receiving_asset,
                 bought_amount=receiving_amount,
                 paid_with_asset=selling_asset,
-                # For polo corresponding buy to a sell you must not invert this
                 trade_rate=1 / trade_rate,
-                # trade_rate=trade_rate,
-                trade_fee=0,  # fee should have already been acccounted on the sell side
+                trade_fee=0,
                 fee_currency=receiving_amount,  # does not matter
                 timestamp=timestamp,
                 is_virtual=True,
@@ -643,7 +667,7 @@ class Accountant(object):
             trade.timestamp
         )
         total_sell_fee_cost = fee_rate * trade.fee
-        gain_in_profit_currency = selling_rate * trade.amount - total_sell_fee_cost
+        gain_in_profit_currency = selling_rate * trade.amount
 
         if not loan_settlement:
             self.add_sell_to_events_and_corresponding_buy(
@@ -812,7 +836,7 @@ class Accountant(object):
                     trade.timestamp
                 )
                 total_sell_fee_cost = fee_rate * trade.fee
-                gain_in_profit_currency = selling_rate * trade.amount - total_sell_fee_cost
+                gain_in_profit_currency = selling_rate * trade.amount
                 self.add_sell_to_events(
                     selling_asset=selling_asset,
                     selling_amount=trade.cost,

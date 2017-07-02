@@ -38,6 +38,9 @@ class FVal(object):
     def __str__(self):
         return str(self.num)
 
+    def __repr__(self):
+        return 'FVal({})'.format(str(self.num))
+
     def __cmp__(self, other):
         other = evaluate_input(other)
         return self.num.compare_signal(other)
@@ -96,3 +99,12 @@ class FVal(object):
         if exact and self.num.to_integral_exact() != self.num:
             raise ValueError('Tried to ask for exact int from {}'.format(self.num))
         return int(self.num)
+
+    def is_close(self, other, max_diff="1e-9"):
+        max_diff = FVal(max_diff)
+
+        if not isinstance(other, FVal):
+            other = FVal(other)
+
+        diff_num = abs(self.num - other.num)
+        return diff_num <= max_diff.num
