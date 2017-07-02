@@ -108,6 +108,14 @@ class RotkelchenServer(object):
 
         return exchange.query_trade_history(start_ts, end_ts)
 
+    def query_asset_price(self, from_asset, to_asset, timestamp):
+        with self.rotkelchen.lock:
+            price = self.rotkelchen.data.price_historian.query_historical_price(
+                from_asset, to_asset, int(timestamp)
+            )
+
+        return str(price)
+
     def process_trade_history(self, start_ts, end_ts):
         start_ts = int(start_ts)
         end_ts = int(end_ts)

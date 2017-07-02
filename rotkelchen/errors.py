@@ -15,3 +15,11 @@ class KrakenAPIRateLimitExceeded(Exception):
 
     def __str__(self):
         return self.err
+
+
+class CorruptData(Exception):
+    def __init__(self, err):
+        self.err = err
+
+    def __str__(self):
+        return self.err

@@ -1,6 +1,9 @@
+import pytest
+
 from rotkelchen.accounting import Accountant
 from rotkelchen.history import PriceHistorian, trades_from_dictlist
 from rotkelchen.utils import Logger
+from rotkelchen.errors import CorruptData
 
 
 def init_accounting_tests(history_list, margin_list, start_ts, end_ts):
@@ -40,12 +43,12 @@ history1 = [
         "timestamp": 1446979735,
         "pair": "ETH_EUR",
         "type": "buy",
-        "rate": 0.13433915893,
-        "cost": 5381.0893501,
+        "rate": 0.2315893,
+        "cost": 335.804485,
         "cost_currency": "EUR",
         "fee": 0,
         "fee_currency": "ETH",
-        "amount": 40056,
+        "amount": 1450,
         "location": "external",
     }, {
         "timestamp": 1473505138,  # cryptocompare hourly BTC/EUR price: 556.435
@@ -75,8 +78,58 @@ history1 = [
 
 def test_simple_history1():
     accountant = init_accounting_tests(history1, [], 1436979735, 1495751688)
-    assert accountant.general_trade_profit_loss.is_close("559.95935843")
-    assert accountant.taxable_trade_profit_loss.is_close("559.95935843")
+    assert accountant.general_trade_profit_loss.is_close("557.528104903")
+    assert accountant.taxable_trade_profit_loss.is_close("557.528104903")
+
+
+bad_history1 = [
+    {
+        "timestamp": 1446979735,
+        "pair": "BTC_EUR",
+        "type": "buy",
+        "rate": 268.678317859,
+        "cost": 1131.6220644,
+        "cost_currency": "EUR",
+        "fee": 0,
+        "fee_currency": "BTC",
+        "amount": 82,
+        "location": "external",
+    }
+]
+
+bad_history2 = [
+    {
+        "timestamp": 1446979735,
+        "pair": "BTC_EUR",
+        "type": "buy",
+        "rate": 268.678317859,
+        "cost": 22031.6220644,
+        "cost_currency": "EUR",
+        "fee": 0,
+        "fee_currency": "BTC",
+        "amount": 82,
+        "location": "external",
+    }, {
+        "timestamp": 1475042230,
+        "pair": "BTC_ETH",
+        "type": "sell",
+        "rate": 0.02209898,
+        "cost": 0.1524745,
+        "cost_currency": "BTC",
+        "fee": 0.00082871175,
+        "fee_currency": "BTC",
+        "amount": 25.0,
+        "location": "poloniex"
+    },
+]
+
+
+def test_mimatch_in_amount_rate_and_cost():
+    with pytest.raises(CorruptData):
+        init_accounting_tests(bad_history1, [], 1436979735, 1495751688)
+
+    with pytest.raises(CorruptData):
+        init_accounting_tests(bad_history2, [], 1436979735, 1495751688)
 
 
 history2 = [

@@ -15,6 +15,7 @@ from history import (
     FIAT_CURRENCIES
 )
 from fval import FVal
+from errors import CorruptData
 
 YEAR_IN_SECONDS = 31536000  # 60 * 60 * 24 * 365
 
@@ -802,6 +803,13 @@ class Accountant(object):
 
             # if we get here it's a trade
             trade = action
+
+            # if the cost is not equal to rate * amount then the data is somehow corrupt
+            if not trade.cost.is_close(trade.amount * trade.rate, max_diff="1e-7"):
+                raise CorruptData(
+                    "Trade found with cost {} which is not equal to trade.amount"
+                    "({}) * trade.rate({})".format(trade.cost, trade.amount, trade.rate)
+                )
 
             # When you buy, you buy with the cost_currency and receive the other one
             # When you sell, you sell the amount in non-cost_currency and receive
