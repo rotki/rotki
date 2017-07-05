@@ -6,6 +6,7 @@ from rotkelchen.utils import rlk_jsonloads, rlk_jsondumps
 def test_simple_arithmetic():
     a = FVal(5.21)
     b = FVal(2.12)
+    c = FVal(-23.124)
 
     assert a + b == FVal('7.33')
     assert a - b == FVal('3.09')
@@ -13,6 +14,9 @@ def test_simple_arithmetic():
     assert a / b == FVal('2.457547169811320754716981132')
     assert a ** 3 == FVal('141.420761')
     assert a.fma(b, FVal(3.14)) == FVal('14.1852')
+    assert -a == FVal('-5.21')
+    assert abs(a) == FVal('5.21')
+    assert abs(c) == FVal('23.124')
 
     a += b
     assert a == FVal('7.33')

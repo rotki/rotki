@@ -81,6 +81,16 @@ class FVal(object):
         other = evaluate_input(other)
         return FVal(self.num.__rdiv__(other))
 
+    # --- Unary operands
+
+    def __neg__(self):
+        return FVal(self.num.__neg__())
+
+    def __abs__(self):
+        return FVal(self.num.copy_abs())
+
+    # --- Other oparations
+
     def fma(self, other, third):
         """
         Fused multiply-add. Return self*other+third with no rounding of the
