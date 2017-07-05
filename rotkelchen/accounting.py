@@ -135,6 +135,7 @@ class Accountant(object):
         fee_cost = fee_price_in_profit_currency * trade_fee
         gross_cost = bought_amount * buy_rate
         cost = gross_cost + fee_cost
+
         self.events[bought_asset].buys.append(
             BuyEvent(
                 amount=bought_amount,
@@ -383,7 +384,7 @@ class Accountant(object):
                 stop_index = idx
                 buying_cost = remaining_sold_amount.fma(
                     buy_event.rate,
-                    buy_event.fee_rate * remaining_sold_amount
+                    - (buy_event.fee_rate * remaining_sold_amount)
                 )
                 if sell_after_year:
                     taxfree_amount += remaining_sold_amount
@@ -874,7 +875,6 @@ class Accountant(object):
                 all_events=self.all_events_csv,
             )
 
-        # TODO: When everything is decimal, get rid of the conversions here
         sum_other_actions = (
             self.margin_positions_profit +
             self.loan_profit -

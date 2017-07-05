@@ -357,6 +357,17 @@ class PriceHistorian(object):
         return calculated_history
 
     def query_historical_price(self, from_asset, to_asset, timestamp):
+        """
+        Query the historical price on `timestamp` for `from_asset` in `to_asset`.
+        So how much `to_asset` does 1 unit of `from_asset` cost.
+
+        Args:
+            from_asset (str): The ticker symbol of the asset for which we want to know
+                              the price.
+            to_asset (str): The ticker symbol of the asset against which we want to
+                            know the price.
+            timestamp (int): The timestamp at which to query the price
+        """
         if from_asset == to_asset:
             return 1
 

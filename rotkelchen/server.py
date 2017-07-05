@@ -110,7 +110,7 @@ class RotkelchenServer(object):
 
     def query_asset_price(self, from_asset, to_asset, timestamp):
         with self.rotkelchen.lock:
-            price = self.rotkelchen.data.price_historian.query_historical_price(
+            price = self.rotkelchen.data.accountant.query_historical_price(
                 from_asset, to_asset, int(timestamp)
             )
 
