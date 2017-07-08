@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-from __future__ import division
-
 import os
 import json
 import threading
@@ -114,7 +112,6 @@ class Rotkelchen(object):
 
     def plot(self):
         plot.show(self.data.stats)
-        return pretty_json_dumps(self.data.stats)
 
     def process_history(self, start_ts, end_ts):
         return self.data.process_history(start_ts, end_ts)
@@ -128,10 +125,10 @@ class Rotkelchen(object):
             )
         )
         eth_resp = rlk_jsonloads(eth_resp.read())
-        if eth_resp['status'] != '1':
+        if eth_resp['status'] != 1:
             raise ValueError('Failed to query etherscan for accounts balance')
         eth_resp = eth_resp['result']
-        eth_sum = 0
+        eth_sum = FVal(0)
         for account_entry in eth_resp:
             eth_sum += from_wei(FVal(account_entry['balance']))
 
@@ -164,9 +161,9 @@ class Rotkelchen(object):
                         data['holding_address']
                     )))
             resp = rlk_jsonloads(resp.read())
-            if resp['status'] != '1':
+            if resp['status'] != 1:
                 raise ValueError('Failed to query etherscan for token balance')
-            amount = FVal(resp['result']) / data['digits_divisor']
+            amount = FVal(resp['result']) / FVal(data['digits_divisor'])
             token_usd_price = data.get('usd_price', 0)
             if token_usd_price == 0:
                 print("-------> Etherscan has no USD price for token: {}".format(token_name))
@@ -217,7 +214,7 @@ class Rotkelchen(object):
 
         currencies = {}
         for k, v in combined.iteritems():
-            currencies['percentage_of_net_usd_in_{}'.format(k.lower())] = (v['usd_value'] / net_usd).to_percentage(),
+            currencies['percentage_of_net_usd_in_{}'.format(k.lower())] = (v['usd_value'] / net_usd).to_percentage()
         stats['currencies'] = currencies
 
         result_dict = merge_dicts(combined, stats)

@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-from __future__ import division
-
 import json
 import time
 import datetime
@@ -86,7 +84,7 @@ def query_fiat_pair(base, quote, timestamp=None):
 
 
 def from_wei(wei_value):
-    return wei_value / 10 ** 18
+    return wei_value / FVal(10 ** 18)
 
 
 def combine_dicts(a, b, op=operator.add):

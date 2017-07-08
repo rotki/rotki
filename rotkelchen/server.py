@@ -125,6 +125,15 @@ class RotkelchenServer(object):
         print('process_trade_history() done')
         return process_result(result)
 
+    def query_balances(self, save_data=False):
+        if isinstance(save_data, str) and (save_data == 'save' or save_data == 'True'):
+            save_data = True
+        with self.rotkelchen.lock:
+            return str(self.rotkelchen.query_balances(save_data))
+
+    def plot(self):
+        self.rotkelchen.plot()
+
     def test(self, from_csv):
         if from_csv == "True":
             from_csv = True
