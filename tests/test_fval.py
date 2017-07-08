@@ -86,3 +86,10 @@ def test_decoding():
     assert data['f'][2] == 3
     assert isinstance(data['f'][3], FVal)
     assert data['f'][3] == FVal('4.2324')
+
+
+def test_conversion():
+    a = 2.0123
+    b = FVal('2.0123')
+    c = float(b)
+    assert a == c

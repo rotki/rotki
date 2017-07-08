@@ -81,6 +81,9 @@ class FVal(object):
         other = evaluate_input(other)
         return FVal(self.num.__rdiv__(other))
 
+    def __float__(self):
+        return float(self.num)
+
     # --- Unary operands
 
     def __neg__(self):
