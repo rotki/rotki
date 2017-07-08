@@ -59,6 +59,7 @@ KRAKEN_TO_WORLD = {
     'ZEUR': 'EUR',
     'XMLN': 'MLN',
     'XICN': 'ICN',
+    'GNO': 'GNO',
 }
 
 WORLD_TO_KRAKEN = {
@@ -72,6 +73,7 @@ WORLD_TO_KRAKEN = {
     'DAO': 'XDAO',
     'MLN': 'XMLN',
     'ICN': 'XICN',
+    'GNO': 'GNO',
 }
 
 
@@ -227,7 +229,13 @@ class Kraken(Exchange):
         e.g.: XICN. Save both prices in the kraken object and then return the
         USD price.
         """
+        # TODO: This is pretty ugly. Find a better way to check out kraken pairs
+        # without this ugliness.
         pair = asset + 'XXBT'
+        pair2 = asset + 'XBT'
+        if pair2 in self.tradeable_pairs:
+            pair = pair2
+
         if pair not in self.tradeable_pairs:
             raise ValueError(
                 'Could not find a BTC tradeable pair in kraken for "{}"'.format(asset)
