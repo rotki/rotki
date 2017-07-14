@@ -134,6 +134,9 @@ class RotkelchenServer(object):
     def plot(self):
         self.rotkelchen.plot()
 
+    def extend_values(self, other_file_path):
+        self.rotkelchen.extend_values(other_file_path)
+
     def test(self, from_csv):
         if from_csv == "True":
             from_csv = True

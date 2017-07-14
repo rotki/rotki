@@ -246,6 +246,16 @@ class Rotkelchen(object):
 
         return result_dict
 
+    def extend_values(self, additional_values_path):
+        """Append to the values file from another file"""
+        if not os.path.isfile(additional_values_path):
+            raise ValueError('Can\'t find given value file: {}'.format(additional_values_path))
+
+        with open(additional_values_path, 'r') as f:
+                new_file_dict = rlk_jsonloads(f.read())
+
+        self.data.extend_stats(new_file_dict)
+
     def set_main_currency(self, currency):
         self.data.set_main_currency(currency)
         if currency != 'USD':

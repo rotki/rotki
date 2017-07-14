@@ -76,6 +76,11 @@ class DataHandler(object):
         with open(self.personal['statsfile_path'], 'w') as f:
             f.write(rlk_jsondumps(self.stats))
 
+    def extend_stats(self, data):
+        self.stats.extend(data)
+        with open(self.personal['statsfile_path'], 'w') as f:
+            f.write(rlk_jsondumps(self.stats))
+
     def set_main_currency(self, currency):
         self.accountant.set_main_currency(currency)
         with open(os.path.join(self.data_directory, 'personal.json'), 'w') as f:
