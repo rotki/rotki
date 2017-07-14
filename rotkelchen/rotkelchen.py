@@ -139,18 +139,10 @@ class Rotkelchen(object):
                 'amount': eth_sum, 'usd_value': eth_accounts_usd_amount}
         }
 
-        # Get the prices for all stuff from coinmarketcap
-        coinmarketcap_resp = urllib2.urlopen(
-            urllib2.Request('https://api.coinmarketcap.com/v1/ticker/')
-        )
-        coinmarketcap_resp = rlk_jsonloads(coinmarketcap_resp.read())
         # For now I only have one address holding a token. In the future if I
         # spread them in different addresses gotta search for token balance in
         # each address
         tokens = self.data.personal['tokens']
-        for result in coinmarketcap_resp:
-            if result['symbol'] in tokens:
-                tokens[result['symbol']]['usd_price'] = FVal(result['price_usd'])
 
         for token_name, data in tokens.iteritems():
             resp = urllib2.urlopen(
@@ -164,9 +156,9 @@ class Rotkelchen(object):
             if resp['status'] != 1:
                 raise ValueError('Failed to query etherscan for token balance')
             amount = FVal(resp['result']) / FVal(data['digits_divisor'])
-            token_usd_price = data.get('usd_price', 0)
+            token_usd_price = self.inquirer.find_usd_price(token_name)
             if token_usd_price == 0:
-                print("-------> Etherscan has no USD price for token: {}".format(token_name))
+                print("-------> Cryptocompare has no USD price for token: {}".format(token_name))
             blockchain_balances[token_name] = {
                 'amount': amount, 'usd_value': amount * token_usd_price
             }

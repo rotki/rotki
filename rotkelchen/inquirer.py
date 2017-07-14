@@ -16,12 +16,11 @@ class Inquirer(object):
         if self.kraken and self.kraken.first_connection_made and asset_btc_price is not None:
             return self.query_kraken_for_price(asset, asset_btc_price)
         else:
-            coinmarketcap_resp = urllib2.urlopen(
-                urllib2.Request('https://api.coinmarketcap.com/v1/ticker/')
+            resp = urllib2.urlopen(
+                urllib2.Request(
+                    'https://min-api.cryptocompare.com/data/price?fsym={}&tsyms=USD'.format(
+                        asset
+                    ))
             )
-            coinmarketcap_resp = rlk_jsonloads(coinmarketcap_resp.read())
-            for result in coinmarketcap_resp:
-                if result['symbol'] == asset:
-                    return FVal(result['price_usd'])
-
-            raise ValueError('Could not find a USD price for "{}"'.format(asset))
+            resp = rlk_jsonloads(resp.read())
+            return FVal(resp['USD'])
