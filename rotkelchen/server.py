@@ -129,7 +129,9 @@ class RotkelchenServer(object):
         if isinstance(save_data, str) and (save_data == 'save' or save_data == 'True'):
             save_data = True
         with self.rotkelchen.lock:
-            return str(self.rotkelchen.query_balances(save_data))
+            s = pretty_json_dumps(self.rotkelchen.query_balances(save_data))
+            print(s)
+            return s
 
     def plot(self):
         self.rotkelchen.plot()
