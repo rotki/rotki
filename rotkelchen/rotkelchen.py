@@ -57,15 +57,6 @@ class Rotkelchen(object):
         self.bittrex = None
 
         # initialize exchanges for which we have keys
-        if 'polo_api_key' in self.secret_data:
-            self.poloniex = Poloniex(
-                self.secret_data['polo_api_key'],
-                self.secret_data['polo_secret'],
-                args,
-                self.logger,
-                self.cache_data_filename,
-                data_dir
-            )
         if 'kraken_api_key' in self.secret_data:
             self.kraken = Kraken(
                 self.secret_data['kraken_api_key'],
@@ -74,7 +65,20 @@ class Rotkelchen(object):
                 self.logger,
                 data_dir
             )
+
         self.inquirer = Inquirer(kraken=self.kraken if hasattr(self, 'kraken') else None)
+
+        if 'polo_api_key' in self.secret_data:
+            self.poloniex = Poloniex(
+                self.secret_data['polo_api_key'],
+                self.secret_data['polo_secret'],
+                args,
+                self.logger,
+                self.cache_data_filename,
+                self.inquirer,
+                data_dir
+            )
+
         if 'bittrex_api_key' in self.secret_data:
             self.bittrex = Bittrex(
                 self.secret_data['bittrex_api_key'],
@@ -134,9 +138,24 @@ class Rotkelchen(object):
 
         eth_usd_price = self.inquirer.find_usd_price('ETH')
         eth_accounts_usd_amount = eth_sum * eth_usd_price
+
+        btc_resp = urllib2.urlopen(
+            urllib2.Request(
+                'https://blockchain.info/q/addressbalance/%s' %
+                '|'.join(self.data.personal['btc_accounts'])
+            )
+        )
+        btc_sum = FVal(btc_resp.read()) * FVal('0.00000001')  # result is in satoshis
+        btc_usd_price = self.inquirer.find_usd_price('BTC')
+        btc_accounts_usd_amount = btc_sum * btc_usd_price
+
         blockchain_balances = {
             'ETH': {
-                'amount': eth_sum, 'usd_value': eth_accounts_usd_amount}
+                'amount': eth_sum, 'usd_value': eth_accounts_usd_amount
+            },
+            'BTC': {
+                'amount': btc_sum, 'usd_value': btc_accounts_usd_amount
+            }
         }
 
         # For now I only have one address holding a token. In the future if I
