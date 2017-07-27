@@ -45,7 +45,7 @@ class Poloniex(Exchange):
         'watched_currencies'
     ]
 
-    def __init__(self, api_key, secret, args, logger, cache_filename, data_dir):
+    def __init__(self, api_key, secret, args, logger, cache_filename, inquirer, data_dir):
         super(Poloniex, self).__init__('poloniex', api_key, secret)
 
         self.cache_filename = cache_filename
@@ -68,6 +68,7 @@ class Poloniex(Exchange):
         }
         self.log = logger
         self.usdprice = {}
+        self.inquirer = inquirer
 
     def first_connection(self):
         if self.first_connection_made:
@@ -400,40 +401,23 @@ class Poloniex(Exchange):
             {'currencyPair': currencyPair}
         )
 
-    def query_balances(self, ignore_cache=False):
-        cache_data = dict()
-        if not ignore_cache and os.path.isfile(self.cache_filename):
-            with open(self.cache_filename, 'r') as f:
-                try:
-                    cache_data = rlk_jsonloads(f.read())
-                except:
-                    pass
-
-                if 'poloniex' in cache_data:
-                    return cache_data['poloniex']['balances']
-
+    def query_balances(self):
         resp = self.api_query('returnCompleteBalances', {"account": "all"})
 
         balances = dict()
         for currency, v in resp.iteritems():
             available = FVal(v['available'])
             on_orders = FVal(v['onOrders'])
-            btc_value = FVal(v['btcValue'])
             if (available != FVal(0) or on_orders != FVal(0)):
                 entry = {}
                 entry['amount'] = available + on_orders
-                try:
-                    usd_value = entry['amount'] * self.usdprice[currency]
-                except:
-                    usd_value = btc_value * self.usdprice['BTC']
+                usd_price = self.inquirer.find_usd_price(
+                    asset=currency,
+                    asset_btc_price=None
+                )
+                usd_value = entry['amount'] * usd_price
                 entry['usd_value'] = usd_value
                 balances[currency] = entry
-
-        with open(self.cache_filename, 'w') as f:
-            cache_data['poloniex'] = dict()
-            cache_data['poloniex']['balances'] = balances
-            cache_data['poloniex']['time'] = ts_now()
-            f.write(rlk_jsondumps(cache_data))
 
         return balances
 

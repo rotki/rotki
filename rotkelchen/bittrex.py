@@ -130,7 +130,7 @@ class Bittrex(Exchange):
 
         return btc_price
 
-    def query_balances(self, ignore_cache=False):
+    def query_balances(self):
         self.markets = self.api_query('getmarketsummaries')
 
         resp = self.api_query('getbalances')
