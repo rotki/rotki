@@ -60,6 +60,7 @@ KRAKEN_TO_WORLD = {
     'XMLN': 'MLN',
     'XICN': 'ICN',
     'GNO': 'GNO',
+    'BCH': 'BCH',
 }
 
 WORLD_TO_KRAKEN = {
@@ -74,6 +75,7 @@ WORLD_TO_KRAKEN = {
     'MLN': 'XMLN',
     'ICN': 'XICN',
     'GNO': 'GNO',
+    'BCH': 'BCH',
 }
 
 

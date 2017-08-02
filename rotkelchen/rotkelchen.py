@@ -149,12 +149,20 @@ class Rotkelchen(object):
         btc_usd_price = self.inquirer.find_usd_price('BTC')
         btc_accounts_usd_amount = btc_sum * btc_usd_price
 
+        # temporary hack for Bitcoin cash
+        bch_sum = btc_sum
+        bch_usd_price = self.inquirer.find_usd_price('BCH')
+        bch_accounts_usd_amount = bch_sum * bch_usd_price
+
         blockchain_balances = {
             'ETH': {
                 'amount': eth_sum, 'usd_value': eth_accounts_usd_amount
             },
             'BTC': {
                 'amount': btc_sum, 'usd_value': btc_accounts_usd_amount
+            },
+            'BCH': {
+                'amount': bch_sum, 'usd_value': bch_accounts_usd_amount
             }
         }
 
