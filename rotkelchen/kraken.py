@@ -220,7 +220,6 @@ class Kraken(Exchange):
         self.eurprice['ETH'] = FVal(self.ticker['XETHZEUR']['c'][0])
         self.usdprice['ETH'] = FVal(self.ticker['XETHZUSD']['c'][0])
         self.eurprice['REP'] = FVal(self.ticker['XREPZEUR']['c'][0])
-        self.usdprice['REP'] = FVal(self.ticker['XREPZUSD']['c'][0])
         self.eurprice['XMR'] = FVal(self.ticker['XXMRZEUR']['c'][0])
         self.usdprice['XMR'] = FVal(self.ticker['XXMRZUSD']['c'][0])
         self.eurprice['ETC'] = FVal(self.ticker['XETCZEUR']['c'][0])
