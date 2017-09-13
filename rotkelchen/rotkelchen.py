@@ -164,6 +164,11 @@ class Rotkelchen(object):
         tokens = self.data.personal['tokens']
 
         for token_name, data in tokens.iteritems():
+            # temporarily ignore holding address for OMG due to airdrop
+            # TODO: Search token balances of all ETH addresses
+            if token_name == 'OMG':
+                continue
+
             resp = urllib2.urlopen(
                 urllib2.Request(
                     'https://api.etherscan.io/api?module=account&action='
@@ -181,6 +186,32 @@ class Rotkelchen(object):
             blockchain_balances[token_name] = {
                 'amount': amount, 'usd_value': amount * token_usd_price
             }
+
+        # for OMG iterate all ETH addresses - TODO for all tokens in the future
+        omg_token_address = self.data.personal['tokens']['OMG']['token_address']
+        omg_digits_divisor = self.data.personal['tokens']['OMG']['digits_divisor']
+        omg_sum = FVal(0)
+        for eth_address in self.data.personal['eth_accounts']:
+            resp = urllib2.urlopen(
+                urllib2.Request(
+                    'https://api.etherscan.io/api?module=account&action='
+                    'tokenbalance&contractaddress={}&address={}'.format(
+                        omg_token_address,
+                        eth_address
+                    )))
+            resp = rlk_jsonloads(resp.read())
+            if resp['status'] != 1:
+                raise ValueError('Failed to query etherscan for token balance')
+
+            amount = FVal(resp['result']) / FVal(omg_digits_divisor)
+            omg_sum += amount
+
+        token_usd_price = self.inquirer.find_usd_price('OMG')
+        if token_usd_price == 0:
+            print("-------> Cryptocompare has no USD price for 'OMG'")
+        blockchain_balances['OMG'] = {
+            'amount': omg_sum, 'usd_value': omg_sum * token_usd_price
+        }
 
         return blockchain_balances
 
