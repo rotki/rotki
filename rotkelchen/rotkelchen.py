@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import os
-import json
 import threading
 import urllib2
 import plot
@@ -8,7 +7,6 @@ import plot
 from utils import (
     Logger,
     combine_stat_dicts,
-    pretty_json_dumps,
     from_wei,
     dict_get_sumof,
     merge_dicts,
