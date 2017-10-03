@@ -806,7 +806,7 @@ class Accountant(object):
             trade = action
 
             # if the cost is not equal to rate * amount then the data is somehow corrupt
-            if not trade.cost.is_close(trade.amount * trade.rate, max_diff="1e-7"):
+            if not trade.cost.is_close(trade.amount * trade.rate, max_diff="1e-5"):
                 raise CorruptData(
                     "Trade found with cost {} which is not equal to trade.amount"
                     "({}) * trade.rate({})".format(trade.cost, trade.amount, trade.rate)
@@ -865,6 +865,7 @@ class Accountant(object):
 
         if self.create_csv:
             output_to_csv(
+                self.log,
                 out_dir='/home/lefteris/.rotkelchen/CSV/',
                 trades=self.trades_csv,
                 loan_profits=self.loan_profits_csv,
