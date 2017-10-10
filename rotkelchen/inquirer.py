@@ -1,6 +1,6 @@
 import urllib2
 from fval import FVal
-from utils import rlk_jsonloads
+from utils import rlk_jsonloads, retry_calls
 
 
 class Inquirer(object):
@@ -16,7 +16,11 @@ class Inquirer(object):
         if self.kraken and self.kraken.first_connection_made and asset_btc_price is not None:
             return self.query_kraken_for_price(asset, asset_btc_price)
         else:
-            resp = urllib2.urlopen(
+            resp = retry_calls(
+                5,
+                'find_usd_price',
+                'urllib2.urlopen',
+                urllib2.urlopen,
                 urllib2.Request(
                     'https://min-api.cryptocompare.com/data/price?fsym={}&tsyms=USD'.format(
                         asset
