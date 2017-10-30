@@ -175,6 +175,16 @@ class Accountant(object):
                 "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
                 "is_virtual": is_virtual
             })
+            self.all_events_csv.apend({
+                'type': 'buy',
+                'paid_in_{}'.format(self.profit_currency): cost,
+                'paid_asset': self.profit_currency,
+                'paid_in_asset': cost,
+                'received_asset': bought_asset,
+                'received_in_asset': bought_amount,
+                "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+                "is_virtual": is_virtual
+            })
 
     def add_loan_gain_to_events(
             self,
@@ -216,6 +226,16 @@ class Accountant(object):
                     'lent_amount': lent_amount,
                     'profit_in_{}'.format(self.profit_currency): gain_in_profit_currency
                 })
+                self.all_events_csv.apend({
+                    'type': 'interest_rate_payment',
+                    'paid_in_{}'.format(self.profit_currency): 0,
+                    'paid_asset': 'None',
+                    'paid_in_asset': 0,
+                    'received_asset': gained_asset,
+                    'received_in_asset': gained_amount,
+                    "time": tsToDate(close_time, formatstr='%d/%m/%Y %H:%M:%S'),
+                    "is_virtual": False
+                })
 
     def add_margin_positions_to_events(
             self,
@@ -256,6 +276,16 @@ class Accountant(object):
                 'gained_amount': net_gain_amount,
                 'profit_in_{}'.format(self.profit_currency): gain_in_profit_currency
             })
+            self.all_events_csv.apend({
+                'type': 'margin_position_close',
+                'paid_in_{}'.format(self.profit_currency): 0,
+                'paid_asset': 'None',
+                'paid_in_asset': 0,
+                'received_asset': gained_asset,
+                'received_in_asset': net_gain_amount,
+                "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+                "is_virtual": False,
+            })
 
     def add_asset_movement_to_events(self, category, asset, amount, timestamp, exchange, fee):
         rate = self.get_rate_in_profit_currency(asset, timestamp)
@@ -271,6 +301,16 @@ class Accountant(object):
                 'moving_asset': asset,
                 'fee_in_asset': fee,
                 'fee_in_{}'.format(self.profit_currency): fee * rate,
+            })
+            self.all_events_csv.apend({
+                'type': 'asset_movement_fee',
+                'paid_in_{}'.format(self.profit_currency): fee*rate,
+                'paid_asset': asset,
+                'paid_in_asset': fee,
+                'received_asset': 'None',
+                'received_in_asset': 0,
+                "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+                "is_virtual": False
             })
 
     def account_for_gas_costs(self, transaction):
@@ -294,6 +334,16 @@ class Accountant(object):
                 'transaction_hash': transaction.hash,
                 'eth_burned_as_gas': eth_burned_as_gas,
                 'cost_in_{}'.format(self.profit_currency): eth_burned_as_gas * rate,
+            })
+            self.all_events_csv.apend({
+                'type': 'tx_gas_cost',
+                'paid_in_{}'.format(self.profit_currency): eth_burned_as_gas * rate,
+                'paid_asset': 'ETH',
+                'paid_in_asset': eth_burned_as_gas,
+                'received_asset': 'None',
+                'received_in_asset': 0,
+                "time": tsToDate(transaction.timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+                "is_virtual": False,
             })
 
     def add_buy_to_events_and_corresponding_sell(
@@ -553,6 +603,17 @@ class Accountant(object):
                         "fee_in_{}".format(self.profit_currency): total_fee_in_profit_currency,
                         "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
                     })
+                    self.all_events_csv.apend({
+                        'type': 'loan_settlement',
+                        'paid_in_{}'.format(self.profit_currency): selling_amount * rate_in_profit_currency + total_fee_in_profit_currency,
+                        'paid_asset': selling_asset,
+                        'paid_in_asset': selling_amount,
+                        'received_asset': 'None',
+                        'received_in_asset': 0,
+                        "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+                        "is_virtual": False,
+                    })
+                    
                 else:
                     self.trades_csv.append({
                         'type': 'sell',
@@ -567,6 +628,16 @@ class Accountant(object):
                             receiving_asset,
                             timestamp
                         ),
+                        "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+                        "is_virtual": is_virtual,
+                    })
+                    self.all_events_csv.apend({
+                        'type': 'sell',
+                        'paid_in_{}'.format(self.profit_currency): selling_amount * rate_in_profit_currency + total_fee_in_profit_currency,
+                        'paid_asset': selling_asset,
+                        'paid_in_asset': selling_amount,
+                        'received_asset': receiving_asset,
+                        'received_in_asset': receiving_amount,
                         "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
                         "is_virtual": is_virtual,
                     })
