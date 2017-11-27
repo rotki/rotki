@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import urllib2
 from fval import FVal
 from utils import rlk_jsonloads, retry_calls
@@ -22,9 +23,22 @@ class Inquirer(object):
                 'urllib2.urlopen',
                 urllib2.urlopen,
                 urllib2.Request(
-                    'https://min-api.cryptocompare.com/data/price?fsym={}&tsyms=USD'.format(
+                    u'https://min-api.cryptocompare.com/data/price?fsym={}&tsyms=USD'.format(
                         asset
                     ))
             )
+
             resp = rlk_jsonloads(resp.read())
+
+            # If there is an error in the response skip this token
+            if 'USD' not in resp:
+                if resp['Response'] == 'Error':
+                    print('Could not query USD price for {}. Error: "{}"'.format(
+                        asset,
+                        resp['Message']),
+                    )
+                else:
+                    print('Could not query USD price for {}'.format(asset))
+                return FVal(0)
+
             return FVal(resp['USD'])

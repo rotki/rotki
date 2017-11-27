@@ -1,4 +1,5 @@
 zerorpc
+jsonrpc
 matplotlib
 
 # dev requirements -- could go onto a separate file

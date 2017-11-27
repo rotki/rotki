@@ -52,6 +52,10 @@ class DataHandler(object):
             create_csv=True
         )
 
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        with open(os.path.join(dir_path, 'data', 'eth_tokens.json')) as f:
+            self.eth_tokens = rlk_jsonloads(f.read())
+
         # open the statsfile if existing
         self.stats = list()
         if os.path.isfile(self.personal['statsfile_path']):

@@ -16,7 +16,7 @@ from utils import (
 from poloniex import Poloniex
 from kraken import Kraken
 from bittrex import Bittrex
-from data import DataHandler
+from data_handler import DataHandler
 from inquirer import Inquirer
 from utils import query_fiat_pair
 from fval import FVal
@@ -129,9 +129,9 @@ class Rotkelchen(object):
         eth_resp = rlk_jsonloads(eth_resp.read())
         if eth_resp['status'] != 1:
             raise ValueError('Failed to query etherscan for accounts balance')
-        eth_resp = eth_resp['result']
+        eth_accounts = eth_resp['result']
         eth_sum = FVal(0)
-        for account_entry in eth_resp:
+        for account_entry in eth_accounts:
             eth_sum += from_wei(FVal(account_entry['balance']))
 
         eth_usd_price = self.inquirer.find_usd_price('ETH')
@@ -156,60 +156,46 @@ class Rotkelchen(object):
             },
         }
 
-        # For now I only have one address holding a token. In the future if I
-        # spread them in different addresses gotta search for token balance in
-        # each address
-        tokens = self.data.personal['tokens']
+        tokens_to_check = None
+        if 'eth_tokens' in self.data.personal:
+            tokens_to_check = self.data.personal['eth_tokens']
 
-        for token_name, data in tokens.iteritems():
-            # temporarily ignore holding address for OMG due to airdrop
-            # TODO: Search token balances of all ETH addresses
-            if token_name == 'OMG':
+        for token in self.data.eth_tokens:
+            token_amount = FVal(0)
+            try:
+                token_symbol = str(token['symbol'])
+            except (UnicodeDecodeError, UnicodeEncodeError):
+                # skip tokens with problems in unicode encoding decoding
+                continue
+            if tokens_to_check and token_symbol not in tokens_to_check:
                 continue
 
-            resp = urllib2.urlopen(
-                urllib2.Request(
-                    'https://api.etherscan.io/api?module=account&action='
-                    'tokenbalance&contractaddress={}&address={}'.format(
-                        data['token_address'],
-                        data['holding_address']
-                    )))
-            resp = rlk_jsonloads(resp.read())
-            if resp['status'] != 1:
-                raise ValueError('Failed to query etherscan for token balance')
-            amount = FVal(resp['result']) / FVal(data['digits_divisor'])
-            token_usd_price = self.inquirer.find_usd_price(token_name)
+            token_usd_price = self.inquirer.find_usd_price(token_symbol)
             if token_usd_price == 0:
-                print("-------> Cryptocompare has no USD price for token: {}".format(token_name))
-            blockchain_balances[token_name] = {
-                'amount': amount, 'usd_value': amount * token_usd_price
+                # skip tokens that have no price
+                continue
+
+            for account in eth_accounts:
+                print('Checking token {} for account {}'.format(token_symbol, account['account']))
+                resp = urllib2.urlopen(
+                    urllib2.Request(
+                        'https://api.etherscan.io/api?module=account&action='
+                        'tokenbalance&contractaddress={}&address={}'.format(
+                            token['address'],
+                            account['account'],
+                        )))
+                resp = rlk_jsonloads(resp.read())
+                if resp['status'] != 1:
+                    raise ValueError(
+                        'Failed to query etherscan for {} token balance of {}'.format(
+                            token_symbol,
+                            account['account'],
+                        ))
+                token_amount += FVal(resp['result']) / (FVal(10) ** FVal(token['decimal']))
+
+            blockchain_balances[token_symbol] = {
+                'amount': token_amount, 'usd_value': token_amount * token_usd_price
             }
-
-        # for OMG iterate all ETH addresses - TODO for all tokens in the future
-        omg_token_address = self.data.personal['tokens']['OMG']['token_address']
-        omg_digits_divisor = self.data.personal['tokens']['OMG']['digits_divisor']
-        omg_sum = FVal(0)
-        for eth_address in self.data.personal['eth_accounts']:
-            resp = urllib2.urlopen(
-                urllib2.Request(
-                    'https://api.etherscan.io/api?module=account&action='
-                    'tokenbalance&contractaddress={}&address={}'.format(
-                        omg_token_address,
-                        eth_address
-                    )))
-            resp = rlk_jsonloads(resp.read())
-            if resp['status'] != 1:
-                raise ValueError('Failed to query etherscan for token balance')
-
-            amount = FVal(resp['result']) / FVal(omg_digits_divisor)
-            omg_sum += amount
-
-        token_usd_price = self.inquirer.find_usd_price('OMG')
-        if token_usd_price == 0:
-            print("-------> Cryptocompare has no USD price for 'OMG'")
-        blockchain_balances['OMG'] = {
-            'amount': omg_sum, 'usd_value': omg_sum * token_usd_price
-        }
 
         return blockchain_balances
 
