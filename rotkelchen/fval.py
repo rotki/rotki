@@ -25,7 +25,7 @@ class FVal(object):
     def __init__(self, data):
         if isinstance(data, float):
             self.num = Decimal(str(data))
-        elif isinstance(data, (Decimal, int, str)):
+        elif isinstance(data, (Decimal, int, str, long)):
             self.num = Decimal(data)
         elif isinstance(data, FVal):
             self.num = data.num

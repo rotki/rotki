@@ -7,6 +7,7 @@ def test_simple_arithmetic():
     a = FVal(5.21)
     b = FVal(2.12)
     c = FVal(-23.124)
+    d = FVal(5006337207657766294397L)
 
     assert a + b == FVal('7.33')
     assert a - b == FVal('3.09')
@@ -17,6 +18,7 @@ def test_simple_arithmetic():
     assert -a == FVal('-5.21')
     assert abs(a) == FVal('5.21')
     assert abs(c) == FVal('23.124')
+    assert d == FVal('5006337207657766294397')
 
     a += b
     assert a == FVal('7.33')

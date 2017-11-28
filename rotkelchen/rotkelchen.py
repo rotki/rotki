@@ -13,6 +13,7 @@ from utils import (
     rlk_jsonloads,
 )
 
+from ethchain import Ethchain
 from poloniex import Poloniex
 from kraken import Kraken
 from bittrex import Bittrex
@@ -49,6 +50,8 @@ class Rotkelchen(object):
         self.logger = Logger(outfile, args.notify)
 
         self.cache_data_filename = os.path.join(data_dir, 'cache_data.json')
+
+        self.ethchain = Ethchain()
 
         self.poloniex = None
         self.kraken = None
@@ -120,20 +123,9 @@ class Rotkelchen(object):
 
     def query_blockchain_balances(self):
         # Find balance of eth Accounts
-        eth_resp = urllib2.urlopen(
-            urllib2.Request(
-                'https://api.etherscan.io/api?module=account&action=balancemulti&address=%s' %
-                ','.join(self.data.personal['eth_accounts'])
-            )
+        eth_sum = self.ethchain.get_multieth_balance(
+            self.data.personal['eth_accounts']
         )
-        eth_resp = rlk_jsonloads(eth_resp.read())
-        if eth_resp['status'] != 1:
-            raise ValueError('Failed to query etherscan for accounts balance')
-        eth_accounts = eth_resp['result']
-        eth_sum = FVal(0)
-        for account_entry in eth_accounts:
-            eth_sum += from_wei(FVal(account_entry['balance']))
-
         eth_usd_price = self.inquirer.find_usd_price('ETH')
         eth_accounts_usd_amount = eth_sum * eth_usd_price
 
@@ -161,7 +153,6 @@ class Rotkelchen(object):
             tokens_to_check = self.data.personal['eth_tokens']
 
         for token in self.data.eth_tokens:
-            token_amount = FVal(0)
             try:
                 token_symbol = str(token['symbol'])
             except (UnicodeDecodeError, UnicodeEncodeError):
@@ -175,24 +166,12 @@ class Rotkelchen(object):
                 # skip tokens that have no price
                 continue
 
-            for account in eth_accounts:
-                print('Checking token {} for account {}'.format(token_symbol, account['account']))
-                resp = urllib2.urlopen(
-                    urllib2.Request(
-                        'https://api.etherscan.io/api?module=account&action='
-                        'tokenbalance&contractaddress={}&address={}'.format(
-                            token['address'],
-                            account['account'],
-                        )))
-                resp = rlk_jsonloads(resp.read())
-                if resp['status'] != 1:
-                    raise ValueError(
-                        'Failed to query etherscan for {} token balance of {}'.format(
-                            token_symbol,
-                            account['account'],
-                        ))
-                token_amount += FVal(resp['result']) / (FVal(10) ** FVal(token['decimal']))
-
+            token_amount = self.ethchain.get_multitoken_balance(
+                token_symbol,
+                token['address'],
+                token['decimal'],
+                self.data.personal['eth_accounts'],
+            )
             blockchain_balances[token_symbol] = {
                 'amount': token_amount, 'usd_value': token_amount * token_usd_price
             }
