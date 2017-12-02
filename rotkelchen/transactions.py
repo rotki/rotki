@@ -1,4 +1,4 @@
-import urllib2
+from urllib.request import Request, urlopen
 from collections import namedtuple
 from utils import retry_calls, rlk_jsonloads, convert_to_int
 from fval import FVal
@@ -36,7 +36,7 @@ def query_txlist(address, internal, from_block=None, to_block=None):
     if to_block:
         reqstring += '&endblock={}'.format(to_block)
 
-    resp = urllib2.urlopen(urllib2.Request(reqstring))
+    resp = urlopen(Request(reqstring))
     resp = rlk_jsonloads(resp.read())
 
     if 'status' not in resp or convert_to_int(resp['status']) != 1:

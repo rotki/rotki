@@ -4,7 +4,9 @@ import time
 import datetime
 import subprocess
 import operator
-import urllib2
+from urllib.request import Request, urlopen
+from urllib.error import URLError
+
 import os
 import calendar
 import csv
@@ -68,7 +70,7 @@ def query_fiat_pair(base, quote, timestamp=None):
     tries = 5
     while True:
         try:
-            resp = urllib2.urlopen(urllib2.Request(querystr))
+            resp = urlopen(Request(querystr))
             resp = rlk_jsonloads(resp.read())
             break
         except:
@@ -102,7 +104,7 @@ def combine_stat_dicts(*args):
 
 def dict_get_sumof(d, attribute, **args):
     sum = 0
-    for key, value in d.iteritems():
+    for key, value in d.items():
         sum += value[attribute]
     return sum
 
@@ -139,7 +141,7 @@ def retry_calls(times, location, method, function, *args):
         try:
             result = function(*args)
             return result
-        except (urllib2.URLError, KrakenAPIRateLimitExceeded) as e:
+        except (URLError, KrakenAPIRateLimitExceeded) as e:
             if isinstance(e, KrakenAPIRateLimitExceeded):
                 time.sleep(5)
 
@@ -300,7 +302,7 @@ def convert_to_int(val, accept_only_exact=True):
     and it's not whole (like 42.0) then raise"""
     if isinstance(val, FVal):
         return val.to_int(accept_only_exact)
-    elif isinstance(val, (str, unicode)):
+    elif isinstance(val, (bytes, str)):
         return int(val)
     elif isinstance(val, int):
         return val
@@ -314,14 +316,14 @@ def convert_to_int(val, accept_only_exact=True):
 def rkl_decode_value(val):
     if isinstance(val, dict):
         new_val = dict()
-        for k, v in val.iteritems():
+        for k, v in val.items():
             new_val[k] = rkl_decode_value(v)
         return new_val
     elif isinstance(val, list):
         return [rkl_decode_value(x) for x in val]
     elif isinstance(val, float):
         return FVal(val)
-    elif isinstance(val, (str, unicode)):
+    elif isinstance(val, (bytes, str)):
         try:
             val = float(val)
             return FVal(val)

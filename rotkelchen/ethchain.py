@@ -1,5 +1,5 @@
-import urllib2
 import os
+from urllib.request import Request, urlopen
 from web3 import Web3, HTTPProvider
 from requests import ConnectionError
 from utils import from_wei, rlk_jsonloads
@@ -29,13 +29,14 @@ class Ethchain(object):
     def get_multieth_balance(self, accounts):
         eth_sum = FVal(0)
         if not self.connected:
-            eth_resp = urllib2.urlopen(
-                urllib2.Request(
-                    'https://api.etherscan.io/api?module=account&action=balancemulti&address=%s' %
-                    ','.join(accounts)
-                )
-            )
+            eth_resp = urlopen(Request(
+                'https://api.etherscan.io/api?module=account&action=balancemulti&address=%s' %
+                ','.join(accounts)
+            ))
+            eth_resp = rlk_jsonloads(eth_resp.read())
             if eth_resp['status'] != 1:
+                import pdb
+                pdb.set_trace()
                 raise ValueError('Failed to query etherscan for accounts balance')
             eth_accounts = eth_resp['result']
             for account_entry in eth_accounts:
@@ -60,13 +61,12 @@ class Ethchain(object):
         else:
             for account in accounts:
                 print('Checking token {} for account {}'.format(token_symbol, account))
-                resp = urllib2.urlopen(
-                    urllib2.Request(
-                        'https://api.etherscan.io/api?module=account&action='
-                        'tokenbalance&contractaddress={}&address={}'.format(
-                            token_address,
-                            account,
-                        )))
+                resp = urlopen(Request(
+                    'https://api.etherscan.io/api?module=account&action='
+                    'tokenbalance&contractaddress={}&address={}'.format(
+                        token_address,
+                        account,
+                    )))
                 resp = rlk_jsonloads(resp.read())
                 if resp['status'] != 1:
                     raise ValueError(

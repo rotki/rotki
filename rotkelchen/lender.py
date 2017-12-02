@@ -26,7 +26,7 @@ def ltRate(a, b):
 
 def deserialize(obj, d):
     # Not using pickle since not all attributes are serialized/deserialized
-    for k, v in d.iteritems():
+    for k, v in d.items():
         if hasattr(obj, k):
             setattr(obj, k, v)
         else:

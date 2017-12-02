@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-
-import urllib
-import urllib2
-import httplib
 import time
 import hmac
 import hashlib
@@ -10,15 +6,15 @@ import datetime
 import os
 import traceback
 import csv
+from urllib.request import Request, urlopen
+from urllib.parse import urlencode
+from http.client import HTTPConnection
 
 from fval import FVal
 from utils import (
     createTimeStamp,
-    ts_now,
     retry_calls,
     safe_urllib_read_to_json,
-    rlk_jsonloads,
-    rlk_jsondumps,
 )
 from exchange import Exchange
 from order_formatting import AssetMovement
@@ -87,10 +83,10 @@ class Poloniex(Exchange):
         # Add timestamps if there isnt one but is a datetime
         if('return' in after):
             if(isinstance(after['return'], list)):
-                for x in xrange(0, len(after['return'])):
+                for x in range(0, len(after['return'])):
                     if(isinstance(after['return'][x], dict)):
-                        if('datetime' in after['return'][x]
-                           and 'timestamp' not in after['return'][x]):
+                        if('datetime' in after['return'][x] and
+                           'timestamp' not in after['return'][x]):
                             after['return'][x]['timestamp'] = float(
                                 createTimeStamp(after['return'][x]['datetime'])
                             )
@@ -110,44 +106,40 @@ class Poloniex(Exchange):
     def _api_query(self, command, req={}):
         # Attempting to circumvent the httplib incomplete read error
         # https://stackoverflow.com/questions/14149100/incompleteread-using-httplib
-        httplib.HTTPConnection._http_vsn = 10
-        httplib.HTTPConnection._http_vsn_str = 'HTTP/1.0'
+        HTTPConnection._http_vsn = 10
+        HTTPConnection._http_vsn_str = 'HTTP/1.0'
 
         if(command == "returnTicker" or command == "return24Volume"):
-            ret = urllib2.urlopen(
-                urllib2.Request(
-                    'https://poloniex.com/public?command=' + command
-                ))
+            ret = urlopen(Request(
+                'https://poloniex.com/public?command=' + command
+            ))
             return safe_urllib_read_to_json(ret)
         elif(command == "returnOrderBook"):
-            ret = urllib2.urlopen(
-                urllib2.Request(
-                    'https://poloniex.com/public?command=' +
-                    command + '&currencyPair=' + str(req['currencyPair']))
+            ret = urlopen(Request(
+                'https://poloniex.com/public?command=' +
+                command + '&currencyPair=' + str(req['currencyPair']))
             )
             ret = safe_urllib_read_to_json(ret)
         elif(command == "returnMarketTradeHistory"):
-            ret = urllib2.urlopen(
-                urllib2.Request(
-                    'https://poloniex.com/public?command='
-                    + "returnTradeHistory" +
-                    '&currencyPair=' +
-                    str(req['currencyPair']))
+            ret = urlopen(Request(
+                'https://poloniex.com/public?command=' +
+                'returnTradeHistory' +
+                '&currencyPair=' +
+                str(req['currencyPair']))
             )
             ret = safe_urllib_read_to_json(ret)
         elif(command == "returnLoanOrders"):
-            ret = urllib2.urlopen(
-                urllib2.Request(
-                    'https://poloniex.com/public?command='
-                    + "returnLoanOrders" +
-                    '&currency=' +
-                    str(req['currency']))
+            ret = urlopen(Request(
+                'https://poloniex.com/public?command=' +
+                'returnLoanOrders' +
+                '&currency=' +
+                str(req['currency']))
             )
             ret = safe_urllib_read_to_json(ret)
         else:
             req['command'] = command
             req['nonce'] = int(time.time() * 1000)
-            post_data = urllib.urlencode(req)
+            post_data = urlencode(req)
 
             sign = hmac.new(self.secret, post_data, hashlib.sha512).hexdigest()
             headers = {
@@ -155,7 +147,7 @@ class Poloniex(Exchange):
                 'Key': self.api_key
             }
 
-            ret = urllib2.urlopen(urllib2.Request(
+            ret = urlopen(Request(
                 'https://poloniex.com/tradingApi',
                 post_data,
                 headers)
@@ -164,8 +156,8 @@ class Poloniex(Exchange):
             ret = self.post_process(jsonRet)
 
         # back to 1.1. connection
-        httplib.HTTPConnection._http_vsn = 11
-        httplib.HTTPConnection._http_vsn_str = 'HTTP/1.1'
+        HTTPConnection._http_vsn = 11
+        HTTPConnection._http_vsn_str = 'HTTP/1.1'
         return ret
 
     def returnAvailableAccountBalances(self, account='all'):
@@ -405,7 +397,7 @@ class Poloniex(Exchange):
         resp = self.api_query('returnCompleteBalances', {"account": "all"})
 
         balances = dict()
-        for currency, v in resp.iteritems():
+        for currency, v in resp.items():
             available = FVal(v['available'])
             on_orders = FVal(v['onOrders'])
             if (available != FVal(0) or on_orders != FVal(0)):

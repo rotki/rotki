@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-import urllib2
+from urllib.request import Request, urlopen
 from fval import FVal
 from utils import rlk_jsonloads, retry_calls
 
@@ -21,8 +21,8 @@ class Inquirer(object):
                 5,
                 'find_usd_price',
                 'urllib2.urlopen',
-                urllib2.urlopen,
-                urllib2.Request(
+                urlopen,
+                Request(
                     u'https://min-api.cryptocompare.com/data/price?fsym={}&tsyms=USD'.format(
                         asset
                     ))

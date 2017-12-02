@@ -1,9 +1,8 @@
 import time
-import urllib2
 import os
 import glob
 import re
-from itertools import izip
+from urllib.request import Request, urlopen
 
 from exchange import data_up_todate
 from kraken import kraken_to_world_pair
@@ -170,7 +169,7 @@ def limit_trade_list_to_period(trades_list, start_ts, end_ts):
 def pairwise(iterable):
     "s -> (s0, s1), (s2, s3), (s4, s5), ..."
     a = iter(iterable)
-    return izip(a, a)
+    return zip(a, a)
 
 
 def check_hourly_data_sanity(data, from_asset, to_asset):
@@ -254,7 +253,7 @@ class PriceHistorian(object):
 
         if invalidate_cache:
             query_string = 'https://www.cryptocompare.com/api/data/coinlist/'
-            resp = urllib2.urlopen(urllib2.Request(query_string))
+            resp = urlopen(Request(query_string))
             resp = rlk_jsonloads(resp.read())
             if 'Response' not in resp or resp['Response'] != 'Success':
                 error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
@@ -305,7 +304,7 @@ class PriceHistorian(object):
                 'fsym={}&tsym={}&limit={}&toTs={}'.format(
                     from_asset, to_asset, cryptocompare_hourquerylimit, end_date
                 ))
-            resp = urllib2.urlopen(urllib2.Request(query_string))
+            resp = urlopen(Request(query_string))
             resp = rlk_jsonloads(resp.read())
             if 'Response' not in resp or resp['Response'] != 'Success':
                 error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
@@ -409,7 +408,7 @@ class PriceHistorian(object):
                     ))
                 if to_asset == 'BTC':
                     query_string += '&tryConversion=false'
-                resp = urllib2.urlopen(urllib2.Request(query_string))
+                resp = urlopen(Request(query_string))
                 resp = rlk_jsonloads(resp.read())
                 print('DAILY PRICE OF ASSET: "{}"'.format(resp))
                 if from_asset not in resp:
@@ -487,7 +486,7 @@ class TradesHistorian(object):
                 end_at_least_ts=end_at_least_ts
             )
             poloniex_margin_trades = list()
-            for pair, trades in polo_history.iteritems():
+            for pair, trades in polo_history.items():
                 for trade in trades:
                     category = trade['category']
 
@@ -553,7 +552,13 @@ class TradesHistorian(object):
         write_tupledata_history_in_file(history, historyfile_path, start_ts, end_ts)
         if not self.read_manual_margin_positions:
             marginfile_path = os.path.join(self.data_directory, MARGIN_HISTORYFILE)
-            write_tupledata_history_in_file(poloniex_margin_trades, marginfile_path, start_ts, end_ts)
+            write_tupledata_history_in_file(
+                poloniex_margin_trades,
+                marginfile_path,
+                start_ts,
+                end_ts
+            )
+
         loansfile_path = os.path.join(self.data_directory, LOANS_HISTORYFILE)
         write_history_data_in_file(polo_loans, loansfile_path, start_ts, end_ts)
         assetmovementsfile_path = os.path.join(self.data_directory, ASSETMOVEMENTS_HISTORYFILE)
@@ -622,7 +627,10 @@ class TradesHistorian(object):
                     end_at_least_ts
                 )
 
-                assetmovementsfile_path = os.path.join(self.data_directory, ASSETMOVEMENTS_HISTORYFILE)
+                assetmovementsfile_path = os.path.join(
+                    self.data_directory,
+                    ASSETMOVEMENTS_HISTORYFILE
+                )
                 asset_movements_contents = get_jsonfile_contents_or_empty_dict(
                     assetmovementsfile_path
                 )

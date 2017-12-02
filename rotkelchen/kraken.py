@@ -2,13 +2,12 @@
 #
 # Good kraken and python resource:
 # https://github.com/zertrin/clikraken/tree/master/clikraken
-
-import urllib
-import urllib2
 import hmac
 import hashlib
 import base64
 import time
+from urllib.request import Request, urlopen
+from urllib.parse import urlencode
 
 from utils import query_fiat_pair, retry_calls, rlk_jsonloads, convert_to_int
 from order_formatting import AssetMovement
@@ -122,13 +121,11 @@ class Kraken(Exchange):
         req    -- additional API request parameters (default: {})
         """
         urlpath = '/' + self.apiversion + '/public/' + method
-        post_data = urllib.urlencode(req)
-        ret = urllib2.urlopen(
-            urllib2.Request(
-                'https://api.kraken.com' + urlpath,
-                post_data
-            )
-        )
+        post_data = urlencode(req)
+        ret = urlopen(Request(
+            'https://api.kraken.com' + urlpath,
+            post_data
+        ))
         json_ret = rlk_jsonloads(ret.read())
         if json_ret['error']:
             if isinstance(json_ret['error'], list):
@@ -159,7 +156,7 @@ class Kraken(Exchange):
         urlpath = '/' + self.apiversion + '/private/' + method
 
         req['nonce'] = int(1000 * time.time())
-        post_data = urllib.urlencode(req)
+        post_data = urlencode(req)
         message = urlpath + hashlib.sha256(
             str(req['nonce']) + post_data).digest()
         signature = hmac.new(
@@ -171,12 +168,11 @@ class Kraken(Exchange):
             'API-Key': self.api_key,
             'API-Sign': base64.b64encode(signature.digest())
         }
-        ret = urllib2.urlopen(
-            urllib2.Request(
-                'https://api.kraken.com' + urlpath,
-                post_data,
-                headers)
-        )
+        ret = urlopen(Request(
+            'https://api.kraken.com' + urlpath,
+            post_data,
+            headers
+        ))
         json_ret = rlk_jsonloads(ret.read())
         if json_ret['error']:
             if isinstance(json_ret['error'], list):
@@ -256,7 +252,7 @@ class Kraken(Exchange):
         self.usdprice['EUR'] = query_fiat_pair('EUR', 'USD')
 
         balances = dict()
-        for k, v in old_balances.iteritems():
+        for k, v in old_balances.items():
             v = FVal(v)
             if v == FVal(0):
                 continue

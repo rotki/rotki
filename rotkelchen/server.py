@@ -25,7 +25,7 @@ def _process_entry(entry):
         return new_list
     elif isinstance(entry, dict):
         new_dict = dict()
-        for k, v in entry.iteritems():
+        for k, v in entry.items():
             new_dict[k] = _process_entry(v)
         return new_dict
     else:
@@ -58,7 +58,7 @@ class RotkelchenServer(object):
 
     def get_total_in_main_currency(self, balances):
         total = 0
-        for _, entry in balances.iteritems():
+        for _, entry in balances.items():
             total += entry['usd_value']
 
         return self.rotkelchen.usd_to_main_currency(total)

@@ -1,8 +1,8 @@
 import time
 import hmac
-import urllib
-import urllib2
 import hashlib
+from urllib.request import Request, urlopen
+from urllib.parse import urlencode
 
 from utils import createTimeStamp, get_pair_position, rlk_jsonloads
 from exchange import Exchange
@@ -100,16 +100,14 @@ class Bittrex(Exchange):
         if method_type != 'public':
             request_url += 'apikey=' + self.api_key + "&nonce=" + nonce + '&'
 
-        request_url += urllib.urlencode(options)
+        request_url += urlencode(options)
         signature = hmac.new(
             self.secret.encode(),
             request_url.encode(),
             hashlib.sha512
         ).hexdigest()
         headers = {'apisign': signature}
-        ret = urllib2.urlopen(
-            urllib2.Request(request_url, headers=headers)
-        )
+        ret = urlopen(Request(request_url, headers=headers))
         json_ret = rlk_jsonloads(ret.read())
         if json_ret['success'] is not True:
             raise ValueError(json_ret['message'])

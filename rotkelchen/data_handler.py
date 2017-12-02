@@ -63,7 +63,7 @@ class DataHandler(object):
                 self.stats = rlk_jsonloads(f.read())
 
             # Change all timestamp entries from string to timestamp if needed
-            if isinstance(self.stats[0]['date'], basestring):
+            if isinstance(self.stats[0]['date'], (str, bytes)):
                 new_stats = []
                 for entry in self.stats:
                     entry['date'] = createTimeStamp(

@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 import os
 import threading
-import urllib2
 import plot
+from urllib.request import Request, urlopen
 
 from utils import (
     Logger,
     combine_stat_dicts,
-    from_wei,
     dict_get_sumof,
     merge_dicts,
     rlk_jsonloads,
@@ -39,7 +38,7 @@ class Rotkelchen(object):
                 self.secret_data = rlk_jsonloads(f.read())
 
         # turn all secret key values from unicode to string
-        for k, v in self.secret_data.iteritems():
+        for k, v in self.secret_data.items():
             self.secret_data[k] = str(self.secret_data[k])
 
         # if a file is given open it for output and initialize the logger
@@ -129,12 +128,10 @@ class Rotkelchen(object):
         eth_usd_price = self.inquirer.find_usd_price('ETH')
         eth_accounts_usd_amount = eth_sum * eth_usd_price
 
-        btc_resp = urllib2.urlopen(
-            urllib2.Request(
-                'https://blockchain.info/q/addressbalance/%s' %
-                '|'.join(self.data.personal['btc_accounts'])
-            )
-        )
+        btc_resp = urlopen(Request(
+            'https://blockchain.info/q/addressbalance/%s' %
+            '|'.join(self.data.personal['btc_accounts'])
+        ))
         btc_sum = FVal(btc_resp.read()) * FVal('0.00000001')  # result is in satoshis
         btc_usd_price = self.inquirer.find_usd_price('BTC')
         btc_accounts_usd_amount = btc_sum * btc_usd_price
@@ -203,7 +200,7 @@ class Rotkelchen(object):
 
         # calculate net usd value
         net_usd = FVal(0)
-        for k, v in combined.iteritems():
+        for k, v in combined.items():
             net_usd += FVal(v['usd_value'])
 
         stats = {
@@ -218,7 +215,7 @@ class Rotkelchen(object):
         }
 
         currencies = {}
-        for k, v in combined.iteritems():
+        for k, v in combined.items():
             currencies['percentage_of_net_usd_in_{}'.format(k.lower())] = (v['usd_value'] / net_usd).to_percentage()
         stats['currencies'] = currencies
 
@@ -231,7 +228,7 @@ class Rotkelchen(object):
         # is not required to be saved in the history file
         try:
             details = self.data.accountant.details
-            for asset, (tax_free_amount, average_buy_value) in details.iteritems():
+            for asset, (tax_free_amount, average_buy_value) in details.items():
                 if asset not in result_dict:
                     continue
 

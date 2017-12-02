@@ -702,7 +702,7 @@ class Accountant(object):
             )
 
     def save_events(self):
-        for asset, events in self.events.iteritems():
+        for asset, events in self.events.items():
             pass
 
     def calculate_asset_details(self):
@@ -710,7 +710,7 @@ class Accountant(object):
         is hence tax-free and also the average buy price for each asset"""
         self.details = dict()
         now = ts_now()
-        for asset, events in self.events.iteritems():
+        for asset, events in self.events.items():
             tax_free_amount_left = 0
             amount_sum = 0
             average = 0
