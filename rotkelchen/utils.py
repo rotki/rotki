@@ -301,7 +301,7 @@ def output_to_csv(
 
 def convert_to_int(val, accept_only_exact=True):
     """Try to convert to an int. Either from an FVal or a string. If it's a float
-    and it's not whole (like 42.0) then raise"""
+    and it's not whole (like 42.0) and accept_only_exact is False then raise"""
     if isinstance(val, FVal):
         return val.to_int(accept_only_exact)
     elif isinstance(val, (bytes, str)):
@@ -309,7 +309,7 @@ def convert_to_int(val, accept_only_exact=True):
     elif isinstance(val, int):
         return val
     elif isinstance(val, float):
-        if val.is_integer():
+        if val.is_integer() or accept_only_exact is False:
             return int(val)
 
     raise ValueError('Can not convert {} which is of type {} to int.'.format(val, type(val)))

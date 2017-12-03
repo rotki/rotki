@@ -379,7 +379,7 @@ class PriceHistorian(object):
         # find the closest entry to the provided timestamp
         # print("loaded {}_{}".format(from_asset, to_asset))
         assert timestamp > data[0]['time']
-        index = convert_to_int((timestamp - data[0]['time']) / 3600)
+        index = convert_to_int((timestamp - data[0]['time']) / 3600, accept_only_exact=False)
         # print("timestamp: {} index: {} data_length: {}".format(timestamp, index, len(data)))
         diff = abs(data[index]['time'] - timestamp)
         if index + 1 <= len(data) - 1:
