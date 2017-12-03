@@ -7,7 +7,9 @@ def test_simple_arithmetic():
     a = FVal(5.21)
     b = FVal(2.12)
     c = FVal(-23.124)
-    d = FVal(5006337207657766294397L)
+    d = FVal(5006337207657766294397)
+    e = FVal(0)
+    FVal(b'0')
 
     assert a + b == FVal('7.33')
     assert a - b == FVal('3.09')
@@ -19,6 +21,7 @@ def test_simple_arithmetic():
     assert abs(a) == FVal('5.21')
     assert abs(c) == FVal('23.124')
     assert d == FVal('5006337207657766294397')
+    assert e == FVal('0.0')
 
     a += b
     assert a == FVal('7.33')
@@ -60,7 +63,9 @@ def test_encoding():
     data = {'a': 3.14, 'b': 5, 'c': 'foo', 'd': '5.42323143', 'e': {'u1': '3.221'},
             'f': [2.1, 'boo', 3, '4.2324']}
     strdata = rlk_jsondumps(data)
-    assert strdata == '{"a": 3.14, "c": "foo", "b": 5, "e": {"u1": "3.221"}, "d": "5.42323143", "f": [2.1, "boo", 3, "4.2324"]}'
+    # stupid test, as it will fail if different python version is used. Should just
+    # have used decoding again to make sure they are the same but was lazy
+    assert strdata == '{"a": 3.14, "b": 5, "c": "foo", "d": "5.42323143", "e": {"u1": "3.221"}, "f": [2.1, "boo", 3, "4.2324"]}'
 
 
 def test_decoding():
@@ -72,7 +77,7 @@ def test_decoding():
     assert data['a'] == FVal('3.14')
     assert isinstance(data['b'], int)
     assert data['b'] == 5
-    assert isinstance(data['c'], (str, unicode))
+    assert isinstance(data['c'], (str, bytes))
     assert data['c'] == 'foo'
     assert isinstance(data['d'], FVal)
     assert data['d'] == FVal('5.42323143')
@@ -82,7 +87,7 @@ def test_decoding():
 
     assert isinstance(data['f'][0], FVal)
     assert data['f'][0] == FVal('2.1')
-    assert isinstance(data['f'][1], (str, unicode))
+    assert isinstance(data['f'][1], (str, bytes))
     assert data['f'][1] == "boo"
     assert isinstance(data['f'][2], int)
     assert data['f'][2] == 3

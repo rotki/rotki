@@ -2,8 +2,9 @@ import os
 from urllib.request import Request, urlopen
 from web3 import Web3, HTTPProvider
 from requests import ConnectionError
-from utils import from_wei, rlk_jsonloads
-from fval import FVal
+
+from rotkelchen.utils import from_wei, rlk_jsonloads
+from rotkelchen.fval import FVal
 
 
 class Ethchain(object):

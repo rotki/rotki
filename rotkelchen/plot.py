@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 
 
-def show(stats):
+def show_plot(stats):
     times = []
     data = []
     for entry in stats:

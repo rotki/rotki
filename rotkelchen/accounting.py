@@ -1,5 +1,5 @@
-from utils import tsToDate, ts_now, output_to_csv
-from order_formatting import (
+from rotkelchen.utils import tsToDate, ts_now, output_to_csv
+from rotkelchen.order_formatting import (
     Events,
     BuyEvent,
     SellEvent,
@@ -8,14 +8,14 @@ from order_formatting import (
     Trade,
     AssetMovement
 )
-from transactions import EthereumTransaction
-from history import (
+from rotkelchen.transactions import EthereumTransaction
+from rotkelchen.history import (
     NoPriceForGivenTimestamp,
     PriceQueryUnknownFromAsset,
     FIAT_CURRENCIES
 )
-from fval import FVal
-from errors import CorruptData
+from rotkelchen.fval import FVal
+from rotkelchen.errors import CorruptData
 
 YEAR_IN_SECONDS = 31536000  # 60 * 60 * 24 * 365
 

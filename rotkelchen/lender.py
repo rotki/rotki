@@ -3,9 +3,9 @@ import os
 import csv
 from datetime import datetime
 
-from utils import createTimeStamp, dateToTs, isclose
-from errors import PoloniexError
-from fval import FVal
+from rotkelchen.utils import createTimeStamp, dateToTs, isclose
+from rotkelchen.errors import PoloniexError
+from rotkelchen.fval import FVal
 
 
 def rateToStr(f):

@@ -1,25 +1,24 @@
 #!/usr/bin/env python
 import os
 import threading
-import plot
 from urllib.request import Request, urlopen
 
-from utils import (
+from rotkelchen.utils import (
     Logger,
     combine_stat_dicts,
     dict_get_sumof,
     merge_dicts,
     rlk_jsonloads,
 )
-
-from ethchain import Ethchain
-from poloniex import Poloniex
-from kraken import Kraken
-from bittrex import Bittrex
-from data_handler import DataHandler
-from inquirer import Inquirer
-from utils import query_fiat_pair
-from fval import FVal
+from rotkelchen.plot import show_plot
+from rotkelchen.ethchain import Ethchain
+from rotkelchen.poloniex import Poloniex
+from rotkelchen.kraken import Kraken
+from rotkelchen.bittrex import Bittrex
+from rotkelchen.data_handler import DataHandler
+from rotkelchen.inquirer import Inquirer
+from rotkelchen.utils import query_fiat_pair
+from rotkelchen.fval import FVal
 
 
 class Rotkelchen(object):
@@ -59,8 +58,8 @@ class Rotkelchen(object):
         # initialize exchanges for which we have keys
         if 'kraken_api_key' in self.secret_data:
             self.kraken = Kraken(
-                self.secret_data['kraken_api_key'],
-                self.secret_data['kraken_secret'],
+                str.encode(self.secret_data['kraken_api_key']),
+                str.encode(self.secret_data['kraken_secret']),
                 args,
                 self.logger,
                 data_dir
@@ -70,8 +69,8 @@ class Rotkelchen(object):
 
         if 'polo_api_key' in self.secret_data:
             self.poloniex = Poloniex(
-                self.secret_data['polo_api_key'],
-                self.secret_data['polo_secret'],
+                str.encode(self.secret_data['polo_api_key']),
+                str.encode(self.secret_data['polo_secret']),
                 args,
                 self.logger,
                 self.cache_data_filename,
@@ -81,8 +80,8 @@ class Rotkelchen(object):
 
         if 'bittrex_api_key' in self.secret_data:
             self.bittrex = Bittrex(
-                self.secret_data['bittrex_api_key'],
-                self.secret_data['bittrex_secret'],
+                str.encode(self.secret_data['bittrex_api_key']),
+                str.encode(self.secret_data['bittrex_secret']),
                 self.inquirer,
                 data_dir
             )
@@ -115,7 +114,7 @@ class Rotkelchen(object):
                     break
 
     def plot(self):
-        plot.show(self.data.stats)
+        show_plot(self.data.stats)
 
     def process_history(self, start_ts, end_ts):
         return self.data.process_history(start_ts, end_ts)

@@ -16,7 +16,7 @@ install_requirements = list(set(
 ))
 
 setup(
-    name='Rotkelchen',
+    name='rotkelchen',
     version='0.0.1',
     author='Lefteris Karapetsas',
     author_email='lefteris@refu.co',
@@ -31,4 +31,9 @@ setup(
         'Development Status :: 1 - Planning',
         'Topic :: Utilities',
     ],
+    entry_points={
+        'console_scripts': [
+            'rotkelchen = rotkelchen.__main__:main',
+        ],
+    },
 )

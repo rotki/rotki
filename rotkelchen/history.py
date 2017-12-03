@@ -4,12 +4,12 @@ import glob
 import re
 from urllib.request import Request, urlopen
 
-from exchange import data_up_todate
-from kraken import kraken_to_world_pair
-from bittrex import trade_from_bittrex
-from transactions import query_etherscan_for_transactions, transactions_from_dictlist
-from fval import FVal
-from utils import (
+from rotkelchen.exchange import data_up_todate
+from rotkelchen.kraken import kraken_to_world_pair
+from rotkelchen.bittrex import trade_from_bittrex
+from rotkelchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
+from rotkelchen.fval import FVal
+from rotkelchen.utils import (
     createTimeStamp,
     tsToDate,
     get_pair_position,
@@ -20,7 +20,7 @@ from utils import (
     convert_to_int,
     ts_now,
 )
-from order_formatting import (
+from rotkelchen.order_formatting import (
     Trade,
     trades_from_dictlist,
     asset_movements_from_dictlist

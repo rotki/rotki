@@ -1,7 +1,8 @@
 from __future__ import unicode_literals
 from urllib.request import Request, urlopen
-from fval import FVal
-from utils import rlk_jsonloads, retry_calls
+
+from rotkelchen.fval import FVal
+from rotkelchen.utils import rlk_jsonloads, retry_calls
 
 
 class Inquirer(object):

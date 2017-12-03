@@ -9,11 +9,11 @@ import time
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
 
-from utils import query_fiat_pair, retry_calls, rlk_jsonloads, convert_to_int
-from order_formatting import AssetMovement
-from exchange import Exchange
-from errors import KrakenAPIRateLimitExceeded
-from fval import FVal
+from rotkelchen.utils import query_fiat_pair, retry_calls, rlk_jsonloads, convert_to_int
+from rotkelchen.order_formatting import AssetMovement
+from rotkelchen.exchange import Exchange
+from rotkelchen.errors import KrakenAPIRateLimitExceeded
+from rotkelchen.fval import FVal
 
 
 # TODO: Figure out why registering the exception class here
@@ -121,7 +121,7 @@ class Kraken(Exchange):
         req    -- additional API request parameters (default: {})
         """
         urlpath = '/' + self.apiversion + '/public/' + method
-        post_data = urlencode(req)
+        post_data = str.encode(urlencode(req))
         ret = urlopen(Request(
             'https://api.kraken.com' + urlpath,
             post_data
@@ -157,8 +157,9 @@ class Kraken(Exchange):
 
         req['nonce'] = int(1000 * time.time())
         post_data = urlencode(req)
-        message = urlpath + hashlib.sha256(
-            str(req['nonce']) + post_data).digest()
+        # any unicode strings must be turned to bytes
+        hashable = (str(req['nonce']) + post_data).encode()
+        message = urlpath.encode() + hashlib.sha256(hashable).digest()
         signature = hmac.new(
             base64.b64decode(self.secret),
             message,
@@ -170,7 +171,7 @@ class Kraken(Exchange):
         }
         ret = urlopen(Request(
             'https://api.kraken.com' + urlpath,
-            post_data,
+            str.encode(post_data),
             headers
         ))
         json_ret = rlk_jsonloads(ret.read())

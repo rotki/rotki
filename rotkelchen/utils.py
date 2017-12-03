@@ -1,17 +1,17 @@
 #!/usr/bin/env python
+import os
 import json
 import time
 import datetime
 import subprocess
+import calendar
 import operator
+import csv
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 
-import os
-import calendar
-import csv
-from errors import KrakenAPIRateLimitExceeded
-from fval import FVal
+from rotkelchen.errors import KrakenAPIRateLimitExceeded
+from rotkelchen.fval import FVal
 
 
 def sfjson_loads(s):
@@ -90,8 +90,10 @@ def from_wei(wei_value):
 
 
 def combine_dicts(a, b, op=operator.add):
-    return dict(a.items() + b.items() +
-                [(k, op(a[k], b[k])) for k in set(b) & set(a)])
+    new_dict = a.copy()
+    new_dict.update(b)
+    new_dict.update([(k, op(a[k], b[k])) for k in set(b) & set(a)])
+    return new_dict
 
 
 def combine_stat_dicts(*args):

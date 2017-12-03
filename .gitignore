@@ -3,3 +3,7 @@ node_modules/
 /tests/.cache
 error.log
 .cache/
+build/
+dist/
+Rotkelchen.egg-info/
+rotkelchen.egg-info/

@@ -10,15 +10,15 @@ from urllib.request import Request, urlopen
 from urllib.parse import urlencode
 from http.client import HTTPConnection
 
-from fval import FVal
-from utils import (
+from rotkelchen.fval import FVal
+from rotkelchen.utils import (
     createTimeStamp,
     retry_calls,
     safe_urllib_read_to_json,
 )
-from exchange import Exchange
-from order_formatting import AssetMovement
-from errors import PoloniexError
+from rotkelchen.exchange import Exchange
+from rotkelchen.order_formatting import AssetMovement
+from rotkelchen.errors import PoloniexError
 
 
 def tsToDate(s):
@@ -139,7 +139,7 @@ class Poloniex(Exchange):
         else:
             req['command'] = command
             req['nonce'] = int(time.time() * 1000)
-            post_data = urlencode(req)
+            post_data = str.encode(urlencode(req))
 
             sign = hmac.new(self.secret, post_data, hashlib.sha512).hexdigest()
             headers = {

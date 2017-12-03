@@ -1,18 +1,15 @@
 # Based on https://github.com/fyears/electron-python-example
-
 from __future__ import print_function
-import traceback
-import sys
+
 import gevent
 import signal
-
 import zerorpc
-
-from args import app_args
-from rotkelchen import Rotkelchen
-from utils import pretty_json_dumps
-from transactions import query_txlist
 from decimal import Decimal
+
+from rotkelchen.args import app_args
+from rotkelchen.rotkelchen import Rotkelchen
+from rotkelchen.utils import pretty_json_dumps
+from rotkelchen.transactions import query_txlist
 
 
 def _process_entry(entry):
@@ -227,21 +224,8 @@ class RotkelchenServer(object):
     def main(self):
         gevent.hub.signal(signal.SIGINT, self.shutdown)
         gevent.hub.signal(signal.SIGTERM, self.shutdown)
-        self.zerorpc = zerorpc.Server(rotkelchen_server)
+        self.zerorpc = zerorpc.Server(self)
         addr = 'tcp://127.0.0.1:' + str(self.port())
         self.zerorpc.bind(addr)
         print('start running on {}'.format(addr))
         self.zerorpc.run()
-
-
-if __name__ == '__main__':
-    try:
-        rotkelchen_server = RotkelchenServer()
-    except:
-        tb = traceback.format_exc()
-        # open a file and dump the stack trace
-        with open("error.log", "w") as f:
-            f.write(tb)
-        print("Failed to start rotkelchen backend:\n{}".format(tb))
-        sys.exit(1)
-    rotkelchen_server.main()

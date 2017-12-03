@@ -1,10 +1,10 @@
 import os
 import time
 
-from utils import createTimeStamp, ts_now, rlk_jsonloads, rlk_jsondumps
+from rotkelchen.utils import createTimeStamp, ts_now, rlk_jsonloads, rlk_jsondumps
 
-from history import TradesHistorian, PriceHistorian
-from accounting import Accountant
+from rotkelchen.history import TradesHistorian, PriceHistorian
+from rotkelchen.accounting import Accountant
 
 DEFAULT_START_DATE = "01/08/2015"
 

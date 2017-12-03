@@ -1,7 +1,8 @@
 from urllib.request import Request, urlopen
 from collections import namedtuple
-from utils import retry_calls, rlk_jsonloads, convert_to_int
-from fval import FVal
+
+from rotkelchen.utils import retry_calls, rlk_jsonloads, convert_to_int
+from rotkelchen.fval import FVal
 
 EthereumTransaction = namedtuple(
     'EthereumTransaction',

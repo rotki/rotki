@@ -25,7 +25,10 @@ class FVal(object):
     def __init__(self, data):
         if isinstance(data, float):
             self.num = Decimal(str(data))
-        elif isinstance(data, (Decimal, int, str, long)):
+        elif isinstance(data, bytes):
+            # assume it's an ascii string and try to decode the bytes to one
+            self.num = Decimal(data.decode())
+        elif isinstance(data, (Decimal, int, str)):
             self.num = Decimal(data)
         elif isinstance(data, FVal):
             self.num = data.num
@@ -41,9 +44,13 @@ class FVal(object):
     def __repr__(self):
         return 'FVal({})'.format(str(self.num))
 
-    def __cmp__(self, other):
+    def __lt__(self, other):
         other = evaluate_input(other)
-        return self.num.compare_signal(other)
+        return self.num.compare_signal(other) == Decimal('-1')
+
+    def __eq__(self, other):
+        other = evaluate_input(other)
+        return self.num.compare_signal(other) == Decimal('0')
 
     def __add__(self, other):
         other = evaluate_input(other)
@@ -57,9 +64,13 @@ class FVal(object):
         other = evaluate_input(other)
         return FVal(self.num.__mul__(other))
 
-    def __div__(self, other):
+    def __truediv__(self, other):
         other = evaluate_input(other)
-        return FVal(self.num.__div__(other))
+        return FVal(self.num.__truediv__(other))
+
+    def __floordiv__(self, other):
+        other = evaluate_input(other)
+        return FVal(self.num.__floordiv__(other))
 
     def __pow__(self, other):
         other = evaluate_input(other)
@@ -77,9 +88,13 @@ class FVal(object):
         other = evaluate_input(other)
         return FVal(self.num.__rmul__(other))
 
-    def __rdiv__(self, other):
+    def __rtruediv__(self, other):
         other = evaluate_input(other)
-        return FVal(self.num.__rdiv__(other))
+        return FVal(self.num.__rtruediv__(other))
+
+    def __rfloordiv__(self, other):
+        other = evaluate_input(other)
+        return FVal(self.num.__rfloordiv__(other))
 
     def __float__(self):
         return float(self.num)

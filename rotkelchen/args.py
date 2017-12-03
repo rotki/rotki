@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import argparse
-from config import default_data_directory
+from rotkelchen.config import default_data_directory
 
 
 def app_args():

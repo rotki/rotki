@@ -4,10 +4,10 @@ import hashlib
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
 
-from utils import createTimeStamp, get_pair_position, rlk_jsonloads
-from exchange import Exchange
-from order_formatting import Trade
-from fval import FVal
+from rotkelchen.utils import createTimeStamp, get_pair_position, rlk_jsonloads
+from rotkelchen.exchange import Exchange
+from rotkelchen.order_formatting import Trade
+from rotkelchen.fval import FVal
 
 
 BITTREX_MARKET_METHODS = {
@@ -98,11 +98,11 @@ class Bittrex(Exchange):
         request_url = self.uri + method_type + '/' + method + '?'
 
         if method_type != 'public':
-            request_url += 'apikey=' + self.api_key + "&nonce=" + nonce + '&'
+            request_url += 'apikey=' + self.api_key.decode() + "&nonce=" + nonce + '&'
 
         request_url += urlencode(options)
         signature = hmac.new(
-            self.secret.encode(),
+            self.secret,
             request_url.encode(),
             hashlib.sha512
         ).hexdigest()

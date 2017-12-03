@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import os
-from utils import rlk_jsonloads, rlk_jsondumps
+from rotkelchen.utils import rlk_jsonloads, rlk_jsondumps
 
 
 def data_up_todate(json_data, start_ts, end_ts):
@@ -17,6 +17,8 @@ def data_up_todate(json_data, start_ts, end_ts):
 class Exchange(object):
 
     def __init__(self, name, api_key, secret):
+        assert isinstance(api_key, bytes), 'api key for {} should be a bytestring'.format(name)
+        assert isinstance(secret, bytes), 'secret for {} should be a bytestring'.format(name)
         self.name = name
         self.api_key = api_key
         self.secret = secret
