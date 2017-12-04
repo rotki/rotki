@@ -33,11 +33,15 @@ def app_args():
         help='The directory where all data and configs are placed',
         default=default_data_directory()
     )
-
     p.add_argument(
         '--zerorpc-port',
         help='The port on which to open a zerorpc server for communication with the UI',
         default=4242
+    )
+    p.add_argument(
+        '--ethrpc-port',
+        help='The port on which to communicate with an ethereum\'s client RPC.',
+        default=8545,
     )
 
     args = p.parse_args()

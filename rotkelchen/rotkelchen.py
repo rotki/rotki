@@ -49,7 +49,7 @@ class Rotkelchen(object):
 
         self.cache_data_filename = os.path.join(data_dir, 'cache_data.json')
 
-        self.ethchain = Ethchain()
+        self.ethchain = Ethchain(args.ethrpc_port)
 
         self.poloniex = None
         self.kraken = None

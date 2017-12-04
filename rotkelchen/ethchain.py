@@ -8,12 +8,12 @@ from rotkelchen.fval import FVal
 
 
 class Ethchain(object):
-    def __init__(self):
+    def __init__(self, ethrpc_port):
         self.connected = True
         # Note that you should create only one RPCProvider per
         # process, as it recycles underlying TCP/IP network connections between
         # your process and Ethereum node
-        self.web3 = Web3(HTTPProvider('http://localhost:8545'))
+        self.web3 = Web3(HTTPProvider('http://localhost:{}'.format(ethrpc_port)))
         try:
             self.web3.eth.blockNumber
             dir_path = os.path.dirname(os.path.realpath(__file__))
