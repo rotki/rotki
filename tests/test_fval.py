@@ -47,6 +47,50 @@ def test_arithmetic_with_int():
     assert 2 / a == FVal('0.3838771593090211132437619962')
 
 
+def test_comparison():
+    a = FVal('1.348938409')
+    b = FVal('0.123432434')
+    c = FVal('1.348938410')
+    d = FVal('1.348938409')
+
+    assert a > b
+    assert a >= b
+    assert b < a
+    assert b <= a
+    assert c > a
+    assert c >= a
+    assert a < c
+    assert a <= c
+    assert a == d
+    assert a <= d
+    assert a >= d
+
+
+def test_int_comparison():
+    a = FVal('1.348938409')
+    b = 1
+    c = FVal('3.0')
+    d = FVal('3')
+    e = 3
+
+    assert a > b
+    assert a >= b
+    assert b < a
+    assert b <= a
+
+    assert c >= d
+    assert c <= d
+    assert d <= c
+    assert d >= c
+    assert d == c
+
+    assert c >= e
+    assert c <= e
+    assert e <= c
+    assert e >= c
+    assert e == c
+
+
 def test_representation():
     a = FVal(2.01)
     b = FVal('2.01')

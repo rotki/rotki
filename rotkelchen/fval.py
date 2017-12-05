@@ -44,9 +44,21 @@ class FVal(object):
     def __repr__(self):
         return 'FVal({})'.format(str(self.num))
 
+    def __gt__(self, other):
+        other = evaluate_input(other)
+        return self.num.compare_signal(other) == Decimal('1')
+
     def __lt__(self, other):
         other = evaluate_input(other)
         return self.num.compare_signal(other) == Decimal('-1')
+
+    def __le__(self, other):
+        other = evaluate_input(other)
+        return self.num.compare_signal(other) in (Decimal('-1'), Decimal('0'))
+
+    def __ge__(self, other):
+        other = evaluate_input(other)
+        return self.num.compare_signal(other) in (Decimal('1'), Decimal('0'))
 
     def __eq__(self, other):
         other = evaluate_input(other)
