@@ -1,6 +1,7 @@
 import time
 import hmac
 import hashlib
+import requests
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
 from urllib.error import HTTPError
@@ -12,6 +13,7 @@ from rotkelchen.fval import FVal
 V3_ENDPOINTS = (
     'account',
     'myTrades',
+    'openOrders',
 )
 
 V1_ENDPOINTS = (
@@ -22,6 +24,9 @@ V1_ENDPOINTS = (
 class Binance(Exchange):
     """Binance exchange api docs:
     https://github.com/binance-exchange/binance-official-api-docs/blob/master/rest-api.md
+
+    An unofficial python binance package:
+    https://github.com/sammchardy/python-binance
     """
     def __init__(self, api_key, secret, inquirer, data_dir):
         super(Binance, self).__init__('binance', api_key, secret)
@@ -29,6 +34,12 @@ class Binance(Exchange):
         self.uri = 'https://api.binance.com/api/'
         self.inquirer = inquirer
         self.data_dir = data_dir
+        self.session = requests.session()
+        self.session.headers.update({
+            'Accept': 'application/json',
+            'User-Agent': 'rotkelchen',
+            'X-MBX-APIKEY': self.api_key,
+        })
 
     def api_query(self, method, options=None):
         if not options:
@@ -36,32 +47,35 @@ class Binance(Exchange):
 
         if method in V3_ENDPOINTS:
             api_version = 3
+            options['timestamp'] = str(int(time.time() * 1000))
+            signature = hmac.new(
+                self.secret,
+                urlencode(options).encode('utf-8'),
+                hashlib.sha256
+            ).hexdigest()
+            options['signature'] = signature
         elif method in V1_ENDPOINTS:
             api_version = 1
         else:
             raise ValueError('Unexpected binance api method {}'.format(method))
 
-        options['timestamp'] = str(int(time.time() * 1000))
-        request_url = self.uri + '/v' + str(api_version) + '/' + method + '?'
-        signature = hmac.new(
-            self.secret,
-            urlencode(options).encode(),
-            hashlib.sha256
-        ).hexdigest()
-        headers = {'X-MBX-APIKEY': self.api_key}
-        options['signature'] = signature
+        request_url = self.uri + 'v' + str(api_version) + '/' + method + '?'
         request_url += urlencode(options)
-        try:
-            ret = urlopen(Request(request_url, headers=headers))
-        except HTTPError as e:
-            print('Binance API request for {} failed with {} {}'.format(
-                method,
-                e.code,
-                e.msg
-            ))
-            return {}
 
-        json_ret = rlk_jsonloads(ret.read())
+        response = getattr(self.session, 'get')(request_url)
+        if response.status_code != 200:
+            result = rlk_jsonloads(response.text)
+            raise ValueError(
+                'Binance API request {} for {} failed with HTTP status '
+                'code: {}, error code: {} and error message: {}'.format(
+                    response.url,
+                    method,
+                    response.status_code,
+                    result['code'],
+                    result['msg'],
+                ))
+
+        json_ret = rlk_jsonloads(response.text)
         return json_ret
 
     def query_balances(self):
@@ -81,12 +95,26 @@ class Binance(Exchange):
 
         return returned_balances
 
-    def query_trade_history(self, start_ts=None, end_ts=None, end_at_least_ts=None):
-        exchange_data = self.api_query('exchangeInfo')
-        symbols = []
-        for symbol in exchange_data['symbols']:
-            symbols.append(symbol['symbol'])
+    def query_trade_history(self, start_ts=None, end_ts=None, end_at_least_ts=None, markets=None):
 
-        #TODO: in progress
-        for symbol in symbols:
-            pass
+        markets = ['RDNETH']
+        if not markets:
+            exchange_data = self.api_query('exchangeInfo')
+            for symbol in exchange_data['symbols']:
+                markets.append(str(symbol['symbol']))
+
+        returned_history = list()
+        for symbol in markets:
+            last_trade_id = 0
+            len_result = 500
+            while len_result == 500:
+                result = self.api_query(
+                    'myTrades',
+                    options={
+                        'symbol': symbol,
+                        'fromId': last_trade_id,
+                    })
+                len_result = len(result)
+            returned_history.extend(result)
+
+        return returned_history

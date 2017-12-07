@@ -206,17 +206,17 @@ class RotkelchenServer(object):
     def test3(self):
         with self.rotkelchen.lock:
             result = query_txlist("0xd1b8d347fd50dc7838a8ceb4294b6621b0b300f6", False)
-        return result
+        return pretty_json_dumps(result)
 
     def test4(self):
         with self.rotkelchen.lock:
-            result = self.rotkelchen.poloniex.returnLendingHistory()
-        return result
+            result = self.rotkelchen.binance.query_balances()
+        return pretty_json_dumps(result)
 
     def test5(self):
         with self.rotkelchen.lock:
-            result = self.rotkelchen.kraken.query_balances()
-        return result
+            result = self.rotkelchen.binance.query_trade_history()
+        return pretty_json_dumps(result)
 
     def echo(self, text):
         return text
