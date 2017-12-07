@@ -7,6 +7,7 @@ from urllib.request import Request, urlopen
 from rotkelchen.exchange import data_up_todate
 from rotkelchen.kraken import kraken_to_world_pair
 from rotkelchen.bittrex import trade_from_bittrex
+from rotkelchen.binance import trade_from_binance
 from rotkelchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
 from rotkelchen.fval import FVal
 from rotkelchen.utils import (
@@ -434,6 +435,7 @@ class TradesHistorian(object):
             poloniex,
             kraken,
             bittrex,
+            binance,
             logger,
             data_directory,
             personal_data,
@@ -443,6 +445,7 @@ class TradesHistorian(object):
         self.poloniex = poloniex
         self.kraken = kraken
         self.bittrex = bittrex
+        self.binance = binance
         self.start_ts = createTimeStamp(start_date, formatstr="%d/%m/%Y")
         self.data_directory = data_directory
         self.personal_data = personal_data
@@ -539,6 +542,15 @@ class TradesHistorian(object):
             for trade in bittrex_history:
                 history.append(trade_from_bittrex(trade))
 
+        if self.binance is not None:
+            binance_history = self.binance.query_trade_history(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                end_at_least_ts=end_at_least_ts
+            )
+            for trade in binance_history:
+                history.append(trade_from_binance(trade))
+
         eth_accounts = self.personal_data['eth_accounts']
         eth_transactions = query_etherscan_for_transactions(eth_accounts)
 
@@ -604,6 +616,11 @@ class TradesHistorian(object):
                     bittrex_history_okay = self.bittrex.check_trades_cache(
                         start_ts, end_at_least_ts
                     ) is not None
+                binance_history_okay = True
+                if self.binance is not None:
+                    binance_history_okay = self.binance.check_trades_cache(
+                        start_ts, end_at_least_ts
+                    ) is not None
 
                 if not self.read_manual_margin_positions:
                     marginfile_path = os.path.join(self.data_directory, MARGIN_HISTORYFILE)
@@ -654,6 +671,7 @@ class TradesHistorian(object):
                         poloniex_history_okay and
                         kraken_history_okay and
                         bittrex_history_okay and
+                        binance_history_okay and
                         margin_history_is_okay and
                         loan_history_is_okay and
                         asset_movements_history_is_okay and

@@ -11,7 +11,11 @@ def data_up_todate(json_data, start_ts, end_ts):
         (start_ts is None and json_data['start_time'] is None) or
         start_ts >= json_data['start_time']
     )
-    return start_ts_ok and end_ts <= json_data['end_time']
+    end_ts_ok = (
+        end_ts is not None and json_data['end_time'] is not None and
+        end_ts <= json_data['end_time']
+    )
+    return start_ts_ok and end_ts_ok
 
 
 class Exchange(object):

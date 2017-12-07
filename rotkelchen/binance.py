@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 from urllib.error import HTTPError
 
 from rotkelchen.exchange import Exchange
+from rotkelchen.order_formatting import pair_get_assets, Trade
 from rotkelchen.utils import rlk_jsonloads
 from rotkelchen.fval import FVal
 
@@ -19,6 +20,46 @@ V3_ENDPOINTS = (
 V1_ENDPOINTS = (
     'exchangeInfo'
 )
+
+
+def binance_pair_to_world(pair):
+    return pair[0:3] + '_' + pair[3:]
+
+
+def trade_from_binance(binance_trade):
+    """Turn a binance trade returned from trade history to our common trade
+    history format"""
+    amount = FVal(binance_trade['qty'])
+    rate = FVal(binance_trade['price'])
+    pair = binance_pair_to_world(binance_trade['symbol'])
+
+    base_asset, quote_asset = pair_get_assets(pair)
+
+    if binance_trade['isBuyer']:
+        order_type = 'buy'
+        # e.g. in RDNETH we buy RDN by paying ETH
+        cost_currency = quote_asset
+    else:
+        order_type = 'sell'
+        # e.g. in RDNETH we sell RDN to obtain ETH
+        cost_currency = base_asset
+
+    fee_currency = binance_trade['commisionAsset']
+    fee = FVal(binance_trade['commision'])
+    cost = rate * amount
+
+    return Trade(
+        timestamp=binance_trade['time'],
+        pair=pair,
+        type=order_type,
+        rate=rate,
+        cost=cost,
+        cost_currency=cost_currency,
+        fee=fee,
+        fee_currency=fee_currency,
+        amount=amount,
+        location='binance'
+    )
 
 
 class Binance(Exchange):
@@ -96,14 +137,21 @@ class Binance(Exchange):
         return returned_balances
 
     def query_trade_history(self, start_ts=None, end_ts=None, end_at_least_ts=None, markets=None):
+        cache = self.check_trades_cache(start_ts, end_at_least_ts)
+        if cache is not None:
+            return cache
 
-        markets = ['RDNETH']
         if not markets:
+            markets = []
             exchange_data = self.api_query('exchangeInfo')
             for symbol in exchange_data['symbols']:
-                markets.append(str(symbol['symbol']))
+                symbol_str = symbol['symbol']
+                if isinstance(symbol_str, FVal):
+                    symbol_str = str(symbol_str.to_int(exact=True))
 
-        returned_history = list()
+                markets.append(symbol_str)
+
+        all_trades_history = list()
         for symbol in markets:
             last_trade_id = 0
             len_result = 500
@@ -115,6 +163,22 @@ class Binance(Exchange):
                         'fromId': last_trade_id,
                     })
                 len_result = len(result)
-            returned_history.extend(result)
+                for r in result:
+                    r['symbol'] = symbol
+            all_trades_history.extend(result)
 
+        all_trades_history.sort(key=lambda x: x['time'])
+
+        returned_history = list()
+        for order in all_trades_history:
+            order_timestamp = int(order['time'] / 1000)
+            if start_ts is not None and order_timestamp < start_ts:
+                continue
+            if end_ts is not None and order_timestamp > end_ts:
+                break
+            order['time'] = order_timestamp
+
+            returned_history.append(order)
+
+        self.update_trades_cache(returned_history, start_ts, end_ts)
         return returned_history

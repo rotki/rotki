@@ -53,12 +53,16 @@ def trade_get_other_pair(trade, asset):
     return currencies[0] if currencies[1] == asset else currencies[1]
 
 
-def trade_get_assets(trade):
-    currencies = trade.pair.split('_')
+def pair_get_assets(pair):
+    currencies = pair.split('_')
     if len(currencies) != 2:
-        raise ValueError("Could not split {} pair".format(trade.pair))
+        raise ValueError("Could not split {} pair".format(pair))
 
     return currencies[0], currencies[1]
+
+
+def trade_get_assets(trade):
+    return pair_get_assets(trade.pair)
 
 
 def trades_from_dictlist(given_trades, start_ts, end_ts):

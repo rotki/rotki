@@ -55,6 +55,7 @@ class Rotkelchen(object):
         self.poloniex = None
         self.kraken = None
         self.bittrex = None
+        self.binance = None
 
         # initialize exchanges for which we have keys
         if 'kraken_api_key' in self.secret_data:
@@ -100,6 +101,7 @@ class Rotkelchen(object):
             self.poloniex,
             self.kraken,
             self.bittrex,
+            self.binance,
             data_dir
         )
         self.main_currency = self.data.accountant.profit_currency

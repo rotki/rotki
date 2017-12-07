@@ -21,6 +21,7 @@ class DataHandler(object):
             poloniex,
             kraken,
             bittrex,
+            binance,
             data_directory):
 
         self.data_directory = data_directory
@@ -38,6 +39,7 @@ class DataHandler(object):
             poloniex,
             kraken,
             bittrex,
+            binance,
             logger,
             self.data_directory,
             self.personal,
