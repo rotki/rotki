@@ -60,6 +60,7 @@ def include_external_trades(personal, start_ts, end_ts, history):
     external_trades = trades_from_dictlist(external_trades, start_ts, end_ts)
     history.extend(external_trades)
     history.sort(key=lambda trade: trade.timestamp)
+
     return history
 
 

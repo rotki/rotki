@@ -15,6 +15,7 @@ from rotkelchen.ethchain import Ethchain
 from rotkelchen.poloniex import Poloniex
 from rotkelchen.kraken import Kraken
 from rotkelchen.bittrex import Bittrex
+from rotkelchen.binance import Binance
 from rotkelchen.data_handler import DataHandler
 from rotkelchen.inquirer import Inquirer
 from rotkelchen.utils import query_fiat_pair
@@ -82,6 +83,14 @@ class Rotkelchen(object):
             self.bittrex = Bittrex(
                 str.encode(self.secret_data['bittrex_api_key']),
                 str.encode(self.secret_data['bittrex_secret']),
+                self.inquirer,
+                data_dir
+            )
+
+        if 'binance_api_key' in self.secret_data:
+            self.binance = Binance(
+                str.encode(self.secret_data['binance_api_key']),
+                str.encode(self.secret_data['binance_secret']),
                 self.inquirer,
                 data_dir
             )
@@ -187,14 +196,23 @@ class Rotkelchen(object):
         polo = self.poloniex.query_balances()
         kraken = self.kraken.query_balances()
         bittrex = self.bittrex.query_balances()
+        binance = self.binance.query_balances()
         blockchain_balances = self.query_blockchain_balances()
         bank_balances = self.query_bank_balances()
 
-        combined = combine_stat_dicts(polo, kraken, bittrex, blockchain_balances, bank_balances)
+        combined = combine_stat_dicts(
+            polo,
+            kraken,
+            bittrex,
+            binance,
+            blockchain_balances,
+            bank_balances
+        )
 
         polo_net_usd = dict_get_sumof(polo, 'usd_value')
         kraken_net_usd = dict_get_sumof(kraken, 'usd_value')
         bittrex_net_usd = dict_get_sumof(bittrex, 'usd_value')
+        binance_net_usd = dict_get_sumof(binance, 'usd_value')
         crypto_net_usd = dict_get_sumof(blockchain_balances, 'usd_value')
 
         # calculate net usd value
@@ -207,6 +225,7 @@ class Rotkelchen(object):
                 'percentage_of_net_usd_in_poloniex': (polo_net_usd / net_usd).to_percentage(),
                 'percentage_of_net_usd_in_kraken': (kraken_net_usd / net_usd).to_percentage(),
                 'percentage_of_net_usd_in_bittrex': (bittrex_net_usd / net_usd).to_percentage(),
+                'percentage_of_net_usd_in_binance': (binance_net_usd / net_usd).to_percentage(),
                 'percentage_of_net_usd_in_normal_crypto_account': (crypto_net_usd / net_usd).to_percentage(),
                 'percentage_of_net_usd_in_banksncash': (bank_balances['EUR']['usd_value'] / net_usd).to_percentage(),
             },

@@ -8,8 +8,6 @@ def main():
     try:
         rotkelchen_server = RotkelchenServer()
     except:
-        import pdb
-        pdb.set_trace()
         tb = traceback.format_exc()
         # open a file and dump the stack trace
         with open("error.log", "w") as f:
