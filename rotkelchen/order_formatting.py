@@ -24,7 +24,7 @@ Trade = namedtuple(
         'pair',
         'type',
         'rate',  # always in quote currency?
-        'cost',
+        'cost', # TODO: Make sure is this total cost with fees or without fees, for all exchanges?
         'cost_currency',
         'fee',
         'fee_currency',
