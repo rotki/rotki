@@ -48,8 +48,7 @@ class CSVExporter(object):
         row = len(self.all_events_csv) + 2
         net_profit_or_loss = 0  # no profit by buying
         if event_type == 'sell':
-            net_profit_or_loss = '=IF(E{}=0,0,H{}-E{})'.format(row, row, row)
-            net_profit_or_loss = '=H{}-F{}'.format(row, row)
+            net_profit_or_loss = '=IF(E{}=0,0,H{}-F{})'.format(row, row, row)
         elif event_type in ('tx_gas_cost', 'asset_movement', 'loan_settlement'):
             net_profit_or_loss = '=-B{}'.format(row)
         elif event_type in ('interest_rate_payment', 'margin_position_close'):
@@ -149,7 +148,7 @@ class CSVExporter(object):
             paid_in_asset=selling_amount,
             received_asset=receiving_asset,
             received_in_asset=receiving_amount,
-            received_in_profit_currency=receiving_asset_rate_in_profit_currency * receiving_amount,
+            received_in_profit_currency=gain_in_profit_currency,
             timestamp=timestamp,
             is_virtual=is_virtual,
             taxable_amount=taxable_amount,
