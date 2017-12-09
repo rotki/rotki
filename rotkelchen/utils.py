@@ -6,7 +6,6 @@ import datetime
 import subprocess
 import calendar
 import operator
-import csv
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 
@@ -261,42 +260,6 @@ class Logger():
     def destroy(self):
         if self.outfile:
             self.outfile.close()
-
-
-def dict_to_csv_file(log, path, dictionary_list):
-
-    if len(dictionary_list) == 0:
-        log.logdebug("Skipping writting empty CSV for {}".format(path))
-        return
-
-    with open(path, 'w') as f:
-        w = csv.DictWriter(f, dictionary_list[0].keys())
-        w.writeheader()
-        for dic in dictionary_list:
-            w.writerow(dic)
-
-
-def output_to_csv(
-        log,
-        out_dir,
-        trades,
-        loan_profits,
-        asset_movements,
-        tx_gas_costs,
-        margin_positions,
-        loan_settlements,
-        all_events):
-
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
-
-    dict_to_csv_file(log, os.path.join(out_dir, 'trades.csv'), trades)
-    dict_to_csv_file(log, os.path.join(out_dir, 'loan_profits.csv'), loan_profits)
-    dict_to_csv_file(log, os.path.join(out_dir, 'asset_movements.csv'), asset_movements)
-    dict_to_csv_file(log, os.path.join(out_dir, 'tx_gas_costs.csv'), tx_gas_costs)
-    dict_to_csv_file(log, os.path.join(out_dir, 'margin_positions.csv'), margin_positions)
-    dict_to_csv_file(log, os.path.join(out_dir, 'loan_settlements.csv'), loan_settlements)
-    dict_to_csv_file(log, os.path.join(out_dir, 'all_events.csv'), all_events)
 
 
 def convert_to_int(val, accept_only_exact=True):
