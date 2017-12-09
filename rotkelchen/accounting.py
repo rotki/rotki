@@ -574,6 +574,8 @@ class Accountant(object):
                         receiving_asset,
                         timestamp,
                     ),
+                    taxable_amount=taxable_amount,
+                    taxable_bought_cost=taxable_bought_cost,
                     timestamp=timestamp,
                     is_virtual=is_virtual,
                 )

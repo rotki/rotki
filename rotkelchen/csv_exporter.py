@@ -31,6 +31,45 @@ class CSVExporter(object):
             for dic in dictionary_list:
                 w.writerow(dic)
 
+    def add_to_allevents(
+            self,
+            event_type,
+            paid_in_profit_currency,
+            paid_asset,
+            paid_in_asset,
+            received_asset,
+            received_in_asset,
+            received_in_profit_currency,
+            timestamp,
+            is_virtual=False,
+            taxable_amount='',
+            taxable_bought_cost='',
+    ):
+        row = len(self.all_events_csv) + 2
+        net_profit_or_loss = 0  # no profit by buying
+        if event_type == 'sell':
+            net_profit_or_loss = '=IF(E{}=0,0,H{}-E{})'.format(row, row, row)
+            net_profit_or_loss = '=H{}-F{}'.format(row, row)
+        elif event_type in ('tx_gas_cost', 'asset_movement', 'loan_settlement'):
+            net_profit_or_loss = '=-B{}'.format(row)
+        elif event_type in ('interest_rate_payment', 'margin_position_close'):
+            net_profit_or_loss = '=H{}'.format(row)
+
+        self.all_events_csv.append({
+            'type': event_type,
+            'paid_in_{}'.format(self.profit_currency): paid_in_profit_currency,
+            'paid_asset': paid_asset,
+            'paid_in_asset': paid_in_asset,
+            'taxable_amount': taxable_amount,
+            'taxable_bought_cost': taxable_bought_cost,
+            'received_asset': received_asset,
+            'received_in_{}'.format(self.profit_currency): received_in_profit_currency,
+            'received_in_asset': received_in_asset,
+            'net_profit_or_loss': net_profit_or_loss,
+            'time': tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+            'is_virtual': is_virtual
+        })
+
     def add_buy(
             self,
             bought_asset,
@@ -60,16 +99,17 @@ class CSVExporter(object):
             "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
             "is_virtual": is_virtual
         })
-        self.all_events_csv.append({
-            'type': 'buy',
-            'paid_in_{}'.format(self.profit_currency): cost,
-            'paid_asset': self.profit_currency,
-            'paid_in_asset': cost,
-            'received_asset': bought_asset,
-            'received_in_asset': amount,
-            "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
-            "is_virtual": is_virtual
-        })
+        self.add_to_allevents(
+            event_type='buy',
+            paid_in_profit_currency=cost,
+            paid_asset=self.profit_currency,
+            paid_in_asset=cost,
+            received_asset=bought_asset,
+            received_in_asset=amount,
+            received_in_profit_currency=0,
+            timestamp=timestamp,
+            is_virtual=is_virtual
+        )
 
     def add_sell(
             self,
@@ -81,6 +121,8 @@ class CSVExporter(object):
             receiving_asset,
             receiving_amount,
             receiving_asset_rate_in_profit_currency,
+            taxable_amount,
+            taxable_bought_cost,
             timestamp,
             is_virtual,
     ):
@@ -100,16 +142,19 @@ class CSVExporter(object):
             "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
             "is_virtual": is_virtual,
         })
-        self.all_events_csv.append({
-            'type': 'sell',
-            'paid_in_{}'.format(self.profit_currency): selling_amount * rate_in_profit_currency + total_fee_in_profit_currency,
-            'paid_asset': selling_asset,
-            'paid_in_asset': selling_amount,
-            'received_asset': receiving_asset,
-            'received_in_asset': receiving_amount,
-            "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
-            "is_virtual": is_virtual,
-        })
+        self.add_to_allevents(
+            event_type='sell',
+            paid_in_profit_currency=selling_amount * rate_in_profit_currency + total_fee_in_profit_currency,
+            paid_asset=selling_asset,
+            paid_in_asset=selling_amount,
+            received_asset=receiving_asset,
+            received_in_asset=receiving_amount,
+            received_in_profit_currency=receiving_asset_rate_in_profit_currency * receiving_amount,
+            timestamp=timestamp,
+            is_virtual=is_virtual,
+            taxable_amount=taxable_amount,
+            taxable_bought_cost=taxable_bought_cost,
+        )
 
     def add_loan_settlement(
             self,
@@ -129,16 +174,16 @@ class CSVExporter(object):
             "fee_in_{}".format(self.profit_currency): total_fee_in_profit_currency,
             "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
         })
-        self.all_events_csv.append({
-            'type': 'loan_settlement',
-            'paid_in_{}'.format(self.profit_currency): amount * rate_in_profit_currency + total_fee_in_profit_currency,
-            'paid_asset': asset,
-            'paid_in_asset': amount,
-            'received_asset': 'None',
-            'received_in_asset': 0,
-            "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
-            "is_virtual": False,
-        })
+        self.add_to_allevents(
+            event_type='loan_settlement',
+            paid_in_profit_currency=amount * rate_in_profit_currency + total_fee_in_profit_currency,
+            paid_asset=asset,
+            paid_in_asset=amount,
+            received_asset='None',
+            received_in_asset=0,
+            received_in_profit_currency=0,
+            timestamp=timestamp,
+        )
 
     def add_loan_profit(
             self,
@@ -160,16 +205,16 @@ class CSVExporter(object):
             'lent_amount': lent_amount,
             'profit_in_{}'.format(self.profit_currency): gain_in_profit_currency
         })
-        self.all_events_csv.append({
-            'type': 'interest_rate_payment',
-            'paid_in_{}'.format(self.profit_currency): 0,
-            'paid_asset': 'None',
-            'paid_in_asset': 0,
-            'received_asset': gained_asset,
-            'received_in_asset': gained_amount,
-            "time": tsToDate(close_time, formatstr='%d/%m/%Y %H:%M:%S'),
-            "is_virtual": False
-        })
+        self.add_to_allevents(
+            event_type='interest_rate_payment',
+            paid_in_profit_currency=0,
+            paid_asset='None',
+            paid_in_asset=0,
+            received_asset=gained_asset,
+            received_in_asset=gained_amount,
+            received_in_profit_currency=gain_in_profit_currency,
+            timestamp=close_time,
+        )
 
     def add_margin_position(
             self,
@@ -189,16 +234,16 @@ class CSVExporter(object):
             'gained_amount': net_gain_amount,
             'profit_in_{}'.format(self.profit_currency): gain_in_profit_currency
         })
-        self.all_events_csv.append({
-            'type': 'margin_position_close',
-            'paid_in_{}'.format(self.profit_currency): 0,
-            'paid_asset': 'None',
-            'paid_in_asset': 0,
-            'received_asset': gained_asset,
-            'received_in_asset': net_gain_amount,
-            "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
-            "is_virtual": False,
-        })
+        self.add_to_allevents(
+            event_type='margin_position_close',
+            paid_in_profit_currency=0,
+            paid_asset='None',
+            paid_in_asset=0,
+            received_asset=gained_asset,
+            received_in_asset=net_gain_amount,
+            received_in_profit_currency=gain_in_profit_currency,
+            timestamp=timestamp,
+        )
 
     def add_asset_movement(
             self,
@@ -220,16 +265,16 @@ class CSVExporter(object):
             'fee_in_asset': fee,
             'fee_in_{}'.format(self.profit_currency): fee * rate,
         })
-        self.all_events_csv.append({
-            'type': 'asset_movement_fee',
-            'paid_in_{}'.format(self.profit_currency): fee * rate,
-            'paid_asset': asset,
-            'paid_in_asset': fee,
-            'received_asset': 'None',
-            'received_in_asset': 0,
-            "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
-            "is_virtual": False
-        })
+        self.add_to_allevents(
+            event_type='asset_movement_fee',
+            paid_in_profit_currency=fee * rate,
+            paid_asset=asset,
+            paid_in_asset=fee,
+            received_asset='None',
+            received_in_asset=0,
+            received_in_profit_currency=0,
+            timestamp=timestamp,
+        )
 
     def add_tx_gas_cost(
             self,
@@ -247,16 +292,16 @@ class CSVExporter(object):
             'eth_burned_as_gas': eth_burned_as_gas,
             'cost_in_{}'.format(self.profit_currency): eth_burned_as_gas * rate,
         })
-        self.all_events_csv.append({
-            'type': 'tx_gas_cost',
-            'paid_in_{}'.format(self.profit_currency): eth_burned_as_gas * rate,
-            'paid_asset': 'ETH',
-            'paid_in_asset': eth_burned_as_gas,
-            'received_asset': 'None',
-            'received_in_asset': 0,
-            "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
-            "is_virtual": False,
-        })
+        self.add_to_allevents(
+            event_type='tx_gas_cost',
+            paid_in_profit_currency=eth_burned_as_gas * rate,
+            paid_asset='ETH',
+            paid_in_asset=eth_burned_as_gas,
+            received_asset='None',
+            received_in_asset=0,
+            received_in_profit_currency=0,
+            timestamp=timestamp,
+        )
 
     def create_files(self, out_dir='/home/lefteris/.rotkelchen/CSV/'):
         if not self.create_csv:
