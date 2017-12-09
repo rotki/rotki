@@ -709,6 +709,8 @@ class TradesHistorian(object):
                         history_trades
                     )
 
+                    # make sure that this is the same as what is returned
+                    # from create_history
                     return (
                         history_trades,
                         margin_trades,

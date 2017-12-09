@@ -8,7 +8,7 @@ def data_up_todate(json_data, start_ts, end_ts):
         return False
 
     start_ts_ok = (
-        (start_ts is None and json_data['start_time'] is None) or
+        (start_ts is not None and json_data['start_time'] is not None) and
         start_ts >= json_data['start_time']
     )
     end_ts_ok = (

@@ -421,6 +421,20 @@ class Accountant(object):
             )
 
     def search_buys_calculate_profit(self, selling_amount, selling_asset, timestamp):
+        """
+        When selling `selling_amount` of `selling_asset` at `timestamp` this function
+        calculates using the first-in-first-out rule the corresponding buy/s from
+        which to do profit calculation. Also applies the one year rule after which
+        a sell is not taxable in Germany.
+
+        Returns a tuple of 3 values:
+            - `taxable_amount`: The amount out of `selling_amount` that is taxable,
+                                calculated from the 1 year rule.
+            - `taxable_bought_cost`: How much it cost in `profit_currency` to buy
+                                     the `taxable_amount`
+            - `taxfree_bought_cost`: How much it cost in `profit_currency` to buy
+                                     the taxfree_amount (selling_amount - taxable_amount)
+        """
         remaining_sold_amount = selling_amount
         stop_index = -1
         taxfree_bought_cost = 0
@@ -613,7 +627,7 @@ class Accountant(object):
                         "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
                         "is_virtual": False,
                     })
-                    
+
                 else:
                     self.trades_csv.append({
                         'type': 'sell',

@@ -44,8 +44,8 @@ def trade_from_binance(binance_trade):
         # e.g. in RDNETH we sell RDN to obtain ETH
         cost_currency = base_asset
 
-    fee_currency = binance_trade['commisionAsset']
-    fee = FVal(binance_trade['commision'])
+    fee_currency = binance_trade['commissionAsset']
+    fee = FVal(binance_trade['commission'])
     cost = rate * amount
 
     return Trade(
