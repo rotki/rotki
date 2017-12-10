@@ -101,7 +101,7 @@ class Binance(Exchange):
         request_url = self.uri + 'v' + str(api_version) + '/' + method + '?'
         request_url += urlencode(options)
 
-        response = getattr(self.session, 'get')(request_url)
+        response = self.session.get(request_url)
         if response.status_code != 200:
             result = rlk_jsonloads(response.text)
             raise ValueError(

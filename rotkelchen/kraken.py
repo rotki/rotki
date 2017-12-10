@@ -57,8 +57,8 @@ def kraken_to_world_pair(pair):
 class Kraken(Exchange):
     def __init__(self, api_key, secret, args, logger, data_dir):
         super(Kraken, self).__init__('kraken', api_key, secret)
-        self.uri = 'https://api.kraken.com'
         self.apiversion = '0'
+        self.uri = 'https://api.kraken.com/{}/'.format(self.apiversion)
         self.log = logger
         self.data_dir = data_dir
         self.usdprice = {}
@@ -118,8 +118,8 @@ class Kraken(Exchange):
         method -- API method name (string, no default)
         req    -- additional API request parameters (default: {})
         """
-        urlpath = '/' + self.apiversion + '/public/' + method
-        response = getattr(self.session, 'post')('https://api.kraken.com' + urlpath, data=req)
+        urlpath = self.uri + 'public/' + method
+        response = self.session.post(urlpath, data=req)
         return self.check_and_get_response(response, method)
 
     def query_public(self, method, req={}):
@@ -151,7 +151,7 @@ class Kraken(Exchange):
         self.session.headers.update({
             'API-Sign': base64.b64encode(signature.digest())
         })
-        response = getattr(self.session, 'post')(
+        response = self.session.post(
             'https://api.kraken.com' + urlpath,
             data=post_data
         )
