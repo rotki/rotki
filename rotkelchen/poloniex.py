@@ -6,9 +6,7 @@ import datetime
 import os
 import traceback
 import csv
-import requests
 from urllib.parse import urlencode
-from http.client import HTTPConnection
 
 from rotkelchen.fval import FVal
 from rotkelchen.utils import (
@@ -67,9 +65,7 @@ class Poloniex(Exchange):
         self.log = logger
         self.usdprice = {}
         self.inquirer = inquirer
-        self.session = requests.session()
         self.session.headers.update({
-            'User-Agent': 'rotkelchen',
             'Key': self.api_key,
         })
 

@@ -1,7 +1,6 @@
 import time
 import hmac
 import hashlib
-import requests
 from urllib.parse import urlencode
 
 from rotkelchen.exchange import Exchange
@@ -73,10 +72,8 @@ class Binance(Exchange):
         self.uri = 'https://api.binance.com/api/'
         self.inquirer = inquirer
         self.data_dir = data_dir
-        self.session = requests.session()
         self.session.headers.update({
             'Accept': 'application/json',
-            'User-Agent': 'rotkelchen',
             'X-MBX-APIKEY': self.api_key,
         })
 

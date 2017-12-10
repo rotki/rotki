@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import requests
 import os
 from rotkelchen.utils import rlk_jsonloads, rlk_jsondumps
 
@@ -27,6 +28,8 @@ class Exchange(object):
         self.api_key = api_key
         self.secret = secret
         self.first_connection_made = False
+        self.session = requests.session()
+        self.session.headers.update({'User-Agent': 'rotkelchen'})
 
     def _get_cachefile_name(self, special_name=None):
         if special_name is None:

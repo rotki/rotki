@@ -6,7 +6,6 @@ import hmac
 import hashlib
 import base64
 import time
-import requests
 from urllib.parse import urlencode
 
 from rotkelchen.utils import query_fiat_pair, retry_calls, rlk_jsonloads, convert_to_int
@@ -63,9 +62,7 @@ class Kraken(Exchange):
         self.data_dir = data_dir
         self.usdprice = {}
         self.eurprice = {}
-        self.session = requests.session()
         self.session.headers.update({
-            'User-Agent': 'rotkelchen',
             'API-Key': self.api_key,
         })
 

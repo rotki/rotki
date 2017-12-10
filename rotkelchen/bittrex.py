@@ -1,7 +1,6 @@
 import time
 import hmac
 import hashlib
-import requests
 from urllib.parse import urlencode
 
 from rotkelchen.utils import createTimeStamp, get_pair_position, rlk_jsonloads
@@ -77,10 +76,6 @@ class Bittrex(Exchange):
         self.uri = 'https://bittrex.com/api/{}/'.format(self.apiversion)
         self.inquirer = inquirer
         self.data_dir = data_dir
-        self.session = requests.session()
-        self.session.headers.update({
-            'User-Agent': 'rotkelchen',
-        })
 
     def first_connection(self):
         self.first_connection_made = True
