@@ -6,7 +6,7 @@ import hmac
 import hashlib
 import base64
 import time
-from urllib.request import Request, urlopen
+import requests
 from urllib.parse import urlencode
 
 from rotkelchen.utils import query_fiat_pair, retry_calls, rlk_jsonloads, convert_to_int
@@ -14,38 +14,6 @@ from rotkelchen.order_formatting import AssetMovement
 from rotkelchen.exchange import Exchange
 from rotkelchen.errors import KrakenAPIRateLimitExceeded
 from rotkelchen.fval import FVal
-
-
-# TODO: Figure out why registering the exception class here
-# does not seem to work.
-# Problem is that `cls.__custom_class_to_dict_registry[clazz] = converter`
-# returns nothing so the converter lookup fails.
-#
-# Examples are here: https://github.com/irmen/Pyro4/tree/master/examples/ser_custom
-# Until then using normal exceptions.
-class KrakenError(Exception):
-    def __init__(self, err):
-        self.err = "Kraken Error: {}".format(err)
-
-    def __str__(self):
-        return self.err
-
-
-def to_dict_converter(obj):
-    print("GOT IN TO_DICT")
-    return {
-        '__class__': 'KrakenError',
-        'error': obj.err
-    }
-
-
-def from_dict_converter(class_name, dictionary):
-    print("GOT IN FROM_DICT")
-    if class_name == 'KrakenError':
-        return KrakenError(dictionary['error'])
-    else:
-        raise ValueError('Unrecognized class')
-
 
 KRAKEN_TO_WORLD = {
     'XDAO': 'DAO',
@@ -95,6 +63,11 @@ class Kraken(Exchange):
         self.data_dir = data_dir
         self.usdprice = {}
         self.eurprice = {}
+        self.session = requests.session()
+        self.session.headers.update({
+            'User-Agent': 'rotkelchen',
+            'API-Key': self.api_key,
+        })
 
     def first_connection(self):
         if self.first_connection_made:
@@ -113,6 +86,31 @@ class Kraken(Exchange):
         # Also need to do at least a single pass of the main logic for the ticker
         self.main_logic()
 
+    def check_and_get_response(self, response, method):
+        result = rlk_jsonloads(response.text)
+        if response.status_code != 200:
+            raise ValueError(
+                'Kraken API request {} for {} failed with HTTP status '
+                'code: {} and error message: {}'.format(
+                    response.url,
+                    method,
+                    response.status_code,
+                    result['error'],
+                ))
+
+        if result['error']:
+            if isinstance(result['error'], list):
+                error = result['error'][0]
+            else:
+                error = result['error']
+
+            if 'Rate limit exceeded' in error:
+                raise KrakenAPIRateLimitExceeded(method)
+            else:
+                raise ValueError(error)
+
+        return result['result']
+
     def _query_public(self, method, req={}):
         """API queries that do not require a valid key/secret pair.
 
@@ -121,23 +119,8 @@ class Kraken(Exchange):
         req    -- additional API request parameters (default: {})
         """
         urlpath = '/' + self.apiversion + '/public/' + method
-        post_data = str.encode(urlencode(req))
-        ret = urlopen(Request(
-            'https://api.kraken.com' + urlpath,
-            post_data
-        ))
-        json_ret = rlk_jsonloads(ret.read())
-        if json_ret['error']:
-            if isinstance(json_ret['error'], list):
-                error = json_ret['error'][0]
-            else:
-                error = json_ret['error']
-            if 'Rate limit exceeded' in error:
-                raise KrakenAPIRateLimitExceeded(method)
-            else:
-                raise ValueError(error)
-
-        return json_ret['result']
+        response = getattr(self.session, 'post')('https://api.kraken.com' + urlpath, data=req)
+        return self.check_and_get_response(response, method)
 
     def query_public(self, method, req={}):
         return retry_calls(5, 'kraken', method, self._query_public, method, req)
@@ -165,27 +148,14 @@ class Kraken(Exchange):
             message,
             hashlib.sha512
         )
-        headers = {
-            'API-Key': self.api_key,
+        self.session.headers.update({
             'API-Sign': base64.b64encode(signature.digest())
-        }
-        ret = urlopen(Request(
+        })
+        response = getattr(self.session, 'post')(
             'https://api.kraken.com' + urlpath,
-            str.encode(post_data),
-            headers
-        ))
-        json_ret = rlk_jsonloads(ret.read())
-        if json_ret['error']:
-            if isinstance(json_ret['error'], list):
-                error = json_ret['error'][0]
-            else:
-                error = json_ret['error']
-            if 'Rate limit exceeded' in error:
-                raise KrakenAPIRateLimitExceeded(method)
-            else:
-                raise ValueError(error)
-
-        return json_ret['result']
+            data=post_data
+        )
+        return self.check_and_get_response(response, method)
 
     def world_to_kraken_pair(self, pair):
         p1, p2 = pair.split('_')

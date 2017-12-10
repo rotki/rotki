@@ -2,9 +2,7 @@ import time
 import hmac
 import hashlib
 import requests
-from urllib.request import Request, urlopen
 from urllib.parse import urlencode
-from urllib.error import HTTPError
 
 from rotkelchen.exchange import Exchange
 from rotkelchen.order_formatting import pair_get_assets, Trade
