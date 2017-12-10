@@ -323,3 +323,14 @@ def rlk_jsonloads(data):
 
 def rlk_jsondumps(data):
     return json.dumps(data, cls=RKLEncoder)
+
+
+def taxable_gain_for_sell(
+        taxable_amount,
+        rate_in_profit_currency,
+        total_fee_in_profit_currency,
+        selling_amount):
+            return (
+                rate_in_profit_currency * taxable_amount -
+                total_fee_in_profit_currency * (taxable_amount / selling_amount)
+            )

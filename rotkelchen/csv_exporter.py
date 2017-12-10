@@ -1,6 +1,6 @@
 import os
 import csv
-from rotkelchen.utils import tsToDate
+from rotkelchen.utils import tsToDate, taxable_gain_for_sell
 
 
 class CSVExporter(object):
@@ -9,8 +9,10 @@ class CSVExporter(object):
         self.profit_currency = profit_currency
         self.log = logger
         self.create_csv = create_csv
+        self.reset_csv_lists()
 
-        if create_csv:
+    def reset_csv_lists(self):
+        if self.create_csv:
             self.trades_csv = list()
             self.loan_profits_csv = list()
             self.asset_movements_csv = list()
@@ -46,13 +48,16 @@ class CSVExporter(object):
             taxable_bought_cost='',
     ):
         row = len(self.all_events_csv) + 2
-        net_profit_or_loss = 0  # no profit by buying
-        if event_type == 'sell':
+        if event_type == 'buy':
+            net_profit_or_loss = 0  # no profit by buying
+        elif event_type == 'sell':
             net_profit_or_loss = '=IF(E{}=0,0,H{}-F{})'.format(row, row, row)
         elif event_type in ('tx_gas_cost', 'asset_movement', 'loan_settlement'):
             net_profit_or_loss = '=-B{}'.format(row)
         elif event_type in ('interest_rate_payment', 'margin_position_close'):
             net_profit_or_loss = '=H{}'.format(row)
+        else:
+            raise ValueError('Illegal event type "{}" at add_to_allevents'.format(event_type))
 
         self.all_events_csv.append({
             'type': event_type,
@@ -148,7 +153,12 @@ class CSVExporter(object):
             paid_in_asset=selling_amount,
             received_asset=receiving_asset,
             received_in_asset=receiving_amount,
-            received_in_profit_currency=gain_in_profit_currency,
+            received_in_profit_currency=taxable_gain_for_sell(
+                taxable_amount=taxable_amount,
+                rate_in_profit_currency=rate_in_profit_currency,
+                total_fee_in_profit_currency=total_fee_in_profit_currency,
+                selling_amount=selling_amount,
+            ),
             timestamp=timestamp,
             is_virtual=is_virtual,
             taxable_amount=taxable_amount,
@@ -178,7 +188,7 @@ class CSVExporter(object):
             paid_in_profit_currency=amount * rate_in_profit_currency + total_fee_in_profit_currency,
             paid_asset=asset,
             paid_in_asset=amount,
-            received_asset='None',
+            received_asset='',
             received_in_asset=0,
             received_in_profit_currency=0,
             timestamp=timestamp,
@@ -207,7 +217,7 @@ class CSVExporter(object):
         self.add_to_allevents(
             event_type='interest_rate_payment',
             paid_in_profit_currency=0,
-            paid_asset='None',
+            paid_asset='',
             paid_in_asset=0,
             received_asset=gained_asset,
             received_in_asset=gained_amount,
@@ -236,7 +246,7 @@ class CSVExporter(object):
         self.add_to_allevents(
             event_type='margin_position_close',
             paid_in_profit_currency=0,
-            paid_asset='None',
+            paid_asset='',
             paid_in_asset=0,
             received_asset=gained_asset,
             received_in_asset=net_gain_amount,
@@ -265,11 +275,11 @@ class CSVExporter(object):
             'fee_in_{}'.format(self.profit_currency): fee * rate,
         })
         self.add_to_allevents(
-            event_type='asset_movement_fee',
+            event_type='asset_movement',
             paid_in_profit_currency=fee * rate,
             paid_asset=asset,
             paid_in_asset=fee,
-            received_asset='None',
+            received_asset='',
             received_in_asset=0,
             received_in_profit_currency=0,
             timestamp=timestamp,
@@ -296,7 +306,7 @@ class CSVExporter(object):
             paid_in_profit_currency=eth_burned_as_gas * rate,
             paid_asset='ETH',
             paid_in_asset=eth_burned_as_gas,
-            received_asset='None',
+            received_asset='',
             received_in_asset=0,
             received_in_profit_currency=0,
             timestamp=timestamp,

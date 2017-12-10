@@ -1,4 +1,6 @@
-from rotkelchen.utils import tsToDate, ts_now
+from random import randint
+
+from rotkelchen.utils import tsToDate, ts_now, taxable_gain_for_sell
 from rotkelchen.order_formatting import (
     Events,
     BuyEvent,
@@ -85,6 +87,9 @@ class Accountant(object):
         # amount is taken as a loss
         self.count_profit_for_settlements = False
         self.csvexporter = CSVExporter(profit_currency, logger, create_csv)
+
+        # TEMPORARY FOR TESTING. TODO: Remove
+        self.temp_list = list()
 
     def set_main_currency(self, currency):
         if currency not in FIAT_CURRENCIES:
@@ -519,9 +524,11 @@ class Accountant(object):
 
         # and then calculate profit/loss
         if not loan_settlement or (loan_settlement and self.count_profit_for_settlements):
-            taxable_gain = (
-                rate_in_profit_currency * taxable_amount -
-                total_fee_in_profit_currency * (taxable_amount / selling_amount)
+            taxable_gain = taxable_gain_for_sell(
+                taxable_amount=taxable_amount,
+                rate_in_profit_currency=rate_in_profit_currency,
+                total_fee_in_profit_currency=total_fee_in_profit_currency,
+                selling_amount=selling_amount,
             )
 
             general_profit_loss = gain_in_profit_currency - (
@@ -538,9 +545,11 @@ class Accountant(object):
         # count profit/losses if we are inside the query period
         if timestamp >= self.query_start_ts:
             if loan_settlement:
-                self.settlement_losses += gain_in_profit_currency
-                self.log.logdebug("Loan Profit: {} {}".format(
-                    gain_in_profit_currency, self.profit_currency
+                # If it's a loan settlement we are charged both the fee and the gain
+                settlement_loss = gain_in_profit_currency + total_fee_in_profit_currency
+                self.settlement_losses += settlement_loss
+                self.log.logdebug("Loan Settlement Loss: {} {}".format(
+                    settlement_loss, self.profit_currency
                 ))
             else:
                 self.log.logdebug("Taxable P/L: {} {} General P/L: {} {}".format(
@@ -552,6 +561,11 @@ class Accountant(object):
 
             self.general_trade_profit_loss += general_profit_loss
             self.taxable_trade_profit_loss += taxable_profit_loss
+
+            # TEMPORARY FOR TESTING. TODO: Remove
+            if randint(0, 100) == 0:
+                row = len(self.csvexporter.all_events_csv) + 2
+                self.temp_list.append((row, taxable_profit_loss))
 
             if loan_settlement:
                 self.csvexporter.add_loan_settlement(
@@ -730,6 +744,7 @@ class Accountant(object):
         self.asset_movement_fees = FVal(0)
         self.query_start_ts = start_ts
         self.query_end_ts = end_ts
+        self.csvexporter.reset_csv_lists()
 
         actions = list(trade_history)
 
@@ -864,6 +879,11 @@ class Accountant(object):
 
         self.calculate_asset_details()
         self.csvexporter.create_files()
+
+        # TEMPORARY FOR TESTING. TODO: Remove
+        print("-------- TEMPLIST START----------")
+        print(self.temp_list)
+        print("-------- TEMPLIST END----------")
 
         sum_other_actions = (
             self.margin_positions_profit +
