@@ -6,7 +6,7 @@ import datetime
 import os
 import traceback
 import csv
-from urllib.request import Request, urlopen
+import requests
 from urllib.parse import urlencode
 from http.client import HTTPConnection
 
@@ -14,7 +14,7 @@ from rotkelchen.fval import FVal
 from rotkelchen.utils import (
     createTimeStamp,
     retry_calls,
-    safe_urllib_read_to_json,
+    rlk_jsonloads,
 )
 from rotkelchen.exchange import Exchange
 from rotkelchen.order_formatting import AssetMovement
@@ -44,6 +44,8 @@ class Poloniex(Exchange):
     def __init__(self, api_key, secret, args, logger, cache_filename, inquirer, data_dir):
         super(Poloniex, self).__init__('poloniex', api_key, secret)
 
+        self.uri = 'https://poloniex.com/'
+        self.public_uri = self.uri + 'public?command='
         self.cache_filename = cache_filename
         self.data_dir = data_dir
         self.args = args
@@ -65,6 +67,11 @@ class Poloniex(Exchange):
         self.log = logger
         self.usdprice = {}
         self.inquirer = inquirer
+        self.session = requests.session()
+        self.session.headers.update({
+            'User-Agent': 'rotkelchen',
+            'Key': self.api_key,
+        })
 
     def first_connection(self):
         if self.first_connection_made:
@@ -104,61 +111,35 @@ class Poloniex(Exchange):
         return result
 
     def _api_query(self, command, req={}):
-        # Attempting to circumvent the httplib incomplete read error
-        # https://stackoverflow.com/questions/14149100/incompleteread-using-httplib
-        HTTPConnection._http_vsn = 10
-        HTTPConnection._http_vsn_str = 'HTTP/1.0'
-
-        if(command == "returnTicker" or command == "return24Volume"):
-            ret = urlopen(Request(
-                'https://poloniex.com/public?command=' + command
-            ))
-            return safe_urllib_read_to_json(ret)
+        if command == "returnTicker" or command == "return24Volume":
+            ret = self.session.get(self.public_uri + command)
         elif(command == "returnOrderBook"):
-            ret = urlopen(Request(
-                'https://poloniex.com/public?command=' +
-                command + '&currencyPair=' + str(req['currencyPair']))
+            ret = self.session.get(
+                self.public_uri + command +
+                '&currencyPair=' + str(req['currencyPair'])
             )
-            ret = safe_urllib_read_to_json(ret)
         elif(command == "returnMarketTradeHistory"):
-            ret = urlopen(Request(
-                'https://poloniex.com/public?command=' +
-                'returnTradeHistory' +
-                '&currencyPair=' +
-                str(req['currencyPair']))
+            ret = self.session.get(
+                self.public_uri + 'returnTradeHistory' + '&currencyPair=' +
+                str(req['currencyPair'])
             )
-            ret = safe_urllib_read_to_json(ret)
         elif(command == "returnLoanOrders"):
-            ret = urlopen(Request(
-                'https://poloniex.com/public?command=' +
-                'returnLoanOrders' +
-                '&currency=' +
-                str(req['currency']))
+            ret = self.session.get(
+                self.public_uri + 'returnLoanOrders' + '&currency=' +
+                str(req['currency'])
             )
-            ret = safe_urllib_read_to_json(ret)
         else:
             req['command'] = command
             req['nonce'] = int(time.time() * 1000)
             post_data = str.encode(urlencode(req))
 
             sign = hmac.new(self.secret, post_data, hashlib.sha512).hexdigest()
-            headers = {
-                'Sign': sign,
-                'Key': self.api_key
-            }
+            self.session.headers.update({'Sign': sign})
+            ret = self.session.post('https://poloniex.com/tradingApi', req)
+            result = rlk_jsonloads(ret.text)
+            return self.post_process(result)
 
-            ret = urlopen(Request(
-                'https://poloniex.com/tradingApi',
-                post_data,
-                headers)
-            )
-            jsonRet = safe_urllib_read_to_json(ret)
-            ret = self.post_process(jsonRet)
-
-        # back to 1.1. connection
-        HTTPConnection._http_vsn = 11
-        HTTPConnection._http_vsn_str = 'HTTP/1.1'
-        return ret
+        return rlk_jsonloads(ret.text)
 
     def returnAvailableAccountBalances(self, account='all'):
         req = {}

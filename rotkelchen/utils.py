@@ -183,23 +183,6 @@ def get_jsonfile_contents_or_empty_dict(filepath):
     return data
 
 
-def safe_urllib_read(urlobj):
-    # Attempting to circumvent the httplib incomplete read error
-    # https://stackoverflow.com/questions/14149100/incompleteread-using-httplib
-
-    # try:
-    #     ret = urlobj.read()
-    # except httplib.IncompleteRead, e:
-    #     ret = e.partial
-    return urlobj.read()
-
-
-def safe_urllib_read_to_json(urlobj):
-    string = safe_urllib_read(urlobj)
-    ret = rlk_jsonloads(string)
-    return ret
-
-
 LOG_NOTHING = 0
 LOG_NOTIFY = 1
 LOG_INFO = LOG_NOTIFY
