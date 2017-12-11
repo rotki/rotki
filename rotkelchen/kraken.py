@@ -11,7 +11,7 @@ from urllib.parse import urlencode
 from rotkelchen.utils import query_fiat_pair, retry_calls, rlk_jsonloads, convert_to_int
 from rotkelchen.order_formatting import AssetMovement
 from rotkelchen.exchange import Exchange
-from rotkelchen.errors import KrakenAPIRateLimitExceeded
+from rotkelchen.errors import RecoverableRequestError
 from rotkelchen.fval import FVal
 
 KRAKEN_TO_WORLD = {
@@ -84,17 +84,18 @@ class Kraken(Exchange):
         self.main_logic()
 
     def check_and_get_response(self, response, method):
-        result = rlk_jsonloads(response.text)
-        if response.status_code != 200:
+        if response.status_code in (520, 504):
+            raise RecoverableRequestError('kraken', 'Usual kraken 5xx shenanigans')
+        elif response.status_code != 200:
             raise ValueError(
                 'Kraken API request {} for {} failed with HTTP status '
-                'code: {} and error message: {}'.format(
+                'code: {}'.format(
                     response.url,
                     method,
                     response.status_code,
-                    result['error'],
                 ))
 
+        result = rlk_jsonloads(response.text)
         if result['error']:
             if isinstance(result['error'], list):
                 error = result['error'][0]
@@ -102,7 +103,7 @@ class Kraken(Exchange):
                 error = result['error']
 
             if 'Rate limit exceeded' in error:
-                raise KrakenAPIRateLimitExceeded(method)
+                raise RecoverableRequestError('kraken', 'Rate limited exceeded')
             else:
                 raise ValueError(error)
 

@@ -9,12 +9,13 @@ class PoloniexError(Exception):
         return self.err
 
 
-class KrakenAPIRateLimitExceeded(Exception):
-    def __init__(self, method):
-        self.err = "Exceeded kraken API limit while querying {}".format(method)
+class RecoverableRequestError(Exception):
+    def __init__(self, exchange, err):
+        self.exchange = exchange
+        self.err = err
 
     def __str__(self):
-        return self.err
+        return 'While querying {} got error: "{}"'.format(self.exchange, self.err)
 
 
 class CorruptData(Exception):

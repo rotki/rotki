@@ -9,7 +9,7 @@ import operator
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 
-from rotkelchen.errors import KrakenAPIRateLimitExceeded
+from rotkelchen.errors import RecoverableRequestError
 from rotkelchen.fval import FVal
 
 
@@ -142,8 +142,8 @@ def retry_calls(times, location, method, function, *args):
         try:
             result = function(*args)
             return result
-        except (URLError, KrakenAPIRateLimitExceeded) as e:
-            if isinstance(e, KrakenAPIRateLimitExceeded):
+        except (URLError, RecoverableRequestError) as e:
+            if isinstance(e, RecoverableRequestError):
                 time.sleep(5)
 
             tries -= 1
