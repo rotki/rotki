@@ -3,6 +3,7 @@ import os
 import glob
 import re
 from urllib.request import Request, urlopen
+from json.decoder import JSONDecodeError
 
 from rotkelchen.exchange import data_up_todate
 from rotkelchen.kraken import kraken_to_world_pair
@@ -244,14 +245,17 @@ class PriceHistorian(object):
         coinlist_cache_path = os.path.join(self.data_directory, 'cryptocompare_coinlist.json')
         if os.path.isfile(coinlist_cache_path):
             with open(coinlist_cache_path, 'rb') as f:
-                data = rlk_jsonloads(f.read())
-                now = ts_now()
-                invalidate_cache = False
+                try:
+                    data = rlk_jsonloads(f.read())
+                    now = ts_now()
+                    invalidate_cache = False
 
-                # If we got a cache and its' over a month old then requery cryptocompare
-                if data['time'] < now and now - data['time'] > 2629800:
+                    # If we got a cache and its' over a month old then requery cryptocompare
+                    if data['time'] < now and now - data['time'] > 2629800:
+                        invalidate_cache = True
+                        data = data['data']
+                except JSONDecodeError:
                     invalidate_cache = True
-                data = data['data']
 
         if invalidate_cache:
             query_string = 'https://www.cryptocompare.com/api/data/coinlist/'
@@ -265,7 +269,9 @@ class PriceHistorian(object):
             data = resp['Data']
 
             # Also save the cache
-            with open(coinlist_cache_path, 'wb') as f:
+            with open(coinlist_cache_path, 'w') as f:
+                import pdb
+                pdb.set_trace()
                 write_data = {'time': ts_now(), 'data': data}
                 f.write(rlk_jsondumps(write_data))
 

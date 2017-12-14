@@ -84,7 +84,7 @@ class Kraken(Exchange):
         self.main_logic()
 
     def check_and_get_response(self, response, method):
-        if response.status_code in (520, 504):
+        if response.status_code in (520, 525, 504):
             raise RecoverableRequestError('kraken', 'Usual kraken 5xx shenanigans')
         elif response.status_code != 200:
             raise ValueError(
