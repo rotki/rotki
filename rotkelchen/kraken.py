@@ -14,6 +14,9 @@ from rotkelchen.exchange import Exchange
 from rotkelchen.errors import RecoverableRequestError
 from rotkelchen.fval import FVal
 
+import logging
+logger = logging.getLogger(__name__)
+
 KRAKEN_TO_WORLD = {
     'XDAO': 'DAO',
     'XETC': 'ETC',
@@ -54,11 +57,10 @@ def kraken_to_world_pair(pair):
 
 
 class Kraken(Exchange):
-    def __init__(self, api_key, secret, args, logger, data_dir):
+    def __init__(self, api_key, secret, args, data_dir):
         super(Kraken, self).__init__('kraken', api_key, secret)
         self.apiversion = '0'
         self.uri = 'https://api.kraken.com/{}/'.format(self.apiversion)
-        self.log = logger
         self.data_dir = data_dir
         self.usdprice = {}
         self.eurprice = {}
@@ -344,4 +346,5 @@ class Kraken(Exchange):
             'trading_agreement': 'agree'
         }
         resp = self.query_private('AddOrder', req=req)
-        self.log.lognotify("Buy Set", "{}".format(resp))
+        if logger.isEnabledFor(logging.INFO):
+            logger.info("Buy Set", "{}".format(resp))

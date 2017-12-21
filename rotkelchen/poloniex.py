@@ -18,6 +18,9 @@ from rotkelchen.exchange import Exchange
 from rotkelchen.order_formatting import AssetMovement
 from rotkelchen.errors import PoloniexError
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def tsToDate(s):
     return datetime.datetime.fromtimestamp(s).strftime('%Y-%m-%d %H:%M:%S')
@@ -39,7 +42,7 @@ class Poloniex(Exchange):
         'watched_currencies'
     ]
 
-    def __init__(self, api_key, secret, args, logger, cache_filename, inquirer, data_dir):
+    def __init__(self, api_key, secret, args, cache_filename, inquirer, data_dir):
         super(Poloniex, self).__init__('poloniex', api_key, secret)
 
         self.uri = 'https://poloniex.com/'
@@ -62,7 +65,6 @@ class Poloniex(Exchange):
             'USDT_BTC': WatchedCurrency(0.0, 1000.0, 1.0),
             'ETH_REP': WatchedCurrency(0.0, 0.435, 0.01),
         }
-        self.log = logger
         self.usdprice = {}
         self.inquirer = inquirer
         self.session.headers.update({
@@ -355,9 +357,9 @@ class Poloniex(Exchange):
             self.market_watcher()
 
         except PoloniexError as e:
-            self.log.output("Poloniex error at main loop: {}".format(str(e)))
+            logger.error("Poloniex error at main loop: {}".format(str(e)))
         except Exception as e:
-            self.log.output(
+            logger.error(
                 "\nException at main loop: {}\n{}\n".format(
                     str(e), traceback.format_exc())
             )

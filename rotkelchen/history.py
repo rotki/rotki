@@ -28,6 +28,8 @@ from rotkelchen.order_formatting import (
     asset_movements_from_dictlist
 )
 
+import logging
+logger = logging.getLogger(__name__)
 
 DEFAULT_START_DATE = "01/08/2015"
 TRADES_HISTORYFILE = 'trades_history.json'
@@ -126,14 +128,14 @@ def trade_from_poloniex(poloniex_trade, pair):
     )
 
 
-def do_read_manual_margin_positions(data_directory, logger):
+def do_read_manual_margin_positions(data_directory):
     manual_margin_path = os.path.join(data_directory, MANUAL_MARGINS_LOGFILE)
     if os.path.isfile(manual_margin_path):
         with open(manual_margin_path, 'r') as f:
             margin_data = rlk_jsonloads(f.read())
     else:
         margin_data = []
-        logger.logerror(
+        logger.error(
             'Could not find manual margins log file at {}'.format(manual_margin_path)
         )
     return margin_data
@@ -217,9 +219,8 @@ def process_polo_loans(data, start_ts, end_ts):
 
 class PriceHistorian(object):
 
-    def __init__(self, data_directory, personal_data, logger):
+    def __init__(self, data_directory, personal_data):
         self.data_directory = data_directory
-        self.log = logger
         # get the start date for historical data
         history_date_start = DEFAULT_START_DATE
         if 'historical_data_start_date' in personal_data:
@@ -270,8 +271,6 @@ class PriceHistorian(object):
 
             # Also save the cache
             with open(coinlist_cache_path, 'w') as f:
-                import pdb
-                pdb.set_trace()
                 write_data = {'time': ts_now(), 'data': data}
                 f.write(rlk_jsondumps(write_data))
 
@@ -442,7 +441,6 @@ class TradesHistorian(object):
             kraken,
             bittrex,
             binance,
-            logger,
             data_directory,
             personal_data,
             start_date='01/11/2015',
@@ -455,7 +453,6 @@ class TradesHistorian(object):
         self.start_ts = createTimeStamp(start_date, formatstr="%d/%m/%Y")
         self.data_directory = data_directory
         self.personal_data = personal_data
-        self.log = logger
         # get the start date for historical data
         history_date_start = DEFAULT_START_DATE
         if 'historical_data_start_date' in personal_data:
@@ -515,7 +512,7 @@ class TradesHistorian(object):
                     "poloniex margin trades list should be empty here"
                 )
                 poloniex_margin_trades = do_read_manual_margin_positions(
-                    self.data_directory, self.log
+                    self.data_directory
                 )
             else:
                 poloniex_margin_trades.sort(key=lambda trade: trade.timestamp)
@@ -639,8 +636,7 @@ class TradesHistorian(object):
                 else:
                     margin_history_is_okay = True
                     margin_file_contents = do_read_manual_margin_positions(
-                        self.data_directory,
-                        self.log
+                        self.data_directory
                     )
 
                 loansfile_path = os.path.join(self.data_directory, LOANS_HISTORYFILE)

@@ -183,68 +183,6 @@ def get_jsonfile_contents_or_empty_dict(filepath):
     return data
 
 
-LOG_NOTHING = 0
-LOG_NOTIFY = 1
-LOG_INFO = LOG_NOTIFY
-LOG_ERROR = 2
-LOG_DEBUG = 3
-LOG_ALERT = 4
-
-
-class Logger():
-    def __init__(self, outfile, should_notify, log_level=LOG_INFO):
-        # TODO: Make log level configurable
-        self.outfile = outfile
-        self.should_notify = should_notify
-        self.log_level = log_level
-
-    def output(self, s):
-        if isinstance(s, dict):
-            s = json.dumps(s, sort_keys=True, indent=4, separators=(',', ': '), cls=RKLEncoder)
-        if self.outfile:
-            self.outfile.write(str(s) + '\n')
-            self.outfile.flush()
-        else:
-            print(s)
-
-    def notify(self, title, message, duration=60):
-        if self.should_notify:
-            subprocess.call([
-                "notify-send",
-                "-t", str(duration * 1000),
-                "-a", "rotkelchen",
-                title,
-                message
-            ])
-        else:
-            self.output("Notification:{}\n{}".format(title, message))
-
-    def lognotify(self, title, message):
-        if self.log_level <= LOG_NOTIFY:
-            self.output(message)
-            self.notify(title, message)
-
-    def loginfo(self, message):
-        if self.log_level <= LOG_INFO:
-            self.output(message)
-
-    def logdebug(self, message):
-        if self.log_level <= LOG_DEBUG:
-            self.output(message)
-
-    def logerror(self, message):
-        if self.log_level <= LOG_ERROR:
-            self.output(message)
-
-    def logalert(self, message):
-        if self.log_level <= LOG_ALERT:
-            self.output(message)
-
-    def destroy(self):
-        if self.outfile:
-            self.outfile.close()
-
-
 def convert_to_int(val, accept_only_exact=True):
     """Try to convert to an int. Either from an FVal or a string. If it's a float
     and it's not whole (like 42.0) and accept_only_exact is False then raise"""

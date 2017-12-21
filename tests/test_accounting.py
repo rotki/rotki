@@ -2,15 +2,12 @@ import pytest
 
 from rotkelchen.accounting import Accountant
 from rotkelchen.history import PriceHistorian, trades_from_dictlist
-from rotkelchen.utils import Logger
 from rotkelchen.errors import CorruptData
 
 
 def init_accounting_tests(history_list, margin_list, start_ts, end_ts):
-    logger = Logger(None, False)
-    price_historian = PriceHistorian('/home/lefteris/.rotkelchen', {}, logger)
+    price_historian = PriceHistorian('/home/lefteris/.rotkelchen', {})
     accountant = Accountant(
-        logger=logger,
         price_historian=price_historian,
         profit_currency='EUR',
         create_csv=False

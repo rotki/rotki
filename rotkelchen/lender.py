@@ -7,6 +7,9 @@ from rotkelchen.utils import createTimeStamp, dateToTs, isclose
 from rotkelchen.errors import PoloniexError
 from rotkelchen.fval import FVal
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def rateToStr(f):
     return "{:10.6f}".format(f)
@@ -45,7 +48,7 @@ class Lender:
         'total_allowed'
     ]
 
-    def __init__(self, poloniex, lending_history_file, data, logger):
+    def __init__(self, poloniex, lending_history_file, data):
         # Set default attribute values
         self.currencies = [
             'ETH',
@@ -106,7 +109,6 @@ class Lender:
         if data:
             deserialize(self, data)
         self.p = poloniex
-        self.log = logger
 
         # initialize some dictionaries
         self.lending_rate = {}
@@ -293,7 +295,8 @@ Average {} earned per day: {}
         if modified <= self.lending_history_modified:
             return
 
-        self.log.output("Lending history file has been modified. Reloading!")
+        if logger.isEnabledFor(logging.INFO):
+            logger.info("Lending history file has been modified. Reloading!")
         self.lending_history_modified = modified
         self.lending_history = self.parseLoanCSV(self.lending_history_file)
 
@@ -325,8 +328,8 @@ Average {} earned per day: {}
                 self.active_profit[currency]
             )
             total = (
-                float(self.historical_earnings[currency])
-                + float(self.active_profit[currency])
+                float(self.historical_earnings[currency]) +
+                float(self.active_profit[currency])
             )
             s += "Sum of active and historical loan profits: {}".format(total)
             total_usd += total * self.p.usdprice[currency]
@@ -394,98 +397,105 @@ Average {} earned per day: {}
 
                 if sum_of_other_offers < offer_threshold:
                     best_rate = this_rate
-                    # self.log.output("CMP_RATE_CHECK: {} == {} -> {}".format(rateToStr(best_rate), rateToStr(pr_best_rate), eqRate(best_rate, pr_best_rate)))
                     if not eqRate(best_rate, pr_best_rate):
                         rate_step = best_rate - pr_best_rate
                         pr_best_rate = best_rate
 
                 else:
                     break
-        self.log.output("Best {} lending rate found: {}".format(
-            currency, rateToStr(best_rate))
-        )
-        self.log.output("Lending rate step for {} found: {}".format(
-            currency,
-            rateToStr(rate_step)
-        ))
+
+        info_enabled = logger.isEnabledFor(logging.INFO)
+        if info_enabled:
+            logger.info("Best {} lending rate found: {}".format(
+                currency, rateToStr(best_rate))
+            )
+            logger.info("Lending rate step for {} found: {}".format(
+                currency,
+                rateToStr(rate_step)
+            ))
         # Also remember the best rate, to show it at query_loans
         self.lending_rate[currency] = best_rate
 
         if self.amount_in_loans[currency] + self.amount_in_account[currency] > self.total_allowed[currency]:
-            self.log.output(
-                "Already have {} {} in loans + account. Total allowed for lending is: "
-                "{} {}. Doing nothing...".format(
-                    self.amount_in_loans[currency],
-                    currency,
-                    self.total_allowed[currency],
-                    currency)
-            )
+            if info_enabled:
+                logger.info(
+                    "Already have {} {} in loans + account. Total allowed for lending is: "
+                    "{} {}. Doing nothing...".format(
+                        self.amount_in_loans[currency],
+                        currency,
+                        self.total_allowed[currency],
+                        currency)
+                )
             return
 
-        # self.log.output("CMP MIN RATE: {} > {} -> {}".format(rateToStr(self.min_rate[currency]), rateToStr(best_rate), gtRate(self.min_rate[currency], best_rate)))
         if gtRate(self.min_rate[currency], best_rate):
-            self.log.output(
-                "Minimum rate {} is bigger than the best rate. Doing "
-                "nothing...".format(rateToStr(self.min_rate[currency]))
-            )
+            if info_enabled:
+                logger.info(
+                    "Minimum rate {} is bigger than the best rate. Doing "
+                    "nothing...".format(rateToStr(self.min_rate[currency]))
+                )
             return
 
         # If that's a better rate than our open offers, cancel them
-        # self.log.output("CMP OPEN_OFFER {} > {} -> {}".format(rateToStr(best_rate), rateToStr(offer_rate), gtRate(best_rate, offer_rate)))
         if offer_rate != 0.0 and gtRate(best_rate, offer_rate):
-            self.log.output(
-                "Found best rate: {} is better than our offer of {}".format(
-                    best_rate, offer_rate)
-            )
+            if info_enabled:
+                logger.info(
+                    "Found best rate: {} is better than our offer of {}".format(
+                        best_rate, offer_rate)
+                )
             for loan in oorsp[currency]:
                 self.amount_in_account[currency] += float(loan['amount'])
                 self.p.cancelLoanOffer(int(loan['id']))
-                self.log.output("Canceling {} loan with ID:{}".format(
-                    currency, int(loan['id']))
-                )
+                if info_enabled:
+                    logger.info("Canceling {} loan with ID:{}".format(
+                        currency, int(loan['id']))
+                    )
             self.amount_in_offers[currency] = 0.0
 
         # If the best rate is "much less" than our existing offers it means
         # the market for lending is going down. We have to adjust.
         if offer_rate != 0.0 and offer_rate - best_rate >= rate_step * 12:
-            self.log.output(
-                "Found best rate: {} is much smaller than our offer of {}".format(
-                    best_rate, offer_rate)
-            )
+            if info_enabled:
+                logger.info(
+                    "Found best rate: {} is much smaller than our offer of {}".format(
+                        best_rate, offer_rate)
+                )
             for loan in oorsp[currency]:
                 self.amount_in_account[currency] += float(loan['amount'])
                 self.p.cancelLoanOffer(int(loan['id']))
-                self.log.output("Canceling {} loan with ID:{}".format(
-                    currency, int(loan['id']))
-                )
+                if info_enabled:
+                    logger.info("Canceling {} loan with ID:{}".format(
+                        currency, int(loan['id']))
+                    )
             self.amount_in_offers[currency] = 0.0
 
         # If there are open offers but we also have some amount in the account,
         # cancel them so that they will be remade
         if (
-                self.amount_in_offers[currency] != 0.0
-                and self.amount_in_account[currency] > 0.5
+                self.amount_in_offers[currency] != 0.0 and
+                self.amount_in_account[currency] > 0.5
         ):
-            self.log.output(
-                "Canceling {} loan offers to remake them and include the {} "
-                "{} inside the account".format(
-                    currency,
-                    self.amount_in_account[currency],
-                    currency)
-            )
+            if info_enabled:
+                logger.info(
+                    "Canceling {} loan offers to remake them and include the {} "
+                    "{} inside the account".format(
+                        currency,
+                        self.amount_in_account[currency],
+                        currency)
+                )
             for loan in oorsp[currency]:
                 self.amount_in_account[currency] += float(loan['amount'])
                 self.p.cancelLoanOffer(int(loan['id']))
-                self.log.output("Canceling {} loan with ID:{}".format(
-                    currency, int(loan['id']))
-                )
+                if info_enabled:
+                    logger.info("Canceling {} loan with ID:{}".format(
+                        currency, int(loan['id']))
+                    )
                 self.amount_in_offers[currency] = 0.0
 
         # If the amount in the account is above threshold create a new offer
-        # self.log.output("CHECK: Amount in account is: {}".format(self.amount_in_account[currency]))
         if (
-                self.amount_in_account[currency] >= self.acc_threshold[currency]
-                and self.amount_in_account[currency] > 0
+                self.amount_in_account[currency] >= self.acc_threshold[currency] and
+                self.amount_in_account[currency] > 0
         ):
             # If we are at a rate of more than 0.5% then maximize the number
             # of days for the loan
@@ -498,13 +508,14 @@ Average {} earned per day: {}
                     0,
                     best_rate
                 )
-                self.log.output(
-                    "Created Loan Offer ({}) for {} {} at rate: {}".format(
-                        oid,
-                        self.amount_in_account[currency],
-                        currency,
-                        rateToStr(best_rate))
-                )
+                if info_enabled:
+                    logger.info(
+                        "Created Loan Offer ({}) for {} {} at rate: {}".format(
+                            oid,
+                            self.amount_in_account[currency],
+                            currency,
+                            rateToStr(best_rate))
+                    )
             except PoloniexError:
                 pass
 

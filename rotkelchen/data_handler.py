@@ -17,7 +17,6 @@ class DataHandler(object):
 
     def __init__(
             self,
-            logger,
             poloniex,
             kraken,
             bittrex,
@@ -31,7 +30,6 @@ class DataHandler(object):
         except:  # No file found or contents are not json
             self.personal = empty_settings
 
-        self.log = logger
         self.poloniex = poloniex
         self.kraken = kraken
         self.bittrex = bittrex
@@ -40,15 +38,11 @@ class DataHandler(object):
             kraken,
             bittrex,
             binance,
-            logger,
             self.data_directory,
             self.personal,
         )
-        self.price_historian = PriceHistorian(
-            self.data_directory, self.personal, logger
-        )
+        self.price_historian = PriceHistorian(self.data_directory, self.personal)
         self.accountant = Accountant(
-            logger=logger,
             price_historian=self.price_historian,
             profit_currency=self.personal.get('main_currency', 'EUR'),
             create_csv=True

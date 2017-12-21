@@ -4,7 +4,6 @@ import threading
 from urllib.request import Request, urlopen
 
 from rotkelchen.utils import (
-    Logger,
     combine_stat_dicts,
     dict_get_sumof,
     merge_dicts,
@@ -21,11 +20,34 @@ from rotkelchen.inquirer import Inquirer
 from rotkelchen.utils import query_fiat_pair
 from rotkelchen.fval import FVal
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class Rotkelchen(object):
     def __init__(self, args):
         self.lock = threading.Lock()
         self.lock.acquire()
+
+        logfilename = None
+        if args.logtarget == 'file':
+            logfilename = args.logfile
+
+        loglevel = 1
+        if args.loglevel == 'debug':
+            loglevel = logging.DEBUG
+        elif args.loglevel == 'info':
+            loglevel = logging.INFO
+        elif args.loglevel == 'warn':
+            loglevel = logging.WARN
+        elif args.loglevel == 'error':
+            loglevel = logging.ERROR
+        elif args.loglevel == 'critical':
+            loglevel = logging.CRITICAL
+        else:
+            raise ValueError('Should never get here. Illegal log value')
+
+        logging.basicConfig(filename=logfilename, filemode='w', level=loglevel)
 
         self.sleep_secs = args.sleep_secs
         data_dir = args.data_dir
@@ -41,13 +63,7 @@ class Rotkelchen(object):
         for k, v in self.secret_data.items():
             self.secret_data[k] = str(self.secret_data[k])
 
-        # if a file is given open it for output and initialize the logger
-        outfile = None
         self.args = args
-        if args.output:
-            outfile = open(args.output, 'w+')
-        self.logger = Logger(outfile, args.notify)
-
         self.cache_data_filename = os.path.join(data_dir, 'cache_data.json')
 
         self.ethchain = Ethchain(args.ethrpc_port)
@@ -63,7 +79,6 @@ class Rotkelchen(object):
                 str.encode(self.secret_data['kraken_api_key']),
                 str.encode(self.secret_data['kraken_secret']),
                 args,
-                self.logger,
                 data_dir
             )
 
@@ -74,7 +89,6 @@ class Rotkelchen(object):
                 str.encode(self.secret_data['polo_api_key']),
                 str.encode(self.secret_data['polo_secret']),
                 args,
-                self.logger,
                 self.cache_data_filename,
                 self.inquirer,
                 data_dir
@@ -97,7 +111,6 @@ class Rotkelchen(object):
             )
 
         self.data = DataHandler(
-            self.logger,
             self.poloniex,
             self.kraken,
             self.bittrex,
@@ -305,7 +318,6 @@ class Rotkelchen(object):
         with self.condition_lock:
             self.condition_lock.notify_all()
         self.worker_thread.join()
-        self.logger.destroy()
 
     def set(self, *args):
         if len(args) < 2:

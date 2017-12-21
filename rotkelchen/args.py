@@ -43,6 +43,23 @@ def app_args():
         help='The port on which to communicate with an ethereum\'s client RPC.',
         default=8545,
     )
+    p.add_argument(
+        '--logfile',
+        help='The name of the file to write log entries to',
+        default='rotkelchen.log',
+    )
+    p.add_argument(
+        '--logtarget',
+        help='Choose where logging entries will be sent. Valid values are "file and "stdout"',
+        choices=['stdout', 'file'],
+        default='file',
+    )
+    p.add_argument(
+        '--loglevel',
+        help='Choose the logging level',
+        choices=['debug', 'info', 'warn', 'error', 'critical'],
+        default='debug'
+    )
 
     args = p.parse_args()
 

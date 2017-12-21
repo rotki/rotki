@@ -20,6 +20,9 @@ from rotkelchen.csv_exporter import CSVExporter
 from rotkelchen.fval import FVal
 from rotkelchen.errors import CorruptData
 
+import logging
+logger = logging.getLogger(__name__)
+
 YEAR_IN_SECONDS = 31536000  # 60 * 60 * 24 * 365
 
 
@@ -72,13 +75,11 @@ class Accountant(object):
 
     def __init__(
             self,
-            logger,
             price_historian,
             profit_currency,
             create_csv,
             ignored_assets=['DAO']):
 
-        self.log = logger
         self.price_historian = price_historian
         self.set_main_currency(profit_currency)
         self.ignored_assets = ignored_assets
@@ -86,7 +87,7 @@ class Accountant(object):
         # loan/margin settlement then profit/loss is also calculated before the entire
         # amount is taken as a loss
         self.count_profit_for_settlements = False
-        self.csvexporter = CSVExporter(profit_currency, logger, create_csv)
+        self.csvexporter = CSVExporter(profit_currency, create_csv)
 
         # TEMPORARY FOR TESTING. TODO: Remove
         self.temp_list = list()
@@ -151,22 +152,23 @@ class Accountant(object):
                 cost=cost
             )
         )
-        self.log.logdebug(
-            'Buying {} "{}" for {} "{}" ({} "{}" per "{}" or {} "{}" per '
-            '"{}") at {}'.format(
-                bought_amount,
-                bought_asset,
-                bought_amount * trade_rate,
-                paid_with_asset,
-                trade_rate,
-                paid_with_asset,
-                bought_asset,
-                buy_rate,
-                self.profit_currency,
-                bought_asset,
-                tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                'Buying {} "{}" for {} "{}" ({} "{}" per "{}" or {} "{}" per '
+                '"{}") at {}'.format(
+                    bought_amount,
+                    bought_asset,
+                    bought_amount * trade_rate,
+                    paid_with_asset,
+                    trade_rate,
+                    paid_with_asset,
+                    bought_asset,
+                    buy_rate,
+                    self.profit_currency,
+                    bought_asset,
+                    tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
+                )
             )
-        )
 
         self.csvexporter.add_buy(
             bought_asset=bought_asset,
@@ -307,7 +309,8 @@ class Accountant(object):
             timestamp
     ):
 
-        self.log.logdebug('\nBUY EVENT:')
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug('\nBUY EVENT:')
         self.add_buy_to_events(
             bought_asset=bought_asset,
             bought_amount=bought_amount,
@@ -391,6 +394,7 @@ class Accountant(object):
         taxable_bought_cost = 0
         taxable_amount = 0
         taxfree_amount = 0
+        debug_enabled = logger.isEnabledFor(logging.DEBUG)
         for idx, buy_event in enumerate(self.events[selling_asset].buys):
             sell_after_year = buy_event.timestamp + YEAR_IN_SECONDS < timestamp
 
@@ -408,17 +412,18 @@ class Accountant(object):
                     taxable_bought_cost += buying_cost
 
                 remaining_amount_from_last_buy = buy_event.amount - remaining_sold_amount
-                self.log.logdebug(
-                    '[{}] Using up {}/{} "{}" from the buy for {} "{}" per "{}"  at {}'.format(
-                        'TAX-FREE' if sell_after_year else 'TAXABLE',
-                        remaining_sold_amount,
-                        buy_event.amount,
-                        selling_asset,
-                        buy_event.rate,
-                        self.profit_currency,
-                        selling_asset,
-                        tsToDate(buy_event.timestamp, formatstr='%d/%m/%Y %H:%M:%S')
-                    ))
+                if debug_enabled:
+                    logger.debug(
+                        '[{}] Using up {}/{} "{}" from the buy for {} "{}" per "{}"  at {}'.format(
+                            'TAX-FREE' if sell_after_year else 'TAXABLE',
+                            remaining_sold_amount,
+                            buy_event.amount,
+                            selling_asset,
+                            buy_event.rate,
+                            self.profit_currency,
+                            selling_asset,
+                            tsToDate(buy_event.timestamp, formatstr='%d/%m/%Y %H:%M:%S')
+                        ))
                 # stop iterating since we found all buys to satisfy this sell
                 break
             else:
@@ -430,19 +435,20 @@ class Accountant(object):
                     taxable_amount += buy_event.amount
                     taxable_bought_cost += buy_event.cost
 
-                self.log.logdebug(
-                    '[{}] Using up the entire buy of {} "{}" for {} "{}" per {} at {}'.format(
-                        'TAX-FREE' if sell_after_year else 'TAXABLE',
-                        buy_event.amount,
-                        selling_asset,
-                        buy_event.rate,
-                        self.profit_currency,
-                        selling_asset,
-                        tsToDate(buy_event.timestamp, formatstr='%d/%m/%Y %H:%M:%S')
-                    ))
+                if debug_enabled:
+                    logger.debug(
+                        '[{}] Using up the entire buy of {} "{}" for {} "{}" per {} at {}'.format(
+                            'TAX-FREE' if sell_after_year else 'TAXABLE',
+                            buy_event.amount,
+                            selling_asset,
+                            buy_event.rate,
+                            self.profit_currency,
+                            selling_asset,
+                            tsToDate(buy_event.timestamp, formatstr='%d/%m/%Y %H:%M:%S')
+                        ))
 
         if stop_index == -1:
-            self.log.logalert('No documented buy found for "{}" before {}'.format(
+            logger.critical('No documented buy found for "{}" before {}'.format(
                 selling_asset, tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
             ))
             # That means we had no documented buy for that asset. This is not good
@@ -486,34 +492,36 @@ class Accountant(object):
             )
         )
 
-        if loan_settlement:
-            self.log.logdebug('Loan Settlement Selling {} of "{}" for {} "{}" at {}'.format(
-                selling_amount,
-                selling_asset,
-                gain_in_profit_currency,
-                self.profit_currency,
-                tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
-            ))
-        else:
-            self.log.logdebug(
-                'Selling {} of "{}" for {} "{}" ({} "{}" per "{}" or {} "{}" '
-                'per "{}") for a gain of {} "{}" and a fee of {} "{} at {}'.format(
+        debug_enabled = logger.isEnabledFor(logging.DEBUG)
+        if debug_enabled:
+            if loan_settlement:
+                logger.debug('Loan Settlement Selling {} of "{}" for {} "{}" at {}'.format(
                     selling_amount,
-                    selling_asset,
-                    receiving_amount,
-                    receiving_asset,
-                    trade_rate,
-                    receiving_asset,
-                    selling_asset,
-                    rate_in_profit_currency,
-                    self.profit_currency,
                     selling_asset,
                     gain_in_profit_currency,
                     self.profit_currency,
-                    total_fee_in_profit_currency,
-                    self.profit_currency,
                     tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
                 ))
+            else:
+                logger.debug(
+                    'Selling {} of "{}" for {} "{}" ({} "{}" per "{}" or {} "{}" '
+                    'per "{}") for a gain of {} "{}" and a fee of {} "{} at {}'.format(
+                        selling_amount,
+                        selling_asset,
+                        receiving_amount,
+                        receiving_asset,
+                        trade_rate,
+                        receiving_asset,
+                        selling_asset,
+                        rate_in_profit_currency,
+                        self.profit_currency,
+                        selling_asset,
+                        gain_in_profit_currency,
+                        self.profit_currency,
+                        total_fee_in_profit_currency,
+                        self.profit_currency,
+                        tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
+                    ))
 
         # now search the buys for `paid_with_asset` and  calculate profit/loss
         taxable_amount, taxable_bought_cost, taxfree_bought_cost = self.search_buys_calculate_profit(
@@ -548,11 +556,12 @@ class Accountant(object):
                 # If it's a loan settlement we are charged both the fee and the gain
                 settlement_loss = gain_in_profit_currency + total_fee_in_profit_currency
                 self.settlement_losses += settlement_loss
-                self.log.logdebug("Loan Settlement Loss: {} {}".format(
-                    settlement_loss, self.profit_currency
-                ))
-            else:
-                self.log.logdebug("Taxable P/L: {} {} General P/L: {} {}".format(
+                if debug_enabled:
+                    logger.debug("Loan Settlement Loss: {} {}".format(
+                        settlement_loss, self.profit_currency
+                    ))
+            elif debug_enabled:
+                logger.debug("Taxable P/L: {} {} General P/L: {} {}".format(
                     taxable_profit_loss,
                     self.profit_currency,
                     general_profit_loss,
@@ -624,7 +633,8 @@ class Accountant(object):
             timestamp (int): The timestamp for the trade
         """
 
-        self.log.logdebug('\nSELL EVENT:')
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug('\nSELL EVENT:')
         self.add_sell_to_events(
             selling_asset,
             selling_amount,
@@ -782,8 +792,9 @@ class Accountant(object):
 
             asset1, asset2 = action_get_assets(action)
             if asset1 in self.ignored_assets or asset2 in self.ignored_assets:
-                self.log.logdebug("Ignoring {} with {} {}".format(action_type, asset1, asset2))
-                continue
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("Ignoring {} with {} {}".format(action_type, asset1, asset2))
+                    continue
 
             if action_type == 'loan':
                 self.add_loan_gain_to_events(

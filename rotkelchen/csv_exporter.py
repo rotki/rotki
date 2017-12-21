@@ -2,12 +2,14 @@ import os
 import csv
 from rotkelchen.utils import tsToDate, taxable_gain_for_sell
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class CSVExporter(object):
 
-    def __init__(self, profit_currency, logger, create_csv):
+    def __init__(self, profit_currency, create_csv):
         self.profit_currency = profit_currency
-        self.log = logger
         self.create_csv = create_csv
         self.reset_csv_lists()
 
@@ -24,7 +26,8 @@ class CSVExporter(object):
     def dict_to_csv_file(self, path, dictionary_list):
 
         if len(dictionary_list) == 0:
-            self.log.logdebug("Skipping writting empty CSV for {}".format(path))
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Skipping writting empty CSV for {}".format(path))
             return
 
         with open(path, 'w') as f:
