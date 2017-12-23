@@ -54,6 +54,11 @@ function set_ui_main_currency(currency) {
     $('#current-main-currency').removeClass().addClass('fa ' + currency.icon + ' fa-fw');
 }
 
+function add_task_dropdown(task_id, task_description) {
+    var str='<li class="task'+task_id+'"><a href="#"><div><p><strong>' + task_description + '</strong><span class="pull-right text-muted">40% Complete</span></p><div class="progress progress-striped active"><div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: 40%"><span class="sr-only">40% Complete (success)</span></div></div></div></a></li><li class="divider task'+task_id+'"></li>';
+    $(str).appendTo($(".dropdown-tasks"));
+}
+
 function add_currency_dropdown(currency) {
     var str = '<li><a id="change-to-'+ currency.ticker_symbol.toLowerCase() +'" href="#"><div><i class="fa '+ currency.icon +' fa-fw"></i> Set '+ currency.name +' as the main currency</div></a></li><li class="divider"></li>';
     $(str).appendTo($(".currency-dropdown"));
@@ -69,39 +74,49 @@ function add_currency_dropdown(currency) {
     });
 }
 
+function create_task(task_id, type, description) {
+    tasks_map[task_id] = new Task(task_id, type);
+    add_task_dropdown(task_id, description);
+}
+
+function remove_task(task_id) {
+    delete tasks_map[task_id];
+    $('.task'+task_id).remove();
+}
+
 function get_initial_settings() {
     client.invoke("get_initial_settings", (error, res) => {
         if (error || res == null) {
-	        var loading_wrapper = document.querySelector('.loadingwrapper');
-	        var loading_wrapper_text = document.querySelector('.loadingwrapper_text');
-	        console.log("get_initial_settings response was: " + res);
-	        console.error("get_initial_settings error was: " + error);
-	        loading_wrapper.style.background = "rgba( 255, 255, 255, .8 ) 50% 50% no-repeat";
-	        loading_wrapper_text.textContent = "ERROR: Failed to connect to the backend. Check Log";
+	    var loading_wrapper = document.querySelector('.loadingwrapper');
+	    var loading_wrapper_text = document.querySelector('.loadingwrapper_text');
+	    console.log("get_initial_settings response was: " + res);
+	    console.error("get_initial_settings error was: " + error);
+	    loading_wrapper.style.background = "rgba( 255, 255, 255, .8 ) 50% 50% no-repeat";
+	    loading_wrapper_text.textContent = "ERROR: Failed to connect to the backend. Check Log";
         } else {
-	        // set main currency
-	        console.log("server is ready");
-	        settings.main_currency = res['main_currency'];
-	        for (var i = 0; i < settings.CURRENCIES.length; i ++) {
-	            if (settings.main_currency == settings.CURRENCIES[i].ticker_symbol) {
-		            set_ui_main_currency(settings.CURRENCIES[i]);
-		            settings.main_currency = settings.CURRENCIES[i];
-		            break;
-	            }
+	    // set main currency
+	    console.log("server is ready");
+	    settings.main_currency = res['main_currency'];
+	    for (var i = 0; i < settings.CURRENCIES.length; i ++) {
+	        if (settings.main_currency == settings.CURRENCIES[i].ticker_symbol) {
+		    set_ui_main_currency(settings.CURRENCIES[i]);
+		    settings.main_currency = settings.CURRENCIES[i];
+		    break;
 	        }
-	        // make separate queries for all registered exchanges
-	        let exchanges = res['exchanges'];
-	        for (var i = 0; i < exchanges.length; i++) {
-	            client.invoke("query_exchange_total_async", exchanges[i], true, function (error, res) {
-		            if (error || res == null) {
-		                console.log("Error at first query of an exchange's balance: " + error);
-		            } else {
-				console.log(exchanges[i] + " Exchange Query returned task id " + res['task_id']);
-				tasks_map[res['task_id']] = new Task(res['task_id'], 'query_exchange_total');
-		            }
-	            });
-	        }
-	        $("body").removeClass("loading");
+	    }
+	    // make separate queries for all registered exchanges
+	    let exchanges = res['exchanges'];
+	    for (var i = 0; i < exchanges.length; i++) {
+		let exx = exchanges[i];
+	        client.invoke("query_exchange_total_async", exchanges[i], true, function (error, res) {
+		    if (error || res == null) {
+		        console.log("Error at first query of an exchange's balance: " + error);
+		    } else {
+			create_task(res['task_id'], 'query_exchange_total', 'Query ' + exx + ' Exchange'); 
+		    }
+	        });
+	    }
+	    $("body").removeClass("loading");
         }
     });
 }
@@ -112,7 +127,7 @@ function get_blockchain_total() {
 	        console.log("Error at querying blockchain total: " + error);
         } else {
 	    console.log("Blockchain total returned task id " + res['task_id']);
-	    tasks_map[res['task_id']] = new Task(res['task_id'], 'query_blockchain_total');
+	    create_task(res['task_id'], 'query_blockchain_total', 'Query Blockchain Balances'); 
         }
     });
 }
@@ -125,7 +140,7 @@ function get_banks_total() {
 	        console.log("Error at querying bank total: " + error);
         } else {
 	    console.log("Query banks returned task id " + res['task_id']);
-	    tasks_map[res['task_id']] = new Task(res['task_id'], 'query_banks_total');
+	    create_task(res['task_id'], 'query_banks_total', 'Query Bank Balances'); 
         }
     });
 }
@@ -189,8 +204,7 @@ function monitor_tasks() {
 		        } else {
 		            console.log('Unrecognized task type ' + task.type);
 		        }
-		    console.log('Deleting task ' + task.id + ' from map');
-		    delete tasks_map[task.id];
+		    remove_task(task.id);
 	        }
 	    });
 	    
