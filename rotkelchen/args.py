@@ -60,6 +60,14 @@ def app_args():
         choices=['debug', 'info', 'warn', 'error', 'critical'],
         default='debug'
     )
+    p.add_argument(
+        '--logfromothermodules',
+        help=(
+            'If given then logs from all all imported modules that use the '
+            'logging system will also be visible.'
+        ),
+        action='store_true',
+    )
 
     args = p.parse_args()
 

@@ -7,6 +7,7 @@ import hashlib
 import base64
 import time
 from urllib.parse import urlencode
+from gevent.lock import Semaphore
 
 from rotkelchen.utils import query_fiat_pair, retry_calls, rlk_jsonloads, convert_to_int
 from rotkelchen.order_formatting import AssetMovement
@@ -62,6 +63,7 @@ class Kraken(Exchange):
         self.apiversion = '0'
         self.uri = 'https://api.kraken.com/{}/'.format(self.apiversion)
         self.data_dir = data_dir
+        self.lock = Semaphore()
         self.usdprice = {}
         self.eurprice = {}
         self.session.headers.update({
@@ -76,12 +78,14 @@ class Kraken(Exchange):
             'TradeVolume',
             req={'pair': 'XETHXXBT', 'fee-info': True}
         )
-        # Assuming all fees are the same for all pairs that we trade here,
-        # as long as they are normal orders on normal pairs.
-        self.taker_fee = FVal(resp['fees']['XETHXXBT']['fee'])
-        self.maker_fee = FVal(resp['fees_maker']['XETHXXBT']['fee'])
-        self.tradeable_pairs = self.query_public('AssetPairs')
-        self.first_connection_made = True
+        with self.lock:
+            # Assuming all fees are the same for all pairs that we trade here,
+            # as long as they are normal orders on normal pairs.
+            self.taker_fee = FVal(resp['fees']['XETHXXBT']['fee'])
+            self.maker_fee = FVal(resp['fees_maker']['XETHXXBT']['fee'])
+            self.tradeable_pairs = self.query_public('AssetPairs')
+            self.first_connection_made = True
+
         # Also need to do at least a single pass of the main logic for the ticker
         self.main_logic()
 
@@ -182,15 +186,16 @@ class Kraken(Exchange):
             'Ticker',
             req={'pair': ','.join(self.tradeable_pairs.keys())}
         )
-        self.eurprice['BTC'] = FVal(self.ticker['XXBTZEUR']['c'][0])
-        self.usdprice['BTC'] = FVal(self.ticker['XXBTZUSD']['c'][0])
-        self.eurprice['ETH'] = FVal(self.ticker['XETHZEUR']['c'][0])
-        self.usdprice['ETH'] = FVal(self.ticker['XETHZUSD']['c'][0])
-        self.eurprice['REP'] = FVal(self.ticker['XREPZEUR']['c'][0])
-        self.eurprice['XMR'] = FVal(self.ticker['XXMRZEUR']['c'][0])
-        self.usdprice['XMR'] = FVal(self.ticker['XXMRZUSD']['c'][0])
-        self.eurprice['ETC'] = FVal(self.ticker['XETCZEUR']['c'][0])
-        self.usdprice['ETC'] = FVal(self.ticker['XETCZUSD']['c'][0])
+        with self.lock:
+            self.eurprice['BTC'] = FVal(self.ticker['XXBTZEUR']['c'][0])
+            self.usdprice['BTC'] = FVal(self.ticker['XXBTZUSD']['c'][0])
+            self.eurprice['ETH'] = FVal(self.ticker['XETHZEUR']['c'][0])
+            self.usdprice['ETH'] = FVal(self.ticker['XETHZUSD']['c'][0])
+            self.eurprice['REP'] = FVal(self.ticker['XREPZEUR']['c'][0])
+            self.eurprice['XMR'] = FVal(self.ticker['XXMRZEUR']['c'][0])
+            self.usdprice['XMR'] = FVal(self.ticker['XXMRZUSD']['c'][0])
+            self.eurprice['ETC'] = FVal(self.ticker['XETCZEUR']['c'][0])
+            self.usdprice['ETC'] = FVal(self.ticker['XETCZUSD']['c'][0])
 
     def find_fiat_price(self, asset):
         """Find USD/EUR price of asset. The asset should be in the kraken style.
@@ -210,17 +215,17 @@ class Kraken(Exchange):
             )
         btc_price = FVal(self.ticker[pair]['c'][0])
         common_name = KRAKEN_TO_WORLD[asset]
-        self.usdprice[common_name] = btc_price * self.usdprice['BTC']
-        self.eurprice[common_name] = btc_price * self.eurprice['BTC']
+        with self.lock:
+            self.usdprice[common_name] = btc_price * self.usdprice['BTC']
+            self.eurprice[common_name] = btc_price * self.eurprice['BTC']
         return self.usdprice[common_name]
 
-    def query_balances(self, ignore_cache=False):
+    def query_balances(self):
         self.first_connection()
-
         old_balances = self.query_private('Balance', req={})
-
         # find USD price of EUR
-        self.usdprice['EUR'] = query_fiat_pair('EUR', 'USD')
+        with self.lock:
+            self.usdprice['EUR'] = query_fiat_pair('EUR', 'USD')
 
         balances = dict()
         for k, v in old_balances.items():
@@ -237,7 +242,6 @@ class Kraken(Exchange):
                 entry['usd_value'] = v * self.find_fiat_price(k)
 
             balances[common_name] = entry
-
         return balances
 
     def query_until_finished(self, endpoint, keyname, start_ts, end_ts, extra_dict=None):
@@ -272,12 +276,16 @@ class Kraken(Exchange):
         return result
 
     def query_trade_history(self, start_ts=None, end_ts=None, end_at_least_ts=None):
-        cache = self.check_trades_cache(start_ts, end_at_least_ts)
+        with self.lock:
+            cache = self.check_trades_cache(start_ts, end_at_least_ts)
+
         if cache is not None:
             return cache
         result = self.query_until_finished('TradesHistory', 'trades', start_ts, end_ts)
-        # before returning save it in the disk for future reference
-        self.update_trades_cache(result, start_ts, end_ts)
+
+        with self.lock:
+            # before returning save it in the disk for future reference
+            self.update_trades_cache(result, start_ts, end_ts)
         return result
 
     def _query_endpoint_for_period(self, endpoint, start_ts, end_ts, offset=None, extra_dict=None):
@@ -292,11 +300,13 @@ class Kraken(Exchange):
         return result
 
     def query_deposits_withdrawals(self, start_ts, end_ts, end_at_least_ts):
-        cache = self.check_trades_cache(
-            start_ts,
-            end_at_least_ts,
-            special_name='deposits_withdrawals'
-        )
+        with self.lock:
+            cache = self.check_trades_cache(
+                start_ts,
+                end_at_least_ts,
+                special_name='deposits_withdrawals'
+            )
+
         if cache is not None:
             result = cache
         else:
@@ -314,12 +324,14 @@ class Kraken(Exchange):
                 end_ts=end_ts,
                 extra_dict=dict(type='withdrawal')
             ))
-            self.update_trades_cache(
-                result,
-                start_ts,
-                end_ts,
-                special_name='deposits_withdrawals'
-            )
+
+            with self.lock:
+                self.update_trades_cache(
+                    result,
+                    start_ts,
+                    end_ts,
+                    special_name='deposits_withdrawals'
+                )
 
         movements = list()
         for movement in result:

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
-import threading
+import gevent
+from gevent.lock import Semaphore
 from urllib.request import Request, urlopen
 
 from rotkelchen.utils import (
@@ -26,14 +27,14 @@ logger = logging.getLogger(__name__)
 
 class Rotkelchen(object):
     def __init__(self, args):
-        self.lock = threading.Lock()
+        self.lock = Semaphore()
         self.lock.acquire()
 
         logfilename = None
         if args.logtarget == 'file':
             logfilename = args.logfile
 
-        loglevel = 1
+        loglevel = logging.DEBUG
         if args.loglevel == 'debug':
             loglevel = logging.DEBUG
         elif args.loglevel == 'info':
@@ -47,7 +48,19 @@ class Rotkelchen(object):
         else:
             raise ValueError('Should never get here. Illegal log value')
 
-        logging.basicConfig(filename=logfilename, filemode='w', level=loglevel)
+        logging.basicConfig(
+            filename=logfilename,
+            filemode='w',
+            level=loglevel,
+            format='%(asctime)s -- %(levelname)s:%(name)s:%(message)s',
+            datefmt='%d/%m/%Y %H:%M:%S %Z',
+        )
+
+        if not args.logfromothermodules:
+            logging.getLogger('zerorpc').setLevel(logging.CRITICAL)
+            logging.getLogger('zerorpc.channel').setLevel(logging.CRITICAL)
+            logging.getLogger('urllib3').setLevel(logging.CRITICAL)
+            logging.getLogger('urllib3.connectionpool').setLevel(logging.CRITICAL)
 
         self.sleep_secs = args.sleep_secs
         data_dir = args.data_dir
@@ -120,22 +133,21 @@ class Rotkelchen(object):
         self.main_currency = self.data.accountant.profit_currency
 
         self.lock.release()
-        self.condition_lock = threading.Condition()
-        self.shutdown_event = threading.Event()
-        self.worker_thread = threading.Thread(target=self.main_loop, args=())
-        self.worker_thread.start()
+        self.shutdown_event = gevent.event.Event()
+
+    def start(self):
+        return gevent.spawn(self.main_loop)
 
     def main_loop(self):
         while True and not self.shutdown_event.is_set():
-            with self.lock:
-                if self.poloniex is not None:
-                    self.poloniex.main_logic()
-                if self.kraken is not None:
-                    self.kraken.main_logic()
+            logger.debug('Main loop start')
+            if self.poloniex is not None:
+                self.poloniex.main_logic()
+            if self.kraken is not None:
+                self.kraken.main_logic()
 
-            with self.condition_lock:
-                if self.condition_lock.wait(self.sleep_secs):
-                    break
+            logger.debug('Main loop end')
+            gevent.sleep(10)
 
     def plot(self):
         show_plot(self.data.stats)
@@ -144,13 +156,16 @@ class Rotkelchen(object):
         return self.data.process_history(start_ts, end_ts)
 
     def query_blockchain_balances(self):
+        logger.debug('query_blockchain_balances start')
         # Find balance of eth Accounts
         eth_sum = self.ethchain.get_multieth_balance(
             self.data.personal['eth_accounts']
         )
+        logger.debug('query_blockchain_balances 2')
         eth_usd_price = self.inquirer.find_usd_price('ETH')
         eth_accounts_usd_amount = eth_sum * eth_usd_price
 
+        logger.debug('query_blockchain_balances 3')
         btc_resp = urlopen(Request(
             'https://blockchain.info/q/addressbalance/%s' %
             '|'.join(self.data.personal['btc_accounts'])
@@ -168,6 +183,7 @@ class Rotkelchen(object):
             },
         }
 
+        logger.debug('query_blockchain_balances 4')
         tokens_to_check = None
         if 'eth_tokens' in self.data.personal:
             tokens_to_check = self.data.personal['eth_tokens']
@@ -180,6 +196,8 @@ class Rotkelchen(object):
                 continue
             if tokens_to_check and token_symbol not in tokens_to_check:
                 continue
+
+            logger.debug('query_blockchain_balances - {}'.format(token_symbol))
 
             token_usd_price = self.inquirer.find_usd_price(token_symbol)
             if token_usd_price == 0:
@@ -195,10 +213,11 @@ class Rotkelchen(object):
             blockchain_balances[token_symbol] = {
                 'amount': token_amount, 'usd_value': token_amount * token_usd_price
             }
-
+        logger.debug('query_blockchain_balances end')
         return blockchain_balances
 
     def query_bank_balances(self):
+        logger.debug('At query_bank_balances start')
         eur_usd_price = query_fiat_pair('EUR', 'USD')
         return {
             'EUR': {
@@ -292,9 +311,10 @@ class Rotkelchen(object):
         self.data.extend_stats(new_file_dict)
 
     def set_main_currency(self, currency):
-        self.data.set_main_currency(currency)
-        if currency != 'USD':
-            self.usd_to_main_currency_rate = query_fiat_pair('USD', currency)
+        with self.rotkelchen.lock:
+            self.data.set_main_currency(currency)
+            if currency != 'USD':
+                self.usd_to_main_currency_rate = query_fiat_pair('USD', currency)
 
     def usd_to_main_currency(self, amount):
         if self.main_currency != 'USD' and not hasattr(self, 'usd_to_main_currency_rate'):
@@ -315,9 +335,6 @@ class Rotkelchen(object):
     def shutdown(self):
         print("Shutting Down...")
         self.shutdown_event.set()
-        with self.condition_lock:
-            self.condition_lock.notify_all()
-        self.worker_thread.join()
 
     def set(self, *args):
         if len(args) < 2:

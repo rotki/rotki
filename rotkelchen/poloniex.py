@@ -7,6 +7,7 @@ import os
 import traceback
 import csv
 from urllib.parse import urlencode
+from gevent.lock import Semaphore
 
 from rotkelchen.fval import FVal
 from rotkelchen.utils import (
@@ -50,6 +51,7 @@ class Poloniex(Exchange):
         self.cache_filename = cache_filename
         self.data_dir = data_dir
         self.args = args
+        self.lock = Semaphore()
         # Set default setting values
         self.watched_currencies = {
             'BTC_DASH': WatchedCurrency(0.0, 0.5, 0.000500),
@@ -76,9 +78,10 @@ class Poloniex(Exchange):
             return
 
         fees_resp = self.returnFeeInfo()
-        self.maker_fee = FVal(fees_resp['makerFee'])
-        self.taker_fee = FVal(fees_resp['takerFee'])
-        self.first_connection_made = True
+        with self.lock:
+            self.maker_fee = FVal(fees_resp['makerFee'])
+            self.taker_fee = FVal(fees_resp['takerFee'])
+            self.first_connection_made = True
         # Also need to do at least a single pass of the market watcher for the ticker
         self.market_watcher()
 
@@ -341,13 +344,14 @@ class Poloniex(Exchange):
 
     def market_watcher(self):
         self.ticker = self.returnTicker()
-        self.usdprice['BTC'] = FVal(self.ticker['USDT_BTC']['last'])
-        self.usdprice['ETH'] = FVal(self.ticker['USDT_ETH']['last'])
-        self.usdprice['DASH'] = FVal(self.ticker['USDT_DASH']['last'])
-        self.usdprice['XMR'] = FVal(self.ticker['USDT_XMR']['last'])
-        self.usdprice['LTC'] = FVal(self.ticker['USDT_LTC']['last'])
-        self.usdprice['MAID'] = FVal(self.ticker['BTC_MAID']['last']) * self.usdprice['BTC']
-        self.usdprice['FCT'] = FVal(self.ticker['BTC_FCT']['last']) * self.usdprice['BTC']
+        with self.lock:
+            self.usdprice['BTC'] = FVal(self.ticker['USDT_BTC']['last'])
+            self.usdprice['ETH'] = FVal(self.ticker['USDT_ETH']['last'])
+            self.usdprice['DASH'] = FVal(self.ticker['USDT_DASH']['last'])
+            self.usdprice['XMR'] = FVal(self.ticker['USDT_XMR']['last'])
+            self.usdprice['LTC'] = FVal(self.ticker['USDT_LTC']['last'])
+            self.usdprice['MAID'] = FVal(self.ticker['BTC_MAID']['last']) * self.usdprice['BTC']
+            self.usdprice['FCT'] = FVal(self.ticker['BTC_FCT']['last']) * self.usdprice['BTC']
 
     def main_logic(self):
         if not self.first_connection_made:
@@ -374,7 +378,6 @@ class Poloniex(Exchange):
 
     def query_balances(self):
         resp = self.api_query('returnCompleteBalances', {"account": "all"})
-
         balances = dict()
         for currency, v in resp.items():
             available = FVal(v['available'])
@@ -389,11 +392,11 @@ class Poloniex(Exchange):
                 usd_value = entry['amount'] * usd_price
                 entry['usd_value'] = usd_value
                 balances[currency] = entry
-
         return balances
 
     def query_trade_history(self, start_ts, end_ts, end_at_least_ts):
-        cache = self.check_trades_cache(start_ts, end_at_least_ts)
+        with self.lock:
+            cache = self.check_trades_cache(start_ts, end_at_least_ts)
         if cache is not None:
             return cache
 
@@ -403,7 +406,8 @@ class Poloniex(Exchange):
             end=end_ts
         )
 
-        self.update_trades_cache(result, start_ts, end_ts)
+        with self.lock:
+            self.update_trades_cache(result, start_ts, end_ts)
         return result
 
     def parseLoanCSV(self):
@@ -441,7 +445,8 @@ class Poloniex(Exchange):
         except:
             pass
 
-        cache = self.check_trades_cache(start_ts, end_at_least_ts, special_name='loan_history')
+        with self.lock:
+            cache = self.check_trades_cache(start_ts, end_at_least_ts, special_name='loan_history')
         if cache is not None:
             return cache
 
@@ -476,23 +481,26 @@ class Poloniex(Exchange):
                 if loan['id'] not in id_set:
                     data.append(loan)
 
-        self.update_trades_cache(data, start_ts, end_ts, special_name='loan_history')
+        with self.lock:
+            self.update_trades_cache(data, start_ts, end_ts, special_name='loan_history')
         return data
 
     def query_deposits_withdrawals(self, start_ts, end_ts, end_at_least_ts):
-        cache = self.check_trades_cache(
-            start_ts,
-            end_at_least_ts,
-            special_name='deposits_withdrawals'
-        )
-        if cache is None:
-            result = self.returnDepositsWithdrawals(start_ts, end_ts)
-            self.update_trades_cache(
-                result,
+        with self.lock:
+            cache = self.check_trades_cache(
                 start_ts,
-                end_ts,
+                end_at_least_ts,
                 special_name='deposits_withdrawals'
             )
+        if cache is None:
+            result = self.returnDepositsWithdrawals(start_ts, end_ts)
+            with self.lock:
+                self.update_trades_cache(
+                    result,
+                    start_ts,
+                    end_ts,
+                    special_name='deposits_withdrawals'
+                )
         else:
             result = cache
 

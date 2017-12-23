@@ -1,4 +1,5 @@
-# makes it possible to run rotkelchen with 'python -m rotkelchen'
+from gevent import monkey
+monkey.patch_all()
 import logging
 logger = logging.getLogger(__name__)
 

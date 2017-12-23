@@ -6,6 +6,9 @@ from requests import ConnectionError
 from rotkelchen.utils import from_wei, rlk_jsonloads
 from rotkelchen.fval import FVal
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class Ethchain(object):
     def __init__(self, ethrpc_port):
@@ -20,7 +23,7 @@ class Ethchain(object):
             with open(os.path.join(dir_path, 'data', 'token_abi.json'), 'r') as f:
                 self.token_abi = rlk_jsonloads(f.read())
         except ConnectionError:
-            print("INFO: Could not connect to a local ethereum node. Will use etherscan only")
+            logger.warn('Could not connect to a local ethereum node. Will use etherscan only')
             self.connected = False
 
     def get_eth_balance(self, account):

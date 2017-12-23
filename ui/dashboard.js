@@ -1,7 +1,12 @@
 require("./zerorpc_client.js")();
 var settings = require("./settings.js");
 
-let jobs = ['false', 'false'];
+let tasks_map = {};
+
+function Task (task_id, task_type) {
+    this.id = task_id;
+    this.type = task_type;
+}
 
 function finish_job() {
     var finished_one = false;
@@ -87,15 +92,12 @@ function get_initial_settings() {
 	        // make separate queries for all registered exchanges
 	        let exchanges = res['exchanges'];
 	        for (var i = 0; i < exchanges.length; i++) {
-	            jobs.push(false);
-	        }
-	        for (var i = 0; i < exchanges.length; i++) {
-	            client.invoke("query_exchange_total", exchanges[i], true, function (error, res) {
+	            client.invoke("query_exchange_total_async", exchanges[i], true, function (error, res) {
 		            if (error || res == null) {
 		                console.log("Error at first query of an exchange's balance: " + error);
 		            } else {
-		                create_exchange_box(res['name'], res['total'], settings.main_currency.icon).appendTo($('#leftest-column'));
-		                finish_job();
+				console.log(exchanges[i] + " Exchange Query returned task id " + res['task_id']);
+				tasks_map[res['task_id']] = new Task(res['task_id'], 'query_exchange_total');
 		            }
 	            });
 	        }
@@ -105,23 +107,25 @@ function get_initial_settings() {
 }
 
 function get_blockchain_total() {
-    client.invoke("query_blockchain_total", (error, res) => {
+    client.invoke("query_blockchain_total_async", (error, res) => {
         if (error || res == null) {
 	        console.log("Error at querying blockchain total: " + error);
         } else {
-	        create_box('blockchain balance', 'fa-hdd-o', res['total'], settings.main_currency.icon).appendTo($('#leftest-column'));
-	        finish_job();
+	    console.log("Blockchain total returned task id " + res['task_id']);
+	    tasks_map[res['task_id']] = new Task(res['task_id'], 'query_blockchain_total');
         }
     });
 }
 
 function get_banks_total() {
-    client.invoke("query_banks_total", (error, res) => {
+    // does not really need to be async at the moment as it's just a file read
+    // but trying to be future proof
+    client.invoke("query_banks_total_async", (error, res) => {
         if (error || res == null) {
 	        console.log("Error at querying bank total: " + error);
         } else {
-	        create_box('banks balance', 'fa-university', res['total'], settings.main_currency.icon).appendTo($('#leftest-column'));
-	        finish_job();
+	    console.log("Query banks returned task id " + res['task_id']);
+	    tasks_map[res['task_id']] = new Task(res['task_id'], 'query_banks_total');
         }
     });
 }
@@ -142,6 +146,59 @@ function create_or_reload_dashboard() {
     }
 }
 
+function monitor_tasks() {
+    if (Object.keys(tasks_map).length == 0) {
+	// if we get here it means we finished all jobs
+	$('#top-loading-icon').removeClass().addClass('fa fa-check-circle fa-fw');
+	// also save the dashboard page
+	settings.page_index = $('#page-wrapper').html();
+	return;
+    }
+
+
+    // else it means we still need to have data to load
+    $('#top-loading-icon').removeClass().addClass('fa fa-circle-o-notch fa-spin fa-fw');
+    
+    for (var task_id in tasks_map) {
+	let task = tasks_map[task_id];
+	if (task.id == null) {
+	    console.log('NULL TASK ID: ' + JSON.stringify(task, null, 4));
+	    continue;
+	}
+	
+	client.invoke("query_task_result", task.id, function (error, res) {
+	    console.log("monitor_tasks. Querying task " + task.id);
+	        if (res != null) {
+		        console.log("monitor_tasks with result");
+		        if (task.type == 'query_exchange_total') {
+		            create_exchange_box(
+				res['name'],
+				parseFloat(res['total']),
+				settings.main_currency.icon).appendTo($('#leftest-column'));
+		        } else if (task.type == 'query_blockchain_total') {
+	                    create_box(
+				'blockchain balance',
+				'fa-hdd-o',
+				parseFloat(res['total']),
+				settings.main_currency.icon).appendTo($('#leftest-column'));
+		        } else if (task.type == 'query_banks_total') {
+	                    create_box('banks balance',
+				       'fa-university',
+				       parseFloat(res['total']),
+				       settings.main_currency.icon).appendTo($('#leftest-column'));
+		        } else {
+		            console.log('Unrecognized task type ' + task.type);
+		        }
+		    console.log('Deleting task ' + task.id + ' from map');
+		    delete tasks_map[task.id];
+	        }
+	    });
+	    
+    }
+}
+// monitor tasks every 2 seconds
+setInterval(monitor_tasks, 2000);
+
 module.exports = function() {
 
     this.create_exchange_box = create_exchange_box;
@@ -149,5 +206,6 @@ module.exports = function() {
     this.set_ui_main_currency = set_ui_main_currency;
     this.add_currency_dropdown = add_currency_dropdown;
     this.create_or_reload_dashboard = create_or_reload_dashboard;
-
 };
+
+
