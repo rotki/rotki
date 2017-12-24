@@ -8,7 +8,8 @@
     "bootstrap": "^3.3.7",
     "jquery": "^3.2.1",
     "startbootstrap-sb-admin-2": "^3.3.7",
-    "zerorpc": "latest"
+    "zerorpc": "latest",
+    "tail": "latest"
   },
   "devDependencies": {
     "electron": "1.6.10",

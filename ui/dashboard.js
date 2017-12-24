@@ -1,5 +1,6 @@
 require("./zerorpc_client.js")();
 var settings = require("./settings.js");
+require("./utils.js")();
 
 let tasks_map = {};
 
@@ -57,6 +58,15 @@ function set_ui_main_currency(currency) {
 function add_task_dropdown(task_id, task_description) {
     var str='<li class="task'+task_id+'"><a href="#"><div><p><strong>' + task_description + '</strong><span class="pull-right text-muted">40% Complete</span></p><div class="progress progress-striped active"><div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: 40%"><span class="sr-only">40% Complete (success)</span></div></div></div></a></li><li class="divider task'+task_id+'"></li>';
     $(str).appendTo($(".dropdown-tasks"));
+}
+
+var alert_id = 0;
+function add_alert_dropdown(alert_text, alert_time) {
+    var str='<li class="warning'+alert_id+'"><a href="#"><div><p>'+alert_text+'<span class="pull-right text-muted"><i class="fa fa-times warningremover'+alert_id+'"></i></span></p></div></a></li><li class="divider warning'+alert_id+'"></li>';
+    $(str).appendTo($(".dropdown-alerts"));
+    let current_alert_id = alert_id;
+    $(".warningremover" + current_alert_id).click(function(){console.log("remove callback called for " +current_alert_id);$('.warning'+current_alert_id).remove();});
+    alert_id += 1;
 }
 
 function add_currency_dropdown(currency) {
@@ -212,6 +222,7 @@ function monitor_tasks() {
 }
 // monitor tasks every 2 seconds
 setInterval(monitor_tasks, 2000);
+setup_warnings_watcher(add_alert_dropdown);
 
 module.exports = function() {
 
