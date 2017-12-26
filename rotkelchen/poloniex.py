@@ -7,7 +7,6 @@ import os
 import traceback
 import csv
 from urllib.parse import urlencode
-from gevent.lock import Semaphore
 
 from rotkelchen.fval import FVal
 from rotkelchen.utils import (
@@ -51,7 +50,6 @@ class Poloniex(Exchange):
         self.cache_filename = cache_filename
         self.data_dir = data_dir
         self.args = args
-        self.lock = Semaphore()
         # Set default setting values
         self.watched_currencies = {
             'BTC_DASH': WatchedCurrency(0.0, 0.5, 0.000500),

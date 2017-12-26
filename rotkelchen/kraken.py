@@ -7,7 +7,6 @@ import hashlib
 import base64
 import time
 from urllib.parse import urlencode
-from gevent.lock import Semaphore
 
 from rotkelchen.utils import query_fiat_pair, retry_calls, rlk_jsonloads, convert_to_int
 from rotkelchen.order_formatting import AssetMovement
@@ -63,7 +62,6 @@ class Kraken(Exchange):
         self.apiversion = '0'
         self.uri = 'https://api.kraken.com/{}/'.format(self.apiversion)
         self.data_dir = data_dir
-        self.lock = Semaphore()
         self.usdprice = {}
         self.eurprice = {}
         self.session.headers.update({

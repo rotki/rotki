@@ -2,6 +2,7 @@
 import requests
 import os
 from collections import namedtuple
+from gevent.lock import Semaphore
 
 from rotkelchen.utils import rlk_jsonloads, rlk_jsondumps, ts_now
 
@@ -28,17 +29,21 @@ def cache_response_timewise(seconds=600):
     def _cache_response_timewise(f):
         def wrapper(exchangeobj, *args):
             now = ts_now()
-            cache_miss = (
-                f.__name__ not in exchangeobj.results_cache or
-                now - exchangeobj.results_cache[f.__name__].timestamp > seconds
-            )
+            with exchangeobj.lock:
+                cache_miss = (
+                    f.__name__ not in exchangeobj.results_cache or
+                    now - exchangeobj.results_cache[f.__name__].timestamp > seconds
+                )
             if cache_miss:
                 result = f(exchangeobj, *args)
-                exchangeobj.results_cache[f.__name__] = ResultCache(result, now)
+                with exchangeobj.lock:
+                    exchangeobj.results_cache[f.__name__] = ResultCache(result, now)
                 return result
 
             # else hit the cache
-            return exchangeobj.results_cache[f.__name__].result
+            with exchangeobj.lock:
+                return exchangeobj.results_cache[f.__name__].result
+
         return wrapper
     return _cache_response_timewise
 
@@ -53,6 +58,7 @@ class Exchange(object):
         self.secret = secret
         self.first_connection_made = False
         self.session = requests.session()
+        self.lock = Semaphore()
         self.results_cache = {}
         self.session.headers.update({'User-Agent': 'rotkelchen'})
 
@@ -100,7 +106,7 @@ class Exchange(object):
             'ICN': {'amount': 42, 'usd_value': 1337}
         }
 
-        The name must be the canonical name used by leftrader
+        The name must be the canonical name used by rotkelchen
         """
         raise NotImplementedError("Should only be implemented by subclasses")
 
