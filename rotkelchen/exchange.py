@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 import requests
 import os
-from rotkelchen.utils import rlk_jsonloads, rlk_jsondumps
+from collections import namedtuple
+
+from rotkelchen.utils import rlk_jsonloads, rlk_jsondumps, ts_now
 
 
 def data_up_todate(json_data, start_ts, end_ts):
@@ -19,6 +21,28 @@ def data_up_todate(json_data, start_ts, end_ts):
     return start_ts_ok and end_ts_ok
 
 
+ResultCache = namedtuple('ResultCache', ('result', 'timestamp'))
+
+
+def cache_response_timewise(seconds=600):
+    def _cache_response_timewise(f):
+        def wrapper(exchangeobj, *args):
+            now = ts_now()
+            cache_miss = (
+                f.__name__ not in exchangeobj.results_cache or
+                now - exchangeobj.results_cache[f.__name__].timestamp > seconds
+            )
+            if cache_miss:
+                result = f(exchangeobj, *args)
+                exchangeobj.results_cache[f.__name__] = ResultCache(result, now)
+                return result
+
+            # else hit the cache
+            return exchangeobj.results_cache[f.__name__].result
+        return wrapper
+    return _cache_response_timewise
+
+
 class Exchange(object):
 
     def __init__(self, name, api_key, secret):
@@ -29,6 +53,7 @@ class Exchange(object):
         self.secret = secret
         self.first_connection_made = False
         self.session = requests.session()
+        self.results_cache = {}
         self.session.headers.update({'User-Agent': 'rotkelchen'})
 
     def _get_cachefile_name(self, special_name=None):

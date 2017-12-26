@@ -3,7 +3,7 @@ import hmac
 import hashlib
 from urllib.parse import urlencode
 
-from rotkelchen.exchange import Exchange
+from rotkelchen.exchange import Exchange, cache_response_timewise
 from rotkelchen.order_formatting import pair_get_assets, Trade
 from rotkelchen.utils import rlk_jsonloads
 from rotkelchen.fval import FVal
@@ -114,6 +114,7 @@ class Binance(Exchange):
         json_ret = rlk_jsonloads(response.text)
         return json_ret
 
+    @cache_response_timewise()
     def query_balances(self):
         account_data = self.api_query('account')
 

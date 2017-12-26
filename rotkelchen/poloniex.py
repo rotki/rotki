@@ -15,7 +15,7 @@ from rotkelchen.utils import (
     retry_calls,
     rlk_jsonloads,
 )
-from rotkelchen.exchange import Exchange
+from rotkelchen.exchange import Exchange, cache_response_timewise
 from rotkelchen.order_formatting import AssetMovement
 from rotkelchen.errors import PoloniexError
 
@@ -376,6 +376,7 @@ class Poloniex(Exchange):
             {'currencyPair': currencyPair}
         )
 
+    @cache_response_timewise()
     def query_balances(self):
         resp = self.api_query('returnCompleteBalances', {"account": "all"})
         balances = dict()

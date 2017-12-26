@@ -11,7 +11,7 @@ from gevent.lock import Semaphore
 
 from rotkelchen.utils import query_fiat_pair, retry_calls, rlk_jsonloads, convert_to_int
 from rotkelchen.order_formatting import AssetMovement
-from rotkelchen.exchange import Exchange
+from rotkelchen.exchange import Exchange, cache_response_timewise
 from rotkelchen.errors import RecoverableRequestError
 from rotkelchen.fval import FVal
 
@@ -220,6 +220,7 @@ class Kraken(Exchange):
             self.eurprice[common_name] = btc_price * self.eurprice['BTC']
         return self.usdprice[common_name]
 
+    @cache_response_timewise()
     def query_balances(self):
         self.first_connection()
         old_balances = self.query_private('Balance', req={})
