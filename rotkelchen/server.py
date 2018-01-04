@@ -92,7 +92,8 @@ class RotkelchenServer(object):
 
     def handle_killed_greenlets(self, greenlet):
         if greenlet.exception:
-            logger.error('Greenlet dies with exception: {}'.format(greenlet.exception))
+            logger.error('Greenlet for task {} dies with exception: {}.\nexc_info is: {}'
+                         .format(greenlet.task_id, greenlet.exception, greenlet._exc_info))
 
     def _query_async(self, command, task_id, **kwargs):
         result = getattr(self, command)(**kwargs)
@@ -107,6 +108,7 @@ class RotkelchenServer(object):
             task_id,
             **kwargs
         )
+        greenlet.task_id = task_id
         greenlet.link_exception(self.handle_killed_greenlets)
         self.greenlets.append(greenlet)
         return task_id
