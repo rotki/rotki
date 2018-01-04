@@ -1,6 +1,7 @@
 require("./zerorpc_client.js")();
 var settings = require("./settings.js");
 require("./utils.js")();
+require("./exchange.js")();
 
 let tasks_map = {};
 
@@ -33,22 +34,58 @@ function showAlert(type, text) {
     $(str).prependTo($("#wrapper"));
 }
 
+function determine_location(url) {
+    var split = url.split('#');
+    if (split.length == 1 || split[1] == '') {
+        return 'index';
+    }
+    return split[1];
+}
+
 function create_exchange_box(exchange, number, currency_icon) {
+
+    if($("#" + exchange+'box').length != 0) {
+	    //already exists
+	    return;
+    }
+
     var css_class = 'exchange-icon-inverted';
     if (exchange == 'poloniex') {
 	    css_class = 'exchange-icon';
     }
     // only show 2 decimal digits
     number = number.toFixed(2);
-    var str = '<div class="panel panel-primary"><div class="panel-heading" id="'+exchange+'_box"><div class="row"><div class="col-xs-3"><i><img title="' + exchange + '" class="' + css_class + '" src="images/'+ exchange +'.png"  /></i></div><div class="col-xs-9 text-right"><div class="huge">'+ number +'</div><div id="status_box_text"><i class="fa '+ currency_icon + ' fa-fw"></i></div></div></div></div><a href="#"><div class="panel-footer"><span class="pull-left">View Details</span><span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span><div class="clearfix"></div></div></a></div>';
-    return $(str);
+    var str = '<div class="panel panel-primary"><div class="panel-heading" id="'+exchange+'_box"><div class="row"><div class="col-xs-3"><i><img title="' + exchange + '" class="' + css_class + '" src="images/'+ exchange +'.png"  /></i></div><div class="col-xs-9 text-right"><div class="huge">'+ number +'</div><div id="status_box_text"><i class="fa '+ currency_icon + ' fa-fw"></i></div></div></div></div><a href="#exchange_' + exchange +'"><div class="panel-footer"><span class="pull-left">View Details</span><span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span><div class="clearfix"></div></div></a></div>';
+    $(str).appendTo($('#leftest-column'));
+    // also save the dashboard page
+    settings.page_index = $('#page-wrapper').html();
+
+    // and add its on click event
+    $('.panel a').click(function(event) {
+        event.preventDefault();
+        var target_location = determine_location(this.href);
+
+        if (target_location.startsWith('exchange_')) {
+            exchange_name = target_location.substring(9);
+            settings.assert_exchange_exists(exchange_name);
+            console.log("Going to exchange " + exchange_name);
+            create_or_reload_exchange(exchange_name);
+        }
+    });
 }
 
 function create_box (id, icon, number, currency_icon) {
+    if($("#" + id).length != 0) {
+	    //already exists
+	    return;
+    }
+
     // only show 2 decimal digits
     number = number.toFixed(2);
     var str = '<div class="panel panel-primary"><div class="panel-heading" id="'+id+'"><div class="row"><div class="col-xs-3"><i title="' + id + '" class="fa '+ icon +'  fa-5x"></i></div><div class="col-xs-9 text-right"><div class="huge">'+ number +'</div><div id="status_box_text"><i class="fa '+ currency_icon + ' fa-fw"></i></div></div></div></div><a href="#"><div class="panel-footer"><span class="pull-left">View Details</span><span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span><div class="clearfix"></div></div></a></div>';
-    return $(str);
+    $(str).appendTo($('#leftest-column'));
+    // also save the dashboard page
+    settings.page_index = $('#page-wrapper').html();
 }
 
 function set_ui_main_currency(currency) {
@@ -193,31 +230,35 @@ function monitor_tasks() {
 	
 	client.invoke("query_task_result", task.id, function (error, res) {
 	    console.log("monitor_tasks. Querying task " + task.id);
-	        if (res != null) {
-		        console.log("monitor_tasks with result");
-		        if (task.type == 'query_exchange_total') {
-		            create_exchange_box(
-				res['name'],
-				parseFloat(res['total']),
-				settings.main_currency.icon).appendTo($('#leftest-column'));
-		        } else if (task.type == 'query_blockchain_total') {
-	                    create_box(
-				'blockchain balance',
-				'fa-hdd-o',
-				parseFloat(res['total']),
-				settings.main_currency.icon).appendTo($('#leftest-column'));
-		        } else if (task.type == 'query_banks_total') {
-	                    create_box('banks balance',
-				       'fa-university',
-				       parseFloat(res['total']),
-				       settings.main_currency.icon).appendTo($('#leftest-column'));
-		        } else {
-		            console.log('Unrecognized task type ' + task.type);
-		        }
-		    remove_task(task.id);
-	        }
-	    });
-	    
+	    if (res != null) {
+		console.log("monitor_tasks with result");
+		if (task.type == 'query_exchange_total') {
+		    create_exchange_box(
+			res['name'],
+			parseFloat(res['total']),
+			settings.main_currency.icon
+		    );
+		} else if (task.type == 'query_blockchain_total') {
+	            create_box(
+			'blockchain balance',
+			'fa-hdd-o',
+			parseFloat(res['total']),
+			settings.main_currency.icon
+		    );
+		} else if (task.type == 'query_banks_total') {
+	            create_box(
+			'banks balance',
+			'fa-university',
+			parseFloat(res['total']),
+			settings.main_currency.icon
+		    );
+		} else {
+		    console.log('Unrecognized task type ' + task.type);
+		}
+		remove_task(task.id);
+	    }
+	});
+	
     }
 }
 // monitor tasks every 2 seconds

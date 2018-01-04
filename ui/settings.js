@@ -17,9 +17,18 @@ let main_currency = default_currency;
 
 let page_index = null;
 let page_external_trades = null;
+let page_exchange = {};
 
 let history_start = null;
 let history_end = null;
+
+
+function assert_exchange_exists(name) {
+    if (EXCHANGES.indexOf(name) < 0) {
+        throw "Invalid exchange name: " + name;
+    }
+}
+
 
 module.exports = {
     EXCHANGES: EXCHANGES,
@@ -27,5 +36,7 @@ module.exports = {
     default_currency: CURRENCIES[0],
     main_currency: CURRENCIES[0],
     page_index: page_index,
-    page_external_trades: page_external_trades
+    page_external_trades: page_external_trades,
+    page_exchange: page_exchange,
+    assert_exchange_exists: assert_exchange_exists
 };

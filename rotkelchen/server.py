@@ -274,7 +274,7 @@ class RotkelchenServer(object):
         return pretty_json_dumps(result)
 
     def test3(self):
-        result = query_txlist("0xd1b8d347fd50dc7838a8ceb4294b6621b0b300f6", False)
+        result = query_txlist("", False)
         return pretty_json_dumps(result)
 
     def test4(self):

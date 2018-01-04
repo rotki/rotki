@@ -1,29 +1,9 @@
 require("./zerorpc_client.js")();
 require("./dashboard.js")();
+require("./exchange.js")();
+require("./utils.js")();
 var settings = require("./settings.js");
 client.connect("tcp://127.0.0.1:4242");
-
-function determine_location(url) {
-    var split = url.split('#');
-    if (split.length == 1 || split[1] == '') {
-        return 'index';
-    }
-    return split[1];
-}
-
-function save_current_location() {
-    console.log("---> " + window.location.href);
-    var current_location = determine_location(window.location.href);
-    if (current_location == 'index') {
-        console.log("Saving index ... ");
-        settings.page_index = $('#page-wrapper').html();
-    } else if (current_location == 'external_trades') {
-        console.log("Saving external trades ... ");
-        settings.page_external_trades = $('#page-wrapper').html();
-    } else {
-        throw "Invalid link location " + current_location;
-    }
-}
 
 function create_page_header(title) {
     return '<div class="row"><div class="col-lg-12"><h1 class=page-header">' + title + '</h1></div></div>';
@@ -60,21 +40,7 @@ $('#side-menu a').click(function(event) {
 
     if (target_location == 'external_trades') {
         load_or_create_external_trades();
-    } else if( target_location == 'index') {
+    } else if (target_location == 'index') {
         create_or_reload_dashboard();
     }
 });
-
-
-// let result = document.querySelector('#result');
-// formula.addEventListener('input', () => {
-//   client.invoke("calc", formula.value, (error, res) => {
-//     if(error) {
-// 	console.error(error);
-//     } else {
-// 	result.textContent = res;
-//     }
-//   });
-// });
-
-// formula.dispatchEvent(new Event('input'));
