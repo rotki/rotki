@@ -15,6 +15,7 @@ let CURRENCIES = [
 let default_currency = CURRENCIES[0];
 let main_currency = default_currency;
 
+let current_location = null;
 let page_index = null;
 let page_external_trades = null;
 let page_exchange = {};
@@ -35,6 +36,7 @@ module.exports = {
     CURRENCIES: CURRENCIES,
     default_currency: CURRENCIES[0],
     main_currency: CURRENCIES[0],
+    current_location: current_location,
     page_index: page_index,
     page_external_trades: page_external_trades,
     page_exchange: page_exchange,

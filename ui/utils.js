@@ -2,16 +2,16 @@ var settings = require("./settings.js");
 var Tail = require('tail').Tail;
 
 
-function setup_warnings_watcher(callback) {
+function setup_log_watcher(callback) {
     var options = { fromBeginning: true};
     var tail = new Tail("rotkelchen.log");
 
-    var rePattern = new RegExp('.*WARNING:.*:(.*)');
+    var rePattern = new RegExp('.*(WARNING|ERROR):.*:(.*)');
     tail.on("line", function(data) {
 	var matches = data.match(rePattern);
 	if (matches != null) {
-	    callback(matches[1], new Date().getTime() / 1000);
-	    console.log(matches[1]);
+	    callback(matches[2], new Date().getTime() / 1000);
+	    console.log(matches[2]);
 	}
     });
 
@@ -29,27 +29,35 @@ function determine_location(url) {
 }
 
 function save_current_location() {
-    console.log("---> " + window.location.href);
-    var current_location = determine_location(window.location.href);
-    if (current_location == 'index') {
+    if (!settings.current_location) {
+	return; //we are at the start of the program
+    }
+
+    if (settings.current_location == 'index') {
         console.log("Saving index ... ");
         settings.page_index = $('#page-wrapper').html();
-    } else if (current_location == 'external_trades') {
+    } else if (settings.current_location == 'external_trades') {
         console.log("Saving external trades ... ");
         settings.page_external_trades = $('#page-wrapper').html();
-    } else if (current_location.startsWith('exchange_')) {
-        exchange_name = current_location.substring(9);
+    } else if (settings.current_location.startsWith('exchange_')) {
+        let exchange_name = settings.current_location.substring(9);
         settings.assert_exchange_exists(exchange_name);
         console.log("Saving exchange " + exchange_name);
-        settings.page_external_trades = $('#page-wrapper').html();
+        settings.page_exchange[exchange_name] = $('#page-wrapper').html();
     } else {
-        throw "Invalid link location " + current_location;
+        throw "Invalid link location " + settings.current_location;
     }
+}
+
+function change_location(target) {
+    save_current_location();
+    console.log("Changing location to " + target);
+    settings.current_location = target;
 }
 
 
 module.exports = function() {
-    this.setup_warnings_watcher = setup_warnings_watcher;
-    this.save_current_location = save_current_location;
+    this.setup_log_watcher = setup_log_watcher;
+    this.change_location = change_location;
     this.determine_location = determine_location;
 };

@@ -10,8 +10,8 @@ function create_page_header(title) {
 }
 
 function load_or_create_external_trades() {
-    save_current_location();
     var str;
+    change_location('external_trades');
     if (!settings.page_external_trades) {
         str = create_page_header('External Trades');
         str += '<div class="row">TRADE STUFF</div>';
@@ -42,5 +42,7 @@ $('#side-menu a').click(function(event) {
         load_or_create_external_trades();
     } else if (target_location == 'index') {
         create_or_reload_dashboard();
+    } else {
+        throw "Invalid link target location " + target_location;
     }
 });

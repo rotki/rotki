@@ -8,7 +8,7 @@ function create_something(name) {
 }
 
 function create_or_reload_exchange(name) {
-    save_current_location();
+    change_location('exchange_' + name);
     if (!settings.page_exchange[name]) {
         console.log("At create/reload exchange, with a null page index");
         create_something(name);

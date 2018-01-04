@@ -4,46 +4,50 @@ require("./utils.js")();
 require("./exchange.js")();
 
 let tasks_map = {};
+let saved_results = [];
 
 function Task (task_id, task_type) {
     this.id = task_id;
     this.type = task_type;
 }
 
-function finish_job() {
-    var finished_one = false;
-    for (var i = 0; i < jobs.length; i ++) {
-	    if (jobs[i] == false) {
-	        if (!finished_one) {
-		        jobs[i] = true;
-		        finished_one = true;
-		        continue;
-	        } else {
-		        return;
-	        }
-	    }
-    }
-    // if we get here it means we finished all jobs
-    $('#top-loading-icon').removeClass().addClass('fa fa-check-circle fa-fw');
-    // also save the dashboard page
-    settings.page_index = $('#page-wrapper').html();
+function Result (result_type, number, name, icon) {
+    this.type = result_type;
+    this.number = number;
+    this.name = name;
+    this.icon = icon;
 }
+
+
 
 function showAlert(type, text) {
     var str = '<div class="alert '+ type +' alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>'+ text +'</div>';
     $(str).prependTo($("#wrapper"));
 }
 
-function determine_location(url) {
-    var split = url.split('#');
-    if (split.length == 1 || split[1] == '') {
-        return 'index';
-    }
-    return split[1];
+function add_exchange_on_click() {
+    $('.panel a').click(function(event) {
+        event.preventDefault();
+        var target_location = determine_location(this.href);
+        if (target_location.startsWith('exchange_')) {
+	    exchange_name = target_location.substring(9);
+	    settings.assert_exchange_exists(exchange_name);
+	    console.log("Going to exchange " + exchange_name);
+	    create_or_reload_exchange(exchange_name);
+        } else {
+	    throw "Invalid link location " + target_location;
+	}
+    });
 }
 
 function create_exchange_box(exchange, number, currency_icon) {
-
+    let current_location = settings.current_location;
+    if (current_location != 'index') {
+	let result = new Result('exchange', number, exchange);
+	saved_results.push(result);
+	return;
+    }
+    
     if($("#" + exchange+'box').length != 0) {
 	    //already exists
 	    return;
@@ -57,24 +61,18 @@ function create_exchange_box(exchange, number, currency_icon) {
     number = number.toFixed(2);
     var str = '<div class="panel panel-primary"><div class="panel-heading" id="'+exchange+'_box"><div class="row"><div class="col-xs-3"><i><img title="' + exchange + '" class="' + css_class + '" src="images/'+ exchange +'.png"  /></i></div><div class="col-xs-9 text-right"><div class="huge">'+ number +'</div><div id="status_box_text"><i class="fa '+ currency_icon + ' fa-fw"></i></div></div></div></div><a href="#exchange_' + exchange +'"><div class="panel-footer"><span class="pull-left">View Details</span><span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span><div class="clearfix"></div></div></a></div>';
     $(str).appendTo($('#leftest-column'));
-    // also save the dashboard page
+    add_exchange_on_click();
+    // finally save the dashboard page
     settings.page_index = $('#page-wrapper').html();
-
-    // and add its on click event
-    $('.panel a').click(function(event) {
-        event.preventDefault();
-        var target_location = determine_location(this.href);
-
-        if (target_location.startsWith('exchange_')) {
-            exchange_name = target_location.substring(9);
-            settings.assert_exchange_exists(exchange_name);
-            console.log("Going to exchange " + exchange_name);
-            create_or_reload_exchange(exchange_name);
-        }
-    });
 }
 
 function create_box (id, icon, number, currency_icon) {
+    let current_location = settings.current_location;
+    if (current_location != 'index') {
+	let result = new Result('box', number, id, icon);
+	saved_results.push(result);
+	return;
+    }
     if($("#" + id).length != 0) {
 	    //already exists
 	    return;
@@ -196,6 +194,8 @@ function get_banks_total() {
 
 
 function create_or_reload_dashboard() {
+    change_location('index');
+
     if (!settings.page_index) {
         $("body").addClass("loading");
         console.log("At create/reload, with a null page index");
@@ -205,15 +205,37 @@ function create_or_reload_dashboard() {
     } else {
         console.log("At create/reload, with a Populated page index");
         $('#page-wrapper').html(settings.page_index);
+	add_exchange_on_click();
     }
+
+    // also if there are any saved results apply them
+    for (var i = 0; i < saved_results.length; i ++) {
+	let result = saved_results[i];
+	console.log("Applying saved result " + result.name + " for dashboard");
+	if (result.type == 'exchange') {
+	    create_exchange_box(
+		result.name,
+		result.number,
+		settings.main_currency.icon
+	    );
+	} else if (result.type == 'box') {
+	    create_box(
+		result.name,
+		result.icon,
+		result.number,
+		settings.main_currency.icon
+	    );
+	} else {
+	    throw "Invalid result type " + result.type;
+	}
+    }
+    saved_results = [];
 }
 
 function monitor_tasks() {
     if (Object.keys(tasks_map).length == 0) {
 	// if we get here it means we finished all jobs
 	$('#top-loading-icon').removeClass().addClass('fa fa-check-circle fa-fw');
-	// also save the dashboard page
-	settings.page_index = $('#page-wrapper').html();
 	return;
     }
 
@@ -263,10 +285,9 @@ function monitor_tasks() {
 }
 // monitor tasks every 2 seconds
 setInterval(monitor_tasks, 2000);
-setup_warnings_watcher(add_alert_dropdown);
+setup_log_watcher(add_alert_dropdown);
 
 module.exports = function() {
-
     this.create_exchange_box = create_exchange_box;
     this.create_box = create_box;
     this.set_ui_main_currency = set_ui_main_currency;
