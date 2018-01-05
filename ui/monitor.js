@@ -29,9 +29,9 @@ function monitor_add_callback(task_type, cb) {
 
 function monitor_tasks() {
     if (Object.keys(tasks_map).length == 0) {
-	// if we get here it means we finished all jobs
-	$('#top-loading-icon').removeClass().addClass('fa fa-check-circle fa-fw');
-	return;
+        // if we get here it means we finished all jobs
+        $('#top-loading-icon').removeClass().addClass('fa fa-check-circle fa-fw');
+        return;
     }
 
 
@@ -39,26 +39,26 @@ function monitor_tasks() {
     $('#top-loading-icon').removeClass().addClass('fa fa-circle-o-notch fa-spin fa-fw');
 
     for (var task_id in tasks_map) {
-	let task = tasks_map[task_id];
-	if (task.id == null) {
-	    console.log('NULL TASK ID: ' + JSON.stringify(task, null, 4));
-	    continue;
-	}
+        let task = tasks_map[task_id];
+        if (task.id == null) {
+            console.log('NULL TASK ID: ' + JSON.stringify(task, null, 4));
+            continue;
+        }
 
-	client.invoke("query_task_result", task.id, function (error, res) {
-	    console.log("monitor_tasks. Querying task " + task.id);
-	    if (res != null) {
-		for (var i = 0; i < callbacks.length; i++) {
-		    if (task.type == callbacks[i][0]) {
-			callbacks[i][1](res);
-			remove_task(task.id);
-			return;
-		    }
-		}
-		// if we get here we got a result for which there was no handler
-		console.log("No handler found for task '" + task.type +"' with id " + task.id);
-	    }
-	});
+        client.invoke("query_task_result", task.id, function (error, res) {
+            console.log("monitor_tasks. Querying task " + task.id);
+            if (res != null) {
+                for (var i = 0; i < callbacks.length; i++) {
+                    if (task.type == callbacks[i][0]) {
+                        callbacks[i][1](res);
+                        remove_task(task.id);
+                        return;
+                    }
+                }
+                // if we get here we got a result for which there was no handler
+                console.log("No handler found for task '" + task.type +"' with id " + task.id);
+            }
+        });
 
     }
 }

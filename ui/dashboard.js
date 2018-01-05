@@ -28,32 +28,32 @@ function add_exchange_on_click() {
         event.preventDefault();
         var target_location = determine_location(this.href);
         if (target_location.startsWith('exchange_')) {
-	    exchange_name = target_location.substring(9);
-	    settings.assert_exchange_exists(exchange_name);
-	    console.log("Going to exchange " + exchange_name);
-	    create_or_reload_exchange(exchange_name);
+            exchange_name = target_location.substring(9);
+            settings.assert_exchange_exists(exchange_name);
+            console.log("Going to exchange " + exchange_name);
+            create_or_reload_exchange(exchange_name);
         } else {
-	    throw "Invalid link location " + target_location;
-	}
+            throw "Invalid link location " + target_location;
+        }
     });
 }
 
 function create_exchange_box(exchange, number, currency_icon) {
     let current_location = settings.current_location;
     if (current_location != 'index') {
-	let result = new Result('exchange', number, exchange);
-	saved_results.push(result);
-	return;
+        let result = new Result('exchange', number, exchange);
+        saved_results.push(result);
+        return;
     }
-    
+
     if($("#" + exchange+'box').length != 0) {
-	    //already exists
-	    return;
+        //already exists
+        return;
     }
 
     var css_class = 'exchange-icon-inverted';
     if (exchange == 'poloniex') {
-	    css_class = 'exchange-icon';
+        css_class = 'exchange-icon';
     }
     // only show 2 decimal digits
     number = number.toFixed(2);
@@ -67,13 +67,13 @@ function create_exchange_box(exchange, number, currency_icon) {
 function create_box (id, icon, number, currency_icon) {
     let current_location = settings.current_location;
     if (current_location != 'index') {
-	let result = new Result('box', number, id, icon);
-	saved_results.push(result);
-	return;
+        let result = new Result('box', number, id, icon);
+        saved_results.push(result);
+        return;
     }
     if($("#" + id).length != 0) {
-	    //already exists
-	    return;
+        //already exists
+        return;
     }
 
     // only show 2 decimal digits
@@ -103,13 +103,13 @@ function add_currency_dropdown(currency) {
     $(str).appendTo($(".currency-dropdown"));
 
     $('#change-to-'+ currency.ticker_symbol.toLowerCase()).bind('click', function() {
-	    client.invoke("set_main_currency", currency.ticker_symbol, (error, res) => {
-	        if(error) {
-		        showAlert('alert-danger', error);
-	        } else {
-		        set_ui_main_currency(currency);
-	        }
-	    });
+        client.invoke("set_main_currency", currency.ticker_symbol, (error, res) => {
+            if(error) {
+                showAlert('alert-danger', error);
+            } else {
+                set_ui_main_currency(currency);
+            }
+        });
     });
 }
 
@@ -118,36 +118,36 @@ function add_currency_dropdown(currency) {
 function get_initial_settings() {
     client.invoke("get_initial_settings", (error, res) => {
         if (error || res == null) {
-	    var loading_wrapper = document.querySelector('.loadingwrapper');
-	    var loading_wrapper_text = document.querySelector('.loadingwrapper_text');
-	    console.log("get_initial_settings response was: " + res);
-	    console.error("get_initial_settings error was: " + error);
-	    loading_wrapper.style.background = "rgba( 255, 255, 255, .8 ) 50% 50% no-repeat";
-	    loading_wrapper_text.textContent = "ERROR: Failed to connect to the backend. Check Log";
+            var loading_wrapper = document.querySelector('.loadingwrapper');
+            var loading_wrapper_text = document.querySelector('.loadingwrapper_text');
+            console.log("get_initial_settings response was: " + res);
+            console.error("get_initial_settings error was: " + error);
+            loading_wrapper.style.background = "rgba( 255, 255, 255, .8 ) 50% 50% no-repeat";
+            loading_wrapper_text.textContent = "ERROR: Failed to connect to the backend. Check Log";
         } else {
-	    // set main currency
-	    console.log("server is ready");
-	    settings.main_currency = res['main_currency'];
-	    for (var i = 0; i < settings.CURRENCIES.length; i ++) {
-	        if (settings.main_currency == settings.CURRENCIES[i].ticker_symbol) {
-		    set_ui_main_currency(settings.CURRENCIES[i]);
-		    settings.main_currency = settings.CURRENCIES[i];
-		    break;
-	        }
-	    }
-	    // make separate queries for all registered exchanges
-	    let exchanges = res['exchanges'];
-	    for (var i = 0; i < exchanges.length; i++) {
-		let exx = exchanges[i];
-	        client.invoke("query_exchange_total_async", exchanges[i], true, function (error, res) {
-		    if (error || res == null) {
-		        console.log("Error at first query of an exchange's balance: " + error);
-		    } else {
-			create_task(res['task_id'], 'query_exchange_total', 'Query ' + exx + ' Exchange'); 
-		    }
-	        });
-	    }
-	    $("body").removeClass("loading");
+            // set main currency
+            console.log("server is ready");
+            settings.main_currency = res['main_currency'];
+            for (var i = 0; i < settings.CURRENCIES.length; i ++) {
+                if (settings.main_currency == settings.CURRENCIES[i].ticker_symbol) {
+                    set_ui_main_currency(settings.CURRENCIES[i]);
+                    settings.main_currency = settings.CURRENCIES[i];
+                    break;
+                }
+            }
+            // make separate queries for all registered exchanges
+            let exchanges = res['exchanges'];
+            for (var i = 0; i < exchanges.length; i++) {
+                let exx = exchanges[i];
+                client.invoke("query_exchange_total_async", exchanges[i], true, function (error, res) {
+                    if (error || res == null) {
+                        console.log("Error at first query of an exchange's balance: " + error);
+                    } else {
+                        create_task(res['task_id'], 'query_exchange_total', 'Query ' + exx + ' Exchange');
+                    }
+                });
+            }
+            $("body").removeClass("loading");
         }
     });
 }
@@ -155,10 +155,10 @@ function get_initial_settings() {
 function get_blockchain_total() {
     client.invoke("query_blockchain_total_async", (error, res) => {
         if (error || res == null) {
-	        console.log("Error at querying blockchain total: " + error);
+            console.log("Error at querying blockchain total: " + error);
         } else {
-	    console.log("Blockchain total returned task id " + res['task_id']);
-	    create_task(res['task_id'], 'query_blockchain_total', 'Query Blockchain Balances'); 
+            console.log("Blockchain total returned task id " + res['task_id']);
+            create_task(res['task_id'], 'query_blockchain_total', 'Query Blockchain Balances');
         }
     });
 }
@@ -168,10 +168,10 @@ function get_banks_total() {
     // but trying to be future proof
     client.invoke("query_banks_total_async", (error, res) => {
         if (error || res == null) {
-	        console.log("Error at querying bank total: " + error);
+            console.log("Error at querying bank total: " + error);
         } else {
-	    console.log("Query banks returned task id " + res['task_id']);
-	    create_task(res['task_id'], 'query_banks_total', 'Query Bank Balances'); 
+            console.log("Query banks returned task id " + res['task_id']);
+            create_task(res['task_id'], 'query_banks_total', 'Query Bank Balances');
         }
     });
 }
@@ -191,29 +191,29 @@ function create_or_reload_dashboard() {
     } else {
         console.log("At create/reload, with a Populated page index");
         $('#page-wrapper').html(settings.page_index);
-	add_exchange_on_click();
+        add_exchange_on_click();
     }
 
     // also if there are any saved results apply them
     for (var i = 0; i < saved_results.length; i ++) {
-	let result = saved_results[i];
-	console.log("Applying saved result " + result.name + " for dashboard");
-	if (result.type == 'exchange') {
-	    create_exchange_box(
-		result.name,
-		result.number,
-		settings.main_currency.icon
-	    );
-	} else if (result.type == 'box') {
-	    create_box(
-		result.name,
-		result.icon,
-		result.number,
-		settings.main_currency.icon
-	    );
-	} else {
-	    throw "Invalid result type " + result.type;
-	}
+        let result = saved_results[i];
+        console.log("Applying saved result " + result.name + " for dashboard");
+        if (result.type == 'exchange') {
+            create_exchange_box(
+                result.name,
+                result.number,
+                settings.main_currency.icon
+            );
+        } else if (result.type == 'box') {
+            create_box(
+                result.name,
+                result.icon,
+                result.number,
+                settings.main_currency.icon
+            );
+        } else {
+            throw "Invalid result type " + result.type;
+        }
     }
     saved_results = [];
 }
@@ -222,27 +222,27 @@ function create_or_reload_dashboard() {
 function init_dashboard() {
     // add callbacks for dashboard to the monitor
     monitor_add_callback('query_exchange_total', function (result) {
-	create_exchange_box(
-	    result['name'],
-	    parseFloat(result['total']),
-	    settings.main_currency.icon
-	);    
+        create_exchange_box(
+            result['name'],
+            parseFloat(result['total']),
+            settings.main_currency.icon
+        );
     });
     monitor_add_callback('query_blockchain_total', function (result) {
-	create_box(
-	    'blockchain balance',
-	    'fa-hdd-o',
-	    parseFloat(result['total']),
-	    settings.main_currency.icon
-	);
+        create_box(
+            'blockchain balance',
+            'fa-hdd-o',
+            parseFloat(result['total']),
+            settings.main_currency.icon
+        );
     });
     monitor_add_callback('query_banks_total', function (result) {
-	create_box(
-	    'banks balance',
-	    'fa-university',
-	    parseFloat(result['total']),
-	    settings.main_currency.icon
-	);
+        create_box(
+            'banks balance',
+            'fa-university',
+            parseFloat(result['total']),
+            settings.main_currency.icon
+        );
     });
     setup_log_watcher(add_alert_dropdown);
 }

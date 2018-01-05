@@ -9,14 +9,14 @@ function create_exchange_table(name) {
     $('#page-wrapper').html(str);
     client.invoke("query_exchange_balances_async", name, (error, res) => {
         if (error || res == null) {
-	    console.log("Error at exchange " + name + " balances: " + error);
+            console.log("Error at exchange " + name + " balances: " + error);
         } else {
-	    console.log("Query "+ name + "  returned task id " + res['task_id']);
-	    create_task(
-		res['task_id'],
-		'query_exchange_balances',
-		'Query '+ name + ' Balances'
-	    );
+            console.log("Query "+ name + "  returned task id " + res['task_id']);
+            create_task(
+                res['task_id'],
+                'query_exchange_balances',
+                'Query '+ name + ' Balances'
+            );
         }
     });
 }
@@ -25,8 +25,8 @@ function populate_exchange_table(name, result) {
 
     for (var asset in result) {
         if(result.hasOwnProperty(asset)) {
-	    let str = '<tr><td>'+asset+'</td><td>'+result[asset]['amount']+'</td/><td>'+result[asset]['usd_value']+'</td></tr>';
-	    $(str).appendTo($('#table_'+name+'_body'));
+            let str = '<tr><td>'+asset+'</td><td>'+result[asset]['amount']+'</td/><td>'+result[asset]['usd_value']+'</td></tr>';
+            $(str).appendTo($('#table_'+name+'_body'));
         }
     }
     $('#table_'+name).DataTable();
@@ -45,7 +45,7 @@ function create_or_reload_exchange(name) {
 
 function init_exchanges_tables() {
     monitor_add_callback('query_exchange_balances', function (result) {
-	populate_exchange_table(result['name'], result['balances']);
+        populate_exchange_table(result['name'], result['balances']);
     });
 }
 

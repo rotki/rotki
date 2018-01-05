@@ -8,15 +8,15 @@ function setup_log_watcher(callback) {
 
     var rePattern = new RegExp('.*(WARNING|ERROR):.*:(.*)');
     tail.on("line", function(data) {
-	var matches = data.match(rePattern);
-	if (matches != null) {
-	    callback(matches[2], new Date().getTime() / 1000);
-	    console.log(matches[2]);
-	}
+        var matches = data.match(rePattern);
+        if (matches != null) {
+            callback(matches[2], new Date().getTime() / 1000);
+            console.log(matches[2]);
+        }
     });
 
     tail.on("error", function(error) {
-	console.log('TAIL ERROR: ', error);
+        console.log('TAIL ERROR: ', error);
     });
 }
 
@@ -30,7 +30,7 @@ function determine_location(url) {
 
 function save_current_location() {
     if (!settings.current_location) {
-	return; //we are at the start of the program
+        return; //we are at the start of the program
     }
 
     if (settings.current_location == 'index') {
