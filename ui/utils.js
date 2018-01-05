@@ -1,8 +1,19 @@
-var settings = require("./settings.js");
+var fs = require('fs');
 var Tail = require('tail').Tail;
+var settings = require("./settings.js");
 
 
-function setup_log_watcher(callback) {
+var log_searcher = null;
+
+function _setup_log_watcher(callback) {
+
+    if (log_searcher) {
+        if (!fs.existsSync("rotkelchen.log")) {
+            return;
+        }
+        clearInterval(log_searcher);
+    }
+
     var options = { fromBeginning: true};
     var tail = new Tail("rotkelchen.log");
 
@@ -18,6 +29,16 @@ function setup_log_watcher(callback) {
     tail.on("error", function(error) {
         console.log('TAIL ERROR: ', error);
     });
+}
+
+function setup_log_watcher(callback) {
+
+    // if the log file is not found keep trying until it is
+    if (!fs.existsSync("rotkelchen.log")) {
+        log_searcher = setInterval(function() {_setup_log_watcher(callback);}, 5000);
+        return;
+    }
+    _setup_log_watcher(callback);
 }
 
 function determine_location(url) {

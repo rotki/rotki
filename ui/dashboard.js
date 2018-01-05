@@ -177,8 +177,6 @@ function get_banks_total() {
 }
 
 
-
-
 function create_or_reload_dashboard() {
     change_location('index');
 
