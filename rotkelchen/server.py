@@ -148,6 +148,18 @@ class RotkelchenServer(object):
         res = self.query_async('query_exchange_total', name=name, first_time=first_time)
         return {'task_id': res}
 
+    def query_exchange_balances(self, name):
+        balances = getattr(self.rotkelchen, name).query_balances()
+        res = {
+            'name': name,
+            'balances': balances
+        }
+        return process_result(res)
+
+    def query_exchange_balances_async(self, name):
+        res = self.query_async('query_exchange_balances', name=name)
+        return {'task_id': res}
+
     def query_blockchain_total(self):
         balances = self.rotkelchen.query_blockchain_balances()
         res = {'total': self.get_total_in_main_currency(balances)}

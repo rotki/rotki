@@ -1,15 +1,13 @@
 require("./zerorpc_client.js")();
 var settings = require("./settings.js");
+require("./monitor.js")();
 require("./utils.js")();
 require("./exchange.js")();
 
-let tasks_map = {};
+
 let saved_results = [];
 
-function Task (task_id, task_type) {
-    this.id = task_id;
-    this.type = task_type;
-}
+
 
 function Result (result_type, number, name, icon) {
     this.type = result_type;
@@ -90,10 +88,6 @@ function set_ui_main_currency(currency) {
     $('#current-main-currency').removeClass().addClass('fa ' + currency.icon + ' fa-fw');
 }
 
-function add_task_dropdown(task_id, task_description) {
-    var str='<li class="task'+task_id+'"><a href="#"><div><p><strong>' + task_description + '</strong><span class="pull-right text-muted">40% Complete</span></p><div class="progress progress-striped active"><div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: 40%"><span class="sr-only">40% Complete (success)</span></div></div></div></a></li><li class="divider task'+task_id+'"></li>';
-    $(str).appendTo($(".dropdown-tasks"));
-}
 
 var alert_id = 0;
 function add_alert_dropdown(alert_text, alert_time) {
@@ -119,15 +113,7 @@ function add_currency_dropdown(currency) {
     });
 }
 
-function create_task(task_id, type, description) {
-    tasks_map[task_id] = new Task(task_id, type);
-    add_task_dropdown(task_id, description);
-}
 
-function remove_task(task_id) {
-    delete tasks_map[task_id];
-    $('.task'+task_id).remove();
-}
 
 function get_initial_settings() {
     client.invoke("get_initial_settings", (error, res) => {
@@ -232,60 +218,34 @@ function create_or_reload_dashboard() {
     saved_results = [];
 }
 
-function monitor_tasks() {
-    if (Object.keys(tasks_map).length == 0) {
-	// if we get here it means we finished all jobs
-	$('#top-loading-icon').removeClass().addClass('fa fa-check-circle fa-fw');
-	return;
-    }
 
-
-    // else it means we still need to have data to load
-    $('#top-loading-icon').removeClass().addClass('fa fa-circle-o-notch fa-spin fa-fw');
-    
-    for (var task_id in tasks_map) {
-	let task = tasks_map[task_id];
-	if (task.id == null) {
-	    console.log('NULL TASK ID: ' + JSON.stringify(task, null, 4));
-	    continue;
-	}
-	
-	client.invoke("query_task_result", task.id, function (error, res) {
-	    console.log("monitor_tasks. Querying task " + task.id);
-	    if (res != null) {
-		console.log("monitor_tasks with result");
-		if (task.type == 'query_exchange_total') {
-		    create_exchange_box(
-			res['name'],
-			parseFloat(res['total']),
-			settings.main_currency.icon
-		    );
-		} else if (task.type == 'query_blockchain_total') {
-	            create_box(
-			'blockchain balance',
-			'fa-hdd-o',
-			parseFloat(res['total']),
-			settings.main_currency.icon
-		    );
-		} else if (task.type == 'query_banks_total') {
-	            create_box(
-			'banks balance',
-			'fa-university',
-			parseFloat(res['total']),
-			settings.main_currency.icon
-		    );
-		} else {
-		    console.log('Unrecognized task type ' + task.type);
-		}
-		remove_task(task.id);
-	    }
-	});
-	
-    }
+function init_dashboard() {
+    // add callbacks for dashboard to the monitor
+    monitor_add_callback('query_exchange_total', function (result) {
+	create_exchange_box(
+	    result['name'],
+	    parseFloat(result['total']),
+	    settings.main_currency.icon
+	);    
+    });
+    monitor_add_callback('query_blockchain_total', function (result) {
+	create_box(
+	    'blockchain balance',
+	    'fa-hdd-o',
+	    parseFloat(result['total']),
+	    settings.main_currency.icon
+	);
+    });
+    monitor_add_callback('query_banks_total', function (result) {
+	create_box(
+	    'banks balance',
+	    'fa-university',
+	    parseFloat(result['total']),
+	    settings.main_currency.icon
+	);
+    });
+    setup_log_watcher(add_alert_dropdown);
 }
-// monitor tasks every 2 seconds
-setInterval(monitor_tasks, 2000);
-setup_log_watcher(add_alert_dropdown);
 
 module.exports = function() {
     this.create_exchange_box = create_exchange_box;
@@ -293,6 +253,7 @@ module.exports = function() {
     this.set_ui_main_currency = set_ui_main_currency;
     this.add_currency_dropdown = add_currency_dropdown;
     this.create_or_reload_dashboard = create_or_reload_dashboard;
+    this.init_dashboard = init_dashboard;
 };
 
 

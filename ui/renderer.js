@@ -1,4 +1,5 @@
 require("./zerorpc_client.js")();
+require("./monitor.js")();
 require("./dashboard.js")();
 require("./exchange.js")();
 require("./utils.js")();
@@ -31,7 +32,6 @@ create_currency_dropdown(settings.default_currency.icon);
 for (var i = 0; i < settings.CURRENCIES.length; i++) {
     add_currency_dropdown(settings.CURRENCIES[i]);
 }
-create_or_reload_dashboard();
 
 
 $('#side-menu a').click(function(event) {
@@ -46,3 +46,8 @@ $('#side-menu a').click(function(event) {
         throw "Invalid link target location " + target_location;
     }
 });
+
+init_monitor();
+init_dashboard();
+init_exchanges_tables();
+create_or_reload_dashboard();
