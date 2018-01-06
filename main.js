@@ -1,8 +1,41 @@
 const electron = require('electron');
 const app = electron.app;
+const ipcMain = electron.ipcMain;
 const BrowserWindow = electron.BrowserWindow;
 const path = require('path');
 
+/*************************************************************
+ * window management
+ *************************************************************/
+let mainWindow = null;
+
+const createWindow = () => {
+    mainWindow = new BrowserWindow({width: 800, height: 600});
+    mainWindow.loadURL(require('url').format({
+        pathname: path.join(__dirname,  'ui', 'index.html'),
+        protocol: 'file:',
+        slashes: true
+    }));
+    mainWindow.webContents.openDevTools();
+
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+    });
+};
+
+app.on('ready', createWindow);
+
+app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
+});
+
+app.on('activate', () => {
+    if (mainWindow === null) {
+        createWindow();
+    }
+});
 
 /*************************************************************
  * py process
@@ -35,6 +68,14 @@ const selectPort = () => {
     return pyPort;
 };
 
+var pyproc_fail_notifier = null;
+
+// Listen for ack messages from renderer process
+ipcMain.on('ack', (event, arg) => {
+    // when ack is received stop the pyproc fail notifier
+    clearInterval(pyproc_fail_notifier);
+});
+
 const createPyProc = () => {
     let script = getScriptPath();
     let port = '' + selectPort();
@@ -49,6 +90,15 @@ const createPyProc = () => {
 
     pyProc.on('error', (err) => {
         console.log('Failed to start python subprocess.');
+    });
+    pyProc.on('exit', function (code, signal) {
+        console.log("python subprocess killed with signal " + signal + " and code " +code);
+        if (code != 0) {
+            // Notify main window every 2 seconds until it acks the notification
+            pyproc_fail_notifier = setInterval(function () {
+                mainWindow.webContents.send('failed', 'failed');
+            }, 2000);
+        }
     });
 
     if (pyProc != null) {
@@ -66,38 +116,3 @@ const exitPyProc = () => {
 
 app.on('ready', createPyProc);
 app.on('will-quit', exitPyProc);
-
-
-/*************************************************************
- * window management
- *************************************************************/
-
-let mainWindow = null;
-
-const createWindow = () => {
-    mainWindow = new BrowserWindow({width: 800, height: 600});
-    mainWindow.loadURL(require('url').format({
-        pathname: path.join(__dirname,  'ui', 'index.html'),
-        protocol: 'file:',
-        slashes: true
-    }));
-    mainWindow.webContents.openDevTools();
-
-    mainWindow.on('closed', () => {
-        mainWindow = null;
-    });
-};
-
-app.on('ready', createWindow);
-
-app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
-});
-
-app.on('activate', () => {
-    if (mainWindow === null) {
-        createWindow();
-    }
-});

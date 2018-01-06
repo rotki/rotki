@@ -22,7 +22,6 @@ function load_or_create_external_trades() {
     $('#page-wrapper').html(str);
 }
 
-
 function create_currency_dropdown(fa_default_icon) {
     var str = '<li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#"><i id="current-main-currency" class="fa '+ fa_default_icon + ' fa-fw"></i> <i class="fa fa-caret-down"></i></a><ul class="dropdown-menu dropdown-alerts currency-dropdown"></ul></li>';
     $(str).appendTo($(".navbar-right"));

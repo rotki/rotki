@@ -4,41 +4,29 @@ function Currency(name, icon, ticker_symbol) {
     this.ticker_symbol = ticker_symbol;
 }
 
-let EXCHANGES = ['kraken', 'poloniex', 'bittrex'];
-let CURRENCIES = [
-    new Currency("United States Dollar", "fa-usd", "USD"),
-    new Currency("Euro", "fa-eur", "EUR"),
-    new Currency("British Pound", "fa-gbp", "GBP"),
-    new Currency("Japanese Yen", "fa-jpy", "JPY"),
-    new Currency("Chinese Yuan", "fa-jpy", "CNY"),
-];
-let default_currency = CURRENCIES[0];
-let main_currency = default_currency;
-
-let current_location = null;
-let page_index = null;
-let page_external_trades = null;
-let page_exchange = {};
-
-let history_start = null;
-let history_end = null;
-
-
 function assert_exchange_exists(name) {
     if (EXCHANGES.indexOf(name) < 0) {
         throw "Invalid exchange name: " + name;
     }
 }
 
+let exchanges = ['kraken', 'poloniex', 'bittrex'];
+let currencies = [
+    new Currency("United States Dollar", "fa-usd", "USD"),
+    new Currency("Euro", "fa-eur", "EUR"),
+    new Currency("British Pound", "fa-gbp", "GBP"),
+    new Currency("Japanese Yen", "fa-jpy", "JPY"),
+    new Currency("Chinese Yuan", "fa-jpy", "CNY"),
+];
 
 module.exports = {
-    EXCHANGES: EXCHANGES,
-    CURRENCIES: CURRENCIES,
-    default_currency: CURRENCIES[0],
-    main_currency: CURRENCIES[0],
-    current_location: current_location,
-    page_index: page_index,
-    page_external_trades: page_external_trades,
-    page_exchange: page_exchange,
+    EXCHANGES: exchanges,
+    CURRENCIES: currencies,
+    default_currency: currencies[0],
+    main_currency: currencies[0],
+    current_location: null,
+    page_index: null,
+    page_external_trades: null,
+    page_exchange: {},
     assert_exchange_exists: assert_exchange_exists
 };

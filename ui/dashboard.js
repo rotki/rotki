@@ -158,12 +158,10 @@ function add_balances_table(result) {
 function get_initial_settings() {
     client.invoke("get_initial_settings", (error, res) => {
         if (error || res == null) {
-            var loading_wrapper = document.querySelector('.loadingwrapper');
-            var loading_wrapper_text = document.querySelector('.loadingwrapper_text');
-            console.log("get_initial_settings response was: " + res);
-            console.error("get_initial_settings error was: " + error);
-            loading_wrapper.style.background = "rgba( 255, 255, 255, .8 ) 50% 50% no-repeat";
-            loading_wrapper_text.textContent = "ERROR: Failed to connect to the backend. Check Log";
+            startup_error(
+                "get_initial_settings response was: " + res + " and error: " + error,
+                "get_initial_settings RPC failed"
+            );
         } else {
             // set main currency
             console.log("server is ready");
@@ -224,13 +222,13 @@ function get_banks_total() {
     });
 }
 
-
 function create_or_reload_dashboard() {
     change_location('index');
 
     if (!settings.page_index) {
         $("body").addClass("loading");
         console.log("At create/reload, with a null page index");
+
         get_initial_settings();
         get_blockchain_total();
         get_banks_total();
@@ -263,6 +261,18 @@ function create_or_reload_dashboard() {
     }
     saved_results = [];
 }
+
+
+const ipc = require('electron').ipcRenderer;
+ipc.on('failed', (event, message) => {
+    // get notified if the python subprocess dies
+    startup_error(
+        "The python process died before the UI startup.",
+        "The python process died before the UI startup."
+    );
+    // send ack to main.js
+    ipc.send('ack', 1);
+});
 
 
 function init_dashboard() {

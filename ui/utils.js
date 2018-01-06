@@ -2,6 +2,13 @@ var fs = require('fs');
 var Tail = require('tail').Tail;
 var settings = require("./settings.js");
 
+function startup_error(text, reason) {
+    let loading_wrapper = document.querySelector('.loadingwrapper');
+    let loading_wrapper_text = document.querySelector('.loadingwrapper_text');
+    loading_wrapper.style.background = "rgba( 255, 255, 255, .8 ) 50% 50% no-repeat";
+    console.log(text);
+    loading_wrapper_text.textContent = "ERROR: Failed to connect to the backend. Reason: " + reason + " Check Log for more details.";
+}
 
 var log_searcher = null;
 
@@ -81,4 +88,5 @@ module.exports = function() {
     this.setup_log_watcher = setup_log_watcher;
     this.change_location = change_location;
     this.determine_location = determine_location;
+    this.startup_error = startup_error;
 };
