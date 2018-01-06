@@ -95,10 +95,12 @@ class RotkelchenServer(object):
     def handle_killed_greenlets(self, greenlet):
         if greenlet.exception:
             logger.error(
-                'Greenlet for task {} dies with exception: {}.\nTraceback: {}'
+                'Greenlet for task {} dies with exception: {}.\nException Name:{}\nException Type\nTraceback: {}'
                 .format(
                     greenlet.task_id,
                     greenlet.exception,
+                    greenlet._exc_info[0],
+                    greenlet._exc_info[1],
                     traceback.print_tb(pickle.loads(greenlet._exc_info[2])))
             )
 
@@ -218,9 +220,9 @@ class RotkelchenServer(object):
         if isinstance(save_data, str) and (save_data == 'save' or save_data == 'True'):
             save_data = True
 
-        s = pretty_json_dumps(self.rotkelchen.query_balances(save_data))
-        print(s)
-        return s
+        result = (self.rotkelchen.query_balances(save_data))
+        print(pretty_json_dumps(result))
+        return process_result(result)
 
     def query_balances_async(self, save_data=False):
         res = self.query_async('query_balances')

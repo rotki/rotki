@@ -113,7 +113,24 @@ function add_currency_dropdown(currency) {
     });
 }
 
-
+function add_balances_table(result) {
+    var str = '<div class="row"><div class="col-lg-12"><h1 class=page-header">All Balances</h1></div></div>';
+    str += '<div class="row"><table id="table_balances_total"><thead><tr><th>Asset</th><th>Amount</th><th>USD Value</th><th>% of net value</th></tr/></thead><tbody id="table_balances_total_body"></tbody></table></div>';
+    $(str).appendTo($('#leftest-column'));
+    for (var asset in result) {
+        if(result.hasOwnProperty(asset)) {
+            if (asset == 'location' || asset == 'net_usd') {
+                continue;
+            }
+            console.log("entry: " + JSON.stringify(result[asset], null, 4));
+            let str = '<tr><td>'+asset+'</td><td>'+result[asset]['amount']+'</td/><td>'+result[asset]['usd_value']+'</td><td>'+result[asset]['percentage_of_net_value']+'</td></tr>';
+            $(str).appendTo($('#table_balances_total_body'));
+        }
+    }
+    $('#table_balances_total').DataTable();
+    // also save the dashboard page
+    settings.page_index = $('#page-wrapper').html();
+}
 
 function get_initial_settings() {
     client.invoke("get_initial_settings", (error, res) => {
@@ -139,14 +156,22 @@ function get_initial_settings() {
             let exchanges = res['exchanges'];
             for (var i = 0; i < exchanges.length; i++) {
                 let exx = exchanges[i];
-                client.invoke("query_exchange_total_async", exchanges[i], true, function (error, res) {
+                client.invoke("query_exchange_total_async", exx, true, function (error, res) {
                     if (error || res == null) {
                         console.log("Error at first query of an exchange's balance: " + error);
-                    } else {
-                        create_task(res['task_id'], 'query_exchange_total', 'Query ' + exx + ' Exchange');
+                        return;
                     }
+                    create_task(res['task_id'], 'query_exchange_total', 'Query ' + exx + ' Exchange');
                 });
             }
+
+            client.invoke("query_balances_async", function (error, res) {
+                if (error || res == null) {
+                    console.log("Error at query balances async: " + error);
+                    return;
+                }
+                create_task(res['task_id'], 'query_balances', 'Query all balances');
+            });
             $("body").removeClass("loading");
         }
     });
@@ -241,6 +266,9 @@ function init_dashboard() {
             parseFloat(result['total']),
             settings.main_currency.icon
         );
+    });
+    monitor_add_callback('query_balances', function (result) {
+        add_balances_table(result);
     });
     setup_log_watcher(add_alert_dropdown);
 }
