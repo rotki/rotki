@@ -119,7 +119,7 @@ function add_balances_table(result) {
     $(str).appendTo($('#leftest-column'));
     for (var asset in result) {
         if(result.hasOwnProperty(asset)) {
-            if (asset == 'location' || asset == 'net_usd') {
+            if (asset == 'net_usd_perc_location' || asset == 'net_usd') {
                 continue;
             }
             let amount = parseFloat(result[asset]['amount']);

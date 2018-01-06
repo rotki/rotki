@@ -22,10 +22,10 @@ const guessPackaged = () => {
 
 const getScriptPath = () => {
     if (!guessPackaged()) {
-	return path.join(__dirname, PY_FOLDER, PY_MODULE + '.py');
+        return path.join(__dirname, PY_FOLDER, PY_MODULE + '.py');
     }
     if (process.platform === 'win32') {
-	return path.join(__dirname, PY_DIST_FOLDER, PY_MODULE, PY_MODULE + '.exe');
+        return path.join(__dirname, PY_DIST_FOLDER, PY_MODULE, PY_MODULE + '.exe');
     }
     return path.join(__dirname, PY_DIST_FOLDER, PY_MODULE, PY_MODULE);
 };
@@ -40,19 +40,19 @@ const createPyProc = () => {
     let port = '' + selectPort();
 
     if (guessPackaged()) {
-	console.log("At guess packaged");
-	pyProc = require('child_process').execFile(script, [port]);
+        console.log("At guess packaged");
+        pyProc = require('child_process').execFile(script, [port]);
     } else {
-	console.log("At not packaged: script:" + script + " port: " + port);
-	pyProc = require('child_process').spawn('python', ["-m", "rotkelchen", "--zerorpc-port", port, "--ethrpc-port", "8560"]);
+        console.log("At not packaged: script:" + script + " port: " + port);
+        pyProc = require('child_process').spawn('python', ["-m", "rotkelchen", "--zerorpc-port", port, "--ethrpc-port", "8560"]);
     }
 
     pyProc.on('error', (err) => {
-	console.log('Failed to start python subprocess.');
+        console.log('Failed to start python subprocess.');
     });
-    
+
     if (pyProc != null) {
-	console.log('child process success on port ' + port);
+        console.log('child process success on port ' + port);
     }
     console.log("CREATED PYPROCESS");
 };
@@ -76,28 +76,28 @@ let mainWindow = null;
 
 const createWindow = () => {
     mainWindow = new BrowserWindow({width: 800, height: 600});
-  mainWindow.loadURL(require('url').format({
-      pathname: path.join(__dirname,  'ui', 'index.html'),
-      protocol: 'file:',
-      slashes: true
-  }));
+    mainWindow.loadURL(require('url').format({
+        pathname: path.join(__dirname,  'ui', 'index.html'),
+        protocol: 'file:',
+        slashes: true
+    }));
     mainWindow.webContents.openDevTools();
 
-  mainWindow.on('closed', () => {
-      mainWindow = null;
-  });
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+    });
 };
 
 app.on('ready', createWindow);
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
-	app.quit();
+        app.quit();
     }
 });
 
 app.on('activate', () => {
-  if (mainWindow === null) {
-      createWindow();
-  }
+    if (mainWindow === null) {
+        createWindow();
+    }
 });

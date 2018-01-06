@@ -257,13 +257,13 @@ class Rotkelchen(object):
             net_usd += FVal(v['usd_value'])
 
         stats = {
-            'location': {
-                'percentage_of_net_usd_in_poloniex': (polo_net_usd / net_usd).to_percentage(),
-                'percentage_of_net_usd_in_kraken': (kraken_net_usd / net_usd).to_percentage(),
-                'percentage_of_net_usd_in_bittrex': (bittrex_net_usd / net_usd).to_percentage(),
-                'percentage_of_net_usd_in_binance': (binance_net_usd / net_usd).to_percentage(),
-                'percentage_of_net_usd_in_normal_crypto_account': (crypto_net_usd / net_usd).to_percentage(),
-                'percentage_of_net_usd_in_banksncash': (bank_balances['EUR']['usd_value'] / net_usd).to_percentage(),
+            'net_usd_perc_location': {
+                'poloniex': (polo_net_usd / net_usd).to_percentage(),
+                'kraken': (kraken_net_usd / net_usd).to_percentage(),
+                'bittrex': (bittrex_net_usd / net_usd).to_percentage(),
+                'binance': (binance_net_usd / net_usd).to_percentage(),
+                'normal_crypto_accounts': (crypto_net_usd / net_usd).to_percentage(),
+                'banksncash': (bank_balances['EUR']['usd_value'] / net_usd).to_percentage(),
             },
             'net_usd': net_usd
         }
