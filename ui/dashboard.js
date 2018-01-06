@@ -115,7 +115,7 @@ function add_currency_dropdown(currency) {
 
 function add_balances_table(result) {
     var str = '<div class="row"><div class="col-lg-12"><h1 class=page-header">All Balances</h1></div></div>';
-    str += '<div class="row"><table id="table_balances_total"><thead><tr><th>Asset</th><th>Amount</th><th>USD Value</th><th>% of net value</th></tr/></thead><tbody id="table_balances_total_body"></tbody></table></div>';
+    str += '<div class="row"><table id="table_balances_total"><thead><tr><th>Asset</th><th>Amount</th><th>USD Value</th><th>% of net value</th></tr/></thead><tfoot><tr><th></th><th></th><th></th><th></th></tr></tfoot><tbody id="table_balances_total_body"></tbody></table></div>';
     $(str).appendTo($('#leftest-column'));
     for (var asset in result) {
         if(result.hasOwnProperty(asset)) {
@@ -131,7 +131,26 @@ function add_balances_table(result) {
             $(str).appendTo($('#table_balances_total_body'));
         }
     }
-    $('#table_balances_total').DataTable();
+    $('#table_balances_total').DataTable({
+        'initComplete': function (settings, json){
+            this.api().column(2).every(function(){
+                var column = this;
+                var sum = column
+                    .data()
+                    .reduce(function (a, b) {
+                        a = parseFloat(a);
+                        if(isNaN(a)){ a = 0; }
+
+                        b = parseFloat(b);
+                        if(isNaN(b)){ b = 0; }
+
+                        return a + b;
+                    });
+
+                $(column.footer()).html('Total Sum: ' + sum.toFixed(2));
+            });
+        }
+    });
     // also save the dashboard page
     settings.page_index = $('#page-wrapper').html();
 }
