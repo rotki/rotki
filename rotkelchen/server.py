@@ -6,6 +6,8 @@ from gevent.event import Event
 from gevent.lock import Semaphore
 import signal
 import zerorpc
+import pickle
+import traceback
 
 from rotkelchen.fval import FVal
 from rotkelchen.args import app_args
@@ -92,8 +94,13 @@ class RotkelchenServer(object):
 
     def handle_killed_greenlets(self, greenlet):
         if greenlet.exception:
-            logger.error('Greenlet for task {} dies with exception: {}.\nexc_info is: {}'
-                         .format(greenlet.task_id, greenlet.exception, greenlet._exc_info))
+            logger.error(
+                'Greenlet for task {} dies with exception: {}.\nTraceback: {}'
+                .format(
+                    greenlet.task_id,
+                    greenlet.exception,
+                    traceback.print_tb(pickle.loads(greenlet._exc_info[2])))
+            )
 
     def _query_async(self, command, task_id, **kwargs):
         result = getattr(self, command)(**kwargs)
@@ -214,6 +221,10 @@ class RotkelchenServer(object):
         s = pretty_json_dumps(self.rotkelchen.query_balances(save_data))
         print(s)
         return s
+
+    def query_balances_async(self, save_data=False):
+        res = self.query_async('query_balances')
+        return {'task_id': res}
 
     def plot(self):
         self.rotkelchen.plot()
