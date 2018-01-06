@@ -58,7 +58,7 @@ function create_exchange_box(exchange, number, currency_icon) {
     // only show 2 decimal digits
     number = number.toFixed(2);
     var str = '<div class="panel panel-primary"><div class="panel-heading" id="'+exchange+'_box"><div class="row"><div class="col-xs-3"><i><img title="' + exchange + '" class="' + css_class + '" src="images/'+ exchange +'.png"  /></i></div><div class="col-xs-9 text-right"><div class="huge">'+ number +'</div><div id="status_box_text"><i class="fa '+ currency_icon + ' fa-fw"></i></div></div></div></div><a href="#exchange_' + exchange +'"><div class="panel-footer"><span class="pull-left">View Details</span><span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span><div class="clearfix"></div></div></a></div>';
-    $(str).appendTo($('#leftest-column'));
+    $(str).prependTo($('#leftest-column'));
     add_exchange_on_click();
     // finally save the dashboard page
     settings.page_index = $('#page-wrapper').html();
@@ -79,7 +79,7 @@ function create_box (id, icon, number, currency_icon) {
     // only show 2 decimal digits
     number = number.toFixed(2);
     var str = '<div class="panel panel-primary"><div class="panel-heading" id="'+id+'"><div class="row"><div class="col-xs-3"><i title="' + id + '" class="fa '+ icon +'  fa-5x"></i></div><div class="col-xs-9 text-right"><div class="huge">'+ number +'</div><div id="status_box_text"><i class="fa '+ currency_icon + ' fa-fw"></i></div></div></div></div><a href="#"><div class="panel-footer"><span class="pull-left">View Details</span><span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span><div class="clearfix"></div></div></a></div>';
-    $(str).appendTo($('#leftest-column'));
+    $(str).prependTo($('#leftest-column'));
     // also save the dashboard page
     settings.page_index = $('#page-wrapper').html();
 }
@@ -122,8 +122,12 @@ function add_balances_table(result) {
             if (asset == 'location' || asset == 'net_usd') {
                 continue;
             }
-            console.log("entry: " + JSON.stringify(result[asset], null, 4));
-            let str = '<tr><td>'+asset+'</td><td>'+result[asset]['amount']+'</td/><td>'+result[asset]['usd_value']+'</td><td>'+result[asset]['percentage_of_net_value']+'</td></tr>';
+            let amount = parseFloat(result[asset]['amount']);
+            amount = amount.toFixed(2);
+            let value = parseFloat(result[asset]['usd_value']);
+            value = value.toFixed(2);
+            let percentage = result[asset]['percentage_of_net_value'];
+            let str = '<tr><td>'+asset+'</td><td>'+amount+'</td/><td>'+value+'</td><td>'+percentage+'</td></tr>';
             $(str).appendTo($('#table_balances_total_body'));
         }
     }

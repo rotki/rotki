@@ -133,7 +133,6 @@ class RotkelchenServer(object):
                 logger.debug("Found response for task {} and it is {}".format(task_id, ret))
         return ret
 
-    # def get_registered_exchanges(self):
     def get_initial_settings(self):
         res = {
             'exchanges': self.rotkelchen.get_exchanges(),
