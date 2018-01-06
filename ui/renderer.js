@@ -29,7 +29,7 @@ function create_currency_dropdown(fa_default_icon) {
 }
 
 create_currency_dropdown(settings.default_currency.icon);
-for (var i = 0; i < settings.CURRENCIES.length; i++) {
+for (let i = 0; i < settings.CURRENCIES.length; i++) {
     add_currency_dropdown(settings.CURRENCIES[i]);
 }
 

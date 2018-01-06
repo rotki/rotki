@@ -48,7 +48,7 @@ function monitor_tasks() {
         client.invoke("query_task_result", task.id, function (error, res) {
             console.log("monitor_tasks. Querying task " + task.id);
             if (res != null) {
-                for (var i = 0; i < callbacks.length; i++) {
+                for (let i = 0; i < callbacks.length; i++) {
                     if (task.type == callbacks[i][0]) {
                         callbacks[i][1](res);
                         remove_task(task.id);

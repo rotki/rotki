@@ -149,7 +149,7 @@ function get_initial_settings() {
             // set main currency
             console.log("server is ready");
             settings.main_currency = res['main_currency'];
-            for (var i = 0; i < settings.CURRENCIES.length; i ++) {
+            for (let i = 0; i < settings.CURRENCIES.length; i ++) {
                 if (settings.main_currency == settings.CURRENCIES[i].ticker_symbol) {
                     set_ui_main_currency(settings.CURRENCIES[i]);
                     settings.main_currency = settings.CURRENCIES[i];
@@ -158,7 +158,7 @@ function get_initial_settings() {
             }
             // make separate queries for all registered exchanges
             let exchanges = res['exchanges'];
-            for (var i = 0; i < exchanges.length; i++) {
+            for (let i = 0; i < exchanges.length; i++) {
                 let exx = exchanges[i];
                 client.invoke("query_exchange_total_async", exx, true, function (error, res) {
                     if (error || res == null) {
@@ -222,7 +222,7 @@ function create_or_reload_dashboard() {
     }
 
     // also if there are any saved results apply them
-    for (var i = 0; i < saved_results.length; i ++) {
+    for (let i = 0; i < saved_results.length; i ++) {
         let result = saved_results[i];
         console.log("Applying saved result " + result.name + " for dashboard");
         if (result.type == 'exchange') {
