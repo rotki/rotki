@@ -3,8 +3,13 @@ import hmac
 import hashlib
 from urllib.parse import urlencode
 
-from rotkelchen.utils import createTimeStamp, get_pair_position, rlk_jsonloads
-from rotkelchen.exchange import Exchange, cache_response_timewise
+from rotkelchen.utils import (
+    createTimeStamp,
+    get_pair_position,
+    rlk_jsonloads,
+    cache_response_timewise,
+)
+from rotkelchen.exchange import Exchange
 from rotkelchen.order_formatting import Trade
 from rotkelchen.fval import FVal
 

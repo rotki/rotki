@@ -18,7 +18,7 @@ from rotkelchen.bittrex import Bittrex
 from rotkelchen.binance import Binance
 from rotkelchen.data_handler import DataHandler
 from rotkelchen.inquirer import Inquirer
-from rotkelchen.utils import query_fiat_pair
+from rotkelchen.utils import query_fiat_pair, cache_response_timewise
 from rotkelchen.fval import FVal
 
 import logging
@@ -29,6 +29,7 @@ class Rotkelchen(object):
     def __init__(self, args):
         self.lock = Semaphore()
         self.lock.acquire()
+        self.results_cache = {}
 
         logfilename = None
         if args.logtarget == 'file':
@@ -155,6 +156,7 @@ class Rotkelchen(object):
     def process_history(self, start_ts, end_ts):
         return self.data.process_history(start_ts, end_ts)
 
+    @cache_response_timewise()
     def query_blockchain_balances(self):
         logger.debug('query_blockchain_balances start')
         # Find balance of eth Accounts
@@ -266,10 +268,8 @@ class Rotkelchen(object):
             'net_usd': net_usd
         }
 
-        currencies = {}
         for k, v in combined.items():
-            currencies['percentage_of_net_usd_in_{}'.format(k.lower())] = (v['usd_value'] / net_usd).to_percentage()
-        stats['currencies'] = currencies
+            combined[k]['percentage_of_net_value'] = (v['usd_value'] / net_usd).to_percentage()
 
         result_dict = merge_dicts(combined, stats)
 

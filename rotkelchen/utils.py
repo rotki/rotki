@@ -7,6 +7,7 @@ import calendar
 import operator
 from urllib.request import Request, urlopen
 from urllib.error import URLError
+from collections import namedtuple
 
 from rotkelchen.errors import RecoverableRequestError
 from rotkelchen.fval import FVal
@@ -55,6 +56,39 @@ def add_entries(a, b):
         'amount': a['amount'] + b['amount'],
         'usd_value': a['usd_value'] + b['usd_value']
     }
+
+
+ResultCache = namedtuple('ResultCache', ('result', 'timestamp'))
+
+
+def cache_response_timewise(seconds=600):
+    """ This is a decorator for caching results of functions of objects.
+    The objects must have:
+        - A results_cache dictionary attribute
+        - A semaphore attributee named lock
+
+    Objects adhering to this interface are all the exchanges and the rotkelchen object.
+    """
+    def _cache_response_timewise(f):
+        def wrapper(wrappingobj, *args):
+            now = ts_now()
+            with wrappingobj.lock:
+                cache_miss = (
+                    f.__name__ not in wrappingobj.results_cache or
+                    now - wrappingobj.results_cache[f.__name__].timestamp > seconds
+                )
+            if cache_miss:
+                result = f(wrappingobj, *args)
+                with wrappingobj.lock:
+                    wrappingobj.results_cache[f.__name__] = ResultCache(result, now)
+                return result
+
+            # else hit the cache
+            with wrappingobj.lock:
+                return wrappingobj.results_cache[f.__name__].result
+
+        return wrapper
+    return _cache_response_timewise
 
 
 def query_fiat_pair(base, quote, timestamp=None):

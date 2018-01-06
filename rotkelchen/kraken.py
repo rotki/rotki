@@ -8,9 +8,15 @@ import base64
 import time
 from urllib.parse import urlencode
 
-from rotkelchen.utils import query_fiat_pair, retry_calls, rlk_jsonloads, convert_to_int
+from rotkelchen.utils import (
+    query_fiat_pair,
+    retry_calls,
+    rlk_jsonloads,
+    convert_to_int,
+    cache_response_timewise,
+)
 from rotkelchen.order_formatting import AssetMovement
-from rotkelchen.exchange import Exchange, cache_response_timewise
+from rotkelchen.exchange import Exchange
 from rotkelchen.errors import RecoverableRequestError
 from rotkelchen.fval import FVal
 

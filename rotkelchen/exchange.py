@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import requests
 import os
-from collections import namedtuple
 from gevent.lock import Semaphore
 
 from rotkelchen.utils import rlk_jsonloads, rlk_jsondumps, ts_now
@@ -20,32 +19,6 @@ def data_up_todate(json_data, start_ts, end_ts):
         end_ts <= json_data['end_time']
     )
     return start_ts_ok and end_ts_ok
-
-
-ResultCache = namedtuple('ResultCache', ('result', 'timestamp'))
-
-
-def cache_response_timewise(seconds=600):
-    def _cache_response_timewise(f):
-        def wrapper(exchangeobj, *args):
-            now = ts_now()
-            with exchangeobj.lock:
-                cache_miss = (
-                    f.__name__ not in exchangeobj.results_cache or
-                    now - exchangeobj.results_cache[f.__name__].timestamp > seconds
-                )
-            if cache_miss:
-                result = f(exchangeobj, *args)
-                with exchangeobj.lock:
-                    exchangeobj.results_cache[f.__name__] = ResultCache(result, now)
-                return result
-
-            # else hit the cache
-            with exchangeobj.lock:
-                return exchangeobj.results_cache[f.__name__].result
-
-        return wrapper
-    return _cache_response_timewise
 
 
 class Exchange(object):

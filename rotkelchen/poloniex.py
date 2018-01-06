@@ -13,8 +13,9 @@ from rotkelchen.utils import (
     createTimeStamp,
     retry_calls,
     rlk_jsonloads,
+    cache_response_timewise,
 )
-from rotkelchen.exchange import Exchange, cache_response_timewise
+from rotkelchen.exchange import Exchange
 from rotkelchen.order_formatting import AssetMovement
 from rotkelchen.errors import PoloniexError
 
@@ -129,12 +130,18 @@ class Poloniex(Exchange):
             )
         else:
             req['command'] = command
-            req['nonce'] = int(time.time() * 1000)
-            post_data = str.encode(urlencode(req))
 
-            sign = hmac.new(self.secret, post_data, hashlib.sha512).hexdigest()
-            self.session.headers.update({'Sign': sign})
-            ret = self.session.post('https://poloniex.com/tradingApi', req)
+            with self.lock:
+                # Protect this region with a lock since poloniex will reject
+                # non-increasing nonces. So if two greenlets come in here at
+                # the same time one of them will fail
+                req['nonce'] = int(time.time() * 1000)
+                post_data = str.encode(urlencode(req))
+
+                sign = hmac.new(self.secret, post_data, hashlib.sha512).hexdigest()
+                self.session.headers.update({'Sign': sign})
+                ret = self.session.post('https://poloniex.com/tradingApi', req)
+
             result = rlk_jsonloads(ret.text)
             return self.post_process(result)
 
