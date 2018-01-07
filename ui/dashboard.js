@@ -1,5 +1,5 @@
 require("./zerorpc_client.js")();
-var settings = require("./settings.js");
+var settings = require("./settings.js")();
 require("./monitor.js")();
 require("./utils.js")();
 require("./exchange.js")();
@@ -23,13 +23,23 @@ function showAlert(type, text) {
     $(str).prependTo($("#wrapper"));
 }
 
+$('#settingsbutton a').click(function(event) {
+    event.preventDefault();
+    var target_location = determine_location(this.href);
+    if (target_location != "settings") {
+        throw "Invalid link location " + target_location;
+    }
+    console.log("Going to settings!");
+    create_or_reload_settings();
+});
+
 function add_exchange_on_click() {
     $('.panel a').click(function(event) {
         event.preventDefault();
         var target_location = determine_location(this.href);
         if (target_location.startsWith('exchange_')) {
             exchange_name = target_location.substring(9);
-            settings.assert_exchange_exists(exchange_name);
+            assert_exchange_exists(exchange_name);
             console.log("Going to exchange " + exchange_name);
             create_or_reload_exchange(exchange_name);
         } else {
@@ -56,7 +66,7 @@ function create_exchange_box(exchange, number, currency_icon) {
         css_class = 'exchange-icon';
     }
     // only show 2 decimal digits
-    number = number.toFixed(2);
+    number = number.toFixed(settings.floating_precision);
     var str = '<div class="panel panel-primary"><div class="panel-heading" id="'+exchange+'_box"><div class="row"><div class="col-xs-3"><i><img title="' + exchange + '" class="' + css_class + '" src="images/'+ exchange +'.png"  /></i></div><div class="col-xs-9 text-right"><div class="huge">'+ number +'</div><div id="status_box_text"><i class="fa '+ currency_icon + ' fa-fw"></i></div></div></div></div><a href="#exchange_' + exchange +'"><div class="panel-footer"><span class="pull-left">View Details</span><span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span><div class="clearfix"></div></div></a></div>';
     $(str).prependTo($('#leftest-column'));
     add_exchange_on_click();
@@ -77,7 +87,7 @@ function create_box (id, icon, number, currency_icon) {
     }
 
     // only show 2 decimal digits
-    number = number.toFixed(2);
+    number = number.toFixed(settings.floating_precision);
     var str = '<div class="panel panel-primary"><div class="panel-heading" id="'+id+'"><div class="row"><div class="col-xs-3"><i title="' + id + '" class="fa '+ icon +'  fa-5x"></i></div><div class="col-xs-9 text-right"><div class="huge">'+ number +'</div><div id="status_box_text"><i class="fa '+ currency_icon + ' fa-fw"></i></div></div></div></div><a href="#"><div class="panel-footer"><span class="pull-left">View Details</span><span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span><div class="clearfix"></div></div></a></div>';
     $(str).prependTo($('#leftest-column'));
     // also save the dashboard page
@@ -123,9 +133,9 @@ function add_balances_table(result) {
                 continue;
             }
             let amount = parseFloat(result[asset]['amount']);
-            amount = amount.toFixed(2);
+            amount = amount.toFixed(settings.floating_precision);
             let value = parseFloat(result[asset]['usd_value']);
-            value = value.toFixed(2);
+            value = value.toFixed(settings.floating_precision);
             let percentage = result[asset]['percentage_of_net_value'];
             let str = '<tr><td>'+asset+'</td><td>'+amount+'</td/><td>'+value+'</td><td>'+percentage+'</td></tr>';
             $(str).appendTo($('#table_balances_total_body'));
@@ -155,12 +165,12 @@ function add_balances_table(result) {
     settings.page_index = $('#page-wrapper').html();
 }
 
-function get_initial_settings() {
-    client.invoke("get_initial_settings", (error, res) => {
+function get_settings() {
+    client.invoke("get_settings", (error, res) => {
         if (error || res == null) {
             startup_error(
-                "get_initial_settings response was: " + res + " and error: " + error,
-                "get_initial_settings RPC failed"
+                "get_settings response was: " + res + " and error: " + error,
+                "get_settings RPC failed"
             );
         } else {
             // set main currency
@@ -173,6 +183,10 @@ function get_initial_settings() {
                     break;
                 }
             }
+            // set the other settings
+            settings.floating_precision = res['ui_floating_precision'];
+            settings.historical_data_start_date = res['historical_data_start_date'];
+
             // make separate queries for all registered exchanges
             let exchanges = res['exchanges'];
             for (let i = 0; i < exchanges.length; i++) {
@@ -229,7 +243,7 @@ function create_or_reload_dashboard() {
         $("body").addClass("loading");
         console.log("At create/reload, with a null page index");
 
-        get_initial_settings();
+        get_settings();
         get_blockchain_total();
         get_banks_total();
     } else {

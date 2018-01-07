@@ -6,13 +6,12 @@
     },
     "dependencies": {
 	"bootstrap": "^3.3.7",
-	"datatables.net": "^1.10.16",
-	"datatables.net-dt": "^1.10.16",
-	"jquery": "^3.2.1",
-	"startbootstrap-sb-admin-2": "^3.3.7",
-	"tail": "latest",
 	"datatables.net": "latest",
 	"datatables.net-dt": "latest",
+	"jquery": "^3.2.1",
+	"jquery-ui": "^1.12.1",
+	"startbootstrap-sb-admin-2": "^3.3.7",
+	"tail": "latest",
 	"zerorpc": "latest"
     },
     "devDependencies": {

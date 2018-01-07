@@ -1,6 +1,6 @@
 var fs = require('fs');
 var Tail = require('tail').Tail;
-var settings = require("./settings.js");
+var settings = require("./settings.js")();
 
 function startup_error(text, reason) {
     let loading_wrapper = document.querySelector('.loadingwrapper');
@@ -67,9 +67,12 @@ function save_current_location() {
     } else if (settings.current_location == 'external_trades') {
         console.log("Saving external trades ... ");
         settings.page_external_trades = $('#page-wrapper').html();
+    } else if (settings.current_location == 'settings') {
+        console.log("Saving settings ... ");
+        settings.settings = $('#page-wrapper').html();
     } else if (settings.current_location.startsWith('exchange_')) {
         let exchange_name = settings.current_location.substring(9);
-        settings.assert_exchange_exists(exchange_name);
+        assert_exchange_exists(exchange_name);
         console.log("Saving exchange " + exchange_name);
         settings.page_exchange[exchange_name] = $('#page-wrapper').html();
     } else {

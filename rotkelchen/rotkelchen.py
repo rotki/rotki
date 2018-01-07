@@ -311,16 +311,26 @@ class Rotkelchen(object):
         self.data.extend_stats(new_file_dict)
 
     def set_main_currency(self, currency):
-        with self.rotkelchen.lock:
+        with self.lock:
             self.data.set_main_currency(currency)
             if currency != 'USD':
                 self.usd_to_main_currency_rate = query_fiat_pair('USD', currency)
+
+    def set_settings(self, settings):
+        with self.lock:
+            self.data.set_settings(settings)
+            main_currency = settings['main_currency']
+            if main_currency != 'USD':
+                self.usd_to_main_currency_rate = query_fiat_pair('USD', main_currency)
 
     def usd_to_main_currency(self, amount):
         if self.main_currency != 'USD' and not hasattr(self, 'usd_to_main_currency_rate'):
             self.usd_to_main_currency_rate = query_fiat_pair('USD', self.main_currency)
 
         return self.usd_to_main_currency_rate * amount
+
+    def get_settings(self):
+        return self.data.settings
 
     def get_exchanges(self):
         exchanges = list()
@@ -330,6 +340,8 @@ class Rotkelchen(object):
             exchanges.append('kraken')
         if 'bittrex_api_key' in self.secret_data:
             exchanges.append('bittrex')
+        if 'binance_api_key' in self.secret_data:
+            exchanges.append('binance')
         return exchanges
 
     def shutdown(self):

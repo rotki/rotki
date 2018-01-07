@@ -85,6 +85,10 @@ class RotkelchenServer(object):
     def set_main_currency(self, currency_text):
         self.rotkelchen.set_main_currency(currency_text)
 
+    def set_settings(self, settings):
+        self.rotkelchen.set_settings(settings)
+        return True
+
     def get_total_in_main_currency(self, balances):
         total = 0
         for _, entry in balances.items():
@@ -133,10 +137,13 @@ class RotkelchenServer(object):
                 logger.debug("Found response for task {} and it is {}".format(task_id, ret))
         return ret
 
-    def get_initial_settings(self):
+    def get_settings(self):
+        settings = self.rotkelchen.get_settings()
         res = {
             'exchanges': self.rotkelchen.get_exchanges(),
-            'main_currency': self.rotkelchen.main_currency
+            'main_currency': self.rotkelchen.main_currency,
+            'ui_floating_precision': settings['ui_floating_precision'],
+            'historical_data_start_date': settings['historical_data_start_date'],
         }
         return process_result(res)
 

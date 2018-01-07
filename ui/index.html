@@ -30,6 +30,10 @@
     <!-- Data tables css -->
     <link href="../node_modules/datatables.net-dt/css/jquery.dataTables.css" rel="stylesheet" type="text/css">
 
+	<!-- Jquery ui date picker css -->
+	<link href="../node_modules/jquery-ui/themes/base/theme.css" rel="stylesheet" type="text/css">
+	<link href="../node_modules/jquery-ui/themes/base/datepicker.css" rel="stylesheet" type="text/css">
+
 	<!-- Our own custom CSS -->
     <link href="rotkelchen.css" rel="stylesheet" type="text/css">
 
@@ -81,7 +85,7 @@
                     <ul class="dropdown-menu dropdown-user">
                         <li><a href="#"><i class="fa fa-user fa-fw"></i> User Profile</a>
                         </li>
-                        <li><a href="#"><i class="fa fa-gear fa-fw"></i> Settings</a>
+                        <li id="settingsbutton"><a href="#settings"><i class="fa fa-gear fa-fw"></i> Settings</a>
                         </li>
                         <li class="divider"></li>
                         <li><a href="login.html"><i class="fa fa-sign-out fa-fw"></i> Logout</a>
@@ -166,6 +170,8 @@
 
     <!-- Custom Theme JavaScript -->
     <script src="../node_modules/startbootstrap-sb-admin-2/dist/js/sb-admin-2.js"></script>
+	<!-- jquery-ui for Datepicker -->
+	<script src="../node_modules/jquery-ui/ui/widgets/datepicker.js"></script>
 	<script>
 	require('./renderer.js')
 	</script>

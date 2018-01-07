@@ -7,9 +7,12 @@ from rotkelchen.history import TradesHistorian, PriceHistorian
 from rotkelchen.accounting import Accountant
 
 DEFAULT_START_DATE = "01/08/2015"
+STATS_FILE = "value.txt"
 
 empty_settings = {
-    'statsfile_path': ''
+    'ui_floating_precision': 2,
+    'main_currency': 'EUR',
+    'historical_data_start_date': DEFAULT_START_DATE,
 }
 
 
@@ -28,7 +31,15 @@ class DataHandler(object):
             with open(os.path.join(self.data_directory, 'personal.json')) as f:
                 self.personal = rlk_jsonloads(f.read())
         except:  # No file found or contents are not json
-            self.personal = empty_settings
+            self.personal = {}
+
+        try:
+            with open(os.path.join(self.data_directory, 'settings.json')) as f:
+                self.settings = rlk_jsonloads(f.read())
+        except:  # No file found or contents are not json
+            self.settings = empty_settings
+
+        historical_data_start = self.settings.get('historical_data_start_date', DEFAULT_START_DATE)
 
         self.poloniex = poloniex
         self.kraken = kraken
@@ -40,11 +51,15 @@ class DataHandler(object):
             binance,
             self.data_directory,
             self.personal,
+            historical_data_start,
         )
-        self.price_historian = PriceHistorian(self.data_directory, self.personal)
+        self.price_historian = PriceHistorian(
+            self.data_directory,
+            historical_data_start,
+        )
         self.accountant = Accountant(
             price_historian=self.price_historian,
-            profit_currency=self.personal.get('main_currency', 'EUR'),
+            profit_currency=self.settings.get('main_currency'),
             create_csv=True
         )
 
@@ -54,8 +69,9 @@ class DataHandler(object):
 
         # open the statsfile if existing
         self.stats = list()
-        if os.path.isfile(self.personal['statsfile_path']):
-            with open(self.personal['statsfile_path'], 'r') as f:
+        stats_file = os.path.join(self.data_directory, STATS_FILE)
+        if os.path.isfile(stats_file):
+            with open(stats_file, 'r') as f:
                 self.stats = rlk_jsonloads(f.read())
 
             # Change all timestamp entries from string to timestamp if needed
@@ -67,25 +83,36 @@ class DataHandler(object):
                     )
                     new_stats.append(entry)
                 self.stats = new_stats
-                with open(self.personal['statsfile_path'], 'w') as f:
+                with open(stats_file, 'w') as f:
                     f.write(rlk_jsondumps(self.stats))
 
     def append_to_stats(self, entry):
         data = {'date': int(time.time()), 'data': entry}
         self.stats.append(data)
-        with open(self.personal['statsfile_path'], 'w') as f:
+        with open(os.path.join(self.data_directory, STATS_FILE), 'w') as f:
             f.write(rlk_jsondumps(self.stats))
 
     def extend_stats(self, data):
         self.stats.extend(data)
-        with open(self.personal['statsfile_path'], 'w') as f:
+        with open(os.path.join(self.data_directory, STATS_FILE), 'w') as f:
             f.write(rlk_jsondumps(self.stats))
 
     def set_main_currency(self, currency):
         self.accountant.set_main_currency(currency)
-        with open(os.path.join(self.data_directory, 'personal.json'), 'w') as f:
-            self.personal['main_currency'] = currency
-            f.write(rlk_jsondumps(self.personal))
+        self.settings['main_currency'] = currency
+        with open(os.path.join(self.data_directory, 'settings.json'), 'w') as f:
+            f.write(rlk_jsondumps(self.settings))
+
+    def set_ui_floating_precision(self, val):
+        self.settings['ui_floating_precision'] = val
+        with open(os.path.join(self.data_directory, 'settings.json'), 'w') as f:
+            f.write(rlk_jsondumps(self.settings))
+
+    def set_settings(self, settings):
+        self.settings = settings
+        self.accountant.set_main_currency(settings['main_currency'])
+        with open(os.path.join(self.data_directory, 'settings.json'), 'w') as f:
+            f.write(rlk_jsondumps(self.settings))
 
     def process_history(self, start_ts, end_ts):
         history, margin_history, loan_history, asset_movements, eth_transactions = self.trades_historian.get_history(

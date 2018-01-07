@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_START_DATE = "01/08/2015"
 TRADES_HISTORYFILE = 'trades_history.json'
+EXTERNAL_TRADES_FILE = 'external_trades.json'
 MARGIN_HISTORYFILE = 'margin_trades_history.json'
 MANUAL_MARGINS_LOGFILE = 'manual_margin_positions_log.json'
 LOANS_HISTORYFILE = 'loans_history.json'
@@ -57,9 +58,9 @@ class PriceQueryUnknownFromAsset(Exception):
         )
 
 
-def include_external_trades(personal, start_ts, end_ts, history):
+def include_external_trades(data_dir, start_ts, end_ts, history):
     external_trades = get_jsonfile_contents_or_empty_list(
-        personal['external_trades_path']
+        os.path.join(data_dir, EXTERNAL_TRADES_FILE)
     )
     external_trades = trades_from_dictlist(external_trades, start_ts, end_ts)
     history.extend(external_trades)
@@ -219,12 +220,9 @@ def process_polo_loans(data, start_ts, end_ts):
 
 class PriceHistorian(object):
 
-    def __init__(self, data_directory, personal_data):
+    def __init__(self, data_directory, history_date_start=DEFAULT_START_DATE):
         self.data_directory = data_directory
         # get the start date for historical data
-        history_date_start = DEFAULT_START_DATE
-        if 'historical_data_start_date' in personal_data:
-            history_date_start = personal_data['historical_data_start_date']
         self.historical_data_start = createTimeStamp(history_date_start, formatstr="%d/%m/%Y")
 
         self.price_history = dict()
@@ -443,6 +441,7 @@ class TradesHistorian(object):
             binance,
             data_directory,
             personal_data,
+            historical_data_start,
             start_date='01/11/2015',
     ):
 
@@ -454,10 +453,7 @@ class TradesHistorian(object):
         self.data_directory = data_directory
         self.personal_data = personal_data
         # get the start date for historical data
-        history_date_start = DEFAULT_START_DATE
-        if 'historical_data_start_date' in personal_data:
-            history_date_start = personal_data['historical_data_start_date']
-        self.historical_data_start = createTimeStamp(history_date_start, formatstr="%d/%m/%Y")
+        self.historical_data_start = createTimeStamp(historical_data_start, formatstr="%d/%m/%Y")
         # If this flag is true we attempt to read from the manually logged margin positions file
         self.read_manual_margin_positions = True
 
@@ -583,7 +579,7 @@ class TradesHistorian(object):
         write_tupledata_history_in_file(eth_transactions, eth_tx_log_path, start_ts, end_ts)
 
         # After writting everything to files include the external trades in the history
-        history = include_external_trades(self.personal_data, start_ts, end_ts, history)
+        history = include_external_trades(self.data_directory, start_ts, end_ts, history)
 
         return history, poloniex_margin_trades, polo_loans, asset_movements, eth_transactions
 
@@ -705,7 +701,7 @@ class TradesHistorian(object):
                     )
 
                     history_trades = include_external_trades(
-                        self.personal_data,
+                        self.data_directory,
                         start_ts,
                         end_ts,
                         history_trades

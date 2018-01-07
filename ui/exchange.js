@@ -1,4 +1,4 @@
-var settings = require("./settings.js");
+var settings = require("./settings.js")();
 require("./monitor.js");
 require("./utils.js")();
 var dt = require( 'datatables.net' )();

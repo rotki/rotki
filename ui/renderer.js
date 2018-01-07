@@ -3,7 +3,7 @@ require("./monitor.js")();
 require("./dashboard.js")();
 require("./exchange.js")();
 require("./utils.js")();
-var settings = require("./settings.js");
+var settings = require("./settings.js")();
 client.connect("tcp://127.0.0.1:4242");
 
 function create_page_header(title) {
