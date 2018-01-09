@@ -64,9 +64,9 @@ function save_current_location() {
     if (settings.current_location == 'index') {
         console.log("Saving index ... ");
         settings.page_index = $('#page-wrapper').html();
-    } else if (settings.current_location == 'external_trades') {
-        console.log("Saving external trades ... ");
-        settings.page_external_trades = $('#page-wrapper').html();
+    } else if (settings.current_location == 'otctrades') {
+        console.log("Saving otc trades ... ");
+        settings.page_otctrades = $('#page-wrapper').html();
     } else if (settings.current_location == 'settings') {
         console.log("Saving settings ... ");
         settings.settings = $('#page-wrapper').html();

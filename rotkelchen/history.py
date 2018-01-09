@@ -58,10 +58,15 @@ class PriceQueryUnknownFromAsset(Exception):
         )
 
 
-def include_external_trades(data_dir, start_ts, end_ts, history):
+def get_external_trades(data_dir):
     external_trades = get_jsonfile_contents_or_empty_list(
         os.path.join(data_dir, EXTERNAL_TRADES_FILE)
     )
+    return external_trades
+
+
+def include_external_trades(data_dir, start_ts, end_ts, history):
+    external_trades = get_external_trades(data_dir)
     external_trades = trades_from_dictlist(external_trades, start_ts, end_ts)
     history.extend(external_trades)
     history.sort(key=lambda trade: trade.timestamp)

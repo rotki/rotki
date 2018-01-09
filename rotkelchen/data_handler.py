@@ -5,6 +5,7 @@ from rotkelchen.utils import createTimeStamp, ts_now, rlk_jsonloads, rlk_jsondum
 
 from rotkelchen.history import TradesHistorian, PriceHistorian
 from rotkelchen.accounting import Accountant
+from rotkelchen.history import get_external_trades
 
 DEFAULT_START_DATE = "01/08/2015"
 STATS_FILE = "value.txt"
@@ -113,6 +114,9 @@ class DataHandler(object):
         self.accountant.set_main_currency(settings['main_currency'])
         with open(os.path.join(self.data_directory, 'settings.json'), 'w') as f:
             f.write(rlk_jsondumps(self.settings))
+
+    def get_external_trades(self):
+        return get_external_trades(self.data_directory)
 
     def process_history(self, start_ts, end_ts):
         history, margin_history, loan_history, asset_movements, eth_transactions = self.trades_historian.get_history(

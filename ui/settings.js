@@ -1,3 +1,5 @@
+require("./elements.js")();
+
 var settings = null;
 function Currency(name, icon, ticker_symbol, unicode_symbol) {
     this.name = name;
@@ -62,8 +64,6 @@ function create_settings_ui() {
     str += '<div class="row"><div class="col-lg-12"><div class="panel panel-default"><div class="panel-heading">General Settings</div><div class="panel-body"></div></div></div></div>';
     $('#page-wrapper').html(str);
 
-    console.log("AT CREATE SETTINGS UI, FP: " + settings.floating_precision);
-
     str = '<div class="row"><form role="form"><div class="form-group input-group"><span class="input-group-addon">Floating Precision</span><input id="floating_precision" class="form-control" value="'+settings.floating_precision+'"type="text"></div>';
     str += '<div class="form-group input-group"><span class="input-group-addon">Date:</span><input id="historical_data_start_date" class="form-control"  value="'+settings.historical_data_start_date+'"type="text"></div>';
     str += '<div class="form-group"><label>Select Main Currency</label><select id="maincurrencyselector" class="form-control" style="font-family: \'FontAwesome\', \'sans-serif\';"></select></div>';
@@ -78,8 +78,8 @@ function create_settings_ui() {
         $(option).appendTo($('#maincurrencyselector'));
     }
 
-
-    str = '<button id="settingssubmit" type="submit" class="btn btn-default">Submit</button></form></div>';
+    str = form_button('Save', 'settingssubmit');
+    str += '</form></div>';
     $(str).appendTo($('.panel-body'));
 }
 
@@ -108,7 +108,7 @@ module.exports = function() {
         settings.current_location = null;
         settings.page_index = null;
         settings.page_settings = null;
-        settings.page_external_trades = null;
+        settings.page_otctrades = null;
         settings.page_exchange = {};
     }
     this.assert_exchange_exists = assert_exchange_exists;
