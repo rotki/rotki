@@ -85,8 +85,16 @@ class Kraken(Exchange):
         with self.lock:
             # Assuming all fees are the same for all pairs that we trade here,
             # as long as they are normal orders on normal pairs.
+
             self.taker_fee = FVal(resp['fees']['XETHXXBT']['fee'])
-            self.maker_fee = FVal(resp['fees_maker']['XETHXXBT']['fee'])
+            # Note from kraken api: If an asset pair is on a maker/taker fee
+            # schedule, the taker side is given in "fees" and maker side in
+            # "fees_maker". For pairs not on maker/taker, they will only be
+            # given in "fees".
+            if 'fees_maker' in resp:
+                self.maker_fee = FVal(resp['fees_maker']['XETHXXBT']['fee'])
+            else:
+                self.maker_fee = self.taker_fee
             self.tradeable_pairs = self.query_public('AssetPairs')
             self.first_connection_made = True
 
