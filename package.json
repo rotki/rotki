@@ -9,7 +9,7 @@
 	"datatables.net": "latest",
 	"datatables.net-dt": "latest",
 	"jquery": "^3.2.1",
-	"jquery-ui": "^1.12.1",
+	"jquery-datetimepicker": "^2.5.16",
 	"startbootstrap-sb-admin-2": "^3.3.7",
 	"tail": "latest",
 	"zerorpc": "latest"

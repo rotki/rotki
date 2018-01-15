@@ -56,7 +56,7 @@ function add_listeners() {
         });
     });
 
-    $('#historicaldatastart').datepicker();
+    $('#historical_data_start_date').datetimepicker({timepicker:false});
 }
 
 function create_settings_ui() {

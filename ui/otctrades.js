@@ -109,7 +109,7 @@ function add_listeners() {
     $('#otctradesubmit').click(function(event) {
         event.preventDefault();
     });
-    $('#otc_time').datepicker();
+    $('#otc_time').datetimepicker();
 }
 
 function create_or_reload_otctrades() {
