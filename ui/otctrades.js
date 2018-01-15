@@ -52,6 +52,27 @@ function edit_otc_trade(row) {
     update_valhtml('#otctradesubmit', 'Edit Trade');
 }
 
+function delete_otc_trade(row) {
+    let data = row.data();
+    // TODO: When using sql just use primary key here
+    // and now send the data to the python process
+    client.invoke(
+        'delete_otctrade',
+        data,
+        (error, res) => {
+            if (error || res == null) {
+                showAlert('alert-danger', 'Error: ' + error);
+            } else {
+                if (!res['result']) {
+                    showAlert('alert-danger', 'Error: ' + res['message']);
+                } else {
+                    showAlert('alert-success', 'Trade Deleted');
+                    reload_table_data();
+                }
+            }
+        });
+}
+
 function reload_table_data() {
     client.invoke("query_otctrades", (error, result) => {
         if (error || result == null) {
@@ -120,6 +141,7 @@ function create_otctrades_table() {
                             // TODO: When move to SQL instead of files, simply use the primary key/id to select
                             switch (key) {
                             case 'delete' :
+                                delete_otc_trade(row);
                                 break;
                             case 'edit' :
                                 edit_otc_trade(row);
@@ -202,7 +224,6 @@ function add_listeners() {
             'otc_link': otc_link,
             'otc_notes': otc_notes
         };
-
 
         // depending on the type of button value we call different function
         let command = 'add_otctrade';

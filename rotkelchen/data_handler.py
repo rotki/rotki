@@ -228,7 +228,23 @@ class DataHandler(object):
 
         return True, ''
 
-    
+    def delete_external_trade(self, data):
+        external_trades = get_external_trades(self.data_directory)
+        # TODO: When using sql just use primary key as id
+        found_idx = -1
+        for idx, trade in enumerate(external_trades):
+            if trade['timestamp'] == data['timestamp']:
+                found_idx = idx
+                break
+
+        if found_idx == -1:
+            return False, 'Could not find the requested trade for deletion'
+
+        del external_trades[found_idx]
+        with open(os.path.join(self.data_directory, EXTERNAL_TRADES_FILE), 'w') as f:
+            f.write(rlk_jsondumps(external_trades))
+
+        return True, ''
 
     def process_history(self, start_ts, end_ts):
         history, margin_history, loan_history, asset_movements, eth_transactions = self.trades_historian.get_history(
