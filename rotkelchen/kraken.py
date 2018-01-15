@@ -36,6 +36,7 @@ KRAKEN_TO_WORLD = {
     'XICN': 'ICN',
     'GNO': 'GNO',
     'BCH': 'BCH',
+    'XXLM': 'XLM',
 }
 
 WORLD_TO_KRAKEN = {
@@ -51,6 +52,7 @@ WORLD_TO_KRAKEN = {
     'ICN': 'XICN',
     'GNO': 'GNO',
     'BCH': 'BCH',
+    'XLM': 'XXLM',
 }
 
 
