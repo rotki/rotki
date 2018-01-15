@@ -42,7 +42,11 @@ function create_otctrades_table() {
                         "className": 'details-control',
                         "orderable": false,
                         "data": null,
-                        "defaultContent": ''
+                        "defaultContent": '',
+                        "render": function () {
+                         return '<i class="fa fa-plus-square" aria-hidden="true"></i>';
+                        },
+                        width:"15px"
                     },
                     { "data": "pair" },
                     { "data": "type" },
@@ -60,16 +64,22 @@ function create_otctrades_table() {
             // Add event listener for opening and closing details
             $('#table_otctrades tbody').on('click', 'td.details-control', function () {
                 var tr = $(this).closest('tr');
-                var row = table.row( tr );
-                
+                var tdi = tr.find("i.fa");
+                var row = table.row(tr);
+
                 if (row.child.isShown()) {
                     // This row is already open - close it
                     row.child.hide();
                     tr.removeClass('shown');
-                } else {
+                    tdi.first().removeClass('fa-minus-square');
+                    tdi.first().addClass('fa-plus-square');
+                }
+                else {
                     // Open this row
-                    row.child( format(row.data()) ).show();
+                    row.child(format(row.data())).show();
                     tr.addClass('shown');
+                    tdi.first().removeClass('fa-plus-square');
+                    tdi.first().addClass('fa-minus-square');
                 }
             } );
         }
@@ -99,6 +109,7 @@ function add_listeners() {
     $('#otctradesubmit').click(function(event) {
         event.preventDefault();
     });
+    $('#otc_time').datepicker();
 }
 
 function create_or_reload_otctrades() {
