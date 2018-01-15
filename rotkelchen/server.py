@@ -151,6 +151,14 @@ class RotkelchenServer(object):
         trades = self.rotkelchen.data.get_external_trades()
         return process_result(trades)
 
+    def add_otctrade(self, data):
+        result, message = self.rotkelchen.data.add_external_trade(data)
+        return {'result': result, 'message': message}
+
+    def edit_otctrade(self, data):
+        result, message = self.rotkelchen.data.edit_external_trade(data)
+        return {'result': result, 'message': message}
+
     def query_exchange_total(self, name, first_time):
         logger.debug("Query exchange {} called.".format(name))
         if first_time:

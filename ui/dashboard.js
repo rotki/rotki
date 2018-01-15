@@ -16,13 +16,6 @@ function Result (result_type, number, name, icon) {
     this.icon = icon;
 }
 
-
-
-function showAlert(type, text) {
-    var str = '<div class="alert '+ type +' alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>'+ text +'</div>';
-    $(str).prependTo($("#wrapper"));
-}
-
 $('#settingsbutton a').click(function(event) {
     event.preventDefault();
     var target_location = determine_location(this.href);

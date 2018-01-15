@@ -1,11 +1,21 @@
 import os
 import time
 
-from rotkelchen.utils import createTimeStamp, ts_now, rlk_jsonloads, rlk_jsondumps
+from rotkelchen.utils import (
+    createTimeStamp,
+    ts_now,
+    rlk_jsonloads,
+    rlk_jsondumps,
+    is_number,
+    get_pair_position,
+)
 
 from rotkelchen.history import TradesHistorian, PriceHistorian
 from rotkelchen.accounting import Accountant
-from rotkelchen.history import get_external_trades
+from rotkelchen.history import get_external_trades, EXTERNAL_TRADES_FILE
+
+import logging
+logger = logging.getLogger(__name__)
 
 DEFAULT_START_DATE = "01/08/2015"
 STATS_FILE = "value.txt"
@@ -15,6 +25,33 @@ empty_settings = {
     'main_currency': 'EUR',
     'historical_data_start_date': DEFAULT_START_DATE,
 }
+
+
+otc_fields = ['otc_time', 'otc_pair', 'otc_type', 'otc_amount', 'otc_rate', 'otc_fee', 'otc_link', 'otc_notes']
+otc_optional_fields = ['otc_fee', 'otc_link', 'otc_notes']
+otc_numerical_fields = ['otc_amount', 'otc_rate', 'otc_fee']
+
+
+def check_otctrade_data_valid(data):
+    for field in otc_fields:
+        if field not in data:
+            return None, '{} was not provided'.format(field)
+
+        if data[field] in ('', None) and field not in otc_optional_fields:
+            return None, '{} was empty'.format(field)
+
+        if field in otc_numerical_fields and not is_number(data[field]):
+            return None, '{} should be a number'.format(field)
+
+    if data['otc_type'] not in ('buy', 'sell'):
+        return None, 'Trade type can only be buy or sell'
+
+    try:
+        timestamp = createTimeStamp(data['otc_time'], formatstr='%d/%m/%Y %H:%M')
+    except ValueError as e:
+        return None, 'Could not process the given datetime: {}'.format(e)
+
+    return timestamp, ''
 
 
 class DataHandler(object):
@@ -117,6 +154,81 @@ class DataHandler(object):
 
     def get_external_trades(self):
         return get_external_trades(self.data_directory)
+
+    def add_external_trade(self, data):
+        timestamp, message = check_otctrade_data_valid(data)
+        if not timestamp:
+            return False, message
+
+        rate = float(data['otc_rate'])
+        amount = float(data['otc_amount'])
+        cost = rate * amount
+        pair = data['otc_pair']
+        external_trades = get_external_trades(self.data_directory)
+        external_trades.append({
+            'timestamp': timestamp,
+            'pair': pair,
+            'type': data['otc_type'],
+            'rate': rate,
+            'cost': cost,
+            # for now cost/fee currency is always second.
+            # TODO: Make it configurable
+            'cost_currency': get_pair_position(pair, 'second'),
+            'fee_currency': get_pair_position(pair, 'second'),
+            'fee': data['otc_fee'],
+            'amount': amount,
+            'location': 'external',
+            'link': data['otc_link'],
+            'notes': data['otc_notes'],
+        })
+        with open(os.path.join(self.data_directory, EXTERNAL_TRADES_FILE), 'w') as f:
+            f.write(rlk_jsondumps(external_trades))
+
+        return True, ''
+
+    def edit_external_trade(self, data):
+        timestamp, message = check_otctrade_data_valid(data)
+        if not timestamp:
+            return False, message
+
+        rate = float(data['otc_rate'])
+        amount = float(data['otc_amount'])
+        cost = rate * amount
+        pair = data['otc_pair']
+        external_trades = get_external_trades(self.data_directory)
+
+        # TODO: When we switch to sql, editing should be done with the primary key
+        found = False
+        for idx, trade in enumerate(external_trades):
+            if timestamp == trade['timestamp']:
+                external_trades[idx] = {
+                    'timestamp': timestamp,
+                    'pair': pair,
+                    'type': data['otc_type'],
+                    'rate': rate,
+                    'cost': cost,
+                    # for now cost/fee currency is always second.
+                    # TODO: Make it configurable
+                    'cost_currency': get_pair_position(pair, 'second'),
+                    'fee_currency': get_pair_position(pair, 'second'),
+                    'fee': data['otc_fee'],
+                    'amount': amount,
+                    'location': 'external',
+                    'link': data['otc_link'],
+                    'notes': data['otc_notes'],
+                }
+                found = True
+                break
+
+        if not found:
+            return False, 'Could not find the requested trade for editing'
+
+        with open(os.path.join(self.data_directory, EXTERNAL_TRADES_FILE), 'w') as f:
+            f.write(rlk_jsondumps(external_trades))
+
+        return True, ''
+
+    
 
     def process_history(self, start_ts, end_ts):
         history, margin_history, loan_history, asset_movements, eth_transactions = self.trades_historian.get_history(

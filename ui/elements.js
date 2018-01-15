@@ -25,11 +25,10 @@ function form_text(prompt, id, rows, initial_value, placeholder) {
 
 function form_select(prompt, id, options) {
     let str = '<div class="form-group"><label>'+prompt+'</label>';
-    str += '<select id="'+id+'" class="form-control" style="font-family: \'FontAwesome\', \'sans-serif\';"></select></div>';
-    str += '<div class="form-group"><label>Select Main Currency</label><select id="maincurrencyselector" class="form-control" style="font-family: \'FontAwesome\', \'sans-serif\';">';
+    str += '<select id="'+id+'" class="form-control" style="font-family: \'FontAwesome\', \'sans-serif\';">';
 
     for (let i = 0; i < options.length; i++) {
-        str += '<option value="'+options[i]+'"></option>';
+        str += '<option value="'+options[i]+'">'+options[i]+'</option>';
     }
     str += '</select></div>';
     return str;

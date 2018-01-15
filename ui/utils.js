@@ -38,6 +38,11 @@ function _setup_log_watcher(callback) {
     });
 }
 
+function showAlert(type, text) {
+    var str = '<div class="alert '+ type +' alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>'+ text +'</div>';
+    $(str).prependTo($("#wrapper"));
+}
+
 function setup_log_watcher(callback) {
 
     // if the log file is not found keep trying until it is
@@ -92,4 +97,5 @@ module.exports = function() {
     this.change_location = change_location;
     this.determine_location = determine_location;
     this.startup_error = startup_error;
+    this.showAlert = showAlert;
 };

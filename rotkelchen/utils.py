@@ -288,3 +288,11 @@ def taxable_gain_for_sell(
                 rate_in_profit_currency * taxable_amount -
                 total_fee_in_profit_currency * (taxable_amount / selling_amount)
             )
+
+
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
