@@ -84,24 +84,29 @@ class Binance(Exchange):
         if not options:
             options = {}
 
-        if method in V3_ENDPOINTS:
-            api_version = 3
-            options['timestamp'] = str(int(time.time() * 1000))
-            signature = hmac.new(
-                self.secret,
-                urlencode(options).encode('utf-8'),
-                hashlib.sha256
-            ).hexdigest()
-            options['signature'] = signature
-        elif method in V1_ENDPOINTS:
-            api_version = 1
-        else:
-            raise ValueError('Unexpected binance api method {}'.format(method))
+        with self.lock:
+            # Protect this region with a lock since binance will reject
+            # non-increasing nonces. So if two greenlets come in here at
+            # the same time one of them will fail
+            if method in V3_ENDPOINTS:
+                api_version = 3
+                options['timestamp'] = str(int(time.time() * 1000))
+                signature = hmac.new(
+                    self.secret,
+                    urlencode(options).encode('utf-8'),
+                    hashlib.sha256
+                ).hexdigest()
+                options['signature'] = signature
+            elif method in V1_ENDPOINTS:
+                api_version = 1
+            else:
+                raise ValueError('Unexpected binance api method {}'.format(method))
 
-        request_url = self.uri + 'v' + str(api_version) + '/' + method + '?'
-        request_url += urlencode(options)
+            request_url = self.uri + 'v' + str(api_version) + '/' + method + '?'
+            request_url += urlencode(options)
 
-        response = self.session.get(request_url)
+            response = self.session.get(request_url)
+
         if response.status_code != 200:
             result = rlk_jsonloads(response.text)
             raise ValueError(
