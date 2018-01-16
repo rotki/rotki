@@ -7,8 +7,8 @@ var OTC_TRADES_TABLE = null;
 function timestamp_to_date(ts) {
     let date = new Date(ts * 1000);
     return (
-        date.getUTCDate()+ '/' +
-        (date.getUTCMonth() + 1) + '/' +
+        ("0" + date.getUTCDate()).slice(-2)+ '/' +
+        ("0" + (date.getUTCMonth() + 1)).slice(-2) + '/' +
         date.getUTCFullYear() + ' ' +
         ("0" + date.getUTCHours()).slice(-2) + ':' +
         ("0" + date.getUTCMinutes()).slice(-2)
@@ -124,6 +124,9 @@ function create_otctrades_table() {
                     { "data": "rate" },
                     {
                         "render": function (data, type, row) {
+                            if (type == 'sort') {
+                                return data;
+                            }
                             return timestamp_to_date(data);
                         },
                         "data": "timestamp"
