@@ -55,13 +55,13 @@ function create_exchange_box(exchange, number, currency_icon) {
     }
 
     var css_class = 'exchange-icon-inverted';
-    if (exchange == 'poloniex') {
+    if (['poloniex', 'binance'].indexOf(exchange) > -1) {
         css_class = 'exchange-icon';
     }
     // only show 2 decimal digits
     number = number.toFixed(settings.floating_precision);
     var str = '<div class="panel panel-primary"><div class="panel-heading" id="'+exchange+'_box"><div class="row"><div class="col-xs-3"><i><img title="' + exchange + '" class="' + css_class + '" src="images/'+ exchange +'.png"  /></i></div><div class="col-xs-9 text-right"><div class="huge">'+ number +'</div><div id="status_box_text"><i class="fa '+ currency_icon + ' fa-fw"></i></div></div></div></div><a href="#exchange_' + exchange +'"><div class="panel-footer"><span class="pull-left">View Details</span><span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span><div class="clearfix"></div></div></a></div>';
-    $(str).prependTo($('#leftest-column'));
+    $(str).prependTo($('#dashboard-contents'));
     add_exchange_on_click();
     // finally save the dashboard page
     settings.page_index = $('#page-wrapper').html();
@@ -80,7 +80,7 @@ function create_box (id, icon, number, currency_icon) {
     }
     number = number.toFixed(settings.floating_precision);
     var str = '<div class="panel panel-primary"><div class="panel-heading" id="'+id+'"><div class="row"><div class="col-xs-3"><i title="' + id + '" class="fa '+ icon +'  fa-5x"></i></div><div class="col-xs-9 text-right"><div class="huge">'+ number +'</div><div id="status_box_text"><i class="fa '+ currency_icon + ' fa-fw"></i></div></div></div></div><a href="#"><div class="panel-footer"><span class="pull-left">View Details</span><span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span><div class="clearfix"></div></div></a></div>';
-    $(str).prependTo($('#leftest-column'));
+    $(str).prependTo($('#dashboard-contents'));
     // also save the dashboard page
     settings.page_index = $('#page-wrapper').html();
 }
@@ -117,7 +117,7 @@ function add_currency_dropdown(currency) {
 function add_balances_table(result) {
     var str = '<div class="row"><div class="col-lg-12"><h1 class=page-header">All Balances</h1></div></div>';
     str += '<div class="row"><table id="table_balances_total"><thead><tr><th>Asset</th><th>Amount</th><th>USD Value</th><th>% of net value</th></tr/></thead><tfoot><tr><th></th><th></th><th></th><th></th></tr></tfoot><tbody id="table_balances_total_body"></tbody></table></div>';
-    $(str).appendTo($('#leftest-column'));
+    $(str).appendTo($('#dashboard-contents'));
     for (var asset in result) {
         if(result.hasOwnProperty(asset)) {
             if (asset == 'net_usd_perc_location' || asset == 'net_usd') {
