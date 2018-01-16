@@ -78,8 +78,6 @@ function create_box (id, icon, number, currency_icon) {
         //already exists
         return;
     }
-
-    // only show 2 decimal digits
     number = number.toFixed(settings.floating_precision);
     var str = '<div class="panel panel-primary"><div class="panel-heading" id="'+id+'"><div class="row"><div class="col-xs-3"><i title="' + id + '" class="fa '+ icon +'  fa-5x"></i></div><div class="col-xs-9 text-right"><div class="huge">'+ number +'</div><div id="status_box_text"><i class="fa '+ currency_icon + ' fa-fw"></i></div></div></div></div><a href="#"><div class="panel-footer"><span class="pull-left">View Details</span><span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span><div class="clearfix"></div></div></a></div>';
     $(str).prependTo($('#leftest-column'));
