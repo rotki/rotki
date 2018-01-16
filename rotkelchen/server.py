@@ -114,7 +114,7 @@ class RotkelchenServer(object):
 
     def query_async(self, command, **kwargs):
         task_id = self.new_task_id()
-        logger.debug("NEW TASK {} with ID: {}".format(command, task_id))
+        logger.debug("NEW TASK {} (kwargs:{}) with ID: {}".format(command, kwargs, task_id))
         greenlet = gevent.spawn(
             self._query_async,
             command,

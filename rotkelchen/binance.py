@@ -77,6 +77,9 @@ class Binance(Exchange):
             'X-MBX-APIKEY': self.api_key,
         })
 
+    def first_connection(self):
+        self.first_connection_made = True
+
     def api_query(self, method, options=None):
         if not options:
             options = {}

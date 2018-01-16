@@ -3,7 +3,7 @@ import requests
 import os
 from gevent.lock import Semaphore
 
-from rotkelchen.utils import rlk_jsonloads, rlk_jsondumps, ts_now
+from rotkelchen.utils import rlk_jsonloads, rlk_jsondumps
 
 
 def data_up_todate(json_data, start_ts, end_ts):
@@ -67,7 +67,7 @@ class Exchange(object):
             f.write(rlk_jsondumps(trades))
 
     def orderBook(self, currency):
-        raise NotImplementedError("Should only be implemented by subclasses")
+        raise NotImplementedError("orderBook should only be implemented by subclasses")
 
     def set_buy(self, pair, amount, price):
         raise NotImplementedError("Should only be implemented by subclasses")
@@ -81,13 +81,13 @@ class Exchange(object):
 
         The name must be the canonical name used by rotkelchen
         """
-        raise NotImplementedError("Should only be implemented by subclasses")
+        raise NotImplementedError("query_balances should only be implemented by subclasses")
 
     def query_deposits_withdrawals(self, start_ts, end_ts):
-        raise NotImplementedError("Should only be implemented by subclasses")
+        raise NotImplementedError("query_deposits_withdrawals should only be implemented by subclasses")
 
     def first_connection(self):
         """Performs actions that should be done in the first time coming online
         and attempting to query data from an exchange.
         """
-        raise NotImplementedError("Should only be implemented by subclasses")
+        raise NotImplementedError("first_connection() should only be implemented by subclasses")

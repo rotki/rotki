@@ -9,12 +9,12 @@ function Currency(name, icon, ticker_symbol, unicode_symbol) {
 }
 
 function assert_exchange_exists(name) {
-    if (EXCHANGES.indexOf(name) < 0) {
+    if (settings.EXCHANGES.indexOf(name) < 0) {
         throw "Invalid exchange name: " + name;
     }
 }
 
-let exchanges = ['kraken', 'poloniex', 'bittrex'];
+let exchanges = ['kraken', 'poloniex', 'bittrex', 'binance'];
 let currencies = [
     new Currency("United States Dollar", "fa-usd", "USD", "$"),
     new Currency("Euro", "fa-eur", "EUR", "€"),
