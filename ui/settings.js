@@ -32,6 +32,14 @@ function get_value_in_main_currency(usd_value) {
     return usd_value * settings.exchange_rates[symbol];
 }
 
+function format_currency_value(number) {
+    // turn it into the requested currency
+    number = get_value_in_main_currency(number);
+    // only show 2 decimal digits
+    number = number.toFixed(settings.floating_precision);
+    return number;
+}
+
 function add_listeners() {
     $('#settingssubmit').click(function(event) {
         event.preventDefault();
@@ -122,6 +130,7 @@ module.exports = function() {
     this.get_value_in_main_currency = get_value_in_main_currency;
     this.assert_exchange_exists = assert_exchange_exists;
     this.create_or_reload_settings = create_or_reload_settings;
+    this.format_currency_value = format_currency_value;
 
     return settings;
 };
