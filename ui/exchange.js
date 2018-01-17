@@ -3,6 +3,8 @@ require("./monitor.js");
 require("./utils.js")();
 var dt = require( 'datatables.net' )();
 
+let SAVED_TABLES = {};
+
 function create_exchange_table(name) {
     var str = '<div class="row"><div class="col-lg-12"><h1 class=page-header">' + name + '</h1></div></div>';
     str += '<div class="row"><table id="table_'+name+'"><thead><tr><th>Asset</th><th>Amount</th><th>USD Value</th></tr/></thead><tbody id="table_'+name+'_body"></tbody></table></div>';
@@ -22,14 +24,51 @@ function create_exchange_table(name) {
 }
 
 function populate_exchange_table(name, result) {
-
+    // TODO: Perhaps change how query_all_balances returns from the python side
+    // so we can have it in the form of
+    // [{'asset': 'BTC', 'amount: 1, 'usd_value': 1, 'netvalue_perc': 0.1}, ... ]
+    // and thus avoid any need for the following preprocessing and instead feed it
+    // directly to datatables
+    let data = [];
     for (var asset in result) {
         if(result.hasOwnProperty(asset)) {
-            let str = '<tr><td>'+asset+'</td><td>'+result[asset]['amount']+'</td/><td>'+result[asset]['usd_value']+'</td></tr>';
-            $(str).appendTo($('#table_'+name+'_body'));
+            let amount = parseFloat(result[asset]['amount']);
+            amount = amount.toFixed(settings.floating_precision);
+            let value = parseFloat(result[asset]['usd_value']);
+            value = value.toFixed(settings.floating_precision);
+            data.push({'asset': asset, 'amount': amount, 'usd_value': value});
         }
     }
-    $('#table_'+name).DataTable();
+    SAVED_TABLES[name] = $('#table_'+name).DataTable({
+        "data": data,
+        "columns": [
+            {"data": "asset"},
+            {"data": "amount"},
+            {
+                // seems to not work. Why? I solve it by specifically changing the name right below
+                // "name": settings.main_currency.ticker_symbol + " value",
+                "data": 'usd_value',
+                "render": function (data, type, row) {
+                    return format_currency_value(data);
+                }
+            }
+        ],
+        "order": [[2, 'desc']]
+    });
+    $(SAVED_TABLES[name].column(2).header()).text(settings.main_currency.ticker_symbol + ' value');
+    // also save the exchange page
+    settings.page_exchange[name] = $('#page-wrapper').html();
+}
+
+function reload_exchange_tables_if_existing() {
+    for (var name in SAVED_TABLES) {
+        if(SAVED_TABLES.hasOwnProperty(name)) {
+            let table = SAVED_TABLES[name];
+            table.rows().invalidate();
+            $(table.column(2).header()).text(settings.main_currency.ticker_symbol + ' value');
+            table.draw();
+        }
+    }
 }
 
 function create_or_reload_exchange(name) {
@@ -52,4 +91,5 @@ function init_exchanges_tables() {
 module.exports = function() {
     this.create_or_reload_exchange = create_or_reload_exchange;
     this.init_exchanges_tables = init_exchanges_tables;
+    this.reload_exchange_tables_if_existing = reload_exchange_tables_if_existing;
 };

@@ -132,8 +132,9 @@ function set_ui_main_currency(currency_ticker_symbol) {
             throw "Invalid result type " + result.type;
         }
     }
-    // also adjust the balance table if it exists
+    // also adjust tables if they exist
     reload_balance_table_if_existing();
+    reload_exchange_tables_if_existing();
 }
 
 
