@@ -14,6 +14,7 @@ from rotkelchen.args import app_args
 from rotkelchen.rotkelchen import Rotkelchen
 from rotkelchen.utils import pretty_json_dumps
 from rotkelchen.transactions import query_txlist
+from rotkelchen.inquirer import get_fiat_usd_exchange_rates
 
 import logging
 logger = logging.getLogger(__name__)
@@ -89,12 +90,12 @@ class RotkelchenServer(object):
         self.rotkelchen.set_settings(settings)
         return True
 
-    def get_total_in_main_currency(self, balances):
+    def get_total_in_usd(self, balances):
         total = 0
         for _, entry in balances.items():
             total += entry['usd_value']
 
-        return self.rotkelchen.usd_to_main_currency(total)
+        return total
 
     def handle_killed_greenlets(self, greenlet):
         if greenlet.exception:
@@ -140,6 +141,7 @@ class RotkelchenServer(object):
     def get_settings(self):
         settings = self.rotkelchen.get_settings()
         res = {
+            'exchange_rates': get_fiat_usd_exchange_rates(),
             'exchanges': self.rotkelchen.get_exchanges(),
             'main_currency': self.rotkelchen.main_currency,
             'ui_floating_precision': settings['ui_floating_precision'],
@@ -170,7 +172,7 @@ class RotkelchenServer(object):
         balances = getattr(self.rotkelchen, name).query_balances()
         res = {
             'name': name,
-            'total': self.get_total_in_main_currency(balances)
+            'total': self.get_total_in_usd(balances)
         }
         logger.debug("Query exchange {} finished.".format(name))
         return process_result(res)
@@ -193,7 +195,7 @@ class RotkelchenServer(object):
 
     def query_blockchain_total(self):
         balances = self.rotkelchen.query_blockchain_balances()
-        res = {'total': self.get_total_in_main_currency(balances)}
+        res = {'total': self.get_total_in_usd(balances)}
         return process_result(res)
 
     def query_blockchain_total_async(self):
@@ -202,7 +204,7 @@ class RotkelchenServer(object):
 
     def query_banks_total(self):
         balances = self.rotkelchen.query_bank_balances()
-        res = {'total': self.get_total_in_main_currency(balances)}
+        res = {'total': self.get_total_in_usd(balances)}
         logger.debug('At query_bank_balances end')
         return process_result(res)
 

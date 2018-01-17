@@ -2,7 +2,17 @@ from __future__ import unicode_literals
 from urllib.request import Request, urlopen
 
 from rotkelchen.fval import FVal
-from rotkelchen.utils import rlk_jsonloads, retry_calls
+from rotkelchen.utils import rlk_jsonloads, retry_calls, query_fiat_pair
+
+FIAT_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CNY']
+
+
+def get_fiat_usd_exchange_rates():
+    rates = {'USD': 1}
+    for currency in FIAT_CURRENCIES[1:]:
+        rates[currency] = query_fiat_pair('USD', currency)
+
+    return rates
 
 
 class Inquirer(object):
@@ -19,7 +29,7 @@ class Inquirer(object):
             return self.query_kraken_for_price(asset, asset_btc_price)
         else:
             if asset == 'RDN':
-                asset = 'RDN*' # temporary
+                asset = 'RDN*'  # temporary
             resp = retry_calls(
                 5,
                 'find_usd_price',

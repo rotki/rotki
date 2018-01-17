@@ -90,6 +90,8 @@ class Binance(Exchange):
             # the same time one of them will fail
             if method in V3_ENDPOINTS:
                 api_version = 3
+                # Recommended recvWindows is 5000 but we get timeouts with it
+                options['recvWindow'] = 10000
                 options['timestamp'] = str(int(time.time() * 1000))
                 signature = hmac.new(
                     self.secret,

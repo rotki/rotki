@@ -23,6 +23,14 @@ let currencies = [
     new Currency("Chinese Yuan", "fa-jpy", "CNY", "¥"),
 ];
 
+function get_value_in_main_currency(usd_value) {
+    let symbol = settings.main_currency.ticker_symbol;
+    usd_value = parseFloat(usd_value);
+    if (symbol == 'USD') {
+        return usd_value;
+    }
+    return usd_value * settings.exchange_rates[symbol];
+}
 
 function add_listeners() {
     $('#settingssubmit').click(function(event) {
@@ -95,10 +103,10 @@ function create_or_reload_settings() {
     add_listeners();
 }
 
-
 module.exports = function() {
     if (!settings) {
         settings = {};
+        settings.exchange_rates = {};
         settings.EXCHANGES = exchanges;
         settings.CURRENCIES = currencies;
         settings.default_currency = currencies[0];
@@ -111,6 +119,7 @@ module.exports = function() {
         settings.page_otctrades = null;
         settings.page_exchange = {};
     }
+    this.get_value_in_main_currency = get_value_in_main_currency;
     this.assert_exchange_exists = assert_exchange_exists;
     this.create_or_reload_settings = create_or_reload_settings;
 

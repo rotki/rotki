@@ -27,6 +27,7 @@ from rotkelchen.order_formatting import (
     trades_from_dictlist,
     asset_movements_from_dictlist
 )
+from rotkelchen.inquirer import FIAT_CURRENCIES
 
 import logging
 logger = logging.getLogger(__name__)
@@ -39,7 +40,6 @@ MANUAL_MARGINS_LOGFILE = 'manual_margin_positions_log.json'
 LOANS_HISTORYFILE = 'loans_history.json'
 ETHEREUM_TX_LOGFILE = 'ethereum_tx_log.json'
 ASSETMOVEMENTS_HISTORYFILE = 'asset_movements_history.json'
-FIAT_CURRENCIES = ('EUR', 'USD', 'GBP', 'JPY', 'CNY')
 
 
 class NoPriceForGivenTimestamp(Exception):

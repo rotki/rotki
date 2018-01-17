@@ -5,8 +5,9 @@ require("./utils.js")();
 require("./exchange.js")();
 
 
-let saved_results = [];
-
+let SAVED_RESULTS = [];
+let TOTAL_BALANCES_TABLE = null;
+let TOTAL_BALANCES_TABLE_DATA = null;
 
 
 function Result (result_type, number, name, icon) {
@@ -14,6 +15,24 @@ function Result (result_type, number, name, icon) {
     this.number = number;
     this.name = name;
     this.icon = icon;
+    this.applied = false;
+}
+
+function create_result_if_not_existing(result_type, number, name, icon) {
+    let found = false;
+    let result;
+    for (let i = 0; i < SAVED_RESULTS.length; i ++) {
+        result = SAVED_RESULTS[i];
+        if (result.type == result_type && result.name == name) {
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        result = new Result(result_type, number, name, icon);
+        SAVED_RESULTS.push(result);
+    }
+    return result;
 }
 
 $('#settingsbutton a').click(function(event) {
@@ -41,11 +60,18 @@ function add_exchange_on_click() {
     });
 }
 
+function format_currency_value(number) {
+    // turn it into the requested currency
+    number = get_value_in_main_currency(number);
+    // only show 2 decimal digits
+    number = number.toFixed(settings.floating_precision);
+    return number;
+}
+
 function create_exchange_box(exchange, number, currency_icon) {
     let current_location = settings.current_location;
+    let saved_result = create_result_if_not_existing('exchange', number, exchange);
     if (current_location != 'index') {
-        let result = new Result('exchange', number, exchange);
-        saved_results.push(result);
         return;
     }
 
@@ -58,35 +84,72 @@ function create_exchange_box(exchange, number, currency_icon) {
     if (['poloniex', 'binance'].indexOf(exchange) > -1) {
         css_class = 'exchange-icon';
     }
-    // only show 2 decimal digits
-    number = number.toFixed(settings.floating_precision);
-    var str = '<div class="panel panel-primary"><div class="panel-heading" id="'+exchange+'_box"><div class="row"><div class="col-xs-3"><i><img title="' + exchange + '" class="' + css_class + '" src="images/'+ exchange +'.png"  /></i></div><div class="col-xs-9 text-right"><div class="huge">'+ number +'</div><div id="status_box_text"><i class="fa '+ currency_icon + ' fa-fw"></i></div></div></div></div><a href="#exchange_' + exchange +'"><div class="panel-footer"><span class="pull-left">View Details</span><span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span><div class="clearfix"></div></div></a></div>';
+    number = format_currency_value(number);
+    var str = '<div class="panel panel-primary"><div class="panel-heading" id="'+exchange+'_box"><div class="row"><div class="col-xs-3"><i><img title="' + exchange + '" class="' + css_class + '" src="images/'+ exchange +'.png"  /></i></div><div class="col-xs-9 text-right"><div class="huge">'+ number +'</div><div id="status_box_text"><i id="currencyicon" class="fa '+ currency_icon + ' fa-fw"></i></div></div></div></div><a href="#exchange_' + exchange +'"><div class="panel-footer"><span class="pull-left">View Details</span><span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span><div class="clearfix"></div></div></a></div>';
     $(str).prependTo($('#dashboard-contents'));
     add_exchange_on_click();
     // finally save the dashboard page
     settings.page_index = $('#page-wrapper').html();
+    saved_result.applied = true;
 }
 
 function create_box (id, icon, number, currency_icon) {
     let current_location = settings.current_location;
+    let saved_result = create_result_if_not_existing('box', number, id, icon);
     if (current_location != 'index') {
-        let result = new Result('box', number, id, icon);
-        saved_results.push(result);
         return;
     }
     if($("#" + id).length != 0) {
         //already exists
         return;
     }
-    number = number.toFixed(settings.floating_precision);
-    var str = '<div class="panel panel-primary"><div class="panel-heading" id="'+id+'"><div class="row"><div class="col-xs-3"><i title="' + id + '" class="fa '+ icon +'  fa-5x"></i></div><div class="col-xs-9 text-right"><div class="huge">'+ number +'</div><div id="status_box_text"><i class="fa '+ currency_icon + ' fa-fw"></i></div></div></div></div><a href="#"><div class="panel-footer"><span class="pull-left">View Details</span><span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span><div class="clearfix"></div></div></a></div>';
+    number = format_currency_value(number);
+    var str = '<div class="panel panel-primary"><div class="panel-heading" id="'+id+'"><div class="row"><div class="col-xs-3"><i title="' + id + '" class="fa '+ icon +'  fa-5x"></i></div><div class="col-xs-9 text-right"><div class="huge">'+ number +'</div><div id="status_box_text"><i id="currencyicon" class="fa '+ currency_icon + ' fa-fw"></i></div></div></div></div><a href="#"><div class="panel-footer"><span class="pull-left">View Details</span><span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span><div class="clearfix"></div></div></a></div>';
     $(str).prependTo($('#dashboard-contents'));
     // also save the dashboard page
     settings.page_index = $('#page-wrapper').html();
+    saved_result.applied = true;
 }
 
-function set_ui_main_currency(currency) {
+function set_ui_main_currency(currency_ticker_symbol) {
+    var currency = null;
+    for (let i = 0; i < settings.CURRENCIES.length; i ++) {
+        if (currency_ticker_symbol == settings.CURRENCIES[i].ticker_symbol) {
+            currency = settings.CURRENCIES[i];
+            break;
+        }
+    }
+
+    if (!currency) {
+        throw "Invalid currency " + currency_ticker_symbol + " requested at set_ui_main_currency";
+    }
+
     $('#current-main-currency').removeClass().addClass('fa ' + currency.icon + ' fa-fw');
+    settings.main_currency = currency;
+
+    // if there are any saved results then use them to change currency values
+    for (let i = 0; i < SAVED_RESULTS.length; i ++) {
+        let result = SAVED_RESULTS[i];
+        let number = format_currency_value(result.number);
+        if (result.type == 'exchange') {
+            $('#'+result.name+'_box div.huge').html(number);
+            $('#'+result.name+'_box i#currencyicon').removeClass().addClass('fa ' + currency.icon + ' fa-fw');
+        } else if (result.type == 'box') {
+            $('#'+result.name+' div.huge').html(number);
+            $('#'+result.name+' div.huge').html(number);
+            $('#'+result.name+' i#currencyicon').removeClass().addClass('fa ' + currency.icon + ' fa-fw');
+        } else {
+            throw "Invalid result type " + result.type;
+        }
+    }
+
+    // also adjust the balance table if it exists
+    if (TOTAL_BALANCES_TABLE) {
+        TOTAL_BALANCES_TABLE.rows().invalidate();
+        balance_table_init_callback.call(TOTAL_BALANCES_TABLE);
+        $(TOTAL_BALANCES_TABLE.column(2).header()).text(settings.main_currency.ticker_symbol + ' value');
+        TOTAL_BALANCES_TABLE.draw();
+    }
 }
 
 
@@ -104,13 +167,43 @@ function add_currency_dropdown(currency) {
     $(str).appendTo($(".currency-dropdown"));
 
     $('#change-to-'+ currency.ticker_symbol.toLowerCase()).bind('click', function() {
+        if (currency.ticker_symbol == settings.main_currency.ticker_symbol) {
+            // nothing to do
+            return;
+        }
         client.invoke("set_main_currency", currency.ticker_symbol, (error, res) => {
             if(error) {
                 showAlert('alert-danger', error);
             } else {
-                set_ui_main_currency(currency);
+                set_ui_main_currency(currency.ticker_symbol);
             }
         });
+    });
+}
+
+function balance_table_init_callback(settings, json) {
+    var api;
+    if (!settings) { // called manually by us via .call() through a DT instance
+        api = this;
+    } else { // called from inside initComplete
+        api = this.api();
+    }
+
+    api.column(2).every(function(){
+        var column = this;
+        var sum = column
+            .data()
+            .reduce(function (a, b) {
+                a = parseFloat(a);
+                if(isNaN(a)){ a = 0; }
+
+                b = parseFloat(b);
+                if(isNaN(b)){ b = 0; }
+
+                return a + b;
+            });
+        sum = format_currency_value(sum);
+        $(column.footer()).html('Total Sum: ' + sum);
     });
 }
 
@@ -118,6 +211,12 @@ function add_balances_table(result) {
     var str = '<div class="row"><div class="col-lg-12"><h1 class=page-header">All Balances</h1></div></div>';
     str += '<div class="row"><table id="table_balances_total"><thead><tr><th>Asset</th><th>Amount</th><th>USD Value</th><th>% of net value</th></tr/></thead><tfoot><tr><th></th><th></th><th></th><th></th></tr></tfoot><tbody id="table_balances_total_body"></tbody></table></div>';
     $(str).appendTo($('#dashboard-contents'));
+    // TODO: Perhaps change how query_all_balances returns from the python side
+    // so we can have it in the form of
+    // [{'asset': 'BTC', 'amount: 1, 'usd_value': 1, 'netvalue_perc': 0.1}, ... ]
+    // and thus avoid any need for the following preprocessing and instead feed it
+    // directly to datatables
+    let data = [];
     for (var asset in result) {
         if(result.hasOwnProperty(asset)) {
             if (asset == 'net_usd_perc_location' || asset == 'net_usd') {
@@ -128,30 +227,29 @@ function add_balances_table(result) {
             let value = parseFloat(result[asset]['usd_value']);
             value = value.toFixed(settings.floating_precision);
             let percentage = result[asset]['percentage_of_net_value'];
-            let str = '<tr><td>'+asset+'</td><td>'+amount+'</td/><td>'+value+'</td><td>'+percentage+'</td></tr>';
-            $(str).appendTo($('#table_balances_total_body'));
+            data.push({'asset': asset, 'amount': amount, 'usd_value': value, 'percentage': percentage});
         }
     }
-    $('#table_balances_total').DataTable({
-        'initComplete': function (settings, json){
-            this.api().column(2).every(function(){
-                var column = this;
-                var sum = column
-                    .data()
-                    .reduce(function (a, b) {
-                        a = parseFloat(a);
-                        if(isNaN(a)){ a = 0; }
-
-                        b = parseFloat(b);
-                        if(isNaN(b)){ b = 0; }
-
-                        return a + b;
-                    });
-
-                $(column.footer()).html('Total Sum: ' + sum.toFixed(2));
-            });
-        }
+    TOTAL_BALANCES_TABLE_DATA = data;
+    TOTAL_BALANCES_TABLE = $('#table_balances_total').DataTable({
+        "data": data,
+        "columns": [
+            {"data": "asset"},
+            {"data": "amount"},
+            {
+                // seems to not work. Why? I solve it by specifically changing the name right below
+                // "name": settings.main_currency.ticker_symbol + " value",
+                "data": 'usd_value',
+                "render": function (data, type, row) {
+                    return format_currency_value(data);
+                }
+            },
+            {"data": "percentage"}
+        ],
+        'initComplete': balance_table_init_callback,
+        "order": [[3, 'desc']]
     });
+    $(TOTAL_BALANCES_TABLE.column(2).header()).text(settings.main_currency.ticker_symbol + ' value');
     // also save the dashboard page
     settings.page_index = $('#page-wrapper').html();
 }
@@ -164,16 +262,11 @@ function get_settings() {
                 "get_settings RPC failed"
             );
         } else {
-            // set main currency
             console.log("server is ready");
-            settings.main_currency = res['main_currency'];
-            for (let i = 0; i < settings.CURRENCIES.length; i ++) {
-                if (settings.main_currency == settings.CURRENCIES[i].ticker_symbol) {
-                    set_ui_main_currency(settings.CURRENCIES[i]);
-                    settings.main_currency = settings.CURRENCIES[i];
-                    break;
-                }
-            }
+            // save exchange rates
+            settings.exchange_rates = res['exchange_rates'];
+            // set main currency
+            set_ui_main_currency(res['main_currency']);
             // set the other settings
             settings.floating_precision = res['ui_floating_precision'];
             settings.historical_data_start_date = res['historical_data_start_date'];
@@ -243,9 +336,12 @@ function create_or_reload_dashboard() {
         add_exchange_on_click();
     }
 
-    // also if there are any saved results apply them
-    for (let i = 0; i < saved_results.length; i ++) {
-        let result = saved_results[i];
+    // also if there are any saved unapplied results apply them
+    for (let i = 0; i < SAVED_RESULTS.length; i ++) {
+        let result = SAVED_RESULTS[i];
+        if (result.applied) {
+            return;
+        }
         console.log("Applying saved result " + result.name + " for dashboard");
         if (result.type == 'exchange') {
             create_exchange_box(
@@ -264,7 +360,6 @@ function create_or_reload_dashboard() {
             throw "Invalid result type " + result.type;
         }
     }
-    saved_results = [];
 }
 
 
@@ -291,7 +386,7 @@ function init_dashboard() {
     });
     monitor_add_callback('query_blockchain_total', function (result) {
         create_box(
-            'blockchain balance',
+            'blockchain_balance',
             'fa-hdd-o',
             parseFloat(result['total']),
             settings.main_currency.icon
@@ -299,7 +394,7 @@ function init_dashboard() {
     });
     monitor_add_callback('query_banks_total', function (result) {
         create_box(
-            'banks balance',
+            'banks_balance',
             'fa-university',
             parseFloat(result['total']),
             settings.main_currency.icon
@@ -314,7 +409,6 @@ function init_dashboard() {
 module.exports = function() {
     this.create_exchange_box = create_exchange_box;
     this.create_box = create_box;
-    this.set_ui_main_currency = set_ui_main_currency;
     this.add_currency_dropdown = add_currency_dropdown;
     this.create_or_reload_dashboard = create_or_reload_dashboard;
     this.init_dashboard = init_dashboard;
