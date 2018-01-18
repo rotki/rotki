@@ -33,6 +33,9 @@
 	<!-- context menu css -->
 	<link href="css/jquery.contextMenu.min.css" rel="stylesheet" type="text/css">
 
+	<!-- jquery confirm css -->
+	<link href="css/jquery-confirm.css" rel="stylesheet" type="text/css">
+
 	<!-- Our own custom CSS -->
     <link href="css/rotkelchen.css" rel="stylesheet" type="text/css">
 
@@ -81,7 +84,7 @@
                         <i class="fa fa-user fa-fw"></i> <i class="fa fa-caret-down"></i>
                     </a>
                     <ul class="dropdown-menu dropdown-user">
-                        <li><a href="#"><i class="fa fa-user fa-fw"></i> User Profile</a>
+                        <li id="usersettingsbutton"><a href="#usersettings"><i class="fa fa-user fa-fw"></i> User Settings</a>
                         </li>
                         <li id="settingsbutton"><a href="#settings"><i class="fa fa-gear fa-fw"></i> Settings</a>
                         </li>
@@ -160,10 +163,12 @@
 
     <!-- Custom Theme JavaScript -->
     <script src="depending_js/sb-admin-2.js"></script>
-	<!-- jquery for Datepicker -->
+	<!-- js source for Datepicker -->
 	<script src="depending_js/jquery.datetimepicker.full.min.js"></script>
-	<!-- jquery for context menu -->
+	<!-- js source for context menu -->
 	<script src="depending_js/jquery.contextMenu.min.js"></script>
+	<!-- js source for jquery-confirm -->
+	<script src="depending_js/jquery-confirm.js"></script>
 	<script>
 	require('./renderer.js')
 	</script>
