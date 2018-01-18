@@ -9,6 +9,7 @@ from rotkelchen.utils import (
     dict_get_sumof,
     merge_dicts,
     rlk_jsonloads,
+    rlk_jsondumps,
 )
 from rotkelchen.plot import show_plot
 from rotkelchen.ethchain import Ethchain
@@ -64,10 +65,10 @@ class Rotkelchen(object):
             logging.getLogger('urllib3.connectionpool').setLevel(logging.CRITICAL)
 
         self.sleep_secs = args.sleep_secs
-        data_dir = args.data_dir
+        self.data_dir = args.data_dir
 
         # read the secret data (api keys e.t.c)
-        self.secret_name = os.path.join(data_dir, 'secret.json')
+        self.secret_name = os.path.join(self.data_dir, 'secret.json')
         self.secret_data = {}
         if os.path.isfile(self.secret_name):
             with open(self.secret_name, 'r') as f:
@@ -78,7 +79,7 @@ class Rotkelchen(object):
             self.secret_data[k] = str(self.secret_data[k])
 
         self.args = args
-        self.cache_data_filename = os.path.join(data_dir, 'cache_data.json')
+        self.cache_data_filename = os.path.join(self.data_dir, 'cache_data.json')
 
         self.ethchain = Ethchain(args.ethrpc_port)
 
@@ -92,20 +93,18 @@ class Rotkelchen(object):
             self.kraken = Kraken(
                 str.encode(self.secret_data['kraken_api_key']),
                 str.encode(self.secret_data['kraken_secret']),
-                args,
-                data_dir
+                self.data_dir
             )
 
         self.inquirer = Inquirer(kraken=self.kraken if hasattr(self, 'kraken') else None)
 
-        if 'polo_api_key' in self.secret_data:
+        if 'poloniex_api_key' in self.secret_data:
             self.poloniex = Poloniex(
-                str.encode(self.secret_data['polo_api_key']),
-                str.encode(self.secret_data['polo_secret']),
-                args,
+                str.encode(self.secret_data['poloniex_api_key']),
+                str.encode(self.secret_data['poloniex_secret']),
                 self.cache_data_filename,
                 self.inquirer,
-                data_dir
+                self.data_dir
             )
 
         if 'bittrex_api_key' in self.secret_data:
@@ -113,7 +112,7 @@ class Rotkelchen(object):
                 str.encode(self.secret_data['bittrex_api_key']),
                 str.encode(self.secret_data['bittrex_secret']),
                 self.inquirer,
-                data_dir
+                self.data_dir
             )
 
         if 'binance_api_key' in self.secret_data:
@@ -121,7 +120,7 @@ class Rotkelchen(object):
                 str.encode(self.secret_data['binance_api_key']),
                 str.encode(self.secret_data['binance_secret']),
                 self.inquirer,
-                data_dir
+                self.data_dir
             )
 
         self.data = DataHandler(
@@ -129,7 +128,7 @@ class Rotkelchen(object):
             self.kraken,
             self.bittrex,
             self.binance,
-            data_dir
+            self.data_dir
         )
         self.main_currency = self.data.accountant.profit_currency
 
@@ -334,7 +333,7 @@ class Rotkelchen(object):
 
     def get_exchanges(self):
         exchanges = list()
-        if 'polo_api_key' in self.secret_data:
+        if 'poloniex_api_key' in self.secret_data:
             exchanges.append('poloniex')
         if 'kraken_api_key' in self.secret_data:
             exchanges.append('kraken')
@@ -343,6 +342,75 @@ class Rotkelchen(object):
         if 'binance_api_key' in self.secret_data:
             exchanges.append('binance')
         return exchanges
+
+    def setup_exchange(self, name, api_key, api_secret):
+        if '{}_api_key'.format(name) in self.secret_data:
+            return False, 'Exchange {} is already registered'
+
+        if name == 'kraken':
+            exchange = self.kraken = Kraken(
+                str.encode(api_key),
+                str.encode(api_secret),
+                self.data_dir
+            )
+        elif name == 'poloniex':
+            exchange = self.poloniex = Poloniex(
+                str.encode(api_key),
+                str.encode(api_secret),
+                self.cache_data_filename,
+                self.inquirer,
+                self.data_dir
+            )
+        elif name == 'bittrex':
+            exchange = self.bittrex = Bittrex(
+                str.encode(api_key),
+                str.encode(api_secret),
+                self.inquirer,
+                self.data_dir
+            )
+        elif name == 'binance':
+            exchange = self.binance = Binance(
+                str.encode(api_key),
+                str.encode(api_secret),
+                self.inquirer,
+                self.data_dir
+            )
+        else:
+            return False, 'Attempted to register unsupported exchange {}'.format(name)
+
+        result, message = exchange.validate_api_key()
+        if not result:
+            return False, message
+
+        if not os.path.isfile(self.secret_name):
+            logger.critical('The secret file can not be found')
+            return False, 'The secret file can not be found'
+
+        self.secret_data['{}_api_key'.format(name)] = api_key
+        self.secret_data['{}_secret'.format(name)] = api_secret
+
+        with open(self.secret_name, 'w') as f:
+            f.write(rlk_jsondumps(self.secret_data))
+
+        return True, ''
+
+    def remove_exchange(self, name):
+        if '{}_api_key'.format(name) not in self.secret_data:
+            return False, 'Exchange {} is not registered'
+
+        if not os.path.isfile(self.secret_name):
+            logger.critical('The secret file can not be found')
+            return False, 'The secret file can not be found'
+
+        del self.secret_data['{}_api_key'.format(name)]
+        del self.secret_data['{}_secret'.format(name)]
+
+        with open(self.secret_name, 'w') as f:
+            f.write(rlk_jsondumps(self.secret_data))
+
+        # TODO: and finally schedule the exchange object for deletion during
+
+        return True, ''
 
     def shutdown(self):
         print("Shutting Down...")

@@ -1,5 +1,5 @@
 function form_entry(input_addon, input_id, initial_value, placeholder) {
-    let str = '<div class="row"><form role="form"><div class="form-group input-group">';
+    let str = '<form role="form"><div class="form-group input-group">';
     if (input_addon) {
         str += '<span class="input-group-addon">'+input_addon+':</span>';
     }
@@ -7,7 +7,7 @@ function form_entry(input_addon, input_id, initial_value, placeholder) {
     if (placeholder) {
         str +=' placeholder="'+placeholder+'"';
     }
-    str += 'type="text"></div></div>';
+    str += 'type="text"></div>';
 
     return str;
 }

@@ -13,6 +13,8 @@ from rotkelchen.exchange import Exchange
 from rotkelchen.order_formatting import Trade
 from rotkelchen.fval import FVal
 
+import logging
+logger = logging.getLogger(__name__)
 
 BITTREX_MARKET_METHODS = {
     'getopenorders',
@@ -84,6 +86,19 @@ class Bittrex(Exchange):
 
     def first_connection(self):
         self.first_connection_made = True
+
+    def validate_api_key(self):
+        try:
+            self.api_query('getbalance', {'currency': 'BTC'})
+        except ValueError as e:
+            error = str(e)
+            if error == 'APIKEY_INVALID':
+                return False, 'Provided API Key is invalid'
+            elif error == 'INVALID_SIGNATURE':
+                return False, 'Provided API Secret is invalid'
+            else:
+                raise
+        return True, ''
 
     def api_query(self, method, options=None):
         """

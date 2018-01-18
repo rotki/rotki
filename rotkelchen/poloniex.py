@@ -43,14 +43,13 @@ class Poloniex(Exchange):
         'watched_currencies'
     ]
 
-    def __init__(self, api_key, secret, args, cache_filename, inquirer, data_dir):
+    def __init__(self, api_key, secret, cache_filename, inquirer, data_dir):
         super(Poloniex, self).__init__('poloniex', api_key, secret)
 
         self.uri = 'https://poloniex.com/'
         self.public_uri = self.uri + 'public?command='
         self.cache_filename = cache_filename
         self.data_dir = data_dir
-        self.args = args
         # Set default setting values
         self.watched_currencies = {
             'BTC_DASH': WatchedCurrency(0.0, 0.5, 0.000500),
@@ -83,6 +82,17 @@ class Poloniex(Exchange):
             self.first_connection_made = True
         # Also need to do at least a single pass of the market watcher for the ticker
         self.market_watcher()
+
+    def validate_api_key(self):
+        try:
+            self.returnFeeInfo()
+        except ValueError as e:
+            error = str(e)
+            if 'Invalid API key/secret pair' in error:
+                return False, 'Provided API Key or secret is invalid'
+            else:
+                raise
+        return True, ''
 
     def post_process(self, before):
         after = before

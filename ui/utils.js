@@ -80,6 +80,9 @@ function save_current_location() {
         assert_exchange_exists(exchange_name);
         console.log("Saving exchange " + exchange_name);
         settings.page_exchange[exchange_name] = $('#page-wrapper').html();
+    } else if (settings.current_location == 'usersettings') {
+        console.log("Saving user settings ...");
+        settings.page_usersettings = $('#page-wrapper').html();
     } else {
         throw "Invalid link location " + settings.current_location;
     }

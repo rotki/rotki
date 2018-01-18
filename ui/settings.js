@@ -58,7 +58,6 @@ function add_listeners() {
                 "main_currency": main_currency
 
         };
-        console.log(send_payload);
         // and now send the data to the python process
         client.invoke(
             "set_settings",
@@ -116,6 +115,7 @@ module.exports = function() {
         settings = {};
         settings.exchange_rates = {};
         settings.EXCHANGES = exchanges;
+        settings.connected_exchanges = [];
         settings.CURRENCIES = currencies;
         settings.default_currency = currencies[0];
         settings.main_currency = currencies[0];
@@ -125,6 +125,7 @@ module.exports = function() {
         settings.page_index = null;
         settings.page_settings = null;
         settings.page_otctrades = null;
+        settings.page_usersettings = null;
         settings.page_exchange = {};
     }
     this.get_value_in_main_currency = get_value_in_main_currency;

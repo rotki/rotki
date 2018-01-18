@@ -1,5 +1,6 @@
 require("./zerorpc_client.js")();
 var settings = require("./settings.js")();
+require("./usersettings.js")();
 require("./monitor.js")();
 require("./utils.js")();
 require("./exchange.js")();
@@ -33,6 +34,16 @@ function create_result_if_not_existing(result_type, number, name, icon) {
     return result;
 }
 
+$('#usersettingsbutton a').click(function(event) {
+    event.preventDefault();
+    var target_location = determine_location(this.href);
+    if (target_location != "usersettings") {
+        throw "Invalid link location " + target_location;
+    }
+    console.log("Going to user settings!");
+    create_or_reload_usersettings();
+});
+
 $('#settingsbutton a').click(function(event) {
     event.preventDefault();
     var target_location = determine_location(this.href);
@@ -42,6 +53,10 @@ $('#settingsbutton a').click(function(event) {
     console.log("Going to settings!");
     create_or_reload_settings();
 });
+
+
+
+
 
 function add_exchange_on_click() {
     $('.panel a').click(function(event) {
@@ -183,10 +198,11 @@ function get_settings() {
             settings.floating_precision = res['ui_floating_precision'];
             settings.historical_data_start_date = res['historical_data_start_date'];
 
-            // make separate queries for all registered exchanges
+            // make separate queries for all connected exchanges
             let exchanges = res['exchanges'];
             for (let i = 0; i < exchanges.length; i++) {
                 let exx = exchanges[i];
+                settings.connected_exchanges.push(exx);
                 client.invoke("query_exchange_total_async", exx, true, function (error, res) {
                     if (error || res == null) {
                         console.log("Error at first query of an exchange's balance: " + error);

@@ -149,6 +149,14 @@ class RotkelchenServer(object):
         }
         return process_result(res)
 
+    def remove_exchange(self, name):
+        result, message = self.rotkelchen.remove_exchange(name)
+        return {'result': result, 'message': message}
+
+    def setup_exchange(self, name, api_key, api_secret):
+        result, message = self.rotkelchen.setup_exchange(name, api_key, api_secret)
+        return {'result': result, 'message': message}
+
     def query_otctrades(self):
         trades = self.rotkelchen.data.get_external_trades()
         return process_result(trades)

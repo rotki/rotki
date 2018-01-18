@@ -80,6 +80,21 @@ class Binance(Exchange):
     def first_connection(self):
         self.first_connection_made = True
 
+    def validate_api_key(self):
+        try:
+            self.api_query('account')
+        except ValueError as e:
+            error = str(e)
+            if 'API-key format invalid' in error:
+                return False, 'Provided API Key is in invalid Format'
+            elif 'Signature for this request is not valid':
+                return False, 'Provided API Secret is malformed'
+            elif 'Invalid API-key, IP, or permissions for action':
+                return 'API Key does not match the given secret'
+            else:
+                raise
+        return True, ''
+
     def api_query(self, method, options=None):
         if not options:
             options = {}

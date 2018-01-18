@@ -91,3 +91,8 @@ class Exchange(object):
         and attempting to query data from an exchange.
         """
         raise NotImplementedError("first_connection() should only be implemented by subclasses")
+
+    def validate_api_key(self):
+        """Tries to make the simplest private api query to the exchange in order to
+        verify the api key's validity"""
+        raise NotImplementedError("validate_api_key() should only be implemented by subclasses")

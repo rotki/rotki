@@ -65,7 +65,7 @@ def kraken_to_world_pair(pair):
 
 
 class Kraken(Exchange):
-    def __init__(self, api_key, secret, args, data_dir):
+    def __init__(self, api_key, secret, data_dir):
         super(Kraken, self).__init__('kraken', api_key, secret)
         self.apiversion = '0'
         self.uri = 'https://api.kraken.com/{}/'.format(self.apiversion)
@@ -102,6 +102,19 @@ class Kraken(Exchange):
 
         # Also need to do at least a single pass of the main logic for the ticker
         self.main_logic()
+
+    def validate_api_key(self):
+        try:
+            self.query_private('Balance', req={})
+        except ValueError as e:
+            error = str(e)
+            if 'Error: Incorrect padding' in error:
+                return False, 'Provided API Key or secret is in invalid Format'
+            elif 'EAPI:Invalid key':
+                return False, 'Provided API Key is invalid'
+            else:
+                raise
+        return True, ''
 
     def check_and_get_response(self, response, method):
         if response.status_code in (520, 525, 504):
