@@ -92,6 +92,9 @@ def cache_response_timewise(seconds=600):
 
 
 def query_fiat_pair(base, quote, timestamp=None):
+    if base == quote:
+        return FVal(1.0)
+
     if timestamp is None:
         querystr = 'http://api.fixer.io/latest?base={}'.format(base)
     else:
@@ -128,9 +131,9 @@ def combine_dicts(a, b, op=operator.add):
     return new_dict
 
 
-def combine_stat_dicts(*args):
-    combined_dict = args[0]
-    for d in args[1:]:
+def combine_stat_dicts(list_of_dicts):
+    combined_dict = list_of_dicts[0]
+    for d in list_of_dicts[1:]:
         combined_dict = combine_dicts(combined_dict, d, add_entries)
 
     return combined_dict

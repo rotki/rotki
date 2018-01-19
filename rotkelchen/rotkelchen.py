@@ -18,7 +18,7 @@ from rotkelchen.kraken import Kraken
 from rotkelchen.bittrex import Bittrex
 from rotkelchen.binance import Binance
 from rotkelchen.data_handler import DataHandler
-from rotkelchen.inquirer import Inquirer
+from rotkelchen.inquirer import Inquirer, FIAT_CURRENCIES
 from rotkelchen.utils import query_fiat_pair, cache_response_timewise
 from rotkelchen.fval import FVal
 
@@ -31,6 +31,7 @@ class Rotkelchen(object):
         self.lock = Semaphore()
         self.lock.acquire()
         self.results_cache = {}
+        self.connected_exchanges = []
 
         logfilename = None
         if args.logtarget == 'file':
@@ -95,6 +96,7 @@ class Rotkelchen(object):
                 str.encode(self.secret_data['kraken_secret']),
                 self.data_dir
             )
+            self.connected_exchanges.append('kraken')
 
         self.inquirer = Inquirer(kraken=self.kraken if hasattr(self, 'kraken') else None)
 
@@ -106,6 +108,7 @@ class Rotkelchen(object):
                 self.inquirer,
                 self.data_dir
             )
+            self.connected_exchanges.append('poloniex')
 
         if 'bittrex_api_key' in self.secret_data:
             self.bittrex = Bittrex(
@@ -114,6 +117,7 @@ class Rotkelchen(object):
                 self.inquirer,
                 self.data_dir
             )
+            self.connected_exchanges.append('bittrex')
 
         if 'binance_api_key' in self.secret_data:
             self.binance = Binance(
@@ -122,6 +126,7 @@ class Rotkelchen(object):
                 self.inquirer,
                 self.data_dir
             )
+            self.connected_exchanges.append('binance')
 
         self.data = DataHandler(
             self.poloniex,
@@ -219,36 +224,30 @@ class Rotkelchen(object):
 
     def query_bank_balances(self):
         logger.debug('At query_bank_balances start')
-        eur_usd_price = query_fiat_pair('EUR', 'USD')
-        return {
-            'EUR': {
-                'amount': FVal(self.data.personal['euros']),
-                'usd_value': self.data.personal['euros'] * eur_usd_price
-            }
-        }
+
+        result = {}
+        for currency in FIAT_CURRENCIES:
+            if currency in self.data.personal:
+                amount = FVal(self.data.personal[currency])
+                usd_rate = query_fiat_pair(currency, 'USD')
+                result[currency] = {
+                    'amount': amount,
+                    'usd_value': amount * usd_rate
+                }
+
+        return result
+
 
     def query_balances(self, save_data=False):
-        polo = self.poloniex.query_balances()
-        kraken = self.kraken.query_balances()
-        bittrex = self.bittrex.query_balances()
-        binance = self.binance.query_balances()
-        blockchain_balances = self.query_blockchain_balances()
-        bank_balances = self.query_bank_balances()
+        balances = {}
+        for exchange in self.connected_exchanges:
+            balances[exchange] = getattr(self, exchange).query_balances()
 
-        combined = combine_stat_dicts(
-            polo,
-            kraken,
-            bittrex,
-            binance,
-            blockchain_balances,
-            bank_balances
-        )
+        balances['blockchain'] = self.query_blockchain_balances()
+        balances['banks'] = self.query_bank_balances()
 
-        polo_net_usd = dict_get_sumof(polo, 'usd_value')
-        kraken_net_usd = dict_get_sumof(kraken, 'usd_value')
-        bittrex_net_usd = dict_get_sumof(bittrex, 'usd_value')
-        binance_net_usd = dict_get_sumof(binance, 'usd_value')
-        crypto_net_usd = dict_get_sumof(blockchain_balances, 'usd_value')
+        combined = combine_stat_dicts([v for k, v in balances.items()])
+        total_usd_per_location = [(k, dict_get_sumof(v, 'usd_value')) for k, v in balances.items()]
 
         # calculate net usd value
         net_usd = FVal(0)
@@ -257,15 +256,13 @@ class Rotkelchen(object):
 
         stats = {
             'net_usd_perc_location': {
-                'poloniex': (polo_net_usd / net_usd).to_percentage(),
-                'kraken': (kraken_net_usd / net_usd).to_percentage(),
-                'bittrex': (bittrex_net_usd / net_usd).to_percentage(),
-                'binance': (binance_net_usd / net_usd).to_percentage(),
-                'normal_crypto_accounts': (crypto_net_usd / net_usd).to_percentage(),
-                'banksncash': (bank_balances['EUR']['usd_value'] / net_usd).to_percentage(),
             },
             'net_usd': net_usd
         }
+        for entry in total_usd_per_location:
+            name = entry[0]
+            total = entry[1]
+            stats['net_usd_perc_location'][name] = (total / net_usd).to_percentage()
 
         for k, v in combined.items():
             combined[k]['percentage_of_net_value'] = (v['usd_value'] / net_usd).to_percentage()
@@ -331,30 +328,22 @@ class Rotkelchen(object):
     def get_settings(self):
         return self.data.settings
 
-    def get_exchanges(self):
-        exchanges = list()
-        if 'poloniex_api_key' in self.secret_data:
-            exchanges.append('poloniex')
-        if 'kraken_api_key' in self.secret_data:
-            exchanges.append('kraken')
-        if 'bittrex_api_key' in self.secret_data:
-            exchanges.append('bittrex')
-        if 'binance_api_key' in self.secret_data:
-            exchanges.append('binance')
-        return exchanges
-
     def setup_exchange(self, name, api_key, api_secret):
         if '{}_api_key'.format(name) in self.secret_data:
             return False, 'Exchange {} is already registered'
 
+        if not os.path.isfile(self.secret_name):
+            logger.critical('The secret file can not be found')
+            return False, 'The secret file can not be found'
+
         if name == 'kraken':
-            exchange = self.kraken = Kraken(
+            exchange = Kraken(
                 str.encode(api_key),
                 str.encode(api_secret),
                 self.data_dir
             )
         elif name == 'poloniex':
-            exchange = self.poloniex = Poloniex(
+            exchange = Poloniex(
                 str.encode(api_key),
                 str.encode(api_secret),
                 self.cache_data_filename,
@@ -362,14 +351,14 @@ class Rotkelchen(object):
                 self.data_dir
             )
         elif name == 'bittrex':
-            exchange = self.bittrex = Bittrex(
+            exchange = Bittrex(
                 str.encode(api_key),
                 str.encode(api_secret),
                 self.inquirer,
                 self.data_dir
             )
         elif name == 'binance':
-            exchange = self.binance = Binance(
+            exchange = Binance(
                 str.encode(api_key),
                 str.encode(api_secret),
                 self.inquirer,
@@ -381,10 +370,9 @@ class Rotkelchen(object):
         result, message = exchange.validate_api_key()
         if not result:
             return False, message
-
-        if not os.path.isfile(self.secret_name):
-            logger.critical('The secret file can not be found')
-            return False, 'The secret file can not be found'
+        # keep the exchange object
+        setattr(self, name, exchange)
+        self.connected_exchanges.append(name)
 
         self.secret_data['{}_api_key'.format(name)] = api_key
         self.secret_data['{}_secret'.format(name)] = api_secret
@@ -405,6 +393,7 @@ class Rotkelchen(object):
         del self.secret_data['{}_api_key'.format(name)]
         del self.secret_data['{}_secret'.format(name)]
 
+        self.connected_exchanges.remove(name)
         with open(self.secret_name, 'w') as f:
             f.write(rlk_jsondumps(self.secret_data))
 

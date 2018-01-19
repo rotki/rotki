@@ -142,7 +142,7 @@ class RotkelchenServer(object):
         settings = self.rotkelchen.get_settings()
         res = {
             'exchange_rates': get_fiat_usd_exchange_rates(),
-            'exchanges': self.rotkelchen.get_exchanges(),
+            'exchanges': self.rotkelchen.connected_exchanges,
             'main_currency': self.rotkelchen.main_currency,
             'ui_floating_precision': settings['ui_floating_precision'],
             'historical_data_start_date': settings['historical_data_start_date'],
