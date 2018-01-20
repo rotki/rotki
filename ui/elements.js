@@ -23,12 +23,16 @@ function form_text(prompt, id, rows, initial_value, placeholder) {
     return str;
 }
 
-function form_select(prompt, id, options) {
+function form_select(prompt, id, options, selected_option) {
     let str = '<div class="form-group"><label class="form-prompt">'+prompt+'</label>';
     str += '<select id="'+id+'" class="form-control" style="font-family: \'FontAwesome\', \'sans-serif\';">';
 
     for (let i = 0; i < options.length; i++) {
-        str += '<option value="'+options[i]+'">'+options[i]+'</option>';
+        str += '<option value="'+options[i]+'"';
+        if (selected_option == options[i]) {
+            str += ' selected="selected"';
+        }
+        str +='>'+options[i]+'</option>';
     }
     str += '</select></div>';
     return str;
@@ -38,7 +42,6 @@ function form_button(prompt, id) {
     let str = '<button id="'+id+'" type="submit" class="btn btn-default">'+prompt+'</button>';
     return str;
 }
-
 
 function table_html(num_columns, id) {
     let str = '<div class="row rotkelchen-table"><table id="'+id+'_table"><thead><tr>';
@@ -53,10 +56,16 @@ function table_html(num_columns, id) {
     return str;
 }
 
+const page_header = (text) => `<div class="row"><div class="col-lg-12"><h1 class="page-header">${text}</h1></div></div>`;
+
+const settings_panel = (text, id) => `<div class="row"><div class="col-lg-12"><div class="panel panel-default"><div class="panel-heading">${text}</div><div id="${id}_panel_body" class="panel-body"></div></div></div></div>`;
+
 module.exports = function() {
     this.form_entry = form_entry;
     this.form_text = form_text;
     this.form_select = form_select;
     this.form_button = form_button;
     this.table_html = table_html;
+    this.page_header = page_header;
+    this.settings_panel = settings_panel;
 };

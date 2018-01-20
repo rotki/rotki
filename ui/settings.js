@@ -83,23 +83,14 @@ function add_listeners() {
 }
 
 function create_settings_ui() {
-    var str = '<div class="row"> <div class="col-lg-12"><h1 class="page-header">Settings</h1></div></div>';
-    str += '<div class="row"><div class="col-lg-12"><div class="panel panel-default"><div class="panel-heading">General Settings</div><div class="panel-body"></div></div></div></div>';
+    var str = page_header('Settings');
+    str += settings_panel('General Settings', 'general_settings');
     $('#page-wrapper').html(str);
 
-    str = '<div class="row"><form role="form"><div class="form-group input-group"><span class="input-group-addon">Floating Precision</span><input id="floating_precision" class="form-control" value="'+settings.floating_precision+'"type="text"></div>';
-    str += '<div class="form-group input-group"><span class="input-group-addon">Date:</span><input id="historical_data_start_date" class="form-control"  value="'+settings.historical_data_start_date+'"type="text"></div>';
-    str += '<div class="form-group"><label>Select Main Currency</label><select id="maincurrencyselector" class="form-control" style="font-family: \'FontAwesome\', \'sans-serif\';"></select></div>';
+    str = form_entry('Floating Precision', 'floating_precision', settings.floating_precision, '');
+    str += form_entry('Date', 'historical_data_start_date', settings.historical_data_start_date, '');
+    str += form_select('Select Main Currency', 'maincurrencyselector', settings.CURRENCIES.map(x => x.ticker_symbol), settings.main_currency.ticker_symbol);
     $(str).appendTo($('.panel-body'));
-
-    for (let i = 0; i < settings.CURRENCIES.length; i ++) {
-        var option = '<option';
-        if (settings.CURRENCIES[i] == settings.main_currency) {
-            option += ' selected="selected"';
-        }
-        option += ' value="'+settings.CURRENCIES[i].ticker_symbol+'">'+settings.CURRENCIES[i].unicode_symbol +' - '+ settings.CURRENCIES[i].ticker_symbol+'</option>';
-        $(option).appendTo($('#maincurrencyselector'));
-    }
 
     str = form_button('Save', 'settingssubmit');
     str += '</form></div>';

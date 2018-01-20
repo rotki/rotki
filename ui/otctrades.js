@@ -194,7 +194,7 @@ function create_otctrades_ui() {
 
     str = form_entry('time', 'otc_time', '', 'Time that the trade took place');
     str += form_entry('pair', 'otc_pair', '', 'Asset pair for the trade');
-    str += form_select('trade type', 'otc_type', ['buy', 'sell']);
+    str += form_select('trade type', 'otc_type', ['buy', 'sell'], '');
     str += form_entry('amount', 'otc_amount', '', 'Amount bought/sold');
     str += form_entry('rate', 'otc_rate', '', 'Rate of the trade');
     str += form_entry('fee', 'otc_fee', '', 'Fee if any that the trade occured');

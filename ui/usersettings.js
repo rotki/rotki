@@ -1,8 +1,11 @@
-require("./elements.js")();
 var settings = require("./settings.js")();
+require("./elements.js")();
+require("./asset_table.js")();
 
 let FIAT_TABLE = null;
 let FIAT_BALANCES = null;
+// awesome idea of template string plus destructuring/mapping taken from:
+// https://stackoverflow.com/a/39065147/110395
 const ExchangeBadge = ({ name, css_class }) => `
 <div id="${name}_badge" class="col-sm-6 col-lg-3">
   <div style="margin-top: 5px;" class="row">
@@ -167,20 +170,17 @@ function add_listeners() {
 }
 
 function create_user_settings() {
-    var str = '<div class="row"><div class="col-lg-12"><h1 class=page-header">User Settings</h1></div></div>';
-    str += '<div class="row"><div class="col-lg-12"><div class="panel panel-default"><div class="panel-heading">Exchange Settings</div><div id="exchange_panel_body" class="panel-body"></div></div></div></div>';
-    str += '<div class="row"><div class="col-lg-12"><div class="panel panel-default"><div class="panel-heading">Fiat Balances</div><div id="fiat_balances_panel_body" class="panel-body"></div></div></div></div>';
+    var str = page_header('User Settings');
+    str += settings_panel('Exchange Settings', 'exchange');
+    str += settings_panel('Fiat Balances', 'fiat_balances');
     $('#page-wrapper').html(str);
 
-
-    // awesome idea of template string plus destructuring/mapping taken from:
-    // https://stackoverflow.com/a/39065147/110395
     let badge_input = settings.connected_exchanges.map(x => ({name: x, css_class: 'exchange-icon'}));
     str = '<div id="exchange_badges" class="row">';
     str += badge_input.map(ExchangeBadge).join('');
     str += '</div>';
 
-    str += form_select('Setup Exchange', 'setup_exchange', settings.EXCHANGES);
+    str += form_select('Setup Exchange', 'setup_exchange', settings.EXCHANGES, '');
     str += form_entry('Api Key', 'api_key_entry', '', '');
     str += form_entry('Api Secret', 'api_secret_entry', '', '');
     str += form_button('Setup', 'setup_exchange_button');
@@ -193,28 +193,12 @@ function create_user_settings() {
         disable_exchange_entries(first_value);
     }
 
-
-
-    str = form_select('Modify Balance', 'fiat_type_entry', settings.CURRENCIES.map(x=>x.ticker_symbol));
+    str = form_select('Modify Balance', 'fiat_type_entry', settings.CURRENCIES.map(x=>x.ticker_symbol), settings.main_currency.ticker_symbol);
     str += form_entry('Balance', 'fiat_value_entry', '', '');
     str += form_button('Modify', 'modify_fiat_button');
 
     $(str).appendTo($('#fiat_balances_panel_body'));
     create_fiat_table();
-}
-
-function format_table_data(original_data) {
-    let data = [];
-    for (var asset in original_data) {
-        if(original_data.hasOwnProperty(asset)) {
-            let amount = parseFloat(original_data[asset]['amount']);
-            amount = amount.toFixed(settings.floating_precision);
-            let value = parseFloat(original_data[asset]['usd_value']);
-            value = value.toFixed(settings.floating_precision);
-            data.push({'asset': asset, 'amount': amount, 'usd_value': value});
-        }
-    }
-    return data;
 }
 
 function create_fiat_table() {
@@ -224,38 +208,14 @@ function create_fiat_table() {
             return;
         }
         FIAT_BALANCES = result;
-        // TODO: Big overlap here with the code in exchange.js. Abstract into
-        // an "asset table" and use it in both places
-        // let str = '<div class="row"><h4 class="center-title">Owned Fiat Currency Balances</h4>';
         let str = '<h4 class="centered-title">Owned Fiat Currency Balances</h4>';
-        str += table_html(3, 'fiat_balances');
-        // str += '</div>';
         $(str).appendTo($('#fiat_balances_panel_body'));
-        let data = format_table_data(result);
-        FIAT_TABLE = $('#fiat_balances_table').DataTable({
-            "data": data,
-            "columns": [
-                {"data": "asset", "title": "Asset"},
-                {"data": "amount", "title": "Amount"},
-                {
-                    "data": 'usd_value',
-                    "title": settings.main_currency.ticker_symbol + ' value',
-                    "render": function (data, type, row) {
-                        return format_currency_value(data);
-                    }
-                }
-            ],
-            "order": [[2, 'desc']]
-        });
+        FIAT_TABLE = create_asset_table('fiat_balances', 'fiat_balances_panel_body', result);
     });
 }
 
 function reload_fiat_table_if_existing() {
-    if (FIAT_TABLE) {
-        FIAT_TABLE.rows().invalidate();
-        $(table.column(2).header()).text(settings.main_currency.ticker_symbol + ' value');
-        FIAT_TABLE.draw();
-    }
+    reload_asset_table(FIAT_TABLE);
 }
 
 function create_or_reload_usersettings() {
