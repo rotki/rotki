@@ -13,7 +13,7 @@ function form_entry(input_addon, input_id, initial_value, placeholder) {
 }
 
 function form_text(prompt, id, rows, initial_value, placeholder) {
-    let str = '<div class="form-group"><label>'+prompt+'</label>';
+    let str = '<div class="form-group"><label class="form-prompt">'+prompt+'</label>';
     str += '<textarea id="'+id+'" class="form-control" rows="'+rows+'"';
     str += ' value="'+initial_value+'"';
     if (placeholder) {
@@ -24,7 +24,7 @@ function form_text(prompt, id, rows, initial_value, placeholder) {
 }
 
 function form_select(prompt, id, options) {
-    let str = '<div class="form-group"><label>'+prompt+'</label>';
+    let str = '<div class="form-group"><label class="form-prompt">'+prompt+'</label>';
     str += '<select id="'+id+'" class="form-control" style="font-family: \'FontAwesome\', \'sans-serif\';">';
 
     for (let i = 0; i < options.length; i++) {
@@ -39,9 +39,24 @@ function form_button(prompt, id) {
     return str;
 }
 
+
+function table_html(num_columns, id) {
+    let str = '<div class="row rotkelchen-table"><table id="'+id+'_table"><thead><tr>';
+    for (let i = 0; i < num_columns; i++) {
+        str += '<th></th>';
+    }
+    str += '</tr/></thead><tfoot><tr>';
+    for (let i = 0; i < num_columns; i++) {
+        str += '<th></th>';
+    }
+    str += '</tr></tfoot><tbody id="'+id+'_table_body"></tbody></table></div>';
+    return str;
+}
+
 module.exports = function() {
     this.form_entry = form_entry;
     this.form_text = form_text;
     this.form_select = form_select;
     this.form_button = form_button;
+    this.table_html = table_html;
 };

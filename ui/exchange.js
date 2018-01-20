@@ -45,8 +45,7 @@ function populate_exchange_table(name, result) {
             {"data": "asset"},
             {"data": "amount"},
             {
-                // seems to not work. Why? I solve it by specifically changing the name right below
-                // "name": settings.main_currency.ticker_symbol + " value",
+                "title": settings.main_currency.ticker_symbol + " value",
                 "data": 'usd_value',
                 "render": function (data, type, row) {
                     return format_currency_value(data);
@@ -55,7 +54,6 @@ function populate_exchange_table(name, result) {
         ],
         "order": [[2, 'desc']]
     });
-    $(SAVED_TABLES[name].column(2).header()).text(settings.main_currency.ticker_symbol + ' value');
     // also save the exchange page
     settings.page_exchange[name] = $('#page-wrapper').html();
 }

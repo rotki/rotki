@@ -29,7 +29,15 @@ function get_value_in_main_currency(usd_value) {
     if (symbol == 'USD') {
         return usd_value;
     }
-    return usd_value * settings.exchange_rates[symbol];
+    return usd_value * settings.usd_to_fiat_exchange_rates[symbol];
+}
+
+function get_fiat_usd_value(currency, amount) {
+    amount = parseFloat(amount);
+    if (currency == 'USD') {
+        return amount;
+    }
+    return amount / settings.usd_to_fiat_exchange_rates[currency];
 }
 
 function format_currency_value(number) {
@@ -113,7 +121,7 @@ function create_or_reload_settings() {
 module.exports = function() {
     if (!settings) {
         settings = {};
-        settings.exchange_rates = {};
+        settings.usd_to_fiat_exchange_rates = {};
         settings.EXCHANGES = exchanges;
         settings.connected_exchanges = [];
         settings.CURRENCIES = currencies;
@@ -132,6 +140,7 @@ module.exports = function() {
     this.assert_exchange_exists = assert_exchange_exists;
     this.create_or_reload_settings = create_or_reload_settings;
     this.format_currency_value = format_currency_value;
+    this.get_fiat_usd_value = get_fiat_usd_value;
 
     return settings;
 };

@@ -57,8 +57,7 @@ function add_balances_table(result) {
             {"data": "asset"},
             {"data": "amount"},
             {
-                // seems to not work. Why? I solve it by specifically changing the name right below
-                // "name": settings.main_currency.ticker_symbol + " value",
+                "title": settings.main_currency.ticker_symbol + ' value',
                 "data": 'usd_value',
                 "render": function (data, type, row) {
                     return format_currency_value(data);
@@ -69,7 +68,6 @@ function add_balances_table(result) {
         'initComplete': balance_table_init_callback,
         "order": [[3, 'desc']]
     });
-    $(TOTAL_BALANCES_TABLE.column(2).header()).text(settings.main_currency.ticker_symbol + ' value');
     // also save the dashboard page
     settings.page_index = $('#page-wrapper').html();
 }

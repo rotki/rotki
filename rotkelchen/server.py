@@ -100,14 +100,14 @@ class RotkelchenServer(object):
     def handle_killed_greenlets(self, greenlet):
         if greenlet.exception:
             logger.error(
-                'Greenlet for task {} dies with exception: {}.\nException Name:{}\nException Type\nTraceback: {}'
+                'Greenlet for task {} dies with exception: {}.\nException Name: {}\nException Info: {}\nTraceback:\n {}'
                 .format(
                     greenlet.task_id,
                     greenlet.exception,
                     greenlet._exc_info[0],
                     greenlet._exc_info[1],
-                    traceback.print_tb(pickle.loads(greenlet._exc_info[2])))
-            )
+                    ''.join(traceback.format_tb(pickle.loads(greenlet._exc_info[2]))),
+                ))
 
     def _query_async(self, command, task_id, **kwargs):
         result = getattr(self, command)(**kwargs)
@@ -210,15 +210,18 @@ class RotkelchenServer(object):
         res = self.query_async('query_blockchain_total')
         return {'task_id': res}
 
-    def query_banks_total(self):
-        balances = self.rotkelchen.query_bank_balances()
+    def query_fiat_total(self):
+        balances = self.rotkelchen.query_fiat_balances()
         res = {'total': self.get_total_in_usd(balances)}
-        logger.debug('At query_bank_balances end')
         return process_result(res)
 
-    def query_banks_total_async(self):
-        res = self.query_async('query_banks_total')
-        return {'task_id': res}
+    def query_fiat_balances(self):
+        res = self.rotkelchen.query_fiat_balances()
+        return process_result(res)
+
+    def set_fiat_balance(self, currency, balance):
+        result, message = self.rotkelchen.data.set_fiat_balance(currency, balance)
+        return {'result': result, 'message': message}
 
     def query_trade_history(self, location, start_ts, end_ts):
         start_ts = int(start_ts)

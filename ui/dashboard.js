@@ -150,6 +150,7 @@ function set_ui_main_currency(currency_ticker_symbol) {
     // also adjust tables if they exist
     reload_balance_table_if_existing();
     reload_exchange_tables_if_existing();
+    reload_fiat_table_if_existing();
 }
 
 
@@ -191,7 +192,7 @@ function get_settings() {
         } else {
             console.log("server is ready");
             // save exchange rates
-            settings.exchange_rates = res['exchange_rates'];
+            settings.usd_to_fiat_exchange_rates = res['exchange_rates'];
             // set main currency
             set_ui_main_currency(res['main_currency']);
             // set the other settings
@@ -236,14 +237,16 @@ function get_blockchain_total() {
 }
 
 function get_banks_total() {
-    // does not really need to be async at the moment as it's just a file read
-    // but trying to be future proof
-    client.invoke("query_banks_total_async", (error, res) => {
+    client.invoke("query_fiat_total", (error, res) => {
         if (error || res == null) {
-            console.log("Error at querying bank total: " + error);
+            console.log("Error at querying fiat total: " + error);
         } else {
-            console.log("Query banks returned task id " + res['task_id']);
-            create_task(res['task_id'], 'query_banks_total', 'Query Bank Balances');
+            create_box(
+                'banks_balance',
+                'fa-university',
+                parseFloat(res['total']),
+                settings.main_currency.icon
+            );
         }
     });
 }
@@ -316,14 +319,6 @@ function init_dashboard() {
         create_box(
             'blockchain_balance',
             'fa-hdd-o',
-            parseFloat(result['total']),
-            settings.main_currency.icon
-        );
-    });
-    monitor_add_callback('query_banks_total', function (result) {
-        create_box(
-            'banks_balance',
-            'fa-university',
             parseFloat(result['total']),
             settings.main_currency.icon
         );

@@ -39,7 +39,9 @@ function _setup_log_watcher(callback) {
 }
 
 function showAlert(type, text) {
-    var str = '<div class="alert '+ type +' alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>'+ text +'</div>';
+    // TODO: Change this with nicer pop ups from jquery confirm
+    var str = '<div class="alert '+ type +' alert-dismissable"><button type="button" class="close" data-dismiss="alert">&times;</button>'+ text +'</div>';
+    console.log("ALERT: " +text);
     $(str).prependTo($("#wrapper"));
 }
 

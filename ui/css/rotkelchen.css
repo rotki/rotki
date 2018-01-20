@@ -56,3 +56,20 @@ tr.shown td.details-control {
     text-align:center;
     color:red;
 }
+
+label.form-prompt {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+h3.centered-title, h4.centered-title {
+    text-align: center;
+    font-weight: 500;
+}
+
+div.rotkelchen-table {
+    margin-top: 7px;
+    margin-left: 7px;
+    margin-bottom: 7px;
+    margin-right: 7px;
+}

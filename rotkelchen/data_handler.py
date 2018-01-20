@@ -1,5 +1,6 @@
 import os
 import time
+from json.decoder import JSONDecodeError
 
 from rotkelchen.utils import (
     createTimeStamp,
@@ -13,6 +14,8 @@ from rotkelchen.utils import (
 from rotkelchen.history import TradesHistorian, PriceHistorian
 from rotkelchen.accounting import Accountant
 from rotkelchen.history import get_external_trades, EXTERNAL_TRADES_FILE
+from rotkelchen.fval import FVal
+from rotkelchen.inquirer import FIAT_CURRENCIES
 
 import logging
 logger = logging.getLogger(__name__)
@@ -68,13 +71,19 @@ class DataHandler(object):
         try:
             with open(os.path.join(self.data_directory, 'personal.json')) as f:
                 self.personal = rlk_jsonloads(f.read())
-        except:  # No file found or contents are not json
+        except JSONDecodeError as e:
+            logger.critical('personal.json file could not be decoded and is corrupt: {}'.format(e))
+            self.personal = {}
+        except FileNotFoundError:
             self.personal = {}
 
         try:
             with open(os.path.join(self.data_directory, 'settings.json')) as f:
                 self.settings = rlk_jsonloads(f.read())
-        except:  # No file found or contents are not json
+        except JSONDecodeError as e:
+            logger.critical('settings.json file could not be decoded and is corrupt: {}'.format(e))
+            self.settings = empty_settings
+        except FileNotFoundError:
             self.settings = empty_settings
 
         historical_data_start = self.settings.get('historical_data_start_date', DEFAULT_START_DATE)
@@ -151,6 +160,26 @@ class DataHandler(object):
         self.accountant.set_main_currency(settings['main_currency'])
         with open(os.path.join(self.data_directory, 'settings.json'), 'w') as f:
             f.write(rlk_jsondumps(self.settings))
+
+    def set_fiat_balance(self, currency, balance):
+        if currency not in FIAT_CURRENCIES:
+            return False, 'Provided currency {} is unknown'
+
+        if balance == 0 or balance == '':
+            # delete entry from currencies
+            del self.personal['fiat'][currency]
+        else:
+            try:
+                balance = FVal(balance)
+            except ValueError:
+                return False, 'Provided amount is not a number'
+
+            self.personal['fiat'][currency] = balance
+
+        with open(os.path.join(self.data_directory, 'personal.json'), 'w') as f:
+            f.write(rlk_jsondumps(self.personal))
+
+        return True, ''
 
     def get_external_trades(self):
         return get_external_trades(self.data_directory)

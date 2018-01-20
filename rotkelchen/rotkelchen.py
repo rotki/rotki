@@ -163,7 +163,7 @@ class Rotkelchen(object):
     @cache_response_timewise()
     def query_blockchain_balances(self):
         logger.debug('query_blockchain_balances start')
-        # Find balance of eth Accounts
+        # Find balance of eth accounts
         eth_sum = self.ethchain.get_multieth_balance(
             self.data.personal['eth_accounts']
         )
@@ -222,13 +222,11 @@ class Rotkelchen(object):
         logger.debug('query_blockchain_balances end')
         return blockchain_balances
 
-    def query_bank_balances(self):
-        logger.debug('At query_bank_balances start')
-
+    def query_fiat_balances(self):
         result = {}
         for currency in FIAT_CURRENCIES:
-            if currency in self.data.personal:
-                amount = FVal(self.data.personal[currency])
+            if currency in self.data.personal['fiat']:
+                amount = FVal(self.data.personal['fiat'][currency])
                 usd_rate = query_fiat_pair(currency, 'USD')
                 result[currency] = {
                     'amount': amount,
@@ -237,14 +235,13 @@ class Rotkelchen(object):
 
         return result
 
-
     def query_balances(self, save_data=False):
         balances = {}
         for exchange in self.connected_exchanges:
             balances[exchange] = getattr(self, exchange).query_balances()
 
         balances['blockchain'] = self.query_blockchain_balances()
-        balances['banks'] = self.query_bank_balances()
+        balances['banks'] = self.query_fiat_balances()
 
         combined = combine_stat_dicts([v for k, v in balances.items()])
         total_usd_per_location = [(k, dict_get_sumof(v, 'usd_value')) for k, v in balances.items()]
@@ -370,15 +367,17 @@ class Rotkelchen(object):
         result, message = exchange.validate_api_key()
         if not result:
             return False, message
-        # keep the exchange object
-        setattr(self, name, exchange)
-        self.connected_exchanges.append(name)
 
-        self.secret_data['{}_api_key'.format(name)] = api_key
-        self.secret_data['{}_secret'.format(name)] = api_secret
+        # Success, save the result
+        with self.lock:
+            setattr(self, name, exchange)
+            self.connected_exchanges.append(name)
 
-        with open(self.secret_name, 'w') as f:
-            f.write(rlk_jsondumps(self.secret_data))
+            self.secret_data['{}_api_key'.format(name)] = api_key
+            self.secret_data['{}_secret'.format(name)] = api_secret
+
+            with open(self.secret_name, 'w') as f:
+                f.write(rlk_jsondumps(self.secret_data))
 
         return True, ''
 
@@ -390,12 +389,13 @@ class Rotkelchen(object):
             logger.critical('The secret file can not be found')
             return False, 'The secret file can not be found'
 
-        del self.secret_data['{}_api_key'.format(name)]
-        del self.secret_data['{}_secret'.format(name)]
+        with self.lock:
+            del self.secret_data['{}_api_key'.format(name)]
+            del self.secret_data['{}_secret'.format(name)]
 
-        self.connected_exchanges.remove(name)
-        with open(self.secret_name, 'w') as f:
-            f.write(rlk_jsondumps(self.secret_data))
+            self.connected_exchanges.remove(name)
+            with open(self.secret_name, 'w') as f:
+                f.write(rlk_jsondumps(self.secret_data))
 
         # TODO: and finally schedule the exchange object for deletion during
 

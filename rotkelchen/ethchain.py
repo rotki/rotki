@@ -39,8 +39,6 @@ class Ethchain(object):
             ))
             eth_resp = rlk_jsonloads(eth_resp.read())
             if eth_resp['status'] != 1:
-                import pdb
-                pdb.set_trace()
                 raise ValueError('Failed to query etherscan for accounts balance')
             eth_accounts = eth_resp['result']
             for account_entry in eth_accounts:

@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 
 def evaluate_input(other):
@@ -23,20 +23,27 @@ class FVal(object):
     __slots__ = ('num',)
 
     def __init__(self, data):
-        if isinstance(data, float):
-            self.num = Decimal(str(data))
-        elif isinstance(data, bytes):
-            # assume it's an ascii string and try to decode the bytes to one
-            self.num = Decimal(data.decode())
-        elif isinstance(data, (Decimal, int, str)):
-            self.num = Decimal(data)
-        elif isinstance(data, FVal):
-            self.num = data.num
-        else:
-            raise ValueError(
-                'Expected string, int, float, or Decimal to initialize an FVal.'
-                'Found {}.'.format(type(data))
-            )
+        try:
+            if isinstance(data, float):
+                self.num = Decimal(str(data))
+            elif isinstance(data, bytes):
+                # assume it's an ascii string and try to decode the bytes to one
+                self.num = Decimal(data.decode())
+            elif isinstance(data, (Decimal, int, str)):
+                self.num = Decimal(data)
+            elif isinstance(data, FVal):
+                self.num = data.num
+            else:
+                self.num = None
+
+        except InvalidOperation as e:
+            self.num = None
+
+            if not self.num:
+                raise ValueError(
+                    'Expected string, int, float, or Decimal to initialize an FVal.'
+                    'Found {}.'.format(type(data))
+                )
 
     def __str__(self):
         return str(self.num)
