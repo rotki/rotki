@@ -169,23 +169,26 @@ class Kraken(Exchange):
         """
         urlpath = '/' + self.apiversion + '/private/' + method
 
-        req['nonce'] = int(1000 * time.time())
-        post_data = urlencode(req)
-        # any unicode strings must be turned to bytes
-        hashable = (str(req['nonce']) + post_data).encode()
-        message = urlpath.encode() + hashlib.sha256(hashable).digest()
-        signature = hmac.new(
-            base64.b64decode(self.secret),
-            message,
-            hashlib.sha512
-        )
-        self.session.headers.update({
-            'API-Sign': base64.b64encode(signature.digest())
-        })
-        response = self.session.post(
-            'https://api.kraken.com' + urlpath,
-            data=post_data
-        )
+        with self.lock:
+            # Protect this section, or else
+            req['nonce'] = int(1000 * time.time())
+            post_data = urlencode(req)
+            # any unicode strings must be turned to bytes
+            hashable = (str(req['nonce']) + post_data).encode()
+            message = urlpath.encode() + hashlib.sha256(hashable).digest()
+            signature = hmac.new(
+                base64.b64decode(self.secret),
+                message,
+                hashlib.sha512
+            )
+            self.session.headers.update({
+                'API-Sign': base64.b64encode(signature.digest())
+            })
+            response = self.session.post(
+                'https://api.kraken.com' + urlpath,
+                data=post_data
+            )
+
         return self.check_and_get_response(response, method)
 
     def world_to_kraken_pair(self, pair):
@@ -213,22 +216,24 @@ class Kraken(Exchange):
             'Ticker',
             req={'pair': ','.join(self.tradeable_pairs.keys())}
         )
-        with self.lock:
-            self.eurprice['BTC'] = FVal(self.ticker['XXBTZEUR']['c'][0])
-            self.usdprice['BTC'] = FVal(self.ticker['XXBTZUSD']['c'][0])
-            self.eurprice['ETH'] = FVal(self.ticker['XETHZEUR']['c'][0])
-            self.usdprice['ETH'] = FVal(self.ticker['XETHZUSD']['c'][0])
-            self.eurprice['REP'] = FVal(self.ticker['XREPZEUR']['c'][0])
-            self.eurprice['XMR'] = FVal(self.ticker['XXMRZEUR']['c'][0])
-            self.usdprice['XMR'] = FVal(self.ticker['XXMRZUSD']['c'][0])
-            self.eurprice['ETC'] = FVal(self.ticker['XETCZEUR']['c'][0])
-            self.usdprice['ETC'] = FVal(self.ticker['XETCZUSD']['c'][0])
+        self.eurprice['BTC'] = FVal(self.ticker['XXBTZEUR']['c'][0])
+        self.usdprice['BTC'] = FVal(self.ticker['XXBTZUSD']['c'][0])
+        self.eurprice['ETH'] = FVal(self.ticker['XETHZEUR']['c'][0])
+        self.usdprice['ETH'] = FVal(self.ticker['XETHZUSD']['c'][0])
+        self.eurprice['REP'] = FVal(self.ticker['XREPZEUR']['c'][0])
+        self.eurprice['XMR'] = FVal(self.ticker['XXMRZEUR']['c'][0])
+        self.usdprice['XMR'] = FVal(self.ticker['XXMRZUSD']['c'][0])
+        self.eurprice['ETC'] = FVal(self.ticker['XETCZEUR']['c'][0])
+        self.usdprice['ETC'] = FVal(self.ticker['XETCZUSD']['c'][0])
 
     def find_fiat_price(self, asset):
         """Find USD/EUR price of asset. The asset should be in the kraken style.
         e.g.: XICN. Save both prices in the kraken object and then return the
         USD price.
         """
+        if asset == 'XXBT':
+            return self.usdprice['BTC']
+
         # TODO: This is pretty ugly. Find a better way to check out kraken pairs
         # without this ugliness.
         pair = asset + 'XXBT'
