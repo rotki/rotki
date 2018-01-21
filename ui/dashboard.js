@@ -150,7 +150,7 @@ function set_ui_main_currency(currency_ticker_symbol) {
     // also adjust tables if they exist
     reload_balance_table_if_existing();
     reload_exchange_tables_if_existing();
-    reload_fiat_table_if_existing();
+    reload_usersettings_tables_if_existing();
 }
 
 

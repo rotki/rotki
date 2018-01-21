@@ -71,8 +71,8 @@ def cache_response_timewise(seconds=600):
     """
     def _cache_response_timewise(f):
         def wrapper(wrappingobj, *args):
-            now = ts_now()
             with wrappingobj.lock:
+                now = ts_now()
                 cache_miss = (
                     f.__name__ not in wrappingobj.results_cache or
                     now - wrappingobj.results_cache[f.__name__].timestamp > seconds

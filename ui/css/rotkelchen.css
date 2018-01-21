@@ -17,6 +17,15 @@
                 no-repeat;
 }
 
+.loadingtest {
+    z-index:    1000;
+    height: 100px;
+    background: rgba( 255, 255, 255, .8 )
+                url('../images/loading-circle.gif')
+                50% 50%
+                no-repeat;
+}
+
 .loadingwrapper_text {
   position: fixed; /* or absolute */
   top: 50%;

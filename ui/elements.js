@@ -38,6 +38,15 @@ function form_select(prompt, id, options, selected_option) {
     return str;
 }
 
+function form_multiselect(prompt, id, options) {
+    let str = '<div class="form-group"><label class="form-prompt">'+prompt+'</label>';
+    str += '<select id="'+id+'" class="form-control" multiple="multiple" style="font-family: \'FontAwesome\', \'sans-serif\';">';
+    for (let i = 0; i < options.length; i++) {
+        str += '<option value="'+options[i]+'">'+options[i]+'</option>';
+    }
+    return str;
+}
+
 function form_button(prompt, id) {
     let str = '<button id="'+id+'" type="submit" class="btn btn-default">'+prompt+'</button>';
     return str;
@@ -60,12 +69,17 @@ const page_header = (text) => `<div class="row"><div class="col-lg-12"><h1 class
 
 const settings_panel = (text, id) => `<div class="row"><div class="col-lg-12"><div class="panel panel-default"><div class="panel-heading">${text}</div><div id="${id}_panel_body" class="panel-body"></div></div></div></div>`;
 
+const loading_placeholder = (id) =>
+      `<div id="${id}" class=loadingtest><div class="loadingwrapper_text"></div></div>`;
+
 module.exports = function() {
     this.form_entry = form_entry;
     this.form_text = form_text;
     this.form_select = form_select;
+    this.form_multiselect = form_multiselect;
     this.form_button = form_button;
     this.table_html = table_html;
     this.page_header = page_header;
     this.settings_panel = settings_panel;
+    this.loading_placeholder = loading_placeholder;
 };

@@ -271,8 +271,8 @@ class RotkelchenServer(object):
         res = self.query_async('query_balances')
         return {'task_id': res}
 
-    def get_possible_eth_tokens(self):
-        result = self.rotkelchen.data.eth_tokens
+    def get_eth_tokens(self):
+        result = {'all_eth_tokens': self.rotkelchen.data.eth_tokens, 'owned_eth_tokens': self.rotkelchen.data.personal['eth_tokens']}
         return process_result(result)
 
     def plot(self):

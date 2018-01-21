@@ -96,6 +96,14 @@ function change_location(target) {
     settings.current_location = target;
 }
 
+function reload_table_currency_val_if_existing(table, colnum) {
+    if (table) {
+        table.rows().invalidate();
+        $(table.column(colnum).header()).text(settings.main_currency.ticker_symbol + ' value');
+        table.draw();
+    }
+}
+
 
 module.exports = function() {
     this.setup_log_watcher = setup_log_watcher;
@@ -103,4 +111,5 @@ module.exports = function() {
     this.determine_location = determine_location;
     this.startup_error = startup_error;
     this.showAlert = showAlert;
+    this.reload_table_currency_val_if_existing = reload_table_currency_val_if_existing;
 };
