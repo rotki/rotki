@@ -12,14 +12,14 @@ from rotkelchen.utils import (
     rlk_jsondumps,
 )
 from rotkelchen.plot import show_plot
-from rotkelchen.ethchain import Ethchain
+from rotkelchen.blockchain import Blockchain
 from rotkelchen.poloniex import Poloniex
 from rotkelchen.kraken import Kraken
 from rotkelchen.bittrex import Bittrex
 from rotkelchen.binance import Binance
 from rotkelchen.data_handler import DataHandler
 from rotkelchen.inquirer import Inquirer, FIAT_CURRENCIES
-from rotkelchen.utils import query_fiat_pair, cache_response_timewise
+from rotkelchen.utils import query_fiat_pair
 from rotkelchen.fval import FVal
 
 import logging
@@ -82,8 +82,6 @@ class Rotkelchen(object):
         self.args = args
         self.cache_data_filename = os.path.join(self.data_dir, 'cache_data.json')
 
-        self.ethchain = Ethchain(args.ethrpc_port)
-
         self.poloniex = None
         self.kraken = None
         self.bittrex = None
@@ -137,6 +135,14 @@ class Rotkelchen(object):
         )
         self.main_currency = self.data.accountant.profit_currency
 
+        self.blockchain = Blockchain(
+            self.data.personal['blockchain_accounts'],
+            self.data.eth_tokens,
+            self.data.personal['eth_tokens'],
+            self.inquirer,
+            args.ethrpc_port
+        )
+
         self.lock.release()
         self.shutdown_event = gevent.event.Event()
 
@@ -160,68 +166,6 @@ class Rotkelchen(object):
     def process_history(self, start_ts, end_ts):
         return self.data.process_history(start_ts, end_ts)
 
-    @cache_response_timewise()
-    def query_blockchain_balances(self):
-        logger.debug('query_blockchain_balances start')
-        # Find balance of eth accounts
-        eth_sum = self.ethchain.get_multieth_balance(
-            self.data.personal['eth_accounts']
-        )
-        logger.debug('query_blockchain_balances 2')
-        eth_usd_price = self.inquirer.find_usd_price('ETH')
-        eth_accounts_usd_amount = eth_sum * eth_usd_price
-
-        logger.debug('query_blockchain_balances 3')
-        btc_resp = urlopen(Request(
-            'https://blockchain.info/q/addressbalance/%s' %
-            '|'.join(self.data.personal['btc_accounts'])
-        ))
-        btc_sum = FVal(btc_resp.read()) * FVal('0.00000001')  # result is in satoshis
-        btc_usd_price = self.inquirer.find_usd_price('BTC')
-        btc_accounts_usd_amount = btc_sum * btc_usd_price
-
-        blockchain_balances = {
-            'ETH': {
-                'amount': eth_sum, 'usd_value': eth_accounts_usd_amount
-            },
-            'BTC': {
-                'amount': btc_sum, 'usd_value': btc_accounts_usd_amount
-            },
-        }
-
-        logger.debug('query_blockchain_balances 4')
-        tokens_to_check = None
-        if 'eth_tokens' in self.data.personal:
-            tokens_to_check = self.data.personal['eth_tokens']
-
-        for token in self.data.eth_tokens:
-            try:
-                token_symbol = str(token['symbol'])
-            except (UnicodeDecodeError, UnicodeEncodeError):
-                # skip tokens with problems in unicode encoding decoding
-                continue
-            if tokens_to_check and token_symbol not in tokens_to_check:
-                continue
-
-            logger.debug('query_blockchain_balances - {}'.format(token_symbol))
-
-            token_usd_price = self.inquirer.find_usd_price(token_symbol)
-            if token_usd_price == 0:
-                # skip tokens that have no price
-                continue
-
-            token_amount = self.ethchain.get_multitoken_balance(
-                token_symbol,
-                token['address'],
-                token['decimal'],
-                self.data.personal['eth_accounts'],
-            )
-            blockchain_balances[token_symbol] = {
-                'amount': token_amount, 'usd_value': token_amount * token_usd_price
-            }
-        logger.debug('query_blockchain_balances end')
-        return blockchain_balances
-
     def query_fiat_balances(self):
         result = {}
         for currency in FIAT_CURRENCIES:
@@ -240,7 +184,7 @@ class Rotkelchen(object):
         for exchange in self.connected_exchanges:
             balances[exchange] = getattr(self, exchange).query_balances()
 
-        balances['blockchain'] = self.query_blockchain_balances()
+        balances['blockchain'] = self.blockchain.query_balances()['totals']
         balances['banks'] = self.query_fiat_balances()
 
         combined = combine_stat_dicts([v for k, v in balances.items()])

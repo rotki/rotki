@@ -65,7 +65,7 @@ def cache_response_timewise(seconds=600):
     """ This is a decorator for caching results of functions of objects.
     The objects must have:
         - A results_cache dictionary attribute
-        - A semaphore attributee named lock
+        - A semaphore attribute named lock
 
     Objects adhering to this interface are all the exchanges and the rotkelchen object.
     """

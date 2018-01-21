@@ -31,7 +31,8 @@ class Ethchain(object):
         pass
 
     def get_multieth_balance(self, accounts):
-        eth_sum = FVal(0)
+        """Returns a dict with keys being accounts and balances in ETH"""
+        balances = {}
         if not self.connected:
             eth_resp = urlopen(Request(
                 'https://api.etherscan.io/api?module=account&action=balancemulti&address=%s' %
@@ -42,24 +43,32 @@ class Ethchain(object):
                 raise ValueError('Failed to query etherscan for accounts balance')
             eth_accounts = eth_resp['result']
             for account_entry in eth_accounts:
-                eth_sum += FVal(account_entry['balance'])
+                amount = FVal(account_entry['balance'])
+                if amount != 0:
+                    balances[account_entry['account']] = from_wei(amount)
 
         else:
             for account in accounts:
-                eth_sum += FVal(self.web3.eth.getBalance(account))
+                amount = FVal(self.web3.eth.getBalance(account))
+                if amount != 0:
+                    balances[account] = from_wei(amount)
 
-        return from_wei(eth_sum)
+        return balances
 
     def get_multitoken_balance(self, token_symbol, token_address, token_decimals, accounts):
-        token_amount = FVal(0)
-
+        """Return a dictionary with keys being accounts and value balances of token
+        Balance value is normalized through the token decimals.
+        """
+        balances = {}
         if self.connected:
             token_contract = self.web3.eth.contract(
                 address=token_address,
                 abi=self.token_abi
             )
             for account in accounts:
-                token_amount += FVal(token_contract.call().balanceOf(account))
+                token_amount = FVal(token_contract.call().balanceOf(account))
+                if token_amount != 0:
+                    balances[account] = token_amount / (FVal(10) ** FVal(token_decimals))
         else:
             for account in accounts:
                 print('Checking token {} for account {}'.format(token_symbol, account))
@@ -76,6 +85,8 @@ class Ethchain(object):
                             token_symbol,
                             account,
                         ))
-                token_amount += FVal(resp['result'])
+                token_amount = FVal(resp['result'])
+                if token_amount != 0:
+                    balances[account] = token_amount / (FVal(10) ** FVal(token_decimals))
 
-        return token_amount / (FVal(10) ** FVal(token_decimals))
+        return balances

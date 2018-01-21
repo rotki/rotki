@@ -202,12 +202,20 @@ class RotkelchenServer(object):
         return {'task_id': res}
 
     def query_blockchain_total(self):
-        balances = self.rotkelchen.query_blockchain_balances()
+        balances = self.rotkelchen.blockchain.query_balances()['totals']
         res = {'total': self.get_total_in_usd(balances)}
         return process_result(res)
 
     def query_blockchain_total_async(self):
         res = self.query_async('query_blockchain_total')
+        return {'task_id': res}
+
+    def query_blockchain_balances(self):
+        balances = self.rotkelchen.blockchain.query_balances()
+        return process_result(balances)
+
+    def query_blockchain_balances_async(self):
+        res = self.query_async('query_blockchain_balances')
         return {'task_id': res}
 
     def query_fiat_total(self):
@@ -262,6 +270,10 @@ class RotkelchenServer(object):
     def query_balances_async(self, save_data=False):
         res = self.query_async('query_balances')
         return {'task_id': res}
+
+    def get_possible_eth_tokens(self):
+        result = self.rotkelchen.data.eth_tokens
+        return process_result(result)
 
     def plot(self):
         self.rotkelchen.plot()

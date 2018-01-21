@@ -555,7 +555,7 @@ class TradesHistorian(object):
             for trade in binance_history:
                 history.append(trade_from_binance(trade))
 
-        eth_accounts = self.personal_data['eth_accounts']
+        eth_accounts = self.personal_data['blockchain_accounts']['ETH']
         eth_transactions = query_etherscan_for_transactions(eth_accounts)
 
         # We sort it here ... but when accounting runs through the entire actions list,

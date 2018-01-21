@@ -110,6 +110,7 @@ class DataHandler(object):
             create_csv=True
         )
 
+        self.eth_tokens = []
         dir_path = os.path.dirname(os.path.realpath(__file__))
         with open(os.path.join(dir_path, 'data', 'eth_tokens.json'), 'r') as f:
             self.eth_tokens = rlk_jsonloads(f.read())
