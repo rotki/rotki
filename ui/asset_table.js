@@ -2,7 +2,7 @@ var settings = require("./settings.js")();
 require("./elements.js");
 require("./utils.js");
 
-function format_table_data(original_data) {
+function format_asset_table_data(original_data) {
     let data = [];
     for (var asset in original_data) {
         if(original_data.hasOwnProperty(asset)) {
@@ -17,7 +17,7 @@ function format_table_data(original_data) {
 }
 
 function populate_asset_table(table_data, id) {
-    let data = format_table_data(table_data);
+    let data = format_asset_table_data(table_data);
     let table = $('#'+id).DataTable({
         "data": data,
         "columns": [
@@ -46,8 +46,21 @@ function reload_asset_table(table) {
     reload_table_currency_val_if_existing(table, 2);
 }
 
+function update_format_asset_table(table, new_data) {
+    new_data = format_asset_table_data(new_data);
+    update_asset_table(table, new_data);
+}
+function update_asset_table(table, new_data) {
+    table.clear();
+    table.rows.add(new_data);
+    table.draw();
+}
+
 module.exports = function() {
     this.create_asset_table = create_asset_table;
     this.populate_asset_table = populate_asset_table;
     this.reload_asset_table = reload_asset_table;
+    this.format_asset_table_data = format_asset_table_data;
+    this.update_asset_table = update_asset_table;
+    this.update_format_asset_table = update_format_asset_table;
 };

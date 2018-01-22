@@ -28,8 +28,11 @@ class Inquirer(object):
         if self.kraken and self.kraken.first_connection_made and asset_btc_price is not None:
             return self.query_kraken_for_price(asset, asset_btc_price)
 
+        # Adjust some ETH tokens to how cryptocompare knows them
         if asset == 'RDN':
             asset = 'RDN*'  # temporary
+        if asset == 'DATAcoin':
+            asset = 'DATA'
         resp = retry_calls(
             5,
             'find_usd_price',

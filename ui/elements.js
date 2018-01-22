@@ -72,6 +72,8 @@ const settings_panel = (text, id) => `<div class="row"><div class="col-lg-12"><d
 const loading_placeholder = (id) =>
       `<div id="${id}" class=loadingtest><div class="loadingwrapper_text"></div></div>`;
 
+const invisible_anchor = (id) => `<div id="${id}" class="invisible-anchor"></div>`;
+
 module.exports = function() {
     this.form_entry = form_entry;
     this.form_text = form_text;
@@ -82,4 +84,5 @@ module.exports = function() {
     this.page_header = page_header;
     this.settings_panel = settings_panel;
     this.loading_placeholder = loading_placeholder;
+    this.invisible_anchor = invisible_anchor;
 };

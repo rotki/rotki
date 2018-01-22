@@ -275,6 +275,20 @@ class RotkelchenServer(object):
         result = {'all_eth_tokens': self.rotkelchen.data.eth_tokens, 'owned_eth_tokens': self.rotkelchen.data.personal['eth_tokens']}
         return process_result(result)
 
+    def add_owned_eth_tokens(self, tokens):
+        new_data = self.rotkelchen.blockchain.track_new_tokens(tokens)
+        result, message = self.rotkelchen.data.add_owned_eth_tokens(tokens)
+        result = {'result': result, 'message': message, 'per_account': new_data['per_account'], 'totals': new_data['totals']}
+        return process_result(result)
+
+    def remove_owned_eth_tokens(self, tokens):
+        logger.debug('At beginning of REMOVE: {}'.format(self.rotkelchen.data.personal['eth_tokens']))
+        logger.debug('At beginning of REMOVE: {}'.format(self.rotkelchen.data.personal['eth_tokens']))
+        new_data = self.rotkelchen.blockchain.remove_eth_tokens(tokens)
+        result, message = self.rotkelchen.data.remove_owned_eth_tokens(tokens)
+        result = {'result': result, 'message': message, 'per_account': new_data['per_account'], 'totals': new_data['totals']}
+        return process_result(result)
+
     def plot(self):
         self.rotkelchen.plot()
 

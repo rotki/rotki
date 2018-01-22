@@ -153,11 +153,7 @@ function fiat_modify_callback(event) {
             } else {
                 FIAT_BALANCES[currency] = {'amount': balance, 'usd_value': get_fiat_usd_value(currency, balance)};
             }
-            // simply add the new data to the table
-            FIAT_TABLE.clear();
-            let data = format_table_data(FIAT_BALANCES);
-            FIAT_TABLE.rows.add(data);
-            FIAT_TABLE.draw();
+            update_format_asset_table(FIAT_TABLE, FIAT_BALANCES);
         });
 }
 
@@ -219,6 +215,7 @@ function create_user_settings() {
     str += table_html(3, 'blockchain_per_asset');
     str += '<h4 class="centered-title">Blockchain Balances Per Account</h4>';
     str += loading_placeholder('blockchain_per_account_placeholder');
+    str += invisible_anchor('ethchain_per_account_anchor');
     $(str).appendTo($('#blockchain_balances_panel_body'));
     client.invoke('query_blockchain_balances_async', (error, result) => {
         if (error || result == null) {
@@ -261,6 +258,73 @@ let table_data_shortener = function (cutoff_start, keep_length) {
     };
 };
 
+function format_ethchain_per_account_data(eth_accounts) {
+    let data = [];
+    for (let account in eth_accounts) {
+        if (eth_accounts.hasOwnProperty(account)) {
+            let account_data = eth_accounts[account];
+            let eth_amount = parseFloat(account_data['ETH']);
+            eth_amount = eth_amount.toFixed(settings.floating_precision);
+            let total_usd_value = parseFloat(account_data['usd_value']);
+            total_usd_value = total_usd_value.toFixed(settings.floating_precision);
+            let row = {'account': account, 'ETH': eth_amount, 'total_usd_value': total_usd_value};
+            for (let i = 0; i < OWNED_TOKENS.length; i ++ ) {
+                if (!account_data[OWNED_TOKENS[i]]) {
+                    row[OWNED_TOKENS[i]] = 0;
+                    continue;
+                }
+                let token_amount = parseFloat(account_data[OWNED_TOKENS[i]]);
+                token_amount = token_amount.toFixed(settings.floating_precision);
+                row[OWNED_TOKENS[i]] = token_amount;
+            }
+            data.push(row);
+        }
+    }
+    let column_data = [
+        {"data": "account", "title": "Account"},
+        {"data": "ETH", "title": "ETH"}
+    ];
+    // if user has a lot of ETH tokens shorten the table by shortening the display of accounts
+    if (OWNED_TOKENS.length > 4) {
+        column_data[0]['render'] = table_data_shortener(2, 6);
+    }
+    for (let i = 0; i < OWNED_TOKENS.length; i ++ ) {
+        column_data.push({"data": OWNED_TOKENS[i], "title": OWNED_TOKENS[i]});
+    }
+
+    column_data.push({
+        "data": 'total_usd_value',
+        "title": 'Total ' + settings.main_currency.ticker_symbol + ' Value',
+        "render": function (data, type, row) {
+            return format_currency_value(data);
+        }
+    });
+
+    return [data, column_data];
+}
+
+function recreate_ethchain_per_account_table(eth_accounts) {
+    $('#ethchain_per_account_header').remove();
+    // to add a column we have to recreate the table
+    BB_PER_ACCOUNT_TABLES['ETH'].destroy(true);
+    $('ethchain_per_account_table').empty();
+    create_ethchain_per_account_table(eth_accounts);
+}
+
+function create_ethchain_per_account_table(eth_accounts) {
+    let str = '<h3 id="ethchain_per_account_header">ETH accounts</h3>';
+    // columns are: one for each token amount, one for ETH, one for account, one for total usd value
+    str += table_html(OWNED_TOKENS.length + 3, 'ethchain_per_account');
+    $(str).insertAfter('#ethchain_per_account_anchor');
+    let [data, column_data] = format_ethchain_per_account_data(eth_accounts);
+    // now we have the data so create the table
+    BB_PER_ACCOUNT_TABLES['ETH'] = $('#ethchain_per_account_table').DataTable({
+        "data": data,
+        "columns": column_data,
+        "order": [[column_data.length - 1, 'desc']]
+    });
+}
+
 function create_blockchain_balances_tables(result) {
 
     BLOCKCHAIN_BALANCES = result;
@@ -272,59 +336,9 @@ function create_blockchain_balances_tables(result) {
     $('#blockchain_per_account_placeholder').remove();
     let eth_accounts = result['per_account']['ETH'];
     if (eth_accounts) {
-        let str = '<h3>ETH accounts</h3>';
-        // columns are: one for each token amount, one for ETH, one for account, one for total usd value
-        str += table_html(OWNED_TOKENS.length + 3, 'ethchain_per_account');
-        $(str).appendTo($('#blockchain_balances_panel_body'));
-
-        let data = [];
-        for (let account in eth_accounts) {
-            if (eth_accounts.hasOwnProperty(account)) {
-                let account_data = eth_accounts[account];
-                let eth_amount = parseFloat(account_data['ETH']);
-                eth_amount = eth_amount.toFixed(settings.floating_precision);
-                let total_usd_value = parseFloat(account_data['usd_value']);
-                total_usd_value = total_usd_value.toFixed(settings.floating_precision);
-                let row = {'account': account, 'ETH': eth_amount, 'total_usd_value': total_usd_value};
-                for (let i = 0; i < OWNED_TOKENS.length; i ++ ) {
-                    if (!account_data[OWNED_TOKENS[i]]) {
-                        row[OWNED_TOKENS[i]] = 0;
-                        continue;
-                    }
-                    let token_amount = parseFloat(account_data[OWNED_TOKENS[i]]);
-                    token_amount = token_amount.toFixed(settings.floating_precision);
-                    row[OWNED_TOKENS[i]] = token_amount;
-                }
-                data.push(row);
-            }
-        }
-        let column_data = [
-            {"data": "account", "title": "Account"},
-            {"data": "ETH", "title": "ETH"}
-        ];
-        // if user has a lot of ETH tokens shorten the table by shortening the display of accounts
-        if (OWNED_TOKENS.length > 4) {
-            column_data[0]['render'] = table_data_shortener(2, 6);
-        }
-        for (let i = 0; i < OWNED_TOKENS.length; i ++ ) {
-            column_data.push({"data": OWNED_TOKENS[i], "title": OWNED_TOKENS[i]});
-        }
-
-        column_data.push({
-            "data": 'total_usd_value',
-            "title": 'Total ' + settings.main_currency.ticker_symbol + ' Value',
-            "render": function (data, type, row) {
-                return format_currency_value(data);
-            }
-        });
-
-        // now we have the data so create the table
-        BB_PER_ACCOUNT_TABLES['ETH'] = $('#ethchain_per_account_table').DataTable({
-            "data": data,
-            "columns": column_data,
-            "order": [[column_data.length - 1, 'desc']]
-        });
+        create_ethchain_per_account_table(eth_accounts);
     }// if eth accounts end
+    enable_multiselect();
 
     let btc_accounts = result['per_account']['BTC'];
     if (btc_accounts) {
@@ -364,6 +378,7 @@ function create_blockchain_balances_tables(result) {
     settings.page_usersettings = $('#page-wrapper').html();
 }
 
+var populate_eth_tokens_called = false;
 function populate_eth_tokens() {
     client.invoke('get_eth_tokens', (error, result) => {
         if (error || result == null) {
@@ -372,16 +387,98 @@ function populate_eth_tokens() {
         }
         $('#eth_tokens_select').multiSelect({
             selectableHeader: "<div class='custom-header'>All ETH Tokens</div>",
-            selectionHeader: "<div class='custom-header'>My ETH Tokens</div>"
-        });
-        let all_tokens = result['all_eth_tokens'];
-        OWNED_TOKENS = result['owned_eth_tokens'];
-        for (let i = 0; i < all_tokens.length; i++) {
-            let symbol = all_tokens[i]['symbol'];
-            $('#eth_tokens_select').multiSelect('addOption', { value: symbol, text: symbol});
+            selectionHeader: "<div class='custom-header'>My ETH Tokens</div>",
+            afterSelect: function(values){
+                // TODO: Super ugly pattern. Any way to do this better and set the
+                // afterSelect callback after populating the initial selections?
+                if (!populate_eth_tokens_called) {
+                    return;
+                }
+                add_new_eth_tokens(values);
 
+            },
+            afterDeselect: function(values){
+                remove_eth_tokens(values);
+            },
+            afterInit: function(container) {
+                // TODO: Also super ugly hack. I think that perhaps this multiselect is kind of flawed due to
+                // the afterInit firing after a `refresh` and also requiring a refresh in order to display
+                // the disabled state of the widget.
+                if (populate_eth_tokens_called) {
+                    return;
+                }
+                let all_tokens = result['all_eth_tokens'];
+                OWNED_TOKENS = result['owned_eth_tokens'];
+                for (let i = 0; i < all_tokens.length; i++) {
+                    let symbol = all_tokens[i]['symbol'];
+                    $('#eth_tokens_select').multiSelect('addOption', { value: symbol, text: symbol});
+
+                }
+                $('#eth_tokens_select').multiSelect('select', OWNED_TOKENS);
+                // has to come after the setting of the selections
+                populate_eth_tokens_called = true;
+                disable_multiselect();
+            }
+        });
+    });
+}
+
+function disable_multiselect() {
+    $('#eth_tokens_select').attr('disabled', 'disabled');
+    $('#eth_tokens_select').multiSelect('refresh');
+}
+
+function enable_multiselect() {
+    $('#eth_tokens_select').removeAttr('disabled');
+    $('#eth_tokens_select').multiSelect('refresh');
+}
+
+
+function add_new_eth_tokens(tokens) {
+    // disable selection until the entire call is done
+    disable_multiselect();
+    client.invoke('add_owned_eth_tokens', tokens, (error, result) => {
+        if (error || result == null) {
+            showAlert('alert-danger', 'Error at adding new tokens: '+ error);
+            return;
         }
-        $('#eth_tokens_select').multiSelect('select', OWNED_TOKENS);
+        if (!result['result']) {
+            showAlert('alert-danger', 'Error at adding new tokens: '+ result['message']);
+        }
+        for (let i = 0; i < tokens.length; i++) {
+            OWNED_TOKENS.push(tokens[i]);
+        }
+
+        recreate_ethchain_per_account_table(result['per_account']['ETH']);
+        // also reload the asset total tables
+        update_format_asset_table(BB_PER_ASSET_TABLE, result['totals']);
+        enable_multiselect();
+    });
+}
+
+function remove_eth_tokens(tokens) {
+    // disable selection until the entire call is done
+    disable_multiselect();
+    client.invoke('remove_owned_eth_tokens', tokens, (error, result) => {
+        if (error || result == null) {
+            showAlert('alert-danger', 'Error at removing eth tokens: '+ error);
+            return;
+        }
+        if (!result['result']) {
+            showAlert('alert-danger', 'Error at removing eth tokens: '+ result['message']);
+        }
+        for (let i = 0; i < tokens.length; i ++) {
+            let index = OWNED_TOKENS.indexOf(tokens[i]);
+            if (index == -1) {
+                throw "Token " + tokens[i] + " could not be found from the javascript side. Unexpected error.";
+            }
+            OWNED_TOKENS.splice(index, 1);
+        }
+
+        recreate_ethchain_per_account_table(result['per_account']['ETH']);
+        // also reload the asset total tables
+        update_format_asset_table(BB_PER_ASSET_TABLE, result['totals']);
+        enable_multiselect();
     });
 }
 

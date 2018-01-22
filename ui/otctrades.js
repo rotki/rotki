@@ -86,9 +86,7 @@ function reload_table_data() {
             update_valhtml('#otc_link', '');
             update_valhtml('#otc_notes', '');
 
-            OTC_TRADES_TABLE.clear();
-            OTC_TRADES_TABLE.rows.add(result);
-            OTC_TRADES_TABLE.draw();
+            update_asset_table(OTC_TRADES_TABLE, result);
         }
     });
 }

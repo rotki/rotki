@@ -162,6 +162,10 @@ class DataHandler(object):
         with open(os.path.join(self.data_directory, 'settings.json'), 'w') as f:
             f.write(rlk_jsondumps(self.settings))
 
+    def store_personal(self):
+        with open(os.path.join(self.data_directory, 'personal.json'), 'w') as f:
+            f.write(rlk_jsondumps(self.personal))
+
     def set_fiat_balance(self, currency, balance):
         if currency not in FIAT_CURRENCIES:
             return False, 'Provided currency {} is unknown'
@@ -177,9 +181,34 @@ class DataHandler(object):
 
             self.personal['fiat'][currency] = balance
 
-        with open(os.path.join(self.data_directory, 'personal.json'), 'w') as f:
-            f.write(rlk_jsondumps(self.personal))
+        self.store_personal()
 
+        return True, ''
+
+    def add_owned_eth_tokens(self, tokens):
+        new_tokens = []
+        for token in tokens:
+            if token in self.personal['eth_tokens']:
+                return False, 'Token {} is already tracked.'.format(token)
+
+            new_tokens.append(token)
+
+        self.personal['eth_tokens'].extend(new_tokens)
+        self.store_personal()
+        return True, ''
+
+    def remove_owned_eth_tokens(self, tokens):
+        new_owned_tokens = self.personal['eth_tokens']
+        for token in tokens:
+            if token not in self.personal['eth_tokens']:
+                logger.debug('----> self.personal["eth_tokens"]: {}'.format(
+                    self.personal["eth_tokens"]))
+                return False, 'Token {} is not tracked.'.format(token)
+
+            new_owned_tokens.remove(token)
+
+        self.personal['eth_tokens'] = new_owned_tokens
+        self.store_personal()
         return True, ''
 
     def get_external_trades(self):

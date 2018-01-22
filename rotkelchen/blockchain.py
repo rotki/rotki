@@ -5,6 +5,9 @@ from rotkelchen.ethchain import Ethchain
 from rotkelchen.fval import FVal
 from rotkelchen.utils import cache_response_timewise
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class Blockchain(object):
 
@@ -21,9 +24,24 @@ class Blockchain(object):
         self.ethchain = Ethchain(ethrpc_port)
         self.inquirer = inquirer
         self.accounts = blockchain_accounts
-        self.all_eth_tokens = all_eth_tokens
-        self.owned_eth_tokens = owned_eth_tokens
+        # A list of only token symbols, copy the personal data
+        self.owned_eth_tokens = list(owned_eth_tokens)
+        # All the known tokens, along with addresses and decimals
+        self.all_eth_tokens = {}
+        for token in all_eth_tokens:
+            try:
+                token_symbol = str(token['symbol'])
+            except (UnicodeDecodeError, UnicodeEncodeError):
+                # skip tokens with problems in unicode encoding decoding
+                continue
+
+            self.all_eth_tokens[token_symbol] = {
+                'address': token['address'],
+                'decimal': token['decimal']
+            }
+        # Per account balances
         self.balances = {}
+        # Per asset total balances
         self.totals = {}
 
     @cache_response_timewise()
@@ -50,6 +68,57 @@ class Blockchain(object):
 
         self.totals['BTC'] = {'amount': total, 'usd_value': total * btc_usd_price}
 
+    def track_new_tokens(self, tokens):
+        self.owned_eth_tokens.extend(tokens)
+        self.query_ethereum_tokens(tokens, self.balances['ETH'])
+        return {'per_account': self.balances, 'totals': self.totals}
+
+    def remove_eth_tokens(self, tokens):
+        for token in tokens:
+            usd_price = self.inquirer.find_usd_price(token)
+            for account, account_data in self.balances['ETH'].items():
+                if token not in account_data:
+                    continue
+
+                balance = account_data[token]
+                deleting_usd_value = balance * usd_price
+                del self.balances['ETH'][account][token]
+                self.balances['ETH'][account]['usd_value'] = self.balances['ETH'][account]['usd_value'] - deleting_usd_value
+
+            del self.totals[token]
+            self.owned_eth_tokens.remove(token)
+
+        return {'per_account': self.balances, 'totals': self.totals}
+
+    def query_ethereum_tokens(self, tokens, eth_balances):
+        token_balances = {}
+        token_usd_price = {}
+        for token in tokens:
+            usd_price = self.inquirer.find_usd_price(token)
+            if usd_price == 0:
+                # skip tokens that have no price
+                continue
+            token_usd_price[token] = usd_price
+
+            token_balances[token] = self.ethchain.get_multitoken_balance(
+                token,
+                self.all_eth_tokens[token]['address'],
+                self.all_eth_tokens[token]['decimal'],
+                self.accounts['ETH'],
+            )
+
+        for token, token_accounts in token_balances.items():
+            token_total = FVal(0)
+            for account, balance in token_accounts.items():
+                token_total += balance
+                usd_value = balance * token_usd_price[token]
+                eth_balances[account][token] = balance
+                eth_balances[account]['usd_value'] = eth_balances[account]['usd_value'] + usd_value
+
+            self.totals[token] = {'amount': token_total, 'usd_value': token_total * token_usd_price[token]}
+
+        self.balances['ETH'] = eth_balances
+
     def query_ethereum_balances(self):
         if 'ETH' not in self.accounts:
             return
@@ -64,49 +133,7 @@ class Blockchain(object):
             eth_balances[account] = {'ETH': balance, 'usd_value': balance * eth_usd_price}
 
         self.totals['ETH'] = {'amount': eth_total, 'usd_value': eth_total * eth_usd_price}
+        self.balances['ETH'] = eth_balances # but they are not complete until token query
 
         # And now for tokens
-        tokens_to_check = None
-        if len(self.owned_eth_tokens) > 0:
-            tokens_to_check = self.owned_eth_tokens
-
-        token_balances = {}
-        token_usd_price = {}
-        for token in self.all_eth_tokens:
-            try:
-                token_symbol = str(token['symbol'])
-            except (UnicodeDecodeError, UnicodeEncodeError):
-                # skip tokens with problems in unicode encoding decoding
-                continue
-            if tokens_to_check and token_symbol not in tokens_to_check:
-                continue
-
-            usd_price = self.inquirer.find_usd_price(token_symbol)
-            if usd_price == 0:
-                # skip tokens that have no price
-                continue
-            token_usd_price[token_symbol] = usd_price
-
-            token_balances[token_symbol] = self.ethchain.get_multitoken_balance(
-                token_symbol,
-                token['address'],
-                token['decimal'],
-                eth_accounts,
-            )
-
-        for token, token_accounts in token_balances.items():
-
-            # self.totals[token] = FVal(0)
-            token_total = FVal(0)
-            for account, balance in token_accounts.items():
-                token_total += balance
-                usd_value = balance * token_usd_price[token]
-                if account not in eth_balances:
-                    import pdb
-                    pdb.set_trace()
-                eth_balances[account][token] = balance
-                eth_balances[account]['usd_value'] = eth_balances[account]['usd_value'] + usd_value
-
-            self.totals[token] = {'amount': token_total, 'usd_value': token_total * token_usd_price[token]}
-
-        self.balances['ETH'] = eth_balances
+        self.query_ethereum_tokens(self.owned_eth_tokens, eth_balances)

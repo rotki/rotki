@@ -82,3 +82,7 @@ div.rotkelchen-table {
     margin-bottom: 7px;
     margin-right: 7px;
 }
+
+div.invisible-anchor {
+    display:none;
+}
