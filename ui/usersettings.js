@@ -153,7 +153,7 @@ function fiat_modify_callback(event) {
             } else {
                 FIAT_BALANCES[currency] = {'amount': balance, 'usd_value': get_fiat_usd_value(currency, balance)};
             }
-            update_format_asset_table(FIAT_TABLE, FIAT_BALANCES);
+            FIAT_TABLE.update_format(FIAT_BALANCES);
         });
 }
 
@@ -168,6 +168,7 @@ function add_listeners() {
     $('#setup_exchange_button').click(setup_exchange_callback);
     $('#fiat_type_entry').change(fiat_selection_callback);
     $('#modify_fiat_button').click(fiat_modify_callback);
+    $('#add_account_button').click(add_blockchain_account);
 }
 
 function create_user_settings() {
@@ -212,10 +213,11 @@ function create_user_settings() {
     populate_eth_tokens();
     str = '<h4 class="centered-title">Blockchain Balances Per Asset</h4>';
     str += loading_placeholder('blockchain_per_asset_placeholder');
-    str += table_html(3, 'blockchain_per_asset');
+    str += invisible_anchor('blockchain_per_asset_anchor');
     str += '<h4 class="centered-title">Blockchain Balances Per Account</h4>';
     str += loading_placeholder('blockchain_per_account_placeholder');
     str += invisible_anchor('ethchain_per_account_anchor');
+    str += invisible_anchor('btcchain_per_account_anchor');
     $(str).appendTo($('#blockchain_balances_panel_body'));
     client.invoke('query_blockchain_balances_async', (error, result) => {
         if (error || result == null) {
@@ -226,6 +228,37 @@ function create_user_settings() {
     });
     // also save the user settings page
     settings.page_usersettings = $('#page-wrapper').html();
+}
+
+function add_blockchain_account(event) {
+    event.preventDefault();
+    let blockchain = $('#crypto_type_entry').val();
+    let account = $('#account_entry').val();
+    // show account entry as disabled to signify we are loading
+    // TODO: Think of a better way to show that?
+    $('#account_entry').attr('disabled', 'disabled');
+    client.invoke(
+        "add_blockchain_account",
+        blockchain,
+        account,
+        (error, result) => {
+            if (error || result == null) {
+                showAlert(
+                    'alert-danger',
+                    'Error at adding new '+ blockchain +' account: '+ error
+                );
+                return;
+            }
+            if (blockchain == 'ETH') {
+                recreate_ethchain_per_account_table(result['per_account']['ETH']);
+            } else if (blockchain == 'BTC') {
+                BB_PER_ACCOUNT_TABLES['BTC'].update_format(result['per_account']['BTC']);
+            }
+            // also reload the asset total tables
+            BB_PER_ASSET_TABLE.update_format(result['totals']);
+            // re-enable account entry to show loading is finished
+            $('#account_entry').removeAttr('disabled');
+        });
 }
 
 let table_data_shortener = function (cutoff_start, keep_length) {
@@ -330,50 +363,21 @@ function create_blockchain_balances_tables(result) {
     BLOCKCHAIN_BALANCES = result;
 
     $('#blockchain_per_asset_placeholder').remove();
-    BB_PER_ASSET_TABLE = populate_asset_table(result['totals'], 'blockchain_per_asset_table');
+    BB_PER_ASSET_TABLE = new AssetTable('asset', 'blockchain_per_asset', 'insertAfter', 'blockchain_per_asset_anchor', result['totals']);
 
     // now the per accounts tables
     $('#blockchain_per_account_placeholder').remove();
     let eth_accounts = result['per_account']['ETH'];
     if (eth_accounts) {
         create_ethchain_per_account_table(eth_accounts);
-    }// if eth accounts end
-    enable_multiselect();
+    }
 
     let btc_accounts = result['per_account']['BTC'];
     if (btc_accounts) {
-        let str = '<h3>BTC accounts</h3>';
-        str += table_html(3, 'btcchain_per_account');
-        $(str).appendTo($('#blockchain_balances_panel_body'));
+        BB_PER_ACCOUNT_TABLES['BTC'] = new AssetTable('account', 'btcchain_per_account', 'insertAfter', 'btcchain_per_account_anchor', btc_accounts, 'BTC Accounts', 'btcchain_per_account_header');
+    }
 
-        let data = [];
-        for (let account in btc_accounts) {
-            if (btc_accounts.hasOwnProperty(account)) {
-                let account_data = btc_accounts[account];
-                let amount = parseFloat(account_data['amount']);
-                amount = amount.toFixed(settings.floating_precision);
-                let usd_value = parseFloat(account_data['usd_value']);
-                usd_value = usd_value.toFixed(settings.floating_precision);
-                data.push({'account': account, 'amount': amount, 'usd_value': usd_value});
-            }
-        }
-        BB_PER_ACCOUNT_TABLES['BTC'] = $('#btcchain_per_account_table').DataTable({
-            "data": data,
-            "columns": [
-                {"data": "account", "title": "Account"},
-                {"data": "amount", "title": "Amount"},
-                {
-                    "data": "usd_value",
-                    "title": settings.main_currency.ticker_symbol + ' value',
-                    "render": function (data, type, row) {
-                        return format_currency_value(data);
-                    }
-                }
-            ],
-            "order": [[2, 'desc']]
-        });
-    }// if btc accounts end
-
+    enable_multiselect();
     // also save the user settings page
     settings.page_usersettings = $('#page-wrapper').html();
 }
@@ -451,7 +455,7 @@ function add_new_eth_tokens(tokens) {
 
         recreate_ethchain_per_account_table(result['per_account']['ETH']);
         // also reload the asset total tables
-        update_format_asset_table(BB_PER_ASSET_TABLE, result['totals']);
+        BB_PER_ASSET_TABLE.update_format(result['totals']);
         enable_multiselect();
     });
 }
@@ -477,7 +481,7 @@ function remove_eth_tokens(tokens) {
 
         recreate_ethchain_per_account_table(result['per_account']['ETH']);
         // also reload the asset total tables
-        update_format_asset_table(BB_PER_ASSET_TABLE, result['totals']);
+        BB_PER_ASSET_TABLE.update_format(result['totals']);
         enable_multiselect();
     });
 }
@@ -491,15 +495,19 @@ function create_fiat_table() {
         FIAT_BALANCES = result;
         let str = '<h4 class="centered-title">Owned Fiat Currency Balances</h4>';
         $(str).appendTo($('#fiat_balances_panel_body'));
-        FIAT_TABLE = create_asset_table('fiat_balances', 'fiat_balances_panel_body', result);
+        FIAT_TABLE = new AssetTable ('currency', 'fiat_balances', 'appendTo', 'fiat_balances_panel_body', result);
         // also save the user settings page
         settings.page_usersettings = $('#page-wrapper').html();
     });
 }
 
 function reload_usersettings_tables_if_existing() {
-    reload_asset_table(FIAT_TABLE);
-    reload_asset_table(BB_PER_ASSET_TABLE);
+    if (FIAT_TABLE) {
+        FIAT_TABLE.reload();
+    }
+    if (BB_PER_ASSET_TABLE) {
+        BB_PER_ASSET_TABLE.reload();
+    }
     for (let currency in BB_PER_ACCOUNT_TABLES) {
         if (BB_PER_ACCOUNT_TABLES.hasOwnProperty(currency)) {
             let table = BB_PER_ACCOUNT_TABLES[currency];

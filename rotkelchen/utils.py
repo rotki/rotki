@@ -63,7 +63,7 @@ ResultCache = namedtuple('ResultCache', ('result', 'timestamp'))
 
 def cache_response_timewise(seconds=600):
     """ This is a decorator for caching results of functions of objects.
-    The objects must have:
+    The objects must adhere to the interface of having:
         - A results_cache dictionary attribute
         - A semaphore attribute named lock
 

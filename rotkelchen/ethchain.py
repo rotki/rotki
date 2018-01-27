@@ -27,13 +27,25 @@ class Ethchain(object):
             self.connected = False
 
     def get_eth_balance(self, account):
-        # TODO
-        pass
+        if not self.connected:
+            eth_resp = urlopen(Request(
+                'https://api.etherscan.io/api?module=account&action=balance&address=%s'
+                % account
+            ))
+            eth_resp = rlk_jsonloads(eth_resp.read())
+            if eth_resp['status'] != 1:
+                raise ValueError('Failed to query etherscan for accounts balance')
+            amount = FVal(eth_resp['result'])
+            return from_wei(amount)
+        else:
+            return from_wei(self.web3.eth.getBalance(account))
 
     def get_multieth_balance(self, accounts):
         """Returns a dict with keys being accounts and balances in ETH"""
         balances = {}
         if not self.connected:
+            # TODO: accounts.length should be less than 20. If more we gotta do
+            # multiple calls
             eth_resp = urlopen(Request(
                 'https://api.etherscan.io/api?module=account&action=balancemulti&address=%s' %
                 ','.join(accounts)
@@ -90,3 +102,7 @@ class Ethchain(object):
                     balances[account] = token_amount / (FVal(10) ** FVal(token_decimals))
 
         return balances
+
+    def get_token_balance(self, token_symbol, token_address, token_decimals, account):
+        res = self.get_multitoken_balance(token_symbol, token_address, token_decimals, [account])
+        return res.get(account, 0)

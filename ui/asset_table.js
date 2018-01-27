@@ -2,7 +2,40 @@ var settings = require("./settings.js")();
 require("./elements.js");
 require("./utils.js");
 
-function format_asset_table_data(original_data) {
+/**
+ * @param first_column      string         Name of the first column of the table
+ * @param id                string         Id prefix for the generated table
+ * @param placement_type    ANY('appendTo', 'insertAfter')    The type of placement for the table
+ * @param placement_id      string         The id at which to perform placement
+ * @param table_data        array          The data to populate the tablewith
+ * @param header            OPTIONAL(string)    If given then a header with this text is prepended to the table
+ * @parama header_id        OPTIONAL(string)    If given then this is the id of the header
+ */
+function AssetTable(first_column, id, placement_type, placement_id, table_data, header, header_id) {
+    this.first_column_name = first_column;
+    this.id = id;
+    let str = '';
+    if (header) {
+        str += '<h3 ';
+        if (header_id) {
+            str += `id="${header_id}"`;
+        }
+        str += `>${header}</h3>`;
+    }
+    str += table_html(3, id);
+    if (placement_type == 'appendTo') {
+        $(str).appendTo($('#'+placement_id));
+    } else if (placement_type == 'insertAfter') {
+        $(str).insertAfter('#'+placement_id);
+    } else {
+        var err = new Error();
+        let stack = err.stack;
+        throw_with_trace('Invalid AssetTable construction value for placement_type: ' + placement_type);
+    }
+    this.populate(table_data);
+}
+
+AssetTable.prototype.format_data =  function(original_data) {
     let data = [];
     for (var asset in original_data) {
         if(original_data.hasOwnProperty(asset)) {
@@ -10,18 +43,19 @@ function format_asset_table_data(original_data) {
             amount = amount.toFixed(settings.floating_precision);
             let value = parseFloat(original_data[asset]['usd_value']);
             value = value.toFixed(settings.floating_precision);
-            data.push({'asset': asset, 'amount': amount, 'usd_value': value});
+            let row = {[this.first_column_name]: asset, 'amount': amount, 'usd_value': value};
+            data.push(row);
         }
     }
     return data;
-}
+};
 
-function populate_asset_table(table_data, id) {
-    let data = format_asset_table_data(table_data);
-    let table = $('#'+id).DataTable({
+AssetTable.prototype.populate = function (table_data) {
+    let data = this.format_data(table_data);
+    let table = $('#'+this.id+'_table').DataTable({
         "data": data,
         "columns": [
-            {"data": "asset", "title": "Asset"},
+            {"data": this.first_column_name, "title": string_capitalize(this.first_column_name)},
             {"data": "amount", "title": "Amount"},
             {
                 "data": 'usd_value',
@@ -33,34 +67,25 @@ function populate_asset_table(table_data, id) {
         ],
         "order": [[2, 'desc']]
     });
-    return table;
-}
+    // return table;
+    this.table = table;
+};
 
-function create_asset_table(id, append_to_id, table_data) {
-    let str = table_html(3, id);
-    $(str).appendTo($('#'+append_to_id));
-    return populate_asset_table(table_data, id+'_table');
-}
+AssetTable.prototype.reload = function () {
+    reload_table_currency_val(this.table, 2);
+};
 
-function reload_asset_table(table) {
-    reload_table_currency_val_if_existing(table, 2);
-}
+AssetTable.prototype.update_format = function(new_data) {
+    new_data = this.format_data(new_data);
+    this.update(new_data);
+};
 
-function update_format_asset_table(table, new_data) {
-    new_data = format_asset_table_data(new_data);
-    update_asset_table(table, new_data);
-}
-function update_asset_table(table, new_data) {
-    table.clear();
-    table.rows.add(new_data);
-    table.draw();
-}
+AssetTable.prototype.update = function (new_data) {
+    this.table.clear();
+    this.table.rows.add(new_data);
+    this.table.draw();
+};
 
 module.exports = function() {
-    this.create_asset_table = create_asset_table;
-    this.populate_asset_table = populate_asset_table;
-    this.reload_asset_table = reload_asset_table;
-    this.format_asset_table_data = format_asset_table_data;
-    this.update_asset_table = update_asset_table;
-    this.update_format_asset_table = update_format_asset_table;
+    this.AssetTable = AssetTable;
 };

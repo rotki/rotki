@@ -27,7 +27,7 @@ function reload_exchange_tables_if_existing() {
     for (var name in SAVED_TABLES) {
         if(SAVED_TABLES.hasOwnProperty(name)) {
             let table = SAVED_TABLES[name];
-            reload_asset_table(table);
+            table.reload();
         }
     }
 }
@@ -47,7 +47,7 @@ function init_exchanges_tables() {
     monitor_add_callback('query_exchange_balances', function (result) {
         let name = result['name'];
         let data = result['balances'];
-        SAVED_TABLES[name] = create_asset_table(name, 'page-wrapper', data);
+        SAVED_TABLES[name] = new AssetTable('asset', name, 'appendTo', 'page-wrapper', data);
         // also save the exchange page
         settings.page_exchange[name] = $('#page-wrapper').html();
     });

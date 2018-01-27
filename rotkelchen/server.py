@@ -10,6 +10,7 @@ import pickle
 import traceback
 
 from rotkelchen.fval import FVal
+from rotkelchen.errors import InputError
 from rotkelchen.args import app_args
 from rotkelchen.rotkelchen import Rotkelchen
 from rotkelchen.utils import pretty_json_dumps
@@ -276,16 +277,38 @@ class RotkelchenServer(object):
         return process_result(result)
 
     def add_owned_eth_tokens(self, tokens):
-        new_data = self.rotkelchen.blockchain.track_new_tokens(tokens)
+        try:
+            new_data = self.rotkelchen.blockchain.track_new_tokens(tokens)
+        except InputError as e:
+            return False, str(e)
         result, message = self.rotkelchen.data.add_owned_eth_tokens(tokens)
         result = {'result': result, 'message': message, 'per_account': new_data['per_account'], 'totals': new_data['totals']}
         return process_result(result)
 
     def remove_owned_eth_tokens(self, tokens):
-        logger.debug('At beginning of REMOVE: {}'.format(self.rotkelchen.data.personal['eth_tokens']))
-        logger.debug('At beginning of REMOVE: {}'.format(self.rotkelchen.data.personal['eth_tokens']))
-        new_data = self.rotkelchen.blockchain.remove_eth_tokens(tokens)
+        try:
+            new_data = self.rotkelchen.blockchain.remove_eth_tokens(tokens)
+        except InputError as e:
+            return False, str(e)
         result, message = self.rotkelchen.data.remove_owned_eth_tokens(tokens)
+        result = {'result': result, 'message': message, 'per_account': new_data['per_account'], 'totals': new_data['totals']}
+        return process_result(result)
+
+    def add_blockchain_account(self, blockchain, account):
+        try:
+            new_data = self.rotkelchen.blockchain.add_blockchain_account(blockchain, account)
+        except InputError as e:
+            return False, str(e)
+        result, message = self.rotkelchen.data.add_blockchain_account(blockchain, account)
+        result = {'result': result, 'message': message, 'per_account': new_data['per_account'], 'totals': new_data['totals']}
+        return process_result(result)
+
+    def remove_blockchain_account(self, blockchain, account):
+        try:
+            new_data = self.rotkelchen.blockchain.remove_blockchain_account(blockchain, account)
+        except InputError as e:
+            return False, str(e)
+        result, message = self.rotkelchen.data.remove_blockchain_account(blockchain, account)
         result = {'result': result, 'message': message, 'per_account': new_data['per_account'], 'totals': new_data['totals']}
         return process_result(result)
 

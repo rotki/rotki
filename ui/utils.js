@@ -96,20 +96,35 @@ function change_location(target) {
     settings.current_location = target;
 }
 
+function reload_table_currency_val(table, colnum) {
+    table.rows().invalidate();
+    $(table.column(colnum).header()).text(settings.main_currency.ticker_symbol + ' value');
+    table.draw();
+}
+
 function reload_table_currency_val_if_existing(table, colnum) {
     if (table) {
-        table.rows().invalidate();
-        $(table.column(colnum).header()).text(settings.main_currency.ticker_symbol + ' value');
-        table.draw();
+        reload_table_currency_val(table, colnum);
     }
 }
 
+function string_capitalize(s) {
+    return s && s[0].toUpperCase() + s.slice(1);
+}
+
+function throw_with_trace(str) {
+    let err = new Error();
+    throw str + "\n" + err.stack;
+}
 
 module.exports = function() {
+    this.string_capitalize = string_capitalize;
     this.setup_log_watcher = setup_log_watcher;
     this.change_location = change_location;
     this.determine_location = determine_location;
     this.startup_error = startup_error;
     this.showAlert = showAlert;
+    this.reload_table_currency_val = reload_table_currency_val;
     this.reload_table_currency_val_if_existing = reload_table_currency_val_if_existing;
+    this.throw_with_trace = throw_with_trace;
 };

@@ -30,7 +30,16 @@ empty_settings = {
 }
 
 
-otc_fields = ['otc_time', 'otc_pair', 'otc_type', 'otc_amount', 'otc_rate', 'otc_fee', 'otc_link', 'otc_notes']
+otc_fields = [
+    'otc_time',
+    'otc_pair',
+    'otc_type',
+    'otc_amount',
+    'otc_rate',
+    'otc_fee',
+    'otc_link',
+    'otc_notes'
+]
 otc_optional_fields = ['otc_fee', 'otc_link', 'otc_notes']
 otc_numerical_fields = ['otc_amount', 'otc_rate', 'otc_fee']
 
@@ -201,13 +210,33 @@ class DataHandler(object):
         new_owned_tokens = self.personal['eth_tokens']
         for token in tokens:
             if token not in self.personal['eth_tokens']:
-                logger.debug('----> self.personal["eth_tokens"]: {}'.format(
-                    self.personal["eth_tokens"]))
                 return False, 'Token {} is not tracked.'.format(token)
 
             new_owned_tokens.remove(token)
 
         self.personal['eth_tokens'] = new_owned_tokens
+        self.store_personal()
+        return True, ''
+
+    def add_blockchain_account(self, blockchain, account):
+        if blockchain not in self.personal['blockchain_accounts']:
+            return False, 'Requested addition of account to untracked blockchain type {}'.format(blockchain)
+
+        if account in self.personal['blockchain_accounts'][blockchain]:
+            return False, 'Account is already tracked'
+
+        self.personal['blockchain_accounts'][blockchain].append(account)
+        self.store_personal()
+        return True, ''
+
+    def remove_blockchain_account(self, blockchain, account):
+        if blockchain not in self.personal['blockchain_accounts']:
+            return False, 'Requested removal of account from untracked blockchain type {}'.format(blockchain)
+
+        if account not in self.personal['blockchain_accounts'][blockchain]:
+            return False, 'Requested removal of untracked account'
+
+        self.personal['blockchain_accounts'][blockchain].remove(account)
         self.store_personal()
         return True, ''
 

@@ -24,3 +24,7 @@ class CorruptData(Exception):
 
     def __str__(self):
         return self.err
+
+
+class InputError(Exception):
+    pass

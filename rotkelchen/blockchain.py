@@ -1,6 +1,10 @@
+import operator
+import copy
+
 from gevent.lock import Semaphore
 from urllib.request import Request, urlopen
 
+from rotkelchen.errors import InputError
 from rotkelchen.ethchain import Ethchain
 from rotkelchen.fval import FVal
 from rotkelchen.utils import cache_response_timewise
@@ -23,7 +27,10 @@ class Blockchain(object):
         self.results_cache = {}
         self.ethchain = Ethchain(ethrpc_port)
         self.inquirer = inquirer
-        self.accounts = blockchain_accounts
+        # TODO: Here we duplicate the json.personal.blockchain_accounts dict
+        #       and the list of owned_eth_tokens
+        #       Perhaps just not duplicate and handle it all from this module
+        self.accounts = copy.deepcopy(blockchain_accounts)
         # A list of only token symbols, copy the personal data
         self.owned_eth_tokens = list(owned_eth_tokens)
         # All the known tokens, along with addresses and decimals
@@ -50,6 +57,12 @@ class Blockchain(object):
         self.query_btc_balances()
         return {'per_account': self.balances, 'totals': self.totals}
 
+    def query_btc_account_balance(self, account):
+        btc_resp = urlopen(Request(
+            'https://blockchain.info/q/addressbalance/%s' % account
+        ))
+        return FVal(btc_resp.read()) * FVal('0.00000001')  # result is in satoshis
+
     def query_btc_balances(self):
         if 'BTC' not in self.accounts:
             return
@@ -58,22 +71,28 @@ class Blockchain(object):
         btc_usd_price = self.inquirer.find_usd_price('BTC')
         total = FVal(0)
         for account in self.accounts['BTC']:
-            btc_resp = urlopen(Request(
-                'https://blockchain.info/q/addressbalance/%s' % account
-            ))
-
-            balance = FVal(btc_resp.read()) * FVal('0.00000001')  # result is in satoshis
+            balance = self.query_btc_account_balance(account)
             total += balance
             self.balances['BTC'][account] = {'amount': balance, 'usd_value': balance * btc_usd_price}
 
         self.totals['BTC'] = {'amount': total, 'usd_value': total * btc_usd_price}
 
     def track_new_tokens(self, tokens):
+        if self.balances == {}:
+            raise ValueError('track_new_tokens called before the first blockchain balance querying')
+
+        intersection = set(tokens).intersection(set(self.owned_eth_tokens))
+        if intersection != set():
+            raise InputError('Some of the new provided tokens to track already exist')
+
         self.owned_eth_tokens.extend(tokens)
         self.query_ethereum_tokens(tokens, self.balances['ETH'])
         return {'per_account': self.balances, 'totals': self.totals}
 
     def remove_eth_tokens(self, tokens):
+        if self.balances == {}:
+            raise ValueError('track_new_tokens called before the first blockchain balance querying')
+
         for token in tokens:
             usd_price = self.inquirer.find_usd_price(token)
             for account, account_data in self.balances['ETH'].items():
@@ -87,6 +106,98 @@ class Blockchain(object):
 
             del self.totals[token]
             self.owned_eth_tokens.remove(token)
+
+        return {'per_account': self.balances, 'totals': self.totals}
+
+    def modify_btc_account(self, account, append_or_remove, add_or_sub):
+        """Either appends or removes a BTC acccount.
+
+        Call with 'append', operator.add to add the account
+        Call with 'remove', operator.sub to remove the account
+        """
+        getattr(self.accounts['BTC'], append_or_remove)(account)
+        btc_usd_price = self.inquirer.find_usd_price('BTC')
+        balance = self.query_btc_account_balance(account)
+        usd_balance = balance * btc_usd_price
+        if append_or_remove == 'append':
+            self.balances['BTC'][account] = {'amount': balance, 'usd_value': usd_balance}
+        self.totals['BTC']['amount'] = add_or_sub(self.totals['BTC']['amount'], balance)
+        self.totals['BTC']['usd_value'] = add_or_sub(self.totals['BTC']['usd_value'], usd_balance)
+
+    def modify_eth_account(self, account, append_or_remove, add_or_sub):
+        """Either appends or removes an ETH acccount.
+
+        Call with 'append', operator.add to add the account
+        Call with 'remove', operator.sub to remove the account
+        """
+        getattr(self.accounts['ETH'], append_or_remove)(account)
+        eth_usd_price = self.inquirer.find_usd_price('ETH')
+        balance = self.ethchain.get_eth_balance(account)
+        usd_balance = balance * eth_usd_price
+        if append_or_remove == 'append':
+            self.balances['ETH'][account] = {'ETH': balance, 'usd_value': usd_balance}
+        self.totals['ETH']['amount'] = add_or_sub(self.totals['ETH']['amount'], balance)
+        self.totals['ETH']['usd_value'] = add_or_sub(self.totals['ETH']['usd_value'], usd_balance)
+
+        for token in self.owned_eth_tokens:
+            usd_price = self.inquirer.find_usd_price(token)
+            if usd_price == 0:
+                # skip tokens that have no price
+                continue
+
+            token_balance = self.ethchain.get_token_balance(
+                token,
+                self.all_eth_tokens[token]['address'],
+                self.all_eth_tokens[token]['decimal'],
+                account
+            )
+            if token_balance == 0:
+                continue
+
+            usd_value = token_balance * usd_price
+            if append_or_remove == 'append':
+                account_balance = self.balances['ETH'][account]
+                account_balance[token] = balance
+                account_balance['usd_value'] = account_balance['usd_value'] + usd_value
+
+            self.totals[token] = {
+                'amount': add_or_sub(self.totals[token], token_balance),
+                'usd_value': add_or_sub(self.totals[usd_value], usd_value)
+            }
+
+    def add_blockchain_account(self, blockchain, account):
+        if self.balances == {}:
+            raise ValueError('add_blockchain_account called before the first blockchain balance querying')
+
+        if blockchain == 'BTC':
+            if account in self.accounts['BTC']:
+                raise InputError('Tried to add an already existing BTC account')
+            self.modify_btc_account(account, 'append', operator.add)
+
+        elif blockchain == 'ETH':
+            if account in self.accounts['ETH']:
+                raise InputError('Tried to add an already existing ETH account')
+            self.modify_eth_account(account, 'append', operator.add)
+        else:
+            raise InputError('Unsupported blockchain {} provided at add_blockchain_account'.format(blockchain))
+
+        return {'per_account': self.balances, 'totals': self.totals}
+
+    def remove_blockchain_account(self, blockchain, account):
+        if self.balances == {}:
+            raise ValueError('remove_blockchain_account called before the first blockchain balance querying')
+
+        if blockchain == 'BTC':
+            if account not in self.accounts['BTC']:
+                raise InputError('Tried to remove a non existing BTC account')
+            self.modify_btc_account(account, 'remove', operator.sub)
+
+        elif blockchain == 'ETH':
+            if account not in self.accounts['ETH']:
+                raise InputError('Tried to remove a non existing ETH account')
+            self.modify_eth_account(account, 'remove', operator.sub)
+        else:
+            raise InputError('Unsupported blockchain {} provided at remove_blockchain_account'.format(blockchain))
 
         return {'per_account': self.balances, 'totals': self.totals}
 
@@ -115,7 +226,10 @@ class Blockchain(object):
                 eth_balances[account][token] = balance
                 eth_balances[account]['usd_value'] = eth_balances[account]['usd_value'] + usd_value
 
-            self.totals[token] = {'amount': token_total, 'usd_value': token_total * token_usd_price[token]}
+            self.totals[token] = {
+                'amount': token_total,
+                'usd_value': token_total * token_usd_price[token]
+            }
 
         self.balances['ETH'] = eth_balances
 
@@ -133,7 +247,7 @@ class Blockchain(object):
             eth_balances[account] = {'ETH': balance, 'usd_value': balance * eth_usd_price}
 
         self.totals['ETH'] = {'amount': eth_total, 'usd_value': eth_total * eth_usd_price}
-        self.balances['ETH'] = eth_balances # but they are not complete until token query
+        self.balances['ETH'] = eth_balances  # but they are not complete until token query
 
         # And now for tokens
         self.query_ethereum_tokens(self.owned_eth_tokens, eth_balances)

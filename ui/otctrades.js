@@ -86,7 +86,7 @@ function reload_table_data() {
             update_valhtml('#otc_link', '');
             update_valhtml('#otc_notes', '');
 
-            update_asset_table(OTC_TRADES_TABLE, result);
+            OTC_TRADES_TABLE.update(result);
         }
     });
 }
@@ -255,7 +255,7 @@ function add_listeners() {
 
     });
     $('#otc_time').datetimepicker({
-        format: 'd/m/Y G:i',
+        format: 'd/m/Y G:i'
     });
 }
 
