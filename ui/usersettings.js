@@ -344,15 +344,15 @@ function recreate_ethchain_per_account_table(eth_accounts) {
     create_ethchain_per_account_table(eth_accounts);
 }
 
-function delete_btc_account_row(row) {
+function delete_blockchain_account_row(blockchain, row) {
     let account = row.data()['account'];
-    client.invoke('remove_blockchain_account', 'BTC', account, (error, result) => {
+    client.invoke('remove_blockchain_account', blockchain, account, (error, result) => {
         if (error || result == null) {
-            showAlert('alert-danger', 'Error at deleting BTC account '+account+' : '+ error);
+            showAlert('alert-danger', `Error at deleting ${blockchain} account ${account}: ${error}`);
             return;
         }
         if (!result['result']) {
-            showAlert('alert-danger', 'Error at deleting BTC account '+account+' : '+ result['message']);  
+            showAlert('alert-danger', `Error at deleting ${blockchain} account ${account}: ` + result['message']);
         }
 
         row.remove().draw();
@@ -360,20 +360,12 @@ function delete_btc_account_row(row) {
     });
 }
 
-function delete_eth_account_row(row) {
-    let account = row.data()['account'];
-    client.invoke('remove_blockchain_account', 'ETH', account, (error, result) => {
-        if (error || result == null) {
-            showAlert('alert-danger', 'Error at deleting ETH account '+account+' : '+ error);
-            return;
-        }
-        if (!result['result']) {
-            showAlert('alert-danger', 'Error at deleting ETH account '+account+' : '+ result['message']);  
-        }
+function delete_btc_account_row(row) {
+    return delete_blockchain_account_row('BTC', row);
+}
 
-        row.remove().draw();
-        BB_PER_ASSET_TABLE.update_format(result['totals']);
-    });
+function delete_eth_account_row(row) {
+    return delete_blockchain_account_row('ETH', row);
 }
 
 function create_ethchain_per_account_table(eth_accounts) {
