@@ -56,14 +56,12 @@ class Ethchain(object):
             eth_accounts = eth_resp['result']
             for account_entry in eth_accounts:
                 amount = FVal(account_entry['balance'])
-                if amount != 0:
-                    balances[account_entry['account']] = from_wei(amount)
+                balances[account_entry['account']] = from_wei(amount)
 
         else:
             for account in accounts:
                 amount = FVal(self.web3.eth.getBalance(account))
-                if amount != 0:
-                    balances[account] = from_wei(amount)
+                balances[account] = from_wei(amount)
 
         return balances
 

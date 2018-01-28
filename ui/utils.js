@@ -117,6 +117,46 @@ function throw_with_trace(str) {
     throw str + "\n" + err.stack;
 }
 
+function dt_edit_drawcallback(id, edit_fn, delete_fn) {
+    return function (settings) {
+        let dt_api = this;
+        let ctx_menu_items = {};
+        if (edit_fn) {
+            ctx_menu_items['edit'] = {name: "Edit", icon: "fa-edit"};
+        }
+        if (delete_fn) {
+            ctx_menu_items['delete'] = {name: "Delete", icon: "fa-trash"};
+        }
+        ctx_menu_items['sep1'] = "---------";
+        ctx_menu_items['quit'] =  {name: "Quit", icon: "fa-sign-out"};
+
+        // idea taken from: https://stackoverflow.com/questions/43161236/how-to-show-edit-and-delete-buttons-on-datatables-when-right-click-to-rows
+        $.contextMenu({
+            selector: '#' + id + '_body tr td',
+            callback: function(key, options) {
+                var tr = $(this).closest('tr');
+                var row = $('#'+id).DataTable().row(tr);
+                // TODO: When move to SQL instead of files, simply use the primary key/id to select
+                switch (key) {
+                case 'delete' :
+                    if (delete_fn) {
+                        delete_fn(row);
+                    }
+                    break;
+                case 'edit' :
+                    if (edit_fn) {
+                        edit_fn(row);
+                    }
+                    break;
+                case 'quit':
+                    break;
+                }
+            },
+            items: ctx_menu_items
+        });
+    };
+}
+
 module.exports = function() {
     this.string_capitalize = string_capitalize;
     this.setup_log_watcher = setup_log_watcher;
@@ -127,4 +167,5 @@ module.exports = function() {
     this.reload_table_currency_val = reload_table_currency_val;
     this.reload_table_currency_val_if_existing = reload_table_currency_val_if_existing;
     this.throw_with_trace = throw_with_trace;
+    this.dt_edit_drawcallback = dt_edit_drawcallback;
 };

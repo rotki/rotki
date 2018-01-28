@@ -10,8 +10,17 @@ require("./utils.js");
  * @param table_data        array          The data to populate the tablewith
  * @param header            OPTIONAL(string)    If given then a header with this text is prepended to the table
  * @parama header_id        OPTIONAL(string)    If given then this is the id of the header
+* @param draw_cb            OPTIONAL(function) If given then the datatable has a draw callback. Callack should follow the signature: (id:string, editfn:optional(function), deletefn:optional(function)
  */
-function AssetTable(first_column, id, placement_type, placement_id, table_data, header, header_id) {
+function AssetTable(
+    first_column,
+    id,
+    placement_type,
+    placement_id,
+    table_data,
+    header,
+    header_id,
+    draw_cb) {
     this.first_column_name = first_column;
     this.id = id;
     let str = '';
@@ -32,7 +41,7 @@ function AssetTable(first_column, id, placement_type, placement_id, table_data, 
         let stack = err.stack;
         throw_with_trace('Invalid AssetTable construction value for placement_type: ' + placement_type);
     }
-    this.populate(table_data);
+    this.populate(table_data, draw_cb);
 }
 
 AssetTable.prototype.format_data =  function(original_data) {
@@ -50,9 +59,9 @@ AssetTable.prototype.format_data =  function(original_data) {
     return data;
 };
 
-AssetTable.prototype.populate = function (table_data) {
+AssetTable.prototype.populate = function (table_data, draw_cb) {
     let data = this.format_data(table_data);
-    let table = $('#'+this.id+'_table').DataTable({
+    let init_obj = {
         "data": data,
         "columns": [
             {"data": this.first_column_name, "title": string_capitalize(this.first_column_name)},
@@ -66,8 +75,11 @@ AssetTable.prototype.populate = function (table_data) {
             }
         ],
         "order": [[2, 'desc']]
-    });
-    // return table;
+    };
+    if (draw_cb) {
+        init_obj['drawCallback'] = draw_cb;
+    }
+    let table = $('#'+this.id+'_table').DataTable(init_obj);
     this.table = table;
 };
 

@@ -344,6 +344,38 @@ function recreate_ethchain_per_account_table(eth_accounts) {
     create_ethchain_per_account_table(eth_accounts);
 }
 
+function delete_btc_account_row(row) {
+    let account = row.data()['account'];
+    client.invoke('remove_blockchain_account', 'BTC', account, (error, result) => {
+        if (error || result == null) {
+            showAlert('alert-danger', 'Error at deleting BTC account '+account+' : '+ error);
+            return;
+        }
+        if (!result['result']) {
+            showAlert('alert-danger', 'Error at deleting BTC account '+account+' : '+ result['message']);  
+        }
+
+        row.remove().draw();
+        BB_PER_ASSET_TABLE.update_format(result['totals']);
+    });
+}
+
+function delete_eth_account_row(row) {
+    let account = row.data()['account'];
+    client.invoke('remove_blockchain_account', 'ETH', account, (error, result) => {
+        if (error || result == null) {
+            showAlert('alert-danger', 'Error at deleting ETH account '+account+' : '+ error);
+            return;
+        }
+        if (!result['result']) {
+            showAlert('alert-danger', 'Error at deleting ETH account '+account+' : '+ result['message']);  
+        }
+
+        row.remove().draw();
+        BB_PER_ASSET_TABLE.update_format(result['totals']);
+    });
+}
+
 function create_ethchain_per_account_table(eth_accounts) {
     let str = '<h3 id="ethchain_per_account_header">ETH accounts</h3>';
     // columns are: one for each token amount, one for ETH, one for account, one for total usd value
@@ -354,7 +386,8 @@ function create_ethchain_per_account_table(eth_accounts) {
     BB_PER_ACCOUNT_TABLES['ETH'] = $('#ethchain_per_account_table').DataTable({
         "data": data,
         "columns": column_data,
-        "order": [[column_data.length - 1, 'desc']]
+        "order": [[column_data.length - 1, 'desc']],
+        drawCallback: dt_edit_drawcallback('ethchain_per_account_table', null, delete_eth_account_row)
     });
 }
 
@@ -374,7 +407,16 @@ function create_blockchain_balances_tables(result) {
 
     let btc_accounts = result['per_account']['BTC'];
     if (btc_accounts) {
-        BB_PER_ACCOUNT_TABLES['BTC'] = new AssetTable('account', 'btcchain_per_account', 'insertAfter', 'btcchain_per_account_anchor', btc_accounts, 'BTC Accounts', 'btcchain_per_account_header');
+        BB_PER_ACCOUNT_TABLES['BTC'] = new AssetTable(
+            'account',
+            'btcchain_per_account',
+            'insertAfter',
+            'btcchain_per_account_anchor',
+            btc_accounts,
+            'BTC Accounts',
+            'btcchain_per_account_header',
+            dt_edit_drawcallback('btcchain_per_account_table', null, delete_btc_account_row)
+        );
     }
 
     enable_multiselect();

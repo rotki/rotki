@@ -121,6 +121,10 @@ class Blockchain(object):
         usd_balance = balance * btc_usd_price
         if append_or_remove == 'append':
             self.balances['BTC'][account] = {'amount': balance, 'usd_value': usd_balance}
+        elif append_or_remove == 'remove':
+            del self.balances['BTC'][account]
+        else:
+            raise ValueError('Programmer error: Should be append or remove')
         self.totals['BTC']['amount'] = add_or_sub(self.totals['BTC']['amount'], balance)
         self.totals['BTC']['usd_value'] = add_or_sub(self.totals['BTC']['usd_value'], usd_balance)
 
@@ -136,6 +140,10 @@ class Blockchain(object):
         usd_balance = balance * eth_usd_price
         if append_or_remove == 'append':
             self.balances['ETH'][account] = {'ETH': balance, 'usd_value': usd_balance}
+        elif append_or_remove == 'remove':
+            del self.balances['ETH'][account]
+        else:
+            raise ValueError('Programmer error: Should be append or remove')
         self.totals['ETH']['amount'] = add_or_sub(self.totals['ETH']['amount'], balance)
         self.totals['ETH']['usd_value'] = add_or_sub(self.totals['ETH']['usd_value'], usd_balance)
 

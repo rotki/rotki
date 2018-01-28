@@ -131,34 +131,7 @@ function create_otctrades_table() {
                     },
                 ],
                 "order": [[5, 'asc']],
-                drawCallback : function() {
-                    // idea taken from: https://stackoverflow.com/questions/43161236/how-to-show-edit-and-delete-buttons-on-datatables-when-right-click-to-rows
-                    $.contextMenu({
-                        selector: 'tbody tr td',
-                        callback: function(key, options) {
-                            var m = "clicked: " + key;
-                            var tr = $(this).closest('tr');
-                            var row = OTC_TRADES_TABLE.row(tr);
-                            // TODO: When move to SQL instead of files, simply use the primary key/id to select
-                            switch (key) {
-                            case 'delete' :
-                                delete_otc_trade(row);
-                                break;
-                            case 'edit' :
-                                edit_otc_trade(row);
-                                break;
-                            case 'quit':
-                                break;
-                            }
-                        },
-                        items: {
-                            "edit": {name: "Edit", icon: "fa-edit"},
-                            "delete": {name: "Delete", icon: "fa-trash"},
-                            "sep1": "---------",
-                            "quit": {name: "Quit", icon: "fa-sign-out"}
-                        }
-                    });
-                }
+                drawCallback : dt_edit_drawcallback('table_otctrades', edit_otc_trade, delete_otc_trade)
             });
             // Add event listener for opening and closing details
             $('#table_otctrades tbody').on('click', 'td.details-control', function () {
