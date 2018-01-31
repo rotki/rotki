@@ -6,7 +6,7 @@ from rotkelchen.errors import CorruptData
 
 
 def init_accounting_tests(history_list, margin_list, start_ts, end_ts):
-    price_historian = PriceHistorian('/home/lefteris/.rotkelchen', {})
+    price_historian = PriceHistorian('/home/lefteris/.rotkelchen')
     accountant = Accountant(
         price_historian=price_historian,
         profit_currency='EUR',

@@ -276,6 +276,9 @@ class PriceHistorian(object):
             with open(coinlist_cache_path, 'w') as f:
                 write_data = {'time': ts_now(), 'data': data}
                 f.write(rlk_jsondumps(write_data))
+        else:
+            # in any case take the data
+            data = data['data']
 
         self.cryptocompare_coin_list = data
         # For some reason even though price for the following assets is returned
