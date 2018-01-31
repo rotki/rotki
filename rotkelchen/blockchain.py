@@ -27,12 +27,13 @@ class Blockchain(object):
         self.results_cache = {}
         self.ethchain = Ethchain(ethrpc_port)
         self.inquirer = inquirer
-        # TODO: Here we duplicate the json.personal.blockchain_accounts dict
-        #       and the list of owned_eth_tokens
-        #       Perhaps just not duplicate and handle it all from this module
-        self.accounts = copy.deepcopy(blockchain_accounts)
-        # A list of only token symbols, copy the personal data
-        self.owned_eth_tokens = list(owned_eth_tokens)
+
+        # These two point into DataHandler's personal dict so all changes here
+        # are reflected there. TODO: Find a way to enforce it so that nobody
+        # else can write on Datahandler's personal dict
+        self.accounts = blockchain_accounts
+        self.owned_eth_tokens = owned_eth_tokens
+
         # All the known tokens, along with addresses and decimals
         self.all_eth_tokens = {}
         for token in all_eth_tokens:
@@ -50,6 +51,10 @@ class Blockchain(object):
         self.balances = {}
         # Per asset total balances
         self.totals = {}
+
+    @property
+    def eth_tokens(self):
+        return self.owned_eth_tokens
 
     @cache_response_timewise()
     def query_balances(self):

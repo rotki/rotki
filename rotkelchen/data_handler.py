@@ -194,52 +194,6 @@ class DataHandler(object):
 
         return True, ''
 
-    def add_owned_eth_tokens(self, tokens):
-        new_tokens = []
-        for token in tokens:
-            if token in self.personal['eth_tokens']:
-                return False, 'Token {} is already tracked.'.format(token)
-
-            new_tokens.append(token)
-
-        self.personal['eth_tokens'].extend(new_tokens)
-        self.store_personal()
-        return True, ''
-
-    def remove_owned_eth_tokens(self, tokens):
-        new_owned_tokens = self.personal['eth_tokens']
-        for token in tokens:
-            if token not in self.personal['eth_tokens']:
-                return False, 'Token {} is not tracked.'.format(token)
-
-            new_owned_tokens.remove(token)
-
-        self.personal['eth_tokens'] = new_owned_tokens
-        self.store_personal()
-        return True, ''
-
-    def add_blockchain_account(self, blockchain, account):
-        if blockchain not in self.personal['blockchain_accounts']:
-            return False, 'Requested addition of account to untracked blockchain type {}'.format(blockchain)
-
-        if account in self.personal['blockchain_accounts'][blockchain]:
-            return False, 'Account is already tracked'
-
-        self.personal['blockchain_accounts'][blockchain].append(account)
-        self.store_personal()
-        return True, ''
-
-    def remove_blockchain_account(self, blockchain, account):
-        if blockchain not in self.personal['blockchain_accounts']:
-            return False, 'Requested removal of account from untracked blockchain type {}'.format(blockchain)
-
-        if account not in self.personal['blockchain_accounts'][blockchain]:
-            return False, 'Requested removal of untracked account'
-
-        self.personal['blockchain_accounts'][blockchain].remove(account)
-        self.store_personal()
-        return True, ''
-
     def get_external_trades(self):
         return get_external_trades(self.data_directory)
 

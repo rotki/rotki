@@ -45,6 +45,20 @@ def process_result(result):
     return _process_entry(result)
 
 
+def simple_result(v, msg):
+    return {'result': v, 'message': msg}
+
+
+def accounts_result(per_account, totals):
+    result = {
+        'result': True,
+        'message': '',
+        'per_account': per_account,
+        'totals': totals
+    }
+    return process_result(result)
+
+
 class RotkelchenServer(object):
     def __init__(self):
         self.args = app_args()
@@ -273,44 +287,41 @@ class RotkelchenServer(object):
         return {'task_id': res}
 
     def get_eth_tokens(self):
-        result = {'all_eth_tokens': self.rotkelchen.data.eth_tokens, 'owned_eth_tokens': self.rotkelchen.data.personal['eth_tokens']}
+        result = {'all_eth_tokens': self.rotkelchen.data.eth_tokens, 'owned_eth_tokens': self.rotkelchen.blockchain.eth_tokens}
         return process_result(result)
 
     def add_owned_eth_tokens(self, tokens):
         try:
             new_data = self.rotkelchen.blockchain.track_new_tokens(tokens)
         except InputError as e:
-            return False, str(e)
-        result, message = self.rotkelchen.data.add_owned_eth_tokens(tokens)
-        result = {'result': result, 'message': message, 'per_account': new_data['per_account'], 'totals': new_data['totals']}
-        return process_result(result)
+            return simple_result(False, str(e))
+
+        self.rotkelchen.data.store_personal()
+        return accounts_result(new_data['per_account'], new_data['totals'])
 
     def remove_owned_eth_tokens(self, tokens):
         try:
             new_data = self.rotkelchen.blockchain.remove_eth_tokens(tokens)
         except InputError as e:
-            return False, str(e)
-        result, message = self.rotkelchen.data.remove_owned_eth_tokens(tokens)
-        result = {'result': result, 'message': message, 'per_account': new_data['per_account'], 'totals': new_data['totals']}
-        return process_result(result)
+            return simple_result(False, str(e))
+        self.rotkelchen.data.store_personal()
+        return accounts_result(new_data['per_account'], new_data['totals'])
 
     def add_blockchain_account(self, blockchain, account):
         try:
             new_data = self.rotkelchen.blockchain.add_blockchain_account(blockchain, account)
         except InputError as e:
-            return False, str(e)
-        result, message = self.rotkelchen.data.add_blockchain_account(blockchain, account)
-        result = {'result': result, 'message': message, 'per_account': new_data['per_account'], 'totals': new_data['totals']}
-        return process_result(result)
+            return simple_result(False, str(e))
+        self.rotkelchen.data.store_personal()
+        return accounts_result(new_data['per_account'], new_data['totals'])
 
     def remove_blockchain_account(self, blockchain, account):
         try:
             new_data = self.rotkelchen.blockchain.remove_blockchain_account(blockchain, account)
         except InputError as e:
-            return False, str(e)
-        result, message = self.rotkelchen.data.remove_blockchain_account(blockchain, account)
-        result = {'result': result, 'message': message, 'per_account': new_data['per_account'], 'totals': new_data['totals']}
-        return process_result(result)
+            return simple_result(False, str(e))
+        self.rotkelchen.data.store_personal()
+        return accounts_result(new_data['per_account'], new_data['totals'])
 
     def plot(self):
         self.rotkelchen.plot()
