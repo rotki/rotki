@@ -3,6 +3,7 @@ var dt = require( 'datatables.net' )();
 require("./monitor.js");
 require("./utils.js")();
 require("./asset_table.js")();
+require("./navigation.js")();
 
 let SAVED_TABLES = {};
 

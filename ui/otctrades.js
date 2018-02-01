@@ -1,6 +1,7 @@
 var settings = require("./settings.js")();
 require("./elements.js")();
 require("./utils.js")();
+require("./navigation.js")();
 
 var OTC_TRADES_TABLE = null;
 

@@ -5,6 +5,7 @@ require("./monitor.js")();
 require("./utils.js")();
 require("./exchange.js")();
 require("./balances_table.js")();
+require("./navigation.js")();
 
 
 let SAVED_RESULTS = [];
@@ -53,9 +54,6 @@ $('#settingsbutton a').click(function(event) {
     console.log("Going to settings!");
     create_or_reload_settings();
 });
-
-
-
 
 
 function add_exchange_on_click() {

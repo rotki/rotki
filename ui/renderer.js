@@ -24,19 +24,7 @@ for (let i = 0; i < settings.CURRENCIES.length; i++) {
 }
 
 
-$('#side-menu a').click(function(event) {
-    event.preventDefault();
-    var target_location = determine_location(this.href);
-
-    if (target_location == 'otctrades') {
-        create_or_reload_otctrades();
-    } else if (target_location == 'index') {
-        create_or_reload_dashboard();
-    } else {
-        throw "Invalid link target location " + target_location;
-    }
-});
-
+init_navigation();
 init_monitor();
 init_dashboard();
 init_usersettings();

@@ -2,6 +2,7 @@ var settings = require("./settings.js")();
 require("./elements.js")();
 require("./asset_table.js")();
 require("./utils.js")();
+require("./navigation.js")();
 
 let FIAT_TABLE = null;
 let FIAT_BALANCES = null;
