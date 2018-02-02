@@ -1,3 +1,4 @@
+import gevent
 from random import randint
 
 from rotkelchen.utils import tsToDate, ts_now, taxable_gain_for_sell
@@ -776,7 +777,18 @@ class Accountant(object):
         )
 
         prev_time = 0
+        count = 0
         for action in actions:
+
+            # Hack to periodically yield back to the gevent IO loop to avoid getting
+            # the losing remote after hearbeat error for the zerorpc client.
+            # https://github.com/0rpc/zerorpc-python/issues/37
+            # TODO: Find better way to do this. Perhas enforce this only if method
+            # is a synced call, and if async don't do this yielding. In any case
+            # this calculation should definitely by async
+            count += 1
+            if count % 500 == 0:
+                gevent.sleep(0.01)  # context switch
 
             # Assert we are sorted in ascending time order.
             timestamp = action_get_timestamp(action)
