@@ -1,7 +1,6 @@
 var settings = require("./settings.js")();
 require("./elements.js")();
 require("./utils.js")();
-require("./navigation.js")();
 
 var OTC_TRADES_TABLE = null;
 
@@ -178,7 +177,7 @@ function create_otctrades_ui() {
     create_otctrades_table();
 }
 
-function add_listeners() {
+function add_otctrades_listeners() {
     $('#otctradesubmit').click(function(event) {
         event.preventDefault();
         let otc_time = $('#otc_time').val();
@@ -233,18 +232,7 @@ function add_listeners() {
     });
 }
 
-function create_or_reload_otctrades() {
-    change_location('otctrades');
-    if (!settings.page_otctrades) {
-        console.log("At create/reload otctrades, with a null page index");
-        create_otctrades_ui();
-    } else {
-        console.log("At create/reload otctrades, with a Populated page index");
-        $('#page-wrapper').html(settings.page_otctrades);
-    }
-    add_listeners();
-}
-
 module.exports = function() {
-    this.create_or_reload_otctrades = create_or_reload_otctrades;
+    this.create_otctrades_ui = create_otctrades_ui;
+    this.add_otctrades_listeners = add_otctrades_listeners;
 };

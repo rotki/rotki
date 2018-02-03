@@ -35,26 +35,6 @@ function create_result_if_not_existing(result_type, number, name, icon) {
     return result;
 }
 
-$('#usersettingsbutton a').click(function(event) {
-    event.preventDefault();
-    var target_location = determine_location(this.href);
-    if (target_location != "usersettings") {
-        throw "Invalid link location " + target_location;
-    }
-    console.log("Going to user settings!");
-    create_or_reload_usersettings();
-});
-
-$('#settingsbutton a').click(function(event) {
-    event.preventDefault();
-    var target_location = determine_location(this.href);
-    if (target_location != "settings") {
-        throw "Invalid link location " + target_location;
-    }
-    console.log("Going to settings!");
-    create_or_reload_settings();
-});
-
 
 function add_exchange_on_click() {
     $('.panel a').click(function(event) {

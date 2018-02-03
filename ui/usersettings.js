@@ -2,7 +2,6 @@ var settings = require("./settings.js")();
 require("./elements.js")();
 require("./asset_table.js")();
 require("./utils.js")();
-require("./navigation.js")();
 
 let FIAT_TABLE = null;
 let FIAT_BALANCES = null;
@@ -158,7 +157,7 @@ function fiat_modify_callback(event) {
         });
 }
 
-function add_listeners() {
+function add_usersettings_listeners() {
     $('#setup_exchange').change(function (event) {
         if (settings.connected_exchanges.indexOf(this.value) > -1) {
             disable_exchange_entries(this.value);
@@ -557,20 +556,10 @@ function init_usersettings() {
     });
 }
 
-function create_or_reload_usersettings() {
-    change_location('usersettings');
-    if (!settings.page_usersettings) {
-        console.log("At create/reload usersettings, with a null page index");
-        create_user_settings();
-    } else {
-        console.log("At create/reload usersettings, with a Populated page index");
-        $('#page-wrapper').html(settings.page_usersettings);
-    }
-    add_listeners();
-}
 
 module.exports = function() {
     this.init_usersettings = init_usersettings;
-    this.create_or_reload_usersettings = create_or_reload_usersettings;
     this.reload_usersettings_tables_if_existing = reload_usersettings_tables_if_existing;
+    this.add_usersettings_listeners = add_usersettings_listeners;
+    this.create_user_settings = create_user_settings;
 };

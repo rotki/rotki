@@ -48,7 +48,7 @@ function format_currency_value(number) {
     return number;
 }
 
-function add_listeners() {
+function add_settings_listeners() {
     $('#settingssubmit').click(function(event) {
         event.preventDefault();
         settings.floating_precision = $('#floating_precision').val();
@@ -97,18 +97,6 @@ function create_settings_ui() {
     $(str).appendTo($('.panel-body'));
 }
 
-function create_or_reload_settings() {
-    change_location('settings');
-    if (!settings.page_settings) {
-        console.log("At create/reload settings, with a null page index");
-        create_settings_ui();
-    } else {
-        console.log("At create/reload settings, with a Populated page index");
-        $('#page-wrapper').html(settings.page_settings);
-    }
-    add_listeners();
-}
-
 module.exports = function() {
     if (!settings) {
         settings = {};
@@ -129,7 +117,8 @@ module.exports = function() {
     }
     this.get_value_in_main_currency = get_value_in_main_currency;
     this.assert_exchange_exists = assert_exchange_exists;
-    this.create_or_reload_settings = create_or_reload_settings;
+    this.create_settings_ui = create_settings_ui;
+    this.add_settings_listeners = add_settings_listeners;
     this.format_currency_value = format_currency_value;
     this.get_fiat_usd_value = get_fiat_usd_value;
 
