@@ -916,13 +916,16 @@ class Accountant(object):
             self.eth_transactions_gas_costs
         )
         return {
-            'loan_profit': str(self.loan_profit),
-            'margin_positions_profit': str(self.margin_positions_profit),
-            'settlement_losses': str(self.settlement_losses),
-            'ethereum_transaction_gas_costs': str(self.eth_transactions_gas_costs),
-            'asset_movement_fees': str(self.asset_movement_fees),
-            'general_trade_profit_loss': str(self.general_trade_profit_loss),
-            'taxable_trade_profit_loss': str(self.taxable_trade_profit_loss),
-            'total_taxable_profit_loss': str(self.taxable_trade_profit_loss + sum_other_actions),
-            'total_profit_loss': str(self.general_trade_profit_loss + sum_other_actions),
+            'overview': {
+                'loan_profit': str(self.loan_profit),
+                'margin_positions_profit': str(self.margin_positions_profit),
+                'settlement_losses': str(self.settlement_losses),
+                'ethereum_transaction_gas_costs': str(self.eth_transactions_gas_costs),
+                'asset_movement_fees': str(self.asset_movement_fees),
+                'general_trade_profit_loss': str(self.general_trade_profit_loss),
+                'taxable_trade_profit_loss': str(self.taxable_trade_profit_loss),
+                'total_taxable_profit_loss': str(self.taxable_trade_profit_loss + sum_other_actions),
+                'total_profit_loss': str(self.general_trade_profit_loss + sum_other_actions),
+            },
+            'all_events': self.csvexporter.all_events,
         }

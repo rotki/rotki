@@ -14,7 +14,6 @@ from rotkelchen.errors import InputError
 from rotkelchen.args import app_args
 from rotkelchen.rotkelchen import Rotkelchen
 from rotkelchen.utils import pretty_json_dumps
-from rotkelchen.transactions import query_txlist
 from rotkelchen.inquirer import get_fiat_usd_exchange_rates
 
 import logging
@@ -78,7 +77,6 @@ class RotkelchenServer(object):
         return task_id
 
     def write_task_result(self, task_id, result):
-        logger.debug('Writting task result for task id {}. It\'s {}'.format(task_id, result))
         with self.task_lock:
             self.task_results[task_id] = result
 
@@ -150,7 +148,7 @@ class RotkelchenServer(object):
             if not ret and len1 != len(self.task_results):
                 logger.error("Popped None from results task but lost an entry")
             if ret:
-                logger.debug("Found response for task {} and it is {}".format(task_id, ret))
+                logger.debug("Found response for task {}".format(task_id))
         return ret
 
     def get_settings(self):
@@ -254,7 +252,7 @@ class RotkelchenServer(object):
 
         try:
             exchange = getattr(self.rotkelchen, location)
-        except:
+        except AttributeError:
             raise "Unknown location {} given".format(location)
 
         return exchange.query_trade_history(start_ts, end_ts)
@@ -270,9 +268,11 @@ class RotkelchenServer(object):
         start_ts = int(start_ts)
         end_ts = int(end_ts)
         result = self.rotkelchen.process_history(start_ts, end_ts)
-
-        print('process_trade_history() done')
         return process_result(result)
+
+    def process_trade_history_async(self, start_ts, end_ts):
+        res = self.query_async('process_trade_history', start_ts=start_ts, end_ts=end_ts)
+        return {'task_id': res}
 
     def query_balances(self, save_data=False):
         if isinstance(save_data, str) and (save_data == 'save' or save_data == 'True'):
@@ -335,7 +335,7 @@ class RotkelchenServer(object):
     def main(self):
         gevent.hub.signal(signal.SIGINT, self.shutdown)
         gevent.hub.signal(signal.SIGTERM, self.shutdown)
-        self.zerorpc = zerorpc.Server(self)
+        self.zerorpc = zerorpc.Server(self, heartbeat=15)
         addr = 'tcp://127.0.0.1:' + str(self.port())
         self.zerorpc.bind(addr)
         print('start running on {}'.format(addr))

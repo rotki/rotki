@@ -113,6 +113,7 @@ module.exports = function() {
         settings.page_settings = null;
         settings.page_otctrades = null;
         settings.page_usersettings = null;
+        settings.page_taxreport = null;
         settings.page_exchange = {};
     }
     this.get_value_in_main_currency = get_value_in_main_currency;

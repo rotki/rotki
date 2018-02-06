@@ -5,6 +5,7 @@ require("./exchange.js")();
 require("./utils.js")();
 require("./otctrades.js")();
 require("./usersettings.js")();
+require("./taxreport.js")();
 var settings = require("./settings.js")();
 client.connect("tcp://127.0.0.1:4242");
 
@@ -29,4 +30,5 @@ init_monitor();
 init_dashboard();
 init_usersettings();
 init_exchanges_tables();
+init_taxreport();
 create_or_reload_dashboard();

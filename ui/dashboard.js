@@ -231,7 +231,6 @@ function get_banks_total() {
 
 function create_or_reload_dashboard() {
     change_location('index');
-
     if (!settings.page_index) {
         $("body").addClass("loading");
         console.log("At create/reload, with a null page index");

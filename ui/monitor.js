@@ -34,7 +34,6 @@ function monitor_tasks() {
         return;
     }
 
-
     // else it means we still need to have data to load
     $('#top-loading-icon').removeClass().addClass('fa fa-circle-o-notch fa-spin fa-fw');
 

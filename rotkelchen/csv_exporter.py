@@ -22,6 +22,7 @@ class CSVExporter(object):
             self.margin_positions_csv = list()
             self.loan_settlements_csv = list()
             self.all_events_csv = list()
+            self.all_events = list()
 
     def dict_to_csv_file(self, path, dictionary_list):
 
@@ -53,29 +54,42 @@ class CSVExporter(object):
         row = len(self.all_events_csv) + 2
         if event_type == 'buy':
             net_profit_or_loss = 0  # no profit by buying
+            net_profit_or_loss_csv = 0  # no profit by buying
         elif event_type == 'sell':
-            net_profit_or_loss = '=IF(E{}=0,0,H{}-F{})'.format(row, row, row)
+            net_profit_or_loss = 0 if taxable_amount == 0 else received_in_asset - taxable_bought_cost
+            net_profit_or_loss_csv = '=IF(E{}=0,0,H{}-F{})'.format(row, row, row)
         elif event_type in ('tx_gas_cost', 'asset_movement', 'loan_settlement'):
-            net_profit_or_loss = '=-B{}'.format(row)
+            net_profit_or_loss = paid_in_profit_currency
+            net_profit_or_loss_csv = '=-B{}'.format(row)
         elif event_type in ('interest_rate_payment', 'margin_position_close'):
-            net_profit_or_loss = '=H{}'.format(row)
+            net_profit_or_loss = received_in_profit_currency
+            net_profit_or_loss_csv = '=H{}'.format(row)
         else:
             raise ValueError('Illegal event type "{}" at add_to_allevents'.format(event_type))
 
-        self.all_events_csv.append({
+        entry = {
             'type': event_type,
-            'paid_in_{}'.format(self.profit_currency): paid_in_profit_currency,
+            'paid_in_profit_currency': paid_in_profit_currency,
             'paid_asset': paid_asset,
             'paid_in_asset': paid_in_asset,
             'taxable_amount': taxable_amount,
             'taxable_bought_cost': taxable_bought_cost,
             'received_asset': received_asset,
-            'received_in_{}'.format(self.profit_currency): received_in_profit_currency,
+            'received_in_profit_currency': received_in_profit_currency,
             'received_in_asset': received_in_asset,
             'net_profit_or_loss': net_profit_or_loss,
-            'time': tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+            'time': timestamp,
             'is_virtual': is_virtual
-        })
+        }
+        self.all_events.append(entry)
+        new_entry = entry.copy()
+        new_entry['net_profit_or_loss'] = net_profit_or_loss_csv
+        new_entry['time'] = tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+        new_entry['paid_in_{}'.format(self.profit_currency)] = paid_in_profit_currency
+        new_entry['received_in_{}'.format(self.profit_currency)] = received_in_profit_currency
+        del new_entry['paid_in_profit_currency']
+        del new_entry['received_in_profit_currency']
+        self.all_events_csv.append(new_entry)
 
     def add_buy(
             self,

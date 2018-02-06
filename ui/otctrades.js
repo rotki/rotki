@@ -4,17 +4,6 @@ require("./utils.js")();
 
 var OTC_TRADES_TABLE = null;
 
-function timestamp_to_date(ts) {
-    let date = new Date(ts * 1000);
-    return (
-        ("0" + date.getUTCDate()).slice(-2)+ '/' +
-        ("0" + (date.getUTCMonth() + 1)).slice(-2) + '/' +
-        date.getUTCFullYear() + ' ' +
-        ("0" + date.getUTCHours()).slice(-2) + ':' +
-        ("0" + date.getUTCMinutes()).slice(-2)
-    );
-}
-
 function update_valhtml(selector_text, val) {
     $(selector_text).val(val);
     $(selector_text).html(val);

@@ -1,4 +1,5 @@
 var settings = require("./settings.js")();
+require("./taxreport.js")();
 
 function determine_location(url) {
     var split = url.split('#');
@@ -30,6 +31,9 @@ function save_current_location() {
     } else if (settings.current_location == 'usersettings') {
         console.log("Saving user settings ...");
         settings.page_usersettings = $('#page-wrapper').html();
+    } else if (settings.current_location == 'taxreport') {
+        console.log("Saving tax report ...");
+        settings.page_taxreport = $('#page-wrapper').html();
     } else {
         throw "Invalid link location " + settings.current_location;
     }
@@ -62,6 +66,8 @@ function init_navigation() {
             create_or_reload_page('otctrades', create_otctrades_ui, add_otctrades_listeners);
         } else if (target_location == 'index') {
             create_or_reload_dashboard();
+        } else if (target_location == 'taxreport') {
+            create_or_reload_page('taxreport', create_taxreport_ui, add_taxreport_listeners);
         }
         // else do nothing -- no link
     });

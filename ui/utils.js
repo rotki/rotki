@@ -2,6 +2,17 @@ var fs = require('fs');
 var Tail = require('tail').Tail;
 var settings = require("./settings.js")();
 
+function timestamp_to_date(ts) {
+    let date = new Date(ts * 1000);
+    return (
+        ("0" + date.getUTCDate()).slice(-2)+ '/' +
+        ("0" + (date.getUTCMonth() + 1)).slice(-2) + '/' +
+        date.getUTCFullYear() + ' ' +
+        ("0" + date.getUTCHours()).slice(-2) + ':' +
+        ("0" + date.getUTCMinutes()).slice(-2)
+    );
+}
+
 function startup_error(text, reason) {
     let loading_wrapper = document.querySelector('.loadingwrapper');
     let loading_wrapper_text = document.querySelector('.loadingwrapper_text');
@@ -45,6 +56,7 @@ function showAlert(type, text) {
     $(str).prependTo($("#wrapper"));
 }
 
+// TODO: Remove this/replace with something else. In the case of a huge log hangs the entire app
 function setup_log_watcher(callback) {
 
     // if the log file is not found keep trying until it is
@@ -75,6 +87,17 @@ function string_capitalize(s) {
 function throw_with_trace(str) {
     let err = new Error();
     throw str + "\n" + err.stack;
+}
+
+function date_text_to_utc_ts(txt) {
+    // for now assuming YYY/MM/DD HH:MM
+    let m = txt.match(/\d+/g);
+    let year = parseInt(m[0]);
+    let month = parseInt(m[1]) - 1;
+    let day = parseInt(m[2]);
+    let hours = parseInt(m[3]);
+    let seconds = parseInt(m[4]);
+    return (new Date(Date.UTC(year, month, day, hours, seconds))).getTime() / 1000;
 }
 
 function dt_edit_drawcallback(id, edit_fn, delete_fn) {
@@ -118,10 +141,12 @@ function dt_edit_drawcallback(id, edit_fn, delete_fn) {
 }
 
 module.exports = function() {
+    this.timestamp_to_date = timestamp_to_date;
     this.string_capitalize = string_capitalize;
     this.setup_log_watcher = setup_log_watcher;
     this.startup_error = startup_error;
     this.showAlert = showAlert;
+    this.date_text_to_utc_ts = date_text_to_utc_ts;
     this.reload_table_currency_val = reload_table_currency_val;
     this.reload_table_currency_val_if_existing = reload_table_currency_val_if_existing;
     this.throw_with_trace = throw_with_trace;
