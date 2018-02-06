@@ -14,8 +14,8 @@ function create_taxreport_ui() {
 }
 
 function add_taxreport_listeners() {
-    $('#analysis_start_date').datetimepicker({timepicker:true});
-    $('#analysis_end_date').datetimepicker({timepicker:true});
+    $('#analysis_start_date').datetimepicker({format: settings.datetime_format});
+    $('#analysis_end_date').datetimepicker({format: settings.datetime_format});
     $('#generate_report').click(generate_report_callback);
 }
 
@@ -26,6 +26,16 @@ function generate_report_callback(event) {
 
     start_ts = date_text_to_utc_ts(start_ts);
     end_ts = date_text_to_utc_ts(end_ts);
+    now_ts = utc_now();
+    if (end_ts <= start_ts) {
+        showAlert('alert-danger', 'The end time should be after the start time.');
+        return;
+    }
+
+    if (end_ts > now_ts) {
+        showAlert('alert-danger', 'The end time should not be in the future.');
+        return;
+    }
     let str = loading_placeholder('tax_report_loading');
     $(str).insertAfter('#tax_report_anchor');
 

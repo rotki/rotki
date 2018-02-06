@@ -217,7 +217,7 @@ function add_otctrades_listeners() {
 
     });
     $('#otc_time').datetimepicker({
-        format: 'd/m/Y G:i'
+        format: settings.datetime_format
     });
 }
 

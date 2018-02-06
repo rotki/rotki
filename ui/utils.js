@@ -2,6 +2,10 @@ var fs = require('fs');
 var Tail = require('tail').Tail;
 var settings = require("./settings.js")();
 
+function utc_now() {
+    return Math.floor(Date.now() / 1000);
+}
+
 function timestamp_to_date(ts) {
     let date = new Date(ts * 1000);
     return (
@@ -91,10 +95,13 @@ function throw_with_trace(str) {
 
 function date_text_to_utc_ts(txt) {
     // for now assuming YYY/MM/DD HH:MM
+    if (settings.datetime_format != 'd/m/Y G:i') {
+        throw "Invalid datetime format";
+    }
     let m = txt.match(/\d+/g);
-    let year = parseInt(m[0]);
+    let day = parseInt(m[0]);
     let month = parseInt(m[1]) - 1;
-    let day = parseInt(m[2]);
+    let year = parseInt(m[2]);
     let hours = parseInt(m[3]);
     let seconds = parseInt(m[4]);
     return (new Date(Date.UTC(year, month, day, hours, seconds))).getTime() / 1000;
@@ -141,6 +148,7 @@ function dt_edit_drawcallback(id, edit_fn, delete_fn) {
 }
 
 module.exports = function() {
+    this.utc_now = utc_now;
     this.timestamp_to_date = timestamp_to_date;
     this.string_capitalize = string_capitalize;
     this.setup_log_watcher = setup_log_watcher;
