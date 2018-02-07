@@ -87,7 +87,16 @@ function create_box (id, icon, number, currency_icon) {
         return;
     }
     number = format_currency_value(number);
-    var str = '<div class="panel panel-primary"><div class="panel-heading" id="'+id+'"><div class="row"><div class="col-xs-3"><i title="' + id + '" class="fa '+ icon +'  fa-5x"></i></div><div class="col-xs-9 text-right"><div class="huge">'+ number +'</div><div id="status_box_text"><i id="currencyicon" class="fa '+ currency_icon + ' fa-fw"></i></div></div></div></div><a href="#"><div class="panel-footer"><span class="pull-left">View Details</span><span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span><div class="clearfix"></div></div></a></div>';
+    var str = '<div class="panel panel-primary"><div class="panel-heading" id="'+id+'"><div class="row"><div class="col-xs-3"><i title="' + id + '" class="fa '+ icon +'  fa-5x"></i></div><div class="col-xs-9 text-right"><div class="huge">'+ number +'</div><div id="status_box_text"><i id="currencyicon" class="fa '+ currency_icon + ' fa-fw"></i></div></div></div></div>';
+    if (id == 'foo') {
+        str += '<a href="#"><div class="panel-footer"><span class="pull-left">View Details</span><span class="pull-right"><i class="fa fa-arrow-circle-right"></i></span>';
+        str += '<div class="clearfix"></div></div></a></div>';
+
+    } else {
+        str += '<div class="panel-footer">';
+        str += '<div class="clearfix"></div></div></div>';
+    }
+
     $(str).prependTo($('#dashboard-contents'));
     // also save the dashboard page
     settings.page_index = $('#page-wrapper').html();
