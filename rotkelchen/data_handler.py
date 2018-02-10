@@ -16,6 +16,7 @@ from rotkelchen.accounting import Accountant
 from rotkelchen.history import get_external_trades, EXTERNAL_TRADES_FILE
 from rotkelchen.fval import FVal
 from rotkelchen.inquirer import FIAT_CURRENCIES
+from rotkelchen.dbhandler import DBHandler
 
 import logging
 logger = logging.getLogger(__name__)
@@ -94,6 +95,8 @@ class DataHandler(object):
             self.settings = empty_settings
         except FileNotFoundError:
             self.settings = empty_settings
+
+        self.db = DBHandler(self.data_directory)
 
         historical_data_start = self.settings.get('historical_data_start_date', DEFAULT_START_DATE)
 

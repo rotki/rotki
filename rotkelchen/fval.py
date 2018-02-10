@@ -10,6 +10,15 @@ def evaluate_input(other):
     return other
 
 
+def fval_from_percentage(perc):
+    """Create an fval from a percentage string in the style of "0.23478%
+
+    We will essentially get the corresponding float and divide by 100"""
+    perc = perc.rstrip('%')
+    perc = FVal(perc) / 100
+    return perc
+
+
 class FVal(object):
     """A value to represent numbers for financial applications. At the moment
     we use the python Decimal library but the abstraction will help us change the
