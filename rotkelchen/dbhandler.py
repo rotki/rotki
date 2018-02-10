@@ -12,11 +12,6 @@ class DBHandler(object):
         self.conn.execute('PRAGMA foreign_keys=ON')
         cursor = self.conn.cursor()
 
-        # temporary for testing
-        cursor.execute('DROP TABLE IF EXISTS timed_balances')
-        cursor.execute('DROP TABLE IF EXISTS timed_location_data')
-        cursor.execute('DROP TABLE IF EXISTS timed_unique_data')
-
         cursor.execute(
             'CREATE TABLE IF NOT EXISTS timed_balances ('
             '    time INTEGER, currency VARCHAR[12], amount DECIMAL, usd_value DECIMAL, net_percentage DECIMAL'
@@ -69,3 +64,9 @@ class DBHandler(object):
             (time, net_usd)
         )
         self.conn.commit()
+
+    def remove(self):
+        cursor = self.conn.cursos()
+        cursor.execute('DROP TABLE IF EXISTS timed_balances')
+        cursor.execute('DROP TABLE IF EXISTS timed_location_data')
+        cursor.execute('DROP TABLE IF EXISTS timed_unique_data')

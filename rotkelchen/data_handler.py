@@ -14,7 +14,7 @@ from rotkelchen.utils import (
 from rotkelchen.history import TradesHistorian, PriceHistorian
 from rotkelchen.accounting import Accountant
 from rotkelchen.history import get_external_trades, EXTERNAL_TRADES_FILE
-from rotkelchen.fval import FVal, fval_from_percentage
+from rotkelchen.fval import FVal
 from rotkelchen.inquirer import FIAT_CURRENCIES
 from rotkelchen.dbhandler import DBHandler
 
@@ -158,108 +158,6 @@ class DataHandler(object):
                 self.stats = new_stats
                 with open(stats_file, 'w') as f:
                     f.write(rlk_jsondumps(self.stats))
-
-    def convert_valuejson_to_db(self):
-        # Unfortunately json data changed format multiple times ...
-        last_time = 0
-        for entry in self.stats:
-            if isinstance(entry['date'], FVal):
-                time = entry['date'].to_int(exact=True)
-            else:
-                time = entry['date']
-
-                assert time > last_time, "new time is {} but last_time was {}".format(time, last_time)
-                last_time = time
-
-            net_usd = FVal(entry['data']['net_usd'])
-            currencies_perc = None
-            if 'currencies' in entry['data']:
-                currencies_perc = entry['data']['currencies']
-
-            location_dict = {}
-            if 'location' in entry['data']:
-                assert len(entry['data']['location']) <= 6
-                check_old_key_value('poloniex', entry['data']['location'], location_dict)
-                check_old_key_value('bittrex', entry['data']['location'], location_dict)
-                check_old_key_value('kraken', entry['data']['location'], location_dict)
-                check_old_key_value('binance', entry['data']['location'], location_dict)
-
-                check_old_key_value('banksncash', entry['data']['location'], location_dict, 'banks')
-                check_old_key_value('normal_crypto_account', entry['data']['location'], location_dict, 'blockchain')
-            else:
-                assert len(entry['data']['net_usd_perc_location']) <= 6
-                check_new_key_value('poloniex', entry['data']['net_usd_perc_location'], location_dict)
-                check_new_key_value('bittrex', entry['data']['net_usd_perc_location'], location_dict)
-                check_new_key_value('binance', entry['data']['net_usd_perc_location'], location_dict)
-                check_new_key_value('kraken', entry['data']['net_usd_perc_location'], location_dict)
-
-                if 'blockchain' in entry['data']['net_usd_perc_location']:
-                    old_key = 'blockchain'
-                elif 'normal_crypto_accounts' in entry['data']['net_usd_perc_location']:
-                    old_key = 'normal_crypto_accounts'
-                else:
-                    raise ValueError('should have a blockchain entry')
-
-                check_new_key_value(old_key, entry['data']['net_usd_perc_location'], location_dict, new_key='blockchain')
-
-                if 'banksncash' in entry['data']['net_usd_perc_location']:
-                    old_key = 'banksncash'
-                elif 'banks' in entry['data']['net_usd_perc_location']:
-                    old_key = 'banks'
-                else:
-                    raise ValueError('should have a blockchain entry')
-
-                check_new_key_value(old_key, entry['data']['net_usd_perc_location'], location_dict, new_key='banks')
-
-            currencies = {}
-            for attr, value in entry['data'].items():
-                if attr in ('currencies', 'location', 'net_usd', 'net_usd_perc_location'):
-                    continue
-
-                # here attr can only be an asset
-                assert isinstance(value, dict)
-                currencies[attr] = value
-
-            # if it's the old json entry for currencies percentages connect them
-            if currencies_perc:
-                assert len(currencies_perc) == len(currencies)
-                for currency, val in currencies.items():
-                    val['percentage_of_net_value'] = currencies_perc[
-                        'percentage_of_net_usd_in_{}'.format(currency.lower())
-                    ]
-
-            # and now we can do the SQL entries
-            balances = []
-            for currency, val in currencies.items():
-                floating_perc = fval_from_percentage(val['percentage_of_net_value'])
-                balances.append((
-                    time,
-                    currency,
-                    str(val['amount']),
-                    str(val['usd_value']),
-                    str(floating_perc),
-                ))
-            self.db.add_multiple_balances(balances)
-
-            locations = []
-            net_sum = FVal(0)
-            for location, perc in location_dict.items():
-                floating_perc = fval_from_percentage(perc)
-                usd_value = floating_perc * net_usd
-                net_sum += usd_value
-                locations.append((
-                    time,
-                    location,
-                    str(usd_value),
-                    str(floating_perc),
-                ))
-            self.db.add_multiple_location_data(locations)
-
-            # Finally add time and unique data
-            self.db.add_timed_unique_data(time, str(net_usd))
-
-    def check_consistency(self):
-        self.db.check_consistency(self.stats)
 
     def append_to_stats(self, entry):
         data = {'date': int(time.time()), 'data': entry}
