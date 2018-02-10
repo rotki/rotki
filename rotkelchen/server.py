@@ -329,6 +329,12 @@ class RotkelchenServer(object):
     def extend_values(self, other_file_path):
         self.rotkelchen.extend_values(other_file_path)
 
+    def convert_db(self):
+        self.rotkelchen.data.convert_valuejson_to_db()
+
+    def check_consistency(self):
+        self.rotkelchen.data.check_consistency()
+
     def echo(self, text):
         return text
 
