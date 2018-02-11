@@ -1,18 +1,25 @@
 import time
 import os
-import sqlite3
+from pysqlcipher3 import dbapi2 as sqlcipher
+
+from rotkelchen.fval import FVal
+from rotkelchen.errors import InputError
 
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
 # http://www.sql-join.com/sql-join-types
 class DBHandler(object):
 
-    def __init__(self, database_directory):
-        self.conn = sqlite3.connect(os.path.join(database_directory, 'rotkehlchen.db'))
+    def __init__(self, database_directory, username, password):
+        self.conn = sqlcipher.connect(os.path.join(database_directory, 'rotkehlchen.db'))
         self.conn.text_factory = str
+        try:
+            self.conn.executescript('PRAGMA key="{}"; pragma kdf_iter=64000;'.format(password))
+        except sqlcipher.DatabaseError:
+            raise InputError('Wrong password while decrypting the database')
+
         self.conn.execute('PRAGMA foreign_keys=ON')
         cursor = self.conn.cursor()
-
         cursor.execute(
             'CREATE TABLE IF NOT EXISTS timed_balances ('
             '    time INTEGER, currency VARCHAR[12], amount DECIMAL, usd_value DECIMAL'

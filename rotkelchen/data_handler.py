@@ -109,7 +109,7 @@ class DataHandler(object):
         except FileNotFoundError:
             self.settings = empty_settings
 
-        self.db = DBHandler(self.data_directory)
+        self.db = DBHandler(self.data_directory, '', '')
 
         historical_data_start = self.settings.get('historical_data_start_date', DEFAULT_START_DATE)
 
