@@ -1,3 +1,4 @@
+import time
 import os
 import sqlite3
 
@@ -14,12 +15,12 @@ class DBHandler(object):
 
         cursor.execute(
             'CREATE TABLE IF NOT EXISTS timed_balances ('
-            '    time INTEGER, currency VARCHAR[12], amount DECIMAL, usd_value DECIMAL, net_percentage DECIMAL'
+            '    time INTEGER, currency VARCHAR[12], amount DECIMAL, usd_value DECIMAL'
             ')'
         )
         cursor.execute(
             'CREATE TABLE IF NOT EXISTS timed_location_data ('
-            '    time INTEGER, location VARCHAR[24], usd_value DECIMAL, net_percentage DECIMAL'
+            '    time INTEGER, location VARCHAR[24], usd_value DECIMAL'
             ')'
         )
         cursor.execute(
@@ -33,12 +34,12 @@ class DBHandler(object):
         """Execute addition of multiple balances in the DB
 
         balances should be a list of tuples each containing:
-        (time, asset, amount, usd_value, perc)"""
+        (time, asset, amount, usd_value)"""
         cursor = self.conn.cursor()
         cursor.executemany(
             'INSERT INTO timed_balances('
-            '    time, currency, amount, usd_value, net_percentage) '
-            ' VALUES(?, ?, ?, ?, ?)',
+            '    time, currency, amount, usd_value) '
+            ' VALUES(?, ?, ?, ?)',
             balances
         )
         self.conn.commit()
@@ -47,12 +48,12 @@ class DBHandler(object):
         """Execute addition of multiple location data in the DB
 
         location_data should be a list of tuples each containing:
-        (time, location, usd_value, perc)"""
+        (time, location, usd_value)"""
         cursor = self.conn.cursor()
         cursor.executemany(
             'INSERT INTO timed_location_data('
-            '    time, location, usd_value, net_percentage) '
-            ' VALUES(?, ?, ?, ?)',
+            '    time, location, usd_value) '
+            ' VALUES(?, ?, ?)',
             location_data
         )
         self.conn.commit()
@@ -70,3 +71,29 @@ class DBHandler(object):
         cursor.execute('DROP TABLE IF EXISTS timed_balances')
         cursor.execute('DROP TABLE IF EXISTS timed_location_data')
         cursor.execute('DROP TABLE IF EXISTS timed_unique_data')
+        self.conn.commit()
+
+    def write_balances_data(self, data):
+        ts = int(time.time())
+        balances = []
+        locations = []
+
+        for key, val in data.items():
+            if key in ('location', 'net_usd'):
+                continue
+
+            balances.append((
+                ts,
+                key,
+                str(val['amount']),
+                str(val['usd_value']),
+            ))
+
+        for key, val in data['location'].items():
+            locations.append((
+                ts, key, str(val['usd_value'])
+            ))
+
+        self.add_multiple_balances(balances)
+        self.add_multiple_location_data(locations)
+        self.add_timed_unique_data(ts, str(data['net_usd']))

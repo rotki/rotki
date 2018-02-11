@@ -278,7 +278,7 @@ class RotkelchenServer(object):
         if isinstance(save_data, str) and (save_data == 'save' or save_data == 'True'):
             save_data = True
 
-        result = (self.rotkelchen.query_balances(save_data))
+        result = self.rotkelchen.query_balances(save_data)
         print(pretty_json_dumps(result))
         return process_result(result)
 
@@ -322,12 +322,6 @@ class RotkelchenServer(object):
             return simple_result(False, str(e))
         self.rotkelchen.data.store_personal()
         return accounts_result(new_data['per_account'], new_data['totals'])
-
-    def plot(self):
-        self.rotkelchen.plot()
-
-    def extend_values(self, other_file_path):
-        self.rotkelchen.extend_values(other_file_path)
 
     def echo(self, text):
         return text

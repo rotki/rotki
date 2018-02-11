@@ -140,35 +140,8 @@ class DataHandler(object):
         with open(os.path.join(dir_path, 'data', 'eth_tokens.json'), 'r') as f:
             self.eth_tokens = rlk_jsonloads(f.read())
 
-        # open the statsfile if existing
-        self.stats = list()
-        stats_file = os.path.join(self.data_directory, STATS_FILE)
-        if os.path.isfile(stats_file):
-            with open(stats_file, 'r') as f:
-                self.stats = rlk_jsonloads(f.read())
-
-            # Change all timestamp entries from string to timestamp if needed
-            if isinstance(self.stats[0]['date'], (str, bytes)):
-                new_stats = []
-                for entry in self.stats:
-                    entry['date'] = createTimeStamp(
-                        entry['date'], "%d/%m/%Y %H:%M"
-                    )
-                    new_stats.append(entry)
-                self.stats = new_stats
-                with open(stats_file, 'w') as f:
-                    f.write(rlk_jsondumps(self.stats))
-
-    def append_to_stats(self, entry):
-        data = {'date': int(time.time()), 'data': entry}
-        self.stats.append(data)
-        with open(os.path.join(self.data_directory, STATS_FILE), 'w') as f:
-            f.write(rlk_jsondumps(self.stats))
-
-    def extend_stats(self, data):
-        self.stats.extend(data)
-        with open(os.path.join(self.data_directory, STATS_FILE), 'w') as f:
-            f.write(rlk_jsondumps(self.stats))
+    def save_balances_data(self, data):
+        self.db.write_balances_data(data)
 
     def set_main_currency(self, currency):
         self.accountant.set_main_currency(currency)

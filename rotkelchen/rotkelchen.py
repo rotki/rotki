@@ -2,7 +2,6 @@
 import os
 import gevent
 from gevent.lock import Semaphore
-from urllib.request import Request, urlopen
 
 from rotkelchen.utils import (
     combine_stat_dicts,
@@ -11,7 +10,6 @@ from rotkelchen.utils import (
     rlk_jsonloads,
     rlk_jsondumps,
 )
-from rotkelchen.plot import show_plot
 from rotkelchen.blockchain import Blockchain
 from rotkelchen.poloniex import Poloniex
 from rotkelchen.kraken import Kraken
@@ -160,9 +158,6 @@ class Rotkelchen(object):
             logger.debug('Main loop end')
             gevent.sleep(10)
 
-    def plot(self):
-        show_plot(self.data.stats)
-
     def process_history(self, start_ts, end_ts):
         return self.data.process_history(start_ts, end_ts)
 
@@ -196,14 +191,17 @@ class Rotkelchen(object):
             net_usd += FVal(v['usd_value'])
 
         stats = {
-            'net_usd_perc_location': {
+            'location': {
             },
             'net_usd': net_usd
         }
         for entry in total_usd_per_location:
             name = entry[0]
             total = entry[1]
-            stats['net_usd_perc_location'][name] = (total / net_usd).to_percentage()
+            stats['location'][name] = {
+                'usd_value': total,
+                'percentage_of_net_value': (total / net_usd).to_percentage(),
+            }
 
         for k, v in combined.items():
             combined[k]['percentage_of_net_value'] = (v['usd_value'] / net_usd).to_percentage()
@@ -211,7 +209,7 @@ class Rotkelchen(object):
         result_dict = merge_dicts(combined, stats)
 
         if save_data:
-            self.data.append_to_stats(result_dict)
+            self.data.save_balances_data(result_dict)
 
         # After adding it to the saved file we can overlay additional data that
         # is not required to be saved in the history file
@@ -236,16 +234,6 @@ class Rotkelchen(object):
             pass
 
         return result_dict
-
-    def extend_values(self, additional_values_path):
-        """Append to the values file from another file"""
-        if not os.path.isfile(additional_values_path):
-            raise ValueError('Can\'t find given value file: {}'.format(additional_values_path))
-
-        with open(additional_values_path, 'r') as f:
-                new_file_dict = rlk_jsonloads(f.read())
-
-        self.data.extend_stats(new_file_dict)
 
     def set_main_currency(self, currency):
         with self.lock:

@@ -1,7 +1,6 @@
 zerorpc
 # web3 <= 3.16.1
 web3
-matplotlib
 
 # dev requirements -- could go onto a separate file
 pytest
