@@ -40,7 +40,7 @@ function add_balances_table(result) {
     let data = [];
     for (var asset in result) {
         if(result.hasOwnProperty(asset)) {
-            if (asset == 'net_usd_perc_location' || asset == 'net_usd') {
+            if (asset == 'location' || asset == 'net_usd') {
                 continue;
             }
             let amount = parseFloat(result[asset]['amount']);
