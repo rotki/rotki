@@ -60,13 +60,6 @@ function showError(title, content, callback) {
     if (!callback) {
         callback = function() {};
     }
-    if (retry) {
-        buttons['tryAgain'] = {
-                text: 'Retry',
-                btnClass: 'btn-red',
-                action: retry
-        };
-    }
     $.confirm({
         title: title,
         content: content,
