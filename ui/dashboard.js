@@ -161,11 +161,131 @@ function add_currency_dropdown(currency) {
         }
         client.invoke("set_main_currency", currency.ticker_symbol, (error, res) => {
             if(error) {
-                showAlert('alert-danger', error);
+                showError('Error', 'Error at setting main currency: ' + error);
             } else {
                 set_ui_main_currency(currency.ticker_symbol);
             }
         });
+    });
+}
+
+function prompt_new_account() {
+    let content_str = '';
+    content_str += form_entry('User Name', 'user_name_entry', '', '');
+    content_str += form_entry('Password', 'password_entry', '', '', 'password');
+    content_str += form_entry('Repeat Password', 'repeat_password_entry', '', '', 'password');
+    $.confirm({
+        title: 'Create New Account',
+        content: content_str,
+        buttons: {
+            formSubmit: {
+                text: 'Create',
+                btnClass: 'btn-blue',
+                action: function () {
+                    var name = this.$content.find('.name').val();
+                    if(!name){
+                        $.alert('provide a valid name');
+                        return false;
+                    }
+                    $.alert('Your name is ' + name);
+                }
+            },
+            cancel: function () { prompt_sign_in();}
+        },
+        onContentReady: function () {
+            // bind to events
+            var jc = this;
+            this.$content.find('form').on('submit', function (e) {
+                // if the user submits the form by pressing enter in the field.
+                e.preventDefault();
+                jc.$$formSubmit.trigger('click'); // reference the button and click it
+            });
+        }
+    });
+}
+
+function prompt_sign_in() {
+    let content_str = '';
+    content_str += form_entry('User Name', 'username_entry', '', '');
+    content_str += form_entry('Password', 'password_entry', '', '', 'password');
+    $.confirm({
+        title: 'Sign In',
+        content: content_str,
+        buttons: {
+            formSubmit: {
+                text: 'Sign In',
+                btnClass: 'btn-blue',
+                action: function () {
+                    let username = this.$content.find('#username_entry').val();
+                    let password = this.$content.find('#password_entry').val();
+                    if (!username) {
+                        $.alert('Please provide a user name');
+                        return false;
+                    }
+                    if (!password) {
+                        $.alert('Please provide a password');
+                        return false;
+                    }
+                    unlock_user(username, password);
+                }
+            },
+            newAccount: {
+                text: 'Create New Account',
+                btnClass: 'btn-blue',
+                action: function () {
+                    prompt_new_account();
+                }
+            }
+        },
+        onContentReady: function () {
+            // bind to events
+            var jc = this;
+            this.$content.find('form').on('submit', function (e) {
+                // if the user submits the form by pressing enter in the field.
+                e.preventDefault();
+                jc.$$formSubmit.trigger('click'); // reference the button and click it
+            });
+        }
+    });
+}
+
+function unlock_user(username, password) {
+    client.invoke("unlock_user", username, password, (error, res) => {
+        if (error || res == null) {
+            // showError('Authentication Error', error);
+            showError('Authentication Error', error, prompt_sign_in);
+            return;
+        }
+        if (!res['result']) {
+            // showError('Authentication Error', res['message']);
+            showError('Authentication Error', res['message'], prompt_sign_in);
+            return;
+        }
+        console.log("EXCHANGES RESULT: " +res['exchanges']);
+        // make separate queries for all connected exchanges
+        let exchanges = res['exchanges'];
+        for (let i = 0; i < exchanges.length; i++) {
+            let exx = exchanges[i];
+            settings.connected_exchanges.push(exx);
+            client.invoke("query_exchange_total_async", exx, true, function (error, res) {
+                if (error || res == null) {
+                    console.log("Error at first query of an exchange's balance: " + error);
+                    return;
+                }
+                create_task(res['task_id'], 'query_exchange_total', 'Query ' + exx + ' Exchange');
+            });
+        }
+
+        client.invoke("query_balances_async", function (error, res) {
+            if (error || res == null) {
+                console.log("Error at query balances async: " + error);
+                return;
+            }
+            create_task(res['task_id'], 'query_balances', 'Query all balances');
+        });
+
+        get_blockchain_total();
+        get_banks_total();
     });
 }
 
@@ -186,28 +306,8 @@ function get_settings() {
             settings.floating_precision = res['ui_floating_precision'];
             settings.historical_data_start_date = res['historical_data_start_date'];
 
-            // make separate queries for all connected exchanges
-            let exchanges = res['exchanges'];
-            for (let i = 0; i < exchanges.length; i++) {
-                let exx = exchanges[i];
-                settings.connected_exchanges.push(exx);
-                client.invoke("query_exchange_total_async", exx, true, function (error, res) {
-                    if (error || res == null) {
-                        console.log("Error at first query of an exchange's balance: " + error);
-                        return;
-                    }
-                    create_task(res['task_id'], 'query_exchange_total', 'Query ' + exx + ' Exchange');
-                });
-            }
-
-            client.invoke("query_balances_async", function (error, res) {
-                if (error || res == null) {
-                    console.log("Error at query balances async: " + error);
-                    return;
-                }
-                create_task(res['task_id'], 'query_balances', 'Query all balances');
-            });
             $("body").removeClass("loading");
+            prompt_sign_in();
         }
     });
 }
@@ -245,8 +345,6 @@ function create_or_reload_dashboard() {
         console.log("At create/reload, with a null page index");
 
         get_settings();
-        get_blockchain_total();
-        get_banks_total();
     } else {
         console.log("At create/reload, with a Populated page index");
         $('#page-wrapper').html(settings.page_index);

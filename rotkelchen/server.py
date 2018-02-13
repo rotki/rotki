@@ -10,7 +10,7 @@ import pickle
 import traceback
 
 from rotkelchen.fval import FVal
-from rotkelchen.errors import InputError
+from rotkelchen.errors import InputError, AuthenticationError
 from rotkelchen.args import app_args
 from rotkelchen.rotkelchen import Rotkelchen
 from rotkelchen.utils import pretty_json_dumps
@@ -155,8 +155,7 @@ class RotkelchenServer(object):
         settings = self.rotkelchen.get_settings()
         res = {
             'exchange_rates': get_fiat_usd_exchange_rates(),
-            'exchanges': self.rotkelchen.connected_exchanges,
-            'main_currency': self.rotkelchen.main_currency,
+            'main_currency': self.rotkelchen.data.main_currency(),
             'ui_floating_precision': settings['ui_floating_precision'],
             'historical_data_start_date': settings['historical_data_start_date'],
         }
@@ -248,7 +247,7 @@ class RotkelchenServer(object):
         start_ts = int(start_ts)
         end_ts = int(end_ts)
         if location == 'all':
-            return self.rotkelchen.data.trades_historian.get_history(start_ts, end_ts)
+            return self.rotkelchen.trades_historian.get_history(start_ts, end_ts)
 
         try:
             exchange = getattr(self.rotkelchen, location)
@@ -322,6 +321,17 @@ class RotkelchenServer(object):
             return simple_result(False, str(e))
         self.rotkelchen.data.store_personal()
         return accounts_result(new_data['per_account'], new_data['totals'])
+
+    def unlock_user(self, user, password):
+        res = {'result': True, 'message': ''}
+        try:
+            self.rotkelchen.unlock_user(user, password)
+            res['exchanges'] = self.rotkelchen.connected_exchanges
+        except AuthenticationError:
+            res['result'] = False
+            res['message'] = 'Failed to unlock your database with this password'
+
+        return res
 
     def echo(self, text):
         return text

@@ -26,14 +26,14 @@ function generate_report_callback(event) {
 
     start_ts = date_text_to_utc_ts(start_ts);
     end_ts = date_text_to_utc_ts(end_ts);
-    now_ts = utc_now();
+    let now_ts = utc_now();
     if (end_ts <= start_ts) {
-        showAlert('alert-danger', 'The end time should be after the start time.');
+        showError('Input Error', 'The end time should be after the start time.');
         return;
     }
 
     if (end_ts > now_ts) {
-        showAlert('alert-danger', 'The end time should not be in the future.');
+        showError('Input Error', 'The end time should not be in the future.');
         return;
     }
     let str = loading_placeholder('tax_report_loading');
@@ -45,7 +45,7 @@ function generate_report_callback(event) {
         end_ts,
         (error, res) => {
             if (error || res == null) {
-                showAlert('alert-danger', 'Error at process trade history' + error);
+                showError('Trade History Processing Error', error);
                 return;
             }
             // else

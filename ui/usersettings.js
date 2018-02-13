@@ -63,12 +63,12 @@ function setup_exchange_callback(event) {
                         exchange_name,
                         (error, res) => {
                             if (error || res == null) {
-                                showAlert('alert-danger', 'Error at removing ' + exchange_name + ' exchange: ' + error);
+                                showError('Exchange Removal Error', 'Error at removing ' + exchange_name + ' exchange: ' + error);
                                 return;
                             }
                             // else
                             if (!res['result']) {
-                                showAlert('alert-danger', 'Error at removing ' + exchange_name + ' exchange: ' + res['message']);
+                                showError('Exchange Removal Error', 'Error at removing ' + exchange_name + ' exchange: ' + res['message']);
                                 return;
                             }
                             // Exchange removal from backend succesfull
@@ -97,12 +97,12 @@ function setup_exchange_callback(event) {
         api_secret,
         (error, res) => {
             if (error || res == null) {
-                showAlert('alert-danger', 'Error at setup of ' + exchange_name + ': ' + error);
+                showError('Exchange Setup Error', 'Error at setup of ' + exchange_name + ': ' + error);
                 return;
             }
             // else
             if (!res['result']) {
-                showAlert('alert-danger', 'Error at setup of ' + exchange_name + ': ' + res['message']);
+                showError('Exchange Setup Error', 'Error at setup of ' + exchange_name + ': ' + res['message']);
                 return;
             }
             // Exchange setup in the backend was succesfull
@@ -141,11 +141,11 @@ function fiat_modify_callback(event) {
         balance,
         (error, result) => {
             if (error || !result) {
-                showAlert('alert-danger', 'Error at modifying ' + currency + ' balance: ' + error);
+                showError('Balance Modification Error', 'Error at modifying ' + currency + ' balance: ' + error);
                 return;
             }
             if (!result['result']) {
-                showAlert('alert-danger', 'Error at modifying ' + currency + ' balance: ' + result['message']);
+                showError('Balance Modification Error', 'Error at modifying ' + currency + ' balance: ' + result['message']);
                 return;
             }
             if (balance == '') {
@@ -243,8 +243,8 @@ function add_blockchain_account(event) {
         account,
         (error, result) => {
             if (error || result == null) {
-                showAlert(
-                    'alert-danger',
+                showError(
+                    'Account Error',
                     'Error at adding new '+ blockchain +' account: '+ error
                 );
                 return;
@@ -348,11 +348,11 @@ function delete_blockchain_account_row(blockchain, row) {
     let account = row.data()['account'];
     client.invoke('remove_blockchain_account', blockchain, account, (error, result) => {
         if (error || result == null) {
-            showAlert('alert-danger', `Error at deleting ${blockchain} account ${account}: ${error}`);
+            showError('Account Deletion Error', `Error at deleting ${blockchain} account ${account}: ${error}`);
             return;
         }
         if (!result['result']) {
-            showAlert('alert-danger', `Error at deleting ${blockchain} account ${account}: ` + result['message']);
+            showError('Account Deletion Error', `Error at deleting ${blockchain} account ${account}: ` + result['message']);
         }
 
         row.remove().draw();
@@ -477,11 +477,11 @@ function add_new_eth_tokens(tokens) {
     disable_multiselect();
     client.invoke('add_owned_eth_tokens', tokens, (error, result) => {
         if (error || result == null) {
-            showAlert('alert-danger', 'Error at adding new tokens: '+ error);
+            showError('Token Addition Error', error);
             return;
         }
         if (!result['result']) {
-            showAlert('alert-danger', 'Error at adding new tokens: '+ result['message']);
+            showError('Token Addition Error', result['message']);
         }
         for (let i = 0; i < tokens.length; i++) {
             OWNED_TOKENS.push(tokens[i]);
@@ -499,11 +499,11 @@ function remove_eth_tokens(tokens) {
     disable_multiselect();
     client.invoke('remove_owned_eth_tokens', tokens, (error, result) => {
         if (error || result == null) {
-            showAlert('alert-danger', 'Error at removing eth tokens: '+ error);
+            showError('Token Removal Error', error);
             return;
         }
         if (!result['result']) {
-            showAlert('alert-danger', 'Error at removing eth tokens: '+ result['message']);
+            showError('Token Removal Error', result['message']);
         }
         for (let i = 0; i < tokens.length; i ++) {
             let index = OWNED_TOKENS.indexOf(tokens[i]);

@@ -9,6 +9,7 @@ from rotkelchen.utils import (
     merge_dicts,
     rlk_jsonloads,
     rlk_jsondumps,
+    ts_now,
 )
 from rotkelchen.blockchain import Blockchain
 from rotkelchen.poloniex import Poloniex
@@ -19,6 +20,8 @@ from rotkelchen.data_handler import DataHandler
 from rotkelchen.inquirer import Inquirer, FIAT_CURRENCIES
 from rotkelchen.utils import query_fiat_pair
 from rotkelchen.fval import FVal
+from rotkelchen.history import TradesHistorian, PriceHistorian
+from rotkelchen.accounting import Accountant
 
 import logging
 logger = logging.getLogger(__name__)
@@ -65,6 +68,20 @@ class Rotkelchen(object):
 
         self.sleep_secs = args.sleep_secs
         self.data_dir = args.data_dir
+        self.args = args
+
+        self.poloniex = None
+        self.kraken = None
+        self.bittrex = None
+        self.binance = None
+
+        self.data = DataHandler(self.data_dir)
+
+        self.lock.release()
+        self.shutdown_event = gevent.event.Event()
+
+    def unlock_user(self, user, password):
+        self.data.unlock(user, password)
 
         # read the secret data (api keys e.t.c)
         self.secret_name = os.path.join(self.data_dir, 'secret.json')
@@ -77,13 +94,7 @@ class Rotkelchen(object):
         for k, v in self.secret_data.items():
             self.secret_data[k] = str(self.secret_data[k])
 
-        self.args = args
         self.cache_data_filename = os.path.join(self.data_dir, 'cache_data.json')
-
-        self.poloniex = None
-        self.kraken = None
-        self.bittrex = None
-        self.binance = None
 
         # initialize exchanges for which we have keys
         if 'kraken_api_key' in self.secret_data:
@@ -124,25 +135,33 @@ class Rotkelchen(object):
             )
             self.connected_exchanges.append('binance')
 
-        self.data = DataHandler(
-            self.poloniex,
-            self.kraken,
-            self.bittrex,
-            self.binance,
-            self.data_dir
-        )
-        self.main_currency = self.data.accountant.profit_currency
-
         self.blockchain = Blockchain(
             self.data.personal['blockchain_accounts'],
             self.data.eth_tokens,
             self.data.personal['eth_tokens'],
             self.inquirer,
-            args.ethrpc_port
+            self.args.ethrpc_port
         )
 
-        self.lock.release()
-        self.shutdown_event = gevent.event.Event()
+        historical_data_start = self.data.historical_start_date()
+        self.trades_historian = TradesHistorian(
+            self.poloniex,
+            self.kraken,
+            self.bittrex,
+            self.binance,
+            self.data_dir,
+            self.data.get_eth_accounts(),
+            historical_data_start,
+        )
+        self.price_historian = PriceHistorian(
+            self.data_dir,
+            historical_data_start,
+        )
+        self.accountant = Accountant(
+            price_historian=self.price_historian,
+            profit_currency=self.data.main_currency(),
+            create_csv=True
+        )
 
     def start(self):
         return gevent.spawn(self.main_loop)
@@ -156,10 +175,23 @@ class Rotkelchen(object):
                 self.kraken.main_logic()
 
             logger.debug('Main loop end')
-            gevent.sleep(10)
+            gevent.sleep(15)
 
     def process_history(self, start_ts, end_ts):
-        return self.data.process_history(start_ts, end_ts)
+        history, margin_history, loan_history, asset_movements, eth_transactions = self.trades_historian.get_history(
+            start_ts=0,  # For entire history processing we need to have full history available
+            end_ts=ts_now(),
+            end_at_least_ts=end_ts
+        )
+        return self.accountant.process_history(
+            start_ts,
+            end_ts,
+            history,
+            margin_history,
+            loan_history,
+            asset_movements,
+            eth_transactions
+        )
 
     def query_fiat_balances(self):
         result = {}
@@ -237,7 +269,7 @@ class Rotkelchen(object):
 
     def set_main_currency(self, currency):
         with self.lock:
-            self.data.set_main_currency(currency)
+            self.data.set_main_currency(currency, self.accountant)
             if currency != 'USD':
                 self.usd_to_main_currency_rate = query_fiat_pair('USD', currency)
 
@@ -249,8 +281,9 @@ class Rotkelchen(object):
                 self.usd_to_main_currency_rate = query_fiat_pair('USD', main_currency)
 
     def usd_to_main_currency(self, amount):
-        if self.main_currency != 'USD' and not hasattr(self, 'usd_to_main_currency_rate'):
-            self.usd_to_main_currency_rate = query_fiat_pair('USD', self.main_currency)
+        main_currency = self.data.main_currency()
+        if main_currency != 'USD' and not hasattr(self, 'usd_to_main_currency_rate'):
+            self.usd_to_main_currency_rate = query_fiat_pair('USD', main_currency)
 
         return self.usd_to_main_currency_rate * amount
 

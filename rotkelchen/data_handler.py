@@ -1,18 +1,13 @@
 import os
-import time
 from json.decoder import JSONDecodeError
 
 from rotkelchen.utils import (
     createTimeStamp,
-    ts_now,
     rlk_jsonloads,
     rlk_jsondumps,
     is_number,
     get_pair_position,
 )
-
-from rotkelchen.history import TradesHistorian, PriceHistorian
-from rotkelchen.accounting import Accountant
 from rotkelchen.history import get_external_trades, EXTERNAL_TRADES_FILE
 from rotkelchen.fval import FVal
 from rotkelchen.inquirer import FIAT_CURRENCIES
@@ -82,13 +77,7 @@ def check_otctrade_data_valid(data):
 
 class DataHandler(object):
 
-    def __init__(
-            self,
-            poloniex,
-            kraken,
-            bittrex,
-            binance,
-            data_directory):
+    def __init__(self, data_directory):
 
         self.data_directory = data_directory
         try:
@@ -109,43 +98,27 @@ class DataHandler(object):
         except FileNotFoundError:
             self.settings = empty_settings
 
-        self.db = DBHandler(self.data_directory, '', '')
-
-        historical_data_start = self.settings.get('historical_data_start_date', DEFAULT_START_DATE)
-
-        self.poloniex = poloniex
-        self.kraken = kraken
-        self.bittrex = bittrex
-        self.trades_historian = TradesHistorian(
-            poloniex,
-            kraken,
-            bittrex,
-            binance,
-            self.data_directory,
-            self.personal,
-            historical_data_start,
-        )
-        self.price_historian = PriceHistorian(
-            self.data_directory,
-            historical_data_start,
-        )
-        self.accountant = Accountant(
-            price_historian=self.price_historian,
-            profit_currency=self.settings.get('main_currency'),
-            create_csv=True
-        )
-
+        self.db = None
         self.eth_tokens = []
         dir_path = os.path.dirname(os.path.realpath(__file__))
         with open(os.path.join(dir_path, 'data', 'eth_tokens.json'), 'r') as f:
             self.eth_tokens = rlk_jsonloads(f.read())
 
+    def unlock(self, user, password):
+        self.db = DBHandler(self.data_directory, user, password)
+
+    def main_currency(self):
+        return self.settings['main_currency']
+
+    def historical_start_date(self):
+        return self.settings.get('historical_data_start_date', DEFAULT_START_DATE)
+
     def save_balances_data(self, data):
         self.db.write_balances_data(data)
 
-    def set_main_currency(self, currency):
-        self.accountant.set_main_currency(currency)
+    def set_main_currency(self, currency, accountant):
         self.settings['main_currency'] = currency
+        accountant.set_main_currency(currency)
         with open(os.path.join(self.data_directory, 'settings.json'), 'w') as f:
             f.write(rlk_jsondumps(self.settings))
 
@@ -154,11 +127,14 @@ class DataHandler(object):
         with open(os.path.join(self.data_directory, 'settings.json'), 'w') as f:
             f.write(rlk_jsondumps(self.settings))
 
-    def set_settings(self, settings):
+    def set_settings(self, settings, accountant):
         self.settings = settings
-        self.accountant.set_main_currency(settings['main_currency'])
+        accountant.set_main_currency(settings['main_currency'])
         with open(os.path.join(self.data_directory, 'settings.json'), 'w') as f:
             f.write(rlk_jsondumps(self.settings))
+
+    def get_eth_accounts(self):
+        return self.personal['blockchain_accounts']['ETH']
 
     def store_personal(self):
         with open(os.path.join(self.data_directory, 'personal.json'), 'w') as f:
@@ -276,19 +252,3 @@ class DataHandler(object):
             f.write(rlk_jsondumps(external_trades))
 
         return True, ''
-
-    def process_history(self, start_ts, end_ts):
-        history, margin_history, loan_history, asset_movements, eth_transactions = self.trades_historian.get_history(
-            start_ts=0,  # For entire history processing we need to have full history available
-            end_ts=ts_now(),
-            end_at_least_ts=end_ts
-        )
-        return self.accountant.process_history(
-            start_ts,
-            end_ts,
-            history,
-            margin_history,
-            loan_history,
-            asset_movements,
-            eth_transactions
-        )

@@ -53,11 +53,42 @@ function _setup_log_watcher(callback) {
     });
 }
 
-function showAlert(type, text) {
-    // TODO: Change this with nicer pop ups from jquery confirm
-    var str = '<div class="alert '+ type +' alert-dismissable"><button type="button" class="close" data-dismiss="alert">&times;</button>'+ text +'</div>';
-    console.log("ALERT: " +text);
-    $(str).prependTo($("#wrapper"));
+// Show an error with TITLE and CONTENT
+// If CALLBACK is given then it should be a callback
+// to call when close is pressed
+function showError(title, content, callback) {
+    if (!callback) {
+        callback = function() {};
+    }
+    if (retry) {
+        buttons['tryAgain'] = {
+                text: 'Retry',
+                btnClass: 'btn-red',
+                action: retry
+        };
+    }
+    $.confirm({
+        title: title,
+        content: content,
+        type: 'red',
+        typeAnimated: true,
+        buttons: {
+            close: callback
+        }
+    });
+}
+
+// Show an Info message with TITLE and CONTENT
+function showInfo(title, content) {
+    $.confirm({
+        title: title,
+        content: content,
+        type: 'green',
+        typeAnimated: true,
+        buttons: {
+            close: function() {}
+        }
+    });
 }
 
 // TODO: Remove this/replace with something else. In the case of a huge log hangs the entire app
@@ -153,7 +184,8 @@ module.exports = function() {
     this.string_capitalize = string_capitalize;
     this.setup_log_watcher = setup_log_watcher;
     this.startup_error = startup_error;
-    this.showAlert = showAlert;
+    this.showError = showError;
+    this.showInfo = showInfo;
     this.date_text_to_utc_ts = date_text_to_utc_ts;
     this.reload_table_currency_val = reload_table_currency_val;
     this.reload_table_currency_val_if_existing = reload_table_currency_val_if_existing;

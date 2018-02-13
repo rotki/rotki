@@ -28,3 +28,7 @@ class CorruptData(Exception):
 
 class InputError(Exception):
     pass
+
+
+class AuthenticationError(Exception):
+    pass

@@ -50,12 +50,12 @@ function delete_otc_trade(row) {
         data,
         (error, res) => {
             if (error || res == null) {
-                showAlert('alert-danger', 'Error: ' + error);
+                showError('Error at Trade Deletion', error);
             } else {
                 if (!res['result']) {
-                    showAlert('alert-danger', 'Error: ' + res['message']);
+                    showError('Error at Trade Deletion', res['message']);
                 } else {
-                    showAlert('alert-success', 'Trade Deleted');
+                    showInfo('Succcess', 'Trade Deleted');
                     reload_table_data();
                 }
             }
@@ -200,12 +200,12 @@ function add_otctrades_listeners() {
             payload,
             (error, res) => {
                 if (error || res == null) {
-                    showAlert('alert-danger', 'Error: ' + error);
+                    showError('Trade Addition Error', error);
                 } else {
                     if (!res['result']) {
-                        showAlert('alert-danger', 'Error: ' + res['message']);
+                        showError('Trade Addition Error', res['message']);
                     } else {
-                        showAlert('alert-success', 'Trade submitted');
+                        showInfo('Success', 'Trade submitted');
                         reload_table_data();
                         // also make sure we are back to adding a trade
                         // in case we were editing
