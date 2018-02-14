@@ -12,6 +12,7 @@ from rotkelchen.history import get_external_trades, EXTERNAL_TRADES_FILE
 from rotkelchen.fval import FVal
 from rotkelchen.inquirer import FIAT_CURRENCIES
 from rotkelchen.dbhandler import DBHandler
+from rotkelchen.errors import AuthenticationError
 
 import logging
 logger = logging.getLogger(__name__)
@@ -104,8 +105,17 @@ class DataHandler(object):
         with open(os.path.join(dir_path, 'data', 'eth_tokens.json'), 'r') as f:
             self.eth_tokens = rlk_jsonloads(f.read())
 
-    def unlock(self, user, password):
-        self.db = DBHandler(self.data_directory, user, password)
+    def unlock(self, username, password, create_new):
+        user_data_dir = os.path.join(self.data_directory, username)
+        if create_new:
+            if os.path.exists(user_data_dir):
+                raise AuthenticationError('User {} already exists'.format(username))
+            else:
+                os.mkdir(user_data_dir)
+        elif not os.path.exists(user_data_dir):
+            raise AuthenticationError('User {} does not exist'.format(username))
+
+        self.db = DBHandler(user_data_dir, username, password)
 
     def main_currency(self):
         return self.settings['main_currency']

@@ -2,16 +2,17 @@ import time
 import os
 from pysqlcipher3 import dbapi2 as sqlcipher
 
+from rotkelchen.constants import SUPPORTED_EXCHANGES
 from rotkelchen.fval import FVal
-from rotkelchen.errors import AuthenticationError
+from rotkelchen.errors import AuthenticationError, InputError
 
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
 # http://www.sql-join.com/sql-join-types
 class DBHandler(object):
 
-    def __init__(self, database_directory, username, password):
-        self.conn = sqlcipher.connect(os.path.join(database_directory, 'rotkehlchen.db'))
+    def __init__(self, user_data_dir, username, password):
+        self.conn = sqlcipher.connect(os.path.join(user_data_dir, 'rotkehlchen.db'))
         self.conn.text_factory = str
         self.conn.executescript('PRAGMA key="{}"; pragma kdf_iter=64000;'.format(password))
         self.conn.execute('PRAGMA foreign_keys=ON')
@@ -32,6 +33,11 @@ class DBHandler(object):
         cursor.execute(
             'CREATE TABLE IF NOT EXISTS timed_unique_data ('
             '    time INTEGER, net_usd DECIMAL'
+            ')'
+        )
+        cursor.execute(
+            'CREATE TABLE IF NOT EXISTS exchange_credentials ('
+            '    name VARCHAR[24], api_key TEXT, api_secret TEXT'
             ')'
         )
         self.conn.commit()
@@ -103,3 +109,37 @@ class DBHandler(object):
         self.add_multiple_balances(balances)
         self.add_multiple_location_data(locations)
         self.add_timed_unique_data(ts, str(data['net_usd']))
+
+    def add_exchange(self, name, api_key, api_secret):
+        if name not in SUPPORTED_EXCHANGES:
+            raise InputError('Unsupported exchange {}'.format(name))
+
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'INSERT INTO exchange_credentials (name, api_key, api_secret) VALUES (?, ?, ?)',
+            (name, api_key, api_secret)
+        )
+        self.conn.commit()
+
+    def remove_exchange(self, name):
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'DELETE FROM exchange_credentials WHERE name =?', (name,)
+        )
+        self.conn.commit()
+
+    def get_exchange_secrets(self):
+        cursor = self.conn.cursor()
+        result = cursor.execute(
+            'SELECT name, api_key, api_secret FROM exchange_credentials;'
+        )
+        result = result.fetchall()
+        secret_data = {}
+        for entry in result:
+            name = entry[0]
+            secret_data[name] = {
+                'api_key': str(entry[1]),
+                'api_secret': str(entry[2])
+            }
+
+        return secret_data

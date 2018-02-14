@@ -80,56 +80,45 @@ class Rotkelchen(object):
         self.lock.release()
         self.shutdown_event = gevent.event.Event()
 
-    def unlock_user(self, user, password):
-        self.data.unlock(user, password)
-
-        # read the secret data (api keys e.t.c)
-        self.secret_name = os.path.join(self.data_dir, 'secret.json')
-        self.secret_data = {}
-        if os.path.isfile(self.secret_name):
-            with open(self.secret_name, 'r') as f:
-                self.secret_data = rlk_jsonloads(f.read())
-
-        # turn all secret key values from unicode to string
-        for k, v in self.secret_data.items():
-            self.secret_data[k] = str(self.secret_data[k])
-
+    def unlock_user(self, user, password, create_new):
+        self.data.unlock(user, password, create_new)
+        self.secret_data = self.data.db.get_exchange_secrets()
         self.cache_data_filename = os.path.join(self.data_dir, 'cache_data.json')
 
         # initialize exchanges for which we have keys
-        if 'kraken_api_key' in self.secret_data:
+        if 'kraken' in self.secret_data:
             self.kraken = Kraken(
-                str.encode(self.secret_data['kraken_api_key']),
-                str.encode(self.secret_data['kraken_secret']),
+                str.encode(self.secret_data['kraken']['api_key']),
+                str.encode(self.secret_data['kraken']['api_secret']),
                 self.data_dir
             )
             self.connected_exchanges.append('kraken')
 
         self.inquirer = Inquirer(kraken=self.kraken if hasattr(self, 'kraken') else None)
 
-        if 'poloniex_api_key' in self.secret_data:
+        if 'poloniex' in self.secret_data:
             self.poloniex = Poloniex(
-                str.encode(self.secret_data['poloniex_api_key']),
-                str.encode(self.secret_data['poloniex_secret']),
+                str.encode(self.secret_data['poloniex']['api_key']),
+                str.encode(self.secret_data['poloniex']['api_secret']),
                 self.cache_data_filename,
                 self.inquirer,
                 self.data_dir
             )
             self.connected_exchanges.append('poloniex')
 
-        if 'bittrex_api_key' in self.secret_data:
+        if 'bittrex' in self.secret_data:
             self.bittrex = Bittrex(
-                str.encode(self.secret_data['bittrex_api_key']),
-                str.encode(self.secret_data['bittrex_secret']),
+                str.encode(self.secret_data['bittrex']['api_key']),
+                str.encode(self.secret_data['bittrex']['api_secret']),
                 self.inquirer,
                 self.data_dir
             )
             self.connected_exchanges.append('bittrex')
 
-        if 'binance_api_key' in self.secret_data:
+        if 'binance' in self.secret_data:
             self.binance = Binance(
-                str.encode(self.secret_data['binance_api_key']),
-                str.encode(self.secret_data['binance_secret']),
+                str.encode(self.secret_data['binance']['api_key']),
+                str.encode(self.secret_data['binance']['api_secret']),
                 self.inquirer,
                 self.data_dir
             )

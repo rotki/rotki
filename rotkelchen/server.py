@@ -322,14 +322,14 @@ class RotkelchenServer(object):
         self.rotkelchen.data.store_personal()
         return accounts_result(new_data['per_account'], new_data['totals'])
 
-    def unlock_user(self, user, password):
+    def unlock_user(self, user, password, create_new):
         res = {'result': True, 'message': ''}
         try:
-            self.rotkelchen.unlock_user(user, password)
+            self.rotkelchen.unlock_user(user, password, create_new)
             res['exchanges'] = self.rotkelchen.connected_exchanges
-        except AuthenticationError:
+        except AuthenticationError as e:
             res['result'] = False
-            res['message'] = 'Failed to unlock your database with this password'
+            res['message'] = str(e)
 
         return res
 

@@ -3,6 +3,22 @@ var settings = require("./settings.js")();
 require("./elements.js")();
 require("./monitor.js")();
 
+function verify_userpass(username, password) {
+    if (!username) {
+        $.alert('Please provide a user name');
+        return false;
+    }
+    if (! /^[0-9a-zA-Z_.-]+$/.test(username)) {
+        $.alert('A username must contain only alphanumeric characters and have no spaces');
+        return false;
+    }
+    if (!password) {
+        $.alert('Please provide a password');
+        return false;
+    }
+    return true;
+}
+
 function prompt_new_account() {
     let content_str = '';
     content_str += form_entry('User Name', 'user_name_entry', '', '');
@@ -16,12 +32,18 @@ function prompt_new_account() {
                 text: 'Create',
                 btnClass: 'btn-blue',
                 action: function () {
-                    var name = this.$content.find('.name').val();
-                    if(!name){
-                        $.alert('provide a valid name');
+                    let username = this.$content.find('#user_name_entry').val();
+                    let password = this.$content.find('#password_entry').val();
+                    let password2 = this.$content.find('#repeat_password_entry').val();
+                    if (!verify_userpass(username, password)) {
                         return false;
                     }
-                    $.alert('Your name is ' + name);
+
+                    if (password != password2) {
+                        $.alert('The given passwords don\'t match');
+                        return false;
+                    }
+                    unlock_user(username, password, true);
                 }
             },
             cancel: function () { prompt_sign_in();}
@@ -52,15 +74,10 @@ function prompt_sign_in() {
                 action: function () {
                     let username = this.$content.find('#username_entry').val();
                     let password = this.$content.find('#password_entry').val();
-                    if (!username) {
-                        $.alert('Please provide a user name');
+                    if (!verify_userpass(username, password)) {
                         return false;
                     }
-                    if (!password) {
-                        $.alert('Please provide a password');
-                        return false;
-                    }
-                    unlock_user(username, password);
+                    unlock_user(username, password, false);
                 }
             },
             newAccount: {
@@ -83,9 +100,9 @@ function prompt_sign_in() {
     });
 }
 
-function unlock_async(username, password) {
+function unlock_async(username, password, create_true) {
     var deferred = $.Deferred();
-    client.invoke("unlock_user", username, password, (error, res) => {
+    client.invoke("unlock_user", username, password, create_true, (error, res) => {
         if (error || res == null) {
             deferred.reject(error);
             return;
@@ -99,11 +116,11 @@ function unlock_async(username, password) {
     return deferred.promise();
 }
 
-function unlock_user(username, password) {
+function unlock_user(username, password, create_true) {
     $.alert({
         content: function(){
             var self = this;
-            return unlock_async(username, password).done(
+            return unlock_async(username, password, create_true).done(
                 function (response) {
                     self.setType('green');
                     self.setTitle('Succesfull Sign In');
