@@ -298,7 +298,7 @@ class RotkelchenServer(object):
         except InputError as e:
             return simple_result(False, str(e))
 
-        self.rotkelchen.data.store_personal()
+        self.rotkelchen.data.write_owned_eth_tokens(self.rotkelchen.blockchain.owned_eth_tokens)
         return accounts_result(new_data['per_account'], new_data['totals'])
 
     def remove_owned_eth_tokens(self, tokens):
@@ -306,7 +306,7 @@ class RotkelchenServer(object):
             new_data = self.rotkelchen.blockchain.remove_eth_tokens(tokens)
         except InputError as e:
             return simple_result(False, str(e))
-        self.rotkelchen.data.store_personal()
+        self.rotkelchen.data.write_owned_eth_tokens(self.rotkelchen.blockchain.owned_eth_tokens)
         return accounts_result(new_data['per_account'], new_data['totals'])
 
     def add_blockchain_account(self, blockchain, account):
@@ -314,7 +314,7 @@ class RotkelchenServer(object):
             new_data = self.rotkelchen.blockchain.add_blockchain_account(blockchain, account)
         except InputError as e:
             return simple_result(False, str(e))
-        self.rotkelchen.data.store_personal()
+        self.rotkelchen.data.add_blockchain_account(blockchain, account)
         return accounts_result(new_data['per_account'], new_data['totals'])
 
     def remove_blockchain_account(self, blockchain, account):
@@ -322,7 +322,7 @@ class RotkelchenServer(object):
             new_data = self.rotkelchen.blockchain.remove_blockchain_account(blockchain, account)
         except InputError as e:
             return simple_result(False, str(e))
-        self.rotkelchen.data.store_personal()
+        self.rotkelchen.data.remove_blockchain_account(blockchain, account)
         return accounts_result(new_data['per_account'], new_data['totals'])
 
     def unlock_user(self, user, password, create_new):

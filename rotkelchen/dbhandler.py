@@ -40,6 +40,21 @@ class DBHandler(object):
             '    name VARCHAR[24], api_key TEXT, api_secret TEXT'
             ')'
         )
+        cursor.execute(
+            'CREATE TABLE IF NOT EXISTS blockchain_accounts ('
+            '    blockchain VARCHAR[24], account TEXT NOT NULL PRIMARY KEY'
+            ')'
+        )
+        cursor.execute(
+            'CREATE TABLE IF NOT EXISTS eth_tokens ('
+            '    token VARCHAR[24] NOT NULL PRIMARY KEY'
+            ')'
+        )
+        cursor.execute(
+            'CREATE TABLE IF NOT EXISTS current_balances ('
+            '    asset VARCHAR[24] NOT NULL PRIMARY KEY, amount DECIMAL'
+            ')'
+        )
         self.conn.commit()
 
     def add_multiple_balances(self, balances):
@@ -78,8 +93,89 @@ class DBHandler(object):
         )
         self.conn.commit()
 
+    def write_owned_tokens(self, tokens):
+        """Execute addition of multiple tokens in the DB
+
+        tokens should be a list of token symbols
+        (time, location, usd_value)"""
+        cursor = self.conn.cursor()
+        cursor.executemany(
+            'INSERT INTO eth_tokens(token) VALUES (?)',
+            [(t,) for t in tokens]
+        )
+        self.conn.commit()
+
+    def get_owned_tokens(self):
+        cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT token FROM eth_tokens;'
+        )
+        query = query.fetchall()
+        return [q[0] for q in query]
+
+    def add_blockchain_account(self, blockchain, account):
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'INSERT INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
+            (blockchain, account)
+        )
+        self.conn.commit()
+
+    def remove_blockchain_account(self, blockchain, account):
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'DELETE FROM blockchain_accounts WHERE '
+            'blockchain = ? and account = ?;', (blockchain, account)
+        )
+        self.conn.commit()
+
+    def add_fiat_balance(self, currency, amount):
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'INSERT INTO current_balances(asset, amount) VALUES (?, ?)',
+            (currency, amount)
+        )
+        self.conn.commit()
+
+    def remove_fiat_balance(self, currency):
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'DELETE FROM current_balances WHERE asset = ?;', (currency,)
+        )
+        self.conn.commit()
+
+    def get_fiat_balances(self):
+        cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT asset, amount FROM current_balances;'
+        )
+        query = query.fetchall()
+
+        result = {}
+        for entry in query:
+            result[entry[0]] = entry[1]
+        return result
+
+    def get_blockchain_accounts(self):
+        """Returns a dictionary with keys being blockchains and values being
+        lists of accounts"""
+        cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT blockchain, account FROM blockchain_accounts;'
+        )
+        query = query.fetchall()
+        result = {}
+
+        for entry in query:
+            if entry[0] not in result:
+                result[entry[0]] = []
+
+            result[entry[0]].append(entry[1])
+
+        return result
+
     def remove(self):
-        cursor = self.conn.cursos()
+        cursor = self.conn.cursor()
         cursor.execute('DROP TABLE IF EXISTS timed_balances')
         cursor.execute('DROP TABLE IF EXISTS timed_location_data')
         cursor.execute('DROP TABLE IF EXISTS timed_unique_data')

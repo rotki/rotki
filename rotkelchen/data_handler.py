@@ -81,14 +81,6 @@ class DataHandler(object):
     def __init__(self, data_directory):
 
         self.data_directory = data_directory
-        try:
-            with open(os.path.join(self.data_directory, 'personal.json')) as f:
-                self.personal = rlk_jsonloads(f.read())
-        except JSONDecodeError as e:
-            logger.critical('personal.json file could not be decoded and is corrupt: {}'.format(e))
-            self.personal = {}
-        except FileNotFoundError:
-            self.personal = {}
 
         try:
             with open(os.path.join(self.data_directory, 'settings.json')) as f:
@@ -126,6 +118,15 @@ class DataHandler(object):
     def save_balances_data(self, data):
         self.db.write_balances_data(data)
 
+    def write_owned_eth_tokens(self, tokens):
+        self.db.write_owned_tokens(tokens)
+
+    def add_blockchain_account(self, blockchain, account):
+        self.db.add_blockchain_account(blockchain, account)
+
+    def remove_blockchain_account(self, blockchain, account):
+        self.db.remove_blockchain_account(blockchain, account)
+
     def set_main_currency(self, currency, accountant):
         self.settings['main_currency'] = currency
         accountant.set_main_currency(currency)
@@ -144,30 +145,27 @@ class DataHandler(object):
             f.write(rlk_jsondumps(self.settings))
 
     def get_eth_accounts(self):
-        return self.personal['blockchain_accounts']['ETH']
-
-    def store_personal(self):
-        with open(os.path.join(self.data_directory, 'personal.json'), 'w') as f:
-            f.write(rlk_jsondumps(self.personal))
+        blockchain_accounts = self.db.get_blockchain_accounts()
+        return blockchain_accounts['ETH']
 
     def set_fiat_balance(self, currency, balance):
         if currency not in FIAT_CURRENCIES:
             return False, 'Provided currency {} is unknown'
 
         if balance == 0 or balance == '':
-            # delete entry from currencies
-            del self.personal['fiat'][currency]
+            self.db.remove_fiat_balance(currency)
         else:
             try:
                 balance = FVal(balance)
             except ValueError:
                 return False, 'Provided amount is not a number'
 
-            self.personal['fiat'][currency] = balance
-
-        self.store_personal()
+            self.db.add_fiat_balance(currency, str(balance))
 
         return True, ''
+
+    def get_fiat_balances(self):
+        return self.db.get_fiat_balances()
 
     def get_external_trades(self):
         return get_external_trades(self.data_directory)

@@ -448,7 +448,7 @@ class TradesHistorian(object):
             bittrex,
             binance,
             data_directory,
-            personal_data,
+            eth_accounts,
             historical_data_start,
             start_date='01/11/2015',
     ):
@@ -459,7 +459,7 @@ class TradesHistorian(object):
         self.binance = binance
         self.start_ts = createTimeStamp(start_date, formatstr="%d/%m/%Y")
         self.data_directory = data_directory
-        self.personal_data = personal_data
+        self.eth_accounts = eth_accounts
         # get the start date for historical data
         self.historical_data_start = createTimeStamp(historical_data_start, formatstr="%d/%m/%Y")
         # If this flag is true we attempt to read from the manually logged margin positions file
@@ -558,8 +558,7 @@ class TradesHistorian(object):
             for trade in binance_history:
                 history.append(trade_from_binance(trade))
 
-        eth_accounts = self.personal_data['blockchain_accounts']['ETH']
-        eth_transactions = query_etherscan_for_transactions(eth_accounts)
+        eth_transactions = query_etherscan_for_transactions(self.eth_accounts)
 
         # We sort it here ... but when accounting runs through the entire actions list,
         # it resorts, so unless the fact that we sort is used somewhere else too, perhaps

@@ -125,9 +125,9 @@ class Rotkelchen(object):
             self.connected_exchanges.append('binance')
 
         self.blockchain = Blockchain(
-            self.data.personal['blockchain_accounts'],
+            self.data.db.get_blockchain_accounts(),
             self.data.eth_tokens,
-            self.data.personal['eth_tokens'],
+            self.data.db.get_owned_tokens(),
             self.inquirer,
             self.args.ethrpc_port
         )
@@ -184,14 +184,14 @@ class Rotkelchen(object):
 
     def query_fiat_balances(self):
         result = {}
-        for currency in FIAT_CURRENCIES:
-            if currency in self.data.personal['fiat']:
-                amount = FVal(self.data.personal['fiat'][currency])
-                usd_rate = query_fiat_pair(currency, 'USD')
-                result[currency] = {
-                    'amount': amount,
-                    'usd_value': amount * usd_rate
-                }
+        balances = self.data.get_fiat_balances()
+        for currency, amount in balances.items():
+            amount = FVal(amount)
+            usd_rate = query_fiat_pair(currency, 'USD')
+            result[currency] = {
+                'amount': amount,
+                'usd_value': amount * usd_rate
+            }
 
         return result
 
