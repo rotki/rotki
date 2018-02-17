@@ -151,10 +151,13 @@ class RotkelchenServer(object):
                 logger.debug("Found response for task {}".format(task_id))
         return ret
 
+    def get_fiat_exchange_rates(self):
+        res = {'exchange_rates': get_fiat_usd_exchange_rates()}
+        return process_result(res)
+
     def get_settings(self):
         settings = self.rotkelchen.get_settings()
         res = {
-            'exchange_rates': get_fiat_usd_exchange_rates(),
             'main_currency': self.rotkelchen.data.main_currency(),
             'ui_floating_precision': settings['ui_floating_precision'],
             'historical_data_start_date': settings['historical_data_start_date'],

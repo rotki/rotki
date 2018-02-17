@@ -170,6 +170,16 @@ function add_currency_dropdown(currency) {
     });
 }
 
+function get_fiat_exchange_rates() {
+    client.invoke("get_fiat_exchange_rates", (error, res) => {
+        if (error || res == null) {
+            showError('Connectivity Error', 'Failed to acquire fiat to USD exchange rates: ' + error);
+            return;
+        }
+        settings.usd_to_fiat_exchange_rates = res['exchange_rates'];
+    });
+}
+
 function get_settings() {
     client.invoke("get_settings", (error, res) => {
         if (error || res == null) {
@@ -179,9 +189,6 @@ function get_settings() {
             );
         } else {
             console.log("server is ready");
-            // save exchange rates
-            settings.usd_to_fiat_exchange_rates = res['exchange_rates'];
-            // set main currency
             set_ui_main_currency(res['main_currency']);
             // set the other settings
             settings.floating_precision = res['ui_floating_precision'];
@@ -199,6 +206,7 @@ function create_or_reload_dashboard() {
         $("body").addClass("loading");
         console.log("At create/reload, with a null page index");
 
+        get_fiat_exchange_rates();
         get_settings();
     } else {
         console.log("At create/reload, with a Populated page index");
