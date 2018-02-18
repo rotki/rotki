@@ -151,8 +151,8 @@ class RotkelchenServer(object):
                 logger.debug("Found response for task {}".format(task_id))
         return ret
 
-    def get_fiat_exchange_rates(self):
-        res = {'exchange_rates': get_fiat_usd_exchange_rates()}
+    def get_fiat_exchange_rates(self, currencies):
+        res = {'exchange_rates': get_fiat_usd_exchange_rates(currencies)}
         return process_result(res)
 
     def get_settings(self):

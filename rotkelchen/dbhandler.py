@@ -131,8 +131,9 @@ class DBHandler(object):
 
     def add_fiat_balance(self, currency, amount):
         cursor = self.conn.cursor()
+        # We don't care about previous value so this simple insert or replace should work
         cursor.execute(
-            'INSERT INTO current_balances(asset, amount) VALUES (?, ?)',
+            'INSERT OR REPLACE INTO current_balances(asset, amount) VALUES (?, ?)',
             (currency, amount)
         )
         self.conn.commit()

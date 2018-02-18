@@ -4,12 +4,17 @@ from urllib.request import Request, urlopen
 from rotkelchen.fval import FVal
 from rotkelchen.utils import rlk_jsonloads, retry_calls, query_fiat_pair
 
+import logging
+logger = logging.getLogger(__name__)
+
 FIAT_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CNY']
 
 
-def get_fiat_usd_exchange_rates():
+def get_fiat_usd_exchange_rates(currencies=None):
     rates = {'USD': 1}
-    for currency in FIAT_CURRENCIES[1:]:
+    if not currencies:
+        currencies = FIAT_CURRENCIES[1:]
+    for currency in currencies:
         rates[currency] = query_fiat_pair('USD', currency)
 
     return rates
