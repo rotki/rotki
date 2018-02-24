@@ -783,7 +783,7 @@ class Accountant(object):
             # Hack to periodically yield back to the gevent IO loop to avoid getting
             # the losing remote after hearbeat error for the zerorpc client.
             # https://github.com/0rpc/zerorpc-python/issues/37
-            # TODO: Find better way to do this. Perhas enforce this only if method
+            # TODO: Find better way to do this. Perhaps enforce this only if method
             # is a synced call, and if async don't do this yielding. In any case
             # this calculation should definitely by async
             count += 1

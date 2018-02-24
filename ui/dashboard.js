@@ -176,11 +176,21 @@ function get_fiat_exchange_rates(currencies) {
             showError('Connectivity Error', 'Failed to acquire fiat to USD exchange rates: ' + error);
             return;
         }
+        console.log("get_fiat_exchange_rates for " + currencies + " returned okay");
         let rates = res['exchange_rates'];
         for (let asset in rates) {
             if(rates.hasOwnProperty(asset)) {
                 settings.usd_to_fiat_exchange_rates[asset] = parseFloat(rates[asset]);
             }
+        }
+
+        // something noticed is that if a zero rpc call from node to python happens
+        // within very close proximity to another one with the same function then
+        // it's very possible one will timeout with heartbear error. That is why
+        // we call the full exchange rate update here after we get the main
+        // currency exchange rate
+        if (currencies) {
+            get_fiat_exchange_rates(); // for all currencies
         }
     });
 }
@@ -213,7 +223,6 @@ function create_or_reload_dashboard() {
     if (!settings.page_index) {
         $("body").addClass("loading");
         console.log("At create/reload, with a null page index");
-        get_fiat_exchange_rates();
         get_settings();
     } else {
         console.log("At create/reload, with a Populated page index");

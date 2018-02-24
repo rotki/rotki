@@ -28,7 +28,6 @@ function startup_error(text, reason) {
 var log_searcher = null;
 
 function _setup_log_watcher(callback) {
-
     if (log_searcher) {
         if (!fs.existsSync("rotkelchen.log")) {
             return;
@@ -86,7 +85,6 @@ function showInfo(title, content) {
 
 // TODO: Remove this/replace with something else. In the case of a huge log hangs the entire app
 function setup_log_watcher(callback) {
-
     // if the log file is not found keep trying until it is
     if (!fs.existsSync("rotkelchen.log")) {
         log_searcher = setInterval(function() {_setup_log_watcher(callback);}, 5000);
