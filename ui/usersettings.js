@@ -24,28 +24,74 @@ const ExchangeBadge = ({ name, css_class }) => `
 </div>
 `;
 
-function disable_exchange_entry(selector_text, value) {
+function disable_api_entry(selector_text, value) {
     $(selector_text).parent().removeClass().addClass('form-group input-group has-success');
     $(selector_text).attr('disabled', true);
     $(selector_text).val(value);
 }
 
-function enable_exchange_entry(selector_text) {
+function enable_api_entry(selector_text) {
     $(selector_text).parent().removeClass().addClass('form-group input-group');
     $(selector_text).attr('disabled', false);
     $(selector_text).val('');
 }
 
-function disable_exchange_entries(val) {
-    disable_exchange_entry('#api_key_entry', val + ' API Key is already registered');
-    disable_exchange_entry('#api_secret_entry', val + ' API Secret is already registered');
-    $('#setup_exchange_button').html('Remove');
+function enable_key_entries(prefix, button_name) {
+    enable_api_entry('#' + prefix + 'api_key_entry');
+    enable_api_entry('#' + prefix + 'api_secret_entry');
+    $('#setup_' + button_name + '_button').html('Setup');
 }
 
-function enable_exchange_entries() {
-    enable_exchange_entry('#api_key_entry');
-    enable_exchange_entry('#api_secret_entry');
-    $('#setup_exchange_button').html('Setup');
+function disable_key_entries(prefix, button_name,  val) {
+    disable_api_entry('#'+ prefix + 'api_key_entry', val + ' API Key is already registered');
+    disable_api_entry('#' + prefix + 'api_secret_entry', val + ' API Secret is already registered');
+    $('#setup_' + button_name + '_button').html('Remove');
+}
+
+function setup_premium_callback(event) {
+    event.preventDefault();
+    let button_type = $('#setup_premium_button').html();
+    if (button_type == 'Remove') {
+        enable_key_entries('premium_', 'premium');
+        return;
+    }
+
+    //else
+    let api_key = $('#premium_api_key_entry').val();
+    let api_secret = $('#premium_api_secret_entry').val();
+    client.invoke("set_premium_credentials", api_key, api_secret, (error, res) => {
+        if (error || res == null) {
+            showError('Premium Credentials Error', 'Error at adding credentials for premium subscription');
+            return;
+        }
+        if (!res['result']) {
+            showError('Premium Credentials Error', res['message']);
+            return;
+        }
+        showinfo('Premium Credentials', 'Succesfully set Premium Credentials');
+        add_premium_settings();
+    });
+}
+
+function change_premiumsettings_callback(event) {
+    event.preventDefault();
+    let should_sync = $('#premium_sync_entry').is(":checked");
+    client.invoke('set_premium_option_sync', should_sync, (error, res) => {
+        if (error || res == null) {
+            showError('Premium Settings Error', 'Error at changing premium settings');
+            return;
+        }
+    });
+}
+
+function add_premium_settings() {
+    if ($('#premium_sync_entry').length) {
+        // do not add if they already exist
+        return;
+    }
+    let str = form_checkbox('premium_sync_entry', 'Allow data sync with Rotkehlchen Server', settings.premium_should_sync);
+    str += form_button('Change Settings', 'change_premiumsettings_button');
+    $(str).insertAfter('#setup_premium_button');
 }
 
 function setup_exchange_callback(event) {
@@ -72,7 +118,7 @@ function setup_exchange_callback(event) {
                                 return;
                             }
                             // Exchange removal from backend succesfull
-                            enable_exchange_entries();
+                            enable_key_entries('', 'exchange');
                             $('#'+exchange_name+'_badge').remove();
                             var index = settings.connected_exchanges.indexOf(exchange_name);
                             if (index == -1) {
@@ -106,7 +152,7 @@ function setup_exchange_callback(event) {
                 return;
             }
             // Exchange setup in the backend was succesfull
-            disable_exchange_entries(exchange_name);
+            disable_key_entries('', 'exchange', exchange_name);
             settings.connected_exchanges.push(exchange_name);
             let str = ExchangeBadge({name: exchange_name, css_class: 'exchange-icon'});
             $(str).appendTo($('#exchange_badges'));
@@ -160,11 +206,16 @@ function fiat_modify_callback(event) {
 function add_usersettings_listeners() {
     $('#setup_exchange').change(function (event) {
         if (settings.connected_exchanges.indexOf(this.value) > -1) {
-            disable_exchange_entries(this.value);
+            disable_key_entries('', 'exchange', this.value);
         } else {
-            enable_exchange_entries();
+            enable_exchange_entries('', 'exchange');
         }
     });
+    if (settings.has_premium) {
+        disable_key_entries('premium_', 'premium', '');
+    }
+    $('#setup_premium_button').click(setup_premium_callback);
+    $('#change_premiumsettings_button').click(change_premiumsettings_callback);
     $('#setup_exchange_button').click(setup_exchange_callback);
     $('#fiat_type_entry').change(fiat_selection_callback);
     $('#modify_fiat_button').click(fiat_modify_callback);
@@ -173,10 +224,20 @@ function add_usersettings_listeners() {
 
 function create_user_settings() {
     var str = page_header('User Settings');
+    str += settings_panel('Premium Settings', 'premium');
     str += settings_panel('Exchange Settings', 'exchange');
     str += settings_panel('Fiat Balances', 'fiat_balances');
     str += settings_panel('Blockchain Balances', 'blockchain_balances');
     $('#page-wrapper').html(str);
+
+    str = form_entry('Rotkehlchen API Key', 'premium_api_key_entry', '', '');
+    str += form_entry('Rotkehlchen API Secret', 'premium_api_secret_entry', '', '');
+
+    str += form_button('Setup', 'setup_premium_button');
+    $(str).appendTo($('#premium_panel_body'));
+    if (settings.has_premium) {
+        add_premium_settings();
+    }
 
     let badge_input = settings.connected_exchanges.map(x => ({name: x, css_class: 'exchange-icon'}));
     str = '<div id="exchange_badges" class="row">';
@@ -193,7 +254,7 @@ function create_user_settings() {
     // essentially call the on-select for the first choice
     let first_value = settings.EXCHANGES[0];
     if (settings.connected_exchanges.indexOf(first_value) > -1) {
-        disable_exchange_entries(first_value);
+        disable_key_entries('', 'exchange', first_value);
     }
 
     str = form_select('Modify Balance', 'fiat_type_entry', settings.CURRENCIES.map(x=>x.ticker_symbol), settings.main_currency.ticker_symbol);

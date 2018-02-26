@@ -126,6 +126,13 @@ function unlock_user(username, password, create_true) {
                     self.setTitle('Succesfull Sign In');
                     self.setContentAppend(`<div>Welcome ${username}!</div>`);
                     load_dashboard_after_unlock(response['exchanges']);
+                    settings.has_premium = response['premium'];
+                    let db_settings = response['settings'];
+                    if ('premium_should_sync' in db_settings) {
+                        settings.premium_should_sync = db_settings['premium_should_sync'];
+                    } else {
+                        settings.premium_should_sync = false;
+                    }
                 }).fail(function(error){
                     self.setType('red');
                     self.setTitle('Sign In Failed');

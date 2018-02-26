@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import os
 import gevent
+import hashlib
+import base64
 from gevent.lock import Semaphore
 
 from rotkelchen.utils import (
@@ -17,7 +19,8 @@ from rotkelchen.kraken import Kraken
 from rotkelchen.bittrex import Bittrex
 from rotkelchen.binance import Binance
 from rotkelchen.data_handler import DataHandler
-from rotkelchen.inquirer import Inquirer, FIAT_CURRENCIES
+from rotkelchen.inquirer import Inquirer
+from rotkelchen.premium import Premium
 from rotkelchen.utils import query_fiat_pair
 from rotkelchen.fval import FVal
 from rotkelchen.history import TradesHistorian, PriceHistorian
@@ -25,6 +28,9 @@ from rotkelchen.accounting import Accountant
 
 import logging
 logger = logging.getLogger(__name__)
+
+
+MAIN_LOOP_SECS_DELAY = 30
 
 
 class Rotkelchen(object):
@@ -69,6 +75,7 @@ class Rotkelchen(object):
         self.sleep_secs = args.sleep_secs
         self.data_dir = args.data_dir
         self.args = args
+        self.last_data_upload_ts = 0
 
         self.poloniex = None
         self.kraken = None
@@ -81,7 +88,8 @@ class Rotkelchen(object):
         self.shutdown_event = gevent.event.Event()
 
     def unlock_user(self, user, password, create_new):
-        self.data.unlock(user, password, create_new)
+        user_dir = self.data.unlock(user, password, create_new)
+        self.password = password
         self.secret_data = self.data.db.get_exchange_secrets()
         self.cache_data_filename = os.path.join(self.data_dir, 'cache_data.json')
 
@@ -132,6 +140,12 @@ class Rotkelchen(object):
             self.args.ethrpc_port
         )
 
+        result = self.data.db.get_rotkehlchen_premium()
+        if result:
+            api_key = result[0]
+            api_secret = result[1]
+            self.premium = Premium(api_key, api_secret, user_dir)
+
         historical_data_start = self.data.historical_start_date()
         self.trades_historian = TradesHistorian(
             self.poloniex,
@@ -152,6 +166,72 @@ class Rotkelchen(object):
             create_csv=True
         )
 
+    def set_premium_credentials(self, api_key, api_secret):
+        if hasattr(self, 'premium'):
+            valid, empty_or_error = self.premium.set_credentials(api_key, api_secret)
+        else:
+            self.premium = Premium(api_key, api_secret, self.data.user_dir)
+            valid, empty_or_error = self.premium.is_active()
+
+        if valid:
+            self.data.set_premium_credentials(api_key, api_secret)
+            return True, ''
+        return False, empty_or_error
+
+    def maybe_upload_data_to_server(self):
+        logger.debug('Maybe upload to server')
+        # upload only if unlocked user has premium
+        if not hasattr(self, 'premium'):
+            return
+
+        # upload only once per hour
+        diff = ts_now() - self.last_data_upload_ts
+        if diff > 3600:
+            self.upload_data_to_server()
+
+    def upload_data_to_server(self):
+        logger.debug('upload to server -- start')
+        data = self.data.compress_and_encrypt_db(self.password)
+        our_hash = base64.b64encode(hashlib.sha256(data).digest())
+        result = self.premium.query_last_data_metadata()
+        if our_hash == result['data_hash']:
+            logger.debug('upload to server -- same hash')
+            # same hash -- no need to upload anything
+            return
+
+        our_last_write_ts = self.data.db.get_last_write_ts()
+        if our_last_write_ts <= result['last_modify_ts']:
+            # Server's DB was modified after our local DB
+            logger.debug('upload to server -- remote db more recent than local')
+            return
+
+        self.premium.upload_data(data, our_last_write_ts, 'zlib')
+        self.last_data_upload_ts = ts_now()
+        logger.debug('upload to server -- success')
+
+    def sync_data_from_server(self):
+        logger.debug('sync data from server -- start')
+        data = self.data.compress_and_encrypt_db(self.password)
+        our_hash = base64.b64encode(hashlib.sha256(data).digest())
+        result = self.premium.query_last_data_metadata()
+
+        if our_hash == result['data_hash']:
+            logger.debug('sync from server -- same hash')
+            # same hash -- no need to get anything
+            return
+
+        our_last_write_ts = self.data.db.get_last_write_ts()
+        if our_last_write_ts >= result['last_modify_ts']:
+            # Local DB is newer than Server DB
+            logger.debug('sync from server -- local DB more recent than remote')
+            return
+
+        success, error_or_result = self.premium.pull_data()
+        if not success:
+            logger.debug('sync from server -- pulling error {}'.format(error_or_result))
+
+        self.data.decompress_and_decrypt_db(self.password, error_or_result['data'])
+
     def start(self):
         return gevent.spawn(self.main_loop)
 
@@ -163,8 +243,10 @@ class Rotkelchen(object):
             if self.kraken is not None:
                 self.kraken.main_logic()
 
+            self.maybe_upload_data_to_server()
+
             logger.debug('Main loop end')
-            gevent.sleep(15)
+            gevent.sleep(MAIN_LOOP_SECS_DELAY)
 
     def process_history(self, start_ts, end_ts):
         history, margin_history, loan_history, asset_movements, eth_transactions = self.trades_historian.get_history(

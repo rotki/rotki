@@ -1,5 +1,8 @@
+import tempfile
 import os
 from json.decoder import JSONDecodeError
+import zlib
+from rotkelchen.crypto import encrypt, decrypt
 
 from rotkelchen.utils import (
     createTimeStamp,
@@ -108,6 +111,8 @@ class DataHandler(object):
             raise AuthenticationError('User {} does not exist'.format(username))
 
         self.db = DBHandler(user_data_dir, username, password)
+        self.user_data_dir = user_data_dir
+        return user_data_dir
 
     def main_currency(self):
         return self.settings['main_currency']
@@ -126,6 +131,9 @@ class DataHandler(object):
 
     def remove_blockchain_account(self, blockchain, account):
         self.db.remove_blockchain_account(blockchain, account)
+
+    def set_premium_credentials(self, api_key, api_secret):
+        self.db.set_rotkehlchen_premium(api_key, api_secret)
 
     def set_main_currency(self, currency, accountant):
         self.settings['main_currency'] = currency
@@ -260,3 +268,28 @@ class DataHandler(object):
             f.write(rlk_jsondumps(external_trades))
 
         return True, ''
+
+    def compress_and_encrypt_db(self, password):
+        """ Decrypt the DB, dump in temporary plaintextdb, compress it,
+        and then re-encrypt it
+
+        Returns a b64 encoded binary blob"""
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            tempdb = os.path.join(tmpdirname, 'temp.db')
+            self.db.export_unencrypted(tempdb)
+            with open(tempdb, 'rb') as f:
+                data_blob = f.read()
+
+        compressed_data = zlib.compress(data_blob, level=9)
+        encrypted_data = encrypt(password.encode(), compressed_data)
+        print('COMPRESSED-ENCRYPTED LENGTH: {}'.format(len(encrypted_data)))
+
+        return encrypted_data
+
+    def decompress_and_decrypt_db(self, password, encrypted_data):
+        """ Decrypt and decompress the encrypted data we receive from the server
+
+        If succesfull then replace our local Database"""
+        decrypted_data = decrypt(password.encode(), encrypted_data)
+        decompressed_data = zlib.decompress(decrypted_data)
+        self.db.import_unencrypted(decompressed_data, password)

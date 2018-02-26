@@ -116,6 +116,8 @@ module.exports = function() {
         settings.page_taxreport = null;
         settings.page_exchange = {};
         settings.datetime_format = 'd/m/Y G:i';
+        settings.has_premium = false;
+        settings.premium_should_sync = false;
     }
     this.get_value_in_main_currency = get_value_in_main_currency;
     this.assert_exchange_exists = assert_exchange_exists;

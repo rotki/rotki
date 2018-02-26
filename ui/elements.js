@@ -42,6 +42,15 @@ function form_select(prompt, id, options, selected_option) {
     return str;
 }
 
+function form_checkbox(id, prompt, checked) {
+    let checkstr = 'checked';
+    if (!checked) {
+        checkstr = '';
+    }
+
+    return `<div class="checkbox"><label><input id="${id}" type="checkbox" ${checkstr}>${prompt}</label></div>`;
+}
+
 function form_multiselect(prompt, id, options) {
     let str = '<div class="form-group"><label class="form-prompt">'+prompt+'</label>';
     str += '<select id="'+id+'" class="form-control" multiple="multiple" style="font-family: \'FontAwesome\', \'sans-serif\';">';
@@ -81,6 +90,7 @@ const invisible_anchor = (id) => `<div id="${id}" class="invisible-anchor"></div
 module.exports = function() {
     this.form_entry = form_entry;
     this.form_text = form_text;
+    this.form_checkbox = form_checkbox;
     this.form_select = form_select;
     this.form_multiselect = form_multiselect;
     this.form_button = form_button;

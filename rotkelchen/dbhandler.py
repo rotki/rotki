@@ -1,10 +1,20 @@
+import tempfile
 import time
 import os
+import shutil
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkelchen.constants import SUPPORTED_EXCHANGES
 from rotkelchen.fval import FVal
+from rotkelchen.utils import ts_now
 from rotkelchen.errors import AuthenticationError, InputError
+
+
+def str_to_bool(s):
+    return True if s == 'True' else False
+
+
+ROTKEHLCHEN_DB_VERSION = 1
 
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
@@ -12,10 +22,8 @@ from rotkelchen.errors import AuthenticationError, InputError
 class DBHandler(object):
 
     def __init__(self, user_data_dir, username, password):
-        self.conn = sqlcipher.connect(os.path.join(user_data_dir, 'rotkehlchen.db'))
-        self.conn.text_factory = str
-        self.conn.executescript('PRAGMA key="{}"; pragma kdf_iter=64000;'.format(password))
-        self.conn.execute('PRAGMA foreign_keys=ON')
+        self.user_data_dir = user_data_dir
+        self.connect(password)
         cursor = self.conn.cursor()
         try:
             cursor.execute(
@@ -36,7 +44,7 @@ class DBHandler(object):
             ')'
         )
         cursor.execute(
-            'CREATE TABLE IF NOT EXISTS exchange_credentials ('
+            'CREATE TABLE IF NOT EXISTS user_credentials ('
             '    name VARCHAR[24], api_key TEXT, api_secret TEXT'
             ')'
         )
@@ -55,7 +63,140 @@ class DBHandler(object):
             '    asset VARCHAR[24] NOT NULL PRIMARY KEY, amount DECIMAL'
             ')'
         )
+        cursor.execute(
+            'CREATE TABLE IF NOT EXISTS settings ('
+            '  name VARCHAR[24] NOT NULL PRIMARY KEY, value TEXT,'
+            '  UNIQUE(name, value)'
+            ')'
+        )
+        cursor.execute(
+            'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
+            ('version', str(ROTKEHLCHEN_DB_VERSION))
+        )
         self.conn.commit()
+
+    def connect(self, password):
+        self.conn = sqlcipher.connect(os.path.join(self.user_data_dir, 'rotkehlchen.db'))
+        self.conn.text_factory = str
+        self.conn.executescript('PRAGMA key="{}"; pragma kdf_iter=64000;'.format(password))
+        self.conn.execute('PRAGMA foreign_keys=ON')
+
+    def disconnect(self):
+        self.conn.close()
+
+    def export_unencrypted(self, temppath):
+        self.conn.executescript(
+            'ATTACH DATABASE "{}" AS plaintext KEY "";'
+            'SELECT sqlcipher_export("plaintext");'
+            'DETACH DATABASE plaintext;'.format(temppath)
+        )
+
+    def import_unencrypted(self, unencrypted_db_data, password):
+        self.disconnect()
+        rdbpath = os.path.join(self.user_data_dir, 'rotkehlchen.db')
+        # Make copy of existing encrypted DB before removing it
+        shutil.copy2(
+            rdbpath,
+            os.path.join(self.user_data_dir, 'rotkehlchen_temp_backup.db')
+        )
+        os.remove(rdbpath)
+
+        # dump the unencrypted data into a temporary file
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            tempdbpath = os.path.join(tmpdirname, 'temp.db')
+            with open(tempdbpath, 'wb') as f:
+                f.write(unencrypted_db_data)
+
+            # Now attach to the unencrypted DB and copy it to our DB and encrypt it
+            self.conn = sqlcipher.connect(tempdbpath)
+            self.conn.executescript(
+                'ATTACH DATABASE "{}" AS encrypted KEY "{}";'
+                'SELECT sqlcipher_export("encrypted");'
+                'DETACH DATABASE encrypted;'.format(rdbpath, password)
+            )
+            self.disconnect()
+
+        self.connect(password)
+        # all went okay, remove the original temp backup
+        os.remove(os.path.join(self.user_data_dir, 'rotkehlchen_temp_backup.db'))
+
+    def update_last_write(self):
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            ('last_write_ts', str(ts_now()))
+        )
+        self.conn.commit()
+
+    def get_last_write_ts(self):
+        cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT value FROM settings where name=?;', ('last_write_ts',)
+        )
+        query = query.fetchall()
+        # If setting is not set, it's 0 by default
+        if len(query) == 0:
+            return 0
+        return int(query[0])
+
+    def update_last_data_upload_ts(self):
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            ('last_data_upload_ts', str(ts_now()))
+        )
+        self.conn.commit()
+
+    def get_last_data_upload_ts(self):
+        cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT value FROM settings where name=?;', ('last_data_upload_ts',)
+        )
+        query = query.fetchall()
+        # If setting is not set, it's 0 by default
+        if len(query) == 0:
+            return 0
+        return int(query[0])
+
+    def update_premium_sync(self, should_sync):
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            ('premium_should_sync', str(should_sync))
+        )
+        self.conn.commit()
+
+    def get_premium_sync(self):
+        cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT value FROM settings where name=?;', ('premium_should_sync',)
+        )
+        query = query.fetchall()
+        # If setting is not set, it's false by default
+        if len(query) == 0:
+            return False
+        return str_to_bool(query[0])
+
+    def get_settings(self):
+        cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT name, value FROM settings;'
+        )
+        query = query.fetchall()
+
+        settings = {}
+        for q in query:
+            if q[0] == 'version':
+                settings['db_version'] = int(q[1])
+            elif q[0] == 'last_write_ts':
+                settings['last_write_ts'] = int(q[1])
+            elif q[0] == 'premium_should_sync':
+                settings['premium_should_sync'] = str_to_bool(q[1])
+            elif q[0] == 'last_data_upload_ts':
+                settings['last_data_upload_ts'] = int(q[1])
+            else:
+                settings[q[0]] = q[1]
+        return settings
 
     def add_multiple_balances(self, balances):
         """Execute addition of multiple balances in the DB
@@ -70,6 +211,7 @@ class DBHandler(object):
             balances
         )
         self.conn.commit()
+        self.update_last_write()
 
     def add_multiple_location_data(self, location_data):
         """Execute addition of multiple location data in the DB
@@ -84,6 +226,7 @@ class DBHandler(object):
             location_data
         )
         self.conn.commit()
+        self.update_last_write()
 
     def add_timed_unique_data(self, time, net_usd):
         cursor = self.conn.cursor()
@@ -92,6 +235,7 @@ class DBHandler(object):
             (time, net_usd)
         )
         self.conn.commit()
+        self.update_last_write()
 
     def write_owned_tokens(self, tokens):
         """Execute addition of multiple tokens in the DB
@@ -104,6 +248,7 @@ class DBHandler(object):
             [(t,) for t in tokens]
         )
         self.conn.commit()
+        self.update_last_write()
 
     def get_owned_tokens(self):
         cursor = self.conn.cursor()
@@ -120,6 +265,7 @@ class DBHandler(object):
             (blockchain, account)
         )
         self.conn.commit()
+        self.update_last_write()
 
     def remove_blockchain_account(self, blockchain, account):
         cursor = self.conn.cursor()
@@ -128,6 +274,7 @@ class DBHandler(object):
             'blockchain = ? and account = ?;', (blockchain, account)
         )
         self.conn.commit()
+        self.update_last_write()
 
     def add_fiat_balance(self, currency, amount):
         cursor = self.conn.cursor()
@@ -137,6 +284,7 @@ class DBHandler(object):
             (currency, amount)
         )
         self.conn.commit()
+        self.update_last_write()
 
     def remove_fiat_balance(self, currency):
         cursor = self.conn.cursor()
@@ -144,6 +292,7 @@ class DBHandler(object):
             'DELETE FROM current_balances WHERE asset = ?;', (currency,)
         )
         self.conn.commit()
+        self.update_last_write()
 
     def get_fiat_balances(self):
         cursor = self.conn.cursor()
@@ -213,26 +362,30 @@ class DBHandler(object):
 
         cursor = self.conn.cursor()
         cursor.execute(
-            'INSERT INTO exchange_credentials (name, api_key, api_secret) VALUES (?, ?, ?)',
+            'INSERT INTO user_credentials (name, api_key, api_secret) VALUES (?, ?, ?)',
             (name, api_key, api_secret)
         )
         self.conn.commit()
+        self.update_last_write()
 
     def remove_exchange(self, name):
         cursor = self.conn.cursor()
         cursor.execute(
-            'DELETE FROM exchange_credentials WHERE name =?', (name,)
+            'DELETE FROM user_credentials WHERE name =?', (name,)
         )
         self.conn.commit()
+        self.update_last_write()
 
     def get_exchange_secrets(self):
         cursor = self.conn.cursor()
         result = cursor.execute(
-            'SELECT name, api_key, api_secret FROM exchange_credentials;'
+            'SELECT name, api_key, api_secret FROM user_credentials;'
         )
         result = result.fetchall()
         secret_data = {}
         for entry in result:
+            if entry == 'rotkehlchen':
+                continue
             name = entry[0]
             secret_data[name] = {
                 'api_key': str(entry[1]),
@@ -240,3 +393,24 @@ class DBHandler(object):
             }
 
         return secret_data
+
+    def set_rotkehlchen_premium(self, api_key, api_secret):
+        cursor = self.conn.cursor()
+        # We don't care about previous value so this simple insert or replace should work
+        cursor.execute(
+            'INSERT OR REPLACE INTO user_credentials(name, api_key, api_secret) VALUES (?, ?, ?)',
+            ('rotkehlchen', api_key, api_secret)
+        )
+        self.conn.commit()
+        self.update_last_write()
+
+    def get_rotkehlchen_premium(self):
+        cursor = self.conn.cursor()
+        result = cursor.execute(
+            'SELECT api_key, api_secret FROM user_credentials where name="rotkehlchen";'
+        )
+        result = result.fetchall()
+        if len(result) == 1:
+            return result[0]
+        else:
+            return None

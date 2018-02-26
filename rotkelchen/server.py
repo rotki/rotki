@@ -188,6 +188,14 @@ class RotkelchenServer(object):
         result, message = self.rotkelchen.data.delete_external_trade(data)
         return {'result': result, 'message': message}
 
+    def set_premium_credentials(self, api_key, api_secret):
+        result, empty_or_error = self.rotkelchen.set_premium_credentials(api_key, api_secret)
+        return {'result': result, 'message': empty_or_error}
+
+    def set_premium_option_sync(self, should_sync):
+        self.rotkelchen.data.db.update_premium_sync(should_sync)
+        return True
+
     def query_exchange_total(self, name, first_time):
         logger.debug("Query exchange {} called.".format(name))
         if first_time:
@@ -330,6 +338,8 @@ class RotkelchenServer(object):
         try:
             self.rotkelchen.unlock_user(user, password, create_new)
             res['exchanges'] = self.rotkelchen.connected_exchanges
+            res['premium'] = True if hasattr(self.rotkelchen, 'premium') else False
+            res['settings'] = self.rotkelchen.data.db.get_settings()
         except AuthenticationError as e:
             res['result'] = False
             res['message'] = str(e)
