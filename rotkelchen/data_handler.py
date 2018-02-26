@@ -1,4 +1,5 @@
 import tempfile
+import shutil
 import os
 from json.decoder import JSONDecodeError
 import zlib
@@ -107,8 +108,23 @@ class DataHandler(object):
                 raise AuthenticationError('User {} already exists'.format(username))
             else:
                 os.mkdir(user_data_dir)
-        elif not os.path.exists(user_data_dir):
-            raise AuthenticationError('User {} does not exist'.format(username))
+        else:
+            if not os.path.exists(user_data_dir):
+                raise AuthenticationError('User {} does not exist'.format(username))
+
+            if not os.path.exists(os.path.join(user_data_dir, 'rotkehlchen.db')):
+                # This is bad. User directory exists but database is missing.
+                # Make a backup of the directory that user should probably remove
+                # on his own. At the same time delete the directory so that a new
+                # user account can be created
+                shutil.move(
+                    user_data_dir,
+                    os.path.join(self.data_directory, 'backup_%s' % username)
+                )
+
+                raise AuthenticationError(
+                    'User {} exists but DB is missing. Somehow must have been manually '
+                    'deleted or is corrupt. Please recreate the user account.'.format(username))
 
         self.db = DBHandler(user_data_dir, username, password)
         self.user_data_dir = user_data_dir
@@ -154,7 +170,7 @@ class DataHandler(object):
 
     def get_eth_accounts(self):
         blockchain_accounts = self.db.get_blockchain_accounts()
-        return blockchain_accounts['ETH']
+        return blockchain_accounts['ETH'] if 'ETH' in blockchain_accounts else []
 
     def set_fiat_balance(self, currency, balance):
         if currency not in FIAT_CURRENCIES:
@@ -284,7 +300,7 @@ class DataHandler(object):
         encrypted_data = encrypt(password.encode(), compressed_data)
         print('COMPRESSED-ENCRYPTED LENGTH: {}'.format(len(encrypted_data)))
 
-        return encrypted_data
+        return encrypted_data.encode()
 
     def decompress_and_decrypt_db(self, password, encrypted_data):
         """ Decrypt and decompress the encrypted data we receive from the server

@@ -132,6 +132,9 @@ def combine_dicts(a, b, op=operator.add):
 
 
 def combine_stat_dicts(list_of_dicts):
+    if len(list_of_dicts) == 0:
+        return {}
+
     combined_dict = list_of_dicts[0]
     for d in list_of_dicts[1:]:
         combined_dict = combine_dicts(combined_dict, d, add_entries)

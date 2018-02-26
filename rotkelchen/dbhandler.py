@@ -137,7 +137,7 @@ class DBHandler(object):
         # If setting is not set, it's 0 by default
         if len(query) == 0:
             return 0
-        return int(query[0])
+        return int(query[0][0])
 
     def update_last_data_upload_ts(self):
         cursor = self.conn.cursor()
@@ -156,7 +156,7 @@ class DBHandler(object):
         # If setting is not set, it's 0 by default
         if len(query) == 0:
             return 0
-        return int(query[0])
+        return int(query[0][0])
 
     def update_premium_sync(self, should_sync):
         cursor = self.conn.cursor()
@@ -402,7 +402,10 @@ class DBHandler(object):
             ('rotkehlchen', api_key, api_secret)
         )
         self.conn.commit()
-        self.update_last_write()
+        # Do not update the last write here. If we are starting in a new machine
+        # then this write is mandatory and to sync with data from server we need
+        # an empty last write ts in that case
+        # self.update_last_write()
 
     def get_rotkehlchen_premium(self):
         cursor = self.conn.cursor()

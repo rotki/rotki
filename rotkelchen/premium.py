@@ -62,6 +62,22 @@ class Premium(object):
         emptystr_or_error = '' if self.active else result_or_error
         return self.active, emptystr_or_error
 
+    def process_response(self, response):
+        result_or_error = ''
+        success = False
+        if response.status_code not in HANDLABLE_STATUS_CODES:
+            result_or_error = (
+                'Unexpected status response({}) from rotkehlchen server'.format(
+                    response.status_code))
+        else:
+            result_or_error = rlk_jsonloads(response.text)
+            if 'error' in result_or_error:
+                result_or_error = result_or_error['error']
+            else:
+                success = True
+
+        return success, result_or_error
+
     def sign(self, method, **kwargs):
         urlpath = '/api/' + self.apiversion + '/' + method
 
@@ -100,18 +116,8 @@ class Premium(object):
         except ConnectionError as e:
             return False, 'Could not connect to rotkehlchen server'
 
-        if response.status_code not in HANDLABLE_STATUS_CODES:
-            return (
-                False,
-                'Unexpected status response({}) from rotkehlchen server'.format(
-                    response.status_code
-                )
-            )
-        result = rlk_jsonloads(response.text)
-        if 'error' in result:
-            return False, result['error']
-
-        return True, result
+        success, result_or_error = self.process_response(response)
+        return success, result_or_error
 
     def pull_data(self):
         signature, data = self.sign('get_saved_data')
@@ -127,18 +133,8 @@ class Premium(object):
         except ConnectionError as e:
             return False, 'Could not connect to rotkehlchen server'
 
-        if response.status_code not in HANDLABLE_STATUS_CODES:
-            return (
-                False,
-                'Unexpected status response({}) from rotkehlchen server'.format(
-                    response.status_code
-                )
-            )
-        result = rlk_jsonloads(response.text)
-        if 'error' in result:
-            return False, result['error']
-
-        return True, result
+        success, result_or_error = self.process_response(response)
+        return success, result_or_error
 
     def query_last_data_metadata(self):
         signature, data = self.sign('last_data_metadata')
@@ -154,15 +150,5 @@ class Premium(object):
         except ConnectionError as e:
             return False, 'Could not connect to rotkehlchen server'
 
-        if response.status_code not in HANDLABLE_STATUS_CODES:
-            return (
-                False,
-                'Unexpected status response({}) from rotkehlchen server'.format(
-                    response.status_code
-                )
-            )
-        result = rlk_jsonloads(response.text)
-        if 'error' in result:
-            return False, result['error']
-
-        return True, result
+        success, result_or_error = self.process_response(response)
+        return success, result_or_error

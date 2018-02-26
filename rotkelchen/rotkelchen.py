@@ -13,6 +13,7 @@ from rotkelchen.utils import (
     rlk_jsondumps,
     ts_now,
 )
+from rotkelchen.constants import SUPPORTED_EXCHANGES
 from rotkelchen.blockchain import Blockchain
 from rotkelchen.poloniex import Poloniex
 from rotkelchen.kraken import Kraken
@@ -87,58 +88,53 @@ class Rotkelchen(object):
         self.lock.release()
         self.shutdown_event = gevent.event.Event()
 
-    def unlock_user(self, user, password, create_new):
-        user_dir = self.data.unlock(user, password, create_new)
-        self.password = password
-        self.secret_data = self.data.db.get_exchange_secrets()
-        self.cache_data_filename = os.path.join(self.data_dir, 'cache_data.json')
-
-        # initialize exchanges for which we have keys
-        if 'kraken' in self.secret_data:
+    def initialize_exchanges(self, secret_data):
+        # initialize exchanges for which we have keys and are not already initialized
+        if self.kraken is None and 'kraken' in secret_data:
             self.kraken = Kraken(
-                str.encode(self.secret_data['kraken']['api_key']),
-                str.encode(self.secret_data['kraken']['api_secret']),
+                str.encode(secret_data['kraken']['api_key']),
+                str.encode(secret_data['kraken']['api_secret']),
                 self.data_dir
             )
             self.connected_exchanges.append('kraken')
+            self.trades_historian.set_exchange('kraken', self.kraken)
 
-        self.inquirer = Inquirer(kraken=self.kraken if hasattr(self, 'kraken') else None)
-
-        if 'poloniex' in self.secret_data:
+        if self.poloniex is None and 'poloniex' in secret_data:
             self.poloniex = Poloniex(
-                str.encode(self.secret_data['poloniex']['api_key']),
-                str.encode(self.secret_data['poloniex']['api_secret']),
+                str.encode(secret_data['poloniex']['api_key']),
+                str.encode(secret_data['poloniex']['api_secret']),
                 self.cache_data_filename,
                 self.inquirer,
                 self.data_dir
             )
             self.connected_exchanges.append('poloniex')
+            self.trades_historian.set_exchange('poloniex', self.poloniex)
 
-        if 'bittrex' in self.secret_data:
+        if self.bittrex is None and 'bittrex' in secret_data:
             self.bittrex = Bittrex(
-                str.encode(self.secret_data['bittrex']['api_key']),
-                str.encode(self.secret_data['bittrex']['api_secret']),
+                str.encode(secret_data['bittrex']['api_key']),
+                str.encode(secret_data['bittrex']['api_secret']),
                 self.inquirer,
                 self.data_dir
             )
             self.connected_exchanges.append('bittrex')
+            self.trades_historian.set_exchange('bittrex', self.bittrex)
 
-        if 'binance' in self.secret_data:
+        if self.binance is None and 'binance' in secret_data:
             self.binance = Binance(
-                str.encode(self.secret_data['binance']['api_key']),
-                str.encode(self.secret_data['binance']['api_secret']),
+                str.encode(secret_data['binance']['api_key']),
+                str.encode(secret_data['binance']['api_secret']),
                 self.inquirer,
                 self.data_dir
             )
             self.connected_exchanges.append('binance')
+            self.trades_historian.set_exchange('binance', self.binance)
 
-        self.blockchain = Blockchain(
-            self.data.db.get_blockchain_accounts(),
-            self.data.eth_tokens,
-            self.data.db.get_owned_tokens(),
-            self.inquirer,
-            self.args.ethrpc_port
-        )
+    def unlock_user(self, user, password, create_new):
+        user_dir = self.data.unlock(user, password, create_new)
+        self.password = password
+        secret_data = self.data.db.get_exchange_secrets()
+        self.cache_data_filename = os.path.join(self.data_dir, 'cache_data.json')
 
         result = self.data.db.get_rotkehlchen_premium()
         if result:
@@ -148,10 +144,6 @@ class Rotkelchen(object):
 
         historical_data_start = self.data.historical_start_date()
         self.trades_historian = TradesHistorian(
-            self.poloniex,
-            self.kraken,
-            self.bittrex,
-            self.binance,
             self.data_dir,
             self.data.get_eth_accounts(),
             historical_data_start,
@@ -166,11 +158,22 @@ class Rotkelchen(object):
             create_csv=True
         )
 
+        self.inquirer = Inquirer(kraken=self.kraken)
+        self.initialize_exchanges(secret_data)
+
+        self.blockchain = Blockchain(
+            self.data.db.get_blockchain_accounts(),
+            self.data.eth_tokens,
+            self.data.db.get_owned_tokens(),
+            self.inquirer,
+            self.args.ethrpc_port
+        )
+
     def set_premium_credentials(self, api_key, api_secret):
         if hasattr(self, 'premium'):
             valid, empty_or_error = self.premium.set_credentials(api_key, api_secret)
         else:
-            self.premium = Premium(api_key, api_secret, self.data.user_dir)
+            self.premium = Premium(api_key, api_secret, self.data.user_data_dir)
             valid, empty_or_error = self.premium.is_active()
 
         if valid:
@@ -193,19 +196,27 @@ class Rotkelchen(object):
         logger.debug('upload to server -- start')
         data = self.data.compress_and_encrypt_db(self.password)
         our_hash = base64.b64encode(hashlib.sha256(data).digest())
-        result = self.premium.query_last_data_metadata()
-        if our_hash == result['data_hash']:
+        success, result_or_error = self.premium.query_last_data_metadata()
+        if not success:
+            logger.debug('upload to server -- query last metadata error: {}'.format(result_or_error))
+            return
+
+        if our_hash == result_or_error['data_hash']:
             logger.debug('upload to server -- same hash')
             # same hash -- no need to upload anything
             return
 
         our_last_write_ts = self.data.db.get_last_write_ts()
-        if our_last_write_ts <= result['last_modify_ts']:
+        if our_last_write_ts <= result_or_error['last_modify_ts']:
             # Server's DB was modified after our local DB
             logger.debug('upload to server -- remote db more recent than local')
             return
 
-        self.premium.upload_data(data, our_last_write_ts, 'zlib')
+        success, result_or_error = self.premium.upload_data(data, our_last_write_ts, 'zlib')
+        if not success:
+            logger.debug('upload to server -- upload error: {}'.format(result_or_error))
+            return
+
         self.last_data_upload_ts = ts_now()
         logger.debug('upload to server -- success')
 
@@ -213,15 +224,18 @@ class Rotkelchen(object):
         logger.debug('sync data from server -- start')
         data = self.data.compress_and_encrypt_db(self.password)
         our_hash = base64.b64encode(hashlib.sha256(data).digest())
-        result = self.premium.query_last_data_metadata()
+        success, result_or_error = self.premium.query_last_data_metadata()
+        if not success:
+            logger.debug('sync data from server-- error: {}'.format(result_or_error))
+            return
 
-        if our_hash == result['data_hash']:
+        if our_hash == result_or_error['data_hash']:
             logger.debug('sync from server -- same hash')
             # same hash -- no need to get anything
             return
 
         our_last_write_ts = self.data.db.get_last_write_ts()
-        if our_last_write_ts >= result['last_modify_ts']:
+        if our_last_write_ts >= result_or_error['last_modify_ts']:
             # Local DB is newer than Server DB
             logger.debug('sync from server -- local DB more recent than remote')
             return
@@ -282,8 +296,13 @@ class Rotkelchen(object):
         for exchange in self.connected_exchanges:
             balances[exchange] = getattr(self, exchange).query_balances()
 
-        balances['blockchain'] = self.blockchain.query_balances()['totals']
-        balances['banks'] = self.query_fiat_balances()
+        result = self.blockchain.query_balances()['totals']
+        if result != {}:
+            balances['blockchain'] = result
+
+        result = self.query_fiat_balances()
+        if result != {}:
+            balances['banks'] = result
 
         combined = combine_stat_dicts([v for k, v in balances.items()])
         total_usd_per_location = [(k, dict_get_sumof(v, 'usd_value')) for k, v in balances.items()]
@@ -362,79 +381,42 @@ class Rotkelchen(object):
         return self.data.settings
 
     def setup_exchange(self, name, api_key, api_secret):
-        if '{}_api_key'.format(name) in self.secret_data:
-            return False, 'Exchange {} is already registered'
-
-        if not os.path.isfile(self.secret_name):
-            logger.critical('The secret file can not be found')
-            return False, 'The secret file can not be found'
-
-        if name == 'kraken':
-            exchange = Kraken(
-                str.encode(api_key),
-                str.encode(api_secret),
-                self.data_dir
-            )
-        elif name == 'poloniex':
-            exchange = Poloniex(
-                str.encode(api_key),
-                str.encode(api_secret),
-                self.cache_data_filename,
-                self.inquirer,
-                self.data_dir
-            )
-        elif name == 'bittrex':
-            exchange = Bittrex(
-                str.encode(api_key),
-                str.encode(api_secret),
-                self.inquirer,
-                self.data_dir
-            )
-        elif name == 'binance':
-            exchange = Binance(
-                str.encode(api_key),
-                str.encode(api_secret),
-                self.inquirer,
-                self.data_dir
-            )
-        else:
+        if name not in SUPPORTED_EXCHANGES:
             return False, 'Attempted to register unsupported exchange {}'.format(name)
 
+        if getattr(self, name) is not None:
+            return False, 'Exchange {} is already registered'.format(name)
+
+        secret_data = {}
+        secret_data[name] = {
+            'api_key': api_key,
+            'api_secret': api_secret,
+        }
+        self.initialize_exchanges(secret_data)
+
+        exchange = getattr(self, name)
         result, message = exchange.validate_api_key()
         if not result:
+            self.delete_exchange_data(name)
             return False, message
 
-        # Success, save the result
-        with self.lock:
-            setattr(self, name, exchange)
-            self.connected_exchanges.append(name)
-
-            self.secret_data['{}_api_key'.format(name)] = api_key
-            self.secret_data['{}_secret'.format(name)] = api_secret
-
-            with open(self.secret_name, 'w') as f:
-                f.write(rlk_jsondumps(self.secret_data))
-
+        # Success, save the result in the DB
+        self.data.db.add_exchange(name, api_key, api_secret)
         return True, ''
 
+    def delete_exchange_data(self, name):
+        self.connected_exchanges.remove(name)
+        self.trades_historian.set_exchange(name, None)
+        delattr(self, name)
+        setattr(self, name, None)
+
     def remove_exchange(self, name):
-        if '{}_api_key'.format(name) not in self.secret_data:
-            return False, 'Exchange {} is not registered'
+        if getattr(self, name) is None:
+            return False, 'Exchange {} is not registered'.format(name)
 
-        if not os.path.isfile(self.secret_name):
-            logger.critical('The secret file can not be found')
-            return False, 'The secret file can not be found'
-
-        with self.lock:
-            del self.secret_data['{}_api_key'.format(name)]
-            del self.secret_data['{}_secret'.format(name)]
-
-            self.connected_exchanges.remove(name)
-            with open(self.secret_name, 'w') as f:
-                f.write(rlk_jsondumps(self.secret_data))
-
-        # TODO: and finally schedule the exchange object for deletion during
-
+        self.delete_exchange_data(name)
+        # Success, remove it also from the DB
+        self.data.db.remove_exchange(name)
         return True, ''
 
     def shutdown(self):

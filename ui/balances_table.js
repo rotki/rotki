@@ -10,22 +10,24 @@ function balance_table_init_callback(settings, json) {
         api = this.api();
     }
 
-    api.column(2).every(function(){
-        var column = this;
-        var sum = column
-            .data()
-            .reduce(function (a, b) {
-                a = parseFloat(a);
-                if(isNaN(a)){ a = 0; }
+    if (api.data().count()) {
+        api.column(2).every(function(){
+            var column = this;
+            var sum = column
+                .data()
+                .reduce(function (a, b) {
+                    a = parseFloat(a);
+                    if(isNaN(a)){ a = 0; }
 
-                b = parseFloat(b);
-                if(isNaN(b)){ b = 0; }
+                    b = parseFloat(b);
+                    if(isNaN(b)){ b = 0; }
 
-                return a + b;
-            });
-        sum = format_currency_value(sum);
-        $(column.footer()).html('Total Sum: ' + sum);
-    });
+                    return a + b;
+                });
+            sum = format_currency_value(sum);
+            $(column.footer()).html('Total Sum: ' + sum);
+        });
+    }
 }
 
 function add_balances_table(result) {

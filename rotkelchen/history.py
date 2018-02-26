@@ -443,20 +443,16 @@ class TradesHistorian(object):
 
     def __init__(
             self,
-            poloniex,
-            kraken,
-            bittrex,
-            binance,
             data_directory,
             eth_accounts,
             historical_data_start,
             start_date='01/11/2015',
     ):
 
-        self.poloniex = poloniex
-        self.kraken = kraken
-        self.bittrex = bittrex
-        self.binance = binance
+        self.poloniex = None
+        self.kraken = None
+        self.bittrex = None
+        self.binance = None
         self.start_ts = createTimeStamp(start_date, formatstr="%d/%m/%Y")
         self.data_directory = data_directory
         self.eth_accounts = eth_accounts
@@ -464,6 +460,15 @@ class TradesHistorian(object):
         self.historical_data_start = createTimeStamp(historical_data_start, formatstr="%d/%m/%Y")
         # If this flag is true we attempt to read from the manually logged margin positions file
         self.read_manual_margin_positions = True
+
+    def set_exchange(self, name, exchange_obj):
+        if getattr(self, name) is None:
+            setattr(self, name, exchange_obj)
+        elif exchange_obj:
+            raise ValueError(
+                'Attempted to set {} exchange in TradesHistorian while it was '
+                'already set'.format(name)
+            )
 
     def create_history(self, start_ts, end_ts, end_at_least_ts):
         """Creates trades and loans history from start_ts to end_ts or if

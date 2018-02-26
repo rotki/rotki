@@ -68,7 +68,9 @@ function setup_premium_callback(event) {
             showError('Premium Credentials Error', res['message']);
             return;
         }
-        showinfo('Premium Credentials', 'Succesfully set Premium Credentials');
+        showInfo('Premium Credentials', 'Succesfully set Premium Credentials');
+        disable_key_entries('premium_', 'premium', '');
+        settings.has_premium = true;
         add_premium_settings();
     });
 }
