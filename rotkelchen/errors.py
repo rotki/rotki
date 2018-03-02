@@ -32,3 +32,7 @@ class InputError(Exception):
 
 class AuthenticationError(Exception):
     pass
+
+
+class PermissionError(Exception):
+    pass

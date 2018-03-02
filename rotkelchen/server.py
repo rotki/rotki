@@ -10,7 +10,7 @@ import pickle
 import traceback
 
 from rotkelchen.fval import FVal
-from rotkelchen.errors import InputError, AuthenticationError
+from rotkelchen.errors import InputError, AuthenticationError, PermissionError
 from rotkelchen.args import app_args
 from rotkelchen.rotkelchen import Rotkelchen
 from rotkelchen.utils import pretty_json_dumps
@@ -333,8 +333,13 @@ class RotkelchenServer(object):
         self.rotkelchen.data.remove_blockchain_account(blockchain, account)
         return accounts_result(new_data['per_account'], new_data['totals'])
 
-    def unlock_user(self, user, password, create_new):
+    def unlock_user(self, user, password, create_new, sync_approval):
         res = {'result': True, 'message': ''}
+
+        valid_approve = isinstance(sync_approval, str) and sync_approval in ['unknown', 'yes', 'no']
+        if not valid_approve:
+            raise ValueError('Provided invalid value for sync_approval')
+
         try:
             self.rotkelchen.unlock_user(user, password, create_new)
             res['exchanges'] = self.rotkelchen.connected_exchanges
@@ -342,6 +347,10 @@ class RotkelchenServer(object):
             res['settings'] = self.rotkelchen.data.db.get_settings()
         except AuthenticationError as e:
             res['result'] = False
+            res['message'] = str(e)
+        except PermissionError as e:
+            res['result'] = False
+            res['permission_needed'] = True
             res['message'] = str(e)
 
         return res

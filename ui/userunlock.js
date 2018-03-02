@@ -19,6 +19,25 @@ function verify_userpass(username, password) {
     return true;
 }
 
+function ask_permission(msg, username, password, create_true) {
+    $.confirm({
+        title: 'Sync Permission Required',
+        content: msg,
+        buttons: {
+            yes: {
+                text: 'Yes',
+                btnClass: 'btn-blue',
+                action: function () {unlock_async(username, password, create_true, 'yes');}
+            },
+            no:  {
+                text: 'No',
+                btnClass: 'btn-red',
+                action: function () {unlock_async(username, password, create_true, 'no');}
+            }
+        }
+    });
+}
+
 function prompt_new_account() {
     let content_str = '';
     content_str += form_entry('User Name', 'user_name_entry', '', '');
@@ -43,7 +62,7 @@ function prompt_new_account() {
                         $.alert('The given passwords don\'t match');
                         return false;
                     }
-                    unlock_user(username, password, true);
+                    unlock_user(username, password, true, 'unknown');
                 }
             },
             cancel: function () { prompt_sign_in();}
@@ -77,7 +96,7 @@ function prompt_sign_in() {
                     if (!verify_userpass(username, password)) {
                         return false;
                     }
-                    unlock_user(username, password, false);
+                    unlock_user(username, password, false, 'unknown');
                 }
             },
             newAccount: {
@@ -100,15 +119,28 @@ function prompt_sign_in() {
     });
 }
 
-function unlock_async(username, password, create_true) {
-    var deferred = $.Deferred();
-    client.invoke("unlock_user", username, password, create_true, (error, res) => {
+var GLOBAL_UNLOCK_DEFERRED = null;
+function unlock_async(username, password, create_true, sync_approval) {
+    var deferred;
+    if (!GLOBAL_UNLOCK_DEFERRED) {
+        console.log("At unlock_async start, creating new deferred object");
+        deferred = $.Deferred();
+        GLOBAL_UNLOCK_DEFERRED = deferred;
+    } else {
+        console.log("At unlock_async start, using global deferred object");
+        deferred = GLOBAL_UNLOCK_DEFERRED;
+    }
+    client.invoke("unlock_user", username, password, create_true, sync_approval, (error, res) => {
         if (error || res == null) {
             deferred.reject(error);
             return;
         }
         if (!res['result']) {
-            deferred.reject(res['message']);
+            if ('permission_needed' in res) {
+                deferred.notify(res['message']);
+            } else {
+                deferred.reject(res['message']);
+            }
             return;
         }
         deferred.resolve(res);
@@ -116,11 +148,11 @@ function unlock_async(username, password, create_true) {
     return deferred.promise();
 }
 
-function unlock_user(username, password, create_true) {
+function unlock_user(username, password, create_true, sync_approval) {
     $.alert({
         content: function(){
             var self = this;
-            return unlock_async(username, password, create_true).done(
+            return unlock_async(username, password, create_true, sync_approval).done(
                 function (response) {
                     self.setType('green');
                     self.setTitle('Succesfull Sign In');
@@ -133,11 +165,15 @@ function unlock_user(username, password, create_true) {
                     } else {
                         settings.premium_should_sync = false;
                     }
+                    GLOBAL_UNLOCK_DEFERRED = null;
+                }).progress(function(msg){
+                    ask_permission(msg, username, password, create_true);
                 }).fail(function(error){
                     self.setType('red');
                     self.setTitle('Sign In Failed');
                     self.setContentAppend(`<div>${error}</div>`);
                     self.buttons.ok.action = function () {prompt_sign_in();};
+                    GLOBAL_UNLOCK_DEFERRED = null;
                 });
         }
     });

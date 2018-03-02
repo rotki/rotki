@@ -13,6 +13,7 @@ from rotkelchen.utils import (
     rlk_jsondumps,
     ts_now,
 )
+from rotkelchen.errors import PermissionError
 from rotkelchen.constants import SUPPORTED_EXCHANGES
 from rotkelchen.blockchain import Blockchain
 from rotkelchen.poloniex import Poloniex
@@ -130,17 +131,32 @@ class Rotkelchen(object):
             self.connected_exchanges.append('binance')
             self.trades_historian.set_exchange('binance', self.binance)
 
-    def unlock_user(self, user, password, create_new):
-        user_dir = self.data.unlock(user, password, create_new)
+    def unlock_user(self, user, password, create_new, sync_approval):
+        # unlock the DB
         self.password = password
+        user_dir = self.data.unlock(user, password, create_new)
+
+        # If we got premium initialize it and try to sync with the server
+        premium_credentials = self.data.db.get_rotkehlchen_premium()
+        if premium_credentials:
+            api_key = premium_credentials[0]
+            api_secret = premium_credentials[1]
+            self.premium = Premium(api_key, api_secret, user_dir)
+
+            if self.can_sync_data_from_server():
+                if sync_approval == 'unknown':
+                    raise PermissionError(
+                        'Rotkehlchen Server has newer version of your DB data. '
+                        'Should we replace local data with the server\'s?'
+                    )
+                elif sync_approval == 'yes':
+                    logger.debug('User approved data sync from server')
+                    self.sync_data_from_server()
+                else:
+                    logger.debug('Could sync data from server but user refused')
+
         secret_data = self.data.db.get_exchange_secrets()
         self.cache_data_filename = os.path.join(self.data_dir, 'cache_data.json')
-
-        result = self.data.db.get_rotkehlchen_premium()
-        if result:
-            api_key = result[0]
-            api_secret = result[1]
-            self.premium = Premium(api_key, api_secret, user_dir)
 
         historical_data_start = self.data.historical_start_date()
         self.trades_historian = TradesHistorian(
@@ -220,31 +236,36 @@ class Rotkelchen(object):
         self.last_data_upload_ts = ts_now()
         logger.debug('upload to server -- success')
 
-    def sync_data_from_server(self):
+    def can_sync_data_from_server(self):
         logger.debug('sync data from server -- start')
         data = self.data.compress_and_encrypt_db(self.password)
         our_hash = base64.b64encode(hashlib.sha256(data).digest())
         success, result_or_error = self.premium.query_last_data_metadata()
         if not success:
             logger.debug('sync data from server-- error: {}'.format(result_or_error))
-            return
+            return False
 
         if our_hash == result_or_error['data_hash']:
             logger.debug('sync from server -- same hash')
             # same hash -- no need to get anything
-            return
+            return False
 
         our_last_write_ts = self.data.db.get_last_write_ts()
         if our_last_write_ts >= result_or_error['last_modify_ts']:
             # Local DB is newer than Server DB
             logger.debug('sync from server -- local DB more recent than remote')
-            return
+            return False
 
+        return True
+
+    def sync_data_from_server(self):
         success, error_or_result = self.premium.pull_data()
         if not success:
             logger.debug('sync from server -- pulling error {}'.format(error_or_result))
+            return False
 
         self.data.decompress_and_decrypt_db(self.password, error_or_result['data'])
+        return True
 
     def start(self):
         return gevent.spawn(self.main_loop)
