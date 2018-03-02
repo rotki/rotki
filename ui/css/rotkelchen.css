@@ -34,10 +34,15 @@
   transform: translate(-50%, -50%);
 }​
 
-/* When the body has the loading class, we turn
-   the scrollbar off with overflow:hidden */
-body.loading {
+
+/* no scrollbar allowed in the body -- only content scrolls*/
+body {
     overflow: hidden;
+}
+
+#page-wrapper {
+    height:964px;
+    overflow: auto;
 }
 
 body.loading .loadingwrapper {
@@ -85,4 +90,45 @@ div.rotkelchen-table {
 
 div.invisible-anchor {
     display:none;
+}
+
+#rotkehlchen_no_text {
+    width: 150px;
+    display: block;
+    margin: 10px auto;
+    padding: 15px;
+    /* outline: 1px solid #e45325; */
+}
+
+/* Color customization */
+
+:root {
+    --elements-bg-color: #7e4a3b;
+    --elements-link-color: #e45325;
+}
+
+a>.fa-fw , a{
+    color: var(--elements-bg-color);
+}
+
+a:focus, a:hover {
+    color: var(--elements-link-color);
+}
+
+.panel-primary {
+    border-color: var(--elements-bg-color);
+}
+
+.panel-primary>.panel-heading {
+    background-color: var(--elements-bg-color);
+    border-color: var(--elements-link-color);
+}
+
+
+#welcome_text {
+    text-align: center;
+    line-height: 1.9;
+    font-size: 16px;
+    text-shadow: 0.1px 0.1 px var(--elements-link-color);
+    color: var(--elements-bg-color);
 }

@@ -157,6 +157,7 @@ function unlock_user(username, password, create_true, sync_approval) {
                     self.setType('green');
                     self.setTitle('Succesfull Sign In');
                     self.setContentAppend(`<div>Welcome ${username}!</div>`);
+                    $('#welcome_text').html(`Welcome ${username}!`);
                     load_dashboard_after_unlock(response['exchanges']);
                     settings.has_premium = response['premium'];
                     let db_settings = response['settings'];

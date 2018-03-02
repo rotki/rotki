@@ -9,6 +9,8 @@ from requests import ConnectionError
 from binascii import Error as binascii_error
 from rotkelchen.utils import rlk_jsonloads
 
+import logging
+logger = logging.getLogger(__name__)
 
 HANDLABLE_STATUS_CODES = [
     HTTPStatus.OK,
@@ -94,11 +96,11 @@ class Premium(object):
         )
         return signature, req
 
-    def upload_data(self, data_blob, last_modify_ts, compression_type):
-
+    def upload_data(self, data_blob, our_hash, last_modify_ts, compression_type):
         signature, data = self.sign(
             'save_data',
             data_blob=data_blob,
+            original_hash=our_hash,
             last_modify_ts=last_modify_ts,
             index=0,
             length=len(data_blob),

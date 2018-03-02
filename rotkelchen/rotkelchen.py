@@ -210,13 +210,13 @@ class Rotkelchen(object):
 
     def upload_data_to_server(self):
         logger.debug('upload to server -- start')
-        data = self.data.compress_and_encrypt_db(self.password)
-        our_hash = base64.b64encode(hashlib.sha256(data).digest())
+        data, our_hash = self.data.compress_and_encrypt_db(self.password)
         success, result_or_error = self.premium.query_last_data_metadata()
         if not success:
             logger.debug('upload to server -- query last metadata error: {}'.format(result_or_error))
             return
 
+        logger.debug("CAN_PUSH--> OURS: {} THEIRS: {}".format(our_hash, result_or_error['data_hash']))
         if our_hash == result_or_error['data_hash']:
             logger.debug('upload to server -- same hash')
             # same hash -- no need to upload anything
@@ -225,10 +225,16 @@ class Rotkelchen(object):
         our_last_write_ts = self.data.db.get_last_write_ts()
         if our_last_write_ts <= result_or_error['last_modify_ts']:
             # Server's DB was modified after our local DB
+            logger.debug("CAN_PUSH -> 3")
             logger.debug('upload to server -- remote db more recent than local')
             return
 
-        success, result_or_error = self.premium.upload_data(data, our_last_write_ts, 'zlib')
+        success, result_or_error = self.premium.upload_data(
+            data,
+            our_hash,
+            our_last_write_ts,
+            'zlib'
+        )
         if not success:
             logger.debug('upload to server -- upload error: {}'.format(result_or_error))
             return
@@ -238,13 +244,13 @@ class Rotkelchen(object):
 
     def can_sync_data_from_server(self):
         logger.debug('sync data from server -- start')
-        data = self.data.compress_and_encrypt_db(self.password)
-        our_hash = base64.b64encode(hashlib.sha256(data).digest())
+        data, our_hash = self.data.compress_and_encrypt_db(self.password)
         success, result_or_error = self.premium.query_last_data_metadata()
         if not success:
             logger.debug('sync data from server-- error: {}'.format(result_or_error))
             return False
 
+        logger.debug("CAN_PULL--> OURS: {} THEIRS: {}".format(our_hash, result_or_error['data_hash']))
         if our_hash == result_or_error['data_hash']:
             logger.debug('sync from server -- same hash')
             # same hash -- no need to get anything

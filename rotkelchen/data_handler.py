@@ -3,6 +3,8 @@ import shutil
 import os
 from json.decoder import JSONDecodeError
 import zlib
+import base64
+import hashlib
 from rotkelchen.crypto import encrypt, decrypt
 
 from rotkelchen.utils import (
@@ -296,11 +298,14 @@ class DataHandler(object):
             with open(tempdb, 'rb') as f:
                 data_blob = f.read()
 
+        original_data_hash = base64.b64encode(
+            hashlib.sha256(data_blob).digest()
+        ).decode()
         compressed_data = zlib.compress(data_blob, level=9)
         encrypted_data = encrypt(password.encode(), compressed_data)
         print('COMPRESSED-ENCRYPTED LENGTH: {}'.format(len(encrypted_data)))
 
-        return encrypted_data.encode()
+        return encrypted_data.encode(), original_data_hash
 
     def decompress_and_decrypt_db(self, password, encrypted_data):
         """ Decrypt and decompress the encrypted data we receive from the server
