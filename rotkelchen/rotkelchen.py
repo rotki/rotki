@@ -135,7 +135,6 @@ class Rotkelchen(object):
         # unlock the DB
         self.password = password
         user_dir = self.data.unlock(user, password, create_new)
-
         # If we got premium initialize it and try to sync with the server
         premium_credentials = self.data.db.get_rotkehlchen_premium()
         if premium_credentials:

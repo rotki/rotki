@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 from requests import ConnectionError
 from binascii import Error as binascii_error
 from rotkelchen.utils import rlk_jsonloads
+from rotkelchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 
 import logging
 logger = logging.getLogger(__name__)
@@ -114,6 +115,7 @@ class Premium(object):
             response = self.session.put(
                 self.uri + 'save_data',
                 data=data,
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except ConnectionError as e:
             return False, 'Could not connect to rotkehlchen server'
@@ -131,6 +133,7 @@ class Premium(object):
             response = self.session.get(
                 self.uri + 'get_saved_data',
                 data=data,
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except ConnectionError as e:
             return False, 'Could not connect to rotkehlchen server'
@@ -148,9 +151,9 @@ class Premium(object):
             response = self.session.get(
                 self.uri + 'last_data_metadata',
                 data=data,
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except ConnectionError as e:
             return False, 'Could not connect to rotkehlchen server'
-
         success, result_or_error = self.process_response(response)
         return success, result_or_error
