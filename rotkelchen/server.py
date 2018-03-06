@@ -333,15 +333,26 @@ class RotkelchenServer(object):
         self.rotkelchen.data.remove_blockchain_account(blockchain, account)
         return accounts_result(new_data['per_account'], new_data['totals'])
 
-    def unlock_user(self, user, password, create_new, sync_approval):
+    def unlock_user(self, user, password, create_new, sync_approval, api_key, api_secret):
+        """Either unlock an existing user or create a new one"""
         res = {'result': True, 'message': ''}
+
+        assert isinstance(sync_approval, str), "sync_approval should be a string"
+        assert isinstance(api_key, str), "api_key should be a string"
+        assert isinstance(api_secret, str), "api_secret should be a string"
 
         valid_approve = isinstance(sync_approval, str) and sync_approval in ['unknown', 'yes', 'no']
         if not valid_approve:
             raise ValueError('Provided invalid value for sync_approval')
 
+        if api_key != '' and create_new is False:
+            raise ValueError('Should not ever have api_key provided during a normal login')
+
+        if api_key != '' and api_secret == '' or api_secret != '' and api_key == '':
+            raise ValueError('Must provide both or neither of api key/secret')
+
         try:
-            self.rotkelchen.unlock_user(user, password, create_new)
+            self.rotkelchen.unlock_user(user, password, create_new, sync_approval, api_key, api_secret)
             res['exchanges'] = self.rotkelchen.connected_exchanges
             res['premium'] = True if hasattr(self.rotkelchen, 'premium') else False
             res['settings'] = self.rotkelchen.data.db.get_settings()

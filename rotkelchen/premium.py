@@ -21,10 +21,27 @@ HANDLABLE_STATUS_CODES = [
 ]
 
 
+def premium_create_and_verify(api_key, api_secret):
+    """Create a Premium object with the key pairs and verify them.
+
+    Returns a tuple (premium_object, valid, empty_or_error) where:
+
+    - premium_object: Is the initialized premium_object
+    - valid: A boolean indicating if the api keys are actually valid. This
+             is found out by making an API call.
+    - empty_or_error: A string containing an error message if something went wrong
+    """
+    try:
+        premium = Premium(api_key, api_secret)
+        valid, empty_or_error = premium.is_active()
+    except binascii_error:
+        return None, False, 'incorrect api key format'
+
+    return premium, valid, empty_or_error
+
 class Premium(object):
 
-    def __init__(self, api_key, api_secret, user_dir):
-        self.user_dir = user_dir
+    def __init__(self, api_key, api_secret):
         self.session = requests.session()
         self.apiversion = '1'
         self.uri = 'http://localhost:5001/api/{}/'.format(self.apiversion)

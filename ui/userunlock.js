@@ -19,7 +19,7 @@ function verify_userpass(username, password) {
     return true;
 }
 
-function ask_permission(msg, username, password, create_true) {
+function ask_permission(msg, username, password, create_true, api_key, api_secret) {
     $.confirm({
         title: 'Sync Permission Required',
         content: msg,
@@ -27,12 +27,12 @@ function ask_permission(msg, username, password, create_true) {
             yes: {
                 text: 'Yes',
                 btnClass: 'btn-blue',
-                action: function () {unlock_async(username, password, create_true, 'yes');}
+                action: function () {unlock_async(username, password, create_true, 'yes', api_key, api_secret);}
             },
             no:  {
                 text: 'No',
                 btnClass: 'btn-red',
-                action: function () {unlock_async(username, password, create_true, 'no');}
+                action: function () {unlock_async(username, password, create_true, 'no', api_key, api_secret);}
             }
         }
     });
@@ -40,9 +40,11 @@ function ask_permission(msg, username, password, create_true) {
 
 function prompt_new_account() {
     let content_str = '';
-    content_str += form_entry('User Name', 'user_name_entry', '', '');
-    content_str += form_entry('Password', 'password_entry', '', '', 'password');
-    content_str += form_entry('Repeat Password', 'repeat_password_entry', '', '', 'password');
+    content_str += form_entry('User Name', 'user_name_entry', '', 'A name for your user -- only used locally');
+    content_str += form_entry('Password', 'password_entry', '', 'Password to encrypt your data with', 'password');
+    content_str += form_entry('Repeat Password', 'repeat_password_entry', '', 'Repeat Password', 'password');
+    content_str += form_entry('API KEY', 'api_key_entry', '', 'Optional: Only for premium users', '');
+    content_str += form_entry('API SECRET', 'api_secret_entry', '', 'Optional: Only for premium users', '');
     $.confirm({
         title: 'Create New Account',
         content: content_str,
@@ -54,6 +56,8 @@ function prompt_new_account() {
                     let username = this.$content.find('#user_name_entry').val();
                     let password = this.$content.find('#password_entry').val();
                     let password2 = this.$content.find('#repeat_password_entry').val();
+		    let api_key = this.$content.find('#api_key_entry').val();
+		    let api_secret = this.$content.find('#api_secret_entry').val();
                     if (!verify_userpass(username, password)) {
                         return false;
                     }
@@ -62,7 +66,7 @@ function prompt_new_account() {
                         $.alert('The given passwords don\'t match');
                         return false;
                     }
-                    unlock_user(username, password, true, 'unknown');
+                    unlock_user(username, password, true, 'unknown', api_key, api_secret);
                 }
             },
             cancel: function () { prompt_sign_in();}
@@ -96,7 +100,7 @@ function prompt_sign_in() {
                     if (!verify_userpass(username, password)) {
                         return false;
                     }
-                    unlock_user(username, password, false, 'unknown');
+                    unlock_user(username, password, false, 'unknown', '', '');
                 }
             },
             newAccount: {
@@ -120,7 +124,7 @@ function prompt_sign_in() {
 }
 
 var GLOBAL_UNLOCK_DEFERRED = null;
-function unlock_async(username, password, create_true, sync_approval) {
+function unlock_async(username, password, create_true, sync_approval, api_key, api_secret) {
     var deferred;
     if (!GLOBAL_UNLOCK_DEFERRED) {
         console.log("At unlock_async start, creating new deferred object");
@@ -130,7 +134,7 @@ function unlock_async(username, password, create_true, sync_approval) {
         console.log("At unlock_async start, using global deferred object");
         deferred = GLOBAL_UNLOCK_DEFERRED;
     }
-    client.invoke("unlock_user", username, password, create_true, sync_approval, (error, res) => {
+    client.invoke("unlock_user", username, password, create_true, sync_approval, api_key, api_secret, (error, res) => {
         if (error || res == null) {
             deferred.reject(error);
             return;
@@ -148,11 +152,11 @@ function unlock_async(username, password, create_true, sync_approval) {
     return deferred.promise();
 }
 
-function unlock_user(username, password, create_true, sync_approval) {
+function unlock_user(username, password, create_true, sync_approval, api_key, api_secret) {
     $.alert({
         content: function(){
             var self = this;
-            return unlock_async(username, password, create_true, sync_approval).done(
+            return unlock_async(username, password, create_true, sync_approval, api_key, api_secret).done(
                 function (response) {
                     self.setType('green');
                     self.setTitle('Succesfull Sign In');
@@ -168,7 +172,7 @@ function unlock_user(username, password, create_true, sync_approval) {
                     }
                     GLOBAL_UNLOCK_DEFERRED = null;
                 }).progress(function(msg){
-                    ask_permission(msg, username, password, create_true);
+                    ask_permission(msg, username, password, create_true, api_key, api_secret);
                 }).fail(function(error){
                     self.setType('red');
                     self.setTitle('Sign In Failed');

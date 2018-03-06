@@ -3,6 +3,7 @@ import os
 import gevent
 import hashlib
 import base64
+import shutil
 from gevent.lock import Semaphore
 
 from rotkelchen.utils import (
@@ -13,7 +14,7 @@ from rotkelchen.utils import (
     rlk_jsondumps,
     ts_now,
 )
-from rotkelchen.errors import PermissionError
+from rotkelchen.errors import PermissionError, AuthenticationError
 from rotkelchen.constants import SUPPORTED_EXCHANGES
 from rotkelchen.blockchain import Blockchain
 from rotkelchen.poloniex import Poloniex
@@ -22,7 +23,7 @@ from rotkelchen.bittrex import Bittrex
 from rotkelchen.binance import Binance
 from rotkelchen.data_handler import DataHandler
 from rotkelchen.inquirer import Inquirer
-from rotkelchen.premium import Premium
+from rotkelchen.premium import premium_create_and_verify
 from rotkelchen.utils import query_fiat_pair
 from rotkelchen.fval import FVal
 from rotkelchen.history import TradesHistorian, PriceHistorian
@@ -32,7 +33,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-MAIN_LOOP_SECS_DELAY = 30
+MAIN_LOOP_SECS_DELAY = 60
 
 
 class Rotkelchen(object):
@@ -131,32 +132,63 @@ class Rotkelchen(object):
             self.connected_exchanges.append('binance')
             self.trades_historian.set_exchange('binance', self.binance)
 
-    def unlock_user(self, user, password, create_new, sync_approval):
-        # unlock the DB
+    def try_premium_at_start(self, api_key, api_secret, create_new, sync_approval, user_dir):
+        """Check if new user provided api pair or we already got one in the DB"""
+
+        if api_key != '':
+            self.premium, valid, empty_or_error = premium_create_and_verify(api_key, api_secret)
+            if not valid:
+                # At this point we are at a new user trying to create an account with
+                # premium API keys and we failed. But a directory was created. Remove it.
+                shutil.rmtree(user_dir)
+                raise AuthenticationError(
+                    'Could not verify keys for the new account. '
+                    '{}'.format(empty_or_error)
+                )
+        else:
+            # If we got premium initialize it and try to sync with the server
+            premium_credentials = self.data.db.get_rotkehlchen_premium()
+            if premium_credentials:
+                api_key = premium_credentials[0]
+                api_secret = premium_credentials[1]
+                self.premium, valid, empty_or_error = premium_create_and_verify(api_key, api_secret)
+                if not valid:
+                    logger.error(
+                        'The API keys found in the Database are not valid. Perhaps '
+                        'they expired?'
+                    )
+                del self.premium
+                return
+            else:
+                # no premium credentials in the DB
+                return
+
+        if self.can_sync_data_from_server():
+            if sync_approval == 'unknown' and not create_new:
+                raise PermissionError(
+                    'Rotkehlchen Server has newer version of your DB data. '
+                    'Should we replace local data with the server\'s?'
+                )
+            elif sync_approval == 'yes' or sync_approval == 'unknown' and create_new:
+                logger.debug('User approved data sync from server')
+                if self.sync_data_from_server():
+                    if create_new:
+                        # if we succesfully synced data from the server and this is
+                        # a new account, make sure the api keys are properly stored
+                        # in the DB
+                        self.data.db.set_rotkehlchen_premium(api_key, api_secret)
+            else:
+                logger.debug('Could sync data from server but user refused')
+
+
+    def unlock_user(self, user, password, create_new, sync_approval, api_key, api_secret):
+        # unlock or create the DB
         self.password = password
         user_dir = self.data.unlock(user, password, create_new)
-        # If we got premium initialize it and try to sync with the server
-        premium_credentials = self.data.db.get_rotkehlchen_premium()
-        if premium_credentials:
-            api_key = premium_credentials[0]
-            api_secret = premium_credentials[1]
-            self.premium = Premium(api_key, api_secret, user_dir)
-
-            if self.can_sync_data_from_server():
-                if sync_approval == 'unknown':
-                    raise PermissionError(
-                        'Rotkehlchen Server has newer version of your DB data. '
-                        'Should we replace local data with the server\'s?'
-                    )
-                elif sync_approval == 'yes':
-                    logger.debug('User approved data sync from server')
-                    self.sync_data_from_server()
-                else:
-                    logger.debug('Could sync data from server but user refused')
+        self.try_premium_at_start(api_key, api_secret, create_new, sync_approval, user_dir)
 
         secret_data = self.data.db.get_exchange_secrets()
         self.cache_data_filename = os.path.join(self.data_dir, 'cache_data.json')
-
         historical_data_start = self.data.historical_start_date()
         self.trades_historian = TradesHistorian(
             self.data_dir,
@@ -188,8 +220,7 @@ class Rotkelchen(object):
         if hasattr(self, 'premium'):
             valid, empty_or_error = self.premium.set_credentials(api_key, api_secret)
         else:
-            self.premium = Premium(api_key, api_secret, self.data.user_data_dir)
-            valid, empty_or_error = self.premium.is_active()
+            self.premium, valid, empty_or_error = premium_create_and_verify(api_key, api_secret)
 
         if valid:
             self.data.set_premium_credentials(api_key, api_secret)
