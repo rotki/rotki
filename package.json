@@ -1,22 +1,18 @@
 {
-    "name": "rotkelchen",
-    "main": "main.js",
-    "scripts": {
-	"start": "electron ."
-    },
-    "dependencies": {
-	"bootstrap": "^3.3.7",
-	"datatables.net": "latest",
-	"datatables.net-dt": "latest",
-	"jquery": "^3.2.1",
-	"jquery-datetimepicker": "^2.5.16",
-	"startbootstrap-sb-admin-2": "^3.3.7",
-	"tail": "latest",
-	"zerorpc": "latest"
-    },
-    "devDependencies": {
-	"electron": "1.6.10",
-	"electron-packager": "^8.5.1",
-	"electron-rebuild": "^1.5.7"
-    }
+   "name": "rotkehlchen",
+   "main": "main.js",
+   "scripts": {
+      "start": "electron ."
+   },
+   "dependencies": {
+      "datatables.net": "latest",
+      "datatables.net-dt": "latest",
+      "tail": "latest",
+      "zerorpc": "git+https://github.com/fyears/zerorpc-node.git"
+   },
+   "devDependencies": {
+      "electron": "1.7.2",
+      "electron-packager": "^8.5.1",
+      "electron-rebuild": "^1.5.7"
+   }
 }
