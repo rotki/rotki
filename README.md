@@ -46,7 +46,7 @@ Now to start the application you need to type `npm start`.
 It's an open-source project so help is really appreciated. Open issues, pull requests to help with development, be active in Github and above all be nice.
 
 
-### Get Premium
+### Get Premium -- Coming Soon
 
 Buy a premium subscription to the software and help us with the development while at the same time enjoying all the cool neat features coming to premium subscribers.
 
