@@ -7,6 +7,8 @@ Rotkehlchen is an asset management and accounting application specializing in Cr
 
 For now only Linux is supported and only installation from source. This will change soon and both other platforms will be supported but also easier to install methods will be provided
 
+Rotkehlchen needs  Python3 in order to function.
+
 ### Linux
 
 Make sure you have [node.js](https://nodejs.org/en/) and [npm](https://www.npmjs.com/). If you don't use your linux distro's package manager to get them.
@@ -22,8 +24,7 @@ Install electron and any other npm dependencies by:
 npm install --runtime=electron --target=1.7.2
 ```
 
-
-Create a new [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/) to install all the python dependencies.
+Create a new [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/) to install all the python dependencies. If you don't have `mkvirtualenv` then check how to get it depending on your distribution. [Here](http://exponential.io/blog/2015/02/10/install-virtualenv-and-virtualenvwrapper-on-ubuntu/) is a guide for Ubuntu and [here]https://wiki.archlinux.org/index.php/Python/Virtual_environment) is one for ArchLinux.
 
 ```
 mkvirtualenv rotkehlchen
