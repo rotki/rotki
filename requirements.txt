@@ -1,4 +1,4 @@
-gevents
+gevent
 zerorpc
 web3
 pysqlcipher3
