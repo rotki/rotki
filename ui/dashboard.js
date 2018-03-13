@@ -279,12 +279,15 @@ function init_dashboard() {
         );
     });
     monitor_add_callback('query_blockchain_total', function (result) {
-        create_box(
-            'blockchain_balance',
-            'fa-hdd-o',
-            parseFloat(result['total']),
-            settings.main_currency.icon
-        );
+        let blockchain_total = parseFloat(result['total']);
+        if (blockchain_total != 0.0) {
+            create_box(
+                'blockchain_balance',
+                'fa-hdd-o',
+                blockchain_total,
+                settings.main_currency.icon
+            );
+        }
     });
     monitor_add_callback('query_balances', function (result) {
         add_balances_table(result);

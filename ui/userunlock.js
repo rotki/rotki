@@ -225,12 +225,16 @@ function get_banks_total() {
         if (error || res == null) {
             console.log("Error at querying fiat total: " + error);
         } else {
-            create_box(
-                'banks_balance',
-                'fa-university',
-                parseFloat(res['total']),
-                settings.main_currency.icon
-            );
+            let fiat_total = parseFloat(res['total']);
+            if (fiat_total != 0.0) {
+
+                create_box(
+                    'banks_balance',
+                    'fa-university',
+                    fiat_total,
+                    settings.main_currency.icon
+                );
+            }
         }
     });
 }
