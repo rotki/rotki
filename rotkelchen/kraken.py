@@ -37,6 +37,7 @@ KRAKEN_TO_WORLD = {
     'GNO': 'GNO',
     'BCH': 'BCH',
     'XXLM': 'XLM',
+    'KFEE': 'KFEE',
 }
 
 WORLD_TO_KRAKEN = {
@@ -53,6 +54,7 @@ WORLD_TO_KRAKEN = {
     'GNO': 'GNO',
     'BCH': 'BCH',
     'XLM': 'XXLM',
+    'KFEE': 'KFEE',
 }
 
 
@@ -231,6 +233,10 @@ class Kraken(Exchange):
         e.g.: XICN. Save both prices in the kraken object and then return the
         USD price.
         """
+        if asset == 'KFEE':
+            # Kraken fees have no value
+            return FVal(0)
+
         if asset == 'XXBT':
             return self.usdprice['BTC']
 
