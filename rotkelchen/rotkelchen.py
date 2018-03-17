@@ -180,7 +180,6 @@ class Rotkelchen(object):
             else:
                 logger.debug('Could sync data from server but user refused')
 
-
     def unlock_user(self, user, password, create_new, sync_approval, api_key, api_secret):
         # unlock or create the DB
         self.password = password

@@ -462,7 +462,7 @@ class TradesHistorian(object):
         self.read_manual_margin_positions = True
 
     def set_exchange(self, name, exchange_obj):
-        if getattr(self, name) is None:
+        if getattr(self, name) is None or exchange_obj is None:
             setattr(self, name, exchange_obj)
         elif exchange_obj:
             raise ValueError(

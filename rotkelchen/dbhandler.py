@@ -2,6 +2,7 @@ import tempfile
 import time
 import os
 import shutil
+from collections import defaultdict
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkelchen.constants import SUPPORTED_EXCHANGES
@@ -243,6 +244,10 @@ class DBHandler(object):
         tokens should be a list of token symbols
         (time, location, usd_value)"""
         cursor = self.conn.cursor()
+        # Delete previous list and write the new one
+        cursor.execute(
+            'DELETE FROM eth_tokens;'
+        )
         cursor.executemany(
             'INSERT INTO eth_tokens(token) VALUES (?)',
             [(t,) for t in tokens]
@@ -314,7 +319,7 @@ class DBHandler(object):
             'SELECT blockchain, account FROM blockchain_accounts;'
         )
         query = query.fetchall()
-        result = {}
+        result = defaultdict(list)
 
         for entry in query:
             if entry[0] not in result:
