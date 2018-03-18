@@ -272,6 +272,14 @@ ipc.on('failed', (event, message) => {
 function init_dashboard() {
     // add callbacks for dashboard to the monitor
     monitor_add_callback('query_exchange_balances', function (result) {
+        if ('error' in result) {
+            showError(
+                'Exchange Query Error',
+                'Querying an exchange died because of: ' + result['error'] + '. ' +
+                    'Check the logs for more details.'
+            );
+            return;
+        }
         let total = get_total_asssets_value(result['balances']);
         create_exchange_box(
             result['name'],
@@ -281,6 +289,14 @@ function init_dashboard() {
         total_table_add_balances(result['name'], result['balances']);
     });
     monitor_add_callback('query_blockchain_balances', function (result) {
+        if ('error' in result) {
+            showError(
+                'Blockchain Query Error',
+                'Querying blockchain balances died because of: ' + result['error'] + '. ' +
+                    'Check the logs for more details.'
+            );
+            return;
+        }
         let total = get_total_asssets_value(result['totals']);
         if (total != 0.0) {
             create_box(

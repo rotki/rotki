@@ -121,6 +121,11 @@ class RotkelchenServer(object):
                     greenlet._exc_info[1],
                     ''.join(traceback.format_tb(pickle.loads(greenlet._exc_info[2]))),
                 ))
+            # also write an error for the task result
+            result = {
+                'error': str(greenlet.exception)
+            }
+            self.write_task_result(greenlet.task_id, result)
 
     def _query_async(self, command, task_id, **kwargs):
         result = getattr(self, command)(**kwargs)
