@@ -113,7 +113,8 @@ class RotkelchenServer(object):
     def handle_killed_greenlets(self, greenlet):
         if greenlet.exception:
             logger.error(
-                'Greenlet for task {} dies with exception: {}.\nException Name: {}\nException Info: {}\nTraceback:\n {}'
+                'Greenlet for task {} dies with exception: {}.\n'
+                'Exception Name: {}\nException Info: {}\nTraceback:\n {}'
                 .format(
                     greenlet.task_id,
                     greenlet.exception,
@@ -201,22 +202,6 @@ class RotkelchenServer(object):
         self.rotkelchen.data.db.update_premium_sync(should_sync)
         return True
 
-    def query_exchange_total(self, name, first_time):
-        logger.debug("Query exchange {} called.".format(name))
-        if first_time:
-            getattr(self.rotkelchen, name).first_connection()
-        balances = getattr(self.rotkelchen, name).query_balances()
-        res = {
-            'name': name,
-            'total': self.get_total_in_usd(balances)
-        }
-        logger.debug("Query exchange {} finished.".format(name))
-        return process_result(res)
-
-    def query_exchange_total_async(self, name, first_time):
-        res = self.query_async('query_exchange_total', name=name, first_time=first_time)
-        return {'task_id': res}
-
     def query_exchange_balances(self, name):
         balances = getattr(self.rotkelchen, name).query_balances()
         res = {
@@ -229,15 +214,6 @@ class RotkelchenServer(object):
         res = self.query_async('query_exchange_balances', name=name)
         return {'task_id': res}
 
-    def query_blockchain_total(self):
-        balances = self.rotkelchen.blockchain.query_balances()['totals']
-        res = {'total': self.get_total_in_usd(balances)}
-        return process_result(res)
-
-    def query_blockchain_total_async(self):
-        res = self.query_async('query_blockchain_total')
-        return {'task_id': res}
-
     def query_blockchain_balances(self):
         balances = self.rotkelchen.blockchain.query_balances()
         return process_result(balances)
@@ -245,11 +221,6 @@ class RotkelchenServer(object):
     def query_blockchain_balances_async(self):
         res = self.query_async('query_blockchain_balances')
         return {'task_id': res}
-
-    def query_fiat_total(self):
-        balances = self.rotkelchen.query_fiat_balances()
-        res = {'total': self.get_total_in_usd(balances)}
-        return process_result(res)
 
     def query_fiat_balances(self):
         res = self.rotkelchen.query_fiat_balances()
@@ -302,7 +273,10 @@ class RotkelchenServer(object):
         return {'task_id': res}
 
     def get_eth_tokens(self):
-        result = {'all_eth_tokens': self.rotkelchen.data.eth_tokens, 'owned_eth_tokens': self.rotkelchen.blockchain.eth_tokens}
+        result = {
+            'all_eth_tokens': self.rotkelchen.data.eth_tokens,
+            'owned_eth_tokens': self.rotkelchen.blockchain.eth_tokens
+        }
         return process_result(result)
 
     def add_owned_eth_tokens(self, tokens):

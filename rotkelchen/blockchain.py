@@ -1,5 +1,4 @@
 import operator
-import copy
 from collections import defaultdict
 
 from gevent.lock import Semaphore

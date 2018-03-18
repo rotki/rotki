@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 import os
 import gevent
-import hashlib
-import base64
 import shutil
 from gevent.lock import Semaphore
 
@@ -10,8 +8,6 @@ from rotkelchen.utils import (
     combine_stat_dicts,
     dict_get_sumof,
     merge_dicts,
-    rlk_jsonloads,
-    rlk_jsondumps,
     ts_now,
 )
 from rotkelchen.errors import PermissionError, AuthenticationError
