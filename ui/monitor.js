@@ -45,17 +45,18 @@ function monitor_tasks() {
         }
 
         client.invoke("query_task_result", task.id, function (error, res) {
-            console.log("monitor_tasks. Querying task " + task.id);
             if (res != null) {
+                let handled = 0;
                 for (let i = 0; i < callbacks.length; i++) {
                     if (task.type == callbacks[i][0]) {
                         callbacks[i][1](res);
                         remove_task(task.id);
-                        return;
+                        handled += 1;
                     }
                 }
-                // if we get here we got a result for which there was no handler
-                console.log("No handler found for task '" + task.type +"' with id " + task.id);
+                if (handled == 0) {
+                    console.log("No handler found for task '" + task.type +"' with id " + task.id);
+                }
             }
         });
 
