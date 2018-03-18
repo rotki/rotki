@@ -190,23 +190,24 @@ function load_dashboard_after_unlock(exchanges, is_new_user) {
     for (let i = 0; i < exchanges.length; i++) {
         let exx = exchanges[i];
         settings.connected_exchanges.push(exx);
-        client.invoke("query_exchange_total_async", exx, true, function (error, res) {
+        client.invoke("query_exchange_balances_async", exx, function (error, res) {
             if (error || res == null) {
                 console.log("Error at first query of an exchange's balance: " + error);
                 return;
             }
-            create_task(res['task_id'], 'query_exchange_total', 'Query ' + exx + ' Exchange');
+            create_task(res['task_id'], 'query_exchange_balances', 'Query ' + exx + ' Exchange');
         });
     }
 
     if (!is_new_user) {
-        client.invoke("query_balances_async", function (error, res) {
-            if (error || res == null) {
-                console.log("Error at query balances async: " + error);
-                return;
-            }
-            create_task(res['task_id'], 'query_balances', 'Query all balances');
-        });
+        // REPLACED by sum of all the rest
+        // client.invoke("query_balances_async", function (error, res) {
+        //     if (error || res == null) {
+        //         console.log("Error at query balances async: " + error);
+        //         return;
+        //     }
+        //     create_task(res['task_id'], 'query_balances', 'Query all balances');
+        // });
 
         get_blockchain_total();
         get_banks_total();
@@ -227,30 +228,30 @@ function load_dashboard_after_unlock(exchanges, is_new_user) {
 }
 
 function get_blockchain_total() {
-    client.invoke("query_blockchain_total_async", (error, res) => {
+    client.invoke("query_blockchain_balances_async", (error, res) => {
         if (error || res == null) {
-            console.log("Error at querying blockchain total: " + error);
+            console.log("Error at querying blockchain balances: " + error);
         } else {
-            console.log("Blockchain total returned task id " + res['task_id']);
-            create_task(res['task_id'], 'query_blockchain_total', 'Query Blockchain Balances');
+            console.log("Blockchain balances returned task id " + res['task_id']);
+            create_task(res['task_id'], 'query_blockchain_balances', 'Query Blockchain Balances');
         }
     });
 }
 
 function get_banks_total() {
-    client.invoke("query_fiat_total", (error, res) => {
+    client.invoke("query_fiat_balances", (error, res) => {
         if (error || res == null) {
-            console.log("Error at querying fiat total: " + error);
+            console.log("Error at querying fiat balances: " + error);
         } else {
-            let fiat_total = parseFloat(res['total']);
+            let fiat_total = get_total_asssets_value(res);
             if (fiat_total != 0.0) {
-
                 create_box(
                     'banks_balance',
                     'fa-university',
                     fiat_total,
                     settings.main_currency.icon
                 );
+                total_table_add_balances('banks', res);
             }
         }
     });
