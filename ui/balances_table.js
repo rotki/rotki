@@ -28,7 +28,6 @@ function create_full_data() {
         }
     }
 
-
     // now let's get the total usd
     let total_usd = 0;
     for (let asset in inter_data) {
@@ -56,6 +55,10 @@ function create_full_data() {
         }
     }
     return full_data;
+}
+
+function total_balances_get(name) {
+    return SAVED_BALANCES[name];
 }
 
 function total_table_add_balances(location, query_result) {
@@ -154,6 +157,7 @@ function reload_balance_table_if_existing() {
 
 
 module.exports = function() {
+    this.total_balances_get = total_balances_get;
     this.total_table_add_balances = total_table_add_balances;
     this.reload_balance_table_if_existing = reload_balance_table_if_existing;
 };

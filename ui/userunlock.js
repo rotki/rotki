@@ -3,6 +3,7 @@ var settings = require("./settings.js")();
 require("./elements.js")();
 require("./monitor.js")();
 require("./utils.js")();
+require("./exchange.js")();
 
 function verify_userpass(username, password) {
     if (!username) {
@@ -190,25 +191,10 @@ function load_dashboard_after_unlock(exchanges, is_new_user) {
     for (let i = 0; i < exchanges.length; i++) {
         let exx = exchanges[i];
         settings.connected_exchanges.push(exx);
-        client.invoke("query_exchange_balances_async", exx, function (error, res) {
-            if (error || res == null) {
-                console.log("Error at first query of an exchange's balance: " + error);
-                return;
-            }
-            create_task(res['task_id'], 'query_exchange_balances', 'Query ' + exx + ' Exchange');
-        });
+        query_exchange_balances_async(exx);
     }
 
     if (!is_new_user) {
-        // REPLACED by sum of all the rest
-        // client.invoke("query_balances_async", function (error, res) {
-        //     if (error || res == null) {
-        //         console.log("Error at query balances async: " + error);
-        //         return;
-        //     }
-        //     create_task(res['task_id'], 'query_balances', 'Query all balances');
-        // });
-
         get_blockchain_total();
         get_banks_total();
     } else {
