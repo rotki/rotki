@@ -21,7 +21,7 @@ Also get [sqlcipher](https://www.zetetic.net/sqlcipher/) using the package manag
 Install electron and any other npm dependencies by:
 
 ```
-npm install --runtime=electron --target=1.7.2
+npm install --runtime=electron --target=1.8.4
 ```
 
 Create a new [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/) to install all the python dependencies. If you don't have `mkvirtualenv` then check how to get it depending on your distribution. [Here](http://exponential.io/blog/2015/02/10/install-virtualenv-and-virtualenvwrapper-on-ubuntu/) is a guide for Ubuntu and [here]https://wiki.archlinux.org/index.php/Python/Virtual_environment) is one for ArchLinux.
