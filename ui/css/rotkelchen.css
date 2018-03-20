@@ -34,6 +34,7 @@
   transform: translate(-50%, -50%);
 }​
 
+html.wait, html.wait * { cursor: wait !important; }
 
 /* no scrollbar allowed in the body -- only content scrolls*/
 body {

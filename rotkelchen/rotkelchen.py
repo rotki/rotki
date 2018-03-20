@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 import os
 import gevent
-import hashlib
-import base64
 import shutil
 from gevent.lock import Semaphore
 
@@ -10,8 +8,6 @@ from rotkelchen.utils import (
     combine_stat_dicts,
     dict_get_sumof,
     merge_dicts,
-    rlk_jsonloads,
-    rlk_jsondumps,
     ts_now,
 )
 from rotkelchen.errors import PermissionError, AuthenticationError
@@ -179,7 +175,6 @@ class Rotkelchen(object):
                         self.data.db.set_rotkehlchen_premium(api_key, api_secret)
             else:
                 logger.debug('Could sync data from server but user refused')
-
 
     def unlock_user(self, user, password, create_new, sync_approval, api_key, api_secret):
         # unlock or create the DB

@@ -169,6 +169,43 @@ function dt_edit_drawcallback(id, edit_fn, delete_fn) {
     };
 }
 
+
+function unsuggest_element(selector) {
+    $(selector).pulsate('destroy');
+    $(selector).removeAttr('style');
+}
+
+function suggest_element(selector, state_to_set) {
+    settings.start_suggestion = state_to_set;
+    $(selector).pulsate({
+        // color: $(this).css("background-color"), // set the color of the pulse
+        color: "#e45325", // set the color of the pulse
+        reach: 20,                              // how far the pulse goes in px
+        speed: 1000,                            // how long one pulse takes in ms
+        pause: 0,                               // how long the pause between pulses is in ms
+        glow: true,                             // if the glow should be shown too
+        repeat: true,                           // will repeat forever if true, if given a number will repeat for that many times
+        onHover: false                          // if true only pulsate if user hovers over the element
+    });
+}
+
+function suggest_element_until_click(selector, state_to_set) {
+    suggest_element(selector, state_to_set);
+    $(selector).click(function(event) {
+        unsuggest_element(selector);
+    });
+}
+
+function get_total_asssets_value(asset_dict) {
+    var value = 0;
+    for (var asset in asset_dict) {
+        if (asset_dict.hasOwnProperty(asset)) {
+            value += parseFloat(asset_dict[asset]['usd_value']);
+        }
+    }
+    return value;
+}
+
 module.exports = function() {
     this.utc_now = utc_now;
     this.timestamp_to_date = timestamp_to_date;
@@ -180,6 +217,10 @@ module.exports = function() {
     this.date_text_to_utc_ts = date_text_to_utc_ts;
     this.reload_table_currency_val = reload_table_currency_val;
     this.reload_table_currency_val_if_existing = reload_table_currency_val_if_existing;
+    this.get_total_asssets_value = get_total_asssets_value;
     this.throw_with_trace = throw_with_trace;
     this.dt_edit_drawcallback = dt_edit_drawcallback;
+    this.suggest_element = suggest_element;
+    this.unsuggest_element = unsuggest_element;
+    this.suggest_element_until_click = suggest_element_until_click;
 };

@@ -24,6 +24,20 @@ const ExchangeBadge = ({ name, css_class }) => `
 </div>
 `;
 
+function show_loading(selector) {
+    $('html').addClass('wait');
+    if (selector) {
+        $(selector).attr('disabled', 'disabled');
+    }
+}
+
+function stop_show_loading(selector) {
+    $('html').removeClass('wait');
+    if (selector) {
+        $(selector).removeAttr('disabled');
+    }
+}
+
 function disable_api_entry(selector_text, value) {
     $(selector_text).parent().removeClass().addClass('form-group input-group has-success');
     $(selector_text).attr('disabled', true);
@@ -136,6 +150,7 @@ function setup_exchange_callback(event) {
         return;
     }
     // else simply add it
+    show_loading('#setup_exchange_button');
     let api_key = $('#api_key_entry').val();
     let api_secret = $('#api_secret_entry').val();
     client.invoke(
@@ -158,7 +173,7 @@ function setup_exchange_callback(event) {
             settings.connected_exchanges.push(exchange_name);
             let str = ExchangeBadge({name: exchange_name, css_class: 'exchange-icon'});
             $(str).appendTo($('#exchange_badges'));
-
+            stop_show_loading('#setup_exchange_button');
         }
     );
 }
@@ -291,15 +306,28 @@ function create_user_settings() {
     });
     // also save the user settings page
     settings.page_usersettings = $('#page-wrapper').html();
+
+    // pulsate element if first time we open and user follows guide
+    if (settings.start_suggestion == 'click_user_settings') {
+        unsuggest_element('#usersettingsbutton');
+        suggest_element_until_click('#fiat_value_entry', 'inactive');
+        suggest_element_until_click('#api_key_entry', 'inactive');
+        suggest_element_until_click('#api_secret_entry', 'inactive');
+        suggest_element_until_click('#account_entry', 'inactive');
+
+        // also show some first time info
+        showInfo(
+            'Add your settings',
+            'Here you can add exchange api keys and pull data from exchanges, add blockchain accounts, or keep track of your fiat balances'
+        );
+    }
 }
 
 function add_blockchain_account(event) {
     event.preventDefault();
     let blockchain = $('#crypto_type_entry').val();
     let account = $('#account_entry').val();
-    // show account entry as disabled to signify we are loading
-    // TODO: Think of a better way to show that?
-    $('#account_entry').attr('disabled', 'disabled');
+    showLoading('#account_entry');
     client.invoke(
         "add_blockchain_account",
         blockchain,
@@ -312,6 +340,13 @@ function add_blockchain_account(event) {
                 );
                 return;
             }
+            if (!result['result']) {
+                showError(
+                    'Account Error',
+                    'Error at adding new '+ blockchain +' account: '+ result['message']
+                );
+                return;
+            }
             if (blockchain == 'ETH') {
                 recreate_ethchain_per_account_table(result['per_account']['ETH']);
             } else if (blockchain == 'BTC') {
@@ -319,8 +354,8 @@ function add_blockchain_account(event) {
             }
             // also reload the asset total tables
             BB_PER_ASSET_TABLE.update_format(result['totals']);
-            // re-enable account entry to show loading is finished
-            $('#account_entry').removeAttr('disabled');
+
+            stop_show_loading('#account_entry');
         });
 }
 
@@ -402,13 +437,16 @@ function format_ethchain_per_account_data(eth_accounts) {
 function recreate_ethchain_per_account_table(eth_accounts) {
     $('#ethchain_per_account_header').remove();
     // to add a column we have to recreate the table
-    BB_PER_ACCOUNT_TABLES['ETH'].destroy(true);
+    if (BB_PER_ACCOUNT_TABLES['ETH']) {
+        BB_PER_ACCOUNT_TABLES['ETH'].destroy(true);
+    }
     $('ethchain_per_account_table').empty();
     create_ethchain_per_account_table(eth_accounts);
 }
 
 function delete_blockchain_account_row(blockchain, row) {
     let account = row.data()['account'];
+    show_loading();
     client.invoke('remove_blockchain_account', blockchain, account, (error, result) => {
         if (error || result == null) {
             showError('Account Deletion Error', `Error at deleting ${blockchain} account ${account}: ${error}`);
@@ -420,6 +458,7 @@ function delete_blockchain_account_row(blockchain, row) {
 
         row.remove().draw();
         BB_PER_ASSET_TABLE.update_format(result['totals']);
+        stop_show_loading();
     });
 }
 
@@ -538,6 +577,7 @@ function enable_multiselect() {
 function add_new_eth_tokens(tokens) {
     // disable selection until the entire call is done
     disable_multiselect();
+    show_loading('#eth_tokens_select');
     client.invoke('add_owned_eth_tokens', tokens, (error, result) => {
         if (error || result == null) {
             showError('Token Addition Error', error);
@@ -554,12 +594,14 @@ function add_new_eth_tokens(tokens) {
         // also reload the asset total tables
         BB_PER_ASSET_TABLE.update_format(result['totals']);
         enable_multiselect();
+        stop_show_loading('#eth_tokens_select');
     });
 }
 
 function remove_eth_tokens(tokens) {
     // disable selection until the entire call is done
     disable_multiselect();
+    show_loading('#eth_tokens_select');
     client.invoke('remove_owned_eth_tokens', tokens, (error, result) => {
         if (error || result == null) {
             showError('Token Removal Error', error);
@@ -580,6 +622,7 @@ function remove_eth_tokens(tokens) {
         // also reload the asset total tables
         BB_PER_ASSET_TABLE.update_format(result['totals']);
         enable_multiselect();
+        stop_show_loading('#eth_tokens_select');
     });
 }
 

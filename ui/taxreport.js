@@ -154,6 +154,14 @@ function create_taxreport_details(all_events) {
 
 function init_taxreport() {
     monitor_add_callback('process_trade_history', function (result) {
+        if ('error' in result) {
+            showError(
+                'Trade History Query Error',
+                'Querying trade history died because of: ' + result['error'] + '. ' +
+                    'Check the logs for more details'
+            );
+            return;
+        }
         create_taxreport_overview(result['overview']);
         create_taxreport_details(result['all_events']);
         // also save the page

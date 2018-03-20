@@ -29,6 +29,5 @@ init_navigation();
 init_monitor();
 init_dashboard();
 init_usersettings();
-init_exchanges_tables();
 init_taxreport();
 create_or_reload_dashboard();

@@ -7,12 +7,10 @@ require("./navigation.js")();
 
 let SAVED_TABLES = {};
 
-function create_exchange_table(name) {
-    var str = page_header(name);
-    $('#page-wrapper').html(str);
+function query_exchange_balances_async(name) {
     client.invoke("query_exchange_balances_async", name, (error, res) => {
         if (error || res == null) {
-            console.log("Error at exchange " + name + " balances: " + error);
+            console.log("Error at querying exchange " + name + " balances: " + error);
             return;
         }
         console.log("Query "+ name + "  returned task id " + res['task_id']);
@@ -22,6 +20,17 @@ function create_exchange_table(name) {
             'Query '+ name + ' Balances'
         );
     });
+}
+
+function create_exchange_table(name) {
+    var str = page_header(name);
+    $('#page-wrapper').html(str);
+    let table = SAVED_TABLES[name];
+    if (!table) {
+        let data = total_balances_get(name);
+        SAVED_TABLES[name] = new AssetTable('asset', name, 'appendTo', 'page-wrapper', data);
+        settings.page_exchange[name] = $('#page-wrapper').html();
+    }
 }
 
 function reload_exchange_tables_if_existing() {
@@ -44,18 +53,9 @@ function create_or_reload_exchange(name) {
     }
 }
 
-function init_exchanges_tables() {
-    monitor_add_callback('query_exchange_balances', function (result) {
-        let name = result['name'];
-        let data = result['balances'];
-        SAVED_TABLES[name] = new AssetTable('asset', name, 'appendTo', 'page-wrapper', data);
-        // also save the exchange page
-        settings.page_exchange[name] = $('#page-wrapper').html();
-    });
-}
 
 module.exports = function() {
+    this.query_exchange_balances_async = query_exchange_balances_async;
     this.create_or_reload_exchange = create_or_reload_exchange;
-    this.init_exchanges_tables = init_exchanges_tables;
     this.reload_exchange_tables_if_existing = reload_exchange_tables_if_existing;
 };

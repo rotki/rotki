@@ -2,6 +2,8 @@ require("./zerorpc_client.js")();
 var settings = require("./settings.js")();
 require("./elements.js")();
 require("./monitor.js")();
+require("./utils.js")();
+require("./exchange.js")();
 
 function verify_userpass(username, password) {
     if (!username) {
@@ -162,7 +164,8 @@ function unlock_user(username, password, create_true, sync_approval, api_key, ap
                     self.setTitle('Succesfull Sign In');
                     self.setContentAppend(`<div>Welcome ${username}!</div>`);
                     $('#welcome_text').html(`Welcome ${username}!`);
-                    load_dashboard_after_unlock(response['exchanges']);
+                    let is_new_user = create_true && api_key == '';
+                    load_dashboard_after_unlock(response['exchanges'], is_new_user);
                     settings.has_premium = response['premium'];
                     let db_settings = response['settings'];
                     if ('premium_should_sync' in db_settings) {
@@ -184,53 +187,58 @@ function unlock_user(username, password, create_true, sync_approval, api_key, ap
     });
 }
 
-function load_dashboard_after_unlock(exchanges) {
+function load_dashboard_after_unlock(exchanges, is_new_user) {
     for (let i = 0; i < exchanges.length; i++) {
         let exx = exchanges[i];
         settings.connected_exchanges.push(exx);
-        client.invoke("query_exchange_total_async", exx, true, function (error, res) {
-            if (error || res == null) {
-                console.log("Error at first query of an exchange's balance: " + error);
-                return;
+        query_exchange_balances_async(exx);
+    }
+
+    if (!is_new_user) {
+        get_blockchain_total();
+        get_banks_total();
+    } else {
+        showInfo(
+            'Welcome to Rotkehlchen!',
+            'It appears this is your first time using the program. Follow the suggestions to integrate with some exchanges or manually input data.'
+        );
+        suggest_element('#user-dropdown', 'click_user_dropdown');
+        $('#user-dropdown').click(function(event) {
+            if (settings.start_suggestion == 'click_user_dropdown') {
+                unsuggest_element('#user-dropdown');
+                suggest_element('#usersettingsbutton', 'click_user_settings');
             }
-            create_task(res['task_id'], 'query_exchange_total', 'Query ' + exx + ' Exchange');
         });
     }
 
-    client.invoke("query_balances_async", function (error, res) {
-        if (error || res == null) {
-            console.log("Error at query balances async: " + error);
-            return;
-        }
-        create_task(res['task_id'], 'query_balances', 'Query all balances');
-    });
-
-    get_blockchain_total();
-    get_banks_total();
 }
 
 function get_blockchain_total() {
-    client.invoke("query_blockchain_total_async", (error, res) => {
+    client.invoke("query_blockchain_balances_async", (error, res) => {
         if (error || res == null) {
-            console.log("Error at querying blockchain total: " + error);
+            console.log("Error at querying blockchain balances: " + error);
         } else {
-            console.log("Blockchain total returned task id " + res['task_id']);
-            create_task(res['task_id'], 'query_blockchain_total', 'Query Blockchain Balances');
+            console.log("Blockchain balances returned task id " + res['task_id']);
+            create_task(res['task_id'], 'query_blockchain_balances', 'Query Blockchain Balances');
         }
     });
 }
 
 function get_banks_total() {
-    client.invoke("query_fiat_total", (error, res) => {
+    client.invoke("query_fiat_balances", (error, res) => {
         if (error || res == null) {
-            console.log("Error at querying fiat total: " + error);
+            console.log("Error at querying fiat balances: " + error);
         } else {
-            create_box(
-                'banks_balance',
-                'fa-university',
-                parseFloat(res['total']),
-                settings.main_currency.icon
-            );
+            let fiat_total = get_total_asssets_value(res);
+            if (fiat_total != 0.0) {
+                create_box(
+                    'banks_balance',
+                    'fa-university',
+                    fiat_total,
+                    settings.main_currency.icon
+                );
+                total_table_add_balances('banks', res);
+            }
         }
     });
 }
