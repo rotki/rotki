@@ -81,7 +81,8 @@ function create_taxreport_overview(results) {
                 'data': 'value',
                 "title": settings.main_currency.ticker_symbol + ' value',
                 "render": function (data, type, row) {
-                    return format_currency_value(data);
+                    // no need for conversion here as it's already in main_currency
+                    return parseFloat(data).toFixed(settings.floating_precision);
                 }
             }
         ],

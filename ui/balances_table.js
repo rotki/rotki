@@ -149,7 +149,7 @@ function init_balances_table(data) {
                 "title": settings.main_currency.ticker_symbol + ' value',
                 "data": 'usd_value',
                 "render": function (data, type, row) {
-                    return format_currency_value(data);
+                    return format_currency_value(data, row['asset'], row['amount']);
                 }
             },
             {"data": "percentage"}
