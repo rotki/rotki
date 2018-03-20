@@ -329,13 +329,13 @@ class PriceHistorian(object):
                 # If we get more than we needed, since we are close to the now_ts
                 # then skip all the already included entries
                 diff = pr_end_date - resp['TimeFrom']
-                if resp['Data'][diff / 3600]['time'] != pr_end_date:
+                if resp['Data'][diff // 3600]['time'] != pr_end_date:
                     raise ValueError(
                         'Expected to find the previous date timestamp during '
                         'historical data fetching'
                     )
                 # just add only the part from the previous timestamp and on
-                resp['Data'] = resp['Data'][diff / 3600:]
+                resp['Data'] = resp['Data'][diff // 3600:]
 
             if end_date < now_ts and resp['TimeTo'] != end_date:
                 raise ValueError('End dates no match')
