@@ -24,7 +24,7 @@ Install electron and any other npm dependencies by:
 npm install --runtime=electron --target=1.7.2
 ```
 
-Create a new [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/) to install all the python dependencies. If you don't have `mkvirtualenv` then check how to get it depending on your distribution. [Here](http://exponential.io/blog/2015/02/10/install-virtualenv-and-virtualenvwrapper-on-ubuntu/) is a guide for Ubuntu and [here]https://wiki.archlinux.org/index.php/Python/Virtual_environment) is one for ArchLinux.
+Create a new [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/) to install all the python dependencies. If you don't have `mkvirtualenv` then check how to get it depending on your distribution. [Here](http://exponential.io/blog/2015/02/10/install-virtualenv-and-virtualenvwrapper-on-ubuntu/) is a guide for Ubuntu and [here](https://wiki.archlinux.org/index.php/Python/Virtual_environment) is one for ArchLinux.
 
 ```
 mkvirtualenv rotkehlchen
@@ -38,6 +38,17 @@ pip install -r requirements.txt
 
 
 Now to start the application you need to type `npm start`.
+
+### OSX
+	$ brew cask install caskroom/cask/anaconda
+	$ echo "export PATH=$PATH:/usr/local/anaconda3/bin" >> ~/.bash_profile
+	$ source ~/.bash_profile
+	$ conda create --name rotkehlchen
+	$ npm install --runtime=electron --target=1.7.2
+	$ npm install
+	$ source activate rotkehlchen
+	
+	
 
 ## Love it? Want to help?
 

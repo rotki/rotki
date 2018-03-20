@@ -78,6 +78,7 @@ ipcMain.on('ack', (event, arg) => {
 
 const createPyProc = () => {
     let script = getScriptPath();
+    console.log('script:', script);
     let port = '' + selectPort();
 
     if (guessPackaged()) {
