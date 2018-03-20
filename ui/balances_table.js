@@ -57,8 +57,34 @@ function create_full_data() {
     return full_data;
 }
 
-function total_balances_get(name) {
-    return SAVED_BALANCES[name];
+function total_balances_get() {
+    return SAVED_BALANCES;
+}
+
+function total_table_recreate() {
+    // only create the total table if we are in the dashboard
+    if (settings.current_location != 'index') {
+        return;
+    }
+
+    let full_data = create_full_data();
+
+    if (!TOTAL_BALANCES_TABLE) {
+        init_balances_table(full_data);
+    } else {
+        if (!$('#table_balances_total_body').length) {
+            // if table has already been initialized but no longer existing on the page
+            TOTAL_BALANCES_TABLE.destroy(false);
+            init_balances_table(full_data);
+        } else {
+            // update the already existing table
+            TOTAL_BALANCES_TABLE.clear();
+            TOTAL_BALANCES_TABLE.rows.add(full_data);
+            balance_table_init_callback.call(TOTAL_BALANCES_TABLE);
+            $(TOTAL_BALANCES_TABLE.column(2).header()).text(settings.main_currency.ticker_symbol + ' value');
+            TOTAL_BALANCES_TABLE.draw();
+        }
+    }
 }
 
 function total_table_add_balances(location, query_result) {
@@ -74,19 +100,7 @@ function total_table_add_balances(location, query_result) {
         }
     }
     SAVED_BALANCES[location] = data;
-
-    let full_data = create_full_data();
-
-    if (!TOTAL_BALANCES_TABLE) {
-        init_balances_table(full_data);
-    } else {
-        // update the already existing table
-        TOTAL_BALANCES_TABLE.clear();
-        TOTAL_BALANCES_TABLE.rows.add(full_data);
-        balance_table_init_callback.call(TOTAL_BALANCES_TABLE);
-        $(TOTAL_BALANCES_TABLE.column(2).header()).text(settings.main_currency.ticker_symbol + ' value');
-        TOTAL_BALANCES_TABLE.draw();
-    }
+    total_table_recreate();
 }
 
 function balance_table_init_callback(settings, json) {
@@ -117,10 +131,14 @@ function balance_table_init_callback(settings, json) {
     }
 }
 
-function init_balances_table(data) {
+function add_balances_table_html() {
     var str = '<div class="row"><div class="col-lg-12"><h1 class=page-header">All Balances</h1></div></div>';
     str += '<div class="row"><table id="table_balances_total"><thead><tr><th>Asset</th><th>Amount</th><th>USD Value</th><th>% of net value</th></tr/></thead><tfoot><tr><th></th><th></th><th></th><th></th></tr></tfoot><tbody id="table_balances_total_body"></tbody></table></div>';
     $(str).appendTo($('#dashboard-contents'));
+}
+
+function init_balances_table(data) {
+    add_balances_table_html();
 
     TOTAL_BALANCES_TABLE = $('#table_balances_total').DataTable({
         "data": data,
@@ -143,9 +161,6 @@ function init_balances_table(data) {
     settings.page_index = $('#page-wrapper').html();
 }
 
-function reload_balance_table() {
-}
-
 function reload_balance_table_if_existing() {
     if (TOTAL_BALANCES_TABLE) {
         TOTAL_BALANCES_TABLE.rows().invalidate();
@@ -158,6 +173,7 @@ function reload_balance_table_if_existing() {
 
 module.exports = function() {
     this.total_balances_get = total_balances_get;
+    this.total_table_recreate = total_table_recreate;
     this.total_table_add_balances = total_table_add_balances;
     this.reload_balance_table_if_existing = reload_balance_table_if_existing;
 };
