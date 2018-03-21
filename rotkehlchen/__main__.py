@@ -7,16 +7,16 @@ logger = logging.getLogger(__name__)
 def main():
     import traceback
     import sys
-    from rotkelchen.server import RotkelchenServer
+    from rotkehlchen.server import RotkehlchenServer
     try:
-        rotkelchen_server = RotkelchenServer()
+        rotkehlchen_server = RotkehlchenServer()
     except:
         tb = traceback.format_exc()
         logging.critical(tb)
-        print("Failed to start rotkelchen backend:\n{}".format(tb))
+        print("Failed to start rotkehlchen backend:\n{}".format(tb))
         sys.exit(1)
 
-    rotkelchen_server.main()
+    rotkehlchen_server.main()
 
 
 if __name__ == '__main__':

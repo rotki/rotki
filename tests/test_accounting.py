@@ -1,12 +1,12 @@
 import pytest
 
-from rotkelchen.accounting import Accountant
-from rotkelchen.history import PriceHistorian, trades_from_dictlist
-from rotkelchen.errors import CorruptData
+from rotkehlchen.accounting import Accountant
+from rotkehlchen.history import PriceHistorian, trades_from_dictlist
+from rotkehlchen.errors import CorruptData
 
 
 def init_accounting_tests(history_list, margin_list, start_ts, end_ts):
-    price_historian = PriceHistorian('/home/lefteris/.rotkelchen')
+    price_historian = PriceHistorian('/home/lefteris/.rotkehlchen')
     accountant = Accountant(
         price_historian=price_historian,
         profit_currency='EUR',

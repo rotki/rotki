@@ -1,5 +1,5 @@
 from collections import namedtuple
-from rotkelchen.fval import FVal
+from rotkehlchen.fval import FVal
 
 Events = namedtuple('Events', ('buys', 'sells'))
 BuyEvent = namedtuple(

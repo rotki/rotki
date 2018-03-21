@@ -1,6 +1,6 @@
 import pytest
-from rotkelchen.fval import FVal
-from rotkelchen.utils import rlk_jsonloads, rlk_jsondumps
+from rotkehlchen.fval import FVal
+from rotkehlchen.utils import rlk_jsonloads, rlk_jsondumps
 
 
 def test_simple_arithmetic():

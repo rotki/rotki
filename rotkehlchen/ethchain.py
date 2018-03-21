@@ -3,8 +3,8 @@ from urllib.request import Request, urlopen
 from web3 import Web3, HTTPProvider
 from requests import ConnectionError
 
-from rotkelchen.utils import from_wei, rlk_jsonloads
-from rotkelchen.fval import FVal
+from rotkehlchen.utils import from_wei, rlk_jsonloads
+from rotkehlchen.fval import FVal
 
 import logging
 logger = logging.getLogger(__name__)

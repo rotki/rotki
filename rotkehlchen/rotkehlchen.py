@@ -4,26 +4,26 @@ import gevent
 import shutil
 from gevent.lock import Semaphore
 
-from rotkelchen.utils import (
+from rotkehlchen.utils import (
     combine_stat_dicts,
     dict_get_sumof,
     merge_dicts,
     ts_now,
 )
-from rotkelchen.errors import PermissionError, AuthenticationError
-from rotkelchen.constants import SUPPORTED_EXCHANGES
-from rotkelchen.blockchain import Blockchain
-from rotkelchen.poloniex import Poloniex
-from rotkelchen.kraken import Kraken
-from rotkelchen.bittrex import Bittrex
-from rotkelchen.binance import Binance
-from rotkelchen.data_handler import DataHandler
-from rotkelchen.inquirer import Inquirer
-from rotkelchen.premium import premium_create_and_verify
-from rotkelchen.utils import query_fiat_pair
-from rotkelchen.fval import FVal
-from rotkelchen.history import TradesHistorian, PriceHistorian
-from rotkelchen.accounting import Accountant
+from rotkehlchen.errors import PermissionError, AuthenticationError
+from rotkehlchen.constants import SUPPORTED_EXCHANGES
+from rotkehlchen.blockchain import Blockchain
+from rotkehlchen.poloniex import Poloniex
+from rotkehlchen.kraken import Kraken
+from rotkehlchen.bittrex import Bittrex
+from rotkehlchen.binance import Binance
+from rotkehlchen.data_handler import DataHandler
+from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.premium import premium_create_and_verify
+from rotkehlchen.utils import query_fiat_pair
+from rotkehlchen.fval import FVal
+from rotkehlchen.history import TradesHistorian, PriceHistorian
+from rotkehlchen.accounting import Accountant
 
 import logging
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 MAIN_LOOP_SECS_DELAY = 60
 
 
-class Rotkelchen(object):
+class Rotkehlchen(object):
     def __init__(self, args):
         self.lock = Semaphore()
         self.lock.acquire()
@@ -496,4 +496,4 @@ class Rotkelchen(object):
 if __name__ == '__main__':
     from args import app_args
     args = app_args()
-    r = Rotkelchen(args)
+    r = Rotkehlchen(args)
