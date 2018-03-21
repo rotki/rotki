@@ -22,6 +22,15 @@ class Ethchain(object):
             dir_path = os.path.dirname(os.path.realpath(__file__))
             with open(os.path.join(dir_path, 'data', 'token_abi.json'), 'r') as f:
                 self.token_abi = rlk_jsonloads(f.read())
+
+            # Also make sure we are actually connected to the Ethereum mainnet
+            genesis_hash = self.web3.eth.getBlock(0)['hash']
+            target = '0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3'
+            if genesis_hash != target:
+                logger.warn(
+                    'Connected to a local ethereum node but it is not on the ethereum mainnet'
+                )
+                self.connected = False
         except ConnectionError:
             logger.warn('Could not connect to a local ethereum node. Will use etherscan only')
             self.connected = False

@@ -3,6 +3,7 @@ require("./elements.js")();
 require("./utils.js")();
 
 var OTC_TRADES_TABLE = null;
+var CURRENT_TRADE = {};
 
 function update_valhtml(selector_text, val) {
     $(selector_text).val(val);
@@ -29,25 +30,38 @@ function format (d) {
 
 function edit_otc_trade(row) {
     let data = row.data();
-    $('#otc_time').val(timestamp_to_date(data.timestamp));
+    let ts = timestamp_to_date(data.time);
+    $('#otc_time').val(ts);
     $('#otc_pair').val(data.pair);
     $('#otc_type').val(data.type);
     $('#otc_amount').val(data.amount);
     $('#otc_rate').val(data.rate);
     $('#otc_fee').val(data.fee);
+    $('#otc_fee_currency').val(data.fee_currency);
     $('#otc_link').val(data.link);
     $('#otc_notes').val(data.notes);
+
+    CURRENT_TRADE = {
+        'id': data.id,
+        'time': ts,
+        'pair': data.pair,
+        'trade_type': data.type,
+        'amount': data.amount,
+        'rate': data.rate,
+        'fee': data.fee,
+        'fee_currency': data.fee_currency,
+        'link': data.link,
+        'notes': data.notes
+    };
 
     update_valhtml('#otctradesubmit', 'Edit Trade');
 }
 
 function delete_otc_trade(row) {
     let data = row.data();
-    // TODO: When using sql just use primary key here
-    // and now send the data to the python process
     client.invoke(
         'delete_otctrade',
-        data,
+        data.id,
         (error, res) => {
             if (error || res == null) {
                 showError('Error at Trade Deletion', error);
@@ -72,10 +86,13 @@ function reload_table_data() {
             update_valhtml('#otc_amount', '');
             update_valhtml('#otc_rate', '');
             update_valhtml('#otc_fee', '');
+            update_valhtml('#otc_fee_currency', '');
             update_valhtml('#otc_link', '');
             update_valhtml('#otc_notes', '');
 
-            OTC_TRADES_TABLE.update(result);
+            OTC_TRADES_TABLE.clear();
+            OTC_TRADES_TABLE.rows.add(result);
+            OTC_TRADES_TABLE.draw();
         }
     });
 }
@@ -83,7 +100,7 @@ function reload_table_data() {
 function create_otctrades_table() {
     var str = '<div class="row"><div class="col-lg-12"><h1 class=page-header">OTC Trades List</h1></div></div>';
     str += '<div class="row"><table id="table_otctrades"><thead><tr><th></th><th>Pair</th><th>Type</th><th>Amount</th><th>Rate</th><th>Time</th></tr/></thead><tbody id="table_otctrades_body"></tbody></table></div>';
-    $(str).appendTo($('#page-wrapper'));
+    $(str).insertAfter($('#otc_table_anchor'));
     client.invoke("query_otctrades", (error, result) => {
         if (error || result == null) {
             console.log("Error at querying OTC trades: " + error);
@@ -116,33 +133,12 @@ function create_otctrades_table() {
                             }
                             return timestamp_to_date(data);
                         },
-                        "data": "timestamp"
+                        "data": "time"
                     },
                 ],
                 "order": [[5, 'asc']],
                 drawCallback : dt_edit_drawcallback('table_otctrades', edit_otc_trade, delete_otc_trade)
             });
-            // Add event listener for opening and closing details
-            $('#table_otctrades tbody').on('click', 'td.details-control', function () {
-                var tr = $(this).closest('tr');
-                var tdi = tr.find("i.fa");
-                var row = OTC_TRADES_TABLE.row(tr);
-
-                if (row.child.isShown()) {
-                    // This row is already open - close it
-                    row.child.hide();
-                    tr.removeClass('shown');
-                    tdi.first().removeClass('fa-minus-square');
-                    tdi.first().addClass('fa-plus-square');
-                }
-                else {
-                    // Open this row
-                    row.child(format(row.data())).show();
-                    tr.addClass('shown');
-                    tdi.first().removeClass('fa-plus-square');
-                    tdi.first().addClass('fa-minus-square');
-                }
-            } );
         }
     });
 }
@@ -158,15 +154,25 @@ function create_otctrades_ui() {
     str += form_entry('amount', 'otc_amount', '', 'Amount bought/sold');
     str += form_entry('rate', 'otc_rate', '', 'Rate of the trade');
     str += form_entry('fee', 'otc_fee', '', 'Fee if any that the trade occured');
+    str += form_entry('fee currency', 'otc_fee_currency', '', 'Currency the fee was paid in');
     str += form_entry('link', 'otc_link', '', 'A link to the trade. e.g.: in an explorer');
     str += form_text('Enter additional notes', 'otc_notes', 3, '', 'Additional notes to store for the trade');
     str += form_button('Add Trade', 'otctradesubmit');
+    str += '<div id="otc_table_anchor"></div>';
     $(str).appendTo($('.panel-body'));
 
     create_otctrades_table();
 }
 
 function add_otctrades_listeners() {
+    // if we are reloading the page, recreate the table
+    if (OTC_TRADES_TABLE) {
+        // first remove the 2 table divs
+        $('#otc_table_anchor').next('div').remove();
+        $('#otc_table_anchor').next('div').remove();
+        // and then recreate it
+        create_otctrades_table();
+    }
     $('#otctradesubmit').click(function(event) {
         event.preventDefault();
         let otc_time = $('#otc_time').val();
@@ -175,15 +181,22 @@ function add_otctrades_listeners() {
         let otc_amount = $('#otc_amount').val();
         let otc_rate = $('#otc_rate').val();
         let otc_fee = $('#otc_fee').val();
+        let otc_fee_currency = $('#otc_fee_currency').val();
         let otc_link = $('#otc_link').val();
         let otc_notes = $('#otc_notes').val();
+        let trade_id = null;
+        if ('id' in CURRENT_TRADE) {
+            trade_id = CURRENT_TRADE['id'];
+        }
         let payload = {
+            'otc_id': trade_id,
             'otc_time': otc_time,
             'otc_pair': otc_pair,
             'otc_type': otc_type,
             'otc_amount': otc_amount,
             'otc_rate': otc_rate,
             'otc_fee': otc_fee,
+            'otc_fee_currency': otc_fee_currency,
             'otc_link': otc_link,
             'otc_notes': otc_notes
         };
@@ -218,6 +231,27 @@ function add_otctrades_listeners() {
     });
     $('#otc_time').datetimepicker({
         format: settings.datetime_format
+    });
+    // Add event listener for opening and closing details
+    $('#table_otctrades tbody').on('click', 'td.details-control', function () {
+        var tr = $(this).closest('tr');
+        var tdi = tr.find("i.fa");
+        var row = OTC_TRADES_TABLE.row(tr);
+
+        if (row.child.isShown()) {
+            // This row is already open - close it
+            row.child.hide();
+            tr.removeClass('shown');
+            tdi.first().removeClass('fa-minus-square');
+            tdi.first().addClass('fa-plus-square');
+        }
+        else {
+            // Open this row
+            row.child(format(row.data())).show();
+            tr.addClass('shown');
+            tdi.first().removeClass('fa-plus-square');
+            tdi.first().addClass('fa-minus-square');
+        }
     });
 }
 

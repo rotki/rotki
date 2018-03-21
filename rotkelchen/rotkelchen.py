@@ -187,6 +187,7 @@ class Rotkelchen(object):
         historical_data_start = self.data.historical_start_date()
         self.trades_historian = TradesHistorian(
             self.data_dir,
+            self.data.db,
             self.data.get_eth_accounts(),
             historical_data_start,
         )

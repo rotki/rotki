@@ -190,8 +190,8 @@ class RotkelchenServer(object):
         result, message = self.rotkelchen.data.edit_external_trade(data)
         return {'result': result, 'message': message}
 
-    def delete_otctrade(self, data):
-        result, message = self.rotkelchen.data.delete_external_trade(data)
+    def delete_otctrade(self, trade_id):
+        result, message = self.rotkelchen.data.delete_external_trade(trade_id)
         return {'result': result, 'message': message}
 
     def set_premium_credentials(self, api_key, api_secret):

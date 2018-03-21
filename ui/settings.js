@@ -40,12 +40,23 @@ function get_fiat_usd_value(currency, amount) {
     return amount / settings.usd_to_fiat_exchange_rates[currency];
 }
 
-function format_currency_value(number) {
-    // turn it into the requested currency
-    number = get_value_in_main_currency(number);
+/**
+ * @param usd_value        The usd value to convert to main currency and format
+ * @param asset [optional] The name of the asset whose value we want
+ * @param amount [optional] If asset was provided then also provide its amount
+ */
+function format_currency_value(usd_value, asset, amount) {
+    let value;
+    // if it's already in main currency don't do any conversion
+    if (asset == settings.main_currency.ticker_symbol) {
+        value = parseFloat(amount);
+    } else {
+        // turn it into the requested currency
+        value = get_value_in_main_currency(usd_value);
+    }
     // only show 2 decimal digits
-    number = number.toFixed(settings.floating_precision);
-    return number;
+    value = value.toFixed(settings.floating_precision);
+    return value;
 }
 
 function add_settings_listeners() {

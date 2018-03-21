@@ -8,35 +8,6 @@ require("./balances_table.js")();
 require("./navigation.js")();
 require("./userunlock.js")();
 
-
-let SAVED_RESULTS = [];
-
-function Result (result_type, number, name, icon) {
-    this.type = result_type;
-    this.number = number;
-    this.name = name;
-    this.icon = icon;
-    this.applied = false;
-}
-
-function create_result_if_not_existing(result_type, number, name, icon) {
-    let found = false;
-    let result;
-    for (let i = 0; i < SAVED_RESULTS.length; i ++) {
-        result = SAVED_RESULTS[i];
-        if (result.type == result_type && result.name == name) {
-            found = true;
-            break;
-        }
-    }
-    if (!found) {
-        result = new Result(result_type, number, name, icon);
-        SAVED_RESULTS.push(result);
-    }
-    return result;
-}
-
-
 function add_exchange_on_click() {
     $('.panel a').click(function(event) {
         event.preventDefault();
@@ -52,9 +23,14 @@ function add_exchange_on_click() {
     });
 }
 
+
+function create_dashboard_header() {
+    let str = '<div class="row"><div class="col-lg-12"><h1 class="page-header">Dashboard</h1></div></div><div class="row"><div id="dashboard-contents" class="col-lg-12"></div></div>';
+    $(str).appendTo($('#page-wrapper'));
+}
+
 function create_exchange_box(exchange, number, currency_icon) {
     let current_location = settings.current_location;
-    let saved_result = create_result_if_not_existing('exchange', number, exchange);
     if (current_location != 'index') {
         return;
     }
@@ -74,12 +50,10 @@ function create_exchange_box(exchange, number, currency_icon) {
     add_exchange_on_click();
     // finally save the dashboard page
     settings.page_index = $('#page-wrapper').html();
-    saved_result.applied = true;
 }
 
 function create_box (id, icon, number, currency_icon) {
     let current_location = settings.current_location;
-    let saved_result = create_result_if_not_existing('box', number, id, icon);
     if (current_location != 'index') {
         return;
     }
@@ -101,7 +75,6 @@ function create_box (id, icon, number, currency_icon) {
     $(str).prependTo($('#dashboard-contents'));
     // also save the dashboard page
     settings.page_index = $('#page-wrapper').html();
-    saved_result.applied = true;
 }
 
 function set_ui_main_currency(currency_ticker_symbol) {
@@ -120,26 +93,13 @@ function set_ui_main_currency(currency_ticker_symbol) {
     $('#current-main-currency').removeClass().addClass('fa ' + currency.icon + ' fa-fw');
     settings.main_currency = currency;
 
-    // if there are any saved results then use them to change currency values
-    for (let i = 0; i < SAVED_RESULTS.length; i ++) {
-        let result = SAVED_RESULTS[i];
-        let number = format_currency_value(result.number);
-        if (result.type == 'exchange') {
-            $('#'+result.name+'_box div.huge').html(number);
-            $('#'+result.name+'_box i#currencyicon').removeClass().addClass('fa ' + currency.icon + ' fa-fw');
-        } else if (result.type == 'box') {
-            $('#'+result.name+' div.huge').html(number);
-            $('#'+result.name+' div.huge').html(number);
-            $('#'+result.name+' i#currencyicon').removeClass().addClass('fa ' + currency.icon + ' fa-fw');
-        } else {
-            throw "Invalid result type " + result.type;
-        }
-    }
+    reload_boxes_after_currency_change(currency);
     // also adjust tables if they exist
     reload_balance_table_if_existing();
     reload_exchange_tables_if_existing();
     reload_usersettings_tables_if_existing();
 }
+
 
 
 var alert_id = 0;
@@ -226,36 +186,76 @@ function create_or_reload_dashboard() {
         get_settings();
     } else {
         console.log("At create/reload, with a Populated page index");
-        $('#page-wrapper').html(settings.page_index);
+        $('#page-wrapper').html('');
+        create_dashboard_header();
+        create_dashboard_from_saved_balances();
+        total_table_recreate();
         add_exchange_on_click();
     }
+}
 
-    // also if there are any saved unapplied results apply them
-    for (let i = 0; i < SAVED_RESULTS.length; i ++) {
-        let result = SAVED_RESULTS[i];
-        if (result.applied) {
-            return;
-        }
-        console.log("Applying saved result " + result.name + " for dashboard");
-        if (result.type == 'exchange') {
-            create_exchange_box(
-                result.name,
-                result.number,
-                settings.main_currency.icon
-            );
-        } else if (result.type == 'box') {
-            create_box(
-                result.name,
-                result.icon,
-                result.number,
-                settings.main_currency.icon
-            );
-        } else {
-            throw "Invalid result type " + result.type;
+function* iterate_saved_balances() {
+    let saved_balances = total_balances_get();
+    for (var location in saved_balances) {
+        if (saved_balances.hasOwnProperty(location)) {
+            let total = get_total_asssets_value(saved_balances[location]);
+            if (settings.EXCHANGES.indexOf(location) >= 0) {
+                yield [location, total, null];
+            } else {
+                let icon;
+                if (location == 'blockchain') {
+                    icon = 'fa-hdd-o';
+                } else if (location == 'banks') {
+                    icon = 'fa-university';
+                } else {
+                    throw 'Invalid location at dashboard box from saved balance creation';
+                }
+                yield [location, total, icon];
+            }
         }
     }
 }
 
+function create_dashboard_from_saved_balances() {
+    // must only be called if we are at index
+    for (let result of iterate_saved_balances()) {
+        let location = result[0];
+        let total = result[1];
+        let icon = result[2];
+        if (settings.EXCHANGES.indexOf(location) >= 0) {
+            create_exchange_box(
+                location,
+                total,
+                settings.main_currency.icon
+            );
+        } else {
+            create_box(
+                location,
+                icon,
+                total,
+                settings.main_currency.icon
+            );
+        }
+    }
+}
+
+function reload_boxes_after_currency_change(currency) {
+    // must only be called if we are at index
+    for (let result of iterate_saved_balances()) {
+        let location = result[0];
+        let total = result[1];
+        let icon = result[2];
+        let number = format_currency_value(total);
+        if (settings.EXCHANGES.indexOf(location) >= 0) {
+            $('#'+location+'_box div.huge').html(number);
+            $('#'+location+'_box i#currencyicon').removeClass().addClass('fa ' + currency.icon + ' fa-fw');
+        } else {
+            $('#'+location+' div.huge').html(number);
+            $('#'+location+' div.huge').html(number);
+            $('#'+location+' i#currencyicon').removeClass().addClass('fa ' + currency.icon + ' fa-fw');
+        }
+    }
+}
 
 const ipc = require('electron').ipcRenderer;
 ipc.on('failed', (event, message) => {

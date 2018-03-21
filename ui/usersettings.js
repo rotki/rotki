@@ -174,6 +174,8 @@ function setup_exchange_callback(event) {
             let str = ExchangeBadge({name: exchange_name, css_class: 'exchange-icon'});
             $(str).appendTo($('#exchange_badges'));
             stop_show_loading('#setup_exchange_button');
+            // also query the balances to have them handy to be shown if needed
+            query_exchange_balances_async(exchange_name);
         }
     );
 }

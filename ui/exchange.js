@@ -27,7 +27,8 @@ function create_exchange_table(name) {
     $('#page-wrapper').html(str);
     let table = SAVED_TABLES[name];
     if (!table) {
-        let data = total_balances_get(name);
+        let data = total_balances_get()[name];
+        console.log("CREATING TABLE FOR " + name);
         SAVED_TABLES[name] = new AssetTable('asset', name, 'appendTo', 'page-wrapper', data);
         settings.page_exchange[name] = $('#page-wrapper').html();
     }

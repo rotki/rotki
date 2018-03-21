@@ -61,16 +61,17 @@ AssetTable.prototype.format_data =  function(original_data) {
 
 AssetTable.prototype.populate = function (table_data, draw_cb) {
     let data = this.format_data(table_data);
+    var first_column_name = this.first_column_name;
     let init_obj = {
         "data": data,
         "columns": [
-            {"data": this.first_column_name, "title": string_capitalize(this.first_column_name)},
+            {"data": first_column_name, "title": string_capitalize(first_column_name)},
             {"data": "amount", "title": "Amount"},
             {
                 "data": 'usd_value',
                 "title": settings.main_currency.ticker_symbol + ' value',
                 "render": function (data, type, row) {
-                    return format_currency_value(data);
+                    return format_currency_value(data, row[first_column_name], row['amount']);
                 }
             }
         ],
