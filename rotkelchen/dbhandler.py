@@ -65,6 +65,21 @@ class DBHandler(object):
             ')'
         )
         cursor.execute(
+            'CREATE TABLE IF NOT EXISTS trades ('
+            '    id INTEGER PRIMARY KEY ASC,'
+            '    time INTEGER,'
+            '    location VARCHAR[24],'
+            '    pair VARCHAR[24],'
+            '    type VARCHAR[3],'
+            '    amount DECIMAL,'
+            '    rate DECIMAL,'
+            '    fee DECIMAL,'
+            '    fee_currency VARCHAR[6],'
+            '    link TEXT,'
+            '    notes TEXT'
+            ')'
+        )
+        cursor.execute(
             'CREATE TABLE IF NOT EXISTS settings ('
             '  name VARCHAR[24] NOT NULL PRIMARY KEY, value TEXT,'
             '  UNIQUE(name, value)'
@@ -398,6 +413,145 @@ class DBHandler(object):
             }
 
         return secret_data
+
+    def add_external_trade(
+            self,
+            time,
+            location,
+            pair,
+            trade_type,
+            amount,
+            rate,
+            fee,
+            fee_currency,
+            link,
+            notes
+    ):
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'INSERT INTO trades('
+            '  time,'
+            '  location,'
+            '  pair,'
+            '  type,'
+            '  amount,'
+            '  rate,'
+            '  fee,'
+            '  fee_currency,'
+            '  link,'
+            '  notes)'
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                time,
+                location,
+                pair,
+                trade_type,
+                amount,
+                rate,
+                fee,
+                fee_currency,
+                link,
+                notes
+            )
+        )
+        self.conn.commit()
+
+    def edit_external_trade(
+            self,
+            trade_id,
+            time,
+            location,
+            pair,
+            trade_type,
+            amount,
+            rate,
+            fee,
+            fee_currency,
+            link,
+            notes
+    ):
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'INSERT OR REPLACE INTO trades('
+            '  id,'
+            '  time,'
+            '  location,'
+            '  pair,'
+            '  type,'
+            '  amount,'
+            '  rate,'
+            '  fee,'
+            '  fee_currency,'
+            '  link,'
+            '  notes)'
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                trade_id,
+                time,
+                location,
+                pair,
+                trade_type,
+                amount,
+                rate,
+                fee,
+                fee_currency,
+                link,
+                notes
+            )
+        )
+        self.conn.commit()
+
+    def get_external_trades(self, from_ts=None, to_ts=None):
+        cursor = self.conn.cursor()
+        query = (
+            'SELECT id,'
+            '  time,'
+            '  location,'
+            '  pair,'
+            '  type,'
+            '  amount,'
+            '  rate,'
+            '  fee,'
+            '  fee_currency,'
+            '  link,'
+            '  notes FROM trades WHERE location="external" '
+        )
+        bindings = ()
+        if from_ts:
+            query += 'AND time >= ? '
+            bindings = (from_ts,)
+            if to_ts:
+                query += 'AND time <= ? '
+                bindings = (from_ts, to_ts,)
+        elif to_ts:
+            query += 'AND time <= ? '
+            bindings = (to_ts,)
+        query += 'ORDER BY time ASC;'
+        results = cursor.execute(query, bindings)
+        results = results.fetchall()
+
+        trades = []
+        for result in results:
+            trades.append({
+                'id': result[0],
+                'time': result[1],
+                'location': result[2],
+                'pair': result[3],
+                'type': result[4],
+                'amount': result[5],
+                'rate': result[6],
+                'fee': result[7],
+                'fee_currency': result[8],
+                'link': result[9],
+                'notes': result[10],
+            })
+
+        return trades
+
+    def delete_external_trade(self, trade_id):
+        cursor = self.conn.cursor()
+        cursor.execute('DELETE FROM trades WHERE id=?', (trade_id,))
+        self.conn.commit()
 
     def set_rotkehlchen_premium(self, api_key, api_secret):
         cursor = self.conn.cursor()

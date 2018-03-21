@@ -34,7 +34,6 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_START_DATE = "01/08/2015"
 TRADES_HISTORYFILE = 'trades_history.json'
-EXTERNAL_TRADES_FILE = 'external_trades.json'
 MARGIN_HISTORYFILE = 'margin_trades_history.json'
 MANUAL_MARGINS_LOGFILE = 'manual_margin_positions_log.json'
 LOANS_HISTORYFILE = 'loans_history.json'
@@ -58,15 +57,8 @@ class PriceQueryUnknownFromAsset(Exception):
         )
 
 
-def get_external_trades(data_dir):
-    external_trades = get_jsonfile_contents_or_empty_list(
-        os.path.join(data_dir, EXTERNAL_TRADES_FILE)
-    )
-    return external_trades
-
-
-def include_external_trades(data_dir, start_ts, end_ts, history):
-    external_trades = get_external_trades(data_dir)
+def include_external_trades(db, start_ts, end_ts, history):
+    external_trades = db.get_external_trades()
     external_trades = trades_from_dictlist(external_trades, start_ts, end_ts)
     history.extend(external_trades)
     history.sort(key=lambda trade: trade.timestamp)
@@ -444,6 +436,7 @@ class TradesHistorian(object):
     def __init__(
             self,
             data_directory,
+            db,
             eth_accounts,
             historical_data_start,
             start_date='01/11/2015',
@@ -455,6 +448,7 @@ class TradesHistorian(object):
         self.binance = None
         self.start_ts = createTimeStamp(start_date, formatstr="%d/%m/%Y")
         self.data_directory = data_directory
+        self.db = db
         self.eth_accounts = eth_accounts
         # get the start date for historical data
         self.historical_data_start = createTimeStamp(historical_data_start, formatstr="%d/%m/%Y")
@@ -591,7 +585,7 @@ class TradesHistorian(object):
         write_tupledata_history_in_file(eth_transactions, eth_tx_log_path, start_ts, end_ts)
 
         # After writting everything to files include the external trades in the history
-        history = include_external_trades(self.data_directory, start_ts, end_ts, history)
+        history = include_external_trades(self.db, start_ts, end_ts, history)
 
         return history, poloniex_margin_trades, polo_loans, asset_movements, eth_transactions
 
@@ -713,7 +707,7 @@ class TradesHistorian(object):
                     )
 
                     history_trades = include_external_trades(
-                        self.data_directory,
+                        self.db,
                         start_ts,
                         end_ts,
                         history_trades

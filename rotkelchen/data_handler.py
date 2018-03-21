@@ -14,7 +14,6 @@ from rotkelchen.utils import (
     is_number,
     get_pair_position,
 )
-from rotkelchen.history import get_external_trades, EXTERNAL_TRADES_FILE
 from rotkelchen.fval import FVal
 from rotkelchen.inquirer import FIAT_CURRENCIES
 from rotkelchen.dbhandler import DBHandler
@@ -40,6 +39,7 @@ otc_fields = [
     'otc_amount',
     'otc_rate',
     'otc_fee',
+    'otc_fee_currency',
     'otc_link',
     'otc_notes'
 ]
@@ -70,6 +70,13 @@ def check_otctrade_data_valid(data):
 
         if field in otc_numerical_fields and not is_number(data[field]):
             return None, '{} should be a number'.format(field)
+
+    pair = data['otc_pair']
+    first = get_pair_position(pair, 'first')
+    second = get_pair_position(pair, 'second')
+
+    if data['otc_fee_currency'] not in (first, second):
+        return None, 'Trade fee currency should be one of the two in the currency pair'
 
     if data['otc_type'] not in ('buy', 'sell'):
         return None, 'Trade type can only be buy or sell'
@@ -194,7 +201,7 @@ class DataHandler(object):
         return self.db.get_fiat_balances()
 
     def get_external_trades(self):
-        return get_external_trades(self.data_directory)
+        return self.db.get_external_trades()
 
     def add_external_trade(self, data):
         timestamp, message = check_otctrade_data_valid(data)
@@ -203,27 +210,20 @@ class DataHandler(object):
 
         rate = float(data['otc_rate'])
         amount = float(data['otc_amount'])
-        cost = rate * amount
         pair = data['otc_pair']
-        external_trades = get_external_trades(self.data_directory)
-        external_trades.append({
-            'timestamp': timestamp,
-            'pair': pair,
-            'type': data['otc_type'],
-            'rate': rate,
-            'cost': cost,
-            # for now cost/fee currency is always second.
-            # TODO: Make it configurable
-            'cost_currency': get_pair_position(pair, 'second'),
-            'fee_currency': get_pair_position(pair, 'second'),
-            'fee': data['otc_fee'],
-            'amount': amount,
-            'location': 'external',
-            'link': data['otc_link'],
-            'notes': data['otc_notes'],
-        })
-        with open(os.path.join(self.data_directory, EXTERNAL_TRADES_FILE), 'w') as f:
-            f.write(rlk_jsondumps(external_trades))
+
+        self.db.add_external_trade(
+            time=timestamp,
+            location='external',
+            pair=pair,
+            trade_type=data['otc_type'],
+            amount=amount,
+            rate=rate,
+            fee=data['otc_fee'],
+            fee_currency=data['otc_fee_currency'],
+            link=data['otc_link'],
+            notes=data['otc_notes'],
+        )
 
         return True, ''
 
@@ -234,57 +234,26 @@ class DataHandler(object):
 
         rate = float(data['otc_rate'])
         amount = float(data['otc_amount'])
-        cost = rate * amount
         pair = data['otc_pair']
-        external_trades = get_external_trades(self.data_directory)
 
-        # TODO: When we switch to sql, editing should be done with the primary key
-        found = False
-        for idx, trade in enumerate(external_trades):
-            if timestamp == trade['timestamp']:
-                external_trades[idx] = {
-                    'timestamp': timestamp,
-                    'pair': pair,
-                    'type': data['otc_type'],
-                    'rate': rate,
-                    'cost': cost,
-                    # for now cost/fee currency is always second.
-                    # TODO: Make it configurable
-                    'cost_currency': get_pair_position(pair, 'second'),
-                    'fee_currency': get_pair_position(pair, 'second'),
-                    'fee': data['otc_fee'],
-                    'amount': amount,
-                    'location': 'external',
-                    'link': data['otc_link'],
-                    'notes': data['otc_notes'],
-                }
-                found = True
-                break
-
-        if not found:
-            return False, 'Could not find the requested trade for editing'
-
-        with open(os.path.join(self.data_directory, EXTERNAL_TRADES_FILE), 'w') as f:
-            f.write(rlk_jsondumps(external_trades))
+        self.db.edit_external_trade(
+            trade_id=data['otc_id'],
+            time=timestamp,
+            location='external',
+            pair=pair,
+            trade_type=data['otc_type'],
+            amount=amount,
+            rate=rate,
+            fee=data['otc_fee'],
+            fee_currency=data['otc_fee_currency'],
+            link=data['otc_link'],
+            notes=data['otc_notes'],
+        )
 
         return True, ''
 
-    def delete_external_trade(self, data):
-        external_trades = get_external_trades(self.data_directory)
-        # TODO: When using sql just use primary key as id
-        found_idx = -1
-        for idx, trade in enumerate(external_trades):
-            if trade['timestamp'] == data['timestamp']:
-                found_idx = idx
-                break
-
-        if found_idx == -1:
-            return False, 'Could not find the requested trade for deletion'
-
-        del external_trades[found_idx]
-        with open(os.path.join(self.data_directory, EXTERNAL_TRADES_FILE), 'w') as f:
-            f.write(rlk_jsondumps(external_trades))
-
+    def delete_external_trade(self, trade_id):
+        self.db.delete_external_trade(trade_id)
         return True, ''
 
     def compress_and_encrypt_db(self, password):
