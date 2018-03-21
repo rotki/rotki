@@ -5,19 +5,19 @@ from json.decoder import JSONDecodeError
 import zlib
 import base64
 import hashlib
-from rotkelchen.crypto import encrypt, decrypt
+from rotkehlchen.crypto import encrypt, decrypt
 
-from rotkelchen.utils import (
+from rotkehlchen.utils import (
     createTimeStamp,
     rlk_jsonloads,
     rlk_jsondumps,
     is_number,
     get_pair_position,
 )
-from rotkelchen.fval import FVal
-from rotkelchen.inquirer import FIAT_CURRENCIES
-from rotkelchen.dbhandler import DBHandler
-from rotkelchen.errors import AuthenticationError
+from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import FIAT_CURRENCIES
+from rotkehlchen.dbhandler import DBHandler
+from rotkehlchen.errors import AuthenticationError
 
 import logging
 logger = logging.getLogger(__name__)

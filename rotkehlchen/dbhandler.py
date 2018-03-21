@@ -5,10 +5,10 @@ import shutil
 from collections import defaultdict
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkelchen.constants import SUPPORTED_EXCHANGES
-from rotkelchen.fval import FVal
-from rotkelchen.utils import ts_now
-from rotkelchen.errors import AuthenticationError, InputError
+from rotkehlchen.constants import SUPPORTED_EXCHANGES
+from rotkehlchen.fval import FVal
+from rotkehlchen.utils import ts_now
+from rotkehlchen.errors import AuthenticationError, InputError
 
 
 def str_to_bool(s):

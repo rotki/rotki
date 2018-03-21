@@ -3,10 +3,10 @@ import hmac
 import hashlib
 from urllib.parse import urlencode
 
-from rotkelchen.exchange import Exchange
-from rotkelchen.order_formatting import pair_get_assets, Trade
-from rotkelchen.utils import rlk_jsonloads, cache_response_timewise
-from rotkelchen.fval import FVal
+from rotkehlchen.exchange import Exchange
+from rotkehlchen.order_formatting import pair_get_assets, Trade
+from rotkehlchen.utils import rlk_jsonloads, cache_response_timewise
+from rotkehlchen.fval import FVal
 
 V3_ENDPOINTS = (
     'account',

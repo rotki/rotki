@@ -1,8 +1,8 @@
 import gevent
 from random import randint
 
-from rotkelchen.utils import tsToDate, ts_now, taxable_gain_for_sell
-from rotkelchen.order_formatting import (
+from rotkehlchen.utils import tsToDate, ts_now, taxable_gain_for_sell
+from rotkehlchen.order_formatting import (
     Events,
     BuyEvent,
     SellEvent,
@@ -11,15 +11,15 @@ from rotkelchen.order_formatting import (
     Trade,
     AssetMovement
 )
-from rotkelchen.transactions import EthereumTransaction
-from rotkelchen.history import (
+from rotkehlchen.transactions import EthereumTransaction
+from rotkehlchen.history import (
     NoPriceForGivenTimestamp,
     PriceQueryUnknownFromAsset,
     FIAT_CURRENCIES
 )
-from rotkelchen.csv_exporter import CSVExporter
-from rotkelchen.fval import FVal
-from rotkelchen.errors import CorruptData
+from rotkehlchen.csv_exporter import CSVExporter
+from rotkehlchen.fval import FVal
+from rotkehlchen.errors import CorruptData
 
 import logging
 logger = logging.getLogger(__name__)

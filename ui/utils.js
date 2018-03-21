@@ -29,14 +29,14 @@ var log_searcher = null;
 
 function _setup_log_watcher(callback) {
     if (log_searcher) {
-        if (!fs.existsSync("rotkelchen.log")) {
+        if (!fs.existsSync("rotkehlchen.log")) {
             return;
         }
         clearInterval(log_searcher);
     }
 
     var options = { fromBeginning: true};
-    var tail = new Tail("rotkelchen.log");
+    var tail = new Tail("rotkehlchen.log");
 
     var rePattern = new RegExp('.*(WARNING|ERROR):.*:(.*)');
     tail.on("line", function(data) {
@@ -86,7 +86,7 @@ function showInfo(title, content) {
 // TODO: Remove this/replace with something else. In the case of a huge log hangs the entire app
 function setup_log_watcher(callback) {
     // if the log file is not found keep trying until it is
-    if (!fs.existsSync("rotkelchen.log")) {
+    if (!fs.existsSync("rotkehlchen.log")) {
         log_searcher = setInterval(function() {_setup_log_watcher(callback);}, 5000);
         return;
     }

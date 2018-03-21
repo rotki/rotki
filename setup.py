@@ -16,7 +16,7 @@ install_requirements = list(set(
 ))
 
 setup(
-    name='rotkelchen',
+    name='rotkehlchen',
     version='0.0.1',
     author='Lefteris Karapetsas',
     author_email='lefteris@refu.co',
@@ -24,7 +24,7 @@ setup(
     license='Private',
     keywords='accounting trading portfolio cryptocurrencies',
     url='http://packages.python.org/an_example_pypi_project',
-    packages=['rotkelchen', 'tests'],
+    packages=['rotkehlchen', 'tests'],
     install_requires=install_requirements,
     long_description=read('README.md'),
     classifiers=[
@@ -33,7 +33,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'rotkelchen = rotkelchen.__main__:main',
+            'rotkehlchen = rotkehlchen.__main__:main',
         ],
     },
 )
