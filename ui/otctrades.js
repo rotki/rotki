@@ -100,7 +100,7 @@ function reload_table_data() {
 function create_otctrades_table() {
     var str = '<div class="row"><div class="col-lg-12"><h1 class=page-header">OTC Trades List</h1></div></div>';
     str += '<div class="row"><table id="table_otctrades"><thead><tr><th></th><th>Pair</th><th>Type</th><th>Amount</th><th>Rate</th><th>Time</th></tr/></thead><tbody id="table_otctrades_body"></tbody></table></div>';
-    $(str).appendTo($('#page-wrapper'));
+    $(str).insertAfter($('#otc_table_anchor'));
     client.invoke("query_otctrades", (error, result) => {
         if (error || result == null) {
             console.log("Error at querying OTC trades: " + error);
@@ -158,12 +158,21 @@ function create_otctrades_ui() {
     str += form_entry('link', 'otc_link', '', 'A link to the trade. e.g.: in an explorer');
     str += form_text('Enter additional notes', 'otc_notes', 3, '', 'Additional notes to store for the trade');
     str += form_button('Add Trade', 'otctradesubmit');
+    str += '<div id="otc_table_anchor"></div>';
     $(str).appendTo($('.panel-body'));
 
     create_otctrades_table();
 }
 
 function add_otctrades_listeners() {
+    // if we are reloading the page, recreate the table
+    if (OTC_TRADES_TABLE) {
+        // first remove the 2 table divs
+        $('#otc_table_anchor').next('div').remove();
+        $('#otc_table_anchor').next('div').remove();
+        // and then recreate it
+        create_otctrades_table();
+    }
     $('#otctradesubmit').click(function(event) {
         event.preventDefault();
         let otc_time = $('#otc_time').val();
