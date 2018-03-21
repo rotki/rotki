@@ -40,16 +40,51 @@ pip install -r requirements.txt
 Now to start the application you need to type `npm start`.
 
 ### OSX
+
+NOTE: While possible, the installation on OSX is still unsupported.
+
+The &lt;tldr&gt; version is:
+- install sqlcipher
+- use a virtual env with python 3.6.x
+- make sure pip installed everything it says it installed
+- get your node under control with nvm, i tested 8.9
+
+The following recipe has been tested using [Anaconda](https://conda.io). [VirtualEnv](https://virtualenv.pypa.io) works as well, refer to the documentations of those projects to install and use them.
+
+Rotkehlchen uses an encrypted database called [SQLCipher](https://www.zetetic.net/sqlcipher/). Before we can proceed, we need to install it. Homebrew makes it simple:
+
+	$ brew update && brew install sqlcipher
+
+If you wish to use Conda, use the following commands:
+
 	$ brew cask install caskroom/cask/anaconda
 	$ echo "export PATH=$PATH:/usr/local/anaconda3/bin" >> ~/.bash_profile
+	$ echo ". /usr/local/anaconda3/etc/profile.d/conda.sh" >> ~/.bash_profile
 	$ source ~/.bash_profile
-	$ conda create --name rotkehlchen
-	$ npm install --runtime=electron --target=1.7.2
-	$ npm install
-	$ source activate rotkehlchen
-	
-	
+	$ conda create python=3.6 --name rotkehlchen
+	$ conda activate rotkehlchen
 
+Before using `pip`, let´s ensure we have the latest version:
+
+	$ pip install --upgrade pip
+
+Install all the requirements:
+
+	$ sudo pip install -r requirements.txt
+
+Rotkehlchen uses electron, we need to install it:
+
+	$ npm install --runtime=electron --target=1.8.4
+
+Almost there, we can now install all the NodeJS dependencies. Using a recent NodeJS version such as 8.9.x, it should be smooth
+
+	$ npm install
+
+You now deserved to start Rotkehlchen:
+
+	$ npm start
+
+	
 ## Love it? Want to help?
 
 
