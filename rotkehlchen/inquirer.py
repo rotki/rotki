@@ -1,8 +1,8 @@
 from __future__ import unicode_literals
 from urllib.request import Request, urlopen
 
-from rotkelchen.fval import FVal
-from rotkelchen.utils import rlk_jsonloads, retry_calls, query_fiat_pair
+from rotkehlchen.fval import FVal
+from rotkehlchen.utils import rlk_jsonloads, retry_calls, query_fiat_pair
 
 import logging
 logger = logging.getLogger(__name__)

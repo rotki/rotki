@@ -3,9 +3,9 @@ import os
 import csv
 from datetime import datetime
 
-from rotkelchen.utils import createTimeStamp, dateToTs, isclose
-from rotkelchen.errors import PoloniexError
-from rotkelchen.fval import FVal
+from rotkehlchen.utils import createTimeStamp, dateToTs, isclose
+from rotkehlchen.errors import PoloniexError
+from rotkehlchen.fval import FVal
 
 import logging
 logger = logging.getLogger(__name__)

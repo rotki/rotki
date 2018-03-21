@@ -9,8 +9,8 @@ from urllib.request import Request, urlopen
 from urllib.error import URLError
 from collections import namedtuple
 
-from rotkelchen.errors import RecoverableRequestError
-from rotkelchen.fval import FVal
+from rotkehlchen.errors import RecoverableRequestError
+from rotkehlchen.fval import FVal
 
 
 def sfjson_loads(s):
@@ -67,7 +67,7 @@ def cache_response_timewise(seconds=600):
         - A results_cache dictionary attribute
         - A semaphore attribute named lock
 
-    Objects adhering to this interface are all the exchanges and the rotkelchen object.
+    Objects adhering to this interface are all the exchanges and the rotkehlchen object.
     """
     def _cache_response_timewise(f):
         def wrapper(wrappingobj, *args):

@@ -9,12 +9,12 @@ import zerorpc
 import pickle
 import traceback
 
-from rotkelchen.fval import FVal
-from rotkelchen.errors import InputError, AuthenticationError, PermissionError
-from rotkelchen.args import app_args
-from rotkelchen.rotkelchen import Rotkelchen
-from rotkelchen.utils import pretty_json_dumps
-from rotkelchen.inquirer import get_fiat_usd_exchange_rates
+from rotkehlchen.fval import FVal
+from rotkehlchen.errors import InputError, AuthenticationError, PermissionError
+from rotkehlchen.args import app_args
+from rotkehlchen.rotkehlchen import Rotkehlchen
+from rotkehlchen.utils import pretty_json_dumps
+from rotkehlchen.inquirer import get_fiat_usd_exchange_rates
 
 import logging
 logger = logging.getLogger(__name__)
@@ -58,12 +58,12 @@ def accounts_result(per_account, totals):
     return process_result(result)
 
 
-class RotkelchenServer(object):
+class RotkehlchenServer(object):
     def __init__(self):
         self.args = app_args()
-        self.rotkelchen = Rotkelchen(self.args)
+        self.rotkehlchen = Rotkehlchen(self.args)
         self.stop_event = Event()
-        mainloop_greenlet = self.rotkelchen.start()
+        mainloop_greenlet = self.rotkehlchen.start()
         mainloop_greenlet.link_exception(self.handle_killed_greenlets)
         self.greenlets = [mainloop_greenlet]
         self.task_lock = Semaphore()
@@ -91,16 +91,16 @@ class RotkelchenServer(object):
         logger.debug('Shutdown initiated')
         self.zerorpc.stop()
         gevent.wait(self.greenlets)
-        self.rotkelchen.shutdown()
+        self.rotkehlchen.shutdown()
         print("Shutting down zerorpc server")
         logger.debug('Shutdown completed')
         logging.shutdown()
 
     def set_main_currency(self, currency_text):
-        self.rotkelchen.set_main_currency(currency_text)
+        self.rotkehlchen.set_main_currency(currency_text)
 
     def set_settings(self, settings):
-        self.rotkelchen.set_settings(settings)
+        self.rotkehlchen.set_settings(settings)
         return True
 
     def get_total_in_usd(self, balances):
@@ -162,48 +162,48 @@ class RotkelchenServer(object):
         return process_result(res)
 
     def get_settings(self):
-        settings = self.rotkelchen.get_settings()
+        settings = self.rotkehlchen.get_settings()
         res = {
-            'main_currency': self.rotkelchen.data.main_currency(),
+            'main_currency': self.rotkehlchen.data.main_currency(),
             'ui_floating_precision': settings['ui_floating_precision'],
             'historical_data_start_date': settings['historical_data_start_date'],
         }
         return process_result(res)
 
     def remove_exchange(self, name):
-        result, message = self.rotkelchen.remove_exchange(name)
+        result, message = self.rotkehlchen.remove_exchange(name)
         return {'result': result, 'message': message}
 
     def setup_exchange(self, name, api_key, api_secret):
-        result, message = self.rotkelchen.setup_exchange(name, api_key, api_secret)
+        result, message = self.rotkehlchen.setup_exchange(name, api_key, api_secret)
         return {'result': result, 'message': message}
 
     def query_otctrades(self):
-        trades = self.rotkelchen.data.get_external_trades()
+        trades = self.rotkehlchen.data.get_external_trades()
         return process_result(trades)
 
     def add_otctrade(self, data):
-        result, message = self.rotkelchen.data.add_external_trade(data)
+        result, message = self.rotkehlchen.data.add_external_trade(data)
         return {'result': result, 'message': message}
 
     def edit_otctrade(self, data):
-        result, message = self.rotkelchen.data.edit_external_trade(data)
+        result, message = self.rotkehlchen.data.edit_external_trade(data)
         return {'result': result, 'message': message}
 
     def delete_otctrade(self, trade_id):
-        result, message = self.rotkelchen.data.delete_external_trade(trade_id)
+        result, message = self.rotkehlchen.data.delete_external_trade(trade_id)
         return {'result': result, 'message': message}
 
     def set_premium_credentials(self, api_key, api_secret):
-        result, empty_or_error = self.rotkelchen.set_premium_credentials(api_key, api_secret)
+        result, empty_or_error = self.rotkehlchen.set_premium_credentials(api_key, api_secret)
         return {'result': result, 'message': empty_or_error}
 
     def set_premium_option_sync(self, should_sync):
-        self.rotkelchen.data.db.update_premium_sync(should_sync)
+        self.rotkehlchen.data.db.update_premium_sync(should_sync)
         return True
 
     def query_exchange_balances(self, name):
-        balances = getattr(self.rotkelchen, name).query_balances()
+        balances = getattr(self.rotkehlchen, name).query_balances()
         res = {
             'name': name,
             'balances': balances
@@ -215,7 +215,7 @@ class RotkelchenServer(object):
         return {'task_id': res}
 
     def query_blockchain_balances(self):
-        balances = self.rotkelchen.blockchain.query_balances()
+        balances = self.rotkehlchen.blockchain.query_balances()
         return process_result(balances)
 
     def query_blockchain_balances_async(self):
@@ -223,28 +223,28 @@ class RotkelchenServer(object):
         return {'task_id': res}
 
     def query_fiat_balances(self):
-        res = self.rotkelchen.query_fiat_balances()
+        res = self.rotkehlchen.query_fiat_balances()
         return process_result(res)
 
     def set_fiat_balance(self, currency, balance):
-        result, message = self.rotkelchen.data.set_fiat_balance(currency, balance)
+        result, message = self.rotkehlchen.data.set_fiat_balance(currency, balance)
         return {'result': result, 'message': message}
 
     def query_trade_history(self, location, start_ts, end_ts):
         start_ts = int(start_ts)
         end_ts = int(end_ts)
         if location == 'all':
-            return self.rotkelchen.trades_historian.get_history(start_ts, end_ts)
+            return self.rotkehlchen.trades_historian.get_history(start_ts, end_ts)
 
         try:
-            exchange = getattr(self.rotkelchen, location)
+            exchange = getattr(self.rotkehlchen, location)
         except AttributeError:
             raise "Unknown location {} given".format(location)
 
         return exchange.query_trade_history(start_ts, end_ts)
 
     def query_asset_price(self, from_asset, to_asset, timestamp):
-        price = self.rotkelchen.data.accountant.query_historical_price(
+        price = self.rotkehlchen.data.accountant.query_historical_price(
             from_asset, to_asset, int(timestamp)
         )
 
@@ -253,7 +253,7 @@ class RotkelchenServer(object):
     def process_trade_history(self, start_ts, end_ts):
         start_ts = int(start_ts)
         end_ts = int(end_ts)
-        result = self.rotkelchen.process_history(start_ts, end_ts)
+        result = self.rotkehlchen.process_history(start_ts, end_ts)
         return process_result(result)
 
     def process_trade_history_async(self, start_ts, end_ts):
@@ -264,7 +264,7 @@ class RotkelchenServer(object):
         if isinstance(save_data, str) and (save_data == 'save' or save_data == 'True'):
             save_data = True
 
-        result = self.rotkelchen.query_balances(save_data)
+        result = self.rotkehlchen.query_balances(save_data)
         print(pretty_json_dumps(result))
         return process_result(result)
 
@@ -274,42 +274,42 @@ class RotkelchenServer(object):
 
     def get_eth_tokens(self):
         result = {
-            'all_eth_tokens': self.rotkelchen.data.eth_tokens,
-            'owned_eth_tokens': self.rotkelchen.blockchain.eth_tokens
+            'all_eth_tokens': self.rotkehlchen.data.eth_tokens,
+            'owned_eth_tokens': self.rotkehlchen.blockchain.eth_tokens
         }
         return process_result(result)
 
     def add_owned_eth_tokens(self, tokens):
         try:
-            new_data = self.rotkelchen.blockchain.track_new_tokens(tokens)
+            new_data = self.rotkehlchen.blockchain.track_new_tokens(tokens)
         except InputError as e:
             return simple_result(False, str(e))
 
-        self.rotkelchen.data.write_owned_eth_tokens(self.rotkelchen.blockchain.owned_eth_tokens)
+        self.rotkehlchen.data.write_owned_eth_tokens(self.rotkehlchen.blockchain.owned_eth_tokens)
         return accounts_result(new_data['per_account'], new_data['totals'])
 
     def remove_owned_eth_tokens(self, tokens):
         try:
-            new_data = self.rotkelchen.blockchain.remove_eth_tokens(tokens)
+            new_data = self.rotkehlchen.blockchain.remove_eth_tokens(tokens)
         except InputError as e:
             return simple_result(False, str(e))
-        self.rotkelchen.data.write_owned_eth_tokens(self.rotkelchen.blockchain.owned_eth_tokens)
+        self.rotkehlchen.data.write_owned_eth_tokens(self.rotkehlchen.blockchain.owned_eth_tokens)
         return accounts_result(new_data['per_account'], new_data['totals'])
 
     def add_blockchain_account(self, blockchain, account):
         try:
-            new_data = self.rotkelchen.blockchain.add_blockchain_account(blockchain, account)
+            new_data = self.rotkehlchen.blockchain.add_blockchain_account(blockchain, account)
         except InputError as e:
             return simple_result(False, str(e))
-        self.rotkelchen.data.add_blockchain_account(blockchain, account)
+        self.rotkehlchen.data.add_blockchain_account(blockchain, account)
         return accounts_result(new_data['per_account'], new_data['totals'])
 
     def remove_blockchain_account(self, blockchain, account):
         try:
-            new_data = self.rotkelchen.blockchain.remove_blockchain_account(blockchain, account)
+            new_data = self.rotkehlchen.blockchain.remove_blockchain_account(blockchain, account)
         except InputError as e:
             return simple_result(False, str(e))
-        self.rotkelchen.data.remove_blockchain_account(blockchain, account)
+        self.rotkehlchen.data.remove_blockchain_account(blockchain, account)
         return accounts_result(new_data['per_account'], new_data['totals'])
 
     def unlock_user(self, user, password, create_new, sync_approval, api_key, api_secret):
@@ -331,10 +331,10 @@ class RotkelchenServer(object):
             raise ValueError('Must provide both or neither of api key/secret')
 
         try:
-            self.rotkelchen.unlock_user(user, password, create_new, sync_approval, api_key, api_secret)
-            res['exchanges'] = self.rotkelchen.connected_exchanges
-            res['premium'] = True if hasattr(self.rotkelchen, 'premium') else False
-            res['settings'] = self.rotkelchen.data.db.get_settings()
+            self.rotkehlchen.unlock_user(user, password, create_new, sync_approval, api_key, api_secret)
+            res['exchanges'] = self.rotkehlchen.connected_exchanges
+            res['premium'] = True if hasattr(self.rotkehlchen, 'premium') else False
+            res['settings'] = self.rotkehlchen.data.db.get_settings()
         except AuthenticationError as e:
             res['result'] = False
             res['message'] = str(e)

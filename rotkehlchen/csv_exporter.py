@@ -1,6 +1,6 @@
 import os
 import csv
-from rotkelchen.utils import tsToDate, taxable_gain_for_sell
+from rotkehlchen.utils import tsToDate, taxable_gain_for_sell
 
 import logging
 logger = logging.getLogger(__name__)
@@ -329,7 +329,7 @@ class CSVExporter(object):
             timestamp=timestamp,
         )
 
-    def create_files(self, out_dir='/home/lefteris/.rotkelchen/CSV/'):
+    def create_files(self, out_dir='/home/lefteris/.rotkehlchen/CSV/'):
         if not self.create_csv:
             return
 

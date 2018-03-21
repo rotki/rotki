@@ -66,7 +66,7 @@ function form_button(prompt, id) {
 }
 
 function table_html(num_columns, id) {
-    let str = '<div class="row rotkelchen-table"><table id="'+id+'_table"><thead><tr>';
+    let str = '<div class="row rotkehlchen-table"><table id="'+id+'_table"><thead><tr>';
     for (let i = 0; i < num_columns; i++) {
         str += '<th></th>';
     }

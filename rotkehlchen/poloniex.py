@@ -8,16 +8,16 @@ import traceback
 import csv
 from urllib.parse import urlencode
 
-from rotkelchen.fval import FVal
-from rotkelchen.utils import (
+from rotkehlchen.fval import FVal
+from rotkehlchen.utils import (
     createTimeStamp,
     retry_calls,
     rlk_jsonloads,
     cache_response_timewise,
 )
-from rotkelchen.exchange import Exchange
-from rotkelchen.order_formatting import AssetMovement
-from rotkelchen.errors import PoloniexError
+from rotkehlchen.exchange import Exchange
+from rotkehlchen.order_formatting import AssetMovement
+from rotkehlchen.errors import PoloniexError
 
 import logging
 logger = logging.getLogger(__name__)

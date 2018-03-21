@@ -5,13 +5,13 @@ import re
 from urllib.request import Request, urlopen
 from json.decoder import JSONDecodeError
 
-from rotkelchen.exchange import data_up_todate
-from rotkelchen.kraken import kraken_to_world_pair
-from rotkelchen.bittrex import trade_from_bittrex
-from rotkelchen.binance import trade_from_binance
-from rotkelchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
-from rotkelchen.fval import FVal
-from rotkelchen.utils import (
+from rotkehlchen.exchange import data_up_todate
+from rotkehlchen.kraken import kraken_to_world_pair
+from rotkehlchen.bittrex import trade_from_bittrex
+from rotkehlchen.binance import trade_from_binance
+from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
+from rotkehlchen.fval import FVal
+from rotkehlchen.utils import (
     createTimeStamp,
     tsToDate,
     get_pair_position,
@@ -22,12 +22,12 @@ from rotkelchen.utils import (
     convert_to_int,
     ts_now,
 )
-from rotkelchen.order_formatting import (
+from rotkehlchen.order_formatting import (
     Trade,
     trades_from_dictlist,
     asset_movements_from_dictlist
 )
-from rotkelchen.inquirer import FIAT_CURRENCIES
+from rotkehlchen.inquirer import FIAT_CURRENCIES
 
 import logging
 logger = logging.getLogger(__name__)

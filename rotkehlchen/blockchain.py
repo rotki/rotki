@@ -4,10 +4,10 @@ from collections import defaultdict
 from gevent.lock import Semaphore
 from urllib.request import Request, urlopen
 
-from rotkelchen.errors import InputError
-from rotkelchen.ethchain import Ethchain
-from rotkelchen.fval import FVal
-from rotkelchen.utils import cache_response_timewise
+from rotkehlchen.errors import InputError
+from rotkehlchen.ethchain import Ethchain
+from rotkehlchen.fval import FVal
+from rotkehlchen.utils import cache_response_timewise
 
 import logging
 logger = logging.getLogger(__name__)
