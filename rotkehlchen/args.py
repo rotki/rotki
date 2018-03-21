@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 import argparse
-from rotkelchen.config import default_data_directory
+from rotkehlchen.config import default_data_directory
 
 
 def app_args():
     """ Parse the arguments and create and return the arguments object"""
-    p = argparse.ArgumentParser(description='Rotkelchen Crypto Portfolio Management')
+    p = argparse.ArgumentParser(description='Rotkehlchen Crypto Portfolio Management')
 
     p.add_argument(
         '--output',
@@ -46,7 +46,7 @@ def app_args():
     p.add_argument(
         '--logfile',
         help='The name of the file to write log entries to',
-        default='rotkelchen.log',
+        default='rotkehlchen.log',
     )
     p.add_argument(
         '--logtarget',

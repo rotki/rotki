@@ -3,7 +3,7 @@ import requests
 import os
 from gevent.lock import Semaphore
 
-from rotkelchen.utils import rlk_jsonloads, rlk_jsondumps
+from rotkehlchen.utils import rlk_jsonloads, rlk_jsondumps
 
 
 def data_up_todate(json_data, start_ts, end_ts):
@@ -33,7 +33,7 @@ class Exchange(object):
         self.session = requests.session()
         self.lock = Semaphore()
         self.results_cache = {}
-        self.session.headers.update({'User-Agent': 'rotkelchen'})
+        self.session.headers.update({'User-Agent': 'rotkehlchen'})
 
     def _get_cachefile_name(self, special_name=None):
         if special_name is None:
@@ -79,7 +79,7 @@ class Exchange(object):
             'ICN': {'amount': 42, 'usd_value': 1337}
         }
 
-        The name must be the canonical name used by rotkelchen
+        The name must be the canonical name used by rotkehlchen
         """
         raise NotImplementedError("query_balances should only be implemented by subclasses")
 

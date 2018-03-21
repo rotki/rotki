@@ -42,7 +42,7 @@ app.on('activate', () => {
  *************************************************************/
 
 const PY_DIST_FOLDER = 'NOTAPPPLICABLE';
-const PY_FOLDER = 'rotkelchen';
+const PY_FOLDER = 'rotkehlchen';
 const PY_MODULE = 'server'; // without .py suffix
 
 let pyProc = null;
@@ -85,7 +85,7 @@ const createPyProc = () => {
         pyProc = require('child_process').execFile(script, [port]);
     } else {
         console.log("At not packaged: script:" + script + " port: " + port);
-        pyProc = require('child_process').spawn('python', ["-m", "rotkelchen", "--zerorpc-port", port, "--ethrpc-port", "8545"]);
+        pyProc = require('child_process').spawn('python', ["-m", "rotkehlchen", "--zerorpc-port", port, "--ethrpc-port", "8545"]);
     }
 
     pyProc.on('error', (err) => {

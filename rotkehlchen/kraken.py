@@ -8,17 +8,17 @@ import base64
 import time
 from urllib.parse import urlencode
 
-from rotkelchen.utils import (
+from rotkehlchen.utils import (
     query_fiat_pair,
     retry_calls,
     rlk_jsonloads,
     convert_to_int,
     cache_response_timewise,
 )
-from rotkelchen.order_formatting import AssetMovement
-from rotkelchen.exchange import Exchange
-from rotkelchen.errors import RecoverableRequestError
-from rotkelchen.fval import FVal
+from rotkehlchen.order_formatting import AssetMovement
+from rotkehlchen.exchange import Exchange
+from rotkehlchen.errors import RecoverableRequestError
+from rotkehlchen.fval import FVal
 
 import logging
 logger = logging.getLogger(__name__)

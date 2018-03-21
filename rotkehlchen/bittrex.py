@@ -3,15 +3,15 @@ import hmac
 import hashlib
 from urllib.parse import urlencode
 
-from rotkelchen.utils import (
+from rotkehlchen.utils import (
     createTimeStamp,
     get_pair_position,
     rlk_jsonloads,
     cache_response_timewise,
 )
-from rotkelchen.exchange import Exchange
-from rotkelchen.order_formatting import Trade
-from rotkelchen.fval import FVal
+from rotkehlchen.exchange import Exchange
+from rotkehlchen.order_formatting import Trade
+from rotkehlchen.fval import FVal
 
 import logging
 logger = logging.getLogger(__name__)

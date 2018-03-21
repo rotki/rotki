@@ -5,7 +5,7 @@ error.log
 .cache/
 build/
 dist/
-Rotkelchen.egg-info/
-rotkelchen.egg-info/
+Rotkehlchen.egg-info/
+rotkehlchen.egg-info/
 .DS_Store
-rotkelchen.log
+rotkehlchen.log
