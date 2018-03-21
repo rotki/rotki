@@ -7,3 +7,5 @@ build/
 dist/
 Rotkelchen.egg-info/
 rotkelchen.egg-info/
+.DS_Store
+rotkelchen.log
