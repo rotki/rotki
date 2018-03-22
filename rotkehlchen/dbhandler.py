@@ -55,8 +55,9 @@ class DBHandler(object):
             ')'
         )
         cursor.execute(
-            'CREATE TABLE IF NOT EXISTS eth_tokens ('
-            '    token VARCHAR[24] NOT NULL PRIMARY KEY'
+            'CREATE TABLE IF NOT EXISTS multisettings ('
+            '    name VARCHAR[24] NOT NULL, value TEXT,'
+            '    UNIQUE(name, value)'
             ')'
         )
         cursor.execute(
@@ -261,11 +262,11 @@ class DBHandler(object):
         cursor = self.conn.cursor()
         # Delete previous list and write the new one
         cursor.execute(
-            'DELETE FROM eth_tokens;'
+            'DELETE FROM multisettings WHERE name="eth_token";'
         )
         cursor.executemany(
-            'INSERT INTO eth_tokens(token) VALUES (?)',
-            [(t,) for t in tokens]
+            'INSERT INTO multisettings(name,value) VALUES (?, ?)',
+            [('eth_token', t) for t in tokens]
         )
         self.conn.commit()
         self.update_last_write()
@@ -273,7 +274,7 @@ class DBHandler(object):
     def get_owned_tokens(self):
         cursor = self.conn.cursor()
         query = cursor.execute(
-            'SELECT token FROM eth_tokens;'
+            'SELECT value FROM multisettings WHERE name="eth_token";'
         )
         query = query.fetchall()
         return [q[0] for q in query]
