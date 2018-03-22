@@ -84,7 +84,7 @@ You now deserved to start Rotkehlchen:
 
 	$ npm start
 
-	
+
 ## Love it? Want to help?
 
 
