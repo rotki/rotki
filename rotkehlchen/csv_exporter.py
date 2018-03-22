@@ -8,7 +8,8 @@ logger = logging.getLogger(__name__)
 
 class CSVExporter(object):
 
-    def __init__(self, profit_currency, create_csv):
+    def __init__(self, profit_currency, user_directory, create_csv):
+        self.user_directory = user_directory
         self.profit_currency = profit_currency
         self.create_csv = create_csv
         self.reset_csv_lists()
@@ -329,10 +330,11 @@ class CSVExporter(object):
             timestamp=timestamp,
         )
 
-    def create_files(self, out_dir='/home/lefteris/.rotkehlchen/CSV/'):
+    def create_files(self):
         if not self.create_csv:
             return
 
+        out_dir = os.path.join(self.user_directory, 'CSV')
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
 

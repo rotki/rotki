@@ -1,4 +1,5 @@
 import pytest
+from tempfile import mkdtemp
 
 from rotkehlchen.accounting import Accountant
 from rotkehlchen.history import PriceHistorian, trades_from_dictlist
@@ -6,10 +7,13 @@ from rotkehlchen.errors import CorruptData
 
 
 def init_accounting_tests(history_list, margin_list, start_ts, end_ts):
-    price_historian = PriceHistorian('/home/lefteris/.rotkehlchen')
+    # TODO: This should become part of test fixtures. Also HAS to be deleted at teardown
+    user_directory = mkdtemp()
+    price_historian = PriceHistorian(user_directory)
     accountant = Accountant(
         price_historian=price_historian,
         profit_currency='EUR',
+        user_directory=user_directory,
         create_csv=False
     )
     accountant.process_history(

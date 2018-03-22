@@ -198,6 +198,7 @@ class Rotkehlchen(object):
         self.accountant = Accountant(
             price_historian=self.price_historian,
             profit_currency=self.data.main_currency(),
+            user_directory=user_dir,
             create_csv=True
         )
 

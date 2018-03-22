@@ -78,6 +78,7 @@ class Accountant(object):
             self,
             price_historian,
             profit_currency,
+            user_directory,
             create_csv,
             ignored_assets=[]):
 
@@ -88,7 +89,7 @@ class Accountant(object):
         # loan/margin settlement then profit/loss is also calculated before the entire
         # amount is taken as a loss
         self.count_profit_for_settlements = False
-        self.csvexporter = CSVExporter(profit_currency, create_csv)
+        self.csvexporter = CSVExporter(profit_currency, user_directory, create_csv)
 
         # TEMPORARY FOR TESTING. TODO: Remove
         self.temp_list = list()
