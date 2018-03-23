@@ -199,7 +199,8 @@ class Rotkehlchen(object):
             price_historian=self.price_historian,
             profit_currency=self.data.main_currency(),
             user_directory=user_dir,
-            create_csv=True
+            create_csv=True,
+            ignored_assets=self.data.db.get_ignored_assets()
         )
 
         self.inquirer = Inquirer(kraken=self.kraken)

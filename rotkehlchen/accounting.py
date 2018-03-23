@@ -80,7 +80,7 @@ class Accountant(object):
             profit_currency,
             user_directory,
             create_csv,
-            ignored_assets=[]):
+            ignored_assets):
 
         self.price_historian = price_historian
         self.set_main_currency(profit_currency)

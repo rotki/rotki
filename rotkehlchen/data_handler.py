@@ -157,6 +157,20 @@ class DataHandler(object):
     def remove_blockchain_account(self, blockchain, account):
         self.db.remove_blockchain_account(blockchain, account)
 
+    def add_ignored_asset(self, asset):
+        ignored_assets = self.db.get_ignored_assets()
+        if asset in ignored_assets:
+            return False, '%s already in ignored assets' % asset
+        self.db.add_to_ignored_assets(asset)
+        return True, ''
+
+    def remove_ignored_asset(self, asset):
+        ignored_assets = self.db.get_ignored_assets()
+        if asset not in ignored_assets:
+            return False, '%s not in ignored assets' % asset
+        self.db.remove_from_ignored_assets(asset)
+        return True, ''
+
     def set_premium_credentials(self, api_key, api_secret):
         self.db.set_rotkehlchen_premium(api_key, api_secret)
 

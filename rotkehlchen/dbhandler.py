@@ -215,6 +215,30 @@ class DBHandler(object):
                 settings[q[0]] = q[1]
         return settings
 
+    def add_to_ignored_assets(self, asset):
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'INSERT INTO multisettings(name, value) VALUES(?, ?)',
+            ('ignored_asset', asset)
+        )
+        self.conn.commit()
+
+    def remove_from_ignored_assets(self, asset):
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'DELETE FROM multisettings WHERE name="ignored_asset" AND value=?;',
+            (asset,)
+        )
+        self.conn.commit()
+
+    def get_ignored_assets(self):
+        cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT value FROM multisettings WHERE name="ignored_asset";'
+        )
+        query = query.fetchall()
+        return [q[0] for q in query]
+
     def add_multiple_balances(self, balances):
         """Execute addition of multiple balances in the DB
 

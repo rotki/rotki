@@ -312,6 +312,20 @@ class RotkehlchenServer(object):
         self.rotkehlchen.data.remove_blockchain_account(blockchain, account)
         return accounts_result(new_data['per_account'], new_data['totals'])
 
+    def get_ignored_assets(self):
+        result = {
+            'ignored_assets': self.rotkehlchen.data.db.get_ignored_assets()
+        }
+        return result
+
+    def add_ignored_asset(self, asset):
+        result, message = self.rotkehlchen.data.add_ignored_asset(asset)
+        return {'result': result, 'message': message}
+
+    def remove_ignored_asset(self, asset):
+        result, message = self.rotkehlchen.data.remove_ignored_asset(asset)
+        return {'result': result, 'message': message}
+
     def unlock_user(self, user, password, create_new, sync_approval, api_key, api_secret):
         """Either unlock an existing user or create a new one"""
         res = {'result': True, 'message': ''}

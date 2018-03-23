@@ -14,7 +14,8 @@ def init_accounting_tests(history_list, margin_list, start_ts, end_ts):
         price_historian=price_historian,
         profit_currency='EUR',
         user_directory=user_directory,
-        create_csv=False
+        create_csv=False,
+        ignored_assets=[]
     )
     accountant.process_history(
         start_ts=start_ts,
