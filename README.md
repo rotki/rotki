@@ -17,9 +17,9 @@ Get [zeromq](http://zeromq.org/) using the package manager of your distro. For e
 
 Also get [sqlcipher](https://www.zetetic.net/sqlcipher/):
 
-- If you're running Archlinux you can install the [package](https://www.archlinux.org/packages/community/x86_64/sqlcipher/) with the package manager of your distro.
+- If you're running Archlinux you can install the [package](https://www.archlinux.org/packages/community/x86_64/sqlcipher/) with `pacman`.
 
-- If you're running Ubuntu you will need to install [libsqlcipher-dev](https://packages.ubuntu.com/trusty/libdevel/libsqlcipher-dev) with the package manager of your distro instead 
+- If you're running Ubuntu you will need to install [libsqlcipher-dev](https://packages.ubuntu.com/trusty/libdevel/libsqlcipher-dev) with `apt-get` instead.
 
 Install electron and any other npm dependencies by:
 
