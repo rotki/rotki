@@ -49,6 +49,9 @@ class Blockchain(object):
         # Per asset total balances
         self.totals = defaultdict(dict)
 
+    def set_eth_rpc_port(self, port):
+        return self.ethchain.set_rpc_port(port)
+
     @property
     def eth_tokens(self):
         return self.owned_eth_tokens

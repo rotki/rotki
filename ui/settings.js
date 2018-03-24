@@ -101,6 +101,7 @@ function create_settings_ui() {
     str = form_entry('Floating Precision', 'floating_precision', settings.floating_precision, '');
     str += form_entry('Date', 'historical_data_start_date', settings.historical_data_start_date, '');
     str += form_select('Select Main Currency', 'maincurrencyselector', settings.CURRENCIES.map(x => x.ticker_symbol), settings.main_currency.ticker_symbol);
+    str += form_entry('Eth RPC Port', 'eth_rpc_port', settings.eth_rpc_port, '');
     $(str).appendTo($('.panel-body'));
 
     str = form_button('Save', 'settingssubmit');

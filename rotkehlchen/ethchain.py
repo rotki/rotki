@@ -12,13 +12,27 @@ logger = logging.getLogger(__name__)
 
 class Ethchain(object):
     def __init__(self, ethrpc_port):
-        self.connected = True
-        # Note that you should create only one RPCProvider per
-        # process, as it recycles underlying TCP/IP network connections between
-        # your process and Ethereum node
-        self.web3 = Web3(HTTPProvider('http://localhost:{}'.format(ethrpc_port)))
+        self.web3 = None
+        self.rpc_port = ethrpc_port
+        self.connected = False
+        self.attempt_connect(ethrpc_port)
+
+    def attempt_connect(self, ethrpc_port):
+        if self.rpc_port == ethrpc_port and self.connected:
+            # We are already connected
+            return True, 'Already connected to an ethereum node'
+
+        if self.web3:
+            del self.web3
+
         try:
-            self.web3.eth.blockNumber
+            self.web3 = Web3(HTTPProvider('http://localhost:{}'.format(ethrpc_port)))
+        except ConnectionError:
+            logger.warn('Could not connect to a local ethereum node. Will use etherscan only')
+            self.connected = False
+            return False, 'Failed to connect to ethereum node at port {}'.format(ethrpc_port)
+
+        if self.web3.isConnected():
             dir_path = os.path.dirname(os.path.realpath(__file__))
             with open(os.path.join(dir_path, 'data', 'token_abi.json'), 'r') as f:
                 self.token_abi = rlk_jsonloads(f.read())
@@ -31,9 +45,28 @@ class Ethchain(object):
                     'Connected to a local ethereum node but it is not on the ethereum mainnet'
                 )
                 self.connected = False
-        except ConnectionError:
+                message = 'Connected to ethereum node at port {} but it is not on the ethereum mainnet'.format(ethrpc_port)
+            self.connected = True
+            return True, ''
+        else:
             logger.warn('Could not connect to a local ethereum node. Will use etherscan only')
             self.connected = False
+            message = 'Failed to connect to ethereum node at port {}'.format(ethrpc_port)
+
+        # If we get here we did not connnect
+        return False, message
+
+    def set_rpc_port(self, port):
+        """ Attempts to set the RPC port for the ethereum client.
+
+        Returns a tuple (result, message)
+            - result: Boolean for success or failure of changing the rpc port
+            - message: A message containing information on what happened. Can
+                       be populated both in case of success or failure"""
+        result, message = self.attempt_connect(port)
+        if result:
+            self.ethrpc_port = port
+        return result, message
 
     def get_eth_balance(self, account):
         if not self.connected:
