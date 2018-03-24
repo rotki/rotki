@@ -184,7 +184,9 @@ class Rotkehlchen(object):
 
         secret_data = self.data.db.get_exchange_secrets()
         self.cache_data_filename = os.path.join(self.data_dir, 'cache_data.json')
-        historical_data_start = self.data.historical_start_date()
+        settings = self.data.db.get_settings()
+        historical_data_start = settings['historical_data_start']
+        eth_rpc_port = settings['eth_rpc_port']
         self.trades_historian = TradesHistorian(
             self.data_dir,
             self.data.db,
@@ -211,7 +213,7 @@ class Rotkehlchen(object):
             self.data.eth_tokens,
             self.data.db.get_owned_tokens(),
             self.inquirer,
-            self.args.ethrpc_port
+            eth_rpc_port
         )
 
     def set_premium_credentials(self, api_key, api_secret):
@@ -419,11 +421,24 @@ class Rotkehlchen(object):
                 self.usd_to_main_currency_rate = query_fiat_pair('USD', currency)
 
     def set_settings(self, settings):
+        message = ''
         with self.lock:
-            self.data.set_settings(settings)
-            main_currency = settings['main_currency']
-            if main_currency != 'USD':
-                self.usd_to_main_currency_rate = query_fiat_pair('USD', main_currency)
+            if 'eth_rpc_port' in settings:
+                result, msg = self.blockchain.set_eth_rpc_port(settings['eth_rpc_port'])
+                if not result:
+                    # Don't save it in the DB
+                    del settings['eth_rpc_port']
+                    message += "\nEthereum RPC port not set: " + msg
+
+            if 'main_currency' in settings:
+                main_currency = settings['main_currency']
+                if main_currency != 'USD':
+                    self.usd_to_main_currency_rate = query_fiat_pair('USD', main_currency)
+
+            self.data.set_settings(settings, self.accountant)
+
+            # Always return success but with a message
+            return True, message
 
     def usd_to_main_currency(self, amount):
         main_currency = self.data.main_currency()

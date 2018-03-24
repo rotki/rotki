@@ -10,6 +10,9 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.utils import ts_now
 from rotkehlchen.errors import AuthenticationError, InputError
 
+DEFAULT_START_DATE = "01/08/2015"
+DEFAULT_UI_FLOATING_PRECISION = 2
+
 
 def str_to_bool(s):
     return True if s == 'True' else False
@@ -211,9 +214,47 @@ class DBHandler(object):
                 settings['premium_should_sync'] = str_to_bool(q[1])
             elif q[0] == 'last_data_upload_ts':
                 settings['last_data_upload_ts'] = int(q[1])
+            elif q[0] == 'ui_floating_precision':
+                settings['ui_floating_precision'] = int(q[1])
             else:
                 settings[q[0]] = q[1]
+
+        # Populate defaults for values not in the DB yet
+        if 'historical_data_start' not in settings:
+            settings['historical_data_start'] = DEFAULT_START_DATE
+        if 'eth_rpc_port' not in settings:
+            settings['eth_rpc_port'] = '8545'
+        if 'ui_floating_precision' not in settings:
+            settings['ui_floating_precision'] = DEFAULT_UI_FLOATING_PRECISION
         return settings
+
+    def get_main_currency(self):
+        cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT value FROM settings WHERE name="main_currency";'
+        )
+        query = query.fetchall()
+        if len(query) == 0:
+            return 'USD'
+        return query[0][0]
+
+    def set_main_currency(self, currency):
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            ('main_currency', currency)
+        )
+        self.conn.commit()
+        self.update_last_write()
+
+    def set_settings(self, settings):
+        cursor = self.conn.cursor()
+        cursor.executemany(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            [setting for setting in list(settings.items())]
+        )
+        self.conn.commit()
+        self.update_last_write()
 
     def add_to_ignored_assets(self, asset):
         cursor = self.conn.cursor()

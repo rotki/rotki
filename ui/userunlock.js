@@ -4,6 +4,7 @@ require("./elements.js")();
 require("./monitor.js")();
 require("./utils.js")();
 require("./exchange.js")();
+require("./topmenu.js")();
 
 function verify_userpass(username, password) {
     if (!username) {
@@ -164,8 +165,7 @@ function unlock_user(username, password, create_true, sync_approval, api_key, ap
                     self.setTitle('Succesfull Sign In');
                     self.setContentAppend(`<div>Welcome ${username}!</div>`);
                     $('#welcome_text').html(`Welcome ${username}!`);
-                    let is_new_user = create_true && api_key == '';
-                    load_dashboard_after_unlock(response['exchanges'], is_new_user);
+
                     settings.has_premium = response['premium'];
                     let db_settings = response['settings'];
                     if ('premium_should_sync' in db_settings) {
@@ -173,6 +173,18 @@ function unlock_user(username, password, create_true, sync_approval, api_key, ap
                     } else {
                         settings.premium_should_sync = false;
                     }
+
+                    if ('main_currency' in db_settings) {
+                        let new_main = db_settings['main_currency'];
+                        get_fiat_exchange_rates([new_main]);
+                        set_ui_main_currency(new_main);
+                    }
+                    settings.floating_precision = db_settings['ui_floating_precision'];
+                    settings.historical_data_start_date = db_settings['historical_data_start_date'];
+                    settings.eth_rpc_port = db_settings['eth_rpc_port'];
+
+                    let is_new_user = create_true && api_key == '';
+                    load_dashboard_after_unlock(response['exchanges'], is_new_user);
                     GLOBAL_UNLOCK_DEFERRED = null;
                 }).progress(function(msg){
                     ask_permission(msg, username, password, create_true, api_key, api_secret);
@@ -232,7 +244,7 @@ function get_banks_total() {
             let fiat_total = get_total_asssets_value(res);
             if (fiat_total != 0.0) {
                 create_box(
-                    'banks_balance',
+                    'banks_box',
                     'fa-university',
                     fiat_total,
                     settings.main_currency.icon

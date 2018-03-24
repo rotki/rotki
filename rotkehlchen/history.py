@@ -32,7 +32,7 @@ from rotkehlchen.inquirer import FIAT_CURRENCIES
 import logging
 logger = logging.getLogger(__name__)
 
-DEFAULT_START_DATE = "01/08/2015"
+
 TRADES_HISTORYFILE = 'trades_history.json'
 MARGIN_HISTORYFILE = 'margin_trades_history.json'
 MANUAL_MARGINS_LOGFILE = 'manual_margin_positions_log.json'
@@ -217,7 +217,7 @@ def process_polo_loans(data, start_ts, end_ts):
 
 class PriceHistorian(object):
 
-    def __init__(self, data_directory, history_date_start=DEFAULT_START_DATE):
+    def __init__(self, data_directory, history_date_start):
         self.data_directory = data_directory
         # get the start date for historical data
         self.historical_data_start = createTimeStamp(history_date_start, formatstr="%d/%m/%Y")
@@ -439,14 +439,12 @@ class TradesHistorian(object):
             db,
             eth_accounts,
             historical_data_start,
-            start_date='01/11/2015',
     ):
 
         self.poloniex = None
         self.kraken = None
         self.bittrex = None
         self.binance = None
-        self.start_ts = createTimeStamp(start_date, formatstr="%d/%m/%Y")
         self.data_directory = data_directory
         self.db = db
         self.eth_accounts = eth_accounts

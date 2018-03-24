@@ -94,16 +94,6 @@ class DataHandler(object):
     def __init__(self, data_directory):
 
         self.data_directory = data_directory
-
-        try:
-            with open(os.path.join(self.data_directory, 'settings.json')) as f:
-                self.settings = rlk_jsonloads(f.read())
-        except JSONDecodeError as e:
-            logger.critical('settings.json file could not be decoded and is corrupt: {}'.format(e))
-            self.settings = empty_settings
-        except FileNotFoundError:
-            self.settings = empty_settings
-
         self.db = None
         self.eth_tokens = []
         dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -140,10 +130,7 @@ class DataHandler(object):
         return user_data_dir
 
     def main_currency(self):
-        return self.settings['main_currency']
-
-    def historical_start_date(self):
-        return self.settings.get('historical_data_start_date', DEFAULT_START_DATE)
+        return self.db.get_main_currency()
 
     def save_balances_data(self, data):
         self.db.write_balances_data(data)
@@ -175,21 +162,13 @@ class DataHandler(object):
         self.db.set_rotkehlchen_premium(api_key, api_secret)
 
     def set_main_currency(self, currency, accountant):
-        self.settings['main_currency'] = currency
         accountant.set_main_currency(currency)
-        with open(os.path.join(self.data_directory, 'settings.json'), 'w') as f:
-            f.write(rlk_jsondumps(self.settings))
-
-    def set_ui_floating_precision(self, val):
-        self.settings['ui_floating_precision'] = val
-        with open(os.path.join(self.data_directory, 'settings.json'), 'w') as f:
-            f.write(rlk_jsondumps(self.settings))
+        self.db.set_main_currency(currency)
 
     def set_settings(self, settings, accountant):
-        self.settings = settings
-        accountant.set_main_currency(settings['main_currency'])
-        with open(os.path.join(self.data_directory, 'settings.json'), 'w') as f:
-            f.write(rlk_jsondumps(self.settings))
+        if 'main_currency' in settings:
+            accountant.set_main_currency(settings['main_currency'])
+        self.db.set_settings(settings)
 
     def get_eth_accounts(self):
         blockchain_accounts = self.db.get_blockchain_accounts()

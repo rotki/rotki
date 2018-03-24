@@ -7,6 +7,7 @@ require("./exchange.js")();
 require("./balances_table.js")();
 require("./navigation.js")();
 require("./userunlock.js")();
+require("./topmenu.js")();
 
 function add_exchange_on_click() {
     $('.panel a').click(function(event) {
@@ -77,29 +78,6 @@ function create_box (id, icon, number, currency_icon) {
     settings.page_index = $('#page-wrapper').html();
 }
 
-function set_ui_main_currency(currency_ticker_symbol) {
-    var currency = null;
-    for (let i = 0; i < settings.CURRENCIES.length; i ++) {
-        if (currency_ticker_symbol == settings.CURRENCIES[i].ticker_symbol) {
-            currency = settings.CURRENCIES[i];
-            break;
-        }
-    }
-
-    if (!currency) {
-        throw "Invalid currency " + currency_ticker_symbol + " requested at set_ui_main_currency";
-    }
-
-    $('#current-main-currency').removeClass().addClass('fa ' + currency.icon + ' fa-fw');
-    settings.main_currency = currency;
-
-    reload_boxes_after_currency_change(currency);
-    // also adjust tables if they exist
-    reload_balance_table_if_existing();
-    reload_exchange_tables_if_existing();
-    reload_usersettings_tables_if_existing();
-}
-
 
 
 var alert_id = 0;
@@ -130,60 +108,13 @@ function add_currency_dropdown(currency) {
     });
 }
 
-function get_fiat_exchange_rates(currencies) {
-    client.invoke("get_fiat_exchange_rates", currencies, (error, res) => {
-        if (error || res == null) {
-            showError('Connectivity Error', 'Failed to acquire fiat to USD exchange rates: ' + error);
-            return;
-        }
-        console.log("get_fiat_exchange_rates for " + currencies + " returned okay");
-        let rates = res['exchange_rates'];
-        for (let asset in rates) {
-            if(rates.hasOwnProperty(asset)) {
-                settings.usd_to_fiat_exchange_rates[asset] = parseFloat(rates[asset]);
-            }
-        }
-
-        // something noticed is that if a zero rpc call from node to python happens
-        // within very close proximity to another one with the same function then
-        // it's very possible one will timeout with heartbear error. That is why
-        // we call the full exchange rate update here after we get the main
-        // currency exchange rate
-        if (currencies) {
-            get_fiat_exchange_rates(); // for all currencies
-        }
-    });
-}
-
-function get_settings() {
-    client.invoke("get_settings", (error, res) => {
-        if (error || res == null) {
-            startup_error(
-                "get_settings response was: " + res + " and error: " + error,
-                "get_settings RPC failed"
-            );
-        } else {
-            console.log("server is ready");
-            // even though we called to get rates at start we need to make at
-            // least 1 call for only the main currency usd rate to be ready asap
-            get_fiat_exchange_rates([res['main_currency']]);
-            set_ui_main_currency(res['main_currency']);
-            // set the other settings
-            settings.floating_precision = res['ui_floating_precision'];
-            settings.historical_data_start_date = res['historical_data_start_date'];
-
-            $("body").removeClass("loading");
-            prompt_sign_in();
-        }
-    });
-}
-
 function create_or_reload_dashboard() {
     change_location('index');
     if (!settings.page_index) {
         $("body").addClass("loading");
         console.log("At create/reload, with a null page index");
-        get_settings();
+        $("body").removeClass("loading");
+        prompt_sign_in();
     } else {
         console.log("At create/reload, with a Populated page index");
         $('#page-wrapper').html('');
@@ -194,27 +125,6 @@ function create_or_reload_dashboard() {
     }
 }
 
-function* iterate_saved_balances() {
-    let saved_balances = total_balances_get();
-    for (var location in saved_balances) {
-        if (saved_balances.hasOwnProperty(location)) {
-            let total = get_total_asssets_value(saved_balances[location]);
-            if (settings.EXCHANGES.indexOf(location) >= 0) {
-                yield [location, total, null];
-            } else {
-                let icon;
-                if (location == 'blockchain') {
-                    icon = 'fa-hdd-o';
-                } else if (location == 'banks') {
-                    icon = 'fa-university';
-                } else {
-                    throw 'Invalid location at dashboard box from saved balance creation';
-                }
-                yield [location, total, icon];
-            }
-        }
-    }
-}
 
 function create_dashboard_from_saved_balances() {
     // must only be called if we are at index
@@ -235,24 +145,6 @@ function create_dashboard_from_saved_balances() {
                 total,
                 settings.main_currency.icon
             );
-        }
-    }
-}
-
-function reload_boxes_after_currency_change(currency) {
-    // must only be called if we are at index
-    for (let result of iterate_saved_balances()) {
-        let location = result[0];
-        let total = result[1];
-        let icon = result[2];
-        let number = format_currency_value(total);
-        if (settings.EXCHANGES.indexOf(location) >= 0) {
-            $('#'+location+'_box div.huge').html(number);
-            $('#'+location+'_box i#currencyicon').removeClass().addClass('fa ' + currency.icon + ' fa-fw');
-        } else {
-            $('#'+location+' div.huge').html(number);
-            $('#'+location+' div.huge').html(number);
-            $('#'+location+' i#currencyicon').removeClass().addClass('fa ' + currency.icon + ' fa-fw');
         }
     }
 }
@@ -300,7 +192,7 @@ function init_dashboard() {
         let total = get_total_asssets_value(result['totals']);
         if (total != 0.0) {
             create_box(
-                'blockchain_balance',
+                'blockchain_box',
                 'fa-hdd-o',
                 total,
                 settings.main_currency.icon
@@ -317,6 +209,7 @@ module.exports = function() {
     this.add_currency_dropdown = add_currency_dropdown;
     this.create_or_reload_dashboard = create_or_reload_dashboard;
     this.init_dashboard = init_dashboard;
+    this.set_ui_main_currency = set_ui_main_currency;
 };
 
 

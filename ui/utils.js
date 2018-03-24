@@ -1,6 +1,7 @@
 var fs = require('fs');
 var Tail = require('tail').Tail;
 var settings = require("./settings.js")();
+require("./balances_table.js")();
 
 function utc_now() {
     return Math.floor(Date.now() / 1000);
@@ -178,7 +179,6 @@ function unsuggest_element(selector) {
 function suggest_element(selector, state_to_set) {
     settings.start_suggestion = state_to_set;
     $(selector).pulsate({
-        // color: $(this).css("background-color"), // set the color of the pulse
         color: "#e45325", // set the color of the pulse
         reach: 20,                              // how far the pulse goes in px
         speed: 1000,                            // how long one pulse takes in ms
@@ -206,6 +206,54 @@ function get_total_asssets_value(asset_dict) {
     return value;
 }
 
+function get_fiat_exchange_rates(currencies) {
+    client.invoke("get_fiat_exchange_rates", currencies, (error, res) => {
+        if (error || res == null) {
+            showError('Connectivity Error', 'Failed to acquire fiat to USD exchange rates: ' + error);
+            return;
+        }
+        console.log("get_fiat_exchange_rates for " + currencies + " returned okay");
+        let rates = res['exchange_rates'];
+        for (let asset in rates) {
+            if(rates.hasOwnProperty(asset)) {
+                settings.usd_to_fiat_exchange_rates[asset] = parseFloat(rates[asset]);
+            }
+        }
+
+        // something noticed is that if a zero rpc call from node to python happens
+        // within very close proximity to another one with the same function then
+        // it's very possible one will timeout with heartbear error. That is why
+        // we call the full exchange rate update here after we get the main
+        // currency exchange rate
+        if (currencies) {
+            get_fiat_exchange_rates(); // for all currencies
+        }
+    });
+}
+
+function* iterate_saved_balances() {
+    let saved_balances = total_balances_get();
+    for (var location in saved_balances) {
+        if (saved_balances.hasOwnProperty(location)) {
+            let total = get_total_asssets_value(saved_balances[location]);
+            if (settings.EXCHANGES.indexOf(location) >= 0) {
+                yield [location, total, null];
+            } else {
+                let icon;
+                if (location == 'blockchain') {
+                    icon = 'fa-hdd-o';
+                } else if (location == 'banks') {
+                    icon = 'fa-university';
+                } else {
+                    throw 'Invalid location at dashboard box from saved balance creation';
+                }
+                yield [location, total, icon];
+            }
+        }
+    }
+}
+
+
 module.exports = function() {
     this.utc_now = utc_now;
     this.timestamp_to_date = timestamp_to_date;
@@ -223,4 +271,6 @@ module.exports = function() {
     this.suggest_element = suggest_element;
     this.unsuggest_element = unsuggest_element;
     this.suggest_element_until_click = suggest_element_until_click;
+    this.get_fiat_exchange_rates = get_fiat_exchange_rates;
+    this.iterate_saved_balances = iterate_saved_balances;
 };

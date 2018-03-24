@@ -85,7 +85,7 @@ const createPyProc = () => {
         pyProc = require('child_process').execFile(script, [port]);
     } else {
         console.log("At not packaged: script:" + script + " port: " + port);
-        pyProc = require('child_process').spawn('python', ["-m", "rotkehlchen", "--zerorpc-port", port, "--ethrpc-port", "8545"]);
+        pyProc = require('child_process').spawn('python', ["-m", "rotkehlchen", "--zerorpc-port", port]);
     }
 
     pyProc.on('error', (err) => {

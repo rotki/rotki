@@ -100,8 +100,8 @@ class RotkehlchenServer(object):
         self.rotkehlchen.set_main_currency(currency_text)
 
     def set_settings(self, settings):
-        self.rotkehlchen.set_settings(settings)
-        return True
+        result, message = self.rotkehlchen.set_settings(settings)
+        return {'result': result, 'message': message}
 
     def get_total_in_usd(self, balances):
         total = 0
@@ -162,13 +162,7 @@ class RotkehlchenServer(object):
         return process_result(res)
 
     def get_settings(self):
-        settings = self.rotkehlchen.get_settings()
-        res = {
-            'main_currency': self.rotkehlchen.data.main_currency(),
-            'ui_floating_precision': settings['ui_floating_precision'],
-            'historical_data_start_date': settings['historical_data_start_date'],
-        }
-        return process_result(res)
+        return process_result(self.rotkehlchen.data.db.get_settings())
 
     def remove_exchange(self, name):
         result, message = self.rotkehlchen.remove_exchange(name)

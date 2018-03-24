@@ -71,10 +71,12 @@ function add_settings_listeners() {
             }
         }
 
+        let eth_rpc_port = $('#eth_rpc_port').val();
         let send_payload = {
-                "ui_floating_precision": settings.floating_precision,
-                "historical_data_start_date": settings.historical_data_start_date,
-                "main_currency": main_currency
+            'ui_floating_precision': settings.floating_precision,
+            'historical_data_start_date': settings.historical_data_start_date,
+            'main_currency': main_currency,
+            'eth_rpc_port': eth_rpc_port
 
         };
         // and now send the data to the python process
@@ -83,10 +85,19 @@ function add_settings_listeners() {
             send_payload,
             (error, res) => {
                 if (error || res == null) {
-                    console.log("Error at setting settings: " + error);
-                } else {
-                    console.log("Set settings returned " + res);
+                    showError('Settings Error', 'Error at modifying settings: ' + error);
+                    return;
                 }
+                if (!res['result']) {
+                    showError('Settings Error', 'Error at modifying settings: ' + res['message']);
+                    return;
+                }
+
+                message = 'Succesfully modified settings.';
+                if ('message' in res && res['message'] != '') {
+                    message = ' ' + message + res['message'];
+                }
+                showInfo('Success', message);
         });
     });
 
@@ -131,6 +142,7 @@ module.exports = function() {
         settings.has_premium = false;
         settings.premium_should_sync = false;
         settings.start_suggestion = 'inactive';
+        settings.eth_rpc_port = '8545';
     }
     this.get_value_in_main_currency = get_value_in_main_currency;
     this.assert_exchange_exists = assert_exchange_exists;
