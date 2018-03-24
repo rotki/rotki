@@ -25,13 +25,6 @@ logger = logging.getLogger(__name__)
 DEFAULT_START_DATE = "01/08/2015"
 STATS_FILE = "value.txt"
 
-empty_settings = {
-    'ui_floating_precision': 2,
-    'main_currency': 'EUR',
-    'historical_data_start_date': DEFAULT_START_DATE,
-}
-
-
 otc_fields = [
     'otc_time',
     'otc_pair',

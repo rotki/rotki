@@ -63,7 +63,7 @@ function add_settings_listeners() {
     $('#settingssubmit').click(function(event) {
         event.preventDefault();
         settings.floating_precision = $('#floating_precision').val();
-        settings.historical_data_start_date = $('#historical_data_start_date').val();
+        settings.historical_data_start = $('#historical_data_start').val();
         let main_currency = $('#maincurrencyselector').val();
         for (let i = 0; i < settings.CURRENCIES.length; i++) {
             if (main_currency == settings.CURRENCIES[i].ticker_symbol) {
@@ -74,7 +74,7 @@ function add_settings_listeners() {
         let eth_rpc_port = $('#eth_rpc_port').val();
         let send_payload = {
             'ui_floating_precision': settings.floating_precision,
-            'historical_data_start_date': settings.historical_data_start_date,
+            'historical_data_start': settings.historical_data_start,
             'main_currency': main_currency,
             'eth_rpc_port': eth_rpc_port
 
@@ -101,7 +101,7 @@ function add_settings_listeners() {
         });
     });
 
-    $('#historical_data_start_date').datetimepicker({timepicker:false});
+    $('#historical_data_start').datetimepicker({timepicker:false});
 }
 
 function create_settings_ui() {
@@ -110,7 +110,7 @@ function create_settings_ui() {
     $('#page-wrapper').html(str);
 
     str = form_entry('Floating Precision', 'floating_precision', settings.floating_precision, '');
-    str += form_entry('Date', 'historical_data_start_date', settings.historical_data_start_date, '');
+    str += form_entry('Date', 'historical_data_start', settings.historical_data_start, '');
     str += form_select('Select Main Currency', 'maincurrencyselector', settings.CURRENCIES.map(x => x.ticker_symbol), settings.main_currency.ticker_symbol);
     str += form_entry('Eth RPC Port', 'eth_rpc_port', settings.eth_rpc_port, '');
     $(str).appendTo($('.panel-body'));
@@ -130,7 +130,7 @@ module.exports = function() {
         settings.default_currency = currencies[0];
         settings.main_currency = currencies[0];
         settings.floating_precision = 2;
-        settings.historical_data_start_date = "01/08/2015";
+        settings.historical_data_start = "01/08/2015";
         settings.current_location = null;
         settings.page_index = null;
         settings.page_settings = null;

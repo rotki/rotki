@@ -180,7 +180,7 @@ function unlock_user(username, password, create_true, sync_approval, api_key, ap
                         set_ui_main_currency(new_main);
                     }
                     settings.floating_precision = db_settings['ui_floating_precision'];
-                    settings.historical_data_start_date = db_settings['historical_data_start_date'];
+                    settings.historical_data_start = db_settings['historical_data_start'];
                     settings.eth_rpc_port = db_settings['eth_rpc_port'];
 
                     let is_new_user = create_true && api_key == '';
