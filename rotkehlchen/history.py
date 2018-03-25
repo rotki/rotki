@@ -293,14 +293,19 @@ class PriceHistorian(object):
             )
 
         cache_key = from_asset + '_' + to_asset
-        if cache_key in self.price_history and self.price_history[cache_key]['end_time'] > timestamp:
+        got_cached_value = (
+            cache_key in self.price_history and
+            self.price_history[cache_key]['start_time'] <= timestamp and
+            self.price_history[cache_key]['end_time'] > timestamp
+        )
+        if got_cached_value:
             return self.price_history[cache_key]['data']
 
         now_ts = int(time.time())
         cryptocompare_hourquerylimit = 2000
         calculated_history = list()
 
-        end_date = self.historical_data_start
+        end_date = self.historical_data_start if self.historical_data_start <= timestamp else timestamp
         while True:
             pr_end_date = end_date
             end_date = end_date + (cryptocompare_hourquerylimit) * 3600
