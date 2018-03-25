@@ -600,7 +600,8 @@ class DBHandler(object):
         for result in results:
             trades.append({
                 'id': result[0],
-                'time': result[1],
+                # At the moment all trades have "timestamp" and not time
+                'timestamp': result[1],
                 'location': result[2],
                 'pair': result[3],
                 'type': result[4],

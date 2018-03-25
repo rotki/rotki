@@ -30,8 +30,8 @@ function format (d) {
 
 function edit_otc_trade(row) {
     let data = row.data();
-    let ts = timestamp_to_date(data.time);
-    $('#otc_time').val(ts);
+    let ts = timestamp_to_date(data.timestamp);
+    $('#otc_timestamp').val(ts);
     $('#otc_pair').val(data.pair);
     $('#otc_type').val(data.type);
     $('#otc_amount').val(data.amount);
@@ -43,7 +43,7 @@ function edit_otc_trade(row) {
 
     CURRENT_TRADE = {
         'id': data.id,
-        'time': ts,
+        'timestamp': ts,
         'pair': data.pair,
         'trade_type': data.type,
         'amount': data.amount,
@@ -81,7 +81,7 @@ function reload_table_data() {
         if (error || result == null) {
             console.log("Error at querying OTC trades: " + error);
         } else {
-            update_valhtml('#otc_time', '');
+            update_valhtml('#otc_timestamp', '');
             update_valhtml('#otc_pair', '');
             update_valhtml('#otc_amount', '');
             update_valhtml('#otc_rate', '');
@@ -133,7 +133,7 @@ function create_otctrades_table() {
                             }
                             return timestamp_to_date(data);
                         },
-                        "data": "time"
+                        "data": "timestamp"
                     },
                 ],
                 "order": [[5, 'asc']],
@@ -148,8 +148,8 @@ function create_otctrades_ui() {
     str += '<div class="row"><div class="col-lg-12"><div class="panel panel-default"><div class="panel-heading">Register New Trade</div><div class="panel-body"></div></div></div></div>';
     $('#page-wrapper').html(str);
 
-    str = form_entry('time', 'otc_time', '', 'Time that the trade took place');
-    str += form_entry('pair', 'otc_pair', '', 'Asset pair for the trade');
+    str = form_entry('time', 'otc_timestamp', '', 'Time that the trade took place');
+    str += form_entry('pair', 'otc_pair', '', 'Pair for the trade. BASECURRENCY_QUOTE_CURRENCY');
     str += form_select('trade type', 'otc_type', ['buy', 'sell'], '');
     str += form_entry('amount', 'otc_amount', '', 'Amount bought/sold');
     str += form_entry('rate', 'otc_rate', '', 'Rate of the trade');
@@ -175,7 +175,7 @@ function add_otctrades_listeners() {
     }
     $('#otctradesubmit').click(function(event) {
         event.preventDefault();
-        let otc_time = $('#otc_time').val();
+        let otc_timestamp = $('#otc_timestamp').val();
         let otc_pair = $('#otc_pair').val();
         let otc_type = $('#otc_type').val();
         let otc_amount = $('#otc_amount').val();
@@ -190,7 +190,7 @@ function add_otctrades_listeners() {
         }
         let payload = {
             'otc_id': trade_id,
-            'otc_time': otc_time,
+            'otc_timestamp': otc_timestamp,
             'otc_pair': otc_pair,
             'otc_type': otc_type,
             'otc_amount': otc_amount,
@@ -229,7 +229,7 @@ function add_otctrades_listeners() {
             });
 
     });
-    $('#otc_time').datetimepicker({
+    $('#otc_timestamp').datetimepicker({
         format: settings.datetime_format
     });
     // Add event listener for opening and closing details

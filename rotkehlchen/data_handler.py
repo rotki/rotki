@@ -26,7 +26,7 @@ DEFAULT_START_DATE = "01/08/2015"
 STATS_FILE = "value.txt"
 
 otc_fields = [
-    'otc_time',
+    'otc_timestamp',
     'otc_pair',
     'otc_type',
     'otc_amount',
@@ -75,7 +75,7 @@ def check_otctrade_data_valid(data):
         return None, 'Trade type can only be buy or sell'
 
     try:
-        timestamp = createTimeStamp(data['otc_time'], formatstr='%d/%m/%Y %H:%M')
+        timestamp = createTimeStamp(data['otc_timestamp'], formatstr='%d/%m/%Y %H:%M')
     except ValueError as e:
         return None, 'Could not process the given datetime: {}'.format(e)
 

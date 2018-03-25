@@ -387,8 +387,8 @@ class PriceHistorian(object):
 
         # all data are sorted and timestamps are always increasing by 1 hour
         # find the closest entry to the provided timestamp
-        # print("loaded {}_{}".format(from_asset, to_asset))
         assert timestamp > data[0]['time']
+
         index = convert_to_int((timestamp - data[0]['time']) / 3600, accept_only_exact=False)
         # print("timestamp: {} index: {} data_length: {}".format(timestamp, index, len(data)))
         diff = abs(data[index]['time'] - timestamp)
@@ -420,7 +420,7 @@ class PriceHistorian(object):
                     query_string += '&tryConversion=false'
                 resp = urlopen(Request(query_string))
                 resp = rlk_jsonloads(resp.read())
-                print('DAILY PRICE OF ASSET: "{}"'.format(resp))
+
                 if from_asset not in resp:
                     error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
                     raise ValueError(error_message)

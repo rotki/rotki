@@ -1,5 +1,6 @@
 from collections import namedtuple
 from rotkehlchen.fval import FVal
+from rotkehlchen.utils import get_pair_position
 
 Events = namedtuple('Events', ('buys', 'sells'))
 BuyEvent = namedtuple(
@@ -76,16 +77,28 @@ def trades_from_dictlist(given_trades, start_ts, end_ts):
         if given_trade['timestamp'] > end_ts:
             break
 
+        pair = given_trade['pair']
+        rate = FVal(given_trade['rate'])
+        amount = FVal(given_trade['amount'])
+        # Slowly trying to make cost go away as it can be calculated anyway
+        if 'cost' not in given_trade:
+            cost = rate * amount
+            # Cost is always on the quote currency
+            cost_currency = get_pair_position(pair, 'second')
+        else:
+            cost = FVal(given_trade['cost'])
+            cost_currency = given_trade['cost_currency']
+
         returned_trades.append(Trade(
             timestamp=given_trade['timestamp'],
-            pair=given_trade['pair'],
+            pair=pair,
             type=given_trade['type'],
-            rate=FVal(given_trade['rate']),
-            cost=FVal(given_trade['cost']),
-            cost_currency=given_trade['cost_currency'],
+            rate=rate,
+            cost=cost,
+            cost_currency=cost_currency,
             fee=FVal(given_trade['fee']),
             fee_currency=given_trade['fee_currency'],
-            amount=FVal(given_trade['amount']),
+            amount=amount,
             location=given_trade['location']
         ))
     return returned_trades

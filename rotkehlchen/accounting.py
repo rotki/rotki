@@ -103,7 +103,8 @@ class Accountant(object):
         self.profit_currency = currency
 
     def query_historical_price(self, from_asset, to_asset, timestamp):
-        return self.price_historian.query_historical_price(from_asset, to_asset, timestamp)
+        price = self.price_historian.query_historical_price(from_asset, to_asset, timestamp)
+        return price
 
     def get_rate_in_profit_currency(self, asset, timestamp):
         if asset == self.profit_currency:
@@ -335,6 +336,8 @@ class Accountant(object):
                 bought_asset_rate_in_profit_currency = -1
 
             if bought_asset_rate_in_profit_currency != -1:
+                # The asset bought does not have a price yet
+                # Can happen for Token sales, presales e.t.c.
                 with_bought_asset_gain = bought_asset_rate_in_profit_currency * bought_amount
                 receiving_asset = bought_asset
                 receiving_amount = bought_amount
