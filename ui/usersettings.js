@@ -331,7 +331,13 @@ function create_user_settings() {
         disable_key_entries('', 'exchange', first_value);
     }
 
-    str = form_select('Modify Balance', 'fiat_type_entry', settings.CURRENCIES.map(x=>x.ticker_symbol), settings.main_currency.ticker_symbol);
+    let fiat_prompt_option = 'Click to Select Fiat Balance to Modify';
+    str = form_select(
+        'Modify Balance',
+        'fiat_type_entry',
+        [fiat_prompt_option].concat(settings.CURRENCIES.map(x=>x.ticker_symbol)),
+        fiat_prompt_option,
+    );
     str += form_entry('Balance', 'fiat_value_entry', '', '');
     str += form_button('Modify', 'modify_fiat_button');
 
