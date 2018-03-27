@@ -29,9 +29,6 @@ CREATE TABLE timed_location_data (
 
 INSERT INTO timed_location_data (time, location, usd_value)
 SELECT time, location, usd_value FROM _timed_location_data;
-INSERT INTO timed_location_data (time, location, usd_value)
-SELECT time, 'total', net_usd FROM timed_unique_data;
-DROP TABLE timed_unique_data;
 DROP TABLE _timed_location_data;
 
 

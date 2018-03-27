@@ -45,11 +45,6 @@ class DBHandler(object):
             ')'
         )
         cursor.execute(
-            'CREATE TABLE IF NOT EXISTS timed_unique_data ('
-            '    time INTEGER, net_usd TEXT'
-            ')'
-        )
-        cursor.execute(
             'CREATE TABLE IF NOT EXISTS user_credentials ('
             '    name VARCHAR[24] NOT NULL PRIMARY KEY, api_key TEXT, api_secret TEXT'
             ')'
