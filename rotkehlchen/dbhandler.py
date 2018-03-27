@@ -9,6 +9,7 @@ from rotkehlchen.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils import ts_now
 from rotkehlchen.errors import AuthenticationError, InputError
+from rotkehlchen.dbutils import DB_SCRIPT_REIMPORT_DATA
 
 DEFAULT_START_DATE = "01/08/2015"
 DEFAULT_UI_FLOATING_PRECISION = 2
@@ -32,19 +33,20 @@ class DBHandler(object):
         try:
             cursor.execute(
                 'CREATE TABLE IF NOT EXISTS timed_balances ('
-                '    time INTEGER, currency VARCHAR[12], amount DECIMAL, usd_value DECIMAL'
+                '    time INTEGER, currency VARCHAR[12], amount TEXT, usd_value TEXT'
                 ')'
             )
         except sqlcipher.DatabaseError:
             raise AuthenticationError('Wrong password while decrypting the database')
+
         cursor.execute(
             'CREATE TABLE IF NOT EXISTS timed_location_data ('
-            '    time INTEGER, location VARCHAR[24], usd_value DECIMAL'
+            '    time INTEGER, location VARCHAR[24], usd_value TEXT'
             ')'
         )
         cursor.execute(
             'CREATE TABLE IF NOT EXISTS timed_unique_data ('
-            '    time INTEGER, net_usd DECIMAL'
+            '    time INTEGER, net_usd TEXT'
             ')'
         )
         cursor.execute(
@@ -65,7 +67,7 @@ class DBHandler(object):
         )
         cursor.execute(
             'CREATE TABLE IF NOT EXISTS current_balances ('
-            '    asset VARCHAR[24] NOT NULL PRIMARY KEY, amount DECIMAL'
+            '    asset VARCHAR[24] NOT NULL PRIMARY KEY, amount TEXT'
             ')'
         )
         cursor.execute(
@@ -75,9 +77,9 @@ class DBHandler(object):
             '    location VARCHAR[24],'
             '    pair VARCHAR[24],'
             '    type VARCHAR[3],'
-            '    amount DECIMAL,'
-            '    rate DECIMAL,'
-            '    fee DECIMAL,'
+            '    amount TEXT,'
+            '    rate TEXT,'
+            '    fee TEXT,'
             '    fee_currency VARCHAR[6],'
             '    link TEXT,'
             '    notes TEXT'
@@ -103,6 +105,12 @@ class DBHandler(object):
 
     def disconnect(self):
         self.conn.close()
+
+    def reimport_all_tables(self):
+        """Useful only when some table's column data type was modified and you
+        need to re-import all data. Should only be used if you know what you are
+        doing. For normal database upgrades the proper scripts should be used"""
+        self.conn.executescript(DB_SCRIPT_REIMPORT_DATA)
 
     def export_unencrypted(self, temppath):
         self.conn.executescript(
