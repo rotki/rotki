@@ -9,6 +9,7 @@ from rotkehlchen.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils import ts_now
 from rotkehlchen.errors import AuthenticationError, InputError
+from .utils import DB_SCRIPT_CREATE_TABLES, DB_SCRIPT_REIMPORT_DATA
 
 DEFAULT_START_DATE = "01/08/2015"
 DEFAULT_UI_FLOATING_PRECISION = 2
@@ -28,67 +29,12 @@ class DBHandler(object):
     def __init__(self, user_data_dir, username, password):
         self.user_data_dir = user_data_dir
         self.connect(password)
-        cursor = self.conn.cursor()
         try:
-            cursor.execute(
-                'CREATE TABLE IF NOT EXISTS timed_balances ('
-                '    time INTEGER, currency VARCHAR[12], amount DECIMAL, usd_value DECIMAL'
-                ')'
-            )
+            self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
         except sqlcipher.DatabaseError:
             raise AuthenticationError('Wrong password while decrypting the database')
-        cursor.execute(
-            'CREATE TABLE IF NOT EXISTS timed_location_data ('
-            '    time INTEGER, location VARCHAR[24], usd_value DECIMAL'
-            ')'
-        )
-        cursor.execute(
-            'CREATE TABLE IF NOT EXISTS timed_unique_data ('
-            '    time INTEGER, net_usd DECIMAL'
-            ')'
-        )
-        cursor.execute(
-            'CREATE TABLE IF NOT EXISTS user_credentials ('
-            '    name VARCHAR[24] NOT NULL PRIMARY KEY, api_key TEXT, api_secret TEXT'
-            ')'
-        )
-        cursor.execute(
-            'CREATE TABLE IF NOT EXISTS blockchain_accounts ('
-            '    blockchain VARCHAR[24], account TEXT NOT NULL PRIMARY KEY'
-            ')'
-        )
-        cursor.execute(
-            'CREATE TABLE IF NOT EXISTS multisettings ('
-            '    name VARCHAR[24] NOT NULL, value TEXT,'
-            '    UNIQUE(name, value)'
-            ')'
-        )
-        cursor.execute(
-            'CREATE TABLE IF NOT EXISTS current_balances ('
-            '    asset VARCHAR[24] NOT NULL PRIMARY KEY, amount DECIMAL'
-            ')'
-        )
-        cursor.execute(
-            'CREATE TABLE IF NOT EXISTS trades ('
-            '    id INTEGER PRIMARY KEY ASC,'
-            '    time INTEGER,'
-            '    location VARCHAR[24],'
-            '    pair VARCHAR[24],'
-            '    type VARCHAR[3],'
-            '    amount DECIMAL,'
-            '    rate DECIMAL,'
-            '    fee DECIMAL,'
-            '    fee_currency VARCHAR[6],'
-            '    link TEXT,'
-            '    notes TEXT'
-            ')'
-        )
-        cursor.execute(
-            'CREATE TABLE IF NOT EXISTS settings ('
-            '  name VARCHAR[24] NOT NULL PRIMARY KEY, value TEXT,'
-            '  UNIQUE(name, value)'
-            ')'
-        )
+
+        cursor = self.conn.cursor()
         cursor.execute(
             'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
             ('version', str(ROTKEHLCHEN_DB_VERSION))
@@ -103,6 +49,12 @@ class DBHandler(object):
 
     def disconnect(self):
         self.conn.close()
+
+    def reimport_all_tables(self):
+        """Useful only when some table's column data type was modified and you
+        need to re-import all data. Should only be used if you know what you are
+        doing. For normal database upgrades the proper scripts should be used"""
+        self.conn.executescript(DB_SCRIPT_REIMPORT_DATA)
 
     def export_unencrypted(self, temppath):
         self.conn.executescript(
@@ -310,15 +262,6 @@ class DBHandler(object):
         self.conn.commit()
         self.update_last_write()
 
-    def add_timed_unique_data(self, time, net_usd):
-        cursor = self.conn.cursor()
-        cursor.execute(
-            'INSERT INTO timed_unique_data(time, net_usd) VALUES (?, ?)',
-            (time, net_usd)
-        )
-        self.conn.commit()
-        self.update_last_write()
-
     def write_owned_tokens(self, tokens):
         """Execute addition of multiple tokens in the DB
 
@@ -437,10 +380,10 @@ class DBHandler(object):
             locations.append((
                 ts, key, str(val['usd_value'])
             ))
+        locations.append((ts, 'total', str(data['net_usd'])))
 
         self.add_multiple_balances(balances)
         self.add_multiple_location_data(locations)
-        self.add_timed_unique_data(ts, str(data['net_usd']))
 
     def add_exchange(self, name, api_key, api_secret):
         if name not in SUPPORTED_EXCHANGES:
