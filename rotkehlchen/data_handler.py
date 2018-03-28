@@ -16,7 +16,7 @@ from rotkehlchen.utils import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import FIAT_CURRENCIES
-from rotkehlchen.dbhandler import DBHandler
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import AuthenticationError
 
 import logging

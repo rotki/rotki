@@ -72,7 +72,6 @@ CREATE TABLE IF NOT EXISTS settings (
 
 DB_SCRIPT_REIMPORT_DATA = """
 PRAGMA foreign_keys=off;
-
 BEGIN TRANSACTION;
 
 ALTER TABLE timed_balances RENAME TO _timed_balances;
@@ -159,13 +158,10 @@ PRAGMA foreign_keys=on;
     DB_CREATE_SETTINGS
 )
 
-
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-
 {}{}{}{}{}{}{}{}
-
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
