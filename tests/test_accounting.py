@@ -5,11 +5,13 @@ from rotkehlchen.accounting import Accountant
 from rotkehlchen.history import PriceHistorian, trades_from_dictlist
 from rotkehlchen.errors import CorruptData
 
+TEST_HISTORY_DATA_START = "01/01/2015"
+
 
 def init_accounting_tests(history_list, margin_list, start_ts, end_ts):
     # TODO: This should become part of test fixtures. Also HAS to be deleted at teardown
     user_directory = mkdtemp()
-    price_historian = PriceHistorian(user_directory)
+    price_historian = PriceHistorian(user_directory, TEST_HISTORY_DATA_START)
     accountant = Accountant(
         price_historian=price_historian,
         profit_currency='EUR',
