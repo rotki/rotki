@@ -1,0 +1,32 @@
+dist: trusty
+sudo: true
+language: generic
+
+
+jobs:
+  include:
+    - language: python
+      python: '3.6'
+      env:
+        - TEST_TYPE=rotkehlchen
+
+      cache:
+        pip: true
+        directories:
+          - $HOME/.cache/pip
+
+      before_install:
+            - mkdir -p $HOME/.bin
+            - export PATH=$PATH:$HOME/.bin
+
+      install:
+        - pip install -U pip wheel coveralls "coverage<4.4"
+        - pip install pytest-travis-fold
+        - pip install flake8
+        - pip install -r requirements.txt
+
+      before_script:
+        - flake8 rotkehlchen/
+
+      script:
+        - coverage run --source rotkehlchen/ -m pytest --travis-fold=always $TEST_TYPE
