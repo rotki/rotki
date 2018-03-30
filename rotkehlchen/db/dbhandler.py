@@ -298,6 +298,16 @@ class DBHandler(object):
 
     def remove_blockchain_account(self, blockchain, account):
         cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT COUNT(*) from blockchain_accounts WHERE '
+            'blockchain = ? and account = ?;', (blockchain, account)
+        )
+        query = query.fetchall()
+        if query[0][0] == 0:
+            raise InputError(
+                'Tried to remove non-existing {} account {}'.format(blockchain, account)
+            )
+
         cursor.execute(
             'DELETE FROM blockchain_accounts WHERE '
             'blockchain = ? and account = ?;', (blockchain, account)

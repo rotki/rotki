@@ -435,7 +435,9 @@ class Rotkehlchen(object):
                 if main_currency != 'USD':
                     self.usd_to_main_currency_rate = query_fiat_pair('USD', main_currency)
 
-            self.data.set_settings(settings, self.accountant)
+            _, msg, = self.data.set_settings(settings, self.accountant)
+            if msg != '':
+                message += '\n' + msg
 
             # Always return success but with a message
             return True, message

@@ -1,10 +1,16 @@
 import os
 import pytest
+from pysqlcipher3 import dbapi2 as sqlcipher
 
-
-from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.utils import ts_now
+from rotkehlchen.db.dbhandler import (
+    ROTKEHLCHEN_DB_VERSION,
+    DEFAULT_START_DATE,
+    DEFAULT_UI_FLOATING_PRECISION
+)
 from rotkehlchen.data_handler import DataHandler
-from rotkehlchen.errors import AuthenticationError
+from rotkehlchen.errors import AuthenticationError, InputError
+
 
 TABLES_AT_INIT = [
     'timed_balances',
@@ -83,4 +89,57 @@ def test_writting_fetching_data(data_dir, username):
     assert set(accounts['ETH']) == set([
         '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
         '0x80b369799104a47e98a553f3329812a44a7facdc'
+
     ])
+    # Add existing account should fail
+    with pytest.raises(sqlcipher.IntegrityError):
+        data.add_blockchain_account('ETH', '0xd36029d76af6fE4A356528e4Dc66B2C18123597D')
+    # Remove non-existing account
+    with pytest.raises(InputError):
+        data.remove_blockchain_account('ETH', '0x136029d76af6fE4A356528e4Dc66B2C18123597D')
+    # Remove existing account
+    data.remove_blockchain_account('ETH', '0xd36029d76af6fE4A356528e4Dc66B2C18123597D')
+    accounts = data.db.get_blockchain_accounts()
+    assert accounts['ETH'] == ['0x80b369799104a47e98a553f3329812a44a7facdc']
+
+    result, _ = data.add_ignored_asset('DAO')
+    assert result
+    result, _ = data.add_ignored_asset('DOGE')
+    assert result
+    result, _ = data.add_ignored_asset('DOGE')
+    assert not result
+    assert set(data.db.get_ignored_assets()) == set(['DAO', 'DOGE'])
+    result, _ = data.remove_ignored_asset('XXX')
+    assert not result
+    result, _ = data.remove_ignored_asset('DOGE')
+    assert result
+    assert data.db.get_ignored_assets() == ['DAO']
+
+    # With nothing inserted in settings make sure default values are returned
+    result = data.db.get_settings()
+    last_write_diff = ts_now() - result['last_write_ts']
+    # make sure last_write was within 3 secs
+    assert last_write_diff >= 0 and last_write_diff < 3
+    del result['last_write_ts']
+    assert result == {
+        'historical_data_start': DEFAULT_START_DATE,
+        'eth_rpc_port': '8545',
+        'ui_floating_precision': DEFAULT_UI_FLOATING_PRECISION,
+        'db_version': ROTKEHLCHEN_DB_VERSION
+    }
+
+    # Check setting non-existing settings. Should be ignored
+    _, msg = data.set_settings({'nonexisting_setting': 1}, accountant=None)
+    assert msg != '' and 'nonexisting_setting' in msg
+    _, msg = data.set_settings({
+        'nonexisting_setting': 1,
+        'eth_rpc_port': '8555',
+        'ui_floating_precision': 3,
+    }, accountant=None)
+    assert msg != '' and 'nonexisting_setting' in msg
+
+    # Now check nothing funny made it in the db
+    result = data.db.get_settings()
+    assert result['eth_rpc_port'] == '8555'
+    assert result['ui_floating_precision'] == 3
+    assert 'nonexisting_setting' not in result
