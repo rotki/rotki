@@ -222,17 +222,13 @@ class DataHandler(object):
         if not timestamp:
             return False, message
 
-        rate = float(data['otc_rate'])
-        amount = float(data['otc_amount'])
-        pair = data['otc_pair']
-
         self.db.add_external_trade(
             time=timestamp,
             location='external',
-            pair=pair,
+            pair=data['otc_pair'],
             trade_type=data['otc_type'],
-            amount=amount,
-            rate=rate,
+            amount=data['otc_amount'],
+            rate=data['otc_rate'],
             fee=data['otc_fee'],
             fee_currency=data['otc_fee_currency'],
             link=data['otc_link'],
@@ -246,29 +242,24 @@ class DataHandler(object):
         if not timestamp:
             return False, message
 
-        rate = float(data['otc_rate'])
-        amount = float(data['otc_amount'])
-        pair = data['otc_pair']
-
-        self.db.edit_external_trade(
+        result, message = self.db.edit_external_trade(
             trade_id=data['otc_id'],
             time=timestamp,
             location='external',
-            pair=pair,
+            pair=data['otc_pair'],
             trade_type=data['otc_type'],
-            amount=amount,
-            rate=rate,
+            amount=data['otc_amount'],
+            rate=data['otc_rate'],
             fee=data['otc_fee'],
             fee_currency=data['otc_fee_currency'],
             link=data['otc_link'],
             notes=data['otc_notes'],
         )
 
-        return True, ''
+        return result, message
 
     def delete_external_trade(self, trade_id):
-        self.db.delete_external_trade(trade_id)
-        return True, ''
+        return self.db.delete_external_trade(trade_id)
 
     def compress_and_encrypt_db(self, password):
         """Decrypt the DB, dump in temporary plaintextdb, compress it,

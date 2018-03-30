@@ -491,21 +491,19 @@ class DBHandler(object):
     ):
         cursor = self.conn.cursor()
         cursor.execute(
-            'INSERT OR REPLACE INTO trades('
-            '  id,'
-            '  time,'
-            '  location,'
-            '  pair,'
-            '  type,'
-            '  amount,'
-            '  rate,'
-            '  fee,'
-            '  fee_currency,'
-            '  link,'
-            '  notes)'
-            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'UPDATE trades SET '
+            '  time=?,'
+            '  location=?,'
+            '  pair=?,'
+            '  type=?,'
+            '  amount=?,'
+            '  rate=?,'
+            '  fee=?,'
+            '  fee_currency=?,'
+            '  link=?,'
+            '  notes=? '
+            'WHERE id=?',
             (
-                trade_id,
                 time,
                 location,
                 pair,
@@ -515,10 +513,15 @@ class DBHandler(object):
                 fee,
                 fee_currency,
                 link,
-                notes
+                notes,
+                trade_id,
             )
         )
+        if cursor.rowcount == 0:
+            return False, 'Tried to edit non existing external trade id'
+
         self.conn.commit()
+        return True, ''
 
     def get_external_trades(self, from_ts=None, to_ts=None):
         cursor = self.conn.cursor()
@@ -571,7 +574,10 @@ class DBHandler(object):
     def delete_external_trade(self, trade_id):
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM trades WHERE id=?', (trade_id,))
+        if cursor.rowcount == 0:
+            return False, 'Tried to delete non-existing external trade'
         self.conn.commit()
+        return True, ''
 
     def set_rotkehlchen_premium(self, api_key, api_secret):
         cursor = self.conn.cursor()

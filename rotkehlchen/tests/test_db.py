@@ -2,7 +2,7 @@ import os
 import pytest
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.utils import ts_now
+from rotkehlchen.utils import ts_now, createTimeStamp
 from rotkehlchen.db.dbhandler import (
     ROTKEHLCHEN_DB_VERSION,
     DEFAULT_START_DATE,
@@ -143,3 +143,93 @@ def test_writting_fetching_data(data_dir, username):
     assert result['eth_rpc_port'] == '8555'
     assert result['ui_floating_precision'] == 3
     assert 'nonexisting_setting' not in result
+
+
+def from_otc_trade(trade):
+    ts = createTimeStamp(trade['otc_timestamp'], formatstr='%d/%m/%Y %H:%M')
+    new_trade = {
+        'timestamp': ts,
+        'location': 'external',
+        'pair': trade['otc_pair'],
+        'type': trade['otc_type'],
+        'amount': str(trade['otc_amount']),
+        'rate': str(trade['otc_rate']),
+        'fee': str(trade['otc_fee']),
+        'fee_currency': trade['otc_fee_currency'],
+        'link': trade['otc_link'],
+        'notes': trade['otc_notes'],
+    }
+    if 'otc_id' in trade:
+        new_trade['id'] = trade['otc_id']
+
+    return new_trade
+
+
+def test_writting_fetching_external_trades(data_dir, username):
+    data = DataHandler(data_dir)
+    data.unlock(username, '123', create_new=True)
+
+    # add 2 trades and check they are in the DB
+    trade1 = {
+        'otc_timestamp': '10/03/2018 23:30',
+        'otc_pair': 'ETH_EUR',
+        'otc_type': 'buy',
+        'otc_amount': '10',
+        'otc_rate': '100',
+        'otc_fee': '0.001',
+        'otc_fee_currency': 'ETH',
+        'otc_link': 'a link',
+        'otc_notes': 'a note',
+    }
+    trade2 = {
+        'otc_timestamp': '10/03/2018 23:35',
+        'otc_pair': 'ETH_EUR',
+        'otc_type': 'buy',
+        'otc_amount': '5',
+        'otc_rate': '100',
+        'otc_fee': '0.001',
+        'otc_fee_currency': 'ETH',
+        'otc_link': 'a link 2',
+        'otc_notes': 'a note 2',
+    }
+    result, _, = data.add_external_trade(trade1)
+    assert result
+    result, _ = data.add_external_trade(trade2)
+    assert result
+    result = data.get_external_trades()
+    del result[0]['id']
+    assert result[0] == from_otc_trade(trade1)
+    del result[1]['id']
+    assert result[1] == from_otc_trade(trade2)
+
+    # edit a trade and check the edit made it in the DB
+    trade1['otc_rate'] = '120'
+    trade1['otc_id'] = 1
+    result, _ = data.edit_external_trade(trade1)
+    assert result
+    result = data.get_external_trades()
+    assert result[0] == from_otc_trade(trade1)
+    del result[1]['id']
+    assert result[1] == from_otc_trade(trade2)
+
+    # try to edit a non-existing trade
+    trade1['otc_rate'] = '160'
+    trade1['otc_id'] = 5
+    result, _ = data.edit_external_trade(trade1)
+    assert not result
+    trade1['otc_rate'] = '120'
+    trade1['otc_id'] = 1
+    result = data.get_external_trades()
+    assert result[0] == from_otc_trade(trade1)
+    del result[1]['id']
+    assert result[1] == from_otc_trade(trade2)
+
+    # try to delete non-existing trade
+    result, _ = data.delete_external_trade(6)
+    assert not result
+
+    # delete an external trade
+    result, _ = data.delete_external_trade(1)
+    result = data.get_external_trades()
+    del result[0]['id']
+    assert result[0] == from_otc_trade(trade2)
