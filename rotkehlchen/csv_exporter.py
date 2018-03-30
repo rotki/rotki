@@ -12,6 +12,7 @@ class CSVExporter(object):
         self.user_directory = user_directory
         self.profit_currency = profit_currency
         self.create_csv = create_csv
+        self.all_events = list()
         self.reset_csv_lists()
 
     def reset_csv_lists(self):

@@ -243,7 +243,7 @@ class DataHandler(object):
         return True, ''
 
     def compress_and_encrypt_db(self, password):
-        """ Decrypt the DB, dump in temporary plaintextdb, compress it,
+        """Decrypt the DB, dump in temporary plaintextdb, compress it,
         and then re-encrypt it
 
         Returns a b64 encoded binary blob"""
@@ -258,12 +258,11 @@ class DataHandler(object):
         ).decode()
         compressed_data = zlib.compress(data_blob, level=9)
         encrypted_data = encrypt(password.encode(), compressed_data)
-        print('COMPRESSED-ENCRYPTED LENGTH: {}'.format(len(encrypted_data)))
 
         return encrypted_data.encode(), original_data_hash
 
     def decompress_and_decrypt_db(self, password, encrypted_data):
-        """ Decrypt and decompress the encrypted data we receive from the server
+        """Decrypt and decompress the encrypted data we receive from the server
 
         If succesfull then replace our local Database"""
         decrypted_data = decrypt(password.encode(), encrypted_data)
