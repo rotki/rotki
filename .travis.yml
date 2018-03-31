@@ -16,6 +16,7 @@ jobs:
           - $HOME/.cache/pip
 
       before_install:
+            - sudo apt-get install -y libsqlcipher-dev libzmq-dev
             - mkdir -p $HOME/.bin
             - export PATH=$PATH:$HOME/.bin
 
