@@ -2,6 +2,7 @@
 import requests
 import os
 from gevent.lock import Semaphore
+from json.decoder import JSONDecodeError
 
 from rotkehlchen.utils import rlk_jsonloads, rlk_jsondumps
 
@@ -48,7 +49,7 @@ class Exchange(object):
             with open(trades_file, 'r') as f:
                 try:
                     trades = rlk_jsonloads(f.read())
-                except:
+                except JSONDecodeError:
                     pass
 
                 # no need to query again
@@ -67,10 +68,10 @@ class Exchange(object):
             f.write(rlk_jsondumps(trades))
 
     def orderBook(self, currency):
-        raise NotImplementedError("orderBook should only be implemented by subclasses")
+        raise NotImplementedError('orderBook should only be implemented by subclasses')
 
     def set_buy(self, pair, amount, price):
-        raise NotImplementedError("Should only be implemented by subclasses")
+        raise NotImplementedError('Should only be implemented by subclasses')
 
     def query_balances(self):
         """Returns the balances held in the exchange in the following format:
@@ -84,15 +85,17 @@ class Exchange(object):
         raise NotImplementedError("query_balances should only be implemented by subclasses")
 
     def query_deposits_withdrawals(self, start_ts, end_ts):
-        raise NotImplementedError("query_deposits_withdrawals should only be implemented by subclasses")
+        raise NotImplementedError(
+            'query_deposits_withdrawals should only be implemented by subclasses'
+        )
 
     def first_connection(self):
         """Performs actions that should be done in the first time coming online
         and attempting to query data from an exchange.
         """
-        raise NotImplementedError("first_connection() should only be implemented by subclasses")
+        raise NotImplementedError('first_connection() should only be implemented by subclasses')
 
     def validate_api_key(self):
         """Tries to make the simplest private api query to the exchange in order to
         verify the api key's validity"""
-        raise NotImplementedError("validate_api_key() should only be implemented by subclasses")
+        raise NotImplementedError('validate_api_key() should only be implemented by subclasses')

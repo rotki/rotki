@@ -6,7 +6,6 @@ from collections import defaultdict
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.constants import SUPPORTED_EXCHANGES
-from rotkehlchen.fval import FVal
 from rotkehlchen.utils import ts_now
 from rotkehlchen.errors import AuthenticationError, InputError
 from .utils import DB_SCRIPT_CREATE_TABLES, DB_SCRIPT_REIMPORT_DATA

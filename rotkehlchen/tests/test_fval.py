@@ -109,12 +109,17 @@ def test_encoding():
     strdata = rlk_jsondumps(data)
     # stupid test, as it will fail if different python version is used. Should just
     # have used decoding again to make sure they are the same but was lazy
-    assert strdata == '{"a": 3.14, "b": 5, "c": "foo", "d": "5.42323143", "e": {"u1": "3.221"}, "f": [2.1, "boo", 3, "4.2324"]}'
+    assert strdata == (
+        '{"a": 3.14, "b": 5, "c": "foo", "d": "5.42323143", '
+        '"e": {"u1": "3.221"}, "f": [2.1, "boo", 3, "4.2324"]}'
+    )
 
 
 def test_decoding():
-    strdata = """
-    {"a": 3.14, "b":5, "c": "foo", "d": "5.42323143", "e": { "u1": "3.221"}, "f": [2.1, "boo", 3, "4.2324"]}"""
+    strdata = (
+        '{"a": 3.14, "b":5, "c": "foo", "d": "5.42323143", "e": { "u1": "3.221"}, '
+        '"f": [2.1, "boo", 3, "4.2324"]}'
+    )
 
     data = rlk_jsonloads(strdata)
     assert isinstance(data['a'], FVal)

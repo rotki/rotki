@@ -17,7 +17,7 @@ def sfjson_loads(s):
     """Exception safe json.loads()"""
     try:
         return rlk_jsonloads(s)
-    except:
+    except json.decoder.JSONDecodeError:
         return {}
 
 
@@ -106,17 +106,21 @@ def query_fiat_pair(base, quote, timestamp=None):
     while True:
         try:
             resp = urlopen(Request(querystr))
-            resp = rlk_jsonloads(resp.read())
-            break
-        except:
+        except URLError:
             if tries == 0:
                 raise ValueError('Timeout while trying to query euro price')
             time.sleep(0.05)
             tries -= 1
+        break
+
+    try:
+        resp = rlk_jsonloads(resp.read())
+    except json.decoder.JSONDecodeError:
+        raise ValueError('api.fixer.io returned malformed json')
 
     try:
         return FVal(resp['rates'][quote])
-    except:
+    except ValueError:
         raise ValueError('Could not find a "{}" price for "{}"'.format(base, quote))
 
 
@@ -203,7 +207,7 @@ def get_jsonfile_contents_or_empty_list(filepath):
     with open(filepath, 'r') as infile:
         try:
             data = rlk_jsonloads(infile.read())
-        except:
+        except json.decoder.JSONDecodeError:
             data = list()
 
     return data
@@ -216,7 +220,7 @@ def get_jsonfile_contents_or_empty_dict(filepath):
     with open(filepath, 'r') as infile:
         try:
             data = rlk_jsonloads(infile.read())
-        except:
+        except json.decoder.JSONDecodeError:
             data = dict()
 
     return data
@@ -252,7 +256,7 @@ def rkl_decode_value(val):
         try:
             val = float(val)
             return FVal(val)
-        except:
+        except ValueError:
             pass
 
     return val

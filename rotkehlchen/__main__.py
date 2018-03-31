@@ -10,7 +10,7 @@ def main():
     from rotkehlchen.server import RotkehlchenServer
     try:
         rotkehlchen_server = RotkehlchenServer()
-    except:
+    except: # noqa
         tb = traceback.format_exc()
         logging.critical(tb)
         print("Failed to start rotkehlchen backend:\n{}".format(tb))

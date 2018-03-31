@@ -58,7 +58,10 @@ class CSVExporter(object):
             net_profit_or_loss = 0  # no profit by buying
             net_profit_or_loss_csv = 0  # no profit by buying
         elif event_type == 'sell':
-            net_profit_or_loss = 0 if taxable_amount == 0 else received_in_asset - taxable_bought_cost
+            if taxable_amount == 0:
+                net_profit_or_loss = 0
+            else:
+                net_profit_or_loss = received_in_asset - taxable_bought_cost
             net_profit_or_loss_csv = '=IF(E{}=0,0,H{}-F{})'.format(row, row, row)
         elif event_type in ('tx_gas_cost', 'asset_movement', 'loan_settlement'):
             net_profit_or_loss = paid_in_profit_currency
@@ -152,22 +155,26 @@ class CSVExporter(object):
         if not self.create_csv:
             return
 
+        gross_key = 'gross_gained_or_invested_{}'.format(self.profit_currency)
         self.trades_csv.append({
             'type': 'sell',
             'asset': selling_asset,
-            "price_in_{}".format(self.profit_currency): rate_in_profit_currency,
-            "fee_in_{}".format(self.profit_currency): total_fee_in_profit_currency,
-            "gross_gained_or_invested_{}".format(self.profit_currency): gain_in_profit_currency + total_fee_in_profit_currency,
-            "net_gained_or_invested_{}".format(self.profit_currency): gain_in_profit_currency,
-            "amount": selling_amount,
-            "exchanged_for": receiving_asset,
-            "exchanged_asset_euro_exchange_rate": receiving_asset_rate_in_profit_currency,
-            "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
-            "is_virtual": is_virtual,
+            'price_in_{}'.format(self.profit_currency): rate_in_profit_currency,
+            'fee_in_{}'.format(self.profit_currency): total_fee_in_profit_currency,
+            gross_key: gain_in_profit_currency + total_fee_in_profit_currency,
+            'net_gained_or_invested_{}'.format(self.profit_currency): gain_in_profit_currency,
+            'amount': selling_amount,
+            'exchanged_for': receiving_asset,
+            'exchanged_asset_euro_exchange_rate': receiving_asset_rate_in_profit_currency,
+            'time': tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+            'is_virtual': is_virtual,
         })
+        paid_in_profit_currency = (
+            selling_amount * rate_in_profit_currency + total_fee_in_profit_currency
+        )
         self.add_to_allevents(
             event_type='sell',
-            paid_in_profit_currency=selling_amount * rate_in_profit_currency + total_fee_in_profit_currency,
+            paid_in_profit_currency=paid_in_profit_currency,
             paid_asset=selling_asset,
             paid_in_asset=selling_amount,
             received_asset=receiving_asset,
@@ -202,9 +209,10 @@ class CSVExporter(object):
             "fee_in_{}".format(self.profit_currency): total_fee_in_profit_currency,
             "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
         })
+        paid_in_profit_currency = amount * rate_in_profit_currency + total_fee_in_profit_currency,
         self.add_to_allevents(
             event_type='loan_settlement',
-            paid_in_profit_currency=amount * rate_in_profit_currency + total_fee_in_profit_currency,
+            paid_in_profit_currency=paid_in_profit_currency,
             paid_asset=asset,
             paid_in_asset=amount,
             received_asset='',

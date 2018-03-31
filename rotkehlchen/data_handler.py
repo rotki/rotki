@@ -1,7 +1,6 @@
 import tempfile
 import shutil
 import os
-from json.decoder import JSONDecodeError
 import zlib
 import base64
 import hashlib
@@ -10,7 +9,6 @@ from rotkehlchen.crypto import encrypt, decrypt
 from rotkehlchen.utils import (
     createTimeStamp,
     rlk_jsonloads,
-    rlk_jsondumps,
     is_number,
     get_pair_position,
 )
