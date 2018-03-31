@@ -290,9 +290,6 @@ class Accountant(object):
 
         rate = self.get_rate_in_profit_currency('ETH', transaction.timestamp)
         eth_burned_as_gas = (transaction.gas_used * gas_price) / FVal(10 ** 18)
-        # print("from: {} to: {} block_number: {} hash: {} eth_burned_as_gas: {} EUR burned:{}".format(
-        #     transaction.from_address, transaction.to_address, transaction.block_number, transaction.hash, eth_burned_as_gas, eth_burned_as_gas * rate
-        # ))
         self.eth_transactions_gas_costs += eth_burned_as_gas * rate
         self.csvexporter.add_tx_gas_cost(
             transaction_hash=transaction.hash,
@@ -529,7 +526,11 @@ class Accountant(object):
                     ))
 
         # now search the buys for `paid_with_asset` and  calculate profit/loss
-        taxable_amount, taxable_bought_cost, taxfree_bought_cost = self.search_buys_calculate_profit(
+        (
+            taxable_amount,
+            taxable_bought_cost,
+            taxfree_bought_cost
+        ) = self.search_buys_calculate_profit(
             selling_amount, selling_asset, timestamp
         )
         general_profit_loss = 0
@@ -919,6 +920,7 @@ class Accountant(object):
             self.asset_movement_fees -
             self.eth_transactions_gas_costs
         )
+        total_taxable_pl = self.taxable_trade_profit_loss + sum_other_actions
         return {
             'overview': {
                 'loan_profit': str(self.loan_profit),
@@ -928,7 +930,7 @@ class Accountant(object):
                 'asset_movement_fees': str(self.asset_movement_fees),
                 'general_trade_profit_loss': str(self.general_trade_profit_loss),
                 'taxable_trade_profit_loss': str(self.taxable_trade_profit_loss),
-                'total_taxable_profit_loss': str(self.taxable_trade_profit_loss + sum_other_actions),
+                'total_taxable_profit_loss': str(total_taxable_pl),
                 'total_profit_loss': str(self.general_trade_profit_loss + sum_other_actions),
             },
             'all_events': self.csvexporter.all_events,

@@ -427,6 +427,10 @@ class Poloniex(Exchange):
         return result
 
     def parseLoanCSV(self):
+        """Parses (if existing) the lendingHistory.csv and returns the history in a list
+
+        It can throw OSError, IOError if the file does not exist and csv.Error if
+        the file is not proper CSV"""
         # the default filename, and should be (if at all) inside the data directory
         path = os.path.join(self.data_dir, "lendingHistory.csv")
         lending_history = list()
@@ -458,7 +462,7 @@ class Poloniex(Exchange):
         try:
             if from_csv:
                 return self.parseLoanCSV()
-        except:
+        except (OSError, IOError, csv.Error):
             pass
 
         with self.lock:

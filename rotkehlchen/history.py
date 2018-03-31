@@ -15,7 +15,6 @@ from rotkehlchen.utils import (
     createTimeStamp,
     tsToDate,
     get_pair_position,
-    get_jsonfile_contents_or_empty_list,
     get_jsonfile_contents_or_empty_dict,
     rlk_jsonloads,
     rlk_jsondumps,
@@ -305,7 +304,10 @@ class PriceHistorian(object):
         cryptocompare_hourquerylimit = 2000
         calculated_history = list()
 
-        end_date = self.historical_data_start if self.historical_data_start <= timestamp else timestamp
+        if self.historical_data_start <= timestamp:
+            end_date = self.historical_data_start
+        else:
+            end_date = timestamp
         while True:
             pr_end_date = end_date
             end_date = end_date + (cryptocompare_hourquerylimit) * 3600
@@ -605,7 +607,7 @@ class TradesHistorian(object):
             with open(historyfile_path, 'r') as infile:
                 try:
                     history_json_data = rlk_jsonloads(infile.read())
-                except:
+                except JSONDecodeError:
                     pass
 
                 all_history_okay = data_up_todate(history_json_data, start_ts, end_at_least_ts)

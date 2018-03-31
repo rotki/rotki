@@ -6,13 +6,13 @@ from collections import defaultdict
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.constants import SUPPORTED_EXCHANGES
-from rotkehlchen.fval import FVal
 from rotkehlchen.utils import ts_now
 from rotkehlchen.errors import AuthenticationError, InputError
 from .utils import DB_SCRIPT_CREATE_TABLES, DB_SCRIPT_REIMPORT_DATA
 
 DEFAULT_START_DATE = "01/08/2015"
 DEFAULT_UI_FLOATING_PRECISION = 2
+KDF_ITER = 64000
 
 
 def str_to_bool(s):
@@ -44,7 +44,7 @@ class DBHandler(object):
     def connect(self, password):
         self.conn = sqlcipher.connect(os.path.join(self.user_data_dir, 'rotkehlchen.db'))
         self.conn.text_factory = str
-        self.conn.executescript('PRAGMA key="{}"; pragma kdf_iter=64000;'.format(password))
+        self.conn.executescript('PRAGMA key="{}"; PRAGMA kdf_iter={};'.format(password, KDF_ITER))
         self.conn.execute('PRAGMA foreign_keys=ON')
 
     def disconnect(self):
@@ -83,8 +83,9 @@ class DBHandler(object):
             self.conn = sqlcipher.connect(tempdbpath)
             self.conn.executescript(
                 'ATTACH DATABASE "{}" AS encrypted KEY "{}";'
+                'PRAGMA encrypted.kdf_iter={};'
                 'SELECT sqlcipher_export("encrypted");'
-                'DETACH DATABASE encrypted;'.format(rdbpath, password)
+                'DETACH DATABASE encrypted;'.format(rdbpath, password, KDF_ITER)
             )
             self.disconnect()
 
@@ -298,6 +299,16 @@ class DBHandler(object):
 
     def remove_blockchain_account(self, blockchain, account):
         cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT COUNT(*) from blockchain_accounts WHERE '
+            'blockchain = ? and account = ?;', (blockchain, account)
+        )
+        query = query.fetchall()
+        if query[0][0] == 0:
+            raise InputError(
+                'Tried to remove non-existing {} account {}'.format(blockchain, account)
+            )
+
         cursor.execute(
             'DELETE FROM blockchain_accounts WHERE '
             'blockchain = ? and account = ?;', (blockchain, account)
@@ -481,21 +492,19 @@ class DBHandler(object):
     ):
         cursor = self.conn.cursor()
         cursor.execute(
-            'INSERT OR REPLACE INTO trades('
-            '  id,'
-            '  time,'
-            '  location,'
-            '  pair,'
-            '  type,'
-            '  amount,'
-            '  rate,'
-            '  fee,'
-            '  fee_currency,'
-            '  link,'
-            '  notes)'
-            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'UPDATE trades SET '
+            '  time=?,'
+            '  location=?,'
+            '  pair=?,'
+            '  type=?,'
+            '  amount=?,'
+            '  rate=?,'
+            '  fee=?,'
+            '  fee_currency=?,'
+            '  link=?,'
+            '  notes=? '
+            'WHERE id=?',
             (
-                trade_id,
                 time,
                 location,
                 pair,
@@ -505,10 +514,15 @@ class DBHandler(object):
                 fee,
                 fee_currency,
                 link,
-                notes
+                notes,
+                trade_id,
             )
         )
+        if cursor.rowcount == 0:
+            return False, 'Tried to edit non existing external trade id'
+
         self.conn.commit()
+        return True, ''
 
     def get_external_trades(self, from_ts=None, to_ts=None):
         cursor = self.conn.cursor()
@@ -561,7 +575,10 @@ class DBHandler(object):
     def delete_external_trade(self, trade_id):
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM trades WHERE id=?', (trade_id,))
+        if cursor.rowcount == 0:
+            return False, 'Tried to delete non-existing external trade'
         self.conn.commit()
+        return True, ''
 
     def set_rotkehlchen_premium(self, api_key, api_secret):
         cursor = self.conn.cursor()

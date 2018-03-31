@@ -1,7 +1,6 @@
 import tempfile
 import shutil
 import os
-from json.decoder import JSONDecodeError
 import zlib
 import base64
 import hashlib
@@ -10,7 +9,6 @@ from rotkehlchen.crypto import encrypt, decrypt
 from rotkehlchen.utils import (
     createTimeStamp,
     rlk_jsonloads,
-    rlk_jsondumps,
     is_number,
     get_pair_position,
 )
@@ -38,6 +36,17 @@ otc_fields = [
 ]
 otc_optional_fields = ['otc_fee', 'otc_link', 'otc_notes']
 otc_numerical_fields = ['otc_amount', 'otc_rate', 'otc_fee']
+
+VALID_SETTINGS = (
+    'main_currency',
+    'historical_data_start',
+    'eth_rpc_port',
+    'ui_floating_precision',
+    'last_write_ts',
+    'db_version',
+    'last_data_upload_ts',
+    'premium_should_sync',
+)
 
 
 def check_old_key_value(location, data, new_data, new_key=None):
@@ -159,9 +168,26 @@ class DataHandler(object):
         self.db.set_main_currency(currency)
 
     def set_settings(self, settings, accountant):
+        given_items = list(settings.keys())
+        msg = ''
+
+        # ignore invalid settings
+        invalid = []
+        all_okay = True
+        for x in given_items:
+            if x not in VALID_SETTINGS:
+                invalid.append(x)
+                del settings[x]
+                all_okay = False
+
+        if not all_okay:
+            msg = 'provided settings: {} are invalid'.format(','.join(invalid))
+
         if 'main_currency' in settings:
             accountant.set_main_currency(settings['main_currency'])
+
         self.db.set_settings(settings)
+        return True, msg
 
     def get_eth_accounts(self):
         blockchain_accounts = self.db.get_blockchain_accounts()
@@ -194,17 +220,13 @@ class DataHandler(object):
         if not timestamp:
             return False, message
 
-        rate = float(data['otc_rate'])
-        amount = float(data['otc_amount'])
-        pair = data['otc_pair']
-
         self.db.add_external_trade(
             time=timestamp,
             location='external',
-            pair=pair,
+            pair=data['otc_pair'],
             trade_type=data['otc_type'],
-            amount=amount,
-            rate=rate,
+            amount=data['otc_amount'],
+            rate=data['otc_rate'],
             fee=data['otc_fee'],
             fee_currency=data['otc_fee_currency'],
             link=data['otc_link'],
@@ -218,32 +240,27 @@ class DataHandler(object):
         if not timestamp:
             return False, message
 
-        rate = float(data['otc_rate'])
-        amount = float(data['otc_amount'])
-        pair = data['otc_pair']
-
-        self.db.edit_external_trade(
+        result, message = self.db.edit_external_trade(
             trade_id=data['otc_id'],
             time=timestamp,
             location='external',
-            pair=pair,
+            pair=data['otc_pair'],
             trade_type=data['otc_type'],
-            amount=amount,
-            rate=rate,
+            amount=data['otc_amount'],
+            rate=data['otc_rate'],
             fee=data['otc_fee'],
             fee_currency=data['otc_fee_currency'],
             link=data['otc_link'],
             notes=data['otc_notes'],
         )
 
-        return True, ''
+        return result, message
 
     def delete_external_trade(self, trade_id):
-        self.db.delete_external_trade(trade_id)
-        return True, ''
+        return self.db.delete_external_trade(trade_id)
 
     def compress_and_encrypt_db(self, password):
-        """ Decrypt the DB, dump in temporary plaintextdb, compress it,
+        """Decrypt the DB, dump in temporary plaintextdb, compress it,
         and then re-encrypt it
 
         Returns a b64 encoded binary blob"""
@@ -258,12 +275,11 @@ class DataHandler(object):
         ).decode()
         compressed_data = zlib.compress(data_blob, level=9)
         encrypted_data = encrypt(password.encode(), compressed_data)
-        print('COMPRESSED-ENCRYPTED LENGTH: {}'.format(len(encrypted_data)))
 
         return encrypted_data.encode(), original_data_hash
 
     def decompress_and_decrypt_db(self, password, encrypted_data):
-        """ Decrypt and decompress the encrypted data we receive from the server
+        """Decrypt and decompress the encrypted data we receive from the server
 
         If succesfull then replace our local Database"""
         decrypted_data = decrypt(password.encode(), encrypted_data)

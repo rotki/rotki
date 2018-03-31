@@ -328,7 +328,8 @@ class RotkehlchenServer(object):
         assert isinstance(api_key, str), "api_key should be a string"
         assert isinstance(api_secret, str), "api_secret should be a string"
 
-        valid_approve = isinstance(sync_approval, str) and sync_approval in ['unknown', 'yes', 'no']
+        valid_actions = ['unknown', 'yes', 'no']
+        valid_approve = isinstance(sync_approval, str) and sync_approval in valid_actions
         if not valid_approve:
             raise ValueError('Provided invalid value for sync_approval')
 
@@ -339,7 +340,14 @@ class RotkehlchenServer(object):
             raise ValueError('Must provide both or neither of api key/secret')
 
         try:
-            self.rotkehlchen.unlock_user(user, password, create_new, sync_approval, api_key, api_secret)
+            self.rotkehlchen.unlock_user(
+                user,
+                password,
+                create_new,
+                sync_approval,
+                api_key,
+                api_secret
+            )
             res['exchanges'] = self.rotkehlchen.connected_exchanges
             res['premium'] = True if hasattr(self.rotkehlchen, 'premium') else False
             res['settings'] = self.rotkehlchen.data.db.get_settings()

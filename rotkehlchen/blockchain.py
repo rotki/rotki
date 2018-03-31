@@ -78,7 +78,10 @@ class Blockchain(object):
         for account in self.accounts['BTC']:
             balance = self.query_btc_account_balance(account)
             total += balance
-            self.balances['BTC'][account] = {'amount': balance, 'usd_value': balance * btc_usd_price}
+            self.balances['BTC'][account] = {
+                'amount': balance,
+                'usd_value': balance * btc_usd_price
+            }
 
         self.totals['BTC'] = {'amount': total, 'usd_value': total * btc_usd_price}
 

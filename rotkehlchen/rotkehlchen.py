@@ -147,7 +147,10 @@ class Rotkehlchen(object):
             if premium_credentials:
                 api_key = premium_credentials[0]
                 api_secret = premium_credentials[1]
-                self.premium, valid, empty_or_error = premium_create_and_verify(api_key, api_secret)
+                self.premium, valid, empty_or_error = premium_create_and_verify(
+                    api_key,
+                    api_secret
+                )
                 if not valid:
                     logger.error(
                         'The API keys found in the Database are not valid. Perhaps '
@@ -243,10 +246,15 @@ class Rotkehlchen(object):
         data, our_hash = self.data.compress_and_encrypt_db(self.password)
         success, result_or_error = self.premium.query_last_data_metadata()
         if not success:
-            logger.debug('upload to server -- query last metadata error: {}'.format(result_or_error))
+            logger.debug('upload to server -- query last metadata error: {}'.format(
+                result_or_error)
+            )
             return
 
-        logger.debug("CAN_PUSH--> OURS: {} THEIRS: {}".format(our_hash, result_or_error['data_hash']))
+        logger.debug("CAN_PUSH--> OURS: {} THEIRS: {}".format(
+            our_hash,
+            result_or_error['data_hash'])
+        )
         if our_hash == result_or_error['data_hash']:
             logger.debug('upload to server -- same hash')
             # same hash -- no need to upload anything
@@ -280,7 +288,10 @@ class Rotkehlchen(object):
             logger.debug('sync data from server-- error: {}'.format(result_or_error))
             return False
 
-        logger.debug("CAN_PULL--> OURS: {} THEIRS: {}".format(our_hash, result_or_error['data_hash']))
+        logger.debug("CAN_PULL--> OURS: {} THEIRS: {}".format(
+            our_hash,
+            result_or_error['data_hash'])
+        )
         if our_hash == result_or_error['data_hash']:
             logger.debug('sync from server -- same hash')
             # same hash -- no need to get anything
@@ -320,7 +331,13 @@ class Rotkehlchen(object):
             gevent.sleep(MAIN_LOOP_SECS_DELAY)
 
     def process_history(self, start_ts, end_ts):
-        history, margin_history, loan_history, asset_movements, eth_transactions = self.trades_historian.get_history(
+        (
+            history,
+            margin_history,
+            loan_history,
+            asset_movements,
+            eth_transactions
+        ) = self.trades_historian.get_history(
             start_ts=0,  # For entire history processing we need to have full history available
             end_ts=ts_now(),
             end_at_least_ts=end_ts
@@ -435,7 +452,9 @@ class Rotkehlchen(object):
                 if main_currency != 'USD':
                     self.usd_to_main_currency_rate = query_fiat_pair('USD', main_currency)
 
-            self.data.set_settings(settings, self.accountant)
+            _, msg, = self.data.set_settings(settings, self.accountant)
+            if msg != '':
+                message += '\n' + msg
 
             # Always return success but with a message
             return True, message

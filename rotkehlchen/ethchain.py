@@ -45,7 +45,10 @@ class Ethchain(object):
                     'Connected to a local ethereum node but it is not on the ethereum mainnet'
                 )
                 self.connected = False
-                message = 'Connected to ethereum node at port {} but it is not on the ethereum mainnet'.format(ethrpc_port)
+                message = (
+                    'Connected to ethereum node at port {} but it is not on '
+                    'the ethereum mainnet'.format(ethrpc_port)
+                )
             self.connected = True
             return True, ''
         else:

@@ -39,6 +39,7 @@ def premium_create_and_verify(api_key, api_secret):
 
     return premium, valid, empty_or_error
 
+
 class Premium(object):
 
     def __init__(self, api_key, api_secret):
