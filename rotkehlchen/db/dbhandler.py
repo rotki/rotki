@@ -12,6 +12,7 @@ from .utils import DB_SCRIPT_CREATE_TABLES, DB_SCRIPT_REIMPORT_DATA
 
 DEFAULT_START_DATE = "01/08/2015"
 DEFAULT_UI_FLOATING_PRECISION = 2
+KDF_ITER = 64000
 
 
 def str_to_bool(s):
@@ -43,7 +44,7 @@ class DBHandler(object):
     def connect(self, password):
         self.conn = sqlcipher.connect(os.path.join(self.user_data_dir, 'rotkehlchen.db'))
         self.conn.text_factory = str
-        self.conn.executescript('PRAGMA key="{}"; pragma kdf_iter=64000;'.format(password))
+        self.conn.executescript('PRAGMA key="{}"; PRAGMA kdf_iter={};'.format(password, KDF_ITER))
         self.conn.execute('PRAGMA foreign_keys=ON')
 
     def disconnect(self):
@@ -82,8 +83,9 @@ class DBHandler(object):
             self.conn = sqlcipher.connect(tempdbpath)
             self.conn.executescript(
                 'ATTACH DATABASE "{}" AS encrypted KEY "{}";'
+                'PRAGMA encrypted.kdf_iter={};'
                 'SELECT sqlcipher_export("encrypted");'
-                'DETACH DATABASE encrypted;'.format(rdbpath, password)
+                'DETACH DATABASE encrypted;'.format(rdbpath, password, KDF_ITER)
             )
             self.disconnect()
 
