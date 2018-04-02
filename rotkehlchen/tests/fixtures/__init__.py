@@ -2,3 +2,4 @@
 # flake8: noqa
 
 from rotkehlchen.tests.fixtures.db import *
+from rotkehlchen.tests.fixtures.accounting import *

@@ -18,6 +18,7 @@ cache:
   pip: true
   directories:
     - $HOME/.cache/pip
+    - $HOME/.cache/.rotkehlchen-test-dir
 
 # _`before_install`: Perform the manual steps on OS X to install python3 and
 # activate venv, since Python support is not available, per the list of
