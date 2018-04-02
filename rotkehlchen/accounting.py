@@ -91,9 +91,6 @@ class Accountant(object):
         self.count_profit_for_settlements = False
         self.csvexporter = CSVExporter(profit_currency, user_directory, create_csv)
 
-        # TEMPORARY FOR TESTING. TODO: Remove
-        self.temp_list = list()
-
     def set_main_currency(self, currency):
         if currency not in FIAT_CURRENCIES:
             raise ValueError(
@@ -577,11 +574,6 @@ class Accountant(object):
             self.general_trade_profit_loss += general_profit_loss
             self.taxable_trade_profit_loss += taxable_profit_loss
 
-            # TEMPORARY FOR TESTING. TODO: Remove
-            if randint(0, 100) == 0:
-                row = len(self.csvexporter.all_events_csv) + 2
-                self.temp_list.append((row, taxable_profit_loss))
-
             if loan_settlement:
                 self.csvexporter.add_loan_settlement(
                     asset=selling_asset,
@@ -909,11 +901,6 @@ class Accountant(object):
 
         self.calculate_asset_details()
         self.csvexporter.create_files()
-
-        # TEMPORARY FOR TESTING. TODO: Remove
-        print("-------- TEMPLIST START----------")
-        print(self.temp_list)
-        print("-------- TEMPLIST END----------")
 
         sum_other_actions = (
             self.margin_positions_profit +
