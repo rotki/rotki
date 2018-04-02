@@ -1,24 +1,10 @@
 import pytest
-from tempfile import mkdtemp
 
-from rotkehlchen.accounting import Accountant
-from rotkehlchen.history import PriceHistorian, trades_from_dictlist
+from rotkehlchen.history import trades_from_dictlist
 from rotkehlchen.errors import CorruptData
 
-TEST_HISTORY_DATA_START = "01/01/2015"
 
-
-def init_accounting_tests(history_list, margin_list, start_ts, end_ts):
-    # TODO: This should become part of test fixtures. Also HAS to be deleted at teardown
-    user_directory = mkdtemp()
-    price_historian = PriceHistorian(user_directory, TEST_HISTORY_DATA_START)
-    accountant = Accountant(
-        price_historian=price_historian,
-        profit_currency='EUR',
-        user_directory=user_directory,
-        create_csv=False,
-        ignored_assets=[]
-    )
+def accounting_history_process(accountant, history_list, margin_list, start_ts, end_ts):
     accountant.process_history(
         start_ts=start_ts,
         end_ts=end_ts,
@@ -28,7 +14,6 @@ def init_accounting_tests(history_list, margin_list, start_ts, end_ts):
         asset_movements=list(),
         eth_transactions=list()
     )
-    return accountant
 
 
 history1 = [
@@ -80,9 +65,8 @@ history1 = [
 ]
 
 
-@pytest.mark.skip(reason="TODO: Refactor")
-def test_simple_accounting():
-    accountant = init_accounting_tests(history1, [], 1436979735, 1495751688)
+def test_simple_accounting(accountant):
+    accounting_history_process(accountant, history1, [], 1436979735, 1495751688)
     assert accountant.general_trade_profit_loss.is_close("557.528104903")
     assert accountant.taxable_trade_profit_loss.is_close("557.528104903")
 
@@ -129,13 +113,12 @@ bad_history2 = [
 ]
 
 
-@pytest.mark.skip(reason="TODO: Refactor")
-def test_mismatch_in_amount_rate_and_cost():
+def test_mismatch_in_amount_rate_and_cost(accountant):
     with pytest.raises(CorruptData):
-        init_accounting_tests(bad_history1, [], 1436979735, 1495751688)
+        accounting_history_process(accountant, bad_history1, [], 1436979735, 1495751688)
 
     with pytest.raises(CorruptData):
-        init_accounting_tests(bad_history2, [], 1436979735, 1495751688)
+        accounting_history_process(accountant, bad_history2, [], 1436979735, 1495751688)
 
 
 history2 = [
@@ -187,8 +170,7 @@ history2 = [
 ]
 
 
-@pytest.mark.skip(reason="TODO: Refactor")
-def test_selling_crypto_bought_with_crypto():
-    accountant = init_accounting_tests(history2, [], 1436979735, 1495751688)
+def test_selling_crypto_bought_with_crypto(accountant):
+    accounting_history_process(accountant, history2, [], 1436979735, 1495751688)
     assert accountant.general_trade_profit_loss.is_close("73.9657992344")
     assert accountant.taxable_trade_profit_loss.is_close("73.9657992344")

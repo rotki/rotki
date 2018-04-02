@@ -737,14 +737,16 @@ class Accountant(object):
                 is_virtual=False
             )
 
-    def process_history(self,
-                        start_ts,
-                        end_ts,
-                        trade_history,
-                        margin_history,
-                        loan_history,
-                        asset_movements,
-                        eth_transactions):
+    def process_history(
+            self,
+            start_ts,
+            end_ts,
+            trade_history,
+            margin_history,
+            loan_history,
+            asset_movements,
+            eth_transactions
+    ):
         """Processes the entire history of cryptoworld actions in order to determine
         the price and time at which every asset was obtained and also
         the general and taxable profit/loss.
