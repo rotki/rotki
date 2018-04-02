@@ -9,3 +9,5 @@ Rotkehlchen.egg-info/
 rotkehlchen.egg-info/
 .DS_Store
 rotkehlchen.log
+.pytest_cache
+ui/.ignore
