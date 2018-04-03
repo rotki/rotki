@@ -1,5 +1,4 @@
 import gevent
-from random import randint
 
 from rotkehlchen.utils import tsToDate, ts_now, taxable_gain_for_sell
 from rotkehlchen.order_formatting import (
@@ -20,6 +19,7 @@ from rotkehlchen.history import (
 from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.fval import FVal
 from rotkehlchen.errors import CorruptData
+from rotkehlchen.constants import ETH_DAO_FORK_TS
 
 import logging
 logger = logging.getLogger(__name__)
@@ -124,7 +124,8 @@ class Accountant(object):
             trade_fee,
             fee_currency,
             timestamp,
-            is_virtual=False):
+            is_virtual=False
+    ):
 
         paid_with_asset_rate = self.get_rate_in_profit_currency(paid_with_asset, timestamp)
         buy_rate = paid_with_asset_rate * trade_rate
@@ -134,6 +135,19 @@ class Accountant(object):
                 fee_currency,
                 self.profit_currency,
                 timestamp
+            )
+
+        if bought_asset == 'ETH' and timestamp < ETH_DAO_FORK_TS:
+            # Acquiring ETH before the DAO fork provides equal amount of ETC
+            self.add_buy_to_events(
+                'ETC',
+                bought_amount,
+                paid_with_asset,
+                trade_rate,
+                0,
+                fee_currency,
+                timestamp,
+                is_virtual=True
             )
 
         if bought_asset not in self.events:

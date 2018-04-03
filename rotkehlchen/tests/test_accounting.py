@@ -174,3 +174,36 @@ def test_selling_crypto_bought_with_crypto(accountant):
     accounting_history_process(accountant, history2, [], 1436979735, 1495751688)
     assert accountant.general_trade_profit_loss.is_close("73.9657992344")
     assert accountant.taxable_trade_profit_loss.is_close("73.9657992344")
+
+
+history3 = [
+    {
+        "timestamp": 1446979735,
+        "pair": "ETH_EUR",
+        "type": "buy",
+        "rate": 0.2315893,
+        "cost": 335.804485,
+        "cost_currency": "EUR",
+        "fee": 0,
+        "fee_currency": "ETH",
+        "amount": 1450,
+        "location": "external",
+    }, {
+        'timestamp': 1481979135,
+        'pair': 'ETC_EUR',  # cryptocompare hourly ETC/EUR price: 1.78
+        'type': 'sell',
+        'rate': 1.78,
+        'cost': 979,
+        'cost_currency': 'EUR',
+        'fee': 0.9375,
+        'fee_currency': 'EUR',
+        'amount': 550,
+        'location': 'kraken'
+    }
+]
+
+
+def test_buying_eth_before_daofork(accountant):
+    accounting_history_process(accountant, history3, [], 1436979735, 1495751688)
+    assert accountant.general_trade_profit_loss.is_close("850.688385")
+    assert accountant.taxable_trade_profit_loss.is_close("0")

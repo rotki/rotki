@@ -1,2 +1,3 @@
+ETH_DAO_FORK_TS = 1469020840  # 20-Jul-16 13:20:40 UTC
 SUPPORTED_EXCHANGES = ['kraken', 'poloniex', 'bittrex', 'binance']
 ROTKEHLCHEN_SERVER_TIMEOUT = 1
