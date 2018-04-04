@@ -93,7 +93,11 @@ You now deserved to start Rotkehlchen:
 
 ### Contribute
 
-It's an open-source project so help is really appreciated. Open issues, pull requests to help with development, be active in Github and above all be nice.
+It's an open-source project so help is really appreciated.
+
+Open issues or pull requests to help with development, be active in Github and above all be nice.
+
+In order for your Pull Request to be considered it will need to pass the automated CI tests and you will also need to sign the CLA (Contributor's license agreement).
 
 
 ### Get Premium -- Coming Soon
