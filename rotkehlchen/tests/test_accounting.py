@@ -207,3 +207,36 @@ def test_buying_eth_before_daofork(accountant):
     accounting_history_process(accountant, history3, [], 1436979735, 1495751688)
     assert accountant.general_trade_profit_loss.is_close("850.688385")
     assert accountant.taxable_trade_profit_loss.is_close("0")
+
+
+history4 = [
+    {
+        "timestamp": 1491593374,
+        "pair": "BTC_EUR",
+        "type": "buy",
+        "rate": 1128.905,
+        "cost": 7337.8825,
+        "cost_currency": "EUR",
+        "fee": 0.55,
+        "fee_currency": "EUR",
+        "amount": 6.5,
+        "location": "external",
+    }, {
+        'timestamp': 1512693374,
+        'pair': 'BCH_EUR',  # cryptocompare hourly BCH/EUR price: 995.935
+        'type': 'sell',
+        'rate': 995.935,
+        'cost': 2091.4635,
+        'cost_currency': 'EUR',
+        'fee': 0.26,
+        'fee_currency': 'EUR',
+        'amount': 2.1,
+        'location': 'kraken'
+    }
+]
+
+
+def test_buying_btc_before_bchfork(accountant):
+    accounting_history_process(accountant, history4, [], 1436979735, 1519693374)
+    assert accountant.general_trade_profit_loss.is_close("-279.497")
+    assert accountant.taxable_trade_profit_loss.is_close("-279.497")

@@ -19,7 +19,7 @@ from rotkehlchen.history import (
 from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.fval import FVal
 from rotkehlchen.errors import CorruptData
-from rotkehlchen.constants import ETH_DAO_FORK_TS
+from rotkehlchen.constants import ETH_DAO_FORK_TS, BTC_BCH_FORK_TS
 
 import logging
 logger = logging.getLogger(__name__)
@@ -115,6 +115,43 @@ class Accountant(object):
         assert isinstance(rate, (FVal, int))  # TODO Remove. Is temporary assert
         return rate
 
+    def handle_prefork_acquisitions(
+            self,
+            bought_asset,
+            bought_amount,
+            paid_with_asset,
+            trade_rate,
+            trade_fee,
+            fee_currency,
+            timestamp
+    ):
+        # TODO: Should fee also be taken into account here?
+        if bought_asset == 'ETH' and timestamp < ETH_DAO_FORK_TS:
+            # Acquiring ETH before the DAO fork provides equal amount of ETC
+            self.add_buy_to_events(
+                'ETC',
+                bought_amount,
+                paid_with_asset,
+                trade_rate,
+                0,
+                fee_currency,
+                timestamp,
+                is_virtual=True
+            )
+
+        if bought_asset == 'BTC' and timestamp < BTC_BCH_FORK_TS:
+            # Acquiring BTC before the BCH fork provides equal amount of BCH
+            self.add_buy_to_events(
+                'BCH',
+                bought_amount,
+                paid_with_asset,
+                trade_rate,
+                0,
+                fee_currency,
+                timestamp,
+                is_virtual=True
+            )
+
     def add_buy_to_events(
             self,
             bought_asset,
@@ -137,18 +174,15 @@ class Accountant(object):
                 timestamp
             )
 
-        if bought_asset == 'ETH' and timestamp < ETH_DAO_FORK_TS:
-            # Acquiring ETH before the DAO fork provides equal amount of ETC
-            self.add_buy_to_events(
-                'ETC',
-                bought_amount,
-                paid_with_asset,
-                trade_rate,
-                0,
-                fee_currency,
-                timestamp,
-                is_virtual=True
-            )
+        self.handle_prefork_acquisitions(
+            bought_asset=bought_asset,
+            bought_amount=bought_amount,
+            paid_with_asset=paid_with_asset,
+            trade_rate=trade_rate,
+            trade_fee=trade_fee,
+            fee_currency=fee_currency,
+            timestamp=timestamp
+        )
 
         if bought_asset not in self.events:
             self.events[bought_asset] = Events(list(), list())
@@ -417,6 +451,7 @@ class Accountant(object):
                     buy_event.rate,
                     - (buy_event.fee_rate * remaining_sold_amount)
                 )
+
                 if sell_after_year:
                     taxfree_amount += remaining_sold_amount
                     taxfree_bought_cost += buying_cost
@@ -771,7 +806,6 @@ class Accountant(object):
         self.csvexporter.reset_csv_lists()
 
         actions = list(trade_history)
-
         # If we got loans, we need to interleave them with the full history and re-sort
         if len(loan_history) != 0:
             actions.extend(loan_history)
