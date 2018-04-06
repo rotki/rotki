@@ -3,6 +3,11 @@ os: linux
 language: python
 python:
   - 3.6
+env:
+  global:
+  - GETH_URL_LINUX='https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.8.0-5f540757.tar.gz'
+  - GETH_URL_MACOS='https://gethstore.blob.core.windows.net/builds/geth-darwin-amd64-1.8.0-5f540757.tar.gz'
+  - GETH_VERSION='1.8.0'
 
 
 matrix:
@@ -19,29 +24,21 @@ cache:
   directories:
     - $HOME/.cache/pip
     - $HOME/.cache/.rotkehlchen-test-dir
+    - $HOME/.ethash
+    - $HOME/.bin
 
-# _`before_install`: Perform the manual steps on OS X to install python3 and
-# activate venv, since Python support is not available, per the list of
-# `unsupported languages on OS X <https://github.com/travis-ci/travis-ci/issues/2320>`_.
-# The following approach is based on a `workaround <https://github.com/travis-ci/travis-ci/issues/2312#issuecomment-195620855>`_.
-# This was modified based on `instructions to install multiple Python versions on OS X <https://gist.github.com/Bouke/11261620>`_.
-# See also the `pyenv docs <https://github.com/yyuu/pyenv/blob/master/README.md>`_.
-before_install: |
-  mkdir -p $HOME/.bin
-  export PATH=$PATH:$HOME/.bin
-  if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-    brew update && brew install sqlcipher
-    git clone https://github.com/MacPython/terryfy.git
-    # Avoid printing the lines from the script below.
-    source terryfy/travis_tools.sh
-    get_python_environment $INSTALL_TYPE $VERSION $VENV
-  else
-    sudo apt-get install -y libsqlcipher-dev libzmq-dev
-  fi
+before_install:
+  - mkdir -p $HOME/.bin
+  - export PATH=$PATH:$HOME/.bin
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./.travis/before_install.sh; fi
+  - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then sudo ./.travis/before_install.sh; fi
+  # This needs to be outside of the before_install.sh script or else the environment
+  # is not set properly for OSX
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source terryfy/travis_tools.sh; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then get_python_environment $INSTALL_TYPE $VERSION $VENV; fi
 
 install:
   - python -m pip install -U pip
-
   - pip install -U pip wheel coveralls "coverage<4.4"
   - pip install pytest-travis-fold
   - pip install flake8
