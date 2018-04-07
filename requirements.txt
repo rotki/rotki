@@ -3,7 +3,7 @@ zerorpc
 web3
 pysqlcipher3
 requests
-pycrypto
+pycryptodome
 coincurve
 psutil==5.4.3
 

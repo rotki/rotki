@@ -2,9 +2,8 @@ import base64
 from binascii import hexlify
 
 from Crypto.Cipher import AES
-from Crypto.Hash import SHA256
+from Crypto.Hash import SHA256, SHA3_256
 from Crypto import Random
-from sha3 import keccak_256
 from coincurve import PrivateKey
 
 from rotkehlchen import typing
@@ -48,7 +47,7 @@ def sha3(data: bytes) -> bytes:
         TypeError: This function does not accept unicode objects, they must be
         encoded prior to usage.
     """
-    return keccak_256(data).digest()
+    return SHA3_256.new(data).digest()
 
 
 def ishash(data: bytes) -> bool:
