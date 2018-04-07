@@ -1,7 +1,13 @@
 import base64
+from binascii import hexlify
+
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
 from Crypto import Random
+from sha3 import keccak_256
+from coincurve import PrivateKey
+
+from rotkehlchen import typing
 
 
 # AES encrypt/decrypt taken from here: https://stackoverflow.com/a/44212550/110395
@@ -31,3 +37,44 @@ def decrypt(key, source, decode=True):
     if data[-padding:] != bytes([padding]) * padding:  # Python 2.x: chr(padding) * padding
         raise ValueError("Invalid padding...")
     return data[:-padding]  # remove the padding
+
+
+def sha3(data: bytes) -> bytes:
+    """
+    Raises:
+        RuntimeError: If Keccak lib initialization failed, or if the function
+        failed to compute the hash.
+
+        TypeError: This function does not accept unicode objects, they must be
+        encoded prior to usage.
+    """
+    return keccak_256(data).digest()
+
+
+def ishash(data: bytes) -> bool:
+    return isinstance(data, bytes) and len(data) == 32
+
+
+def isaddress(data: bytes) -> bool:
+    return isinstance(data, bytes) and len(data) == 20
+
+
+def privatekey_to_publickey(private_key_bin: bytes) -> bytes:
+    """ Returns public key in bitcoins 'bin' encoding. """
+    if not ishash(private_key_bin):
+        raise ValueError('private_key_bin format mismatch. maybe hex encoded?')
+    private_key = PrivateKey(private_key_bin)
+    return private_key.public_key.format(compressed=False)
+
+
+def publickey_to_address(publickey: bytes) -> bytes:
+    return sha3(publickey[1:])[12:]
+
+
+def privatekey_to_address(private_key_bin: bytes) -> typing.Address:
+    return publickey_to_address(privatekey_to_publickey(private_key_bin))
+
+
+def address_encoder(address: typing.Address) -> str:
+    assert len(address) in (20, 0)
+    return '0x' + hexlify(address).decode()

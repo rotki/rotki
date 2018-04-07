@@ -11,13 +11,14 @@ logger = logging.getLogger(__name__)
 
 
 class Ethchain(object):
-    def __init__(self, ethrpc_port):
+    def __init__(self, ethrpc_port, attempt_connect=True):
         self.web3 = None
         self.rpc_port = ethrpc_port
         self.connected = False
-        self.attempt_connect(ethrpc_port)
+        if attempt_connect:
+            self.attempt_connect(ethrpc_port)
 
-    def attempt_connect(self, ethrpc_port):
+    def attempt_connect(self, ethrpc_port, mainnet_check=True):
         if self.rpc_port == ethrpc_port and self.connected:
             # We are already connected
             return True, 'Already connected to an ethereum node'
@@ -38,17 +39,20 @@ class Ethchain(object):
                 self.token_abi = rlk_jsonloads(f.read())
 
             # Also make sure we are actually connected to the Ethereum mainnet
-            genesis_hash = self.web3.eth.getBlock(0)['hash']
-            target = '0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3'
-            if genesis_hash != target:
-                logger.warn(
-                    'Connected to a local ethereum node but it is not on the ethereum mainnet'
-                )
-                self.connected = False
-                message = (
-                    'Connected to ethereum node at port {} but it is not on '
-                    'the ethereum mainnet'.format(ethrpc_port)
-                )
+            if mainnet_check:
+                genesis_hash = self.web3.eth.getBlock(0)['hash']
+                target = '0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3'
+                if genesis_hash != target:
+                    logger.warn(
+                        'Connected to a local ethereum node but it is not on the ethereum mainnet'
+                    )
+                    self.connected = False
+                    message = (
+                        'Connected to ethereum node at port {} but it is not on '
+                        'the ethereum mainnet'.format(ethrpc_port)
+                    )
+                    return False, message
+
             self.connected = True
             return True, ''
         else:
@@ -149,3 +153,9 @@ class Ethchain(object):
     def get_token_balance(self, token_symbol, token_address, token_decimals, account):
         res = self.get_multitoken_balance(token_symbol, token_address, token_decimals, [account])
         return res.get(account, 0)
+
+    def get_block_by_number(self, num):
+        if not self.connected:
+            return None
+
+        return self.web3.eth.getBlock(num)

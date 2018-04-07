@@ -5,7 +5,6 @@ from gevent.lock import Semaphore
 from urllib.request import Request, urlopen
 
 from rotkehlchen.errors import InputError
-from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils import cache_response_timewise
 
@@ -21,11 +20,11 @@ class Blockchain(object):
             all_eth_tokens,
             owned_eth_tokens,
             inquirer,
-            ethrpc_port
+            ethchain,
     ):
         self.lock = Semaphore()
         self.results_cache = {}
-        self.ethchain = Ethchain(ethrpc_port)
+        self.ethchain = ethchain
         self.inquirer = inquirer
 
         self.accounts = blockchain_accounts
