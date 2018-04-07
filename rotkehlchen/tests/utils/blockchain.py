@@ -184,7 +184,13 @@ def geth_create_blockchain(
         stderr=stderr,
     )
 
-    geth_wait_and_check(ethchain_client, gethrpcport, private_keys, random_marker)
+    try:
+        geth_wait_and_check(ethchain_client, gethrpcport, private_keys, random_marker)
+    except (ValueError, RuntimeError) as e:
+        # if something goes wrong in the above function make sure to kill the geth
+        # process before quitting the tests
+        process.terminate()
+        raise e
 
     # reenter echo mode (disabled by geth pasphrase prompt)
     if isinstance(sys.stdin, io.IOBase):
