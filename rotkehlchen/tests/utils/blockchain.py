@@ -135,19 +135,6 @@ def geth_wait_and_check(ethchain_client, rpc_port, privatekeys, random_marker):
     if jsonrpc_running is False:
         raise ValueError('geth didnt start the jsonrpc interface')
 
-    # for key in sorted(set(privatekeys)):
-    #     address = address_encoder(privatekey_to_address(key))
-
-    #     tries = 10
-    #     balance = '0x0'
-    #     while balance == '0x0' and tries > 0:
-    #         balance = deploy_client.call('eth_getBalance', address, 'latest')
-    #         gevent.sleep(1)
-    #         tries -= 1
-
-    #     if balance == '0x0':
-    #         raise ValueError('account is with a balance of 0')
-
 
 def geth_create_blockchain(
         ethchain_client,
