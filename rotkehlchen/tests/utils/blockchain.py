@@ -6,6 +6,8 @@ import subprocess
 import gevent
 import sys
 import termios
+from binascii import hexlify
+from web3.middleware import geth_poa_middleware
 
 from rotkehlchen.crypto import privatekey_to_address, address_encoder
 from rotkehlchen.tests.utils.genesis import GENESIS_STUB
@@ -123,9 +125,12 @@ def geth_wait_and_check(ethchain_client, rpc_port, privatekeys, random_marker):
             gevent.sleep(0.5)
             tries -= 1
         else:
+            # inject the web3 middleware for PoA to not fail at extraData validation
+            # https://github.com/ethereum/web3.py/issues/549
+            ethchain_client.web3.middleware_stack.inject(geth_poa_middleware, layer=0)
             jsonrpc_running = True
             block = ethchain_client.get_block_by_number(0)
-            running_marker = block['extraData'][2:len(random_marker) + 2]
+            running_marker = hexlify(block['proofOfAuthorityData'])[:24].decode()
             if running_marker != random_marker:
                 raise RuntimeError(
                     'the test marker does not match, maybe two tests are running in '
@@ -145,7 +150,7 @@ def geth_create_blockchain(
         verbosity,
         random_marker,
         genesis_path=None,
-        logdirectory=None
+        logdirectory=None,
 ):
     nodekey_part = 'foo'  # since we have only 1 instance running any string is fine
     nodedir = os.path.join(base_datadir, nodekey_part)
@@ -186,7 +191,7 @@ def geth_create_blockchain(
 
     try:
         geth_wait_and_check(ethchain_client, gethrpcport, private_keys, random_marker)
-    except (ValueError, RuntimeError) as e:
+    except (ValueError, RuntimeError, KeyError) as e:
         # if something goes wrong in the above function make sure to kill the geth
         # process before quitting the tests
         process.terminate()
