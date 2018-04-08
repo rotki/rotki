@@ -40,7 +40,7 @@ class Ethchain(object):
 
             # Also make sure we are actually connected to the Ethereum mainnet
             if mainnet_check:
-                genesis_hash = self.web3.eth.getBlock(0)['hash']
+                genesis_hash = self.web3.eth.getBlock(0)['hash'].hex()
                 target = '0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3'
                 if genesis_hash != target:
                     logger.warn(
@@ -125,7 +125,7 @@ class Ethchain(object):
                 abi=self.token_abi
             )
             for account in accounts:
-                token_amount = FVal(token_contract.call().balanceOf(account))
+                token_amount = FVal(token_contract.functions.balanceOf(account).call())
                 if token_amount != 0:
                     balances[account] = token_amount / (FVal(10) ** FVal(token_decimals))
         else:

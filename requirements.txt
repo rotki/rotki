@@ -1,6 +1,6 @@
 gevent
 zerorpc
-web3
+web3==4.0.0
 pysqlcipher3
 requests
 pycryptodome

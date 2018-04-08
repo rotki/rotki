@@ -44,7 +44,7 @@ class Blockchain(object):
                 continue
 
             self.all_eth_tokens[token_symbol] = {
-                'address': token['address'],
+                'address': to_checksum_address(token['address']),
                 'decimal': token['decimal']
             }
         # Per account balances
