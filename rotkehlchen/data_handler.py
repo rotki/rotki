@@ -91,16 +91,19 @@ def check_otctrade_data_valid(data):
     return timestamp, ''
 
 
+def get_all_eth_tokens():
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    with open(os.path.join(dir_path, 'data', 'eth_tokens.json'), 'r') as f:
+        return rlk_jsonloads(f.read())
+
+
 class DataHandler(object):
 
     def __init__(self, data_directory):
 
         self.data_directory = data_directory
         self.db = None
-        self.eth_tokens = []
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        with open(os.path.join(dir_path, 'data', 'eth_tokens.json'), 'r') as f:
-            self.eth_tokens = rlk_jsonloads(f.read())
+        self.eth_tokens = get_all_eth_tokens()
 
     def unlock(self, username, password, create_new):
         user_data_dir = os.path.join(self.data_directory, username)

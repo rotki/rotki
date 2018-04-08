@@ -24,6 +24,7 @@ from rotkehlchen.utils import query_fiat_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import TradesHistorian, PriceHistorian
 from rotkehlchen.accounting import Accountant
+from rotkehlchen.ethchain import Ethchain
 
 import logging
 logger = logging.getLogger(__name__)
@@ -211,12 +212,13 @@ class Rotkehlchen(object):
         self.inquirer = Inquirer(kraken=self.kraken)
         self.initialize_exchanges(secret_data)
 
+        ethchain = Ethchain(eth_rpc_port)
         self.blockchain = Blockchain(
             self.data.db.get_blockchain_accounts(),
             self.data.eth_tokens,
             self.data.db.get_owned_tokens(),
             self.inquirer,
-            eth_rpc_port
+            ethchain
         )
 
     def set_premium_credentials(self, api_key, api_secret):

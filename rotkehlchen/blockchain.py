@@ -1,11 +1,10 @@
 import operator
 from collections import defaultdict
-
 from gevent.lock import Semaphore
 from urllib.request import Request, urlopen
+from eth_utils.address import to_checksum_address
 
 from rotkehlchen.errors import InputError
-from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils import cache_response_timewise
 
@@ -21,14 +20,18 @@ class Blockchain(object):
             all_eth_tokens,
             owned_eth_tokens,
             inquirer,
-            ethrpc_port
+            ethchain,
     ):
         self.lock = Semaphore()
         self.results_cache = {}
-        self.ethchain = Ethchain(ethrpc_port)
+        self.ethchain = ethchain
         self.inquirer = inquirer
 
         self.accounts = blockchain_accounts
+        # go through ETH accounts and make sure they are EIP55 encoded
+        if 'ETH' in self.accounts:
+            self.accounts['ETH'] = [to_checksum_address(x) for x in self.accounts['ETH']]
+
         self.owned_eth_tokens = owned_eth_tokens
 
         # All the known tokens, along with addresses and decimals
@@ -41,7 +44,7 @@ class Blockchain(object):
                 continue
 
             self.all_eth_tokens[token_symbol] = {
-                'address': token['address'],
+                'address': to_checksum_address(token['address']),
                 'decimal': token['decimal']
             }
         # Per account balances

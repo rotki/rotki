@@ -1,7 +1,12 @@
 import base64
+from binascii import hexlify, unhexlify
+
 from Crypto.Cipher import AES
-from Crypto.Hash import SHA256
+from Crypto.Hash import SHA256, SHA3_256
 from Crypto import Random
+from coincurve import PrivateKey
+
+from rotkehlchen import typing
 
 
 # AES encrypt/decrypt taken from here: https://stackoverflow.com/a/44212550/110395
@@ -31,3 +36,53 @@ def decrypt(key, source, decode=True):
     if data[-padding:] != bytes([padding]) * padding:  # Python 2.x: chr(padding) * padding
         raise ValueError("Invalid padding...")
     return data[:-padding]  # remove the padding
+
+
+def sha3(data: bytes) -> bytes:
+    """
+    Raises:
+        RuntimeError: If Keccak lib initialization failed, or if the function
+        failed to compute the hash.
+
+        TypeError: This function does not accept unicode objects, they must be
+        encoded prior to usage.
+    """
+    return SHA3_256.new(data).digest()
+
+
+def ishash(data: bytes) -> bool:
+    return isinstance(data, bytes) and len(data) == 32
+
+
+def isaddress(data: bytes) -> bool:
+    return isinstance(data, bytes) and len(data) == 20
+
+
+def privatekey_to_publickey(private_key_bin: bytes) -> bytes:
+    """ Returns public key in bitcoins 'bin' encoding. """
+    if not ishash(private_key_bin):
+        raise ValueError('private_key_bin format mismatch. maybe hex encoded?')
+    private_key = PrivateKey(private_key_bin)
+    return private_key.public_key.format(compressed=False)
+
+
+def publickey_to_address(publickey: bytes) -> bytes:
+    return sha3(publickey[1:])[12:]
+
+
+def privatekey_to_address(private_key_bin: bytes) -> typing.Address:
+    return publickey_to_address(privatekey_to_publickey(private_key_bin))
+
+
+def address_encoder(address: typing.Address) -> str:
+    assert len(address) in (20, 0)
+    return '0x' + hexlify(address).decode()
+
+
+def address_decoder(addr: str) -> typing.Address:
+    if addr[:2] == '0x':
+        addr = addr[2:]
+
+    addr = unhexlify(addr)
+    assert len(addr) in (20, 0)
+    return addr

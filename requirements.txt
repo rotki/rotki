@@ -1,9 +1,11 @@
 gevent
 zerorpc
-web3
+web3==4.0.0
 pysqlcipher3
 requests
-pycrypto
+pycryptodome
+coincurve
+psutil==5.4.3
 
 # dev requirements -- could go onto a separate file
 pytest

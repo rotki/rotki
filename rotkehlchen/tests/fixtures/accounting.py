@@ -4,6 +4,7 @@ import errno
 
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.accounting import Accountant
+from rotkehlchen.inquirer import Inquirer
 
 TEST_HISTORY_DATA_START = "01/01/2015"
 
@@ -62,3 +63,8 @@ def accountant(
         create_csv=accounting_create_csv,
         ignored_assets=accounting_ignored_assets
     )
+
+
+@pytest.fixture(scope='session')
+def inquirer():
+    return Inquirer(kraken=None)
