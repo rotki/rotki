@@ -9,11 +9,11 @@ def test_eth_connection_initial_balances(
         ethereum_accounts,
         inquirer,
 ):
+    eth_usd_price = inquirer.find_usd_price('ETH')
     res = blockchain.query_balances()
     assert 'per_account' in res
     assert 'totals' in res
 
-    eth_usd_price = inquirer.find_usd_price('ETH')
     per_eth_account = res['per_account']['ETH']
     assert len(ethereum_accounts) == len(per_eth_account) == number_of_accounts
 
