@@ -1,5 +1,5 @@
 import base64
-from binascii import hexlify
+from binascii import hexlify, unhexlify
 
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA256, SHA3_256
@@ -77,3 +77,12 @@ def privatekey_to_address(private_key_bin: bytes) -> typing.Address:
 def address_encoder(address: typing.Address) -> str:
     assert len(address) in (20, 0)
     return '0x' + hexlify(address).decode()
+
+
+def address_decoder(addr: str) -> typing.Address:
+    if addr[:2] == '0x':
+        addr = addr[2:]
+
+    addr = unhexlify(addr)
+    assert len(addr) in (20, 0)
+    return addr

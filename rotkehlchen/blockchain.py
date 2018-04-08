@@ -1,8 +1,8 @@
 import operator
 from collections import defaultdict
-
 from gevent.lock import Semaphore
 from urllib.request import Request, urlopen
+from eth_utils.address import to_checksum_address
 
 from rotkehlchen.errors import InputError
 from rotkehlchen.fval import FVal
@@ -28,6 +28,10 @@ class Blockchain(object):
         self.inquirer = inquirer
 
         self.accounts = blockchain_accounts
+        # go through ETH accounts and make sure they are EIP55 encoded
+        if 'ETH' in self.accounts:
+            self.accounts['ETH'] = [to_checksum_address(x) for x in self.accounts['ETH']]
+
         self.owned_eth_tokens = owned_eth_tokens
 
         # All the known tokens, along with addresses and decimals

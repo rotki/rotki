@@ -7,7 +7,7 @@ set -x
 # export PATH=$PATH:$HOME/.bin
 
 if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then
-    apt-get install -y libsqlcipher-dev libzmq-dev libssl-dev
+    apt-get install -y libsqlcipher-dev libzmq-dev
 else
     brew update && brew install sqlcipher
     git clone https://github.com/MacPython/terryfy.git

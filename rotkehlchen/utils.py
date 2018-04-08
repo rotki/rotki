@@ -9,9 +9,12 @@ from urllib.request import Request, urlopen
 from urllib.error import URLError
 from collections import namedtuple
 from rlp.sedes import big_endian_int
+from rlp.utils import str_to_bytes
 
+from rotkehlchen import typing
 from rotkehlchen.errors import RecoverableRequestError
 from rotkehlchen.fval import FVal
+from rotkehlchen.crypto import sha3, address_decoder
 
 
 def sfjson_loads(s):

@@ -1,6 +1,7 @@
 import pytest
 import os
 import json
+from eth_utils.address import to_checksum_address
 
 from rotkehlchen.blockchain import Blockchain
 from rotkehlchen.ethchain import Ethchain
@@ -48,7 +49,7 @@ def private_keys(number_of_accounts, privatekey_seed):
 @pytest.fixture
 def ethereum_accounts(private_keys):
     return [
-        address_encoder(privatekey_to_address(key))
+        to_checksum_address(address_encoder(privatekey_to_address(key)))
         for key in sorted(set(private_keys))
     ]
 
