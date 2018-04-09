@@ -196,10 +196,10 @@ def geth_create_blockchain(
         # process before quitting the tests
         process.terminate()
         raise e
-
-    # reenter echo mode (disabled by geth pasphrase prompt)
-    if isinstance(sys.stdin, io.IOBase):
-        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, term_settings)
+    finally:
+        # reenter echo mode (disabled by geth pasphrase prompt)
+        if isinstance(sys.stdin, io.IOBase):
+            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, term_settings)
 
     process.poll()
 
