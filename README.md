@@ -5,13 +5,13 @@ Rotkehlchen is an asset management and accounting application specializing in Cr
 
 ## Installation
 
-For now only Linux is supported and only installation from source. This will change soon and both other platforms will be supported but also easier to install methods will be provided
+For now only source installation for Linux and OSX is supported. This will change soon and Windows will be added but also easier to install methods will be provided.
 
-Rotkehlchen needs  Python3 in order to function.
+Rotkehlchen needs Python3 in order to function.
 
 ### Linux
 
-Make sure you have [node.js](https://nodejs.org/en/) and [npm](https://www.npmjs.com/). If you don't use your linux distro's package manager to get them.
+Make sure you have [node.js](https://nodejs.org/en/) and [npm](https://www.npmjs.com/). If you don't, use your linux distro's package manager to get them.
 
 Get [zeromq](http://zeromq.org/) using the package manager of your distro. For example here is the package in [Archlinux](https://www.archlinux.org/packages/community/x86_64/zeromq/) and in [Ubuntu](https://packages.ubuntu.com/source/trusty/libs/zeromq).
 
@@ -44,7 +44,6 @@ Now to start the application you need to type `npm start`.
 
 ### OSX
 
-NOTE: While possible, the installation on OSX is still unsupported.
 
 The &lt;tldr&gt; version is:
 - install sqlcipher
