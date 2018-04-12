@@ -89,7 +89,7 @@ class CSVExporter(object):
         self.all_events.append(entry)
         new_entry = entry.copy()
         new_entry['net_profit_or_loss'] = net_profit_or_loss_csv
-        new_entry['time'] = tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+        new_entry['time'] = tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
         new_entry['paid_in_{}'.format(self.profit_currency)] = paid_in_profit_currency
         new_entry['received_in_{}'.format(self.profit_currency)] = received_in_profit_currency
         del new_entry['paid_in_profit_currency']
@@ -209,7 +209,7 @@ class CSVExporter(object):
             "fee_in_{}".format(self.profit_currency): total_fee_in_profit_currency,
             "time": tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
         })
-        paid_in_profit_currency = amount * rate_in_profit_currency + total_fee_in_profit_currency,
+        paid_in_profit_currency = amount * rate_in_profit_currency + total_fee_in_profit_currency
         self.add_to_allevents(
             event_type='loan_settlement',
             paid_in_profit_currency=paid_in_profit_currency,
