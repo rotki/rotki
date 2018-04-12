@@ -33,6 +33,8 @@ def _process_entry(entry):
         for k, v in entry.items():
             new_dict[k] = _process_entry(v)
         return new_dict
+    elif isinstance(entry, tuple):
+        raise ValueError('Query results should not contain tuples')
     else:
         return entry
 
