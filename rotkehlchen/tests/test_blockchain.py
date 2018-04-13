@@ -9,7 +9,6 @@ def test_eth_connection_initial_balances(
         ethereum_accounts,
         inquirer,
 ):
-    eth_usd_price = inquirer.find_usd_price('ETH')
     res = blockchain.query_balances()
     assert 'per_account' in res
     assert 'totals' in res
@@ -21,8 +20,8 @@ def test_eth_connection_initial_balances(
     for acc, values in per_eth_account.items():
         assert acc in ethereum_accounts
         assert values['ETH'] == eth_default_balance
-        assert values['usd_value'] == eth_default_balance * eth_usd_price
+        assert 'usd_value' in values
 
     totals_eth = res['totals']['ETH']
     assert totals_eth['amount'] == number_of_accounts * eth_default_balance
-    assert totals_eth['usd_value'] == number_of_accounts * eth_default_balance * eth_usd_price
+    assert 'usd_value' in totals_eth
