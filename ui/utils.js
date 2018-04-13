@@ -2,6 +2,19 @@ var fs = require('fs');
 var Tail = require('tail').Tail;
 var settings = require("./settings.js")();
 require("./balances_table.js")();
+const {dialog} = require('electron').remote;
+
+
+// Prompt a directory selection dialog and pass selected directory to callback
+// Callback should be a function which accepts a single argument which will be
+// a list of pathnames. The list should only contain 1 entry.
+function prompt_directory_select_async(callback) {
+    dialog.showOpenDialog({
+        title:"Select a directory",
+        properties: ["openDirectory"]
+    }, callback);
+}
+
 
 function utc_now() {
     return Math.floor(Date.now() / 1000);
@@ -255,6 +268,7 @@ function* iterate_saved_balances() {
 
 
 module.exports = function() {
+    this.prompt_directory_select_async = prompt_directory_select_async;
     this.utc_now = utc_now;
     this.timestamp_to_date = timestamp_to_date;
     this.string_capitalize = string_capitalize;
