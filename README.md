@@ -6,22 +6,22 @@ Rotkehlchen is an asset management and accounting application specializing in Cr
 
 ## Table of Contents
 
-- [Installation](https://github.com/rotkehlchenio/rotkehlchen#installation)
-    - [Linux](https://github.com/rotkehlchenio/rotkehlchen#linux)
-	- [OSX](https://github.com/rotkehlchenio/rotkehlchen#osx)
-- [Usage](https://github.com/rotkehlchenio/rotkehlchen#usage)
-    - [Signin/Signup](https://github.com/rotkehlchenio/rotkehlchen#signin-signup)
-    - [Changing the Profit Currency](https://github.com/rotkehlchenio/rotkehlchen#changing-the-profit-currency)
-    - [Adding Exchanges](https://github.com/rotkehlchenio/rotkehlchen#adding-exchanges)
-    - [Adding Fiat Balances](https://github.com/rotkehlchenio/rotkehlchen#adding-fiat-balances)
-    - [Adding And Removing Blockchain Accounts](https://github.com/rotkehlchenio/rotkehlchen#adding-and-removing-blockchain-accounts)
-    - [Adding And Removing Ethereum Tokens](https://github.com/rotkehlchenio/rotkehlchen#adding-and-removing-ethereum-tokens)
-    - [Manually Adding Trades Or Taxable Events](https://github.com/rotkehlchenio/rotkehlchen#manually-adding-trades-or-taxable-events)
-    - [Creating a Tax Report](https://github.com/rotkehlchenio/rotkehlchen#creating-a-tax-report)
-- [Wanna Help?](https://github.com/rotkehlchenio/rotkehlchen#wanna-help)
-    - [Contribute](https://github.com/rotkehlchenio/rotkehlchen#contribute)
-    - [Get Premium](https://github.com/rotkehlchenio/rotkehlchen#get-premium----coming-soon)
-    - [Donate](https://github.com/rotkehlchenio/rotkehlchen#donate)
+- [Installation](#installation)
+    - [Linux](#linux)
+	- [OSX](#osx)
+- [Usage](#usage)
+    - [Signin/Signup](#signinsignup)
+    - [Changing the Profit Currency](#changing-the-profit-currency)
+    - [Adding Exchanges](#adding-exchanges)
+    - [Adding Fiat Balances](#adding-fiat-balances)
+    - [Adding And Removing Blockchain Accounts](#adding-and-removing-blockchain-accounts)
+    - [Adding And Removing Ethereum Tokens](#adding-and-removing-ethereum-tokens)
+    - [Manually Adding Trades Or Taxable Events](#manually-adding-trades-or-taxable-events)
+    - [Creating a Tax Report](#creating-a-tax-report)
+- [Wanna Help?](#wanna-help)
+    - [Contribute](#contribute)
+    - [Get Premium](#get-premium----coming-soon)
+    - [Donate](#donate)
 
 
 ## Installation
