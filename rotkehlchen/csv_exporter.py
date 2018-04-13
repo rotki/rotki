@@ -339,27 +339,31 @@ class CSVExporter(object):
             timestamp=timestamp,
         )
 
-    def create_files(self):
+    def create_files(self, dirpath):
         if not self.create_csv:
-            return
+            return True, ''
 
-        out_dir = os.path.join(self.user_directory, 'CSV')
-        if not os.path.exists(out_dir):
-            os.makedirs(out_dir)
+        try:
+            if not os.path.exists(dirpath):
+                os.makedirs(dirpath)
 
-        self.dict_to_csv_file(os.path.join(out_dir, 'trades.csv'), self.trades_csv)
-        self.dict_to_csv_file(os.path.join(out_dir, 'loan_profits.csv'), self.loan_profits_csv)
-        self.dict_to_csv_file(
-            os.path.join(out_dir, 'asset_movements.csv'),
-            self.asset_movements_csv
-        )
-        self.dict_to_csv_file(os.path.join(out_dir, 'tx_gas_costs.csv'), self.tx_gas_costs_csv)
-        self.dict_to_csv_file(
-            os.path.join(out_dir, 'margin_positions.csv'),
-            self.margin_positions_csv
-        )
-        self.dict_to_csv_file(
-            os.path.join(out_dir, 'loan_settlements.csv'),
-            self.loan_settlements_csv
-        )
-        self.dict_to_csv_file(os.path.join(out_dir, 'all_events.csv'), self.all_events_csv)
+            self.dict_to_csv_file(os.path.join(dirpath, 'trades.csv'), self.trades_csv)
+            self.dict_to_csv_file(os.path.join(dirpath, 'loan_profits.csv'), self.loan_profits_csv)
+            self.dict_to_csv_file(
+                os.path.join(dirpath, 'asset_movements.csv'),
+                self.asset_movements_csv
+            )
+            self.dict_to_csv_file(os.path.join(dirpath, 'tx_gas_costs.csv'), self.tx_gas_costs_csv)
+            self.dict_to_csv_file(
+                os.path.join(dirpath, 'margin_positions.csv'),
+                self.margin_positions_csv
+            )
+            self.dict_to_csv_file(
+                os.path.join(dirpath, 'loan_settlements.csv'),
+                self.loan_settlements_csv
+            )
+            self.dict_to_csv_file(os.path.join(dirpath, 'all_events.csv'), self.all_events_csv)
+        except (PermissionError, OSError) as e:
+            return False, str(e)
+
+        return True, ''

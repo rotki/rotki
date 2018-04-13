@@ -256,6 +256,10 @@ class RotkehlchenServer(object):
         res = self.query_async('process_trade_history', start_ts=start_ts, end_ts=end_ts)
         return {'task_id': res}
 
+    def export_processed_history_csv(self, dirpath):
+        result, message = self.rotkehlchen.accountant.csvexporter.create_files(dirpath)
+        return {'result': result, 'message': message}
+
     def query_balances(self, save_data=False):
         if isinstance(save_data, str) and (save_data == 'save' or save_data == 'True'):
             save_data = True
