@@ -17,6 +17,31 @@ function add_taxreport_listeners() {
     $('#analysis_start_date').datetimepicker({format: settings.datetime_format});
     $('#analysis_end_date').datetimepicker({format: settings.datetime_format});
     $('#generate_report').click(generate_report_callback);
+    $('#export_csv').click(export_csv_callback);
+}
+
+function export_csv_callback(event) {
+    event.preventDefault();
+    let dir = prompt_directory_select_async((directories) => {
+        if(directories === undefined){
+            return;
+        }
+        let dir = directories[0];
+        client.invoke(
+            "export_processed_history_csv",
+            dir,
+            (error, res) => {
+                if (error || res == null) {
+                    showError('Exporting History to CSV error', error);
+                    return;
+                }
+                if (!res['result']) {
+                    showError('Exporting History to CSV error', res['message']);
+                    return;
+                }
+                showInfo('Success', 'History exported to CVS succesfully');
+            });
+    });
 }
 
 function generate_report_callback(event) {
@@ -162,6 +187,11 @@ function init_taxreport() {
                     'Check the logs for more details'
             );
             return;
+        }
+        if ($('#elementId').length == 0) {
+            str = form_button('Export CSV', 'export_csv');
+            $(str).insertAfter('#generate_report');
+            $('#export_csv').click(export_csv_callback);
         }
         create_taxreport_overview(result['overview']);
         create_taxreport_details(result['all_events']);

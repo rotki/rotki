@@ -948,7 +948,6 @@ class Accountant(object):
                 raise ValueError('Unknown trade type "{}" encountered'.format(trade.type))
 
         self.calculate_asset_details()
-        self.csvexporter.create_files()
 
         sum_other_actions = (
             self.margin_positions_profit +
