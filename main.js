@@ -40,7 +40,7 @@ app.on('activate', () => {
  * py process
  *************************************************************/
 
-const PY_DIST_FOLDER = 'NOTAPPPLICABLE';
+const PY_DIST_FOLDER = 'dist';
 const PY_FOLDER = 'rotkehlchen';
 const PY_MODULE = 'server'; // without .py suffix
 
