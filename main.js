@@ -41,7 +41,7 @@ app.on('activate', () => {
  * py process
  *************************************************************/
 
-const PY_DIST_FOLDER = 'dist';
+const PY_DIST_FOLDER = 'rotkehlchen_py_dist';
 const PY_FOLDER = 'rotkehlchen';
 const PY_MODULE = 'server'; // without .py suffix
 
@@ -78,7 +78,9 @@ const createPyProc = () => {
     if (guessPackaged()) {
         let dist_dir = path.join(__dirname, PY_DIST_FOLDER);
         let files = fs.readdirSync(dist_dir);
-        if (files.length != 1) {
+        if (files.length == 0) {
+            log_and_quit('No files found in the dist directory');
+        } else if (files.length != 1) {
             log_and_quit('Found more than one file in the dist directory');
         }
         let executable = files[0];

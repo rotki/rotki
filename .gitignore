@@ -4,9 +4,9 @@ node_modules/
 error.log
 .cache/
 build/
-dist/
-Rotkehlchen.egg-info/
+rotkehlchen_py_dist/
 rotkehlchen.egg-info/
+rotkehlchen-linux-x64
 .DS_Store
 rotkehlchen.log
 .pytest_cache
