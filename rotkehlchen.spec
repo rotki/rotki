@@ -74,15 +74,11 @@ a = Entrypoint(
     'console_scripts',
     'rotkehlchen',
     hookspath=['tools/pyinstaller_hooks'],
-    # runtime_hooks=[
-    #     'tools/pyinstaller_hooks/runtime_pyeth.py',   # Important: Needs to be first!
-    #     'tools/pyinstaller_hooks/runtime_encoding.py',
-    # ],
     hiddenimports=['cytoolz.utils', 'cytoolz._signatures'],
     datas=[
         ('rotkehlchen/data/eth_tokens.json', 'rotkehlchen/data'),
+        ('rotkehlchen/data/token_abi.json', 'rotkehlchen/data'),
     ],
-    # excludes=['FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter'],
 )
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=None)
