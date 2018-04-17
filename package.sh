@@ -1,8 +1,36 @@
 #!/usr/bin/env bash
 
+# Get the arch
+ARCH=`uname -m`
+if [ ${ARCH} == 'x86_64' ]; then
+    ARCH='x64'
+else
+    echo "package.sh - ERROR: Unsupported architecture '${ARCH}'"
+    exit 1
+fi
+
+# Get the platform
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
+    PLATFORM='linux'
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    PLATFORM='darwin'
+elif [[ "$OSTYPE" == "win32" ]]; then
+    PLATFORM='win32'
+elif [[ "$OSTYPE" == "freebsd"* ]]; then
+    PLATFORM='freebsd'
+else
+    echo "package.sh - ERROR: Unsupported platform '${OSTYPE}'"
+    exit 1
+fi
+
 # Use pyinstaller to package the python app
 rm -rf build rotkehlchen_py_dist
 pyinstaller --noconfirm --clean --distpath rotkehlchen_py_dist rotkehlchen.spec
+
+if [[ $? -ne 0 ]]; then
+    echo "package.sh - ERROR: pyinstaller step failed"
+    exit 1
+fi
 
 # Now use electron packager to bundle the entire app together with electron in a dir
 ./node_modules/.bin/electron-packager . --overwrite \
@@ -11,3 +39,18 @@ pyinstaller --noconfirm --clean --distpath rotkehlchen_py_dist rotkehlchen.spec
 				      --ignore="tools$" \
 				      --ignore=".*\.sh" \
 				      --ignore=".*\.py"
+
+if [[ $? -ne 0 ]]; then
+    echo "test.sh - ERROR: electron-packager step failed"
+    exit 1
+fi
+
+# Now try to zip the created bundle
+NAME="rotkehlchen-${PLATFORM}-${ARCH}"
+rm -rf $NAME
+zip -r $NAME "$NAME/"
+
+if [[ $? -ne 0 ]]; then
+    echo "test.sh - ERROR: zipping of final bundle failed"
+    exit 1
+fi
