@@ -49,3 +49,19 @@ script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source terryfy/test_tools.sh; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then python -m pytest rotkehlchen; fi
   - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then coverage run --source rotkehlchen/ -m pytest --travis-fold=always $TEST_TYPE; fi
+
+before_deploy:
+  - ./package.sh
+
+deploy:
+  - provider: releases
+    api_key:
+      secure: "mHrLrcP7VG8jYSqJdBHOf4xWzy6wGeLHywxM74JrhrMQ9GsKGvQ8G0y9joxJYGVfSI7IQu9Ne5Ke9XUAXG2pqyuhxeyVn98Xap9eqWMg1DA57yGwrqDazd6+P1GGRoI0bMJ0GosCEAvjdGO5215XudkJikpiFmECt4ijtLfUKem2iLT4r+QBXzinWRYTkO7bVwAv97MANlA/fclbyECgUCW5KyQvYLC5oSHbSBCHc2KIYTNMqNut7cfDAqd8iiUZYKgzTQRHFm750PtFuAGQH/a7JJAmlzUJzkd7orXv3+IXr4PCMP+N1Zs1+cvXXqUiegpzrRAz2LyHhjFmI/gJTsdjDLBW1rZtZsIz9F0NHvUzOto9vkzf4Qyoefk9aKxIQMTnCbfHXPDOe2CdnJ9EQHt8hh0bEk3Z1KdFiLvcY0eFroc5t6jfF4eVrP3Lvb9U54z53uWeQ79curechf6VQmfhxL9P3FYkTZV6MqAjFfeWyZW7s4ypNEk4yFvEqC3lsQ78P3bFD+0i5aH2iusduy8aDLhRXmS/rxp1wcz6L9GJpK5TiMZr7xLlxqRTqiojDMo/CZg1XH6Gos/u1maZotCRGWLEzrpU8p+/nJijGA74X1AUrj/04/+b8NierWa9hVAZUwvswWQfgQYzv3r0hR64bFCxbOLn4BlBsDHKTjI="
+    file: rotkehlchen-linux-x64.zip
+    skip_cleanup: true
+    on:
+      tags: true
+      repo: rotkehlchenio/rotkehlchen
+      branch: master
+
+
