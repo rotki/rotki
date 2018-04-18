@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# Install the rotkehlchen package and pyinstaller. Needed by the pyinstaller
+pip install -e .
+pip install pyinstaller
+
 # Get the arch
 ARCH=`uname -m`
 if [ ${ARCH} == 'x86_64' ]; then
@@ -32,7 +36,14 @@ if [[ $? -ne 0 ]]; then
     exit 1
 fi
 
+
 # Now use electron packager to bundle the entire app together with electron in a dir
+rm -rf ./node_modules
+npm install
+if [[ $? -ne 0 ]]; then
+    echo "package.sh - ERROR: npm install step failed"
+    exit 1
+fi
 ./node_modules/.bin/electron-packager . --overwrite \
 				      --ignore="rotkehlchen$" \
 				      --ignore="rotkehlchen.egg-info" \
@@ -47,10 +58,10 @@ fi
 
 # Now try to zip the created bundle
 NAME="rotkehlchen-${PLATFORM}-${ARCH}"
-rm -rf $NAME
 zip -r $NAME "$NAME/"
-
 if [[ $? -ne 0 ]]; then
     echo "test.sh - ERROR: zipping of final bundle failed"
     exit 1
 fi
+
+rm -rf $NAME
