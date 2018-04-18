@@ -3,6 +3,7 @@ const app = electron.app;
 const ipcMain = electron.ipcMain;
 const BrowserWindow = electron.BrowserWindow;
 const path = require('path');
+const fs = require('fs');
 
 /*************************************************************
  * window management
@@ -40,7 +41,7 @@ app.on('activate', () => {
  * py process
  *************************************************************/
 
-const PY_DIST_FOLDER = 'NOTAPPPLICABLE';
+const PY_DIST_FOLDER = 'rotkehlchen_py_dist';
 const PY_FOLDER = 'rotkehlchen';
 const PY_MODULE = 'server'; // without .py suffix
 
@@ -49,20 +50,11 @@ let pyPort = null;
 
 const guessPackaged = () => {
     const fullPath = path.join(__dirname, PY_DIST_FOLDER);
-    return require('fs').existsSync(fullPath);
-};
-
-const getScriptPath = () => {
-    if (!guessPackaged()) {
-        return path.join(__dirname, PY_FOLDER, PY_MODULE + '.py');
-    }
-    if (process.platform === 'win32') {
-        return path.join(__dirname, PY_DIST_FOLDER, PY_MODULE, PY_MODULE + '.exe');
-    }
-    return path.join(__dirname, PY_DIST_FOLDER, PY_MODULE, PY_MODULE);
+    return fs.existsSync(fullPath);
 };
 
 const selectPort = () => {
+    // TODO: Perhaps find free port and return it here?
     pyPort = 4242;
     return pyPort;
 };
@@ -75,15 +67,29 @@ ipcMain.on('ack', (event, arg) => {
     clearInterval(pyproc_fail_notifier);
 });
 
+function log_and_quit(msg) {
+    console.log(msg);
+    app.quit();
+}
+
 const createPyProc = () => {
-    let script = getScriptPath();
     let port = '' + selectPort();
 
     if (guessPackaged()) {
-        console.log("At guess packaged");
-        pyProc = require('child_process').execFile(script, [port]);
+        let dist_dir = path.join(__dirname, PY_DIST_FOLDER);
+        let files = fs.readdirSync(dist_dir);
+        if (files.length == 0) {
+            log_and_quit('No files found in the dist directory');
+        } else if (files.length != 1) {
+            log_and_quit('Found more than one file in the dist directory');
+        }
+        let executable = files[0];
+        if (!executable.startsWith('rotkehlchen-')) {
+            log_and_quit('Unexpected executable name "' + executable + '" in the dist directory');
+        }
+        executable = path.join(dist_dir, executable);
+        pyProc = require('child_process').execFile(executable, ["--zerorpc-port", port]);
     } else {
-        console.log("At not packaged: script:" + script + " port: " + port);
         pyProc = require('child_process').spawn('python', ["-m", "rotkehlchen", "--zerorpc-port", port]);
     }
 

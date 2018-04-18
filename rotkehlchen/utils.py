@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import sys
 import os
 import json
 import time
@@ -314,3 +315,31 @@ def is_number(s):
 
 def int_to_big_endian(x):
     return big_endian_int.serialize(x)
+
+
+def get_system_spec():
+    """Collect information about the system and installation."""
+    import pkg_resources
+    import platform
+    import rotkehlchen
+
+    if sys.platform == 'darwin':
+        system_info = 'macOS {} {}'.format(
+            platform.mac_ver()[0],
+            platform.architecture()[0]
+        )
+    else:
+        system_info = '{} {} {} {}'.format(
+            platform.system(),
+            '_'.join(platform.architecture()),
+            platform.release(),
+            platform.machine()
+        )
+
+    system_spec = dict(
+        rotkehlchen=pkg_resources.require(rotkehlchen.__name__)[0].version,
+        python_implementation=platform.python_implementation(),
+        python_version=platform.python_version(),
+        system=system_info
+    )
+    return system_spec

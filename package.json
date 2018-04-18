@@ -1,18 +1,20 @@
 {
-   "name": "rotkehlchen",
-   "main": "main.js",
-   "scripts": {
-      "start": "electron ."
-   },
-   "dependencies": {
-      "datatables.net": "latest",
-      "datatables.net-dt": "latest",
-      "tail": "latest",
-      "zerorpc": "git+https://github.com/fyears/zerorpc-node.git"
-   },
-   "devDependencies": {
-      "electron": "1.8.4",
-      "electron-packager": "^8.5.1",
-      "electron-rebuild": "^1.5.7"
-   }
+    "name": "rotkehlchen",
+    "version": "0.1.0",
+    "license": "BSD-3-Clause",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron ."
+    },
+    "dependencies": {
+        "datatables.net": "latest",
+        "datatables.net-dt": "latest",
+        "tail": "latest",
+        "zerorpc": "git+https://github.com/fyears/zerorpc-node.git"
+    },
+    "devDependencies": {
+        "electron": "1.8.4",
+        "electron-packager": "^8.7.2",
+        "electron-rebuild": "^1.5.7"
+    }
 }
