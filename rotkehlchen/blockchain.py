@@ -1,12 +1,12 @@
 import operator
+
 from collections import defaultdict
 from gevent.lock import Semaphore
-from urllib.request import Request, urlopen
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.errors import InputError
 from rotkehlchen.fval import FVal
-from rotkehlchen.utils import cache_response_timewise
+from rotkehlchen.utils import cache_response_timewise, request_get
 
 import logging
 logger = logging.getLogger(__name__)
@@ -66,10 +66,10 @@ class Blockchain(object):
         return {'per_account': self.balances, 'totals': self.totals}
 
     def query_btc_account_balance(self, account):
-        btc_resp = urlopen(Request(
+        btc_resp = request_get(
             'https://blockchain.info/q/addressbalance/%s' % account
-        ))
-        return FVal(btc_resp.read()) * FVal('0.00000001')  # result is in satoshis
+        )
+        return FVal(btc_resp) * FVal('0.00000001')  # result is in satoshis
 
     def query_btc_balances(self):
         if 'BTC' not in self.accounts:

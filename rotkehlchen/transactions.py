@@ -1,7 +1,6 @@
-from urllib.request import Request, urlopen
 from collections import namedtuple
 
-from rotkehlchen.utils import retry_calls, rlk_jsonloads, convert_to_int
+from rotkehlchen.utils import retry_calls, rlk_jsonloads, convert_to_int, request_get
 from rotkehlchen.fval import FVal
 
 EthereumTransaction = namedtuple(
@@ -37,8 +36,7 @@ def query_txlist(address, internal, from_block=None, to_block=None):
     if to_block:
         reqstring += '&endblock={}'.format(to_block)
 
-    resp = urlopen(Request(reqstring))
-    resp = rlk_jsonloads(resp.read())
+    resp = request_get(reqstring)
 
     if 'status' not in resp or convert_to_int(resp['status']) != 1:
         status = convert_to_int(resp['status'])

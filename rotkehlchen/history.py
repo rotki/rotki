@@ -2,7 +2,6 @@ import time
 import os
 import glob
 import re
-from urllib.request import Request, urlopen
 from json.decoder import JSONDecodeError
 
 from rotkehlchen.exchange import data_up_todate
@@ -20,6 +19,7 @@ from rotkehlchen.utils import (
     rlk_jsondumps,
     convert_to_int,
     ts_now,
+    request_get
 )
 from rotkehlchen.order_formatting import (
     Trade,
@@ -254,8 +254,7 @@ class PriceHistorian(object):
 
         if invalidate_cache:
             query_string = 'https://www.cryptocompare.com/api/data/coinlist/'
-            resp = urlopen(Request(query_string))
-            resp = rlk_jsonloads(resp.read())
+            resp = request_get(query_string)
             if 'Response' not in resp or resp['Response'] != 'Success':
                 error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
                 if 'Message' in resp:
@@ -316,8 +315,7 @@ class PriceHistorian(object):
                 'fsym={}&tsym={}&limit={}&toTs={}'.format(
                     from_asset, to_asset, cryptocompare_hourquerylimit, end_date
                 ))
-            resp = urlopen(Request(query_string))
-            resp = rlk_jsonloads(resp.read())
+            resp = request_get(query_string)
             if 'Response' not in resp or resp['Response'] != 'Success':
                 error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
                 if 'Message' in resp:
@@ -420,8 +418,7 @@ class PriceHistorian(object):
                     ))
                 if to_asset == 'BTC':
                     query_string += '&tryConversion=false'
-                resp = urlopen(Request(query_string))
-                resp = rlk_jsonloads(resp.read())
+                resp = request_get(query_string)
 
                 if from_asset not in resp:
                     error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)

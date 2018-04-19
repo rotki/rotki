@@ -1,8 +1,9 @@
 from __future__ import unicode_literals
-from urllib.request import Request, urlopen
+import requests
 
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils import rlk_jsonloads, retry_calls, query_fiat_pair
+from rotkehlchen.errors import RemoteError
 
 import logging
 logger = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ def get_fiat_usd_exchange_rates(currencies=None):
 class Inquirer(object):
     def __init__(self, kraken=None):
         self.kraken = kraken
+        self.session = requests.session()
 
     def query_kraken_for_price(self, asset, asset_btc_price):
         if asset == 'BTC':
@@ -41,15 +43,16 @@ class Inquirer(object):
         resp = retry_calls(
             5,
             'find_usd_price',
-            'urllib2.urlopen',
-            urlopen,
-            Request(
-                u'https://min-api.cryptocompare.com/data/price?fsym={}&tsyms=USD'.format(
-                    asset
-                ))
+            'requests.get',
+            requests.get,
+            u'https://min-api.cryptocompare.com/data/price?'
+            'fsym={}&tsyms=USD'.format(asset)
         )
 
-        resp = rlk_jsonloads(resp.read())
+        if resp.status_code != 200:
+            raise RemoteError('Cant reach cryptocompare to get USD value of {}'.format(asset))
+
+        resp = rlk_jsonloads(resp.text)
 
         # If there is an error in the response skip this token
         if 'USD' not in resp:

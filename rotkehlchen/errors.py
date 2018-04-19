@@ -36,3 +36,8 @@ class AuthenticationError(Exception):
 
 class PermissionError(Exception):
     pass
+
+
+class RemoteError(Exception):
+    """Thrown when a remote API can't be reached for some reason"""
+    pass

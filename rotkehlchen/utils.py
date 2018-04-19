@@ -6,16 +6,13 @@ import time
 import datetime
 import calendar
 import operator
-from urllib.request import Request, urlopen
-from urllib.error import URLError
+import requests
 from collections import namedtuple
 from rlp.sedes import big_endian_int
-from rlp.utils import str_to_bytes
 
-from rotkehlchen import typing
-from rotkehlchen.errors import RecoverableRequestError
+from rotkehlchen.constants import ALL_REMOTES_TIMEOUT
+from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.crypto import sha3, address_decoder
 
 
 def sfjson_loads(s):
@@ -107,22 +104,7 @@ def query_fiat_pair(base, quote, timestamp=None):
             tsToDate(timestamp, formatstr='%Y-%m-%d'), base
         )
 
-    tries = 5
-    while True:
-        try:
-            resp = urlopen(Request(querystr))
-        except URLError:
-            if tries == 0:
-                raise ValueError('Timeout while trying to query euro price')
-            time.sleep(0.05)
-            tries -= 1
-        break
-
-    try:
-        resp = rlk_jsonloads(resp.read())
-    except json.decoder.JSONDecodeError:
-        raise ValueError('api.fixer.io returned malformed json')
-
+    resp = request_get(querystr)
     try:
         return FVal(resp['rates'][quote])
     except ValueError:
@@ -190,19 +172,32 @@ def retry_calls(times, location, method, function, *args):
         try:
             result = function(*args)
             return result
-        except (URLError, RecoverableRequestError) as e:
+        except (requests.exceptions.ConnectionError, RecoverableRequestError) as e:
             if isinstance(e, RecoverableRequestError):
                 time.sleep(5)
 
             tries -= 1
             if tries == 0:
-                raise ValueError(
+                raise RemoteError(
                     "{} query for {} failed after {} tries. Reason: {}".format(
                         location,
                         method,
                         times,
                         e
                     ))
+
+
+def request_get(uri, timeout=ALL_REMOTES_TIMEOUT):
+    response = requests.get(uri)
+    if response.status_code != 200:
+        raise RemoteError('Get {} returned status code {}'.format(uri, response.status_code))
+
+    try:
+        result = rlk_jsonloads(response.text)
+    except json.decoder.JSONDecodeError:
+        raise ValueError('{} returned malformed json'.format(uri))
+
+    return result
 
 
 def get_jsonfile_contents_or_empty_list(filepath):
