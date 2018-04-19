@@ -9,11 +9,6 @@ env:
   - GETH_URL_MACOS='https://gethstore.blob.core.windows.net/builds/geth-darwin-amd64-1.8.0-5f540757.tar.gz'
   - GETH_VERSION='1.8.0'
 
-addons:
-  apt:
-    packages:
-      - libssl1.0.0
-
 
 matrix:
   include:
