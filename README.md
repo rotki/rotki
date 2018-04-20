@@ -87,6 +87,10 @@ Rotkehlchen uses an encrypted database called [SQLCipher](https://www.zetetic.ne
 
 	$ brew update && brew install sqlcipher
 
+Also these are some dependencies that may or may not be properly installed in your system so make sure you have them.
+
+    $ brew install gmp
+
 If you wish to use Conda, use the following commands:
 
 	$ brew cask install caskroom/cask/anaconda
@@ -115,6 +119,20 @@ Before using `pip`, let´s ensure we have the latest version:
 Install all the requirements:
 
 	$ sudo pip install -r requirements.txt
+
+**Important note**: Make sure that pysqlcipher3 is properly installed. If
+
+    $ pip freeze | grep pysqlcipher3
+
+returns nothing for you then it was not installed.
+
+Try to manually install only that dependency with the verbose option to see where it fails.
+
+    $ pip install pysqlcipher3 -v
+
+If it fails at the stage of finding the library for `-lsqlcipher` then `brew install sqlciper` did not place the installed lib directory to the `LIBRARY_PATH` and you will have to do it manually. For example if `sqlcipher` was installed at `/usr/local/Cellar/sqlcipher/3.4.2/` then use pip install this way:
+
+    $ LIBRARY_PATH=/usr/local/Cellar/sqlcipher/3.4.2/lib pip install pysqlcipher3.
 
 Rotkehlchen uses electron, we need to install it. To do so you need `node.js` and `npm`. If you don't have it use homebrew to install it:
 
