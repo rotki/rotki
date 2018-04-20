@@ -96,6 +96,18 @@ If you wish to use Conda, use the following commands:
 	$ conda create python=3.6 --name rotkehlchen
 	$ conda activate rotkehlchen
 
+If you wish to use Virtualenvwrapper use the following:
+
+    $ pip install virtualenv
+    $ pip install virtualenvwrapper
+
+And add the following to your shell startup file, assuming virtualenvwrapper was installed in `/usr/local/bin`:
+
+    export WORKON_HOME=$HOME/.virtualenvs
+    export PROJECT_HOME=$HOME/Devel
+    source /usr/local/bin/virtualenvwrapper.sh
+
+
 Before using `pip`, let´s ensure we have the latest version:
 
 	$ pip install --upgrade pip
@@ -104,7 +116,11 @@ Install all the requirements:
 
 	$ sudo pip install -r requirements.txt
 
-Rotkehlchen uses electron, we need to install it:
+Rotkehlchen uses electron, we need to install it. To do so you need `node.js` and `npm`. If you don't have it use homebrew to install it:
+
+    $ brew install node
+
+To get electron:
 
 	$ npm install --runtime=electron --target=1.8.4
 
