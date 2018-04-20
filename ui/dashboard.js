@@ -150,11 +150,13 @@ function create_dashboard_from_saved_balances() {
 }
 
 const ipc = require('electron').ipcRenderer;
+const remote = require('electron').remote;
 ipc.on('failed', (event, message) => {
     // get notified if the python subprocess dies
-    startup_error(
-        "The python process died before the UI startup.",
-        "The python process died before the UI startup."
+    showError(
+        'Startup Error',
+        'The Python backend crushed. Check rotkehlchen.log or open an issue in Github.',
+        function () {remote.getCurrentWindow().close();}
     );
     // send ack to main.js
     ipc.send('ack', 1);

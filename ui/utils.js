@@ -31,14 +31,6 @@ function timestamp_to_date(ts) {
     );
 }
 
-function startup_error(text, reason) {
-    let loading_wrapper = document.querySelector('.loadingwrapper');
-    let loading_wrapper_text = document.querySelector('.loadingwrapper_text');
-    loading_wrapper.style.background = "rgba( 255, 255, 255, .8 ) 50% 50% no-repeat";
-    console.log(text);
-    loading_wrapper_text.textContent = "ERROR: Failed to connect to the backend. Reason: " + reason + " Check Log for more details.";
-}
-
 var log_searcher = null;
 
 function _setup_log_watcher(callback) {
@@ -273,7 +265,6 @@ module.exports = function() {
     this.timestamp_to_date = timestamp_to_date;
     this.string_capitalize = string_capitalize;
     this.setup_log_watcher = setup_log_watcher;
-    this.startup_error = startup_error;
     this.showError = showError;
     this.showInfo = showInfo;
     this.date_text_to_utc_ts = date_text_to_utc_ts;
