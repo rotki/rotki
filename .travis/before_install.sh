@@ -10,6 +10,7 @@ if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then
     apt-get install -y libsqlcipher-dev libzmq-dev
 else
     brew update && brew install sqlcipher
+    brew install zmq
     git clone https://github.com/MacPython/terryfy.git
     # Avoid printing the lines from the script below.
 fi
