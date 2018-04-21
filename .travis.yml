@@ -50,6 +50,8 @@ script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source terryfy/test_tools.sh; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then python -m pytest rotkehlchen; fi
   - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then coverage run --source rotkehlchen/ -m pytest --travis-fold=always $TEST_TYPE; fi
+  - npm install
+  - npm test
 
 before_deploy:
   - ./package.sh
