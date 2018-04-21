@@ -40,7 +40,7 @@ fi
 # Now use electron packager to bundle the entire app together with electron in a dir
 rm -rf ./node_modules
 npm config set python python2.7
-npm install
+npm install --runtime=electron --target=1.8.4
 if [[ $? -ne 0 ]]; then
     echo "package.sh - ERROR: npm install step failed"
     exit 1

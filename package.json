@@ -3,9 +3,6 @@
     "version": "0.1.0",
     "license": "BSD-3-Clause",
     "main": "main.js",
-    "scripts": {
-        "start": "electron ."
-    },
     "dependencies": {
         "datatables.net": "latest",
         "datatables.net-dt": "latest",
@@ -13,8 +10,16 @@
         "zerorpc": "latest"
     },
     "devDependencies": {
+        "chai": "^4.1.2",
+        "chai-as-promised": "^7.1.1",
         "electron": "1.8.4",
         "electron-packager": "^8.7.2",
-        "electron-rebuild": "^1.5.7"
+        "electron-rebuild": "^1.5.7",
+        "mocha": "^5.1.1",
+        "spectron": "^3.8.0"
+    },
+    "scripts": {
+        "test": "mocha ui/tests/",
+        "start": "electron ."
     }
 }

@@ -37,6 +37,10 @@ before_install:
   # is not set properly for OSX
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source terryfy/travis_tools.sh; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then get_python_environment $INSTALL_TYPE $VERSION $VENV; fi
+  - if [[ $TRAVIS_OS_NAME = "linux" ]]; then
+      export DISPLAY=:99.0;
+      Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+    fi
 
 install:
   - python -m pip install -U pip
@@ -50,6 +54,13 @@ script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source terryfy/test_tools.sh; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then python -m pytest rotkehlchen; fi
   - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then coverage run --source rotkehlchen/ -m pytest --travis-fold=always $TEST_TYPE; fi
+  - npm config set python python2.7
+  # If we add the specific electron runtime compile in OSX fails with an error
+  # that looks like this: https://www.npmjs.com/package/nan#compiling-against-nodejs-012-on-osx
+  # - npm install --runtime=electron --target=1.8.4
+  - npm install
+  - PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild
+  - npm test
 
 before_deploy:
   - ./package.sh
