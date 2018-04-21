@@ -89,6 +89,7 @@ Rotkehlchen uses an encrypted database called [SQLCipher](https://www.zetetic.ne
 
 Also these are some dependencies that may or may not be properly installed in your system so make sure you have them.
 
+    $ brew install zmq
     $ brew install gmp
 
 If you wish to use Conda, use the following commands:
@@ -142,9 +143,10 @@ To get electron:
 
 	$ npm install --runtime=electron --target=1.8.4
 
-Almost there, we can now install all the NodeJS dependencies. Using a recent NodeJS version such as 8.9.x, it should be smooth
+Almost there, we can now install all the NodeJS dependencies. Using a recent NodeJS version such as 8.9.x, it should be smooth. Also since npm uses gyp and gyp requires python 2.7 make sure to set it up appropriately before invoking npm.
 
-	$ npm install
+        $ npm config set python python2.7
+        $ npm install
 
 You now deserved to start Rotkehlchen:
 
