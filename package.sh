@@ -71,15 +71,38 @@ fi
 				      --ignore=".*\.py"
 
 if [[ $? -ne 0 ]]; then
-    echo "test.sh - ERROR: electron-packager step failed"
+    echo "package.sh - ERROR: electron-packager step failed"
     exit 1
 fi
 
-# Now try to zip the created bundle
 NAME="rotkehlchen-${PLATFORM}-${ARCH}"
+# Ugly hack to include zmq lib in the distribution. TODO: Is there a better solution?
+# Step 1: Copy the library in the directory
+# Step 2: Create a wrapper script executable for both distros which points
+#         the LD_LIBRARY_PATH to the current directory
+if [[ $PLATFORM == "darwin" ]]; then
+    ZMQLIBPATH=`otool -l ./rotkehlchen-darwin-x64/rotkehlchen.app/Contents/Resources/app/node_modules/zmq/bin/darwin-x64-57/zmq.node | grep zmq | awk '/ / { print $2 }'`
+    cp $ZMQLIBPATH $NAME/
+    if [[ $? -ne 0 ]]; then
+	echo "package.sh - ERROR: copying libzmq step failed"
+	exit 1
+    fi
+else
+    ZMQLIBPATH=`ldd ./rotkehlchen-linux-x64/resources/app/node_modules/zmq/bin/*/zmq.node | grep libzmq | awk '/ => / { print $3 }'`
+    cp $ZMQLIBPATH $NAME/
+    if [[ $? -ne 0 ]]; then
+	echo "package.sh - ERROR: copying libzmq step failed"
+	exit 1
+    fi
+    mv $NAME/rotkehlchen $NAME/unwrapped_executable
+fi
+    cp tools/scripts/wrapper_script.sh $NAME/rotkehlchen
+
+
+# Now try to zip the created bundle
 zip -r $NAME "$NAME/"
 if [[ $? -ne 0 ]]; then
-    echo "test.sh - ERROR: zipping of final bundle failed"
+    echo "package.sh - ERROR: zipping of final bundle failed"
     exit 1
 fi
 
