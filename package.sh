@@ -87,6 +87,12 @@ if [[ $PLATFORM == "darwin" ]]; then
 	echo "package.sh - ERROR: copying libzmq step failed"
 	exit 1
     fi
+    PGMLIBPATH=`otool -l $ZMQLIBPATH | grep libpgm | awk '/ / { print $2 }'`
+    cp $PGMLIBPATH $NAME/
+    if [[ $? -ne 0 ]]; then
+	echo "package.sh - ERROR: copying libpgm step failed"
+	exit 1
+    fi
 else
     ZMQLIBPATH=`ldd ./rotkehlchen-linux-x64/resources/app/node_modules/zmq/bin/*/zmq.node | grep libzmq | awk '/ => / { print $3 }'`
     cp $ZMQLIBPATH $NAME/
@@ -94,6 +100,13 @@ else
 	echo "package.sh - ERROR: copying libzmq step failed"
 	exit 1
     fi
+    PGMLIBPATH=`ldd $ZMQLIBPATH | grep libpgm | awk '/ => / { print $3 }'`
+    cp $PGMLIBPATH $NAME/
+    if [[ $? -ne 0 ]]; then
+	echo "package.sh - ERROR: copying libpgm step failed"
+	exit 1
+    fi
+
     mv $NAME/rotkehlchen $NAME/unwrapped_executable
 fi
     cp tools/scripts/wrapper_script.sh $NAME/rotkehlchen
