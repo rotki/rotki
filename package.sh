@@ -38,9 +38,20 @@ fi
 
 
 # Now use electron packager to bundle the entire app together with electron in a dir
+
+# Let's make sure all npm dependencies are installed. Since we added electron tests
+# maybe this does not need to happen here?
 rm -rf ./node_modules
 npm config set python python2.7
-npm install --runtime=electron --target=1.8.4
+if [[ $PLATFORM == "darwin" ]]; then
+  # If we add the specific electron runtime compile in OSX fails with an error
+  # that looks like this: https://www.npmjs.com/package/nan#compiling-against-nodejs-012-on-osx
+  # - npm install --runtime=electron --target=1.8.4
+    npm install
+else
+    npm install --runtime=electron --target=1.8.4
+fi
+
 if [[ $? -ne 0 ]]; then
     echo "package.sh - ERROR: npm install step failed"
     exit 1
