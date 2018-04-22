@@ -19,7 +19,7 @@ const createWindow = () => {
     }));
 
     // uncomment for the final app to have dev tools opened
-    mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools();
 
     mainWindow.on('closed', () => {
         mainWindow = null;

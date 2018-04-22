@@ -13,6 +13,12 @@ SCRIPT_DIR="$( cd -P "$( dirname "$FILE_SOURCE" )" && pwd )"
 
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
+    # TODO: Add this check also for OSX
+    LDD_RESULT=`LD_LIBRARY_PATH=$SCRIPT_DIR ldd $SCRIPT_DIR/resources/app/node_modules/zmq/bin/*/zmq.node | grep "not found" | awk '/ => / {print $1 }'`
+    if [[ $LDD_RESULT != '' ]]; then
+	echo "Failed to start Rotkehlchen. Dynamic library '$LDD_RESULT' not found";
+	exit 1
+    fi
     LD_LIBRARY_PATH=$SCRIPT_DIR $SCRIPT_DIR/unwrapped_executable
 else
     LD_LIBRARY_PATH=$SCRIPT_DIR $SCRIPT_DIR/rotkehlchen.app/Contents/MacOS/rotkehlchen
