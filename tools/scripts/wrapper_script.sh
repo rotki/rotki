@@ -21,5 +21,5 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     fi
     LD_LIBRARY_PATH=$SCRIPT_DIR $SCRIPT_DIR/unwrapped_executable
 else
-    LD_LIBRARY_PATH=$SCRIPT_DIR $SCRIPT_DIR/rotkehlchen.app/Contents/MacOS/rotkehlchen
+    DYLD_FALLBACK_LIBRARY_PATH=$SCRIPT_DIR $SCRIPT_DIR/rotkehlchen.app/Contents/MacOS/rotkehlchen
 fi
