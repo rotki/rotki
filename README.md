@@ -184,7 +184,7 @@ To do so you have to go to your exchange and create an API key. If the exchange 
 
 Click the Person Icon on the top right menu and then choose "User Settings". This will take you to your user settings page. Under the exchange settings sections, select your exchange from the dropdown menu. Then copy and paste the `API Key` and the `API Secret` in the respective text fields and press submit.
 
-If all went well, then you will get a confirmation that the connection was succesfull. If not please doublecheck that the key and secret are correct.
+If all went well, then you will get a confirmation that the connection was successful. If not please doublecheck that the key and secret are correct.
 
 ### Adding Fiat Balances
 

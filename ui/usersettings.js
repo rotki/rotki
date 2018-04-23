@@ -82,7 +82,7 @@ function setup_premium_callback(event) {
             showError('Premium Credentials Error', res['message']);
             return;
         }
-        showInfo('Premium Credentials', 'Succesfully set Premium Credentials');
+        showInfo('Premium Credentials', 'Successfully set Premium Credentials');
         disable_key_entries('premium_', 'premium', '');
         settings.has_premium = true;
         add_premium_settings();
@@ -133,7 +133,7 @@ function setup_exchange_callback(event) {
                                 showError('Exchange Removal Error', 'Error at removing ' + exchange_name + ' exchange: ' + res['message']);
                                 return;
                             }
-                            // Exchange removal from backend succesfull
+                            // Exchange removal from backend successful
                             enable_key_entries('', 'exchange');
                             $('#'+exchange_name+'_badge').remove();
                             var index = settings.connected_exchanges.indexOf(exchange_name);
@@ -168,7 +168,7 @@ function setup_exchange_callback(event) {
                 showError('Exchange Setup Error', 'Error at setup of ' + exchange_name + ': ' + res['message']);
                 return;
             }
-            // Exchange setup in the backend was succesfull
+            // Exchange setup in the backend was successful
             disable_key_entries('', 'exchange', exchange_name);
             settings.connected_exchanges.push(exchange_name);
             let str = ExchangeBadge({name: exchange_name, css_class: 'exchange-icon'});

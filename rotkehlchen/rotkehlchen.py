@@ -173,7 +173,7 @@ class Rotkehlchen(object):
                 logger.debug('User approved data sync from server')
                 if self.sync_data_from_server():
                     if create_new:
-                        # if we succesfully synced data from the server and this is
+                        # if we successfully synced data from the server and this is
                         # a new account, make sure the api keys are properly stored
                         # in the DB
                         self.data.db.set_rotkehlchen_premium(api_key, api_secret)
