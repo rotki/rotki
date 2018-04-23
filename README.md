@@ -8,8 +8,12 @@ Rotkehlchen is an asset management and accounting application specializing in Cr
 
 - [Disclaimer](#disclaimer)
 - [Installation](#installation)
-    - [Linux](#linux)
-	- [OSX](#osx)
+    - [Packaged binaries](#packaged-binaries)
+        - [Linux](#linux)
+        - [OSX](#osx)
+    - [Build from Source](#build-from-source)
+        - [Linux](#source-install-linux)
+        - [OSX](#source-install-osx)
 - [Usage](#usage)
     - [Signin/Signup](#signinsignup)
     - [Changing the Profit Currency](#changing-the-profit-currency)
@@ -35,11 +39,28 @@ THE SERVICE IS NOT INTENDED FOR CONTINUOUS MONITORING OF TRANSACTION DATA OR FOR
 
 ## Installation
 
-For now only source installation for Linux and OSX is supported. This will change soon and Windows will be added but also easier to install methods will be provided.
 
-Rotkehlchen needs Python3 in order to function.
+The easiest way to start rotkehlchen is to download the packaged binary for your Operating system. For now only Linux and OSX is supported. To see how to do this go to the [next section](#packaged-binaries).
 
-### Linux
+You can also build rotkehlchen in OSX and Linux from source. In order to see how to do that go to the [appropriate section](#build-from-source).
+
+### Packed Binaries
+
+#### Linux
+
+Go to the [releases](https://github.com/rotkehlchenio/rotkehlchen/releases) page and download the linux-x64 package from the [latest release](https://github.com/rotkehlchenio/rotkehlchen/releases/latest).
+
+Unzip it in a directory of your choice. In the root directory of the unzipped archive there is a `rotkehlchen` executable. Run it to start rotkehlchen.
+
+#### OSX
+
+Go to the [releases](https://github.com/rotkehlchenio/rotkehlchen/releases) page and download the darwin-x64 package from the [latest release](https://github.com/rotkehlchenio/rotkehlchen/releases/latest).
+
+Unzip it in a directory of your choice. In the root directory of the unzipped archive there is a `rotkehlchen` executable. Run it to start rotkehlchen.
+
+### Build from Source
+
+#### Source Install Linux
 
 Make sure you have [node.js](https://nodejs.org/en/) and [npm](https://www.npmjs.com/). If you don't, use your linux distro's package manager to get them.
 
@@ -72,7 +93,7 @@ pip install -r requirements.txt
 
 Now to start the application you need to type `npm start`.
 
-### OSX
+#### Source Install OSX
 
 
 The &lt;tldr&gt; version is:
