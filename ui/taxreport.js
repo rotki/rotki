@@ -39,7 +39,7 @@ function export_csv_callback(event) {
                     showError('Exporting History to CSV error', res['message']);
                     return;
                 }
-                showInfo('Success', 'History exported to CVS succesfully');
+                showInfo('Success', 'History exported to CVS successfully');
             });
     });
 }

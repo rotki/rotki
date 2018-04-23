@@ -284,7 +284,7 @@ class DataHandler(object):
     def decompress_and_decrypt_db(self, password, encrypted_data):
         """Decrypt and decompress the encrypted data we receive from the server
 
-        If succesfull then replace our local Database"""
+        If successful then replace our local Database"""
         decrypted_data = decrypt(password.encode(), encrypted_data)
         decompressed_data = zlib.decompress(decrypted_data)
         self.db.import_unencrypted(decompressed_data, password)
