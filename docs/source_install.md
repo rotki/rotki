@@ -35,6 +35,13 @@ pip install -r requirements.txt
 
 Now to start the application you need to type `npm start`.
 
+If you get runtime errors about a Node version mismatch, you can try to rebuild the electron
+modules like this:
+
+```
+./node_modules/.bin/electron-rebuild
+```
+
 ## OSX
 
 The &lt;tldr&gt; version is:
