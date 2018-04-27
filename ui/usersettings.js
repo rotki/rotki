@@ -161,11 +161,13 @@ function setup_exchange_callback(event) {
         (error, res) => {
             if (error || res == null) {
                 showError('Exchange Setup Error', 'Error at setup of ' + exchange_name + ': ' + error);
+                stop_show_loading('#setup_exchange_button');
                 return;
             }
             // else
             if (!res['result']) {
                 showError('Exchange Setup Error', 'Error at setup of ' + exchange_name + ': ' + res['message']);
+                stop_show_loading('#setup_exchange_button');
                 return;
             }
             // Exchange setup in the backend was successful
@@ -396,7 +398,7 @@ function add_blockchain_account(event) {
     event.preventDefault();
     let blockchain = $('#crypto_type_entry').val();
     let account = $('#account_entry').val();
-    showLoading('#account_entry');
+    show_loading('#account_entry');
     client.invoke(
         "add_blockchain_account",
         blockchain,
@@ -407,6 +409,7 @@ function add_blockchain_account(event) {
                     'Account Error',
                     'Error at adding new '+ blockchain +' account: '+ error
                 );
+                stop_show_loading('#account_entry');
                 return;
             }
             if (!result['result']) {
@@ -414,6 +417,7 @@ function add_blockchain_account(event) {
                     'Account Error',
                     'Error at adding new '+ blockchain +' account: '+ result['message']
                 );
+                stop_show_loading('#account_entry');
                 return;
             }
             if (blockchain == 'ETH') {
@@ -519,10 +523,13 @@ function delete_blockchain_account_row(blockchain, row) {
     client.invoke('remove_blockchain_account', blockchain, account, (error, result) => {
         if (error || result == null) {
             showError('Account Deletion Error', `Error at deleting ${blockchain} account ${account}: ${error}`);
+            stop_show_loading();
             return;
         }
         if (!result['result']) {
             showError('Account Deletion Error', `Error at deleting ${blockchain} account ${account}: ` + result['message']);
+            stop_show_loading();
+            return;
         }
 
         row.remove().draw();
@@ -671,10 +678,13 @@ function add_new_eth_tokens(tokens) {
     client.invoke('add_owned_eth_tokens', tokens, (error, result) => {
         if (error || result == null) {
             showError('Token Addition Error', error);
+            stop_show_loading('#eth_tokens_select');
             return;
         }
         if (!result['result']) {
             showError('Token Addition Error', result['message']);
+            stop_show_loading('#eth_tokens_select');
+            return;
         }
         for (let i = 0; i < tokens.length; i++) {
             OWNED_TOKENS.push(tokens[i]);
@@ -695,10 +705,13 @@ function remove_eth_tokens(tokens) {
     client.invoke('remove_owned_eth_tokens', tokens, (error, result) => {
         if (error || result == null) {
             showError('Token Removal Error', error);
+            stop_show_loading('#eth_tokens_select');
             return;
         }
         if (!result['result']) {
             showError('Token Removal Error', result['message']);
+            stop_show_loading('#eth_tokens_select');
+            return;
         }
         for (let i = 0; i < tokens.length; i ++) {
             let index = OWNED_TOKENS.indexOf(tokens[i]);

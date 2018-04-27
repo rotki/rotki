@@ -145,6 +145,8 @@ class Blockchain(object):
         Call with 'append', operator.add to add the account
         Call with 'remove', operator.sub to remove the account
         """
+        # Make sure account goes into web3.py as a properly checksummed address
+        account = to_checksum_address(account)
         getattr(self.accounts['ETH'], append_or_remove)(account)
         eth_usd_price = self.inquirer.find_usd_price('ETH')
         balance = self.ethchain.get_eth_balance(account)
