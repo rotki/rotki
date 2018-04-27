@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
+import subprocess
 from setuptools import setup
 
 
@@ -18,6 +19,8 @@ install_requirements = list(set(
 ))
 
 version = '0.1.0'  # Do not edit: this is maintained by bumpversion (see .bumpversion.cfg)
+
+
 def read_version_from_git():
     try:
         import shlex
@@ -46,6 +49,7 @@ def read_version_from_git():
     except BaseException as e:
         print('could not read version from git: {}'.format(e))
         return version
+
 
 setup(
     name='rotkehlchen',
