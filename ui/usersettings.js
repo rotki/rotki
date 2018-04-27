@@ -396,7 +396,7 @@ function add_blockchain_account(event) {
     event.preventDefault();
     let blockchain = $('#crypto_type_entry').val();
     let account = $('#account_entry').val();
-    showLoading('#account_entry');
+    show_loading('#account_entry');
     client.invoke(
         "add_blockchain_account",
         blockchain,
