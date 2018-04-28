@@ -1,6 +1,6 @@
 require("./zerorpc_client.js")();
 var settings = require("./settings.js")();
-require("./usersettings.js")();
+require("./user_settings.js")();
 require("./monitor.js")();
 require("./utils.js")();
 require("./exchange.js")();

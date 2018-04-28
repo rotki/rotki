@@ -1,4 +1,5 @@
 var settings = require("./settings.js")();
+require("./accounting_settings.js")();
 require("./taxreport.js")();
 
 function determine_location(url) {
@@ -28,9 +29,12 @@ function save_current_location() {
         assert_exchange_exists(exchange_name);
         console.log("Saving exchange " + exchange_name);
         settings.page_exchange[exchange_name] = $('#page-wrapper').html();
-    } else if (settings.current_location == 'usersettings') {
+    } else if (settings.current_location == 'user_settings') {
         console.log("Saving user settings ...");
-        settings.page_usersettings = $('#page-wrapper').html();
+        settings.page_user_settings = $('#page-wrapper').html();
+    } else if (settings.current_location == 'accounting_settings') {
+        console.log("Saving accounting settings ...");
+        settings.page_accounting_settings = $('#page-wrapper').html();
     } else if (settings.current_location == 'taxreport') {
         console.log("Saving tax report ...");
         settings.page_taxreport = $('#page-wrapper').html();
@@ -81,13 +85,22 @@ function init_navigation() {
         create_or_reload_page('settings', create_settings_ui, add_settings_listeners);
     });
 
-    $('#usersettingsbutton a').click(function(event) {
+    $('#user_settings_button a').click(function(event) {
         event.preventDefault();
         var target_location = determine_location(this.href);
-        if (target_location != "usersettings") {
+        if (target_location != "user_settings") {
             throw "Invalid link location " + target_location;
         }
-        create_or_reload_page('usersettings', create_user_settings, add_usersettings_listeners);
+        create_or_reload_page('user_settings', create_user_settings, add_user_settings_listeners);
+    });
+
+    $('#accounting_settings_button a').click(function(event) {
+        event.preventDefault();
+        var target_location = determine_location(this.href);
+        if (target_location != "accounting_settings") {
+            throw "Invalid link location " + target_location;
+        }
+        create_or_reload_page('accounting_settings', create_accounting_settings, add_accounting_settings_listeners);
     });
 }
 
