@@ -1,4 +1,5 @@
 var settings = require("./settings.js")();
+require("./accounting_settings.js")();
 require("./taxreport.js")();
 
 function determine_location(url) {
@@ -31,6 +32,9 @@ function save_current_location() {
     } else if (settings.current_location == 'usersettings') {
         console.log("Saving user settings ...");
         settings.page_usersettings = $('#page-wrapper').html();
+    } else if (settings.current_location == 'accounting_settings') {
+        console.log("Saving accounting settings ...");
+        settings.page_accounting_settings = $('#page-wrapper').html();
     } else if (settings.current_location == 'taxreport') {
         console.log("Saving tax report ...");
         settings.page_taxreport = $('#page-wrapper').html();
@@ -88,6 +92,15 @@ function init_navigation() {
             throw "Invalid link location " + target_location;
         }
         create_or_reload_page('usersettings', create_user_settings, add_usersettings_listeners);
+    });
+
+    $('#accounting_settings_button a').click(function(event) {
+        event.preventDefault();
+        var target_location = determine_location(this.href);
+        if (target_location != "accounting_settings") {
+            throw "Invalid link location " + target_location;
+        }
+        create_or_reload_page('accounting_settings', create_accounting_settings, add_accounting_settings_listeners);
     });
 }
 

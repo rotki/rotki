@@ -223,59 +223,6 @@ function fiat_modify_callback(event) {
         });
 }
 
-function ignored_asset_selection_callback(event) {
-    let asset = this.value;
-    $('#ignored_asset_entry').val(asset);
-    if (asset != '') {
-        $('#modify_ignored_asset_button').html('Remove');
-    } else {
-        $('#modify_ignored_asset_button').html('Add');
-    }
-}
-
-function ignored_asset_modify_callback(event) {
-    event.preventDefault();
-    let button_type = $('#modify_ignored_asset_button').html();
-    let asset = $('#ignored_asset_entry').val();
-
-    let command = 'add_ignored_asset';
-    if (button_type == 'Remove') {
-        command = 'remove_ignored_asset';
-    }
-
-    client.invoke(
-        command,
-        asset,
-        (error, result) => {
-            if (error || !result) {
-                showError(
-                    'Ignored Asset Modification Error',
-                    'Error at modifying ignored asset ' + asset
-                );
-                return;
-            }
-            if (!result['result']) {
-                showError(
-                    'Ignored Asset Modification Error',
-                    'Error at modifying ignored asset: ' + result['message']
-                );
-                return;
-            }
-
-            if (command == 'add_ignored_asset') {
-                $('#ignored_assets_selection').append($('<option>', {
-                    value: asset,
-                    text: asset,
-                    selected: true
-                }));
-            } else {
-                $("#ignored_assets_selection option[value='"+asset+"']").remove();
-                $('#modify_ignored_asset_button').html('Add');
-                $('#ignored_asset_entry').val('');
-            }
-        });
-}
-
 function add_usersettings_listeners() {
     $('#setup_exchange').change(function (event) {
         if (settings.connected_exchanges.indexOf(this.value) > -1) {
@@ -292,8 +239,6 @@ function add_usersettings_listeners() {
     $('#setup_exchange_button').click(setup_exchange_callback);
     $('#fiat_type_entry').change(fiat_selection_callback);
     $('#modify_fiat_button').click(fiat_modify_callback);
-    $('#ignored_assets_selection').change(ignored_asset_selection_callback);
-    $('#modify_ignored_asset_button').click(ignored_asset_modify_callback);
     $('#add_account_button').click(add_blockchain_account);
 }
 
@@ -345,12 +290,6 @@ function create_user_settings() {
 
     $(str).appendTo($('#fiat_balances_panel_body'));
     create_fiat_table();
-
-    str = form_entry('Asset To Ignore', 'ignored_asset_entry', '', 'Assets to ignore during all accounting calculations');
-    str += form_select('Ignored Assets', 'ignored_assets_selection', [], '');
-    str += form_button('Add', 'modify_ignored_asset_button');
-    $(str).appendTo($('#accounting_panel_body'));
-    populate_ignored_assets();
 
     str += '<h4 class="centered-title">Add New Accounts to track</h4>';
     str = form_select('Choose Blockchain', 'crypto_type_entry', ['ETH', 'BTC'], '');
@@ -592,27 +531,6 @@ function create_blockchain_balances_tables(result) {
     enable_multiselect();
     // also save the user settings page
     settings.page_usersettings = $('#page-wrapper').html();
-}
-
-function populate_ignored_assets() {
-    client.invoke('get_ignored_assets', (error, result) => {
-        if (error || result == null) {
-            showError('Error getting ignored assets');
-            return;
-        }
-
-        $('#ignored_assets_selection').append($('<option>', {
-            value: '',
-            text: 'Click to see all ignored assets and select one for removal'
-        }));
-        let assets = result['ignored_assets'];
-        $.each(assets, function (i, asset) {
-            $('#ignored_assets_selection').append($('<option>', {
-                value: asset,
-                text : asset
-            }));
-        });
-    });
 }
 
 var populate_eth_tokens_called = false;
