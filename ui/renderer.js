@@ -4,7 +4,7 @@ require("./dashboard.js")();
 require("./exchange.js")();
 require("./utils.js")();
 require("./otctrades.js")();
-require("./usersettings.js")();
+require("./user_settings.js")();
 require("./taxreport.js")();
 var settings = require("./settings.js")();
 client.connect("tcp://127.0.0.1:4242");
@@ -28,6 +28,6 @@ for (let i = 0; i < settings.CURRENCIES.length; i++) {
 init_navigation();
 init_monitor();
 init_dashboard();
-init_usersettings();
+init_user_settings();
 init_taxreport();
 create_or_reload_dashboard();

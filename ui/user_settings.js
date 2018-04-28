@@ -223,7 +223,7 @@ function fiat_modify_callback(event) {
         });
 }
 
-function add_usersettings_listeners() {
+function add_user_settings_listeners() {
     $('#setup_exchange').change(function (event) {
         if (settings.connected_exchanges.indexOf(this.value) > -1) {
             disable_key_entries('', 'exchange', this.value);
@@ -315,11 +315,11 @@ function create_user_settings() {
         create_task(result['task_id'], 'user_settings_query_blockchain_balances', 'Query blockchain balances');
     });
     // also save the user settings page
-    settings.page_usersettings = $('#page-wrapper').html();
+    settings.page_user_settings = $('#page-wrapper').html();
 
     // pulsate element if first time we open and user follows guide
     if (settings.start_suggestion == 'click_user_settings') {
-        unsuggest_element('#usersettingsbutton');
+        unsuggest_element('#user_settings_button');
         suggest_element_until_click('#fiat_value_entry', 'inactive');
         suggest_element_until_click('#api_key_entry', 'inactive');
         suggest_element_until_click('#api_secret_entry', 'inactive');
@@ -530,7 +530,7 @@ function create_blockchain_balances_tables(result) {
 
     enable_multiselect();
     // also save the user settings page
-    settings.page_usersettings = $('#page-wrapper').html();
+    settings.page_user_settings = $('#page-wrapper').html();
 }
 
 var populate_eth_tokens_called = false;
@@ -658,11 +658,11 @@ function create_fiat_table() {
         $(str).appendTo($('#fiat_balances_panel_body'));
         FIAT_TABLE = new AssetTable ('currency', 'fiat_balances', 'appendTo', 'fiat_balances_panel_body', result);
         // also save the user settings page
-        settings.page_usersettings = $('#page-wrapper').html();
+        settings.page_user_settings = $('#page-wrapper').html();
     });
 }
 
-function reload_usersettings_tables_if_existing() {
+function reload_user_settings_tables_if_existing() {
     if (FIAT_TABLE) {
         FIAT_TABLE.reload();
     }
@@ -677,7 +677,7 @@ function reload_usersettings_tables_if_existing() {
     }
 }
 
-function init_usersettings() {
+function init_user_settings() {
     monitor_add_callback('user_settings_query_blockchain_balances', function (result) {
         create_blockchain_balances_tables(result);
     });
@@ -685,8 +685,8 @@ function init_usersettings() {
 
 
 module.exports = function() {
-    this.init_usersettings = init_usersettings;
-    this.reload_usersettings_tables_if_existing = reload_usersettings_tables_if_existing;
-    this.add_usersettings_listeners = add_usersettings_listeners;
+    this.init_user_settings = init_user_settings;
+    this.reload_user_settings_tables_if_existing = reload_user_settings_tables_if_existing;
+    this.add_user_settings_listeners = add_user_settings_listeners;
     this.create_user_settings = create_user_settings;
 };

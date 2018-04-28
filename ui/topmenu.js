@@ -2,7 +2,7 @@ var settings = require("./settings.js")();
 require("./utils.js")();
 require("./balances_table.js")();
 require("./exchange.js")();
-require("./usersettings.js")();
+require("./user_settings.js")();
 
 function set_ui_main_currency(currency_ticker_symbol) {
     var currency = null;
@@ -24,7 +24,7 @@ function set_ui_main_currency(currency_ticker_symbol) {
     // also adjust tables if they exist
     reload_balance_table_if_existing();
     reload_exchange_tables_if_existing();
-    reload_usersettings_tables_if_existing();
+    reload_user_settings_tables_if_existing();
 }
 
 function reload_boxes_after_currency_change(currency) {

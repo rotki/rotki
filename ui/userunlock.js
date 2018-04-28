@@ -218,7 +218,7 @@ function load_dashboard_after_unlock(exchanges, is_new_user) {
         $('#user-dropdown').click(function(event) {
             if (settings.start_suggestion == 'click_user_dropdown') {
                 unsuggest_element('#user-dropdown');
-                suggest_element('#usersettingsbutton', 'click_user_settings');
+                suggest_element('#user_settings_button', 'click_user_settings');
             }
         });
     }
