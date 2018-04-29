@@ -67,8 +67,8 @@ history1 = [
 
 def test_simple_accounting(accountant):
     accounting_history_process(accountant, history1, [], 1436979735, 1495751688)
-    assert accountant.general_trade_profit_loss.is_close("557.528104903")
-    assert accountant.taxable_trade_profit_loss.is_close("557.528104903")
+    assert accountant.general_trade_pl.is_close("557.528104903")
+    assert accountant.taxable_trade_pl.is_close("557.528104903")
 
 
 bad_history1 = [
@@ -172,8 +172,8 @@ history2 = [
 
 def test_selling_crypto_bought_with_crypto(accountant):
     accounting_history_process(accountant, history2, [], 1436979735, 1495751688)
-    assert accountant.general_trade_profit_loss.is_close("73.9657992344")
-    assert accountant.taxable_trade_profit_loss.is_close("73.9657992344")
+    assert accountant.general_trade_pl.is_close("73.9657992344")
+    assert accountant.taxable_trade_pl.is_close("73.9657992344")
 
 
 history3 = [
@@ -205,8 +205,8 @@ history3 = [
 
 def test_buying_eth_before_daofork(accountant):
     accounting_history_process(accountant, history3, [], 1436979735, 1495751688)
-    assert accountant.general_trade_profit_loss.is_close("850.688385")
-    assert accountant.taxable_trade_profit_loss.is_close("0")
+    assert accountant.general_trade_pl.is_close("850.688385")
+    assert accountant.taxable_trade_pl.is_close("0")
 
 
 history4 = [
@@ -238,5 +238,5 @@ history4 = [
 
 def test_buying_btc_before_bchfork(accountant):
     accounting_history_process(accountant, history4, [], 1436979735, 1519693374)
-    assert accountant.general_trade_profit_loss.is_close("-279.497")
-    assert accountant.taxable_trade_profit_loss.is_close("-279.497")
+    assert accountant.general_trade_pl.is_close("-279.497")
+    assert accountant.taxable_trade_pl.is_close("-279.497")

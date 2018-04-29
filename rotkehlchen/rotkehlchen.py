@@ -23,7 +23,7 @@ from rotkehlchen.premium import premium_create_and_verify
 from rotkehlchen.utils import query_fiat_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import TradesHistorian, PriceHistorian
-from rotkehlchen.accounting import Accountant
+from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.ethchain import Ethchain
 
 import logging

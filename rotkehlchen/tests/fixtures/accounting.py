@@ -3,7 +3,7 @@ import os
 import errno
 
 from rotkehlchen.history import PriceHistorian
-from rotkehlchen.accounting import Accountant
+from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.inquirer import Inquirer
 
 TEST_HISTORY_DATA_START = "01/01/2015"
