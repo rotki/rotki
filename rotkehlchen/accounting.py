@@ -710,10 +710,6 @@ class Accountant(object):
                 is_virtual=True,
             )
 
-    def save_events(self):
-        for asset, events in self.events.items():
-            pass
-
     def calculate_asset_details(self):
         """ Calculates what amount of all assets has been untouched for a year and
         is hence tax-free and also the average buy price for each asset"""
