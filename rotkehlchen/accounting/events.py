@@ -39,6 +39,9 @@ class TaxableEvents(object):
         self.settlement_losses = FVal(0)
         self.margin_positions_profit = FVal(0)
 
+    def customize(self, include_crypto2crypto):
+        self.include_crypto2crypto = include_crypto2crypto
+
     def calculate_asset_details(self):
         """ Calculates what amount of all assets has been untouched for a year and
         is hence tax-free and also the average buy price for each asset"""
@@ -135,58 +138,60 @@ class TaxableEvents(object):
             is_virtual=False,
         )
 
-        if paid_with_asset not in FIAT_CURRENCIES:
-            # then you are also selling some other asset to buy the bought asset
-            try:
-                bought_asset_rate_in_profit_currency = self.get_rate_in_profit_currency(
-                    bought_asset,
-                    timestamp
-                )
-            except (NoPriceForGivenTimestamp, PriceQueryUnknownFromAsset):
-                bought_asset_rate_in_profit_currency = -1
+        if paid_with_asset in FIAT_CURRENCIES or not self.include_crypto2crypto:
+            return
 
-            if bought_asset_rate_in_profit_currency != -1:
-                # The asset bought does not have a price yet
-                # Can happen for Token sales, presales e.t.c.
-                with_bought_asset_gain = bought_asset_rate_in_profit_currency * bought_amount
-                receiving_asset = bought_asset
-                receiving_amount = bought_amount
-                rate_in_profit_currency = bought_asset_rate_in_profit_currency / trade_rate
-                gain_in_profit_currency = with_bought_asset_gain
-
-            sold_amount = trade_rate * bought_amount
-
-            sold_asset_rate_in_profit_currency = self.get_rate_in_profit_currency(
-                paid_with_asset,
+        # else you are also selling some other asset to buy the bought asset
+        try:
+            bought_asset_rate_in_profit_currency = self.get_rate_in_profit_currency(
+                bought_asset,
                 timestamp
             )
-            with_sold_asset_gain = sold_asset_rate_in_profit_currency * sold_amount
+        except (NoPriceForGivenTimestamp, PriceQueryUnknownFromAsset):
+            bought_asset_rate_in_profit_currency = -1
 
-            # Consider as value of the sell what would give the least profit
-            if (bought_asset_rate_in_profit_currency == -1 or
-                    with_sold_asset_gain < with_bought_asset_gain):
-                receiving_asset = self.profit_currency
-                receiving_amount = with_sold_asset_gain
-                trade_rate = sold_asset_rate_in_profit_currency
-                rate_in_profit_currency = sold_asset_rate_in_profit_currency
-                gain_in_profit_currency = with_sold_asset_gain
+        if bought_asset_rate_in_profit_currency != -1:
+            # The asset bought does not have a price yet
+            # Can happen for Token sales, presales e.t.c.
+            with_bought_asset_gain = bought_asset_rate_in_profit_currency * bought_amount
+            receiving_asset = bought_asset
+            receiving_amount = bought_amount
+            rate_in_profit_currency = bought_asset_rate_in_profit_currency / trade_rate
+            gain_in_profit_currency = with_bought_asset_gain
 
-            # add the fee
-            fee_rate = self.get_rate_in_profit_currency(fee_currency, timestamp)
-            fee_in_profit_currency = fee_rate * trade_fee
+        sold_amount = trade_rate * bought_amount
 
-            self.add_sell(
-                selling_asset=paid_with_asset,
-                selling_amount=sold_amount,
-                receiving_asset=receiving_asset,
-                receiving_amount=receiving_amount,
-                trade_rate=trade_rate,
-                rate_in_profit_currency=rate_in_profit_currency,
-                gain_in_profit_currency=gain_in_profit_currency,
-                total_fee_in_profit_currency=fee_in_profit_currency,
-                timestamp=timestamp,
-                is_virtual=True,
-            )
+        sold_asset_rate_in_profit_currency = self.get_rate_in_profit_currency(
+            paid_with_asset,
+            timestamp
+        )
+        with_sold_asset_gain = sold_asset_rate_in_profit_currency * sold_amount
+
+        # Consider as value of the sell what would give the least profit
+        if (bought_asset_rate_in_profit_currency == -1 or
+                with_sold_asset_gain < with_bought_asset_gain):
+            receiving_asset = self.profit_currency
+            receiving_amount = with_sold_asset_gain
+            trade_rate = sold_asset_rate_in_profit_currency
+            rate_in_profit_currency = sold_asset_rate_in_profit_currency
+            gain_in_profit_currency = with_sold_asset_gain
+
+        # add the fee
+        fee_rate = self.get_rate_in_profit_currency(fee_currency, timestamp)
+        fee_in_profit_currency = fee_rate * trade_fee
+
+        self.add_sell(
+            selling_asset=paid_with_asset,
+            selling_amount=sold_amount,
+            receiving_asset=receiving_asset,
+            receiving_amount=receiving_amount,
+            trade_rate=trade_rate,
+            rate_in_profit_currency=rate_in_profit_currency,
+            gain_in_profit_currency=gain_in_profit_currency,
+            total_fee_in_profit_currency=fee_in_profit_currency,
+            timestamp=timestamp,
+            is_virtual=True,
+        )
 
     def add_buy(
             self,
@@ -313,20 +318,21 @@ class TaxableEvents(object):
             is_virtual=False,
         )
 
-        if receiving_asset not in FIAT_CURRENCIES:
-            # then you are also buying some other asset through your sell
+        if receiving_asset in FIAT_CURRENCIES or not self.include_crypto2crypto:
+            return
 
-            # TODO: Account for trade fees in the virtual buy too
-            self.add_buy(
-                bought_asset=receiving_asset,
-                bought_amount=receiving_amount,
-                paid_with_asset=selling_asset,
-                trade_rate=1 / trade_rate,
-                trade_fee=0,
-                fee_currency=receiving_amount,  # does not matter
-                timestamp=timestamp,
-                is_virtual=True,
-            )
+        # else then you are also buying some other asset through your sell
+        # TODO: Account for trade fees in the virtual buy too
+        self.add_buy(
+            bought_asset=receiving_asset,
+            bought_amount=receiving_amount,
+            paid_with_asset=selling_asset,
+            trade_rate=1 / trade_rate,
+            trade_fee=0,
+            fee_currency=receiving_amount,  # does not matter
+            timestamp=timestamp,
+            is_virtual=True,
+        )
 
     def add_sell(
             self,
@@ -397,7 +403,11 @@ class TaxableEvents(object):
         general_profit_loss = 0
         taxable_profit_loss = 0
 
-        # and then calculate profit/loss
+        # If we don't include crypto2crypto and we sell for crypto, stop here
+        if receiving_asset not in FIAT_CURRENCIES and not self.include_crypto2crypto:
+            return
+
+        # calculate profit/loss
         if not loan_settlement or (loan_settlement and self.count_profit_for_settlements):
             taxable_gain = taxable_gain_for_sell(
                 taxable_amount=taxable_amount,
@@ -417,6 +427,7 @@ class TaxableEvents(object):
         assert timestamp <= self.query_end_ts, (
             "Trade time > query_end_ts found in adding to sell event"
         )
+
         # count profit/losses if we are inside the query period
         if timestamp >= self.query_start_ts:
             if loan_settlement:

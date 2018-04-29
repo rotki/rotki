@@ -71,14 +71,18 @@ class Accountant(object):
             profit_currency,
             user_directory,
             create_csv,
-            ignored_assets
+            ignored_assets,
+            include_crypto2crypto,
     ):
 
         self.price_historian = price_historian
-        self.ignored_assets = ignored_assets
         self.csvexporter = CSVExporter(profit_currency, user_directory, create_csv)
         self.events = TaxableEvents(price_historian, self.csvexporter, profit_currency)
         self.set_main_currency(profit_currency)
+
+        # Customizable Options
+        self.ignored_assets = ignored_assets
+        self.events.customize(include_crypto2crypto)
 
     @property
     def general_trade_pl(self):
