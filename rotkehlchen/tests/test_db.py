@@ -125,7 +125,8 @@ def test_writting_fetching_data(data_dir, username):
         'historical_data_start': DEFAULT_START_DATE,
         'eth_rpc_port': '8545',
         'ui_floating_precision': DEFAULT_UI_FLOATING_PRECISION,
-        'db_version': ROTKEHLCHEN_DB_VERSION
+        'db_version': ROTKEHLCHEN_DB_VERSION,
+        'include_crypto2crypto': True,
     }
 
     # Check setting non-existing settings. Should be ignored
