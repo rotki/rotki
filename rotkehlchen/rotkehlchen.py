@@ -23,7 +23,7 @@ from rotkehlchen.premium import premium_create_and_verify
 from rotkehlchen.utils import query_fiat_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import TradesHistorian, PriceHistorian
-from rotkehlchen.accounting import Accountant
+from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.ethchain import Ethchain
 
 import logging
@@ -201,12 +201,14 @@ class Rotkehlchen(object):
             self.data_dir,
             historical_data_start,
         )
+        db_settings = self.data.db.get_settings()
         self.accountant = Accountant(
             price_historian=self.price_historian,
             profit_currency=self.data.main_currency(),
             user_directory=user_dir,
             create_csv=True,
-            ignored_assets=self.data.db.get_ignored_assets()
+            ignored_assets=self.data.db.get_ignored_assets(),
+            include_crypto2crypto=db_settings['include_crypto2crypto'],
         )
 
         self.inquirer = Inquirer(kraken=self.kraken)
@@ -453,6 +455,9 @@ class Rotkehlchen(object):
                 main_currency = settings['main_currency']
                 if main_currency != 'USD':
                     self.usd_to_main_currency_rate = query_fiat_pair('USD', main_currency)
+
+            if 'include_crypto2crypto' in settings:
+                self.accountant.set_includecrypto2crypto(settings['include_crypto2crypto'])
 
             _, msg, = self.data.set_settings(settings, self.accountant)
             if msg != '':

@@ -51,6 +51,20 @@ function form_checkbox(id, prompt, checked) {
     return `<div class="checkbox"><label><input id="${id}" type="checkbox" ${checkstr}>${prompt}</label></div>`;
 }
 
+function form_radio(prompt, id, options, selected_option) {
+    let str = '<div class="form-group"><label class="form-prompt">'+prompt+'</label><div class="row">';
+    let colnum = Math.floor(12 / options.length);
+    for (let i = 0; i < options.length; i++) {
+        str += '<div class="col-sm-'+ colnum + '"><input type="radio" name="'+ id +'" value="'+options[i]+'"';
+        if (selected_option == options[i]) {
+            str += ' checked="checked"';
+        }
+        str +='>'+options[i]+'</input></div>';
+    }
+    str += '</div></div>';
+    return str;
+}
+
 function form_multiselect(prompt, id, options) {
     let str = '<div class="form-group"><label class="form-prompt">'+prompt+'</label>';
     str += '<select id="'+id+'" class="form-control" multiple="multiple" style="font-family: \'FontAwesome\', \'sans-serif\';">';
@@ -91,6 +105,7 @@ module.exports = function() {
     this.form_entry = form_entry;
     this.form_text = form_text;
     this.form_checkbox = form_checkbox;
+    this.form_radio = form_radio;
     this.form_select = form_select;
     this.form_multiselect = form_multiselect;
     this.form_button = form_button;

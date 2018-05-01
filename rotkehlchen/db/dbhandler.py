@@ -10,6 +10,7 @@ from rotkehlchen.utils import ts_now
 from rotkehlchen.errors import AuthenticationError, InputError
 from .utils import DB_SCRIPT_CREATE_TABLES, DB_SCRIPT_REIMPORT_DATA
 
+DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
 DEFAULT_START_DATE = "01/08/2015"
 DEFAULT_UI_FLOATING_PRECISION = 2
 KDF_ITER = 64000
@@ -165,6 +166,8 @@ class DBHandler(object):
                 settings['last_write_ts'] = int(q[1])
             elif q[0] == 'premium_should_sync':
                 settings['premium_should_sync'] = str_to_bool(q[1])
+            elif q[0] == 'include_crypto2crypto':
+                settings['include_crypto2crypto'] = str_to_bool(q[1])
             elif q[0] == 'last_data_upload_ts':
                 settings['last_data_upload_ts'] = int(q[1])
             elif q[0] == 'ui_floating_precision':
@@ -179,6 +182,8 @@ class DBHandler(object):
             settings['eth_rpc_port'] = '8545'
         if 'ui_floating_precision' not in settings:
             settings['ui_floating_precision'] = DEFAULT_UI_FLOATING_PRECISION
+        if 'include_crypto2crypto' not in settings:
+            settings['include_crypto2crypto'] = DEFAULT_INCLUDE_CRYPTO2CRYPTO
         return settings
 
     def get_main_currency(self):

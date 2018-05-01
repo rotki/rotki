@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`45` Add option to customize including crypto to crypto trades.
 * :feature:`42` Move the accounting settings to their own page.
 
 * :release:`0.1.1 <2017-04-27>`
