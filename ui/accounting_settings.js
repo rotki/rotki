@@ -1,3 +1,4 @@
+var settings = require("./settings.js")();
 require("./elements.js")();
 require("./utils.js")();
 
@@ -75,16 +76,53 @@ function ignored_asset_selection_callback(event) {
     }
 }
 
+function crypto2crypto_callback() {
+    let element = $(this);
+    let name = element.val();
+    let is_checked = element.prop('checked');
+
+    // return if a deselect triggered the event (may be unnecessary)
+    if (!is_checked) {
+        return;
+    }
+
+    // change class of div-box according to checked radio-box
+    let value = false;
+    if  (name == 'Yes') {
+        value = true;
+    }
+    client.invoke('set_settings', {'include_crypto2crypto': value}, (error, result) => {
+        if (error || result == null) {
+            showError('Error setting crypto to crypto', error);
+            return;
+        }
+        if (!result['result']) {
+            showError('Error setting crypto to crypto', result['message']);
+        }
+
+        showInfo('Success', 'Succesfully set crypto to crypto consideration value');
+    });
+}
+
 function add_accounting_settings_listeners() {
     $('#modify_ignored_asset_button').click(ignored_asset_modify_callback);
     $('#ignored_assets_selection').change(ignored_asset_selection_callback);
+    $('input[name=crypto2crypto]').change(crypto2crypto_callback);
 }
 
 function create_accounting_settings() {
     var str = page_header('Accounting Settings');
+    str += settings_panel('Trade Settings', 'trades');
     str += settings_panel('Asset Settings', 'assets');
     $('#page-wrapper').html(str);
 
+
+    let starting_c2c = 'Yes';
+    if (!settings.include_crypto2crypto) {
+        starting_c2c = 'No';
+    }
+    str = form_radio('Take into account crypto to crypto trades', 'crypto2crypto', ['Yes', 'No'], starting_c2c);
+    $(str).appendTo($('#trades_panel_body'));
 
     str = form_entry('Asset To Ignore', 'ignored_asset_entry', '', 'Assets to ignore during all accounting calculations');
     str += form_select('Ignored Assets', 'ignored_assets_selection', [], '');
