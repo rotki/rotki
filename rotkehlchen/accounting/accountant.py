@@ -92,6 +92,9 @@ class Accountant(object):
     def taxable_trade_pl(self):
         return self.events.taxable_trade_profit_loss
 
+    def set_includecrypto2crypto(self, value):
+        self.events.customize(include_crypto2crypto=value)
+
     def set_main_currency(self, currency):
         if currency not in FIAT_CURRENCIES:
             raise ValueError(

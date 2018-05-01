@@ -201,13 +201,14 @@ class Rotkehlchen(object):
             self.data_dir,
             historical_data_start,
         )
+        db_settings = self.data.db.get_settings()
         self.accountant = Accountant(
             price_historian=self.price_historian,
             profit_currency=self.data.main_currency(),
             user_directory=user_dir,
             create_csv=True,
             ignored_assets=self.data.db.get_ignored_assets(),
-            include_crypto2crypto=True,
+            include_crypto2crypto=db_settings['include_crypto2crypto'],
         )
 
         self.inquirer = Inquirer(kraken=self.kraken)
@@ -454,6 +455,9 @@ class Rotkehlchen(object):
                 main_currency = settings['main_currency']
                 if main_currency != 'USD':
                     self.usd_to_main_currency_rate = query_fiat_pair('USD', main_currency)
+
+            if 'include_crypto2crypto' in settings:
+                self.accountant.set_includecrypto2crypto(settings['include_crypto2crypto'])
 
             _, msg, = self.data.set_settings(settings, self.accountant)
             if msg != '':
