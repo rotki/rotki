@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from rotkehlchen.utils import retry_calls, rlk_jsonloads, convert_to_int, request_get
+from rotkehlchen.utils import retry_calls, convert_to_int, request_get
 from rotkehlchen.fval import FVal
 
 EthereumTransaction = namedtuple(
