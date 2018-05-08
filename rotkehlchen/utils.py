@@ -7,6 +7,7 @@ import datetime
 import calendar
 import operator
 import requests
+from functools import wraps
 from collections import namedtuple
 from rlp.sedes import big_endian_int
 
@@ -72,6 +73,7 @@ def cache_response_timewise(seconds=600):
     Objects adhering to this interface are all the exchanges and the rotkehlchen object.
     """
     def _cache_response_timewise(f):
+        @wraps(f)
         def wrapper(wrappingobj, *args):
             with wrappingobj.lock:
                 now = ts_now()
