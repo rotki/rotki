@@ -32,8 +32,11 @@ class DBHandler(object):
         self.connect(password)
         try:
             self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
-        except sqlcipher.DatabaseError:
-            raise AuthenticationError('Wrong password while decrypting the database')
+        except sqlcipher.DatabaseError as e:
+            errstr = str(e)
+            if errstr == 'file is not a database':
+                errstr = 'Wrong password while decrypting the database or not a database'
+            raise AuthenticationError(str(e))
 
         cursor = self.conn.cursor()
         cursor.execute(
