@@ -73,6 +73,7 @@ class Accountant(object):
             create_csv,
             ignored_assets,
             include_crypto2crypto,
+            taxfree_after_period,
     ):
 
         self.price_historian = price_historian
@@ -82,7 +83,8 @@ class Accountant(object):
 
         # Customizable Options
         self.ignored_assets = ignored_assets
-        self.events.customize(include_crypto2crypto)
+        self.events.include_crypto2crypto = include_crypto2crypto
+        self.events.taxfree_after_period = taxfree_after_period
 
     @property
     def general_trade_pl(self):
@@ -92,8 +94,12 @@ class Accountant(object):
     def taxable_trade_pl(self):
         return self.events.taxable_trade_profit_loss
 
-    def set_includecrypto2crypto(self, value):
-        self.events.customize(include_crypto2crypto=value)
+    def customize(self, settings):
+        if 'include_crypto2crypto' in settings:
+            self.events.include_crypto2crypto = settings['include_crypto2crypto']
+
+        if 'taxfree_after_period' in settings:
+            self.events.taxfree_after_period = settings['taxfree_after_period']
 
     def set_main_currency(self, currency):
         if currency not in FIAT_CURRENCIES:
