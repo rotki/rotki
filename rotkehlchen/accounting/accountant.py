@@ -73,6 +73,7 @@ class Accountant(object):
             create_csv,
             ignored_assets,
             include_crypto2crypto,
+            taxfree_after_period,
     ):
 
         self.price_historian = price_historian
@@ -82,7 +83,8 @@ class Accountant(object):
 
         # Customizable Options
         self.ignored_assets = ignored_assets
-        self.events.customize(include_crypto2crypto)
+        self.events.include_crypto2crypto = include_crypto2crypto
+        self.events.taxfree_after_period = taxfree_after_period
 
     @property
     def general_trade_pl(self):
@@ -92,8 +94,32 @@ class Accountant(object):
     def taxable_trade_pl(self):
         return self.events.taxable_trade_profit_loss
 
-    def set_includecrypto2crypto(self, value):
-        self.events.customize(include_crypto2crypto=value)
+    def customize(self, settings):
+        include_c2c = self.events.include_crypto2crypto
+        taxfree_after_period = self.events.taxfree_after_period
+
+        if 'include_crypto2crypto' in settings:
+            include_c2c = settings['include_crypto2crypto']
+            if not isinstance(include_c2c, bool):
+                return False, 'Value for include_crypto2crypto must be boolean'
+
+        if 'taxfree_after_period' in settings:
+            taxfree_after_period = settings['taxfree_after_period']
+            if taxfree_after_period is not None:
+                if not isinstance(taxfree_after_period, int):
+                    return False, 'Value for taxfree_after_period must be an integer'
+
+                if taxfree_after_period == 0:
+                    return False, 'Value for taxfree_after_period can not be 0 days'
+
+                # turn to seconds
+                taxfree_after_period = taxfree_after_period * 86400
+                settings['taxfree_after_period'] = taxfree_after_period
+
+        self.events.include_crypto2crypto = include_c2c
+        self.events.taxfree_after_period = taxfree_after_period
+
+        return True, ''
 
     def set_main_currency(self, currency):
         if currency not in FIAT_CURRENCIES:

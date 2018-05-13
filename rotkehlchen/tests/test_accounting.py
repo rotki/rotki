@@ -261,3 +261,17 @@ def test_nocrypto2crypto(accountant):
     accounting_history_process(accountant, history5, [], 1436979735, 1519693374)
     assert accountant.general_trade_pl.is_close("264693.43364282")
     assert accountant.taxable_trade_pl.is_close("0")
+
+
+@pytest.mark.parametrize('accounting_taxfree_after_period', [None])
+def test_no_taxfree_period(accountant):
+    accounting_history_process(accountant, history5, [], 1436979735, 1519693374)
+    assert accountant.general_trade_pl.is_close("265250.961748")
+    assert accountant.taxable_trade_pl.is_close("265250.961748")
+
+
+@pytest.mark.parametrize('accounting_taxfree_after_period', [86400])
+def test_big_taxfree_period(accountant):
+    accounting_history_process(accountant, history5, [], 1436979735, 1519693374)
+    assert accountant.general_trade_pl.is_close("265250.961748")
+    assert accountant.taxable_trade_pl.is_close("0")

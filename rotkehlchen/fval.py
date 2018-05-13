@@ -156,7 +156,7 @@ class FVal(object):
             raise ValueError('Tried to ask for exact int from {}'.format(self.num))
         return int(self.num)
 
-    def is_close(self, other, max_diff="1e-9"):
+    def is_close(self, other, max_diff="1e-6"):
         max_diff = FVal(max_diff)
 
         if not isinstance(other, FVal):

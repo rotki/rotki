@@ -10,7 +10,7 @@ from rotkehlchen.history import (
     PriceQueryUnknownFromAsset,
     FIAT_CURRENCIES
 )
-from rotkehlchen.constants import ETH_DAO_FORK_TS, BTC_BCH_FORK_TS, YEAR_IN_SECONDS
+from rotkehlchen.constants import ETH_DAO_FORK_TS, BTC_BCH_FORK_TS
 
 import logging
 logger = logging.getLogger(__name__)
@@ -39,8 +39,21 @@ class TaxableEvents(object):
         self.settlement_losses = FVal(0)
         self.margin_positions_profit = FVal(0)
 
-    def customize(self, include_crypto2crypto):
-        self.include_crypto2crypto = include_crypto2crypto
+    @property
+    def include_crypto2crypto(self):
+        return self._include_crypto2crypto
+
+    @include_crypto2crypto.setter
+    def include_crypto2crypto(self, value):
+        self._include_crypto2crypto = value
+
+    @property
+    def taxfree_after_period(self):
+        return self._taxfree_after_period
+
+    @taxfree_after_period.setter
+    def taxfree_after_period(self, value):
+        self._taxfree_after_period = value
 
     def calculate_asset_details(self):
         """ Calculates what amount of all assets has been untouched for a year and
@@ -52,8 +65,9 @@ class TaxableEvents(object):
             amount_sum = 0
             average = 0
             for buy_event in events.buys:
-                if buy_event.timestamp + YEAR_IN_SECONDS < now:
-                    tax_free_amount_left += buy_event.amount
+                if self.taxfree_after_period is not None:
+                    if buy_event.timestamp + self.taxfree_after_period < now:
+                        tax_free_amount_left += buy_event.amount
                 amount_sum += buy_event.amount
                 average += buy_event.amount * buy_event.rate
 
@@ -499,7 +513,12 @@ class TaxableEvents(object):
         taxfree_amount = 0
         debug_enabled = logger.isEnabledFor(logging.DEBUG)
         for idx, buy_event in enumerate(self.events[selling_asset].buys):
-            sell_after_year = buy_event.timestamp + YEAR_IN_SECONDS < timestamp
+            if self.taxfree_after_period is None:
+                at_taxfree_period = False
+            else:
+                at_taxfree_period = (
+                    buy_event.timestamp + self.taxfree_after_period < timestamp
+                )
 
             if remaining_sold_amount < buy_event.amount:
                 stop_index = idx
@@ -508,7 +527,7 @@ class TaxableEvents(object):
                     - (buy_event.fee_rate * remaining_sold_amount)
                 )
 
-                if sell_after_year:
+                if at_taxfree_period:
                     taxfree_amount += remaining_sold_amount
                     taxfree_bought_cost += buying_cost
                 else:
@@ -519,7 +538,7 @@ class TaxableEvents(object):
                 if debug_enabled:
                     logger.debug(
                         '[{}] Using up {}/{} "{}" from the buy for {} "{}" per "{}"  at {}'.format(
-                            'TAX-FREE' if sell_after_year else 'TAXABLE',
+                            'TAX-FREE' if at_taxfree_period else 'TAXABLE',
                             remaining_sold_amount,
                             buy_event.amount,
                             selling_asset,
@@ -532,7 +551,7 @@ class TaxableEvents(object):
                 break
             else:
                 remaining_sold_amount -= buy_event.amount
-                if sell_after_year:
+                if at_taxfree_period:
                     taxfree_amount += buy_event.amount
                     taxfree_bought_cost += buy_event.cost
                 else:
@@ -542,7 +561,7 @@ class TaxableEvents(object):
                 if debug_enabled:
                     logger.debug(
                         '[{}] Using up the entire buy of {} "{}" for {} "{}" per {} at {}'.format(
-                            'TAX-FREE' if sell_after_year else 'TAXABLE',
+                            'TAX-FREE' if at_taxfree_period else 'TAXABLE',
                             buy_event.amount,
                             selling_asset,
                             buy_event.rate,

@@ -7,6 +7,7 @@ set -x
 # export PATH=$PATH:$HOME/.bin
 
 if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then
+    apt-get update
     apt-get install -y libsqlcipher-dev libzmq3 libzmq3-dev
     sudo ldconfig
 else

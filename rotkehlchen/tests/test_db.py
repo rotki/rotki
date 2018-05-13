@@ -10,6 +10,7 @@ from rotkehlchen.db.dbhandler import (
 )
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.errors import AuthenticationError, InputError
+from rotkehlchen.constants import YEAR_IN_SECONDS
 
 
 TABLES_AT_INIT = [
@@ -127,6 +128,7 @@ def test_writting_fetching_data(data_dir, username):
         'ui_floating_precision': DEFAULT_UI_FLOATING_PRECISION,
         'db_version': ROTKEHLCHEN_DB_VERSION,
         'include_crypto2crypto': True,
+        'taxfree_after_period': YEAR_IN_SECONDS,
     }
 
     # Check setting non-existing settings. Should be ignored

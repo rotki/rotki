@@ -183,6 +183,7 @@ function unlock_user(username, password, create_true, sync_approval, api_key, ap
                     settings.historical_data_start = db_settings['historical_data_start'];
                     settings.eth_rpc_port = db_settings['eth_rpc_port'];
                     settings.include_crypto2crypto = db_settings['include_crypto2crypto'];
+                    settings.taxfree_after_period = db_settings['taxfree_after_period'];
 
                     let is_new_user = create_true && api_key == '';
                     load_dashboard_after_unlock(response['exchanges'], is_new_user);

@@ -1,5 +1,5 @@
 function form_entry(input_addon, input_id, initial_value, placeholder, input_type) {
-    let str = '<form role="form"><div class="form-group input-group">';
+    let str = '<div class="form-group input-group">';
     if (input_addon) {
         str += '<span class="input-group-addon">'+input_addon+':</span>';
     }

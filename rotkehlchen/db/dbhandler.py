@@ -5,11 +5,12 @@ import shutil
 from collections import defaultdict
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.constants import SUPPORTED_EXCHANGES
+from rotkehlchen.constants import SUPPORTED_EXCHANGES, YEAR_IN_SECONDS
 from rotkehlchen.utils import ts_now
 from rotkehlchen.errors import AuthenticationError, InputError
 from .utils import DB_SCRIPT_CREATE_TABLES, DB_SCRIPT_REIMPORT_DATA
 
+DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
 DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
 DEFAULT_START_DATE = "01/08/2015"
 DEFAULT_UI_FLOATING_PRECISION = 2
@@ -187,6 +188,8 @@ class DBHandler(object):
             settings['ui_floating_precision'] = DEFAULT_UI_FLOATING_PRECISION
         if 'include_crypto2crypto' not in settings:
             settings['include_crypto2crypto'] = DEFAULT_INCLUDE_CRYPTO2CRYPTO
+        if 'taxfree_after_period' not in settings:
+            settings['taxfree_after_period'] = DEFAULT_TAXFREE_AFTER_PERIOD
         return settings
 
     def get_main_currency(self):

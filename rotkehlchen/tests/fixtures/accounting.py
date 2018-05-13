@@ -5,6 +5,7 @@ import errno
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.constants import YEAR_IN_SECONDS
 
 TEST_HISTORY_DATA_START = "01/01/2015"
 
@@ -54,13 +55,19 @@ def accounting_include_crypto2crypto():
 
 
 @pytest.fixture
+def accounting_taxfree_after_period():
+    return YEAR_IN_SECONDS
+
+
+@pytest.fixture
 def accountant(
         price_historian,
         profit_currency,
         accounting_data_dir,
         accounting_create_csv,
         accounting_ignored_assets,
-        accounting_include_crypto2crypto
+        accounting_include_crypto2crypto,
+        accounting_taxfree_after_period,
 ):
     return Accountant(
         price_historian=price_historian,
@@ -69,6 +76,7 @@ def accountant(
         create_csv=accounting_create_csv,
         ignored_assets=accounting_ignored_assets,
         include_crypto2crypto=accounting_include_crypto2crypto,
+        taxfree_after_period=accounting_taxfree_after_period,
     )
 
 

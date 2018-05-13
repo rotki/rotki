@@ -47,6 +47,7 @@ VALID_SETTINGS = (
     'last_data_upload_ts',
     'premium_should_sync',
     'include_crypto2crypto',
+    'taxfree_after_period',
 )
 
 

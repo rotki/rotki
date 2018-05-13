@@ -98,9 +98,35 @@ function crypto2crypto_callback() {
         }
         if (!result['result']) {
             showError('Error setting crypto to crypto', result['message']);
+            return;
         }
 
         showInfo('Success', 'Succesfully set crypto to crypto consideration value');
+    });
+}
+
+function modify_trade_settings_callback() {
+    let element = $('input[name=taxfree_period_exists]');
+    let name = element.val();
+    let is_checked = element.prop('checked');
+
+    // return if a deselect triggered the event (may be unnecessary)
+    let value = null;
+    if (is_checked) {
+        value = parseInt($('#taxfree_period_entry').val());
+    }
+
+    client.invoke('set_settings', {'taxfree_after_period': value}, (error, result) => {
+        if (error || result == null) {
+            showError('Error setting trade settings', error);
+            return;
+        }
+        if (!result['result']) {
+            showError('Error setting trade settings', result['message']);
+            return;
+        }
+
+        showInfo('Success', 'Succesfully set trade settings');
     });
 }
 
@@ -108,6 +134,7 @@ function add_accounting_settings_listeners() {
     $('#modify_ignored_asset_button').click(ignored_asset_modify_callback);
     $('#ignored_assets_selection').change(ignored_asset_selection_callback);
     $('input[name=crypto2crypto]').change(crypto2crypto_callback);
+    $('#modify_trade_settings').click(modify_trade_settings_callback);
 }
 
 function create_accounting_settings() {
@@ -121,7 +148,18 @@ function create_accounting_settings() {
     if (!settings.include_crypto2crypto) {
         starting_c2c = 'No';
     }
+    let starting_taxfree_after_period_choice = 'Yes';
+    let starting_taxfree_after_period = '';
+    if (!settings.taxfree_after_period) {
+        starting_taxfree_after_period_choice = 'No';
+    } else {
+        //get number of days of the setting
+        starting_taxfree_after_period = (settings.taxfree_after_period / 86400).toString();
+    }
     str = form_radio('Take into account crypto to crypto trades', 'crypto2crypto', ['Yes', 'No'], starting_c2c);
+    str += form_radio('Is there a tax free period?', 'taxfree_period_exists', ['Yes', 'No'], starting_taxfree_after_period_choice);
+    str += form_entry('Tax free after how many days', 'taxfree_period_entry', starting_taxfree_after_period, '');
+    str += form_button('Set', 'modify_trade_settings');
     $(str).appendTo($('#trades_panel_body'));
 
     str = form_entry('Asset To Ignore', 'ignored_asset_entry', '', 'Assets to ignore during all accounting calculations');

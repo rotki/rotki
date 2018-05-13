@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`51` Add customization for the period of time after which trades are tax free.
 * :bug:`50` rotkehlchen --help now works again
 * :feature:`45` Add option to customize including crypto to crypto trades.
 * :feature:`42` Move the accounting settings to their own page.
