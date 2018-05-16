@@ -225,13 +225,15 @@ class PriceHistorian(object):
         # TODO: Check if historical data is after the requested start date
         # Check the data folder and load any cached history
         prefix = os.path.join(self.data_directory, 'price_history_')
-        regex = re.compile(prefix + '(.*)\.json')
+        regex = re.compile(prefix + '(.*)\\.json')
         files_list = glob.glob(prefix + '*.json')
+        # XXX: This takes quite a bit of time to run. Investigate why.
         for file_ in files_list:
             match = regex.match(file_)
             assert match
             cache_key = match.group(1)
             with open(file_, 'rb') as f:
+                print(file_)
                 data = rlk_jsonloads(f.read())
                 self.price_history[cache_key] = data
 
