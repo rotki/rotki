@@ -40,7 +40,7 @@ def app_args():
     )
     p.add_argument(
         '--ethrpc-port',
-        help='The port on which to communicate with an ethereum\'s client RPC.',
+        help="The port on which to communicate with an ethereum client's RPC.",
         default=8545,
     )
     p.add_argument(
@@ -63,7 +63,7 @@ def app_args():
     p.add_argument(
         '--logfromothermodules',
         help=(
-            'If given then logs from all all imported modules that use the '
+            'If given then logs from all imported modules that use the '
             'logging system will also be visible.'
         ),
         action='store_true',
