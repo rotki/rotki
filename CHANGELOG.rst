@@ -2,6 +2,8 @@
 Changelog
 =========
 
+:bug: `61` Overcome etherscan's limit of 20 accounts per query by splitting the accounts list
+
 * :release:`0.2.0 <2018-05-13>`
 
 * :feature:`51` Add customization for the period of time after which trades are tax free.
