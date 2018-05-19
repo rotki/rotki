@@ -90,19 +90,25 @@ class Ethchain(object):
     def get_multieth_balance(self, accounts):
         """Returns a dict with keys being accounts and balances in ETH"""
         balances = {}
+
         if not self.connected:
-            # TODO: accounts.length should be less than 20. If more we gotta do
-            # multiple calls
-            eth_resp = request_get(
-                'https://api.etherscan.io/api?module=account&action=balancemulti&address=%s' %
-                ','.join(accounts)
-            )
-            if eth_resp['status'] != 1:
-                raise ValueError('Failed to query etherscan for accounts balance')
-            eth_accounts = eth_resp['result']
-            for account_entry in eth_accounts:
-                amount = FVal(account_entry['balance'])
-                balances[account_entry['account']] = from_wei(amount)
+            if len(accounts) > 20:
+                new_accounts = [accounts[x:x+2] for x in range(0, len(accounts), 2)]
+            else:
+                new_accounts = [accounts]
+
+            for account_slice in new_accounts:
+                eth_resp = request_get(
+                    'https://api.etherscan.io/api?module=account&action=balancemulti&address=%s' %
+                    ','.join(account_slice)
+                )
+                if eth_resp['status'] != 1:
+                    raise ValueError('Failed to query etherscan for accounts balance')
+                eth_accounts = eth_resp['result']
+
+                for account_entry in eth_accounts:
+                    amount = FVal(account_entry['balance'])
+                    balances[account_entry['account']] = from_wei(amount)
 
         else:
             for account in accounts:
