@@ -222,20 +222,18 @@ class PriceHistorian(object):
         self.historical_data_start = createTimeStamp(history_date_start, formatstr="%d/%m/%Y")
 
         self.price_history = dict()
-        # TODO: Check if historical data is after the requested start date
-        # Check the data folder and load any cached history
+        self.price_history_file = dict()
+
+        # Check the data folder and remember the filenames of any cached history
         prefix = os.path.join(self.data_directory, 'price_history_')
         regex = re.compile(prefix + '(.*)\\.json')
         files_list = glob.glob(prefix + '*.json')
-        # XXX: This takes quite a bit of time to run. Investigate why.
+
         for file_ in files_list:
             match = regex.match(file_)
             assert match
             cache_key = match.group(1)
-            with open(file_, 'rb') as f:
-                print(file_)
-                data = rlk_jsonloads(f.read())
-                self.price_history[cache_key] = data
+            self.price_history_file[cache_key] = file_
 
         # Get coin list of crypto compare
         invalidate_cache = True
@@ -278,6 +276,26 @@ class PriceHistorian(object):
         self.cryptocompare_coin_list['DAO'] = object()
         self.cryptocompare_coin_list['USDT'] = object()
 
+    def got_cached_price(self, cache_key, timestamp):
+        """Check if we got a price history for the timestamp cached"""
+        if cache_key in self.price_history_file:
+            if cache_key not in self.price_history:
+                try:
+                    with open(self.price_history_file[cache_key], 'rb') as f:
+                        data = rlk_jsonloads(f.read())
+                        self.price_history[cache_key] = data
+                except (OSError, IOError, JSONDecodeError):
+                    return False
+
+            in_range = (
+                self.price_history[cache_key]['start_time'] <= timestamp and
+                self.price_history[cache_key]['end_time'] > timestamp
+            )
+            if in_range:
+                return True
+
+        return False
+
     def get_historical_data(self, from_asset, to_asset, timestamp):
         """Get historical price data from cryptocompare"""
         if from_asset not in self.cryptocompare_coin_list:
@@ -293,11 +311,7 @@ class PriceHistorian(object):
             )
 
         cache_key = from_asset + '_' + to_asset
-        got_cached_value = (
-            cache_key in self.price_history and
-            self.price_history[cache_key]['start_time'] <= timestamp and
-            self.price_history[cache_key]['end_time'] > timestamp
-        )
+        got_cached_value = self.got_cached_price(cache_key, timestamp)
         if got_cached_value:
             return self.price_history[cache_key]['data']
 
@@ -358,12 +372,14 @@ class PriceHistorian(object):
             'end_time': now_ts
         }
         # and now since we actually queried the data let's also save them locally
+        filename = os.path.join(self.data_directory, 'price_history_' + cache_key + '.json')
         write_history_data_in_file(
             calculated_history,
-            os.path.join(self.data_directory, 'price_history_' + cache_key + '.json'),
+            filename,
             self.historical_data_start,
             now_ts
         )
+        self.price_history_file[cache_key] = filename
 
         return calculated_history
 
