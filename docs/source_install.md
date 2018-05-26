@@ -54,7 +54,7 @@ The following recipe has been tested using [Anaconda](https://conda.io). [Virtua
 
 Rotkehlchen uses an encrypted database called [SQLCipher](https://www.zetetic.net/sqlcipher/). Before we can proceed, we need to install it. Homebrew makes it simple:
 
-	$ brew update && brew install sqlcipher
+    $ brew update && brew install sqlcipher
 
 Also these are some dependencies that may or may not be properly installed in your system so make sure you have them.
 
@@ -63,12 +63,12 @@ Also these are some dependencies that may or may not be properly installed in yo
 
 If you wish to use Conda, use the following commands:
 
-	$ brew cask install caskroom/cask/anaconda
-	$ echo "export PATH=$PATH:/usr/local/anaconda3/bin" >> ~/.bash_profile
-	$ echo ". /usr/local/anaconda3/etc/profile.d/conda.sh" >> ~/.bash_profile
-	$ source ~/.bash_profile
-	$ conda create python=3.6 --name rotkehlchen
-	$ conda activate rotkehlchen
+    $ brew cask install caskroom/cask/anaconda
+    $ echo "export PATH=$PATH:/usr/local/anaconda3/bin" >> ~/.bash_profile
+    $ echo ". /usr/local/anaconda3/etc/profile.d/conda.sh" >> ~/.bash_profile
+    $ source ~/.bash_profile
+    $ conda create python=3.6 --name rotkehlchen
+    $ conda activate rotkehlchen
 
 If you wish to use Virtualenvwrapper use the following:
 
@@ -84,11 +84,11 @@ And add the following to your shell startup file, assuming virtualenvwrapper was
 
 Before using `pip`, let´s ensure we have the latest version:
 
-	$ pip install --upgrade pip
+    $ pip install --upgrade pip
 
 Install all the requirements:
 
-	$ sudo pip install -r requirements.txt
+    $ sudo pip install -r requirements.txt
 
 **Important note**: Make sure that pysqlcipher3 is properly installed. If
 
@@ -108,15 +108,12 @@ Rotkehlchen uses electron, we need to install it. To do so you need `node.js` an
 
     $ brew install node
 
-To get electron:
-
-	$ npm install --runtime=electron --target=1.8.4
-
 Almost there, we can now install all the NodeJS dependencies. Using a recent NodeJS version such as 8.9.x, it should be smooth. Also since npm uses gyp and gyp requires python 2.7 make sure to set it up appropriately before invoking npm.
 
         $ npm config set python python2.7
         $ npm install
+        $ PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild
 
-You now deserved to start Rotkehlchen:
+You can now start Rotkehlchen:
 
-	$ npm start
+        $ npm start
