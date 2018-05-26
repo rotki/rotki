@@ -4,6 +4,7 @@ import os
 import shutil
 from collections import defaultdict
 from pysqlcipher3 import dbapi2 as sqlcipher
+from eth_utils.address import to_checksum_address
 
 from rotkehlchen.constants import SUPPORTED_EXCHANGES, YEAR_IN_SECONDS
 from rotkehlchen.utils import ts_now
@@ -21,7 +22,7 @@ def str_to_bool(s):
     return True if s == 'True' else False
 
 
-ROTKEHLCHEN_DB_VERSION = 1
+ROTKEHLCHEN_DB_VERSION = 2
 
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
@@ -39,12 +40,39 @@ class DBHandler(object):
                 errstr = 'Wrong password while decrypting the database or not a database'
             raise AuthenticationError(str(e))
 
+        self.run_updates()
         cursor = self.conn.cursor()
         cursor.execute(
-            'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
             ('version', str(ROTKEHLCHEN_DB_VERSION))
         )
         self.conn.commit()
+
+    def get_version(self):
+        cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT value FROM settings WHERE name=?;', ('version',)
+        )
+        query = query.fetchall()
+        # If setting is not set, it's the latest version
+        if len(query) == 0:
+            return ROTKEHLCHEN_DB_VERSION
+
+        return int(query[0][0])
+
+    def run_updates(self):
+        current_version = self.get_version()
+
+        if current_version == 1:
+            # apply the 1 -> 2 updates
+            accounts = self.get_blockchain_accounts()
+            cursor = self.conn.cursor()
+            cursor.execute(
+                'DELETE FROM blockchain_accounts WHERE blockchain=?;', ('ETH',)
+            )
+            self.conn.commit()
+            for account in accounts['ETH']:
+                self.add_blockchain_account('ETH', to_checksum_address(account))
 
     def connect(self, password):
         self.conn = sqlcipher.connect(os.path.join(self.user_data_dir, 'rotkehlchen.db'))

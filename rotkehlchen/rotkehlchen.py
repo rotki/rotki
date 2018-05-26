@@ -9,8 +9,9 @@ from rotkehlchen.utils import (
     dict_get_sumof,
     merge_dicts,
     ts_now,
+    accounts_result,
 )
-from rotkehlchen.errors import PermissionError, AuthenticationError
+from rotkehlchen.errors import PermissionError, AuthenticationError, InputError
 from rotkehlchen.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.blockchain import Blockchain
 from rotkehlchen.poloniex import Poloniex
@@ -20,7 +21,7 @@ from rotkehlchen.binance import Binance
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium import premium_create_and_verify
-from rotkehlchen.utils import query_fiat_pair
+from rotkehlchen.utils import query_fiat_pair, simple_result
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import TradesHistorian, PriceHistorian
 from rotkehlchen.accounting.accountant import Accountant
@@ -334,6 +335,39 @@ class Rotkehlchen(object):
 
             logger.debug('Main loop end')
             gevent.sleep(MAIN_LOOP_SECS_DELAY)
+
+    def add_blockchain_account(self, blockchain, account):
+        try:
+            new_data = self.blockchain.add_blockchain_account(blockchain, account)
+        except InputError as e:
+            return simple_result(False, str(e))
+        self.data.add_blockchain_account(blockchain, account)
+        return accounts_result(new_data['per_account'], new_data['totals'])
+
+    def remove_blockchain_account(self, blockchain, account):
+        try:
+            new_data = self.blockchain.remove_blockchain_account(blockchain, account)
+        except InputError as e:
+            return simple_result(False, str(e))
+        self.data.remove_blockchain_account(blockchain, account)
+        return accounts_result(new_data['per_account'], new_data['totals'])
+
+    def add_owned_eth_tokens(self, tokens):
+        try:
+            new_data = self.blockchain.track_new_tokens(tokens)
+        except InputError as e:
+            return simple_result(False, str(e))
+
+        self.data.write_owned_eth_tokens(self.rotkehlchen.blockchain.owned_eth_tokens)
+        return accounts_result(new_data['per_account'], new_data['totals'])
+
+    def remove_owned_eth_tokens(self, tokens):
+        try:
+            new_data = self.blockchain.remove_eth_tokens(tokens)
+        except InputError as e:
+            return simple_result(False, str(e))
+        self.data.write_owned_eth_tokens(self.rotkehlchen.blockchain.owned_eth_tokens)
+        return accounts_result(new_data['per_account'], new_data['totals'])
 
     def process_history(self, start_ts, end_ts):
         (

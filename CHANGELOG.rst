@@ -2,6 +2,7 @@
 Changelog
 =========
 
+:bug: `66` Persist all eth accounts in the database as checksummed. Upgrade all existing DB accounts.
 :bug: `63` Unlocking a user account for an application is no longer slow if you have lots of historical price cache files.
 :bug: `61` Overcome etherscan's limit of 20 accounts per query by splitting the accounts list
 

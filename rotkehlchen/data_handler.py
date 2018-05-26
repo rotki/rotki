@@ -4,8 +4,9 @@ import os
 import zlib
 import base64
 import hashlib
-from rotkehlchen.crypto import encrypt, decrypt
+from eth_utils.address import to_checksum_address
 
+from rotkehlchen.crypto import encrypt, decrypt
 from rotkehlchen.utils import (
     createTimeStamp,
     rlk_jsonloads,
@@ -146,9 +147,13 @@ class DataHandler(object):
         self.db.write_owned_tokens(tokens)
 
     def add_blockchain_account(self, blockchain, account):
+        if blockchain == 'ETH':
+            account = to_checksum_address(account)
         self.db.add_blockchain_account(blockchain, account)
 
     def remove_blockchain_account(self, blockchain, account):
+        if blockchain == 'ETH':
+            account = to_checksum_address(account)
         self.db.remove_blockchain_account(blockchain, account)
 
     def add_ignored_asset(self, asset):

@@ -1,8 +1,10 @@
-from rotkehlchen.utils import from_wei
+import pytest
 
+from rotkehlchen.utils import from_wei
 from rotkehlchen.tests.utils.blockchain import DEFAULT_BALANCE
 
 
+@pytest.mark.parametrize('have_blockchain_backend', [True])
 def test_eth_connection_initial_balances(
         blockchain,
         number_of_accounts,

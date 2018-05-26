@@ -1,6 +1,7 @@
 import os
 import pytest
 from pysqlcipher3 import dbapi2 as sqlcipher
+from eth_utils.address import to_checksum_address
 
 from rotkehlchen.utils import ts_now, createTimeStamp
 from rotkehlchen.db.dbhandler import (
@@ -89,7 +90,7 @@ def test_writting_fetching_data(data_dir, username):
     assert accounts['BTC'] == ['1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS']
     assert set(accounts['ETH']) == set([
         '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
-        '0x80b369799104a47e98a553f3329812a44a7facdc'
+        to_checksum_address('0x80b369799104a47e98a553f3329812a44a7facdc')
 
     ])
     # Add existing account should fail
@@ -101,7 +102,7 @@ def test_writting_fetching_data(data_dir, username):
     # Remove existing account
     data.remove_blockchain_account('ETH', '0xd36029d76af6fE4A356528e4Dc66B2C18123597D')
     accounts = data.db.get_blockchain_accounts()
-    assert accounts['ETH'] == ['0x80b369799104a47e98a553f3329812a44a7facdc']
+    assert accounts['ETH'] == [to_checksum_address('0x80b369799104a47e98a553f3329812a44a7facdc')]
 
     result, _ = data.add_ignored_asset('DAO')
     assert result
@@ -236,3 +237,26 @@ def test_writting_fetching_external_trades(data_dir, username):
     result = data.get_external_trades()
     del result[0]['id']
     assert result[0] == from_otc_trade(trade2)
+
+
+def test_upgrade_db_1_to_2(data_dir, username):
+    """Test upgrading the DB from version 1 to version 2"""
+    # Creating a new data dir should work
+    data = DataHandler(data_dir)
+    data.unlock(username, '123', create_new=True)
+    # Manually set to version 1 and input a non checksummed account
+    cursor = data.db.conn.cursor()
+    cursor.execute(
+        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+        ('version', str(1))
+    )
+    data.db.conn.commit()
+    data.db.add_blockchain_account('ETH', '0xe3580c38b0106899f45845e361ea7f8a0062ef12')
+
+    # now relogin and check that the account has been re-saved as checksummed
+    del data
+    data = DataHandler(data_dir)
+    data.unlock(username, '123', create_new=False)
+    accounts = data.db.get_blockchain_accounts()
+    assert accounts['ETH'][0] == '0xe3580C38B0106899F45845E361EA7F8a0062Ef12'
+    assert data.db.get_version() == ROTKEHLCHEN_DB_VERSION

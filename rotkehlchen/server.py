@@ -9,55 +9,14 @@ import zerorpc
 import pickle
 import traceback
 
-from rotkehlchen.fval import FVal
-from rotkehlchen.errors import InputError, AuthenticationError, PermissionError
+from rotkehlchen.errors import AuthenticationError, PermissionError
 from rotkehlchen.args import app_args
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.utils import pretty_json_dumps
+from rotkehlchen.utils import pretty_json_dumps, process_result
 from rotkehlchen.inquirer import get_fiat_usd_exchange_rates
 
 import logging
 logger = logging.getLogger(__name__)
-
-
-def _process_entry(entry):
-    if isinstance(entry, FVal):
-        return str(entry)
-    elif isinstance(entry, list):
-        new_list = list()
-        for new_entry in entry:
-            new_list.append(_process_entry(new_entry))
-        return new_list
-    elif isinstance(entry, dict):
-        new_dict = dict()
-        for k, v in entry.items():
-            new_dict[k] = _process_entry(v)
-        return new_dict
-    elif isinstance(entry, tuple):
-        raise ValueError('Query results should not contain tuples')
-    else:
-        return entry
-
-
-def process_result(result):
-    """Before sending out a result a dictionary via the server we are turning
-    all Decimals to strings so that the serialization to float/big number is handled
-    by the client application and we lose nothing in the transfer"""
-    return _process_entry(result)
-
-
-def simple_result(v, msg):
-    return {'result': v, 'message': msg}
-
-
-def accounts_result(per_account, totals):
-    result = {
-        'result': True,
-        'message': '',
-        'per_account': per_account,
-        'totals': totals
-    }
-    return process_result(result)
 
 
 class RotkehlchenServer(object):
@@ -280,37 +239,16 @@ class RotkehlchenServer(object):
         return process_result(result)
 
     def add_owned_eth_tokens(self, tokens):
-        try:
-            new_data = self.rotkehlchen.blockchain.track_new_tokens(tokens)
-        except InputError as e:
-            return simple_result(False, str(e))
-
-        self.rotkehlchen.data.write_owned_eth_tokens(self.rotkehlchen.blockchain.owned_eth_tokens)
-        return accounts_result(new_data['per_account'], new_data['totals'])
+        return self.rotkehlchen.add_owned_eth_tokens(tokens)
 
     def remove_owned_eth_tokens(self, tokens):
-        try:
-            new_data = self.rotkehlchen.blockchain.remove_eth_tokens(tokens)
-        except InputError as e:
-            return simple_result(False, str(e))
-        self.rotkehlchen.data.write_owned_eth_tokens(self.rotkehlchen.blockchain.owned_eth_tokens)
-        return accounts_result(new_data['per_account'], new_data['totals'])
+        return self.rotkehlchen.remove_owned_eth_tokens(tokens)
 
     def add_blockchain_account(self, blockchain, account):
-        try:
-            new_data = self.rotkehlchen.blockchain.add_blockchain_account(blockchain, account)
-        except InputError as e:
-            return simple_result(False, str(e))
-        self.rotkehlchen.data.add_blockchain_account(blockchain, account)
-        return accounts_result(new_data['per_account'], new_data['totals'])
+        return self.rotkehlchen.add_blockchain_account(blockchain, account)
 
     def remove_blockchain_account(self, blockchain, account):
-        try:
-            new_data = self.rotkehlchen.blockchain.remove_blockchain_account(blockchain, account)
-        except InputError as e:
-            return simple_result(False, str(e))
-        self.rotkehlchen.data.remove_blockchain_account(blockchain, account)
-        return accounts_result(new_data['per_account'], new_data['totals'])
+        return self.rotkehlchen.remove_blockchain_account(blockchain, account)
 
     def get_ignored_assets(self):
         result = {
