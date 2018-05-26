@@ -236,3 +236,26 @@ def test_writting_fetching_external_trades(data_dir, username):
     result = data.get_external_trades()
     del result[0]['id']
     assert result[0] == from_otc_trade(trade2)
+
+
+def test_upgrade_db_1_to_2(data_dir, username):
+    """Test upgrading the DB from version 1 to version 2"""
+    # Creating a new data dir should work
+    data = DataHandler(data_dir)
+    data.unlock(username, '123', create_new=True)
+    # Manually set to version 1 and input a non checksummed account
+    cursor = data.db.conn.cursor()
+    cursor.execute(
+        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+        ('version', str(1))
+    )
+    data.db.conn.commit()
+    data.db.add_blockchain_account('ETH', '0xe3580c38b0106899f45845e361ea7f8a0062ef12')
+
+    # now relogin and check that the account has been re-saved as checksummed
+    del data
+    data = DataHandler(data_dir)
+    data.unlock(username, '123', create_new=False)
+    accounts = data.db.get_blockchain_accounts()
+    assert accounts['ETH'][0] == '0xe3580C38B0106899F45845E361EA7F8a0062Ef12'
+    assert data.db.get_version() == ROTKEHLCHEN_DB_VERSION
