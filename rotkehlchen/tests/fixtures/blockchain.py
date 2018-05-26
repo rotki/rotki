@@ -112,6 +112,11 @@ def cached_genesis():
 
 
 @pytest.fixture
+def have_blockchain_backend():
+    return False
+
+
+@pytest.fixture
 def blockchain_backend(
         request,
         ethchain_client,
@@ -120,8 +125,11 @@ def blockchain_backend(
         eth_p2p_port,
         tmpdir,
         random_marker,
-        cached_genesis
+        cached_genesis,
+        have_blockchain_backend,
 ):
+    if not have_blockchain_backend:
+        return
 
     genesis_path = None
     if cached_genesis:

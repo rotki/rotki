@@ -340,3 +340,43 @@ def get_system_spec():
         system=system_info
     )
     return system_spec
+
+
+def _process_entry(entry):
+    if isinstance(entry, FVal):
+        return str(entry)
+    elif isinstance(entry, list):
+        new_list = list()
+        for new_entry in entry:
+            new_list.append(_process_entry(new_entry))
+        return new_list
+    elif isinstance(entry, dict):
+        new_dict = dict()
+        for k, v in entry.items():
+            new_dict[k] = _process_entry(v)
+        return new_dict
+    elif isinstance(entry, tuple):
+        raise ValueError('Query results should not contain tuples')
+    else:
+        return entry
+
+
+def process_result(result):
+    """Before sending out a result a dictionary via the server we are turning
+    all Decimals to strings so that the serialization to float/big number is handled
+    by the client application and we lose nothing in the transfer"""
+    return _process_entry(result)
+
+
+def accounts_result(per_account, totals):
+    result = {
+        'result': True,
+        'message': '',
+        'per_account': per_account,
+        'totals': totals
+    }
+    return process_result(result)
+
+
+def simple_result(v, msg):
+    return {'result': v, 'message': msg}
