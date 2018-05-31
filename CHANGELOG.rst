@@ -2,6 +2,8 @@
 Changelog
 =========
 
+:bug: `68` All kraken pairs should now work properly. Users who hold XRP, ZEC, USD, GP, CAD, JPY, DASH, EOSD and USDT in kraken will no longer have any problems.
+
 * :release:`0.2.1 <2018-05-26>`
 
 :bug: `66` Persist all eth accounts in the database as checksummed. Upgrade all existing DB accounts.
