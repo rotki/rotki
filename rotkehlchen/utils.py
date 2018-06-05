@@ -95,20 +95,15 @@ def cache_response_timewise(seconds=600):
     return _cache_response_timewise
 
 
-def query_fiat_pair(base, quote, timestamp=None):
+def query_fiat_pair(base, quote):
     if base == quote:
         return FVal(1.0)
 
-    if timestamp is None:
-        querystr = 'http://api.fixer.io/latest?base={}'.format(base)
-    else:
-        querystr = 'http://api.fixer.io/{}?base={}'.format(
-            tsToDate(timestamp, formatstr='%Y-%m-%d'), base
-        )
-
+    pair = '{}_{}'.format(base, quote)
+    querystr = 'https://free.currencyconverterapi.com/api/v5/convert?q={}'.format(pair)
     resp = request_get(querystr)
     try:
-        return FVal(resp['rates'][quote])
+        return FVal(resp['results'][pair]['val'])
     except ValueError:
         raise ValueError('Could not find a "{}" price for "{}"'.format(base, quote))
 
