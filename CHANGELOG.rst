@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :release:`0.2.2 <2018-06-05>`
+
 :bug: `73` Fixer.io api switched to be subscription based and its endpoints are now locked, so we switch to a different currency converter api.
 :bug: `68` All kraken pairs should now work properly. Users who hold XRP, ZEC, USD, GP, CAD, JPY, DASH, EOSD and USDT in kraken will no longer have any problems.
 
