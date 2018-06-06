@@ -260,3 +260,30 @@ def test_upgrade_db_1_to_2(data_dir, username):
     accounts = data.db.get_blockchain_accounts()
     assert accounts['ETH'][0] == '0xe3580C38B0106899F45845E361EA7F8a0062Ef12'
     assert data.db.get_version() == ROTKEHLCHEN_DB_VERSION
+
+
+def test_settings_entry_types(data_dir, username):
+    data = DataHandler(data_dir)
+    data.unlock(username, '123', create_new=True)
+
+    data.db.set_settings({
+        'version': 1,
+        'last_write_ts': 1,
+        'premium_should_sync': True,
+        'include_crypto2crypto': True,
+        'last_data_upload_ts': 1,
+        'ui_floating_precision': 1,
+        'taxfree_after_period': 1,
+        'historical_data_start': '01/08/2015',
+        'eth_rpc_port': '8545',
+    })
+
+    res = data.db.get_settings()
+    assert isinstance(res['db_version'], int)
+    assert isinstance(res['last_write_ts'], int)
+    assert isinstance(res['premium_should_sync'], bool)
+    assert isinstance(res['include_crypto2crypto'], bool)
+    assert isinstance(res['ui_floating_precision'], int)
+    assert isinstance(res['taxfree_after_period'], int)
+    assert isinstance(res['historical_data_start'], str)
+    assert isinstance(res['eth_rpc_port'], str)

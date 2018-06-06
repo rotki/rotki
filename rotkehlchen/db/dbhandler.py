@@ -204,6 +204,8 @@ class DBHandler(object):
                 settings['last_data_upload_ts'] = int(q[1])
             elif q[0] == 'ui_floating_precision':
                 settings['ui_floating_precision'] = int(q[1])
+            elif q[0] == 'taxfree_after_period':
+                settings['taxfree_after_period'] = int(q[1])
             else:
                 settings[q[0]] = q[1]
 
