@@ -2,6 +2,8 @@
 Changelog
 =========
 
+:bug: `77` Fix bug cause by reading `taxfree_after_period` from the database
+
 * :release:`0.2.2 <2018-06-05>`
 
 :bug: `73` Fixer.io api switched to be subscription based and its endpoints are now locked, so we switch to a different currency converter api.
