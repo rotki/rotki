@@ -53,7 +53,8 @@ class TaxableEvents(object):
 
     @taxfree_after_period.setter
     def taxfree_after_period(self, value):
-        assert isinstance(value, int), 'set taxfree_after_period should only get int'
+        is_valid = isinstance(value, int) or value is None
+        assert is_valid, 'set taxfree_after_period should only get int or None'
         self._taxfree_after_period = value
 
     def calculate_asset_details(self):
