@@ -17,7 +17,7 @@ from rotkehlchen.utils import (
 )
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.order_formatting import AssetMovement
-from rotkehlchen.errors import PoloniexError
+from rotkehlchen.errors import PoloniexError, RemoteError
 
 import logging
 logger = logging.getLogger(__name__)
@@ -113,7 +113,7 @@ class Poloniex(Exchange):
     def api_query(self, command, req={}):
         result = retry_calls(5, 'poloniex', command, self._api_query, command, req)
         if 'error' in result:
-            raise ValueError(
+            raise PoloniexError(
                 'Poloniex query for "{}" returned error: {}'.format(
                     command,
                     result['error']
@@ -393,7 +393,16 @@ class Poloniex(Exchange):
 
     @cache_response_timewise()
     def query_balances(self):
-        resp = self.api_query('returnCompleteBalances', {"account": "all"})
+        try:
+            resp = self.api_query('returnCompleteBalances', {"account": "all"})
+        except (RemoteError, PoloniexError) as e:
+            msg = (
+                'Poloniex API request failed. Could not reach poloniex due '
+                'to {}'.format(e)
+            )
+            logger.error(msg)
+            return None, msg
+
         balances = dict()
         for currency, v in resp.items():
             available = FVal(v['available'])
@@ -408,7 +417,7 @@ class Poloniex(Exchange):
                 usd_value = entry['amount'] * usd_price
                 entry['usd_value'] = usd_value
                 balances[currency] = entry
-        return balances
+        return balances, ''
 
     def query_trade_history(self, start_ts, end_ts, end_at_least_ts):
         with self.lock:

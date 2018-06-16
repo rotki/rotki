@@ -407,7 +407,12 @@ class Rotkehlchen(object):
     def query_balances(self, save_data=False):
         balances = {}
         for exchange in self.connected_exchanges:
-            balances[exchange] = getattr(self, exchange).query_balances()
+            exchange_balances, msg = getattr(self, exchange).query_balances()
+            # If we got an error, disregard that exchange but make sure we don't save data
+            if not exchange_balances:
+                save_data = False
+            else:
+                balances[exchange] = exchange_balances
 
         result = self.blockchain.query_balances()['totals']
         if result != {}:

@@ -169,7 +169,7 @@ function init_dashboard() {
         if ('error' in result) {
             showError(
                 'Exchange Query Error',
-                'Querying an exchange died because of: ' + result['error'] + '. ' +
+                'Querying ' + result['name'] + ' died because of: ' + result['error'] + '. ' +
                     'Check the logs for more details.'
             );
             return;

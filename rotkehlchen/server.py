@@ -158,11 +158,13 @@ class RotkehlchenServer(object):
         return True
 
     def query_exchange_balances(self, name):
-        balances = getattr(self.rotkehlchen, name).query_balances()
-        res = {
-            'name': name,
-            'balances': balances
-        }
+        res = {'name': name}
+        balances, msg = getattr(self.rotkehlchen, name).query_balances()
+        if balances is None:
+            res['error'] = msg
+        else:
+            res['balances'] = balances
+
         return process_result(res)
 
     def query_exchange_balances_async(self, name):
