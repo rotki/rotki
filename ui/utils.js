@@ -89,6 +89,18 @@ function showInfo(title, content) {
     });
 }
 
+function showWarning(title, content) {
+    $.confirm({
+        title: title,
+        content: content,
+        type: 'yellow',
+        typeAnimated: true,
+        buttons: {
+            close: function() {}
+        }
+    });
+}
+
 // TODO: Remove this/replace with something else. In the case of a huge log hangs the entire app
 function setup_log_watcher(callback) {
     // if the log file is not found keep trying until it is
@@ -267,6 +279,7 @@ module.exports = function() {
     this.setup_log_watcher = setup_log_watcher;
     this.showError = showError;
     this.showInfo = showInfo;
+    this.showWarning = showWarning;
     this.date_text_to_utc_ts = date_text_to_utc_ts;
     this.reload_table_currency_val = reload_table_currency_val;
     this.reload_table_currency_val_if_existing = reload_table_currency_val_if_existing;

@@ -371,6 +371,7 @@ class Rotkehlchen(object):
 
     def process_history(self, start_ts, end_ts):
         (
+            error_or_empty,
             history,
             margin_history,
             loan_history,
@@ -381,7 +382,7 @@ class Rotkehlchen(object):
             end_ts=ts_now(),
             end_at_least_ts=end_ts
         )
-        return self.accountant.process_history(
+        result = self.accountant.process_history(
             start_ts,
             end_ts,
             history,
@@ -390,6 +391,7 @@ class Rotkehlchen(object):
             asset_movements,
             eth_transactions
         )
+        return result, error_or_empty
 
     def query_fiat_balances(self):
         result = {}
@@ -407,7 +409,12 @@ class Rotkehlchen(object):
     def query_balances(self, save_data=False):
         balances = {}
         for exchange in self.connected_exchanges:
-            balances[exchange] = getattr(self, exchange).query_balances()
+            exchange_balances, msg = getattr(self, exchange).query_balances()
+            # If we got an error, disregard that exchange but make sure we don't save data
+            if not exchange_balances:
+                save_data = False
+            else:
+                balances[exchange] = exchange_balances
 
         result = self.blockchain.query_balances()['totals']
         if result != {}:

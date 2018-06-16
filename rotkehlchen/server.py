@@ -158,11 +158,13 @@ class RotkehlchenServer(object):
         return True
 
     def query_exchange_balances(self, name):
-        balances = getattr(self.rotkehlchen, name).query_balances()
-        res = {
-            'name': name,
-            'balances': balances
-        }
+        res = {'name': name}
+        balances, msg = getattr(self.rotkehlchen, name).query_balances()
+        if balances is None:
+            res['error'] = msg
+        else:
+            res['balances'] = balances
+
         return process_result(res)
 
     def query_exchange_balances_async(self, name):
@@ -196,7 +198,7 @@ class RotkehlchenServer(object):
         except AttributeError:
             raise "Unknown location {} given".format(location)
 
-        return exchange.query_trade_history(start_ts, end_ts)
+        return exchange.query_trade_history(start_ts, end_ts, end_ts)
 
     def query_asset_price(self, from_asset, to_asset, timestamp):
         price = self.rotkehlchen.data.accountant.query_historical_price(
@@ -208,8 +210,9 @@ class RotkehlchenServer(object):
     def process_trade_history(self, start_ts, end_ts):
         start_ts = int(start_ts)
         end_ts = int(end_ts)
-        result = self.rotkehlchen.process_history(start_ts, end_ts)
-        return process_result(result)
+        result, error_or_empty = self.rotkehlchen.process_history(start_ts, end_ts)
+        response = {'result': result, 'message': error_or_empty}
+        return process_result(response)
 
     def process_trade_history_async(self, start_ts, end_ts):
         res = self.query_async('process_trade_history', start_ts=start_ts, end_ts=end_ts)

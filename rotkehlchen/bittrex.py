@@ -2,6 +2,7 @@ import time
 import hmac
 import hashlib
 from urllib.parse import urlencode
+from json.decoder import JSONDecodeError
 
 from rotkehlchen.utils import (
     createTimeStamp,
@@ -12,6 +13,7 @@ from rotkehlchen.utils import (
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.order_formatting import Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.errors import RemoteError
 
 import logging
 logger = logging.getLogger(__name__)
@@ -127,9 +129,13 @@ class Bittrex(Exchange):
         ).hexdigest()
         self.session.headers.update({'apisign': signature})
         response = self.session.get(request_url)
-        json_ret = rlk_jsonloads(response.text)
+        try:
+            json_ret = rlk_jsonloads(response.text)
+        except JSONDecodeError:
+            raise RemoteError('Bittrex returned invalid JSON response')
+
         if json_ret['success'] is not True:
-            raise ValueError(json_ret['message'])
+            raise RemoteError(json_ret['message'])
         return json_ret['result']
 
     def get_btc_price(self, asset):
@@ -149,9 +155,17 @@ class Bittrex(Exchange):
 
     @cache_response_timewise()
     def query_balances(self):
-        self.markets = self.api_query('getmarketsummaries')
+        try:
+            self.markets = self.api_query('getmarketsummaries')
+            resp = self.api_query('getbalances')
+        except RemoteError as e:
+            msg = (
+                'Bittrex API request failed. Could not reach bittrex due '
+                'to {}'.format(e)
+            )
+            logger.error(msg)
+            return None, msg
 
-        resp = self.api_query('getbalances')
         returned_balances = dict()
         for entry in resp:
             currency = entry['Currency']
@@ -165,7 +179,7 @@ class Bittrex(Exchange):
             balance['usd_value'] = FVal(balance['amount']) * usd_price
             returned_balances[currency] = balance
 
-        return returned_balances
+        return returned_balances, ''
 
     def query_trade_history(
             self,
@@ -173,7 +187,8 @@ class Bittrex(Exchange):
             end_ts=None,
             end_at_least_ts=None,
             market=None,
-            count=None):
+            count=None
+    ):
 
         options = dict()
         cache = self.check_trades_cache(start_ts, end_at_least_ts)

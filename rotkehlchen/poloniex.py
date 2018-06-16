@@ -17,7 +17,7 @@ from rotkehlchen.utils import (
 )
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.order_formatting import AssetMovement
-from rotkehlchen.errors import PoloniexError
+from rotkehlchen.errors import PoloniexError, RemoteError
 
 import logging
 logger = logging.getLogger(__name__)
@@ -113,7 +113,7 @@ class Poloniex(Exchange):
     def api_query(self, command, req={}):
         result = retry_calls(5, 'poloniex', command, self._api_query, command, req)
         if 'error' in result:
-            raise ValueError(
+            raise PoloniexError(
                 'Poloniex query for "{}" returned error: {}'.format(
                     command,
                     result['error']
@@ -233,7 +233,8 @@ class Poloniex(Exchange):
         return self.api_query('returnTradeHistory', {
             "currencyPair": currencyPair,
             'start': start,
-            'end': end
+            'end': end,
+            'limit': 10000,
         })
 
     def returnDepositsWithdrawals(self, start_ts, end_ts):
@@ -393,7 +394,16 @@ class Poloniex(Exchange):
 
     @cache_response_timewise()
     def query_balances(self):
-        resp = self.api_query('returnCompleteBalances', {"account": "all"})
+        try:
+            resp = self.api_query('returnCompleteBalances', {"account": "all"})
+        except (RemoteError, PoloniexError) as e:
+            msg = (
+                'Poloniex API request failed. Could not reach poloniex due '
+                'to {}'.format(e)
+            )
+            logger.error(msg)
+            return None, msg
+
         balances = dict()
         for currency, v in resp.items():
             available = FVal(v['available'])
@@ -408,7 +418,7 @@ class Poloniex(Exchange):
                 usd_value = entry['amount'] * usd_price
                 entry['usd_value'] = usd_value
                 balances[currency] = entry
-        return balances
+        return balances, ''
 
     def query_trade_history(self, start_ts, end_ts, end_at_least_ts):
         with self.lock:
@@ -422,6 +432,16 @@ class Poloniex(Exchange):
             end=end_ts
         )
 
+        results_length = 0
+        for r, v in result.items():
+            results_length += len(v)
+
+        if results_length >= 10000:
+            raise ValueError(
+                'Poloniex api has a 10k limit to trade history. Have not implemented'
+                ' a solution for more than 10k trades at the moment'
+            )
+
         with self.lock:
             self.update_trades_cache(result, start_ts, end_ts)
         return result
@@ -434,7 +454,7 @@ class Poloniex(Exchange):
         # the default filename, and should be (if at all) inside the data directory
         path = os.path.join(self.data_dir, "lendingHistory.csv")
         lending_history = list()
-        with open(path, 'rb') as csvfile:
+        with open(path, 'r') as csvfile:
             history = csv.reader(csvfile, delimiter=',', quotechar='|')
             next(history)  # skip header row
             for row in history:

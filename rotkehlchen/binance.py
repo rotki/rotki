@@ -7,6 +7,10 @@ from rotkehlchen.exchange import Exchange
 from rotkehlchen.order_formatting import pair_get_assets, Trade
 from rotkehlchen.utils import rlk_jsonloads, cache_response_timewise
 from rotkehlchen.fval import FVal
+from rotkehlchen.errors import RemoteError
+
+import logging
+logger = logging.getLogger(__name__)
 
 V3_ENDPOINTS = (
     'account',
@@ -126,7 +130,7 @@ class Binance(Exchange):
 
         if response.status_code != 200:
             result = rlk_jsonloads(response.text)
-            raise ValueError(
+            raise RemoteError(
                 'Binance API request {} for {} failed with HTTP status '
                 'code: {}, error code: {} and error message: {}'.format(
                     response.url,
@@ -141,7 +145,15 @@ class Binance(Exchange):
 
     @cache_response_timewise()
     def query_balances(self):
-        account_data = self.api_query('account')
+        try:
+            account_data = self.api_query('account')
+        except RemoteError as e:
+            msg = (
+                'Binance API request failed. Could not reach binance due '
+                'to {}'.format(e)
+            )
+            logger.error(msg)
+            return None, msg
 
         returned_balances = dict()
         for entry in account_data['balances']:
@@ -155,7 +167,7 @@ class Binance(Exchange):
             balance['usd_value'] = FVal(amount * usd_price)
             returned_balances[currency] = balance
 
-        return returned_balances
+        return returned_balances, ''
 
     def query_trade_history(self, start_ts=None, end_ts=None, end_at_least_ts=None, markets=None):
         cache = self.check_trades_cache(start_ts, end_at_least_ts)

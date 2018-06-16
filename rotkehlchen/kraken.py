@@ -17,7 +17,7 @@ from rotkehlchen.utils import (
 )
 from rotkehlchen.order_formatting import AssetMovement
 from rotkehlchen.exchange import Exchange
-from rotkehlchen.errors import RecoverableRequestError
+from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.fval import FVal
 
 import logging
@@ -77,11 +77,16 @@ WORLD_TO_KRAKEN = {
 
 
 def kraken_to_world_pair(pair):
-    p1 = pair[:4]
-    p2 = pair[4:]
-    world_p1 = KRAKEN_TO_WORLD[p1]
-    world_p2 = KRAKEN_TO_WORLD[p2]
-    return world_p1 + '_' + world_p2
+    if len(pair) == 6:
+        p1 = pair[:3]
+        p2 = pair[3:]
+        return p1 + '_' + p2
+    else:
+        p1 = pair[:4]
+        p2 = pair[4:]
+        world_p1 = KRAKEN_TO_WORLD[p1]
+        world_p2 = KRAKEN_TO_WORLD[p2]
+        return world_p1 + '_' + world_p2
 
 
 class Kraken(Exchange):
@@ -126,7 +131,7 @@ class Kraken(Exchange):
     def validate_api_key(self):
         try:
             self.query_private('Balance', req={})
-        except ValueError as e:
+        except (RemoteError, ValueError) as e:
             error = str(e)
             if 'Error: Incorrect padding' in error:
                 return False, 'Provided API Key or secret is in invalid Format'
@@ -140,7 +145,7 @@ class Kraken(Exchange):
         if response.status_code in (520, 525, 504):
             raise RecoverableRequestError('kraken', 'Usual kraken 5xx shenanigans')
         elif response.status_code != 200:
-            raise ValueError(
+            raise RemoteError(
                 'Kraken API request {} for {} failed with HTTP status '
                 'code: {}'.format(
                     response.url,
@@ -158,7 +163,7 @@ class Kraken(Exchange):
             if 'Rate limit exceeded' in error:
                 raise RecoverableRequestError('kraken', 'Rate limited exceeded')
             else:
-                raise ValueError(error)
+                raise RemoteError(error)
 
         return result['result']
 
@@ -278,11 +283,19 @@ class Kraken(Exchange):
 
     @cache_response_timewise()
     def query_balances(self):
-        self.first_connection()
-        old_balances = self.query_private('Balance', req={})
-        # find USD price of EUR
-        with self.lock:
-            self.usdprice['EUR'] = query_fiat_pair('EUR', 'USD')
+        try:
+            self.first_connection()
+            old_balances = self.query_private('Balance', req={})
+            # find USD price of EUR
+            with self.lock:
+                self.usdprice['EUR'] = query_fiat_pair('EUR', 'USD')
+        except RemoteError as e:
+            msg = (
+                'Kraken API request failed. Could not reach kraken due '
+                'to {}'.format(e)
+            )
+            logger.error(msg)
+            return None, msg
 
         balances = dict()
         for k, v in old_balances.items():
@@ -299,11 +312,11 @@ class Kraken(Exchange):
                 entry['usd_value'] = v * self.find_fiat_price(k)
 
             balances[common_name] = entry
-        return balances
+        return balances, ''
 
     def query_until_finished(self, endpoint, keyname, start_ts, end_ts, extra_dict=None):
         """ Abstracting away the functionality of querying a kraken endpoint where
-        you neen to check the 'count' of the returned results and provide sufficient
+        you need to check the 'count' of the returned results and provide sufficient
         calls with enough offset to gather all the data of your query.
         """
         result = list()
@@ -327,7 +340,17 @@ class Kraken(Exchange):
                 extra_dict=extra_dict
             )
             assert count == response['count']
-            offset += len(response[keyname])
+            response_length = len(response[keyname])
+            offset += response_length
+            if response_length == 0 and offset != count:
+                # it is possible that kraken misbehaves and either does not
+                # send us enough results or thinks it has more than it really does
+                logger.warning(
+                    'Missing {} results when querying kraken endpoint {}'.format(
+                        count - offset, endpoint)
+                )
+                break
+
             result.extend(response[keyname].values())
 
         return result

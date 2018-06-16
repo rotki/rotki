@@ -39,5 +39,5 @@ class PermissionError(Exception):
 
 
 class RemoteError(Exception):
-    """Thrown when a remote API can't be reached for some reason"""
+    """Thrown when a remote API can't be reached or throws unexpected error"""
     pass
