@@ -10,3 +10,4 @@ psutil==5.4.3
 
 # dev requirements -- could go onto a separate file
 pytest
+mypy

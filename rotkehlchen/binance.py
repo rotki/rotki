@@ -71,11 +71,10 @@ class Binance(Exchange):
     https://github.com/sammchardy/python-binance
     """
     def __init__(self, api_key, secret, inquirer, data_dir):
-        super(Binance, self).__init__('binance', api_key, secret)
+        super(Binance, self).__init__('binance', api_key, secret, data_dir)
         self.apiversion = 'v3'
         self.uri = 'https://api.binance.com/api/'
         self.inquirer = inquirer
-        self.data_dir = data_dir
         self.session.headers.update({
             'Accept': 'application/json',
             'X-MBX-APIKEY': self.api_key,

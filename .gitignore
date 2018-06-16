@@ -1,5 +1,6 @@
 node_modules/
 *.pyc
+.mypy_cache/
 /tests/.cache
 error.log
 .cache/

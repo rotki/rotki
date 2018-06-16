@@ -91,10 +91,9 @@ def kraken_to_world_pair(pair):
 
 class Kraken(Exchange):
     def __init__(self, api_key, secret, data_dir):
-        super(Kraken, self).__init__('kraken', api_key, secret)
+        super(Kraken, self).__init__('kraken', api_key, secret, data_dir)
         self.apiversion = '0'
         self.uri = 'https://api.kraken.com/{}/'.format(self.apiversion)
-        self.data_dir = data_dir
         self.usdprice = {}
         self.eurprice = {}
         self.session.headers.update({
@@ -425,18 +424,3 @@ class Kraken(Exchange):
                 fee=FVal(movement['fee'])
             ))
         return movements
-
-    def set_buy(self, pair, amount, price):
-        pair = WORLD_TO_KRAKEN(pair)
-        req = {
-            'pair': pair,
-            'type': 'buy',
-            'ordertype': 'limit',
-            'price': price,
-            'volume': amount,
-            'oflags': 'post',
-            'trading_agreement': 'agree'
-        }
-        resp = self.query_private('AddOrder', req=req)
-        if logger.isEnabledFor(logging.INFO):
-            logger.info("Buy Set", "{}".format(resp))

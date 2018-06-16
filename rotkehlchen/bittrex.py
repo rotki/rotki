@@ -80,11 +80,10 @@ def trade_from_bittrex(bittrex_trade):
 
 class Bittrex(Exchange):
     def __init__(self, api_key, secret, inquirer, data_dir):
-        super(Bittrex, self).__init__('bittrex', api_key, secret)
+        super(Bittrex, self).__init__('bittrex', api_key, secret, data_dir)
         self.apiversion = 'v1.1'
         self.uri = 'https://bittrex.com/api/{}/'.format(self.apiversion)
         self.inquirer = inquirer
-        self.data_dir = data_dir
 
     def first_connection(self):
         self.first_connection_made = True

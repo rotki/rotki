@@ -581,6 +581,6 @@ class Rotkehlchen(object):
 
 # For testing purposes only
 if __name__ == '__main__':
-    from args import app_args
+    from rotkehlchen.args import app_args
     args = app_args()
     r = Rotkehlchen(args)
