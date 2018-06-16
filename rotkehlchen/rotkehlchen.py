@@ -358,7 +358,7 @@ class Rotkehlchen(object):
         except InputError as e:
             return simple_result(False, str(e))
 
-        self.data.write_owned_eth_tokens(self.rotkehlchen.blockchain.owned_eth_tokens)
+        self.data.write_owned_eth_tokens(self.blockchain.owned_eth_tokens)
         return accounts_result(new_data['per_account'], new_data['totals'])
 
     def remove_owned_eth_tokens(self, tokens):
@@ -366,7 +366,7 @@ class Rotkehlchen(object):
             new_data = self.blockchain.remove_eth_tokens(tokens)
         except InputError as e:
             return simple_result(False, str(e))
-        self.data.write_owned_eth_tokens(self.rotkehlchen.blockchain.owned_eth_tokens)
+        self.data.write_owned_eth_tokens(self.blockchain.owned_eth_tokens)
         return accounts_result(new_data['per_account'], new_data['totals'])
 
     def process_history(self, start_ts, end_ts):
