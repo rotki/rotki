@@ -233,7 +233,8 @@ class Poloniex(Exchange):
         return self.api_query('returnTradeHistory', {
             "currencyPair": currencyPair,
             'start': start,
-            'end': end
+            'end': end,
+            'limit': 10000,
         })
 
     def returnDepositsWithdrawals(self, start_ts, end_ts):
@@ -431,6 +432,16 @@ class Poloniex(Exchange):
             end=end_ts
         )
 
+        results_length = 0
+        for r, v in result.items():
+            results_length += len(v)
+
+        if results_length >= 10000:
+            raise ValueError(
+                'Poloniex api has a 10k limit to trade history. Have not implemented'
+                ' a solution for more than 10k trades at the moment'
+            )
+
         with self.lock:
             self.update_trades_cache(result, start_ts, end_ts)
         return result
@@ -443,7 +454,7 @@ class Poloniex(Exchange):
         # the default filename, and should be (if at all) inside the data directory
         path = os.path.join(self.data_dir, "lendingHistory.csv")
         lending_history = list()
-        with open(path, 'rb') as csvfile:
+        with open(path, 'r') as csvfile:
             history = csv.reader(csvfile, delimiter=',', quotechar='|')
             next(history)  # skip header row
             for row in history:

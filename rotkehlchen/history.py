@@ -569,7 +569,7 @@ class TradesHistorian(object):
                 asset_movements.extend(kraken_asset_movements)
 
             except RemoteError as e:
-                empty_or_error += e
+                empty_or_error += '\n' + str(e)
 
         try:
             history, asset_movements, poloniex_margin_trades, polo_loans = self.query_poloniex_history(
@@ -580,7 +580,7 @@ class TradesHistorian(object):
                 end_at_least_ts,
             )
         except RemoteError as e:
-            empty_or_error += e
+            empty_or_error += '\n' + str(e)
 
         if self.bittrex is not None:
             try:
@@ -592,7 +592,7 @@ class TradesHistorian(object):
                 for trade in bittrex_history:
                     history.append(trade_from_bittrex(trade))
             except RemoteError as e:
-                empty_or_error += e
+                empty_or_error += '\n' + str(e)
 
         if self.binance is not None:
             try:
@@ -604,12 +604,12 @@ class TradesHistorian(object):
                 for trade in binance_history:
                     history.append(trade_from_binance(trade))
             except RemoteError as e:
-                empty_or_error += e
+                empty_or_error += '\n' + str(e)
 
         try:
             eth_transactions = query_etherscan_for_transactions(self.eth_accounts)
         except RemoteError as e:
-            empty_or_error += e
+            empty_or_error += '\n' + str(e)
 
         # We sort it here ... but when accounting runs through the entire actions list,
         # it resorts, so unless the fact that we sort is used somewhere else too, perhaps
