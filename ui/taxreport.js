@@ -188,13 +188,19 @@ function init_taxreport() {
             );
             return;
         }
+        if (result['message'] != '') {
+            showWarning(
+                'Trade History Query Warning',
+                'During trade history query we got:' + result['message'] + '. History report is probably not complete.'
+            );
+        }
         if ($('#elementId').length == 0) {
             str = form_button('Export CSV', 'export_csv');
             $(str).insertAfter('#generate_report');
             $('#export_csv').click(export_csv_callback);
         }
-        create_taxreport_overview(result['overview']);
-        create_taxreport_details(result['all_events']);
+        create_taxreport_overview(result['result']['overview']);
+        create_taxreport_details(result['result']['all_events']);
         // also save the page
         settings.page_taxreport = $('#page-wrapper').html();
     });

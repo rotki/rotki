@@ -210,8 +210,9 @@ class RotkehlchenServer(object):
     def process_trade_history(self, start_ts, end_ts):
         start_ts = int(start_ts)
         end_ts = int(end_ts)
-        result = self.rotkehlchen.process_history(start_ts, end_ts)
-        return process_result(result)
+        result, error_or_empty = self.rotkehlchen.process_history(start_ts, end_ts)
+        response = {'result': result, 'message': error_or_empty}
+        return process_result(response)
 
     def process_trade_history_async(self, start_ts, end_ts):
         res = self.query_async('process_trade_history', start_ts=start_ts, end_ts=end_ts)

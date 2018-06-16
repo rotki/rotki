@@ -187,7 +187,8 @@ class Bittrex(Exchange):
             end_ts=None,
             end_at_least_ts=None,
             market=None,
-            count=None):
+            count=None
+    ):
 
         options = dict()
         cache = self.check_trades_cache(start_ts, end_at_least_ts)

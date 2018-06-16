@@ -27,6 +27,7 @@ from rotkehlchen.order_formatting import (
     asset_movements_from_dictlist
 )
 from rotkehlchen.inquirer import FIAT_CURRENCIES
+from rotkehlchen.errors import RemoteError
 
 import logging
 logger = logging.getLogger(__name__)
@@ -484,38 +485,16 @@ class TradesHistorian(object):
                 'already set'.format(name)
             )
 
-    def create_history(self, start_ts, end_ts, end_at_least_ts):
-        """Creates trades and loans history from start_ts to end_ts or if
-        `end_at_least` is given and we have a cache history for that particular source
-        which satisfies it we return the cache
-        """
-
-        # start creating the all trades history list
-        history = list()
-        asset_movements = list()
-
-        if self.kraken is not None:
-            kraken_history = self.kraken.query_trade_history(
-                start_ts=start_ts,
-                end_ts=end_ts,
-                end_at_least_ts=end_at_least_ts
-            )
-            for trade in kraken_history:
-                history.append(trade_from_kraken(trade))
-            kraken_asset_movements = self.kraken.query_deposits_withdrawals(
-                start_ts=start_ts,
-                end_ts=end_ts,
-                end_at_least_ts=end_at_least_ts,
-            )
-            asset_movements.extend(kraken_asset_movements)
-
+    def query_poloniex_history(self, history, asset_movements, start_ts, end_ts, end_at_least_ts):
+        poloniex_margin_trades = list()
+        polo_loans = list()
         if self.poloniex is not None:
             polo_history = self.poloniex.query_trade_history(
                 start_ts=start_ts,
                 end_ts=end_ts,
                 end_at_least_ts=end_at_least_ts
             )
-            poloniex_margin_trades = list()
+
             for pair, trades in polo_history.items():
                 for trade in trades:
                     category = trade['category']
@@ -559,25 +538,78 @@ class TradesHistorian(object):
             )
             asset_movements.extend(polo_asset_movements)
 
-        if self.bittrex is not None:
-            bittrex_history = self.bittrex.query_trade_history(
-                start_ts=start_ts,
-                end_ts=end_ts,
-                end_at_least_ts=end_at_least_ts
+        return history, asset_movements, poloniex_margin_trades, polo_loans
+
+    def create_history(self, start_ts, end_ts, end_at_least_ts):
+        """Creates trades and loans history from start_ts to end_ts or if
+        `end_at_least` is given and we have a cache history for that particular source
+        which satisfies it we return the cache
+        """
+
+        # start creating the all trades history list
+        history = list()
+        asset_movements = list()
+        empty_or_error = ''
+
+        if self.kraken is not None:
+            try:
+                kraken_history = self.kraken.query_trade_history(
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    end_at_least_ts=end_at_least_ts
+                )
+                for trade in kraken_history:
+                    history.append(trade_from_kraken(trade))
+
+                kraken_asset_movements = self.kraken.query_deposits_withdrawals(
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    end_at_least_ts=end_at_least_ts,
+                )
+                asset_movements.extend(kraken_asset_movements)
+
+            except RemoteError as e:
+                empty_or_error += e
+
+        try:
+            history, asset_movements, poloniex_margin_trades, polo_loans = self.query_poloniex_history(
+                history,
+                asset_movements,
+                start_ts,
+                end_ts,
+                end_at_least_ts,
             )
-            for trade in bittrex_history:
-                history.append(trade_from_bittrex(trade))
+        except RemoteError as e:
+            empty_or_error += e
+
+        if self.bittrex is not None:
+            try:
+                bittrex_history = self.bittrex.query_trade_history(
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    end_at_least_ts=end_at_least_ts
+                )
+                for trade in bittrex_history:
+                    history.append(trade_from_bittrex(trade))
+            except RemoteError as e:
+                empty_or_error += e
 
         if self.binance is not None:
-            binance_history = self.binance.query_trade_history(
-                start_ts=start_ts,
-                end_ts=end_ts,
-                end_at_least_ts=end_at_least_ts
-            )
-            for trade in binance_history:
-                history.append(trade_from_binance(trade))
+            try:
+                binance_history = self.binance.query_trade_history(
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    end_at_least_ts=end_at_least_ts
+                )
+                for trade in binance_history:
+                    history.append(trade_from_binance(trade))
+            except RemoteError as e:
+                empty_or_error += e
 
-        eth_transactions = query_etherscan_for_transactions(self.eth_accounts)
+        try:
+            eth_transactions = query_etherscan_for_transactions(self.eth_accounts)
+        except RemoteError as e:
+            empty_or_error += e
 
         # We sort it here ... but when accounting runs through the entire actions list,
         # it resorts, so unless the fact that we sort is used somewhere else too, perhaps
@@ -588,7 +620,7 @@ class TradesHistorian(object):
         # Write to files
         historyfile_path = os.path.join(self.data_directory, TRADES_HISTORYFILE)
         write_tupledata_history_in_file(history, historyfile_path, start_ts, end_ts)
-        if not self.read_manual_margin_positions:
+        if self.poloniex is not None and not self.read_manual_margin_positions:
             marginfile_path = os.path.join(self.data_directory, MARGIN_HISTORYFILE)
             write_tupledata_history_in_file(
                 poloniex_margin_trades,
@@ -597,8 +629,9 @@ class TradesHistorian(object):
                 end_ts
             )
 
-        loansfile_path = os.path.join(self.data_directory, LOANS_HISTORYFILE)
-        write_history_data_in_file(polo_loans, loansfile_path, start_ts, end_ts)
+        if self.poloniex is not None:
+            loansfile_path = os.path.join(self.data_directory, LOANS_HISTORYFILE)
+            write_history_data_in_file(polo_loans, loansfile_path, start_ts, end_ts)
         assetmovementsfile_path = os.path.join(self.data_directory, ASSETMOVEMENTS_HISTORYFILE)
         write_tupledata_history_in_file(asset_movements, assetmovementsfile_path, start_ts, end_ts)
         eth_tx_log_path = os.path.join(self.data_directory, ETHEREUM_TX_LOGFILE)
@@ -607,7 +640,14 @@ class TradesHistorian(object):
         # After writting everything to files include the external trades in the history
         history = include_external_trades(self.db, start_ts, end_ts, history)
 
-        return history, poloniex_margin_trades, polo_loans, asset_movements, eth_transactions
+        return (
+            empty_or_error,
+            history,
+            poloniex_margin_trades,
+            polo_loans,
+            asset_movements,
+            eth_transactions,
+        )
 
     def get_history(self, start_ts, end_ts, end_at_least_ts=None):
         """Gets or creates trades and loans history from start_ts to end_ts or if
@@ -736,6 +776,7 @@ class TradesHistorian(object):
                     # make sure that this is the same as what is returned
                     # from create_history
                     return (
+                        '',
                         history_trades,
                         margin_trades,
                         loan_file_contents['data'],
