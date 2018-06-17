@@ -7,6 +7,7 @@ import hashlib
 import base64
 import time
 from urllib.parse import urlencode
+from requests import Response
 
 from rotkehlchen.utils import (
     query_fiat_pair,
@@ -19,6 +20,8 @@ from rotkehlchen.order_formatting import AssetMovement
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen import typing
+from typing import Optional, Tuple, Dict, List
 
 import logging
 logger = logging.getLogger(__name__)
@@ -90,12 +93,17 @@ def kraken_to_world_pair(pair):
 
 
 class Kraken(Exchange):
-    def __init__(self, api_key, secret, data_dir):
+    def __init__(
+            self,
+            api_key: typing.ApiKey,
+            secret: typing.ApiSecret,
+            data_dir: typing.FilePath
+    ):
         super(Kraken, self).__init__('kraken', api_key, secret, data_dir)
         self.apiversion = '0'
         self.uri = 'https://api.kraken.com/{}/'.format(self.apiversion)
-        self.usdprice = {}
-        self.eurprice = {}
+        self.usdprice: Dict[typing.Asset, FVal] = {}
+        self.eurprice: Dict[typing.Asset, FVal] = {}
         self.session.headers.update({
             'API-Key': self.api_key,
         })
@@ -140,7 +148,7 @@ class Kraken(Exchange):
                 raise
         return True, ''
 
-    def check_and_get_response(self, response, method):
+    def check_and_get_response(self, response: Response, method: str) -> dict:
         if response.status_code in (520, 525, 504):
             raise RecoverableRequestError('kraken', 'Usual kraken 5xx shenanigans')
         elif response.status_code != 200:
@@ -166,24 +174,26 @@ class Kraken(Exchange):
 
         return result['result']
 
-    def _query_public(self, method, req={}):
+    def _query_public(self, method: str, req: Optional[dict] = None) -> dict:
         """API queries that do not require a valid key/secret pair.
 
         Arguments:
         method -- API method name (string, no default)
         req    -- additional API request parameters (default: {})
         """
+        if req is None:
+            req = {}
         urlpath = self.uri + 'public/' + method
         response = self.session.post(urlpath, data=req)
         return self.check_and_get_response(response, method)
 
-    def query_public(self, method, req={}):
+    def query_public(self, method: str, req: Optional[dict] = None) -> dict:
         return retry_calls(5, 'kraken', method, self._query_public, method, req)
 
-    def query_private(self, method, req={}):
+    def query_private(self, method: str, req: Optional[dict] = None) -> dict:
         return retry_calls(5, 'kraken', method, self._query_private, method, req)
 
-    def _query_private(self, method, req={}):
+    def _query_private(self, method: str, req: Optional[dict] = None) -> dict:
         """API queries that require a valid key/secret pair.
 
         Arguments:
@@ -191,6 +201,9 @@ class Kraken(Exchange):
         req    -- additional API request parameters (default: {})
 
         """
+        if req is None:
+            req = {}
+
         urlpath = '/' + self.apiversion + '/private/' + method
 
         with self.lock:
@@ -215,7 +228,7 @@ class Kraken(Exchange):
 
         return self.check_and_get_response(response, method)
 
-    def world_to_kraken_pair(self, pair):
+    def world_to_kraken_pair(self, pair: str) -> str:
         p1, p2 = pair.split('_')
         kraken_p1 = WORLD_TO_KRAKEN[p1]
         kraken_p2 = WORLD_TO_KRAKEN[p2]
@@ -228,10 +241,6 @@ class Kraken(Exchange):
         return pair
 
     # ---- General exchanges interface ----
-    def order_book(self, currencyPair):
-        resp = self.query_public('Depth', req={'pair': currencyPair})
-        return resp[currencyPair]
-
     def main_logic(self):
         if not self.first_connection_made:
             return
@@ -250,7 +259,7 @@ class Kraken(Exchange):
         self.eurprice['ETC'] = FVal(self.ticker['XETCZEUR']['c'][0])
         self.usdprice['ETC'] = FVal(self.ticker['XETCZUSD']['c'][0])
 
-    def find_fiat_price(self, asset):
+    def find_fiat_price(self, asset: typing.Asset) -> FVal:
         """Find USD/EUR price of asset. The asset should be in the kraken style.
         e.g.: XICN. Save both prices in the kraken object and then return the
         USD price.
@@ -281,7 +290,7 @@ class Kraken(Exchange):
         return self.usdprice[common_name]
 
     @cache_response_timewise()
-    def query_balances(self):
+    def query_balances(self) -> Tuple[Optional[dict], str]:
         try:
             self.first_connection()
             old_balances = self.query_private('Balance', req={})
@@ -313,12 +322,19 @@ class Kraken(Exchange):
             balances[common_name] = entry
         return balances, ''
 
-    def query_until_finished(self, endpoint, keyname, start_ts, end_ts, extra_dict=None):
+    def query_until_finished(
+            self,
+            endpoint: str,
+            keyname: str,
+            start_ts: typing.Timestamp,
+            end_ts: typing.Timestamp,
+            extra_dict: Optional[dict] = None,
+    ) -> List:
         """ Abstracting away the functionality of querying a kraken endpoint where
         you need to check the 'count' of the returned results and provide sufficient
         calls with enough offset to gather all the data of your query.
         """
-        result = list()
+        result: List = list()
 
         response = self._query_endpoint_for_period(
             endpoint=endpoint,
@@ -354,7 +370,12 @@ class Kraken(Exchange):
 
         return result
 
-    def query_trade_history(self, start_ts=None, end_ts=None, end_at_least_ts=None):
+    def query_trade_history(
+            self,
+            start_ts: typing.Timestamp,
+            end_ts: typing.Timestamp,
+            end_at_least_ts: typing.Timestamp,
+    ) -> List:
         with self.lock:
             cache = self.check_trades_cache(start_ts, end_at_least_ts)
 
@@ -367,7 +388,14 @@ class Kraken(Exchange):
             self.update_trades_cache(result, start_ts, end_ts)
         return result
 
-    def _query_endpoint_for_period(self, endpoint, start_ts, end_ts, offset=None, extra_dict=None):
+    def _query_endpoint_for_period(
+            self,
+            endpoint: str,
+            start_ts: typing.Timestamp,
+            end_ts: typing.Timestamp,
+            offset: Optional[int] = None,
+            extra_dict: Optional[dict] = None,
+    ) -> dict:
         request = dict()
         request['start'] = start_ts
         request['end'] = end_ts
@@ -378,7 +406,12 @@ class Kraken(Exchange):
         result = self.query_private(endpoint, request)
         return result
 
-    def query_deposits_withdrawals(self, start_ts, end_ts, end_at_least_ts):
+    def query_deposits_withdrawals(
+            self,
+            start_ts: typing.Timestamp,
+            end_ts: typing.Timestamp,
+            end_at_least_ts: typing.Timestamp,
+    ) -> List:
         with self.lock:
             cache = self.check_trades_cache(
                 start_ts,

@@ -15,3 +15,6 @@ ApiSecret = NewType('ApiSecret', T_ApiSecret)
 
 T_FilePath = str
 FilePath = NewType('FilePath', T_FilePath)
+
+T_Asset = str
+Asset = NewType('Asset', T_Asset)

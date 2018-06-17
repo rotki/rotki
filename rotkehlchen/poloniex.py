@@ -384,13 +384,6 @@ class Poloniex(Exchange):
             )
 
     # ---- General exchanges interface ----
-    def order_book(self, currencyPair=None):
-        currencyPair = 'all' if currencyPair is None else currencyPair
-        return self.api_query(
-            "returnOrderBook",
-            {'currencyPair': currencyPair}
-        )
-
     @cache_response_timewise()
     def query_balances(self):
         try:

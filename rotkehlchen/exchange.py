@@ -3,6 +3,7 @@ import requests
 import os
 from gevent.lock import Semaphore
 from json.decoder import JSONDecodeError
+from typing import Optional, List
 
 from rotkehlchen.utils import rlk_jsonloads, rlk_jsondumps
 from rotkehlchen import typing
@@ -57,7 +58,7 @@ class Exchange(object):
             start_ts: typing.Timestamp,
             end_ts: typing.Timestamp,
             special_name: str = None
-    ) -> None:
+    ) -> Optional[List]:
         trades_file = self._get_cachefile_name(special_name)
         trades: dict = dict()
         if os.path.isfile(trades_file):
@@ -99,7 +100,12 @@ class Exchange(object):
         """
         raise NotImplementedError("query_balances should only be implemented by subclasses")
 
-    def query_deposits_withdrawals(self, start_ts: typing.Timestamp, end_ts: typing.Timestamp):
+    def query_deposits_withdrawals(
+            self,
+            start_ts: typing.Timestamp,
+            end_ts: typing.Timestamp,
+            end_at_least_ts: typing.Timestamp,
+    ):
         raise NotImplementedError(
             'query_deposits_withdrawals should only be implemented by subclasses'
         )

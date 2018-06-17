@@ -10,6 +10,7 @@ import requests
 from functools import wraps
 from collections import namedtuple
 from rlp.sedes import big_endian_int
+from typing import Callable, Any
 
 from rotkehlchen.constants import ALL_REMOTES_TIMEOUT
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
@@ -163,7 +164,13 @@ def merge_dicts(*dict_args):
     return result
 
 
-def retry_calls(times, location, method, function, *args):
+def retry_calls(
+        times: int,
+        location: str,
+        method: str,
+        function: Callable[..., Any],
+        *args: Any
+) -> Any:
     tries = times
     while True:
         try:
