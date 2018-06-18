@@ -135,7 +135,7 @@ class Kraken(Exchange):
         # Also need to do at least a single pass of the main logic for the ticker
         self.main_logic()
 
-    def validate_api_key(self):
+    def validate_api_key(self) -> Tuple[bool, str]:
         try:
             self.query_private('Balance', req={})
         except (RemoteError, ValueError) as e:

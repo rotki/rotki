@@ -103,7 +103,6 @@ class Rotkehlchen(object):
             self.poloniex = Poloniex(
                 str.encode(secret_data['poloniex']['api_key']),
                 str.encode(secret_data['poloniex']['api_secret']),
-                self.cache_data_filename,
                 self.inquirer,
                 self.data_dir
             )
@@ -188,7 +187,6 @@ class Rotkehlchen(object):
         self.try_premium_at_start(api_key, api_secret, create_new, sync_approval, user_dir)
 
         secret_data = self.data.db.get_exchange_secrets()
-        self.cache_data_filename = os.path.join(self.data_dir, 'cache_data.json')
         settings = self.data.db.get_settings()
         historical_data_start = settings['historical_data_start']
         eth_rpc_port = settings['eth_rpc_port']

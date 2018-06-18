@@ -7,6 +7,7 @@ import os
 import traceback
 import csv
 from urllib.parse import urlencode
+from typing import Tuple, Dict, Optional, List, Union
 
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils import (
@@ -15,9 +16,11 @@ from rotkehlchen.utils import (
     rlk_jsonloads,
     cache_response_timewise,
 )
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.order_formatting import AssetMovement
 from rotkehlchen.errors import PoloniexError, RemoteError
+from rotkehlchen import typing
 
 import logging
 logger = logging.getLogger(__name__)
@@ -27,44 +30,20 @@ def tsToDate(s):
     return datetime.datetime.fromtimestamp(s).strftime('%Y-%m-%d %H:%M:%S')
 
 
-class WatchedCurrency(object):
-
-    def __init__(self, low, high, threshold):
-        self.low = low
-        self.high = high
-        self.threshold = threshold
-        self.last = 0.0
-        self.last_percentage = 0.0
-
-
 class Poloniex(Exchange):
 
-    settings = [
-        'watched_currencies'
-    ]
-
-    def __init__(self, api_key, secret, cache_filename, inquirer, data_dir):
+    def __init__(
+            self,
+            api_key: typing.ApiKey,
+            secret: typing.ApiSecret,
+            inquirer: Inquirer,
+            data_dir: typing.FilePath,
+    ):
         super(Poloniex, self).__init__('poloniex', api_key, secret, data_dir)
 
         self.uri = 'https://poloniex.com/'
         self.public_uri = self.uri + 'public?command='
-        self.cache_filename = cache_filename
-        # Set default setting values
-        self.watched_currencies = {
-            'BTC_DASH': WatchedCurrency(0.0, 0.5, 0.000500),
-            'BTC_XMR': WatchedCurrency(0.0, 0.5, 0.000500),
-            'BTC_LBC': WatchedCurrency(0.0, 0.00036084, 0.00000100),
-            'BTC_ETH': WatchedCurrency(0.0, 0.5, 0.000500),
-            'BTC_LTC': WatchedCurrency(0.0, 0.5, 0.0),
-            'BTC_MAID': WatchedCurrency(0.0, 0.5, 0.0),
-            'BTC_XRP': WatchedCurrency(0.0, 1.0, 0.0),
-            'BTC_DOGE': WatchedCurrency(0.0, 1.0, 0.0),
-            'BTC_BTS': WatchedCurrency(0.0, 1.0, 0.0),
-            'BTC_CLAM': WatchedCurrency(0.0, 1.0, 0.0),
-            'USDT_BTC': WatchedCurrency(0.0, 1000.0, 1.0),
-            'ETH_REP': WatchedCurrency(0.0, 0.435, 0.01),
-        }
-        self.usdprice = {}
+        self.usdprice: Dict[typing.Asset, FVal] = {}
         self.inquirer = inquirer
         self.session.headers.update({
             'Key': self.api_key,
@@ -82,7 +61,7 @@ class Poloniex(Exchange):
         # Also need to do at least a single pass of the market watcher for the ticker
         self.market_watcher()
 
-    def validate_api_key(self):
+    def validate_api_key(self) -> Tuple[bool, str]:
         try:
             self.returnFeeInfo()
         except ValueError as e:
@@ -93,7 +72,7 @@ class Poloniex(Exchange):
                 raise
         return True, ''
 
-    def post_process(self, before):
+    def post_process(self, before: Dict) -> Dict:
         after = before
 
         # Add timestamps if there isnt one but is a datetime
@@ -109,7 +88,7 @@ class Poloniex(Exchange):
 
         return after
 
-    def api_query(self, command, req={}):
+    def api_query(self, command: str, req: Optional[Dict] = None) -> Dict:
         result = retry_calls(5, 'poloniex', command, self._api_query, command, req)
         if 'error' in result:
             raise PoloniexError(
@@ -119,7 +98,10 @@ class Poloniex(Exchange):
                 ))
         return result
 
-    def _api_query(self, command, req={}):
+    def _api_query(self, command: str, req: Optional[Dict] = None) -> Dict:
+        if req is None:
+            req = {}
+
         if command == "returnTicker" or command == "return24Volume":
             ret = self.session.get(self.public_uri + command)
         elif(command == "returnOrderBook"):
@@ -156,32 +138,37 @@ class Poloniex(Exchange):
 
         return rlk_jsonloads(ret.text)
 
-    def returnAvailableAccountBalances(self, account='all'):
-        req = {}
+    def returnAvailableAccountBalances(self, account: str = 'all') -> Dict:
+        req: Dict = {}
         if account:
             req = {'account': account}
         return self.api_query("returnAvailableAccountBalances", req)
 
-    def returnLoanOrders(self, currency):
+    def returnLoanOrders(self, currency: typing.Asset) -> Dict:
         return self.api_query('returnLoanOrders', {'currency': currency})
 
-    def returnTicker(self):
+    def returnTicker(self) -> Dict:
         return self.api_query("returnTicker")
 
-    def return24Volume(self):
+    def return24Volume(self) -> Dict:
         return self.api_query("return24Volume")
 
-    def returnFeeInfo(self):
+    def returnFeeInfo(self) -> Dict:
         return self.api_query("returnFeeInfo")
 
-    def returnLendingHistory(self, start_ts=None, end_ts=None, limit=None):
+    def returnLendingHistory(
+            self,
+            start_ts: Optional[typing.Timestamp] = None,
+            end_ts: Optional[typing.Timestamp] = None,
+            limit: Optional[int] = None,
+    ) -> Dict:
         """Default limit for this endpoint seems to be 500 when I tried.
         So to be sure all your loans are included put a very high limit per call
         and also check if the limit was reached after each call.
 
         Also maximum limit seems to be 12660
         """
-        req = dict()
+        req: Dict[str, Union[int, typing.Timestamp]] = dict()
         if start_ts is not None:
             req['start'] = start_ts
         if end_ts is not None:
@@ -190,7 +177,7 @@ class Poloniex(Exchange):
             req['limit'] = limit
         return self.api_query("returnLendingHistory", req)
 
-    def returnMarketTradeHistory(self, currencyPair):
+    def returnMarketTradeHistory(self, currencyPair: str) -> Dict:
         return self.api_query(
             "returnMarketTradeHistory",
             {'currencyPair': currencyPair}
@@ -199,7 +186,7 @@ class Poloniex(Exchange):
     # Returns all of your balances.
     # Outputs:
     # {"BTC":"0.59098578","LTC":"3.31117268", ... }
-    def returnBalances(self):
+    def returnBalances(self) -> Dict:
         return self.api_query('returnBalances')
 
     # Returns your open orders for a given market,
@@ -212,23 +199,21 @@ class Poloniex(Exchange):
     # rate          Price the order is selling or buying at
     # Amount        Quantity of order
     # total         Total value of order (price * quantity)
-    def returnOpenOrders(self, currencyPair):
+    def returnOpenOrders(self, currencyPair: str) -> Dict:
         return self.api_query(
             'returnOpenOrders',
             {"currencyPair": currencyPair}
         )
 
-    # Returns your trade history for a given market,
-    # specified by the "currencyPair" POST parameter
-    # Inputs:
-    # currencyPair  The currency pair e.g. "BTC_XCP"
-    # Outputs:
-    # date          Date in the form: "2014-02-19 03:44:59"
-    # rate          Price the order is selling or buying at
-    # amount        Quantity of order
-    # total         Total value of order (price * quantity)
-    # type          sell or buy
-    def returnTradeHistory(self, currencyPair, start=None, end=None):
+    def returnTradeHistory(
+            self,
+            currencyPair: str,
+            start: typing.Timestamp,
+            end: typing.Timestamp,
+    ) -> Union[Dict, List]:
+        """If `currencyPair` is all, then it returns a dictionary with each key
+        being a pair and each value a list of trades. If `currencyPair` is a specific
+        pair then a list is returned"""
         return self.api_query('returnTradeHistory', {
             "currencyPair": currencyPair,
             'start': start,
@@ -236,126 +221,12 @@ class Poloniex(Exchange):
             'limit': 10000,
         })
 
-    def returnDepositsWithdrawals(self, start_ts, end_ts):
+    def returnDepositsWithdrawals(
+            self,
+            start_ts: typing.Timestamp,
+            end_ts: typing.Timestamp,
+    ) -> Dict:
         return self.api_query('returnDepositsWithdrawals', {'start': start_ts, 'end': end_ts})
-
-    def returnActiveLoans(self):
-        return self.api_query('returnActiveLoans')
-
-    def returnOpenLoanOffers(self):
-        return self.api_query('returnOpenLoanOffers')
-
-    def createLoanOffer(self, currency, amount, duration, autoRenew, lendingRate):
-        resp = self.api_query(
-            'createLoanOffer', {
-                'currency': currency,
-                'amount': amount,
-                'duration': duration,
-                'autoRenew': autoRenew,
-                'lendingRate': lendingRate
-            }
-        )
-        if 'success' not in resp or resp['success'] == 0:
-            raise PoloniexError(
-                "Poloniex Error. Failed to create a Loan Order.\n{}".format(
-                    resp['error'])
-            )
-        return resp['orderID']
-
-    def cancelLoanOffer(self, orderNumber):
-        resp = self.api_query(
-            'cancelLoanOffer', {'orderNumber': orderNumber}
-        )
-        if 'success' not in resp:
-            raise PoloniexError(
-                "Poloniex Error. Failed to cancel Loan Order '{}'\n{}".format(
-                    orderNumber, resp['error'])
-            )
-
-    # Places a buy order in a given market.
-    # Required POST parameters are "currencyPair", "rate", and "amount".
-    # If successful, the method will return the order number.
-    # Inputs:
-    # currencyPair  The curreny pair
-    # rate          price the order is buying at
-    # amount        Amount of coins to buy
-    # Outputs:
-    # orderNumber   The order number
-    def buy(self, currencyPair, rate, amount):
-        return self.api_query(
-            'buy', {
-                "currencyPair": currencyPair,
-                "rate": rate,
-                "amount": amount
-            })
-
-    def buy_fill_or_kill(self, currencyPair, rate, amount):
-        return self.api_query(
-            'buy', {
-                "currencyPair": currencyPair,
-                "rate": rate,
-                "amount": amount,
-                "fillOrKill": 1
-            })
-
-    # Places a sell order in a given market.
-    # Required POST parameters are "currencyPair", "rate", and "amount".
-    # If successful, the method will return the order number.
-    # Inputs:
-    # currencyPair  The curreny pair
-    # rate          price the order is selling at
-    # amount        Amount of coins to sell
-    # Outputs:
-    # orderNumber   The order number
-    def sell(self, currencyPair, rate, amount):
-        return self.api_query(
-            'sell', {
-                "currencyPair": currencyPair,
-                "rate": rate,
-                "amount": amount}
-        )
-
-    def sell_fill_or_kill(self, currencyPair, rate, amount):
-        return self.api_query(
-            'sell', {
-                "currencyPair": currencyPair,
-                "rate": rate,
-                "amount": amount,
-                "fillOrKill": 1
-            })
-
-    # Cancels an order you have placed in a given market.
-    # Required POST parameters are "currencyPair" and "orderNumber".
-    # Inputs:
-    # currencyPair  The curreny pair
-    # orderNumber   The order number to cancel
-    # Outputs:
-    # succes        1 or 0
-    def cancel(self, currencyPair, orderNumber):
-        return self.api_query(
-            'cancelOrder', {
-                "currencyPair": currencyPair,
-                "orderNumber": orderNumber
-            })
-
-    # Immediately places a withdrawal for a given currency, with no email
-    # confirmation. In order to use this method, the withdrawal privilege must
-    # be enabled for your API key.
-    # Required POST parameters are "currency", "amount", and "address".
-    # Sample output: {"response":"Withdrew 2398 NXT."}
-    # Inputs:
-    # currency      The currency to withdraw
-    # amount        The amount of this coin to withdraw
-    # address       The withdrawal address
-    # Outputs:
-    # response      Text containing message about the withdrawal
-    def withdraw(self, currency, amount, address):
-        return self.api_query(
-            'withdraw', {
-                "currency": currency,
-                "amount": amount,
-                "address": address
-            })
 
     def market_watcher(self):
         self.ticker = self.returnTicker()
@@ -385,7 +256,7 @@ class Poloniex(Exchange):
 
     # ---- General exchanges interface ----
     @cache_response_timewise()
-    def query_balances(self):
+    def query_balances(self) -> Tuple[Optional[dict], str]:
         try:
             resp = self.api_query('returnCompleteBalances', {"account": "all"})
         except (RemoteError, PoloniexError) as e:
@@ -412,7 +283,12 @@ class Poloniex(Exchange):
                 balances[currency] = entry
         return balances, ''
 
-    def query_trade_history(self, start_ts, end_ts, end_at_least_ts):
+    def query_trade_history(
+            self,
+            start_ts: typing.Timestamp,
+            end_ts: typing.Timestamp,
+            end_at_least_ts: typing.Timestamp,
+    ) -> List:
         with self.lock:
             cache = self.check_trades_cache(start_ts, end_at_least_ts)
         if cache is not None:
@@ -438,7 +314,7 @@ class Poloniex(Exchange):
             self.update_trades_cache(result, start_ts, end_ts)
         return result
 
-    def parseLoanCSV(self):
+    def parseLoanCSV(self) -> List:
         """Parses (if existing) the lendingHistory.csv and returns the history in a list
 
         It can throw OSError, IOError if the file does not exist and csv.Error if
@@ -460,7 +336,13 @@ class Poloniex(Exchange):
                 })
         return lending_history
 
-    def query_loan_history(self, start_ts, end_ts, end_at_least_ts=None, from_csv=False):
+    def query_loan_history(
+            self,
+            start_ts: typing.Timestamp,
+            end_ts: typing.Timestamp,
+            end_at_least_ts: typing.Timestamp,
+            from_csv: Optional[bool] = False,
+    ) -> List:
         """
         WARNING: Querying from returnLendingHistory endpoing instead of reading from
         the CSV file can potentially  return unexpected/wrong results.
@@ -517,7 +399,12 @@ class Poloniex(Exchange):
             self.update_trades_cache(data, start_ts, end_ts, special_name='loan_history')
         return data
 
-    def query_deposits_withdrawals(self, start_ts, end_ts, end_at_least_ts):
+    def query_deposits_withdrawals(
+            self,
+            start_ts: typing.Timestamp,
+            end_ts: typing.Timestamp,
+            end_at_least_ts: typing.Timestamp,
+    ) -> List:
         with self.lock:
             cache = self.check_trades_cache(
                 start_ts,

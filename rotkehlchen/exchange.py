@@ -3,7 +3,7 @@ import requests
 import os
 from gevent.lock import Semaphore
 from json.decoder import JSONDecodeError
-from typing import Optional, List
+from typing import Optional, List, Dict, Union
 
 from rotkehlchen.utils import rlk_jsonloads, rlk_jsondumps
 from rotkehlchen import typing
@@ -76,7 +76,7 @@ class Exchange(object):
 
     def update_trades_cache(
             self,
-            data: list,
+            data: Union[List, Dict],
             start_ts: typing.Timestamp,
             end_ts: typing.Timestamp,
             special_name: str = None
