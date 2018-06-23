@@ -220,7 +220,7 @@ class Blockchain(object):
                     token_balance,
                 ),
                 'usd_value': add_or_sub(
-                    self.totals.get('usd_value', FVal(0)),
+                    self.totals[token].get('usd_value', FVal(0)),
                     usd_value,
                 )
             }
