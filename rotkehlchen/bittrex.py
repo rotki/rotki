@@ -150,7 +150,7 @@ class Bittrex(Exchange):
             raise RemoteError(json_ret['message'])
         return json_ret['result']
 
-    def get_btc_price(self, asset: typing.Asset) -> Optional[FVal]:
+    def get_btc_price(self, asset: typing.BlockchainAsset) -> Optional[FVal]:
         if asset == 'BTC':
             return None
         btc_price = None

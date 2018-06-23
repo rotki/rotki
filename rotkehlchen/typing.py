@@ -1,4 +1,4 @@
-from typing import TypeVar, NewType, NamedTuple, Dict, Union
+from typing import NewType, NamedTuple, Dict, Union
 from eth_typing.misc import HexAddress, ChecksumAddress
 
 T_BinaryEthAddress = bytes
@@ -23,11 +23,16 @@ T_EthToken = str
 EthToken = NewType('EthToken', T_EthToken)
 
 # All non eth token blockchain assets: e.g. 'ETH', 'BTC', 'XMR' e.t.c.
-T_BlockchainAsset = str
-BlockchainAsset = NewType('BlockchainAsset', T_BlockchainAsset)
+T_NonEthTokenBlockchainAsset = str
+NonEthTokenBlockchainAsset = NewType('NonEthTokenBlockchainAsset', T_NonEthTokenBlockchainAsset)
+
+BlockchainAsset = Union[EthToken, NonEthTokenBlockchainAsset]
+
+T_FiatAsset = str
+FiatAsset = NewType('FiatAsset', T_FiatAsset)
 
 # All types of assets
-Asset = TypeVar('Asset', EthToken, BlockchainAsset)
+Asset = Union[BlockchainAsset, FiatAsset]
 
 # eth-typing already defines these types correctly so let's use them
 EthAddress = HexAddress
@@ -39,7 +44,7 @@ BTCAddress = NewType('BTCAddress', T_BTCAddress)
 T_BlockchainAddress = str
 # TODO: Here using EthAddress instead of HexAddress gives a mypy invalid type error
 # Find out why. This should not happen as EthAddress is just an Alias
-BlockchainAddress = TypeVar('BlockchainAddress', HexAddress, BTCAddress)
+BlockchainAddress = Union[HexAddress, BTCAddress]
 EthTokenInfo = Dict[str, Union[EthToken, HexAddress, int]]
 
 

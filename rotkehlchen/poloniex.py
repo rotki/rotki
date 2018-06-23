@@ -43,7 +43,7 @@ class Poloniex(Exchange):
 
         self.uri = 'https://poloniex.com/'
         self.public_uri = self.uri + 'public?command='
-        self.usdprice: Dict[typing.Asset, FVal] = {}
+        self.usdprice: Dict[typing.BlockchainAsset, FVal] = {}
         self.inquirer = inquirer
         self.session.headers.update({
             'Key': self.api_key,
@@ -144,7 +144,7 @@ class Poloniex(Exchange):
             req = {'account': account}
         return self.api_query("returnAvailableAccountBalances", req)
 
-    def returnLoanOrders(self, currency: typing.Asset) -> Dict:
+    def returnLoanOrders(self, currency: typing.BlockchainAsset) -> Dict:
         return self.api_query('returnLoanOrders', {'currency': currency})
 
     def returnTicker(self) -> Dict:

@@ -2,6 +2,7 @@ import tempfile
 import time
 import os
 import shutil
+from typing import Dict, Union, List, Tuple, Optional, cast
 from collections import defaultdict
 from pysqlcipher3 import dbapi2 as sqlcipher
 from eth_utils.address import to_checksum_address
@@ -9,7 +10,17 @@ from eth_utils.address import to_checksum_address
 from rotkehlchen.constants import SUPPORTED_EXCHANGES, YEAR_IN_SECONDS
 from rotkehlchen.utils import ts_now
 from rotkehlchen.errors import AuthenticationError, InputError
+from rotkehlchen.fval import FVal
+from rotkehlchen.constants import S_ETH, S_USD
+from rotkehlchen import typing
 from .utils import DB_SCRIPT_CREATE_TABLES, DB_SCRIPT_REIMPORT_DATA
+
+# Types used in this module
+DBSettings = Dict[str, Union[int, bool, str]]
+BlockchainAccounts = Dict[typing.NonEthTokenBlockchainAsset, List[typing.BlockchainAddress]]
+AssetBalances = List[Tuple[typing.Timestamp, typing.Asset, str, str]]
+LocationData = List[Tuple[typing.Timestamp, str, str]]
+BalancesData = Dict[Union[str, typing.Asset], Dict[str, Union[FVal, Dict]]]
 
 DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
 DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
@@ -29,7 +40,7 @@ ROTKEHLCHEN_DB_VERSION = 2
 # http://www.sql-join.com/sql-join-types
 class DBHandler(object):
 
-    def __init__(self, user_data_dir, username, password):
+    def __init__(self, user_data_dir: typing.FilePath, username: str, password: str):
         self.user_data_dir = user_data_dir
         self.connect(password)
         try:
@@ -48,7 +59,7 @@ class DBHandler(object):
         )
         self.conn.commit()
 
-    def get_version(self):
+    def get_version(self) -> int:
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT value FROM settings WHERE name=?;', ('version',)
@@ -60,7 +71,7 @@ class DBHandler(object):
 
         return int(query[0][0])
 
-    def run_updates(self):
+    def run_updates(self) -> None:
         current_version = self.get_version()
 
         if current_version == 1:
@@ -68,13 +79,13 @@ class DBHandler(object):
             accounts = self.get_blockchain_accounts()
             cursor = self.conn.cursor()
             cursor.execute(
-                'DELETE FROM blockchain_accounts WHERE blockchain=?;', ('ETH',)
+                'DELETE FROM blockchain_accounts WHERE blockchain=?;', (S_ETH,)
             )
             self.conn.commit()
-            for account in accounts['ETH']:
-                self.add_blockchain_account('ETH', to_checksum_address(account))
+            for account in accounts[S_ETH]:
+                self.add_blockchain_account(S_ETH, to_checksum_address(account))
 
-    def connect(self, password):
+    def connect(self, password: str) -> None:
         self.conn = sqlcipher.connect(os.path.join(self.user_data_dir, 'rotkehlchen.db'))
         self.conn.text_factory = str
         self.conn.executescript('PRAGMA key="{}"; PRAGMA kdf_iter={};'.format(password, KDF_ITER))
@@ -83,20 +94,20 @@ class DBHandler(object):
     def disconnect(self):
         self.conn.close()
 
-    def reimport_all_tables(self):
+    def reimport_all_tables(self) -> None:
         """Useful only when some table's column data type was modified and you
         need to re-import all data. Should only be used if you know what you are
         doing. For normal database upgrades the proper scripts should be used"""
         self.conn.executescript(DB_SCRIPT_REIMPORT_DATA)
 
-    def export_unencrypted(self, temppath):
+    def export_unencrypted(self, temppath: typing.FilePath):
         self.conn.executescript(
             'ATTACH DATABASE "{}" AS plaintext KEY "";'
             'SELECT sqlcipher_export("plaintext");'
             'DETACH DATABASE plaintext;'.format(temppath)
         )
 
-    def import_unencrypted(self, unencrypted_db_data, password):
+    def import_unencrypted(self, unencrypted_db_data: bytes, password: str) -> None:
         self.disconnect()
         rdbpath = os.path.join(self.user_data_dir, 'rotkehlchen.db')
         # Make copy of existing encrypted DB before removing it
@@ -126,7 +137,7 @@ class DBHandler(object):
         # all went okay, remove the original temp backup
         os.remove(os.path.join(self.user_data_dir, 'rotkehlchen_temp_backup.db'))
 
-    def update_last_write(self):
+    def update_last_write(self) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -134,7 +145,7 @@ class DBHandler(object):
         )
         self.conn.commit()
 
-    def get_last_write_ts(self):
+    def get_last_write_ts(self) -> typing.Timestamp:
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT value FROM settings where name=?;', ('last_write_ts',)
@@ -142,10 +153,12 @@ class DBHandler(object):
         query = query.fetchall()
         # If setting is not set, it's 0 by default
         if len(query) == 0:
-            return 0
-        return int(query[0][0])
+            ts = 0
+        else:
+            ts = int(query[0][0])
+        return cast(typing.Timestamp, ts)
 
-    def update_last_data_upload_ts(self):
+    def update_last_data_upload_ts(self) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -153,7 +166,7 @@ class DBHandler(object):
         )
         self.conn.commit()
 
-    def get_last_data_upload_ts(self):
+    def get_last_data_upload_ts(self) -> typing.Timestamp:
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT value FROM settings where name=?;', ('last_data_upload_ts',)
@@ -161,10 +174,12 @@ class DBHandler(object):
         query = query.fetchall()
         # If setting is not set, it's 0 by default
         if len(query) == 0:
-            return 0
-        return int(query[0][0])
+            ts = 0
+        else:
+            ts = int(query[0][0])
+        return cast(typing.Timestamp, ts)
 
-    def update_premium_sync(self, should_sync):
+    def update_premium_sync(self, should_sync: bool) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -172,7 +187,7 @@ class DBHandler(object):
         )
         self.conn.commit()
 
-    def get_premium_sync(self):
+    def get_premium_sync(self) -> bool:
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT value FROM settings where name=?;', ('premium_should_sync',)
@@ -183,14 +198,14 @@ class DBHandler(object):
             return False
         return str_to_bool(query[0])
 
-    def get_settings(self):
+    def get_settings(self) -> DBSettings:
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT name, value FROM settings;'
         )
         query = query.fetchall()
 
-        settings = {}
+        settings: DBSettings = {}
         for q in query:
             if q[0] == 'version':
                 settings['db_version'] = int(q[1])
@@ -222,17 +237,19 @@ class DBHandler(object):
             settings['taxfree_after_period'] = DEFAULT_TAXFREE_AFTER_PERIOD
         return settings
 
-    def get_main_currency(self):
+    def get_main_currency(self) -> typing.FiatAsset:
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT value FROM settings WHERE name="main_currency";'
         )
         query = query.fetchall()
         if len(query) == 0:
-            return 'USD'
-        return query[0][0]
+            return S_USD
 
-    def set_main_currency(self, currency):
+        result = query[0][0]
+        return cast(typing. FiatAsset, result)
+
+    def set_main_currency(self, currency: typing.FiatAsset) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -241,7 +258,7 @@ class DBHandler(object):
         self.conn.commit()
         self.update_last_write()
 
-    def set_settings(self, settings):
+    def set_settings(self, settings: DBSettings) -> None:
         cursor = self.conn.cursor()
         cursor.executemany(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -250,7 +267,7 @@ class DBHandler(object):
         self.conn.commit()
         self.update_last_write()
 
-    def add_to_ignored_assets(self, asset):
+    def add_to_ignored_assets(self, asset: typing.Asset) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT INTO multisettings(name, value) VALUES(?, ?)',
@@ -258,7 +275,7 @@ class DBHandler(object):
         )
         self.conn.commit()
 
-    def remove_from_ignored_assets(self, asset):
+    def remove_from_ignored_assets(self, asset: typing.Asset) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
             'DELETE FROM multisettings WHERE name="ignored_asset" AND value=?;',
@@ -266,7 +283,7 @@ class DBHandler(object):
         )
         self.conn.commit()
 
-    def get_ignored_assets(self):
+    def get_ignored_assets(self) -> List[typing.Asset]:
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT value FROM multisettings WHERE name="ignored_asset";'
@@ -274,7 +291,7 @@ class DBHandler(object):
         query = query.fetchall()
         return [q[0] for q in query]
 
-    def add_multiple_balances(self, balances):
+    def add_multiple_balances(self, balances: AssetBalances) -> None:
         """Execute addition of multiple balances in the DB
 
         balances should be a list of tuples each containing:
@@ -289,7 +306,7 @@ class DBHandler(object):
         self.conn.commit()
         self.update_last_write()
 
-    def add_multiple_location_data(self, location_data):
+    def add_multiple_location_data(self, location_data: LocationData) -> None:
         """Execute addition of multiple location data in the DB
 
         location_data should be a list of tuples each containing:
@@ -304,11 +321,10 @@ class DBHandler(object):
         self.conn.commit()
         self.update_last_write()
 
-    def write_owned_tokens(self, tokens):
+    def write_owned_tokens(self, tokens: List[typing.EthToken]) -> None:
         """Execute addition of multiple tokens in the DB
 
-        tokens should be a list of token symbols
-        (time, location, usd_value)"""
+        tokens should be a list of token symbols"""
         cursor = self.conn.cursor()
         # Delete previous list and write the new one
         cursor.execute(
@@ -321,7 +337,7 @@ class DBHandler(object):
         self.conn.commit()
         self.update_last_write()
 
-    def get_owned_tokens(self):
+    def get_owned_tokens(self) -> List[typing.EthToken]:
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT value FROM multisettings WHERE name="eth_token";'
@@ -329,7 +345,11 @@ class DBHandler(object):
         query = query.fetchall()
         return [q[0] for q in query]
 
-    def add_blockchain_account(self, blockchain, account):
+    def add_blockchain_account(
+            self,
+            blockchain: typing.NonEthTokenBlockchainAsset,
+            account: typing.BlockchainAddress,
+    ) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
@@ -338,7 +358,11 @@ class DBHandler(object):
         self.conn.commit()
         self.update_last_write()
 
-    def remove_blockchain_account(self, blockchain, account):
+    def remove_blockchain_account(
+            self,
+            blockchain: typing.NonEthTokenBlockchainAsset,
+            account: typing.BlockchainAddress,
+    ) -> None:
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT COUNT(*) from blockchain_accounts WHERE '
@@ -357,7 +381,7 @@ class DBHandler(object):
         self.conn.commit()
         self.update_last_write()
 
-    def add_fiat_balance(self, currency, amount):
+    def add_fiat_balance(self, currency: typing.FiatAsset, amount: FVal) -> None:
         cursor = self.conn.cursor()
         # We don't care about previous value so this simple insert or replace should work
         cursor.execute(
@@ -367,7 +391,7 @@ class DBHandler(object):
         self.conn.commit()
         self.update_last_write()
 
-    def remove_fiat_balance(self, currency):
+    def remove_fiat_balance(self, currency: typing.FiatAsset) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
             'DELETE FROM current_balances WHERE asset = ?;', (currency,)
@@ -375,7 +399,7 @@ class DBHandler(object):
         self.conn.commit()
         self.update_last_write()
 
-    def get_fiat_balances(self):
+    def get_fiat_balances(self) -> Dict[typing.FiatAsset, str]:
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT asset, amount FROM current_balances;'
@@ -387,7 +411,7 @@ class DBHandler(object):
             result[entry[0]] = entry[1]
         return result
 
-    def get_blockchain_accounts(self):
+    def get_blockchain_accounts(self) -> BlockchainAccounts:
         """Returns a dictionary with keys being blockchains and values being
         lists of accounts"""
         cursor = self.conn.cursor()
@@ -395,7 +419,7 @@ class DBHandler(object):
             'SELECT blockchain, account FROM blockchain_accounts;'
         )
         query = query.fetchall()
-        result = defaultdict(list)
+        result: BlockchainAccounts = defaultdict(list)
 
         for entry in query:
             if entry[0] not in result:
@@ -405,17 +429,20 @@ class DBHandler(object):
 
         return result
 
-    def remove(self):
+    def remove(self) -> None:
         cursor = self.conn.cursor()
         cursor.execute('DROP TABLE IF EXISTS timed_balances')
         cursor.execute('DROP TABLE IF EXISTS timed_location_data')
         cursor.execute('DROP TABLE IF EXISTS timed_unique_data')
         self.conn.commit()
 
-    def write_balances_data(self, data):
-        ts = int(time.time())
-        balances = []
-        locations = []
+    def write_balances_data(self, data: BalancesData) -> None:
+        """ The keys of the data dictionary can be any kind of asset plus 'location'
+        and 'net_usd'. This gives us the balance data per assets, the balance data
+        per location and finally the total balance"""
+        ts = cast(typing.Timestamp, int(time.time()))
+        balances: AssetBalances = []
+        locations: LocationData = []
 
         for key, val in data.items():
             if key in ('location', 'net_usd'):
@@ -423,7 +450,8 @@ class DBHandler(object):
 
             balances.append((
                 ts,
-                key,
+                # We just excluded the 2 possible str value above
+                cast(typing.Asset, key),
                 str(val['amount']),
                 str(val['usd_value']),
             ))
@@ -437,7 +465,12 @@ class DBHandler(object):
         self.add_multiple_balances(balances)
         self.add_multiple_location_data(locations)
 
-    def add_exchange(self, name, api_key, api_secret):
+    def add_exchange(
+            self,
+            name: str,
+            api_key: typing.ApiKey,
+            api_secret: typing.ApiSecret,
+    ) -> None:
         if name not in SUPPORTED_EXCHANGES:
             raise InputError('Unsupported exchange {}'.format(name))
 
@@ -449,7 +482,7 @@ class DBHandler(object):
         self.conn.commit()
         self.update_last_write()
 
-    def remove_exchange(self, name):
+    def remove_exchange(self, name: str) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
             'DELETE FROM user_credentials WHERE name =?', (name,)
@@ -457,7 +490,7 @@ class DBHandler(object):
         self.conn.commit()
         self.update_last_write()
 
-    def get_exchange_secrets(self):
+    def get_exchange_secrets(self) -> Dict[str, Dict[str, str]]:
         cursor = self.conn.cursor()
         result = cursor.execute(
             'SELECT name, api_key, api_secret FROM user_credentials;'
@@ -477,17 +510,17 @@ class DBHandler(object):
 
     def add_external_trade(
             self,
-            time,
-            location,
-            pair,
-            trade_type,
+            time: typing.Timestamp,
+            location: str,
+            pair: str,
+            trade_type: str,
             amount,
-            rate,
-            fee,
-            fee_currency,
-            link,
-            notes
-    ):
+            rate: FVal,
+            fee: FVal,
+            fee_currency: typing.Asset,
+            link: str,
+            notes: str,
+    ) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT INTO trades('
@@ -519,18 +552,18 @@ class DBHandler(object):
 
     def edit_external_trade(
             self,
-            trade_id,
-            time,
-            location,
-            pair,
-            trade_type,
+            trade_id: int,
+            time: typing.Timestamp,
+            location: str,
+            pair: str,
+            trade_type: str,
             amount,
-            rate,
-            fee,
-            fee_currency,
-            link,
-            notes
-    ):
+            rate: FVal,
+            fee: FVal,
+            fee_currency: typing.Asset,
+            link: str,
+            notes: str,
+    ) -> Tuple[bool, str]:
         cursor = self.conn.cursor()
         cursor.execute(
             'UPDATE trades SET '
@@ -565,7 +598,11 @@ class DBHandler(object):
         self.conn.commit()
         return True, ''
 
-    def get_external_trades(self, from_ts=None, to_ts=None):
+    def get_external_trades(
+            self,
+            from_ts: Optional[typing.Timestamp] = None,
+            to_ts: Optional[typing.Timestamp] = None,
+    ) -> List[Dict[str, Union[str, int]]]:
         cursor = self.conn.cursor()
         query = (
             'SELECT id,'
@@ -580,7 +617,7 @@ class DBHandler(object):
             '  link,'
             '  notes FROM trades WHERE location="external" '
         )
-        bindings = ()
+        bindings: Union[Tuple[typing.Timestamp], Tuple[typing.Timestamp, typing.Timestamp]]
         if from_ts:
             query += 'AND time >= ? '
             bindings = (from_ts,)
@@ -613,7 +650,7 @@ class DBHandler(object):
 
         return trades
 
-    def delete_external_trade(self, trade_id):
+    def delete_external_trade(self, trade_id: int) -> Tuple[bool, str]:
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM trades WHERE id=?', (trade_id,))
         if cursor.rowcount == 0:
@@ -621,7 +658,11 @@ class DBHandler(object):
         self.conn.commit()
         return True, ''
 
-    def set_rotkehlchen_premium(self, api_key, api_secret):
+    def set_rotkehlchen_premium(
+            self,
+            api_key: typing.ApiKey,
+            api_secret: typing.ApiSecret,
+    ) -> None:
         cursor = self.conn.cursor()
         # We don't care about previous value so this simple insert or replace should work
         cursor.execute(
@@ -634,7 +675,7 @@ class DBHandler(object):
         # an empty last write ts in that case
         # self.update_last_write()
 
-    def get_rotkehlchen_premium(self):
+    def get_rotkehlchen_premium(self) -> Optional[Tuple[str, str]]:
         cursor = self.conn.cursor()
         result = cursor.execute(
             'SELECT api_key, api_secret FROM user_credentials where name="rotkehlchen";'

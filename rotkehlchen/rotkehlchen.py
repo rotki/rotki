@@ -3,6 +3,7 @@ import gevent
 import shutil
 from gevent.lock import Semaphore
 
+from rotkehlchen import typing
 from rotkehlchen.utils import (
     combine_stat_dicts,
     dict_get_sumof,

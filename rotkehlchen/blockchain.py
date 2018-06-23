@@ -9,6 +9,7 @@ from rotkehlchen.errors import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils import cache_response_timewise, request_get
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.constants import S_ETH, S_BTC
 from rotkehlchen import typing
 
 
@@ -16,14 +17,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Type Aliases used in this module
-Balances = Dict[typing.Asset, Dict[typing.BlockchainAddress, Dict[Union[str, typing.Asset], FVal]]]
-Totals = Dict[Union[typing.Asset, typing.EthToken], Dict[str, FVal]]
+Balances = Dict[typing.BlockchainAsset, Dict[typing.BlockchainAddress, Dict[Union[str, typing.Asset], FVal]]]
+Totals = Dict[typing.BlockchainAsset, Dict[str, FVal]]
 BlockchainBalancesUpdate = Dict[str, Dict]
-EthBalances = Dict[typing.EthAddress, Dict[Union[typing.Asset, str], FVal]]
+EthBalances = Dict[typing.EthAddress, Dict[Union[typing.BlockchainAsset, str], FVal]]
 AllEthTokens = Dict[typing.EthToken, Dict[str, Union[typing.ChecksumEthAddress, int]]]
-
-S_BTC = cast(typing.BlockchainAsset, 'BTC')
-S_ETH = cast(typing.BlockchainAsset, 'ETH')
 
 
 class Blockchain(object):
