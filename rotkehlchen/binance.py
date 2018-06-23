@@ -2,12 +2,15 @@ import time
 import hmac
 import hashlib
 from urllib.parse import urlencode
+from typing import Dict, Tuple, Optional, Union, List, cast
 
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.order_formatting import pair_get_assets, Trade
 from rotkehlchen.utils import rlk_jsonloads, cache_response_timewise
 from rotkehlchen.fval import FVal
 from rotkehlchen.errors import RemoteError
+from rotkehlchen.inquirer import Inquirer
+from rotkehlchen import typing
 
 import logging
 logger = logging.getLogger(__name__)
@@ -23,11 +26,11 @@ V1_ENDPOINTS = (
 )
 
 
-def binance_pair_to_world(pair):
+def binance_pair_to_world(pair: str) -> str:
     return pair[0:3] + '_' + pair[3:]
 
 
-def trade_from_binance(binance_trade):
+def trade_from_binance(binance_trade: Dict) -> Trade:
     """Turn a binance trade returned from trade history to our common trade
     history format"""
     amount = FVal(binance_trade['qty'])
@@ -70,7 +73,13 @@ class Binance(Exchange):
     An unofficial python binance package:
     https://github.com/sammchardy/python-binance
     """
-    def __init__(self, api_key, secret, inquirer, data_dir):
+    def __init__(
+            self,
+            api_key: typing.ApiKey,
+            secret: typing.ApiSecret,
+            inquirer: Inquirer,
+            data_dir: typing.FilePath
+    ):
         super(Binance, self).__init__('binance', api_key, secret, data_dir)
         self.apiversion = 'v3'
         self.uri = 'https://api.binance.com/api/'
@@ -83,7 +92,7 @@ class Binance(Exchange):
     def first_connection(self):
         self.first_connection_made = True
 
-    def validate_api_key(self):
+    def validate_api_key(self) -> Tuple[bool, str]:
         try:
             self.api_query('account')
         except ValueError as e:
@@ -93,12 +102,12 @@ class Binance(Exchange):
             elif 'Signature for this request is not valid':
                 return False, 'Provided API Secret is malformed'
             elif 'Invalid API-key, IP, or permissions for action':
-                return 'API Key does not match the given secret'
+                return False, 'API Key does not match the given secret'
             else:
                 raise
         return True, ''
 
-    def api_query(self, method, options=None):
+    def api_query(self, method: str, options: Optional[Dict] = None) -> Union[List, Dict]:
         if not options:
             options = {}
 
@@ -143,9 +152,10 @@ class Binance(Exchange):
         return json_ret
 
     @cache_response_timewise()
-    def query_balances(self):
+    def query_balances(self) -> Tuple[Optional[dict], str]:
         try:
-            account_data = self.api_query('account')
+            # account data returns a dict as per binance docs
+            account_data = cast(Dict, self.api_query('account'))
         except RemoteError as e:
             msg = (
                 'Binance API request failed. Could not reach binance due '
@@ -168,8 +178,15 @@ class Binance(Exchange):
 
         return returned_balances, ''
 
-    def query_trade_history(self, start_ts=None, end_ts=None, end_at_least_ts=None, markets=None):
+    def query_trade_history(
+            self,
+            start_ts: typing.Timestamp,
+            end_ts: typing.Timestamp,
+            end_at_least_ts: typing.Timestamp,
+            markets: Optional[str] = None,
+    ) -> List:
         cache = self.check_trades_cache(start_ts, end_at_least_ts)
+        cache = cast(List, cache)
         if cache is not None:
             return cache
 
