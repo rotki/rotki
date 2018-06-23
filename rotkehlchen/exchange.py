@@ -58,7 +58,7 @@ class Exchange(object):
             start_ts: typing.Timestamp,
             end_ts: typing.Timestamp,
             special_name: str = None
-    ) -> Optional[List]:
+    ) -> Optional[Union[List, Dict]]:
         trades_file = self._get_cachefile_name(special_name)
         trades: dict = dict()
         if os.path.isfile(trades_file):

@@ -7,7 +7,7 @@ import os
 import traceback
 import csv
 from urllib.parse import urlencode
-from typing import Tuple, Dict, Optional, List, Union
+from typing import Tuple, Dict, Optional, List, Union, cast
 
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils import (
@@ -288,7 +288,7 @@ class Poloniex(Exchange):
             start_ts: typing.Timestamp,
             end_ts: typing.Timestamp,
             end_at_least_ts: typing.Timestamp,
-    ) -> List:
+    ) -> Union[List, Dict]:
         with self.lock:
             cache = self.check_trades_cache(start_ts, end_at_least_ts)
         if cache is not None:
@@ -299,6 +299,8 @@ class Poloniex(Exchange):
             start=start_ts,
             end=end_ts
         )
+        # we know that returnTradeHistory returns a dict with currencyPair=all
+        result = cast(Dict, result)
 
         results_length = 0
         for r, v in result.items():
@@ -360,7 +362,11 @@ class Poloniex(Exchange):
             pass
 
         with self.lock:
-            cache = self.check_trades_cache(start_ts, end_at_least_ts, special_name='loan_history')
+            # We know Loan history cache is a list
+            cache = cast(
+                List,
+                self.check_trades_cache(start_ts, end_at_least_ts, special_name='loan_history'),
+            )
         if cache is not None:
             return cache
 
@@ -411,6 +417,7 @@ class Poloniex(Exchange):
                 end_at_least_ts,
                 special_name='deposits_withdrawals'
             )
+            cache = cast(Dict, cache)
         if cache is None:
             result = self.returnDepositsWithdrawals(start_ts, end_ts)
             with self.lock:

@@ -21,7 +21,7 @@ from rotkehlchen.exchange import Exchange
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen import typing
-from typing import Optional, Tuple, Dict, List
+from typing import Optional, Tuple, Dict, List, Union, cast
 
 import logging
 logger = logging.getLogger(__name__)
@@ -102,8 +102,10 @@ class Kraken(Exchange):
         super(Kraken, self).__init__('kraken', api_key, secret, data_dir)
         self.apiversion = '0'
         self.uri = 'https://api.kraken.com/{}/'.format(self.apiversion)
-        self.usdprice: Dict[typing.Asset, FVal] = {}
-        self.eurprice: Dict[typing.Asset, FVal] = {}
+        # typing TODO: Without a union of str and Asset we get lots of warning
+        # How can this be avoided without too much pain?
+        self.usdprice: Dict[Union[typing.Asset, str], FVal] = {}
+        self.eurprice: Dict[Union[typing.Asset, str], FVal] = {}
         self.session.headers.update({
             'API-Key': self.api_key,
         })
@@ -223,7 +225,7 @@ class Kraken(Exchange):
             })
             response = self.session.post(
                 'https://api.kraken.com' + urlpath,
-                data=post_data
+                data=post_data.encode()
             )
 
         return self.check_and_get_response(response, method)
@@ -378,6 +380,7 @@ class Kraken(Exchange):
     ) -> List:
         with self.lock:
             cache = self.check_trades_cache(start_ts, end_at_least_ts)
+            cache = cast(List, cache)
 
         if cache is not None:
             return cache
@@ -396,7 +399,7 @@ class Kraken(Exchange):
             offset: Optional[int] = None,
             extra_dict: Optional[dict] = None,
     ) -> dict:
-        request = dict()
+        request: Dict[str, Union[typing.Timestamp, int]] = dict()
         request['start'] = start_ts
         request['end'] = end_ts
         if offset is not None:
