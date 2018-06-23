@@ -8,13 +8,13 @@ import calendar
 import operator
 import requests
 from functools import wraps
-from collections import namedtuple
 from rlp.sedes import big_endian_int
 from typing import Callable, Any
 
 from rotkehlchen.constants import ALL_REMOTES_TIMEOUT
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen import typing
 
 
 def sfjson_loads(s):
@@ -62,9 +62,6 @@ def add_entries(a, b):
     }
 
 
-ResultCache = namedtuple('ResultCache', ('result', 'timestamp'))
-
-
 def cache_response_timewise(seconds=600):
     """ This is a decorator for caching results of functions of objects.
     The objects must adhere to the interface of having:
@@ -85,7 +82,7 @@ def cache_response_timewise(seconds=600):
             if cache_miss:
                 result = f(wrappingobj, *args)
                 with wrappingobj.lock:
-                    wrappingobj.results_cache[f.__name__] = ResultCache(result, now)
+                    wrappingobj.results_cache[f.__name__] = typing.ResultCache(result, now)
                 return result
 
             # else hit the cache

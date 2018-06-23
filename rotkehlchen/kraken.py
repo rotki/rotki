@@ -97,7 +97,7 @@ class Kraken(Exchange):
             self,
             api_key: typing.ApiKey,
             secret: typing.ApiSecret,
-            data_dir: typing.FilePath
+            data_dir: typing.FilePath,
     ):
         super(Kraken, self).__init__('kraken', api_key, secret, data_dir)
         self.apiversion = '0'

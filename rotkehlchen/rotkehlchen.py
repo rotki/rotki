@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import os
 import gevent
 import shutil
 from gevent.lock import Semaphore
@@ -38,7 +37,7 @@ class Rotkehlchen(object):
     def __init__(self, args):
         self.lock = Semaphore()
         self.lock.acquire()
-        self.results_cache = {}
+        self.results_cache: typing.ResultsCacheMap = dict()
         self.connected_exchanges = []
 
         logfilename = None
@@ -216,11 +215,11 @@ class Rotkehlchen(object):
 
         ethchain = Ethchain(eth_rpc_port)
         self.blockchain = Blockchain(
-            self.data.db.get_blockchain_accounts(),
-            self.data.eth_tokens,
-            self.data.db.get_owned_tokens(),
-            self.inquirer,
-            ethchain
+            blockchain_accounts=self.data.db.get_blockchain_accounts(),
+            all_eth_tokens=self.data.eth_tokens,
+            owned_eth_tokens=self.data.db.get_owned_tokens(),
+            inquirer=self.inquirer,
+            ethchain=ethchain,
         )
 
     def set_premium_credentials(self, api_key, api_secret):

@@ -82,7 +82,7 @@ class Exchange(object):
             special_name: str = None
     ) -> None:
         trades_file = self._get_cachefile_name(special_name)
-        trades = dict()
+        trades: Dict[str, Union[typing.Timestamp, List, Dict]] = dict()
         with open(trades_file, 'w') as f:
             trades['start_time'] = start_ts
             trades['end_time'] = end_ts

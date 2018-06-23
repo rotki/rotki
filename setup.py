@@ -12,8 +12,16 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
+install_requires_replacements = {
+    (
+        'git+https://github.com/eth-typing.git'
+        '@a4eba0cd42c34e051ac8818177c8eb95ac67f5b5#egg=eth-typing'
+    ): 'eth-typing',
+}
+
 install_requirements = list(set(
-    requirement.strip() for requirement in open('requirements.txt')
+    install_requires_replacements.get(requirement.strip(), requirement.strip())
+    for requirement in open('requirements.txt')
     if not requirement.lstrip().startswith('#')
 ))
 
