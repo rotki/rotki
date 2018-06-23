@@ -4,6 +4,7 @@ import hashlib
 from urllib.parse import urlencode
 from json.decoder import JSONDecodeError
 
+from typing import Dict, Tuple, Optional, Union, List, cast
 from rotkehlchen.utils import (
     createTimeStamp,
     get_pair_position,
@@ -14,6 +15,8 @@ from rotkehlchen.exchange import Exchange
 from rotkehlchen.order_formatting import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.errors import RemoteError
+from rotkehlchen.inquirer import Inquirer
+from rotkehlchen import typing
 
 import logging
 logger = logging.getLogger(__name__)
@@ -35,15 +38,15 @@ BITTREX_ACCOUNT_METHODS = {
 }
 
 
-def bittrex_pair_to_world(pair):
+def bittrex_pair_to_world(pair: str) -> str:
     return pair.replace('-', '_')
 
 
-def world_pair_to_bittrex(pair):
+def world_pair_to_bittrex(pair: str) -> str:
     return pair.replace('_', '-')
 
 
-def trade_from_bittrex(bittrex_trade):
+def trade_from_bittrex(bittrex_trade: Dict) -> Trade:
     """Turn a bittrex trade returned from bittrex trade history to our common trade
     history format"""
     amount = FVal(bittrex_trade['Quantity']) - FVal(bittrex_trade['QuantityRemaining'])
@@ -79,7 +82,13 @@ def trade_from_bittrex(bittrex_trade):
 
 
 class Bittrex(Exchange):
-    def __init__(self, api_key, secret, inquirer, data_dir):
+    def __init__(
+            self,
+            api_key: typing.ApiKey,
+            secret: typing.ApiSecret,
+            inquirer: Inquirer,
+            data_dir: typing.FilePath
+    ):
         super(Bittrex, self).__init__('bittrex', api_key, secret, data_dir)
         self.apiversion = 'v1.1'
         self.uri = 'https://bittrex.com/api/{}/'.format(self.apiversion)
@@ -88,7 +97,7 @@ class Bittrex(Exchange):
     def first_connection(self):
         self.first_connection_made = True
 
-    def validate_api_key(self):
+    def validate_api_key(self) -> Tuple[bool, str]:
         try:
             self.api_query('getbalance', {'currency': 'BTC'})
         except ValueError as e:
@@ -101,7 +110,11 @@ class Bittrex(Exchange):
                 raise
         return True, ''
 
-    def api_query(self, method, options=None):
+    def api_query(
+            self,
+            method: str,
+            options: Optional[Dict] = None,
+    ) -> Union[List, Dict]:
         """
         Queries Bittrex with given method and options
         """
@@ -137,7 +150,7 @@ class Bittrex(Exchange):
             raise RemoteError(json_ret['message'])
         return json_ret['result']
 
-    def get_btc_price(self, asset):
+    def get_btc_price(self, asset: typing.Asset) -> Optional[FVal]:
         if asset == 'BTC':
             return None
         btc_price = None
@@ -153,7 +166,7 @@ class Bittrex(Exchange):
         return btc_price
 
     @cache_response_timewise()
-    def query_balances(self):
+    def query_balances(self) -> Tuple[Optional[dict], str]:
         try:
             self.markets = self.api_query('getmarketsummaries')
             resp = self.api_query('getbalances')
@@ -182,15 +195,16 @@ class Bittrex(Exchange):
 
     def query_trade_history(
             self,
-            start_ts=None,
-            end_ts=None,
-            end_at_least_ts=None,
-            market=None,
-            count=None
-    ):
+            start_ts: typing.Timestamp,
+            end_ts: typing.Timestamp,
+            end_at_least_ts: typing.Timestamp,
+            market: Optional[str] = None,
+            count: Optional[int] = None,
+    ) -> List:
 
-        options = dict()
+        options: Dict[str, Union[str, int]] = dict()
         cache = self.check_trades_cache(start_ts, end_at_least_ts)
+        cache = cast(List, cache)
         if market is not None:
             options['market'] = world_pair_to_bittrex(market)
         elif cache is not None:
