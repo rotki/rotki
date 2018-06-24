@@ -1,5 +1,6 @@
 import os
 import pytest
+import time
 from pysqlcipher3 import dbapi2 as sqlcipher
 from eth_utils.address import to_checksum_address
 
@@ -7,7 +8,8 @@ from rotkehlchen.utils import ts_now, createTimeStamp
 from rotkehlchen.db.dbhandler import (
     ROTKEHLCHEN_DB_VERSION,
     DEFAULT_START_DATE,
-    DEFAULT_UI_FLOATING_PRECISION
+    DEFAULT_UI_FLOATING_PRECISION,
+    DEFAULT_BALANCE_SAVE_FREQUENCY,
 )
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.errors import AuthenticationError, InputError
@@ -130,6 +132,7 @@ def test_writting_fetching_data(data_dir, username):
         'db_version': ROTKEHLCHEN_DB_VERSION,
         'include_crypto2crypto': True,
         'taxfree_after_period': YEAR_IN_SECONDS,
+        'balance_save_frequency': DEFAULT_BALANCE_SAVE_FREQUENCY,
     }
 
     # Check setting non-existing settings. Should be ignored
@@ -276,6 +279,7 @@ def test_settings_entry_types(data_dir, username):
         'taxfree_after_period': 1,
         'historical_data_start': '01/08/2015',
         'eth_rpc_port': '8545',
+        'balance_save_frequency': 24,
     })
 
     res = data.db.get_settings()
@@ -287,3 +291,18 @@ def test_settings_entry_types(data_dir, username):
     assert isinstance(res['taxfree_after_period'], int)
     assert isinstance(res['historical_data_start'], str)
     assert isinstance(res['eth_rpc_port'], str)
+    assert isinstance(res['balance_save_frequency'], int)
+
+
+def test_balance_save_frequency_check(data_dir, username):
+    data = DataHandler(data_dir)
+    data.unlock(username, '123', create_new=True)
+
+    now = int(time.time())
+    data.db.add_multiple_location_data([(
+        now - 24 * 60 * 60 + 20, 'kraken', '1500',
+    )])
+
+    assert not data.should_save_balances()
+    data.db.set_settings({'balance_save_frequency': 5})
+    assert data.should_save_balances()

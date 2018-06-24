@@ -25,6 +25,7 @@ DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
 DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
 DEFAULT_START_DATE = "01/08/2015"
 DEFAULT_UI_FLOATING_PRECISION = 2
+DEFAULT_BALANCE_SAVE_FREQUENCY = 24
 KDF_ITER = 64000
 
 
@@ -220,6 +221,8 @@ class DBHandler(object):
                 settings['ui_floating_precision'] = int(q[1])
             elif q[0] == 'taxfree_after_period':
                 settings['taxfree_after_period'] = int(q[1])
+            elif q[0] == 'balance_save_frequency':
+                settings['balance_save_frequency'] = int(q[1])
             else:
                 settings[q[0]] = q[1]
 
@@ -234,6 +237,8 @@ class DBHandler(object):
             settings['include_crypto2crypto'] = DEFAULT_INCLUDE_CRYPTO2CRYPTO
         if 'taxfree_after_period' not in settings:
             settings['taxfree_after_period'] = DEFAULT_TAXFREE_AFTER_PERIOD
+        if 'balance_save_frequency' not in settings:
+            settings['balance_save_frequency'] = DEFAULT_BALANCE_SAVE_FREQUENCY
         return settings
 
     def get_main_currency(self) -> typing.FiatAsset:
@@ -304,6 +309,17 @@ class DBHandler(object):
         )
         self.conn.commit()
         self.update_last_write()
+
+    def get_last_balance_save_time(self) -> typing.Timestamp:
+        cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT MAX(time) from timed_location_data'
+        )
+        query = query.fetchall()
+        if len(query) == 0:
+            return cast(typing.Timestamp, 0)
+
+        return cast(typing.Timestamp, int(query[0][0]))
 
     def add_multiple_location_data(self, location_data: LocationData) -> None:
         """Execute addition of multiple location data in the DB
@@ -597,7 +613,11 @@ class DBHandler(object):
             '  link,'
             '  notes FROM trades WHERE location="external" '
         )
-        bindings: Union[Tuple[typing.Timestamp], Tuple[typing.Timestamp, typing.Timestamp]] = ()
+        bindings: Union[
+            Tuple,
+            Tuple[typing.Timestamp],
+            Tuple[typing.Timestamp, typing.Timestamp],
+        ] = ()
         if from_ts:
             query += 'AND time >= ? '
             bindings = (from_ts,)
