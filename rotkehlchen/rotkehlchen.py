@@ -404,13 +404,14 @@ class Rotkehlchen(object):
 
         return result
 
-    def query_balances(self, save_data=False):
+    def query_balances(self, requested_save_data=False):
         balances = {}
+        problem_free = True
         for exchange in self.connected_exchanges:
             exchange_balances, msg = getattr(self, exchange).query_balances()
             # If we got an error, disregard that exchange but make sure we don't save data
             if not exchange_balances:
-                save_data = False
+                problem_free = False
             else:
                 balances[exchange] = exchange_balances
 
@@ -448,7 +449,8 @@ class Rotkehlchen(object):
 
         result_dict = merge_dicts(combined, stats)
 
-        if save_data:
+        allowed_to_save = requested_save_data or self.data.should_save_balances()
+        if problem_free and allowed_to_save:
             self.data.save_balances_data(result_dict)
 
         # After adding it to the saved file we can overlay additional data that

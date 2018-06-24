@@ -4,6 +4,7 @@ import os
 import zlib
 import base64
 import hashlib
+import time
 from typing import Tuple, Dict, List, Optional, cast
 from eth_utils.address import to_checksum_address
 
@@ -225,6 +226,16 @@ class DataHandler(object):
 
         self.db.set_settings(settings)
         return True, msg
+
+    def should_save_balances(self) -> bool:
+        """ Returns whether or not we can save data to the database depending on
+        the balance data saving frequency setting"""
+        last_save = self.db.get_last_balance_save_time()
+        settings = self.db.get_settings()
+        # Setting is saved in hours, convert to seconds here
+        period = settings['balance_save_frequency'] * 60 * 60
+        now = cast(typing.Timestamp, int(time.time()))
+        return now - last_save > period
 
     def get_eth_accounts(self) -> List[typing.EthAddress]:
         blockchain_accounts = self.db.get_blockchain_accounts()

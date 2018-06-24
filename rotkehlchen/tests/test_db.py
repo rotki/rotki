@@ -1,5 +1,6 @@
 import os
 import pytest
+import time
 from pysqlcipher3 import dbapi2 as sqlcipher
 from eth_utils.address import to_checksum_address
 
@@ -278,6 +279,7 @@ def test_settings_entry_types(data_dir, username):
         'taxfree_after_period': 1,
         'historical_data_start': '01/08/2015',
         'eth_rpc_port': '8545',
+        'balance_save_frequency': 24,
     })
 
     res = data.db.get_settings()
@@ -289,3 +291,18 @@ def test_settings_entry_types(data_dir, username):
     assert isinstance(res['taxfree_after_period'], int)
     assert isinstance(res['historical_data_start'], str)
     assert isinstance(res['eth_rpc_port'], str)
+    assert isinstance(res['balance_save_frequency'], int)
+
+
+def test_balance_save_frequency_check(data_dir, username):
+    data = DataHandler(data_dir)
+    data.unlock(username, '123', create_new=True)
+
+    now = int(time.time())
+    data.db.add_multiple_location_data([(
+        now - 24 * 60 * 60 + 20, 'kraken', '1500',
+    )])
+
+    assert not data.should_save_balances()
+    data.db.set_settings({'balance_save_frequency': 5})
+    assert data.should_save_balances()
