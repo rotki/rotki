@@ -529,9 +529,9 @@ class DBHandler(object):
                 trade.location,
                 trade.pair,
                 trade.trade_type,
-                trade.amount,
-                trade.rate,
-                trade.fee,
+                str(trade.amount),
+                str(trade.rate),
+                str(trade.fee),
                 trade.fee_currency,
                 trade.link,
                 trade.notes
@@ -559,13 +559,13 @@ class DBHandler(object):
             '  notes=? '
             'WHERE id=?',
             (
-                time,
+                trade.time,
                 trade.location,
                 trade.pair,
                 trade.trade_type,
-                trade.amount,
-                trade.rate,
-                trade.fee,
+                str(trade.amount),
+                str(trade.rate),
+                str(trade.fee),
                 trade.fee_currency,
                 trade.link,
                 trade.notes,
@@ -597,7 +597,7 @@ class DBHandler(object):
             '  link,'
             '  notes FROM trades WHERE location="external" '
         )
-        bindings: Union[Tuple[typing.Timestamp], Tuple[typing.Timestamp, typing.Timestamp]]
+        bindings: Union[Tuple[typing.Timestamp], Tuple[typing.Timestamp, typing.Timestamp]] = ()
         if from_ts:
             query += 'AND time >= ? '
             bindings = (from_ts,)
