@@ -111,7 +111,7 @@ function create_settings_ui() {
     $('#page-wrapper').html(str);
 
     str = form_entry('Floating Precision', 'floating_precision', settings.floating_precision, '');
-    str += form_entry('Date', 'historical_data_start', settings.historical_data_start, '');
+    str += form_entry('Date from when to count historical data', 'historical_data_start', settings.historical_data_start, '');
     str += form_select('Select Main Currency', 'maincurrencyselector', settings.CURRENCIES.map(x => x.ticker_symbol), settings.main_currency.ticker_symbol);
     str += form_entry('Eth RPC Port', 'eth_rpc_port', settings.eth_rpc_port, '');
     str += form_entry(
