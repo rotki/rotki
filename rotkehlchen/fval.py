@@ -45,7 +45,7 @@ class FVal(object):
             else:
                 self.num = None
 
-        except InvalidOperation as e:
+        except InvalidOperation:
             self.num = None
 
             if not self.num:

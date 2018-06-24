@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-import os
 import gevent
 import shutil
 from gevent.lock import Semaphore
 
+from rotkehlchen import typing
 from rotkehlchen.utils import (
     combine_stat_dicts,
     dict_get_sumof,
@@ -38,7 +38,7 @@ class Rotkehlchen(object):
     def __init__(self, args):
         self.lock = Semaphore()
         self.lock.acquire()
-        self.results_cache = {}
+        self.results_cache: typing.ResultsCacheMap = dict()
         self.connected_exchanges = []
 
         logfilename = None
@@ -103,7 +103,6 @@ class Rotkehlchen(object):
             self.poloniex = Poloniex(
                 str.encode(secret_data['poloniex']['api_key']),
                 str.encode(secret_data['poloniex']['api_secret']),
-                self.cache_data_filename,
                 self.inquirer,
                 self.data_dir
             )
@@ -188,7 +187,6 @@ class Rotkehlchen(object):
         self.try_premium_at_start(api_key, api_secret, create_new, sync_approval, user_dir)
 
         secret_data = self.data.db.get_exchange_secrets()
-        self.cache_data_filename = os.path.join(self.data_dir, 'cache_data.json')
         settings = self.data.db.get_settings()
         historical_data_start = settings['historical_data_start']
         eth_rpc_port = settings['eth_rpc_port']
@@ -218,11 +216,11 @@ class Rotkehlchen(object):
 
         ethchain = Ethchain(eth_rpc_port)
         self.blockchain = Blockchain(
-            self.data.db.get_blockchain_accounts(),
-            self.data.eth_tokens,
-            self.data.db.get_owned_tokens(),
-            self.inquirer,
-            ethchain
+            blockchain_accounts=self.data.db.get_blockchain_accounts(),
+            all_eth_tokens=self.data.eth_tokens,
+            owned_eth_tokens=self.data.db.get_owned_tokens(),
+            inquirer=self.inquirer,
+            ethchain=ethchain,
         )
 
     def set_premium_credentials(self, api_key, api_secret):
@@ -581,6 +579,6 @@ class Rotkehlchen(object):
 
 # For testing purposes only
 if __name__ == '__main__':
-    from args import app_args
+    from rotkehlchen.args import app_args
     args = app_args()
     r = Rotkehlchen(args)

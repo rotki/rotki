@@ -1,4 +1,5 @@
 import base64
+from typing import cast
 from binascii import hexlify, unhexlify
 
 from Crypto.Cipher import AES
@@ -66,23 +67,23 @@ def privatekey_to_publickey(private_key_bin: bytes) -> bytes:
     return private_key.public_key.format(compressed=False)
 
 
-def publickey_to_address(publickey: bytes) -> bytes:
-    return sha3(publickey[1:])[12:]
+def publickey_to_address(publickey: bytes) -> typing.BinaryEthAddress:
+    return cast(typing.BinaryEthAddress, sha3(publickey[1:])[12:])
 
 
-def privatekey_to_address(private_key_bin: bytes) -> typing.Address:
+def privatekey_to_address(private_key_bin: bytes) -> typing.BinaryEthAddress:
     return publickey_to_address(privatekey_to_publickey(private_key_bin))
 
 
-def address_encoder(address: typing.Address) -> str:
+def address_encoder(address: typing.BinaryEthAddress) -> typing.EthAddress:
     assert len(address) in (20, 0)
     return '0x' + hexlify(address).decode()
 
 
-def address_decoder(addr: str) -> typing.Address:
+def address_decoder(addr: str) -> typing.BinaryEthAddress:
     if addr[:2] == '0x':
         addr = addr[2:]
 
-    addr = unhexlify(addr)
-    assert len(addr) in (20, 0)
-    return addr
+    b_addr = unhexlify(addr)
+    assert len(b_addr) in (20, 0)
+    return cast(typing.BinaryEthAddress, b_addr)

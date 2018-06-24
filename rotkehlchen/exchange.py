@@ -3,11 +3,13 @@ import requests
 import os
 from gevent.lock import Semaphore
 from json.decoder import JSONDecodeError
+from typing import Optional, List, Dict, Union
 
 from rotkehlchen.utils import rlk_jsonloads, rlk_jsondumps
+from rotkehlchen import typing
 
 
-def data_up_todate(json_data, start_ts, end_ts):
+def data_up_todate(json_data: dict, start_ts: typing.Timestamp, end_ts: typing.Timestamp) -> bool:
     if 'data' not in json_data or 'start_time' not in json_data or 'end_time' not in json_data:
         return False
 
@@ -24,27 +26,41 @@ def data_up_todate(json_data, start_ts, end_ts):
 
 class Exchange(object):
 
-    def __init__(self, name, api_key, secret):
-        assert isinstance(api_key, bytes), 'api key for {} should be a bytestring'.format(name)
-        assert isinstance(secret, bytes), 'secret for {} should be a bytestring'.format(name)
+    def __init__(
+            self,
+            name: str,
+            api_key: typing.ApiKey,
+            secret: typing.ApiSecret,
+            datadir: typing.FilePath
+    ):
+        assert isinstance(api_key, typing.T_ApiKey), 'api key for {} should be a '
+        'bytestring'.format(name)
+        assert isinstance(secret, typing.T_ApiSecret), 'secret for {} should be a '
+        'bytestring'.format(name)
         self.name = name
+        self.data_dir = datadir
         self.api_key = api_key
         self.secret = secret
         self.first_connection_made = False
         self.session = requests.session()
         self.lock = Semaphore()
-        self.results_cache = {}
+        self.results_cache: dict = {}
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
 
-    def _get_cachefile_name(self, special_name=None):
+    def _get_cachefile_name(self, special_name: str = None) -> str:
         if special_name is None:
             return os.path.join(self.data_dir, "%s_trades.json" % self.name)
         else:
             return os.path.join(self.data_dir, "%s_%s.json" % (self.name, special_name))
 
-    def check_trades_cache(self, start_ts, end_ts, special_name=None):
+    def check_trades_cache(
+            self,
+            start_ts: typing.Timestamp,
+            end_ts: typing.Timestamp,
+            special_name: str = None
+    ) -> Optional[Union[List, Dict]]:
         trades_file = self._get_cachefile_name(special_name)
-        trades = dict()
+        trades: dict = dict()
         if os.path.isfile(trades_file):
             with open(trades_file, 'r') as f:
                 try:
@@ -58,20 +74,20 @@ class Exchange(object):
 
         return None
 
-    def update_trades_cache(self, data, start_ts, end_ts, special_name=None):
+    def update_trades_cache(
+            self,
+            data: Union[List, Dict],
+            start_ts: typing.Timestamp,
+            end_ts: typing.Timestamp,
+            special_name: str = None
+    ) -> None:
         trades_file = self._get_cachefile_name(special_name)
-        trades = dict()
+        trades: Dict[str, Union[typing.Timestamp, List, Dict]] = dict()
         with open(trades_file, 'w') as f:
             trades['start_time'] = start_ts
             trades['end_time'] = end_ts
             trades['data'] = data
             f.write(rlk_jsondumps(trades))
-
-    def orderBook(self, currency):
-        raise NotImplementedError('orderBook should only be implemented by subclasses')
-
-    def set_buy(self, pair, amount, price):
-        raise NotImplementedError('Should only be implemented by subclasses')
 
     def query_balances(self):
         """Returns the balances held in the exchange in the following format:
@@ -84,7 +100,12 @@ class Exchange(object):
         """
         raise NotImplementedError("query_balances should only be implemented by subclasses")
 
-    def query_deposits_withdrawals(self, start_ts, end_ts):
+    def query_deposits_withdrawals(
+            self,
+            start_ts: typing.Timestamp,
+            end_ts: typing.Timestamp,
+            end_at_least_ts: typing.Timestamp,
+    ):
         raise NotImplementedError(
             'query_deposits_withdrawals should only be implemented by subclasses'
         )

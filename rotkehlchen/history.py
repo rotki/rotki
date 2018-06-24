@@ -572,7 +572,12 @@ class TradesHistorian(object):
                 empty_or_error += '\n' + str(e)
 
         try:
-            history, asset_movements, poloniex_margin_trades, polo_loans = self.query_poloniex_history(
+            (
+                history,
+                asset_movements,
+                poloniex_margin_trades,
+                polo_loans,
+            ) = self.query_poloniex_history(
                 history,
                 asset_movements,
                 start_ts,
@@ -587,7 +592,7 @@ class TradesHistorian(object):
                 bittrex_history = self.bittrex.query_trade_history(
                     start_ts=start_ts,
                     end_ts=end_ts,
-                    end_at_least_ts=end_at_least_ts
+                    end_at_least_ts=end_at_least_ts,
                 )
                 for trade in bittrex_history:
                     history.append(trade_from_bittrex(trade))

@@ -135,7 +135,7 @@ class Premium(object):
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
-        except ConnectionError as e:
+        except ConnectionError:
             return False, 'Could not connect to rotkehlchen server'
 
         success, result_or_error = self.process_response(response)
@@ -153,7 +153,7 @@ class Premium(object):
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
-        except ConnectionError as e:
+        except ConnectionError:
             return False, 'Could not connect to rotkehlchen server'
 
         success, result_or_error = self.process_response(response)
@@ -171,7 +171,7 @@ class Premium(object):
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
-        except ConnectionError as e:
+        except ConnectionError:
             return False, 'Could not connect to rotkehlchen server'
         success, result_or_error = self.process_response(response)
         return success, result_or_error

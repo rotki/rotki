@@ -1,23 +1,25 @@
 import os
 from web3 import Web3, HTTPProvider
 from requests import ConnectionError
+from typing import Tuple, List, Dict
 
 from rotkehlchen.utils import from_wei, rlk_jsonloads, request_get
 from rotkehlchen.fval import FVal
+from rotkehlchen import typing
 
 import logging
 logger = logging.getLogger(__name__)
 
 
 class Ethchain(object):
-    def __init__(self, ethrpc_port, attempt_connect=True):
-        self.web3 = None
+    def __init__(self, ethrpc_port: int, attempt_connect: bool = True):
+        self.web3: Web3 = None
         self.rpc_port = ethrpc_port
         self.connected = False
         if attempt_connect:
             self.attempt_connect(ethrpc_port)
 
-    def attempt_connect(self, ethrpc_port, mainnet_check=True):
+    def attempt_connect(self, ethrpc_port, mainnet_check=True) -> Tuple[bool, str]:
         if self.rpc_port == ethrpc_port and self.connected:
             # We are already connected
             return True, 'Already connected to an ethereum node'
@@ -62,7 +64,7 @@ class Ethchain(object):
         # If we get here we did not connnect
         return False, message
 
-    def set_rpc_port(self, port):
+    def set_rpc_port(self, port: int) -> Tuple[bool, str]:
         """ Attempts to set the RPC port for the ethereum client.
 
         Returns a tuple (result, message)
@@ -74,7 +76,7 @@ class Ethchain(object):
             self.ethrpc_port = port
         return result, message
 
-    def get_eth_balance(self, account):
+    def get_eth_balance(self, account: typing.EthAddress) -> FVal:
         if not self.connected:
             eth_resp = request_get(
                 'https://api.etherscan.io/api?module=account&action=balance&address=%s'
@@ -87,13 +89,16 @@ class Ethchain(object):
         else:
             return from_wei(self.web3.eth.getBalance(account))
 
-    def get_multieth_balance(self, accounts):
+    def get_multieth_balance(
+            self,
+            accounts: List[typing.EthAddress],
+    ) -> Dict[typing.EthAddress, FVal]:
         """Returns a dict with keys being accounts and balances in ETH"""
         balances = {}
 
         if not self.connected:
             if len(accounts) > 20:
-                new_accounts = [accounts[x:x+2] for x in range(0, len(accounts), 2)]
+                new_accounts = [accounts[x:x + 2] for x in range(0, len(accounts), 2)]
             else:
                 new_accounts = [accounts]
 
@@ -117,7 +122,13 @@ class Ethchain(object):
 
         return balances
 
-    def get_multitoken_balance(self, token_symbol, token_address, token_decimals, accounts):
+    def get_multitoken_balance(
+            self,
+            token_symbol: typing.EthToken,
+            token_address: typing.EthAddress,
+            token_decimals: int,
+            accounts: List[typing.EthAddress],
+    ) -> Dict[typing.EthAddress, FVal]:
         """Return a dictionary with keys being accounts and value balances of token
         Balance value is normalized through the token decimals.
         """
@@ -152,11 +163,17 @@ class Ethchain(object):
 
         return balances
 
-    def get_token_balance(self, token_symbol, token_address, token_decimals, account):
+    def get_token_balance(
+            self,
+            token_symbol: typing.EthToken,
+            token_address: typing.EthAddress,
+            token_decimals: int,
+            account: typing.EthAddress,
+    ) -> FVal:
         res = self.get_multitoken_balance(token_symbol, token_address, token_decimals, [account])
-        return res.get(account, 0)
+        return res.get(account, FVal(0))
 
-    def get_block_by_number(self, num):
+    def get_block_by_number(self, num: int):
         if not self.connected:
             return None
 
