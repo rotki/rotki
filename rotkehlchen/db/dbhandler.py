@@ -13,6 +13,7 @@ from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.constants import S_ETH, S_USD
 from rotkehlchen import typing
+from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
 from .utils import DB_SCRIPT_CREATE_TABLES, DB_SCRIPT_REIMPORT_DATA
 
 # Types used in this module
@@ -196,14 +197,14 @@ class DBHandler(object):
             return False
         return str_to_bool(query[0])
 
-    def get_settings(self) -> typing.DBSettings:
+    def get_settings(self) -> DBSettings:
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT name, value FROM settings;'
         )
         query = query.fetchall()
 
-        settings: typing.DBSettings = {}
+        settings: DBSettings = {}
         for q in query:
             if q[0] == 'version':
                 settings['db_version'] = int(q[1])
@@ -256,7 +257,7 @@ class DBHandler(object):
         self.conn.commit()
         self.update_last_write()
 
-    def set_settings(self, settings: typing.DBSettings) -> None:
+    def set_settings(self, settings: DBSettings) -> None:
         cursor = self.conn.cursor()
         cursor.executemany(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -434,7 +435,7 @@ class DBHandler(object):
         cursor.execute('DROP TABLE IF EXISTS timed_unique_data')
         self.conn.commit()
 
-    def write_balances_data(self, data: typing.BalancesData) -> None:
+    def write_balances_data(self, data: BalancesData) -> None:
         """ The keys of the data dictionary can be any kind of asset plus 'location'
         and 'net_usd'. This gives us the balance data per assets, the balance data
         per location and finally the total balance"""
@@ -602,7 +603,7 @@ class DBHandler(object):
             self,
             from_ts: Optional[typing.Timestamp] = None,
             to_ts: Optional[typing.Timestamp] = None,
-    ) -> List[typing.ExternalTrade]:
+    ) -> List[ExternalTrade]:
         cursor = self.conn.cursor()
         query = (
             'SELECT id,'

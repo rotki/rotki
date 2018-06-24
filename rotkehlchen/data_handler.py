@@ -20,6 +20,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import AuthenticationError
 from rotkehlchen.constants import S_ETH
 from rotkehlchen import typing
+from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
 
 import logging
 logger = logging.getLogger(__name__)
@@ -130,7 +131,7 @@ class DataHandler(object):
     def main_currency(self) -> typing.FiatAsset:
         return self.db.get_main_currency()
 
-    def save_balances_data(self, data: typing.BalancesData) -> None:
+    def save_balances_data(self, data: BalancesData) -> None:
         self.db.write_balances_data(data)
 
     def write_owned_eth_tokens(self, tokens: List[typing.EthToken]) -> None:
@@ -185,7 +186,7 @@ class DataHandler(object):
 
     def set_settings(
             self,
-            settings: typing.DBSettings,
+            settings: DBSettings,
             accountant,  # TODO: Set type after cyclic dependency fix
     ) -> Tuple[bool, str]:
         given_items = list(settings.keys())
@@ -232,12 +233,12 @@ class DataHandler(object):
     def get_fiat_balances(self) -> Dict[typing.FiatAsset, str]:
         return self.db.get_fiat_balances()
 
-    def get_external_trades(self) -> List[typing.ExternalTrade]:
+    def get_external_trades(self) -> List[ExternalTrade]:
         return self.db.get_external_trades()
 
     def add_external_trade(
             self,
-            data: typing.ExternalTrade,
+            data: ExternalTrade,
     ) -> Tuple[bool, str]:
         timestamp, message = check_otctrade_data_valid(data)
         if not timestamp:
@@ -259,7 +260,7 @@ class DataHandler(object):
 
         return True, ''
 
-    def edit_external_trade(self, data: typing.ExternalTrade) -> Tuple[bool, str]:
+    def edit_external_trade(self, data: ExternalTrade) -> Tuple[bool, str]:
         timestamp, message = check_otctrade_data_valid(data)
         if not timestamp:
             return False, message
