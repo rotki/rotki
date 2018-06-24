@@ -515,9 +515,6 @@ class Rotkehlchen(object):
 
         return self.usd_to_main_currency_rate * amount
 
-    def get_settings(self):
-        return self.data.settings
-
     def setup_exchange(self, name, api_key, api_secret):
         if name not in SUPPORTED_EXCHANGES:
             return False, 'Attempted to register unsupported exchange {}'.format(name)

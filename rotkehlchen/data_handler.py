@@ -53,6 +53,7 @@ VALID_SETTINGS = (
     'premium_should_sync',
     'include_crypto2crypto',
     'taxfree_after_period',
+    'balance_save_frequency',
 )
 
 

@@ -7,7 +7,8 @@ from rotkehlchen.utils import ts_now, createTimeStamp
 from rotkehlchen.db.dbhandler import (
     ROTKEHLCHEN_DB_VERSION,
     DEFAULT_START_DATE,
-    DEFAULT_UI_FLOATING_PRECISION
+    DEFAULT_UI_FLOATING_PRECISION,
+    DEFAULT_BALANCE_SAVE_FREQUENCY,
 )
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.errors import AuthenticationError, InputError
@@ -130,6 +131,7 @@ def test_writting_fetching_data(data_dir, username):
         'db_version': ROTKEHLCHEN_DB_VERSION,
         'include_crypto2crypto': True,
         'taxfree_after_period': YEAR_IN_SECONDS,
+        'balance_save_frequency': DEFAULT_BALANCE_SAVE_FREQUENCY,
     }
 
     # Check setting non-existing settings. Should be ignored

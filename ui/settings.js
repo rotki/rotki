@@ -72,12 +72,13 @@ function add_settings_listeners() {
         }
 
         let eth_rpc_port = $('#eth_rpc_port').val();
+        let balance_save_frequency = $('#balance_save_frequency').val();
         let send_payload = {
             'ui_floating_precision': settings.floating_precision,
             'historical_data_start': settings.historical_data_start,
             'main_currency': main_currency,
-            'eth_rpc_port': eth_rpc_port
-
+            'eth_rpc_port': eth_rpc_port,
+            'balance_save_frequency': balance_save_frequency
         };
         // and now send the data to the python process
         client.invoke(
@@ -113,6 +114,12 @@ function create_settings_ui() {
     str += form_entry('Date', 'historical_data_start', settings.historical_data_start, '');
     str += form_select('Select Main Currency', 'maincurrencyselector', settings.CURRENCIES.map(x => x.ticker_symbol), settings.main_currency.ticker_symbol);
     str += form_entry('Eth RPC Port', 'eth_rpc_port', settings.eth_rpc_port, '');
+    str += form_entry(
+        'Balance data saving frequency in hours',
+        'balance_save_frequency',
+        settings.balance_save_frequency,
+        ''
+    );
     $(str).appendTo($('.panel-body'));
 
     str = form_button('Save', 'settingssubmit');
@@ -144,6 +151,7 @@ module.exports = function() {
         settings.premium_should_sync = false;
         settings.start_suggestion = 'inactive';
         settings.eth_rpc_port = '8545';
+        settings.balance_save_frequency = 24;
     }
     this.get_value_in_main_currency = get_value_in_main_currency;
     this.assert_exchange_exists = assert_exchange_exists;
