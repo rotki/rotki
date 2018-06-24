@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # Type Aliases used in this module
 Balances = Dict[typing.BlockchainAsset, Dict[typing.BlockchainAddress, Dict[Union[str, typing.Asset], FVal]]]
 Totals = Dict[typing.BlockchainAsset, Dict[str, FVal]]
-BlockchainBalancesUpdate = Dict[str, Dict]
+BlockchainBalancesUpdate = Dict[str, Union[Balances, Totals]]
 EthBalances = Dict[typing.EthAddress, Dict[Union[typing.BlockchainAsset, str], FVal]]
 AllEthTokens = Dict[typing.EthToken, Dict[str, Union[typing.ChecksumEthAddress, int]]]
 

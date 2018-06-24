@@ -16,11 +16,9 @@ from rotkehlchen import typing
 from .utils import DB_SCRIPT_CREATE_TABLES, DB_SCRIPT_REIMPORT_DATA
 
 # Types used in this module
-DBSettings = Dict[str, Union[int, bool, str]]
 BlockchainAccounts = Dict[typing.NonEthTokenBlockchainAsset, List[typing.BlockchainAddress]]
 AssetBalances = List[Tuple[typing.Timestamp, typing.Asset, str, str]]
 LocationData = List[Tuple[typing.Timestamp, str, str]]
-BalancesData = Dict[Union[str, typing.Asset], Dict[str, Union[FVal, Dict]]]
 
 DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
 DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
@@ -198,14 +196,14 @@ class DBHandler(object):
             return False
         return str_to_bool(query[0])
 
-    def get_settings(self) -> DBSettings:
+    def get_settings(self) -> typing.DBSettings:
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT name, value FROM settings;'
         )
         query = query.fetchall()
 
-        settings: DBSettings = {}
+        settings: typing.DBSettings = {}
         for q in query:
             if q[0] == 'version':
                 settings['db_version'] = int(q[1])
@@ -258,7 +256,7 @@ class DBHandler(object):
         self.conn.commit()
         self.update_last_write()
 
-    def set_settings(self, settings: DBSettings) -> None:
+    def set_settings(self, settings: typing.DBSettings) -> None:
         cursor = self.conn.cursor()
         cursor.executemany(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -386,7 +384,7 @@ class DBHandler(object):
         # We don't care about previous value so this simple insert or replace should work
         cursor.execute(
             'INSERT OR REPLACE INTO current_balances(asset, amount) VALUES (?, ?)',
-            (currency, amount)
+            (currency, str(amount))
         )
         self.conn.commit()
         self.update_last_write()
@@ -436,7 +434,7 @@ class DBHandler(object):
         cursor.execute('DROP TABLE IF EXISTS timed_unique_data')
         self.conn.commit()
 
-    def write_balances_data(self, data: BalancesData) -> None:
+    def write_balances_data(self, data: typing.BalancesData) -> None:
         """ The keys of the data dictionary can be any kind of asset plus 'location'
         and 'net_usd'. This gives us the balance data per assets, the balance data
         per location and finally the total balance"""
@@ -456,9 +454,11 @@ class DBHandler(object):
                 str(val['usd_value']),
             ))
 
-        for key, val in data['location'].items():
+        for key, val2 in data['location'].items():
+            # Here we know val2 is just a Dict since the key to data is 'location'
+            val2 = cast(Dict, val2)
             locations.append((
-                ts, key, str(val['usd_value'])
+                ts, key, str(val2['usd_value'])
             ))
         locations.append((ts, 'total', str(data['net_usd'])))
 
@@ -514,9 +514,9 @@ class DBHandler(object):
             location: str,
             pair: str,
             trade_type: str,
-            amount,
-            rate: FVal,
-            fee: FVal,
+            amount: str,
+            rate: str,
+            fee: str,
             fee_currency: typing.Asset,
             link: str,
             notes: str,
@@ -557,9 +557,9 @@ class DBHandler(object):
             location: str,
             pair: str,
             trade_type: str,
-            amount,
-            rate: FVal,
-            fee: FVal,
+            amount: str,
+            rate: str,
+            fee: str,
             fee_currency: typing.Asset,
             link: str,
             notes: str,
@@ -602,7 +602,7 @@ class DBHandler(object):
             self,
             from_ts: Optional[typing.Timestamp] = None,
             to_ts: Optional[typing.Timestamp] = None,
-    ) -> List[Dict[str, Union[str, int]]]:
+    ) -> List[typing.ExternalTrade]:
         cursor = self.conn.cursor()
         query = (
             'SELECT id,'

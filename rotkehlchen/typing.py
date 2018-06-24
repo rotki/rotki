@@ -1,5 +1,6 @@
 from typing import NewType, NamedTuple, Dict, Union
 from eth_typing.misc import HexAddress, ChecksumAddress
+from rotkehlchen.FVal import FVal
 
 T_BinaryEthAddress = bytes
 BinaryEthAddress = NewType('BinaryEthAddress', T_BinaryEthAddress)
@@ -52,3 +53,9 @@ class ResultCache(NamedTuple):
     """Represents a time-cached result of some API query"""
     result: Dict
     timestamp: Timestamp
+
+
+# Types used by dbhander and datahandler
+BalancesData = Dict[Union[str, Asset], Dict[str, Union[FVal, Dict]]]
+DBSettings = Dict[str, Union[int, bool, str]]
+ExternalTrade = Dict[str, Union[str, int]]
