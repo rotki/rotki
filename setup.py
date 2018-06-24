@@ -14,7 +14,7 @@ def read(fname):
 
 install_requires_replacements = {
     (
-        'git+https://github.com/eth-typing.git'
+        'git+https://github.com/ethereum/eth-typing.git'
         '@a4eba0cd42c34e051ac8818177c8eb95ac67f5b5#egg=eth-typing'
     ): 'eth-typing',
 }
