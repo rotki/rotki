@@ -2,8 +2,9 @@
 Changelog
 =========
 
-* :bug: Thanks to `introducing typing <https://github.com/rotkehlchenio/rotkehlchen/pull/89>`_ to many of the modules 3 bugs were found and fixed
 * :feature: `90` Add configuration option for it and periodically save balances data in the database
+* :bug: `91` Provide more accurate name for the setting for the date from which historical data starts
+* :bug: Thanks to `introducing typing <https://github.com/rotkehlchenio/rotkehlchen/pull/89>`_ to many of the modules 3 bugs were found and fixed
 * :bug: `83` Fix a bug that did not allow adding or removing ethereum tokens from the tracker
 * :feature: `79` Do not crash with exception if an exchange is unresponsive, but instead warn the user.
 * :bug: `77` Fix bug caused by reading `taxfree_after_period` from the database
