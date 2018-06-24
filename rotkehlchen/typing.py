@@ -1,5 +1,6 @@
 from typing import NewType, NamedTuple, Dict, Union
 from eth_typing.misc import HexAddress, ChecksumAddress
+from rotkehlchen.fval import FVal
 
 T_BinaryEthAddress = bytes
 BinaryEthAddress = NewType('BinaryEthAddress', T_BinaryEthAddress)
@@ -52,3 +53,17 @@ class ResultCache(NamedTuple):
     """Represents a time-cached result of some API query"""
     result: Dict
     timestamp: Timestamp
+
+
+class Trade(NamedTuple):
+    """Represents a Trade"""
+    time: Timestamp
+    location: str
+    pair: str
+    trade_type: str
+    amount: FVal
+    rate: FVal
+    fee: FVal
+    fee_currency: Asset
+    link: str
+    notes: str

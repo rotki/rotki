@@ -56,7 +56,10 @@ VALID_SETTINGS = (
 )
 
 
-def check_otctrade_data_valid(data: Dict[str, Union[int, str]]) -> Tuple[Optional[typing.Timestamp], str]:
+def verify_otctrade_data(
+        data: ExternalTrade,
+) -> Tuple[Optional[typing.Trade], str]:
+    """Takes in the trade data dictionary, validates it and returns a trade instance"""
     for field in otc_fields:
         if field not in data:
             return None, '{} was not provided'.format(field)
@@ -82,7 +85,20 @@ def check_otctrade_data_valid(data: Dict[str, Union[int, str]]) -> Tuple[Optiona
     except ValueError as e:
         return None, 'Could not process the given datetime: {}'.format(e)
 
-    return timestamp, ''
+    trade = typing.Trade(
+        time=timestamp,
+        location='external',
+        pair=cast(str, pair),
+        trade_type=cast(str, data['otc_type']),
+        amount=FVal(data['otc_amount']),
+        rate=FVal(data['otc_rate']),
+        fee=FVal(data['otc_fee']),
+        fee_currency=cast(typing.Asset, data['otc_fee_currency']),
+        link=cast(str, data['otc_link']),
+        notes=cast(str, data['otc_notes']),
+    )
+
+    return trade, ''
 
 
 def get_all_eth_tokens() -> List[typing.EthTokenInfo]:
@@ -96,7 +112,6 @@ class DataHandler(object):
     def __init__(self, data_directory: typing.FilePath):
 
         self.data_directory = data_directory
-        self.db: DBHandler = None
         self.eth_tokens = get_all_eth_tokens()
 
     def unlock(self, username: str, password: str, create_new: bool) -> typing.FilePath:
@@ -240,44 +255,22 @@ class DataHandler(object):
             self,
             data: ExternalTrade,
     ) -> Tuple[bool, str]:
-        timestamp, message = check_otctrade_data_valid(data)
-        if not timestamp:
+        trade, message = verify_otctrade_data(data)
+        if not trade:
             return False, message
 
-        # TODO: Really ugly, too many casts. Fix with runtime checks and NamedTuple?
-        self.db.add_external_trade(
-            time=timestamp,
-            location='external',
-            pair=cast(str, data['otc_pair']),
-            trade_type=cast(str, data['otc_type']),
-            amount=cast(str, data['otc_amount']),
-            rate=cast(str, data['otc_rate']),
-            fee=cast(str, data['otc_fee']),
-            fee_currency=cast(typing.Asset, data['otc_fee_currency']),
-            link=cast(str, data['otc_link']),
-            notes=cast(str, data['otc_notes']),
-        )
+        self.db.add_external_trade(trade)
 
         return True, ''
 
     def edit_external_trade(self, data: ExternalTrade) -> Tuple[bool, str]:
-        timestamp, message = check_otctrade_data_valid(data)
-        if not timestamp:
+        trade, message = verify_otctrade_data(data)
+        if not trade:
             return False, message
 
-        # TODO: Really ugly, too many casts. Fix with runtime checks and NamedTuple?
         result, message = self.db.edit_external_trade(
             trade_id=cast(int, data['otc_id']),
-            time=timestamp,
-            location='external',
-            pair=cast(str, data['otc_pair']),
-            trade_type=cast(str, data['otc_type']),
-            amount=cast(str, data['otc_amount']),
-            rate=cast(str, data['otc_rate']),
-            fee=cast(str, data['otc_fee']),
-            fee_currency=cast(typing.Asset, data['otc_fee_currency']),
-            link=cast(str, data['otc_link']),
-            notes=cast(str, data['otc_notes']),
+            trade=trade,
         )
 
         return result, message

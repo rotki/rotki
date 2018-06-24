@@ -509,19 +509,7 @@ class DBHandler(object):
 
         return secret_data
 
-    def add_external_trade(
-            self,
-            time: typing.Timestamp,
-            location: str,
-            pair: str,
-            trade_type: str,
-            amount: str,
-            rate: str,
-            fee: str,
-            fee_currency: typing.Asset,
-            link: str,
-            notes: str,
-    ) -> None:
+    def add_external_trade(self, trade: typing.Trade) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT INTO trades('
@@ -537,16 +525,16 @@ class DBHandler(object):
             '  notes)'
             'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             (
-                time,
-                location,
-                pair,
-                trade_type,
-                amount,
-                rate,
-                fee,
-                fee_currency,
-                link,
-                notes
+                trade.time,
+                trade.location,
+                trade.pair,
+                trade.trade_type,
+                trade.amount,
+                trade.rate,
+                trade.fee,
+                trade.fee_currency,
+                trade.link,
+                trade.notes
             )
         )
         self.conn.commit()
@@ -554,16 +542,7 @@ class DBHandler(object):
     def edit_external_trade(
             self,
             trade_id: int,
-            time: typing.Timestamp,
-            location: str,
-            pair: str,
-            trade_type: str,
-            amount: str,
-            rate: str,
-            fee: str,
-            fee_currency: typing.Asset,
-            link: str,
-            notes: str,
+            trade: typing.Trade,
     ) -> Tuple[bool, str]:
         cursor = self.conn.cursor()
         cursor.execute(
@@ -581,15 +560,15 @@ class DBHandler(object):
             'WHERE id=?',
             (
                 time,
-                location,
-                pair,
-                trade_type,
-                amount,
-                rate,
-                fee,
-                fee_currency,
-                link,
-                notes,
+                trade.location,
+                trade.pair,
+                trade.trade_type,
+                trade.amount,
+                trade.rate,
+                trade.fee,
+                trade.fee_currency,
+                trade.link,
+                trade.notes,
                 trade_id,
             )
         )
