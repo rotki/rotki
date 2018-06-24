@@ -572,7 +572,12 @@ class TradesHistorian(object):
                 empty_or_error += '\n' + str(e)
 
         try:
-            history, asset_movements, poloniex_margin_trades, polo_loans = self.query_poloniex_history(
+            (
+                history,
+                asset_movements,
+                poloniex_margin_trades,
+                polo_loans,
+            ) = self.query_poloniex_history(
                 history,
                 asset_movements,
                 start_ts,

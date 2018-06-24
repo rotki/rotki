@@ -48,7 +48,8 @@ class Inquirer(object):
 
         # Adjust some ETH tokens to how cryptocompare knows them
         if asset == S_RDN:
-            asset = cast(typing.EthToken, 'RDN*')  # remove this if cryptocompare changes the symbol
+            # remove this if cryptocompare changes the symbol
+            asset = cast(typing.EthToken, 'RDN*')
         if asset == S_DATACOIN:
             asset = cast(typing.NonEthTokenBlockchainAsset, 'DATA')
         resp = retry_calls(

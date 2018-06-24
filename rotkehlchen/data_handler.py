@@ -4,7 +4,7 @@ import os
 import zlib
 import base64
 import hashlib
-from typing import Tuple, Dict, Union, List, Optional, cast
+from typing import Tuple, Dict, List, Optional, cast
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.crypto import encrypt, decrypt
