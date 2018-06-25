@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`0.3.1 <2018-06-25>`
 
 * :bug: `96` Periodic balance data storage should now also work from the UI
 
