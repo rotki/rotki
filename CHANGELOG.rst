@@ -2,9 +2,11 @@
 Changelog
 =========
 
+* :bug: `99` Show proper error if kraken or binance api key validation fails due to an invalid key having been provided.
+
 * :release:`0.3.1 <2018-06-25>`
 
-* :bug: `96` Periodic balance data storage should now also work from the UI
+* :bug: `96` Periodic balance data storage should now also work from the UI.
 
 * :release:`0.3.0 <2018-06-24>`
 
