@@ -45,8 +45,6 @@ app.on('activate', () => {
  *************************************************************/
 
 const PY_DIST_FOLDER = 'rotkehlchen_py_dist';
-const PY_FOLDER = 'rotkehlchen';
-const PY_MODULE = 'server'; // without .py suffix
 
 let pyProc = null;
 let pyPort = null;

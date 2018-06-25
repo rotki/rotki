@@ -49,7 +49,7 @@ class DBHandler(object):
             errstr = str(e)
             if errstr == 'file is not a database':
                 errstr = 'Wrong password while decrypting the database or not a database'
-            raise AuthenticationError(str(e))
+            raise AuthenticationError(errstr)
 
         self.run_updates()
         cursor = self.conn.cursor()

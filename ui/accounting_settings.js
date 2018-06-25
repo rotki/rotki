@@ -107,7 +107,6 @@ function crypto2crypto_callback() {
 
 function modify_trade_settings_callback() {
     let element = $('input[name=taxfree_period_exists]');
-    let name = element.val();
     let is_checked = element.prop('checked');
 
     // return if a deselect triggered the event (may be unnecessary)

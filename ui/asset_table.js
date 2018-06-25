@@ -38,7 +38,6 @@ function AssetTable(
         $(str).insertAfter('#'+placement_id);
     } else {
         var err = new Error();
-        let stack = err.stack;
         throw_with_trace('Invalid AssetTable construction value for placement_type: ' + placement_type);
     }
     this.populate(table_data, draw_cb);

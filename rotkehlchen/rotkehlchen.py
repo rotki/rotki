@@ -45,7 +45,6 @@ class Rotkehlchen(object):
         if args.logtarget == 'file':
             logfilename = args.logfile
 
-        loglevel = logging.DEBUG
         if args.loglevel == 'debug':
             loglevel = logging.DEBUG
         elif args.loglevel == 'info':

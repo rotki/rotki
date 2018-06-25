@@ -1,11 +1,10 @@
-import requests
 import time
 import hashlib
 import hmac
 import base64
 from http import HTTPStatus
 from urllib.parse import urlencode
-from requests import ConnectionError
+from requests import session, ConnectionError
 from binascii import Error as binascii_error
 from rotkehlchen.utils import rlk_jsonloads
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
@@ -43,7 +42,7 @@ def premium_create_and_verify(api_key, api_secret):
 class Premium(object):
 
     def __init__(self, api_key, api_secret):
-        self.session = requests.session()
+        self.session = session()
         self.apiversion = '1'
         self.uri = 'http://localhost:5001/api/{}/'.format(self.apiversion)
         self.reset_credentials(api_key, api_secret)

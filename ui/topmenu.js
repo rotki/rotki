@@ -32,7 +32,6 @@ function reload_boxes_after_currency_change(currency) {
     for (let result of iterate_saved_balances()) {
         let location = result[0];
         let total = result[1];
-        let icon = result[2];
         let number = format_currency_value(total);
         if (settings.EXCHANGES.indexOf(location) >= 0) {
             $('#'+location+'_box div.huge').html(number);
