@@ -144,7 +144,7 @@ class Kraken(Exchange):
             error = str(e)
             if 'Error: Incorrect padding' in error:
                 return False, 'Provided API Key or secret is in invalid Format'
-            elif 'EAPI:Invalid key':
+            elif 'EAPI:Invalid key' in error:
                 return False, 'Provided API Key is invalid'
             else:
                 raise
