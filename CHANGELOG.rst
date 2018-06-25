@@ -2,6 +2,9 @@
 Changelog
 =========
 
+
+* :bug: `96` Periodic balance data storage should now also work from the UI
+
 * :release:`0.3.0 <2018-06-24>`
 
 * :feature: `90` Add configuration option for it and periodically save balances data in the database
