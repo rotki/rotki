@@ -94,7 +94,7 @@ function add_settings_listeners() {
                     return;
                 }
 
-                message = 'Succesfully modified settings.';
+                let message = 'Succesfully modified settings.';
                 if ('message' in res && res['message'] != '') {
                     message = ' ' + message + res['message'];
                 }

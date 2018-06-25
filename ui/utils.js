@@ -41,7 +41,6 @@ function _setup_log_watcher(callback) {
         clearInterval(log_searcher);
     }
 
-    var options = { fromBeginning: true};
     var tail = new Tail("rotkehlchen.log");
 
     var rePattern = new RegExp('.*(WARNING|ERROR):.*:(.*)');
@@ -149,7 +148,6 @@ function date_text_to_utc_ts(txt) {
 
 function dt_edit_drawcallback(id, edit_fn, delete_fn) {
     return function (settings) {
-        let dt_api = this;
         let ctx_menu_items = {};
         if (edit_fn) {
             ctx_menu_items['edit'] = {name: "Edit", icon: "fa-edit"};

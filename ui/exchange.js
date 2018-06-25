@@ -1,5 +1,5 @@
 var settings = require("./settings.js")();
-var dt = require( 'datatables.net' )();
+require( 'datatables.net' )();
 require("./monitor.js");
 require("./utils.js")();
 require("./asset_table.js")();

@@ -14,7 +14,7 @@ function add_exchange_on_click() {
         event.preventDefault();
         var target_location = determine_location(this.href);
         if (target_location.startsWith('exchange_')) {
-            exchange_name = target_location.substring(9);
+            let exchange_name = target_location.substring(9);
             assert_exchange_exists(exchange_name);
             console.log("Going to exchange " + exchange_name);
             create_or_reload_exchange(exchange_name);

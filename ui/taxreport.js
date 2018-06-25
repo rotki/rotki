@@ -22,7 +22,7 @@ function add_taxreport_listeners() {
 
 function export_csv_callback(event) {
     event.preventDefault();
-    let dir = prompt_directory_select_async((directories) => {
+    prompt_directory_select_async((directories) => {
         if(directories === undefined){
             return;
         }
@@ -115,7 +115,7 @@ function create_taxreport_overview(results) {
         ],
         "order": [[1, 'desc']]
     };
-    let table = $('#report_overview_table').DataTable(init_obj);
+    $('#report_overview_table').DataTable(init_obj);
 }
 
 function create_taxreport_details(all_events) {
@@ -177,7 +177,7 @@ function create_taxreport_details(all_events) {
         "pageLength": 25,
         'order': [[8, 'asc']]
     };
-    let table = $('#report_details_table').DataTable(init_obj);
+    $('#report_details_table').DataTable(init_obj);
 }
 
 function init_taxreport() {
@@ -197,7 +197,7 @@ function init_taxreport() {
             );
         }
         if ($('#elementId').length == 0) {
-            str = form_button('Export CSV', 'export_csv');
+            let str = form_button('Export CSV', 'export_csv');
             $(str).insertAfter('#generate_report');
             $('#export_csv').click(export_csv_callback);
         }
