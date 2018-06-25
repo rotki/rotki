@@ -177,7 +177,7 @@ function setup_exchange_callback(event) {
             $(str).appendTo($('#exchange_badges'));
             stop_show_loading('#setup_exchange_button');
             // also query the balances to have them handy to be shown if needed
-            query_exchange_balances_async(exchange_name);
+            query_exchange_balances_async(exchange_name, false);
         }
     );
 }
@@ -312,7 +312,7 @@ function create_user_settings() {
             console.log("Error at querying blockchain balances async:" + error);
             return;
         }
-        create_task(result['task_id'], 'user_settings_query_blockchain_balances', 'Query blockchain balances');
+        create_task(result['task_id'], 'user_settings_query_blockchain_balances', 'Query blockchain balances', false, true);
     });
     // also save the user settings page
     settings.page_user_settings = $('#page-wrapper').html();

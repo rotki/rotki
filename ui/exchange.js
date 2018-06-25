@@ -7,7 +7,7 @@ require("./navigation.js")();
 
 let SAVED_TABLES = {};
 
-function query_exchange_balances_async(name) {
+function query_exchange_balances_async(name, is_balance_task) {
     client.invoke("query_exchange_balances_async", name, (error, res) => {
         if (error || res == null) {
             console.log("Error at querying exchange " + name + " balances: " + error);
@@ -17,7 +17,9 @@ function query_exchange_balances_async(name) {
         create_task(
             res['task_id'],
             'query_exchange_balances',
-            'Query '+ name + ' Balances'
+            'Query '+ name + ' Balances',
+            is_balance_task,
+            true
         );
     });
 }
