@@ -206,7 +206,7 @@ function load_dashboard_after_unlock(exchanges, is_new_user) {
     for (let i = 0; i < exchanges.length; i++) {
         let exx = exchanges[i];
         settings.connected_exchanges.push(exx);
-        query_exchange_balances_async(exx);
+        query_exchange_balances_async(exx, true);
     }
 
     if (!is_new_user) {
@@ -234,7 +234,7 @@ function get_blockchain_total() {
             console.log("Error at querying blockchain balances: " + error);
         } else {
             console.log("Blockchain balances returned task id " + res['task_id']);
-            create_task(res['task_id'], 'query_blockchain_balances', 'Query Blockchain Balances');
+            create_task(res['task_id'], 'query_blockchain_balances', 'Query Blockchain Balances', true, true);
         }
     });
 }

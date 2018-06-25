@@ -77,7 +77,9 @@ function generate_report_callback(event) {
             create_task(
                 res['task_id'],
                 'process_trade_history',
-                'Create tax report'
+                'Create tax report',
+                false,
+                true
             );
         });
 }
