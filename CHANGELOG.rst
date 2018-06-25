@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :release:`0.3.0 <2018-06-24>`
+
 * :feature: `90` Add configuration option for it and periodically save balances data in the database
 * :bug: `91` Provide more accurate name for the setting for the date from which historical data starts
 * :bug: Thanks to `introducing typing <https://github.com/rotkehlchenio/rotkehlchen/pull/89>`_ to many of the modules 3 bugs were found and fixed
