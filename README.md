@@ -2,7 +2,7 @@
 
 <img src="https://raw.githubusercontent.com/rotkehlchenio/rotkehlchen/master/ui/images/rotkehlchen_no_text.png" width="250">
 
-Rotkehlchen is an asset management and accounting application specializing in Crypto assets and aims to also help with tax reporting. It is integrated with multiple exchanges and more will come soon.
+Rotkehlchen is an asset management and accounting application specializing in Crypto assets and aims to also help with tax reporting. It has integration for multiple exchanges with more coming soon.
 
 ## Table of Contents
 
@@ -61,9 +61,9 @@ You can also build rotkehlchen in OSX and Linux from source. In order to see how
 
 In this section we are going to see how to use various parts of the Rotkehlchen application.
 
-### Signin/Signup
+### Sign-in/Signup
 
-When you start Rotkehlchen you are greeted with a signin/signup prompt.
+When you start Rotkehlchen you are greeted with a sign-in/signup prompt.
 
 If you have never created an account before press "Create New Account". Provide a username and a password. Don't forget this password. It will be used to encrypt all your local files. If you have purchased a premium subscription you can also add the API Key and secret here.
 
@@ -77,15 +77,15 @@ Rotkehlchen calculates everything, including your profit/loss for your tax repor
 
 ### Connecting to an Ethereum Client
 
-When Rotkehlchen begins it tries to connect to a local ethereum node running with an rpc port set at the default port `8545`. If no client is running then all blockchain queries will use etherscan and will this be rather slower.
+When Rotkehlchen begins it tries to connect to a local ethereum node running with an rpc port set at the default port `8545`. If no client is running then all blockchain queries will use etherscan and this will be rather slower.
 
 If you want to connect to an ethereum client running in a non-default port you can set that through the settings. Click the person icon on the top right menu and select "Settings" from the drop down menu. This will take you to the settings page. Write the desired port in the ETH RPC Port textbox
 
 ### Adding Exchanges
 
-You can integrate rotkehlchen with many different exchanges. Currently supported exchanges are: Kraken, Poloniex, Bittrex and Binance.
+You can integrate many different exchanges with Rotkehlchen. Currently supported exchanges are: Kraken, Poloniex, Bittrex and Binance.
 
-To do so you have to go to your exchange and create an API key. If the exchange allows it make sure that the API Key only has reading/querying permissions to your account and nothing else.
+To do so you have to go to your exchange and create an API key. If the exchange allows it make sure that the API Key only has reading/querying permissions to your account and nothing else since that is all the permissions needed by Rotkehlchen.
 
 Click the Person Icon on the top right menu and then choose "User Settings". This will take you to your user settings page. Under the exchange settings sections, select your exchange from the dropdown menu. Then copy and paste the `API Key` and the `API Secret` in the respective text fields and press submit.
 
