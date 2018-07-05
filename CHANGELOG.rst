@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug: `103` After removing an exchange's API key the new api key/secret input form is now properly re-enabled 
 * :bug: `99` Show proper error if kraken or binance api key validation fails due to an invalid key having been provided.
 
 * :release:`0.3.1 <2018-06-25>`
