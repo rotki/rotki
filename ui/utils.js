@@ -221,31 +221,6 @@ function get_total_asssets_value(asset_dict) {
     return value;
 }
 
-function get_fiat_exchange_rates(currencies) {
-    client.invoke("get_fiat_exchange_rates", currencies, (error, res) => {
-        if (error || res == null) {
-            showError('Connectivity Error', 'Failed to acquire fiat to USD exchange rates: ' + error);
-            return;
-        }
-        console.log("get_fiat_exchange_rates for " + currencies + " returned okay");
-        let rates = res['exchange_rates'];
-        for (let asset in rates) {
-            if(rates.hasOwnProperty(asset)) {
-                settings.usd_to_fiat_exchange_rates[asset] = parseFloat(rates[asset]);
-            }
-        }
-
-        // something noticed is that if a zero rpc call from node to python happens
-        // within very close proximity to another one with the same function then
-        // it's very possible one will timeout with heartbear error. That is why
-        // we call the full exchange rate update here after we get the main
-        // currency exchange rate
-        if (currencies) {
-            get_fiat_exchange_rates(); // for all currencies
-        }
-    });
-}
-
 function* iterate_saved_balances() {
     let saved_balances = total_balances_get();
     for (var location in saved_balances) {

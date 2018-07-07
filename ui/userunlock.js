@@ -161,33 +161,56 @@ function unlock_user(username, password, create_true, sync_approval, api_key, ap
             var self = this;
             return unlock_async(username, password, create_true, sync_approval, api_key, api_secret).done(
                 function (response) {
+                    let db_settings = response['settings'];
+                    if (!'main_currency' in db_settings) {
+                        self.setType('red');
+                        self.setTitle('Sign In Failed');
+                        self.setContentAppend('<div>main_currency not returned from db_settings</div>');
+                        GLOBAL_UNLOCK_DEFERRED = null;
+                        return;
+                    }
+
                     self.setType('green');
                     self.setTitle('Succesfull Sign In');
                     self.setContentAppend(`<div>Welcome ${username}!</div>`);
                     $('#welcome_text').html(`Welcome ${username}!`);
 
                     settings.has_premium = response['premium'];
-                    let db_settings = response['settings'];
                     if ('premium_should_sync' in db_settings) {
                         settings.premium_should_sync = db_settings['premium_should_sync'];
                     } else {
                         settings.premium_should_sync = false;
                     }
 
-                    if ('main_currency' in db_settings) {
-                        let new_main = db_settings['main_currency'];
-                        get_fiat_exchange_rates([new_main]);
-                        set_ui_main_currency(new_main);
-                    }
-                    settings.floating_precision = db_settings['ui_floating_precision'];
-                    settings.historical_data_start = db_settings['historical_data_start'];
-                    settings.eth_rpc_port = db_settings['eth_rpc_port'];
-                    settings.include_crypto2crypto = db_settings['include_crypto2crypto'];
-                    settings.taxfree_after_period = db_settings['taxfree_after_period'];
-                    settings.balance_save_frequency = db_settings['balance_save_frequency'];
+                    let new_main = db_settings['main_currency'];
+                    // Before any other calls happen let's make sure we got the
+                    // exchange rates so that everything can be shown to the user
+                    // in their desired currency. Empty list argument means to
+                    // query all fiat currency pairs
+                    client.invoke("get_fiat_exchange_rates", [], (error, res) => {
+                        if (error || res == null) {
+                            showError('Connectivity Error', 'Failed to acquire fiat to USD exchange rates: ' + error);
+                            return;
+                        }
 
-                    let is_new_user = create_true && api_key == '';
-                    load_dashboard_after_unlock(response['exchanges'], is_new_user);
+                        let rates = res['exchange_rates'];
+                        for (let asset in rates) {
+                            if(rates.hasOwnProperty(asset)) {
+                                settings.usd_to_fiat_exchange_rates[asset] = parseFloat(rates[asset]);
+                            }
+                        }
+                        set_ui_main_currency(new_main);
+
+                        settings.floating_precision = db_settings['ui_floating_precision'];
+                        settings.historical_data_start = db_settings['historical_data_start'];
+                        settings.eth_rpc_port = db_settings['eth_rpc_port'];
+                        settings.include_crypto2crypto = db_settings['include_crypto2crypto'];
+                        settings.taxfree_after_period = db_settings['taxfree_after_period'];
+                        settings.balance_save_frequency = db_settings['balance_save_frequency'];
+
+                        let is_new_user = create_true && api_key == '';
+                        load_dashboard_after_unlock(response['exchanges'], is_new_user);
+                    });
                     GLOBAL_UNLOCK_DEFERRED = null;
                 }).progress(function(msg){
                     ask_permission(msg, username, password, create_true, api_key, api_secret);
@@ -245,6 +268,8 @@ function get_banks_total() {
             console.log("Error at querying fiat balances: " + error);
         } else {
             let fiat_total = get_total_asssets_value(res);
+            console.log("query fiat balances result is: " + JSON.stringify(res, null, 4));
+            console.log("Fiat total is: " + fiat_total);
             if (fiat_total != 0.0) {
                 create_box(
                     'banks_box',
