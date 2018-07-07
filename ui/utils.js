@@ -262,6 +262,5 @@ module.exports = function() {
     this.suggest_element = suggest_element;
     this.unsuggest_element = unsuggest_element;
     this.suggest_element_until_click = suggest_element_until_click;
-    this.get_fiat_exchange_rates = get_fiat_exchange_rates;
     this.iterate_saved_balances = iterate_saved_balances;
 };

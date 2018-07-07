@@ -162,7 +162,7 @@ function unlock_user(username, password, create_true, sync_approval, api_key, ap
             return unlock_async(username, password, create_true, sync_approval, api_key, api_secret).done(
                 function (response) {
                     let db_settings = response['settings'];
-                    if (!'main_currency' in db_settings) {
+                    if (!('main_currency' in db_settings)) {
                         self.setType('red');
                         self.setTitle('Sign In Failed');
                         self.setContentAppend('<div>main_currency not returned from db_settings</div>');
