@@ -30,6 +30,10 @@ class InputError(Exception):
     pass
 
 
+class EthSyncError(Exception):
+    pass
+
+
 class AuthenticationError(Exception):
     pass
 

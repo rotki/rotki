@@ -679,7 +679,15 @@ function reload_user_settings_tables_if_existing() {
 
 function init_user_settings() {
     monitor_add_callback('user_settings_query_blockchain_balances', function (result) {
-        create_blockchain_balances_tables(result);
+        let msg = 'Querying blockchain balances for user settings failed';
+        if (result == null || result['message'] != '') {
+            if (result['message'] != '') {
+                msg = result['message'];
+            }
+            showError('Querying Blockchain Balances Error', msg);
+            return;
+        }
+        create_blockchain_balances_tables(result['result']);
     });
 }
 

@@ -172,8 +172,8 @@ class RotkehlchenServer(object):
         return {'task_id': res}
 
     def query_blockchain_balances(self):
-        balances = self.rotkehlchen.blockchain.query_balances()
-        return process_result(balances)
+        result, empty_or_error = self.rotkehlchen.blockchain.query_balances()
+        return process_result({'result': result, 'message': empty_or_error})
 
     def query_blockchain_balances_async(self):
         res = self.query_async('query_blockchain_balances')
