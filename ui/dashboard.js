@@ -183,14 +183,15 @@ function init_dashboard() {
         total_table_add_balances(result['name'], result['balances']);
     });
     monitor_add_callback('query_blockchain_balances', function (result) {
-        if ('error' in result) {
+        if (result['message'] != '') {
             showError(
                 'Blockchain Query Error',
-                'Querying blockchain balances died because of: ' + result['error'] + '. ' +
+                'Querying blockchain balances died because of: ' + result['message'] + '. ' +
                     'Check the logs for more details.'
             );
             return;
         }
+        result = result['result'];
         let total = get_total_asssets_value(result['totals']);
         if (total != 0.0) {
             create_box(

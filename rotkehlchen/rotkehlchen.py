@@ -11,7 +11,7 @@ from rotkehlchen.utils import (
     ts_now,
     accounts_result,
 )
-from rotkehlchen.errors import PermissionError, AuthenticationError, InputError
+from rotkehlchen.errors import PermissionError, AuthenticationError, InputError, EthSyncError
 from rotkehlchen.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.blockchain import Blockchain
 from rotkehlchen.poloniex import Poloniex
@@ -336,7 +336,7 @@ class Rotkehlchen(object):
     def add_blockchain_account(self, blockchain, account):
         try:
             new_data = self.blockchain.add_blockchain_account(blockchain, account)
-        except InputError as e:
+        except (InputError, EthSyncError) as e:
             return simple_result(False, str(e))
         self.data.add_blockchain_account(blockchain, account)
         return accounts_result(new_data['per_account'], new_data['totals'])
@@ -344,7 +344,7 @@ class Rotkehlchen(object):
     def remove_blockchain_account(self, blockchain, account):
         try:
             new_data = self.blockchain.remove_blockchain_account(blockchain, account)
-        except InputError as e:
+        except (InputError, EthSyncError) as e:
             return simple_result(False, str(e))
         self.data.remove_blockchain_account(blockchain, account)
         return accounts_result(new_data['per_account'], new_data['totals'])
@@ -352,7 +352,7 @@ class Rotkehlchen(object):
     def add_owned_eth_tokens(self, tokens):
         try:
             new_data = self.blockchain.track_new_tokens(tokens)
-        except InputError as e:
+        except (InputError, EthSyncError) as e:
             return simple_result(False, str(e))
 
         self.data.write_owned_eth_tokens(self.blockchain.owned_eth_tokens)
@@ -414,9 +414,11 @@ class Rotkehlchen(object):
             else:
                 balances[exchange] = exchange_balances
 
-        result = self.blockchain.query_balances()['totals']
-        if result != {}:
-            balances['blockchain'] = result
+        result, error_or_empty = self.blockchain.query_balances()
+        if error_or_empty == '':
+            balances['blockchain'] = result['totals']
+        else:
+            problem_free = False
 
         result = self.query_fiat_balances()
         if result != {}:

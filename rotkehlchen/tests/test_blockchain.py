@@ -11,7 +11,8 @@ def test_eth_connection_initial_balances(
         ethereum_accounts,
         inquirer,
 ):
-    res = blockchain.query_balances()
+    res, empty_or_error = blockchain.query_balances()
+    assert empty_or_error == ''
     assert 'per_account' in res
     assert 'totals' in res
 

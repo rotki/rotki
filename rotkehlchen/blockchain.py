@@ -1,11 +1,12 @@
 import operator
 
+from web3.exceptions import BadFunctionCallOutput
 from collections import defaultdict
 from gevent.lock import Semaphore
 from eth_utils.address import to_checksum_address
 from typing import Tuple, List, Dict, Union, Callable, cast
 
-from rotkehlchen.errors import InputError
+from rotkehlchen.errors import InputError, EthSyncError
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils import cache_response_timewise, request_get
 from rotkehlchen.inquirer import Inquirer
@@ -75,10 +76,22 @@ class Blockchain(object):
         return self.owned_eth_tokens
 
     @cache_response_timewise()
-    def query_balances(self) -> Dict[str, Dict]:
-        self.query_ethereum_balances()
+    def query_balances(self) -> Tuple[Dict[str, Dict], str]:
+        try:
+            self.query_ethereum_balances()
+        except BadFunctionCallOutput as e:
+            logger.error(
+                'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
+                'exception: {}'.format(str(e))
+            )
+            msg = (
+                'Tried to use the ethereum chain of a local client to query '
+                'an eth account but the chain is not synced.'
+            )
+            return {}, msg
+
         self.query_btc_balances()
-        return {'per_account': self.balances, 'totals': self.totals}
+        return {'per_account': self.balances, 'totals': self.totals}, ''
 
     def query_btc_account_balance(self, account: typing.BTCAddress) -> FVal:
         btc_resp = request_get(
@@ -256,7 +269,18 @@ class Blockchain(object):
         elif blockchain == S_ETH:
             if append_or_remove == 'remove' and account not in self.accounts[S_ETH]:
                 raise InputError('Tried to remove a non existing ETH account')
-            self.modify_eth_account(account, append_or_remove, add_or_sub)
+            try:
+                self.modify_eth_account(account, append_or_remove, add_or_sub)
+            except BadFunctionCallOutput as e:
+                logger.error(
+                    'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
+                    'exception: {}'.format(str(e))
+                )
+                raise EthSyncError(
+                    'Tried to use the ethereum chain of a local client to edit '
+                    'an eth account but the chain is not synced.'
+                )
+
         else:
             raise InputError(
                 'Unsupported blockchain {} provided at remove_blockchain_account'.format(
