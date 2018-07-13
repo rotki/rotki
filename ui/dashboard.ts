@@ -8,6 +8,7 @@ require("./balances_table.js")();
 require("./navigation.js")();
 require("./userunlock.js")();
 require("./topmenu.js")();
+import $ from "jquery";
 
 function add_exchange_on_click() {
     $('.panel a').click(function(event) {
