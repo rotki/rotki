@@ -48,11 +48,18 @@ T_BlockchainAddress = str
 BlockchainAddress = Union[HexAddress, BTCAddress]
 EthTokenInfo = Dict[str, Union[EthToken, HexAddress, int]]
 
+T_EmptyStr = str
+EmptyStr = NewType('EmptyStr', T_EmptyStr)
+
 
 class ResultCache(NamedTuple):
     """Represents a time-cached result of some API query"""
     result: Dict
     timestamp: Timestamp
+
+
+T_EventType = str
+EventType = NewType('EventType', T_EventType)
 
 
 class Trade(NamedTuple):

@@ -1,10 +1,20 @@
 import os
 import csv
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Union
 
 from rotkehlchen.utils import tsToDate, taxable_gain_for_sell
 from rotkehlchen.fval import FVal
-from rotkehlchen.constants import S_ETH
+from rotkehlchen.constants import (
+    S_ETH,
+    S_EMPTYSTR,
+    EV_BUY,
+    EV_SELL,
+    EV_TX_GAS_COST,
+    EV_ASSET_MOVE,
+    EV_LOAN_SETTLE,
+    EV_INTEREST_PAYMENT,
+    EV_MARGIN_CLOSE,
+)
 from rotkehlchen import typing
 
 import logging
@@ -52,11 +62,11 @@ class CSVExporter(object):
 
     def add_to_allevents(
             self,
-            event_type: str,
+            event_type: typing.EventType,
             paid_in_profit_currency: FVal,
-            paid_asset: typing.Asset,
+            paid_asset: Union[typing.Asset, typing.EmptyStr],
             paid_in_asset: FVal,
-            received_asset: typing.Asset,
+            received_asset: Union[typing.Asset, typing.EmptyStr],
             received_in_asset: FVal,
             received_in_profit_currency: FVal,
             timestamp: typing.Timestamp,
@@ -65,19 +75,19 @@ class CSVExporter(object):
             taxable_bought_cost: FVal = FVal(0),
     ) -> None:
         row = len(self.all_events_csv) + 2
-        if event_type == 'buy':
+        if event_type == EV_BUY:
             net_profit_or_loss = FVal(0)  # no profit by buying
             net_profit_or_loss_csv = '0'  # no profit by buying
-        elif event_type == 'sell':
+        elif event_type == EV_SELL:
             if taxable_amount == 0:
                 net_profit_or_loss = FVal(0)
             else:
                 net_profit_or_loss = received_in_asset - taxable_bought_cost
             net_profit_or_loss_csv = '=IF(E{}=0,0,H{}-F{})'.format(row, row, row)
-        elif event_type in ('tx_gas_cost', 'asset_movement', 'loan_settlement'):
+        elif event_type in (EV_TX_GAS_COST, EV_ASSET_MOVE, EV_LOAN_SETTLE):
             net_profit_or_loss = paid_in_profit_currency
             net_profit_or_loss_csv = '=-B{}'.format(row)
-        elif event_type in ('interest_rate_payment', 'margin_position_close'):
+        elif event_type in (EV_INTEREST_PAYMENT, EV_MARGIN_CLOSE):
             net_profit_or_loss = received_in_profit_currency
             net_profit_or_loss_csv = '=H{}'.format(row)
         else:
@@ -137,7 +147,7 @@ class CSVExporter(object):
             "is_virtual": is_virtual
         })
         self.add_to_allevents(
-            event_type='buy',
+            event_type=EV_BUY,
             paid_in_profit_currency=cost,
             paid_asset=self.profit_currency,
             paid_in_asset=cost,
@@ -184,7 +194,7 @@ class CSVExporter(object):
             selling_amount * rate_in_profit_currency + total_fee_in_profit_currency
         )
         self.add_to_allevents(
-            event_type='sell',
+            event_type=EV_SELL,
             paid_in_profit_currency=paid_in_profit_currency,
             paid_asset=selling_asset,
             paid_in_asset=selling_amount,
@@ -222,11 +232,11 @@ class CSVExporter(object):
         })
         paid_in_profit_currency = amount * rate_in_profit_currency + total_fee_in_profit_currency
         self.add_to_allevents(
-            event_type='loan_settlement',
+            event_type=EV_LOAN_SETTLE,
             paid_in_profit_currency=paid_in_profit_currency,
             paid_asset=asset,
             paid_in_asset=amount,
-            received_asset=typing.Asset(''),
+            received_asset=S_EMPTYSTR,
             received_in_asset=FVal(0),
             received_in_profit_currency=FVal(0),
             timestamp=timestamp,
@@ -253,9 +263,9 @@ class CSVExporter(object):
             'profit_in_{}'.format(self.profit_currency): gain_in_profit_currency
         })
         self.add_to_allevents(
-            event_type='interest_rate_payment',
+            event_type=EV_INTEREST_PAYMENT,
             paid_in_profit_currency=FVal(0),
-            paid_asset=typing.Asset(''),
+            paid_asset=S_EMPTYSTR,
             paid_in_asset=FVal(0),
             received_asset=gained_asset,
             received_in_asset=gained_amount,
@@ -282,9 +292,9 @@ class CSVExporter(object):
             'profit_in_{}'.format(self.profit_currency): gain_in_profit_currency
         })
         self.add_to_allevents(
-            event_type='margin_position_close',
+            event_type=EV_MARGIN_CLOSE,
             paid_in_profit_currency=FVal(0),
-            paid_asset=typing.Asset(''),
+            paid_asset=S_EMPTYSTR,
             paid_in_asset=FVal(0),
             received_asset=gained_asset,
             received_in_asset=net_gain_amount,
@@ -313,11 +323,11 @@ class CSVExporter(object):
             'fee_in_{}'.format(self.profit_currency): fee * rate,
         })
         self.add_to_allevents(
-            event_type='asset_movement',
+            event_type=EV_ASSET_MOVE,
             paid_in_profit_currency=fee * rate,
             paid_asset=asset,
             paid_in_asset=fee,
-            received_asset=typing.Asset(''),
+            received_asset=S_EMPTYSTR,
             received_in_asset=FVal(0),
             received_in_profit_currency=FVal(0),
             timestamp=timestamp,
@@ -340,11 +350,11 @@ class CSVExporter(object):
             'cost_in_{}'.format(self.profit_currency): eth_burned_as_gas * rate,
         })
         self.add_to_allevents(
-            event_type='tx_gas_cost',
+            event_type=EV_TX_GAS_COST,
             paid_in_profit_currency=eth_burned_as_gas * rate,
             paid_asset=S_ETH,
             paid_in_asset=eth_burned_as_gas,
-            received_asset=typing.Asset(''),
+            received_asset=S_EMPTYSTR,
             received_in_asset=FVal(0),
             received_in_profit_currency=FVal(0),
             timestamp=timestamp,
