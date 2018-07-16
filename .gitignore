@@ -13,3 +13,4 @@ rotkehlchen.log
 .pytest_cache
 ui/.ignore
 pytestdebug.log
+built/
