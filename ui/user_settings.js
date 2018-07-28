@@ -228,7 +228,7 @@ function add_user_settings_listeners() {
         if (settings.connected_exchanges.indexOf(this.value) > -1) {
             disable_key_entries('', 'exchange', this.value);
         } else {
-            enable_key_entries('', 'exchange', this.value);
+            enable_key_entries('', 'exchange');
         }
     });
     if (settings.has_premium) {
