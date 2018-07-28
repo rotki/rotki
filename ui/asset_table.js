@@ -37,7 +37,6 @@ function AssetTable(
     } else if (placement_type == 'insertAfter') {
         $(str).insertAfter('#'+placement_id);
     } else {
-        var err = new Error();
         throw_with_trace('Invalid AssetTable construction value for placement_type: ' + placement_type);
     }
     this.populate(table_data, draw_cb);
