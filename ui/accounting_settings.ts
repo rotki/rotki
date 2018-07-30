@@ -1,8 +1,9 @@
-var settings = require("./settings.js")();
-require("./elements.js")();
-require("./utils.js")();
+import { settings } from './settings';
+import client from './zerorpc_client';
+import { showError, showInfo } from './utils';
+import { form_button, form_entry, form_radio, form_select, page_header, settings_panel } from './elements';
 
-function populate_ignored_assets() {
+function populate_ignored_assets(): void {
     client.invoke('get_ignored_assets', (error, result) => {
         if (error || result == null) {
             showError('Error getting ignored assets');
@@ -14,7 +15,7 @@ function populate_ignored_assets() {
             text: 'Click to see all ignored assets and select one for removal'
         }));
         let assets = result['ignored_assets'];
-        $.each(assets, function (i, asset) {
+        $.each(assets, function (i: number, asset: string) {
             $('#ignored_assets_selection').append($('<option>', {
                 value: asset,
                 text : asset
@@ -23,13 +24,13 @@ function populate_ignored_assets() {
     });
 }
 
-function ignored_asset_modify_callback(event) {
+function ignored_asset_modify_callback(event: any): void {
     event.preventDefault();
     let button_type = $('#modify_ignored_asset_button').html();
     let asset = $('#ignored_asset_entry').val();
 
     let command = 'add_ignored_asset';
-    if (button_type == 'Remove') {
+    if (button_type === 'Remove') {
         command = 'remove_ignored_asset';
     }
 
@@ -52,31 +53,31 @@ function ignored_asset_modify_callback(event) {
                 return;
             }
 
-            if (command == 'add_ignored_asset') {
+            if (command === 'add_ignored_asset') {
                 $('#ignored_assets_selection').append($('<option>', {
                     value: asset,
                     text: asset,
                     selected: true
                 }));
             } else {
-                $("#ignored_assets_selection option[value='"+asset+"']").remove();
+                $('#ignored_assets_selection option[value=\'' + asset).remove();
                 $('#modify_ignored_asset_button').html('Add');
                 $('#ignored_asset_entry').val('');
             }
         });
 }
 
-function ignored_asset_selection_callback(event) {
+function ignored_asset_selection_callback(event: any): void {
     let asset = this.value;
     $('#ignored_asset_entry').val(asset);
-    if (asset != '') {
+    if (asset !== '') {
         $('#modify_ignored_asset_button').html('Remove');
     } else {
         $('#modify_ignored_asset_button').html('Add');
     }
 }
 
-function crypto2crypto_callback() {
+function crypto2crypto_callback(): void {
     let element = $(this);
     let name = element.val();
     let is_checked = element.prop('checked');
@@ -88,7 +89,7 @@ function crypto2crypto_callback() {
 
     // change class of div-box according to checked radio-box
     let value = false;
-    if  (name == 'Yes') {
+    if  (name === 'Yes') {
         value = true;
     }
     client.invoke('set_settings', {'include_crypto2crypto': value}, (error, result) => {
@@ -105,14 +106,14 @@ function crypto2crypto_callback() {
     });
 }
 
-function modify_trade_settings_callback() {
+function modify_trade_settings_callback(): void {
     let element = $('input[name=taxfree_period_exists]');
     let is_checked = element.prop('checked');
 
     // return if a deselect triggered the event (may be unnecessary)
-    let value = null;
+    let value: number = null;
     if (is_checked) {
-        value = parseInt($('#taxfree_period_entry').val());
+        value = parseInt($('#taxfree_period_entry').val().toString());
     }
 
     client.invoke('set_settings', {'taxfree_after_period': value}, (error, result) => {
@@ -129,15 +130,15 @@ function modify_trade_settings_callback() {
     });
 }
 
-function add_accounting_settings_listeners() {
+export function add_accounting_settings_listeners(): void {
     $('#modify_ignored_asset_button').click(ignored_asset_modify_callback);
     $('#ignored_assets_selection').change(ignored_asset_selection_callback);
     $('input[name=crypto2crypto]').change(crypto2crypto_callback);
     $('#modify_trade_settings').click(modify_trade_settings_callback);
 }
 
-function create_accounting_settings() {
-    var str = page_header('Accounting Settings');
+export function create_accounting_settings(): void {
+    let str = page_header('Accounting Settings');
     str += settings_panel('Trade Settings', 'trades');
     str += settings_panel('Asset Settings', 'assets');
     $('#page-wrapper').html(str);
@@ -149,10 +150,10 @@ function create_accounting_settings() {
     }
     let starting_taxfree_after_period_choice = 'Yes';
     let starting_taxfree_after_period = '';
-    if (!settings.taxfree_after_period) {
+    if (settings.taxfree_after_period === 0 || settings.taxfree_after_period === null) {
         starting_taxfree_after_period_choice = 'No';
     } else {
-        //get number of days of the setting
+        // get number of days of the setting
         starting_taxfree_after_period = (settings.taxfree_after_period / 86400).toString();
     }
     str = form_radio('Take into account crypto to crypto trades', 'crypto2crypto', ['Yes', 'No'], starting_c2c);
@@ -168,7 +169,3 @@ function create_accounting_settings() {
     populate_ignored_assets();
 }
 
-module.exports = function() {
-    this.add_accounting_settings_listeners = add_accounting_settings_listeners;
-    this.create_accounting_settings = create_accounting_settings;
-};

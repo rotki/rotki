@@ -1,9 +1,11 @@
-var settings = require("./settings.js")();
-require("./elements.js")();
-require("./utils.js")();
+import { format_currency_value, settings } from './settings';
+import { form_button, form_entry, invisible_anchor, loading_placeholder, page_header, table_html } from './elements';
+import { date_text_to_utc_ts, prompt_directory_select_async, showError, showInfo, showWarning, timestamp_to_date, utc_now } from './utils';
+import client from './zerorpc_client';
+import { create_task, monitor_add_callback } from './monitor';
 
-function create_taxreport_ui() {
-    var str = page_header('Tax Report');
+export function create_taxreport_ui() {
+    let str = page_header('Tax Report');
     str += form_entry('Start Date', 'analysis_start_date', '', '');
     str += form_entry('End Date', 'analysis_end_date', '', '');
     str += form_button('Generate Report', 'generate_report');
@@ -13,22 +15,22 @@ function create_taxreport_ui() {
     $('#page-wrapper').html(str);
 }
 
-function add_taxreport_listeners() {
+export function add_taxreport_listeners() {
     $('#analysis_start_date').datetimepicker({format: settings.datetime_format});
     $('#analysis_end_date').datetimepicker({format: settings.datetime_format});
     $('#generate_report').click(generate_report_callback);
     $('#export_csv').click(export_csv_callback);
 }
 
-function export_csv_callback(event) {
+function export_csv_callback(event: any) {
     event.preventDefault();
     prompt_directory_select_async((directories) => {
-        if(directories === undefined){
+        if (directories === undefined) {
             return;
         }
         let dir = directories[0];
         client.invoke(
-            "export_processed_history_csv",
+            'export_processed_history_csv',
             dir,
             (error, res) => {
                 if (error || res == null) {
@@ -44,7 +46,7 @@ function export_csv_callback(event) {
     });
 }
 
-function generate_report_callback(event) {
+function generate_report_callback(event: any) {
     event.preventDefault();
     let start_ts = $('#analysis_start_date').val();
     let end_ts = $('#analysis_end_date').val();
@@ -65,7 +67,7 @@ function generate_report_callback(event) {
     $(str).insertAfter('#tax_report_anchor');
 
     client.invoke(
-        "process_trade_history_async",
+        'process_trade_history_async',
         start_ts,
         end_ts,
         (error, res) => {
@@ -84,49 +86,49 @@ function generate_report_callback(event) {
         });
 }
 
-function show_float_or_empty(data) {
-    if (data == '') {
+function show_float_or_empty(data: string) {
+    if (data === '') {
         return '';
     }
     return parseFloat(data).toFixed(settings.floating_precision);
 }
 
-function create_taxreport_overview(results) {
+function create_taxreport_overview(results: any) {
     $('#tax_report_loading').remove();
     let data = [];
-    for (var result in results) {
-        if(results.hasOwnProperty(result)) {
+    for (let result in results) {
+        if (results.hasOwnProperty(result)) {
             let row = {'result': result, 'value': results[result]};
             data.push(row);
         }
     }
     let init_obj = {
-        "data": data,
-        "columns": [
+        'data': data,
+        'columns': [
             {'data': 'result', 'title': 'Result'},
             {
                 'data': 'value',
-                "title": settings.main_currency.ticker_symbol + ' value',
-                "render": function (data, type, row) {
+                'title': settings.main_currency.ticker_symbol + ' value',
+                'render': function (data: any, type: any, row: any) {
                     // no need for conversion here as it's already in main_currency
                     return parseFloat(data).toFixed(settings.floating_precision);
                 }
             }
         ],
-        "order": [[1, 'desc']]
+        'order': [[1, 'desc']]
     };
     $('#report_overview_table').DataTable(init_obj);
 }
 
-function create_taxreport_details(all_events) {
+export function create_taxreport_details(all_events: any) {
     let init_obj = {
-        "data": all_events,
-        "columns": [
+        'data': all_events,
+        'columns': [
             {'data': 'type', 'title': 'Type'},
             {
                 'data': 'paid_in_profit_currency',
                 'title': 'Paid in ' + settings.main_currency.ticker_symbol,
-                'render': function (data, type, row) {
+                'render': function (data: any, type: any, row: any) {
                     // it's already in main currency
                     return show_float_or_empty(data);
                 }
@@ -135,21 +137,21 @@ function create_taxreport_details(all_events) {
             {
                 'data': 'paid_in_asset',
                 'title': 'Paid In Asset',
-                'render': function (data, type, row) {
+                'render': function (data: any, type: any, row: any) {
                     return show_float_or_empty(data);
                 }
             },
             {
                 'data': 'taxable_amount',
                 'title': 'Taxable Amount',
-                'render': function (data, type, row) {
+                'render': function (data: any, type: any, row: any) {
                     return show_float_or_empty(data);
                 }
             },
             {
                 'data': 'taxable_bought_cost',
                 'title': 'Taxable Bought Cost',
-                'render': function (data, type, row) {
+                'render': function (data: any, type: any, row: any) {
                     return show_float_or_empty(data);
                 }
             },
@@ -157,7 +159,7 @@ function create_taxreport_details(all_events) {
             {
                 'data': 'received_in_profit_currency',
                 'title': 'Received in ' + settings.main_currency.ticker_symbol,
-                'render': function (data, type, row) {
+                'render': function (data: any, type: any, row: any) {
                     // it's already in main currency
                     return show_float_or_empty(data);
                 }
@@ -165,8 +167,8 @@ function create_taxreport_details(all_events) {
             {
                 'data': 'time',
                 'title': 'Time',
-                'render': function (data, type, row) {
-                    if (type == 'sort') {
+                'render': function (data: any, type: any, row: any) {
+                    if (type === 'sort') {
                         return data;
                     }
                     return timestamp_to_date(data);
@@ -174,14 +176,14 @@ function create_taxreport_details(all_events) {
             },
             {'data': 'is_virtual', 'title': 'Virtual ?'}
         ],
-        "pageLength": 25,
+        'pageLength': 25,
         'order': [[8, 'asc']]
     };
     $('#report_details_table').DataTable(init_obj);
 }
 
-function init_taxreport() {
-    monitor_add_callback('process_trade_history', function (result) {
+export function init_taxreport() {
+    monitor_add_callback('process_trade_history', function (result: any) {
         if ('error' in result) {
             showError(
                 'Trade History Query Error',
@@ -190,13 +192,13 @@ function init_taxreport() {
             );
             return;
         }
-        if (result['message'] != '') {
+        if (result['message'] !== '') {
             showWarning(
                 'Trade History Query Warning',
                 'During trade history query we got:' + result['message'] + '. History report is probably not complete.'
             );
         }
-        if ($('#elementId').length == 0) {
+        if ($('#elementId').length === 0) {
             let str = form_button('Export CSV', 'export_csv');
             $(str).insertAfter('#generate_report');
             $('#export_csv').click(export_csv_callback);
@@ -208,8 +210,3 @@ function init_taxreport() {
     });
 }
 
-module.exports = function() {
-    this.init_taxreport = init_taxreport;
-    this.create_taxreport_ui = create_taxreport_ui;
-    this.add_taxreport_listeners = add_taxreport_listeners;
-};
