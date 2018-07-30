@@ -1,7 +1,10 @@
-var settings = require("./settings.js")();
-require("./elements.js")();
-require("./asset_table.js")();
-require("./utils.js")();
+import { get_fiat_usd_value, settings } from './settings';
+import { form_button, form_checkbox, form_entry, form_multiselect, form_select, invisible_anchor, loading_placeholder, page_header, settings_panel, table_html } from './elements';
+import { dt_edit_drawcallback, reload_table_currency_val_if_existing, showError, showInfo, suggest_element_until_click, unsuggest_element } from './utils';
+import client from './zerorpc_client';
+import { query_exchange_balances_async } from './exchange';
+import { create_task, monitor_add_callback } from './monitor';
+import { AssetTable } from './asset_table';
 
 let FIAT_TABLE = null;
 let FIAT_BALANCES = null;
@@ -24,56 +27,56 @@ const ExchangeBadge = ({ name, css_class }) => `
 </div>
 `;
 
-function show_loading(selector) {
+function show_loading(selector?: any) {
     $('html').addClass('wait');
     if (selector) {
         $(selector).attr('disabled', 'disabled');
     }
 }
 
-function stop_show_loading(selector) {
+function stop_show_loading(selector?: any) {
     $('html').removeClass('wait');
     if (selector) {
         $(selector).removeAttr('disabled');
     }
 }
 
-function disable_api_entry(selector_text, value) {
+function disable_api_entry(selector_text: any, value: any) {
     $(selector_text).parent().removeClass().addClass('form-group input-group has-success');
-    $(selector_text).attr('disabled', true);
+    $(selector_text).attr('disabled', 'true');
     $(selector_text).val(value);
 }
 
-function enable_api_entry(selector_text) {
+function enable_api_entry(selector_text: any) {
     $(selector_text).parent().removeClass().addClass('form-group input-group');
-    $(selector_text).attr('disabled', false);
+    $(selector_text).attr('disabled', 'false');
     $(selector_text).val('');
 }
 
-function enable_key_entries(prefix, button_name) {
+function enable_key_entries(prefix: string, button_name: string) {
     enable_api_entry('#' + prefix + 'api_key_entry');
     enable_api_entry('#' + prefix + 'api_secret_entry');
     $('#setup_' + button_name + '_button').html('Setup');
 }
 
-function disable_key_entries(prefix, button_name,  val) {
-    disable_api_entry('#'+ prefix + 'api_key_entry', val + ' API Key is already registered');
+function disable_key_entries(prefix: string, button_name: string,  val: string) {
+    disable_api_entry('#' + prefix + 'api_key_entry', val + ' API Key is already registered');
     disable_api_entry('#' + prefix + 'api_secret_entry', val + ' API Secret is already registered');
     $('#setup_' + button_name + '_button').html('Remove');
 }
 
-function setup_premium_callback(event) {
+function setup_premium_callback(event: any) {
     event.preventDefault();
     let button_type = $('#setup_premium_button').html();
-    if (button_type == 'Remove') {
+    if (button_type === 'Remove') {
         enable_key_entries('premium_', 'premium');
         return;
     }
 
-    //else
+    // else
     let api_key = $('#premium_api_key_entry').val();
     let api_secret = $('#premium_api_secret_entry').val();
-    client.invoke("set_premium_credentials", api_key, api_secret, (error, res) => {
+    client.invoke('set_premium_credentials', api_key, api_secret, (error, res) => {
         if (error || res == null) {
             showError('Premium Credentials Error', 'Error at adding credentials for premium subscription');
             return;
@@ -89,9 +92,9 @@ function setup_premium_callback(event) {
     });
 }
 
-function change_premiumsettings_callback(event) {
+function change_premiumsettings_callback(event: any) {
     event.preventDefault();
-    let should_sync = $('#premium_sync_entry').is(":checked");
+    let should_sync = $('#premium_sync_entry').is(':checked');
     client.invoke('set_premium_option_sync', should_sync, (error, res) => {
         if (error || res == null) {
             showError('Premium Settings Error', 'Error at changing premium settings');
@@ -110,18 +113,18 @@ function add_premium_settings() {
     $(str).insertAfter('#setup_premium_button');
 }
 
-function setup_exchange_callback(event) {
+function setup_exchange_callback(event: any) {
     event.preventDefault();
     let button_type = $('#setup_exchange_button').html();
-    var exchange_name = $('#setup_exchange').val();
-    if (button_type == 'Remove') {
+    let exchange_name = $('#setup_exchange').val();
+    if (button_type === 'Remove') {
         $.confirm({
             title: 'Confirmation Required',
             content: 'Are you sure you want to delete the API key and secret from rotkehlchen? This action is not undoable and you will need to obtain the key and secret again from the exchange.',
             buttons: {
                 confirm: function () {
                     client.invoke(
-                        "remove_exchange",
+                        'remove_exchange',
                         exchange_name,
                         (error, res) => {
                             if (error || res == null) {
@@ -135,10 +138,10 @@ function setup_exchange_callback(event) {
                             }
                             // Exchange removal from backend successful
                             enable_key_entries('', 'exchange');
-                            $('#'+exchange_name+'_badge').remove();
-                            var index = settings.connected_exchanges.indexOf(exchange_name);
-                            if (index == -1) {
-                                throw "Exchange " + exchange_name + "was not in connected_exchanges when trying to remove";
+                            $('#' + exchange_name + '_badge').remove();
+                            let index = settings.connected_exchanges.indexOf(exchange_name.toString());
+                            if (index === -1) {
+                                throw new Error('Exchange ' + exchange_name + 'was not in connected_exchanges when trying to remove');
                             }
                             settings.connected_exchanges.splice(index, 1);
 
@@ -154,7 +157,7 @@ function setup_exchange_callback(event) {
     let api_key = $('#api_key_entry').val();
     let api_secret = $('#api_secret_entry').val();
     client.invoke(
-        "setup_exchange",
+        'setup_exchange',
         exchange_name,
         api_key,
         api_secret,
@@ -171,18 +174,18 @@ function setup_exchange_callback(event) {
                 return;
             }
             // Exchange setup in the backend was successful
-            disable_key_entries('', 'exchange', exchange_name);
-            settings.connected_exchanges.push(exchange_name);
+            disable_key_entries('', 'exchange', exchange_name.toString());
+            settings.connected_exchanges.push(exchange_name.toString());
             let str = ExchangeBadge({name: exchange_name, css_class: 'exchange-icon'});
             $(str).appendTo($('#exchange_badges'));
             stop_show_loading('#setup_exchange_button');
             // also query the balances to have them handy to be shown if needed
-            query_exchange_balances_async(exchange_name, false);
+            query_exchange_balances_async(exchange_name.toString(), false);
         }
     );
 }
 
-function fiat_selection_callback(event) {
+function fiat_selection_callback(event: any) {
     if (!FIAT_BALANCES) {
         return;
     }
@@ -196,13 +199,13 @@ function fiat_selection_callback(event) {
     }
 }
 
-function fiat_modify_callback(event) {
+function fiat_modify_callback(event: any) {
     event.preventDefault();
     let currency = $('#fiat_type_entry').val();
     let balance = $('#fiat_value_entry').val();
 
     client.invoke(
-        "set_fiat_balance",
+        'set_fiat_balance',
         currency,
         balance,
         (error, result) => {
@@ -214,19 +217,19 @@ function fiat_modify_callback(event) {
                 showError('Balance Modification Error', 'Error at modifying ' + currency + ' balance: ' + result['message']);
                 return;
             }
-            if (balance == '') {
-                delete FIAT_BALANCES[currency];
+            if (balance === '') {
+                delete FIAT_BALANCES[currency.toString()];
             } else {
-                FIAT_BALANCES[currency] = {'amount': balance, 'usd_value': get_fiat_usd_value(currency, balance)};
+                FIAT_BALANCES[currency.toString()] = {'amount': balance, 'usd_value': get_fiat_usd_value(currency.toString(), balance.toString())};
             }
             FIAT_TABLE.update_format(FIAT_BALANCES);
         });
 }
 
-function add_user_settings_listeners() {
-    $('#setup_exchange').change(function (event) {
-        if (settings.connected_exchanges.indexOf(this.value) > -1) {
-            disable_key_entries('', 'exchange', this.value);
+export function add_user_settings_listeners() {
+    $('#setup_exchange').change(function (event: any) {
+        if (settings.connected_exchanges.indexOf(this.nodeValue) > -1) {
+            disable_key_entries('', 'exchange', this.nodeValue);
         } else {
             enable_key_entries('', 'exchange');
         }
@@ -242,8 +245,8 @@ function add_user_settings_listeners() {
     $('#add_account_button').click(add_blockchain_account);
 }
 
-function create_user_settings() {
-    var str = page_header('User Settings');
+export function create_user_settings() {
+    let str = page_header('User Settings');
     str += settings_panel('Premium Settings', 'premium');
     str += settings_panel('Exchange Settings', 'exchange');
     str += settings_panel('Accounting Settings', 'accounting');
@@ -282,7 +285,7 @@ function create_user_settings() {
     str = form_select(
         'Modify Balance',
         'fiat_type_entry',
-        [fiat_prompt_option].concat(settings.CURRENCIES.map(x=>x.ticker_symbol)),
+        [fiat_prompt_option].concat(settings.CURRENCIES.map(x => x.ticker_symbol)),
         fiat_prompt_option,
     );
     str += form_entry('Balance', 'fiat_value_entry', '', '');
@@ -309,7 +312,7 @@ function create_user_settings() {
     $(str).appendTo($('#blockchain_balances_panel_body'));
     client.invoke('query_blockchain_balances_async', (error, result) => {
         if (error || result == null) {
-            console.log("Error at querying blockchain balances async:" + error);
+            console.log('Error at querying blockchain balances async:' + error);
             return;
         }
         create_task(result['task_id'], 'user_settings_query_blockchain_balances', 'Query blockchain balances', false, true);
@@ -318,7 +321,7 @@ function create_user_settings() {
     settings.page_user_settings = $('#page-wrapper').html();
 
     // pulsate element if first time we open and user follows guide
-    if (settings.start_suggestion == 'click_user_settings') {
+    if (settings.start_suggestion === 'click_user_settings') {
         unsuggest_element('#user_settings_button');
         suggest_element_until_click('#fiat_value_entry', 'inactive');
         suggest_element_until_click('#api_key_entry', 'inactive');
@@ -333,20 +336,20 @@ function create_user_settings() {
     }
 }
 
-function add_blockchain_account(event) {
+function add_blockchain_account(event: any) {
     event.preventDefault();
     let blockchain = $('#crypto_type_entry').val();
     let account = $('#account_entry').val();
     show_loading('#account_entry');
     client.invoke(
-        "add_blockchain_account",
+        'add_blockchain_account',
         blockchain,
         account,
         (error, result) => {
             if (error || result == null) {
                 showError(
                     'Account Error',
-                    'Error at adding new '+ blockchain +' account: '+ error
+                    'Error at adding new ' + blockchain + ' account: ' + error
                 );
                 stop_show_loading('#account_entry');
                 return;
@@ -354,14 +357,14 @@ function add_blockchain_account(event) {
             if (!result['result']) {
                 showError(
                     'Account Error',
-                    'Error at adding new '+ blockchain +' account: '+ result['message']
+                    'Error at adding new ' + blockchain + ' account: ' + result['message']
                 );
                 stop_show_loading('#account_entry');
                 return;
             }
-            if (blockchain == 'ETH') {
+            if (blockchain === 'ETH') {
                 recreate_ethchain_per_account_table(result['per_account']['ETH']);
-            } else if (blockchain == 'BTC') {
+            } else if (blockchain === 'BTC') {
                 BB_PER_ACCOUNT_TABLES['BTC'].update_format(result['per_account']['BTC']);
             }
             // also reload the asset total tables
@@ -371,8 +374,8 @@ function add_blockchain_account(event) {
         });
 }
 
-let table_data_shortener = function (cutoff_start, keep_length) {
-    var esc = function ( t ) {
+let table_data_shortener = function (cutoff_start: number, keep_length: number) {
+    let esc = function ( t: string ) {
         return t
             .replace( /&/g, '&amp;' )
             .replace( /</g, '&lt;' )
@@ -380,7 +383,7 @@ let table_data_shortener = function (cutoff_start, keep_length) {
             .replace( /"/g, '&quot;' );
     };
 
-    return function (d, type, row) {
+    return function (d: any, type: any, row: any) {
         // Order, search and type get the original data
         if (type !== 'display') {
             return d;
@@ -396,57 +399,53 @@ let table_data_shortener = function (cutoff_start, keep_length) {
             return d;
         }
 
-        var shortened = d.substr(cutoff_start, cutoff_start + keep_length - 1);
-        return '<span class="ellipsis" title="'+esc(d)+'">'+shortened+'&#8230;</span>';
+        let shortened = d.substr(cutoff_start, cutoff_start + keep_length - 1);
+        return '<span class="ellipsis" title="' + esc(d) + '">' + shortened + '&#8230;</span>';
     };
 };
 
-function format_ethchain_per_account_data(eth_accounts) {
+function format_ethchain_per_account_data(eth_accounts: Array<any>) {
     let data = [];
     for (let account in eth_accounts) {
         if (eth_accounts.hasOwnProperty(account)) {
             let account_data = eth_accounts[account];
-            let eth_amount = parseFloat(account_data['ETH']);
-            eth_amount = eth_amount.toFixed(settings.floating_precision);
-            let total_usd_value = parseFloat(account_data['usd_value']);
-            total_usd_value = total_usd_value.toFixed(settings.floating_precision);
+            let eth_amount_f = parseFloat(account_data['ETH']);
+            let eth_amount = eth_amount_f.toFixed(settings.floating_precision);
+            let total_usd_value_f = parseFloat(account_data['usd_value']);
+            let total_usd_value = total_usd_value_f.toFixed(settings.floating_precision);
             let row = {'account': account, 'ETH': eth_amount, 'total_usd_value': total_usd_value};
             for (let i = 0; i < OWNED_TOKENS.length; i ++ ) {
                 if (!account_data[OWNED_TOKENS[i]]) {
                     row[OWNED_TOKENS[i]] = 0;
                     continue;
                 }
-                let token_amount = parseFloat(account_data[OWNED_TOKENS[i]]);
-                token_amount = token_amount.toFixed(settings.floating_precision);
+                let token_amount_f = parseFloat(account_data[OWNED_TOKENS[i]]);
+                let token_amount = token_amount_f.toFixed(settings.floating_precision);
                 row[OWNED_TOKENS[i]] = token_amount;
             }
             data.push(row);
         }
     }
     let column_data = [
-        {"data": "account", "title": "Account"},
-        {"data": "ETH", "title": "ETH"}
+        {'data': 'account', 'title': 'Account'},
+        {'data': 'ETH', 'title': 'ETH'}
     ];
     // if user has a lot of ETH tokens shorten the table by shortening the display of accounts
     if (OWNED_TOKENS.length > 4) {
         column_data[0]['render'] = table_data_shortener(2, 6);
     }
     for (let i = 0; i < OWNED_TOKENS.length; i ++ ) {
-        column_data.push({"data": OWNED_TOKENS[i], "title": OWNED_TOKENS[i]});
+        column_data.push({'data': OWNED_TOKENS[i], 'title': OWNED_TOKENS[i]});
     }
 
     column_data.push({
-        "data": 'total_usd_value',
-        "title": 'Total ' + settings.main_currency.ticker_symbol + ' Value',
-        "render": function (data, type, row) {
-            return format_currency_value(data);
-        }
+        'data': 'total_usd_value',
+        'title': 'Total ' + settings.main_currency.ticker_symbol + ' Value'
     });
-
     return [data, column_data];
 }
 
-function recreate_ethchain_per_account_table(eth_accounts) {
+function recreate_ethchain_per_account_table(eth_accounts: Array<any>) {
     $('#ethchain_per_account_header').remove();
     // to add a column we have to recreate the table
     if (BB_PER_ACCOUNT_TABLES['ETH']) {
@@ -456,7 +455,7 @@ function recreate_ethchain_per_account_table(eth_accounts) {
     create_ethchain_per_account_table(eth_accounts);
 }
 
-function delete_blockchain_account_row(blockchain, row) {
+function delete_blockchain_account_row(blockchain: any, row: any) {
     let account = row.data()['account'];
     show_loading();
     client.invoke('remove_blockchain_account', blockchain, account, (error, result) => {
@@ -477,15 +476,15 @@ function delete_blockchain_account_row(blockchain, row) {
     });
 }
 
-function delete_btc_account_row(row) {
+function delete_btc_account_row(row: any) {
     return delete_blockchain_account_row('BTC', row);
 }
 
-function delete_eth_account_row(row) {
+function delete_eth_account_row(row: any) {
     return delete_blockchain_account_row('ETH', row);
 }
 
-function create_ethchain_per_account_table(eth_accounts) {
+function create_ethchain_per_account_table(eth_accounts: Array<any>) {
     let str = '<h3 id="ethchain_per_account_header">ETH accounts</h3>';
     // columns are: one for each token amount, one for ETH, one for account, one for total usd value
     str += table_html(OWNED_TOKENS.length + 3, 'ethchain_per_account');
@@ -493,14 +492,14 @@ function create_ethchain_per_account_table(eth_accounts) {
     let [data, column_data] = format_ethchain_per_account_data(eth_accounts);
     // now we have the data so create the table
     BB_PER_ACCOUNT_TABLES['ETH'] = $('#ethchain_per_account_table').DataTable({
-        "data": data,
-        "columns": column_data,
-        "order": [[column_data.length - 1, 'desc']],
+        'data': data,
+        'columns': column_data,
+        'order': [[column_data.length - 1, 'desc']],
         drawCallback: dt_edit_drawcallback('ethchain_per_account_table', null, delete_eth_account_row)
     });
 }
 
-function create_blockchain_balances_tables(result) {
+function create_blockchain_balances_tables(result: any) {
 
     BLOCKCHAIN_BALANCES = result;
 
@@ -533,17 +532,17 @@ function create_blockchain_balances_tables(result) {
     settings.page_user_settings = $('#page-wrapper').html();
 }
 
-var populate_eth_tokens_called = false;
+let populate_eth_tokens_called = false;
 function populate_eth_tokens() {
     client.invoke('get_eth_tokens', (error, result) => {
         if (error || result == null) {
-            console.log("Error at getting ETH tokens:" + error);
+            console.log('Error at getting ETH tokens:' + error);
             return;
         }
         $('#eth_tokens_select').multiSelect({
-            selectableHeader: "<div class='custom-header'>All ETH Tokens</div>",
-            selectionHeader: "<div class='custom-header'>My ETH Tokens</div>",
-            afterSelect: function(values){
+            selectableHeader: '<div class=\'custom-header\'>All ETH Tokens</div>',
+            selectionHeader: '<div class=\'custom-header\'>My ETH Tokens</div>',
+            afterSelect: function(values: any) {
                 // TODO: Super ugly pattern. Any way to do this better and set the
                 // afterSelect callback after populating the initial selections?
                 if (!populate_eth_tokens_called) {
@@ -552,10 +551,10 @@ function populate_eth_tokens() {
                 add_new_eth_tokens(values);
 
             },
-            afterDeselect: function(values){
+            afterDeselect: function(values: any) {
                 remove_eth_tokens(values);
             },
-            afterInit: function(container) {
+            afterInit: function(container: any) {
                 // TODO: Also super ugly hack. I think that perhaps this multiselect is kind of flawed due to
                 // the afterInit firing after a `refresh` and also requiring a refresh in order to display
                 // the disabled state of the widget.
@@ -589,7 +588,7 @@ function enable_multiselect() {
 }
 
 
-function add_new_eth_tokens(tokens) {
+function add_new_eth_tokens(tokens: any) {
     // disable selection until the entire call is done
     disable_multiselect();
     show_loading('#eth_tokens_select');
@@ -616,7 +615,7 @@ function add_new_eth_tokens(tokens) {
     });
 }
 
-function remove_eth_tokens(tokens) {
+function remove_eth_tokens(tokens: any) {
     // disable selection until the entire call is done
     disable_multiselect();
     show_loading('#eth_tokens_select');
@@ -633,8 +632,8 @@ function remove_eth_tokens(tokens) {
         }
         for (let i = 0; i < tokens.length; i ++) {
             let index = OWNED_TOKENS.indexOf(tokens[i]);
-            if (index == -1) {
-                throw "Token " + tokens[i] + " could not be found from the javascript side. Unexpected error.";
+            if (index === -1) {
+                throw new Error('Token ' + tokens[i] + ' could not be found from the javascript side. Unexpected error.');
             }
             OWNED_TOKENS.splice(index, 1);
         }
@@ -650,7 +649,7 @@ function remove_eth_tokens(tokens) {
 function create_fiat_table() {
     client.invoke('query_fiat_balances', (error, result) => {
         if (error || result == null) {
-            console.log("Error at querying fiat balances:" + error);
+            console.log('Error at querying fiat balances:' + error);
             return;
         }
         FIAT_BALANCES = result;
@@ -662,7 +661,7 @@ function create_fiat_table() {
     });
 }
 
-function reload_user_settings_tables_if_existing() {
+export function reload_user_settings_tables_if_existing() {
     if (FIAT_TABLE) {
         FIAT_TABLE.reload();
     }
@@ -677,11 +676,11 @@ function reload_user_settings_tables_if_existing() {
     }
 }
 
-function init_user_settings() {
-    monitor_add_callback('user_settings_query_blockchain_balances', function (result) {
+export function init_user_settings() {
+    monitor_add_callback('user_settings_query_blockchain_balances', function (result: any) {
         let msg = 'Querying blockchain balances for user settings failed';
-        if (result == null || result['message'] != '') {
-            if (result['message'] != '') {
+        if (result == null || result['message'] !== '') {
+            if (result['message'] !== '') {
                 msg = result['message'];
             }
             showError('Querying Blockchain Balances Error', msg);
@@ -691,10 +690,3 @@ function init_user_settings() {
     });
 }
 
-
-module.exports = function() {
-    this.init_user_settings = init_user_settings;
-    this.reload_user_settings_tables_if_existing = reload_user_settings_tables_if_existing;
-    this.add_user_settings_listeners = add_user_settings_listeners;
-    this.create_user_settings = create_user_settings;
-};

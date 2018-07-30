@@ -114,7 +114,7 @@
                             <a href="#index"><i class="fa fa-dashboard fa-fw"></i> Dashboard</a>
                         </li>
                         <li>
-                            <a><i class="fa fa-exchange fa-fw"></i> Trades<span class="fa arrow"></span></a>
+                            <a href="#"><i class="fa fa-exchange fa-fw"></i> Trades<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 <li>
                                     <a href="#otctrades">OTC Trades</a>
@@ -163,6 +163,9 @@
 	<!-- Include jquery the electron way -->
 	<script>
     window.jQuery = window.$ = require('jquery');
+    require( 'datatables.net' )( window, $ );
+    require( 'datatables.net-dt' )( window, $ );
+
 	</script>
 
     <!-- Bootstrap Core JavaScript -->
@@ -184,7 +187,7 @@
 	<!-- js source for jquery.pulsate -->
 	<script src="depending_js/jquery.pulsate.min.js"></script>
 	<script>
-	require('./renderer.js')
+	require('../build/renderer.js')
 	</script>
 </body>
 
