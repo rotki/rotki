@@ -34,4 +34,28 @@ describe('Application launch', function () {
         return this.app.client.waitForExist('.jconfirm-box-container', 5000).should.eventually.equal(true);
     });
 
+    it('Going to the user settings, adding an ethereum account and looking at its balance', function () {
+
+    });
+
+    it('Adding a token and seeing the tokens get updated', function () {
+
+    });
+
+    it('Adding a bitcoin account and seeing that the balance is there', function () {
+
+    });
+    it('adding a fiat balance and see that it is properly updated', function () {
+
+    });
+    it('add an exchange and see that the api key is successfully accepted', function () {
+
+    });
+    it('change the currency to EUR and the currency changes everywhere in the UI', function () {
+
+    });
+    it('change each one of the settings and see the change has been applied', function () {
+
+    });
+
 });
