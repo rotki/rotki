@@ -226,7 +226,7 @@ class DBHandler(object):
             else:
                 settings[q[0]] = q[1]
 
-        # Populate defaults for values not in the DB yet
+        # populate defaults for values not in the DB yet
         if 'historical_data_start' not in settings:
             settings['historical_data_start'] = DEFAULT_START_DATE
         if 'eth_rpc_port' not in settings:
@@ -239,6 +239,11 @@ class DBHandler(object):
             settings['taxfree_after_period'] = DEFAULT_TAXFREE_AFTER_PERIOD
         if 'balance_save_frequency' not in settings:
             settings['balance_save_frequency'] = DEFAULT_BALANCE_SAVE_FREQUENCY
+
+        # populate values that are not saved in the setting but computed and returned
+        # as part of the get_settings call
+        settings['last_balance_save'] = self.get_last_balance_save_time()
+
         return settings
 
     def get_main_currency(self) -> typing.FiatAsset:
@@ -316,7 +321,7 @@ class DBHandler(object):
             'SELECT MAX(time) from timed_location_data'
         )
         query = query.fetchall()
-        if len(query) == 0:
+        if len(query) == 0 or query[0][0] is None:
             return cast(typing.Timestamp, 0)
 
         return cast(typing.Timestamp, int(query[0][0]))

@@ -2,7 +2,6 @@
 import argparse
 from rotkehlchen.config import default_data_directory
 
-
 def app_args():
     """ Parse the arguments and create and return the arguments object"""
     p = argparse.ArgumentParser(description='Rotkehlchen Crypto Portfolio Management')
