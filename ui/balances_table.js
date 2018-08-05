@@ -1,4 +1,5 @@
 var settings = require("./settings.js")();
+require("./utils.js")();
 
 let TOTAL_BALANCES_TABLE = null;
 let SAVED_BALANCES = {};
@@ -85,6 +86,7 @@ function total_table_recreate() {
             TOTAL_BALANCES_TABLE.draw();
         }
     }
+    update_last_balance_save();
 }
 
 function total_table_add_balances(location, query_result) {
@@ -133,8 +135,17 @@ function balance_table_init_callback(settings, json) {
 
 function add_balances_table_html() {
     var str = '<div class="row"><div class="col-lg-12"><h1 class=page-header">All Balances</h1></div></div>';
+    str += '<div class="list-group"><div class="list-group-item"><i class="fa fa-save fa-fw"></i> Last Time Balances were saved:<span id="last_balance_save_field" class="pull-right small">Never</span></div></div>';
     str += '<div class="row"><table id="table_balances_total"><thead><tr><th>Asset</th><th>Amount</th><th>USD Value</th><th>% of net value</th></tr/></thead><tfoot><tr><th></th><th></th><th></th><th></th></tr></tfoot><tbody id="table_balances_total_body"></tbody></table></div>';
     $(str).appendTo($('#dashboard-contents'));
+}
+
+function update_last_balance_save() {
+    let str_value = 'Never';
+    if (settings.last_balance_save != 0) {
+        str_value = timestamp_to_date(settings.last_balance_save);
+    }
+    $('#last_balance_save_field').html(str_value);
 }
 
 function init_balances_table(data) {
@@ -171,9 +182,44 @@ function reload_balance_table_if_existing() {
 }
 
 
+function get_total_asssets_value(asset_dict) {
+    var value = 0;
+    for (var asset in asset_dict) {
+        if (asset_dict.hasOwnProperty(asset)) {
+            value += parseFloat(asset_dict[asset]['usd_value']);
+        }
+    }
+    return value;
+}
+
+function* iterate_saved_balances() {
+    let saved_balances = total_balances_get();
+    for (var location in saved_balances) {
+        if (saved_balances.hasOwnProperty(location)) {
+            let total = get_total_asssets_value(saved_balances[location]);
+            if (settings.EXCHANGES.indexOf(location) >= 0) {
+                yield [location, total, null];
+            } else {
+                let icon;
+                if (location == 'blockchain') {
+                    icon = 'fa-hdd-o';
+                } else if (location == 'banks') {
+                    icon = 'fa-university';
+                } else {
+                    throw 'Invalid location at dashboard box from saved balance creation';
+                }
+                yield [location, total, icon];
+            }
+        }
+    }
+}
+
+
 module.exports = function() {
     this.total_balances_get = total_balances_get;
     this.total_table_recreate = total_table_recreate;
     this.total_table_add_balances = total_table_add_balances;
     this.reload_balance_table_if_existing = reload_balance_table_if_existing;
+    this.get_total_asssets_value = get_total_asssets_value;
+    this.iterate_saved_balances = iterate_saved_balances;
 };
