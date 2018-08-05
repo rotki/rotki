@@ -1,7 +1,6 @@
 var fs = require('fs');
 var Tail = require('tail').Tail;
 var settings = require("./settings.js")();
-require("./balances_table.js")();
 const {dialog} = require('electron').remote;
 
 
@@ -32,6 +31,22 @@ function timestamp_to_date(ts) {
 }
 
 var log_searcher = null;
+var client_auditor = null;
+
+/**
+ * This function is called periodically, query some data from the
+ * client and update the UI with the response.
+ */
+function periodic_client_query() {
+    // for now only query when was the last time balance data was saved
+    client.invoke('query_last_balance_save_time', (error, res) => {
+        if (error || res == null) {
+            console.log('Error at periodic client query');
+            return;
+        }
+        settings.last_balance_save = res;
+    });
+}
 
 function _setup_log_watcher(callback) {
     if (log_searcher) {
@@ -108,6 +123,12 @@ function setup_log_watcher(callback) {
         return;
     }
     _setup_log_watcher(callback);
+}
+
+function setup_client_auditor() {
+    if (!client_auditor) {
+        client_auditor = setInterval(periodic_client_query, 60000);
+    }
 }
 
 
@@ -211,56 +232,22 @@ function suggest_element_until_click(selector, state_to_set) {
     });
 }
 
-function get_total_asssets_value(asset_dict) {
-    var value = 0;
-    for (var asset in asset_dict) {
-        if (asset_dict.hasOwnProperty(asset)) {
-            value += parseFloat(asset_dict[asset]['usd_value']);
-        }
-    }
-    return value;
-}
-
-function* iterate_saved_balances() {
-    let saved_balances = total_balances_get();
-    for (var location in saved_balances) {
-        if (saved_balances.hasOwnProperty(location)) {
-            let total = get_total_asssets_value(saved_balances[location]);
-            if (settings.EXCHANGES.indexOf(location) >= 0) {
-                yield [location, total, null];
-            } else {
-                let icon;
-                if (location == 'blockchain') {
-                    icon = 'fa-hdd-o';
-                } else if (location == 'banks') {
-                    icon = 'fa-university';
-                } else {
-                    throw 'Invalid location at dashboard box from saved balance creation';
-                }
-                yield [location, total, icon];
-            }
-        }
-    }
-}
-
-
 module.exports = function() {
     this.prompt_directory_select_async = prompt_directory_select_async;
     this.utc_now = utc_now;
     this.timestamp_to_date = timestamp_to_date;
     this.string_capitalize = string_capitalize;
     this.setup_log_watcher = setup_log_watcher;
+    this.setup_client_auditor = setup_client_auditor;
     this.showError = showError;
     this.showInfo = showInfo;
     this.showWarning = showWarning;
     this.date_text_to_utc_ts = date_text_to_utc_ts;
     this.reload_table_currency_val = reload_table_currency_val;
     this.reload_table_currency_val_if_existing = reload_table_currency_val_if_existing;
-    this.get_total_asssets_value = get_total_asssets_value;
     this.throw_with_trace = throw_with_trace;
     this.dt_edit_drawcallback = dt_edit_drawcallback;
     this.suggest_element = suggest_element;
     this.unsuggest_element = unsuggest_element;
     this.suggest_element_until_click = suggest_element_until_click;
-    this.iterate_saved_balances = iterate_saved_balances;
 };

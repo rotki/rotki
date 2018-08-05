@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature: `95` Add a UI widget to display the last time the balance data was saved in the DB.
 * :bug: `101` Catch the web3 exception if using a local client with an out of sync chain and report a proper error in the UI
 * :bug: `86` Fixed race condition at startup that could result in the banks balance displaying as NaN.
 * :bug: `103` After removing an exchange's API key the new api key/secret input form is now properly re-enabled 

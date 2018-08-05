@@ -204,6 +204,7 @@ function init_dashboard() {
         }
     });
     setup_log_watcher(add_alert_dropdown);
+    setup_client_auditor();
 }
 
 module.exports = function() {
@@ -212,7 +213,6 @@ module.exports = function() {
     this.add_currency_dropdown = add_currency_dropdown;
     this.create_or_reload_dashboard = create_or_reload_dashboard;
     this.init_dashboard = init_dashboard;
-    this.set_ui_main_currency = set_ui_main_currency;
 };
 
 

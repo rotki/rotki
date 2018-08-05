@@ -234,6 +234,10 @@ class RotkehlchenServer(object):
         res = self.query_async('query_balances')
         return {'task_id': res}
 
+    def query_last_balance_save_time(self):
+        res = self.rotkehlchen.data.db.get_last_balance_save_time()
+        return res
+
     def get_eth_tokens(self):
         result = {
             'all_eth_tokens': self.rotkehlchen.data.eth_tokens,

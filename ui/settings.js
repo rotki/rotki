@@ -152,6 +152,7 @@ module.exports = function() {
         settings.start_suggestion = 'inactive';
         settings.eth_rpc_port = '8545';
         settings.balance_save_frequency = 24;
+        settings.last_balance_save = 0;
     }
     this.get_value_in_main_currency = get_value_in_main_currency;
     this.assert_exchange_exists = assert_exchange_exists;

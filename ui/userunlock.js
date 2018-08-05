@@ -2,6 +2,7 @@ require("./zerorpc_client.js")();
 var settings = require("./settings.js")();
 require("./elements.js")();
 require("./monitor.js")();
+require("./balances_table.js")();
 require("./utils.js")();
 require("./exchange.js")();
 require("./topmenu.js")();
@@ -207,6 +208,7 @@ function unlock_user(username, password, create_true, sync_approval, api_key, ap
                         settings.include_crypto2crypto = db_settings['include_crypto2crypto'];
                         settings.taxfree_after_period = db_settings['taxfree_after_period'];
                         settings.balance_save_frequency = db_settings['balance_save_frequency'];
+                        settings.last_balance_save = db_settings['last_balance_save'];
 
                         let is_new_user = create_true && api_key == '';
                         load_dashboard_after_unlock(response['exchanges'], is_new_user);

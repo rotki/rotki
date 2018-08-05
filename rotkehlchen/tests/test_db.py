@@ -133,6 +133,7 @@ def test_writting_fetching_data(data_dir, username):
         'include_crypto2crypto': True,
         'taxfree_after_period': YEAR_IN_SECONDS,
         'balance_save_frequency': DEFAULT_BALANCE_SAVE_FREQUENCY,
+        'last_balance_save': 0,
     }
 
     # Check setting non-existing settings. Should be ignored
@@ -292,6 +293,7 @@ def test_settings_entry_types(data_dir, username):
     assert isinstance(res['historical_data_start'], str)
     assert isinstance(res['eth_rpc_port'], str)
     assert isinstance(res['balance_save_frequency'], int)
+    assert isinstance(res['last_balance_save'], int)
 
 
 def test_balance_save_frequency_check(data_dir, username):
@@ -299,10 +301,14 @@ def test_balance_save_frequency_check(data_dir, username):
     data.unlock(username, '123', create_new=True)
 
     now = int(time.time())
+    data_save_ts = now - 24 * 60 * 60 + 20
     data.db.add_multiple_location_data([(
-        now - 24 * 60 * 60 + 20, 'kraken', '1500',
+        data_save_ts, 'kraken', '1500',
     )])
 
     assert not data.should_save_balances()
     data.db.set_settings({'balance_save_frequency': 5})
     assert data.should_save_balances()
+
+    last_save_ts = data.db.get_last_balance_save_time()
+    assert last_save_ts == data_save_ts
