@@ -204,6 +204,7 @@ function init_dashboard() {
         }
     });
     setup_log_watcher(add_alert_dropdown);
+    setup_client_auditor();
 }
 
 module.exports = function() {

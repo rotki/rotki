@@ -31,6 +31,22 @@ function timestamp_to_date(ts) {
 }
 
 var log_searcher = null;
+var client_auditor = null;
+
+/**
+ * This function is called periodically, query some data from the
+ * client and update the UI with the response.
+ */
+function periodic_client_query() {
+    // for now only query when was the last time balance data was saved
+    client.invoke('query_last_balance_save_time', (error, res) => {
+        if (error || res == null) {
+            console.log('Error at periodic client query');
+            return;
+        }
+        settings.last_balance_save = res;
+    });
+}
 
 function _setup_log_watcher(callback) {
     if (log_searcher) {
@@ -107,6 +123,12 @@ function setup_log_watcher(callback) {
         return;
     }
     _setup_log_watcher(callback);
+}
+
+function setup_client_auditor() {
+    if (!client_auditor) {
+        client_auditor = setInterval(periodic_client_query, 60000);
+    }
 }
 
 
@@ -216,6 +238,7 @@ module.exports = function() {
     this.timestamp_to_date = timestamp_to_date;
     this.string_capitalize = string_capitalize;
     this.setup_log_watcher = setup_log_watcher;
+    this.setup_client_auditor = setup_client_auditor;
     this.showError = showError;
     this.showInfo = showInfo;
     this.showWarning = showWarning;
