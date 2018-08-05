@@ -338,6 +338,10 @@ class Kraken(Exchange):
         """
         result: List = list()
 
+        logger.debug(
+            f'Querying Kraken {endpoint} from {start_ts} to '
+            f'{end_ts} with extra_dict {extra_dict}',
+        )
         response = self._query_endpoint_for_period(
             endpoint=endpoint,
             start_ts=start_ts,
@@ -348,7 +352,13 @@ class Kraken(Exchange):
         offset = len(response[keyname])
         result.extend(response[keyname].values())
 
+        logger.debug(f'Kraken {endpoint} Query Response with count:{count}')
+
         while offset < count:
+            logger.debug(
+                f'Querying Kraken {endpoint} from {start_ts} to {end_ts} '
+                f'with offset {offset} and extra_dict {extra_dict}',
+            )
             response = self._query_endpoint_for_period(
                 endpoint=endpoint,
                 start_ts=start_ts,
@@ -360,6 +370,11 @@ class Kraken(Exchange):
             response_length = len(response[keyname])
             offset += response_length
             if response_length == 0 and offset != count:
+                # If we have provided specific filtering then this is a known
+                # issue documented below, so skip the warning logging
+                # https://github.com/rotkehlchenio/rotkehlchen/issues/116
+                if extra_dict:
+                    break
                 # it is possible that kraken misbehaves and either does not
                 # send us enough results or thinks it has more than it really does
                 logger.warning(
@@ -430,14 +445,14 @@ class Kraken(Exchange):
                 keyname='ledger',
                 start_ts=start_ts,
                 end_ts=end_ts,
-                extra_dict=dict(type='deposit')
+                extra_dict=dict(type='deposit'),
             )
             result.extend(self.query_until_finished(
                 endpoint='Ledgers',
                 keyname='ledger',
                 start_ts=start_ts,
                 end_ts=end_ts,
-                extra_dict=dict(type='withdrawal')
+                extra_dict=dict(type='withdrawal'),
             ))
 
             with self.lock:
@@ -459,4 +474,5 @@ class Kraken(Exchange):
                 amount=FVal(movement['amount']),
                 fee=FVal(movement['fee'])
             ))
+
         return movements
