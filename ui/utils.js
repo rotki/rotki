@@ -1,7 +1,6 @@
 var fs = require('fs');
 var Tail = require('tail').Tail;
 var settings = require("./settings.js")();
-require("./balances_table.js")();
 const {dialog} = require('electron').remote;
 
 
@@ -211,39 +210,6 @@ function suggest_element_until_click(selector, state_to_set) {
     });
 }
 
-function get_total_asssets_value(asset_dict) {
-    var value = 0;
-    for (var asset in asset_dict) {
-        if (asset_dict.hasOwnProperty(asset)) {
-            value += parseFloat(asset_dict[asset]['usd_value']);
-        }
-    }
-    return value;
-}
-
-function* iterate_saved_balances() {
-    let saved_balances = total_balances_get();
-    for (var location in saved_balances) {
-        if (saved_balances.hasOwnProperty(location)) {
-            let total = get_total_asssets_value(saved_balances[location]);
-            if (settings.EXCHANGES.indexOf(location) >= 0) {
-                yield [location, total, null];
-            } else {
-                let icon;
-                if (location == 'blockchain') {
-                    icon = 'fa-hdd-o';
-                } else if (location == 'banks') {
-                    icon = 'fa-university';
-                } else {
-                    throw 'Invalid location at dashboard box from saved balance creation';
-                }
-                yield [location, total, icon];
-            }
-        }
-    }
-}
-
-
 module.exports = function() {
     this.prompt_directory_select_async = prompt_directory_select_async;
     this.utc_now = utc_now;
@@ -256,11 +222,9 @@ module.exports = function() {
     this.date_text_to_utc_ts = date_text_to_utc_ts;
     this.reload_table_currency_val = reload_table_currency_val;
     this.reload_table_currency_val_if_existing = reload_table_currency_val_if_existing;
-    this.get_total_asssets_value = get_total_asssets_value;
     this.throw_with_trace = throw_with_trace;
     this.dt_edit_drawcallback = dt_edit_drawcallback;
     this.suggest_element = suggest_element;
     this.unsuggest_element = unsuggest_element;
     this.suggest_element_until_click = suggest_element_until_click;
-    this.iterate_saved_balances = iterate_saved_balances;
 };
