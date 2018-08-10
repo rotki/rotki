@@ -1,33 +1,32 @@
 {
-    "name": "rotkehlchen",
-    "version": "0.3.1",
-    "license": "BSD-3-Clause",
-    "main": "main.js",
-    "dependencies": {
-        "datatables.net": "latest",
-        "datatables.net-dt": "latest",
-        "tail": "latest",
-        "zerorpc": "latest"
-    },
-    "devDependencies": {
-        "@types/datatables.net": "^1.10.12",
-        "@types/jquery": "^3.3.5",
-        "@types/jquery.contextmenu": "^1.7.33",
-        "@types/jquery.ui.datetimepicker": "^0.3.29",
-        "chai": "^4.1.2",
-        "chai-as-promised": "^7.1.1",
-        "electron": "1.8.4",
-        "electron-packager": "^8.7.2",
-        "electron-rebuild": "^1.5.7",
-        "mocha": "^5.1.1",
-        "spectron": "^3.8.0",
-        "tslint": "^5.11.0",
-        "tslint-config-prettier": "^1.14.0",
-        "tslint-config-standard": "^7.1.0",
-        "typescript": "^2.9.2"
-    },
-    "scripts": {
-        "test": "mocha ui/tests/",
-        "start": "tsc && electron ."
-    }
+  "name": "rotkehlchen",
+  "version": "0.3.1",
+  "license": "BSD-3-Clause",
+  "main": "main.js",
+  "dependencies": {
+    "datatables.net": "latest",
+    "datatables.net-dt": "latest",
+    "tail": "latest",
+    "zerorpc": "latest"
+  },
+  "devDependencies": {
+    "@types/datatables.net": "^1.10.12",
+    "@types/jquery": "^3.3.5",
+    "@types/jquery.contextmenu": "^1.7.33",
+    "chai": "^4.1.2",
+    "chai-as-promised": "^7.1.1",
+    "electron": "1.8.4",
+    "electron-packager": "^8.7.2",
+    "electron-rebuild": "^1.5.7",
+    "mocha": "^5.1.1",
+    "spectron": "^3.8.0",
+    "tslint": "^5.11.0",
+    "tslint-config-prettier": "^1.14.0",
+    "tslint-config-standard": "^7.1.0",
+    "typescript": "^2.9.2"
+  },
+  "scripts": {
+    "test": "tsc && mocha ui/tests/",
+    "start": "tsc && electron ."
+  }
 }
