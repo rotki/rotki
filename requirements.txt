@@ -1,4 +1,4 @@
-gevent==1.2.2
+gevent==1.3.5
 zerorpc==0.6.1
 web3==4.0.0
 # Replace with the first release that will include HexAddress and ChecksumAddress types
@@ -10,7 +10,3 @@ pycryptodome==3.6.0
 pycryptodomex==3.6.0
 coincurve==7.1.0
 psutil==5.4.3
-
-# dev requirements -- could go onto a separate file
-pytest
-mypy
