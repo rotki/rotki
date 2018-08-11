@@ -33,6 +33,13 @@ Then install all the python requirements by doing:
 pip install -r requirements.txt
 ```
 
+If you want to also have the developer requirements in order to develop rotkehlchen
+then do:
+
+```
+pip install -r requirements_dev.txt
+```
+
 Now to start the application you need to type `npm start`.
 
 If you get runtime errors about a Node version mismatch, you can try to rebuild the electron
@@ -89,6 +96,14 @@ Before using `pip`, let´s ensure we have the latest version:
 Install all the requirements:
 
     $ sudo pip install -r requirements.txt
+
+
+If you want to also have the developer requirements in order to develop rotkehlchen
+then do:
+
+
+    $ pip install -r requirements_dev.txt
+
 
 **Important note**: Make sure that pysqlcipher3 is properly installed. If
 
