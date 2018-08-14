@@ -1,8 +1,9 @@
 import psutil
+from typing import Iterator
 from itertools import count
 
 
-def get_free_port(address: str, initial_port: int):
+def get_free_port(address: str, initial_port: int) -> Iterator[int]:
     """Find an unused TCP port in a specified range. This should not
       be used in misson-critical applications - a race condition may
       occur if someone grabs the port before caller of this function

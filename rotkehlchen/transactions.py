@@ -1,25 +1,20 @@
-from collections import namedtuple
+from typing import Dict, List
 
+from rotkehlchen.typing import (
+    EthereumTransaction,
+    EthAddress,
+    Timestamp,
+)
 from rotkehlchen.utils import retry_calls, convert_to_int, request_get
 from rotkehlchen.fval import FVal
 
-EthereumTransaction = namedtuple(
-    'EthereumTransaction',
-    (
-        'timestamp',
-        'block_number',
-        'hash',
-        'from_address',
-        'to_address',
-        'value',
-        'gas',
-        'gas_price',
-        'gas_used',
-    )
-)
 
-
-def query_txlist(address, internal, from_block=None, to_block=None):
+def query_ethereum_txlist(
+        address: EthAddress,
+        internal: bool,
+        from_block: int = None,
+        to_block: int = None,
+) -> List[EthereumTransaction]:
     result = list()
     if internal:
         reqstring = (
@@ -51,7 +46,7 @@ def query_txlist(address, internal, from_block=None, to_block=None):
 
     for v in resp['result']:
         # internal tx list contains no gasprice
-        gas_price = -1 if internal else FVal(v['gasPrice'])
+        gas_price = FVal(-1) if internal else FVal(v['gasPrice'])
         result.append(EthereumTransaction(
             timestamp=convert_to_int(v['timeStamp']),
             block_number=convert_to_int(v['blockNumber']),
@@ -67,21 +62,39 @@ def query_txlist(address, internal, from_block=None, to_block=None):
     return result
 
 
-def query_etherscan_for_transactions(accounts):
-    transactions = list()
+def query_etherscan_for_transactions(accounts: List[EthAddress]) -> List[EthereumTransaction]:
+    transactions: List[EthereumTransaction] = list()
     for account in accounts:
         transactions.extend(
-            retry_calls(5, 'etherscan', 'query_txlist', query_txlist, account, False)
+            retry_calls(
+                5,
+                'etherscan',
+                'query_ethereum_txlist',
+                query_ethereum_txlist,
+                account,
+                False,
+            )
         )
         transactions.extend(
-            retry_calls(5, 'etherscan', 'query_txlist_internal', query_txlist, account, True)
+            retry_calls(
+                5,
+                'etherscan',
+                'query_ethereum_txlist_internal',
+                query_ethereum_txlist,
+                account,
+                True,
+            )
         )
 
     transactions.sort(key=lambda tx: tx.timestamp)
     return transactions
 
 
-def transactions_from_dictlist(given_transactions, start_ts, end_ts):
+def transactions_from_dictlist(
+        given_transactions: Dict,
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+) -> List[EthereumTransaction]:
     """ Gets a list of transaction, most probably read from the json files and
     a time period. Returns it as a list of the transaction tuples that are inside the time period
     """

@@ -74,3 +74,16 @@ class Trade(NamedTuple):
     fee_currency: Asset
     link: str
     notes: str
+
+
+class EthereumTransaction(NamedTuple):
+    """Represent an Ethereum transaction"""
+    timestamp: Timestamp
+    block_number: int
+    hash: bytes
+    from_address: HexAddress
+    to_address: HexAddress
+    value: FVal
+    gas: FVal
+    gas_price: FVal
+    gas_used: FVal
