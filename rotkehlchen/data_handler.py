@@ -233,7 +233,7 @@ class DataHandler(object):
         last_save = self.db.get_last_balance_save_time()
         settings = self.db.get_settings()
         # Setting is saved in hours, convert to seconds here
-        period = settings['balance_save_frequency'] * 60 * 60
+        period = cast(int, settings['balance_save_frequency'] * 60 * 60)
         now = cast(typing.Timestamp, int(time.time()))
         return now - last_save > period
 
