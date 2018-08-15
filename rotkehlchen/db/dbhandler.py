@@ -2,7 +2,7 @@ import tempfile
 import time
 import os
 import shutil
-from typing import Dict, Union, List, Tuple, Optional, cast
+from typing import Dict, Union, List, NamedTuple, Optional, cast, Tuple
 from collections import defaultdict
 from pysqlcipher3 import dbapi2 as sqlcipher
 from eth_utils.address import to_checksum_address
@@ -11,13 +11,21 @@ from rotkehlchen.constants import SUPPORTED_EXCHANGES, YEAR_IN_SECONDS
 from rotkehlchen.utils import ts_now
 from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.fval import FVal
-from rotkehlchen.constants import S_ETH, S_USD
+from rotkehlchen.constants import S_ETH, S_BTC, S_USD
 from rotkehlchen import typing
 from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
 from .utils import DB_SCRIPT_CREATE_TABLES, DB_SCRIPT_REIMPORT_DATA
 
-# Types used in this module
-BlockchainAccounts = Dict[typing.NonEthTokenBlockchainAsset, List[typing.BlockchainAddress]]
+
+import logging
+logger = logging.getLogger(__name__)
+
+
+class BlockchainAccounts(NamedTuple):
+    eth: List[typing.EthAddress]
+    btc: List[typing.BTCAddress]
+
+
 AssetBalances = List[Tuple[typing.Timestamp, typing.Asset, str, str]]
 LocationData = List[Tuple[typing.Timestamp, str, str]]
 
@@ -83,7 +91,7 @@ class DBHandler(object):
                 'DELETE FROM blockchain_accounts WHERE blockchain=?;', (S_ETH,)
             )
             self.conn.commit()
-            for account in accounts[S_ETH]:
+            for account in accounts.eth:
                 self.add_blockchain_account(S_ETH, to_checksum_address(account))
 
     def connect(self, password: str) -> None:
@@ -435,22 +443,27 @@ class DBHandler(object):
         return result
 
     def get_blockchain_accounts(self) -> BlockchainAccounts:
-        """Returns a dictionary with keys being blockchains and values being
-        lists of accounts"""
+        """Returns a Blockchain accounts instance"""
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT blockchain, account FROM blockchain_accounts;'
         )
         query = query.fetchall()
-        result: BlockchainAccounts = defaultdict(list)
+
+        eth_list = list()
+        btc_list = list()
 
         for entry in query:
-            if entry[0] not in result:
-                result[entry[0]] = []
+            if entry[0] == S_ETH:
+                eth_list.append(entry[1])
+            elif entry[0] == S_BTC:
+                btc_list.append(entry[1])
+            else:
+                logger.warning(
+                    f'unknown blockchain type {entry[0]} found in DB. Ignoring...'
+                )
 
-            result[entry[0]].append(entry[1])
-
-        return result
+        return BlockchainAccounts(eth=eth_list, btc=btc_list)
 
     def remove(self) -> None:
         cursor = self.conn.cursor()

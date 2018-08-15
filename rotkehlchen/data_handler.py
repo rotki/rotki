@@ -239,7 +239,7 @@ class DataHandler(object):
 
     def get_eth_accounts(self) -> List[typing.EthAddress]:
         blockchain_accounts = self.db.get_blockchain_accounts()
-        return blockchain_accounts[S_ETH] if S_ETH in blockchain_accounts else []
+        return blockchain_accounts.eth
 
     def set_fiat_balance(self, currency: typing.FiatAsset, balance: FVal) -> Tuple[bool, str]:
         if currency not in FIAT_CURRENCIES:

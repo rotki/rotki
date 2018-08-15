@@ -77,7 +77,7 @@ def privatekey_to_address(private_key_bin: bytes) -> typing.BinaryEthAddress:
 
 def address_encoder(address: typing.BinaryEthAddress) -> typing.EthAddress:
     assert len(address) in (20, 0)
-    return '0x' + hexlify(address).decode()
+    return typing.EthAddress('0x' + hexlify(address).decode())
 
 
 def address_decoder(addr: str) -> typing.BinaryEthAddress:
@@ -86,4 +86,4 @@ def address_decoder(addr: str) -> typing.BinaryEthAddress:
 
     b_addr = unhexlify(addr)
     assert len(b_addr) in (20, 0)
-    return cast(typing.BinaryEthAddress, b_addr)
+    return typing.BinaryEthAddress(b_addr)
