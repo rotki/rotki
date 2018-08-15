@@ -6,6 +6,7 @@ from gevent.lock import Semaphore
 from eth_utils.address import to_checksum_address
 from typing import Tuple, List, Dict, Union, Callable, cast
 
+from rotkehlchen.db.dbhandler import BlockchainAccounts
 from rotkehlchen.errors import InputError, EthSyncError
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils import cache_response_timewise, request_get
@@ -32,7 +33,7 @@ class Blockchain(object):
 
     def __init__(
             self,
-            blockchain_accounts: Dict[str, List[Union[typing.EthAddress, typing.BTCAddress]]],
+            blockchain_accounts: BlockchainAccounts,
             all_eth_tokens: List[typing.EthTokenInfo],
             owned_eth_tokens: List[typing.EthToken],
             inquirer: Inquirer,
@@ -45,8 +46,9 @@ class Blockchain(object):
 
         self.accounts = blockchain_accounts
         # go through ETH accounts and make sure they are EIP55 encoded
-        if S_ETH in self.accounts:
-            self.accounts[S_ETH] = [to_checksum_address(x) for x in self.accounts[S_ETH]]
+        # TODO: really really bad thing here. Should not have to force mutate
+        # a named tuple. Move this into the named tuple constructor
+        self.accounts._replace(eth=[to_checksum_address(x) for x in self.accounts.eth])
 
         self.owned_eth_tokens = owned_eth_tokens
 
@@ -100,13 +102,13 @@ class Blockchain(object):
         return FVal(btc_resp) * FVal('0.00000001')  # result is in satoshis
 
     def query_btc_balances(self) -> None:
-        if S_BTC not in self.accounts:
+        if len(self.accounts.btc) == 0:
             return
 
         self.balances[S_BTC] = {}
         btc_usd_price = self.inquirer.find_usd_price(S_BTC)
         total = FVal(0)
-        for account in self.accounts[S_BTC]:
+        for account in self.accounts.btc:
             balance = self.query_btc_account_balance(account)
             total += balance
             self.balances[S_BTC][account] = {
@@ -156,7 +158,7 @@ class Blockchain(object):
         Call with 'append', operator.add to add the account
         Call with 'remove', operator.sub to remove the account
         """
-        getattr(self.accounts[S_BTC], append_or_remove)(account)
+        getattr(self.accounts.btc, append_or_remove)(account)
         btc_usd_price = self.inquirer.find_usd_price(S_BTC)
         balance = self.query_btc_account_balance(account)
         usd_balance = balance * btc_usd_price
@@ -188,7 +190,7 @@ class Blockchain(object):
         """
         # Make sure account goes into web3.py as a properly checksummed address
         account = to_checksum_address(account)
-        getattr(self.accounts[S_ETH], append_or_remove)(account)
+        getattr(self.accounts.eth, append_or_remove)(account)
         eth_usd_price = self.inquirer.find_usd_price(S_ETH)
         balance = self.ethchain.get_eth_balance(account)
         usd_balance = balance * eth_usd_price
@@ -262,12 +264,12 @@ class Blockchain(object):
     ) -> BlockchainBalancesUpdate:
 
         if blockchain == S_BTC:
-            if append_or_remove == 'remove' and account not in self.accounts[S_BTC]:
+            if append_or_remove == 'remove' and account not in self.accounts.btc:
                 raise InputError('Tried to remove a non existing BTC account')
             self.modify_btc_account(account, append_or_remove, add_or_sub)
 
         elif blockchain == S_ETH:
-            if append_or_remove == 'remove' and account not in self.accounts[S_ETH]:
+            if append_or_remove == 'remove' and account not in self.accounts.eth:
                 raise InputError('Tried to remove a non existing ETH account')
             try:
                 self.modify_eth_account(account, append_or_remove, add_or_sub)
@@ -307,7 +309,7 @@ class Blockchain(object):
                 token,
                 self.all_eth_tokens[token]['address'],
                 self.all_eth_tokens[token]['decimal'],
-                self.accounts[S_ETH],
+                self.accounts.eth,
             )
 
         for token, token_accounts in token_balances.items():
@@ -326,10 +328,10 @@ class Blockchain(object):
         self.balances[S_ETH] = eth_balances
 
     def query_ethereum_balances(self) -> None:
-        if S_ETH not in self.accounts:
+        if len(self.accounts.eth) == 0:
             return
 
-        eth_accounts = self.accounts[S_ETH]
+        eth_accounts = self.accounts.eth
         eth_usd_price = self.inquirer.find_usd_price(S_ETH)
         balances = self.ethchain.get_multieth_balance(eth_accounts)
         eth_total = FVal(0)

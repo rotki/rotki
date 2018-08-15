@@ -7,6 +7,7 @@ from eth_utils.address import to_checksum_address
 from rotkehlchen.utils import ts_now, createTimeStamp
 from rotkehlchen.db.dbhandler import (
     BlockchainAccounts,
+    LocationData,
     ROTKEHLCHEN_DB_VERSION,
     DEFAULT_START_DATE,
     DEFAULT_MAIN_CURRENCY,
@@ -306,8 +307,8 @@ def test_balance_save_frequency_check(data_dir, username):
 
     now = int(time.time())
     data_save_ts = now - 24 * 60 * 60 + 20
-    data.db.add_multiple_location_data([(
-        data_save_ts, 'kraken', '1500',
+    data.db.add_multiple_location_data([LocationData(
+        time=data_save_ts, location='kraken', usd_value='1500',
     )])
 
     assert not data.should_save_balances()

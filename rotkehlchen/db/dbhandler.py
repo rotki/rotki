@@ -3,7 +3,6 @@ import time
 import os
 import shutil
 from typing import Dict, Union, List, NamedTuple, Optional, cast, Tuple
-from collections import defaultdict
 from pysqlcipher3 import dbapi2 as sqlcipher
 from eth_utils.address import to_checksum_address
 
@@ -26,8 +25,18 @@ class BlockchainAccounts(NamedTuple):
     btc: List[typing.BTCAddress]
 
 
-AssetBalances = List[Tuple[typing.Timestamp, typing.Asset, str, str]]
-LocationData = List[Tuple[typing.Timestamp, str, str]]
+class AssetBalance(NamedTuple):
+    time: typing.Timestamp
+    name: typing.Asset
+    amount: str
+    usd_value: str
+
+
+class LocationData(NamedTuple):
+    time: typing.Timestamp
+    location: str
+    usd_value: str
+
 
 DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
 DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
@@ -311,18 +320,17 @@ class DBHandler(object):
         query = query.fetchall()
         return [q[0] for q in query]
 
-    def add_multiple_balances(self, balances: AssetBalances) -> None:
-        """Execute addition of multiple balances in the DB
-
-        balances should be a list of tuples each containing:
-        (time, asset, amount, usd_value)"""
+    def add_multiple_balances(self, balances: List[AssetBalance]) -> None:
+        """Execute addition of multiple balances in the DB"""
         cursor = self.conn.cursor()
-        cursor.executemany(
-            'INSERT INTO timed_balances('
-            '    time, currency, amount, usd_value) '
-            ' VALUES(?, ?, ?, ?)',
-            balances
-        )
+
+        for entry in balances:
+            cursor.execute(
+                'INSERT INTO timed_balances('
+                '    time, currency, amount, usd_value) '
+                ' VALUES(?, ?, ?, ?)',
+                (entry.time, entry.name, entry.amount, entry.usd_value),
+            )
         self.conn.commit()
         self.update_last_write()
 
@@ -337,18 +345,16 @@ class DBHandler(object):
 
         return cast(typing.Timestamp, int(query[0][0]))
 
-    def add_multiple_location_data(self, location_data: LocationData) -> None:
-        """Execute addition of multiple location data in the DB
-
-        location_data should be a list of tuples each containing:
-        (time, location, usd_value)"""
+    def add_multiple_location_data(self, location_data: List[LocationData]) -> None:
+        """Execute addition of multiple location data in the DB"""
         cursor = self.conn.cursor()
-        cursor.executemany(
-            'INSERT INTO timed_location_data('
-            '    time, location, usd_value) '
-            ' VALUES(?, ?, ?)',
-            location_data
-        )
+        for entry in location_data:
+            cursor.execute(
+                'INSERT INTO timed_location_data('
+                '    time, location, usd_value) '
+                ' VALUES(?, ?, ?)',
+                (entry.time, entry.location, entry.usd_value),
+            )
         self.conn.commit()
         self.update_last_write()
 
@@ -477,19 +483,18 @@ class DBHandler(object):
         and 'net_usd'. This gives us the balance data per assets, the balance data
         per location and finally the total balance"""
         ts = cast(typing.Timestamp, int(time.time()))
-        balances: AssetBalances = []
-        locations: LocationData = []
+        balances = []
+        locations = []
 
         for key, val in data.items():
             if key in ('location', 'net_usd'):
                 continue
 
-            balances.append((
-                ts,
-                # We just excluded the 2 possible str value above
-                cast(typing.Asset, key),
-                str(val['amount']),
-                str(val['usd_value']),
+            balances.append(AssetBalance(
+                time=ts,
+                name=cast(typing.Asset, key),
+                amount=str(val['amount']),
+                usd_value=str(val['usd_value']),
             ))
 
         for key, val2 in data['location'].items():
@@ -498,7 +503,11 @@ class DBHandler(object):
             locations.append((
                 ts, key, str(val2['usd_value'])
             ))
-        locations.append((ts, 'total', str(data['net_usd'])))
+        locations.append(LocationData(
+            time=ts,
+            location='total',
+            usd_value=str(data['net_usd']),
+        ))
 
         self.add_multiple_balances(balances)
         self.add_multiple_location_data(locations)
