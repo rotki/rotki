@@ -500,8 +500,8 @@ class DBHandler(object):
         for key, val2 in data['location'].items():
             # Here we know val2 is just a Dict since the key to data is 'location'
             val2 = cast(Dict, val2)
-            locations.append((
-                ts, key, str(val2['usd_value'])
+            locations.append(LocationData(
+                time=ts, location=key, usd_value=str(val2['usd_value'])
             ))
         locations.append(LocationData(
             time=ts,

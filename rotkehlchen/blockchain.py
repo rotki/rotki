@@ -266,13 +266,20 @@ class Blockchain(object):
         if blockchain == S_BTC:
             if append_or_remove == 'remove' and account not in self.accounts.btc:
                 raise InputError('Tried to remove a non existing BTC account')
-            self.modify_btc_account(account, append_or_remove, add_or_sub)
+
+            # above we check that account is a BTC account
+            self.modify_btc_account(
+                typing.BTCAddress(account),
+                append_or_remove,
+                add_or_sub,
+            )
 
         elif blockchain == S_ETH:
             if append_or_remove == 'remove' and account not in self.accounts.eth:
                 raise InputError('Tried to remove a non existing ETH account')
             try:
-                self.modify_eth_account(account, append_or_remove, add_or_sub)
+                # above we check that account is an ETH account
+                self.modify_eth_account(typing.EthAddress(account), append_or_remove, add_or_sub)
             except BadFunctionCallOutput as e:
                 logger.error(
                     'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
