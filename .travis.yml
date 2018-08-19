@@ -5,9 +5,9 @@ python:
   - 3.6
 env:
   global:
-  - GETH_URL_LINUX='https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.8.0-5f540757.tar.gz'
-  - GETH_URL_MACOS='https://gethstore.blob.core.windows.net/builds/geth-darwin-amd64-1.8.0-5f540757.tar.gz'
-  - GETH_VERSION='1.8.0'
+  - GETH_URL_LINUX='https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.8.13-225171a4.tar.gz'
+  - GETH_URL_MACOS='https://gethstore.blob.core.windows.net/builds/geth-darwin-amd64-1.8.13-225171a4.tar.gz'
+  - GETH_VERSION='1.8.13'
 
 
 matrix:
