@@ -294,6 +294,7 @@ def test_settings_entry_types(data_dir, username):
     assert isinstance(res['eth_rpc_port'], str)
     assert isinstance(res['balance_save_frequency'], int)
     assert isinstance(res['last_balance_save'], int)
+    assert isinstance(res['main_currency'], str)
 
 
 def test_balance_save_frequency_check(data_dir, username):
