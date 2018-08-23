@@ -8,6 +8,7 @@ from rotkehlchen.utils import ts_now, createTimeStamp
 from rotkehlchen.db.dbhandler import (
     ROTKEHLCHEN_DB_VERSION,
     DEFAULT_START_DATE,
+    DEFAULT_MAIN_CURRENCY,
     DEFAULT_UI_FLOATING_PRECISION,
     DEFAULT_BALANCE_SAVE_FREQUENCY,
 )
@@ -134,6 +135,7 @@ def test_writting_fetching_data(data_dir, username):
         'taxfree_after_period': YEAR_IN_SECONDS,
         'balance_save_frequency': DEFAULT_BALANCE_SAVE_FREQUENCY,
         'last_balance_save': 0,
+        'main_currency': DEFAULT_MAIN_CURRENCY,
     }
 
     # Check setting non-existing settings. Should be ignored
