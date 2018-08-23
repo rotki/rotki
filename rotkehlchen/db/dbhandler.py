@@ -26,6 +26,7 @@ DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
 DEFAULT_START_DATE = "01/08/2015"
 DEFAULT_UI_FLOATING_PRECISION = 2
 DEFAULT_BALANCE_SAVE_FREQUENCY = 24
+DEFAULT_MAIN_CURRENCY = S_USD
 KDF_ITER = 64000
 
 
@@ -239,6 +240,8 @@ class DBHandler(object):
             settings['taxfree_after_period'] = DEFAULT_TAXFREE_AFTER_PERIOD
         if 'balance_save_frequency' not in settings:
             settings['balance_save_frequency'] = DEFAULT_BALANCE_SAVE_FREQUENCY
+        if 'main_currency' not in settings:
+            settings['main_currency'] = DEFAULT_MAIN_CURRENCY
 
         # populate values that are not saved in the setting but computed and returned
         # as part of the get_settings call
