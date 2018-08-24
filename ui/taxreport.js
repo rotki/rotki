@@ -70,6 +70,15 @@ function generate_report_callback(event) {
         showError('Input Error', 'The end time should not be in the future.');
         return;
     }
+
+    if (($('#tax_report_loading').length)) {
+        showError(
+            'In Progress Error',
+            'A tax report is already being generated. Please wait until the ' +
+            'current report is finished until you can generate a new one'
+        );
+        return;
+    }
     let str = loading_placeholder('tax_report_loading');
     $(str).insertAfter('#tax_report_anchor');
 
