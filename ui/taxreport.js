@@ -20,10 +20,19 @@ function add_taxreport_listeners() {
     $('#export_csv').click(export_csv_callback);
 }
 
+function clean_taxreport_ui() {
+    $('#export_csv').remove();
+    $('#report_overview_table_wrapper').parent().remove();
+    $('#report_details_table_wrapper').parent().remove();
+    let str =  table_html(2, 'report_overview');
+    str += table_html(10, 'report_details');
+    $(str).insertAfter('#tax_report_anchor');
+}
+
 function export_csv_callback(event) {
     event.preventDefault();
     prompt_directory_select_async((directories) => {
-        if(directories === undefined){
+        if (directories === undefined) {
             return;
         }
         let dir = directories[0];
@@ -64,6 +73,7 @@ function generate_report_callback(event) {
     let str = loading_placeholder('tax_report_loading');
     $(str).insertAfter('#tax_report_anchor');
 
+    clean_taxreport_ui();
     client.invoke(
         "process_trade_history_async",
         start_ts,
@@ -93,6 +103,7 @@ function show_float_or_empty(data) {
 
 function create_taxreport_overview(results) {
     $('#tax_report_loading').remove();
+
     let data = [];
     for (var result in results) {
         if(results.hasOwnProperty(result)) {
