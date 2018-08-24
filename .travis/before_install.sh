@@ -8,7 +8,7 @@ set -x
 
 if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then
     apt-get update
-    apt-get install -y libsqlcipher-dev libzmq3 libzmq3-dev
+    apt-get install -y libsqlcipher-dev libzmq5 libzmq3-dev
     sudo ldconfig
 else
     brew update && brew install sqlcipher
