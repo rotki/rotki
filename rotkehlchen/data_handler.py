@@ -233,13 +233,13 @@ class DataHandler(object):
         last_save = self.db.get_last_balance_save_time()
         settings = self.db.get_settings()
         # Setting is saved in hours, convert to seconds here
-        period = settings['balance_save_frequency'] * 60 * 60
+        period = cast(int, settings['balance_save_frequency'] * 60 * 60)
         now = cast(typing.Timestamp, int(time.time()))
         return now - last_save > period
 
     def get_eth_accounts(self) -> List[typing.EthAddress]:
         blockchain_accounts = self.db.get_blockchain_accounts()
-        return blockchain_accounts[S_ETH] if S_ETH in blockchain_accounts else []
+        return blockchain_accounts.eth
 
     def set_fiat_balance(self, currency: typing.FiatAsset, balance: FVal) -> Tuple[bool, str]:
         if currency not in FIAT_CURRENCIES:

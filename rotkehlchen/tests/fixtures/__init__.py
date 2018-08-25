@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # flake8: noqa
 
-from rotkehlchen.tests.fixtures.db import *
-from rotkehlchen.tests.fixtures.accounting import *
-from rotkehlchen.tests.fixtures.variables import *
-from rotkehlchen.tests.fixtures.blockchain import *
-from rotkehlchen.tests.fixtures.rotkehlchen import *
+from rotkehlchen.tests.fixtures.db import * # type: ignore
+from rotkehlchen.tests.fixtures.accounting import * # type: ignore
+from rotkehlchen.tests.fixtures.variables import * # type: ignore
+from rotkehlchen.tests.fixtures.blockchain import * # type: ignore
+from rotkehlchen.tests.fixtures.rotkehlchen import * # type: ignore

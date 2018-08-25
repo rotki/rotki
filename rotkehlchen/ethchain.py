@@ -1,6 +1,6 @@
 import os
 from web3 import Web3, HTTPProvider
-from requests import ConnectionError
+from requests.exceptions import ConnectionError
 from typing import Tuple, List, Dict
 
 from rotkehlchen.utils import from_wei, rlk_jsonloads, request_get

@@ -6,6 +6,8 @@ from eth_utils.address import to_checksum_address
 
 from rotkehlchen.utils import ts_now, createTimeStamp
 from rotkehlchen.db.dbhandler import (
+    BlockchainAccounts,
+    LocationData,
     ROTKEHLCHEN_DB_VERSION,
     DEFAULT_START_DATE,
     DEFAULT_MAIN_CURRENCY,
@@ -89,9 +91,9 @@ def test_writting_fetching_data(data_dir, username):
     data.add_blockchain_account('ETH', '0xd36029d76af6fE4A356528e4Dc66B2C18123597D')
     data.add_blockchain_account('ETH', '0x80b369799104a47e98a553f3329812a44a7facdc')
     accounts = data.db.get_blockchain_accounts()
-    assert len(accounts) == 2
-    assert accounts['BTC'] == ['1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS']
-    assert set(accounts['ETH']) == set([
+    assert isinstance(accounts, BlockchainAccounts)
+    assert accounts.btc == ['1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS']
+    assert set(accounts.eth) == set([
         '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
         to_checksum_address('0x80b369799104a47e98a553f3329812a44a7facdc')
 
@@ -105,7 +107,7 @@ def test_writting_fetching_data(data_dir, username):
     # Remove existing account
     data.remove_blockchain_account('ETH', '0xd36029d76af6fE4A356528e4Dc66B2C18123597D')
     accounts = data.db.get_blockchain_accounts()
-    assert accounts['ETH'] == [to_checksum_address('0x80b369799104a47e98a553f3329812a44a7facdc')]
+    assert accounts.eth == [to_checksum_address('0x80b369799104a47e98a553f3329812a44a7facdc')]
 
     result, _ = data.add_ignored_asset('DAO')
     assert result
@@ -264,7 +266,7 @@ def test_upgrade_db_1_to_2(data_dir, username):
     data = DataHandler(data_dir)
     data.unlock(username, '123', create_new=False)
     accounts = data.db.get_blockchain_accounts()
-    assert accounts['ETH'][0] == '0xe3580C38B0106899F45845E361EA7F8a0062Ef12'
+    assert accounts.eth[0] == '0xe3580C38B0106899F45845E361EA7F8a0062Ef12'
     assert data.db.get_version() == ROTKEHLCHEN_DB_VERSION
 
 
@@ -305,8 +307,8 @@ def test_balance_save_frequency_check(data_dir, username):
 
     now = int(time.time())
     data_save_ts = now - 24 * 60 * 60 + 20
-    data.db.add_multiple_location_data([(
-        data_save_ts, 'kraken', '1500',
+    data.db.add_multiple_location_data([LocationData(
+        time=data_save_ts, location='kraken', usd_value='1500',
     )])
 
     assert not data.should_save_balances()

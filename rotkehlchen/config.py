@@ -1,8 +1,10 @@
 import os
 import errno
 
+from rotkehlchen.typing import FilePath
 
-def default_data_directory():
+
+def default_data_directory() -> FilePath:
     home = os.path.expanduser("~")
     data_directory = os.path.join(home, '.rotkehlchen')
     try:
@@ -11,4 +13,4 @@ def default_data_directory():
         if exception.errno != errno.EEXIST:
             raise
 
-    return data_directory
+    return FilePath(data_directory)
