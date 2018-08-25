@@ -1,18 +1,25 @@
-var settings = require("./settings.js")();
-require("./utils.js")();
+import { format_currency_value, settings } from './settings';
+import { timestamp_to_date } from './utils';
 
-let TOTAL_BALANCES_TABLE = null;
+let TOTAL_BALANCES_TABLE: DataTables.Api = null;
 let SAVED_BALANCES = {};
 
 
-function create_full_data() {
-    let inter_data = {};
-    for (var location in SAVED_BALANCES) {
+interface ItableDataItem {
+    'asset': string;
+    'amount': string;
+    'usd_value': string;
+    'percentage': string;
+}
+
+function create_full_data(): Array<ItableDataItem> {
+    let inter_data: any = {};
+    for (let location in SAVED_BALANCES) {
         if (SAVED_BALANCES.hasOwnProperty(location)) {
             // for every location's balances
             let balances = SAVED_BALANCES[location];
             for (let asset in balances) {
-                if(balances.hasOwnProperty(asset)) {
+                if (balances.hasOwnProperty(asset)) {
 
                     let old_amount = 0;
                     let old_value = 0;
@@ -30,23 +37,23 @@ function create_full_data() {
     }
 
     // now let's get the total usd
-    let total_usd = 0;
+    let total_usd: number = 0;
     for (let asset in inter_data) {
         if (inter_data.hasOwnProperty(asset)) {
             total_usd += inter_data[asset]['usd_value'];
         }
     }
 
-    let full_data = [];
+    let full_data: Array<ItableDataItem> = [];
     // we should have all balances by now
     for (let asset in inter_data) {
         if (inter_data.hasOwnProperty(asset)) {
-            let amount = inter_data[asset]['amount'];
-            amount = amount.toFixed(settings.floating_precision);
-            let value = inter_data[asset]['usd_value'];
-            let percentage = value / total_usd;
-            percentage = (percentage * 100).toFixed(settings.floating_precision);
-            value = value.toFixed(settings.floating_precision);
+            const amount_n: number = inter_data[asset]['amount'];
+            const amount: string = amount_n.toFixed(settings.floating_precision);
+            const value_n: number = inter_data[asset]['usd_value'];
+            const percentage_n = value_n / total_usd;
+            const percentage = (percentage_n * 100).toFixed(settings.floating_precision);
+            const value = value_n.toFixed(settings.floating_precision);
             full_data.push({
                 'asset': asset,
                 'amount': amount,
@@ -58,13 +65,13 @@ function create_full_data() {
     return full_data;
 }
 
-function total_balances_get() {
+export function total_balances_get() {
     return SAVED_BALANCES;
 }
 
-function total_table_recreate() {
+export function total_table_recreate() {
     // only create the total table if we are in the dashboard
-    if (settings.current_location != 'index') {
+    if (settings.current_location !== 'index') {
         return;
     }
 
@@ -89,11 +96,11 @@ function total_table_recreate() {
     update_last_balance_save();
 }
 
-function total_table_add_balances(location, query_result) {
+export function total_table_add_balances(location: string, query_result: any) {
     let data = {};
-    for (var asset in query_result) {
-        if(query_result.hasOwnProperty(asset)) {
-            if (asset == 'location' || asset == 'net_usd') {
+    for (let asset in query_result) {
+        if (query_result.hasOwnProperty(asset)) {
+            if (asset === 'location' || asset === 'net_usd') {
                 continue;
             }
             let amount = parseFloat(query_result[asset]['amount']);
@@ -105,8 +112,8 @@ function total_table_add_balances(location, query_result) {
     total_table_recreate();
 }
 
-function balance_table_init_callback(settings, json) {
-    var api;
+function balance_table_init_callback(settings: any, json: any) {
+    let api;
     if (!settings) { // called manually by us via .call() through a DT instance
         api = this;
     } else { // called from inside initComplete
@@ -114,16 +121,16 @@ function balance_table_init_callback(settings, json) {
     }
 
     if (api.data().count()) {
-        api.column(2).every(function(){
-            var column = this;
-            var sum = column
+        api.column(2).every(function() {
+            let column = this;
+            let sum = column
                 .data()
-                .reduce(function (a, b) {
+                .reduce(function (a: any, b: any) {
                     a = parseFloat(a);
-                    if(isNaN(a)){ a = 0; }
+                    if (isNaN(a)) { a = 0; }
 
                     b = parseFloat(b);
-                    if(isNaN(b)){ b = 0; }
+                    if (isNaN(b)) { b = 0; }
 
                     return a + b;
                 });
@@ -131,13 +138,6 @@ function balance_table_init_callback(settings, json) {
             $(column.footer()).html('Total Sum: ' + sum);
         });
     }
-}
-
-function add_balances_table_html() {
-    var str = '<div class="row"><div class="col-lg-12"><h1 class=page-header">All Balances</h1></div></div>';
-    str += '<div class="list-group"><div class="list-group-item"><i class="fa fa-save fa-fw"></i> Last Time Balances were saved:<span id="last_balance_save_field" class="pull-right small">Never</span></div></div>';
-    str += '<div class="row"><table id="table_balances_total"><thead><tr><th>Asset</th><th>Amount</th><th>USD Value</th><th>% of net value</th></tr/></thead><tfoot><tr><th></th><th></th><th></th><th></th></tr></tfoot><tbody id="table_balances_total_body"></tbody></table></div>';
-    $(str).appendTo($('#dashboard-contents'));
 }
 
 function update_last_balance_save() {
@@ -148,51 +148,47 @@ function update_last_balance_save() {
     $('#last_balance_save_field').html(str_value);
 }
 
-function init_balances_table(data) {
+function add_balances_table_html() {
+    let str = '<div class="row"><div class="col-lg-12"><h1 class=page-header">All Balances</h1></div></div>';
+    str += '<div class="list-group"><div class="list-group-item"><i class="fa fa-save fa-fw"></i> Last Time Balances were saved:<span id="last_balance_save_field" class="pull-right small">Never</span></div></div>';
+    str += '<div class="row"><table id="table_balances_total"><thead><tr><th>Asset</th><th>Amount</th><th>USD Value</th><th>% of net value</th></tr/></thead><tfoot><tr><th></th><th></th><th></th><th></th></tr></tfoot><tbody id="table_balances_total_body"></tbody></table></div>';
+    $(str).appendTo($('#dashboard-contents'));
+}
+
+function init_balances_table(data: Array<ItableDataItem>) {
     add_balances_table_html();
 
     TOTAL_BALANCES_TABLE = $('#table_balances_total').DataTable({
-        "data": data,
-        "columns": [
-            {"data": "asset"},
-            {"data": "amount"},
+        'data': data,
+        'columns': [
+            {'data': 'asset'},
+            {'data': 'amount'},
             {
-                "title": settings.main_currency.ticker_symbol + ' value',
-                "data": 'usd_value',
-                "render": function (data, type, row) {
+                'title': settings.main_currency.ticker_symbol + ' value',
+                'data': 'usd_value',
+                'render': function (data: string | number, type: any, row: any) {
                     return format_currency_value(data, row['asset'], row['amount']);
                 }
             },
-            {"data": "percentage"}
+            {'data': 'percentage'}
         ],
         'initComplete': balance_table_init_callback,
-        "order": [[3, 'desc']]
+        'order': [[3, 'desc']]
     });
     // also save the dashboard page
     settings.page_index = $('#page-wrapper').html();
 }
 
-function reload_balance_table_if_existing() {
-    if (TOTAL_BALANCES_TABLE) {
-        TOTAL_BALANCES_TABLE.rows().invalidate();
-        balance_table_init_callback.call(TOTAL_BALANCES_TABLE);
-        $(TOTAL_BALANCES_TABLE.column(2).header()).text(settings.main_currency.ticker_symbol + ' value');
-        TOTAL_BALANCES_TABLE.draw();
-    }
-}
-
-
 function get_total_asssets_value(asset_dict) {
-    var value = 0;
-    for (var asset in asset_dict) {
+    let value = 0;
+    for (let asset in asset_dict) {
         if (asset_dict.hasOwnProperty(asset)) {
             value += parseFloat(asset_dict[asset]['usd_value']);
         }
     }
     return value;
 }
-
-function* iterate_saved_balances() {
+export function* iterate_saved_balances() {
     let saved_balances = total_balances_get();
     for (var location in saved_balances) {
         if (saved_balances.hasOwnProperty(location)) {
@@ -214,12 +210,11 @@ function* iterate_saved_balances() {
     }
 }
 
-
-module.exports = function() {
-    this.total_balances_get = total_balances_get;
-    this.total_table_recreate = total_table_recreate;
-    this.total_table_add_balances = total_table_add_balances;
-    this.reload_balance_table_if_existing = reload_balance_table_if_existing;
-    this.get_total_asssets_value = get_total_asssets_value;
-    this.iterate_saved_balances = iterate_saved_balances;
-};
+export function reload_balance_table_if_existing() {
+    if (TOTAL_BALANCES_TABLE) {
+        TOTAL_BALANCES_TABLE.rows().invalidate();
+        balance_table_init_callback.call(TOTAL_BALANCES_TABLE);
+        $(TOTAL_BALANCES_TABLE.column(2).header()).text(settings.main_currency.ticker_symbol + ' value');
+        TOTAL_BALANCES_TABLE.draw();
+    }
+}
