@@ -81,26 +81,30 @@ NAME="rotkehlchen-${PLATFORM}-${ARCH}"
 # Step 2: Create a wrapper script executable for both distros which points
 #         the LD_LIBRARY_PATH to the current directory
 if [[ $PLATFORM == "darwin" ]]; then
-    ZMQLIBPATH=`otool -l ./rotkehlchen-darwin-x64/rotkehlchen.app/Contents/Resources/app/node_modules/zmq/bin/darwin-x64-57/zmq.node | grep zmq | awk '/ / { print $2 }'`
-    cp $ZMQLIBPATH $NAME/
-    if [[ $? -ne 0 ]]; then
-	echo "package.sh - ERROR: copying libzmq step failed"
-	exit 1
-    fi
-else
-    ZMQLIBPATH=`ldd ./rotkehlchen-linux-x64/resources/app/node_modules/zmq/bin/*/zmq.node | grep libzmq | awk '/ => / { print $3 }'`
-    cp $ZMQLIBPATH $NAME/
-    if [[ $? -ne 0 ]]; then
-	echo "package.sh - ERROR: copying libzmq step failed"
-	exit 1
-    fi
-    PGMLIBPATH=`ldd $ZMQLIBPATH | grep libpgm | awk '/ => / { print $3 }'`
-    cp $PGMLIBPATH $NAME/
-    if [[ $? -ne 0 ]]; then
-	echo "package.sh - ERROR: copying libpgm step failed"
-	exit 1
-    fi
+    # ZMQLIBPATH=`otool -l ./rotkehlchen-darwin-x64/rotkehlchen.app/Contents/Resources/app/node_modules/zeromq/build/Release/zmq.node | grep zmq | awk '/ / { print $2 }'`
+    # cp $ZMQLIBPATH $NAME/
+    # if [[ $? -ne 0 ]]; then
+    # 	echo "package.sh - ERROR: copying libzmq step failed"
+    # 	exit 1
+    # fi
 
+    # The above seems to no longer be required. The final executable does not even depend on libzmq
+    echo "noop"
+else
+    # ZMQLIBPATH=`ldd ./rotkehlchen-linux-x64/resources/app/node_modules/zeromq/build/Release/zmq.node | grep libzmq | awk '/ => / { print $3 }'`
+    # cp $ZMQLIBPATH $NAME/
+    # if [[ $? -ne 0 ]]; then
+    # 	echo "package.sh - ERROR: copying libzmq step failed"
+    # 	exit 1
+    # fi
+    # PGMLIBPATH=`ldd $ZMQLIBPATH | grep libpgm | awk '/ => / { print $3 }'`
+    # cp $PGMLIBPATH $NAME/
+    # if [[ $? -ne 0 ]]; then
+    # 	echo "package.sh - ERROR: copying libpgm step failed"
+    # 	exit 1
+    # fi
+
+    # The above seems to no longer be required. The final executable does not even depend on libzmq
     mv $NAME/rotkehlchen $NAME/unwrapped_executable
 fi
     cp tools/scripts/wrapper_script.sh $NAME/rotkehlchen
