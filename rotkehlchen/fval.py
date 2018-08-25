@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from decimal import Decimal, InvalidOperation
 from typing import Union, Optional, NoReturn
 
@@ -67,47 +65,47 @@ class FVal(object):
         other = evaluate_input(other)
         return self.num.compare_signal(other) == Decimal('0')
 
-    def __add__(self, other: AcceptableFValOtherInput) -> FVal:
+    def __add__(self, other: AcceptableFValOtherInput):
         other = evaluate_input(other)
         return FVal(self.num.__add__(other))
 
-    def __sub__(self, other: AcceptableFValOtherInput) -> FVal:
+    def __sub__(self, other: AcceptableFValOtherInput):
         other = evaluate_input(other)
         return FVal(self.num.__sub__(other))
 
-    def __mul__(self, other: AcceptableFValOtherInput) -> FVal:
+    def __mul__(self, other: AcceptableFValOtherInput):
         other = evaluate_input(other)
         return FVal(self.num.__mul__(other))
 
-    def __truediv__(self, other: AcceptableFValOtherInput) -> FVal:
+    def __truediv__(self, other: AcceptableFValOtherInput):
         other = evaluate_input(other)
         return FVal(self.num.__truediv__(other))
 
-    def __floordiv__(self, other: AcceptableFValOtherInput) -> FVal:
+    def __floordiv__(self, other: AcceptableFValOtherInput):
         other = evaluate_input(other)
         return FVal(self.num.__floordiv__(other))
 
-    def __pow__(self, other: AcceptableFValOtherInput) -> FVal:
+    def __pow__(self, other: AcceptableFValOtherInput):
         other = evaluate_input(other)
         return FVal(self.num.__pow__(other))
 
-    def __radd__(self, other: AcceptableFValOtherInput) -> FVal:
+    def __radd__(self, other: AcceptableFValOtherInput):
         other = evaluate_input(other)
         return FVal(self.num.__radd__(other))
 
-    def __rsub__(self, other: AcceptableFValOtherInput) -> FVal:
+    def __rsub__(self, other: AcceptableFValOtherInput):
         other = evaluate_input(other)
         return FVal(self.num.__rsub__(other))
 
-    def __rmul__(self, other: AcceptableFValOtherInput) -> FVal:
+    def __rmul__(self, other: AcceptableFValOtherInput):
         other = evaluate_input(other)
         return FVal(self.num.__rmul__(other))
 
-    def __rtruediv__(self, other: AcceptableFValOtherInput) -> FVal:
+    def __rtruediv__(self, other: AcceptableFValOtherInput):
         other = evaluate_input(other)
         return FVal(self.num.__rtruediv__(other))
 
-    def __rfloordiv__(self, other: AcceptableFValOtherInput) -> FVal:
+    def __rfloordiv__(self, other: AcceptableFValOtherInput):
         other = evaluate_input(other)
         return FVal(self.num.__rfloordiv__(other))
 
@@ -116,15 +114,15 @@ class FVal(object):
 
     # --- Unary operands
 
-    def __neg__(self) -> FVal:
+    def __neg__(self):
         return FVal(self.num.__neg__())
 
-    def __abs__(self) -> FVal:
+    def __abs__(self):
         return FVal(self.num.copy_abs())
 
     # --- Other operations
 
-    def fma(self, other: AcceptableFValOtherInput, third: AcceptableFValOtherInput) -> FVal:
+    def fma(self, other: AcceptableFValOtherInput, third: AcceptableFValOtherInput):
         """
         Fused multiply-add. Return self*other+third with no rounding of the
         intermediate product self*other
