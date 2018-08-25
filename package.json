@@ -19,7 +19,7 @@
         "spectron": "^3.8.0"
     },
     "scripts": {
-        "test": "mocha ui/tests/",
+        "test": "mocha --full-trace ui/tests/",
         "start": "electron ."
     }
 }
