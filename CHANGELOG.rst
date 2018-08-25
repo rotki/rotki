@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :release:`0.3.2 <2018-08-25>`
+
 * :feature: `95` Add a UI widget to display the last time the balance data was saved in the DB.
 * :bug: `126` Refuse to generate a new tax report if one is in progress and also clean previous report before generating a new one.
 * :bug: `123` Return USD ad default main currency if DB is new
