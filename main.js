@@ -5,6 +5,16 @@ const BrowserWindow = electron.BrowserWindow;
 const path = require('path');
 const fs = require('fs');
 
+if (process.env.NODE_ENV != 'production') {
+    require('electron-context-menu')({
+        prepend: (params, browserWindow) => [{
+            label: 'Rainbow',
+            // Only show it when right-clicking images
+            visible: params.mediaType === 'image'
+        }]
+    });
+}
+
 /*************************************************************
  * window management
  *************************************************************/
