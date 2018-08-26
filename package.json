@@ -16,7 +16,8 @@
         "electron-packager": "^8.7.2",
         "electron-rebuild": "^1.5.7",
         "mocha": "^5.1.1",
-        "spectron": "^3.8.0"
+        "spectron": "^3.8.0",
+        "electron-context-menu": "^0.10.0"
     },
     "scripts": {
         "test": "mocha ui/tests/",
