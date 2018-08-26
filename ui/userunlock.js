@@ -97,7 +97,7 @@ function prompt_sign_in() {
         buttons: {
             formSubmit: {
                 text: 'Sign In',
-                btnClass: 'btn-blue',
+                btnClass: 'btn-blue sign-in',
                 action: function () {
                     let username = this.$content.find('#username_entry').val();
                     let password = this.$content.find('#password_entry').val();
@@ -109,7 +109,7 @@ function prompt_sign_in() {
             },
             newAccount: {
                 text: 'Create New Account',
-                btnClass: 'btn-blue',
+                btnClass: 'btn-blue create-new-account',
                 action: function () {
                     prompt_new_account();
                 }
