@@ -13,3 +13,5 @@ rotkehlchen.log
 .pytest_cache
 ui/.ignore
 pytestdebug.log
+dist/
+.eggs
