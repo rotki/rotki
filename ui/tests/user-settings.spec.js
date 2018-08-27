@@ -1,21 +1,16 @@
 // Nice overview for electron tests with the chai.should model:
 // https://dzone.com/articles/write-automated-tests-for-electron-with-spectron-m
 
-require('dotenv').config();
-const Application = require('spectron').Application;
-const electronPath = require('electron'); // Require Electron from the binaries included in node_modules.
-const path = require('path');
-const chaiAsPromised = require("chai-as-promised");
-const chai = require("chai");
-chai.should();
-chai.use(chaiAsPromised);
+const {
+    path, chai, Application, electronPath
+} = require('./utils/setup')
 
 const guid = () => {
     const s4 = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1)
     return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
 }
 
-describe('Application launch', function () {
+describe('User Settings', function () {
   this.timeout(30000);
 
   beforeEach(function () {
@@ -30,14 +25,6 @@ describe('Application launch', function () {
     if (this.app && this.app.isRunning()) {
         return this.app.stop();
     }
-  });
-
-  it('assert we got 1 window running', function () {
-      return this.app.client.getWindowCount().should.eventually.equal(1);
-  });
-
-  it('make sure we get the login popup', function () {
-    return this.app.client.waitForExist('.jconfirm-box-container', 5000).should.eventually.equal(true);
   });
 
   it('Going to the user settings, adding an ethereum account and looking at its balance', async function () {
