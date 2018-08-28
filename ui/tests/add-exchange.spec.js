@@ -36,7 +36,7 @@ describe('User Settings', function () {
     }
 
     // wait for sign-in / create-new-account modal
-    this.app.client.waitForExist('.jconfirm-box-container', 5000).should.eventually.equal(true);
+    await this.app.client.waitForExist('.jconfirm-box-container', 5000).should.eventually.equal(true);
 
     // choose create-new-account
     await this.app.client.click('button.create-new-account')
@@ -60,7 +60,7 @@ describe('User Settings', function () {
     await this.app.client.click('li#user-dropdown.dropdown')
 
     // make sure dropdown menu is open
-    this.app.client.waitForExist('li.dropdown.open', 5000).should.eventually.equal(true)
+    await this.app.client.waitForExist('li.dropdown.open', 5000).should.eventually.equal(true)
     
     await this.app.client.execute(function () {
         // remove all modals
@@ -90,9 +90,9 @@ describe('User Settings', function () {
 
     await this.app.client.waitForExist('#exchange_panel_body .form-group.input-group.has-success', 28000)
 
-    this.app.client.getText('#api_key_entry').should.eventually.equal('bittrex API Key is already registered')
+    await this.app.client.getValue('#api_key_entry').should.eventually.equal('bittrex API Key is already registered')
 
-    this.app.client.getText('#api_secret_entry').should.eventually.equal('bittrex API Secret is already registered')
+    await this.app.client.getValue('#api_secret_entry').should.eventually.equal('bittrex API Secret is already registered')
 
     // remove the bittrex registration, so we can test again
 
