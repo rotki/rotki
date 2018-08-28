@@ -46,7 +46,7 @@ before_install:
 
 install:
   - pip install virtualenv
-  - python -m virtualenv -p python3 ./vpy3
+  - python -m virtualenv -p python3.6 ./vpy3
   - source ./vpy3/bin/activate
   - which python
   - pip install --upgrade pip
