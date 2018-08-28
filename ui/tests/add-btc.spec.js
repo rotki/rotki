@@ -33,7 +33,7 @@ describe('User Settings', function () {
     const btcAddress = process.env.BTC_ADDRESS
 
     // wait for sign-in / create-new-account modal
-    this.app.client.waitForExist('.jconfirm-box-container', 5000).should.eventually.equal(true);
+    await this.app.client.waitForExist('.jconfirm-box-container', 5000).should.eventually.equal(true);
 
     // choose create-new-account
     await this.app.client.click('button.create-new-account')
@@ -57,7 +57,7 @@ describe('User Settings', function () {
     await this.app.client.click('li#user-dropdown.dropdown')
 
     // make sure dropdown menu is open
-    this.app.client.waitForExist('li.dropdown.open', 5000).should.eventually.equal(true)
+    await this.app.client.waitForExist('li.dropdown.open', 5000).should.eventually.equal(true)
     
     await this.app.client.execute(function () {
         // remove all modals
@@ -82,11 +82,11 @@ describe('User Settings', function () {
 
     await this.app.client.waitForExist('#blockchain_per_asset_table_body td.sorting_1', 28000)
 
-    this.app.client.getText('#blockchain_per_asset_table_body td').should.eventually.contain('BTC')
+    await this.app.client.getText('#blockchain_per_asset_table_body td').should.eventually.contain('BTC')
 
-    this.app.client.getText('#btcchain_per_account_table_body td').should.eventually.contain(btcAddress)
+    await this.app.client.getText('#btcchain_per_account_table_body td').should.eventually.contain(btcAddress)
 
-    this.app.client.getText('#blockchain_per_asset_table_body td.sorting_1').should.eventually.equal('0.00')
+    await this.app.client.getText('#blockchain_per_asset_table_body td.sorting_1').should.eventually.equal('0.00')
   });
 
 });
