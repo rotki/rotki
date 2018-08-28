@@ -15,6 +15,7 @@ ui/.ignore
 pytestdebug.log
 lib/
 bin/
+dist/
 .eggs/
 include/
 *.Python
