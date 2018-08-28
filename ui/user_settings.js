@@ -362,6 +362,7 @@ function add_blockchain_account(event) {
             if (blockchain == 'ETH') {
                 recreate_ethchain_per_account_table(result['per_account']['ETH']);
             } else if (blockchain == 'BTC') {
+                create_blockchain_balances_tables(result)
                 BB_PER_ACCOUNT_TABLES['BTC'].update_format(result['per_account']['BTC']);
             }
             // also reload the asset total tables
