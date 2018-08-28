@@ -33,7 +33,7 @@ describe('Add Token', function () {
     const ethAddress = process.env.ETH_ADDRESS
 
     // wait for sign-in / create-new-account modal
-    this.app.client.waitForExist('.jconfirm-box-container', 5000).should.eventually.equal(true);
+    await this.app.client.waitForExist('.jconfirm-box-container', 5000).should.eventually.equal(true);
 
     // choose create-new-account
     await this.app.client.click('button.create-new-account')
@@ -57,7 +57,7 @@ describe('Add Token', function () {
     await this.app.client.click('li#user-dropdown.dropdown')
 
     // make sure dropdown menu is open
-    this.app.client.waitForExist('li.dropdown.open', 5000).should.eventually.equal(true)
+    await this.app.client.waitForExist('li.dropdown.open', 5000).should.eventually.equal(true)
     
     await this.app.client.execute(function () {
         // remove all modals
@@ -88,7 +88,7 @@ describe('Add Token', function () {
     // check that the <li> has been selected
     await this.app.client.waitForExist('ul.ms-list li.ms-elem-selection.ms-selected')
 
-    this.app.client.getText('ul.ms-list li.ms-elem-selection.ms-selected').should.eventually.equal(tokens[0])
+    await this.app.client.getText('ul.ms-list li.ms-elem-selection.ms-selected').should.eventually.equal(tokens[0])
   });
 
 });
