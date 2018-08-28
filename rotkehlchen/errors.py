@@ -8,6 +8,12 @@ class PoloniexError(Exception):
     def __str__(self):
         return self.err
 
+class BitmexError(Exception):
+    def __init__(self, err):
+        self.err = err
+
+    def __str__(self):
+        return self.err
 
 class RecoverableRequestError(Exception):
     def __init__(self, exchange, err):

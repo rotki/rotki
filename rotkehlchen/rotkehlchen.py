@@ -18,6 +18,7 @@ from rotkehlchen.poloniex import Poloniex
 from rotkehlchen.kraken import Kraken
 from rotkehlchen.bittrex import Bittrex
 from rotkehlchen.binance import Binance
+from rotkehlchen.bitmex import Bitmex
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium import premium_create_and_verify
@@ -81,6 +82,7 @@ class Rotkehlchen(object):
         self.kraken = None
         self.bittrex = None
         self.binance = None
+        self.bitmex = None
 
         self.data = DataHandler(self.data_dir)
 
@@ -107,6 +109,17 @@ class Rotkehlchen(object):
             )
             self.connected_exchanges.append('poloniex')
             self.trades_historian.set_exchange('poloniex', self.poloniex)
+
+        if self.bitmex is None and 'bitmex' in secret_data:
+            self.bitmex = Bitmex(
+                secret_data['bitmex']['api_key'],
+                secret_data['bitmex']['api_secret'],
+                self.inquirer,
+                self.data_dir
+            )
+            self.connected_exchanges.append('bitmex')
+            self.trades_historian.set_exchange('bitmex', self.bitmex)
+
 
         if self.bittrex is None and 'bittrex' in secret_data:
             self.bittrex = Bittrex(
@@ -327,6 +340,8 @@ class Rotkehlchen(object):
                 self.poloniex.main_logic()
             if self.kraken is not None:
                 self.kraken.main_logic()
+            if self.bitmex is not None:
+                self.bitmex.main_logic()
 
             self.maybe_upload_data_to_server()
 
