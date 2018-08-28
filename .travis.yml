@@ -45,7 +45,6 @@ before_install:
     fi
 
 install:
-  - pip install --upgrade pip
   - pip install -U pip wheel coveralls "coverage<4.4"
   - pip install pytest-travis-fold
   - pip install flake8
