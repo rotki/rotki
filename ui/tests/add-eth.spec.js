@@ -81,6 +81,10 @@ describe('User Settings', function () {
 
     await this.app.client.waitForExist('#blockchain_per_asset_table_body td.sorting_1', 20000)
 
+    this.app.client.getText('#blockchain_per_asset_table_body td').should.eventually.contain('ETH')
+
+    this.app.client.getText('#ethchain_per_account_table_body td').should.eventually.contain(ethAddress)
+
     this.app.client.getText('#blockchain_per_asset_table_body td.sorting_1').should.eventually.equal('0.00')
   });
 
