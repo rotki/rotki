@@ -45,6 +45,12 @@ before_install:
     fi
 
 install:
+  - pip install virtualenv
+  - python -m virtualenv -p python3 ./vpy3
+  - source ./vpy3/bin/activate
+  - which python
+  - pip install --upgrade pip
+  - python -m pip install -U pip
   - pip install -U pip wheel coveralls "coverage<4.4"
   - pip install pytest-travis-fold
   - pip install flake8
