@@ -33,7 +33,7 @@ describe('User Settings', function () {
     const btcAddress = process.env.BTC_ADDRESS
 
     // wait for sign-in / create-new-account modal
-    this.app.client.waitForExist('.jconfirm-box-container', 5000).should.eventually.equal(true);
+    await this.app.client.waitForExist('.jconfirm-box-container', 5000).should.eventually.equal(true);
 
     // choose create-new-account
     await this.app.client.click('button.create-new-account')
@@ -57,7 +57,7 @@ describe('User Settings', function () {
     await this.app.client.click('li#user-dropdown.dropdown')
 
     // make sure dropdown menu is open
-    this.app.client.waitForExist('li.dropdown.open', 5000).should.eventually.equal(true)
+    await this.app.client.waitForExist('li.dropdown.open', 5000).should.eventually.equal(true)
     
     await this.app.client.execute(function () {
         // remove all modals
@@ -82,9 +82,9 @@ describe('User Settings', function () {
 
     await this.app.client.waitForExist('#fiat_balances_table td.sorting_1', 28000)
 
-    this.app.client.getText('#fiat_balances_table td').should.eventually.contain('USD')
+    await this.app.client.getText('#fiat_balances_table td').should.eventually.contain('USD')
 
-    this.app.client.getText('#fiat_balances_table td.sorting_1').should.eventually.equal('15.00')
+    await this.app.client.getText('#fiat_balances_table td.sorting_1').should.eventually.equal('15.00')
   });
 
 });
