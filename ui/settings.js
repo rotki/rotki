@@ -14,7 +14,7 @@ function assert_exchange_exists(name) {
     }
 }
 
-let exchanges = ['kraken', 'poloniex', 'bittrex', 'binance'];
+let exchanges = ['kraken', 'poloniex', 'bittrex', 'binance','bitmex'];
 let currencies = [
     new Currency("United States Dollar", "fa-usd", "USD", "$"),
     new Currency("Euro", "fa-eur", "EUR", "€"),

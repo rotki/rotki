@@ -125,6 +125,45 @@ def trade_from_poloniex(poloniex_trade, pair):
         location='poloniex'
     )
 
+def trade_from_bitmex(bitmex_trade, pair):
+    """Turn a bitmex trade returned from bitmex trade history to our common trade
+    history format"""
+
+    trade_type = bitmex_trade['type']
+    amount = FVal(bitmex_trade['amount'])
+    rate = FVal(bitmex_trade['rate'])
+    perc_fee = FVal(bitmex_trade['fee'])
+    base_currency = get_pair_position(pair, 'first')
+    quote_currency = get_pair_position(pair, 'second')
+    if trade_type == 'buy':
+        cost = rate * amount
+        cost_currency = base_currency
+        fee = amount * perc_fee
+        fee_currency = quote_currency
+    elif trade_type == 'sell':
+        cost = amount * rate
+        cost_currency = base_currency
+        fee = cost * perc_fee
+        fee_currency = base_currency
+    else:
+        raise ValueError('Got unexpected trade type "{}" for bitmex trade'.format(trade_type))
+
+    if bitmex_trade['category'] == 'settlement':
+        trade_type = "settlement_%s" % trade_type
+
+    return Trade(
+        timestamp=createTimeStamp(bitmex_trade['date'], formatstr="%Y-%m-%d %H:%M:%S"),
+        pair=pair,
+        type=trade_type,
+        rate=rate,
+        cost=cost,
+        cost_currency=cost_currency,
+        fee=fee,
+        fee_currency=fee_currency,
+        amount=amount,
+        location='bitmex'
+    )
+
 
 def do_read_manual_margin_positions(data_directory):
     manual_margin_path = os.path.join(data_directory, MANUAL_MARGINS_LOGFILE)
@@ -468,6 +507,7 @@ class TradesHistorian(object):
         self.kraken = None
         self.bittrex = None
         self.binance = None
+        self.bitmex = None
         self.data_directory = data_directory
         self.db = db
         self.eth_accounts = eth_accounts
@@ -484,6 +524,62 @@ class TradesHistorian(object):
                 'Attempted to set {} exchange in TradesHistorian while it was '
                 'already set'.format(name)
             )
+
+    def query_bitmex_history(self, history, asset_movements, start_ts, end_ts, end_at_least_ts):
+        bitmex_margin_trades = list()
+        bit_loans = list()
+        if self.bitmex is not None:
+            bit_history = self.bitmex.query_trade_history(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                end_at_least_ts=end_at_least_ts
+            )
+
+            for pair, trades in bit_history.items():
+                for trade in trades:
+                    category = trade['category']
+
+                    if category == 'exchange' or category == 'settlement':
+                        history.append(trade_from_bitmex(trade, pair))
+                    elif category == 'marginTrade':
+                        if not self.read_manual_margin_positions:
+                            bitmex_margin_trades.append(trade_from_bitmex(trade, pair))
+                    else:
+                        raise ValueError("Unexpected bitmex trade category: {}".format(category))
+
+            if self.read_manual_margin_positions:
+                # Just read the manual positions log and make virtual trades that
+                # correspond to the profits
+                assert bitmex_margin_trades == list(), (
+                    "bitmex margin trades list should be empty here"
+                )
+                bitmex_margin_trades = do_read_manual_margin_positions(
+                    self.data_directory
+                )
+            else:
+                bitmex_margin_trades.sort(key=lambda trade: trade.timestamp)
+                bitmex_margin_trades = limit_trade_list_to_period(
+                    bitmex_margin_trades,
+                    start_ts,
+                    end_ts
+                )
+
+            bit_loans = self.bitmex.query_loan_history(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                end_at_least_ts=end_at_least_ts,
+                from_csv=True
+            )
+            bit_loans = process_polo_loans(bit_loans, start_ts, end_ts)
+            bit_asset_movements = self.bitmex.query_deposits_withdrawals(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                end_at_least_ts=end_at_least_ts,
+            )
+            asset_movements.extend(bit_asset_movements)
+
+        return history, asset_movements, bitmex_margin_trades, bit_loans
+
 
     def query_poloniex_history(self, history, asset_movements, start_ts, end_ts, end_at_least_ts):
         poloniex_margin_trades = list()
@@ -587,6 +683,22 @@ class TradesHistorian(object):
         except RemoteError as e:
             empty_or_error += '\n' + str(e)
 
+        try:
+            (
+                history,
+                asset_movements,
+                bitmex_margin_trades,
+                bit_loans,
+            ) = self.query_bitmex_history(
+                history,
+                asset_movements,
+                start_ts,
+                end_ts,
+                end_at_least_ts,
+            )
+        except RemoteError as e:
+            empty_or_error += '\n' + str(e)
+
         if self.bittrex is not None:
             try:
                 bittrex_history = self.bittrex.query_trade_history(
@@ -633,10 +745,20 @@ class TradesHistorian(object):
                 start_ts,
                 end_ts
             )
-
+        if self.bitmex is not None and not self.read_manual_margin_positions:
+            marginfile_path = os.path.join(self.data_directory, MARGIN_HISTORYFILE)
+            write_tupledata_history_in_file(
+                bitmex_margin_trades,
+                marginfile_path,
+                start_ts,
+                end_ts
+            )
         if self.poloniex is not None:
             loansfile_path = os.path.join(self.data_directory, LOANS_HISTORYFILE)
             write_history_data_in_file(polo_loans, loansfile_path, start_ts, end_ts)
+        if self.bitmex is not None:
+            loansfile_path = os.path.join(self.data_directory, LOANS_HISTORYFILE)
+            write_history_data_in_file(bit_loans, loansfile_path, start_ts, end_ts)
         assetmovementsfile_path = os.path.join(self.data_directory, ASSETMOVEMENTS_HISTORYFILE)
         write_tupledata_history_in_file(asset_movements, assetmovementsfile_path, start_ts, end_ts)
         eth_tx_log_path = os.path.join(self.data_directory, ETHEREUM_TX_LOGFILE)
@@ -671,6 +793,11 @@ class TradesHistorian(object):
                     pass
 
                 all_history_okay = data_up_todate(history_json_data, start_ts, end_at_least_ts)
+                bitmex_history_okay = True
+                if self.bitmex is not None:
+                    bitmex_history_okay = self.bitmex.check_trades_cache(
+                        start_ts, end_at_least_ts
+                    ) is not None
                 poloniex_history_okay = True
                 if self.poloniex is not None:
                     poloniex_history_okay = self.poloniex.check_trades_cache(
@@ -738,6 +865,7 @@ class TradesHistorian(object):
                 if (
                         all_history_okay and
                         poloniex_history_okay and
+                        bitmex_history_okay and
                         kraken_history_okay and
                         bittrex_history_okay and
                         binance_history_okay and
