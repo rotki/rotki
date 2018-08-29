@@ -104,9 +104,6 @@ const createPyProc = () => {
         pyProc = require('child_process').spawn('python', ["-m", "rotkehlchen", "--zerorpc-port", port]);
     }
 
-    pyProc.on('data', (data) => {
-        console.log('pyproc:', data);
-    });
     pyProc.on('error', (err) => {
         console.error('Failed to start python subprocess.', err);
     });
