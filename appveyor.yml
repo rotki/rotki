@@ -1,0 +1,36 @@
+version: 1.0.{build}
+
+environment:
+    python2_version: 2.7.15
+    python3_version: 3.6.6
+    matrix:
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+          arch: 32
+
+install:
+    - ps: appveyor\variables.ps1
+    - ps: appveyor\install.ps1
+    - git clone https://github.com/journeyapps/node-sqlcipher.git
+    - git clone https://github.com/rigglemania/pysqlcipher3.git
+    - tar -xvzf node-sqlcipher/deps/sqlcipher-amalgamation-3020001.tar.gz
+    - robocopy sqlcipher-amalgamation-3020001\ pysqlcipher3\amalgamation\ & exit 0
+    - robocopy sqlcipher-amalgamation-3020001\ c:\python36\include\sqlcipher\ & exit 0
+    - cd pysqlcipher3
+    - python setup.py build_amalgamation
+    - python setup.py install
+    - cd ..     
+    - pip install -r requirements.txt
+
+build_script:
+    - npm install
+    - npm config set python C:\Python27\python.exe
+    - set PYTHON="C:\Python27\python.exe" 
+    - npm rebuild zeromq --runtime=electron --target=1.8.4
+    - node_modules\.bin\electron-rebuild
+
+test_script:
+    - npm test
+
+deploy_script:
+    - node_modules\.bin\electron-packager . --overwrite --ignore="rotkehlchen$" --ignore="rotkehlchen.egg-info" --ignore="tools$" --ignore=".*\.sh" --ignore=".*\.py"
+
