@@ -133,7 +133,7 @@ def do_read_manual_margin_positions(data_directory):
             margin_data = rlk_jsonloads(f.read())
     else:
         margin_data = []
-        logger.error(
+        logger.info(
             'Could not find manual margins log file at {}'.format(manual_margin_path)
         )
     return margin_data
