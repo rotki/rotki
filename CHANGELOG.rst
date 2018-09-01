@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`135` Fix bug in converting binance sell trades to the common rotkehlchen format
 * :bug:`140` Don't log an error if the manual margin file is not found
 
 * :release:`0.3.2 <2018-08-25>`
