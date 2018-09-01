@@ -607,7 +607,7 @@ class TradesHistorian(object):
                     end_at_least_ts=end_at_least_ts
                 )
                 for trade in binance_history:
-                    history.append(trade_from_binance(trade))
+                    history.append(trade_from_binance(trade, self.binance.symbols_to_pair))
             except RemoteError as e:
                 empty_or_error += '\n' + str(e)
 
