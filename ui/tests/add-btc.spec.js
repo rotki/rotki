@@ -76,6 +76,8 @@ describe('User Settings', function () {
         $('.jconfirm').remove()
         $('#crypto_type_entry').val('BTC')
     })
+    // Make sure the modal is not there
+    await this.app.client.waitForExist('.jconfirm-box', 5000, true).should.eventually.equal(true);
     await this.app.client.addValue('#account_entry', btcAddress)
     await this.app.client.click('#add_account_button')
 
@@ -86,7 +88,10 @@ describe('User Settings', function () {
 
     await this.app.client.getText('#btcchain_per_account_table_body td').should.eventually.contain(btcAddress)
 
-    await this.app.client.getText('#blockchain_per_asset_table_body td.sorting_1').should.eventually.equal('0.00')
+      await this.app.client.getText('#blockchain_per_asset_table_body td.sorting_1').should.eventually.satisfy(function(txt) {
+          let number = parseInt(txt, 10);
+          return number >= 0;
+      });
   });
 
 });
