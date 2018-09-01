@@ -3,8 +3,7 @@ os: linux
 language: python
 python:
   - 3.6
-node_js:
-  - 8.9
+
 env:
   global:
   - GETH_URL_LINUX='https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.8.13-225171a4.tar.gz'
