@@ -52,6 +52,12 @@ describe('User Settings', function () {
     await this.app.client.execute(function () {
         $('.jconfirm').remove()
     })
+    // wait for the other modal popup, then close it
+    await this.app.client.waitForExist('.jconfirm-box.jconfirm-hilight-shake.jconfirm-type-animated.jconfirm-type-green', 5000)
+    await this.app.client.execute(function () {
+        $('.jconfirm-box.jconfirm-hilight-shake.jconfirm-type-animated.jconfirm-type-green').remove()
+        $('.jconfirm').remove()
+    })
     
     // open dropdown menu
     await this.app.client.click('li#user-dropdown.dropdown')
@@ -76,8 +82,6 @@ describe('User Settings', function () {
         $('.jconfirm').remove()
         $('#crypto_type_entry').val('BTC')
     })
-    // Make sure the modal is not there
-    await this.app.client.waitForExist('.jconfirm-box', 5000, true).should.eventually.equal(true);
     await this.app.client.addValue('#account_entry', btcAddress)
     await this.app.client.click('#add_account_button')
 
