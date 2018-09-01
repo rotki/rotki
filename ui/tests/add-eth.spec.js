@@ -11,7 +11,7 @@ const guid = () => {
 }
 
 describe('User Settings', function () {
-  this.timeout(30000);
+  this.timeout(50000);
 
   beforeEach(function () {
     this.app = new Application({
