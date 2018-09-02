@@ -26,47 +26,41 @@ BITMEX_PRIVATE_ENDPOINTS = (
 )
 
 
-def bittrex_pair_to_world(pair: str) -> str:
-    return pair.replace('-', '_')
-
-
-def world_pair_to_bittrex(pair: str) -> str:
-    return pair.replace('_', '-')
-
-
 def trade_from_bitmex(bittrex_trade: Dict) -> Trade:
-    """Turn a bittrex trade returned from bittrex trade history to our common trade
+    """Turn a bitmex trade returned from bittrex trade history to our common trade
     history format"""
-    amount = FVal(bittrex_trade['Quantity']) - FVal(bittrex_trade['QuantityRemaining'])
-    rate = FVal(bittrex_trade['PricePerUnit'])
-    order_type = bittrex_trade['OrderType']
-    bittrex_price = FVal(bittrex_trade['Price'])
-    bittrex_commission = FVal(bittrex_trade['Commission'])
-    pair = bittrex_pair_to_world(bittrex_trade['Exchange'])
-    base_currency = get_pair_position(pair, 'first')
-    if order_type == 'LIMIT_BUY':
-        order_type = 'buy'
-        cost = bittrex_price + bittrex_commission
-        fee = bittrex_commission
-    elif order_type == 'LIMIT_SEL':
-        order_type = 'sell'
-        cost = bittrex_price - bittrex_commission
-        fee = bittrex_commission
-    else:
-        raise ValueError('Got unexpected order type "{}" for bittrex trade'.format(order_type))
+    # TODO
+    return None
+    # amount = FVal(bittrex_trade['Quantity']) - FVal(bittrex_trade['QuantityRemaining'])
+    # rate = FVal(bittrex_trade['PricePerUnit'])
+    # order_type = bittrex_trade['OrderType']
+    # bittrex_price = FVal(bittrex_trade['Price'])
+    # bittrex_commission = FVal(bittrex_trade['Commission'])
+    # pair = bittrex_pair_to_world(bittrex_trade['Exchange'])
+    # base_currency = get_pair_position(pair, 'first')
+    # if order_type == 'LIMIT_BUY':
+    #     order_type = 'buy'
+    #     cost = bittrex_price + bittrex_commission
+    #     fee = bittrex_commission
+    # elif order_type == 'LIMIT_SEL':
+    #     order_type = 'sell'
+    #     cost = bittrex_price - bittrex_commission
+    #     fee = bittrex_commission
+    # else:
+    #     raise ValueError('Got unexpected order type "{}" for bittrex trade'.format(order_type))
 
-    return Trade(
-        timestamp=bittrex_trade['TimeStamp'],
-        pair=pair,
-        type=order_type,
-        rate=rate,
-        cost=cost,
-        cost_currency=base_currency,
-        fee=fee,
-        fee_currency=base_currency,
-        amount=amount,
-        location='bitmex'
-    )
+    # return Trade(
+    #     timestamp=bittrex_trade['TimeStamp'],
+    #     pair=pair,
+    #     type=order_type,
+    #     rate=rate,
+    #     cost=cost,
+    #     cost_currency=base_currency,
+    #     fee=fee,
+    #     fee_currency=base_currency,
+    #     amount=amount,
+    #     location='bitmex'
+    # )
 
 
 class Bitmex(Exchange):
@@ -153,13 +147,8 @@ class Bitmex(Exchange):
 
         request_url = self.uri + request_path
         response = getattr(self.session, verb)(request_url, data=data)
-        print('verb: ' + verb)
-        print('request_path: ' + request_path)
-        print('request_url: ' + request_url)
-        print('data: ' + data)
 
         if response.status_code not in (200, 401):
-            print(response.text)
             raise RemoteError(
                 'Bitmex api request for {} failed with HTTP status code {}'.format(
                     response.url,
@@ -170,13 +159,11 @@ class Bitmex(Exchange):
         try:
             json_ret = rlk_jsonloads(response.text)
         except JSONDecodeError:
-            print('failed response: ' + response.text)
             raise RemoteError('Bitmex returned invalid JSON response')
 
         if 'error' in json_ret:
             raise RemoteError(json_ret['error']['message'])
 
-        print('success response: {}'.format(json_ret))
         return json_ret
 
     def get_btc_price(self, asset: typing.BlockchainAsset) -> Optional[FVal]:
