@@ -23,6 +23,8 @@ matrix:
   - os: osx
     language: generic
     env: INSTALL_TYPE=macpython VERSION=3.6 VENV=venv
+    node_js: '8.9'
+    python: '3.6'
   - os: linux
     language: python
     python: '3.6'
