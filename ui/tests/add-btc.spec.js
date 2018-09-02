@@ -48,12 +48,12 @@ describe('User Settings', function () {
     await this.app.client.click('.jconfirm-buttons>button')
 
     // wait for popup modal, then close it
-    await this.app.client.waitForExist('.jconfirm-box.jconfirm-type-green.jconfirm-type-animated', 5000)
+    await this.app.client.waitForExist('.jconfirm-box', 5000)
     await this.app.client.execute(function () {
         $('.jconfirm').remove()
     })
     // wait for the other modal popup, then close it
-    await this.app.client.waitForExist('.jconfirm-box.jconfirm-hilight-shake.jconfirm-type-animated.jconfirm-type-green', 5000)
+    await this.app.client.waitForExist('.jconfirm-box', 5000)
     await this.app.client.execute(function () {
         $('.jconfirm-box.jconfirm-hilight-shake.jconfirm-type-animated.jconfirm-type-green').remove()
         $('.jconfirm').remove()
@@ -76,7 +76,7 @@ describe('User Settings', function () {
         $('#account_entry')[0].scrollIntoView()
     })
     await this.app.client.waitForExist('#blockchain_per_asset_table_body td.dataTables_empty')
-
+    
     await this.app.client.execute(function () {
         // remove all modals
         $('.jconfirm').remove()
