@@ -11,7 +11,7 @@ const guid = () => {
 }
 
 describe('User Settings', function () {
-  this.timeout(30000);
+  this.timeout(50000);
 
   beforeEach(function () {
     this.app = new Application({
@@ -50,6 +50,12 @@ describe('User Settings', function () {
     // wait for popup modal, then close it
     await this.app.client.waitForExist('.jconfirm-box.jconfirm-type-green.jconfirm-type-animated', 5000)
     await this.app.client.execute(function () {
+        $('.jconfirm-box.jconfirm-type-green.jconfirm-type-animated').remove()
+    })
+    // wait for the other modal popup, then close it
+    await this.app.client.waitForExist('.jconfirm-box.jconfirm-hilight-shake.jconfirm-type-animated.jconfirm-type-green', 5000)
+    await this.app.client.execute(function () {
+        $('.jconfirm-box.jconfirm-hilight-shake.jconfirm-type-animated.jconfirm-type-green').remove()
         $('.jconfirm').remove()
     })
     
@@ -75,6 +81,7 @@ describe('User Settings', function () {
         // remove all modals
         $('.jconfirm').remove()
     })
+    // Make sure the modal is not there
     await this.app.client.addValue('#account_entry', ethAddress)
     await this.app.client.click('#add_account_button')
 
@@ -85,7 +92,36 @@ describe('User Settings', function () {
 
     await this.app.client.getText('#ethchain_per_account_table_body td').should.eventually.contain(ethAddress)
 
-    await this.app.client.getText('#blockchain_per_asset_table_body td.sorting_1').should.eventually.equal('0.00')
-  });
+    await this.app.client.getText('#blockchain_per_asset_table_body td.sorting_1').should.eventually.satisfy(function(txt) {
+          let number = parseInt(txt, 10);
+          return number >= 0;
+    });
 
+    // now scroll to the tokens list
+    await this.app.client.execute(function () {
+        $('body').css('overflow', 'scroll')
+        $('ul.ms-list')[0].scrollIntoView()
+    })
+
+    // get the list of available tokens
+    const tokens = await this.app.client.getText('ul.ms-list li.ms-elem-selectable')
+    await this.app.client.execute(function () {
+        // click OMG token
+        $('ul.ms-list li.ms-elem-selectable span').filter(function () { return $(this).html() == 'OMG'; }).click();
+    })
+    // check that the <li> has been selected
+    await this.app.client.waitForExist('ul.ms-list li.ms-elem-selection.ms-selected')
+    // check that OMG has been moved to the owned tokens column
+    await this.app.client.getText('ul.ms-list li.ms-elem-selection.ms-selected').should.eventually.equal('OMG')
+    // check that the ethchain per account table has an extra column
+    await this.app.client.waitForExist('#ethchain_per_account_table > thead > tr > th:nth-child(4)', 20000);
+
+    // check that OMG is now in the ETH accouns table
+    await this.app.client.getText('#ethchain_per_account_table > thead > tr > th:nth-child(3)').should.eventually.equal('OMG')
+    // check that the table has a value for the amount of OMG
+    await this.app.client.getText('#ethchain_per_account_table_body > tr:nth-child(1) > td:nth-child(3)').should.eventually.satisfy(function(txt) {
+          let number = parseInt(txt, 10);
+          return number >= 0;
+      });
+  });
 });

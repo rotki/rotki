@@ -33,10 +33,12 @@ class Exchange(object):
             secret: typing.ApiSecret,
             datadir: typing.FilePath
     ):
-        assert isinstance(api_key, typing.T_ApiKey), 'api key for {} should be a '
-        'bytestring'.format(name)
-        assert isinstance(secret, typing.T_ApiSecret), 'secret for {} should be a '
-        'bytestring'.format(name)
+        assert isinstance(api_key, typing.T_ApiKey), (
+            'api key for {} should be a bytestring'.format(name)
+        )
+        assert isinstance(secret, typing.T_ApiSecret), (
+            'secret for {} should be a bytestring'.format(name)
+        )
         self.name = name
         self.data_dir = datadir
         self.api_key = api_key

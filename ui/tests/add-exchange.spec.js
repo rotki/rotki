@@ -53,6 +53,12 @@ describe('User Settings', function () {
     // wait for popup modal, then close it
     await this.app.client.waitForExist('.jconfirm-box.jconfirm-type-green.jconfirm-type-animated', 5000)
     await this.app.client.execute(function () {
+        $('.jconfirm-box.jconfirm-type-green.jconfirm-type-animated').remove()
+    })
+    // wait for the other modal popup, then close it
+    await this.app.client.waitForExist('.jconfirm-box.jconfirm-hilight-shake.jconfirm-type-animated.jconfirm-type-green', 5000)
+    await this.app.client.execute(function () {
+        $('.jconfirm-box.jconfirm-hilight-shake.jconfirm-type-animated.jconfirm-type-green').remove()
         $('.jconfirm').remove()
     })
     

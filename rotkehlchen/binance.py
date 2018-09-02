@@ -2,10 +2,10 @@ import time
 import hmac
 import hashlib
 from urllib.parse import urlencode
-from typing import Dict, Tuple, Optional, Union, List, cast
+from typing import Any, Dict, NamedTuple, Tuple, Optional, Union, List, cast
 
 from rotkehlchen.exchange import Exchange
-from rotkehlchen.order_formatting import pair_get_assets, Trade
+from rotkehlchen.order_formatting import Trade
 from rotkehlchen.utils import rlk_jsonloads, cache_response_timewise
 from rotkehlchen.fval import FVal
 from rotkehlchen.errors import RemoteError
@@ -26,35 +26,46 @@ V1_ENDPOINTS = (
 )
 
 
-def binance_pair_to_world(pair: str) -> str:
-    return pair[0:3] + '_' + pair[3:]
+class BinancePair(NamedTuple):
+    symbol: str
+    base_asset: str
+    quote_asset: str
 
 
-def trade_from_binance(binance_trade: Dict) -> Trade:
+def trade_from_binance(
+        binance_trade: Dict,
+        binance_symbols_to_pair: Dict[str, BinancePair],
+) -> Trade:
     """Turn a binance trade returned from trade history to our common trade
-    history format"""
+    history format
+
+    From the official binance api docs (01/09/18):
+    https://github.com/binance-exchange/binance-official-api-docs/blob/62ff32d27bb32d9cc74d63d547c286bb3c9707ef/rest-api.md#terminology
+
+    base asset refers to the asset that is the quantity of a symbol.
+    quote asset refers to the asset that is the price of a symbol.
+    """
     amount = FVal(binance_trade['qty'])
     rate = FVal(binance_trade['price'])
-    pair = binance_pair_to_world(binance_trade['symbol'])
+    pair = binance_symbols_to_pair[binance_trade['symbol']]
 
-    base_asset, quote_asset = pair_get_assets(pair)
+    base_asset = pair.base_asset
+    quote_asset = pair.quote_asset
 
     if binance_trade['isBuyer']:
         order_type = 'buy'
         # e.g. in RDNETH we buy RDN by paying ETH
-        cost_currency = quote_asset
     else:
         order_type = 'sell'
-        # e.g. in RDNETH we sell RDN to obtain ETH
-        cost_currency = base_asset
 
+    cost_currency = quote_asset
     fee_currency = binance_trade['commissionAsset']
     fee = FVal(binance_trade['commission'])
     cost = rate * amount
 
     return Trade(
         timestamp=binance_trade['time'],
-        pair=pair,
+        pair=base_asset + '_' + quote_asset,
         type=order_type,
         rate=rate,
         cost=cost,
@@ -90,7 +101,32 @@ class Binance(Exchange):
         })
 
     def first_connection(self):
+        if self.first_connection_made:
+            return
+
+        # If it's the first time, populate the binance pair trade symbols
+        exchange_data = self.api_query('exchangeInfo')
+        self._populate_symbols_to_pair(exchange_data)
+
         self.first_connection_made = True
+
+    def _populate_symbols_to_pair(self, exchange_data: Dict[str, Any]):
+        self._symbols_to_pair = dict()
+        for symbol in exchange_data['symbols']:
+            symbol_str = symbol['symbol']
+            if isinstance(symbol_str, FVal):
+                symbol_str = str(symbol_str.to_int(exact=True))
+
+            self._symbols_to_pair[symbol_str] = BinancePair(
+                symbol=symbol_str,
+                base_asset=symbol['baseAsset'],
+                quote_asset=symbol['quoteAsset'],
+            )
+
+    @property
+    def symbols_to_pair(self) -> Dict[str, BinancePair]:
+        self.first_connection()
+        return self._symbols_to_pair
 
     def validate_api_key(self) -> Tuple[bool, str]:
         try:
@@ -153,6 +189,8 @@ class Binance(Exchange):
 
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[dict], str]:
+        self.first_connection()
+
         try:
             # account data returns a dict as per binance docs
             account_data = cast(Dict, self.api_query('account'))
@@ -190,15 +228,10 @@ class Binance(Exchange):
         if cache is not None:
             return cache
 
-        if not markets:
-            markets = []
-            exchange_data = self.api_query('exchangeInfo')
-            for symbol in exchange_data['symbols']:
-                symbol_str = symbol['symbol']
-                if isinstance(symbol_str, FVal):
-                    symbol_str = str(symbol_str.to_int(exact=True))
+        self.first_connection()
 
-                markets.append(symbol_str)
+        if not markets:
+            markets = self._symbols_to_pair.keys()
 
         all_trades_history = list()
         for symbol in markets:
