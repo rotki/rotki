@@ -7,6 +7,7 @@ from json.decoder import JSONDecodeError
 from rotkehlchen.exchange import data_up_todate
 from rotkehlchen.kraken import kraken_to_world_pair
 from rotkehlchen.bittrex import trade_from_bittrex
+from rotkehlchen.bitmex import trade_from_bitmex
 from rotkehlchen.binance import trade_from_binance
 from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
 from rotkehlchen.fval import FVal
@@ -467,6 +468,7 @@ class TradesHistorian(object):
         self.poloniex = None
         self.kraken = None
         self.bittrex = None
+        self.bitmex = None
         self.binance = None
         self.data_directory = data_directory
         self.db = db
@@ -599,6 +601,18 @@ class TradesHistorian(object):
             except RemoteError as e:
                 empty_or_error += '\n' + str(e)
 
+        if self.bitmex is not None:
+            try:
+                bitmex_history = self.bitmex.query_trade_history(
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    end_at_least_ts=end_at_least_ts,
+                )
+                for trade in bitmex_history:
+                    history.append(trade_from_bitmex(trade))
+            except RemoteError as e:
+                empty_or_error += '\n' + str(e)
+
         if self.binance is not None:
             try:
                 binance_history = self.binance.query_trade_history(
@@ -686,6 +700,11 @@ class TradesHistorian(object):
                     bittrex_history_okay = self.bittrex.check_trades_cache(
                         start_ts, end_at_least_ts
                     ) is not None
+                bitmex_history_okay = True
+                if self.bitmex is not None:
+                    bitmex_history_okay = self.bitmex.check_trades_cache(
+                        start_ts, end_at_least_ts
+                    ) is not None
                 binance_history_okay = True
                 if self.binance is not None:
                     binance_history_okay = self.binance.check_trades_cache(
@@ -740,6 +759,7 @@ class TradesHistorian(object):
                         poloniex_history_okay and
                         kraken_history_okay and
                         bittrex_history_okay and
+                        bitmex_history_okay and
                         binance_history_okay and
                         margin_history_is_okay and
                         loan_history_is_okay and

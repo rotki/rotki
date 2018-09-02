@@ -42,7 +42,7 @@ function create_exchange_box(exchange, number, currency_icon) {
     }
 
     var css_class = 'exchange-icon-inverted';
-    if (['poloniex', 'binance'].indexOf(exchange) > -1) {
+    if (['poloniex', 'binance', 'bitmex'].indexOf(exchange) > -1) {
         css_class = 'exchange-icon';
     }
     number = format_currency_value(number);
