@@ -83,7 +83,7 @@ If you want to connect to an ethereum client running in a non-default port you c
 
 ### Adding Exchanges
 
-You can integrate many different exchanges with Rotkehlchen. Currently supported exchanges are: Kraken, Poloniex, Bittrex and Binance.
+You can integrate many different exchanges with Rotkehlchen. Currently supported exchanges are: Kraken, Poloniex, Bittrex, Bitmex and Binance.
 
 To do so you have to go to your exchange and create an API key. If the exchange allows it make sure that the API Key only has reading/querying permissions to your account and nothing else since that is all the permissions needed by Rotkehlchen.
 

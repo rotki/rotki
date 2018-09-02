@@ -17,6 +17,7 @@ from rotkehlchen.blockchain import Blockchain
 from rotkehlchen.poloniex import Poloniex
 from rotkehlchen.kraken import Kraken
 from rotkehlchen.bittrex import Bittrex
+from rotkehlchen.bitmex import Bitmex
 from rotkehlchen.binance import Binance
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.inquirer import Inquirer
@@ -80,6 +81,7 @@ class Rotkehlchen(object):
         self.poloniex = None
         self.kraken = None
         self.bittrex = None
+        self.bitmex = None
         self.binance = None
 
         self.data = DataHandler(self.data_dir)
@@ -127,6 +129,16 @@ class Rotkehlchen(object):
             )
             self.connected_exchanges.append('binance')
             self.trades_historian.set_exchange('binance', self.binance)
+
+        if self.bitmex is None and 'bitmex' in secret_data:
+            self.bitmex = Bitmex(
+                str.encode(secret_data['bitmex']['api_key']),
+                str.encode(secret_data['bitmex']['api_secret']),
+                self.inquirer,
+                self.data_dir
+            )
+            self.connected_exchanges.append('bitmex')
+            self.trades_historian.set_exchange('bitmex', self.bitmex)
 
     def try_premium_at_start(self, api_key, api_secret, create_new, sync_approval, user_dir):
         """Check if new user provided api pair or we already got one in the DB"""
