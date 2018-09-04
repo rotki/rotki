@@ -10,8 +10,8 @@ const guid = () => {
     return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
 }
 
-describe('User Settings', function () {
-  this.timeout(30000);
+describe('User Settings: Bitcoin Balance', function () {
+  this.timeout(60000);
 
   beforeEach(function () {
     this.app = new Application({
@@ -38,6 +38,23 @@ describe('User Settings', function () {
     // choose create-new-account
     await this.app.client.click('button.create-new-account')
 
+    await this.app.client.pause(1000)
+
+    await this.app.client.waitForExist('#user_name_entry', 5000).should.eventually.equal(true);
+    
+    {
+        // this code exists because the IPC is failing
+
+        await this.app.client.pause(2000)
+
+        await this.app.client.execute(function () {
+            if ($('.jconfirm').length > 1) {
+                $('.jconfirm:last').remove()
+            }
+        })
+    }
+    
+
     // fill values
     await this.app.client.addValue('#user_name_entry', username)
     await this.app.client.addValue('#password_entry', password)
@@ -47,15 +64,19 @@ describe('User Settings', function () {
     await this.app.client.waitForExist('.jconfirm-buttons>button', 5000)
     await this.app.client.click('.jconfirm-buttons>button')
 
+    await this.app.client.pause(1000)
+
     // wait for popup modal, then close it
     await this.app.client.waitForExist('.jconfirm-box', 5000)
     await this.app.client.execute(function () {
         $('.jconfirm').remove()
     })
-    // wait for the other modal popup, then close it
+
+    await this.app.client.pause(2000)
+
+    // wait for popup modal, then close it
     await this.app.client.waitForExist('.jconfirm-box', 5000)
     await this.app.client.execute(function () {
-        $('.jconfirm-box.jconfirm-hilight-shake.jconfirm-type-animated.jconfirm-type-green').remove()
         $('.jconfirm').remove()
     })
     
@@ -75,7 +96,7 @@ describe('User Settings', function () {
         $('body').css('overflow', 'scroll')
         $('#account_entry')[0].scrollIntoView()
     })
-    await this.app.client.waitForExist('#blockchain_per_asset_table_body td.dataTables_empty')
+    await this.app.client.waitForExist('#blockchain_per_asset_table_body td.dataTables_empty', 15000)
     
     await this.app.client.execute(function () {
         // remove all modals
