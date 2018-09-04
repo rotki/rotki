@@ -2,7 +2,7 @@
 // https://dzone.com/articles/write-automated-tests-for-electron-with-spectron-m
 
 const {
-    path, chai, Application, electronPath
+    path, chai, Application, electronPath, waitAfterLoad, waitAfterSignup
 } = require('./utils/setup')
 
 const guid = () => {
@@ -11,7 +11,7 @@ const guid = () => {
 }
 
 describe('User Settings: Bitcoin Balance', function () {
-  this.timeout(60000);
+  this.timeout(50000);
 
   beforeEach(function () {
     this.app = new Application({
@@ -38,21 +38,7 @@ describe('User Settings: Bitcoin Balance', function () {
     // choose create-new-account
     await this.app.client.click('button.create-new-account')
 
-    await this.app.client.pause(1000)
-
-    await this.app.client.waitForExist('#user_name_entry', 5000).should.eventually.equal(true);
-    
-    {
-        // this code exists because the IPC is failing
-
-        await this.app.client.pause(2000)
-
-        await this.app.client.execute(function () {
-            if ($('.jconfirm').length > 1) {
-                $('.jconfirm:last').remove()
-            }
-        })
-    }
+    await waitAfterLoad.call(this)
     
 
     // fill values
@@ -64,21 +50,7 @@ describe('User Settings: Bitcoin Balance', function () {
     await this.app.client.waitForExist('.jconfirm-buttons>button', 5000)
     await this.app.client.click('.jconfirm-buttons>button')
 
-    await this.app.client.pause(1000)
-
-    // wait for popup modal, then close it
-    await this.app.client.waitForExist('.jconfirm-box', 5000)
-    await this.app.client.execute(function () {
-        $('.jconfirm').remove()
-    })
-
-    await this.app.client.pause(2000)
-
-    // wait for popup modal, then close it
-    await this.app.client.waitForExist('.jconfirm-box', 5000)
-    await this.app.client.execute(function () {
-        $('.jconfirm').remove()
-    })
+    await waitAfterSignup.call(this)
     
     // open dropdown menu
     await this.app.client.click('li#user-dropdown.dropdown')

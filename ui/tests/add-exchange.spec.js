@@ -2,7 +2,7 @@
 // https://dzone.com/articles/write-automated-tests-for-electron-with-spectron-m
 
 const {
-    path, chai, Application, electronPath
+    path, chai, Application, electronPath, waitAfterLoad, waitAfterSignup
 } = require('./utils/setup')
 
 const guid = () => {
@@ -11,7 +11,7 @@ const guid = () => {
 }
 
 describe('User Settings', function () {
-  this.timeout(30000);
+  this.timeout(50000);
 
   beforeEach(function () {
     this.app = new Application({
@@ -41,6 +41,8 @@ describe('User Settings', function () {
     // choose create-new-account
     await this.app.client.click('button.create-new-account')
 
+    await waitAfterLoad.call(this)
+
     // fill values
     await this.app.client.addValue('#user_name_entry', username)
     await this.app.client.addValue('#password_entry', password)
@@ -50,17 +52,7 @@ describe('User Settings', function () {
     await this.app.client.waitForExist('.jconfirm-buttons>button', 5000)
     await this.app.client.click('.jconfirm-buttons>button')
 
-    // wait for popup modal, then close it
-    await this.app.client.waitForExist('.jconfirm-box.jconfirm-type-green.jconfirm-type-animated', 5000)
-    await this.app.client.execute(function () {
-        $('.jconfirm-box.jconfirm-type-green.jconfirm-type-animated').remove()
-    })
-    // wait for the other modal popup, then close it
-    await this.app.client.waitForExist('.jconfirm-box.jconfirm-hilight-shake.jconfirm-type-animated.jconfirm-type-green', 5000)
-    await this.app.client.execute(function () {
-        $('.jconfirm-box.jconfirm-hilight-shake.jconfirm-type-animated.jconfirm-type-green').remove()
-        $('.jconfirm').remove()
-    })
+    await waitAfterSignup.call(this)
     
     // open dropdown menu
     await this.app.client.click('li#user-dropdown.dropdown')
@@ -93,6 +85,14 @@ describe('User Settings', function () {
     await this.app.client.addValue('#api_key_entry', bittrex.key)
     await this.app.client.addValue('#api_secret_entry', bittrex.secret)
     await this.app.client.click('#setup_exchange_button')
+
+    try {
+        // make sure the BITTREX API KEY and SECRET has not already been registered
+        await this.app.client.waitForExist('.jconfirm').should.eventually.equal(false)
+    }
+    catch (err) {
+        throw new Error(await this.app.client.getText('.jconfirm-content'))
+    }
 
     await this.app.client.waitForExist('#exchange_panel_body .form-group.input-group.has-success', 28000)
 
