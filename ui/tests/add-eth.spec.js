@@ -10,8 +10,8 @@ const guid = () => {
     return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
 }
 
-describe('User Settings', function () {
-  this.timeout(50000);
+describe('User Settings: Ethereum', function () {
+  this.timeout(60000);
 
   beforeEach(function () {
     this.app = new Application({

@@ -10,7 +10,7 @@ const guid = () => {
     return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
 }
 
-describe('User Settings', function () {
+describe('User Settings: Fiat', function () {
   this.timeout(50000);
 
   beforeEach(function () {

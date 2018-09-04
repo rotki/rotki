@@ -10,7 +10,7 @@ const guid = () => {
     return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
 }
 
-describe('User Settings', function () {
+describe('User Settings: Exchange', function () {
   this.timeout(50000);
 
   beforeEach(function () {
@@ -86,13 +86,13 @@ describe('User Settings', function () {
     await this.app.client.addValue('#api_secret_entry', bittrex.secret)
     await this.app.client.click('#setup_exchange_button')
 
-    try {
-        // make sure the BITTREX API KEY and SECRET has not already been registered
-        await this.app.client.waitForExist('.jconfirm').should.eventually.equal(false)
-    }
-    catch (err) {
-        throw new Error(await this.app.client.getText('.jconfirm-content'))
-    }
+    // try {
+    //     // make sure the BITTREX API KEY and SECRET has not already been registered
+    //     await this.app.client.waitForExist('.jconfirm').should.eventually.equal(false)
+    // }
+    // catch (err) {
+    //     throw new Error(await this.app.client.getText('.jconfirm-content'))
+    // }
 
     await this.app.client.waitForExist('#exchange_panel_body .form-group.input-group.has-success', 28000)
 
