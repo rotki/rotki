@@ -11,7 +11,7 @@ const guid = () => {
 }
 
 describe('User Settings: Exchange', function () {
-  this.timeout(50000);
+  this.timeout(60000);
 
   beforeEach(function () {
     this.app = new Application({
