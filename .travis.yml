@@ -41,6 +41,7 @@ before_install:
   - openssl version
   - mkdir -p $HOME/.bin
   - export PATH=$PATH:$HOME/.bin
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then nvm use 8.11.3; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./.travis/before_install.sh; fi
   - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then sudo ./.travis/before_install.sh; fi
   # This needs to be outside of the before_install.sh script or else the environment
