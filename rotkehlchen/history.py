@@ -228,6 +228,7 @@ class PriceHistorian(object):
 
         # Check the data folder and remember the filenames of any cached history
         prefix = os.path.join(self.data_directory, 'price_history_')
+        prefix = prefix.replace('\\', '\\\\')
         regex = re.compile(prefix + '(.*)\\.json')
         files_list = glob.glob(prefix + '*.json')
 
