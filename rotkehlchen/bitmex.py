@@ -6,7 +6,6 @@ from json.decoder import JSONDecodeError
 
 from typing import Dict, Tuple, Optional, Union, List
 from rotkehlchen.utils import (
-    get_pair_position,
     rlk_jsonloads,
     cache_response_timewise,
 )
