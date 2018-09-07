@@ -16,3 +16,4 @@ pytestdebug.log
 dist/
 .eggs
 docs/_build
+.idea
