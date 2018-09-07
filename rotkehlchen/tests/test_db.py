@@ -99,7 +99,7 @@ def test_writting_fetching_data(data_dir, username):
 
     ])
     # Add existing account should fail
-    with pytest.raises(sqlcipher.IntegrityError):
+    with pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
         data.add_blockchain_account('ETH', '0xd36029d76af6fE4A356528e4Dc66B2C18123597D')
     # Remove non-existing account
     with pytest.raises(InputError):

@@ -35,14 +35,17 @@ if sys.platform == 'darwin':
             except AttributeError:
                 basetemp = self.config.option.basetemp
                 if basetemp:
-                    basetemp = py.path.local(basetemp)
+                    basetemp = py.path.local(basetemp)  # pylint: disable=no-member
                     if basetemp.check():
                         basetemp.remove()
                     basetemp.mkdir()
                 else:
-                    rootdir = py.path.local.get_temproot()
+                    rootdir = py.path.local.get_temproot()  # pylint: disable=no-member
                     rootdir.ensure(dir=1)
-                    basetemp = py.path.local.make_numbered_dir(prefix='pyt', rootdir=rootdir)
+                    basetemp = py.path.local.make_numbered_dir(  # pylint: disable=no-member
+                        prefix='pyt',
+                        rootdir=rootdir,
+                    )
                 self._basetemp = t = basetemp.realpath()
                 self.trace('new basetemp', t)
                 return t
