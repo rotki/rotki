@@ -6,7 +6,6 @@ from json.decoder import JSONDecodeError
 
 from typing import Dict, Tuple, Optional, Union, List
 from rotkehlchen.utils import (
-    get_pair_position,
     rlk_jsonloads,
     cache_response_timewise,
 )
@@ -165,21 +164,6 @@ class Bitmex(Exchange):
             raise RemoteError(json_ret['error']['message'])
 
         return json_ret
-
-    def get_btc_price(self, asset: typing.BlockchainAsset) -> Optional[FVal]:
-        if asset == 'BTC':
-            return None
-        btc_price = None
-        btc_pair = 'BTC-' + asset
-        for market in self.markets:
-            if market['MarketName'] == btc_pair:
-                btc_price = FVal(market['Last'])
-                break
-
-        if btc_price is None:
-            raise ValueError('Bittrex: Could not find BTC market for "{}"'.format(asset))
-
-        return btc_price
 
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[dict], str]:

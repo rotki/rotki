@@ -46,12 +46,13 @@ install:
   - python -m pip install -U pip
   - pip install -U pip wheel coveralls "coverage<4.4"
   - pip install pytest-travis-fold
-  - pip install flake8
-  - pip install -r requirements.txt
+  - pip install -r requirements_dev.txt
 
 # Run the tests.
 script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source terryfy/test_tools.sh; fi
+  - flake8 rotkehlchen/
+  - pylint --disable=all --enable=no-value-for-parameter,too-many-format-args,no-member rotkehlchen
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then python -m pytest rotkehlchen; fi
   - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then coverage run --source rotkehlchen/ -m pytest --travis-fold=always $TEST_TYPE; fi
   - npm config set python python2.7

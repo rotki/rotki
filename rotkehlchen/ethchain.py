@@ -41,7 +41,7 @@ class Ethchain(object):
 
             # Also make sure we are actually connected to the Ethereum mainnet
             if mainnet_check:
-                genesis_hash = self.web3.eth.getBlock(0)['hash'].hex()
+                genesis_hash = self.web3.eth.getBlock(0)['hash'].hex()  # pylint: disable=no-member
                 target = '0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3'
                 if genesis_hash != target:
                     logger.warn(
@@ -87,7 +87,7 @@ class Ethchain(object):
             amount = FVal(eth_resp['result'])
             return from_wei(amount)
         else:
-            return from_wei(self.web3.eth.getBalance(account))
+            return from_wei(self.web3.eth.getBalance(account))  # pylint: disable=no-member
 
     def get_multieth_balance(
             self,
@@ -117,7 +117,7 @@ class Ethchain(object):
 
         else:
             for account in accounts:
-                amount = FVal(self.web3.eth.getBalance(account))
+                amount = FVal(self.web3.eth.getBalance(account))  # pylint: disable=no-member
                 balances[account] = from_wei(amount)
 
         return balances
@@ -134,7 +134,7 @@ class Ethchain(object):
         """
         balances = {}
         if self.connected:
-            token_contract = self.web3.eth.contract(
+            token_contract = self.web3.eth.contract(  # pylint: disable=no-member
                 address=token_address,
                 abi=self.token_abi
             )
@@ -177,4 +177,4 @@ class Ethchain(object):
         if not self.connected:
             return None
 
-        return self.web3.eth.getBlock(num)
+        return self.web3.eth.getBlock(num)  # pylint: disable=no-member

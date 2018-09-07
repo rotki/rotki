@@ -63,7 +63,7 @@ class DBHandler(object):
         self.connect(password)
         try:
             self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
-        except sqlcipher.DatabaseError as e:
+        except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
             errstr = str(e)
             if errstr == 'file is not a database':
                 errstr = 'Wrong password while decrypting the database or not a database'
@@ -104,7 +104,9 @@ class DBHandler(object):
                 self.add_blockchain_account(S_ETH, to_checksum_address(account))
 
     def connect(self, password: str) -> None:
-        self.conn = sqlcipher.connect(os.path.join(self.user_data_dir, 'rotkehlchen.db'))
+        self.conn = sqlcipher.connect(  # pylint: disable=no-member
+            os.path.join(self.user_data_dir, 'rotkehlchen.db'),
+        )
         self.conn.text_factory = str
         self.conn.executescript('PRAGMA key="{}"; PRAGMA kdf_iter={};'.format(password, KDF_ITER))
         self.conn.execute('PRAGMA foreign_keys=ON')
@@ -142,7 +144,7 @@ class DBHandler(object):
                 f.write(unencrypted_db_data)
 
             # Now attach to the unencrypted DB and copy it to our DB and encrypt it
-            self.conn = sqlcipher.connect(tempdbpath)
+            self.conn = sqlcipher.connect(tempdbpath)  # pylint: disable=no-member
             self.conn.executescript(
                 'ATTACH DATABASE "{}" AS encrypted KEY "{}";'
                 'PRAGMA encrypted.kdf_iter={};'

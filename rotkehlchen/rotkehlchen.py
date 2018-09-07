@@ -39,7 +39,7 @@ class Rotkehlchen(object):
     def __init__(self, args):
         self.lock = Semaphore()
         self.lock.acquire()
-        self.results_cache: typing.ResultsCacheMap = dict()
+        self.results_cache: typing.ResultCache = dict()
         self.connected_exchanges = []
 
         logfilename = None
@@ -572,21 +572,6 @@ class Rotkehlchen(object):
     def shutdown(self):
         print("Shutting Down...")
         self.shutdown_event.set()
-
-    def set(self, *args):
-        if len(args) < 2:
-            return (
-                "ERROR: set requires at least two arguments but "
-                "got: {}".format(args)
-            )
-
-        if args[0] == 'poloniex':
-            resp = self.poloniex.set(*args[1:])
-        else:
-            return "ERROR: Unrecognized first argument: {}".format(args[0])
-
-        self.save_data()
-        return resp
 
 
 # For testing purposes only
