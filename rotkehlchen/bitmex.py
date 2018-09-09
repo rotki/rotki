@@ -6,11 +6,12 @@ from json.decoder import JSONDecodeError
 
 from typing import Dict, Tuple, Optional, Union, List
 from rotkehlchen.utils import (
-    rlk_jsonloads,
     cache_response_timewise,
+    createTimeStamp,
+    rlk_jsonloads,
 )
 from rotkehlchen.exchange import Exchange
-from rotkehlchen.order_formatting import Trade
+from rotkehlchen.order_formatting import AssetMovement, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.inquirer import Inquirer
@@ -21,8 +22,15 @@ logger = logging.getLogger(__name__)
 
 BITMEX_PRIVATE_ENDPOINTS = (
     'user',
-    'user/wallet'
+    'user/wallet',
+    'user/walletHistory',
 )
+
+
+def bitmex_to_world(asset):
+    if asset == 'XBt':
+        return 'BTC'
+    return asset
 
 
 def trade_from_bitmex(bittrex_trade: Dict) -> Trade:
@@ -71,7 +79,7 @@ class Bitmex(Exchange):
             data_dir: typing.FilePath
     ):
         super(Bitmex, self).__init__('bitmex', api_key, secret, data_dir)
-        self.uri = 'https://bitmex.com'
+        self.uri = 'https://testnet.bitmex.com'
         self.inquirer = inquirer
         self.session.headers.update({'api-key': api_key})
 
@@ -199,7 +207,73 @@ class Bitmex(Exchange):
             count: Optional[int] = None,
     ) -> List:
 
-        raise NotImplementedError(
-            'Querying trade history is not yet implemented for bitmex'
-        )
-        return list()
+        try:
+            resp = self._api_query('get', 'user/walletHistory')
+        except RemoteError as e:
+            msg = (
+                'Bitmex API request failed. Could not reach bitmex due '
+                'to {}'.format(e)
+            )
+            logger.error(msg)
+            return None, msg
+
+        return resp
+
+    def query_deposits_withdrawals(
+            self,
+            start_ts: typing.Timestamp,
+            end_ts: typing.Timestamp,
+            end_at_least_ts: typing.Timestamp,
+            market: Optional[str] = None,
+            count: Optional[int] = None,
+    ) -> List:
+        # TODO: Implement cache like in other exchange calls
+        try:
+            resp = self._api_query('get', 'user/walletHistory')
+        except RemoteError as e:
+            msg = (
+                'Bitmex API request failed. Could not reach bitmex due '
+                'to {}'.format(e)
+            )
+            logger.error(msg)
+            return None, msg
+
+        movements = list()
+        for movement in resp:
+            transaction_type = movement['transactType']
+            if transaction_type not in ('Deposit', 'Withdrawal'):
+                continue
+
+            timestamp = createTimeStamp(
+                movement['timestamp'],
+                formatstr="%Y-%m-%dT%H:%M:%S.%fZ",
+            )
+            if timestamp < start_ts:
+                continue
+            if timestamp > end_ts:
+                continue
+
+            asset = bitmex_to_world(movement['currency'])
+            amount = FVal(movement['amount'])
+            fee = FVal(0)
+            if movement['fee'] is not None:
+                fee = FVal(movement['fee'])
+            # bitmex has negative numbers for withdrawals
+            if amount < 0:
+                amount *= -1
+
+            if asset == 'BTC':
+                # bitmex stores amounts in satoshis
+                amount = amount * FVal('0.00000001')
+                fee = fee * FVal('0.00000001')
+
+            movements.append(AssetMovement(
+                exchange='bitmex',
+                category=transaction_type,
+                timestamp=timestamp,
+                asset=asset,
+                amount=amount,
+                fee=fee,
+            ))
+
+        return movements
