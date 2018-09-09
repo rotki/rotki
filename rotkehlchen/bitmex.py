@@ -83,9 +83,9 @@ class Bitmex(Exchange):
             self._api_query('get', 'user')
         except RemoteError as e:
             error = str(e)
-            if error == 'Invalid API Key.':
+            if 'Invalid API Key' in error:
                 return False, 'Provided API key is invalid'
-            elif error == 'Signature not valid.':
+            elif 'Signature not valid' in error:
                 return False, 'Provided API secret is invalid'
             else:
                 raise
@@ -130,7 +130,7 @@ class Bitmex(Exchange):
         if path in BITMEX_PRIVATE_ENDPOINTS:
             self._generate_signature(
                 verb=verb,
-                path=request_path_no_args,
+                path=request_path,
                 expires=expires,
                 data=data,
             )
@@ -180,7 +180,9 @@ class Bitmex(Exchange):
         # Bitmex shows only BTC balance
         returned_balances = dict()
         usd_price = self.inquirer.find_usd_price('BTC')
-        amount = FVal(resp['amount'])
+        # result is in satoshis
+        amount = FVal(resp['amount']) * FVal('0.00000001')
+
         returned_balances['BTC'] = dict(
             amount=amount,
             usd_value=amount * usd_price
