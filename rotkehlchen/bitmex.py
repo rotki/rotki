@@ -217,7 +217,24 @@ class Bitmex(Exchange):
             logger.error(msg)
             return None, msg
 
-        return resp
+        realised_pnls = []
+        for tx in resp:
+            if tx['timestamp'] is None:
+                timestamp = None
+            else:
+                timestamp = createTimeStamp(
+                    tx['timestamp'],
+                    formatstr="%Y-%m-%dT%H:%M:%S.%fZ",
+                )
+            if tx['transactType'] != 'RealisedPNL':
+                continue
+            if timestamp and timestamp < start_ts:
+                continue
+            if timestamp and timestamp > end_ts:
+                continue
+            realised_pnls.append(tx)
+
+        return realised_pnls
 
     def query_deposits_withdrawals(
             self,
