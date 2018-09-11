@@ -232,6 +232,17 @@ function suggest_element_until_click(selector, state_to_set) {
     });
 }
 
+function format_asset_title_for_ui(asset) {
+  var asset_call_letters = '';
+  if(asset == 'IOTA') {
+    asset_call_letters = 'MIOTA';
+  } else {
+    asset_call_letters = asset;
+  }
+  var str = '<img src="../node_modules/cryptocurrency-icons/svg/color/'+asset_call_letters+'.svg" />'+' '+asset;
+  return str;
+}
+
 module.exports = function() {
     this.prompt_directory_select_async = prompt_directory_select_async;
     this.utc_now = utc_now;
@@ -250,4 +261,5 @@ module.exports = function() {
     this.suggest_element = suggest_element;
     this.unsuggest_element = unsuggest_element;
     this.suggest_element_until_click = suggest_element_until_click;
+    this.format_asset_title_for_ui = format_asset_title_for_ui;
 };
