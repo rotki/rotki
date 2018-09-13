@@ -233,14 +233,24 @@ function suggest_element_until_click(selector, state_to_set) {
 }
 
 function format_asset_title_for_ui(asset) {
-  var asset_call_letters = '';
-  if(asset == 'IOTA') {
-    asset_call_letters = 'MIOTA';
-  } else {
-    asset_call_letters = asset;
-  }
-  var str = '<img src="../node_modules/cryptocurrency-icons/svg/color/'+asset_call_letters+'.svg" />'+' '+asset;
-  return str;
+    var symbol = '';
+    var str;
+    if(asset == 'IOTA') {
+        symbol = 'MIOTA';
+    } else {
+        symbol = asset;
+    }
+    resolve = require('path').resolve;
+    let path = 'node_modules/cryptocurrency-icons/svg/color/' + symbol.toLowerCase() + '.svg';
+    let resolved_path = resolve(path);
+    // TODO: Better import all icon names into a map and check the map instead
+    // of doing a syscall for each file existing in the user's system
+    if (fs.existsSync(resolved_path)) {
+        str = '<img src="../' + path + '" />' + ' ' + asset;
+    } else {
+        str = ' ¤ ' + asset;
+    }
+    return str;
 }
 
 module.exports = function() {
