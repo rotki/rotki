@@ -70,7 +70,6 @@ AssetTable.prototype.populate = function (table_data, draw_cb) {
                     return format_asset_title_for_ui(row['asset']);
                 }
             },
-            // {"data": first_column_name, "title": string_capitalize(first_column_name)},
             {"data": "amount", "title": "Amount"},
             {
                 "data": 'usd_value',
