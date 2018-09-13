@@ -130,7 +130,7 @@ function create_settings_ui() {
 function get_icon_map() {
     fs = require('fs');
     let icon_dir = 'node_modules/cryptocurrency-icons/svg/color/';
-    var files = fs.readdirSync(icon_dir)
+    let files = fs.readdirSync(icon_dir)
         .map(function(v) { 
             return {
                 symbol: v.substr(0,v.indexOf('.')),

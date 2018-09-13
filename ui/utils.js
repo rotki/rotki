@@ -233,8 +233,7 @@ function suggest_element_until_click(selector, state_to_set) {
 }
 
 function format_asset_title_for_ui(asset) {
-    var symbol = '';
-    var str;
+    let symbol, str;
     if(asset == 'IOTA') {
         symbol = 'MIOTA';
     } else {
