@@ -240,12 +240,8 @@ function format_asset_title_for_ui(asset) {
     } else {
         symbol = asset;
     }
-    resolve = require('path').resolve;
-    let path = 'node_modules/cryptocurrency-icons/svg/color/' + symbol.toLowerCase() + '.svg';
-    let resolved_path = resolve(path);
-    // TODO: Better import all icon names into a map and check the map instead
-    // of doing a syscall for each file existing in the user's system
-    if (fs.existsSync(resolved_path)) {
+    let path = settings.ICON_MAP_LIST.find(x => x.symbol === symbol.toLowerCase()).path;
+    if (path != '') {
         str = '<img src="../' + path + '" />' + ' ' + asset;
     } else {
         str = ' ¤ ' + asset;
