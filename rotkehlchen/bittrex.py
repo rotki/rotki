@@ -1,24 +1,24 @@
-import time
-import hmac
 import hashlib
-from urllib.parse import urlencode
+import hmac
+import logging
+import time
 from json.decoder import JSONDecodeError
+from typing import Dict, List, Optional, Tuple, Union, cast
+from urllib.parse import urlencode
 
-from typing import Dict, Tuple, Optional, Union, List, cast
+from rotkehlchen import typing
+from rotkehlchen.errors import RemoteError
+from rotkehlchen.exchange import Exchange
+from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.order_formatting import Trade
 from rotkehlchen.utils import (
+    cache_response_timewise,
     createTimeStamp,
     get_pair_position,
     rlk_jsonloads,
-    cache_response_timewise,
 )
-from rotkehlchen.exchange import Exchange
-from rotkehlchen.order_formatting import Trade
-from rotkehlchen.fval import FVal
-from rotkehlchen.errors import RemoteError
-from rotkehlchen.inquirer import Inquirer
-from rotkehlchen import typing
 
-import logging
 logger = logging.getLogger(__name__)
 
 BITTREX_MARKET_METHODS = {
@@ -160,9 +160,6 @@ class Bittrex(Exchange):
                 btc_price = FVal(market['Last'])
                 break
 
-        if btc_price is None:
-            raise ValueError('Bittrex: Could not find BTC market for "{}"'.format(asset))
-
         return btc_price
 
     @cache_response_timewise()
@@ -181,9 +178,10 @@ class Bittrex(Exchange):
         returned_balances = dict()
         for entry in resp:
             currency = entry['Currency']
+            asset_btc_price = self.get_btc_price(currency)
             usd_price = self.inquirer.find_usd_price(
                 asset=currency,
-                asset_btc_price=self.get_btc_price(currency)
+                asset_btc_price=asset_btc_price
             )
 
             balance = dict()
