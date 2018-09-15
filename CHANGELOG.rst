@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`151` If an asset stored at Bittrex does not have a BTC market rotkehlchen no longer crashes.
 * :feature:`74` Add experimental support for Bitmex. Supporting only simple balance query for now.
 * :bug:`135` Fix bug in converting binance sell trades to the common rotkehlchen format
 * :bug:`140` Don't log an error if the manual margin file is not found
