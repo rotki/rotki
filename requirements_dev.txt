@@ -5,3 +5,4 @@ mypy
 bump2version==0.5.8
 pylint
 flake8
+isort
