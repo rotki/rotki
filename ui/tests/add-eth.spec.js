@@ -11,7 +11,7 @@ const guid = () => {
 }
 
 describe('User Settings: Ethereum', function () {
-  this.timeout(60000);
+  this.timeout(100000);
 
   beforeEach(function () {
     this.app = new Application({

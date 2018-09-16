@@ -11,7 +11,7 @@ const guid = () => {
 }
 
 describe('User Settings: Bitcoin Balance', function () {
-  this.timeout(60000);
+  this.timeout(100000);
 
   beforeEach(function () {
     this.app = new Application({
@@ -68,7 +68,7 @@ describe('User Settings: Bitcoin Balance', function () {
         $('body').css('overflow', 'scroll')
         $('#account_entry')[0].scrollIntoView()
     })
-    await this.app.client.waitForExist('#blockchain_per_asset_table_body td.dataTables_empty', 15000)
+    await this.app.client.waitForExist('#blockchain_per_asset_table_body td.dataTables_empty', 25000)
     
     await this.app.client.execute(function () {
         // remove all modals
