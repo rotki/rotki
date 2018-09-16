@@ -31,7 +31,7 @@ module.exports.waitAfterLoad = async function () {
 }
 
 module.exports.waitAfterSignup = async function () {
-    await this.app.client.pause(2000)
+    await this.app.client.pause(1000)
 
     // wait for popup modal, then close it
     await this.app.client.waitForExist('.jconfirm-box', 5000)
@@ -39,7 +39,7 @@ module.exports.waitAfterSignup = async function () {
         $('.jconfirm').remove()
     })
 
-    await this.app.client.pause(3000)
+    await this.app.client.pause(2000)
 
     // wait for popup modal, then close it
     await this.app.client.waitForExist('.jconfirm-box', 5000)

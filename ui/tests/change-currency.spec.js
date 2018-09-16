@@ -77,8 +77,15 @@ describe('User Settings: Change Currency', function () {
     await this.app.client.execute(function () {
         // remove all modals
         $('.jconfirm').remove()
+        $('li.dropdown:last')[0].scrollIntoView()
         $('li.dropdown:last').click()
+    })
+
+    await this.app.client.pause(500)
+
+    await this.app.client.execute(function () {
         $('#change-to-eur').click()
+        $('#fiat_balances_table')[0].scrollIntoView()
     })
 
     await this.app.client.pause(2000)
