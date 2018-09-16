@@ -39,11 +39,16 @@ module.exports.waitAfterSignup = async function () {
         $('.jconfirm').remove()
     })
 
-    await this.app.client.pause(2000)
+    try {
+        await this.app.client.pause(2000)
 
-    // wait for popup modal, then close it
-    await this.app.client.waitForExist('.jconfirm-box', 5000)
-    await this.app.client.execute(function () {
-        $('.jconfirm').remove()
-    })
+        // wait for popup modal, then close it
+        await this.app.client.waitForExist('.jconfirm-box', 5000)
+        await this.app.client.execute(function () {
+            $('.jconfirm').remove()
+        })
+    }
+    catch (err) {
+
+    }
 }
