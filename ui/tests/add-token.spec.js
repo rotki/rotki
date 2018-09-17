@@ -36,7 +36,9 @@ describe('Add Token', function () {
     await this.app.client.waitForExist('.jconfirm-box-container', 5000).should.eventually.equal(true);
 
     // choose create-new-account
-    await this.app.client.click('button.create-new-account')
+    await this.app.client.execute(function () {
+        $('button.create-new-account').click()
+    })
 
     await waitAfterLoad.call(this)
 
@@ -47,12 +49,18 @@ describe('Add Token', function () {
 
     // click create-new-account
     await this.app.client.waitForExist('.jconfirm-buttons>button', 5000)
-    await this.app.client.click('.jconfirm-buttons>button')
+    await this.app.client.execute(function () {
+        $('.jconfirm-buttons>button:first').click()
+    })
 
     await waitAfterSignup.call(this)
     
     // open dropdown menu
-    await this.app.client.click('li#user-dropdown.dropdown')
+    await this.app.client.execute(function () {
+        $('li#user-dropdown.dropdown a:first').click()
+    })
+
+    await this.app.client.pause(500)
 
     // make sure dropdown menu is open
     await this.app.client.waitForExist('li.dropdown.open', 5000).should.eventually.equal(true)
@@ -61,7 +69,9 @@ describe('Add Token', function () {
         // remove all modals
         $('.jconfirm').remove()
     })
-    await this.app.client.click('li#user_settings_button')
+    await this.app.client.execute(function () {
+        $('li#user_settings_button a:first').click()
+    })
 
     await this.app.client.waitForExist('ul.ms-list')
     
