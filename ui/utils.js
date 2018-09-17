@@ -239,8 +239,9 @@ function format_asset_title_for_ui(asset) {
     } else {
         symbol = asset;
     }
-    let path = settings.ICON_MAP_LIST.find(x => x.symbol === symbol.toLowerCase()).path;
-    if (path != '') {
+    
+    let path = settings.ICON_MAP_LIST[symbol.toLowerCase()];
+    if (path !== undefined) {
         str = '<img src="../' + path + '" />' + ' ' + asset;
     } else {
         str = ' ¤ ' + asset;
