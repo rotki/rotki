@@ -425,14 +425,14 @@ function format_ethchain_per_account_data(eth_accounts) {
     }
     let column_data = [
         {"data": "account", "title": "Account"},
-        {"data": "ETH", "title": "ETH"}
+        {"data": "ETH", "title": format_asset_title_for_ui("ETH")}
     ];
     // if user has a lot of ETH tokens shorten the table by shortening the display of accounts
     if (OWNED_TOKENS.length > 4) {
         column_data[0]['render'] = table_data_shortener(2, 6);
     }
     for (let i = 0; i < OWNED_TOKENS.length; i ++ ) {
-        column_data.push({"data": OWNED_TOKENS[i], "title": OWNED_TOKENS[i]});
+        column_data.push({"data": OWNED_TOKENS[i], "title": format_asset_title_for_ui(OWNED_TOKENS[i])});
     }
 
     column_data.push({

@@ -232,6 +232,23 @@ function suggest_element_until_click(selector, state_to_set) {
     });
 }
 
+function format_asset_title_for_ui(asset) {
+    let symbol, str;
+    if(asset == 'IOTA') {
+        symbol = 'MIOTA';
+    } else {
+        symbol = asset;
+    }
+    
+    let path = settings.ICON_MAP_LIST[symbol.toLowerCase()];
+    if (path !== undefined) {
+        str = '<img src="../' + path + '" />' + ' ' + asset;
+    } else {
+        str = ' ¤ ' + asset;
+    }
+    return str;
+}
+
 module.exports = function() {
     this.prompt_directory_select_async = prompt_directory_select_async;
     this.utc_now = utc_now;
@@ -250,4 +267,5 @@ module.exports = function() {
     this.suggest_element = suggest_element;
     this.unsuggest_element = unsuggest_element;
     this.suggest_element_until_click = suggest_element_until_click;
+    this.format_asset_title_for_ui = format_asset_title_for_ui;
 };

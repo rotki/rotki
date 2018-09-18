@@ -127,6 +127,20 @@ function create_settings_ui() {
     $(str).appendTo($('.panel-body'));
 }
 
+function get_icon_map() {
+    let fs = require('fs');
+    let icon_dir = 'node_modules/cryptocurrency-icons/svg/color/';
+    
+    let icon_map = {};
+    fs.readdirSync(icon_dir)
+        .forEach(function(v) {
+            icon_map[v.substr(0,v.indexOf('.'))] = icon_dir + v;
+    });
+    return icon_map;
+}
+
+let icon_map_list = get_icon_map();
+
 module.exports = function() {
     if (!settings) {
         settings = {};
@@ -153,6 +167,7 @@ module.exports = function() {
         settings.eth_rpc_port = '8545';
         settings.balance_save_frequency = 24;
         settings.last_balance_save = 0;
+        settings.ICON_MAP_LIST = get_icon_map();
     }
     this.get_value_in_main_currency = get_value_in_main_currency;
     this.assert_exchange_exists = assert_exchange_exists;

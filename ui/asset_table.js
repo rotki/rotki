@@ -63,7 +63,27 @@ AssetTable.prototype.populate = function (table_data, draw_cb) {
     let init_obj = {
         "data": data,
         "columns": [
-            {"data": first_column_name, "title": string_capitalize(first_column_name)},
+            {
+                "title": string_capitalize(first_column_name),
+                "data": first_column_name,
+                "render": function (data, type, row) {
+                    // TODO: Lefteris should fix the fiat balances query
+                    // to return 'asset' instead of 'currency' at some point
+                    let asset;
+                    if ('currency' in row) {
+                        asset = row['currency'];
+                        return format_asset_title_for_ui(asset);
+                    } else if ('asset' in row) {
+                        asset = row['asset'];
+                        return format_asset_title_for_ui(asset);
+                    } else if ('account' in row) {
+                        // the first column is not always an asset. In the per account
+                        // table it's an account so don't add icons there
+                        return row['account'];
+                    }
+                    throw "Unknown data for asset table";
+                }
+            },
             {"data": "amount", "title": "Amount"},
             {
                 "data": 'usd_value',

@@ -154,7 +154,13 @@ function init_balances_table(data) {
     TOTAL_BALANCES_TABLE = $('#table_balances_total').DataTable({
         "data": data,
         "columns": [
-            {"data": "asset"},
+            {
+                "title": 'asset',
+                "data": 'asset',
+                "render": function (data, type, row) {
+                    return format_asset_title_for_ui(row['asset']);
+                }
+            },
             {"data": "amount"},
             {
                 "title": settings.main_currency.ticker_symbol + ' value',
