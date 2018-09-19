@@ -133,3 +133,10 @@ a:focus, a:hover {
     text-shadow: 0.1px 0.1 px var(--elements-link-color);
     color: var(--elements-bg-color);
 }
+
+/* Dropdown Eth Status (Hidden by Default) */
+.dropdown-eth-status {
+    min-width: 290px;
+}
+
+.eth-node-status:hover .dropdown-eth-status {display: block;}
