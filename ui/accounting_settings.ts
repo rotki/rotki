@@ -1,8 +1,9 @@
-import client from './zerorpc_client';
+
 import { showError, showInfo } from './utils';
 import { form_button, form_entry, form_radio, form_select, page_header, settings_panel } from './elements';
 import { settings } from './settings';
 import { ActionResult } from './model/action-result';
+import { client } from './rotkehlchen_service';
 
 export interface IgnoredAssetsResponse {
     ignored_assets: string[];

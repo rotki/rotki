@@ -1,5 +1,4 @@
 import { form_entry } from './elements';
-import client from './zerorpc_client';
 import { showError, showInfo, suggest_element, unsuggest_element } from './utils';
 import { set_ui_main_currency } from './topmenu';
 import { get_total_assets_value, total_table_add_balances } from './balances_table';
@@ -10,6 +9,7 @@ import { settings } from './settings';
 import { UnlockResult } from './model/action-result';
 import { AsyncQueryResult } from './model/balance-result';
 import { AssetBalance } from './model/asset-balance';
+import { client } from './rotkehlchen_service';
 
 function verify_userpass(username: string, password: string) {
     if (!username) {

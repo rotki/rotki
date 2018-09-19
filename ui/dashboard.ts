@@ -5,12 +5,12 @@ import { assert_exchange_exists, Currency, format_currency_value, pages, setting
 import { setup_client_auditor, setup_log_watcher, showError } from './utils';
 import { create_or_reload_exchange } from './exchange';
 import { monitor_add_callback } from './monitor';
-import client from './zerorpc_client';
 import { prompt_sign_in } from './userunlock';
 import { ActionResult } from './model/action-result';
 import { ExchangeBalanceResult } from './model/exchange-balance-result';
 import { BlockchainBalances } from './model/blockchain-balances';
 import { ipcRenderer, remote } from 'electron';
+import { client } from './rotkehlchen_service';
 
 function add_exchange_on_click() {
     $('.panel a').click((event: JQuery.Event) => {

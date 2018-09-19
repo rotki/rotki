@@ -1,10 +1,10 @@
 import { dt_edit_drawcallback, showError, showInfo, timestamp_to_date } from './utils';
-import client from './zerorpc_client';
 import { form_button, form_entry, form_select, form_text } from './elements';
 import { settings } from './settings';
 import { ActionResult } from './model/action-result';
 import { OtcTrade } from './model/otc-trade';
 import 'datatables.net';
+import { client } from './rotkehlchen_service';
 
 let OTC_TRADES_TABLE: DataTables.Api;
 let CURRENT_TRADE: OtcTrade | {} = {};
@@ -111,7 +111,7 @@ function create_otctrades_table() {
     $(str).insertAfter($('#otc_table_anchor'));
     client.invoke('query_otctrades', (error: Error, result: OtcTrade[]) => {
         if (error || result == null) {
-            console.log('Error at querying OTC trades: ' + error);
+            console.log(`Error at querying OTC trades: ${error}`);
         } else {
             for (let i = 0; i < result.length; i++) {
                 const rowTemplate = '<tr><td></td><td></td/><td></td><td></td></tr>';

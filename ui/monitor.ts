@@ -1,6 +1,6 @@
-import client from './zerorpc_client';
 import { AsyncQueryResult } from './model/balance-result';
 import { BalanceStatus } from './enums/BalanceStatus';
+import { client } from './rotkehlchen_service';
 
 const callbacks: Array<[string, (result: any) => void]> = [];
 const tasks_map: { [task_id: number]: Task } = {};
@@ -142,5 +142,5 @@ function monitor_tasks() {
 
 export function init_monitor() {
     // monitor tasks every 2 seconds
-    setInterval(monitor_tasks, 1200000000);
+    setInterval(monitor_tasks, 120000);
 }

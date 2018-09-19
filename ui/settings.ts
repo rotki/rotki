@@ -1,8 +1,9 @@
-import client from './zerorpc_client';
+
 import { showError, showInfo } from './utils';
 import { form_button, form_checkbox, form_entry, form_select, page_header, settings_panel } from './elements';
 import { ActionResult } from './model/action-result';
 import * as fs from 'fs';
+import { client } from './rotkehlchen_service';
 
 export class Currency {
     constructor(readonly name: string, readonly icon: string, readonly ticker_symbol: string, readonly unicode_symbol: string) {

@@ -1,5 +1,4 @@
 import { AssetTable } from './asset_table';
-import client from './zerorpc_client';
 import { create_task, monitor_add_callback } from './monitor';
 import {
     dt_edit_drawcallback, format_asset_title_for_ui,
@@ -31,6 +30,7 @@ import { EthTokensResult } from './model/eth_tokens_result';
 
 import { BlockchainAccountResult } from './model/blockchain_account_result';
 import { BlockchainBalances } from './model/blockchain-balances';
+import { client, NoPremiumCredentials, NoResponseError, service } from './rotkehlchen_service';
 import Api = DataTables.Api;
 
 let FIAT_TABLE: AssetTable;
@@ -100,21 +100,23 @@ function setup_premium_callback(event: JQuery.Event) {
     }
 
     // else
-    const api_key = $('#premium_api_key_entry').val();
-    const api_secret = $('#premium_api_secret_entry').val();
-    client.invoke('set_premium_credentials', api_key, api_secret, (error: Error, res: ActionResult<boolean>) => {
-        if (error || res == null) {
+    const api_key = $('#premium_api_key_entry').val() as string;
+    const api_secret = $('#premium_api_secret_entry').val() as string;
+
+    service.setPremiumCredentials(api_key, api_secret)
+        .then(() => {
+            showInfo('Premium Credentials', 'Successfully set Premium Credentials');
+            disable_key_entries('premium_', 'premium', '');
+            settings.has_premium = true;
+            add_premium_settings();
+        }).catch((reason: Error) => {
+        if (reason instanceof NoResponseError) {
             showError('Premium Credentials Error', 'Error at adding credentials for premium subscription');
-            return;
+        } else if (reason instanceof NoPremiumCredentials) {
+            showError('Premium Credentials Error', reason.message);
+        } else {
+            showError('Premium Credentials Error', reason.message);
         }
-        if (!res.result) {
-            showError('Premium Credentials Error', res.message);
-            return;
-        }
-        showInfo('Premium Credentials', 'Successfully set Premium Credentials');
-        disable_key_entries('premium_', 'premium', '');
-        settings.has_premium = true;
-        add_premium_settings();
     });
 }
 
@@ -654,17 +656,7 @@ function add_new_eth_tokens(tokens: string[]) {
     // disable selection until the entire call is done
     disable_multiselect();
     show_loading('#eth_tokens_select');
-    client.invoke('add_owned_eth_tokens', tokens, (error: Error, result: BlockchainAccountResult) => {
-        if (error || result == null) {
-            showError('Token Addition Error', error.message);
-            stop_show_loading('#eth_tokens_select');
-            return;
-        }
-        if (!result.result) {
-            showError('Token Addition Error', result.message);
-            stop_show_loading('#eth_tokens_select');
-            return;
-        }
+    service.add_owned_eth_tokens(tokens).then(result => {
         for (let i = 0; i < tokens.length; i++) {
             OWNED_TOKENS.push(tokens[i]);
         }
@@ -674,6 +666,9 @@ function add_new_eth_tokens(tokens: string[]) {
         BB_PER_ASSET_TABLE.update_format(result['totals']);
         enable_multiselect();
         stop_show_loading('#eth_tokens_select');
+    }).catch(reason => {
+        showError('Token Addition Error', reason.message);
+        stop_show_loading('#eth_tokens_select');
     });
 }
 
@@ -681,17 +676,7 @@ function remove_eth_tokens(tokens: string[]) {
     // disable selection until the entire call is done
     disable_multiselect();
     show_loading('#eth_tokens_select');
-    client.invoke('remove_owned_eth_tokens', tokens, (error: Error, result: BlockchainAccountResult) => {
-        if (error || result == null) {
-            showError('Token Removal Error', error.message);
-            stop_show_loading('#eth_tokens_select');
-            return;
-        }
-        if (!result.result) {
-            showError('Token Removal Error', result.message);
-            stop_show_loading('#eth_tokens_select');
-            return;
-        }
+    service.remove_owned_eth_tokens(tokens).then(result => {
         for (let i = 0; i < tokens.length; i++) {
             const index = OWNED_TOKENS.indexOf(tokens[i]);
             if (index === -1) {
@@ -705,21 +690,22 @@ function remove_eth_tokens(tokens: string[]) {
         BB_PER_ASSET_TABLE.update_format(result.totals);
         enable_multiselect();
         stop_show_loading('#eth_tokens_select');
+    }).catch(reason => {
+        showError('Token Removal Error', (reason as Error).message);
+        stop_show_loading('#eth_tokens_select');
     });
 }
 
 function create_fiat_table() {
-    client.invoke('query_fiat_balances', (error: Error, result: { [currency: string]: AssetBalance }) => {
-        if (error || result == null) {
-            console.log('Error at querying fiat balances:' + error);
-            return;
-        }
-        FIAT_BALANCES = result;
+    service.query_fiat_balances().then(value => {
+        FIAT_BALANCES = value;
         const str = '<h4 class="centered-title">Owned Fiat Currency Balances</h4>';
         $(str).appendTo($('#fiat_balances_panel_body'));
-        FIAT_TABLE = new AssetTable('currency', 'fiat_balances', PlacementType.appendTo, 'fiat_balances_panel_body', result);
+        FIAT_TABLE = new AssetTable('currency', 'fiat_balances', PlacementType.appendTo, 'fiat_balances_panel_body', value);
         // also save the user settings page
         pages.page_user_settings = $('#page-wrapper').html();
+    }).catch(reason => {
+        console.log(`Error at querying fiat balances: ${reason}`);
     });
 }
 

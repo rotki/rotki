@@ -1,4 +1,4 @@
-import client from './zerorpc_client';
+
 import { page_header } from './elements';
 import { total_balances_get } from './balances_table';
 import { AssetTable } from './asset_table';
@@ -7,6 +7,7 @@ import { change_location } from './navigation';
 import { pages } from './settings';
 import { PlacementType } from './enums/PlacementType';
 import { AsyncQueryResult } from './model/balance-result';
+import { client } from './rotkehlchen_service';
 
 const SAVED_TABLES: { [name: string]: AssetTable } = {};
 

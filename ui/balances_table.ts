@@ -195,6 +195,7 @@ function update_last_balance_save() {
 function init_balances_table(data: AssetBalance[]) {
     add_balances_table_html();
 
+    console.log( $('#table_balances_total'));
     TOTAL_BALANCES_TABLE = $('#table_balances_total').DataTable({
         'data': data,
         'columns': [

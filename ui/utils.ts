@@ -1,8 +1,8 @@
-import client from './zerorpc_client';
 import { Tail } from 'tail';
 import * as fs from 'fs';
 import { settings } from './settings';
 import { dialog } from 'electron';
+import { service } from './rotkehlchen_service';
 import Timer = NodeJS.Timer;
 
 
@@ -41,12 +41,10 @@ let client_auditor: Timer;
  */
 function periodic_client_query() {
     // for now only query when was the last time balance data was saved
-    client.invoke('query_last_balance_save_time', (error: Error, res: number) => {
-        if (error || res == null) {
-            console.log('Error at periodic client query');
-            return;
-        }
-        settings.last_balance_save = res;
+    service.queryLastBalanceSaveTime().then(value => {
+        settings.last_balance_save = value;
+    }).catch(reason => {
+        console.log('Error at periodic client query' + reason);
     });
 }
 

@@ -1,12 +1,12 @@
 import { init_navigation } from './navigation';
 import { add_currency_dropdown, create_or_reload_dashboard, init_dashboard } from './dashboard';
-import client from './zerorpc_client';
 import { init_monitor } from './monitor';
 import { init_user_settings } from './user_settings';
 import { init_taxreport } from './taxreport';
 import { settings } from './settings';
+import { service } from './rotkehlchen_service';
 
-client.connect('tcp://127.0.0.1:4242');
+service.connect();
 
 function create_currency_dropdown(fa_default_icon: string) {
     const str = `<li class="dropdown">
