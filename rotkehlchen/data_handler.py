@@ -130,7 +130,7 @@ class DataHandler(object):
             if not os.path.exists(os.path.join(user_data_dir, 'rotkehlchen.db')):
                 # This is bad. User directory exists but database is missing.
                 # Make a backup of the directory that user should probably remove
-                # on his own. At the same time delete the directory so that a new
+                # on their own. At the same time delete the directory so that a new
                 # user account can be created
                 shutil.move(
                     user_data_dir,

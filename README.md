@@ -69,7 +69,7 @@ If you have never created an account before press "Create New Account". Provide 
 
 If you already have an account just write the name and the password here.
 
-All accounts are created in the rotkehlchen directory which is located in: `$HOME/.rotkehlchen`. Each user has his own subdirectory.
+All accounts are created in the rotkehlchen directory which is located in: `$HOME/.rotkehlchen`. Each user has their own subdirectory.
 
 ### Changing the Profit Currency
 
