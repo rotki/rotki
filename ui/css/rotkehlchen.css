@@ -139,4 +139,19 @@ a:focus, a:hover {
     min-width: 290px;
 }
 
+.eth-node-status {
+    padding:0;
+}
+
 .eth-node-status:hover .dropdown-eth-status {display: block;}
+
+.lg-status-icons {
+    float:left;
+    padding:14px 30px 14px 0px;
+    margin-bottom:0px;
+}
+
+.navbar-status-icons {
+    float: left;
+    margin-left:120px;
+}
