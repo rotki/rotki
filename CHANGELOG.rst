@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`153` Add a ``version`` command to display the rotkehlchen version
+* :bug:`159` Gracefully exit if an invalid argument is provided
 * :bug:`151` If an asset stored at Bittrex does not have a BTC market rotkehlchen no longer crashes.
 * :feature:`148` Add icons for all tokens to the UI
 * :feature:`74` Add experimental support for Bitmex. Supporting only simple balance query for now.
