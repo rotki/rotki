@@ -111,7 +111,7 @@ class Ethchain(object):
             'https://api.blockcypher.com/v1/eth/main'
         )
         if 'height' not in eth_resp:
-            raise ValueError('Failed to query blockcypher for heighest block')
+            return None
         blockNumber = int(eth_resp['height'])
         return blockNumber
 
