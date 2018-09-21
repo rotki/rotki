@@ -95,6 +95,10 @@ class Ethchain(object):
         return result, message
 
     def get_eth_highest_block(self):
+        """ Attempts to query blockcypher for the block height 
+        
+        Returns the highest blockNumber"""
+        
         eth_resp = request_get(
             'https://api.blockcypher.com/v1/eth/main'
         )
