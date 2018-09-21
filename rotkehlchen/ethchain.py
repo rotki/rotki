@@ -84,6 +84,15 @@ class Ethchain(object):
             self.ethrpc_port = port
         return result, message
 
+    def get_eth_highest_block(self):
+        eth_resp = request_get(
+            'https://api.blockcypher.com/v1/eth/main'
+        )
+        if 'height' not in eth_resp:
+            raise ValueError('Failed to query blockcypher for heighest block')
+        blockNumber = int(eth_resp['height'])
+        return blockNumber
+
     def get_eth_balance(self, account: typing.EthAddress) -> FVal:
         if not self.connected:
             eth_resp = request_get(
