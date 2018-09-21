@@ -53,14 +53,24 @@ class Ethchain(object):
                         'the ethereum mainnet'.format(ethrpc_port)
                     )
                     return False, message
-                curr_block = self.web3.eth.syncing.currentBlock
-                high_block = self.web3.eth.syncing.highestBlock
-                sync_perc = (100 * curr_block / high_block)
-                if (sync_perc < 99.99):
-                    message = ('Connected to a local ethereum node but it is syncing. Currently at {0:.6f}%'.format(sync_perc))
-                    logger.warn(message)
-                    self.connected = False
-                    return False, message
+                if self.web3.eth.syncing:
+                    curr_block = self.web3.eth.syncing.currentBlock
+                    high_block = self.web3.eth.syncing.highestBlock
+                    sync_perc = (100 * curr_block / high_block)
+                    if sync_perc < 99.99:
+                        message = ('Found local ethereum node but it is syncing. Currently at {0:.2f}%. Will use etherscan.'.format(sync_perc))
+                        logger.warn(message)
+                        self.connected = False
+                        return False, message
+                else:
+                    high_block = self.get_eth_highest_block()
+                    curr_block = self.web3.eth.blockNumber
+                    sync_perc = (100 * curr_block / high_block)
+                    if sync_perc < 99.99:
+                        message = ('Found local ethereum node but it is out of sync. Currently at {0:.2f}%. Will use etherscan.'.format(sync_perc))
+                        logger.warn(message)
+                        self.connected = False
+                        return False, message
                     
             self.connected = True
             return True, ''
