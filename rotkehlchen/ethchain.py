@@ -72,7 +72,7 @@ class Ethchain(object):
         # If we get here we did not connnect
         return False, message
 
-    def is_syncronized(self, curr_block, high_block):
+    def syncronized(self, current_block:int, latest_block:int) -> Tuple[bool, str]:
         """ Validate that the local ethereum node is syncronized
             at least 99.99% before using local blockchain
 
@@ -102,7 +102,7 @@ class Ethchain(object):
             self.ethrpc_port = port
         return result, message
 
-    def get_eth_highest_block(self):
+    def query_eth_highest_block(self) -> int:
         """ Attempts to query blockcypher for the block height
 
         Returns the highest blockNumber"""
