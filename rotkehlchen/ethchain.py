@@ -30,7 +30,7 @@ class Ethchain(object):
         try:
             self.web3 = Web3(HTTPProvider('http://localhost:{}'.format(ethrpc_port)))
         except ConnectionError:
-            logger.warn('Could not connect to a local ethereum node. Will use etherscan only')
+            logger.warning('Could not connect to a local ethereum node. Will use etherscan only')
             self.connected = False
             return False, 'Failed to connect to ethereum node at port {}'.format(ethrpc_port)
 
@@ -44,7 +44,7 @@ class Ethchain(object):
                 genesis_hash = self.web3.eth.getBlock(0)['hash'].hex()  # pylint: disable=no-member
                 target = '0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3'
                 if genesis_hash != target:
-                    logger.warn(
+                    logger.warning(
                         'Connected to a local ethereum node but it is not on the ethereum mainnet'
                     )
                     self.connected = False
@@ -53,34 +53,40 @@ class Ethchain(object):
                         'the ethereum mainnet'.format(ethrpc_port)
                     )
                     return False, message
-                if self.web3.eth.syncing:
-                    curr_block = self.web3.eth.syncing.currentBlock
-                    high_block = self.web3.eth.syncing.highestBlock
-                    sync_perc = (100 * curr_block / high_block)
-                    if sync_perc < 99.99:
-                        message = ('Found local ethereum node but it is syncing. Currently at {0:.2f}%. Will use etherscan.'.format(sync_perc))
-                        logger.warn(message)
-                        self.connected = False
-                        return False, message
+                if self.web3.eth.syncing:  # pylint: disable=no-member
+                    curr_block = self.web3.eth.syncing.currentBlock # pylint: disable=no-member
+                    high_block = self.web3.eth.syncing.highestBlock # pylint: disable=no-member
+                    return self.is_syncronized(curr_block, high_block)
                 else:
                     high_block = self.get_eth_highest_block()
-                    curr_block = self.web3.eth.blockNumber
-                    sync_perc = (100 * curr_block / high_block)
-                    if sync_perc < 99.99:
-                        message = ('Found local ethereum node but it is out of sync. Currently at {0:.2f}%. Will use etherscan.'.format(sync_perc))
-                        logger.warn(message)
-                        self.connected = False
-                        return False, message
-                    
+                    curr_block = self.web3.eth.blockNumber # pylint: disable=no-member
+                    return self.is_syncronized(curr_block, high_block)
+
             self.connected = True
             return True, ''
         else:
-            logger.warn('Could not connect to a local ethereum node. Will use etherscan only')
+            logger.warning('Could not connect to a local ethereum node. Will use etherscan only')
             self.connected = False
             message = 'Failed to connect to ethereum node at port {}'.format(ethrpc_port)
 
         # If we get here we did not connnect
         return False, message
+
+    def is_syncronized(self, curr_block, high_block):
+        """ Validate that the local ethereum node is syncronized
+            at least 99.99% before using local blockchain
+
+        Returns a tuple (results, message)
+            - result: Boolean for confirmation of syncronized
+            - message: A message containing information on what the status is. """
+        sync_perc = (100 * curr_block / high_block)
+        if sync_perc < 99.99:
+            message = ('Found local ethereum node but it is out of sync. Currently at '
+                '{0:.2f}%. Will use etherscan.'.format(sync_perc))
+            logger.warning(message)
+            self.connected = False
+            return False, message
+        return True, message
 
     def set_rpc_port(self, port: int) -> Tuple[bool, str]:
         """ Attempts to set the RPC port for the ethereum client.
@@ -95,10 +101,10 @@ class Ethchain(object):
         return result, message
 
     def get_eth_highest_block(self):
-        """ Attempts to query blockcypher for the block height 
-        
+        """ Attempts to query blockcypher for the block height
+
         Returns the highest blockNumber"""
-        
+
         eth_resp = request_get(
             'https://api.blockcypher.com/v1/eth/main'
         )
