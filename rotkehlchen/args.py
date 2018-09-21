@@ -1,6 +1,20 @@
 #!/usr/bin/env python
 import argparse
+import sys
+
 from rotkehlchen.config import default_data_directory
+from rotkehlchen.utils import get_system_spec
+
+
+class VersionAction(argparse.Action):
+    def __init__(self, option_strings, dest, nargs=None, required=False, **kwargs):
+        if nargs is not None:
+            raise ValueError("nargs not allowed")
+        super().__init__(option_strings, dest, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        print(get_system_spec()['rotkehlchen'])
+        sys.exit(0)
 
 
 def app_args() -> argparse.Namespace:
@@ -67,6 +81,11 @@ def app_args() -> argparse.Namespace:
             'logging system will also be visible.'
         ),
         action='store_true',
+    )
+    p.add_argument(
+        'version',
+        help='Shows the rotkehlchen version',
+        action=VersionAction,
     )
 
     args = p.parse_args()
