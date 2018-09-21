@@ -54,12 +54,12 @@ class Ethchain(object):
                     )
                     return False, message
                 if self.web3.eth.syncing:  # pylint: disable=no-member
-                    curr_block = self.web3.eth.syncing.currentBlock # pylint: disable=no-member
-                    high_block = self.web3.eth.syncing.highestBlock # pylint: disable=no-member
+                    curr_block = self.web3.eth.syncing.currentBlock  # pylint: disable=no-member
+                    high_block = self.web3.eth.syncing.highestBlock  # pylint: disable=no-member
                     return self.is_syncronized(curr_block, high_block)
                 else:
                     high_block = self.get_eth_highest_block()
-                    curr_block = self.web3.eth.blockNumber # pylint: disable=no-member
+                    curr_block = self.web3.eth.blockNumber  # pylint: disable=no-member
                     return self.is_syncronized(curr_block, high_block)
 
             self.connected = True
@@ -81,8 +81,10 @@ class Ethchain(object):
             - message: A message containing information on what the status is. """
         sync_perc = (100 * curr_block / high_block)
         if sync_perc < 99.99:
-            message = ('Found local ethereum node but it is out of sync. Currently at '
-                '{0:.2f}%. Will use etherscan.'.format(sync_perc))
+            message = (
+                'Found local ethereum node but it is out of sync. Currently at '
+                '{0:.2f}%. Will use etherscan.'.format(sync_perc)
+            )
             logger.warning(message)
             self.connected = False
             return False, message
