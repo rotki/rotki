@@ -19,7 +19,10 @@ class VersionAction(argparse.Action):
 
 def app_args() -> argparse.Namespace:
     """ Parse the arguments and create and return the arguments object"""
-    p = argparse.ArgumentParser(description='Rotkehlchen Crypto Portfolio Management')
+    p = argparse.ArgumentParser(
+        prog='rotkehlchen',
+        description='Rotkehlchen Crypto Portfolio Management',
+    )
 
     p.add_argument(
         '--output',
