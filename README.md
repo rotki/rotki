@@ -159,6 +159,13 @@ Open issues or pull requests to help with development, be active in Github and a
 
 In order for your Pull Request to be considered it will need to pass the automated CI tests and you will also need to sign the CLA (Contributor's license agreement).
 
+Please follow these rules for commits:
+1. Commits should be just to the point, not too long and not too short.
+2. Commits should do one thing, if two commits both do the same thing, that's a good sign they should be combined.
+3. Commits should follow a simple format. A max 80 columns title, optionally followed by an empty line separator and then the subject.
+4. More info on commit messages [here](https://who-t.blogspot.com/2009/12/on-commit-messages.html)
+5. **Never** merge master on the branch, always rebase on master. To delete/amend/edit/combine commits follow [this tutorial](https://robots.thoughtbot.com/git-interactive-rebase-squash-amend-rewriting-history)
+
 
 ### Get Premium -- Coming Soon
 
