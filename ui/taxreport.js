@@ -111,8 +111,6 @@ function show_float_or_empty(data) {
 }
 
 function create_taxreport_overview(results) {
-    $('#tax_report_loading').remove();
-
     let data = [];
     for (var result in results) {
         if(results.hasOwnProperty(result)) {
@@ -202,6 +200,8 @@ function create_taxreport_details(all_events) {
 
 function init_taxreport() {
     monitor_add_callback('process_trade_history', function (result) {
+        $('#tax_report_loading').remove();
+
         if ('error' in result) {
             showError(
                 'Trade History Query Error',

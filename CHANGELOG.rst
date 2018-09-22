@@ -2,11 +2,12 @@
 Changelog
 =========
 
-* :bug:`155` Check if the local ethereum node is synced before querying balances from it
-* :feature:`153` Add a ``version`` command to display the rotkehlchen version
-* :bug:`159` Gracefully exit if an invalid argument is provided
+* :bug:`163` Properly handle errors in the tax report calculation and in other asynchronous tasks.
+* :bug:`155` Check if the local ethereum node is synced before querying balances from it.
+* :feature:`153` Add a ``version`` command to display the rotkehlchen version.
+* :bug:`159` Gracefully exit if an invalid argument is provided.
 * :bug:`151` If an asset stored at Bittrex does not have a BTC market rotkehlchen no longer crashes.
-* :feature:`148` Add icons for all tokens to the UI
+* :feature:`148` Add icons for all tokens to the UI.
 * :feature:`74` Add experimental support for Bitmex. Supporting only simple balance query for now.
 * :bug:`135` Fix bug in converting binance sell trades to the common rotkehlchen format
 * :bug:`140` Don't log an error if the manual margin file is not found
