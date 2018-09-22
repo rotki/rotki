@@ -1,12 +1,9 @@
 import logging
 
 from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS
+from rotkehlchen.errors import PriceQueryUnknownFromAsset
 from rotkehlchen.fval import FVal
-from rotkehlchen.history import (
-    FIAT_CURRENCIES,
-    NoPriceForGivenTimestamp,
-    PriceQueryUnknownFromAsset,
-)
+from rotkehlchen.history import FIAT_CURRENCIES, NoPriceForGivenTimestamp
 from rotkehlchen.order_formatting import BuyEvent, Events, SellEvent
 from rotkehlchen.typing import Asset, Timestamp
 from rotkehlchen.utils import taxable_gain_for_sell, ts_now, tsToDate
@@ -218,7 +215,6 @@ class TaxableEvents(object):
             timestamp,
             is_virtual=False
     ):
-
         paid_with_asset_rate = self.get_rate_in_profit_currency(paid_with_asset, timestamp)
         buy_rate = paid_with_asset_rate * trade_rate
         fee_price_in_profit_currency = 0

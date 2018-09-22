@@ -8,7 +8,7 @@ from json.decoder import JSONDecodeError
 from rotkehlchen.binance import trade_from_binance
 from rotkehlchen.bitmex import trade_from_bitmex
 from rotkehlchen.bittrex import trade_from_bittrex
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.errors import PriceQueryUnknownFromAsset, RemoteError
 from rotkehlchen.exchange import data_up_todate
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import FIAT_CURRENCIES, world_to_cryptocompare
@@ -20,7 +20,7 @@ from rotkehlchen.order_formatting import (
     trades_from_dictlist,
 )
 from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
-from rotkehlchen.typing import BlockchainAsset
+from rotkehlchen.typing import NonEthTokenBlockchainAsset
 from rotkehlchen.utils import (
     convert_to_int,
     createTimeStamp,
@@ -50,13 +50,6 @@ class NoPriceForGivenTimestamp(Exception):
             'Unable to query a historical price for "{}" to "{}" at {}'.format(
                 from_asset, to_asset, timestamp
             )
-        )
-
-
-class PriceQueryUnknownFromAsset(Exception):
-    def __init__(self, from_asset):
-        super(PriceQueryUnknownFromAsset, self).__init__(
-            'Unable to query historical price for Unknown Asset: "{}"'.format(from_asset)
         )
 
 
@@ -154,7 +147,7 @@ def do_read_manual_margin_positions(data_directory):
                 open_time=position['open_time'],
                 close_time=position['close_time'],
                 profit_loss=FVal(position['btc_profit_loss']),
-                pl_currency=BlockchainAsset('BTC'),
+                pl_currency=NonEthTokenBlockchainAsset('BTC'),
                 notes=position['notes'],
             )
         )
