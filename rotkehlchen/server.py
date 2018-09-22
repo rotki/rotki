@@ -1,21 +1,21 @@
 # Based on https://github.com/fyears/electron-python-example
 from __future__ import print_function
 
-import gevent
-from gevent.event import Event
-from gevent.lock import Semaphore
+import logging
 import signal
-import zerorpc
-import pickle
 import traceback
 
-from rotkehlchen.errors import AuthenticationError, PermissionError
+import gevent
+import zerorpc
+from gevent.event import Event
+from gevent.lock import Semaphore
+
 from rotkehlchen.args import app_args
+from rotkehlchen.errors import AuthenticationError, PermissionError
+from rotkehlchen.inquirer import get_fiat_usd_exchange_rates
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.utils import pretty_json_dumps, process_result
-from rotkehlchen.inquirer import get_fiat_usd_exchange_rates
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -72,22 +72,25 @@ class RotkehlchenServer(object):
         return total
 
     def handle_killed_greenlets(self, greenlet):
-        if greenlet.exception:
-            logger.error(
-                'Greenlet for task {} dies with exception: {}.\n'
-                'Exception Name: {}\nException Info: {}\nTraceback:\n {}'
-                .format(
-                    greenlet.task_id,
-                    greenlet.exception,
-                    greenlet._exc_info[0],
-                    greenlet._exc_info[1],
-                    ''.join(traceback.format_tb(pickle.loads(greenlet._exc_info[2]))),
-                ))
-            # also write an error for the task result
-            result = {
-                'error': str(greenlet.exception)
-            }
-            self.write_task_result(greenlet.task_id, result)
+        if not greenlet.exception:
+            logger.warning('handle_killed_greenlets without an exception')
+            return
+
+        logger.error(
+            'Greenlet for task {} dies with exception: {}.\n'
+            'Exception Name: {}\nException Info: {}\nTraceback:\n {}'
+            .format(
+                greenlet.task_id,
+                greenlet.exception,
+                greenlet.exc_info[0],
+                greenlet.exc_info[1],
+                ''.join(traceback.format_tb(greenlet.exc_info[2])),
+            ))
+        # also write an error for the task result
+        result = {
+            'error': str(greenlet.exception)
+        }
+        self.write_task_result(greenlet.task_id, result)
 
     def _query_async(self, command, task_id, **kwargs):
         result = getattr(self, command)(**kwargs)
