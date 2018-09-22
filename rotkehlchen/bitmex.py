@@ -62,7 +62,7 @@ class Bitmex(Exchange):
             data_dir: typing.FilePath
     ):
         super(Bitmex, self).__init__('bitmex', api_key, secret, data_dir)
-        self.uri = 'https://testnet.bitmex.com'
+        self.uri = 'https://bitmex.com'
         self.inquirer = inquirer
         self.session.headers.update({'api-key': api_key})
 
