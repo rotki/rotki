@@ -1,22 +1,22 @@
-require("./zerorpc_client.js")();
-require("./monitor.js")();
-require("./dashboard.js")();
-require("./exchange.js")();
-require("./utils.js")();
-require("./otctrades.js")();
-require("./user_settings.js")();
-require("./taxreport.js")();
-var settings = require("./settings.js")();
-client.connect("tcp://127.0.0.1:4242");
+import { init_navigation } from './navigation';
+import { add_currency_dropdown, create_or_reload_dashboard, init_dashboard } from './dashboard';
+import client from './zerorpc_client';
+import { init_monitor } from './monitor';
+import { init_user_settings } from './user_settings';
+import { init_taxreport } from './taxreport';
+import { settings } from './settings';
 
-function create_page_header(title) {
-    return '<div class="row"><div class="col-lg-12"><h1 class=page-header">' + title + '</h1></div></div>';
-}
+client.connect('tcp://127.0.0.1:4242');
 
-
-function create_currency_dropdown(fa_default_icon) {
-    var str = '<li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#"><i id="current-main-currency" class="fa '+ fa_default_icon + ' fa-fw"></i> <i class="fa fa-caret-down"></i></a><ul class="dropdown-menu currency-dropdown"></ul></li>';
-    $(str).appendTo($(".navbar-right"));
+function create_currency_dropdown(fa_default_icon: string) {
+    const str = `<li class="dropdown">
+    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+        <i id="current-main-currency" class="fa ${fa_default_icon} fa-fw"></i>
+        <i class="fa fa-caret-down"></i>
+    </a>
+    <ul class="dropdown-menu currency-dropdown"></ul>
+</li>`;
+    $(str).appendTo($('.navbar-right'));
 }
 
 create_currency_dropdown(settings.default_currency.icon);

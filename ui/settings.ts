@@ -1,43 +1,35 @@
-require("./elements.js")();
+import client from './zerorpc_client';
+import { showError, showInfo } from './utils';
+import { form_button, form_checkbox, form_entry, form_select, page_header, settings_panel } from './elements';
+import { ActionResult } from './model/action-result';
+import * as fs from 'fs';
 
-var settings = null;
-function Currency(name, icon, ticker_symbol, unicode_symbol) {
-    this.name = name;
-    this.icon = icon;
-    this.ticker_symbol = ticker_symbol;
-    this.unicode_symbol = unicode_symbol;
+export class Currency {
+    constructor(readonly name: string, readonly icon: string, readonly ticker_symbol: string, readonly unicode_symbol: string) {
+    }
 }
 
-function assert_exchange_exists(name) {
+export function assert_exchange_exists(name: string) {
     if (settings.EXCHANGES.indexOf(name) < 0) {
-        throw "Invalid exchange name: " + name;
+        throw new Error('Invalid exchange name: ' + name);
     }
 }
 
-let exchanges = ['kraken', 'poloniex', 'bittrex', 'bitmex', 'binance'];
-let currencies = [
-    new Currency("United States Dollar", "fa-usd", "USD", "$"),
-    new Currency("Euro", "fa-eur", "EUR", "€"),
-    new Currency("British Pound", "fa-gbp", "GBP", "£"),
-    new Currency("Japanese Yen", "fa-jpy", "JPY", "¥"),
-    new Currency("Chinese Yuan", "fa-jpy", "CNY", "¥"),
-];
-
-function get_value_in_main_currency(usd_value) {
-    let symbol = settings.main_currency.ticker_symbol;
-    usd_value = parseFloat(usd_value);
-    if (symbol == 'USD') {
-        return usd_value;
+export function get_value_in_main_currency(usd_value: string): number {
+    const symbol = settings.main_currency.ticker_symbol;
+    const usd_value_number = parseFloat(usd_value);
+    if (symbol === 'USD') {
+        return usd_value_number;
     }
-    return usd_value * settings.usd_to_fiat_exchange_rates[symbol];
+    return usd_value_number * settings.usd_to_fiat_exchange_rates[symbol];
 }
 
-function get_fiat_usd_value(currency, amount) {
-    amount = parseFloat(amount);
-    if (currency == 'USD') {
-        return amount;
+export function get_fiat_usd_value(currency: string, amount: string): number {
+    const amount_number = parseFloat(amount);
+    if (currency === 'USD') {
+        return amount_number;
     }
-    return amount / settings.usd_to_fiat_exchange_rates[currency];
+    return amount_number / settings.usd_to_fiat_exchange_rates[currency];
 }
 
 /**
@@ -45,10 +37,13 @@ function get_fiat_usd_value(currency, amount) {
  * @param asset [optional] The name of the asset whose value we want
  * @param amount [optional] If asset was provided then also provide its amount
  */
-function format_currency_value(usd_value, asset, amount) {
+export function format_currency_value(usd_value: string, asset?: string, amount?: string): string {
     let value;
     // if it's already in main currency don't do any conversion
-    if (asset == settings.main_currency.ticker_symbol) {
+    if (asset === settings.main_currency.ticker_symbol) {
+        if (!amount) {
+            throw new Error('amount was supposed to have value but it did not have');
+        }
         value = parseFloat(amount);
     } else {
         // turn it into the requested currency
@@ -59,22 +54,22 @@ function format_currency_value(usd_value, asset, amount) {
     return value;
 }
 
-function add_settings_listeners() {
-    $('#settingssubmit').click(function(event) {
+export function add_settings_listeners() {
+    $('#settingssubmit').click(function (event) {
         event.preventDefault();
-        settings.floating_precision = $('#floating_precision').val();
-        settings.historical_data_start = $('#historical_data_start').val();
-        let main_currency = $('#maincurrencyselector').val();
+        settings.floating_precision = $('#floating_precision').val() as number;
+        settings.historical_data_start = $('#historical_data_start').val() as string;
+        const main_currency = $('#maincurrencyselector').val();
         for (let i = 0; i < settings.CURRENCIES.length; i++) {
-            if (main_currency == settings.CURRENCIES[i].ticker_symbol) {
+            if (main_currency === settings.CURRENCIES[i].ticker_symbol) {
                 settings.main_currency = settings.CURRENCIES[i];
             }
         }
 
-        let anonymized_logs = $('#anonymized_logs_input').is(":checked");
-        let eth_rpc_port = $('#eth_rpc_port').val();
-        let balance_save_frequency = $('#balance_save_frequency').val();
-        let send_payload = {
+        const anonymized_logs = $('#anonymized_logs_input').is(':checked');
+        const eth_rpc_port = $('#eth_rpc_port').val();
+        const balance_save_frequency = $('#balance_save_frequency').val();
+        const send_payload = {
             'ui_floating_precision': settings.floating_precision,
             'historical_data_start': settings.historical_data_start,
             'main_currency': main_currency,
@@ -84,43 +79,48 @@ function add_settings_listeners() {
         };
         // and now send the data to the python process
         client.invoke(
-            "set_settings",
+            'set_settings',
             send_payload,
-            (error, res) => {
+            (error: Error, res: ActionResult<boolean>) => {
                 if (error || res == null) {
-                    showError('Settings Error', 'Error at modifying settings: ' + error);
+                    showError('Settings Error', 'Error at modifying settings: ' + error.message);
                     return;
                 }
                 if (!res['result']) {
-                    showError('Settings Error', 'Error at modifying settings: ' + res['message']);
+                    showError('Settings Error', 'Error at modifying settings: ' + res.message);
                     return;
                 }
 
                 let message = 'Succesfully modified settings.';
-                if ('message' in res && res['message'] != '') {
-                    message = ' ' + message + res['message'];
+                if ('message' in res && res.message !== '') {
+                    message = ' ' + message + res.message;
                 }
                 showInfo('Success', message);
-        });
+            });
     });
 
-    $('#historical_data_start').datetimepicker({timepicker:false});
+    $('#historical_data_start').datetimepicker({timepicker: false});
 }
 
-function create_settings_ui() {
-    var str = page_header('Settings');
+export function create_settings_ui() {
+    let str = page_header('Settings');
     str += settings_panel('General Settings', 'general_settings');
     $('#page-wrapper').html(str);
 
-    str = form_entry('Floating Precision', 'floating_precision', settings.floating_precision, '');
+    str = form_entry('Floating Precision', 'floating_precision', settings.floating_precision.toString());
     str += form_checkbox('anonymized_logs_input', 'Should logs by anonymized?', settings.anonymized_logs);
-    str += form_entry('Date from when to count historical data', 'historical_data_start', settings.historical_data_start, '');
-    str += form_select('Select Main Currency', 'maincurrencyselector', settings.CURRENCIES.map(x => x.ticker_symbol), settings.main_currency.ticker_symbol);
+    str += form_entry('Date from when to count historical data', 'historical_data_start', settings.historical_data_start);
+    str += form_select(
+        'Select Main Currency',
+        'maincurrencyselector',
+        settings.CURRENCIES.map(x => x.ticker_symbol),
+        settings.main_currency.ticker_symbol
+    );
     str += form_entry('Eth RPC Port', 'eth_rpc_port', settings.eth_rpc_port, '');
     str += form_entry(
         'Balance data saving frequency in hours',
         'balance_save_frequency',
-        settings.balance_save_frequency,
+        settings.balance_save_frequency.toString(),
         ''
     );
     $(str).appendTo($('.panel-body'));
@@ -130,55 +130,88 @@ function create_settings_ui() {
     $(str).appendTo($('.panel-body'));
 }
 
-function get_icon_map() {
-    let fs = require('fs');
-    let icon_dir = 'node_modules/cryptocurrency-icons/svg/color/';
-    
-    let icon_map = {};
-    fs.readdirSync(icon_dir)
-        .forEach(function(v) {
-            icon_map[v.substr(0,v.indexOf('.'))] = icon_dir + v;
-    });
-    return icon_map;
+export class Settings {
+    private exchanges = ['kraken', 'poloniex', 'bittrex', 'bitmex', 'binance'];
+
+    private currencies = [
+        new Currency('United States Dollar', 'fa-usd', 'USD', '$'),
+        new Currency('Euro', 'fa-eur', 'EUR', '€'),
+        new Currency('British Pound', 'fa-gbp', 'GBP', '£'),
+        new Currency('Japanese Yen', 'fa-jpy', 'JPY', '¥'),
+        new Currency('Chinese Yuan', 'fa-jpy', 'CNY', '¥'),
+    ];
+    private icon_map: { [asset: string]: string };
+
+    constructor() {
+        this.settings = '';
+        this.include_crypto2crypto = false;
+        this.taxfree_after_period = 0;
+        this.icon_map = this.get_icon_map();
+    }
+
+    usd_to_fiat_exchange_rates: { [key: string]: number } = {};
+    settings: string;
+
+    get EXCHANGES(): string[] {
+        return this.exchanges;
+    }
+
+    connected_exchanges: string[] = [];
+
+    get CURRENCIES(): Currency[] {
+        return this.currencies;
+    }
+
+    get default_currency(): Currency {
+        return this.currencies[0];
+    }
+
+    public main_currency: Currency = this.currencies[0];
+
+    floating_precision = 2;
+    historical_data_start = '01/08/2015';
+    current_location?: string;
+    datetime_format = 'd/m/Y G:i';
+    has_premium = false;
+    premium_should_sync = false;
+    start_suggestion = 'inactive';
+    eth_rpc_port = '8545';
+    balance_save_frequency = 24;
+    last_balance_save = 0;
+    include_crypto2crypto: boolean;
+    taxfree_after_period: number;
+    anonymized_logs = false;
+
+    public get ICON_MAP_LIST(): { [asset: string]: string } {
+        return this.icon_map;
+    }
+
+    private get_icon_map(): { [asset: string]: string } {
+        const icon_dir = 'node_modules/cryptocurrency-icons/svg/color/';
+
+        const icon_map: { [asset: string]: string } = {};
+        fs.readdirSync(icon_dir)
+            .forEach(function (v) {
+                icon_map[v.substr(0, v.indexOf('.'))] = icon_dir + v;
+            });
+        return icon_map;
+    }
 }
 
-let icon_map_list = get_icon_map();
+export const settings = new Settings();
 
-module.exports = function() {
-    if (!settings) {
-        settings = {};
-        settings.usd_to_fiat_exchange_rates = {};
-        settings.EXCHANGES = exchanges;
-        settings.connected_exchanges = [];
-        settings.CURRENCIES = currencies;
-        settings.default_currency = currencies[0];
-        settings.main_currency = currencies[0];
-        settings.floating_precision = 2;
-        settings.historical_data_start = "01/08/2015";
-        settings.current_location = null;
-        settings.page_index = null;
-        settings.page_settings = null;
-        settings.page_otctrades = null;
-        settings.page_user_settings = null;
-        settings.page_accounting_settings = null;
-        settings.page_taxreport = null;
-        settings.page_exchange = {};
-        settings.datetime_format = 'd/m/Y G:i';
-        settings.has_premium = false;
-        settings.premium_should_sync = false;
-        settings.start_suggestion = 'inactive';
-        settings.eth_rpc_port = '8545';
-        settings.balance_save_frequency = 24;
-        settings.last_balance_save = 0;
-        settings.ICON_MAP_LIST = get_icon_map();
-        settings.anonymized_logs = false;
-    }
-    this.get_value_in_main_currency = get_value_in_main_currency;
-    this.assert_exchange_exists = assert_exchange_exists;
-    this.create_settings_ui = create_settings_ui;
-    this.add_settings_listeners = add_settings_listeners;
-    this.format_currency_value = format_currency_value;
-    this.get_fiat_usd_value = get_fiat_usd_value;
+interface Pages {
+    [key: string]: string | { [name: string]: string } | undefined;
 
-    return settings;
+    page_index?: string;
+    page_settings?: string;
+    page_otctrades?: string;
+    page_user_settings?: string;
+    page_accounting_settings?: string;
+    page_taxreport?: string;
+    page_exchange: { [name: string]: string };
+}
+
+export const pages: Pages = {
+    page_exchange: {}
 };
