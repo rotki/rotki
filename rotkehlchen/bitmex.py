@@ -1,23 +1,24 @@
-import time
-import hmac
 import hashlib
-from urllib.parse import urlencode
+import hmac
+import logging
+import time
 from json.decoder import JSONDecodeError
+from typing import Dict, List, Optional, Tuple, Union
+from urllib.parse import urlencode
 
-from typing import Dict, Tuple, Optional, Union, List
+from rotkehlchen import typing
+from rotkehlchen.errors import RemoteError
+from rotkehlchen.exchange import Exchange
+from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.order_formatting import AssetMovement, MarginPosition
 from rotkehlchen.utils import (
     cache_response_timewise,
-    createTimeStamp,
+    iso8601ts_to_timestamp,
     rlk_jsonloads,
+    satoshis_to_btc,
 )
-from rotkehlchen.exchange import Exchange
-from rotkehlchen.order_formatting import AssetMovement, Trade
-from rotkehlchen.fval import FVal
-from rotkehlchen.errors import RemoteError
-from rotkehlchen.inquirer import Inquirer
-from rotkehlchen import typing
 
-import logging
 logger = logging.getLogger(__name__)
 
 BITMEX_PRIVATE_ENDPOINTS = (
@@ -33,41 +34,23 @@ def bitmex_to_world(asset):
     return asset
 
 
-def trade_from_bitmex(bittrex_trade: Dict) -> Trade:
-    """Turn a bitmex trade returned from bittrex trade history to our common trade
-    history format"""
-    # TODO
-    return None
-    # amount = FVal(bittrex_trade['Quantity']) - FVal(bittrex_trade['QuantityRemaining'])
-    # rate = FVal(bittrex_trade['PricePerUnit'])
-    # order_type = bittrex_trade['OrderType']
-    # bittrex_price = FVal(bittrex_trade['Price'])
-    # bittrex_commission = FVal(bittrex_trade['Commission'])
-    # pair = bittrex_pair_to_world(bittrex_trade['Exchange'])
-    # base_currency = get_pair_position(pair, 'first')
-    # if order_type == 'LIMIT_BUY':
-    #     order_type = 'buy'
-    #     cost = bittrex_price + bittrex_commission
-    #     fee = bittrex_commission
-    # elif order_type == 'LIMIT_SEL':
-    #     order_type = 'sell'
-    #     cost = bittrex_price - bittrex_commission
-    #     fee = bittrex_commission
-    # else:
-    #     raise ValueError('Got unexpected order type "{}" for bittrex trade'.format(order_type))
+def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
+    """Turn a bitmex trade returned from bitmex trade history to our common trade
+    history format. This only returns margin positions as bitmex only deals in
+    margin trading"""
+    close_time = iso8601ts_to_timestamp(bitmex_trade['transactTime'])
+    profit_loss = satoshis_to_btc(FVal(bitmex_trade['amount']))
+    currency = bitmex_to_world(bitmex_trade['currency'])
+    assert currency == 'BTC', 'Bitmex trade should only deal in BTC'
 
-    # return Trade(
-    #     timestamp=bittrex_trade['TimeStamp'],
-    #     pair=pair,
-    #     type=order_type,
-    #     rate=rate,
-    #     cost=cost,
-    #     cost_currency=base_currency,
-    #     fee=fee,
-    #     fee_currency=base_currency,
-    #     amount=amount,
-    #     location='bitmex'
-    # )
+    return MarginPosition(
+        exchange='bitmex',
+        open_time=None,
+        close_time=close_time,
+        profit_loss=profit_loss,
+        pl_currency='BTC',
+        notes=bitmex_trade['address'],
+    )
 
 
 class Bitmex(Exchange):
@@ -189,7 +172,7 @@ class Bitmex(Exchange):
         returned_balances = dict()
         usd_price = self.inquirer.find_usd_price('BTC')
         # result is in satoshis
-        amount = FVal(resp['amount']) * FVal('0.00000001')
+        amount = satoshis_to_btc(FVal(resp['amount']))
 
         returned_balances['BTC'] = dict(
             amount=amount,
@@ -222,10 +205,7 @@ class Bitmex(Exchange):
             if tx['timestamp'] is None:
                 timestamp = None
             else:
-                timestamp = createTimeStamp(
-                    tx['timestamp'],
-                    formatstr="%Y-%m-%dT%H:%M:%S.%fZ",
-                )
+                timestamp = iso8601ts_to_timestamp(tx['timestamp'])
             if tx['transactType'] != 'RealisedPNL':
                 continue
             if timestamp and timestamp < start_ts:
@@ -261,10 +241,7 @@ class Bitmex(Exchange):
             if transaction_type not in ('Deposit', 'Withdrawal'):
                 continue
 
-            timestamp = createTimeStamp(
-                movement['timestamp'],
-                formatstr="%Y-%m-%dT%H:%M:%S.%fZ",
-            )
+            timestamp = iso8601ts_to_timestamp(movement['timestamp'])
             if timestamp < start_ts:
                 continue
             if timestamp > end_ts:
@@ -281,8 +258,8 @@ class Bitmex(Exchange):
 
             if asset == 'BTC':
                 # bitmex stores amounts in satoshis
-                amount = amount * FVal('0.00000001')
-                fee = fee * FVal('0.00000001')
+                amount = satoshis_to_btc(amount)
+                fee = satoshis_to_btc(fee)
 
             movements.append(AssetMovement(
                 exchange='bitmex',

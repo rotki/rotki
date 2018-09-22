@@ -201,7 +201,7 @@ class RotkehlchenServer(object):
         except AttributeError:
             raise "Unknown location {} given".format(location)
 
-        return exchange.query_trade_history(start_ts, end_ts, end_ts)
+        return process_result(exchange.query_trade_history(start_ts, end_ts, end_ts))
 
     def process_trade_history(self, start_ts, end_ts):
         start_ts = int(start_ts)
