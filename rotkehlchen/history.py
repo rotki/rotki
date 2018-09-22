@@ -11,7 +11,7 @@ from rotkehlchen.bittrex import trade_from_bittrex
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchange import data_up_todate
 from rotkehlchen.fval import FVal
-from rotkehlchen.inquirer import FIAT_CURRENCIES
+from rotkehlchen.inquirer import FIAT_CURRENCIES, world_to_cryptocompare
 from rotkehlchen.kraken import kraken_to_world_pair
 from rotkehlchen.order_formatting import (
     MarginPosition,
@@ -354,7 +354,10 @@ class PriceHistorian(object):
             query_string = (
                 'https://min-api.cryptocompare.com/data/histohour?'
                 'fsym={}&tsym={}&limit={}&toTs={}'.format(
-                    from_asset, to_asset, cryptocompare_hourquerylimit, end_date
+                    world_to_cryptocompare(from_asset),
+                    world_to_cryptocompare(to_asset),
+                    cryptocompare_hourquerylimit,
+                    end_date,
                 ))
             resp = request_get(query_string)
             if 'Response' not in resp or resp['Response'] != 'Success':
@@ -454,19 +457,23 @@ class PriceHistorian(object):
                 price = asset_btc_price * btc_to_asset_price
             else:
                 # attempt to get the daily price by timestamp
+                cc_from_asset = world_to_cryptocompare(from_asset)
+                cc_to_asset = world_to_cryptocompare(to_asset)
                 query_string = (
                     'https://min-api.cryptocompare.com/data/pricehistorical?'
                     'fsym={}&tsyms={}&ts={}'.format(
-                        from_asset, to_asset, timestamp
+                        cc_from_asset,
+                        cc_to_asset,
+                        timestamp,
                     ))
                 if to_asset == 'BTC':
                     query_string += '&tryConversion=false'
                 resp = request_get(query_string)
 
-                if from_asset not in resp:
+                if cc_from_asset not in resp:
                     error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
                     raise ValueError(error_message)
-                price = FVal(resp[from_asset][to_asset])
+                price = FVal(resp[cc_from_asset][cc_to_asset])
 
                 if price == 0:
                     raise NoPriceForGivenTimestamp(
