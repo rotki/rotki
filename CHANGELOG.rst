@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`155` Check if the local ethereum node is synced before querying balances from it
 * :feature:`153` Add a ``version`` command to display the rotkehlchen version
 * :bug:`159` Gracefully exit if an invalid argument is provided
 * :bug:`151` If an asset stored at Bittrex does not have a BTC market rotkehlchen no longer crashes.
@@ -49,4 +50,3 @@ Changelog
 * :bug:`37` Fix a bug where adding an ethereum account was throwing an exception in the UI.
 
 * :release:`0.1.0 <2018-04-23>`
-
