@@ -1,8 +1,10 @@
-import pytest
 import json
 
-from rotkehlchen.server import process_result
+import pytest
+
 from rotkehlchen.fval import FVal
+from rotkehlchen.server import process_result
+from rotkehlchen.utils import iso8601ts_to_timestamp
 
 
 def test_process_result():
@@ -32,3 +34,9 @@ def test_tuple_in_process_result():
     # Process result should detect the tuple and throw
     with pytest.raises(ValueError):
         json.dumps(process_result(d))
+
+
+def test_iso8601ts_to_timestamp():
+    assert iso8601ts_to_timestamp('2018-09-09T12:00:00.000Z') == 1536494400
+    assert iso8601ts_to_timestamp('2011-01-01T04:13:22.220Z') == 1293855202
+    assert iso8601ts_to_timestamp('1986-11-04T16:23:57.921Z') == 531505437

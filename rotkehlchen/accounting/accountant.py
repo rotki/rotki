@@ -1,20 +1,23 @@
+import logging
+from typing import Dict, Optional, Tuple, Union
+
 import gevent
 
+from rotkehlchen.accounting.events import TaxableEvents
+from rotkehlchen.csv_exporter import CSVExporter
+from rotkehlchen.errors import CorruptData, PriceQueryUnknownFromAsset
+from rotkehlchen.fval import FVal
+from rotkehlchen.history import FIAT_CURRENCIES
 from rotkehlchen.order_formatting import (
-    trade_get_other_pair,
-    trade_get_assets,
+    AssetMovement,
+    MarginPosition,
     Trade,
-    AssetMovement
+    trade_get_assets,
+    trade_get_other_pair,
 )
 from rotkehlchen.transactions import EthereumTransaction
-from rotkehlchen.history import FIAT_CURRENCIES
-from rotkehlchen.csv_exporter import CSVExporter
-from rotkehlchen.fval import FVal
-from rotkehlchen.errors import CorruptData
+from rotkehlchen.typing import Asset
 
-from rotkehlchen.accounting.events import TaxableEvents
-
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -27,38 +30,48 @@ def action_get_timestamp(action):
     if has_timestamp:
         return action.timestamp
 
-    # For loans and manual margin positions
+    if isinstance(action, MarginPosition):
+        return action.close_time
+
+    # For loans
     if 'close_time' not in action:
-        print("----> {}".format(action))
+        raise ValueError(f'Unexpected action {action} in get_timestamp')
+
     return action['close_time']
 
 
-def action_get_type(action):
+def action_get_type(
+        action: Union[Trade, AssetMovement, EthereumTransaction, MarginPosition, Dict],
+) -> str:
     if isinstance(action, Trade):
         return 'trade'
     elif isinstance(action, AssetMovement):
         return 'asset_movement'
     elif isinstance(action, EthereumTransaction):
         return 'ethereum_transaction'
+    elif isinstance(action, MarginPosition):
+        return 'margin_position'
     elif isinstance(action, dict):
-        if 'btc_profit_loss' in action:
-            return 'margin_position'
         return 'loan'
 
+    raise ValueError('Unexpected action type found.')
 
-def action_get_assets(action):
+
+def action_get_assets(
+        action: Union[Trade, AssetMovement, EthereumTransaction, MarginPosition, Dict],
+) -> Tuple[Asset, Optional[Asset]]:
     if isinstance(action, Trade):
         return trade_get_assets(action)
     elif isinstance(action, AssetMovement):
         return action.asset, None
     elif isinstance(action, EthereumTransaction):
         return 'ETH', None
+    elif isinstance(action, MarginPosition):
+        return action.pl_currency, None
     elif isinstance(action, dict):
-        if 'btc_profit_loss' in action:
-            return 'BTC', None
-
         # else a loan
         return action['currency'], None
+
     else:
         raise ValueError('Unexpected action type found.')
 
@@ -263,131 +276,23 @@ class Accountant(object):
         prev_time = 0
         count = 0
         for action in actions:
+            try:
+                (
+                    should_continue,
+                    prev_time,
+                    count,
+                ) = self.process_action(action, end_ts, prev_time, count)
+            except PriceQueryUnknownFromAsset as e:
+                logger.error(f'Skipping trade during history processing: {str(e)}')
+                continue
 
-            # Hack to periodically yield back to the gevent IO loop to avoid getting
-            # the losing remote after hearbeat error for the zerorpc client.
-            # https://github.com/0rpc/zerorpc-python/issues/37
-            # TODO: Find better way to do this. Perhaps enforce this only if method
-            # is a synced call, and if async don't do this yielding. In any case
-            # this calculation should definitely by async
-            count += 1
-            if count % 500 == 0:
-                gevent.sleep(0.01)  # context switch
-
-            # Assert we are sorted in ascending time order.
-            timestamp = action_get_timestamp(action)
-            assert timestamp >= prev_time, (
-                "During history processing the trades/loans are not in ascending order"
-            )
-            prev_time = timestamp
-
-            if timestamp > end_ts:
+            if not should_continue:
                 break
-
-            action_type = action_get_type(action)
-
-            asset1, asset2 = action_get_assets(action)
-            if asset1 in self.ignored_assets or asset2 in self.ignored_assets:
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug("Ignoring {} with {} {}".format(action_type, asset1, asset2))
-                    continue
-
-            if action_type == 'loan':
-                self.events.add_loan_gain(
-                    gained_asset=action['currency'],
-                    lent_amount=action['amount_lent'],
-                    gained_amount=action['earned'],
-                    fee_in_asset=action['fee'],
-                    open_time=action['open_time'],
-                    close_time=timestamp,
-                )
-                continue
-            elif action_type == 'asset_movement':
-                self.add_asset_movement_to_events(
-                    category=action.category,
-                    asset=action.asset,
-                    amount=action.amount,
-                    timestamp=action.timestamp,
-                    exchange=action.exchange,
-                    fee=action.fee
-                )
-                continue
-            elif action_type == 'margin_position':
-                self.events.add_margin_position(
-                    gained_asset='BTC',
-                    gained_amount=action['btc_profit_loss'],
-                    fee_in_asset=0,
-                    margin_notes=action['notes'],
-                    timestamp=timestamp
-                )
-                continue
-            elif action_type == 'ethereum_transaction':
-                self.account_for_gas_costs(action)
-                continue
-
-            # if we get here it's a trade
-            trade = action
-
-            # if the cost is not equal to rate * amount then the data is somehow corrupt
-            if not trade.cost.is_close(trade.amount * trade.rate, max_diff="1e-5"):
-                raise CorruptData(
-                    "Trade found with cost {} which is not equal to trade.amount"
-                    "({}) * trade.rate({})".format(trade.cost, trade.amount, trade.rate)
-                )
-
-            # When you buy, you buy with the cost_currency and receive the other one
-            # When you sell, you sell the amount in non-cost_currency and receive
-            # costs in cost_currency
-            if trade.type == 'buy':
-                self.events.add_buy_and_corresponding_sell(
-                    bought_asset=trade_get_other_pair(trade, trade.cost_currency),
-                    bought_amount=trade.amount,
-                    paid_with_asset=trade.cost_currency,
-                    trade_rate=trade.rate,
-                    trade_fee=trade.fee,
-                    fee_currency=trade.fee_currency,
-                    timestamp=trade.timestamp
-                )
-            elif trade.type == 'sell':
-                self.trade_add_to_sell_events(trade, False)
-            elif trade.type == 'settlement_sell':
-                # in poloniex settlements sell some asset to get BTC to repay a loan
-                self.trade_add_to_sell_events(trade, True)
-            elif trade.type == 'settlement_buy':
-                # in poloniex settlements you buy some asset with BTC to repay a loan
-                # so in essense you sell BTC to repay the loan
-                selling_asset = 'BTC'
-                selling_asset_rate = self.get_rate_in_profit_currency(
-                    selling_asset,
-                    trade.timestamp
-                )
-                selling_rate = selling_asset_rate * trade.rate
-                fee_rate = self.query_historical_price(
-                    trade.fee_currency,
-                    self.profit_currency,
-                    trade.timestamp
-                )
-                total_sell_fee_cost = fee_rate * trade.fee
-                gain_in_profit_currency = selling_rate * trade.amount
-                self.events.add_sell(
-                    selling_asset=selling_asset,
-                    selling_amount=trade.cost,
-                    receiving_asset=None,
-                    receiving_amount=None,
-                    gain_in_profit_currency=gain_in_profit_currency,
-                    total_fee_in_profit_currency=total_sell_fee_cost,
-                    trade_rate=trade.rate,
-                    rate_in_profit_currency=selling_rate,
-                    timestamp=trade.timestamp,
-                    loan_settlement=True
-                )
-            else:
-                raise ValueError('Unknown trade type "{}" encountered'.format(trade.type))
 
         self.events.calculate_asset_details()
 
         sum_other_actions = (
-            self.events.margin_positions_profit +
+            self.events.margin_positions_profit_loss +
             self.events.loan_profit -
             self.events.settlement_losses -
             self.asset_movement_fees -
@@ -397,7 +302,7 @@ class Accountant(object):
         return {
             'overview': {
                 'loan_profit': str(self.events.loan_profit),
-                'margin_positions_profit': str(self.events.margin_positions_profit),
+                'margin_positions_profit_loss': str(self.events.margin_positions_profit_loss),
                 'settlement_losses': str(self.events.settlement_losses),
                 'ethereum_transaction_gas_costs': str(self.eth_transactions_gas_costs),
                 'asset_movement_fees': str(self.asset_movement_fees),
@@ -411,3 +316,130 @@ class Accountant(object):
             },
             'all_events': self.csvexporter.all_events,
         }
+
+    def process_action(self, action, end_ts, prev_time, count) -> Tuple[bool, int, int]:
+        """Processes each individual action and returns whether we should continue
+        looping through the rest of the actions or not"""
+
+        # Hack to periodically yield back to the gevent IO loop to avoid getting
+        # the losing remote after hearbeat error for the zerorpc client.
+        # https://github.com/0rpc/zerorpc-python/issues/37
+        # TODO: Find better way to do this. Perhaps enforce this only if method
+        # is a synced call, and if async don't do this yielding. In any case
+        # this calculation should definitely by async
+        count += 1
+        if count % 500 == 0:
+            gevent.sleep(0.01)  # context switch
+
+        # Assert we are sorted in ascending time order.
+        timestamp = action_get_timestamp(action)
+        assert timestamp >= prev_time, (
+            "During history processing the trades/loans are not in ascending order"
+        )
+        prev_time = timestamp
+
+        if timestamp > end_ts:
+            return False, prev_time, count
+
+        action_type = action_get_type(action)
+
+        asset1, asset2 = action_get_assets(action)
+        if asset1 in self.ignored_assets or asset2 in self.ignored_assets:
+            logger.debug("Ignoring {} with {} {}".format(action_type, asset1, asset2))
+            return True, prev_time, count
+
+        if action_type == 'loan':
+            self.events.add_loan_gain(
+                gained_asset=action['currency'],
+                lent_amount=action['amount_lent'],
+                gained_amount=action['earned'],
+                fee_in_asset=action['fee'],
+                open_time=action['open_time'],
+                close_time=timestamp,
+            )
+            return True, prev_time, count
+        elif action_type == 'asset_movement':
+            self.add_asset_movement_to_events(
+                category=action.category,
+                asset=action.asset,
+                amount=action.amount,
+                timestamp=action.timestamp,
+                exchange=action.exchange,
+                fee=action.fee
+            )
+            return True, prev_time, count
+        elif action_type == 'margin_position':
+            self.events.add_margin_position(
+                gain_loss_asset=action.pl_currency,
+                gain_loss_amount=action.profit_loss,
+                fee_in_asset=FVal(0),
+                margin_notes=action.notes,
+                timestamp=action.close_time,
+            )
+            return True, prev_time, count
+        elif action_type == 'ethereum_transaction':
+            self.account_for_gas_costs(action)
+            return True, prev_time, count
+
+        # if we get here it's a trade
+        trade = action
+
+        # if the cost is not equal to rate * amount then the data is somehow corrupt
+        if not trade.cost.is_close(trade.amount * trade.rate, max_diff="1e-4"):
+            # import pdb
+            # pdb.set_trace()
+            raise CorruptData(
+                "Trade found with cost {} which is not equal to trade.amount"
+                "({}) * trade.rate({})".format(trade.cost, trade.amount, trade.rate)
+            )
+
+        # When you buy, you buy with the cost_currency and receive the other one
+        # When you sell, you sell the amount in non-cost_currency and receive
+        # costs in cost_currency
+        if trade.type == 'buy':
+            self.events.add_buy_and_corresponding_sell(
+                bought_asset=trade_get_other_pair(trade, trade.cost_currency),
+                bought_amount=trade.amount,
+                paid_with_asset=trade.cost_currency,
+                trade_rate=trade.rate,
+                trade_fee=trade.fee,
+                fee_currency=trade.fee_currency,
+                timestamp=trade.timestamp
+            )
+        elif trade.type == 'sell':
+            self.trade_add_to_sell_events(trade, False)
+        elif trade.type == 'settlement_sell':
+            # in poloniex settlements sell some asset to get BTC to repay a loan
+            self.trade_add_to_sell_events(trade, True)
+        elif trade.type == 'settlement_buy':
+            # in poloniex settlements you buy some asset with BTC to repay a loan
+            # so in essense you sell BTC to repay the loan
+            selling_asset = 'BTC'
+            selling_asset_rate = self.get_rate_in_profit_currency(
+                selling_asset,
+                trade.timestamp
+            )
+            selling_rate = selling_asset_rate * trade.rate
+            fee_rate = self.query_historical_price(
+                trade.fee_currency,
+                self.profit_currency,
+                trade.timestamp
+            )
+            total_sell_fee_cost = fee_rate * trade.fee
+            gain_in_profit_currency = selling_rate * trade.amount
+            self.events.add_sell(
+                selling_asset=selling_asset,
+                selling_amount=trade.cost,
+                receiving_asset=None,
+                receiving_amount=None,
+                gain_in_profit_currency=gain_in_profit_currency,
+                total_fee_in_profit_currency=total_sell_fee_cost,
+                trade_rate=trade.rate,
+                rate_in_profit_currency=selling_rate,
+                timestamp=trade.timestamp,
+                loan_settlement=True
+            )
+        else:
+            raise ValueError('Unknown trade type "{}" encountered'.format(trade.type))
+
+        return True, prev_time, count

@@ -1,14 +1,16 @@
 from __future__ import unicode_literals
-import requests
-from typing import Optional, Dict, Iterable, cast
-
-from rotkehlchen.fval import FVal
-from rotkehlchen.utils import rlk_jsonloads, retry_calls, query_fiat_pair
-from rotkehlchen import typing
-from rotkehlchen.constants import FIAT_CURRENCIES, S_USD, S_RDN, S_DATACOIN
-from rotkehlchen.errors import RemoteError
 
 import logging
+from typing import Dict, Iterable, Optional, cast
+
+import requests
+
+from rotkehlchen import typing
+from rotkehlchen.constants import FIAT_CURRENCIES, S_DATACOIN, S_RDN, S_USD
+from rotkehlchen.errors import RemoteError
+from rotkehlchen.fval import FVal
+from rotkehlchen.utils import query_fiat_pair, retry_calls, rlk_jsonloads
+
 logger = logging.getLogger(__name__)
 
 
@@ -22,6 +24,17 @@ def get_fiat_usd_exchange_rates(
         rates[currency] = query_fiat_pair(S_USD, currency)
 
     return rates
+
+
+def world_to_cryptocompare(asset):
+    # Adjust some ETH tokens to how cryptocompare knows them
+    if asset == S_RDN:
+        # remove this if cryptocompare changes the symbol
+        asset = cast(typing.EthToken, 'RDN*')
+    elif asset == S_DATACOIN:
+        asset = cast(typing.NonEthTokenBlockchainAsset, 'DATA')
+
+    return asset
 
 
 class Inquirer(object):
@@ -46,12 +59,7 @@ class Inquirer(object):
         if self.kraken and self.kraken.first_connection_made and asset_btc_price is not None:
             return self.query_kraken_for_price(asset, asset_btc_price)
 
-        # Adjust some ETH tokens to how cryptocompare knows them
-        if asset == S_RDN:
-            # remove this if cryptocompare changes the symbol
-            asset = cast(typing.EthToken, 'RDN*')
-        if asset == S_DATACOIN:
-            asset = cast(typing.NonEthTokenBlockchainAsset, 'DATA')
+        asset = world_to_cryptocompare(asset)
         resp = retry_calls(
             5,
             'find_usd_price',

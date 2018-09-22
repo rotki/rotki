@@ -1,65 +1,56 @@
-import time
-import hmac
 import hashlib
-from urllib.parse import urlencode
-from json.decoder import JSONDecodeError
-
-from typing import Dict, Tuple, Optional, Union, List
-from rotkehlchen.utils import (
-    rlk_jsonloads,
-    cache_response_timewise,
-)
-from rotkehlchen.exchange import Exchange
-from rotkehlchen.order_formatting import Trade
-from rotkehlchen.fval import FVal
-from rotkehlchen.errors import RemoteError
-from rotkehlchen.inquirer import Inquirer
-from rotkehlchen import typing
-
+import hmac
 import logging
+import time
+from json.decoder import JSONDecodeError
+from typing import Dict, List, Optional, Tuple, Union
+from urllib.parse import urlencode
+
+from rotkehlchen import typing
+from rotkehlchen.errors import RemoteError
+from rotkehlchen.exchange import Exchange
+from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.order_formatting import AssetMovement, MarginPosition
+from rotkehlchen.utils import (
+    cache_response_timewise,
+    iso8601ts_to_timestamp,
+    rlk_jsonloads,
+    satoshis_to_btc,
+)
+
 logger = logging.getLogger(__name__)
 
 BITMEX_PRIVATE_ENDPOINTS = (
     'user',
-    'user/wallet'
+    'user/wallet',
+    'user/walletHistory',
 )
 
 
-def trade_from_bitmex(bittrex_trade: Dict) -> Trade:
-    """Turn a bitmex trade returned from bittrex trade history to our common trade
-    history format"""
-    # TODO
-    return None
-    # amount = FVal(bittrex_trade['Quantity']) - FVal(bittrex_trade['QuantityRemaining'])
-    # rate = FVal(bittrex_trade['PricePerUnit'])
-    # order_type = bittrex_trade['OrderType']
-    # bittrex_price = FVal(bittrex_trade['Price'])
-    # bittrex_commission = FVal(bittrex_trade['Commission'])
-    # pair = bittrex_pair_to_world(bittrex_trade['Exchange'])
-    # base_currency = get_pair_position(pair, 'first')
-    # if order_type == 'LIMIT_BUY':
-    #     order_type = 'buy'
-    #     cost = bittrex_price + bittrex_commission
-    #     fee = bittrex_commission
-    # elif order_type == 'LIMIT_SEL':
-    #     order_type = 'sell'
-    #     cost = bittrex_price - bittrex_commission
-    #     fee = bittrex_commission
-    # else:
-    #     raise ValueError('Got unexpected order type "{}" for bittrex trade'.format(order_type))
+def bitmex_to_world(asset):
+    if asset == 'XBt':
+        return 'BTC'
+    return asset
 
-    # return Trade(
-    #     timestamp=bittrex_trade['TimeStamp'],
-    #     pair=pair,
-    #     type=order_type,
-    #     rate=rate,
-    #     cost=cost,
-    #     cost_currency=base_currency,
-    #     fee=fee,
-    #     fee_currency=base_currency,
-    #     amount=amount,
-    #     location='bitmex'
-    # )
+
+def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
+    """Turn a bitmex trade returned from bitmex trade history to our common trade
+    history format. This only returns margin positions as bitmex only deals in
+    margin trading"""
+    close_time = iso8601ts_to_timestamp(bitmex_trade['transactTime'])
+    profit_loss = satoshis_to_btc(FVal(bitmex_trade['amount']))
+    currency = bitmex_to_world(bitmex_trade['currency'])
+    assert currency == 'BTC', 'Bitmex trade should only deal in BTC'
+
+    return MarginPosition(
+        exchange='bitmex',
+        open_time=None,
+        close_time=close_time,
+        profit_loss=profit_loss,
+        pl_currency='BTC',
+        notes=bitmex_trade['address'],
+    )
 
 
 class Bitmex(Exchange):
@@ -71,7 +62,7 @@ class Bitmex(Exchange):
             data_dir: typing.FilePath
     ):
         super(Bitmex, self).__init__('bitmex', api_key, secret, data_dir)
-        self.uri = 'https://bitmex.com'
+        self.uri = 'https://testnet.bitmex.com'
         self.inquirer = inquirer
         self.session.headers.update({'api-key': api_key})
 
@@ -83,9 +74,9 @@ class Bitmex(Exchange):
             self._api_query('get', 'user')
         except RemoteError as e:
             error = str(e)
-            if error == 'Invalid API Key.':
+            if 'Invalid API Key' in error:
                 return False, 'Provided API key is invalid'
-            elif error == 'Signature not valid.':
+            elif 'Signature not valid' in error:
                 return False, 'Provided API secret is invalid'
             else:
                 raise
@@ -130,7 +121,7 @@ class Bitmex(Exchange):
         if path in BITMEX_PRIVATE_ENDPOINTS:
             self._generate_signature(
                 verb=verb,
-                path=request_path_no_args,
+                path=request_path,
                 expires=expires,
                 data=data,
             )
@@ -180,7 +171,9 @@ class Bitmex(Exchange):
         # Bitmex shows only BTC balance
         returned_balances = dict()
         usd_price = self.inquirer.find_usd_price('BTC')
-        amount = FVal(resp['amount'])
+        # result is in satoshis
+        amount = satoshis_to_btc(FVal(resp['amount']))
+
         returned_balances['BTC'] = dict(
             amount=amount,
             usd_value=amount * usd_price
@@ -197,7 +190,84 @@ class Bitmex(Exchange):
             count: Optional[int] = None,
     ) -> List:
 
-        raise NotImplementedError(
-            'Querying trade history is not yet implemented for bitmex'
-        )
-        return list()
+        try:
+            resp = self._api_query('get', 'user/walletHistory')
+        except RemoteError as e:
+            msg = (
+                'Bitmex API request failed. Could not reach bitmex due '
+                'to {}'.format(e)
+            )
+            logger.error(msg)
+            return None, msg
+
+        realised_pnls = []
+        for tx in resp:
+            if tx['timestamp'] is None:
+                timestamp = None
+            else:
+                timestamp = iso8601ts_to_timestamp(tx['timestamp'])
+            if tx['transactType'] != 'RealisedPNL':
+                continue
+            if timestamp and timestamp < start_ts:
+                continue
+            if timestamp and timestamp > end_ts:
+                continue
+            realised_pnls.append(tx)
+
+        return realised_pnls
+
+    def query_deposits_withdrawals(
+            self,
+            start_ts: typing.Timestamp,
+            end_ts: typing.Timestamp,
+            end_at_least_ts: typing.Timestamp,
+            market: Optional[str] = None,
+            count: Optional[int] = None,
+    ) -> List:
+        # TODO: Implement cache like in other exchange calls
+        try:
+            resp = self._api_query('get', 'user/walletHistory')
+        except RemoteError as e:
+            msg = (
+                'Bitmex API request failed. Could not reach bitmex due '
+                'to {}'.format(e)
+            )
+            logger.error(msg)
+            return None, msg
+
+        movements = list()
+        for movement in resp:
+            transaction_type = movement['transactType']
+            if transaction_type not in ('Deposit', 'Withdrawal'):
+                continue
+
+            timestamp = iso8601ts_to_timestamp(movement['timestamp'])
+            if timestamp < start_ts:
+                continue
+            if timestamp > end_ts:
+                continue
+
+            asset = bitmex_to_world(movement['currency'])
+            amount = FVal(movement['amount'])
+            fee = FVal(0)
+            if movement['fee'] is not None:
+                fee = FVal(movement['fee'])
+            # bitmex has negative numbers for withdrawals
+            if amount < 0:
+                amount *= -1
+
+            if asset == 'BTC':
+                # bitmex stores amounts in satoshis
+                amount = satoshis_to_btc(amount)
+                fee = satoshis_to_btc(fee)
+
+            movements.append(AssetMovement(
+                exchange='bitmex',
+                category=transaction_type,
+                timestamp=timestamp,
+                asset=asset,
+                amount=amount,
+                fee=fee,
+            ))
+
+        return movements

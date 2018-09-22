@@ -1,20 +1,21 @@
 #!/usr/bin/env python
-import sys
-import os
-import json
-import time
-import datetime
 import calendar
+import datetime
+import json
 import operator
-import requests
+import os
+import sys
+import time
 from functools import wraps
-from rlp.sedes import big_endian_int
-from typing import Callable, Any
+from typing import Any, Callable
 
+import requests
+from rlp.sedes import big_endian_int
+
+from rotkehlchen import typing
 from rotkehlchen.constants import ALL_REMOTES_TIMEOUT
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen import typing
 
 
 def sfjson_loads(s):
@@ -39,8 +40,16 @@ def ts_now():
     return int(time.time())
 
 
-def createTimeStamp(datestr, formatstr="%Y-%m-%d %H:%M:%S"):
+def createTimeStamp(datestr, formatstr='%Y-%m-%d %H:%M:%S'):
     return int(calendar.timegm(time.strptime(datestr, formatstr)))
+
+
+def iso8601ts_to_timestamp(datestr):
+    return createTimeStamp(datestr, formatstr='%Y-%m-%dT%H:%M:%S.%fZ')
+
+
+def satoshis_to_btc(satoshis: FVal) -> FVal:
+    return satoshis * FVal('0.00000001')
 
 
 def dateToTs(s):
@@ -294,11 +303,12 @@ def taxable_gain_for_sell(
         taxable_amount,
         rate_in_profit_currency,
         total_fee_in_profit_currency,
-        selling_amount):
-            return (
-                rate_in_profit_currency * taxable_amount -
-                total_fee_in_profit_currency * (taxable_amount / selling_amount)
-            )
+        selling_amount,
+):
+    return (
+        rate_in_profit_currency * taxable_amount -
+        total_fee_in_profit_currency * (taxable_amount / selling_amount)
+    )
 
 
 def is_number(s):

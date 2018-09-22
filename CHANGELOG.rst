@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`144` Rotkehlchen now starts fully supporting Bitmex and allows querying Bitmex history for tax calculations.
 * :bug:`163` Properly handle errors in the tax report calculation and in other asynchronous tasks.
 * :bug:`155` Check if the local ethereum node is synced before querying balances from it.
 * :feature:`153` Add a ``version`` command to display the rotkehlchen version.

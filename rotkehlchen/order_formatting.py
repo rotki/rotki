@@ -1,4 +1,5 @@
 from collections import namedtuple
+
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils import get_pair_position
 
@@ -45,6 +46,18 @@ AssetMovement = namedtuple(
         'asset',
         'amount',
         'fee',
+    )
+)
+
+MarginPosition = namedtuple(
+    'MarginPosition',
+    (
+        'exchange',
+        'open_time',
+        'close_time',
+        'profit_loss',
+        'pl_currency',
+        'notes',
     )
 )
 

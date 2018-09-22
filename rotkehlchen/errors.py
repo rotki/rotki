@@ -45,3 +45,10 @@ class PermissionError(Exception):
 class RemoteError(Exception):
     """Thrown when a remote API can't be reached or throws unexpected error"""
     pass
+
+
+class PriceQueryUnknownFromAsset(Exception):
+    def __init__(self, from_asset):
+        super().__init__(
+            'Unable to query historical price for Unknown Asset: "{}"'.format(from_asset)
+        )

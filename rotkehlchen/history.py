@@ -1,36 +1,38 @@
-import time
-import os
 import glob
+import logging
+import os
 import re
+import time
 from json.decoder import JSONDecodeError
 
-from rotkehlchen.exchange import data_up_todate
-from rotkehlchen.kraken import kraken_to_world_pair
-from rotkehlchen.bittrex import trade_from_bittrex
-from rotkehlchen.bitmex import trade_from_bitmex
 from rotkehlchen.binance import trade_from_binance
-from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
+from rotkehlchen.bitmex import trade_from_bitmex
+from rotkehlchen.bittrex import trade_from_bittrex
+from rotkehlchen.errors import PriceQueryUnknownFromAsset, RemoteError
+from rotkehlchen.exchange import data_up_todate
 from rotkehlchen.fval import FVal
-from rotkehlchen.utils import (
-    createTimeStamp,
-    tsToDate,
-    get_pair_position,
-    get_jsonfile_contents_or_empty_dict,
-    rlk_jsonloads,
-    rlk_jsondumps,
-    convert_to_int,
-    ts_now,
-    request_get
-)
+from rotkehlchen.inquirer import FIAT_CURRENCIES, world_to_cryptocompare
+from rotkehlchen.kraken import kraken_to_world_pair
 from rotkehlchen.order_formatting import (
+    MarginPosition,
     Trade,
+    asset_movements_from_dictlist,
     trades_from_dictlist,
-    asset_movements_from_dictlist
 )
-from rotkehlchen.inquirer import FIAT_CURRENCIES
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
+from rotkehlchen.typing import NonEthTokenBlockchainAsset
+from rotkehlchen.utils import (
+    convert_to_int,
+    createTimeStamp,
+    get_jsonfile_contents_or_empty_dict,
+    get_pair_position,
+    request_get,
+    rlk_jsondumps,
+    rlk_jsonloads,
+    ts_now,
+    tsToDate,
+)
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -48,13 +50,6 @@ class NoPriceForGivenTimestamp(Exception):
             'Unable to query a historical price for "{}" to "{}" at {}'.format(
                 from_asset, to_asset, timestamp
             )
-        )
-
-
-class PriceQueryUnknownFromAsset(Exception):
-    def __init__(self, from_asset):
-        super(PriceQueryUnknownFromAsset, self).__init__(
-            'Unable to query historical price for Unknown Asset: "{}"'.format(from_asset)
         )
 
 
@@ -137,7 +132,27 @@ def do_read_manual_margin_positions(data_directory):
         logger.info(
             'Could not find manual margins log file at {}'.format(manual_margin_path)
         )
-    return margin_data
+
+    # Now turn the manual margin data to our MarginPosition format
+    # The poloniex manual data format is:
+    # { "open_time": unix_timestamp, "close_time": unix_timestamp,
+    #   "btc_profit_loss": floating_point_number for profit or loss,
+    #   "notes": "optional string with notes on the margin position"
+    # }
+    margin_positions = list()
+    for position in margin_data:
+        margin_positions.append(
+            MarginPosition(
+                exchange='poloniex',
+                open_time=position['open_time'],
+                close_time=position['close_time'],
+                profit_loss=FVal(position['btc_profit_loss']),
+                pl_currency=NonEthTokenBlockchainAsset('BTC'),
+                notes=position['notes'],
+            )
+        )
+
+    return margin_positions
 
 
 def write_history_data_in_file(data, filepath, start_ts, end_ts):
@@ -332,7 +347,10 @@ class PriceHistorian(object):
             query_string = (
                 'https://min-api.cryptocompare.com/data/histohour?'
                 'fsym={}&tsym={}&limit={}&toTs={}'.format(
-                    from_asset, to_asset, cryptocompare_hourquerylimit, end_date
+                    world_to_cryptocompare(from_asset),
+                    world_to_cryptocompare(to_asset),
+                    cryptocompare_hourquerylimit,
+                    end_date,
                 ))
             resp = request_get(query_string)
             if 'Response' not in resp or resp['Response'] != 'Success':
@@ -432,19 +450,23 @@ class PriceHistorian(object):
                 price = asset_btc_price * btc_to_asset_price
             else:
                 # attempt to get the daily price by timestamp
+                cc_from_asset = world_to_cryptocompare(from_asset)
+                cc_to_asset = world_to_cryptocompare(to_asset)
                 query_string = (
                     'https://min-api.cryptocompare.com/data/pricehistorical?'
                     'fsym={}&tsyms={}&ts={}'.format(
-                        from_asset, to_asset, timestamp
+                        cc_from_asset,
+                        cc_to_asset,
+                        timestamp,
                     ))
                 if to_asset == 'BTC':
                     query_string += '&tryConversion=false'
                 resp = request_get(query_string)
 
-                if from_asset not in resp:
+                if cc_from_asset not in resp:
                     error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
                     raise ValueError(error_message)
-                price = FVal(resp[from_asset][to_asset])
+                price = FVal(resp[cc_from_asset][cc_to_asset])
 
                 if price == 0:
                     raise NoPriceForGivenTimestamp(
@@ -611,6 +633,14 @@ class TradesHistorian(object):
                 )
                 for trade in bitmex_history:
                     history.append(trade_from_bitmex(trade))
+
+                bitmex_asset_movements = self.bitmex.query_deposits_withdrawals(
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    end_at_least_ts=end_at_least_ts,
+                )
+                asset_movements.extend(bitmex_asset_movements)
+
             except RemoteError as e:
                 empty_or_error += '\n' + str(e)
 
