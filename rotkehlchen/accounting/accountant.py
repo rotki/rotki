@@ -1,20 +1,23 @@
+import logging
+from typing import Dict, Optional, Tuple, Union
+
 import gevent
 
+from rotkehlchen.accounting.events import TaxableEvents
+from rotkehlchen.csv_exporter import CSVExporter
+from rotkehlchen.errors import CorruptData
+from rotkehlchen.fval import FVal
+from rotkehlchen.history import FIAT_CURRENCIES
 from rotkehlchen.order_formatting import (
-    trade_get_other_pair,
-    trade_get_assets,
+    AssetMovement,
+    MarginPosition,
     Trade,
-    AssetMovement
+    trade_get_assets,
+    trade_get_other_pair,
 )
 from rotkehlchen.transactions import EthereumTransaction
-from rotkehlchen.history import FIAT_CURRENCIES
-from rotkehlchen.csv_exporter import CSVExporter
-from rotkehlchen.fval import FVal
-from rotkehlchen.errors import CorruptData
+from rotkehlchen.typing import Asset
 
-from rotkehlchen.accounting.events import TaxableEvents
-
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -33,32 +36,38 @@ def action_get_timestamp(action):
     return action['close_time']
 
 
-def action_get_type(action):
+def action_get_type(
+        action: Union[Trade, AssetMovement, EthereumTransaction, MarginPosition, Dict],
+) -> str:
     if isinstance(action, Trade):
         return 'trade'
     elif isinstance(action, AssetMovement):
         return 'asset_movement'
     elif isinstance(action, EthereumTransaction):
         return 'ethereum_transaction'
+    elif isinstance(action, MarginPosition):
+        return 'margin_position'
     elif isinstance(action, dict):
-        if 'btc_profit_loss' in action:
-            return 'margin_position'
         return 'loan'
 
+    raise ValueError('Unexpected action type found.')
 
-def action_get_assets(action):
+
+def action_get_assets(
+        action: Union[Trade, AssetMovement, EthereumTransaction, MarginPosition, Dict],
+) -> Tuple[Asset, Optional[Asset]]:
     if isinstance(action, Trade):
         return trade_get_assets(action)
     elif isinstance(action, AssetMovement):
         return action.asset, None
     elif isinstance(action, EthereumTransaction):
         return 'ETH', None
+    elif isinstance(action, MarginPosition):
+        return action.pl_currency, None
     elif isinstance(action, dict):
-        if 'btc_profit_loss' in action:
-            return 'BTC', None
-
         # else a loan
         return action['currency'], None
+
     else:
         raise ValueError('Unexpected action type found.')
 
@@ -314,11 +323,11 @@ class Accountant(object):
                 continue
             elif action_type == 'margin_position':
                 self.events.add_margin_position(
-                    gained_asset='BTC',
-                    gained_amount=action['btc_profit_loss'],
-                    fee_in_asset=0,
-                    margin_notes=action['notes'],
-                    timestamp=timestamp
+                    gained_loss_asset=action.pl_currency,
+                    gained_amount=action.profit_loss,
+                    fee_in_asset=FVal(0),
+                    margin_notes=action.notes,
+                    timestamp=action.close_time,
                 )
                 continue
             elif action_type == 'ethereum_transaction':
@@ -387,7 +396,7 @@ class Accountant(object):
         self.events.calculate_asset_details()
 
         sum_other_actions = (
-            self.events.margin_positions_profit +
+            self.events.margin_positions_profit_loss +
             self.events.loan_profit -
             self.events.settlement_losses -
             self.asset_movement_fees -
@@ -397,7 +406,7 @@ class Accountant(object):
         return {
             'overview': {
                 'loan_profit': str(self.events.loan_profit),
-                'margin_positions_profit': str(self.events.margin_positions_profit),
+                'margin_positions_profit_loss': str(self.events.margin_positions_profit_loss),
                 'settlement_losses': str(self.events.settlement_losses),
                 'ethereum_transaction_gas_costs': str(self.eth_transactions_gas_costs),
                 'asset_movement_fees': str(self.asset_movement_fees),

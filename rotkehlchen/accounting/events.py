@@ -1,18 +1,16 @@
-from rotkehlchen.utils import tsToDate, ts_now, taxable_gain_for_sell
-from rotkehlchen.order_formatting import (
-    Events,
-    BuyEvent,
-    SellEvent,
-)
+import logging
+
+from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import (
+    FIAT_CURRENCIES,
     NoPriceForGivenTimestamp,
     PriceQueryUnknownFromAsset,
-    FIAT_CURRENCIES
 )
-from rotkehlchen.constants import ETH_DAO_FORK_TS, BTC_BCH_FORK_TS
+from rotkehlchen.order_formatting import BuyEvent, Events, SellEvent
+from rotkehlchen.typing import Asset, Timestamp
+from rotkehlchen.utils import taxable_gain_for_sell, ts_now, tsToDate
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -37,7 +35,7 @@ class TaxableEvents(object):
         self.taxable_trade_profit_loss = FVal(0)
         self.loan_profit = FVal(0)
         self.settlement_losses = FVal(0)
-        self.margin_positions_profit = FVal(0)
+        self.margin_positions_profit_loss = FVal(0)
 
     @property
     def include_crypto2crypto(self):
@@ -362,7 +360,8 @@ class TaxableEvents(object):
             rate_in_profit_currency,
             timestamp,
             loan_settlement=False,
-            is_virtual=False):
+            is_virtual=False,
+    ):
 
         if selling_asset not in self.events:
             self.events[selling_asset] = Events(list(), list())
@@ -633,39 +632,39 @@ class TaxableEvents(object):
 
     def add_margin_position(
             self,
-            gained_asset,
-            gained_amount,
-            fee_in_asset,
-            margin_notes,
-            timestamp):
+            gain_loss_asset: Asset,
+            gain_loss_amount: FVal,
+            fee_in_asset: FVal,
+            margin_notes: str,
+            timestamp: Timestamp,
+    ):
 
-        rate = self.get_rate_in_profit_currency(gained_asset, timestamp)
+        rate = self.get_rate_in_profit_currency(gain_loss_asset, timestamp)
 
-        if gained_asset not in self.events:
-            self.events[gained_asset] = Events(list(), list())
+        if gain_loss_asset not in self.events:
+            self.events[gain_loss_asset] = Events(list(), list())
 
-        net_gain_amount = gained_amount - fee_in_asset
-        gain_in_profit_currency = net_gain_amount * rate
-        assert gain_in_profit_currency > 0, (
-            'Margin profit is negative. Should never happen for the hacky way I use em now'
-        )
-        self.events[gained_asset].buys.append(
-            BuyEvent(
-                amount=net_gain_amount,
-                timestamp=timestamp,
-                rate=rate,
-                fee_rate=0,
-                cost=0
+        net_gain_loss_amount = gain_loss_amount - fee_in_asset
+        gain_loss_in_profit_currency = net_gain_loss_amount * rate
+
+        if net_gain_loss_amount > 0:
+            self.events[gain_loss_asset].buys.append(
+                BuyEvent(
+                    amount=net_gain_loss_amount,
+                    timestamp=timestamp,
+                    rate=rate,
+                    fee_rate=0,
+                    cost=0
+                )
             )
-        )
-        # count profits if we are inside the query period
+        # count profit/loss if we are inside the query period
         if timestamp >= self.query_start_ts:
-            self.margin_positions_profit += gain_in_profit_currency
+            self.margin_positions_profit_loss += gain_loss_in_profit_currency
 
         self.csv_exporter.add_margin_position(
             margin_notes=margin_notes,
-            gained_asset=gained_asset,
-            net_gain_amount=net_gain_amount,
-            gain_in_profit_currency=gain_in_profit_currency,
+            gain_loss_asset=gain_loss_asset,
+            net_gain_loss_amount=net_gain_loss_amount,
+            gain_loss_in_profit_currency=gain_loss_in_profit_currency,
             timestamp=timestamp,
         )

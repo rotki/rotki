@@ -1,36 +1,38 @@
-import time
-import os
 import glob
+import logging
+import os
 import re
+import time
 from json.decoder import JSONDecodeError
 
-from rotkehlchen.exchange import data_up_todate
-from rotkehlchen.kraken import kraken_to_world_pair
-from rotkehlchen.bittrex import trade_from_bittrex
-from rotkehlchen.bitmex import trade_from_bitmex
 from rotkehlchen.binance import trade_from_binance
-from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
-from rotkehlchen.fval import FVal
-from rotkehlchen.utils import (
-    createTimeStamp,
-    tsToDate,
-    get_pair_position,
-    get_jsonfile_contents_or_empty_dict,
-    rlk_jsonloads,
-    rlk_jsondumps,
-    convert_to_int,
-    ts_now,
-    request_get
-)
-from rotkehlchen.order_formatting import (
-    Trade,
-    trades_from_dictlist,
-    asset_movements_from_dictlist
-)
-from rotkehlchen.inquirer import FIAT_CURRENCIES
+from rotkehlchen.bitmex import trade_from_bitmex
+from rotkehlchen.bittrex import trade_from_bittrex
 from rotkehlchen.errors import RemoteError
+from rotkehlchen.exchange import data_up_todate
+from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import FIAT_CURRENCIES
+from rotkehlchen.kraken import kraken_to_world_pair
+from rotkehlchen.order_formatting import (
+    MarginPosition,
+    Trade,
+    asset_movements_from_dictlist,
+    trades_from_dictlist,
+)
+from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
+from rotkehlchen.typing import BlockchainAsset
+from rotkehlchen.utils import (
+    convert_to_int,
+    createTimeStamp,
+    get_jsonfile_contents_or_empty_dict,
+    get_pair_position,
+    request_get,
+    rlk_jsondumps,
+    rlk_jsonloads,
+    ts_now,
+    tsToDate,
+)
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -137,7 +139,27 @@ def do_read_manual_margin_positions(data_directory):
         logger.info(
             'Could not find manual margins log file at {}'.format(manual_margin_path)
         )
-    return margin_data
+
+    # Now turn the manual margin data to our MarginPosition format
+    # The poloniex manual data format is:
+    # { "open_time": unix_timestamp, "close_time": unix_timestamp,
+    #   "btc_profit_loss": floating_point_number for profit or loss,
+    #   "notes": "optional string with notes on the margin position"
+    # }
+    margin_positions = list()
+    for position in margin_data:
+        margin_positions.append(
+            MarginPosition(
+                exchange='poloniex',
+                open_time=position['open_time'],
+                close_time=position['close_time'],
+                profit_loss=FVal(position['btc_profit_loss']),
+                pl_currency=BlockchainAsset('BTC'),
+                notes=position['notes'],
+            )
+        )
+
+    return margin_positions
 
 
 def write_history_data_in_file(data, filepath, start_ts, end_ts):

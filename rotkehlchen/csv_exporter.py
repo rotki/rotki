@@ -1,23 +1,23 @@
-import os
 import csv
-from typing import List, Tuple, Dict, Any, Union
+import logging
+import os
+from typing import Any, Dict, List, Tuple, Union
 
-from rotkehlchen.utils import tsToDate, taxable_gain_for_sell
-from rotkehlchen.fval import FVal
+from rotkehlchen import typing
 from rotkehlchen.constants import (
-    S_ETH,
-    S_EMPTYSTR,
+    EV_ASSET_MOVE,
     EV_BUY,
+    EV_INTEREST_PAYMENT,
+    EV_LOAN_SETTLE,
+    EV_MARGIN_CLOSE,
     EV_SELL,
     EV_TX_GAS_COST,
-    EV_ASSET_MOVE,
-    EV_LOAN_SETTLE,
-    EV_INTEREST_PAYMENT,
-    EV_MARGIN_CLOSE,
+    S_EMPTYSTR,
+    S_ETH,
 )
-from rotkehlchen import typing
+from rotkehlchen.fval import FVal
+from rotkehlchen.utils import taxable_gain_for_sell, tsToDate
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -276,9 +276,9 @@ class CSVExporter(object):
     def add_margin_position(
             self,
             margin_notes: str,
-            gained_asset: typing.Asset,
-            net_gain_amount: FVal,
-            gain_in_profit_currency: FVal,
+            gain_loss_asset: typing.Asset,
+            net_gain_loss_amount: FVal,
+            gain_loss_in_profit_currency: FVal,
             timestamp: typing.Timestamp,
     ) -> None:
         if not self.create_csv:
@@ -287,18 +287,18 @@ class CSVExporter(object):
         self.margin_positions_csv.append({
             'name': margin_notes,
             'time': tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
-            'gained_asset': gained_asset,
-            'gained_amount': net_gain_amount,
-            'profit_in_{}'.format(self.profit_currency): gain_in_profit_currency
+            'gain_loss_asset': gain_loss_asset,
+            'gain_loss_amount': net_gain_loss_amount,
+            'profit_loss_in_{}'.format(self.profit_currency): gain_loss_in_profit_currency,
         })
         self.add_to_allevents(
             event_type=EV_MARGIN_CLOSE,
             paid_in_profit_currency=FVal(0),
             paid_asset=S_EMPTYSTR,
             paid_in_asset=FVal(0),
-            received_asset=gained_asset,
-            received_in_asset=net_gain_amount,
-            received_in_profit_currency=gain_in_profit_currency,
+            received_asset=gain_loss_asset,
+            received_in_asset=net_gain_loss_amount,
+            received_in_profit_currency=gain_loss_in_profit_currency,
             timestamp=timestamp,
         )
 
