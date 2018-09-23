@@ -52,7 +52,7 @@ install:
 script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source terryfy/test_tools.sh; fi
   - flake8 rotkehlchen/
-  - pylint --disable=all --enable=no-value-for-parameter,too-many-format-args,no-member rotkehlchen
+  - pylint --disable=all --enable=no-value-for-parameter,too-many-format-args,no-member,bad-except-order rotkehlchen
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then python -m pytest rotkehlchen; fi
   - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then coverage run --source rotkehlchen/ -m pytest --travis-fold=always $TEST_TYPE; fi
   - npm config set python python2.7
