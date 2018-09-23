@@ -7,3 +7,7 @@ pycryptodome==3.6.6
 pycryptodomex==3.6.6
 coincurve==7.1.0
 psutil==5.4.3
+
+
+#constraints
+eth-typing==1.3.0
