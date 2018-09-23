@@ -1,16 +1,11 @@
-import { AsyncQueryResult } from './model/balance-result';
 import { BalanceStatus } from './enums/BalanceStatus';
-import { client } from './rotkehlchen_service';
+import { service } from './rotkehlchen_service';
+import { Task } from './model/task';
 
 const callbacks: Array<[string, (result: any) => void]> = [];
 const tasks_map: { [task_id: number]: Task } = {};
 const balance_tasks: number[] = [];
 let balance_query_status = BalanceStatus.start;
-
-export class Task {
-    constructor(readonly id: number, readonly type: string, readonly should_expect_callback: boolean) {
-    }
-}
 
 function add_task_dropdown(task_id: number, task_description: string) {
     const str = `<li class="task${task_id}"><a href="#">
@@ -67,18 +62,16 @@ function remove_task(task_id: number) {
                 // TODO: Perhaps this is not the best way to achieve the saving of the balances but it works
                 // Essentially we re-request a query of all balances which should be very fast due to the cache
                 // and that should take care of saving the data for us
-                client.invoke('query_balances_async', (error: Error, result: AsyncQueryResult) => {
-                    if (error || result == null) {
-                        console.log('Error at querying all balances asynchronously: ' + error.message);
-                        return;
-                    }
+                service.query_balances_async().then(result => {
                     create_task(
                         result.task_id,
-                        'query_balances',
+                        'query_balances_async',
                         'Query All Balances',
                         false,
                         false
                     );
+                }).catch((reason: Error) => {
+                    console.log(`Error at querying all balances asynchronously: ${reason.message}`);
                 });
             }
             break;
@@ -114,18 +107,18 @@ function monitor_tasks() {
 
         console.log('task query');
 
-        client.invoke('query_task_result', task.id, (_error: Error, res: any) => {
+        service.query_task_result(task.id).then(result => {
             if (!task.should_expect_callback) {
                 remove_task(task.id);
             } else {
-                if (res == null) {
+                if (result == null) {
                     return;
                 }
 
                 let handled = 0;
                 for (let i = 0; i < callbacks.length; i++) {
                     if (task.type === callbacks[i][0]) {
-                        callbacks[i][1](res);
+                        callbacks[i][1](result);
                         remove_task(task.id);
                         handled += 1;
                     }
@@ -135,12 +128,11 @@ function monitor_tasks() {
                 }
             }
         });
-
     }
 }
 
 
 export function init_monitor() {
     // monitor tasks every 2 seconds
-    setInterval(monitor_tasks, 120000);
+    setInterval(monitor_tasks, 2000);
 }

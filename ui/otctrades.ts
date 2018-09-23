@@ -1,10 +1,9 @@
 import { dt_edit_drawcallback, showError, showInfo, timestamp_to_date } from './utils';
 import { form_button, form_entry, form_select, form_text } from './elements';
 import { settings } from './settings';
-import { ActionResult } from './model/action-result';
 import { OtcTrade } from './model/otc-trade';
 import 'datatables.net';
-import { client } from './rotkehlchen_service';
+import { service } from './rotkehlchen_service';
 
 let OTC_TRADES_TABLE: DataTables.Api;
 let CURRENT_TRADE: OtcTrade | {} = {};
@@ -52,41 +51,30 @@ function edit_otc_trade(row: DataTables.RowMethods) {
 
 function delete_otc_trade(row: DataTables.RowMethods) {
     const data = row.data() as OtcTrade;
-    client.invoke(
-        'delete_otctrade',
-        data.id,
-        (error: Error, res: ActionResult<boolean>) => {
-            if (error || res == null) {
-                showError('Error at Trade Deletion', error.message);
-            } else {
-                if (!res.result) {
-                    showError('Error at Trade Deletion', res.message);
-                } else {
-                    showInfo('Succcess', 'Trade Deleted');
-                    reload_table_data();
-                }
-            }
-        });
+    service.delete_otctrade(data.id).then(() => {
+        showInfo('Succcess', 'Trade Deleted');
+        reload_table_data();
+    }).catch(reason => {
+        showError('Error at Trade Deletion', reason.message);
+    });
 }
 
 function reload_table_data() {
-    client.invoke('query_otctrades', (error: Error, result: OtcTrade[]) => {
-        if (error || result == null) {
-            console.log('Error at querying OTC trades: ' + error.message);
-        } else {
-            update_valhtml('#otc_timestamp');
-            update_valhtml('#otc_pair');
-            update_valhtml('#otc_amount');
-            update_valhtml('#otc_rate');
-            update_valhtml('#otc_fee');
-            update_valhtml('#otc_fee_currency');
-            update_valhtml('#otc_link');
-            update_valhtml('#otc_notes');
+    service.query_otctrades().then(value => {
+        update_valhtml('#otc_timestamp');
+        update_valhtml('#otc_pair');
+        update_valhtml('#otc_amount');
+        update_valhtml('#otc_rate');
+        update_valhtml('#otc_fee');
+        update_valhtml('#otc_fee_currency');
+        update_valhtml('#otc_link');
+        update_valhtml('#otc_notes');
 
-            OTC_TRADES_TABLE.clear();
-            OTC_TRADES_TABLE.rows.add(result);
-            OTC_TRADES_TABLE.draw();
-        }
+        OTC_TRADES_TABLE.clear();
+        OTC_TRADES_TABLE.rows.add(value);
+        OTC_TRADES_TABLE.draw();
+    }).catch(reason => {
+        console.log(`Error at querying OTC trades: ${reason.message}`);
     });
 }
 
@@ -102,52 +90,48 @@ function create_otctrades_table() {
             <th>Amount</th>
             <th>Rate</th>
             <th>Time</th>
-        </tr/>
+        </tr>
         </thead>
         <tbody id="table_otctrades_body"></tbody>
     </table>
 </div>`;
 
     $(str).insertAfter($('#otc_table_anchor'));
-    client.invoke('query_otctrades', (error: Error, result: OtcTrade[]) => {
-        if (error || result == null) {
-            console.log(`Error at querying OTC trades: ${error}`);
-        } else {
-            for (let i = 0; i < result.length; i++) {
-                const rowTemplate = '<tr><td></td><td></td/><td></td><td></td></tr>';
-                $(rowTemplate).appendTo($('#table_otctrades_body'));
-            }
-            OTC_TRADES_TABLE = $('#table_otctrades').DataTable({
-                'data': result,
-                'columns': [
-                    {
-                        'className': 'details-control',
-                        'orderable': false,
-                        'data': undefined,
-                        'defaultContent': '',
-                        'render': function () {
-                            return '<i class="fa fa-plus-square" aria-hidden="true"></i>';
-                        },
-                        width: '15px'
-                    },
-                    {'data': 'pair'},
-                    {'data': 'type'},
-                    {'data': 'amount'},
-                    {'data': 'rate'},
-                    {
-                        'render': (data: number, type: string) => {
-                            if (type === 'sort') {
-                                return data;
-                            }
-                            return timestamp_to_date(data);
-                        },
-                        'data': 'timestamp'
-                    },
-                ],
-                'order': [[5, 'asc']],
-                drawCallback: dt_edit_drawcallback('table_otctrades', edit_otc_trade, delete_otc_trade)
-            });
+    service.query_otctrades().then(value => {
+        for (let i = 0; i < value.length; i++) {
+            const rowTemplate = '<tr><td></td><td></td><td></td><td></td></tr>';
+            $(rowTemplate).appendTo($('#table_otctrades_body'));
         }
+        OTC_TRADES_TABLE = $('#table_otctrades').DataTable({
+            'data': value,
+            'columns': [
+                {
+                    'className': 'details-control',
+                    'orderable': false,
+                    'data': undefined,
+                    'defaultContent': '',
+                    'render': () => '<i class="fa fa-plus-square" aria-hidden="true"></i>',
+                    'width': '15px'
+                },
+                {'data': 'pair'},
+                {'data': 'type'},
+                {'data': 'amount'},
+                {'data': 'rate'},
+                {
+                    'render': (data: number, type: string) => {
+                        if (type === 'sort') {
+                            return data;
+                        }
+                        return timestamp_to_date(data);
+                    },
+                    'data': 'timestamp'
+                },
+            ],
+            'order': [[5, 'asc']],
+            drawCallback: dt_edit_drawcallback('table_otctrades', edit_otc_trade, delete_otc_trade)
+        });
+    }).catch(reason => {
+        console.log(`Error at querying OTC trades: ${reason.message}`);
     });
 }
 
@@ -216,32 +200,21 @@ export function add_otctrades_listeners() {
             'otc_notes': otc_notes
         };
 
-        // depending on the type of button value we call different function
-        let command = 'add_otctrade';
+        let add = true;
         if ($('#otctradesubmit').val() === 'Edit Trade') {
-            command = 'edit_otctrade';
+            add = false;
         }
 
-        // and now send the data to the python process
-        client.invoke(
-            command,
-            payload,
-            (error: Error, res: ActionResult<boolean>) => {
-                if (error || res == null) {
-                    showError('Trade Addition Error', error.message);
-                } else {
-                    if (!res.result) {
-                        showError('Trade Addition Error', res.message);
-                    } else {
-                        showInfo('Success', 'Trade submitted');
-                        reload_table_data();
-                        // also make sure we are back to adding a trade
-                        // in case we were editing
-                        $('#otctradesubmit').val('Add Trade');
-                        $('#otctradesubmit').html('Add Trade');
-                    }
-                }
-            });
+        service.modify_otc_trades(add, payload).then(() => {
+            showInfo('Success', 'Trade submitted');
+            reload_table_data();
+            // also make sure we are back to adding a trade
+            // in case we were editing
+            $('#otctradesubmit').val('Add Trade');
+            $('#otctradesubmit').html('Add Trade');
+        }).catch((reason: Error) => {
+            showError('Trade Addition Error', reason.message);
+        });
 
     });
     $('#otc_timestamp').datetimepicker({

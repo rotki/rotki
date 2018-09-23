@@ -7,9 +7,7 @@ import { create_task } from './monitor';
 import { query_exchange_balances_async } from './exchange';
 import { settings } from './settings';
 import { UnlockResult } from './model/action-result';
-import { AsyncQueryResult } from './model/balance-result';
-import { AssetBalance } from './model/asset-balance';
-import { client } from './rotkehlchen_service';
+import { service } from './rotkehlchen_service';
 
 function verify_userpass(username: string, password: string) {
     if (!username) {
@@ -158,11 +156,8 @@ function unlock_async(
         console.log('At unlock_async start, using global deferred object');
         deferred = GLOBAL_UNLOCK_DEFERRED;
     }
-    client.invoke('unlock_user', username, password, create_true, sync_approval, api_key, api_secret, (error: Error, res: UnlockResult) => {
-        if (error || res == null) {
-            deferred.reject(error);
-            return;
-        }
+
+    service.unlock_user(username, password, create_true, sync_approval, api_key, api_secret).then(res => {
         if (!res.result) {
             if (res.permission_needed) {
                 deferred.notify(res.message);
@@ -172,7 +167,10 @@ function unlock_async(
             return;
         }
         deferred.resolve(res);
+    }).catch((reason: Error) => {
+        deferred.reject(reason);
     });
+
     return deferred.promise();
 }
 
@@ -215,13 +213,9 @@ function unlock_user(
                     // exchange rates so that everything can be shown to the user
                     // in their desired currency. Empty list argument means to
                     // query all fiat currency pairs
-                    client.invoke('get_fiat_exchange_rates', [], (error: Error, res: { exchange_rates: { [currency: string]: string } }) => {
-                        if (error || res == null) {
-                            showError('Connectivity Error', 'Failed to acquire fiat to USD exchange rates: ' + error);
-                            return;
-                        }
 
-                        const rates = res.exchange_rates;
+                    service.get_fiat_exchange_rates().then(result => {
+                        const rates = result.exchange_rates;
                         for (const asset in rates) {
                             if (!rates.hasOwnProperty(asset)) {
                                 continue;
@@ -245,7 +239,10 @@ function unlock_user(
                             return;
                         }
                         load_dashboard_after_unlock(exchanges, is_new_user);
+                    }).catch((reason: Error) => {
+                        showError('Connectivity Error', `Failed to acquire fiat to USD exchange rates: ${reason.message}`);
                     });
+
                     GLOBAL_UNLOCK_DEFERRED = null;
                 }).progress((msg: string) => {
                 ask_permission(msg, username, password, create_true, api_key, api_secret);
@@ -289,33 +286,30 @@ function load_dashboard_after_unlock(exchanges: string[], is_new_user: boolean) 
 }
 
 function get_blockchain_total() {
-    client.invoke('query_blockchain_balances_async', (error: Error, res: AsyncQueryResult) => {
-        if (error || res == null) {
-            console.log(`Error at querying blockchain balances: ${error}`);
-        } else {
-            console.log(`Blockchain balances returned task id ${res.task_id}`);
-            create_task(res.task_id, 'query_blockchain_balances', 'Query Blockchain Balances', true, true);
-        }
+    service.query_blockchain_balances_async().then(result => {
+        console.log(`Blockchain balances returned task id ${result.task_id}`);
+        create_task(result.task_id, 'query_blockchain_balances_async', 'Query Blockchain Balances', true, true);
+    }).catch((reason: Error) => {
+        console.log(`Error at querying blockchain balances: ${reason}`);
     });
 }
 
 function get_banks_total() {
-    client.invoke('query_fiat_balances', (error: Error, res: { [currency: string]: AssetBalance }) => {
-        if (error || res == null) {
-            console.log(`Error at querying fiat balances: ${error}`);
-        } else {
-            const fiat_total = get_total_assets_value(res);
-            console.log(`query fiat balances result is: ${JSON.stringify(res, null, 4)}`);
-            console.log(`Fiat total is: ${fiat_total}`);
-            if (fiat_total !== 0.0) {
-                create_box(
-                    'banks_box',
-                    'fa-university',
-                    fiat_total,
-                    settings.main_currency.icon
-                );
-                total_table_add_balances('banks', res);
-            }
+    service.query_fiat_balances().then(result => {
+        const fiat_total = get_total_assets_value(result);
+        console.log(`query fiat balances result is: ${JSON.stringify(result, null, 4)}`);
+        console.log(`Fiat total is: ${fiat_total}`);
+        if (fiat_total !== 0.0) {
+            create_box(
+                'banks_box',
+                'fa-university',
+                fiat_total,
+                settings.main_currency.icon
+            );
+            total_table_add_balances('banks', result);
         }
+    }).catch((reason: Error) => {
+        console.log(`Error at querying fiat balances`);
+        console.error(reason);
     });
 }

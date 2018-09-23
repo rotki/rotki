@@ -132,28 +132,25 @@ function balance_table_init_callback(sett?: DataTables.Api, _json?: any) {
     if (!api.data().count()) {
         return;
     }
-    // @ts-ignore
-    api.column(2).every(() => {
-        // @ts-ignore
-        const column: ColumnsMethods = this;
-        let sum = column
-            .data()
-            .reduce((a: any, b: any) => {
-                a = parseFloat(a);
-                if (isNaN(a)) {
-                    a = 0;
-                }
 
-                b = parseFloat(b);
-                if (isNaN(b)) {
-                    b = 0;
-                }
+    const column = api.column(2);
+    let sum = column.data()
+        .flatten()
+        .reduce((a: any, b: any) => {
+            a = parseFloat(a);
+            if (isNaN(a)) {
+                a = 0;
+            }
 
-                return a + b;
-            });
-        sum = format_currency_value(sum);
-        $(column.footer()).html(`Total Sum: ${sum}`);
-    });
+            b = parseFloat(b);
+            if (isNaN(b)) {
+                b = 0;
+            }
+
+            return a + b;
+        });
+    sum = format_currency_value(sum);
+    $(column.footer()).html(`Total Sum: ${sum}`);
 }
 
 function add_balances_table_html() {
@@ -195,7 +192,6 @@ function update_last_balance_save() {
 function init_balances_table(data: AssetBalance[]) {
     add_balances_table_html();
 
-    console.log( $('#table_balances_total'));
     TOTAL_BALANCES_TABLE = $('#table_balances_total').DataTable({
         'data': data,
         'columns': [

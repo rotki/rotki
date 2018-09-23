@@ -1,4 +1,3 @@
-
 import { page_header } from './elements';
 import { total_balances_get } from './balances_table';
 import { AssetTable } from './asset_table';
@@ -6,37 +5,35 @@ import { create_task } from './monitor';
 import { change_location } from './navigation';
 import { pages } from './settings';
 import { PlacementType } from './enums/PlacementType';
-import { AsyncQueryResult } from './model/balance-result';
-import { client } from './rotkehlchen_service';
+import { service } from './rotkehlchen_service';
 
 const SAVED_TABLES: { [name: string]: AssetTable } = {};
 
 export function query_exchange_balances_async(name: string, is_balance_task: boolean) {
-    client.invoke('query_exchange_balances_async', name, (error: Error, res: AsyncQueryResult) => {
-        if (error || res == null) {
-            console.log(`Error at querying exchange ${name} balances: ${error}`);
-            return;
-        }
-        console.log(`Query ${name} returned task id ${res.task_id}`);
+    service.query_exchange_balances_async(name).then(result => {
+        console.log(`Query ${name} returned task id ${result.task_id}`);
         create_task(
-            res.task_id,
-            'query_exchange_balances',
+            result.task_id,
+            'query_exchange_balances_async',
             `Query ${name} Balances`,
             is_balance_task,
             true
         );
+    }).catch(reason => {
+        console.log(`Error at querying exchange ${name} balances: ${reason}`);
     });
 }
 
 function create_exchange_table(name: string) {
     const str = page_header(name);
-    $('#page-wrapper').html(str);
+    const $page_wrapper = $('#page-wrapper');
+    $page_wrapper.html(str);
     const table = SAVED_TABLES[name];
     if (!table) {
         const data = total_balances_get()[name];
         console.log(`CREATING TABLE FOR ${name}`);
         SAVED_TABLES[name] = new AssetTable('asset', name, PlacementType.appendTo, 'page-wrapper', data);
-        pages.page_exchange[name] = $('#page-wrapper').html();
+        pages.page_exchange[name] = $page_wrapper.html();
     }
 }
 

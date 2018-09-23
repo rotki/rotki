@@ -3,10 +3,9 @@ import { date_text_to_utc_ts, prompt_directory_select_async, showError, showInfo
 import { create_task, monitor_add_callback } from './monitor';
 import { pages, settings } from './settings';
 import { ActionResult } from './model/action-result';
-import { AsyncQueryResult } from './model/balance-result';
 import { TradeHistoryOverview, TradeHistoryResult } from './model/trade-history-result';
 import { EventEntry } from './model/event-entry';
-import { client } from './rotkehlchen_service';
+import { service } from './rotkehlchen_service';
 
 export function create_taxreport_ui() {
     let str = page_header('Tax Report');
@@ -42,20 +41,11 @@ function export_csv_callback(event: JQuery.Event) {
             return;
         }
         const dir = directories[0];
-        client.invoke(
-            'export_processed_history_csv',
-            dir,
-            (error: Error, res: ActionResult<boolean>) => {
-                if (error || res == null) {
-                    showError('Exporting History to CSV error', error.message);
-                    return;
-                }
-                if (!res.result) {
-                    showError('Exporting History to CSV error', res.message);
-                    return;
-                }
-                showInfo('Success', 'History exported to CVS successfully');
-            });
+        service.export_processed_history_csv(dir).then(() => {
+            showInfo('Success', 'History exported to CVS successfully');
+        }).catch((reason: Error) => {
+            showError('Exporting History to CSV error', reason.message);
+        });
     });
 }
 
@@ -89,24 +79,17 @@ function generate_report_callback(event: JQuery.Event) {
     $(str).insertAfter('#tax_report_anchor');
 
     clean_taxreport_ui();
-    client.invoke(
-        'process_trade_history_async',
-        start_ts,
-        end_ts,
-        (error: Error, res: AsyncQueryResult) => {
-            if (error || res == null) {
-                showError('Trade History Processing Error', error.message);
-                return;
-            }
-            // else
-            create_task(
-                res.task_id,
-                'process_trade_history',
-                'Create tax report',
-                false,
-                true
-            );
-        });
+    service.process_trade_history_async(start_ts, end_ts).then(result => {
+        create_task(
+            result.task_id,
+            'process_trade_history',
+            'Create tax report',
+            false,
+            true
+        );
+    }).catch((reason: Error) => {
+        showError('Trade History Processing Error', reason.message);
+    });
 }
 
 function show_float_or_empty(data: string) {

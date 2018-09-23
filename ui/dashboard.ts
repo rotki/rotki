@@ -1,7 +1,7 @@
 import { change_location, determine_location } from './navigation';
 import { set_ui_main_currency } from './topmenu';
 import { get_total_assets_value, iterate_saved_balances, total_table_add_balances, total_table_recreate } from './balances_table';
-import { assert_exchange_exists, Currency, format_currency_value, pages, settings } from './settings';
+import { assert_exchange_exists, format_currency_value, pages, settings } from './settings';
 import { setup_client_auditor, setup_log_watcher, showError } from './utils';
 import { create_or_reload_exchange } from './exchange';
 import { monitor_add_callback } from './monitor';
@@ -10,7 +10,8 @@ import { ActionResult } from './model/action-result';
 import { ExchangeBalanceResult } from './model/exchange-balance-result';
 import { BlockchainBalances } from './model/blockchain-balances';
 import { ipcRenderer, remote } from 'electron';
-import { client } from './rotkehlchen_service';
+import { service } from './rotkehlchen_service';
+import { Currency } from './model/currency';
 
 function add_exchange_on_click() {
     $('.panel a').click((event: JQuery.Event) => {
@@ -157,8 +158,8 @@ function add_alert_dropdown(alert_text: string, _alert_time: number) {
             </p>
         </div>
     </a>
-</li>
-<li class="divider warning${alert_id}"></li>`;
+    </li>
+    <li class="divider warning${alert_id}"></li>`;
     $(str).appendTo($('.dropdown-alerts'));
     const current_alert_id = alert_id;
     $(`.warningremover${current_alert_id}`).click(() => {
@@ -180,12 +181,11 @@ export function add_currency_dropdown(currency: Currency) {
             // nothing to do
             return;
         }
-        client.invoke('set_main_currency', currency.ticker_symbol, (error: Error) => {
-            if (error) {
-                showError('Error', 'Error at setting main currency: ' + error.message);
-            } else {
-                set_ui_main_currency(currency.ticker_symbol);
-            }
+
+        service.set_main_currency(currency).then(value => {
+            set_ui_main_currency(value.ticker_symbol);
+        }).catch((reason: Error) => {
+            showError('Error', `Error at setting main currency: ${reason.message}`);
         });
     });
 }

@@ -1,14 +1,8 @@
-
 import { showError, showInfo } from './utils';
 import { form_button, form_checkbox, form_entry, form_select, page_header, settings_panel } from './elements';
-import { ActionResult } from './model/action-result';
 import * as fs from 'fs';
-import { client } from './rotkehlchen_service';
-
-export class Currency {
-    constructor(readonly name: string, readonly icon: string, readonly ticker_symbol: string, readonly unicode_symbol: string) {
-    }
-}
+import { Currency } from './model/currency';
+import { service } from './rotkehlchen_service';
 
 export class Settings {
     private exchanges = ['kraken', 'poloniex', 'bittrex', 'bitmex', 'binance'];
@@ -126,7 +120,7 @@ export function format_currency_value(usd_value: string, asset?: string, amount?
 }
 
 export function add_settings_listeners() {
-    $('#settingssubmit').click(function (event) {
+    $('#settingssubmit').click(event => {
         event.preventDefault();
         settings.floating_precision = $('#floating_precision').val() as number;
         settings.historical_data_start = $('#historical_data_start').val() as string;
@@ -149,25 +143,16 @@ export function add_settings_listeners() {
             'anonymized_logs': anonymized_logs
         };
         // and now send the data to the python process
-        client.invoke(
-            'set_settings',
-            send_payload,
-            (error: Error, res: ActionResult<boolean>) => {
-                if (error || res == null) {
-                    showError('Settings Error', 'Error at modifying settings: ' + error.message);
-                    return;
-                }
-                if (!res['result']) {
-                    showError('Settings Error', 'Error at modifying settings: ' + res.message);
-                    return;
-                }
 
-                let message = 'Succesfully modified settings.';
-                if ('message' in res && res.message !== '') {
-                    message = ' ' + message + res.message;
-                }
-                showInfo('Success', message);
-            });
+        service.set_settings(send_payload).then(result => {
+            let message = 'Succesfully modified settings.';
+            if ('message' in result && result.message !== '') {
+                message = ` ${message}${result.message}`;
+            }
+            showInfo('Success', message);
+        }).catch((error: Error) => {
+            showError('Settings Error', `Error at modifying settings: ${error.message}`);
+        });
     });
 
     $('#historical_data_start').datetimepicker({timepicker: false});

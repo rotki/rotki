@@ -5,7 +5,6 @@ import { dialog } from 'electron';
 import { service } from './rotkehlchen_service';
 import Timer = NodeJS.Timer;
 
-
 // Prompt a directory selection dialog and pass selected directory to callback
 // Callback should be a function which accepts a single argument which will be
 // a list of pathnames. The list should only contain 1 entry.
@@ -41,7 +40,7 @@ let client_auditor: Timer;
  */
 function periodic_client_query() {
     // for now only query when was the last time balance data was saved
-    service.queryLastBalanceSaveTime().then(value => {
+    service.query_last_balance_save_time().then(value => {
         settings.last_balance_save = value;
     }).catch(reason => {
         console.log('Error at periodic client query' + reason);

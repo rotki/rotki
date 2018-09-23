@@ -1,76 +1,54 @@
-
 import { showError, showInfo } from './utils';
 import { form_button, form_entry, form_radio, form_select, page_header, settings_panel } from './elements';
 import { settings } from './settings';
-import { ActionResult } from './model/action-result';
-import { client } from './rotkehlchen_service';
-
-export interface IgnoredAssetsResponse {
-    ignored_assets: string[];
-}
+import { service } from './rotkehlchen_service';
 
 function populate_ignored_assets() {
-    client.invoke('get_ignored_assets', (error: Error, result: IgnoredAssetsResponse) => {
-        if (error || result == null) {
-            showError('Error getting ignored assets');
-            return;
-        }
-
+    service.get_ignored_assets().then(assets => {
         $('#ignored_assets_selection').append($('<option>', {
             value: '',
             text: 'Click to see all ignored assets and select one for removal'
         }));
-        const assets = result.ignored_assets;
+
         $.each(assets, (_, asset) => {
             $('#ignored_assets_selection').append($('<option>', {
                 value: asset,
                 text: asset
             }));
         });
+    }).catch(() => {
+        showError('Error getting ignored assets');
     });
 }
 
 function ignored_asset_modify_callback(event: JQuery.Event) {
     event.preventDefault();
     const button_type = $('#modify_ignored_asset_button').html();
-    const asset = $('#ignored_asset_entry').val();
+    const asset = $('#ignored_asset_entry').val() as string;
 
-    let command = 'add_ignored_asset';
+    let add = true;
     if (button_type === 'Remove') {
-        command = 'remove_ignored_asset';
+        add = false;
     }
 
-    client.invoke(
-        command,
-        asset,
-        (error: Error, result: ActionResult<boolean>) => {
-            if (error || !result) {
-                showError(
-                    'Ignored Asset Modification Error',
-                    'Error at modifying ignored asset ' + asset
-                );
-                return;
-            }
-            if (!result.result) {
-                showError(
-                    'Ignored Asset Modification Error',
-                    'Error at modifying ignored asset: ' + result.message
-                );
-                return;
-            }
-
-            if (command === 'add_ignored_asset') {
-                $('#ignored_assets_selection').append($('<option>', {
-                    value: asset,
-                    text: asset,
-                    selected: true
-                }));
-            } else {
-                $('#ignored_assets_selection option[value=\'' + asset + '\']').remove();
-                $('#modify_ignored_asset_button').html('Add');
-                $('#ignored_asset_entry').val('');
-            }
-        });
+    service.modify_asset(add, asset).then(() => {
+        if (add) {
+            $('#ignored_assets_selection').append($('<option>', {
+                value: asset,
+                text: asset,
+                selected: true
+            }));
+        } else {
+            $(`#ignored_assets_selection option[value='${asset}']`).remove();
+            $('#modify_ignored_asset_button').html('Add');
+            $('#ignored_asset_entry').val('');
+        }
+    }).catch((reason: Error) => {
+        showError(
+            'Ignored Asset Modification Error',
+            `Error at modifying ignored asset ${asset} (${reason.message})`
+        );
+    });
 }
 
 function ignored_asset_selection_callback(event: JQuery.Event) {
@@ -98,17 +76,10 @@ function crypto2crypto_callback(event: JQuery.Event) {
     if (name === 'Yes') {
         value = true;
     }
-    client.invoke('set_settings', {'include_crypto2crypto': value}, (error: Error, result: ActionResult<boolean>) => {
-        if (error || result == null) {
-            showError('Error setting crypto to crypto', error.message);
-            return;
-        }
-        if (!result['result']) {
-            showError('Error setting crypto to crypto', result['message']);
-            return;
-        }
-
+    service.set_settings({'include_crypto2crypto': value}).then(() => {
         showInfo('Success', 'Succesfully set crypto to crypto consideration value');
+    }).catch(reason => {
+        showError('Error setting crypto to crypto', reason.message);
     });
 }
 
@@ -122,17 +93,10 @@ function modify_trade_settings_callback() {
         value = parseInt($('#taxfree_period_entry').val() as string, 10);
     }
 
-    client.invoke('set_settings', {'taxfree_after_period': value}, (error: Error, result: ActionResult<boolean>) => {
-        if (error || result == null) {
-            showError('Error setting trade settings', error.message);
-            return;
-        }
-        if (!result.result) {
-            showError('Error setting trade settings', result.message);
-            return;
-        }
-
+    service.set_settings({'taxfree_after_period': value}).then(() => {
         showInfo('Success', 'Succesfully set trade settings');
+    }).catch((reason: Error) => {
+        showError('Error setting trade settings', reason.message);
     });
 }
 

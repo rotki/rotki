@@ -24,13 +24,10 @@ import { format_currency_value, get_fiat_usd_value, pages, settings } from './se
 import { query_exchange_balances_async } from './exchange';
 import { PlacementType } from './enums/PlacementType';
 import { ActionResult } from './model/action-result';
-import { AsyncQueryResult } from './model/balance-result';
 import { AssetBalance } from './model/asset-balance';
-import { EthTokensResult } from './model/eth_tokens_result';
 
-import { BlockchainAccountResult } from './model/blockchain_account_result';
 import { BlockchainBalances } from './model/blockchain-balances';
-import { client, NoPremiumCredentials, NoResponseError, service } from './rotkehlchen_service';
+import { NoPremiumCredentials, NoResponseError, service } from './rotkehlchen_service';
 import Api = DataTables.Api;
 
 let FIAT_TABLE: AssetTable;
@@ -103,7 +100,7 @@ function setup_premium_callback(event: JQuery.Event) {
     const api_key = $('#premium_api_key_entry').val() as string;
     const api_secret = $('#premium_api_secret_entry').val() as string;
 
-    service.setPremiumCredentials(api_key, api_secret)
+    service.set_premium_credentials(api_key, api_secret)
         .then(() => {
             showInfo('Premium Credentials', 'Successfully set Premium Credentials');
             disable_key_entries('premium_', 'premium', '');
@@ -123,11 +120,9 @@ function setup_premium_callback(event: JQuery.Event) {
 function change_premiumsettings_callback(event: JQuery.Event) {
     event.preventDefault();
     const should_sync = $('#premium_sync_entry').is(':checked');
-    client.invoke('set_premium_option_sync', should_sync, (error: Error, res: boolean) => {
-        if (error || res == null) {
-            showError('Premium Settings Error', 'Error at changing premium settings');
-            return;
-        }
+    service.set_premium_option_sync(should_sync).then(() => {
+    }).catch(() => {
+        showError('Premium Settings Error', 'Error at changing premium settings');
     });
 }
 
@@ -152,29 +147,18 @@ function setup_exchange_callback(event: JQuery.Event) {
                 'This action is not undoable and you will need to obtain the key and secret again from the exchange.',
             buttons: {
                 confirm: function () {
-                    client.invoke(
-                        'remove_exchange',
-                        exchange_name,
-                        (error: Error, res: ActionResult<boolean>) => {
-                            if (error || res == null) {
-                                showError('Exchange Removal Error', `Error at removing ${exchange_name} exchange: ${error}`);
-                                return;
-                            }
-                            // else
-                            if (!res.result) {
-                                showError('Exchange Removal Error', `Error at removing ${exchange_name} exchange: ${res['message']}`);
-                                return;
-                            }
-                            // Exchange removal from backend successful
-                            enable_key_entries('', 'exchange');
-                            $(`#${exchange_name}_badge`).remove();
-                            const index = settings.connected_exchanges.indexOf(exchange_name);
-                            if (index === -1) {
-                                throw new Error(`Exchange ${exchange_name} was not in connected_exchanges when trying to remove`);
-                            }
-                            settings.connected_exchanges.splice(index, 1);
-
-                        });
+                    service.remove_exchange(exchange_name).then(() => {
+                        // Exchange removal from backend successful
+                        enable_key_entries('', 'exchange');
+                        $(`#${exchange_name}_badge`).remove();
+                        const index = settings.connected_exchanges.indexOf(exchange_name);
+                        if (index === -1) {
+                            throw new Error(`Exchange ${exchange_name} was not in connected_exchanges when trying to remove`);
+                        }
+                        settings.connected_exchanges.splice(index, 1);
+                    }).catch((reason: Error) => {
+                        showError('Exchange Removal Error', `Error at removing ${exchange_name} exchange: ${reason.message}`);
+                    });
                 },
                 cancel: function () {
                 }
@@ -184,35 +168,21 @@ function setup_exchange_callback(event: JQuery.Event) {
     }
     // else simply add it
     show_loading('#setup_exchange_button');
-    const api_key = $('#api_key_entry').val();
-    const api_secret = $('#api_secret_entry').val();
-    client.invoke(
-        'setup_exchange',
-        exchange_name,
-        api_key,
-        api_secret,
-        (error: Error, res: ActionResult<boolean>) => {
-            if (error || res == null) {
-                showError('Exchange Setup Error', `Error at setup of ${exchange_name}: ${error}`);
-                stop_show_loading('#setup_exchange_button');
-                return;
-            }
-            // else
-            if (!res['result']) {
-                showError('Exchange Setup Error', `Error at setup of ${exchange_name}: ${res.message}`);
-                stop_show_loading('#setup_exchange_button');
-                return;
-            }
-            // Exchange setup in the backend was successful
-            disable_key_entries('', 'exchange', exchange_name);
-            settings.connected_exchanges.push(exchange_name);
-            const str = ExchangeBadge({name: exchange_name, css_class: 'exchange-icon'});
-            $(str).appendTo($('#exchange_badges'));
-            stop_show_loading('#setup_exchange_button');
-            // also query the balances to have them handy to be shown if needed
-            query_exchange_balances_async(exchange_name, false);
-        }
-    );
+    const api_key = $('#api_key_entry').val() as string;
+    const api_secret = $('#api_secret_entry').val() as string;
+    service.setup_exchange(exchange_name, api_key, api_secret).then(() => {
+        // Exchange setup in the backend was successful
+        disable_key_entries('', 'exchange', exchange_name);
+        settings.connected_exchanges.push(exchange_name);
+        const str = ExchangeBadge({name: exchange_name, css_class: 'exchange-icon'});
+        $(str).appendTo($('#exchange_badges'));
+        stop_show_loading('#setup_exchange_button');
+        // also query the balances to have them handy to be shown if needed
+        query_exchange_balances_async(exchange_name, false);
+    }).catch((reason: Error) => {
+        showError('Exchange Setup Error', `Error at setup of ${exchange_name}: ${reason.message}`);
+        stop_show_loading('#setup_exchange_button');
+    });
 }
 
 function fiat_selection_callback(event: JQuery.Event) {
@@ -236,29 +206,19 @@ function fiat_modify_callback(event: JQuery.Event) {
     const currency = $('#fiat_type_entry').val() as string;
     const balance = $('#fiat_value_entry').val() as string;
 
-    client.invoke(
-        'set_fiat_balance',
-        currency,
-        balance,
-        (error: Error, result: ActionResult<boolean>) => {
-            if (error || !result) {
-                showError('Balance Modification Error', `Error at modifying ${currency} balance: ${error}`);
-                return;
-            }
-            if (!result.result) {
-                showError('Balance Modification Error', `Error at modifying ${currency} balance: ${result.message}`);
-                return;
-            }
-            if (balance === '') {
-                delete FIAT_BALANCES[currency];
-            } else {
-                FIAT_BALANCES[currency] = {amount: balance, usd_value: get_fiat_usd_value(currency, balance)};
-            }
+    service.set_fiat_balance(currency, balance).then(() => {
+        if (balance === '') {
+            delete FIAT_BALANCES[currency];
+        } else {
+            FIAT_BALANCES[currency] = {amount: balance, usd_value: get_fiat_usd_value(currency, balance)};
+        }
 
-            if (FIAT_TABLE) {
-                FIAT_TABLE.update_format(FIAT_BALANCES);
-            }
-        });
+        if (FIAT_TABLE) {
+            FIAT_TABLE.update_format(FIAT_BALANCES);
+        }
+    }).catch((reason: Error) => {
+        showError('Balance Modification Error', `Error at modifying ${currency} balance: ${reason.message}`);
+    });
 }
 
 export function add_user_settings_listeners() {
@@ -346,12 +306,10 @@ export function create_user_settings() {
     str += invisible_anchor('ethchain_per_account_anchor');
     str += invisible_anchor('btcchain_per_account_anchor');
     $(str).appendTo($('#blockchain_balances_panel_body'));
-    client.invoke('query_blockchain_balances_async', (error: string, result: AsyncQueryResult) => {
-        if (error || result == null) {
-            console.log('Error at querying blockchain balances async:' + error);
-            return;
-        }
-        create_task(result.task_id, 'user_settings_query_blockchain_balances', 'Query blockchain balances', false, true);
+    service.query_blockchain_balances_async().then(value => {
+        create_task(value.task_id, 'user_settings_query_blockchain_balances', 'Query blockchain balances', false, true);
+    }).catch((reason: Error) => {
+        console.log(`Error at querying blockchain balances async: ${reason.message}`);
     });
     // also save the user settings page
     pages.page_user_settings = $('#page-wrapper').html();
@@ -374,44 +332,31 @@ export function create_user_settings() {
 
 function add_blockchain_account(event: JQuery.Event) {
     event.preventDefault();
-    const blockchain = $('#crypto_type_entry').val();
-    const account = $('#account_entry').val();
+    const blockchain = $('#crypto_type_entry').val() as string;
+    const account = $('#account_entry').val() as string;
     show_loading('#account_entry');
-    client.invoke(
-        'add_blockchain_account',
-        blockchain,
-        account,
-        (error: Error, result: BlockchainAccountResult) => {
-            if (error || result == null) {
-                showError(
-                    'Account Error',
-                    `Error at adding new ${blockchain} account: ${error}`
-                );
-                stop_show_loading('#account_entry');
-                return;
-            }
-            if (!result.result) {
-                showError(
-                    'Account Error',
-                    `Error at adding new ${blockchain} account: ${result.message}`
-                );
-                stop_show_loading('#account_entry');
-                return;
-            }
-            if (blockchain === 'ETH') {
-                recreate_ethchain_per_account_table(result.per_account['ETH']);
-            } else if (blockchain === 'BTC') {
-                const btcTable = BB_PER_ACCOUNT_TABLES['BTC'] as AssetTable;
-                btcTable.update_format(result.per_account['BTC']);
-            }
-            if (BB_PER_ASSET_TABLE == null) {
-                throw new Error('Table was not supposed to be null');
-            }
-            // also reload the asset total tables
-            BB_PER_ASSET_TABLE.update_format(result['totals']);
 
-            stop_show_loading('#account_entry');
-        });
+    service.add_blockchain_account(blockchain, account).then(result => {
+        if (blockchain === 'ETH') {
+            recreate_ethchain_per_account_table(result.per_account['ETH']);
+        } else if (blockchain === 'BTC') {
+            const btcTable = BB_PER_ACCOUNT_TABLES['BTC'] as AssetTable;
+            btcTable.update_format(result.per_account['BTC']);
+        }
+        if (BB_PER_ASSET_TABLE == null) {
+            throw new Error('Table was not supposed to be null');
+        }
+        // also reload the asset total tables
+        BB_PER_ASSET_TABLE.update_format(result['totals']);
+
+        stop_show_loading('#account_entry');
+    }).catch((reason: Error) => {
+        showError(
+            'Account Error',
+            `Error at adding new ${blockchain} account: ${reason.message}`
+        );
+        stop_show_loading('#account_entry');
+    });
 }
 
 const table_data_shortener = function (cutoff_start: number, keep_length: number) {
@@ -515,21 +460,13 @@ function delete_blockchain_account_row(blockchain: string, row: DataTables.RowMe
     const data: EthChainRowData = row.data() as EthChainRowData;
     const account = data['account'];
     show_loading();
-    client.invoke('remove_blockchain_account', blockchain, account, (error: Error, result: BlockchainAccountResult) => {
-        if (error || result == null) {
-            showError('Account Deletion Error', `Error at deleting ${blockchain} account ${account}: ${error}`);
-            stop_show_loading();
-            return;
-        }
-        if (!result.result) {
-            showError('Account Deletion Error', `Error at deleting ${blockchain} account ${account}: ${result.message}`);
-            stop_show_loading();
-            return;
-        }
-
+    service.remove_blockchain_account(blockchain, account).then(value => {
         // @ts-ignore
         row.remove().draw();
-        BB_PER_ASSET_TABLE.update_format(result['totals']);
+        BB_PER_ASSET_TABLE.update_format(value.totals);
+        stop_show_loading();
+    }).catch((reason: Error) => {
+        showError('Account Deletion Error', `Error at deleting ${blockchain} account ${account}: ${reason.message}`);
         stop_show_loading();
     });
 }
@@ -598,11 +535,7 @@ function create_blockchain_balances_tables(result: BlockchainBalances) {
 let populate_eth_tokens_called = false;
 
 function populate_eth_tokens() {
-    client.invoke('get_eth_tokens', (error: Error, result: EthTokensResult) => {
-        if (error || result == null) {
-            console.log('Error at getting ETH tokens:' + error);
-            return;
-        }
+    service.get_eth_tokens().then(result => {
         $('#eth_tokens_select').multiSelect({
             selectableHeader: '<div class=\'custom-header\'>All ETH Tokens</div>',
             selectionHeader: '<div class=\'custom-header\'>My ETH Tokens</div>',
@@ -636,7 +569,10 @@ function populate_eth_tokens() {
                 disable_multiselect();
             }
         });
+    }).catch((reason: Error) => {
+        console.log('Error at getting ETH tokens:' + reason.message);
     });
+
 }
 
 function disable_multiselect() {
