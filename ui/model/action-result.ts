@@ -11,7 +11,6 @@ export interface UnlockResult extends ActionResult<boolean> {
     readonly exchanges?: string[];
 }
 
-
 export interface DBSettings {
     readonly db_version: number;
     readonly last_write_ts: number;
@@ -27,3 +26,4 @@ export interface DBSettings {
     readonly last_balance_save: number;
     readonly anonymized_logs: boolean;
 }
+

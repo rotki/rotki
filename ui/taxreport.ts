@@ -200,7 +200,8 @@ function create_taxreport_details(all_events: EventEntry[]) {
 
 export function init_taxreport() {
     monitor_add_callback('process_trade_history', (result: ActionResult<TradeHistoryResult>) => {
-        $('#tax_report_loading').remove();        
+        $('#tax_report_loading').remove();
+
         if (result.error) {
             showError(
                 'Trade History Query Error',

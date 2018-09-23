@@ -19,4 +19,3 @@ export interface TradeHistoryOverview {
     readonly total_taxable_profit_loss: number;
     readonly total_profit_loss: number;
 }
-

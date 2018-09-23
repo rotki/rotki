@@ -1,7 +1,6 @@
 import { ActionResult } from './model/action-result';
 import { AssetBalance } from './model/asset-balance';
 import { BlockchainAccountResult } from './model/blockchain_account_result';
-import { showError } from './utils';
 
 const zerorpc = require('zerorpc');
 // max timeout is now 9999 seconds
