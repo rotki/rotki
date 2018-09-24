@@ -113,7 +113,6 @@ class Bitmex(Exchange):
 
         data = ''
         if not options:
-            options = {}
             request_path = request_path_no_args
         else:
             request_path = request_path_no_args + '?' + urlencode(options)
