@@ -64,7 +64,6 @@
                 <a class="navbar-brand" href="">Rotkehlchen</a>
             </div>
             <!-- /.navbar-header -->
-
             <ul class="nav navbar-top-links navbar-status-icons">
                 <ul class="list-group lg-status-icons">
                     <!-- eth node status -->
@@ -74,6 +73,14 @@
                         </a>
                         <ul class="dropdown-menu dropdown-eth-status alert-success">
                             <p>Connected to a local ethereum node</p>
+                        </ul>
+                    </li>
+                    <li class="list-group-item balance-save-status">
+                        <a class="balances-saved-status-link" href="#">
+                            <i class="fa fa-save fa-fw"></i>
+                        </a>
+                        <ul class="dropdown-menu dropdown-balance-save-status">
+                            <p>Balances last saved:<br><span id="last_balance_save_field">Never</span></p>
                         </ul>
                     </li>
                 </ul>

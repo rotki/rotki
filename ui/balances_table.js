@@ -135,7 +135,6 @@ function balance_table_init_callback(settings, json) {
 
 function add_balances_table_html() {
     var str = '<div class="row"><div class="col-lg-12"><h1 class=page-header">All Balances</h1></div></div>';
-    str += '<div class="list-group"><div class="list-group-item"><i class="fa fa-save fa-fw"></i> Last Time Balances were saved:<span id="last_balance_save_field" class="pull-right small">Never</span></div></div>';
     str += '<div class="row"><table id="table_balances_total"><thead><tr><th>Asset</th><th>Amount</th><th>USD Value</th><th>% of net value</th></tr/></thead><tfoot><tr><th></th><th></th><th></th><th></th></tr></tfoot><tbody id="table_balances_total_body"></tbody></table></div>';
     $(str).appendTo($('#dashboard-contents'));
 }
