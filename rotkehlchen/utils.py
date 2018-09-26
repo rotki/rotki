@@ -198,7 +198,16 @@ def retry_calls(
 
 
 def request_get(uri, timeout=ALL_REMOTES_TIMEOUT):
-    response = requests.get(uri)
+    # TODO make this a bit more smart. Perhaps conditional on the type of request.
+    # Not all requests would need repeated attempts
+    response = retry_calls(
+        5,
+        '',
+        uri,
+        requests.get,
+        uri,
+    )
+
     if response.status_code != 200:
         raise RemoteError('Get {} returned status code {}'.format(uri, response.status_code))
 
