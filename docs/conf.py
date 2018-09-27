@@ -24,9 +24,9 @@ copyright = '2018, Lefteris Karapetsas'
 author = 'Lefteris Karapetsas'
 
 # The short X.Y version
-version = ''
+version = '0.4.0'
 # The full version, including alpha/beta/rc tags
-release = '0.3.1'
+release = '0.4.0'
 
 
 # -- General configuration ---------------------------------------------------
