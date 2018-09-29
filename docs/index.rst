@@ -31,4 +31,5 @@ Contents
    overview
    installation_guide
    usage_guide
+   contribute
    changelog
