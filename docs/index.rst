@@ -1,7 +1,7 @@
 Welcome to Rotkehlchen's documentation!
 =======================================
 
-This is the documentation for the |version| version of Rotkehlchen <http://rotkehlchen.io/>`_. The sourcecode along with the issue tracker is in the `Github Repository <https://github.com/rotkehlchenio/rotkehlchen>`_.
+This is the documentation for the |version| version of `Rotkehlchen <http://rotkehlchen.io/>`_. The sourcecode along with the issue tracker is in the `Github Repository <https://github.com/rotkehlchenio/rotkehlchen>`_.
 
 What is Rotkehlchen?
 --------------------
