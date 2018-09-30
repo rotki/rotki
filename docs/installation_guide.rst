@@ -7,7 +7,7 @@ System Requirements and Installation Guide
 Introduction
 ============
 
-The easiest way to start Rotkehlchen is to download the packaged binary for your Operating system. For now only Linux and OSX is supported. To see how to do this go to the :ref:`next section <_packaged_binaries>`.
+The easiest way to start Rotkehlchen is to download the packaged binary for your Operating system. For now only Linux and OSX is supported. To see how to do this go to the :ref:`next section <packaged_binaries>`.
 
 
 .. _packaged_binaries:
@@ -49,20 +49,20 @@ Install electron and any other npm dependencies by::
 
     npm install --runtime=electron --target=1.8.4
 
-Create a new `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ to install all the python dependencies. If you don't have ``mkvirtualenv`` then check how to get it depending on your distribution. `Here` <http://exponential.io/blog/2015/02/10/install-virtualenv-and-virtualenvwrapper-on-ubuntu/>`_ is a guide for Ubuntu and `here` <https://wiki.archlinux.org/index.php/Python/Virtual_environment>`_ is one for ArchLinux.::
+Create a new `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ to install all the python dependencies. If you don't have ``mkvirtualenv`` then check how to get it depending on your distribution. `Here <http://exponential.io/blog/2015/02/10/install-virtualenv-and-virtualenvwrapper-on-ubuntu/>`_ is a guide for Ubuntu and `here <https://wiki.archlinux.org/index.php/Python/Virtual_environment>`_ is one for ArchLinux::
 
     mkvirtualenv rotkehlchen
 
-Then install all the python requirements by doing:::
+Then install all the python requirements by doing::
 
     pip install -r requirements.txt
 
 If you want to also have the developer requirements in order to develop rotkehlchen
-then do:::
+then do::
 
     pip install -r requirements_dev.txt
 
-Now to start the application you need to type `npm start`.
+Now to start the application you need to type ``npm start``.
 
 If you get runtime errors about a Node version mismatch, you can try to rebuild the electron
 modules like this:::
@@ -72,11 +72,11 @@ modules like this:::
 OSX
 ***
 
-The &lt;tldr&gt; version is:
+The tl;dr version is:
 - install sqlcipher
 - use a virtual env with python 3.6.x
 - make sure pip installed everything it says it installed
-- get your node under control with nvm, i tested 8.9
+- get your node under control with nvm. It has been tested with 8.9
 
 The following recipe has been tested using `Anaconda <https://conda.io>`_. `VirtualEnv <https://virtualenv.pypa.io>`_ works as well, refer to the documentations of those projects to install and use them.
 
@@ -98,12 +98,12 @@ If you wish to use Conda, use the following commands:::
     $ conda create python=3.6 --name rotkehlchen
     $ conda activate rotkehlchen
 
-If you wish to use Virtualenvwrapper use the following:::
+If you wish to use Virtualenvwrapper use the following::
 
     $ pip install virtualenv
     $ pip install virtualenvwrapper
 
-And add the following to your shell startup file, assuming virtualenvwrapper was installed in ``/usr/local/bin``:::
+And add the following to your shell startup file, assuming virtualenvwrapper was installed in ``/usr/local/bin``::
 
     export WORKON_HOME=$HOME/.virtualenvs
     export PROJECT_HOME=$HOME/Devel
@@ -123,14 +123,14 @@ then do:::
     $ pip install -r requirements_dev.txt
 
 .. NOTE::
-   Make sure that pysqlcipher3 is properly installed. If ``$ pip freeze | grep pysqlcipher3`` returns nothing for you then it was not installed. Try to manually install only that dependency with the verbose option to see where it fails. ``$ pip install pysqlcipher3 -v``. If it fails at the stage of finding the library for ``-lsqlcipher`` then ``brew install sqlciper`` did not place the installed lib directory to the ``LIBRARY_PATH`` and you will have to do it manually. For example if ``sqlcipher`` was installed at ``/usr/local/Cellar/sqlcipher/3.4.2/`` then use pip install this way:::
+   Make sure that pysqlcipher3 is properly installed. If ``$ pip freeze | grep pysqlcipher3`` returns nothing for you then it was not installed. Try to manually install only that dependency with the verbose option to see where it fails. ``$ pip install pysqlcipher3 -v``. If it fails at the stage of finding the library for ``-lsqlcipher`` then ``brew install sqlciper`` did not place the installed lib directory to the ``LIBRARY_PATH`` and you will have to do it manually. For example if ``sqlcipher`` was installed at ``/usr/local/Cellar/sqlcipher/3.4.2/`` then use pip install this way::
      $ LIBRARY_PATH=/usr/local/Cellar/sqlcipher/3.4.2/lib pip install pysqlcipher3.
 
-Rotkehlchen uses electron, we need to install it. To do so you need ``node.js`` and ``npm``. If you don't have it use homebrew to install it:::
+Rotkehlchen uses electron, we need to install it. To do so you need ``node.js`` and ``npm``. If you don't have it use homebrew to install it::
 
     $ brew install node
 
-Almost there, we can now install all the NodeJS dependencies. Using a recent NodeJS version such as 8.9.x, it should be smooth. Also since npm uses gyp and gyp requires python 2.7 make sure to set it up appropriately before invoking npm.::
+Almost there, we can now install all the NodeJS dependencies. Using a recent NodeJS version such as 8.9.x, it should be smooth. Also since npm uses gyp and gyp requires python 2.7 make sure to set it up appropriately before invoking npm::
 
     $ npm config set python python2.7
     $ npm install

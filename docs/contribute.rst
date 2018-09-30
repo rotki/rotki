@@ -32,6 +32,7 @@ Committing Rules
 ****************
 
 Please follow these rules for commits:
+
 1. Commits should be just to the point, not too long and not too short.
 2. Commits should do one thing, if two commits both do the same thing, that's a good sign they should be combined.
 3. Commits should follow a simple format. A max 80 columns title, optionally followed by an empty line separator and then the subject.
