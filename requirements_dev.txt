@@ -6,5 +6,9 @@ bump2version==0.5.8
 pylint
 flake8
 isort
+
+# Documentation
 sphinx
 sphinx-autobuild
+sphinx_rtd_theme
+releases
