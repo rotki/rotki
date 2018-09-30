@@ -6,3 +6,5 @@ bump2version==0.5.8
 pylint
 flake8
 isort
+sphinx
+sphinx-autobuild
