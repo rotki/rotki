@@ -39,6 +39,7 @@ release = '0.4.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'releases',
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
 ]
@@ -76,13 +77,13 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = {'logo_only': True, 'display_version': False}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -99,6 +100,12 @@ html_static_path = ['_static']
 #
 # html_sidebars = {}
 
+# The name of an image file (relative to this directory) to place at the top
+# of the sidebar.
+#
+html_logo = '../ui/images/rotkehlchen_no_text.png'
+
+html_show_copyright = False
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
@@ -176,3 +183,8 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
+
+# Enables 0.x.y releases to not be grouped into feature and bugfix releases
+# see: http://releases.readthedocs.io/en/latest/concepts.html#unstable-prehistory-mode
+# This needs to be kept enabled even once 1.0 has been reached!
+releases_unstable_prehistory = True
