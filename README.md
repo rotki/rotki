@@ -8,3 +8,6 @@ Rotkehlchen is an asset management and accounting application specializing in Cr
 
 For documentation look [here](https://rotkehlchen.readthedocs.io/en/latest/)
 
+## Changelog
+
+Click [here](https://rotkehlchen.readthedocs.io/en/latest/changelog.html) for the latest changelog.
