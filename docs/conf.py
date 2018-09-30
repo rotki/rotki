@@ -44,6 +44,11 @@ extensions = [
     'sphinx.ext.ifconfig',
 ]
 
+
+# 'releases' (changelog) settings
+releases_issue_uri = "https://github.com/rotkehlchenio/rotkehlchen/issues/%s"
+releases_release_uri = "https://github.com/rotkehlchenio/rotkehlchen/releases/tag/v%s"
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
