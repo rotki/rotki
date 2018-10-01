@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`173` Price querying for IOTA should now work properly with cryptocompare
+
 * :release:`0.4.0 <2018-09-23>`
 * :feature:`144` Rotkehlchen now starts fully supporting Bitmex and allows querying Bitmex history for tax calculations.
 * :bug:`163` Properly handle errors in the tax report calculation and in other asynchronous tasks.
