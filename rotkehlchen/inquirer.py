@@ -6,7 +6,7 @@ from typing import Dict, Iterable, Optional, cast
 import requests
 
 from rotkehlchen import typing
-from rotkehlchen.constants import FIAT_CURRENCIES, S_DATACOIN, S_RDN, S_USD
+from rotkehlchen.constants import FIAT_CURRENCIES, S_DATACOIN, S_RDN, S_USD, S_IOTA
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils import query_fiat_pair, retry_calls, rlk_jsonloads
@@ -33,6 +33,8 @@ def world_to_cryptocompare(asset):
         asset = cast(typing.EthToken, 'RDN*')
     elif asset == S_DATACOIN:
         asset = cast(typing.NonEthTokenBlockchainAsset, 'DATA')
+    elif asset == S_IOTA:
+        asset = cast(typing.NonEthTokenBlockchainAsset, 'IOT')
 
     return asset
 
