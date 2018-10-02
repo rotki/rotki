@@ -1,23 +1,24 @@
 import os
-import pytest
 import time
-from pysqlcipher3 import dbapi2 as sqlcipher
-from eth_utils.address import to_checksum_address
 
-from rotkehlchen.utils import ts_now, createTimeStamp
+import pytest
+from eth_utils.address import to_checksum_address
+from pysqlcipher3 import dbapi2 as sqlcipher
+
+from rotkehlchen.constants import YEAR_IN_SECONDS
+from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import (
+    DEFAULT_ANONYMIZED_LOGS,
+    DEFAULT_BALANCE_SAVE_FREQUENCY,
+    DEFAULT_MAIN_CURRENCY,
+    DEFAULT_START_DATE,
+    DEFAULT_UI_FLOATING_PRECISION,
+    ROTKEHLCHEN_DB_VERSION,
     BlockchainAccounts,
     LocationData,
-    ROTKEHLCHEN_DB_VERSION,
-    DEFAULT_START_DATE,
-    DEFAULT_MAIN_CURRENCY,
-    DEFAULT_UI_FLOATING_PRECISION,
-    DEFAULT_BALANCE_SAVE_FREQUENCY,
 )
-from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.errors import AuthenticationError, InputError
-from rotkehlchen.constants import YEAR_IN_SECONDS
-
+from rotkehlchen.utils import createTimeStamp, ts_now
 
 TABLES_AT_INIT = [
     'timed_balances',
@@ -138,10 +139,12 @@ def test_writting_fetching_data(data_dir, username):
         'balance_save_frequency': DEFAULT_BALANCE_SAVE_FREQUENCY,
         'last_balance_save': 0,
         'main_currency': DEFAULT_MAIN_CURRENCY,
+        'anonymized_logs': DEFAULT_ANONYMIZED_LOGS,
     }
 
     # Check setting non-existing settings. Should be ignored
-    _, msg = data.set_settings({'nonexisting_setting': 1}, accountant=None)
+    success, msg = data.set_settings({'nonexisting_setting': 1}, accountant=None)
+    assert success
     assert msg != '' and 'nonexisting_setting' in msg
     _, msg = data.set_settings({
         'nonexisting_setting': 1,
@@ -274,8 +277,7 @@ def test_settings_entry_types(data_dir, username):
     data = DataHandler(data_dir)
     data.unlock(username, '123', create_new=True)
 
-    data.db.set_settings({
-        'version': 1,
+    success, msg = data.set_settings({
         'last_write_ts': 1,
         'premium_should_sync': True,
         'include_crypto2crypto': True,
@@ -285,20 +287,35 @@ def test_settings_entry_types(data_dir, username):
         'historical_data_start': '01/08/2015',
         'eth_rpc_port': '8545',
         'balance_save_frequency': 24,
+        'anonymized_logs': True,
     })
+    assert success
+    assert msg == '', f'set settings returned error: "{msg}"'
 
     res = data.db.get_settings()
     assert isinstance(res['db_version'], int)
+    assert res['db_version'] == ROTKEHLCHEN_DB_VERSION
     assert isinstance(res['last_write_ts'], int)
     assert isinstance(res['premium_should_sync'], bool)
+    assert res['premium_should_sync'] is True
     assert isinstance(res['include_crypto2crypto'], bool)
+    assert res['include_crypto2crypto'] is True
     assert isinstance(res['ui_floating_precision'], int)
+    assert res['ui_floating_precision'] == 1
     assert isinstance(res['taxfree_after_period'], int)
+    assert res['taxfree_after_period'] == 1
     assert isinstance(res['historical_data_start'], str)
+    assert res['historical_data_start'] == '01/08/2015'
     assert isinstance(res['eth_rpc_port'], str)
+    assert res['eth_rpc_port'] == '8545'
     assert isinstance(res['balance_save_frequency'], int)
+    assert res['balance_save_frequency'] == 24
     assert isinstance(res['last_balance_save'], int)
+    assert res['last_balance_save'] == 0
     assert isinstance(res['main_currency'], str)
+    assert res['main_currency'] == 'USD'
+    assert isinstance(res['anonymized_logs'], bool)
+    assert res['anonymized_logs'] is True
 
 
 def test_balance_save_frequency_check(data_dir, username):
@@ -312,7 +329,9 @@ def test_balance_save_frequency_check(data_dir, username):
     )])
 
     assert not data.should_save_balances()
-    data.db.set_settings({'balance_save_frequency': 5})
+    success, msg = data.set_settings({'balance_save_frequency': 5})
+    assert success
+    assert msg == '', f'set settings returned error: "{msg}"'
     assert data.should_save_balances()
 
     last_save_ts = data.db.get_last_balance_save_time()

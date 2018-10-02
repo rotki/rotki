@@ -71,6 +71,7 @@ function add_settings_listeners() {
             }
         }
 
+        let anonymized_logs = $('#anonymized_logs_input').is(":checked");
         let eth_rpc_port = $('#eth_rpc_port').val();
         let balance_save_frequency = $('#balance_save_frequency').val();
         let send_payload = {
@@ -78,7 +79,8 @@ function add_settings_listeners() {
             'historical_data_start': settings.historical_data_start,
             'main_currency': main_currency,
             'eth_rpc_port': eth_rpc_port,
-            'balance_save_frequency': balance_save_frequency
+            'balance_save_frequency': balance_save_frequency,
+            'anonymized_logs': anonymized_logs
         };
         // and now send the data to the python process
         client.invoke(
@@ -111,6 +113,7 @@ function create_settings_ui() {
     $('#page-wrapper').html(str);
 
     str = form_entry('Floating Precision', 'floating_precision', settings.floating_precision, '');
+    str += form_checkbox('anonymized_logs_input', 'Should logs by anonymized?', settings.anonymized_logs);
     str += form_entry('Date from when to count historical data', 'historical_data_start', settings.historical_data_start, '');
     str += form_select('Select Main Currency', 'maincurrencyselector', settings.CURRENCIES.map(x => x.ticker_symbol), settings.main_currency.ticker_symbol);
     str += form_entry('Eth RPC Port', 'eth_rpc_port', settings.eth_rpc_port, '');
@@ -168,6 +171,7 @@ module.exports = function() {
         settings.balance_save_frequency = 24;
         settings.last_balance_save = 0;
         settings.ICON_MAP_LIST = get_icon_map();
+        settings.anonymized_logs = false;
     }
     this.get_value_in_main_currency = get_value_in_main_currency;
     this.assert_exchange_exists = assert_exchange_exists;

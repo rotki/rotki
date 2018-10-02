@@ -209,6 +209,7 @@ function unlock_user(username, password, create_true, sync_approval, api_key, ap
                         settings.taxfree_after_period = db_settings['taxfree_after_period'];
                         settings.balance_save_frequency = db_settings['balance_save_frequency'];
                         settings.last_balance_save = db_settings['last_balance_save'];
+                        settings.anonymized_logs = db_settings['anonymized_logs'];
 
                         let is_new_user = create_true && api_key == '';
                         load_dashboard_after_unlock(response['exchanges'], is_new_user);

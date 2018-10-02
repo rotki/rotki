@@ -1,29 +1,25 @@
-import tempfile
-import shutil
-import os
-import zlib
 import base64
 import hashlib
+import logging
+import os
+import shutil
+import tempfile
 import time
-from typing import Tuple, Dict, List, Optional, cast
+import zlib
+from typing import Dict, List, Optional, Tuple, cast
+
 from eth_utils.address import to_checksum_address
 
-from rotkehlchen.crypto import encrypt, decrypt
-from rotkehlchen.utils import (
-    createTimeStamp,
-    rlk_jsonloads,
-    is_number,
-    get_pair_position,
-)
-from rotkehlchen.fval import FVal
-from rotkehlchen.inquirer import FIAT_CURRENCIES
+from rotkehlchen import typing
+from rotkehlchen.constants import S_ETH
+from rotkehlchen.crypto import decrypt, encrypt
+from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import AuthenticationError
-from rotkehlchen.constants import S_ETH
-from rotkehlchen import typing
-from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
+from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import FIAT_CURRENCIES
+from rotkehlchen.utils import createTimeStamp, get_pair_position, is_number, rlk_jsonloads
 
-import logging
 logger = logging.getLogger(__name__)
 
 DEFAULT_START_DATE = "01/08/2015"
@@ -55,6 +51,13 @@ VALID_SETTINGS = (
     'include_crypto2crypto',
     'taxfree_after_period',
     'balance_save_frequency',
+    'anonymized_logs',
+)
+
+BOOLEAN_SETTINGS = (
+    'premium_should_sync',
+    'include_crypto2crypto',
+    'anonymized_logs',
 )
 
 
@@ -204,7 +207,7 @@ class DataHandler(object):
     def set_settings(
             self,
             settings: DBSettings,
-            accountant,  # TODO: Set type after cyclic dependency fix
+            accountant=None,  # TODO: Set type after cyclic dependency fix
     ) -> Tuple[bool, str]:
         given_items = list(settings.keys())
         msg = ''
@@ -217,6 +220,16 @@ class DataHandler(object):
                 invalid.append(x)
                 del settings[x]
                 all_okay = False
+
+            if x in BOOLEAN_SETTINGS:
+                if settings[x] is True:
+                    settings[x] = 'True'
+                elif settings[x] is False:
+                    settings[x] = 'False'
+                else:
+                    raise ValueError(
+                        f'Setting {x} should have a True/False value but it has {settings[x]}'
+                    )
 
         if not all_okay:
             msg = 'provided settings: {} are invalid'.format(','.join(invalid))

@@ -386,8 +386,6 @@ class Accountant(object):
 
         # if the cost is not equal to rate * amount then the data is somehow corrupt
         if not trade.cost.is_close(trade.amount * trade.rate, max_diff="1e-4"):
-            # import pdb
-            # pdb.set_trace()
             raise CorruptData(
                 "Trade found with cost {} which is not equal to trade.amount"
                 "({}) * trade.rate({})".format(trade.cost, trade.amount, trade.rate)
