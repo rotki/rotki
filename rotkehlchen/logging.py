@@ -7,7 +7,9 @@ from rotkehlchen.utils import ts_now
 
 ANONYMIZABLE_BIG_VALUES = (
     'amount',
+    'amount_lent',
     'cost',
+    'earned',
     'price',
     'profit_loss',
     'usd_value',
@@ -21,7 +23,7 @@ ANONYMIZABLE_BIG_VALUES = (
     'wei_amount',
 )
 ANONYMIZABLE_SMALL_VALUES = ('fee', 'rate')
-ANONYMIZABLE_TIME_VALUES = ('time', 'timestamp')
+ANONYMIZABLE_TIME_VALUES = ('time', 'timestamp', 'open_time', 'close_time')
 ANONYMIZABLE_ETH_ADDRESSES = ('eth_address', 'eth_account')
 ANONYMIZABLE_MULTIETH_ADDRESSES = ('eth_addresses', 'eth_accounts')
 
@@ -29,6 +31,10 @@ ANONYMIZABLE_MULTIETH_ADDRESSES = ('eth_addresses', 'eth_accounts')
 def random_eth_address():
     b = bytes(''.join(random.choice(string.printable) for _ in range(20)), encoding='utf-8')
     return '0x' + b.hex()
+
+
+def make_sensitive(data):
+    return dict(data, **{'sensitive_log': True})
 
 
 class LoggingSettings(object):

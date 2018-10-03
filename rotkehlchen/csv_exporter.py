@@ -16,7 +16,7 @@ from rotkehlchen.constants import (
     S_ETH,
 )
 from rotkehlchen.fval import FVal
-from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
 from rotkehlchen.utils import taxable_gain_for_sell, tsToDate
 
 logger = logging.getLogger(__name__)
@@ -108,7 +108,7 @@ class CSVExporter(object):
             'time': timestamp,
             'is_virtual': is_virtual
         }
-        log.debug('csv event', **dict(entry, **{'sensitive_log': True}))
+        log.debug('csv event', **make_sensitive(entry))
         self.all_events.append(entry)
         new_entry = entry.copy()
         new_entry['net_profit_or_loss'] = net_profit_or_loss_csv
