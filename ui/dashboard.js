@@ -81,9 +81,9 @@ function create_box (id, icon, number, currency_icon) {
 function update_eth_node_connection_status_ui(is_local_eth) {
     let str;
     if (!is_local_eth) {
-        str='<a class="eth-node-status-link" href="#"><i class="fa fa-unlink fa-fw"></i></a><ul class="dropdown-menu dropdown-eth-status alert-warning"><p>Not connected to a local ethereum node</p></ul>';
+        str='<a class="eth-node-status-link" href="#"><i class="fa fa-unlink fa-fw"></i></a><ul class="dropdown-menu dropdown-eth-status"><p>Not connected to a local ethereum node</p></ul>';
     } else {
-        str='<a class="eth-node-status-link" href="#"><i class="fa fa-link fa-fw"></i></a><ul class="dropdown-menu dropdown-eth-status alert-success"><p>Connected to a local ethereum node</p></ul>';
+        str='<a class="eth-node-status-link" href="#"><i class="fa fa-link fa-fw"></i></a><ul class="dropdown-menu dropdown-eth-status"><p>Connected to a local ethereum node</p></ul>';
     }
     $('.eth-node-status').html(str);
 }
