@@ -1,7 +1,6 @@
 from decimal import Decimal, InvalidOperation
 from typing import Union
 
-
 # Here even though we got __future__ annotations using FVal does not seem to work
 AcceptableFValInitInput = Union[float, bytes, Decimal, int, str, 'FVal']
 AcceptableFValOtherInput = Union[int, 'FVal']

@@ -1,36 +1,39 @@
 #!/usr/bin/env python
-import gevent
+import logging
 import shutil
+
+import gevent
 from gevent.lock import Semaphore
 
 from rotkehlchen import typing
+from rotkehlchen.accounting.accountant import Accountant
+from rotkehlchen.binance import Binance
+from rotkehlchen.bitmex import Bitmex
+from rotkehlchen.bittrex import Bittrex
+from rotkehlchen.blockchain import Blockchain
+from rotkehlchen.constants import SUPPORTED_EXCHANGES
+from rotkehlchen.data_handler import DataHandler
+from rotkehlchen.errors import AuthenticationError, EthSyncError, InputError, PermissionError
+from rotkehlchen.ethchain import Ethchain
+from rotkehlchen.fval import FVal
+from rotkehlchen.history import PriceHistorian, TradesHistorian
+from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.kraken import Kraken
+from rotkehlchen.logging import LoggingSettings, RotkehlchenLogsAdapter
+from rotkehlchen.poloniex import Poloniex
+from rotkehlchen.premium import premium_create_and_verify
 from rotkehlchen.utils import (
+    accounts_result,
     combine_stat_dicts,
     dict_get_sumof,
     merge_dicts,
+    query_fiat_pair,
+    simple_result,
     ts_now,
-    accounts_result,
 )
-from rotkehlchen.errors import PermissionError, AuthenticationError, InputError, EthSyncError
-from rotkehlchen.constants import SUPPORTED_EXCHANGES
-from rotkehlchen.blockchain import Blockchain
-from rotkehlchen.poloniex import Poloniex
-from rotkehlchen.kraken import Kraken
-from rotkehlchen.bittrex import Bittrex
-from rotkehlchen.bitmex import Bitmex
-from rotkehlchen.binance import Binance
-from rotkehlchen.data_handler import DataHandler
-from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.premium import premium_create_and_verify
-from rotkehlchen.utils import query_fiat_pair, simple_result
-from rotkehlchen.fval import FVal
-from rotkehlchen.history import TradesHistorian, PriceHistorian
-from rotkehlchen.accounting.accountant import Accountant
-from rotkehlchen.ethchain import Ethchain
 
-import logging
 logger = logging.getLogger(__name__)
-
+log = RotkehlchenLogsAdapter(logger)
 
 MAIN_LOOP_SECS_DELAY = 60
 
@@ -164,7 +167,7 @@ class Rotkehlchen(object):
                     api_secret
                 )
                 if not valid:
-                    logger.error(
+                    log.error(
                         'The API keys found in the Database are not valid. Perhaps '
                         'they expired?'
                     )
@@ -181,7 +184,7 @@ class Rotkehlchen(object):
                     'Should we replace local data with the server\'s?'
                 )
             elif sync_approval == 'yes' or sync_approval == 'unknown' and create_new:
-                logger.debug('User approved data sync from server')
+                log.debug('User approved data sync from server')
                 if self.sync_data_from_server():
                     if create_new:
                         # if we successfully synced data from the server and this is
@@ -189,7 +192,7 @@ class Rotkehlchen(object):
                         # in the DB
                         self.data.db.set_rotkehlchen_premium(api_key, api_secret)
             else:
-                logger.debug('Could sync data from server but user refused')
+                log.debug('Could sync data from server but user refused')
 
     def unlock_user(self, user, password, create_new, sync_approval, api_key, api_secret):
         # unlock or create the DB
@@ -222,6 +225,9 @@ class Rotkehlchen(object):
             taxfree_after_period=db_settings['taxfree_after_period'],
         )
 
+        # Initialize the rotkehlchen logger
+        LoggingSettings(anonymized_logs=db_settings['anonymized_logs'])
+
         self.inquirer = Inquirer(kraken=self.kraken)
         self.initialize_exchanges(secret_data)
 
@@ -246,7 +252,7 @@ class Rotkehlchen(object):
         return False, empty_or_error
 
     def maybe_upload_data_to_server(self):
-        logger.debug('Maybe upload to server')
+        log.debug('Maybe upload to server')
         # upload only if unlocked user has premium
         if not hasattr(self, 'premium'):
             return
@@ -257,29 +263,31 @@ class Rotkehlchen(object):
             self.upload_data_to_server()
 
     def upload_data_to_server(self):
-        logger.debug('upload to server -- start')
+        log.debug('upload to server -- start')
         data, our_hash = self.data.compress_and_encrypt_db(self.password)
         success, result_or_error = self.premium.query_last_data_metadata()
         if not success:
-            logger.debug('upload to server -- query last metadata error: {}'.format(
-                result_or_error)
+            log.debug(
+                'upload to server -- query last metadata failed',
+                error=result_or_error,
             )
             return
 
-        logger.debug("CAN_PUSH--> OURS: {} THEIRS: {}".format(
-            our_hash,
-            result_or_error['data_hash'])
+        log.debug(
+            'CAN_PUSH',
+            ours=our_hash,
+            theirs=result_or_error['data_hash'],
         )
         if our_hash == result_or_error['data_hash']:
-            logger.debug('upload to server -- same hash')
+            log.debug('upload to server -- same hash')
             # same hash -- no need to upload anything
             return
 
         our_last_write_ts = self.data.db.get_last_write_ts()
         if our_last_write_ts <= result_or_error['last_modify_ts']:
             # Server's DB was modified after our local DB
-            logger.debug("CAN_PUSH -> 3")
-            logger.debug('upload to server -- remote db more recent than local')
+            log.debug("CAN_PUSH -> 3")
+            log.debug('upload to server -- remote db more recent than local')
             return
 
         success, result_or_error = self.premium.upload_data(
@@ -289,33 +297,34 @@ class Rotkehlchen(object):
             'zlib'
         )
         if not success:
-            logger.debug('upload to server -- upload error: {}'.format(result_or_error))
+            log.debug('upload to server -- upload error', error=result_or_error)
             return
 
         self.last_data_upload_ts = ts_now()
-        logger.debug('upload to server -- success')
+        log.debug('upload to server -- success')
 
     def can_sync_data_from_server(self):
-        logger.debug('sync data from server -- start')
+        log.debug('sync data from server -- start')
         data, our_hash = self.data.compress_and_encrypt_db(self.password)
         success, result_or_error = self.premium.query_last_data_metadata()
         if not success:
-            logger.debug('sync data from server-- error: {}'.format(result_or_error))
+            log.debug('sync data from server failed', error=result_or_error)
             return False
 
-        logger.debug("CAN_PULL--> OURS: {} THEIRS: {}".format(
-            our_hash,
-            result_or_error['data_hash'])
+        log.debug(
+            'CAN_PULL',
+            ours=our_hash,
+            theirs=result_or_error['data_hash'],
         )
         if our_hash == result_or_error['data_hash']:
-            logger.debug('sync from server -- same hash')
+            log.debug('sync from server -- same hash')
             # same hash -- no need to get anything
             return False
 
         our_last_write_ts = self.data.db.get_last_write_ts()
         if our_last_write_ts >= result_or_error['last_modify_ts']:
             # Local DB is newer than Server DB
-            logger.debug('sync from server -- local DB more recent than remote')
+            log.debug('sync from server -- local DB more recent than remote')
             return False
 
         return True
@@ -323,7 +332,7 @@ class Rotkehlchen(object):
     def sync_data_from_server(self):
         success, error_or_result = self.premium.pull_data()
         if not success:
-            logger.debug('sync from server -- pulling error {}'.format(error_or_result))
+            log.debug('sync from server -- pulling failed.', error=error_or_result)
             return False
 
         self.data.decompress_and_decrypt_db(self.password, error_or_result['data'])
@@ -334,7 +343,7 @@ class Rotkehlchen(object):
 
     def main_loop(self):
         while True and not self.shutdown_event.is_set():
-            logger.debug('Main loop start')
+            log.debug('Main loop start')
             if self.poloniex is not None:
                 self.poloniex.main_logic()
             if self.kraken is not None:
@@ -342,7 +351,7 @@ class Rotkehlchen(object):
 
             self.maybe_upload_data_to_server()
 
-            logger.debug('Main loop end')
+            log.debug('Main loop end')
             gevent.sleep(MAIN_LOOP_SECS_DELAY)
 
     def add_blockchain_account(self, blockchain, account):
