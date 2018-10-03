@@ -1,5 +1,8 @@
 import logging
-from random import randrange
+import random
+
+from rotkehlchen.fval import FVal
+from rotkehlchen.utils import ts_now
 
 
 class LoggingSettings(object):
@@ -44,7 +47,14 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
         if is_sensitive and settings.anonymized_logs:
             new_kwargs = {}
             for key, val in kwargs.items():
-                new_kwargs[key] = randrange(10)
+                if key in ('amount', 'usd_value', 'price', 'profit_loss', 'cost'):
+                    new_kwargs[key] = FVal(round(random.uniform(0, 10000), 3))
+                elif key in ('fee', 'rate'):
+                    new_kwargs[key] = FVal(round(random.uniform(0, 5), 3))
+                elif key == 'timestamp':
+                    new_kwargs[key] = random.randrange(1451606400, ts_now())
+                else:
+                    new_kwargs[key] = val
         else:
             new_kwargs = kwargs
 

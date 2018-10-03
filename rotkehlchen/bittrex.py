@@ -11,6 +11,7 @@ from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import Trade
 from rotkehlchen.utils import (
     cache_response_timewise,
@@ -20,6 +21,7 @@ from rotkehlchen.utils import (
 )
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 BITTREX_MARKET_METHODS = {
     'getopenorders',
@@ -66,6 +68,18 @@ def trade_from_bittrex(bittrex_trade: Dict) -> Trade:
         fee = bittrex_commission
     else:
         raise ValueError('Got unexpected order type "{}" for bittrex trade'.format(order_type))
+
+    log.debug(
+        'Processing bittrex Trade',
+        sensitive_log=True,
+        amount=amount,
+        rate=rate,
+        order_type=order_type,
+        price=bittrex_price,
+        fee=bittrex_commission,
+        bittrex_pair=bittrex_trade['Exchange'],
+        pair=pair,
+    )
 
     return Trade(
         timestamp=bittrex_trade['TimeStamp'],
@@ -140,7 +154,9 @@ class Bittrex(Exchange):
             hashlib.sha512
         ).hexdigest()
         self.session.headers.update({'apisign': signature})
+        log.debug('Bittrex API query', request_url=request_url)
         response = self.session.get(request_url)
+
         try:
             json_ret = rlk_jsonloads(response.text)
         except JSONDecodeError:
@@ -172,7 +188,7 @@ class Bittrex(Exchange):
                 'Bittrex API request failed. Could not reach bittrex due '
                 'to {}'.format(e)
             )
-            logger.error(msg)
+            log.error(msg)
             return None, msg
 
         returned_balances = dict()
@@ -188,6 +204,14 @@ class Bittrex(Exchange):
             balance['amount'] = FVal(entry['Balance'])
             balance['usd_value'] = FVal(balance['amount']) * usd_price
             returned_balances[currency] = balance
+
+            log.debug(
+                'bittrex balance query result',
+                sensitive_log=True,
+                currency=currency,
+                amount=balance['amount'],
+                usd_value=balance['usd_value'],
+            )
 
         return returned_balances, ''
 
@@ -211,6 +235,7 @@ class Bittrex(Exchange):
         if count is not None:
             options['count'] = count
         order_history = self.api_query('getorderhistory', options)
+        log.debug('binance order history result', results_num=len(order_history))
 
         returned_history = list()
         for order in order_history:

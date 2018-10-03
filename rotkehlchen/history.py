@@ -12,13 +12,14 @@ from rotkehlchen.errors import PriceQueryUnknownFromAsset, RemoteError
 from rotkehlchen.exchange import data_up_todate
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import FIAT_CURRENCIES, world_to_cryptocompare
-from rotkehlchen.kraken import kraken_to_world_pair
+from rotkehlchen.kraken import trade_from_kraken
 from rotkehlchen.order_formatting import (
     MarginPosition,
     Trade,
     asset_movements_from_dictlist,
     trades_from_dictlist,
 )
+from rotkehlchen.poloniex import trade_from_poloniex
 from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
 from rotkehlchen.typing import NonEthTokenBlockchainAsset
 from rotkehlchen.utils import (
@@ -60,66 +61,6 @@ def include_external_trades(db, start_ts, end_ts, history):
     history.sort(key=lambda trade: trade.timestamp)
 
     return history
-
-
-def trade_from_kraken(kraken_trade):
-    """Turn a kraken trade returned from kraken trade history to our common trade
-    history format"""
-    currency_pair = kraken_to_world_pair(kraken_trade['pair'])
-    quote_currency = get_pair_position(currency_pair, 'second')
-    return Trade(
-        # Kraken timestamps have floating point ...
-        timestamp=convert_to_int(kraken_trade['time'], accept_only_exact=False),
-        pair=currency_pair,
-        type=kraken_trade['type'],
-        rate=FVal(kraken_trade['price']),
-        cost=FVal(kraken_trade['cost']),
-        cost_currency=quote_currency,
-        fee=FVal(kraken_trade['fee']),
-        fee_currency=quote_currency,
-        amount=FVal(kraken_trade['vol']),
-        location='kraken'
-    )
-
-
-def trade_from_poloniex(poloniex_trade, pair):
-    """Turn a poloniex trade returned from poloniex trade history to our common trade
-    history format"""
-
-    trade_type = poloniex_trade['type']
-    amount = FVal(poloniex_trade['amount'])
-    rate = FVal(poloniex_trade['rate'])
-    perc_fee = FVal(poloniex_trade['fee'])
-    base_currency = get_pair_position(pair, 'first')
-    quote_currency = get_pair_position(pair, 'second')
-    if trade_type == 'buy':
-        cost = rate * amount
-        cost_currency = base_currency
-        fee = amount * perc_fee
-        fee_currency = quote_currency
-    elif trade_type == 'sell':
-        cost = amount * rate
-        cost_currency = base_currency
-        fee = cost * perc_fee
-        fee_currency = base_currency
-    else:
-        raise ValueError('Got unexpected trade type "{}" for poloniex trade'.format(trade_type))
-
-    if poloniex_trade['category'] == 'settlement':
-        trade_type = "settlement_%s" % trade_type
-
-    return Trade(
-        timestamp=createTimeStamp(poloniex_trade['date'], formatstr="%Y-%m-%d %H:%M:%S"),
-        pair=pair,
-        type=trade_type,
-        rate=rate,
-        cost=cost,
-        cost_currency=cost_currency,
-        fee=fee,
-        fee_currency=fee_currency,
-        amount=amount,
-        location='poloniex'
-    )
 
 
 def do_read_manual_margin_positions(data_directory):
