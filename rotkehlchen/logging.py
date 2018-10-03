@@ -1,30 +1,46 @@
 import logging
 import random
 import string
+import time
 
 from rotkehlchen.fval import FVal
-from rotkehlchen.utils import ts_now
 
 ANONYMIZABLE_BIGINT_VALUES = ('tx_value', 'gas_price', 'gas', 'gas_used')
 ANONYMIZABLE_BIG_VALUES = (
     'amount',
     'amount_lent',
+    'bought_amount',
     'cost',
+    'cost_in_profit_currency',
     'earned',
+    'fee_in_profit_currency',
+    'gain_in_profit_currency',
+    'gain_loss_in_profit_currency',
+    'gained_amount',
+    'general_profit_loss',
+    'lent_amount',
     'price',
     'profit_loss',
     'usd_value',
     'net_profit_or_loss',
+    'net_gain_loss_amount',
     'paid_in_profit_currency',
     'paid_in_asset',
+    'rate_in_profit_currency',
     'received_in_asset'
     'received_in_profit_currency',
+    'receiving_amount',
+    'remaining_sold_amount',
+    'settlement_loss',
+    'selling_amount',
     'taxable_amount',
     'taxable_bought_cost',
+    'taxable_profit_loss',
+    'used_amount',
     'wei_amount',
 )
-ANONYMIZABLE_SMALL_VALUES = ('fee', 'rate')
-ANONYMIZABLE_TIME_VALUES = ('time', 'timestamp', 'open_time', 'close_time')
+ANONYMIZABLE_SMALL_VALUES = ('fee', 'rate', 'trade_buy_rate')
+ANONYMIZABLE_TIME_VALUES = ('time', 'trade_timestamp', 'timestamp', 'open_time', 'close_time')
 ANONYMIZABLE_ETH_ADDRESSES = ('eth_address', 'eth_account', 'from_eth_address', 'to_eth_address')
 ANONYMIZABLE_MULTIETH_ADDRESSES = ('eth_addresses', 'eth_accounts')
 ANONYMIZABLE_ETH_TXHASH = ('eth_tx_hash')
@@ -93,7 +109,7 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
                 elif key in ANONYMIZABLE_BIGINT_VALUES:
                     new_kwargs[key] = FVal(random.randint(0, 100000000))
                 elif key in ANONYMIZABLE_TIME_VALUES:
-                    new_kwargs[key] = random.randrange(1451606400, ts_now())
+                    new_kwargs[key] = random.randrange(1451606400, int(time.time()))
                 elif key in ANONYMIZABLE_ETH_ADDRESSES:
                     new_kwargs[key] = random_eth_address()
                 elif key in ANONYMIZABLE_MULTIETH_ADDRESSES:
