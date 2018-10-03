@@ -6,12 +6,14 @@ from typing import Dict, Iterable, Optional, cast
 import requests
 
 from rotkehlchen import typing
-from rotkehlchen.constants import FIAT_CURRENCIES, S_DATACOIN, S_RDN, S_USD, S_IOTA
+from rotkehlchen.constants import FIAT_CURRENCIES, S_DATACOIN, S_IOTA, S_RDN, S_USD
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils import query_fiat_pair, retry_calls, rlk_jsonloads
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def get_fiat_usd_exchange_rates(
@@ -59,8 +61,11 @@ class Inquirer(object):
             asset_btc_price: Optional[FVal] = None,
     ) -> FVal:
         if self.kraken and self.kraken.first_connection_made and asset_btc_price is not None:
-            return self.query_kraken_for_price(asset, asset_btc_price)
+            price = self.query_kraken_for_price(asset, asset_btc_price)
+            log.debug('Get usd price from kraken', asset=asset, price=price)
+            return price
 
+        log.debug('Get usd price from cryptocompare', asset=asset)
         asset = world_to_cryptocompare(asset)
         resp = retry_calls(
             5,
@@ -78,13 +83,17 @@ class Inquirer(object):
 
         # If there is an error in the response skip this token
         if 'USD' not in resp:
+            error_message = ''
             if resp['Response'] == 'Error':
-                print('Could not query USD price for {}. Error: "{}"'.format(
-                    asset,
-                    resp['Message']),
-                )
-            else:
-                print('Could not query USD price for {}'.format(asset))
+                error_message = resp['Message']
+
+            log.error(
+                'Cryptocompare usd price query failed',
+                asset=asset,
+                error=error_message,
+            )
             return FVal(0)
 
-        return FVal(resp['USD'])
+        price = FVal(resp['USD'])
+        log.debug('Got usd price from cryptocompare', asset=asset, price=price)
+        return price

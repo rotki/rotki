@@ -149,6 +149,7 @@ class Rotkehlchen(object):
         if api_key != '':
             self.premium, valid, empty_or_error = premium_create_and_verify(api_key, api_secret)
             if not valid:
+                log.error('Given API key is invalid')
                 # At this point we are at a new user trying to create an account with
                 # premium API keys and we failed. But a directory was created. Remove it.
                 shutil.rmtree(user_dir)
@@ -179,12 +180,13 @@ class Rotkehlchen(object):
 
         if self.can_sync_data_from_server():
             if sync_approval == 'unknown' and not create_new:
+                log.info('DB data at server newer than local')
                 raise PermissionError(
                     'Rotkehlchen Server has newer version of your DB data. '
                     'Should we replace local data with the server\'s?'
                 )
             elif sync_approval == 'yes' or sync_approval == 'unknown' and create_new:
-                log.debug('User approved data sync from server')
+                log.info('User approved data sync from server')
                 if self.sync_data_from_server():
                     if create_new:
                         # if we successfully synced data from the server and this is
@@ -195,6 +197,12 @@ class Rotkehlchen(object):
                 log.debug('Could sync data from server but user refused')
 
     def unlock_user(self, user, password, create_new, sync_approval, api_key, api_secret):
+        log.info(
+            'Unlocking user',
+            user=user,
+            create_new=create_new,
+            sync_approval=sync_approval,
+        )
         # unlock or create the DB
         self.password = password
         user_dir = self.data.unlock(user, password, create_new)
@@ -241,6 +249,7 @@ class Rotkehlchen(object):
         )
 
     def set_premium_credentials(self, api_key, api_secret):
+        log.info('Setting new premium credentials')
         if hasattr(self, 'premium'):
             valid, empty_or_error = self.premium.set_credentials(api_key, api_secret)
         else:
@@ -249,10 +258,10 @@ class Rotkehlchen(object):
         if valid:
             self.data.set_premium_credentials(api_key, api_secret)
             return True, ''
+        log.error('Setting new premium credentials failed', error=empty_or_error)
         return False, empty_or_error
 
     def maybe_upload_data_to_server(self):
-        log.debug('Maybe upload to server')
         # upload only if unlocked user has premium
         if not hasattr(self, 'premium'):
             return
@@ -412,6 +421,7 @@ class Rotkehlchen(object):
         return result, error_or_empty
 
     def query_fiat_balances(self):
+        log.info('query_fiat_balances called')
         result = {}
         balances = self.data.get_fiat_balances()
         for currency, amount in balances.items():
@@ -425,6 +435,8 @@ class Rotkehlchen(object):
         return result
 
     def query_balances(self, requested_save_data=False):
+        log.info('query_balances called', requested_save_data=requested_save_data)
+
         balances = {}
         problem_free = True
         for exchange in self.connected_exchanges:
@@ -506,6 +518,8 @@ class Rotkehlchen(object):
                 self.usd_to_main_currency_rate = query_fiat_pair('USD', currency)
 
     def set_settings(self, settings):
+        log.info('Add new settings')
+
         message = ''
         with self.lock:
             if 'eth_rpc_port' in settings:
@@ -540,6 +554,7 @@ class Rotkehlchen(object):
         return self.usd_to_main_currency_rate * amount
 
     def setup_exchange(self, name, api_key, api_secret):
+        log.info('setup_exchange', name=name)
         if name not in SUPPORTED_EXCHANGES:
             return False, 'Attempted to register unsupported exchange {}'.format(name)
 
@@ -556,6 +571,11 @@ class Rotkehlchen(object):
         exchange = getattr(self, name)
         result, message = exchange.validate_api_key()
         if not result:
+            log.error(
+                'Failed to validate API key for exchange',
+                name=name,
+                error=message,
+            )
             self.delete_exchange_data(name)
             return False, message
 
@@ -579,7 +599,7 @@ class Rotkehlchen(object):
         return True, ''
 
     def shutdown(self):
-        print("Shutting Down...")
+        log.info("Shutting Down")
         self.shutdown_event.set()
 
 

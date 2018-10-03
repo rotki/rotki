@@ -227,7 +227,6 @@ class DataHandler(object):
             settings: DBSettings,
             accountant=None,  # TODO: Set type after cyclic dependency fix
     ) -> Tuple[bool, str]:
-        log.info('Add new settings')
         given_items = list(settings.keys())
         msg = ''
 

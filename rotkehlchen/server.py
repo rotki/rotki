@@ -13,10 +13,12 @@ from gevent.lock import Semaphore
 from rotkehlchen.args import app_args
 from rotkehlchen.errors import AuthenticationError, PermissionError
 from rotkehlchen.inquirer import get_fiat_usd_exchange_rates
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.utils import pretty_json_dumps, process_result
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class RotkehlchenServer(object):
@@ -49,12 +51,12 @@ class RotkehlchenServer(object):
         return self.args.zerorpc_port
 
     def shutdown(self):
-        logger.debug('Shutdown initiated')
+        log.debug('Shutdown initiated')
         self.zerorpc.stop()
         gevent.wait(self.greenlets)
         self.rotkehlchen.shutdown()
         print("Shutting down zerorpc server")
-        logger.debug('Shutdown completed')
+        log.debug('Shutdown completed')
         logging.shutdown()
 
     def set_main_currency(self, currency_text):
@@ -73,10 +75,10 @@ class RotkehlchenServer(object):
 
     def handle_killed_greenlets(self, greenlet):
         if not greenlet.exception:
-            logger.warning('handle_killed_greenlets without an exception')
+            log.warning('handle_killed_greenlets without an exception')
             return
 
-        logger.error(
+        log.error(
             'Greenlet for task {} dies with exception: {}.\n'
             'Exception Name: {}\nException Info: {}\nTraceback:\n {}'
             .format(
@@ -98,7 +100,7 @@ class RotkehlchenServer(object):
 
     def query_async(self, command, **kwargs):
         task_id = self.new_task_id()
-        logger.debug("NEW TASK {} (kwargs:{}) with ID: {}".format(command, kwargs, task_id))
+        log.debug("NEW TASK {} (kwargs:{}) with ID: {}".format(command, kwargs, task_id))
         greenlet = gevent.spawn(
             self._query_async,
             command,
@@ -111,14 +113,13 @@ class RotkehlchenServer(object):
         return task_id
 
     def query_task_result(self, task_id):
-        logger.debug("Querying task result with task id {}".format(task_id))
         with self.task_lock:
             len1 = len(self.task_results)
             ret = self.task_results.pop(int(task_id), None)
             if not ret and len1 != len(self.task_results):
-                logger.error("Popped None from results task but lost an entry")
+                log.error("Popped None from results task but lost an entry")
             if ret:
-                logger.debug("Found response for task {}".format(task_id))
+                log.debug("Found response for task {}".format(task_id))
         return ret
 
     def get_fiat_exchange_rates(self, currencies):

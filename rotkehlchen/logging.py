@@ -5,6 +5,7 @@ import string
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils import ts_now
 
+ANONYMIZABLE_BIGINT_VALUES = ('tx_value', 'gas_price', 'gas', 'gas_used')
 ANONYMIZABLE_BIG_VALUES = (
     'amount',
     'amount_lent',
@@ -24,12 +25,18 @@ ANONYMIZABLE_BIG_VALUES = (
 )
 ANONYMIZABLE_SMALL_VALUES = ('fee', 'rate')
 ANONYMIZABLE_TIME_VALUES = ('time', 'timestamp', 'open_time', 'close_time')
-ANONYMIZABLE_ETH_ADDRESSES = ('eth_address', 'eth_account')
+ANONYMIZABLE_ETH_ADDRESSES = ('eth_address', 'eth_account', 'from_eth_address', 'to_eth_address')
 ANONYMIZABLE_MULTIETH_ADDRESSES = ('eth_addresses', 'eth_accounts')
+ANONYMIZABLE_ETH_TXHASH = ('eth_tx_hash')
 
 
 def random_eth_address():
     b = bytes(''.join(random.choice(string.printable) for _ in range(20)), encoding='utf-8')
+    return '0x' + b.hex()
+
+
+def random_hash():
+    b = bytes(''.join(random.choice(string.printable) for _ in range(32)), encoding='utf-8')
     return '0x' + b.hex()
 
 
@@ -83,6 +90,8 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
                     new_kwargs[key] = FVal(round(random.uniform(0, 10000), 3))
                 elif key in ANONYMIZABLE_SMALL_VALUES:
                     new_kwargs[key] = FVal(round(random.uniform(0, 5), 3))
+                elif key in ANONYMIZABLE_BIGINT_VALUES:
+                    new_kwargs[key] = FVal(random.randint(0, 100000000))
                 elif key in ANONYMIZABLE_TIME_VALUES:
                     new_kwargs[key] = random.randrange(1451606400, ts_now())
                 elif key in ANONYMIZABLE_ETH_ADDRESSES:
@@ -92,6 +101,8 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
                         f'During anonymizing value for {key} was not a list'
                     )
                     new_kwargs[key] = [random_eth_address()] * len(val)
+                elif key in ANONYMIZABLE_ETH_TXHASH:
+                    new_kwargs[key] = random_hash()
                 else:
                     new_kwargs[key] = val
         else:

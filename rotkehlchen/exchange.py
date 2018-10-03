@@ -1,12 +1,18 @@
 #!/usr/bin/env python
-import requests
+import logging
 import os
-from gevent.lock import Semaphore
 from json.decoder import JSONDecodeError
-from typing import Optional, List, Dict, Union
+from typing import Dict, List, Optional, Union
 
-from rotkehlchen.utils import rlk_jsonloads, rlk_jsondumps
+import requests
+from gevent.lock import Semaphore
+
 from rotkehlchen import typing
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.utils import rlk_jsondumps, rlk_jsonloads
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def data_up_todate(json_data: dict, start_ts: typing.Timestamp, end_ts: typing.Timestamp) -> bool:
@@ -48,6 +54,7 @@ class Exchange(object):
         self.lock = Semaphore()
         self.results_cache: dict = {}
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
+        log.info(f'Initialized {name} exchange')
 
     def _get_cachefile_name(self, special_name: str = None) -> str:
         if special_name is None:
