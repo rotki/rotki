@@ -18,9 +18,11 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import AuthenticationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import FIAT_CURRENCIES
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils import createTimeStamp, get_pair_position, is_number, rlk_jsonloads
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 DEFAULT_START_DATE = "01/08/2015"
 STATS_FILE = "value.txt"
@@ -78,6 +80,26 @@ def verify_otctrade_data(
     pair = data['otc_pair']
     first = get_pair_position(pair, 'first')
     second = get_pair_position(pair, 'second')
+    trade_type = cast(str, data['otc_type'])
+    amount = FVal(data['otc_amount'])
+    rate = FVal(data['otc_rate'])
+    fee = FVal(data['otc_fee'])
+    fee_currency = cast(typing.Asset, data['otc_fee_currency'])
+    try:
+        timestamp = createTimeStamp(data['otc_timestamp'], formatstr='%d/%m/%Y %H:%M')
+    except ValueError as e:
+        return None, 'Could not process the given datetime: {}'.format(e)
+
+    log.debug(
+        'Creating OTC trade data',
+        sensitive_log=True,
+        pair=pair,
+        trade_type=trade_type,
+        amount=amount,
+        rate=rate,
+        fee=fee,
+        fee_currency=fee_currency,
+    )
 
     if data['otc_fee_currency'] not in (first, second):
         return None, 'Trade fee currency should be one of the two in the currency pair'
@@ -85,20 +107,15 @@ def verify_otctrade_data(
     if data['otc_type'] not in ('buy', 'sell'):
         return None, 'Trade type can only be buy or sell'
 
-    try:
-        timestamp = createTimeStamp(data['otc_timestamp'], formatstr='%d/%m/%Y %H:%M')
-    except ValueError as e:
-        return None, 'Could not process the given datetime: {}'.format(e)
-
     trade = typing.Trade(
         time=timestamp,
         location='external',
         pair=cast(str, pair),
-        trade_type=cast(str, data['otc_type']),
-        amount=FVal(data['otc_amount']),
-        rate=FVal(data['otc_rate']),
-        fee=FVal(data['otc_fee']),
-        fee_currency=cast(typing.Asset, data['otc_fee_currency']),
+        trade_type=trade_type,
+        amount=amount,
+        rate=rate,
+        fee=fee,
+        fee_currency=fee_currency,
         link=cast(str, data['otc_link']),
         notes=cast(str, data['otc_notes']),
     )
@@ -201,6 +218,7 @@ class DataHandler(object):
             currency: typing.FiatAsset,
             accountant,  # TODO: Set type after cyclic dependency fix
     ) -> None:
+        log.info('Set main currency', currency=currency)
         accountant.set_main_currency(currency)
         self.db.set_main_currency(currency)
 
@@ -209,6 +227,7 @@ class DataHandler(object):
             settings: DBSettings,
             accountant=None,  # TODO: Set type after cyclic dependency fix
     ) -> Tuple[bool, str]:
+        log.info('Add new settings')
         given_items = list(settings.keys())
         msg = ''
 
@@ -233,6 +252,7 @@ class DataHandler(object):
 
         if not all_okay:
             msg = 'provided settings: {} are invalid'.format(','.join(invalid))
+            log.warn(msg)
 
         if 'main_currency' in settings:
             accountant.set_main_currency(settings['main_currency'])
@@ -308,6 +328,7 @@ class DataHandler(object):
         and then re-encrypt it
 
         Returns a b64 encoded binary blob"""
+        log.info('Compress and encrypt DB')
         with tempfile.TemporaryDirectory() as tmpdirname:
             tempdb = cast(typing.FilePath, os.path.join(tmpdirname, 'temp.db'))
             self.db.export_unencrypted(tempdb)
@@ -326,6 +347,7 @@ class DataHandler(object):
         """Decrypt and decompress the encrypted data we receive from the server
 
         If successful then replace our local Database"""
+        log.info('Decompress and decrypt DB')
         decrypted_data = decrypt(password.encode(), encrypted_data)
         decompressed_data = zlib.decompress(decrypted_data)
         self.db.import_unencrypted(decompressed_data, password)

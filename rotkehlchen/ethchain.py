@@ -1,14 +1,17 @@
-import os
-from web3 import Web3, HTTPProvider
-from requests.exceptions import ConnectionError
-from typing import Tuple, List, Dict
-
-from rotkehlchen.utils import from_wei, rlk_jsonloads, request_get
-from rotkehlchen.fval import FVal
-from rotkehlchen import typing
-
 import logging
+import os
+from typing import Dict, List, Tuple
+
+from requests.exceptions import ConnectionError
+from web3 import HTTPProvider, Web3
+
+from rotkehlchen import typing
+from rotkehlchen.fval import FVal
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.utils import from_wei, request_get, rlk_jsonloads
+
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class Ethchain(object):
@@ -30,7 +33,7 @@ class Ethchain(object):
         try:
             self.web3 = Web3(HTTPProvider('http://localhost:{}'.format(ethrpc_port)))
         except ConnectionError:
-            logger.warning('Could not connect to a local ethereum node. Will use etherscan only')
+            log.warning('Could not connect to a local ethereum node. Will use etherscan only')
             self.connected = False
             return False, 'Failed to connect to ethereum node at port {}'.format(ethrpc_port)
 
@@ -44,7 +47,7 @@ class Ethchain(object):
                 genesis_hash = self.web3.eth.getBlock(0)['hash'].hex()  # pylint: disable=no-member
                 target = '0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3'
                 if genesis_hash != target:
-                    logger.warning(
+                    log.warning(
                         'Connected to a local ethereum node but it is not on the ethereum mainnet'
                     )
                     self.connected = False
@@ -67,7 +70,7 @@ class Ethchain(object):
             self.connected = True
             return True, ''
         else:
-            logger.warning('Could not connect to a local ethereum node. Will use etherscan only')
+            log.warning('Could not connect to a local ethereum node. Will use etherscan only')
             self.connected = False
             message = 'Failed to connect to ethereum node at port {}'.format(ethrpc_port)
 
@@ -85,9 +88,10 @@ class Ethchain(object):
             message = (
                 'Found local ethereum node but it is out of sync. Will use etherscan.'
             )
-            logger.warning(message)
+            log.warning(message)
             self.connected = False
             return False, message
+
         return True, message
 
     def set_rpc_port(self, port: int) -> Tuple[bool, str]:
@@ -99,6 +103,7 @@ class Ethchain(object):
                        be populated both in case of success or failure"""
         result, message = self.attempt_connect(port)
         if result:
+            log.info('Setting ETH RPC port', port=port)
             self.ethrpc_port = port
         return result, message
 
@@ -107,16 +112,23 @@ class Ethchain(object):
 
         Returns the highest blockNumber"""
 
-        eth_resp = request_get(
-            'https://api.blockcypher.com/v1/eth/main'
-        )
+        url = 'https://api.blockcypher.com/v1/eth/main'
+        log.debug('Querying ETH highest block', url=url)
+        eth_resp = request_get(url)
+
         if 'height' not in eth_resp:
             return None
-        blockNumber = int(eth_resp['height'])
-        return blockNumber
+        block_number = int(eth_resp['height'])
+        log.debug('ETH highest block result', block=block_number)
+        return block_number
 
     def get_eth_balance(self, account: typing.EthAddress) -> FVal:
         if not self.connected:
+            log.debug(
+                'Querying etherscan for account balance',
+                sensitive_log=True,
+                eth_address=account,
+            )
             eth_resp = request_get(
                 'https://api.etherscan.io/api?module=account&action=balance&address=%s'
                 % account
@@ -124,9 +136,23 @@ class Ethchain(object):
             if eth_resp['status'] != 1:
                 raise ValueError('Failed to query etherscan for accounts balance')
             amount = FVal(eth_resp['result'])
+
+            log.debug(
+                'Etherscan account balance result',
+                sensitive_log=True,
+                eth_address=account,
+                wei_amount=amount,
+            )
             return from_wei(amount)
         else:
-            return from_wei(self.web3.eth.getBalance(account))  # pylint: disable=no-member
+            wei_amount = self.web3.eth.getBalance(account)  # pylint: disable=no-member
+            log.debug(
+                'Ethereum node account balance result',
+                sensitive_log=True,
+                eth_address=account,
+                wei_amount=wei_amount,
+            )
+            return from_wei(wei_amount)
 
     def get_multieth_balance(
             self,
@@ -142,6 +168,11 @@ class Ethchain(object):
                 new_accounts = [accounts]
 
             for account_slice in new_accounts:
+                log.debug(
+                    'Querying etherscan for multiple accounts balance',
+                    sensitive_log=True,
+                    eth_accounts=account_slice,
+                )
                 eth_resp = request_get(
                     'https://api.etherscan.io/api?module=account&action=balancemulti&address=%s' %
                     ','.join(account_slice)
@@ -153,10 +184,22 @@ class Ethchain(object):
                 for account_entry in eth_accounts:
                     amount = FVal(account_entry['balance'])
                     balances[account_entry['account']] = from_wei(amount)
+                    log.debug(
+                        'Etherscan account balance result',
+                        sensitive_log=True,
+                        eth_address=account_entry['account'],
+                        wei_amount=amount,
+                    )
 
         else:
             for account in accounts:
                 amount = FVal(self.web3.eth.getBalance(account))  # pylint: disable=no-member
+                log.debug(
+                    'Ethereum node balance result',
+                    sensitive_log=True,
+                    eth_address=account,
+                    wei_amount=amount,
+                )
                 balances[account] = from_wei(amount)
 
         return balances
@@ -177,13 +220,35 @@ class Ethchain(object):
                 address=token_address,
                 abi=self.token_abi
             )
+
             for account in accounts:
+                log.debug(
+                    'Ethereum node query for token balance',
+                    sensitive_log=True,
+                    eth_address=account,
+                    token_address=token_address,
+                    token_symbol=token_symbol,
+                )
                 token_amount = FVal(token_contract.functions.balanceOf(account).call())
                 if token_amount != 0:
                     balances[account] = token_amount / (FVal(10) ** FVal(token_decimals))
+                log.debug(
+                    'Ethereum node result for token balance',
+                    sensitive_log=True,
+                    eth_address=account,
+                    token_address=token_address,
+                    token_symbol=token_symbol,
+                    amount=token_amount,
+                )
         else:
             for account in accounts:
-                print('Checking token {} for account {}'.format(token_symbol, account))
+                log.debug(
+                    'Querying Etherscan for token balance',
+                    sensitive_log=True,
+                    eth_address=account,
+                    token_address=token_address,
+                    token_symbol=token_symbol,
+                )
                 resp = request_get(
                     'https://api.etherscan.io/api?module=account&action='
                     'tokenbalance&contractaddress={}&address={}'.format(
@@ -199,6 +264,14 @@ class Ethchain(object):
                 token_amount = FVal(resp['result'])
                 if token_amount != 0:
                     balances[account] = token_amount / (FVal(10) ** FVal(token_decimals))
+                log.debug(
+                    'Etherscan result for token balance',
+                    sensitive_log=True,
+                    eth_address=account,
+                    token_address=token_address,
+                    token_symbol=token_symbol,
+                    amount=token_amount
+                )
 
         return balances
 
