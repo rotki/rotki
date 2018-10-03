@@ -133,3 +133,25 @@ a:focus, a:hover {
     text-shadow: 0.1px 0.1 px var(--elements-link-color);
     color: var(--elements-bg-color);
 }
+
+/* Dropdown Eth Status (Hidden by Default) */
+.dropdown-eth-status { min-width: 290px; }
+.eth-node-status { padding:0; }
+.eth-node-status:hover .dropdown-eth-status {display: block;}
+
+.dropdown-balance-save-status { min-width: 210px; }
+.balance-save-status { padding: 0; }
+.balance-save-status:hover .dropdown-balance-save-status { display: block; }
+
+.lg-status-icons {
+    float:left;
+    padding:14px 30px 14px 0px;
+    margin-bottom:0px;
+}
+
+.lg-status-icons > li > ul > p { text-align:center; padding: 0px 5px 0px 5px; }
+
+.navbar-status-icons {
+    float: left;
+    margin-left:120px;
+}

@@ -78,10 +78,26 @@ function create_box (id, icon, number, currency_icon) {
     settings.page_index = $('#page-wrapper').html();
 }
 
+function update_eth_node_connection_status_ui(is_local_eth) {
+    let str;
+    if (!is_local_eth) {
+        str='<a class="eth-node-status-link" href="#"><i class="fa fa-unlink fa-fw"></i></a><ul class="dropdown-menu dropdown-eth-status"><p>Not connected to a local ethereum node</p></ul>';
+    } else {
+        str='<a class="eth-node-status-link" href="#"><i class="fa fa-link fa-fw"></i></a><ul class="dropdown-menu dropdown-eth-status"><p>Connected to a local ethereum node</p></ul>';
+    }
+    $('.eth-node-status').html(str);
+}
 
 
 var alert_id = 0;
 function add_alert_dropdown(alert_text, alert_time) {
+    let connection_fail = alert_text.indexOf('Could not connect to a local ethereum node') >= 0;
+    let no_sync = alert_text.indexOf('Could not transact with/call contract function') >= 0;
+    if (connection_fail || no_sync) {
+        update_eth_node_connection_status_ui(false);
+    } else {
+        update_eth_node_connection_status_ui(true);
+    }
     var str='<li class="warning'+alert_id+'"><a href="#"><div><p>'+alert_text+'<span class="pull-right text-muted"><i class="fa fa-times warningremover'+alert_id+'"></i></span></p></div></a></li><li class="divider warning'+alert_id+'"></li>';
     $(str).appendTo($(".dropdown-alerts"));
     let current_alert_id = alert_id;
@@ -214,5 +230,3 @@ module.exports = function() {
     this.create_or_reload_dashboard = create_or_reload_dashboard;
     this.init_dashboard = init_dashboard;
 };
-
-

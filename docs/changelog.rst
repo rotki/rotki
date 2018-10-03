@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`132` Added a UI widget showing if rotkehlchen is connected to an ethereum node
 * :bug:`173` Price querying for IOTA should now work properly with cryptocompare
 
 * :release:`0.4.0 <2018-09-23>`
