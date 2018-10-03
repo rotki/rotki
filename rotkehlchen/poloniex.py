@@ -102,23 +102,8 @@ class Poloniex(Exchange):
         if req is None:
             req = {}
 
-        if command == "returnTicker" or command == "return24Volume":
+        if command == "returnTicker":
             ret = self.session.get(self.public_uri + command)
-        elif(command == "returnOrderBook"):
-            ret = self.session.get(
-                self.public_uri + command +
-                '&currencyPair=' + str(req['currencyPair'])
-            )
-        elif(command == "returnMarketTradeHistory"):
-            ret = self.session.get(
-                self.public_uri + 'returnTradeHistory' + '&currencyPair=' +
-                str(req['currencyPair'])
-            )
-        elif(command == "returnLoanOrders"):
-            ret = self.session.get(
-                self.public_uri + 'returnLoanOrders' + '&currency=' +
-                str(req['currency'])
-            )
         else:
             req['command'] = command
 
@@ -144,14 +129,8 @@ class Poloniex(Exchange):
             req = {'account': account}
         return self.api_query("returnAvailableAccountBalances", req)
 
-    def returnLoanOrders(self, currency: typing.BlockchainAsset) -> Dict:
-        return self.api_query('returnLoanOrders', {'currency': currency})
-
     def returnTicker(self) -> Dict:
         return self.api_query("returnTicker")
-
-    def return24Volume(self) -> Dict:
-        return self.api_query("return24Volume")
 
     def returnFeeInfo(self) -> Dict:
         return self.api_query("returnFeeInfo")
@@ -176,34 +155,6 @@ class Poloniex(Exchange):
         if limit is not None:
             req['limit'] = limit
         return self.api_query("returnLendingHistory", req)
-
-    def returnMarketTradeHistory(self, currencyPair: str) -> Dict:
-        return self.api_query(
-            "returnMarketTradeHistory",
-            {'currencyPair': currencyPair}
-        )
-
-    # Returns all of your balances.
-    # Outputs:
-    # {"BTC":"0.59098578","LTC":"3.31117268", ... }
-    def returnBalances(self) -> Dict:
-        return self.api_query('returnBalances')
-
-    # Returns your open orders for a given market,
-    # specified by the "currencyPair" POST parameter, e.g. "BTC_XCP"
-    # Inputs:
-    # currencyPair  The currency pair e.g. "BTC_XCP"
-    # Outputs:
-    # orderNumber   The order number
-    # type          sell or buy
-    # rate          Price the order is selling or buying at
-    # Amount        Quantity of order
-    # total         Total value of order (price * quantity)
-    def returnOpenOrders(self, currencyPair: str) -> Dict:
-        return self.api_query(
-            'returnOpenOrders',
-            {"currencyPair": currencyPair}
-        )
 
     def returnTradeHistory(
             self,
