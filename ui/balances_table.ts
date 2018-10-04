@@ -2,7 +2,6 @@ import { format_asset_title_for_ui, timestamp_to_date } from './utils';
 import { format_currency_value, pages, settings } from './settings';
 import { AssetBalance } from './model/asset-balance';
 import 'datatables.net';
-import ColumnsMethods = DataTables.ColumnsMethods;
 
 let TOTAL_BALANCES_TABLE: DataTables.Api | null = null;
 const SAVED_BALANCES: { [location: string]: { [asset: string]: AssetBalance } } = {};

@@ -5,43 +5,9 @@ import { Currency } from './model/currency';
 import { service } from './rotkehlchen_service';
 
 export class Settings {
-    private exchanges = ['kraken', 'poloniex', 'bittrex', 'bitmex', 'binance'];
-
-    private currencies = [
-        new Currency('United States Dollar', 'fa-usd', 'USD', '$'),
-        new Currency('Euro', 'fa-eur', 'EUR', '€'),
-        new Currency('British Pound', 'fa-gbp', 'GBP', '£'),
-        new Currency('Japanese Yen', 'fa-jpy', 'JPY', '¥'),
-        new Currency('Chinese Yuan', 'fa-jpy', 'CNY', '¥'),
-    ];
-    private readonly icon_map: { [asset: string]: string };
-
-    constructor() {
-        this.settings = '';
-        this.include_crypto2crypto = false;
-        this.taxfree_after_period = 0;
-        this.icon_map = this.get_icon_map();
-    }
-
     usd_to_fiat_exchange_rates: { [key: string]: number } = {};
     settings: string;
-
-    get EXCHANGES(): string[] {
-        return this.exchanges;
-    }
-
     connected_exchanges: string[] = [];
-
-    get CURRENCIES(): Currency[] {
-        return this.currencies;
-    }
-
-    get default_currency(): Currency {
-        return this.currencies[0];
-    }
-
-    public main_currency: Currency = this.currencies[0];
-
     floating_precision = 2;
     historical_data_start = '01/08/2015';
     current_location?: string;
@@ -55,6 +21,35 @@ export class Settings {
     include_crypto2crypto: boolean;
     taxfree_after_period: number;
     anonymized_logs = false;
+    private exchanges = ['kraken', 'poloniex', 'bittrex', 'bitmex', 'binance'];
+    private currencies = [
+        new Currency('United States Dollar', 'fa-usd', 'USD', '$'),
+        new Currency('Euro', 'fa-eur', 'EUR', '€'),
+        new Currency('British Pound', 'fa-gbp', 'GBP', '£'),
+        new Currency('Japanese Yen', 'fa-jpy', 'JPY', '¥'),
+        new Currency('Chinese Yuan', 'fa-jpy', 'CNY', '¥'),
+    ];
+    public main_currency: Currency = this.currencies[0];
+    private readonly icon_map: { [asset: string]: string };
+
+    constructor() {
+        this.settings = '';
+        this.include_crypto2crypto = false;
+        this.taxfree_after_period = 0;
+        this.icon_map = this.get_icon_map();
+    }
+
+    get EXCHANGES(): string[] {
+        return this.exchanges;
+    }
+
+    get CURRENCIES(): Currency[] {
+        return this.currencies;
+    }
+
+    get default_currency(): Currency {
+        return this.currencies[0];
+    }
 
     public get ICON_MAP_LIST(): { [asset: string]: string } {
         return this.icon_map;
@@ -63,8 +58,15 @@ export class Settings {
     private get_icon_map(): { [asset: string]: string } {
         const icon_dir = 'node_modules/cryptocurrency-icons/svg/color/';
 
+        let fs_dir: string;
+        if (!fs.existsSync(icon_dir)) {
+            fs_dir = `resources/app/${icon_dir}`;
+        } else {
+            fs_dir = icon_dir;
+        }
+
         const icon_map: { [asset: string]: string } = {};
-        fs.readdirSync(icon_dir)
+        fs.readdirSync(fs_dir)
             .forEach(function (v) {
                 icon_map[v.substr(0, v.indexOf('.'))] = icon_dir + v;
             });
@@ -187,8 +189,6 @@ export function create_settings_ui() {
 }
 
 interface Pages {
-    [key: string]: string | { [name: string]: string } | undefined;
-
     page_index?: string;
     page_settings?: string;
     page_otctrades?: string;
@@ -196,6 +196,8 @@ interface Pages {
     page_accounting_settings?: string;
     page_taxreport?: string;
     page_exchange: { [name: string]: string };
+
+    [key: string]: string | { [name: string]: string } | undefined;
 }
 
 export const pages: Pages = {

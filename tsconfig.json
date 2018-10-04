@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "outDir": "dist/ui",
+    "outDir": "./ui/dist",
     "allowJs": false,
     "target": "es2016",
     "declaration": true,

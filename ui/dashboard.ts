@@ -267,7 +267,7 @@ export function init_dashboard() {
         );
         total_table_add_balances(result.name, balances);
     });
-    monitor_add_callback('query_blockchain_balances', (result: ActionResult<BlockchainBalances>) => {
+    monitor_add_callback('query_blockchain_balances_async', (result: ActionResult<BlockchainBalances>) => {
         if (result.message !== '') {
             showError(
                 'Blockchain Query Error',
