@@ -1,22 +1,22 @@
-import tempfile
-import time
+import logging
 import os
 import shutil
-from typing import Dict, Union, List, NamedTuple, Optional, cast, Tuple
-from pysqlcipher3 import dbapi2 as sqlcipher
-from eth_utils.address import to_checksum_address
+import tempfile
+import time
+from typing import Dict, List, NamedTuple, Optional, Tuple, Union, cast
 
-from rotkehlchen.constants import SUPPORTED_EXCHANGES, YEAR_IN_SECONDS
-from rotkehlchen.utils import ts_now
+from eth_utils.address import to_checksum_address
+from pysqlcipher3 import dbapi2 as sqlcipher
+
+from rotkehlchen import typing
+from rotkehlchen.constants import S_BTC, S_ETH, S_USD, SUPPORTED_EXCHANGES, YEAR_IN_SECONDS
+from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
 from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.fval import FVal
-from rotkehlchen.constants import S_ETH, S_BTC, S_USD
-from rotkehlchen import typing
-from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
+from rotkehlchen.utils import ts_now
+
 from .utils import DB_SCRIPT_CREATE_TABLES, DB_SCRIPT_REIMPORT_DATA
 
-
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -40,6 +40,7 @@ class LocationData(NamedTuple):
 
 DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
 DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
+DEFAULT_ANONYMIZED_LOGS = False
 DEFAULT_START_DATE = "01/08/2015"
 DEFAULT_UI_FLOATING_PRECISION = 2
 DEFAULT_BALANCE_SAVE_FREQUENCY = 24
@@ -235,6 +236,8 @@ class DBHandler(object):
                 settings['premium_should_sync'] = str_to_bool(q[1])
             elif q[0] == 'include_crypto2crypto':
                 settings['include_crypto2crypto'] = str_to_bool(q[1])
+            elif q[0] == 'anonymized_logs':
+                settings['anonymized_logs'] = str_to_bool(q[1])
             elif q[0] == 'last_data_upload_ts':
                 settings['last_data_upload_ts'] = int(q[1])
             elif q[0] == 'ui_floating_precision':
@@ -261,6 +264,8 @@ class DBHandler(object):
             settings['balance_save_frequency'] = DEFAULT_BALANCE_SAVE_FREQUENCY
         if 'main_currency' not in settings:
             settings['main_currency'] = DEFAULT_MAIN_CURRENCY
+        if 'anonymized_logs' not in settings:
+            settings['anonymized_logs'] = DEFAULT_ANONYMIZED_LOGS
 
         # populate values that are not saved in the setting but computed and returned
         # as part of the get_settings call

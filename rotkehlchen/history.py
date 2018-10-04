@@ -12,20 +12,20 @@ from rotkehlchen.errors import PriceQueryUnknownFromAsset, RemoteError
 from rotkehlchen.exchange import data_up_todate
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import FIAT_CURRENCIES, world_to_cryptocompare
-from rotkehlchen.kraken import kraken_to_world_pair
+from rotkehlchen.kraken import trade_from_kraken
+from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
 from rotkehlchen.order_formatting import (
     MarginPosition,
-    Trade,
     asset_movements_from_dictlist,
     trades_from_dictlist,
 )
+from rotkehlchen.poloniex import trade_from_poloniex
 from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
 from rotkehlchen.typing import NonEthTokenBlockchainAsset
 from rotkehlchen.utils import (
     convert_to_int,
     createTimeStamp,
     get_jsonfile_contents_or_empty_dict,
-    get_pair_position,
     request_get,
     rlk_jsondumps,
     rlk_jsonloads,
@@ -34,6 +34,7 @@ from rotkehlchen.utils import (
 )
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 TRADES_HISTORYFILE = 'trades_history.json'
@@ -60,66 +61,6 @@ def include_external_trades(db, start_ts, end_ts, history):
     history.sort(key=lambda trade: trade.timestamp)
 
     return history
-
-
-def trade_from_kraken(kraken_trade):
-    """Turn a kraken trade returned from kraken trade history to our common trade
-    history format"""
-    currency_pair = kraken_to_world_pair(kraken_trade['pair'])
-    quote_currency = get_pair_position(currency_pair, 'second')
-    return Trade(
-        # Kraken timestamps have floating point ...
-        timestamp=convert_to_int(kraken_trade['time'], accept_only_exact=False),
-        pair=currency_pair,
-        type=kraken_trade['type'],
-        rate=FVal(kraken_trade['price']),
-        cost=FVal(kraken_trade['cost']),
-        cost_currency=quote_currency,
-        fee=FVal(kraken_trade['fee']),
-        fee_currency=quote_currency,
-        amount=FVal(kraken_trade['vol']),
-        location='kraken'
-    )
-
-
-def trade_from_poloniex(poloniex_trade, pair):
-    """Turn a poloniex trade returned from poloniex trade history to our common trade
-    history format"""
-
-    trade_type = poloniex_trade['type']
-    amount = FVal(poloniex_trade['amount'])
-    rate = FVal(poloniex_trade['rate'])
-    perc_fee = FVal(poloniex_trade['fee'])
-    base_currency = get_pair_position(pair, 'first')
-    quote_currency = get_pair_position(pair, 'second')
-    if trade_type == 'buy':
-        cost = rate * amount
-        cost_currency = base_currency
-        fee = amount * perc_fee
-        fee_currency = quote_currency
-    elif trade_type == 'sell':
-        cost = amount * rate
-        cost_currency = base_currency
-        fee = cost * perc_fee
-        fee_currency = base_currency
-    else:
-        raise ValueError('Got unexpected trade type "{}" for poloniex trade'.format(trade_type))
-
-    if poloniex_trade['category'] == 'settlement':
-        trade_type = "settlement_%s" % trade_type
-
-    return Trade(
-        timestamp=createTimeStamp(poloniex_trade['date'], formatstr="%Y-%m-%d %H:%M:%S"),
-        pair=pair,
-        type=trade_type,
-        rate=rate,
-        cost=cost,
-        cost_currency=cost_currency,
-        fee=fee,
-        fee_currency=fee_currency,
-        amount=amount,
-        location='poloniex'
-    )
 
 
 def do_read_manual_margin_positions(data_directory):
@@ -156,6 +97,12 @@ def do_read_manual_margin_positions(data_directory):
 
 
 def write_history_data_in_file(data, filepath, start_ts, end_ts):
+    log.info(
+        'Writting history file',
+        filepath=filepath,
+        start_time=start_ts,
+        end_time=end_ts,
+    )
     with open(filepath, 'w') as outfile:
         history_dict = dict()
         history_dict['data'] = data
@@ -218,14 +165,17 @@ def process_polo_loans(data, start_ts, end_ts):
             continue
         if close_time > end_ts:
             break
-        new_data.append({
+
+        loan_data = {
             'open_time': open_time,
             'close_time': close_time,
             'currency': loan['currency'],
             'fee': FVal(loan['fee']),
             'earned': FVal(loan['earned']),
             'amount_lent': FVal(loan['amount']),
-        })
+        }
+        log.debug('processing poloniex loan', **make_sensitive(loan_data))
+        new_data.append(loan_data)
 
     new_data.sort(key=lambda loan: loan['open_time'])
     return new_data
@@ -257,6 +207,7 @@ class PriceHistorian(object):
         invalidate_cache = True
         coinlist_cache_path = os.path.join(self.data_directory, 'cryptocompare_coinlist.json')
         if os.path.isfile(coinlist_cache_path):
+            log.info('Found coinlist cache', path=coinlist_cache_path)
             with open(coinlist_cache_path, 'rb') as f:
                 try:
                     data = rlk_jsonloads(f.read())
@@ -265,6 +216,7 @@ class PriceHistorian(object):
 
                     # If we got a cache and its' over a month old then requery cryptocompare
                     if data['time'] < now and now - data['time'] > 2629800:
+                        log.info('Coinlist cache is now invalidated')
                         invalidate_cache = True
                         data = data['data']
                 except JSONDecodeError:
@@ -272,17 +224,23 @@ class PriceHistorian(object):
 
         if invalidate_cache:
             query_string = 'https://www.cryptocompare.com/api/data/coinlist/'
+            log.debug('Querying cryptocompare', url=query_string)
             resp = request_get(query_string)
             if 'Response' not in resp or resp['Response'] != 'Success':
                 error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
                 if 'Message' in resp:
                     error_message += ". Error: {}".format(resp['Message'])
+
+                log.error('Cryptocompare query failure', url=query_string, error=error_message)
                 raise ValueError(error_message)
+
             data = resp['Data']
 
             # Also save the cache
             with open(coinlist_cache_path, 'w') as f:
-                write_data = {'time': ts_now(), 'data': data}
+                now = ts_now()
+                log.info('Writting coinlist cache', timestamp=now)
+                write_data = {'time': now, 'data': data}
                 f.write(rlk_jsondumps(write_data))
         else:
             # in any case take the data
@@ -310,12 +268,20 @@ class PriceHistorian(object):
                 self.price_history[cache_key]['end_time'] > timestamp
             )
             if in_range:
+                log.debug('Found cached price', cache_key=cache_key, timestamp=timestamp)
                 return True
 
         return False
 
     def get_historical_data(self, from_asset, to_asset, timestamp):
         """Get historical price data from cryptocompare"""
+        log.debug(
+            'Retrieving historical price data',
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=timestamp,
+        )
+
         if from_asset not in self.cryptocompare_coin_list:
             raise ValueError(
                 'Attempted to query historical price data for '
@@ -344,6 +310,14 @@ class PriceHistorian(object):
         while True:
             pr_end_date = end_date
             end_date = end_date + (cryptocompare_hourquerylimit) * 3600
+
+            log.debug(
+                'Querying cryptocompare for hourly historical price',
+                from_asset=from_asset,
+                to_asset=to_asset,
+                cryptocompare_hourquerylimit=cryptocompare_hourquerylimit,
+                end_date=end_date,
+            )
             query_string = (
                 'https://min-api.cryptocompare.com/data/histohour?'
                 'fsym={}&tsym={}&limit={}&toTs={}'.format(
@@ -352,11 +326,17 @@ class PriceHistorian(object):
                     cryptocompare_hourquerylimit,
                     end_date,
                 ))
+
             resp = request_get(query_string)
             if 'Response' not in resp or resp['Response'] != 'Success':
                 error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
                 if 'Message' in resp:
                     error_message += ". Error: {}".format(resp['Message'])
+
+                log.error(
+                    'Cryptocompare hourly historical price query failed',
+                    error=error_message,
+                )
                 raise ValueError(error_message)
 
             if pr_end_date != resp['TimeFrom']:
@@ -394,6 +374,12 @@ class PriceHistorian(object):
         }
         # and now since we actually queried the data let's also save them locally
         filename = os.path.join(self.data_directory, 'price_history_' + cache_key + '.json')
+        log.info(
+            'Updating price history cache',
+            filename=filename,
+            from_asset=from_asset,
+            to_asset=to_asset
+        )
         write_history_data_in_file(
             calculated_history,
             filename,
@@ -416,6 +402,12 @@ class PriceHistorian(object):
                             know the price.
             timestamp (int): The timestamp at which to query the price
         """
+        log.debug(
+            'Querying historical price',
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=timestamp,
+        )
         if from_asset == to_asset:
             return 1
 
@@ -444,14 +436,28 @@ class PriceHistorian(object):
 
         if price == 0:
             if from_asset != 'BTC' and to_asset != 'BTC':
+                log.debug(
+                    f"Coudn't find historical price from {from_asset} to "
+                    f"{to_asset}. Comparing with BTC...",
+                )
                 # Just get the BTC price
                 asset_btc_price = self.query_historical_price(from_asset, 'BTC', timestamp)
                 btc_to_asset_price = self.query_historical_price('BTC', to_asset, timestamp)
                 price = asset_btc_price * btc_to_asset_price
             else:
+                log.debug(
+                    f"Coudn't find historical price from {from_asset} to "
+                    f"{to_asset}. Attempting to get daily price...",
+                )
                 # attempt to get the daily price by timestamp
                 cc_from_asset = world_to_cryptocompare(from_asset)
                 cc_to_asset = world_to_cryptocompare(to_asset)
+                log.debug(
+                    'Querying cryptocompare for daily historical price',
+                    from_asset=from_asset,
+                    to_asset=to_asset,
+                    timestamp=timestamp,
+                )
                 query_string = (
                     'https://min-api.cryptocompare.com/data/pricehistorical?'
                     'fsym={}&tsyms={}&ts={}'.format(
@@ -465,7 +471,15 @@ class PriceHistorian(object):
 
                 if cc_from_asset not in resp:
                     error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
+                    log.error(
+                        'Cryptocompare query for daily historical price failed',
+                        from_asset=from_asset,
+                        to_asset=to_asset,
+                        timestamp=timestamp,
+                        error=error_message,
+                    )
                     raise ValueError(error_message)
+
                 price = FVal(resp[cc_from_asset][cc_to_asset])
 
                 if price == 0:
@@ -475,6 +489,13 @@ class PriceHistorian(object):
                         tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
                     )
 
+        log.debug(
+            'Got historical price',
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=timestamp,
+            price=price
+        )
         return price
 
 
@@ -511,6 +532,12 @@ class TradesHistorian(object):
             )
 
     def query_poloniex_history(self, history, asset_movements, start_ts, end_ts, end_at_least_ts):
+        log.info(
+            'Starting poloniex history query',
+            start_ts=start_ts,
+            end_ts=end_ts,
+            end_at_least_ts=end_at_least_ts,
+        )
         poloniex_margin_trades = list()
         polo_loans = list()
         if self.poloniex is not None:
@@ -570,6 +597,12 @@ class TradesHistorian(object):
         `end_at_least` is given and we have a cache history for that particular source
         which satisfies it we return the cache
         """
+        log.info(
+            'Starting trade history creation',
+            start_ts=start_ts,
+            end_ts=end_ts,
+            end_at_least_ts=end_at_least_ts,
+        )
 
         # start creating the all trades history list
         history = list()
@@ -707,6 +740,13 @@ class TradesHistorian(object):
         if end_at_least_ts is None:
             end_at_least_ts = end_ts
 
+        log.info(
+            'Get or create trade history',
+            start_ts=start_ts,
+            end_ts=end_ts,
+            end_at_least_ts=end_at_least_ts,
+        )
+
         historyfile_path = os.path.join(self.data_directory, TRADES_HISTORYFILE)
         if os.path.isfile(historyfile_path):
             with open(historyfile_path, 'r') as infile:
@@ -796,6 +836,13 @@ class TradesHistorian(object):
                         loan_history_is_okay and
                         asset_movements_history_is_okay and
                         eth_tx_log_history_history_is_okay):
+
+                    log.info(
+                        'Using cached history',
+                        start_ts=start_ts,
+                        end_ts=end_ts,
+                        end_at_least_ts=end_at_least_ts,
+                    )
 
                     history_trades = trades_from_dictlist(
                         history_json_data['data'],

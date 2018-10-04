@@ -16,9 +16,11 @@ from rotkehlchen.constants import (
     S_ETH,
 )
 from rotkehlchen.fval import FVal
+from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
 from rotkehlchen.utils import taxable_gain_for_sell, tsToDate
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class CSVExporter(object):
@@ -50,8 +52,7 @@ class CSVExporter(object):
     def dict_to_csv_file(self, path: typing.FilePath, dictionary_list: List) -> None:
 
         if len(dictionary_list) == 0:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("Skipping writting empty CSV for {}".format(path))
+            log.debug("Skipping writting empty CSV for {}".format(path))
             return
 
         with open(path, 'w') as f:
@@ -107,6 +108,7 @@ class CSVExporter(object):
             'time': timestamp,
             'is_virtual': is_virtual
         }
+        log.debug('csv event', **make_sensitive(entry))
         self.all_events.append(entry)
         new_entry = entry.copy()
         new_entry['net_profit_or_loss'] = net_profit_or_loss_csv

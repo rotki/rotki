@@ -1,33 +1,91 @@
 #!/usr/bin/env python
-import time
-import hmac
-import hashlib
-import datetime
-import os
-import traceback
 import csv
+import datetime
+import hashlib
+import hmac
+import logging
+import os
+import time
+import traceback
+from typing import Dict, List, Optional, Tuple, Union, cast
 from urllib.parse import urlencode
-from typing import Tuple, Dict, Optional, List, Union, cast
 
+from rotkehlchen import typing
+from rotkehlchen.errors import PoloniexError, RemoteError
+from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.order_formatting import AssetMovement, Trade
 from rotkehlchen.utils import (
+    cache_response_timewise,
     createTimeStamp,
+    get_pair_position,
     retry_calls,
     rlk_jsonloads,
-    cache_response_timewise,
 )
-from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.exchange import Exchange
-from rotkehlchen.order_formatting import AssetMovement
-from rotkehlchen.errors import PoloniexError, RemoteError
-from rotkehlchen import typing
 
-import logging
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def tsToDate(s):
     return datetime.datetime.fromtimestamp(s).strftime('%Y-%m-%d %H:%M:%S')
+
+
+def trade_from_poloniex(poloniex_trade, pair):
+    """Turn a poloniex trade returned from poloniex trade history to our common trade
+    history format"""
+
+    trade_type = poloniex_trade['type']
+    amount = FVal(poloniex_trade['amount'])
+    rate = FVal(poloniex_trade['rate'])
+    perc_fee = FVal(poloniex_trade['fee'])
+    base_currency = get_pair_position(pair, 'first')
+    quote_currency = get_pair_position(pair, 'second')
+    timestamp = createTimeStamp(poloniex_trade['date'], formatstr="%Y-%m-%d %H:%M:%S"),
+    if trade_type == 'buy':
+        cost = rate * amount
+        cost_currency = base_currency
+        fee = amount * perc_fee
+        fee_currency = quote_currency
+    elif trade_type == 'sell':
+        cost = amount * rate
+        cost_currency = base_currency
+        fee = cost * perc_fee
+        fee_currency = base_currency
+    else:
+        raise ValueError('Got unexpected trade type "{}" for poloniex trade'.format(trade_type))
+
+    if poloniex_trade['category'] == 'settlement':
+        trade_type = "settlement_%s" % trade_type
+
+    log.debug(
+        'Processing poloniex Trade',
+        sensitive_log=True,
+        timestamp=timestamp,
+        order_type=trade_type,
+        pair=pair,
+        base_currency=base_currency,
+        quote_currency=quote_currency,
+        amount=amount,
+        cost=cost,
+        fee=fee,
+        rate=rate,
+    )
+
+    return Trade(
+        timestamp=timestamp,
+        pair=pair,
+        type=trade_type,
+        rate=rate,
+        cost=cost,
+        cost_currency=cost_currency,
+        fee=fee,
+        fee_currency=fee_currency,
+        amount=amount,
+        location='poloniex'
+    )
 
 
 class Poloniex(Exchange):
@@ -102,23 +160,9 @@ class Poloniex(Exchange):
         if req is None:
             req = {}
 
-        if command == "returnTicker" or command == "return24Volume":
+        if command == "returnTicker":
+            log.debug('Querying poloniex for returnTicker')
             ret = self.session.get(self.public_uri + command)
-        elif(command == "returnOrderBook"):
-            ret = self.session.get(
-                self.public_uri + command +
-                '&currencyPair=' + str(req['currencyPair'])
-            )
-        elif(command == "returnMarketTradeHistory"):
-            ret = self.session.get(
-                self.public_uri + 'returnTradeHistory' + '&currencyPair=' +
-                str(req['currencyPair'])
-            )
-        elif(command == "returnLoanOrders"):
-            ret = self.session.get(
-                self.public_uri + 'returnLoanOrders' + '&currency=' +
-                str(req['currency'])
-            )
         else:
             req['command'] = command
 
@@ -131,6 +175,12 @@ class Poloniex(Exchange):
 
                 sign = hmac.new(self.secret, post_data, hashlib.sha512).hexdigest()
                 self.session.headers.update({'Sign': sign})
+
+                log.debug(
+                    'Poloniex private API query',
+                    command=command,
+                    post_data=req,
+                )
                 ret = self.session.post('https://poloniex.com/tradingApi', req)
 
             result = rlk_jsonloads(ret.text)
@@ -138,20 +188,8 @@ class Poloniex(Exchange):
 
         return rlk_jsonloads(ret.text)
 
-    def returnAvailableAccountBalances(self, account: str = 'all') -> Dict:
-        req: Dict = {}
-        if account:
-            req = {'account': account}
-        return self.api_query("returnAvailableAccountBalances", req)
-
-    def returnLoanOrders(self, currency: typing.BlockchainAsset) -> Dict:
-        return self.api_query('returnLoanOrders', {'currency': currency})
-
     def returnTicker(self) -> Dict:
         return self.api_query("returnTicker")
-
-    def return24Volume(self) -> Dict:
-        return self.api_query("return24Volume")
 
     def returnFeeInfo(self) -> Dict:
         return self.api_query("returnFeeInfo")
@@ -176,34 +214,6 @@ class Poloniex(Exchange):
         if limit is not None:
             req['limit'] = limit
         return self.api_query("returnLendingHistory", req)
-
-    def returnMarketTradeHistory(self, currencyPair: str) -> Dict:
-        return self.api_query(
-            "returnMarketTradeHistory",
-            {'currencyPair': currencyPair}
-        )
-
-    # Returns all of your balances.
-    # Outputs:
-    # {"BTC":"0.59098578","LTC":"3.31117268", ... }
-    def returnBalances(self) -> Dict:
-        return self.api_query('returnBalances')
-
-    # Returns your open orders for a given market,
-    # specified by the "currencyPair" POST parameter, e.g. "BTC_XCP"
-    # Inputs:
-    # currencyPair  The currency pair e.g. "BTC_XCP"
-    # Outputs:
-    # orderNumber   The order number
-    # type          sell or buy
-    # rate          Price the order is selling or buying at
-    # Amount        Quantity of order
-    # total         Total value of order (price * quantity)
-    def returnOpenOrders(self, currencyPair: str) -> Dict:
-        return self.api_query(
-            'returnOpenOrders',
-            {"currencyPair": currencyPair}
-        )
 
     def returnTradeHistory(
             self,
@@ -247,9 +257,9 @@ class Poloniex(Exchange):
             self.market_watcher()
 
         except PoloniexError as e:
-            logger.error("Poloniex error at main loop: {}".format(str(e)))
+            log.error('Poloniex error at main loop', error=str(e))
         except Exception as e:
-            logger.error(
+            log.error(
                 "\nException at main loop: {}\n{}\n".format(
                     str(e), traceback.format_exc())
             )
@@ -264,7 +274,7 @@ class Poloniex(Exchange):
                 'Poloniex API request failed. Could not reach poloniex due '
                 'to {}'.format(e)
             )
-            logger.error(msg)
+            log.error(msg)
             return None, msg
 
         balances = dict()
@@ -281,6 +291,15 @@ class Poloniex(Exchange):
                 usd_value = entry['amount'] * usd_price
                 entry['usd_value'] = usd_value
                 balances[currency] = entry
+
+                log.debug(
+                    'Poloniex balance query',
+                    sensitive_log=True,
+                    currency=currency,
+                    amount=entry['amount'],
+                    usd_value=usd_value,
+                )
+
         return balances, ''
 
     def query_trade_history(
@@ -305,6 +324,8 @@ class Poloniex(Exchange):
         results_length = 0
         for r, v in result.items():
             results_length += len(v)
+
+        log.debug('Poloniex trade history query', results_num=results_length)
 
         if results_length >= 10000:
             raise ValueError(
@@ -377,6 +398,7 @@ class Poloniex(Exchange):
             limit=loans_query_return_limit
         )
         data = list(result)
+        log.debug('Poloniex loan history query', results_num=len(data))
 
         # since I don't think we have any guarantees about order of results
         # using a set of loan ids is one way to make sure we get no duplicates
@@ -397,6 +419,7 @@ class Poloniex(Exchange):
                 end_ts=min_ts,
                 limit=loans_query_return_limit
             )
+            log.debug('Poloniex loan history query', results_num=len(result))
             for loan in result:
                 if loan['id'] not in id_set:
                     data.append(loan)
@@ -429,6 +452,11 @@ class Poloniex(Exchange):
                 )
         else:
             result = cache
+
+        log.debug(
+            'Poloniex deposits/withdrawal query',
+            results_num=len(result['withdrawals']) + len(result['deposits']),
+        )
 
         movements = list()
         for withdrawal in result['withdrawals']:

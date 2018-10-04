@@ -8,6 +8,7 @@ from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.errors import CorruptData, PriceQueryUnknownFromAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import FIAT_CURRENCIES
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import (
     AssetMovement,
     MarginPosition,
@@ -19,6 +20,7 @@ from rotkehlchen.transactions import EthereumTransaction
 from rotkehlchen.typing import Asset
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def action_get_timestamp(action):
@@ -162,9 +164,19 @@ class Accountant(object):
 
     def add_asset_movement_to_events(self, category, asset, amount, timestamp, exchange, fee):
         rate = self.get_rate_in_profit_currency(asset, timestamp)
-        self.asset_movement_fees += fee * rate
+        cost = fee * rate
+        self.asset_movement_fees += cost
+        log.debug(
+            'Accounting for asset movement',
+            sensitive_log=True,
+            category=category,
+            asset=asset,
+            cost_in_profit_currency=cost,
+            timestamp=timestamp,
+            exchange_name=exchange,
+        )
         if category == 'withdrawal':
-            assert fee != 0, "So far all exchanges charge you for withdrawing"
+            assert fee != 0, 'So far all exchanges charge you for withdrawing'
 
         self.csvexporter.add_asset_movement(
             exchange=exchange,
@@ -176,7 +188,6 @@ class Accountant(object):
         )
 
     def account_for_gas_costs(self, transaction):
-
         if transaction.gas_price == -1:
             gas_price = self.last_gas_price
         else:
@@ -185,7 +196,17 @@ class Accountant(object):
 
         rate = self.get_rate_in_profit_currency('ETH', transaction.timestamp)
         eth_burned_as_gas = (transaction.gas_used * gas_price) / FVal(10 ** 18)
-        self.eth_transactions_gas_costs += eth_burned_as_gas * rate
+        cost = eth_burned_as_gas * rate
+        self.eth_transactions_gas_costs += cost
+
+        log.debug(
+            'Accounting for ethereum transaction gas cost',
+            sensitive_log=True,
+            gas_used=transaction.gas_used,
+            gas_price=gas_price,
+            timestamp=transaction.timestamp,
+        )
+
         self.csvexporter.add_tx_gas_cost(
             transaction_hash=transaction.hash,
             eth_burned_as_gas=eth_burned_as_gas,
@@ -249,6 +270,11 @@ class Accountant(object):
         the price and time at which every asset was obtained and also
         the general and taxable profit/loss.
         """
+        log.info(
+            'Start of history processing',
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
         self.events.reset(start_ts, end_ts)
         self.last_gas_price = FVal("2000000000")
         self.eth_transactions_gas_costs = FVal(0)
@@ -283,7 +309,7 @@ class Accountant(object):
                     count,
                 ) = self.process_action(action, end_ts, prev_time, count)
             except PriceQueryUnknownFromAsset as e:
-                logger.error(f'Skipping trade during history processing: {str(e)}')
+                log.error(f'Skipping trade during history processing: {str(e)}')
                 continue
 
             if not should_continue:
@@ -345,7 +371,13 @@ class Accountant(object):
 
         asset1, asset2 = action_get_assets(action)
         if asset1 in self.ignored_assets or asset2 in self.ignored_assets:
-            logger.debug("Ignoring {} with {} {}".format(action_type, asset1, asset2))
+            log.debug(
+                'Ignoring action with ignored asset',
+                action_type=action_type,
+                asset1=asset1,
+                asset2=asset2,
+            )
+
             return True, prev_time, count
 
         if action_type == 'loan':
@@ -386,8 +418,6 @@ class Accountant(object):
 
         # if the cost is not equal to rate * amount then the data is somehow corrupt
         if not trade.cost.is_close(trade.amount * trade.rate, max_diff="1e-4"):
-            # import pdb
-            # pdb.set_trace()
             raise CorruptData(
                 "Trade found with cost {} which is not equal to trade.amount"
                 "({}) * trade.rate({})".format(trade.cost, trade.amount, trade.rate)

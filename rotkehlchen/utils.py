@@ -2,6 +2,7 @@
 import calendar
 import datetime
 import json
+import logging
 import operator
 import os
 import sys
@@ -16,6 +17,10 @@ from rotkehlchen import typing
 from rotkehlchen.constants import ALL_REMOTES_TIMEOUT
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def sfjson_loads(s):
@@ -106,12 +111,22 @@ def query_fiat_pair(base, quote):
     if base == quote:
         return FVal(1.0)
 
+    log.debug(
+        'Query free.currencyconverterapi.com fiat pair',
+        base_currency=base,
+        quote_currency=quote,
+    )
     pair = '{}_{}'.format(base, quote)
     querystr = 'https://free.currencyconverterapi.com/api/v5/convert?q={}'.format(pair)
     resp = request_get(querystr)
     try:
         return FVal(resp['results'][pair]['val'])
     except ValueError:
+        log.error(
+            'Querying free.currencyconverterapi.com fiat pair failed',
+            base_currency=base,
+            quote_currency=quote,
+        )
         raise ValueError('Could not find a "{}" price for "{}"'.format(base, quote))
 
 
@@ -175,7 +190,7 @@ def retry_calls(
         location: str,
         method: str,
         function: Callable[..., Any],
-        *args: Any
+        *args: Any,
 ) -> Any:
     tries = times
     while True:

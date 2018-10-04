@@ -1,19 +1,21 @@
-import time
-import hmac
 import hashlib
-from urllib.parse import urlencode
-from typing import Any, Dict, NamedTuple, Tuple, Optional, Union, List, cast
-
-from rotkehlchen.exchange import Exchange
-from rotkehlchen.order_formatting import Trade
-from rotkehlchen.utils import rlk_jsonloads, cache_response_timewise
-from rotkehlchen.fval import FVal
-from rotkehlchen.errors import RemoteError
-from rotkehlchen.inquirer import Inquirer
-from rotkehlchen import typing
-
+import hmac
 import logging
+import time
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
+from urllib.parse import urlencode
+
+from rotkehlchen import typing
+from rotkehlchen.errors import RemoteError
+from rotkehlchen.exchange import Exchange
+from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.order_formatting import Trade
+from rotkehlchen.utils import cache_response_timewise, rlk_jsonloads
+
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 V3_ENDPOINTS = (
     'account',
@@ -48,6 +50,7 @@ def trade_from_binance(
     amount = FVal(binance_trade['qty'])
     rate = FVal(binance_trade['price'])
     pair = binance_symbols_to_pair[binance_trade['symbol']]
+    timestamp = binance_trade['time']
 
     base_asset = pair.base_asset
     quote_asset = pair.quote_asset
@@ -63,8 +66,22 @@ def trade_from_binance(
     fee = FVal(binance_trade['commission'])
     cost = rate * amount
 
+    log.debug(
+        'Processing binance Trade',
+        sensitive_log=True,
+        amount=amount,
+        rate=rate,
+        timestamp=timestamp,
+        pair=binance_trade['symbol'],
+        base_asset=base_asset,
+        quote=quote_asset,
+        order_type=order_type,
+        commision_asset=binance_trade['commissionAsset'],
+        fee=fee,
+    )
+
     return Trade(
-        timestamp=binance_trade['time'],
+        timestamp=timestamp,
         pair=base_asset + '_' + quote_asset,
         type=order_type,
         rate=rate,
@@ -170,6 +187,8 @@ class Binance(Exchange):
             request_url = self.uri + 'v' + str(api_version) + '/' + method + '?'
             request_url += urlencode(options)
 
+            log.debug('Binance API request', request_url=request_url)
+
             response = self.session.get(request_url)
 
         if response.status_code != 200:
@@ -199,7 +218,7 @@ class Binance(Exchange):
                 'Binance API request failed. Could not reach binance due '
                 'to {}'.format(e)
             )
-            logger.error(msg)
+            log.error(msg)
             return None, msg
 
         returned_balances = dict()
@@ -213,6 +232,14 @@ class Binance(Exchange):
             balance['amount'] = amount
             balance['usd_value'] = FVal(amount * usd_price)
             returned_balances[currency] = balance
+
+            log.debug(
+                'binance balance query result',
+                sensitive_log=True,
+                currency=currency,
+                amount=amount,
+                usd_value=balance['usd_value'],
+            )
 
         return returned_balances, ''
 
@@ -245,6 +272,7 @@ class Binance(Exchange):
                         'fromId': last_trade_id,
                     })
                 len_result = len(result)
+                log.debug('binance myTrades query result', results_num=len_result)
                 for r in result:
                     r['symbol'] = symbol
             all_trades_history.extend(result)

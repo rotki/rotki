@@ -11,6 +11,7 @@ from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import AssetMovement, MarginPosition
 from rotkehlchen.utils import (
     cache_response_timewise,
@@ -20,6 +21,7 @@ from rotkehlchen.utils import (
 )
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 BITMEX_PRIVATE_ENDPOINTS = (
     'user',
@@ -41,7 +43,17 @@ def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
     close_time = iso8601ts_to_timestamp(bitmex_trade['transactTime'])
     profit_loss = satoshis_to_btc(FVal(bitmex_trade['amount']))
     currency = bitmex_to_world(bitmex_trade['currency'])
+    notes = bitmex_trade['address']
     assert currency == 'BTC', 'Bitmex trade should only deal in BTC'
+
+    log.debug(
+        'Processing Bitmex Trade',
+        sensitive_log=True,
+        timestamp=close_time,
+        profit_loss=profit_loss,
+        currency=currency,
+        notes=notes
+    )
 
     return MarginPosition(
         exchange='bitmex',
@@ -49,7 +61,7 @@ def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
         close_time=close_time,
         profit_loss=profit_loss,
         pl_currency='BTC',
-        notes=bitmex_trade['address'],
+        notes=notes,
     )
 
 
@@ -135,6 +147,8 @@ class Bitmex(Exchange):
             })
 
         request_url = self.uri + request_path
+        log.debug('Bitmex API Query', verb=verb, request_url=request_url)
+
         response = getattr(self.session, verb)(request_url, data=data)
 
         if response.status_code not in (200, 401):
@@ -164,7 +178,7 @@ class Bitmex(Exchange):
                 'Bitmex API request failed. Could not reach bitmex due '
                 'to {}'.format(e)
             )
-            logger.error(msg)
+            log.error(msg)
             return None, msg
 
         # Bitmex shows only BTC balance
@@ -172,10 +186,18 @@ class Bitmex(Exchange):
         usd_price = self.inquirer.find_usd_price('BTC')
         # result is in satoshis
         amount = satoshis_to_btc(FVal(resp['amount']))
+        usd_value = amount * usd_price
 
         returned_balances['BTC'] = dict(
             amount=amount,
-            usd_value=amount * usd_price
+            usd_value=usd_value,
+        )
+        log.debug(
+            'Bitmex balance query result',
+            sensitive_log=True,
+            currency='BTC',
+            amount=amount,
+            usd_value=usd_value,
         )
 
         return returned_balances, ''
@@ -196,8 +218,10 @@ class Bitmex(Exchange):
                 'Bitmex API request failed. Could not reach bitmex due '
                 'to {}'.format(e)
             )
-            logger.error(msg)
+            log.error(msg)
             return None, msg
+
+        log.debug('Bitmex trade history query', results_num=len(resp))
 
         realised_pnls = []
         for tx in resp:
@@ -231,8 +255,10 @@ class Bitmex(Exchange):
                 'Bitmex API request failed. Could not reach bitmex due '
                 'to {}'.format(e)
             )
-            logger.error(msg)
+            log.error(msg)
             return None, msg
+
+        log.debug('Bitmex deposit/withdrawals query', results_num=len(resp))
 
         movements = list()
         for movement in resp:

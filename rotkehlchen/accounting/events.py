@@ -4,11 +4,13 @@ from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS
 from rotkehlchen.errors import PriceQueryUnknownFromAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import FIAT_CURRENCIES, NoPriceForGivenTimestamp
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import BuyEvent, Events, SellEvent
 from rotkehlchen.typing import Asset, Timestamp
 from rotkehlchen.utils import taxable_gain_for_sell, ts_now, tsToDate
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class TaxableEvents(object):
@@ -99,7 +101,10 @@ class TaxableEvents(object):
     ):
         # TODO: Should fee also be taken into account here?
         if bought_asset == 'ETH' and timestamp < ETH_DAO_FORK_TS:
-            # Acquiring ETH before the DAO fork provides equal amount of ETC
+            log.debug(
+                'Acquiring ETH before the DAO fork provides equal amount of ETC',
+                timestamp=timestamp,
+            )
             self.add_buy(
                 'ETC',
                 bought_amount,
@@ -113,6 +118,10 @@ class TaxableEvents(object):
 
         if bought_asset == 'BTC' and timestamp < BTC_BCH_FORK_TS:
             # Acquiring BTC before the BCH fork provides equal amount of BCH
+            log.debug(
+                'Acquiring BTC before the BCH fork provides equal amount of BCH',
+                timestamp=timestamp,
+            )
             self.add_buy(
                 'BCH',
                 bought_amount,
@@ -134,10 +143,6 @@ class TaxableEvents(object):
             fee_currency,
             timestamp
     ):
-
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug('\nBUY EVENT:')
-
         self.add_buy(
             bought_asset=bought_asset,
             bought_amount=bought_amount,
@@ -153,6 +158,9 @@ class TaxableEvents(object):
             return
 
         # else you are also selling some other asset to buy the bought asset
+        log.debug(
+            f'Buying {bought_asset} with {paid_with_asset} also introduces a virtual sell event'
+        )
         try:
             bought_asset_rate_in_profit_currency = self.get_rate_in_profit_currency(
                 bought_asset,
@@ -251,23 +259,17 @@ class TaxableEvents(object):
                 cost=cost
             )
         )
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(
-                'Buying {} "{}" for {} "{}" ({} "{}" per "{}" or {} "{}" per '
-                '"{}") at {}'.format(
-                    bought_amount,
-                    bought_asset,
-                    bought_amount * trade_rate,
-                    paid_with_asset,
-                    trade_rate,
-                    paid_with_asset,
-                    bought_asset,
-                    buy_rate,
-                    self.profit_currency,
-                    bought_asset,
-                    tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
-                )
-            )
+        log.debug(
+            'Buy Event',
+            sensitive_log=True,
+            bought_amount=bought_amount,
+            bought_asset=bought_asset,
+            paid_with_asset=paid_with_asset,
+            rate=trade_rate,
+            rate_in_profit_currency=buy_rate,
+            profit_currency=self.profit_currency,
+            timestamp=timestamp,
+        )
 
         self.csv_exporter.add_buy(
             bought_asset=bought_asset,
@@ -311,10 +313,6 @@ class TaxableEvents(object):
             rate_in_profit_currency (FVal): The equivalent of `trade_rate` in `profit_currency`
             timestamp (int): The timestamp for the trade
         """
-
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug('\nSELL EVENT:')
-
         self.add_sell(
             selling_asset,
             selling_amount,
@@ -331,6 +329,9 @@ class TaxableEvents(object):
         if receiving_asset in FIAT_CURRENCIES or not self.include_crypto2crypto:
             return
 
+        log.debug(
+            f'Selling {selling_asset} for {receiving_asset} also introduces a virtual buy event'
+        )
         # else then you are also buying some other asset through your sell
         # TODO: Account for trade fees in the virtual buy too
         self.add_buy(
@@ -372,36 +373,31 @@ class TaxableEvents(object):
             )
         )
 
-        debug_enabled = logger.isEnabledFor(logging.DEBUG)
-        if debug_enabled:
-            if loan_settlement:
-                logger.debug('Loan Settlement Selling {} of "{}" for {} "{}" at {}'.format(
-                    selling_amount,
-                    selling_asset,
-                    gain_in_profit_currency,
-                    self.profit_currency,
-                    tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
-                ))
-            else:
-                logger.debug(
-                    'Selling {} of "{}" for {} "{}" ({} "{}" per "{}" or {} "{}" '
-                    'per "{}") for a gain of {} "{}" and a fee of {} "{} at {}'.format(
-                        selling_amount,
-                        selling_asset,
-                        receiving_amount,
-                        receiving_asset,
-                        trade_rate,
-                        receiving_asset,
-                        selling_asset,
-                        rate_in_profit_currency,
-                        self.profit_currency,
-                        selling_asset,
-                        gain_in_profit_currency,
-                        self.profit_currency,
-                        total_fee_in_profit_currency,
-                        self.profit_currency,
-                        tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
-                    ))
+        if loan_settlement:
+            log.debug(
+                'Loan Settlement Selling Event',
+                sensitive_log=True,
+                selling_amount=selling_amount,
+                selling_asset=selling_asset,
+                gain_in_profit_currency=gain_in_profit_currency,
+                profit_currency=self.profit_currency,
+                timestamp=timestamp,
+            )
+        else:
+            log.debug(
+                'Selling Event',
+                sensitive_log=True,
+                selling_amount=selling_amount,
+                selling_asset=selling_asset,
+                receiving_amount=receiving_amount,
+                receiving_asset=receiving_asset,
+                rate=trade_rate,
+                rate_in_profit_currency=rate_in_profit_currency,
+                profit_currency=self.profit_currency,
+                gain_in_profit_currency=gain_in_profit_currency,
+                fee_in_profit_currency=total_fee_in_profit_currency,
+                timestamp=timestamp,
+            )
 
         # now search the buys for `paid_with_asset` and  calculate profit/loss
         (
@@ -445,17 +441,20 @@ class TaxableEvents(object):
                 # If it's a loan settlement we are charged both the fee and the gain
                 settlement_loss = gain_in_profit_currency + total_fee_in_profit_currency
                 self.settlement_losses += settlement_loss
-                if debug_enabled:
-                    logger.debug("Loan Settlement Loss: {} {}".format(
-                        settlement_loss, self.profit_currency
-                    ))
-            elif debug_enabled:
-                logger.debug("Taxable P/L: {} {} General P/L: {} {}".format(
-                    taxable_profit_loss,
-                    self.profit_currency,
-                    general_profit_loss,
-                    self.profit_currency,
-                ))
+                log.debug(
+                    'Loan Settlement Loss',
+                    sensitive_log=True,
+                    settlement_loss=settlement_loss,
+                    profit_currency=self.profit_currency,
+                )
+            else:
+                log.debug(
+                    "After Sell Profit/Loss",
+                    sensitive_log=True,
+                    taxable_profit_loss=taxable_profit_loss,
+                    general_profit_loss=general_profit_loss,
+                    profit_currency=self.profit_currency,
+                )
 
             self.general_trade_profit_loss += general_profit_loss
             self.taxable_trade_profit_loss += taxable_profit_loss
@@ -508,7 +507,6 @@ class TaxableEvents(object):
         taxable_bought_cost = 0
         taxable_amount = 0
         taxfree_amount = 0
-        debug_enabled = logger.isEnabledFor(logging.DEBUG)
         for idx, buy_event in enumerate(self.events[selling_asset].buys):
             if self.taxfree_after_period is None:
                 at_taxfree_period = False
@@ -532,18 +530,17 @@ class TaxableEvents(object):
                     taxable_bought_cost += buying_cost
 
                 remaining_amount_from_last_buy = buy_event.amount - remaining_sold_amount
-                if debug_enabled:
-                    logger.debug(
-                        '[{}] Using up {}/{} "{}" from the buy for {} "{}" per "{}"  at {}'.format(
-                            'TAX-FREE' if at_taxfree_period else 'TAXABLE',
-                            remaining_sold_amount,
-                            buy_event.amount,
-                            selling_asset,
-                            buy_event.rate,
-                            self.profit_currency,
-                            selling_asset,
-                            tsToDate(buy_event.timestamp, formatstr='%d/%m/%Y %H:%M:%S')
-                        ))
+                log.debug(
+                    'Sell uses up part of historical buy',
+                    sensitive_log=True,
+                    tax_status='TAX-FREE' if at_taxfree_period else 'TAXABLE',
+                    used_amount=remaining_sold_amount,
+                    from_amount=buy_event.amount,
+                    asset=selling_asset,
+                    trade_buy_rate=buy_event.rate,
+                    profit_currency=self.profit_currency,
+                    trade_timestamp=buy_event.timestamp,
+                )
                 # stop iterating since we found all buys to satisfy this sell
                 break
             else:
@@ -555,22 +552,24 @@ class TaxableEvents(object):
                     taxable_amount += buy_event.amount
                     taxable_bought_cost += buy_event.cost
 
-                if debug_enabled:
-                    logger.debug(
-                        '[{}] Using up the entire buy of {} "{}" for {} "{}" per {} at {}'.format(
-                            'TAX-FREE' if at_taxfree_period else 'TAXABLE',
-                            buy_event.amount,
-                            selling_asset,
-                            buy_event.rate,
-                            self.profit_currency,
-                            selling_asset,
-                            tsToDate(buy_event.timestamp, formatstr='%d/%m/%Y %H:%M:%S')
-                        ))
+                log.debug(
+                    'Sell uses up entire historical buy',
+                    sensitive_log=True,
+                    tax_status='TAX-FREE' if at_taxfree_period else 'TAXABLE',
+                    bought_amount=buy_event.amount,
+                    asset=selling_asset,
+                    trade_buy_rate=buy_event.rate,
+                    profit_currency=self.profit_currency,
+                    trade_timestamp=buy_event.timestamp,
+                )
 
         if stop_index == -1:
-            logger.critical('No documented buy found for "{}" before {}'.format(
-                selling_asset, tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
-            ))
+            log.critical(
+                'No documented buy found for "{}" before {}'.format(
+                    selling_asset,
+                    tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
+                )
+            )
             # That means we had no documented buy for that asset. This is not good
             # because we can't prove a corresponding buy and as such we are burdened
             # calculating the entire sell as profit which needs to be taxed
@@ -615,8 +614,18 @@ class TaxableEvents(object):
         )
         # count profits if we are inside the query period
         if timestamp >= self.query_start_ts:
-            self.loan_profit += gain_in_profit_currency
+            log.debug(
+                'Accounting for loan profit',
+                sensitive_log=True,
+                gained_asset=gained_asset,
+                gained_amount=gained_amount,
+                gain_in_profit_currency=gain_in_profit_currency,
+                lent_amount=lent_amount,
+                open_time=open_time,
+                close_time=close_time,
+            )
 
+            self.loan_profit += gain_in_profit_currency
             self.csv_exporter.add_loan_profit(
                 gained_asset=gained_asset,
                 gained_amount=gained_amount,
@@ -657,10 +666,20 @@ class TaxableEvents(object):
         if timestamp >= self.query_start_ts:
             self.margin_positions_profit_loss += gain_loss_in_profit_currency
 
-        self.csv_exporter.add_margin_position(
-            margin_notes=margin_notes,
-            gain_loss_asset=gain_loss_asset,
-            net_gain_loss_amount=net_gain_loss_amount,
-            gain_loss_in_profit_currency=gain_loss_in_profit_currency,
-            timestamp=timestamp,
-        )
+            log.debug(
+                'Accounting for margin position',
+                sensitive_log=True,
+                notes=margin_notes,
+                gain_loss_asset=gain_loss_asset,
+                net_gain_loss_amount=net_gain_loss_amount,
+                gain_loss_in_profit_currency=gain_loss_in_profit_currency,
+                timestamp=timestamp,
+            )
+
+            self.csv_exporter.add_margin_position(
+                margin_notes=margin_notes,
+                gain_loss_asset=gain_loss_asset,
+                net_gain_loss_amount=net_gain_loss_amount,
+                gain_loss_in_profit_currency=gain_loss_in_profit_currency,
+                timestamp=timestamp,
+            )

@@ -2,29 +2,33 @@
 #
 # Good kraken and python resource:
 # https://github.com/zertrin/clikraken/tree/master/clikraken
-import hmac
-import hashlib
 import base64
+import hashlib
+import hmac
+import logging
 import time
+from typing import Dict, List, Optional, Tuple, Union, cast
 from urllib.parse import urlencode
+
 from requests import Response
 
+from rotkehlchen import typing
+from rotkehlchen.errors import RecoverableRequestError, RemoteError
+from rotkehlchen.exchange import Exchange
+from rotkehlchen.fval import FVal
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.order_formatting import AssetMovement, Trade
 from rotkehlchen.utils import (
+    cache_response_timewise,
+    convert_to_int,
+    get_pair_position,
     query_fiat_pair,
     retry_calls,
     rlk_jsonloads,
-    convert_to_int,
-    cache_response_timewise,
 )
-from rotkehlchen.order_formatting import AssetMovement
-from rotkehlchen.exchange import Exchange
-from rotkehlchen.errors import RecoverableRequestError, RemoteError
-from rotkehlchen.fval import FVal
-from rotkehlchen import typing
-from typing import Optional, Tuple, Dict, List, Union, cast
 
-import logging
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 KRAKEN_TO_WORLD = {
     'XDAO': 'DAO',
@@ -90,6 +94,47 @@ def kraken_to_world_pair(pair):
         world_p1 = KRAKEN_TO_WORLD[p1]
         world_p2 = KRAKEN_TO_WORLD[p2]
         return world_p1 + '_' + world_p2
+
+
+def trade_from_kraken(kraken_trade):
+    """Turn a kraken trade returned from kraken trade history to our common trade
+    history format"""
+    currency_pair = kraken_to_world_pair(kraken_trade['pair'])
+    quote_currency = get_pair_position(currency_pair, 'second')
+    # Kraken timestamps have floating point
+    timestamp = convert_to_int(kraken_trade['time'], accept_only_exact=False)
+    amount = FVal(kraken_trade['vol'])
+    cost = FVal(kraken_trade['cost'])
+    fee = FVal(kraken_trade['fee'])
+    order_type = kraken_trade['type']
+    rate = FVal(kraken_trade['price'])
+
+    log.debug(
+        'Processing kraken Trade',
+        sensitive_log=True,
+        timestamp=timestamp,
+        order_type=order_type,
+        kraken_pair=kraken_trade['pair'],
+        pair=currency_pair,
+        quote_currency=quote_currency,
+        amount=amount,
+        cost=cost,
+        fee=fee,
+        rate=rate,
+    )
+
+    return Trade(
+        timestamp=timestamp,
+        pair=currency_pair,
+        type=order_type,
+        rate=rate,
+        cost=cost,
+        cost_currency=quote_currency,
+        fee=fee,
+        fee_currency=quote_currency,
+        amount=amount,
+        location='kraken'
+    )
 
 
 class Kraken(Exchange):
@@ -186,6 +231,7 @@ class Kraken(Exchange):
         if req is None:
             req = {}
         urlpath = self.uri + 'public/' + method
+        log.debug('Kraken Public API query', request_url=urlpath, data=req)
         response = self.session.post(urlpath, data=req)
         return self.check_and_get_response(response, method)
 
@@ -223,6 +269,7 @@ class Kraken(Exchange):
             self.session.headers.update({
                 'API-Sign': base64.b64encode(signature.digest())
             })
+            log.debug('Kraken Private API query', request_url=urlpath, data=post_data)
             response = self.session.post(
                 'https://api.kraken.com' + urlpath,
                 data=post_data.encode()
@@ -304,7 +351,7 @@ class Kraken(Exchange):
                 'Kraken API request failed. Could not reach kraken due '
                 'to {}'.format(e)
             )
-            logger.error(msg)
+            log.error(msg)
             return None, msg
 
         balances = dict()
@@ -322,6 +369,14 @@ class Kraken(Exchange):
                 entry['usd_value'] = v * self.find_fiat_price(k)
 
             balances[common_name] = entry
+            log.debug(
+                'kraken balance query result',
+                sensitive_log=True,
+                currency=common_name,
+                amount=entry['amount'],
+                usd_value=entry['usd_value'],
+            )
+
         return balances, ''
 
     def query_until_finished(
@@ -338,7 +393,7 @@ class Kraken(Exchange):
         """
         result: List = list()
 
-        logger.debug(
+        log.debug(
             f'Querying Kraken {endpoint} from {start_ts} to '
             f'{end_ts} with extra_dict {extra_dict}',
         )
@@ -352,10 +407,10 @@ class Kraken(Exchange):
         offset = len(response[keyname])
         result.extend(response[keyname].values())
 
-        logger.debug(f'Kraken {endpoint} Query Response with count:{count}')
+        log.debug(f'Kraken {endpoint} Query Response with count:{count}')
 
         while offset < count:
-            logger.debug(
+            log.debug(
                 f'Querying Kraken {endpoint} from {start_ts} to {end_ts} '
                 f'with offset {offset} and extra_dict {extra_dict}',
             )
@@ -377,7 +432,7 @@ class Kraken(Exchange):
                     break
                 # it is possible that kraken misbehaves and either does not
                 # send us enough results or thinks it has more than it really does
-                logger.warning(
+                log.warning(
                     'Missing {} results when querying kraken endpoint {}'.format(
                         count - offset, endpoint)
                 )
@@ -462,6 +517,8 @@ class Kraken(Exchange):
                     end_ts,
                     special_name='deposits_withdrawals'
                 )
+
+        log.debug('Kraken deposit/withdrawals query result', num_results=len(result))
 
         movements = list()
         for movement in result:
