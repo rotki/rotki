@@ -101,11 +101,9 @@ function monitor_tasks() {
         }
         const task = tasks_map[task_id];
         if (task.id == null) {
-            console.log(`NULL TASK ID: ${JSON.stringify(task, null, 4)}`);
+            console.log('NULL TASK ID: '+ JSON.stringify(task, null, 4));
             continue;
         }
-
-        console.log('task query');
 
         service.query_task_result(task.id).then(result => {
             if (!task.should_expect_callback) {

@@ -247,7 +247,7 @@ ipcRenderer.on('failed', () => {
 
 export function init_dashboard() {
     // add callbacks for dashboard to the monitor
-    monitor_add_callback('query_exchange_balances', (result: ExchangeBalanceResult) => {
+    monitor_add_callback('query_exchange_balances_async', (result: ExchangeBalanceResult) => {
         if (result.error) {
             showError(
                 'Exchange Query Error',
