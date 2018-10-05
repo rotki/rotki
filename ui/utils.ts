@@ -1,7 +1,7 @@
 import {Tail} from 'tail';
 import * as fs from 'fs';
 import {settings} from './settings';
-import {dialog} from 'electron';
+import {remote} from 'electron';
 import {service} from './rotkehlchen_service';
 import Timer = NodeJS.Timer;
 
@@ -9,7 +9,7 @@ import Timer = NodeJS.Timer;
 // Callback should be a function which accepts a single argument which will be
 // a list of pathnames. The list should only contain 1 entry.
 export function prompt_directory_select_async(callback: (directories: string[]) => void) {
-    dialog.showOpenDialog({
+    remote.dialog.showOpenDialog({
         title: 'Select a directory',
         properties: ['openDirectory']
     }, callback);
