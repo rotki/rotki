@@ -198,8 +198,9 @@ export function dt_edit_drawcallback(
         // https://stackoverflow.com/questions/43161236/how-to-show-edit-and-delete-buttons-on-datatables-when-right-click-to-rows
         $.contextMenu({
             selector: `#${id}_body tr td`,
-            callback: (key: string, options: any) => {
-                const row = $(`#${id}`).DataTable().row(options.trigger$);
+            callback: (key: string, options: { $trigger: JQuery }) => {
+                const tr = options.$trigger.closest('tr');
+                const row = $(`#${id}`).DataTable().row(tr);
                 console.log(row);
                 // TODO: When move to SQL instead of files, simply use the primary key/id to select
                 switch (key) {
