@@ -1,6 +1,6 @@
-import { format_asset_title_for_ui, timestamp_to_date } from './utils';
-import { format_currency_value, pages, settings } from './settings';
-import { AssetBalance } from './model/asset-balance';
+import {format_asset_title_for_ui, timestamp_to_date} from './utils';
+import {format_currency_value, pages, settings} from './settings';
+import {AssetBalance} from './model/asset-balance';
 import 'datatables.net';
 
 let TOTAL_BALANCES_TABLE: DataTables.Api | null = null;
@@ -118,9 +118,9 @@ export function total_table_add_balances(location: string, query_result: { [asse
     total_table_recreate();
 }
 
-function balance_table_init_callback(sett?: DataTables.Api, _json?: any) {
+function balance_table_init_callback(datatablesApi?: DataTables.Api, _json?: any) {
     let api: DataTables.Api;
-    if (!sett) { // called manually by us via .call() through a DT instance
+    if (!datatablesApi) { // called manually by us via .call() through a DT instance
         // @ts-ignore
         api = this;
     } else { // called from inside initComplete

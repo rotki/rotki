@@ -26,4 +26,3 @@ export interface DBSettings {
     readonly last_balance_save: number;
     readonly anonymized_logs: boolean;
 }
-

@@ -1,8 +1,8 @@
-import { Tail } from 'tail';
+import {Tail} from 'tail';
 import * as fs from 'fs';
-import { settings } from './settings';
-import { dialog } from 'electron';
-import { service } from './rotkehlchen_service';
+import {settings} from './settings';
+import {dialog} from 'electron';
+import {service} from './rotkehlchen_service';
 import Timer = NodeJS.Timer;
 
 // Prompt a directory selection dialog and pass selected directory to callback
@@ -198,10 +198,9 @@ export function dt_edit_drawcallback(
         // https://stackoverflow.com/questions/43161236/how-to-show-edit-and-delete-buttons-on-datatables-when-right-click-to-rows
         $.contextMenu({
             selector: `#${id}_body tr td`,
-            callback: (key: string) => {
-                // @ts-ignore
-                const tr = $(this).closest('tr');
-                const row = $(`#${id}`).DataTable().row(tr);
+            callback: (key: string, options: any) => {
+                const row = $(`#${id}`).DataTable().row(options.trigger$);
+                console.log(row);
                 // TODO: When move to SQL instead of files, simply use the primary key/id to select
                 switch (key) {
                     case 'delete' :
@@ -232,13 +231,13 @@ export function unsuggest_element(selector: string) {
 export function suggest_element(selector: string, state_to_set: string) {
     settings.start_suggestion = state_to_set;
     $(selector).pulsate({
-        color: '#e45325', // set the color of the pulse
-        reach: 20,                              // how far the pulse goes in px
-        speed: 1000,                            // how long one pulse takes in ms
-        pause: 0,                               // how long the pause between pulses is in ms
-        glow: true,                             // if the glow should be shown too
-        repeat: true,                           // will repeat forever if true, if given a number will repeat for that many times
-        onHover: false                          // if true only pulsate if user hovers over the element
+        color: '#e45325',   // set the color of the pulse
+        reach: 20,          // how far the pulse goes in px
+        speed: 1000,        // how long one pulse takes in ms
+        pause: 0,           // how long the pause between pulses is in ms
+        glow: true,         // if the glow should be shown too
+        repeat: true,       // will repeat forever if true, if given a number will repeat for that many times
+        onHover: false      // if true only pulsate if user hovers over the element
     });
 }
 
@@ -249,7 +248,7 @@ export function suggest_element_until_click(selector: string, state_to_set: stri
     });
 }
 
-export function format_asset_title_for_ui(asset: string): string  {
+export function format_asset_title_for_ui(asset: string): string {
     let symbol, str;
     if (asset === 'IOTA') {
         symbol = 'MIOTA';

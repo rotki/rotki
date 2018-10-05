@@ -1,9 +1,9 @@
-import { dt_edit_drawcallback, showError, showInfo, timestamp_to_date } from './utils';
-import { form_button, form_entry, form_select, form_text } from './elements';
-import { settings } from './settings';
-import { OtcTrade } from './model/otc-trade';
+import {dt_edit_drawcallback, showError, showInfo, timestamp_to_date} from './utils';
+import {form_button, form_entry, form_select, form_text} from './elements';
+import {settings} from './settings';
+import {OtcTrade} from './model/otc-trade';
 import 'datatables.net';
-import { service } from './rotkehlchen_service';
+import {service} from './rotkehlchen_service';
 
 let OTC_TRADES_TABLE: DataTables.Api;
 let CURRENT_TRADE: OtcTrade | {} = {};

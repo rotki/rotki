@@ -1,7 +1,8 @@
-import { AssetTable } from './asset_table';
-import { create_task, monitor_add_callback } from './monitor';
+import {AssetTable} from './asset_table';
+import {create_task, monitor_add_callback} from './monitor';
 import {
-    dt_edit_drawcallback, format_asset_title_for_ui,
+    dt_edit_drawcallback,
+    format_asset_title_for_ui,
     reload_table_currency_val_if_existing,
     showError,
     showInfo,
@@ -20,14 +21,14 @@ import {
     settings_panel,
     table_html
 } from './elements';
-import { format_currency_value, get_fiat_usd_value, pages, settings } from './settings';
-import { query_exchange_balances_async } from './exchange';
-import { PlacementType } from './enums/PlacementType';
-import { ActionResult } from './model/action-result';
-import { AssetBalance } from './model/asset-balance';
+import {format_currency_value, get_fiat_usd_value, pages, settings} from './settings';
+import {query_exchange_balances_async} from './exchange';
+import {PlacementType} from './enums/PlacementType';
+import {ActionResult} from './model/action-result';
+import {AssetBalance} from './model/asset-balance';
 
-import { BlockchainBalances } from './model/blockchain-balances';
-import { NoPremiumCredentials, NoResponseError, service } from './rotkehlchen_service';
+import {BlockchainBalances} from './model/blockchain-balances';
+import {NoPremiumCredentials, NoResponseError, service} from './rotkehlchen_service';
 import Api = DataTables.Api;
 
 let FIAT_TABLE: AssetTable;

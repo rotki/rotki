@@ -1,8 +1,8 @@
-import { showError, showInfo } from './utils';
-import { form_button, form_checkbox, form_entry, form_select, page_header, settings_panel } from './elements';
+import {showError, showInfo} from './utils';
+import {form_button, form_checkbox, form_entry, form_select, page_header, settings_panel} from './elements';
 import * as fs from 'fs';
-import { Currency } from './model/currency';
-import { service } from './rotkehlchen_service';
+import {Currency} from './model/currency';
+import {service} from './rotkehlchen_service';
 
 export class Settings {
     usd_to_fiat_exchange_rates: { [key: string]: number } = {};

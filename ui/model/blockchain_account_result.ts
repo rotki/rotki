@@ -1,4 +1,4 @@
-import { AssetBalance } from './asset-balance';
+import {AssetBalance} from './asset-balance';
 
 export interface BlockchainAccountResult {
     readonly result: boolean;

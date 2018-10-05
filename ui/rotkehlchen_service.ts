@@ -1,11 +1,11 @@
-import { ActionResult, UnlockResult } from './model/action-result';
-import { AssetBalance } from './model/asset-balance';
-import { BlockchainAccountResult } from './model/blockchain_account_result';
-import { OtcTrade } from './model/otc-trade';
-import { IgnoredAssetsResponse } from './model/ignored_assets_response';
-import { Currency } from './model/currency';
-import { AsyncQueryResult } from './model/balance-result';
-import { EthTokensResult } from './model/eth_tokens_result';
+import {ActionResult, UnlockResult} from './model/action-result';
+import {AssetBalance} from './model/asset-balance';
+import {BlockchainAccountResult} from './model/blockchain_account_result';
+import {OtcTrade} from './model/otc-trade';
+import {IgnoredAssetsResponse} from './model/ignored_assets_response';
+import {Currency} from './model/currency';
+import {AsyncQueryResult} from './model/balance-result';
+import {EthTokensResult} from './model/eth_tokens_result';
 
 const zerorpc = require('zerorpc');
 // max timeout is now 9999 seconds

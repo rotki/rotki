@@ -1,6 +1,6 @@
-import { BalanceStatus } from './enums/BalanceStatus';
-import { service } from './rotkehlchen_service';
-import { Task } from './model/task';
+import {BalanceStatus} from './enums/BalanceStatus';
+import {service} from './rotkehlchen_service';
+import {Task} from './model/task';
 
 const callbacks: Array<[string, (result: any) => void]> = [];
 const tasks_map: { [task_id: number]: Task } = {};
@@ -128,7 +128,6 @@ function monitor_tasks() {
         });
     }
 }
-
 
 export function init_monitor() {
     // monitor tasks every 2 seconds

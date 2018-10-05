@@ -1,4 +1,4 @@
-import { EventEntry } from './event-entry';
+import {EventEntry} from './event-entry';
 
 export interface TradeHistoryResult {
     readonly overview: TradeHistoryOverview;
@@ -7,8 +7,6 @@ export interface TradeHistoryResult {
 }
 
 export interface TradeHistoryOverview {
-    readonly [key: string]: number;
-
     readonly loan_profit: number;
     readonly margin_positions_profit: number;
     readonly settlement_losses: number;
@@ -18,4 +16,6 @@ export interface TradeHistoryOverview {
     readonly taxable_trade_profit_loss: number;
     readonly total_taxable_profit_loss: number;
     readonly total_profit_loss: number;
+
+    readonly [key: string]: number;
 }

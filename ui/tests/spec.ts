@@ -1,7 +1,7 @@
 // Nice overview for electron tests with the chai.should model:
 // https://dzone.com/articles/write-automated-tests-for-electron-with-spectron-m
 
-import { Application } from 'spectron';
+import {Application} from 'spectron';
 
 import * as electron from 'electron';
 import * as path from 'path';

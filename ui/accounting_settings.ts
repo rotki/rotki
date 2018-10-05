@@ -1,7 +1,7 @@
-import { showError, showInfo } from './utils';
-import { form_button, form_entry, form_radio, form_select, page_header, settings_panel } from './elements';
-import { settings } from './settings';
-import { service } from './rotkehlchen_service';
+import {showError, showInfo} from './utils';
+import {form_button, form_entry, form_radio, form_select, page_header, settings_panel} from './elements';
+import {settings} from './settings';
+import {service} from './rotkehlchen_service';
 
 function populate_ignored_assets() {
     service.get_ignored_assets().then(assets => {

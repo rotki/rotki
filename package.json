@@ -21,7 +21,7 @@
         "@types/tail": "^1.2.0",
         "chai": "^4.1.2",
         "chai-as-promised": "^7.1.1",
-        "electron": "^1.8.4",
+        "electron": "1.8.4",
         "electron-packager": "^8.7.2",
         "electron-rebuild": "^1.5.7",
         "mocha": "^5.2.0",
@@ -35,6 +35,6 @@
         "build": "rimraf ui/dist && tsc",
         "test": "rimraf ui/dist && tsc && mocha --require ts-node/register ui/tests/**/*.ts",
         "start": "rimraf ui/dist && tsc && electron .",
-        "lint": "tslint -c tslint.json --project tsconfig.json 'ui/**/*.ts'"
+        "lint": "tslint -c tslint.json -e 'ui/dist/*' --project tsconfig.json 'ui/**/*.ts'"
     }
 }

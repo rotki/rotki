@@ -1,11 +1,11 @@
-import { form_button, form_entry, invisible_anchor, loading_placeholder, page_header, table_html } from './elements';
-import { date_text_to_utc_ts, prompt_directory_select_async, showError, showInfo, showWarning, timestamp_to_date, utc_now } from './utils';
-import { create_task, monitor_add_callback } from './monitor';
-import { pages, settings } from './settings';
-import { ActionResult } from './model/action-result';
-import { TradeHistoryOverview, TradeHistoryResult } from './model/trade-history-result';
-import { EventEntry } from './model/event-entry';
-import { service } from './rotkehlchen_service';
+import {form_button, form_entry, invisible_anchor, loading_placeholder, page_header, table_html} from './elements';
+import {date_text_to_utc_ts, prompt_directory_select_async, showError, showInfo, showWarning, timestamp_to_date, utc_now} from './utils';
+import {create_task, monitor_add_callback} from './monitor';
+import {pages, settings} from './settings';
+import {ActionResult} from './model/action-result';
+import {TradeHistoryOverview, TradeHistoryResult} from './model/trade-history-result';
+import {EventEntry} from './model/event-entry';
+import {service} from './rotkehlchen_service';
 
 export function create_taxreport_ui() {
     let str = page_header('Tax Report');

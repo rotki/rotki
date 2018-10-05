@@ -1,17 +1,17 @@
-import { change_location, determine_location } from './navigation';
-import { set_ui_main_currency } from './topmenu';
-import { get_total_assets_value, iterate_saved_balances, total_table_add_balances, total_table_recreate } from './balances_table';
-import { assert_exchange_exists, format_currency_value, pages, settings } from './settings';
-import { setup_client_auditor, setup_log_watcher, showError } from './utils';
-import { create_or_reload_exchange } from './exchange';
-import { monitor_add_callback } from './monitor';
-import { prompt_sign_in } from './userunlock';
-import { ActionResult } from './model/action-result';
-import { ExchangeBalanceResult } from './model/exchange-balance-result';
-import { BlockchainBalances } from './model/blockchain-balances';
-import { ipcRenderer, remote } from 'electron';
-import { service } from './rotkehlchen_service';
-import { Currency } from './model/currency';
+import {change_location, determine_location} from './navigation';
+import {set_ui_main_currency} from './topmenu';
+import {get_total_assets_value, iterate_saved_balances, total_table_add_balances, total_table_recreate} from './balances_table';
+import {assert_exchange_exists, format_currency_value, pages, settings} from './settings';
+import {setup_client_auditor, setup_log_watcher, showError} from './utils';
+import {create_or_reload_exchange} from './exchange';
+import {monitor_add_callback} from './monitor';
+import {prompt_sign_in} from './userunlock';
+import {ActionResult} from './model/action-result';
+import {ExchangeBalanceResult} from './model/exchange-balance-result';
+import {BlockchainBalances} from './model/blockchain-balances';
+import {ipcRenderer, remote} from 'electron';
+import {service} from './rotkehlchen_service';
+import {Currency} from './model/currency';
 
 function add_exchange_on_click() {
     $('.panel a').click((event: JQuery.Event) => {
@@ -290,4 +290,3 @@ export function init_dashboard() {
     setup_log_watcher(add_alert_dropdown);
     setup_client_auditor();
 }
-

@@ -1,9 +1,9 @@
-import { Callback } from './model/callback';
-import { format_asset_title_for_ui, reload_table_currency_val, string_capitalize } from './utils';
-import { format_currency_value, settings } from './settings';
-import { table_html } from './elements';
-import { PlacementType } from './enums/PlacementType';
-import { AssetBalance } from './model/asset-balance';
+import {Callback} from './model/callback';
+import {format_asset_title_for_ui, reload_table_currency_val, string_capitalize} from './utils';
+import {format_currency_value, settings} from './settings';
+import {table_html} from './elements';
+import {PlacementType} from './enums/PlacementType';
+import {AssetBalance} from './model/asset-balance';
 import Api = DataTables.Api;
 
 export class AssetTable {

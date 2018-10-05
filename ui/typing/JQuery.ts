@@ -11,6 +11,7 @@ interface DateTimePickerOptions {
     timepicker?: boolean;
 }
 
+// noinspection JSUnusedGlobalSymbols
 interface JQueryStatic {
     confirm(options?: ConfirmOptions): void;
 
@@ -43,13 +44,13 @@ interface Alert {
 }
 
 interface PulsateOptions {
-    color?: string;
-    reach?: number;                              // how far the pulse goes in px
-    speed?: number;                            // how long one pulse takes in ms
-    pause?: number;                               // how long the pause between pulses is in ms
-    glow?: boolean;                             // if the glow should be shown too
-    repeat?: boolean;                           // will repeat forever if true, if given a number will repeat for that many times
-    onHover?: boolean;                         // if true only pulsate if user hovers over the element
+    color?: string;     // set the color of the pulse
+    reach?: number;     // how far the pulse goes in px
+    speed?: number;     // how long one pulse takes in ms
+    pause?: number;     // how long the pause between pulses is in ms
+    glow?: boolean;     // if the glow should be shown too
+    repeat?: boolean;   // will repeat forever if true, if given a number will repeat for that many times
+    onHover?: boolean;  // if true only pulsate if user hovers over the element
 }
 
 interface ConfirmOptions {
@@ -57,7 +58,7 @@ interface ConfirmOptions {
     content?: string;
     type?: string;
     typeAnimated?: true;
-    buttons?: { [button: string]:  ConfirmButton | (() => void) };
+    buttons?: { [button: string]: ConfirmButton | (() => void) };
     onContentReady?: () => void;
 }
 
