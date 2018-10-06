@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`156` Overflow should now scroll completely and properly on mac
 * :feature:`138` Add an option to allow for anonymizing of all sensitive rotkehlchen logs.
 * :feature:`132` Added a UI widget showing if rotkehlchen is connected to an ethereum node
 * :bug:`173` Price querying for IOTA should now work properly with cryptocompare
