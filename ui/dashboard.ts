@@ -16,7 +16,8 @@ import {Currency} from './model/currency';
 function add_exchange_on_click() {
     $('.panel a').click((event: JQuery.Event) => {
         event.preventDefault();
-        const target = event.target as HTMLAnchorElement;
+	// ??? Why is currentTarget needed here while in other places target is enough?
+        const target = event.currentTarget as HTMLAnchorElement;
         const target_location = determine_location(target.href);
         if (target_location.startsWith('exchange_')) {
             const exchange_name = target_location.substring(9);
