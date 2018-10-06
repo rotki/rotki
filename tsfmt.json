@@ -1,0 +1,5 @@
+{
+  "indentSize": 4,
+  "InsertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets": false,
+  "InsertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces": false,
+}

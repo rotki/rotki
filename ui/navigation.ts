@@ -1,10 +1,10 @@
-import {add_taxreport_listeners, create_taxreport_ui} from './taxreport';
-import {create_or_reload_dashboard} from './dashboard';
-import {add_user_settings_listeners, create_user_settings} from './user_settings';
-import {add_otctrades_listeners, create_otctrades_ui} from './otctrades';
-import {add_accounting_settings_listeners, create_accounting_settings} from './accounting_settings';
-import {add_settings_listeners, assert_exchange_exists, create_settings_ui, pages, settings, reset_pages} from './settings';
-import {service} from './rotkehlchen_service';
+import { add_taxreport_listeners, create_taxreport_ui } from './taxreport';
+import { create_or_reload_dashboard } from './dashboard';
+import { add_user_settings_listeners, create_user_settings } from './user_settings';
+import { add_otctrades_listeners, create_otctrades_ui } from './otctrades';
+import { add_accounting_settings_listeners, create_accounting_settings } from './accounting_settings';
+import { add_settings_listeners, assert_exchange_exists, create_settings_ui, pages, settings, reset_pages } from './settings';
+import { service } from './rotkehlchen_service';
 
 export function determine_location(url: string) {
     const split = url.split('#');
@@ -105,10 +105,10 @@ export function init_navigation() {
         const target = event.target as HTMLAnchorElement;
         const target_location = determine_location(target.href);
         if (target_location !== 'accounting_settings') {
-             throw new Error('Invalid link location ' + target_location);
+            throw new Error('Invalid link location ' + target_location);
         }
         create_or_reload_page('accounting_settings', create_accounting_settings, add_accounting_settings_listeners);
-     });
+    });
 
     $('#logout_button a').click(event => {
         event.preventDefault();
@@ -117,24 +117,24 @@ export function init_navigation() {
         if (target_location !== 'logout') {
             throw new Error('Invalid link location ' + target_location);
         }
-	$.confirm({
-	    title: 'Confirmation Required',
-	    content: 'Are you sure you want to log out of your current rotkehlchen session?',
-	    buttons: {
-		confirm: function () {
-		    service.logout().then(() => {
-			$('#welcome_text').html('');
-			settings.reset();
-			reset_pages();
-			create_or_reload_dashboard();
-		    }).catch((reason: Error) => {
-			console.log(`Error at logout`);
-			console.error(reason);
-		    });
-		},
-		cancel: function () {
-		}
-	    }
-	});
+        $.confirm({
+            title: 'Confirmation Required',
+            content: 'Are you sure you want to log out of your current rotkehlchen session?',
+            buttons: {
+                confirm: function() {
+                    service.logout().then(() => {
+                        $('#welcome_text').html('');
+                        settings.reset();
+                        reset_pages();
+                        create_or_reload_dashboard();
+                    }).catch((reason: Error) => {
+                        console.log(`Error at logout`);
+                        console.error(reason);
+                    });
+                },
+                cancel: function() {
+                }
+            }
+        });
     });
 }

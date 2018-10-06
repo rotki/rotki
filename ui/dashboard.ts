@@ -230,7 +230,7 @@ ipcRenderer.on('failed', () => {
     showError(
         'Startup Error',
         'The Python backend crushed. Check rotkehlchen.log or open an issue in Github.',
-        function () {
+        function() {
             remote.getCurrentWindow().close();
         }
     );
