@@ -126,6 +126,7 @@ export function init_navigation() {
                         $('#welcome_text').html('');
                         settings.reset();
                         reset_pages();
+                        $('#page-wrapper').html('');
                         create_or_reload_dashboard();
                     }).catch((reason: Error) => {
                         console.log(`Error at logout`);
