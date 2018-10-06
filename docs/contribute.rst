@@ -31,7 +31,7 @@ In order for your Pull Request to be considered it will need to pass the automat
 Committing Rules
 ****************
 
-For an exhaustive guide read `this <http://chris.beams.io/posts/git-commit/`_ guide. It's all really good advice. Some rules that you should always follow though are:
+For an exhaustive guide read `this <http://chris.beams.io/posts/git-commit/>`_ guide. It's all really good advice. Some rules that you should always follow though are:
 
 1. Commits should be just to the point, not too long and not too short.
 2. Commit title not exceed 50 characters.
