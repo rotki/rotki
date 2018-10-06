@@ -5,6 +5,7 @@ import { Currency } from './model/currency';
 import { service } from './rotkehlchen_service';
 
 export class Settings {
+    user_logged = false;
     usd_to_fiat_exchange_rates: { [key: string]: number } = {};
     connected_exchanges: string[] = [];
     floating_precision = 2;
@@ -42,6 +43,7 @@ export class Settings {
     }
 
     public reset() {
+        this.user_logged = false;
         this.floating_precision = 2;
         this.historical_data_start = '01/08/2015';
         this.current_location = '';
@@ -55,6 +57,7 @@ export class Settings {
         this.include_crypto2crypto = true;
         this.taxfree_after_period = 0;
         this.anonymized_logs = false;
+        this.connected_exchanges = [];
     }
 
     get EXCHANGES(): string[] {

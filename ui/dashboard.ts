@@ -186,14 +186,14 @@ export function add_currency_dropdown(currency: Currency) {
 
 export function create_or_reload_dashboard() {
     change_location('index');
-    if (!pages.page_index) {
+    if (!settings.user_logged) {
         const body = $('body');
         body.addClass('loading');
-        console.log('At create/reload, with a null page index');
+        console.log('At create/reload, for the first time');
         body.removeClass('loading');
         prompt_sign_in();
     } else {
-        console.log('At create/reload, with a Populated page index');
+        console.log('At create/reload, revisiting');
         $('#page-wrapper').html('');
         create_dashboard_header();
         create_dashboard_from_saved_balances();

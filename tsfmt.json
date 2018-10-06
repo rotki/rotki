@@ -1,5 +1,4 @@
 {
   "indentSize": 4,
-  "InsertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets": false,
-  "InsertSpaceAfterOpeningAndBeforeClosingTemplateStringBraces": false,
+  "insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets": 0,
 }
