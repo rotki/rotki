@@ -59,6 +59,9 @@ class RotkehlchenServer(object):
         log.debug('Shutdown completed')
         logging.shutdown()
 
+    def logout(self):
+        self.rotkehlchen.logout()
+
     def set_main_currency(self, currency_text):
         self.rotkehlchen.set_main_currency(currency_text)
 

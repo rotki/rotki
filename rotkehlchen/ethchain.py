@@ -22,6 +22,10 @@ class Ethchain(object):
         if attempt_connect:
             self.attempt_connect(ethrpc_port)
 
+    def __del__(self):
+        if self.web3:
+            del self.web3
+
     def attempt_connect(self, ethrpc_port, mainnet_check=True) -> Tuple[bool, str]:
         if self.rpc_port == ethrpc_port and self.connected:
             # We are already connected

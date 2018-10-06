@@ -1,21 +1,20 @@
-import operator
-
-from web3.exceptions import BadFunctionCallOutput
-from collections import defaultdict
-from gevent.lock import Semaphore
-from eth_utils.address import to_checksum_address
-from typing import Tuple, List, Dict, Union, Callable, cast
-
-from rotkehlchen.db.dbhandler import BlockchainAccounts
-from rotkehlchen.errors import InputError, EthSyncError
-from rotkehlchen.fval import FVal
-from rotkehlchen.utils import cache_response_timewise, request_get
-from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.constants import S_ETH, S_BTC
-from rotkehlchen import typing
-
-
 import logging
+import operator
+from collections import defaultdict
+from typing import Callable, Dict, List, Tuple, Union, cast
+
+from eth_utils.address import to_checksum_address
+from gevent.lock import Semaphore
+from web3.exceptions import BadFunctionCallOutput
+
+from rotkehlchen import typing
+from rotkehlchen.constants import S_BTC, S_ETH
+from rotkehlchen.db.dbhandler import BlockchainAccounts
+from rotkehlchen.errors import EthSyncError, InputError
+from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.utils import cache_response_timewise, request_get
+
 logger = logging.getLogger(__name__)
 
 # Type Aliases used in this module
@@ -69,6 +68,9 @@ class Blockchain(object):
         self.balances: Balances = defaultdict(dict)
         # Per asset total balances
         self.totals: Totals = defaultdict(dict)
+
+    def __del__(self):
+        del self.ethchain
 
     def set_eth_rpc_port(self, port: int) -> Tuple[bool, str]:
         return self.ethchain.set_rpc_port(port)
