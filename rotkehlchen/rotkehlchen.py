@@ -473,13 +473,21 @@ class Rotkehlchen(object):
         for entry in total_usd_per_location:
             name = entry[0]
             total = entry[1]
+            if net_usd != FVal(0):
+                percentage = (total / net_usd).to_percentage()
+            else:
+                percentage = '0%'
             stats['location'][name] = {
                 'usd_value': total,
-                'percentage_of_net_value': (total / net_usd).to_percentage(),
+                'percentage_of_net_value': percentage,
             }
 
         for k, v in combined.items():
-            combined[k]['percentage_of_net_value'] = (v['usd_value'] / net_usd).to_percentage()
+            if net_usd != FVal(0):
+                percentage = (v['usd_value'] / net_usd).to_percentage()
+            else:
+                percentage = '0%'
+            combined[k]['percentage_of_net_value'] = percentage
 
         result_dict = merge_dicts(combined, stats)
 
