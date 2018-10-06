@@ -72,9 +72,10 @@ function disable_api_entry(selector_text: string, value: string) {
 }
 
 function enable_api_entry(selector_text: string) {
-    $(selector_text).parent().removeClass().addClass('form-group input-group');
-    $(selector_text).attr('disabled', 'false');
-    $(selector_text).val('');
+    const element = $(selector_text);
+    element.parent().removeClass().addClass('form-group input-group');
+    element.removeAttr('disabled');
+    element.val('');
 }
 
 function enable_key_entries(prefix: string, button_name: string) {
