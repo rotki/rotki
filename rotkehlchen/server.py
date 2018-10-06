@@ -60,6 +60,15 @@ class RotkehlchenServer(object):
         logging.shutdown()
 
     def logout(self):
+        # Kill all queries apart from the main loop -- perhaps a bit heavy handed
+        # but the other options would be:
+        # 1. to wait for all of them. That could take a lot of time, for no reason.
+        #    All results would be discarded anyway since we are logging out.
+        # 2. Have an intricate stop() notification system for each greenlet, but
+        #   that is going to get complicated fast.
+        gevent.killall(self.greenlets[1:])
+        with self.task_lock:
+            self.task_results = {}
         self.rotkehlchen.logout()
 
     def set_main_currency(self, currency_text):

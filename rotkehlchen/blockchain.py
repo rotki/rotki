@@ -13,9 +13,11 @@ from rotkehlchen.db.dbhandler import BlockchainAccounts
 from rotkehlchen.errors import EthSyncError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils import cache_response_timewise, request_get
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 # Type Aliases used in this module
 Balances = Dict[
@@ -84,7 +86,7 @@ class Blockchain(object):
         try:
             self.query_ethereum_balances()
         except BadFunctionCallOutput as e:
-            logger.error(
+            log.error(
                 'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
                 'exception: {}'.format(str(e))
             )
@@ -283,7 +285,7 @@ class Blockchain(object):
                 # above we check that account is an ETH account
                 self.modify_eth_account(typing.EthAddress(account), append_or_remove, add_or_sub)
             except BadFunctionCallOutput as e:
-                logger.error(
+                log.error(
                     'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
                     'exception: {}'.format(str(e))
                 )

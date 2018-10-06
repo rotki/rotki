@@ -263,11 +263,11 @@ class Rotkehlchen(object):
         )
 
     def logout(self):
+        user = self.data.username,
         log.info(
             'Logging out user',
-            user=self.data.username,
+            user=user,
         )
-
         del self.blockchain
         self.blockchain = None
         self.remove_all_exchanges()
@@ -287,6 +287,11 @@ class Rotkehlchen(object):
             self.premium = None
         self.data.logout()
         self.password = None
+
+        log.info(
+            'User successfully logged out',
+            user=user,
+        )
 
     def set_premium_credentials(self, api_key, api_secret):
         log.info('Setting new premium credentials')
