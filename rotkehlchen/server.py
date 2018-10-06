@@ -309,7 +309,7 @@ class RotkehlchenServer(object):
                 api_secret
             )
             res['exchanges'] = self.rotkehlchen.connected_exchanges
-            res['premium'] = True if hasattr(self.rotkehlchen, 'premium') else False
+            res['premium'] = self.rotkehlchen.premium is not None
             res['settings'] = self.rotkehlchen.data.db.get_settings()
         except AuthenticationError as e:
             res['result'] = False
