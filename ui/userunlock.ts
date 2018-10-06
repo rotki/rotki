@@ -128,10 +128,11 @@ export function prompt_sign_in() {
         },
         onContentReady: () => {
             const $content = $(document);
-            $content.find('form').on('submit', function (e: JQuery.Event) {
-                // if the user submits the form by pressing enter in the field.
-                e.preventDefault();
-                $(e.target).trigger('click'); // reference the button and click it
+            $content.find('#password_entry').on('keypress', function(e) {
+                if (e.keyCode === 13) { // enter key
+                    e.preventDefault();
+                    $content.find('button:contains("Sign In")').trigger('click');
+                }
             });
         }
     });
