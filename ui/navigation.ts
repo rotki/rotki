@@ -117,13 +117,24 @@ export function init_navigation() {
         if (target_location !== 'logout') {
             throw new Error('Invalid link location ' + target_location);
         }
-	service.logout().then(() => {
-	    settings.reset();
-	    reset_pages();
-	    create_or_reload_dashboard();
-        }).catch((reason: Error) => {
-            console.log(`Error at logout`);
-            console.error(reason);
+	$.confirm({
+	    title: 'Confirmation Required',
+	    content: 'Are you sure you want to log out of your current rotkehlchen session?',
+	    buttons: {
+		confirm: function () {
+		    service.logout().then(() => {
+			$('#welcome_text').html('');
+			settings.reset();
+			reset_pages();
+			create_or_reload_dashboard();
+		    }).catch((reason: Error) => {
+			console.log(`Error at logout`);
+			console.error(reason);
+		    });
+		},
+		cancel: function () {
+		}
+	    }
 	});
     });
 }
