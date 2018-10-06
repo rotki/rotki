@@ -43,6 +43,7 @@ class Rotkehlchen(object):
         self.lock = Semaphore()
         self.lock.acquire()
         self.results_cache: typing.ResultCache = dict()
+        self.premium = None
         self.connected_exchanges = []
 
         logfilename = None
@@ -185,6 +186,7 @@ class Rotkehlchen(object):
                         'they expired?'
                     )
                 del self.premium
+                self.premium = None
                 return
             else:
                 # no premium credentials in the DB
@@ -248,8 +250,8 @@ class Rotkehlchen(object):
         # Initialize the rotkehlchen logger
         LoggingSettings(anonymized_logs=db_settings['anonymized_logs'])
 
-        self.initialize_exchanges(secret_data)
         self.inquirer = Inquirer(kraken=self.kraken)
+        self.initialize_exchanges(secret_data)
 
         ethchain = Ethchain(eth_rpc_port)
         self.blockchain = Blockchain(
@@ -288,7 +290,7 @@ class Rotkehlchen(object):
 
     def set_premium_credentials(self, api_key, api_secret):
         log.info('Setting new premium credentials')
-        if hasattr(self, 'premium'):
+        if self.premium is not None:
             valid, empty_or_error = self.premium.set_credentials(api_key, api_secret)
         else:
             self.premium, valid, empty_or_error = premium_create_and_verify(api_key, api_secret)
@@ -301,7 +303,7 @@ class Rotkehlchen(object):
 
     def maybe_upload_data_to_server(self):
         # upload only if unlocked user has premium
-        if not hasattr(self, 'premium'):
+        if self.premium is None:
             return
 
         # upload only once per hour

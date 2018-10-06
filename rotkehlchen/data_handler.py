@@ -144,6 +144,7 @@ class DataHandler(object):
         self.db = None
 
     def unlock(self, username: str, password: str, create_new: bool) -> typing.FilePath:
+        self.username = username
         user_data_dir = cast(typing.FilePath, os.path.join(self.data_directory, username))
         if create_new:
             if os.path.exists(user_data_dir):
