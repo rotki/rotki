@@ -18,8 +18,9 @@ export class Settings {
     eth_rpc_port = '8545';
     balance_save_frequency = 24;
     last_balance_save = 0;
-    include_crypto2crypto: boolean;
-    taxfree_after_period: number;
+    include_crypto2crypto = true;
+    include_gas_costs = true;
+    taxfree_after_period = 0;
     anonymized_logs = false;
     private exchanges = ['kraken', 'poloniex', 'bittrex', 'bitmex', 'binance'];
     private currencies = [
@@ -33,11 +34,6 @@ export class Settings {
     private readonly icon_map: { [asset: string]: string };
 
     constructor() {
-        // rant start: Why is typescript so stupid as to not see that in the
-        // function this.reset() the following 2 attributes are set?
-        this.include_crypto2crypto = false;
-        this.taxfree_after_period = 0;
-        // rant end
         this.reset();
         this.icon_map = this.get_icon_map();
     }
@@ -55,6 +51,7 @@ export class Settings {
         this.balance_save_frequency = 24;
         this.last_balance_save = 0;
         this.include_crypto2crypto = true;
+        this.include_gas_costs = true;
         this.taxfree_after_period = 0;
         this.anonymized_logs = false;
         this.connected_exchanges = [];

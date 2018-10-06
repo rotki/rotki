@@ -54,12 +54,14 @@ VALID_SETTINGS = (
     'taxfree_after_period',
     'balance_save_frequency',
     'anonymized_logs',
+    'include_gas_costs'
 )
 
 BOOLEAN_SETTINGS = (
     'premium_should_sync',
     'include_crypto2crypto',
     'anonymized_logs',
+    'include_gas_costs'
 )
 
 
