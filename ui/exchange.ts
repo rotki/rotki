@@ -1,11 +1,11 @@
-import { page_header } from './elements';
-import { total_balances_get } from './balances_table';
-import { AssetTable } from './asset_table';
-import { create_task } from './monitor';
-import { change_location } from './navigation';
-import { pages } from './settings';
-import { PlacementType } from './enums/PlacementType';
-import { service } from './rotkehlchen_service';
+import {page_header} from './elements';
+import {total_balances_get} from './balances_table';
+import {AssetTable} from './asset_table';
+import {create_task} from './monitor';
+import {change_location} from './navigation';
+import {pages} from './settings';
+import {PlacementType} from './enums/PlacementType';
+import {service} from './rotkehlchen_service';
 
 let SAVED_TABLES: { [name: string]: AssetTable } = {};
 

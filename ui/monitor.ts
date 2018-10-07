@@ -1,6 +1,6 @@
-import { BalanceStatus } from './enums/BalanceStatus';
-import { service } from './rotkehlchen_service';
-import { Task } from './model/task';
+import {BalanceStatus} from './enums/BalanceStatus';
+import {service} from './rotkehlchen_service';
+import {Task} from './model/task';
 
 const callbacks: Array<[string, (result: any) => void]> = [];
 let tasks_map: { [task_id: number]: Task } = {};

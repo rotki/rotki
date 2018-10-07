@@ -1,13 +1,13 @@
-import { form_entry } from './elements';
-import { showError, showInfo, suggest_element, unsuggest_element } from './utils';
-import { set_ui_main_currency } from './topmenu';
-import { get_total_assets_value, total_table_add_balances } from './balances_table';
-import { create_box } from './dashboard';
-import { create_task } from './monitor';
-import { query_exchange_balances_async } from './exchange';
-import { settings } from './settings';
-import { UnlockResult } from './model/action-result';
-import { service } from './rotkehlchen_service';
+import {form_entry} from './elements';
+import {showError, showInfo, suggest_element, unsuggest_element} from './utils';
+import {set_ui_main_currency} from './topmenu';
+import {get_total_assets_value, total_table_add_balances} from './balances_table';
+import {create_box} from './dashboard';
+import {create_task} from './monitor';
+import {query_exchange_balances_async} from './exchange';
+import {settings} from './settings';
+import {UnlockResult} from './model/action-result';
+import {service} from './rotkehlchen_service';
 
 function verify_userpass(username: string, password: string) {
     if (!username) {

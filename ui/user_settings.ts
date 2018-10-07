@@ -1,5 +1,5 @@
-import { AssetTable } from './asset_table';
-import { create_task, monitor_add_callback } from './monitor';
+import {AssetTable} from './asset_table';
+import {create_task, monitor_add_callback} from './monitor';
 import {
     dt_edit_drawcallback,
     format_asset_title_for_ui,
@@ -21,14 +21,14 @@ import {
     settings_panel,
     table_html
 } from './elements';
-import { format_currency_value, get_fiat_usd_value, pages, settings } from './settings';
-import { query_exchange_balances_async } from './exchange';
-import { PlacementType } from './enums/PlacementType';
-import { ActionResult } from './model/action-result';
-import { AssetBalance } from './model/asset-balance';
+import {format_currency_value, get_fiat_usd_value, pages, settings} from './settings';
+import {query_exchange_balances_async} from './exchange';
+import {PlacementType} from './enums/PlacementType';
+import {ActionResult} from './model/action-result';
+import {AssetBalance} from './model/asset-balance';
 
-import { BlockchainBalances } from './model/blockchain-balances';
-import { NoPremiumCredentials, NoResponseError, service } from './rotkehlchen_service';
+import {BlockchainBalances} from './model/blockchain-balances';
+import {NoPremiumCredentials, NoResponseError, service} from './rotkehlchen_service';
 import Api = DataTables.Api;
 
 let populate_eth_tokens_called = false;
@@ -39,7 +39,7 @@ let BB_PER_ASSET_TABLE: AssetTable;
 let BB_PER_ACCOUNT_TABLES: { [asset: string]: AssetTable | DataTables.Api } = {};
 // awesome idea of template string plus destructuring/mapping taken from:
 // https://stackoverflow.com/a/39065147/110395
-const ExchangeBadge = ({ name, css_class }: { name: string, css_class: string }) => `
+const ExchangeBadge = ({name, css_class}: { name: string, css_class: string }) => `
 <div id="${name}_badge" class="col-sm-6 col-lg-3">
   <div style="margin-top: 5px;" class="row">
     <div class="col-xs-3"><i><img title="${name}" class="${css_class}" src="images/${name}.png" /></i>
@@ -55,7 +55,7 @@ const ExchangeBadge = ({ name, css_class }: { name: string, css_class: string })
 export function reset_user_settings() {
     FIAT_BALANCES = {};
     OWNED_TOKENS = [];
-    BB_PER_ACCOUNT_TABLES = {}
+    BB_PER_ACCOUNT_TABLES = {};
     populate_eth_tokens_called = false;
 }
 
@@ -185,7 +185,7 @@ function setup_exchange_callback(event: JQuery.Event) {
         // Exchange setup in the backend was successful
         disable_key_entries('', 'exchange', exchange_name);
         settings.connected_exchanges.push(exchange_name);
-        const str = ExchangeBadge({ name: exchange_name, css_class: 'exchange-icon' });
+        const str = ExchangeBadge({name: exchange_name, css_class: 'exchange-icon'});
         $(str).appendTo($('#exchange_badges'));
         stop_show_loading('#setup_exchange_button');
         // also query the balances to have them handy to be shown if needed
@@ -221,7 +221,7 @@ function fiat_modify_callback(event: JQuery.Event) {
         if (balance === '') {
             delete FIAT_BALANCES[currency];
         } else {
-            FIAT_BALANCES[currency] = { amount: balance, usd_value: get_fiat_usd_value(currency, balance) };
+            FIAT_BALANCES[currency] = {amount: balance, usd_value: get_fiat_usd_value(currency, balance)};
         }
 
         if (FIAT_TABLE) {
@@ -270,7 +270,7 @@ export function create_user_settings() {
         add_premium_settings();
     }
 
-    const badge_input = settings.connected_exchanges.map(x => ({ name: x, css_class: 'exchange-icon' }));
+    const badge_input = settings.connected_exchanges.map(x => ({name: x, css_class: 'exchange-icon'}));
     str = '<div id="exchange_badges" class="row">';
     str += badge_input.map(ExchangeBadge).join('');
     str += '</div>';
@@ -420,7 +420,7 @@ function format_ethchain_per_account_data(eth_accounts: { [account: string]: Ass
         const eth_amount_str = eth_amount.toFixed(settings.floating_precision);
         const total_usd_value = parseFloat(account_data['usd_value'] as string);
         const total_usd_value_str = total_usd_value.toFixed(settings.floating_precision);
-        const row: EthChainRowData = { 'account': account, 'ETH': eth_amount_str, 'total_usd_value': total_usd_value_str };
+        const row: EthChainRowData = {'account': account, 'ETH': eth_amount_str, 'total_usd_value': total_usd_value_str};
         for (let i = 0; i < OWNED_TOKENS.length; i++) {
             if (!account_data[OWNED_TOKENS[i]]) {
                 row[OWNED_TOKENS[i]] = 0;
@@ -436,15 +436,15 @@ function format_ethchain_per_account_data(eth_accounts: { [account: string]: Ass
         title: string,
         render?: any
     }[] = [
-            { 'data': 'account', 'title': 'Account' },
-            { 'data': 'ETH', 'title': format_asset_title_for_ui('ETH') }
+            {'data': 'account', 'title': 'Account'},
+            {'data': 'ETH', 'title': format_asset_title_for_ui('ETH')}
         ];
     // if user has a lot of ETH tokens shorten the table by shortening the display of accounts
     if (OWNED_TOKENS.length > 4) {
         column_data[0]['render'] = table_data_shortener(2, 6);
     }
     for (let i = 0; i < OWNED_TOKENS.length; i++) {
-        column_data.push({ 'data': OWNED_TOKENS[i], 'title': format_asset_title_for_ui(OWNED_TOKENS[i]) });
+        column_data.push({'data': OWNED_TOKENS[i], 'title': format_asset_title_for_ui(OWNED_TOKENS[i])});
     }
 
     column_data.push({
@@ -569,7 +569,7 @@ function populate_eth_tokens() {
                 OWNED_TOKENS = result.owned_eth_tokens;
                 for (let i = 0; i < all_tokens.length; i++) {
                     const symbol = all_tokens[i].symbol;
-                    $('#eth_tokens_select').multiSelect('addOption', { value: symbol, text: symbol });
+                    $('#eth_tokens_select').multiSelect('addOption', {value: symbol, text: symbol});
 
                 }
                 $('#eth_tokens_select').multiSelect('select', OWNED_TOKENS);

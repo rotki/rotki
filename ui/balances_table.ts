@@ -1,6 +1,6 @@
-import { format_asset_title_for_ui, timestamp_to_date } from './utils';
-import { format_currency_value, pages, settings } from './settings';
-import { AssetBalance } from './model/asset-balance';
+import {format_asset_title_for_ui, timestamp_to_date} from './utils';
+import {format_currency_value, pages, settings} from './settings';
+import {AssetBalance} from './model/asset-balance';
 import 'datatables.net';
 
 let TOTAL_BALANCES_TABLE: DataTables.Api | null = null;
@@ -117,7 +117,7 @@ export function total_table_add_balances(location: string, query_result: { [asse
 
         const amount = parseFloat(query_result[asset].amount.toString());
         const value = parseFloat(query_result[asset].usd_value.toString());
-        data[asset] = { amount: amount, usd_value: value };
+        data[asset] = {amount: amount, usd_value: value};
     }
     SAVED_BALANCES[location] = data;
     total_table_recreate();
@@ -204,7 +204,7 @@ function init_balances_table(data: AssetBalance[]) {
                 'data': 'asset',
                 'render': (_data: any, _type: string, row: { [key: string]: string }) => format_asset_title_for_ui(row['asset'])
             },
-            { 'data': 'amount' },
+            {'data': 'amount'},
             {
                 'title': `${settings.main_currency.ticker_symbol} value`,
                 'data': 'usd_value',
@@ -212,7 +212,7 @@ function init_balances_table(data: AssetBalance[]) {
                     return format_currency_value(_data, row.asset as string, row.amount as string);
                 }
             },
-            { 'data': 'percentage' }
+            {'data': 'percentage'}
         ],
         'initComplete': balance_table_init_callback as any,
         'order': [[3, 'desc']]

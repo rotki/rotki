@@ -1,8 +1,8 @@
-import { showError, showInfo } from './utils';
-import { form_button, form_checkbox, form_entry, form_select, page_header, settings_panel } from './elements';
+import {showError, showInfo} from './utils';
+import {form_button, form_checkbox, form_entry, form_select, page_header, settings_panel} from './elements';
 import * as fs from 'fs';
-import { Currency } from './model/currency';
-import { service } from './rotkehlchen_service';
+import {Currency} from './model/currency';
+import {service} from './rotkehlchen_service';
 
 export class Settings {
     user_logged = false;
@@ -178,7 +178,7 @@ export function add_settings_listeners() {
         });
     });
 
-    $('#historical_data_start').datetimepicker({ timepicker: false });
+    $('#historical_data_start').datetimepicker({timepicker: false});
 }
 
 export function create_settings_ui() {
