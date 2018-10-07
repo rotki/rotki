@@ -30,8 +30,7 @@ function save_current_location() {
     } else if (settings.current_location.startsWith('exchange_')) {
         const exchange_name = settings.current_location.substring(9);
         assert_exchange_exists(exchange_name);
-        console.log('Saving exchange ' + exchange_name);
-        pages.page_exchange[exchange_name] = $('#page-wrapper').html();
+        console.log(`Moving out of exchange ${exchange_name} without saving.`);
     } else if (settings.current_location === 'user_settings') {
         console.log('Saving user settings ...');
         pages.page_user_settings = $('#page-wrapper').html();

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`187` Exchange balance tables no longer become unresponsive if visited multiple times.
 * :bug:`181` Take 0 net balance into account when doing balance queries and not crash.
 * :bug:`156` Overflow should now scroll completely and properly on mac.
 * :feature:`138` Add an option to allow for anonymizing of all sensitive rotkehlchen logs.

@@ -10,6 +10,11 @@ export class AssetTable {
     private first_column_name: string;
     private id: string;
     private table?: DataTables.Api;
+    private header?: string;
+    private header_id?: string;
+    private placement_type: PlacementType;
+    private placement_id: string;
+    private table_html  = '';
 
     /**
      * @param first_column      string         Name of the first column of the table
@@ -35,23 +40,38 @@ export class AssetTable {
     ) {
         this.first_column_name = first_column;
         this.id = id;
-        let str = '';
-        if (header) {
-            str += '<h3 ';
-            if (header_id) {
-                str += `id="${header_id}"`;
-            }
-            str += `>${header}</h3>`;
-        }
-        str += table_html(3, id);
-        if (placement_type === PlacementType.appendTo) {
-            $(str).appendTo($(`#${placement_id}`));
-        } else if (placement_type === PlacementType.insertAfter) {
-            $(str).insertAfter(`#${placement_id}`);
-        } else {
-            throw new Error(`Invalid AssetTable construction value for placement_type: ${placement_type}`);
-        }
+        this.header = header;
+        this.header_id = header_id;
+        this.placement_type = placement_type;
+        this.placement_id = placement_id;
+
+        this.calculate_html();
+        this.place_html();
         this.populate(table_data, draw_cb);
+    }
+
+    calculate_html() {
+        let str = '';
+        if (this.header) {
+            str += '<h3 ';
+            if (this.header_id) {
+                str += `id="${this.header_id}"`;
+            }
+            str += `>${this.header}</h3>`;
+        }
+        str += table_html(3, this.id);
+        this.table_html = str;
+    }
+
+    place_html() {
+        const str = this.table_html;
+        if (this.placement_type === PlacementType.appendTo) {
+            $(str).appendTo($(`#${this.placement_id}`));
+        } else if (this.placement_type === PlacementType.insertAfter) {
+            $(str).insertAfter(`#${this.placement_id}`);
+        } else {
+            throw new Error(`Invalid AssetTable construction value for placement_type: ${this.placement_type}`);
+        }
     }
 
     format_data(original_data: { [asset: string]: AssetBalance }): AssetBalance[] {
@@ -121,6 +141,15 @@ export class AssetTable {
 
     reload() {
         reload_table_currency_val(this.table as Api, 2);
+    }
+
+    repopulate(new_data: { [asset: string]: AssetBalance }) {
+        if (this.table) {
+            $(`#${this.id}_table_wrapper`).empty();
+            this.table.destroy(true);
+            this.place_html();
+            this.populate(new_data);
+        }
     }
 
     update_format(new_data: { [asset: string]: AssetBalance }) {
