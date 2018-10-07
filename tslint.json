@@ -1,8 +1,9 @@
 {
     "rulesDirectory": [
-        
+        "node_modules/tslint-eslint-rules/dist/rules"
     ],
     "rules": {
+        "object-curly-spacing": [true, "never"],
         "arrow-return-shorthand": true,
         "callable-types": true,
         "class-name": true,
