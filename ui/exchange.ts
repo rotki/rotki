@@ -28,21 +28,21 @@ function create_exchange_table(name: string) {
     const str = page_header(name);
     const $page_wrapper = $('#page-wrapper');
     $page_wrapper.html(str);
+    pages.page_exchange[name] = $page_wrapper.html();
     const table = SAVED_TABLES[name];
     if (!table) {
         const data = total_balances_get()[name];
         console.log(`CREATING TABLE FOR ${name}`);
         SAVED_TABLES[name] = new AssetTable('asset', name, PlacementType.appendTo, 'page-wrapper', data);
-        pages.page_exchange[name] = $page_wrapper.html();
     }
 }
 
-export function reload_exchange_tables_if_existing() {
-    for (const name in SAVED_TABLES) {
-        if (SAVED_TABLES.hasOwnProperty(name)) {
-            const table = SAVED_TABLES[name];
-            table.reload();
-        }
+export function reload_exchange_table_if_existing(name: string) {
+    if (SAVED_TABLES.hasOwnProperty(name)) {
+        const table = SAVED_TABLES[name];
+        const data = total_balances_get()[name];
+        table.repopulate(data);
+        table.reload();
     }
 }
 
@@ -54,5 +54,6 @@ export function create_or_reload_exchange(name: string) {
     } else {
         console.log('At create/reload exchange, with a Populated page index');
         $('#page-wrapper').html(pages.page_exchange[name]);
+        reload_exchange_table_if_existing(name);
     }
 }

@@ -1,6 +1,6 @@
 import {iterate_saved_balances, reload_balance_table_if_existing} from './balances_table';
 import {reload_user_settings_tables_if_existing} from './user_settings';
-import {reload_exchange_tables_if_existing} from './exchange';
+import {reload_exchange_table_if_existing} from './exchange';
 import {format_currency_value, settings} from './settings';
 import {Currency} from './model/currency';
 
@@ -23,7 +23,10 @@ export function set_ui_main_currency(currency_ticker_symbol: string) {
     reload_boxes_after_currency_change(currency);
     // also adjust tables if they exist
     reload_balance_table_if_existing();
-    reload_exchange_tables_if_existing();
+    if (settings.current_location && settings.current_location.startsWith('exchange_')) {
+        const exchange_name = settings.current_location.substring(9);
+        reload_exchange_table_if_existing(exchange_name);
+    }
     reload_user_settings_tables_if_existing();
 }
 
