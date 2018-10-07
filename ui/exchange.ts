@@ -7,7 +7,7 @@ import {pages} from './settings';
 import {PlacementType} from './enums/PlacementType';
 import {service} from './rotkehlchen_service';
 
-const SAVED_TABLES: { [name: string]: AssetTable } = {};
+let SAVED_TABLES: { [name: string]: AssetTable } = {};
 
 export function query_exchange_balances_async(name: string, is_balance_task: boolean) {
     service.query_exchange_balances_async(name).then(result => {
@@ -44,6 +44,10 @@ export function reload_exchange_table_if_existing(name: string) {
         table.repopulate(data);
         table.reload();
     }
+}
+
+export function reset_exchange_tables() {
+    SAVED_TABLES = {};
 }
 
 export function create_or_reload_exchange(name: string) {

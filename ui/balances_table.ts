@@ -4,7 +4,7 @@ import {AssetBalance} from './model/asset-balance';
 import 'datatables.net';
 
 let TOTAL_BALANCES_TABLE: DataTables.Api | null = null;
-const SAVED_BALANCES: { [location: string]: { [asset: string]: AssetBalance } } = {};
+let SAVED_BALANCES: { [location: string]: { [asset: string]: AssetBalance } } = {};
 
 function create_full_data(): AssetBalance[] {
     const inter_data: { [asset: string]: AssetBalance } = {};
@@ -70,6 +70,11 @@ function create_full_data(): AssetBalance[] {
 
 export function total_balances_get() {
     return SAVED_BALANCES;
+}
+
+export function reset_total_balances() {
+    TOTAL_BALANCES_TABLE = null;
+    SAVED_BALANCES = {};
 }
 
 export function total_table_recreate() {

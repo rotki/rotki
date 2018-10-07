@@ -101,6 +101,11 @@ class Accountant(object):
         self.events.include_crypto2crypto = include_crypto2crypto
         self.events.taxfree_after_period = taxfree_after_period
 
+    def __del__(self):
+        del self.events
+        del self.csvexporter
+        del self.price_historian
+
     @property
     def general_trade_pl(self):
         return self.events.general_trade_profit_loss

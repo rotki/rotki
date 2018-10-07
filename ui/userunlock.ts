@@ -2,7 +2,7 @@ import {form_entry} from './elements';
 import {showError, showInfo, suggest_element, unsuggest_element} from './utils';
 import {set_ui_main_currency} from './topmenu';
 import {get_total_assets_value, total_table_add_balances} from './balances_table';
-import {create_box} from './dashboard';
+import {create_box, create_or_reload_dashboard} from './dashboard';
 import {create_task} from './monitor';
 import {query_exchange_balances_async} from './exchange';
 import {settings} from './settings';
@@ -33,14 +33,14 @@ function ask_permission(msg: string, username: string, password: string, create_
             yes: {
                 text: 'Yes',
                 btnClass: 'btn-blue',
-                action: function () {
+                action: function() {
                     unlock_async(username, password, create_true, 'yes', api_key, api_secret);
                 }
             },
             no: {
                 text: 'No',
                 btnClass: 'btn-red',
-                action: function () {
+                action: function() {
                     unlock_async(username, password, create_true, 'no', api_key, api_secret);
                 }
             }
@@ -81,11 +81,11 @@ function prompt_new_account() {
                     return true;
                 }
             },
-            cancel: function () {
+            cancel: function() {
                 prompt_sign_in();
             }
         },
-        onContentReady: function () {
+        onContentReady: function() {
             const $content = $(document);
             $content.find('form').on('submit', (e: JQuery.Event) => {
                 // if the user submits the form by pressing enter in the field.
@@ -128,7 +128,7 @@ export function prompt_sign_in() {
         },
         onContentReady: () => {
             const $content = $(document);
-            $content.find('form').on('submit', function (e: JQuery.Event) {
+            $content.find('form').on('submit', function(e: JQuery.Event) {
                 // if the user submits the form by pressing enter in the field.
                 e.preventDefault();
                 $(e.target).trigger('click'); // reference the button and click it
@@ -183,7 +183,7 @@ function unlock_user(
     api_secret: string = ''
 ) {
     $.alert({
-        content: function () {
+        content: function() {
             const self = this as Alert;
             return unlock_async(username, password, create_true, sync_approval, api_key, api_secret).done(
                 (response: UnlockResult) => {
@@ -201,6 +201,7 @@ function unlock_user(
                     self.setContentAppend(`<div>Welcome ${username}!</div>`);
                     $('#welcome_text').html(`Welcome ${username}!`);
 
+                    settings.user_logged = true;
                     settings.has_premium = response.premium;
                     if (db_settings.premium_should_sync) {
                         settings.premium_should_sync = db_settings.premium_should_sync;
@@ -245,15 +246,15 @@ function unlock_user(
 
                     GLOBAL_UNLOCK_DEFERRED = null;
                 }).progress((msg: string) => {
-                ask_permission(msg, username, password, create_true, api_key, api_secret);
-            }).fail((error: Error) => {
-                self.setType('red');
-                self.setTitle('Sign In Failed');
-                self.setContentAppend(`<div>${error}</div>`);
-                // @ts-ignore
-                self.buttons.ok.action = () => prompt_sign_in();
-                GLOBAL_UNLOCK_DEFERRED = null;
-            });
+                    ask_permission(msg, username, password, create_true, api_key, api_secret);
+                }).fail((error: Error) => {
+                    self.setType('red');
+                    self.setTitle('Sign In Failed');
+                    self.setContentAppend(`<div>${error}</div>`);
+                    // @ts-ignore
+                    self.buttons.ok.action = () => prompt_sign_in();
+                    GLOBAL_UNLOCK_DEFERRED = null;
+                });
         }
     });
 }
@@ -282,6 +283,7 @@ function load_dashboard_after_unlock(exchanges: string[], is_new_user: boolean) 
             }
         });
     }
+    create_or_reload_dashboard();
 
 }
 

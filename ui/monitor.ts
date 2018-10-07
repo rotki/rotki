@@ -3,7 +3,7 @@ import {service} from './rotkehlchen_service';
 import {Task} from './model/task';
 
 const callbacks: Array<[string, (result: any) => void]> = [];
-const tasks_map: { [task_id: number]: Task } = {};
+let tasks_map: { [task_id: number]: Task } = {};
 const balance_tasks: number[] = [];
 let balance_query_status = BalanceStatus.start;
 
@@ -101,7 +101,7 @@ function monitor_tasks() {
         }
         const task = tasks_map[task_id];
         if (task.id == null) {
-            console.log('NULL TASK ID: '+ JSON.stringify(task, null, 4));
+            console.log('NULL TASK ID: ' + JSON.stringify(task, null, 4));
             continue;
         }
 
@@ -127,6 +127,10 @@ function monitor_tasks() {
             }
         });
     }
+}
+
+export function reset_tasks() {
+    tasks_map = {};
 }
 
 export function init_monitor() {

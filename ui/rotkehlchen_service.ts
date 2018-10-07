@@ -27,6 +27,18 @@ export class RotkehlchenService {
         client.connect('tcp://127.0.0.1:4242');
     }
 
+    logout(): Promise<boolean> {
+        return new Promise<boolean>((resolve, reject) => {
+            client.invoke('logout', (error: Error) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(true);
+                }
+            });
+        });
+    }
+
     query_last_balance_save_time(): Promise<number> {
         return new Promise<number>((resolve, reject) => {
             // for now only query when was the last time balance data was saved

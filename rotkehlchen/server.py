@@ -59,6 +59,18 @@ class RotkehlchenServer(object):
         log.debug('Shutdown completed')
         logging.shutdown()
 
+    def logout(self):
+        # Kill all queries apart from the main loop -- perhaps a bit heavy handed
+        # but the other options would be:
+        # 1. to wait for all of them. That could take a lot of time, for no reason.
+        #    All results would be discarded anyway since we are logging out.
+        # 2. Have an intricate stop() notification system for each greenlet, but
+        #   that is going to get complicated fast.
+        gevent.killall(self.greenlets[1:])
+        with self.task_lock:
+            self.task_results = {}
+        self.rotkehlchen.logout()
+
     def set_main_currency(self, currency_text):
         self.rotkehlchen.set_main_currency(currency_text)
 
@@ -297,7 +309,7 @@ class RotkehlchenServer(object):
                 api_secret
             )
             res['exchanges'] = self.rotkehlchen.connected_exchanges
-            res['premium'] = True if hasattr(self.rotkehlchen, 'premium') else False
+            res['premium'] = self.rotkehlchen.premium is not None
             res['settings'] = self.rotkehlchen.data.db.get_settings()
         except AuthenticationError as e:
             res['result'] = False

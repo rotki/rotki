@@ -31,11 +31,12 @@ import {BlockchainBalances} from './model/blockchain-balances';
 import {NoPremiumCredentials, NoResponseError, service} from './rotkehlchen_service';
 import Api = DataTables.Api;
 
+let populate_eth_tokens_called = false;
 let FIAT_TABLE: AssetTable;
 let FIAT_BALANCES: { [currency: string]: AssetBalance };
 let OWNED_TOKENS: string[] = [];
 let BB_PER_ASSET_TABLE: AssetTable;
-const BB_PER_ACCOUNT_TABLES: { [asset: string]: AssetTable | DataTables.Api } = {};
+let BB_PER_ACCOUNT_TABLES: { [asset: string]: AssetTable | DataTables.Api } = {};
 // awesome idea of template string plus destructuring/mapping taken from:
 // https://stackoverflow.com/a/39065147/110395
 const ExchangeBadge = ({name, css_class}: { name: string, css_class: string }) => `
@@ -50,6 +51,13 @@ const ExchangeBadge = ({name, css_class}: { name: string, css_class: string }) =
   </div>
 </div>
 `;
+
+export function reset_user_settings() {
+    FIAT_BALANCES = {};
+    OWNED_TOKENS = [];
+    BB_PER_ACCOUNT_TABLES = {};
+    populate_eth_tokens_called = false;
+}
 
 function show_loading(selector?: string) {
     $('html').addClass('wait');
@@ -66,9 +74,10 @@ function stop_show_loading(selector?: string) {
 }
 
 function disable_api_entry(selector_text: string, value: string) {
-    $(selector_text).parent().removeClass().addClass('form-group input-group has-success');
-    $(selector_text).attr('disabled', 'true');
-    $(selector_text).val(value);
+    const element = $(selector_text);
+    element.parent().removeClass().addClass('form-group input-group has-success');
+    element.attr('disabled', 'true');
+    element.val(value);
 }
 
 function enable_api_entry(selector_text: string) {
@@ -109,14 +118,14 @@ function setup_premium_callback(event: JQuery.Event) {
             settings.has_premium = true;
             add_premium_settings();
         }).catch((reason: Error) => {
-        if (reason instanceof NoResponseError) {
-            showError('Premium Credentials Error', 'Error at adding credentials for premium subscription');
-        } else if (reason instanceof NoPremiumCredentials) {
-            showError('Premium Credentials Error', reason.message);
-        } else {
-            showError('Premium Credentials Error', reason.message);
-        }
-    });
+            if (reason instanceof NoResponseError) {
+                showError('Premium Credentials Error', 'Error at adding credentials for premium subscription');
+            } else if (reason instanceof NoPremiumCredentials) {
+                showError('Premium Credentials Error', reason.message);
+            } else {
+                showError('Premium Credentials Error', reason.message);
+            }
+        });
 }
 
 function change_premiumsettings_callback(event: JQuery.Event) {
@@ -148,7 +157,7 @@ function setup_exchange_callback(event: JQuery.Event) {
             content: 'Are you sure you want to delete the API key and secret from rotkehlchen? ' +
                 'This action is not undoable and you will need to obtain the key and secret again from the exchange.',
             buttons: {
-                confirm: function () {
+                confirm: function() {
                     service.remove_exchange(exchange_name).then(() => {
                         // Exchange removal from backend successful
                         enable_key_entries('', 'exchange');
@@ -162,7 +171,7 @@ function setup_exchange_callback(event: JQuery.Event) {
                         showError('Exchange Removal Error', `Error at removing ${exchange_name} exchange: ${reason.message}`);
                     });
                 },
-                cancel: function () {
+                cancel: function() {
                 }
             }
         });
@@ -361,8 +370,8 @@ function add_blockchain_account(event: JQuery.Event) {
     });
 }
 
-const table_data_shortener = function (cutoff_start: number, keep_length: number) {
-    const esc = function (t: string) {
+const table_data_shortener = function(cutoff_start: number, keep_length: number) {
+    const esc = function(t: string) {
         return t
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
@@ -370,7 +379,7 @@ const table_data_shortener = function (cutoff_start: number, keep_length: number
             .replace(/"/g, '&quot;');
     };
 
-    return function (d: number | string, type: string) {
+    return function(d: number | string, type: string) {
         // Order, search and type get the original data
         if (type !== 'display') {
             return d;
@@ -427,9 +436,9 @@ function format_ethchain_per_account_data(eth_accounts: { [account: string]: Ass
         title: string,
         render?: any
     }[] = [
-        {'data': 'account', 'title': 'Account'},
-        {'data': 'ETH', 'title': format_asset_title_for_ui('ETH')}
-    ];
+            {'data': 'account', 'title': 'Account'},
+            {'data': 'ETH', 'title': format_asset_title_for_ui('ETH')}
+        ];
     // if user has a lot of ETH tokens shorten the table by shortening the display of accounts
     if (OWNED_TOKENS.length > 4) {
         column_data[0]['render'] = table_data_shortener(2, 6);
@@ -533,8 +542,6 @@ function create_blockchain_balances_tables(result: BlockchainBalances) {
     // also save the user settings page
     pages.page_user_settings = $('#page-wrapper').html();
 }
-
-let populate_eth_tokens_called = false;
 
 function populate_eth_tokens() {
     service.get_eth_tokens().then(result => {

@@ -19,7 +19,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian, TradesHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.kraken import Kraken
-from rotkehlchen.logging import LoggingSettings, RotkehlchenLogsAdapter
+from rotkehlchen.logging import DEFAULT_ANONYMIZED_LOGS, LoggingSettings, RotkehlchenLogsAdapter
 from rotkehlchen.poloniex import Poloniex
 from rotkehlchen.premium import premium_create_and_verify
 from rotkehlchen.utils import (
@@ -43,6 +43,7 @@ class Rotkehlchen(object):
         self.lock = Semaphore()
         self.lock.acquire()
         self.results_cache: typing.ResultCache = dict()
+        self.premium = None
         self.connected_exchanges = []
 
         logfilename = None
@@ -143,6 +144,18 @@ class Rotkehlchen(object):
             self.connected_exchanges.append('bitmex')
             self.trades_historian.set_exchange('bitmex', self.bitmex)
 
+    def remove_all_exchanges(self):
+        if self.kraken is not None:
+            self.delete_exchange_data('kraken')
+        if self.poloniex is not None:
+            self.delete_exchange_data('poloniex')
+        if self.bittrex is not None:
+            self.delete_exchange_data('bittrex')
+        if self.binance is not None:
+            self.delete_exchange_data('binance')
+        if self.bitmex is not None:
+            self.delete_exchange_data('bitmex')
+
     def try_premium_at_start(self, api_key, api_secret, create_new, sync_approval, user_dir):
         """Check if new user provided api pair or we already got one in the DB"""
 
@@ -173,6 +186,7 @@ class Rotkehlchen(object):
                         'they expired?'
                     )
                 del self.premium
+                self.premium = None
                 return
             else:
                 # no premium credentials in the DB
@@ -218,13 +232,13 @@ class Rotkehlchen(object):
             self.data.get_eth_accounts(),
             historical_data_start,
         )
-        self.price_historian = PriceHistorian(
+        price_historian = PriceHistorian(
             self.data_dir,
             historical_data_start,
         )
         db_settings = self.data.db.get_settings()
         self.accountant = Accountant(
-            price_historian=self.price_historian,
+            price_historian=price_historian,
             profit_currency=self.data.main_currency(),
             user_directory=user_dir,
             create_csv=True,
@@ -248,9 +262,40 @@ class Rotkehlchen(object):
             ethchain=ethchain,
         )
 
+    def logout(self):
+        user = self.data.username,
+        log.info(
+            'Logging out user',
+            user=user,
+        )
+        del self.blockchain
+        self.blockchain = None
+        self.remove_all_exchanges()
+
+        # Reset rotkehlchen logger to default
+        LoggingSettings(anonymized_logs=DEFAULT_ANONYMIZED_LOGS)
+
+        del self.inquirer
+        self.inquirer = None
+        del self.accountant
+        self.accountant = None
+        del self.trades_historian
+        self.trades_historian = None
+
+        if self.premium is not None:
+            del self.premium
+            self.premium = None
+        self.data.logout()
+        self.password = None
+
+        log.info(
+            'User successfully logged out',
+            user=user,
+        )
+
     def set_premium_credentials(self, api_key, api_secret):
         log.info('Setting new premium credentials')
-        if hasattr(self, 'premium'):
+        if self.premium is not None:
             valid, empty_or_error = self.premium.set_credentials(api_key, api_secret)
         else:
             self.premium, valid, empty_or_error = premium_create_and_verify(api_key, api_secret)
@@ -263,7 +308,7 @@ class Rotkehlchen(object):
 
     def maybe_upload_data_to_server(self):
         # upload only if unlocked user has premium
-        if not hasattr(self, 'premium'):
+        if self.premium is None:
             return
 
         # upload only once per hour

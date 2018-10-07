@@ -45,6 +45,8 @@ ANONYMIZABLE_ETH_ADDRESSES = ('eth_address', 'eth_account', 'from_eth_address', 
 ANONYMIZABLE_MULTIETH_ADDRESSES = ('eth_addresses', 'eth_accounts')
 ANONYMIZABLE_ETH_TXHASH = ('eth_tx_hash')
 
+DEFAULT_ANONYMIZED_LOGS = False
+
 
 def random_eth_address():
     b = bytes(''.join(random.choice(string.printable) for _ in range(20)), encoding='utf-8')
@@ -63,7 +65,7 @@ def make_sensitive(data):
 class LoggingSettings(object):
     __instance = None
 
-    def __new__(cls, anonymized_logs=False):
+    def __new__(cls, anonymized_logs=DEFAULT_ANONYMIZED_LOGS):
         if LoggingSettings.__instance is None:
             LoggingSettings.__instance = object.__new__(cls)
 

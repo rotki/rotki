@@ -1,22 +1,23 @@
-import operator
-
-from web3.exceptions import BadFunctionCallOutput
-from collections import defaultdict
-from gevent.lock import Semaphore
-from eth_utils.address import to_checksum_address
-from typing import Tuple, List, Dict, Union, Callable, cast
-
-from rotkehlchen.db.dbhandler import BlockchainAccounts
-from rotkehlchen.errors import InputError, EthSyncError
-from rotkehlchen.fval import FVal
-from rotkehlchen.utils import cache_response_timewise, request_get
-from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.constants import S_ETH, S_BTC
-from rotkehlchen import typing
-
-
 import logging
+import operator
+from collections import defaultdict
+from typing import Callable, Dict, List, Tuple, Union, cast
+
+from eth_utils.address import to_checksum_address
+from gevent.lock import Semaphore
+from web3.exceptions import BadFunctionCallOutput
+
+from rotkehlchen import typing
+from rotkehlchen.constants import S_BTC, S_ETH
+from rotkehlchen.db.dbhandler import BlockchainAccounts
+from rotkehlchen.errors import EthSyncError, InputError
+from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.utils import cache_response_timewise, request_get
+
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 # Type Aliases used in this module
 Balances = Dict[
@@ -70,6 +71,9 @@ class Blockchain(object):
         # Per asset total balances
         self.totals: Totals = defaultdict(dict)
 
+    def __del__(self):
+        del self.ethchain
+
     def set_eth_rpc_port(self, port: int) -> Tuple[bool, str]:
         return self.ethchain.set_rpc_port(port)
 
@@ -82,7 +86,7 @@ class Blockchain(object):
         try:
             self.query_ethereum_balances()
         except BadFunctionCallOutput as e:
-            logger.error(
+            log.error(
                 'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
                 'exception: {}'.format(str(e))
             )
@@ -281,7 +285,7 @@ class Blockchain(object):
                 # above we check that account is an ETH account
                 self.modify_eth_account(typing.EthAddress(account), append_or_remove, add_or_sub)
             except BadFunctionCallOutput as e:
-                logger.error(
+                log.error(
                     'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
                     'exception: {}'.format(str(e))
                 )

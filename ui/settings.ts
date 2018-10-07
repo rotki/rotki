@@ -5,8 +5,8 @@ import {Currency} from './model/currency';
 import {service} from './rotkehlchen_service';
 
 export class Settings {
+    user_logged = false;
     usd_to_fiat_exchange_rates: { [key: string]: number } = {};
-    settings: string;
     connected_exchanges: string[] = [];
     floating_precision = 2;
     historical_data_start = '01/08/2015';
@@ -33,10 +33,31 @@ export class Settings {
     private readonly icon_map: { [asset: string]: string };
 
     constructor() {
-        this.settings = '';
+        // rant start: Why is typescript so stupid as to not see that in the
+        // function this.reset() the following 2 attributes are set?
         this.include_crypto2crypto = false;
         this.taxfree_after_period = 0;
+        // rant end
+        this.reset();
         this.icon_map = this.get_icon_map();
+    }
+
+    public reset() {
+        this.user_logged = false;
+        this.floating_precision = 2;
+        this.historical_data_start = '01/08/2015';
+        this.current_location = '';
+        this.datetime_format = 'd/m/Y G:i';
+        this.has_premium = false;
+        this.premium_should_sync = false;
+        this.start_suggestion = 'inactive';
+        this.eth_rpc_port = '8545';
+        this.balance_save_frequency = 24;
+        this.last_balance_save = 0;
+        this.include_crypto2crypto = true;
+        this.taxfree_after_period = 0;
+        this.anonymized_logs = false;
+        this.connected_exchanges = [];
     }
 
     get EXCHANGES(): string[] {
@@ -67,7 +88,7 @@ export class Settings {
 
         const icon_map: { [asset: string]: string } = {};
         fs.readdirSync(fs_dir)
-            .forEach(function (v) {
+            .forEach(function(v) {
                 icon_map[v.substr(0, v.indexOf('.'))] = icon_dir + v;
             });
         return icon_map;
@@ -203,3 +224,13 @@ interface Pages {
 export const pages: Pages = {
     page_exchange: {}
 };
+
+export function reset_pages() {
+    pages.page_index = '';
+    pages.page_settings = '';
+    pages.page_otctrades = '';
+    pages.page_user_settings = '';
+    pages.page_accounting_settings = '';
+    pages.page_taxreport = '';
+    pages.page_exchange = {};
+}

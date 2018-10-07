@@ -78,6 +78,9 @@ class DBHandler(object):
         )
         self.conn.commit()
 
+    def __del__(self):
+        self.disconnect()
+
     def get_version(self) -> int:
         cursor = self.conn.cursor()
         query = cursor.execute(

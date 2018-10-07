@@ -135,8 +135,16 @@ class DataHandler(object):
 
         self.data_directory = data_directory
         self.eth_tokens = get_all_eth_tokens()
+        self.username = 'no_user'
+
+    def logout(self):
+        self.username = 'no_user'
+        self.user_data_dir = None
+        del self.db
+        self.db = None
 
     def unlock(self, username: str, password: str, create_new: bool) -> typing.FilePath:
+        self.username = username
         user_data_dir = cast(typing.FilePath, os.path.join(self.data_directory, username))
         if create_new:
             if os.path.exists(user_data_dir):
