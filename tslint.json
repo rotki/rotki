@@ -1,8 +1,9 @@
 {
     "rulesDirectory": [
-        
+        "node_modules/tslint-eslint-rules/dist/rules"
     ],
     "rules": {
+        "object-curly-spacing": [true, "never"],
         "arrow-return-shorthand": true,
         "callable-types": true,
         "class-name": true,
@@ -116,16 +117,6 @@
             "check-operator",
             "check-separator",
             "check-type"
-        ],
-        "no-output-on-prefix": true,
-        "use-input-property-decorator": true,
-        "use-output-property-decorator": true,
-        "use-host-property-decorator": true,
-        "no-input-rename": true,
-        "no-output-rename": true,
-        "use-life-cycle-interface": true,
-        "use-pipe-transform-interface": true,
-        "component-class-suffix": true,
-        "directive-class-suffix": true
+        ]
     }
 }
