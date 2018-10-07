@@ -1,4 +1,4 @@
-import {change_location, determine_location} from './navigation';
+import {change_location} from './navigation';
 import {set_ui_main_currency} from './topmenu';
 import {get_total_assets_value, iterate_saved_balances, total_table_add_balances, total_table_recreate} from './balances_table';
 import {assert_exchange_exists, format_currency_value, pages, settings} from './settings';
@@ -13,20 +13,13 @@ import {ipcRenderer, remote} from 'electron';
 import {service} from './rotkehlchen_service';
 import {Currency} from './model/currency';
 
-function add_exchange_on_click() {
-    $('.panel a').click((event: JQuery.Event) => {
+function add_exchange_on_click(name: string) {
+    const selector = $(`a#exchange_${name}_details`);
+    selector.click((event: JQuery.Event) => {
         event.preventDefault();
-	// ??? Why is currentTarget needed here while in other places target is enough?
-        const target = event.currentTarget as HTMLAnchorElement;
-        const target_location = determine_location(target.href);
-        if (target_location.startsWith('exchange_')) {
-            const exchange_name = target_location.substring(9);
-            assert_exchange_exists(exchange_name);
-            console.log(`Going to exchange ${exchange_name}`);
-            create_or_reload_exchange(exchange_name);
-        } else {
-            throw new Error(`Invalid link location ${target_location}`);
-        }
+        assert_exchange_exists(name);
+        console.log(`Going to exchange ${name}`);
+        create_or_reload_exchange(name);
     });
 }
 
@@ -68,14 +61,14 @@ export function create_exchange_box(exchange: string, number: any, currency_icon
             </div>
         </div>
     </div>
-    <a href="#exchange_${exchange}">
+    <a id="exchange_${exchange}_details" href="#exchange_${exchange}">
         <div class="panel-footer"><span class="pull-left">View Details</span><span class="pull-right"><i
                 class="fa fa-arrow-circle-right"></i></span>
             <div class="clearfix"></div>
         </div>
     </a></div>`;
     $(str).prependTo($('#dashboard-contents'));
-    add_exchange_on_click();
+    add_exchange_on_click(exchange);
     // finally save the dashboard page
     pages.page_index = $('#page-wrapper').html();
 }
@@ -205,7 +198,6 @@ export function create_or_reload_dashboard() {
         create_dashboard_header();
         create_dashboard_from_saved_balances();
         total_table_recreate();
-        add_exchange_on_click();
     }
 }
 
