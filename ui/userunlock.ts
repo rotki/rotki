@@ -2,7 +2,7 @@ import {form_entry} from './elements';
 import {showError, showInfo, suggest_element, unsuggest_element} from './utils';
 import {set_ui_main_currency} from './topmenu';
 import {get_total_assets_value, total_table_add_balances} from './balances_table';
-import {create_box} from './dashboard';
+import {create_box, create_or_reload_dashboard} from './dashboard';
 import {create_task} from './monitor';
 import {query_exchange_balances_async} from './exchange';
 import {settings} from './settings';
@@ -283,6 +283,7 @@ function load_dashboard_after_unlock(exchanges: string[], is_new_user: boolean) 
             }
         });
     }
+    create_or_reload_dashboard();
 
 }
 
