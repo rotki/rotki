@@ -9,7 +9,7 @@ import {prompt_sign_in} from './userunlock';
 import {ActionResult} from './model/action-result';
 import {ExchangeBalanceResult} from './model/exchange-balance-result';
 import {BlockchainBalances} from './model/blockchain-balances';
-import {ipcRenderer, remote} from 'electron';
+import {ipcRenderer, remote, shell} from 'electron';
 import {service} from './rotkehlchen_service';
 import {Currency} from './model/currency';
 
@@ -23,6 +23,13 @@ function add_exchange_on_click(name: string) {
     });
 }
 
+function setup_brand_behavior() {
+    let brand = $('a.navbar-brand');
+    brand.click((event: JQuery.Event) => {
+        event.preventDefault();
+        shell.openExternal('http://rotkehlchen.io');
+    })
+}
 
 function create_dashboard_header() {
     const str = `<div class="row">
@@ -280,6 +287,7 @@ export function init_dashboard() {
             total_table_add_balances('blockchain', data.totals);
         }
     });
+    setup_brand_behavior();
     setup_log_watcher(add_alert_dropdown);
     setup_client_auditor();
 }

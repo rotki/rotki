@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`184` If Rotkehlchen brand name in top left is clicked, open browser to rotkehlchen.io instead of showing the sign-in popup
 * :bug:`187` Exchange balance tables no longer become unresponsive if visited multiple times.
 * :feature:`178` New logout api call. Users can now logout of a rotkehlchen session.
 * :bug:`181` Take 0 net balance into account when doing balance queries and not crash.
