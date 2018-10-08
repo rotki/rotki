@@ -229,6 +229,7 @@ function unlock_user(
                         settings.historical_data_start = db_settings.historical_data_start;
                         settings.eth_rpc_port = db_settings.eth_rpc_port;
                         settings.include_crypto2crypto = db_settings.include_crypto2crypto;
+                        settings.include_gas_costs = db_settings.include_gas_costs;
                         settings.taxfree_after_period = db_settings.taxfree_after_period;
                         settings.balance_save_frequency = db_settings.balance_save_frequency;
                         settings.last_balance_save = db_settings.last_balance_save;

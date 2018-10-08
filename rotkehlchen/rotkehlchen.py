@@ -245,6 +245,7 @@ class Rotkehlchen(object):
             ignored_assets=self.data.db.get_ignored_assets(),
             include_crypto2crypto=db_settings['include_crypto2crypto'],
             taxfree_after_period=db_settings['taxfree_after_period'],
+            include_gas_costs=db_settings['include_gas_costs']
         )
 
         # Initialize the rotkehlchen logger

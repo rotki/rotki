@@ -40,6 +40,7 @@ class LocationData(NamedTuple):
 
 DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
 DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
+DEFAULT_INCLUDE_GAS_COSTS = True
 DEFAULT_ANONYMIZED_LOGS = False
 DEFAULT_START_DATE = "01/08/2015"
 DEFAULT_UI_FLOATING_PRECISION = 2
@@ -249,6 +250,8 @@ class DBHandler(object):
                 settings['taxfree_after_period'] = int(q[1])
             elif q[0] == 'balance_save_frequency':
                 settings['balance_save_frequency'] = int(q[1])
+            elif q[0] == 'include_gas_costs':
+                settings['include_gas_costs'] = str_to_bool(q[1])
             else:
                 settings[q[0]] = q[1]
 
@@ -269,6 +272,8 @@ class DBHandler(object):
             settings['main_currency'] = DEFAULT_MAIN_CURRENCY
         if 'anonymized_logs' not in settings:
             settings['anonymized_logs'] = DEFAULT_ANONYMIZED_LOGS
+        if 'include_gas_costs' not in settings:
+            settings['include_gas_costs'] = DEFAULT_INCLUDE_GAS_COSTS
 
         # populate values that are not saved in the setting but computed and returned
         # as part of the get_settings call

@@ -89,8 +89,8 @@ class Accountant(object):
             ignored_assets,
             include_crypto2crypto,
             taxfree_after_period,
+            include_gas_costs,
     ):
-
         self.price_historian = price_historian
         self.csvexporter = CSVExporter(profit_currency, user_directory, create_csv)
         self.events = TaxableEvents(price_historian, self.csvexporter, profit_currency)
@@ -98,6 +98,7 @@ class Accountant(object):
 
         # Customizable Options
         self.ignored_assets = ignored_assets
+        self.include_gas_costs = include_gas_costs
         self.events.include_crypto2crypto = include_crypto2crypto
         self.events.taxfree_after_period = taxfree_after_period
 
@@ -193,6 +194,9 @@ class Accountant(object):
         )
 
     def account_for_gas_costs(self, transaction):
+        if not self.include_gas_costs:
+            return
+
         if transaction.gas_price == -1:
             gas_price = self.last_gas_price
         else:

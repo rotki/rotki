@@ -60,6 +60,11 @@ def accounting_taxfree_after_period():
 
 
 @pytest.fixture
+def accounting_include_gas_costs():
+    return True
+
+
+@pytest.fixture
 def accountant(
         price_historian,
         profit_currency,
@@ -68,6 +73,7 @@ def accountant(
         accounting_ignored_assets,
         accounting_include_crypto2crypto,
         accounting_taxfree_after_period,
+        accounting_include_gas_costs,
 ):
     return Accountant(
         price_historian=price_historian,
@@ -77,6 +83,7 @@ def accountant(
         ignored_assets=accounting_ignored_assets,
         include_crypto2crypto=accounting_include_crypto2crypto,
         taxfree_after_period=accounting_taxfree_after_period,
+        include_gas_costs=accounting_include_gas_costs
     )
 
 
