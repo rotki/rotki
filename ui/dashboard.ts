@@ -148,8 +148,6 @@ function add_alert_dropdown(alert_text: string, _alert_time: number) {
     const no_sync = alert_text.indexOf('Could not transact with/call contract function') >= 0;
     if (connection_fail || no_sync) {
         update_eth_node_connection_status_ui(false);
-    } else {
-        update_eth_node_connection_status_ui(true);
     }
     const str = `<li class="warning${alert_id}">
     <a href="#">
