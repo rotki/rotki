@@ -346,6 +346,7 @@ class Kraken(Exchange):
             # find USD price of EUR
             with self.lock:
                 self.usdprice['EUR'] = query_fiat_pair('EUR', 'USD')
+
         except RemoteError as e:
             msg = (
                 'Kraken API request failed. Could not reach kraken due '
