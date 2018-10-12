@@ -247,7 +247,7 @@ class DBHandler(object):
             elif q[0] == 'ui_floating_precision':
                 settings['ui_floating_precision'] = int(q[1])
             elif q[0] == 'taxfree_after_period':
-                settings['taxfree_after_period'] = int(q[1])
+                settings['taxfree_after_period'] = int(q[1]) if q[1] else None
             elif q[0] == 'balance_save_frequency':
                 settings['balance_save_frequency'] = int(q[1])
             elif q[0] == 'include_gas_costs':
