@@ -4,7 +4,10 @@ from typing import Optional
 import pytest
 
 from rotkehlchen.kraken import KRAKEN_TO_WORLD, Kraken
-from rotkehlchen.tests.utils.factories import make_random_bytes, make_random_positive_fval
+from rotkehlchen.tests.utils.factories import (
+    make_random_bytes_for_requests,
+    make_random_positive_fval,
+)
 
 
 def generate_random_kraken_balance_response():
@@ -24,9 +27,22 @@ class MockKraken(Kraken):
     def first_connection(self):
         # Perhaps mock this too?
         self.tradeable_pairs = self.query_public('AssetPairs')
-        import pdb
-        pdb.set_trace()
+        self.ticker = {}
+        self.ticker['XXBTZEUR'] = {'c': [make_random_positive_fval()]}
+        self.ticker['XXBTZUSD'] = {'c': [make_random_positive_fval()]}
+        self.ticker['XETHZEUR'] = {'c': [make_random_positive_fval()]}
+        self.ticker['XETHZUSD'] = {'c': [make_random_positive_fval()]}
+        self.ticker['XREPZEUR'] = {'c': [make_random_positive_fval()]}
+        self.ticker['XXMRZEUR'] = {'c': [make_random_positive_fval()]}
+        self.ticker['XXMRZUSD'] = {'c': [make_random_positive_fval()]}
+        self.ticker['XETCZEUR'] = {'c': [make_random_positive_fval()]}
+        self.ticker['XETCZUSD'] = {'c': [make_random_positive_fval()]}
+
+        self.calculate_fiat_prices_from_ticker()
         return
+
+    def main_logic(self):
+        pass
 
     def query_private(self, method: str, req: Optional[dict] = None) -> dict:
         if method == 'Balance':
@@ -38,8 +54,8 @@ class MockKraken(Kraken):
 @pytest.fixture
 def kraken(tmpdir):
     mock = MockKraken(
-        api_key=make_random_bytes(256),
-        secret=make_random_bytes(256),
+        api_key=make_random_bytes_for_requests(128),
+        secret=make_random_bytes_for_requests(128),
         data_dir=tmpdir
     )
     return mock

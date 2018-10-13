@@ -289,15 +289,7 @@ class Kraken(Exchange):
             raise ValueError('Unknown pair "{}" provided'.format(pair))
         return pair
 
-    # ---- General exchanges interface ----
-    def main_logic(self):
-        if not self.first_connection_made:
-            return
-
-        self.ticker = self.query_public(
-            'Ticker',
-            req={'pair': ','.join(self.tradeable_pairs.keys())}
-        )
+    def calculate_fiat_prices_from_ticker(self):
         self.eurprice['BTC'] = FVal(self.ticker['XXBTZEUR']['c'][0])
         self.usdprice['BTC'] = FVal(self.ticker['XXBTZUSD']['c'][0])
         self.eurprice['ETH'] = FVal(self.ticker['XETHZEUR']['c'][0])
@@ -307,6 +299,18 @@ class Kraken(Exchange):
         self.usdprice['XMR'] = FVal(self.ticker['XXMRZUSD']['c'][0])
         self.eurprice['ETC'] = FVal(self.ticker['XETCZEUR']['c'][0])
         self.usdprice['ETC'] = FVal(self.ticker['XETCZUSD']['c'][0])
+
+    # ---- General exchanges interface ----
+    def main_logic(self):
+        if not self.first_connection_made:
+            return
+
+        self.ticker = self.query_public(
+            'Ticker',
+            req={'pair': ','.join(self.tradeable_pairs.keys())}
+        )
+        self.calculate_fiat_prices_from_ticker()
+
 
     def find_fiat_price(self, asset: typing.Asset) -> FVal:
         """Find USD/EUR price of asset. The asset should be in the kraken style.
