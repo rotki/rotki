@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`197` Rotkehlchen no longer crashes at restart if a "No" tax_free_period is given
 * :bug:`185` Ethereum node connection indicator should always properly indicate the connection status to the underlying ethereum node
 * :bug:`184` If Rotkehlchen brand name in top left is clicked, open browser to rotkehlchen.io instead of showing the sign-in popup
 * :bug:`187` Exchange balance tables no longer become unresponsive if visited multiple times.
@@ -30,7 +31,7 @@ Changelog
 * :bug:`123` Return USD as default main currency if DB is new
 * :bug:`101` Catch the web3 exception if using a local client with an out of sync chain and report a proper error in the UI
 * :bug:`86` Fixed race condition at startup that could result in the banks balance displaying as NaN.
-* :bug:`103` After removing an exchange's API key the new api key/secret input form is now properly re-enabled 
+* :bug:`103` After removing an exchange's API key the new api key/secret input form is now properly re-enabled
 * :bug:`99` Show proper error if kraken or binance api key validation fails due to an invalid key having been provided.
 
 * :release:`0.3.1 <2018-06-25>`
