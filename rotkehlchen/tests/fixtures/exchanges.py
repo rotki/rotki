@@ -11,7 +11,9 @@ from rotkehlchen.tests.utils.factories import (
 
 
 def generate_random_kraken_balance_response():
-    kraken_assets = KRAKEN_TO_WORLD.keys()
+    kraken_assets = list(KRAKEN_TO_WORLD.keys())
+    # remove delisted assets
+    kraken_assets.remove('XDAO')
     number_of_assets = random.randrange(0, len(kraken_assets))
     chosen_assets = random.sample(kraken_assets, number_of_assets)
 
@@ -25,20 +27,12 @@ def generate_random_kraken_balance_response():
 class MockKraken(Kraken):
 
     def first_connection(self):
+        if self.first_connection_made:
+            return
         # Perhaps mock this too?
         self.tradeable_pairs = self.query_public('AssetPairs')
-        self.ticker = {}
-        self.ticker['XXBTZEUR'] = {'c': [make_random_positive_fval()]}
-        self.ticker['XXBTZUSD'] = {'c': [make_random_positive_fval()]}
-        self.ticker['XETHZEUR'] = {'c': [make_random_positive_fval()]}
-        self.ticker['XETHZUSD'] = {'c': [make_random_positive_fval()]}
-        self.ticker['XREPZEUR'] = {'c': [make_random_positive_fval()]}
-        self.ticker['XXMRZEUR'] = {'c': [make_random_positive_fval()]}
-        self.ticker['XXMRZUSD'] = {'c': [make_random_positive_fval()]}
-        self.ticker['XETCZEUR'] = {'c': [make_random_positive_fval()]}
-        self.ticker['XETCZUSD'] = {'c': [make_random_positive_fval()]}
-
-        self.calculate_fiat_prices_from_ticker()
+        self.get_fiat_prices_from_ticker()
+        self.first_connection_made = True
         return
 
     def main_logic(self):

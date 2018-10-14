@@ -289,7 +289,11 @@ class Kraken(Exchange):
             raise ValueError('Unknown pair "{}" provided'.format(pair))
         return pair
 
-    def calculate_fiat_prices_from_ticker(self):
+    def get_fiat_prices_from_ticker(self):
+        self.ticker = self.query_public(
+            'Ticker',
+            req={'pair': ','.join(self.tradeable_pairs.keys())}
+        )
         self.eurprice['BTC'] = FVal(self.ticker['XXBTZEUR']['c'][0])
         self.usdprice['BTC'] = FVal(self.ticker['XXBTZUSD']['c'][0])
         self.eurprice['ETH'] = FVal(self.ticker['XETHZEUR']['c'][0])
@@ -304,13 +308,7 @@ class Kraken(Exchange):
     def main_logic(self):
         if not self.first_connection_made:
             return
-
-        self.ticker = self.query_public(
-            'Ticker',
-            req={'pair': ','.join(self.tradeable_pairs.keys())}
-        )
-        self.calculate_fiat_prices_from_ticker()
-
+        self.get_fiat_prices_from_ticker()
 
     def find_fiat_price(self, asset: typing.Asset) -> FVal:
         """Find USD/EUR price of asset. The asset should be in the kraken style.
@@ -324,12 +322,20 @@ class Kraken(Exchange):
         if asset == 'XXBT':
             return self.usdprice['BTC']
 
+        if asset == 'USDT':
+            price = FVal(self.ticker['USDTZUSD']['c'][0])
+            self.usdprice['USDT'] = price
+            return price
+
         # TODO: This is pretty ugly. Find a better way to check out kraken pairs
         # without this ugliness.
         pair = asset + 'XXBT'
         pair2 = asset + 'XBT'
+        pair3 = 'XXBT' + asset
         if pair2 in self.tradeable_pairs:
             pair = pair2
+        elif pair3 in self.tradeable_pairs:
+            pair = pair3
 
         if pair not in self.tradeable_pairs:
             raise ValueError(
