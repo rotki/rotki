@@ -45,6 +45,7 @@ KRAKEN_TO_WORLD = {
     'ZGBP': 'GBP',
     'ZCAD': 'CAD',
     'ZJPY': 'JPY',
+    'ZKRW': 'KRW',
     'XMLN': 'MLN',
     'XICN': 'ICN',
     'GNO': 'GNO',
@@ -54,6 +55,12 @@ KRAKEN_TO_WORLD = {
     'EOS': 'EOS',
     'USDT': 'USDT',
     'KFEE': 'KFEE',
+    'ADA': 'ADA',
+    'QTUM': 'QTUM',
+    'XNMC': 'NMC',
+    'XXVN': 'XVN',
+    'XXDG': 'XDG',
+    'XTZ': 'XTZ',
 }
 
 WORLD_TO_KRAKEN = {
@@ -70,6 +77,7 @@ WORLD_TO_KRAKEN = {
     'GBP': 'ZGBP',
     'CAD': 'ZCAD',
     'JPY': 'ZJPY',
+    'KRW': 'ZKRW',
     'DAO': 'XDAO',
     'MLN': 'XMLN',
     'ICN': 'XICN',
@@ -80,6 +88,12 @@ WORLD_TO_KRAKEN = {
     'EOS': 'EOS',
     'USDT': 'USDT',
     'KFEE': 'KFEE',
+    'ADA': 'ADA',
+    'QTUM': 'QTUM',
+    'NMC': 'XNMC',
+    'XVN': 'XXVN',
+    'XDG': 'XXDG',
+    'XTZ': 'XTZ',
 }
 
 

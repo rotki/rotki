@@ -1,13 +1,11 @@
+import base64
 import random
 from typing import Optional
 
 import pytest
 
 from rotkehlchen.kraken import KRAKEN_TO_WORLD, Kraken
-from rotkehlchen.tests.utils.factories import (
-    make_random_bytes_for_requests,
-    make_random_positive_fval,
-)
+from rotkehlchen.tests.utils.factories import make_random_b64bytes, make_random_positive_fval
 
 
 def generate_random_kraken_balance_response():
@@ -48,8 +46,8 @@ class MockKraken(Kraken):
 @pytest.fixture
 def kraken(tmpdir):
     mock = MockKraken(
-        api_key=make_random_bytes_for_requests(128),
-        secret=make_random_bytes_for_requests(128),
+        api_key=base64.b64encode(make_random_b64bytes(128)),
+        secret=base64.b64encode(make_random_b64bytes(128)),
         data_dir=tmpdir
     )
     return mock
