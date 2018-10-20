@@ -96,6 +96,8 @@ WORLD_TO_KRAKEN = {
     'XTZ': 'XTZ',
 }
 
+KRAKEN_DELISTED = ('XDAO', 'XXVN', 'ZKRW', 'XNMC')
+
 
 def kraken_to_world_pair(pair):
     if len(pair) == 6:

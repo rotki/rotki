@@ -4,14 +4,12 @@ from typing import Optional
 
 import pytest
 
-from rotkehlchen.kraken import KRAKEN_TO_WORLD, Kraken
+from rotkehlchen.kraken import KRAKEN_DELISTED, KRAKEN_TO_WORLD, Kraken
 from rotkehlchen.tests.utils.factories import make_random_b64bytes, make_random_positive_fval
 
 
 def generate_random_kraken_balance_response():
-    kraken_assets = list(KRAKEN_TO_WORLD.keys())
-    # remove delisted assets
-    kraken_assets.remove('XDAO')
+    kraken_assets = set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED)
     number_of_assets = random.randrange(0, len(kraken_assets))
     chosen_assets = random.sample(kraken_assets, number_of_assets)
 
@@ -43,11 +41,11 @@ class MockKraken(Kraken):
         return super().query_private(method, req)
 
 
-@pytest.fixture
-def kraken(tmpdir):
+@pytest.fixture(scope='session')
+def kraken(session_data_dir):
     mock = MockKraken(
         api_key=base64.b64encode(make_random_b64bytes(128)),
         secret=base64.b64encode(make_random_b64bytes(128)),
-        data_dir=tmpdir
+        data_dir=session_data_dir
     )
     return mock
