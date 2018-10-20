@@ -1,11 +1,17 @@
 import base64
 import random
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 import pytest
 
 from rotkehlchen.kraken import KRAKEN_DELISTED, KRAKEN_TO_WORLD, Kraken
-from rotkehlchen.tests.utils.factories import make_random_b64bytes, make_random_positive_fval
+from rotkehlchen.tests.utils.factories import (
+    make_random_b64bytes,
+    make_random_positive_fval,
+    make_random_timestamp,
+    make_random_uppercasenumeric_string,
+)
+from rotkehlchen.typing import Timestamp
 
 
 def generate_random_kraken_balance_response():
@@ -18,6 +24,37 @@ def generate_random_kraken_balance_response():
         balances[asset] = make_random_positive_fval()
 
     return balances
+
+
+def generate_random_kraken_id() -> str:
+    return (
+        make_random_uppercasenumeric_string(6) + '-' +
+        make_random_uppercasenumeric_string(5) + '-' +
+        make_random_uppercasenumeric_string(6)
+    )
+
+
+def generate_random_kraken_trade_data(
+        tradeable_pairs: List[str],
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+) -> Dict[str, str]:
+    trade = {}
+    trade['ordertxid'] = str(generate_random_kraken_id())
+    trade['postxid'] = str(generate_random_kraken_id())
+    trade['pair'] = random.choice(tradeable_pairs)
+    trade['time'] = str(make_random_timestamp(start=start_ts, end=end_ts)) + '.0000'
+    trade['type'] = random.choice(('buy', 'sell'))
+    trade['ordertype'] = random.choice(('limit', 'market'))
+    price = make_random_positive_fval()
+    volume = make_random_positive_fval()
+    trade['price'] = str(price)
+    trade['vol'] = str(volume)
+    trade['fee'] = str(make_random_positive_fval(max_num=2))
+    trade['cost'] = str(price * volume)
+    trade['margin'] = '0.0'
+    trade['misc'] = ''
+    return trade
 
 
 class MockKraken(Kraken):
@@ -37,6 +74,23 @@ class MockKraken(Kraken):
     def query_private(self, method: str, req: Optional[dict] = None) -> dict:
         if method == 'Balance':
             return generate_random_kraken_balance_response()
+        elif method == 'TradesHistory':
+            self.first_connection()
+            trades_num = random.randint(1, 49)
+            start = req['start']
+            end = req['end']
+
+            # Trades is a dict with txid as the key
+            trades = {}
+            for _ in range(trades_num):
+                trade = generate_random_kraken_trade_data(
+                    list(self.tradeable_pairs.keys()),
+                    start,
+                    end,
+                )
+                trades[trade['ordertxid']] = trade
+
+            return {'trades': trades, 'count': trades_num}
 
         return super().query_private(method, req)
 
