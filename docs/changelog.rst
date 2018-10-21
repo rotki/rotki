@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`186` Pressing Enter at signin/create new account and other popups will submit them just like clicking the form button.
 * :bug:`197` Rotkehlchen no longer crashes at restart if a "No" tax_free_period is given
 * :bug:`185` Ethereum node connection indicator should always properly indicate the connection status to the underlying ethereum node
 * :bug:`184` If Rotkehlchen brand name in top left is clicked, open browser to rotkehlchen.io instead of showing the sign-in popup
