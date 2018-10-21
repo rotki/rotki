@@ -1,6 +1,6 @@
 import base64
 import random
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import pytest
 
@@ -12,6 +12,11 @@ from rotkehlchen.tests.utils.factories import (
     make_random_uppercasenumeric_string,
 )
 from rotkehlchen.typing import Timestamp
+
+
+def get_random_kraken_asset():
+    kraken_assets = set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED)
+    return random.choice(kraken_assets)
 
 
 def generate_random_kraken_balance_response():
@@ -57,6 +62,23 @@ def generate_random_kraken_trade_data(
     return trade
 
 
+def generate_random_kraken_ledger_data(
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+        ledger_type: str,
+) -> Dict[str, str]:
+    ledger = {}
+    ledger['refid'] = str(generate_random_kraken_id())
+    ledger['time'] = str(make_random_timestamp(start=start_ts, end=end_ts)) + '.0000'
+    ledger['type'] = ledger_type
+    ledger['aclass'] = 'currency'
+    ledger['asset'] = get_random_kraken_asset()
+    ledger['amount'] = str(make_random_positive_fval())
+    ledger['balance'] = str(make_random_positive_fval())
+    ledger['fee'] = str(make_random_positive_fval(max_num=2))
+    return ledger
+
+
 class MockKraken(Kraken):
 
     def first_connection(self):
@@ -72,10 +94,10 @@ class MockKraken(Kraken):
         pass
 
     def query_private(self, method: str, req: Optional[dict] = None) -> dict:
+        self.first_connection()
         if method == 'Balance':
             return generate_random_kraken_balance_response()
         elif method == 'TradesHistory':
-            self.first_connection()
             trades_num = random.randint(1, 49)
             start = req['start']
             end = req['end']
@@ -91,6 +113,22 @@ class MockKraken(Kraken):
                 trades[trade['ordertxid']] = trade
 
             return {'trades': trades, 'count': trades_num}
+        elif method == 'Ledgers':
+            ledgers_num = random.randint(1, 49)
+            start = req['start']
+            end = req['end']
+            ledger_type = req['type']
+            # Ledgers is a dict with txid as the key
+            ledgers = {}
+            for _ in range(ledgers_num):
+                ledger = generate_random_kraken_ledger_data(
+                    start_ts=start,
+                    end_ts=end,
+                    ledger_type=ledger_type,
+                )
+                ledgers[ledger['refid']] = ledger
+
+            return {'ledger': ledgers, 'count': ledgers_num}
 
         return super().query_private(method, req)
 

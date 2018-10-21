@@ -31,3 +31,14 @@ def test_querying_trade_history(kraken):
     )
     assert isinstance(result, list)
     assert len(result) != 0
+
+
+def test_querying_deposits_withdrawals(kraken):
+    now = ts_now()
+    result = kraken.query_trade_history(
+        start_ts=1451606400,
+        end_ts=now,
+        end_at_least_ts=now,
+    )
+    assert isinstance(result, list)
+    assert len(result) != 0
