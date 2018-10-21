@@ -1,18 +1,19 @@
-import os
 import io
 import json
+import logging
+import os
 import shutil
 import subprocess
-import gevent
 import sys
 import termios
 from binascii import hexlify
+
+import gevent
 from web3.middleware import geth_poa_middleware
 
-from rotkehlchen.crypto import privatekey_to_address, address_encoder
+from rotkehlchen.crypto import address_encoder, privatekey_to_address
 from rotkehlchen.tests.utils.genesis import GENESIS_STUB
 
-import logging
 logger = logging.getLogger(__name__)
 
 DEFAULT_BALANCE = (10 ** 18) * 1000000
@@ -156,7 +157,9 @@ def geth_create_blockchain(
     nodedir = os.path.join(base_datadir, nodekey_part)
     node_genesis_path = os.path.join(nodedir, 'custom_genesis.json')
 
-    assert len(nodedir + '/geth.ipc') <= 104, 'geth data path is too large'
+    assert len(nodedir + '/geth.ipc') <= 104, (
+        f'geth data path is too large: {nodedir}'
+    )
 
     os.makedirs(nodedir)
 

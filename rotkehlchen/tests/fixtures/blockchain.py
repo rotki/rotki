@@ -1,18 +1,18 @@
-import pytest
-import os
 import json
+import os
 from typing import List
+
+import pytest
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen import typing
 from rotkehlchen.blockchain import Blockchain
-from rotkehlchen.ethchain import Ethchain
-from rotkehlchen.crypto import privatekey_to_address, address_encoder, sha3
+from rotkehlchen.crypto import address_encoder, privatekey_to_address, sha3
 from rotkehlchen.data_handler import get_all_eth_tokens
 from rotkehlchen.db.dbhandler import BlockchainAccounts
-
-from rotkehlchen.tests.utils.tests import cleanup_tasks
+from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.tests.utils.blockchain import geth_create_blockchain
+from rotkehlchen.tests.utils.tests import cleanup_tasks
 
 
 @pytest.fixture(scope='session')
@@ -90,14 +90,14 @@ def _geth_blockchain(
 
     """ Helper to do proper cleanup. """
     geth_process = geth_create_blockchain(
-        ethchain_client,
-        private_keys,
-        eth_p2p_port,
-        eth_rpc_port,
-        str(tmpdir),
-        request.config.option.verbose,
-        random_marker,
-        genesis_path,
+        ethchain_client=ethchain_client,
+        private_keys=private_keys,
+        gethport=eth_p2p_port,
+        gethrpcport=eth_rpc_port,
+        base_datadir=str(tmpdir),
+        verbosity=request.config.option.verbose,
+        random_marker=random_marker,
+        genesis_path=genesis_path,
     )
 
     def _cleanup():
@@ -142,14 +142,14 @@ def blockchain_backend(
             json.dump(cached_genesis, handler)
 
     return _geth_blockchain(
-        request,
-        ethchain_client,
-        private_keys,
-        eth_p2p_port,
-        ethrpc_port,
-        tmpdir,
-        random_marker,
-        genesis_path,
+        request=request,
+        ethchain_client=ethchain_client,
+        private_keys=private_keys,
+        eth_p2p_port=eth_p2p_port,
+        eth_rpc_port=ethrpc_port,
+        tmpdir=tmpdir,
+        random_marker=random_marker,
+        genesis_path=genesis_path,
     )
 
 
