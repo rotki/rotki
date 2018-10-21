@@ -1,6 +1,7 @@
 import {settings} from './settings';
 import {remote} from 'electron';
 import {service} from './rotkehlchen_service';
+import {update_eth_node_connection_status_ui} from './dashboard';
 import Timer = NodeJS.Timer;
 
 // Prompt a directory selection dialog and pass selected directory to callback
@@ -37,8 +38,9 @@ let client_auditor: Timer;
  */
 function periodic_client_query() {
     // for now only query when was the last time balance data was saved
-    service.query_last_balance_save_time().then(value => {
-        settings.last_balance_save = value;
+    service.query_periodic_data().then(result => {
+        settings.last_balance_save = result['last_balance_save'];
+        update_eth_node_connection_status_ui(result['eth_node_connection']);
     }).catch(reason => {
         console.log('Error at periodic client query' + reason);
     });
@@ -101,6 +103,8 @@ export function showWarning(title: string, content: string) {
 
 export function setup_client_auditor() {
     if (!client_auditor) {
+        // run it once and then let it run every minute
+        periodic_client_query();
         client_auditor = setInterval(periodic_client_query, 60000);
     }
 }

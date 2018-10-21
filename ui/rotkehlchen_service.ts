@@ -6,6 +6,8 @@ import {IgnoredAssetsResponse} from './model/ignored_assets_response';
 import {Currency} from './model/currency';
 import {AsyncQueryResult} from './model/balance-result';
 import {EthTokensResult} from './model/eth_tokens_result';
+import {PeriodicClientQueryResult} from './model/periodic_client_query_result';
+import {showError} from './utils';
 
 const zerorpc = require('zerorpc');
 // max timeout is now 9999 seconds
@@ -39,12 +41,13 @@ export class RotkehlchenService {
         });
     }
 
-    query_last_balance_save_time(): Promise<number> {
-        return new Promise<number>((resolve, reject) => {
-            // for now only query when was the last time balance data was saved
-            client.invoke('query_last_balance_save_time', (error: Error, res: number) => {
+    query_periodic_data(): Promise<PeriodicClientQueryResult> {
+        return new Promise<PeriodicClientQueryResult>((resolve, reject) => {
+            client.invoke('query_periodic_data', (error: Error, res: PeriodicClientQueryResult) => {
                 if (error || res == null) {
-                    console.log('Error at periodic client query');
+                    const error_string = 'Error at periodic client query: ' + error;
+                    console.log(error_string);
+                    showError('Periodic Client Query Error', error_string);
                     reject(error || new NoResponseError());
                 } else {
                     resolve(res);
