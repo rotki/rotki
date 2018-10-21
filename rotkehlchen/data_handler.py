@@ -261,7 +261,7 @@ class DataHandler(object):
 
         if not all_okay:
             msg = 'provided settings: {} are invalid'.format(','.join(invalid))
-            log.warn(msg)
+            log.warning(msg)
 
         if 'main_currency' in settings:
             accountant.set_main_currency(settings['main_currency'])

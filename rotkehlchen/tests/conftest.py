@@ -1,12 +1,14 @@
 from gevent import monkey
+
 monkey.patch_all()
 
-import pytest
-import re
-import sys
-import py
+if True:
+    import re
+    import sys
 
-from rotkehlchen.tests.fixtures import *  # noqa: F401,F403
+    import py
+    import pytest
+    from rotkehlchen.tests.fixtures import *  # noqa: F401,F403
 
 
 def pytest_addoption(parser):
@@ -66,7 +68,7 @@ if sys.platform == 'darwin':
         """
         name = request.node.name
         name = re.sub(r'[\W]', '_', name)
-        MAXVAL = 15
+        MAXVAL = 1
         if len(name) > MAXVAL:
             name = name[:MAXVAL]
         return tmpdir_factory.mktemp(name, numbered=True)

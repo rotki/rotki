@@ -37,6 +37,7 @@ KRAKEN_TO_WORLD = {
     'XLTC': 'LTC',
     'XREP': 'REP',
     'XXBT': 'BTC',
+    'XBT': 'BTC',
     'XXMR': 'XMR',
     'XXRP': 'XRP',
     'XZEC': 'ZEC',
@@ -45,6 +46,7 @@ KRAKEN_TO_WORLD = {
     'ZGBP': 'GBP',
     'ZCAD': 'CAD',
     'ZJPY': 'JPY',
+    'ZKRW': 'KRW',
     'XMLN': 'MLN',
     'XICN': 'ICN',
     'GNO': 'GNO',
@@ -54,6 +56,12 @@ KRAKEN_TO_WORLD = {
     'EOS': 'EOS',
     'USDT': 'USDT',
     'KFEE': 'KFEE',
+    'ADA': 'ADA',
+    'QTUM': 'QTUM',
+    'XNMC': 'NMC',
+    'XXVN': 'XVN',
+    'XXDG': 'XDG',
+    'XTZ': 'XTZ',
 }
 
 WORLD_TO_KRAKEN = {
@@ -70,6 +78,7 @@ WORLD_TO_KRAKEN = {
     'GBP': 'ZGBP',
     'CAD': 'ZCAD',
     'JPY': 'ZJPY',
+    'KRW': 'ZKRW',
     'DAO': 'XDAO',
     'MLN': 'XMLN',
     'ICN': 'XICN',
@@ -80,20 +89,70 @@ WORLD_TO_KRAKEN = {
     'EOS': 'EOS',
     'USDT': 'USDT',
     'KFEE': 'KFEE',
+    'ADA': 'ADA',
+    'QTUM': 'QTUM',
+    'NMC': 'XNMC',
+    'XVN': 'XXVN',
+    'XDG': 'XXDG',
+    'XTZ': 'XTZ',
 }
+
+KRAKEN_ASSETS = (
+    'XDAO',
+    'XETC',
+    'XETH',
+    'XLTC',
+    'XREP',
+    'XXBT',
+    'XXMR',
+    'XXRP',
+    'XZEC',
+    'ZEUR',
+    'ZUSD',
+    'ZGBP',
+    'ZCAD',
+    'ZJPY',
+    'ZKRW',
+    'XMLN',
+    'XICN',
+    'GNO',
+    'BCH',
+    'XXLM',
+    'DASH',
+    'EOS',
+    'USDT',
+    'KFEE',
+    'ADA',
+    'QTUM',
+    'XNMC',
+    'XXVN',
+    'XXDG',
+    'XTZ',
+)
+
+KRAKEN_DELISTED = ('XDAO', 'XXVN', 'ZKRW', 'XNMC')
 
 
 def kraken_to_world_pair(pair):
-    if len(pair) == 6:
-        p1 = pair[:3]
-        p2 = pair[3:]
-        return p1 + '_' + p2
+    # handle dark pool pairs
+    if pair[-2:] == '.d':
+        pair = pair[:-2]
+
+    if pair[0:3] in KRAKEN_ASSETS:
+        base_currency = pair[0:3]
+        quote_currency = pair[3:]
+    elif pair[0:4] in KRAKEN_ASSETS:
+        base_currency = pair[0:4]
+        quote_currency = pair[4:]
     else:
-        p1 = pair[:4]
-        p2 = pair[4:]
-        world_p1 = KRAKEN_TO_WORLD[p1]
-        world_p2 = KRAKEN_TO_WORLD[p2]
-        return world_p1 + '_' + world_p2
+        raise ValueError(f'Could not process kraken trade pair {pair}')
+
+    if base_currency not in WORLD_TO_KRAKEN:
+        base_currency = KRAKEN_TO_WORLD[base_currency]
+    if quote_currency not in WORLD_TO_KRAKEN:
+        quote_currency = KRAKEN_TO_WORLD[quote_currency]
+
+    return base_currency + '_' + quote_currency
 
 
 def trade_from_kraken(kraken_trade):
@@ -289,11 +348,7 @@ class Kraken(Exchange):
             raise ValueError('Unknown pair "{}" provided'.format(pair))
         return pair
 
-    # ---- General exchanges interface ----
-    def main_logic(self):
-        if not self.first_connection_made:
-            return
-
+    def get_fiat_prices_from_ticker(self):
         self.ticker = self.query_public(
             'Ticker',
             req={'pair': ','.join(self.tradeable_pairs.keys())}
@@ -308,6 +363,12 @@ class Kraken(Exchange):
         self.eurprice['ETC'] = FVal(self.ticker['XETCZEUR']['c'][0])
         self.usdprice['ETC'] = FVal(self.ticker['XETCZUSD']['c'][0])
 
+    # ---- General exchanges interface ----
+    def main_logic(self):
+        if not self.first_connection_made:
+            return
+        self.get_fiat_prices_from_ticker()
+
     def find_fiat_price(self, asset: typing.Asset) -> FVal:
         """Find USD/EUR price of asset. The asset should be in the kraken style.
         e.g.: XICN. Save both prices in the kraken object and then return the
@@ -320,12 +381,20 @@ class Kraken(Exchange):
         if asset == 'XXBT':
             return self.usdprice['BTC']
 
+        if asset == 'USDT':
+            price = FVal(self.ticker['USDTZUSD']['c'][0])
+            self.usdprice['USDT'] = price
+            return price
+
         # TODO: This is pretty ugly. Find a better way to check out kraken pairs
         # without this ugliness.
         pair = asset + 'XXBT'
         pair2 = asset + 'XBT'
+        pair3 = 'XXBT' + asset
         if pair2 in self.tradeable_pairs:
             pair = pair2
+        elif pair3 in self.tradeable_pairs:
+            pair = pair3
 
         if pair not in self.tradeable_pairs:
             raise ValueError(
@@ -346,6 +415,7 @@ class Kraken(Exchange):
             # find USD price of EUR
             with self.lock:
                 self.usdprice['EUR'] = query_fiat_pair('EUR', 'USD')
+
         except RemoteError as e:
             msg = (
                 'Kraken API request failed. Could not reach kraken due '
