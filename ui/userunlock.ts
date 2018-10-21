@@ -218,6 +218,7 @@ function unlock_user(
                     self.setType('green');
                     self.setTitle('Succesfull Sign In');
                     self.setContentAppend(`<div>Welcome ${username}!</div>`);
+                    self.buttons.ok.keys = ['enter'];
                     $('#welcome_text').html(`Welcome ${username}!`);
 
                     settings.user_logged = true;

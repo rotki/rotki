@@ -85,7 +85,11 @@ export function showError(title: string, content?: string, callback?: () => void
         type: 'red',
         typeAnimated: true,
         buttons: {
-            close: callback
+            close: {
+                text: 'Close',
+                keys: ['enter'],
+                action: callback
+            }
         }
     });
 }
@@ -98,7 +102,9 @@ export function showInfo(title: string, content: string) {
         type: 'green',
         typeAnimated: true,
         buttons: {
-            close: () => {
+            close: {
+                text: 'Close',
+                keys: ['enter'],
             }
         }
     });
@@ -111,7 +117,9 @@ export function showWarning(title: string, content: string) {
         type: 'yellow',
         typeAnimated: true,
         buttons: {
-            close: () => {
+            close: {
+                text: 'Close',
+                keys: ['enter'],
             }
         }
     });
