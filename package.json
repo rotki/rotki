@@ -7,7 +7,6 @@
         "cryptocurrency-icons": "^0.5.0",
         "datatables.net": "latest",
         "datatables.net-dt": "latest",
-        "tail": "latest",
         "zerorpc": "latest"
     },
     "devDependencies": {

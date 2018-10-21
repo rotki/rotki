@@ -1,5 +1,3 @@
-import {Tail} from 'tail';
-import * as fs from 'fs';
 import {settings} from './settings';
 import {remote} from 'electron';
 import {service} from './rotkehlchen_service';
@@ -31,7 +29,6 @@ export function timestamp_to_date(ts: number) {
     );
 }
 
-let log_searcher: Timer;
 let client_auditor: Timer;
 
 /**
@@ -47,29 +44,6 @@ function periodic_client_query() {
     });
 }
 
-function _setup_log_watcher(callback: (alert_text: string, alert_time: number) => void) {
-    if (log_searcher) {
-        if (!fs.existsSync('rotkehlchen.log')) {
-            return;
-        }
-        clearInterval(log_searcher);
-    }
-
-    const tail = new Tail('rotkehlchen.log');
-    const rePattern = new RegExp('.*(WARNING|ERROR):.*:(.*)');
-    tail.on('line', (data) => {
-        const matches = data.match(rePattern);
-
-        if (matches != null) {
-            callback(matches[2], new Date().getTime() / 1000);
-            console.log(matches[2]);
-        }
-    });
-
-    tail.on('error', function (error) {
-        console.error('TAIL ERROR: ', error);
-    });
-}
 
 // Show an error with TITLE and CONTENT
 // If CALLBACK is given then it should be a callback
@@ -123,18 +97,6 @@ export function showWarning(title: string, content: string) {
             }
         }
     });
-}
-
-// TODO: Remove this/replace with something else. In the case of a huge log hangs the entire app
-export function setup_log_watcher(callback: (alert_text: string, alert_time: number) => void) {
-    // if the log file is not found keep trying until it is
-    if (!fs.existsSync('rotkehlchen.log')) {
-        log_searcher = setInterval(function () {
-            _setup_log_watcher(callback);
-        }, 5000);
-        return;
-    }
-    _setup_log_watcher(callback);
 }
 
 export function setup_client_auditor() {
