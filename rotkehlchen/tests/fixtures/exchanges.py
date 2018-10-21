@@ -1,10 +1,11 @@
 import base64
+import json
 import random
 from typing import Dict, List, Optional
 
 import pytest
 
-from rotkehlchen.kraken import KRAKEN_DELISTED, KRAKEN_TO_WORLD, Kraken
+from rotkehlchen.kraken import KRAKEN_ASSETS, KRAKEN_DELISTED, Kraken
 from rotkehlchen.tests.utils.factories import (
     make_random_b64bytes,
     make_random_positive_fval,
@@ -12,15 +13,16 @@ from rotkehlchen.tests.utils.factories import (
     make_random_uppercasenumeric_string,
 )
 from rotkehlchen.typing import Timestamp
+from rotkehlchen.utils import rlk_jsonloads
 
 
 def get_random_kraken_asset():
-    kraken_assets = set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED)
+    kraken_assets = set(KRAKEN_ASSETS) - set(KRAKEN_DELISTED)
     return random.choice(kraken_assets)
 
 
 def generate_random_kraken_balance_response():
-    kraken_assets = set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED)
+    kraken_assets = set(KRAKEN_ASSETS) - set(KRAKEN_DELISTED)
     number_of_assets = random.randrange(0, len(kraken_assets))
     chosen_assets = random.sample(kraken_assets, number_of_assets)
 
@@ -112,7 +114,8 @@ class MockKraken(Kraken):
                 )
                 trades[trade['ordertxid']] = trade
 
-            return {'trades': trades, 'count': trades_num}
+            response_str = json.dumps({'trades': trades, 'count': trades_num})
+            return rlk_jsonloads(response_str)
         elif method == 'Ledgers':
             ledgers_num = random.randint(1, 49)
             start = req['start']
@@ -128,7 +131,8 @@ class MockKraken(Kraken):
                 )
                 ledgers[ledger['refid']] = ledger
 
-            return {'ledger': ledgers, 'count': ledgers_num}
+            response_str = json.dumps({'ledger': ledgers, 'count': ledgers_num})
+            return rlk_jsonloads(response_str)
 
         return super().query_private(method, req)
 

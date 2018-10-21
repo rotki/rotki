@@ -1,12 +1,18 @@
-from rotkehlchen.kraken import KRAKEN_TO_WORLD, WORLD_TO_KRAKEN
+import pytest
+
+from rotkehlchen.kraken import (
+    KRAKEN_ASSETS,
+    WORLD_TO_KRAKEN,
+    kraken_to_world_pair,
+    trade_from_kraken,
+)
+from rotkehlchen.order_formatting import Trade
 from rotkehlchen.utils import ts_now
 
 
 def test_coverage_of_kraken_balances(kraken):
-    our_known_assets = set(KRAKEN_TO_WORLD.keys())
     all_assets = set(kraken.query_public('Assets').keys())
-
-    diff = our_known_assets.symmetric_difference(all_assets)
+    diff = set(KRAKEN_ASSETS).symmetric_difference(all_assets)
     assert len(diff) == 0, (
         f"Our known assets don't match kraken's assets. Difference: {diff}"
     )
@@ -32,6 +38,10 @@ def test_querying_trade_history(kraken):
     assert isinstance(result, list)
     assert len(result) != 0
 
+    for kraken_trade in result:
+        trade = trade_from_kraken(kraken_trade)
+        assert isinstance(trade, Trade)
+
 
 def test_querying_deposits_withdrawals(kraken):
     now = ts_now()
@@ -42,3 +52,15 @@ def test_querying_deposits_withdrawals(kraken):
     )
     assert isinstance(result, list)
     assert len(result) != 0
+
+
+def test_kraken_to_world_pair():
+    assert kraken_to_world_pair('QTUMXBT') == 'QTUM_BTC'
+    assert kraken_to_world_pair('ADACAD') == 'ADA_CAD'
+    assert kraken_to_world_pair('BCHUSD') == 'BCH_USD'
+    assert kraken_to_world_pair('DASHUSD') == 'DASH_USD'
+    assert kraken_to_world_pair('XTZETH') == 'XTZ_ETH'
+    assert kraken_to_world_pair('XXBTZGBP.d') == 'BTC_GBP'
+
+    with pytest.raises(ValueError):
+        kraken_to_world_pair('GABOOBABOO')

@@ -37,6 +37,7 @@ KRAKEN_TO_WORLD = {
     'XLTC': 'LTC',
     'XREP': 'REP',
     'XXBT': 'BTC',
+    'XBT': 'BTC',
     'XXMR': 'XMR',
     'XXRP': 'XRP',
     'XZEC': 'ZEC',
@@ -96,20 +97,62 @@ WORLD_TO_KRAKEN = {
     'XTZ': 'XTZ',
 }
 
+KRAKEN_ASSETS = (
+    'XDAO',
+    'XETC',
+    'XETH',
+    'XLTC',
+    'XREP',
+    'XXBT',
+    'XXMR',
+    'XXRP',
+    'XZEC',
+    'ZEUR',
+    'ZUSD',
+    'ZGBP',
+    'ZCAD',
+    'ZJPY',
+    'ZKRW',
+    'XMLN',
+    'XICN',
+    'GNO',
+    'BCH',
+    'XXLM',
+    'DASH',
+    'EOS',
+    'USDT',
+    'KFEE',
+    'ADA',
+    'QTUM',
+    'XNMC',
+    'XXVN',
+    'XXDG',
+    'XTZ',
+)
+
 KRAKEN_DELISTED = ('XDAO', 'XXVN', 'ZKRW', 'XNMC')
 
 
 def kraken_to_world_pair(pair):
-    if len(pair) == 6:
-        p1 = pair[:3]
-        p2 = pair[3:]
-        return p1 + '_' + p2
+    # handle dark pool pairs
+    if pair[-2:] == '.d':
+        pair = pair[:-2]
+
+    if pair[0:3] in KRAKEN_ASSETS:
+        base_currency = pair[0:3]
+        quote_currency = pair[3:]
+    elif pair[0:4] in KRAKEN_ASSETS:
+        base_currency = pair[0:4]
+        quote_currency = pair[4:]
     else:
-        p1 = pair[:4]
-        p2 = pair[4:]
-        world_p1 = KRAKEN_TO_WORLD[p1]
-        world_p2 = KRAKEN_TO_WORLD[p2]
-        return world_p1 + '_' + world_p2
+        raise ValueError(f'Could not process kraken trade pair {pair}')
+
+    if base_currency not in WORLD_TO_KRAKEN:
+        base_currency = KRAKEN_TO_WORLD[base_currency]
+    if quote_currency not in WORLD_TO_KRAKEN:
+        quote_currency = KRAKEN_TO_WORLD[quote_currency]
+
+    return base_currency + '_' + quote_currency
 
 
 def trade_from_kraken(kraken_trade):
