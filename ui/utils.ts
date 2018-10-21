@@ -42,7 +42,8 @@ function periodic_client_query() {
         settings.last_balance_save = result['last_balance_save'];
         update_eth_node_connection_status_ui(result['eth_node_connection']);
     }).catch(reason => {
-        console.log('Error at periodic client query' + reason);
+        const error_string = 'Error at periodic client query: ' + reason;
+        showError('Periodic Client Query Error', error_string);
     });
 }
 
