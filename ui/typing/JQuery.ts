@@ -34,12 +34,10 @@ interface AlertOptions {
 }
 
 interface Alert {
-    buttons?: { [name: string]: { action: () => void } };
-
+    buttons: { [name: string]: ({ action: () => void }) | ConfirmButton };
+    close(): void;
     setType(type: string): void;
-
     setTitle(title: string): void;
-
     setContentAppend(content: string): void;
 }
 
@@ -55,6 +53,7 @@ interface PulsateOptions {
 
 interface ConfirmOptions {
     title?: string;
+    keyboardEnabled?: boolean;
     content?: string;
     type?: string;
     typeAnimated?: true;
@@ -66,4 +65,5 @@ interface ConfirmButton {
     text?: string;
     btnClass?: string;
     action?: () => void | boolean;
+    keys?: Array<string>;
 }

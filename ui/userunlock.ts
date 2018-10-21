@@ -48,6 +48,23 @@ function ask_permission(msg: string, username: string, password: string, create_
     });
 }
 
+/**
+ * Registers a handler for pressing Enter Key on form entry buttons
+ *
+ * @param content JquerySelectorResult A JQuery selector with the content of the form
+ * @param id string                    The id of the form entry field at which pressing enter should work
+ * @param button_text string           The text of the form submit button to activate
+*/
+function register_enter_keypress(content: JQuery.PlainObject, id: string, button_text: string) {
+    $(`#${id}`).on('keypress', function(e: JQuery.Event) {
+        // if the user submits the form by pressing enter in the last field.
+        if (e.keyCode === 13 || e.which === 13) {
+            e.preventDefault();
+            content.find(`button:contains("${button_text}")`).trigger('click'); // reference the button and click it
+        }
+    });
+}
+
 function prompt_new_account() {
     let content_str = '';
     content_str += form_entry('User Name', 'user_name_entry', '', 'A name for your user -- only used locally');
@@ -92,6 +109,8 @@ function prompt_new_account() {
                 e.preventDefault();
                 $(e.target).trigger('click'); // reference the button and click it
             });
+            register_enter_keypress($content, 'repeat_password_entry', 'Create');
+            register_enter_keypress($content, 'api_secret_entry', 'Create');
         }
     });
 }
@@ -129,10 +148,10 @@ export function prompt_sign_in() {
         onContentReady: () => {
             const $content = $(document);
             $content.find('form').on('submit', function(e: JQuery.Event) {
-                // if the user submits the form by pressing enter in the field.
                 e.preventDefault();
                 $(e.target).trigger('click'); // reference the button and click it
             });
+            register_enter_keypress($content, 'password_entry', 'Sign In');
         }
     });
 }
@@ -199,6 +218,7 @@ function unlock_user(
                     self.setType('green');
                     self.setTitle('Succesfull Sign In');
                     self.setContentAppend(`<div>Welcome ${username}!</div>`);
+                    (self.buttons.ok as ConfirmButton).keys = ['enter'];
                     $('#welcome_text').html(`Welcome ${username}!`);
 
                     settings.user_logged = true;
