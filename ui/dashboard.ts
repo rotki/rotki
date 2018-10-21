@@ -2,7 +2,7 @@ import {change_location} from './navigation';
 import {set_ui_main_currency} from './topmenu';
 import {get_total_assets_value, iterate_saved_balances, total_table_add_balances, total_table_recreate} from './balances_table';
 import {assert_exchange_exists, format_currency_value, pages, settings} from './settings';
-import {setup_client_auditor, setup_log_watcher, showError} from './utils';
+import {showError} from './utils';
 import {create_or_reload_exchange} from './exchange';
 import {monitor_add_callback} from './monitor';
 import {prompt_sign_in} from './userunlock';
@@ -24,11 +24,11 @@ function add_exchange_on_click(name: string) {
 }
 
 function setup_brand_behavior() {
-    let brand = $('a.navbar-brand');
+    const brand = $('a.navbar-brand');
     brand.click((event: JQuery.Event) => {
         event.preventDefault();
         shell.openExternal('http://rotkehlchen.io');
-    })
+    });
 }
 
 function create_dashboard_header() {
@@ -125,9 +125,9 @@ const nodeConnectionStatus = ({iconClass, message}: { iconClass: string, message
 </ul>
 `;
 
-function update_eth_node_connection_status_ui(is_local_eth: boolean) {
+export function update_eth_node_connection_status_ui(local_eth_connection: boolean) {
     let str: string;
-    if (!is_local_eth) {
+    if (!local_eth_connection) {
         str = nodeConnectionStatus({
             iconClass: 'fa-unlink',
             message: 'Not connected to a local ethereum node'
@@ -139,33 +139,6 @@ function update_eth_node_connection_status_ui(is_local_eth: boolean) {
         });
     }
     $('.eth-node-status').html(str);
-}
-
-let alert_id = 0;
-
-function add_alert_dropdown(alert_text: string, _alert_time: number) {
-    const connection_fail = alert_text.indexOf('Could not connect to a local ethereum node') >= 0;
-    const no_sync = alert_text.indexOf('Could not transact with/call contract function') >= 0;
-    if (connection_fail || no_sync) {
-        update_eth_node_connection_status_ui(false);
-    }
-    const str = `<li class="warning${alert_id}">
-    <a href="#">
-        <div>
-            <p>${alert_text}
-                <span class="pull-right text-muted"><i class="fa fa-times warningremover${alert_id}"></i></span>
-            </p>
-        </div>
-    </a>
-    </li>
-    <li class="divider warning${alert_id}"></li>`;
-    $(str).appendTo($('.dropdown-alerts'));
-    const current_alert_id = alert_id;
-    $(`.warningremover${current_alert_id}`).click(() => {
-        console.log(`remove callback called for ${current_alert_id}`);
-        $(`.warning${current_alert_id}`).remove();
-    });
-    alert_id += 1;
 }
 
 export function add_currency_dropdown(currency: Currency) {
@@ -286,6 +259,4 @@ export function init_dashboard() {
         }
     });
     setup_brand_behavior();
-    setup_log_watcher(add_alert_dropdown);
-    setup_client_auditor();
 }
