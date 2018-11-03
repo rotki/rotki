@@ -41,6 +41,41 @@ def world_to_cryptocompare(asset):
     return asset
 
 
+def query_cryptocompare_for_fiat_price(asset: typing.Asset) -> FVal:
+    log.debug('Get usd price from cryptocompare', asset=asset)
+    asset = world_to_cryptocompare(asset)
+    resp = retry_calls(
+        5,
+        'find_usd_price',
+        'requests.get',
+        requests.get,
+        u'https://min-api.cryptocompare.com/data/price?'
+        'fsym={}&tsyms=USD'.format(asset)
+    )
+
+    if resp.status_code != 200:
+        raise RemoteError('Cant reach cryptocompare to get USD value of {}'.format(asset))
+
+    resp = rlk_jsonloads(resp.text)
+
+    # If there is an error in the response skip this token
+    if 'USD' not in resp:
+        error_message = ''
+        if resp['Response'] == 'Error':
+            error_message = resp['Message']
+
+        log.error(
+            'Cryptocompare usd price query failed',
+            asset=asset,
+            error=error_message,
+        )
+        return FVal(0)
+
+    price = FVal(resp['USD'])
+    log.debug('Got usd price from cryptocompare', asset=asset, price=price)
+    return price
+
+
 class Inquirer(object):
     def __init__(self, kraken=None):  # TODO: Add type after fixing cyclic dependency
         self.kraken = kraken
@@ -65,35 +100,4 @@ class Inquirer(object):
             log.debug('Get usd price from kraken', asset=asset, price=price)
             return price
 
-        log.debug('Get usd price from cryptocompare', asset=asset)
-        asset = world_to_cryptocompare(asset)
-        resp = retry_calls(
-            5,
-            'find_usd_price',
-            'requests.get',
-            requests.get,
-            u'https://min-api.cryptocompare.com/data/price?'
-            'fsym={}&tsyms=USD'.format(asset)
-        )
-
-        if resp.status_code != 200:
-            raise RemoteError('Cant reach cryptocompare to get USD value of {}'.format(asset))
-
-        resp = rlk_jsonloads(resp.text)
-
-        # If there is an error in the response skip this token
-        if 'USD' not in resp:
-            error_message = ''
-            if resp['Response'] == 'Error':
-                error_message = resp['Message']
-
-            log.error(
-                'Cryptocompare usd price query failed',
-                asset=asset,
-                error=error_message,
-            )
-            return FVal(0)
-
-        price = FVal(resp['USD'])
-        log.debug('Got usd price from cryptocompare', asset=asset, price=price)
-        return price
+        return query_cryptocompare_for_fiat_price(asset)

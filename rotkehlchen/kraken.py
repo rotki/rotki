@@ -16,6 +16,7 @@ from rotkehlchen import typing
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import query_cryptocompare_for_fiat_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import AssetMovement, Trade
 from rotkehlchen.utils import (
@@ -385,6 +386,12 @@ class Kraken(Exchange):
             price = FVal(self.ticker['USDTZUSD']['c'][0])
             self.usdprice['USDT'] = price
             return price
+
+        if asset == 'XICN':
+            # ICN has been delisted by kraken at 31/10/2018 and withdrawals
+            # will only last until 31/11/2018. For this period of time there
+            # can be ICN in Kraken -- so use crypto compare for price info
+            return query_cryptocompare_for_fiat_price('ICN')
 
         # TODO: This is pretty ugly. Find a better way to check out kraken pairs
         # without this ugliness.
