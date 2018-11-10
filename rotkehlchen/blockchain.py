@@ -64,7 +64,7 @@ class Blockchain(object):
 
             self.all_eth_tokens[token_symbol] = {
                 'address': to_checksum_address(token['address']),
-                'decimal': token['decimal']
+                'decimal': cast(int, token['decimal']),
             }
         # Per account balances
         self.balances: Balances = defaultdict(dict)

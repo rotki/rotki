@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from requests.exceptions import ConnectionError
 from web3 import HTTPProvider, Web3
@@ -111,7 +111,7 @@ class Ethchain(object):
             self.ethrpc_port = port
         return result, message
 
-    def query_eth_highest_block(self) -> int:
+    def query_eth_highest_block(self) -> Optional[int]:
         """ Attempts to query blockcypher for the block height
 
         Returns the highest blockNumber"""

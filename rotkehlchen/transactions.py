@@ -129,7 +129,7 @@ def transactions_from_dictlist(
         tx_hash = given_tx['hash']
         from_address = given_tx['from_address']
         to_address = given_tx['to_address']
-        value = FVal(given_tx['value']),
+        value = FVal(given_tx['value'])
         gas = FVal(given_tx['gas'])
         gas_price = FVal(given_tx['gas_price'])
         gas_used = FVal(given_tx['gas_used'])
