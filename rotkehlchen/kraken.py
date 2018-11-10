@@ -391,7 +391,7 @@ class Kraken(Exchange):
             # ICN has been delisted by kraken at 31/10/2018 and withdrawals
             # will only last until 31/11/2018. For this period of time there
             # can be ICN in Kraken -- so use crypto compare for price info
-            return query_cryptocompare_for_fiat_price('ICN')
+            return query_cryptocompare_for_fiat_price(typing.EthToken('ICN'))
 
         # TODO: This is pretty ugly. Find a better way to check out kraken pairs
         # without this ugliness.
