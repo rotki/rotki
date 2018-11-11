@@ -59,3 +59,15 @@ export async function closeAddYourSettingsPopup(client: SpectronClient) {
     await client.waitUntilTextExists('.jconfirm-title', 'Add your settings', METHOD_TIMEOUT);
     await client.click('.jconfirm-buttons>button');
 }
+
+export async function navigateToUserSettings(client: SpectronClient) {
+    await client.click('#user-dropdown');
+    await client.waitForVisible('#user_settings_button', 5000);
+    await client.click('#user_settings_button');
+    await client.pause(100);
+}
+
+export async function closeAddYourSettingsPopup(client: SpectronClient) {
+    await client.waitUntilTextExists('.jconfirm-title', 'Add your settings', 5000);
+    await client.click('.jconfirm-buttons>button');
+}
