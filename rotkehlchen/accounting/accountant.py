@@ -1,13 +1,14 @@
 import logging
-from typing import Dict, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import gevent
 
 from rotkehlchen.accounting.events import TaxableEvents
+from rotkehlchen.constants import S_BTC, S_ETH
 from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.errors import CorruptData, PriceQueryUnknownFromAsset
 from rotkehlchen.fval import FVal
-from rotkehlchen.history import FIAT_CURRENCIES
+from rotkehlchen.history import FIAT_CURRENCIES, PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import (
     AssetMovement,
@@ -17,34 +18,34 @@ from rotkehlchen.order_formatting import (
     trade_get_other_pair,
 )
 from rotkehlchen.transactions import EthereumTransaction
-from rotkehlchen.typing import Asset
+from rotkehlchen.typing import Asset, FiatAsset, FilePath, Timestamp
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+TaxableAction = Union[Trade, AssetMovement, EthereumTransaction, MarginPosition, Dict]
 
-def action_get_timestamp(action):
+
+def action_get_timestamp(action: TaxableAction) -> Timestamp:
     has_timestamp = (
         isinstance(action, Trade) or
         isinstance(action, AssetMovement) or
         isinstance(action, EthereumTransaction)
     )
     if has_timestamp:
-        return action.timestamp
+        return action.timestamp  # type: ignore # There is an isinstance check above
 
     if isinstance(action, MarginPosition):
         return action.close_time
 
     # For loans
-    if 'close_time' not in action:
-        raise ValueError(f'Unexpected action {action} in get_timestamp')
+    is_loan = isinstance(action, Dict) and 'close_time' in action
+    assert is_loan, 'Unexpected action in get_timestamp'
 
     return action['close_time']
 
 
-def action_get_type(
-        action: Union[Trade, AssetMovement, EthereumTransaction, MarginPosition, Dict],
-) -> str:
+def action_get_type(action: TaxableAction) -> str:
     if isinstance(action, Trade):
         return 'trade'
     elif isinstance(action, AssetMovement):
@@ -60,14 +61,14 @@ def action_get_type(
 
 
 def action_get_assets(
-        action: Union[Trade, AssetMovement, EthereumTransaction, MarginPosition, Dict],
+        action: TaxableAction,
 ) -> Tuple[Asset, Optional[Asset]]:
     if isinstance(action, Trade):
         return trade_get_assets(action)
     elif isinstance(action, AssetMovement):
         return action.asset, None
     elif isinstance(action, EthereumTransaction):
-        return 'ETH', None
+        return S_ETH, None
     elif isinstance(action, MarginPosition):
         return action.pl_currency, None
     elif isinstance(action, dict):
@@ -82,19 +83,22 @@ class Accountant(object):
 
     def __init__(
             self,
-            price_historian,
-            profit_currency,
-            user_directory,
-            create_csv,
-            ignored_assets,
-            include_crypto2crypto,
-            taxfree_after_period,
-            include_gas_costs,
+            price_historian: PriceHistorian,
+            profit_currency: FiatAsset,
+            user_directory: FilePath,
+            create_csv: bool,
+            ignored_assets: List[Asset],
+            include_crypto2crypto: bool,
+            taxfree_after_period: int,
+            include_gas_costs: bool,
     ):
         self.price_historian = price_historian
         self.csvexporter = CSVExporter(profit_currency, user_directory, create_csv)
         self.events = TaxableEvents(price_historian, self.csvexporter, profit_currency)
         self.set_main_currency(profit_currency)
+
+        self.asset_movement_fees = FVal(0)
+        self.last_gas_price = FVal(0)
 
         # Customizable Options
         self.ignored_assets = ignored_assets
@@ -108,14 +112,14 @@ class Accountant(object):
         del self.price_historian
 
     @property
-    def general_trade_pl(self):
+    def general_trade_pl(self) -> FVal:
         return self.events.general_trade_profit_loss
 
     @property
-    def taxable_trade_pl(self):
+    def taxable_trade_pl(self) -> FVal:
         return self.events.taxable_trade_profit_loss
 
-    def customize(self, settings):
+    def customize(self, settings: Dict[str, Any]) -> Tuple[bool, str]:
         include_c2c = self.events.include_crypto2crypto
         taxfree_after_period = self.events.taxfree_after_period
 
@@ -142,7 +146,7 @@ class Accountant(object):
 
         return True, ''
 
-    def set_main_currency(self, currency):
+    def set_main_currency(self, currency: FiatAsset) -> None:
         if currency not in FIAT_CURRENCIES:
             raise ValueError(
                 'Attempted to set unsupported "{}" as main currency.'.format(currency)
@@ -151,14 +155,19 @@ class Accountant(object):
         self.profit_currency = currency
         self.events.profit_currency = currency
 
-    def query_historical_price(self, from_asset, to_asset, timestamp):
+    def query_historical_price(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+    ) -> FVal:
         price = self.price_historian.query_historical_price(from_asset, to_asset, timestamp)
         return price
 
-    def get_rate_in_profit_currency(self, asset, timestamp):
+    def get_rate_in_profit_currency(self, asset: Asset, timestamp: Timestamp) -> FVal:
         # TODO: Moved this to events.py too. Is it still needed here?
         if asset == self.profit_currency:
-            rate = 1
+            rate = FVal(1)
         else:
             rate = self.query_historical_price(
                 asset,
@@ -168,7 +177,15 @@ class Accountant(object):
         assert isinstance(rate, (FVal, int))  # TODO Remove. Is temporary assert
         return rate
 
-    def add_asset_movement_to_events(self, category, asset, amount, timestamp, exchange, fee):
+    def add_asset_movement_to_events(
+            self,
+            category: str,
+            asset: Asset,
+            amount: FVal,
+            timestamp: Timestamp,
+            exchange: str,
+            fee: FVal,
+    ) -> None:
         rate = self.get_rate_in_profit_currency(asset, timestamp)
         cost = fee * rate
         self.asset_movement_fees += cost
@@ -193,7 +210,7 @@ class Accountant(object):
             timestamp=timestamp,
         )
 
-    def account_for_gas_costs(self, transaction):
+    def account_for_gas_costs(self, transaction: EthereumTransaction) -> None:
         if not self.include_gas_costs:
             return
 
@@ -203,7 +220,7 @@ class Accountant(object):
             gas_price = transaction.gas_price
             self.last_gas_price = transaction.gas_price
 
-        rate = self.get_rate_in_profit_currency('ETH', transaction.timestamp)
+        rate = self.get_rate_in_profit_currency(S_ETH, transaction.timestamp)
         eth_burned_as_gas = (transaction.gas_used * gas_price) / FVal(10 ** 18)
         cost = eth_burned_as_gas * rate
         self.eth_transactions_gas_costs += cost
@@ -223,7 +240,7 @@ class Accountant(object):
             timestamp=transaction.timestamp,
         )
 
-    def trade_add_to_sell_events(self, trade, loan_settlement):
+    def trade_add_to_sell_events(self, trade: Trade, loan_settlement: bool) -> None:
         selling_asset = trade_get_other_pair(trade, trade.cost_currency)
         selling_asset_rate = self.get_rate_in_profit_currency(
             trade.cost_currency,
@@ -267,14 +284,14 @@ class Accountant(object):
 
     def process_history(
             self,
-            start_ts,
-            end_ts,
-            trade_history,
-            margin_history,
-            loan_history,
-            asset_movements,
-            eth_transactions
-    ):
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            trade_history: List[Trade],
+            margin_history: List[Trade],
+            loan_history: Dict,
+            asset_movements: List[AssetMovement],
+            eth_transactions: List[EthereumTransaction],
+    ) -> Dict[str, Any]:
         """Processes the entire history of cryptoworld actions in order to determine
         the price and time at which every asset was obtained and also
         the general and taxable profit/loss.
@@ -290,7 +307,7 @@ class Accountant(object):
         self.asset_movement_fees = FVal(0)
         self.csvexporter.reset_csv_lists()
 
-        actions = list(trade_history)
+        actions: List[TaxableAction] = list(trade_history)
         # If we got loans, we need to interleave them with the full history and re-sort
         if len(loan_history) != 0:
             actions.extend(loan_history)
@@ -308,7 +325,7 @@ class Accountant(object):
             key=lambda action: action_get_timestamp(action)
         )
 
-        prev_time = 0
+        prev_time: Timestamp = 0
         count = 0
         for action in actions:
             try:
@@ -352,7 +369,13 @@ class Accountant(object):
             'all_events': self.csvexporter.all_events,
         }
 
-    def process_action(self, action, end_ts, prev_time, count) -> Tuple[bool, int, int]:
+    def process_action(
+            self,
+            action: TaxableAction,
+            end_ts: Timestamp,
+            prev_time: Timestamp,
+            count: int,
+    ) -> Tuple[bool, int, int]:
         """Processes each individual action and returns whether we should continue
         looping through the rest of the actions or not"""
 
@@ -390,6 +413,7 @@ class Accountant(object):
             return True, prev_time, count
 
         if action_type == 'loan':
+            action = cast(Dict, action)
             self.events.add_loan_gain(
                 gained_asset=action['currency'],
                 lent_amount=action['amount_lent'],
@@ -400,6 +424,7 @@ class Accountant(object):
             )
             return True, prev_time, count
         elif action_type == 'asset_movement':
+            action = cast(AssetMovement, action)
             self.add_asset_movement_to_events(
                 category=action.category,
                 asset=action.asset,
@@ -410,6 +435,7 @@ class Accountant(object):
             )
             return True, prev_time, count
         elif action_type == 'margin_position':
+            action = cast(MarginPosition, action)
             self.events.add_margin_position(
                 gain_loss_asset=action.pl_currency,
                 gain_loss_amount=action.profit_loss,
@@ -419,11 +445,12 @@ class Accountant(object):
             )
             return True, prev_time, count
         elif action_type == 'ethereum_transaction':
+            action = cast(EthereumTransaction, action)
             self.account_for_gas_costs(action)
             return True, prev_time, count
 
         # if we get here it's a trade
-        trade = action
+        trade = cast(Trade, action)
 
         # if the cost is not equal to rate * amount then the data is somehow corrupt
         if not trade.cost.is_close(trade.amount * trade.rate, max_diff="1e-4"):
@@ -453,7 +480,7 @@ class Accountant(object):
         elif trade.type == 'settlement_buy':
             # in poloniex settlements you buy some asset with BTC to repay a loan
             # so in essense you sell BTC to repay the loan
-            selling_asset = 'BTC'
+            selling_asset = S_BTC
             selling_asset_rate = self.get_rate_in_profit_currency(
                 selling_asset,
                 trade.timestamp
