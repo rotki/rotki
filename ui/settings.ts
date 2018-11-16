@@ -171,7 +171,7 @@ export function add_settings_listeners() {
         // and now send the data to the python process
 
         service.set_settings(send_payload).then(result => {
-            let message = 'Succesfully modified settings.';
+            let message = 'Successfully modified settings.';
             if ('message' in result && result.message !== '') {
                 message = ` ${message}${result.message}`;
             }
