@@ -60,14 +60,26 @@ export async function closeAddYourSettingsPopup(client: SpectronClient) {
     await client.click('.jconfirm-buttons>button');
 }
 
-export async function navigateToUserSettings(client: SpectronClient) {
+export async function logout(client: SpectronClient) {
     await client.click('#user-dropdown');
-    await client.waitForVisible('#user_settings_button', 5000);
-    await client.click('#user_settings_button');
-    await client.pause(100);
+    await client.waitForVisible('#logout_button', METHOD_TIMEOUT);
+    await client.click('#logout_button');
+
+    await client.waitForVisible('.jconfirm', METHOD_TIMEOUT);
+    await client.click('.jconfirm-buttons>button');
+    await client.waitUntilTextExists('.jconfirm-title', 'Sign In', METHOD_TIMEOUT);
 }
 
-export async function closeAddYourSettingsPopup(client: SpectronClient) {
-    await client.waitUntilTextExists('.jconfirm-title', 'Add your settings', 5000);
+export async function login(client: SpectronClient, username: string, password: string) {
+    await client.clearElement('#username_entry');
+    await client.addValue('#username_entry', username);
+
+    await client.clearElement('#password_entry');
+    await client.addValue('#password_entry', password);
+
     await client.click('.jconfirm-buttons>button');
+
+    await client.waitUntilTextExists('.jconfirm-title', 'Successful Sign In', METHOD_TIMEOUT);
+    await client.click('.jconfirm-buttons>button');
+    await client.waitForVisible('.jconfirm', METHOD_TIMEOUT, true);
 }
