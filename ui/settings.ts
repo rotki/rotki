@@ -175,7 +175,10 @@ export function add_settings_listeners() {
         });
     });
 
-    $('#historical_data_start').datetimepicker({timepicker: false});
+    $('#historical_data_start').datetimepicker({
+        timepicker: false,
+        format: 'd/m/Y',
+    });
 }
 
 export function create_settings_ui() {
