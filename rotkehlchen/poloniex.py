@@ -307,7 +307,7 @@ class Poloniex(Exchange):
             start_ts: typing.Timestamp,
             end_ts: typing.Timestamp,
             end_at_least_ts: typing.Timestamp,
-    ) -> Union[List, Dict]:
+    ) -> Dict:
         with self.lock:
             cache = self.check_trades_cache(start_ts, end_at_least_ts)
         if cache is not None:

@@ -3,10 +3,11 @@ import hmac
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union, cast
 from urllib.parse import urlencode
 
 from rotkehlchen import typing
+from rotkehlchen.constants import S_BTC
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
@@ -180,15 +181,17 @@ class Bitmex(Exchange):
             )
             log.error(msg)
             return None, msg
+        # get /user/wallet returns Dict
+        resp = cast(Dict, resp)
 
         # Bitmex shows only BTC balance
         returned_balances = dict()
-        usd_price = self.inquirer.find_usd_price('BTC')
+        usd_price = self.inquirer.find_usd_price(S_BTC)
         # result is in satoshis
         amount = satoshis_to_btc(FVal(resp['amount']))
         usd_value = amount * usd_price
 
-        returned_balances['BTC'] = dict(
+        returned_balances[S_BTC] = dict(
             amount=amount,
             usd_value=usd_value,
         )
@@ -219,7 +222,7 @@ class Bitmex(Exchange):
                 'to {}'.format(e)
             )
             log.error(msg)
-            return None, msg
+            return list()
 
         log.debug('Bitmex trade history query', results_num=len(resp))
 
@@ -256,7 +259,7 @@ class Bitmex(Exchange):
                 'to {}'.format(e)
             )
             log.error(msg)
-            return None, msg
+            return list()
 
         log.debug('Bitmex deposit/withdrawals query', results_num=len(resp))
 
