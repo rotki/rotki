@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`211` Handle the BCHSV fork in Kraken properly.
+
 * :release:`0.5.0 <2018-11-10>`
 * :bug:`201` Having ICN in Kraken from 31/10 to 31/11 2018 will not lead rotkehlchen to crash.
 * :feature:`186` Pressing Enter at signin/create new account and other popups will submit them just like clicking the form button.

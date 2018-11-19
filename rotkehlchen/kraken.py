@@ -63,6 +63,7 @@ KRAKEN_TO_WORLD = {
     'XXVN': 'XVN',
     'XXDG': 'XDG',
     'XTZ': 'XTZ',
+    'BSV': 'BCHSV',
 }
 
 WORLD_TO_KRAKEN = {
@@ -96,6 +97,7 @@ WORLD_TO_KRAKEN = {
     'XVN': 'XXVN',
     'XDG': 'XXDG',
     'XTZ': 'XTZ',
+    'BCHSV': 'BSV',
 }
 
 KRAKEN_ASSETS = (
@@ -118,6 +120,7 @@ KRAKEN_ASSETS = (
     'XICN',
     'GNO',
     'BCH',
+    'BSV',
     'XXLM',
     'DASH',
     'EOS',
