@@ -128,7 +128,8 @@ class Blockchain(object):
             raise InputError('Some of the new provided tokens to track already exist')
 
         self.owned_eth_tokens.extend(tokens)
-        self.query_ethereum_tokens(tokens, self.balances[S_ETH])
+        eth_balances = cast(EthBalances, self.balances[S_ETH])
+        self.query_ethereum_tokens(tokens, eth_balances)
         return {'per_account': self.balances, 'totals': self.totals}
 
     def remove_eth_tokens(self, tokens: List[typing.EthToken]) -> BlockchainBalancesUpdate:
@@ -336,7 +337,10 @@ class Blockchain(object):
                 'usd_value': token_total * token_usd_price[token]
             }
 
-        self.balances[S_ETH] = eth_balances
+        self.balances[S_ETH] = cast(
+            Dict[typing.BlockchainAddress, Dict[Union[str, typing.Asset], FVal]],
+            eth_balances,
+        )
 
     def query_ethereum_balances(self) -> None:
         if len(self.accounts.eth) == 0:
