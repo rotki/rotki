@@ -128,7 +128,7 @@ class Binance(Exchange):
         self.first_connection_made = True
 
     def _populate_symbols_to_pair(self, exchange_data: Dict[str, Any]):
-        self._symbols_to_pair = dict()
+        self._symbols_to_pair: Dict[str, BinancePair] = dict()
         for symbol in exchange_data['symbols']:
             symbol_str = symbol['symbol']
             if isinstance(symbol_str, FVal):

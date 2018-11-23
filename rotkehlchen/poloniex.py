@@ -311,6 +311,7 @@ class Poloniex(Exchange):
         with self.lock:
             cache = self.check_trades_cache(start_ts, end_at_least_ts)
         if cache is not None:
+            assert isinstance(cache, Dict), 'Poloniex trade history should be a dict'
             return cache
 
         result = self.returnTradeHistory(

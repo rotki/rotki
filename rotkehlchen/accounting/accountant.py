@@ -39,9 +39,9 @@ def action_get_timestamp(action: TaxableAction) -> Timestamp:
         return action.close_time
 
     # For loans
-    is_loan = isinstance(action, Dict) and 'close_time' in action
-    assert is_loan, 'Unexpected action in get_timestamp'
-
+    assert isinstance(action, Dict) and 'close_time' in action, (
+        'Unexpected action in get_timestamp'
+    )
     return action['close_time']
 
 
@@ -325,7 +325,7 @@ class Accountant(object):
             key=lambda action: action_get_timestamp(action)
         )
 
-        prev_time: Timestamp = 0
+        prev_time = Timestamp(0)
         count = 0
         for action in actions:
             try:
@@ -375,7 +375,7 @@ class Accountant(object):
             end_ts: Timestamp,
             prev_time: Timestamp,
             count: int,
-    ) -> Tuple[bool, int, int]:
+    ) -> Tuple[bool, Timestamp, int]:
         """Processes each individual action and returns whether we should continue
         looping through the rest of the actions or not"""
 
