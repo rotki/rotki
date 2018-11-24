@@ -4,21 +4,21 @@
     "license": "BSD-3-Clause",
     "main": "main.js",
     "dependencies": {
-        "cryptocurrency-icons": "^0.5.0",
+        "cryptocurrency-icons": "^0.9.0",
         "datatables.net": "latest",
         "datatables.net-dt": "latest",
         "zerorpc": "latest"
     },
     "devDependencies": {
-        "@types/chai": "^4.1.5",
+        "@types/chai": "^4.1.7",
         "@types/chai-as-promised": "^7.1.0",
         "@types/datatables.net": "^1.10.13",
-        "@types/jquery": "^3.3.6",
-        "@types/jquery.contextmenu": "^1.7.33",
+        "@types/jquery": "^3.3.22",
+        "@types/jquery.contextmenu": "^1.7.34",
         "@types/mocha": "^5.2.5",
-        "@types/node": "^8.9.2",
+        "@types/node": "^8.10.38",
         "@types/tail": "^1.2.0",
-        "chai": "^4.1.2",
+        "chai": "^4.2.0",
         "chai-as-promised": "^7.1.1",
         "electron": "1.8.4",
         "electron-packager": "^8.7.2",
@@ -29,7 +29,7 @@
         "ts-node": "^7.0.1",
         "tslint": "^5.11.0",
         "tslint-eslint-rules": "^5.4.0",
-        "typescript": "^3.0.3"
+        "typescript": "^3.1.6"
     },
     "scripts": {
         "build": "rimraf ui/dist && tsc",
