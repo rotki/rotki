@@ -13,9 +13,12 @@ export function initialiseSpectron() {
         env: {
             ELECTRON_ENABLE_LOGGING: true,
             ELECTRON_ENABLE_STACK_DUMPING: true,
-            NODE_ENV: 'development'
+            NODE_ENV: 'development',
+            SPECTRON: true
         },
-        startTimeout: 10000,
+        startTimeout: METHOD_TIMEOUT,
+        connectionRetryTimeout: GLOBAL_TIMEOUT,
+        waitTimeout: METHOD_TIMEOUT,
         chromeDriverLogPath: '../chromedriverlog.txt'
     });
 }
