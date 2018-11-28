@@ -3,7 +3,7 @@ import * as electron from 'electron';
 import * as path from 'path';
 
 export const GLOBAL_TIMEOUT = 60_000;
-export const METHOD_TIMEOUT = 15_000;
+export const METHOD_TIMEOUT = 20_000;
 
 export function initialiseSpectron() {
 
