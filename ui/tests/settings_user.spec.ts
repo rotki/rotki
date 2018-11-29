@@ -22,7 +22,7 @@ describe('user settings', function () {
     const ethAccount: string = process.env.ETH_ADDRESS as string;
     const btcAccount: string = process.env.BTC_ADDRESS as string;
 
-    beforeEach(async () => {
+    before(async () => {
         username = Guid.newGuid().toString();
         app = initialiseSpectron();
         await app.start();
@@ -37,7 +37,7 @@ describe('user settings', function () {
         await client.waitForVisible('#blockchain_balances_panel_body', METHOD_TIMEOUT);
     });
 
-    afterEach(async () => {
+    after(async () => {
         if (app && app.isRunning()) {
             await app.stop();
         }
@@ -49,7 +49,10 @@ describe('user settings', function () {
         const blockchain = 'ETH';
         await client.waitForExist('#ethchain_per_account_table', METHOD_TIMEOUT);
         await client.scroll('#ethchain_per_account_table', 0, 0);
-        await client.getText('#ethchain_per_account_table > tbody > tr:nth-child(1) > td:nth-child(1)').should.eventually.equal(ethAccount);
+        await client.getText('#ethchain_per_account_table > tbody > tr:nth-child(1) > td:nth-child(1)')
+            .should
+            .eventually
+            .equal(ethAccount);
         await client.getText('#ethchain_per_account_table > thead > tr:nth-child(1) > th:nth-child(2)')
             .should
             .eventually
@@ -76,7 +79,7 @@ describe('user settings', function () {
         await client.element('.ms-selection').getText('span=RDN').should.eventually.equal('RDN');
 
         await client.waitUntil(async () => {
-            return client.getText('#blockchain_per_asset_table > tbody > tr:nth-child(1) > td:nth-child(1)')
+            return client.getText('#blockchain_per_asset_table > tbody > tr:nth-child(2) > td:nth-child(1)')
                 .should
                 .eventually
                 .contain('RDN');
@@ -99,13 +102,13 @@ describe('user settings', function () {
         }, METHOD_TIMEOUT, 'btcchain_per_account_table should have the BTC account');
 
         await client.waitUntil(async () => {
-            return await client.getText('#blockchain_per_asset_table > tbody > tr:nth-child(1) > td:nth-child(1)')
+            return await client.getText('#blockchain_per_asset_table > tbody > tr:nth-child(3) > td:nth-child(1)')
                 .should
                 .eventually
                 .contain(blockchain);
         }, METHOD_TIMEOUT, 'blockchain_per_asset_table should have a BTC entry');
 
-        const assetTableColumn = client.getText('#blockchain_per_asset_table_body > tr:nth-child(1) > td:nth-child(3)');
+        const assetTableColumn = client.getText('#blockchain_per_asset_table_body > tr:nth-child(3) > td:nth-child(3)');
         await assetTableColumn.should.eventually.satisfy((value: string) => {
             return parseFloat(value) >= 0;
         }, 'The usd value should be equal or greater than zero');
@@ -144,41 +147,41 @@ describe('user settings', function () {
 
         await app.client.waitForEnabled('#api_key_entry', METHOD_TIMEOUT, true);
         await app.client.waitForEnabled('#api_secret_entry', METHOD_TIMEOUT, true);
-
     });
 
     it('should change the currency and verify that it changed', async () => {
-
-        await controller.addAccount(AccountType.ETH, ethAccount);
-        await controller.addAccount(AccountType.BTC, btcAccount);
-
-        await client.waitForExist('#btcchain_per_account_table', METHOD_TIMEOUT);
-
-        await controller.addFiatValue();
 
         await client.click('.navbar > .nav > li.dropdown:last-child');
         await client.waitForVisible('.currency-dropdown', METHOD_TIMEOUT);
         await client.click('#change-to-eur');
 
         await app.client.waitUntil(async () => {
-            return client.getText('#fiat_balances_table > thead > tr > th:last-child').should.eventually.contain('EUR');
+            return client.getText('#fiat_balances_table > thead > tr > th:last-child')
+                .should
+                .eventually
+                .contain('EUR');
         }, METHOD_TIMEOUT, 'fiat_balances_table should have EUR on the header');
 
-        await client.getText('#blockchain_per_asset_table > thead > tr > th:last-child')
-            .should
-            .eventually
-            .contain('EUR', 'blockchain_per_asset_table should have EUR on the header');
+        await client.waitUntil(async () => {
+            return client.getText('#blockchain_per_asset_table > thead > tr > th:last-child')
+                .should
+                .eventually
+                .contain('EUR');
+        }, METHOD_TIMEOUT, 'blockchain_per_asset_table should have EUR on the header');
 
-        await client.getText('#ethchain_per_account_table > thead > tr > th:last-child')
-            .should
-            .eventually
-            .contain('EUR', 'ethchain_per_account_table should have EUR on the header');
+        await client.waitUntil(async () => {
+            return client.getText('#ethchain_per_account_table > thead > tr > th:nth-child(3)')
+                .should
+                .eventually
+                .contain('EUR');
+        }, METHOD_TIMEOUT, 'ethchain_per_account_table should have EUR on the header');
 
-        await client.getText('#btcchain_per_account_table > thead > tr > th:last-child')
-            .should
-            .eventually
-            .contain('EUR', 'btcchain_per_account_table should had EUR on the header');
+        await client.waitUntil(async () => {
+            return client.getText('#btcchain_per_account_table > thead > tr > th:last-child')
+                .should
+                .eventually
+                .contain('EUR');
+        }, METHOD_TIMEOUT, 'btcchain_per_account_table should had EUR on the header');
 
     });
-
 });

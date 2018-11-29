@@ -24,7 +24,7 @@ export function initialiseSpectron() {
 }
 
 export async function createAccount(app: Application, username: string, password: string) {
-    await app.client.waitForExist('.jconfirm-box-container', METHOD_TIMEOUT);
+    await app.client.waitUntilTextExists('.jconfirm-title', 'Sign In', METHOD_TIMEOUT);
 
     await app.client.click('.jconfirm-buttons :nth-child(2)');
 
