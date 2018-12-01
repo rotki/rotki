@@ -495,7 +495,7 @@ class Accountant(object):
             gain_in_profit_currency = selling_rate * trade.amount
             self.events.add_sell(
                 selling_asset=selling_asset,
-                selling_amount=trade.cost,
+                selling_amount=trade.amount,
                 receiving_asset=None,
                 receiving_amount=None,
                 gain_in_profit_currency=gain_in_profit_currency,
