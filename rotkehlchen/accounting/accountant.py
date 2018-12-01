@@ -186,6 +186,9 @@ class Accountant(object):
             exchange: str,
             fee: FVal,
     ) -> None:
+        if timestamp < self.start_ts:
+            return
+
         rate = self.get_rate_in_profit_currency(asset, timestamp)
         cost = fee * rate
         self.asset_movement_fees += cost
@@ -212,6 +215,8 @@ class Accountant(object):
 
     def account_for_gas_costs(self, transaction: EthereumTransaction) -> None:
         if not self.include_gas_costs:
+            return
+        if transaction.timestamp < self.start_ts:
             return
 
         if transaction.gas_price == -1:
@@ -303,6 +308,7 @@ class Accountant(object):
         )
         self.events.reset(start_ts, end_ts)
         self.last_gas_price = FVal("2000000000")
+        self.start_ts = start_ts
         self.eth_transactions_gas_costs = FVal(0)
         self.asset_movement_fees = FVal(0)
         self.csvexporter.reset_csv_lists()

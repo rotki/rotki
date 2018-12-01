@@ -271,18 +271,19 @@ class TaxableEvents(object):
             timestamp=timestamp,
         )
 
-        self.csv_exporter.add_buy(
-            bought_asset=bought_asset,
-            rate=buy_rate,
-            fee_cost=fee_cost,
-            amount=bought_amount,
-            gross_cost=gross_cost,
-            cost=cost,
-            paid_with_asset=paid_with_asset,
-            paid_with_asset_rate=paid_with_asset_rate,
-            timestamp=timestamp,
-            is_virtual=is_virtual,
-        )
+        if timestamp >= self.query_start_ts:
+            self.csv_exporter.add_buy(
+                bought_asset=bought_asset,
+                rate=buy_rate,
+                fee_cost=fee_cost,
+                amount=bought_amount,
+                gross_cost=gross_cost,
+                cost=cost,
+                paid_with_asset=paid_with_asset,
+                paid_with_asset_rate=paid_with_asset_rate,
+                timestamp=timestamp,
+                is_virtual=is_virtual,
+            )
 
     def add_sell_and_corresponding_buy(
             self,
@@ -440,6 +441,15 @@ class TaxableEvents(object):
             if loan_settlement:
                 # If it's a loan settlement we are charged both the fee and the gain
                 settlement_loss = gain_in_profit_currency + total_fee_in_profit_currency
+                expected = rate_in_profit_currency * selling_amount + total_fee_in_profit_currency
+                msg = (
+                    f'Expected settlement loss mismatch. rate_in_profit_currency'
+                    f' ({rate_in_profit_currency}) * selling_amount'
+                    f' ({selling_amount}) + total_fee_in_profit_currency'
+                    f' ({total_fee_in_profit_currency}) != settlement_loss '
+                    f'({settlement_loss})'
+                )
+                assert expected == settlement_loss, msg
                 self.settlement_losses += settlement_loss
                 log.debug(
                     'Loan Settlement Loss',
