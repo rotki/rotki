@@ -294,7 +294,7 @@ class PriceHistorian(object):
         abs_diff = abs(usd_invert_conversion - price)
         relative_difference = abs_diff / max(price, usd_invert_conversion)
         if relative_difference >= FVal('0.1'):
-            log.warn(
+            log.warning(
                 'Cryptocompare historical price data are incosistent.'
                 'Taking USD adjusted price. Check github issue #221',
                 from_asset=from_asset,

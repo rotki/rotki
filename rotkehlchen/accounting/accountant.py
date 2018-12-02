@@ -516,3 +516,15 @@ class Accountant(object):
             raise ValueError('Unknown trade type "{}" encountered'.format(trade.type))
 
         return True, prev_time, count
+
+    def get_calculated_asset_amount(self, asset: Asset) -> Optional[FVal]:
+        """Get the amount of asset accounting has calculated we should have after
+        the history has been processed
+        """
+        if asset not in self.events.events:
+            return None
+
+        amount = FVal(0)
+        for buy_event in self.events.events[asset].buys:
+            amount += buy_event.amount
+        return amount
