@@ -1,20 +1,7 @@
 import pytest
 
-from rotkehlchen.history import trades_from_dictlist
 from rotkehlchen.errors import CorruptData
-
-
-def accounting_history_process(accountant, history_list, margin_list, start_ts, end_ts):
-    accountant.process_history(
-        start_ts=start_ts,
-        end_ts=end_ts,
-        trade_history=trades_from_dictlist(history_list, start_ts, end_ts),
-        margin_history=trades_from_dictlist(margin_list, start_ts, end_ts),
-        loan_history=list(),
-        asset_movements=list(),
-        eth_transactions=list()
-    )
-
+from rotkehlchen.tests.utils.accounting import accounting_history_process
 
 history1 = [
     {
@@ -66,7 +53,7 @@ history1 = [
 
 
 def test_simple_accounting(accountant):
-    accounting_history_process(accountant, history1, [], 1436979735, 1495751688)
+    accounting_history_process(accountant, 1436979735, 1495751688, history1)
     assert accountant.general_trade_pl.is_close("557.528104903")
     assert accountant.taxable_trade_pl.is_close("557.528104903")
 
@@ -115,10 +102,10 @@ bad_history2 = [
 
 def test_mismatch_in_amount_rate_and_cost(accountant):
     with pytest.raises(CorruptData):
-        accounting_history_process(accountant, bad_history1, [], 1436979735, 1495751688)
+        accounting_history_process(accountant, 1436979735, 1495751688, bad_history1)
 
     with pytest.raises(CorruptData):
-        accounting_history_process(accountant, bad_history2, [], 1436979735, 1495751688)
+        accounting_history_process(accountant, 1436979735, 1495751688, bad_history2)
 
 
 history2 = [
@@ -171,7 +158,7 @@ history2 = [
 
 
 def test_selling_crypto_bought_with_crypto(accountant):
-    accounting_history_process(accountant, history2, [], 1436979735, 1495751688)
+    accounting_history_process(accountant, 1436979735, 1495751688, history2)
     assert accountant.general_trade_pl.is_close("73.9657992344")
     assert accountant.taxable_trade_pl.is_close("73.9657992344")
 
@@ -204,7 +191,7 @@ history3 = [
 
 
 def test_buying_eth_before_daofork(accountant):
-    accounting_history_process(accountant, history3, [], 1436979735, 1495751688)
+    accounting_history_process(accountant, 1436979735, 1495751688, history3)
     assert accountant.general_trade_pl.is_close("850.688385")
     assert accountant.taxable_trade_pl.is_close("0")
 
@@ -237,7 +224,7 @@ history4 = [
 
 
 def test_buying_btc_before_bchfork(accountant):
-    accounting_history_process(accountant, history4, [], 1436979735, 1519693374)
+    accounting_history_process(accountant, 1436979735, 1519693374, history4)
     assert accountant.general_trade_pl.is_close("-279.497")
     assert accountant.taxable_trade_pl.is_close("-279.497")
 
@@ -258,20 +245,20 @@ history5 = history1 + [{
 
 @pytest.mark.parametrize('accounting_include_crypto2crypto', [False])
 def test_nocrypto2crypto(accountant):
-    accounting_history_process(accountant, history5, [], 1436979735, 1519693374)
+    accounting_history_process(accountant, 1436979735, 1519693374, history5)
     assert accountant.general_trade_pl.is_close("264693.43364282")
     assert accountant.taxable_trade_pl.is_close("0")
 
 
 @pytest.mark.parametrize('accounting_taxfree_after_period', [None])
 def test_no_taxfree_period(accountant):
-    accounting_history_process(accountant, history5, [], 1436979735, 1519693374)
+    accounting_history_process(accountant, 1436979735, 1519693374, history5)
     assert accountant.general_trade_pl.is_close("265250.961748")
     assert accountant.taxable_trade_pl.is_close("265250.961748")
 
 
 @pytest.mark.parametrize('accounting_taxfree_after_period', [86400])
 def test_big_taxfree_period(accountant):
-    accounting_history_process(accountant, history5, [], 1436979735, 1519693374)
+    accounting_history_process(accountant, 1436979735, 1519693374, history5)
     assert accountant.general_trade_pl.is_close("265250.961748")
     assert accountant.taxable_trade_pl.is_close("0")
