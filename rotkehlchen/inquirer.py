@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
 
 import logging
+import os
+from json.decoder import JSONDecodeError
 from typing import Dict, Iterable, Optional, cast
 
 import requests
@@ -10,7 +12,7 @@ from rotkehlchen.constants import FIAT_CURRENCIES, S_DATACOIN, S_IOTA, S_RDN, S_
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils import query_fiat_pair, retry_calls, rlk_jsonloads
+from rotkehlchen.utils import query_fiat_pair, retry_calls, rlk_jsondumps, rlk_jsonloads, tsToDate
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -77,9 +79,18 @@ def query_cryptocompare_for_fiat_price(asset: typing.Asset) -> FVal:
 
 
 class Inquirer(object):
-    def __init__(self, kraken=None):  # TODO: Add type after fixing cyclic dependency
+    def __init__(self, data_dir, kraken=None):
         self.kraken = kraken
         self.session = requests.session()
+        self.data_directory = data_dir
+
+        filename = os.path.join(self.data_directory, 'price_history_forex.json')
+        try:
+            with open(filename, 'rb') as f:
+                data = rlk_jsonloads(f.read())
+                self.cached_forex_data = data
+        except (OSError, IOError, JSONDecodeError):
+            self.cached_forex_data = dict()
 
     def query_kraken_for_price(
             self,
@@ -101,3 +112,70 @@ class Inquirer(object):
             return price
 
         return query_cryptocompare_for_fiat_price(asset)
+
+    def query_historical_fiat_exchange_rates(
+            self,
+            from_currency: typing.FiatAsset,
+            to_currency: typing.FiatAsset,
+            timestamp: typing.Timestamp,
+    ) -> Optional[FVal]:
+        date = tsToDate(timestamp, formatstr='%Y-%m-%d')
+        if date in self.cached_forex_data:
+            if from_currency in self.cached_forex_data[date]:
+                rate = self.cached_forex_data[date][from_currency].get(to_currency)
+                if rate:
+                    log.debug(
+                        'Got cached forex rate',
+                        from_currency=from_currency,
+                        to_currency=to_currency,
+                        rate=rate
+                    )
+                return rate
+
+        log.debug(
+            'Querying exchangeratesapi',
+            from_currency=from_currency,
+            to_currency=to_currency,
+            timestamp=timestamp,
+        )
+
+        query_str = (
+            f'https://api.exchangeratesapi.io/{date}?'
+            f'base={from_currency}'
+        )
+        resp = retry_calls(
+            5,
+            'query_exchangeratesapi',
+            'requests.get',
+            requests.get,
+            query_str,
+        )
+
+        if resp.status_code != 200:
+            return None
+
+        try:
+            result = rlk_jsonloads(resp.text)
+        except JSONDecodeError:
+            return None
+
+        if 'rates' not in result or to_currency not in result['rates']:
+            return None
+
+        if date not in self.cached_forex_data:
+            self.cached_forex_data[date] = {}
+
+        if from_currency not in self.cached_forex_data[date]:
+            self.cached_forex_data[date][from_currency] = {}
+
+        for key, value in result['rates'].items():
+            self.cached_forex_data[date][from_currency][key] = FVal(value)
+
+        rate = FVal(result['rates'][to_currency])
+        log.debug('Exchangeratesapi query succesful', rate=rate)
+        return rate
+
+    def save_historical_forex_data(self):
+        filename = os.path.join(self.data_directory, 'price_history_forex.json')
+        with open(filename, 'w') as outfile:
+            outfile.write(rlk_jsondumps(self.cached_forex_data))

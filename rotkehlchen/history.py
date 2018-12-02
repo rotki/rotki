@@ -21,7 +21,7 @@ from rotkehlchen.order_formatting import (
 )
 from rotkehlchen.poloniex import trade_from_poloniex
 from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
-from rotkehlchen.typing import NonEthTokenBlockchainAsset
+from rotkehlchen.typing import Asset, NonEthTokenBlockchainAsset, Timestamp
 from rotkehlchen.utils import (
     convert_to_int,
     createTimeStamp,
@@ -183,10 +183,11 @@ def process_polo_loans(data, start_ts, end_ts):
 
 class PriceHistorian(object):
 
-    def __init__(self, data_directory, history_date_start):
+    def __init__(self, data_directory, history_date_start, inquirer):
         self.data_directory = data_directory
         # get the start date for historical data
         self.historical_data_start = createTimeStamp(history_date_start, formatstr="%d/%m/%Y")
+        self.inquirer = inquirer
 
         self.price_history = dict()
         self.price_history_file = dict()
@@ -273,6 +274,38 @@ class PriceHistorian(object):
 
         return False
 
+    def adjust_to_cryptocompare_price_incosistencies(
+            self,
+            price: FVal,
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+    ) -> FVal:
+        """Doublecheck against the USD rate, and if incosistencies are found
+        then take the USD adjusted price.
+
+        This is due to incosistencies in the provided historical data from
+        cryptocompare. https://github.com/rotkehlchenio/rotkehlchen/issues/221
+        """
+        from_asset_usd = self.query_historical_price(from_asset, 'USD', timestamp)
+        to_asset_usd = self.query_historical_price(to_asset, 'USD', timestamp)
+
+        usd_invert_conversion = from_asset_usd / to_asset_usd
+        abs_diff = abs(usd_invert_conversion - price)
+        relative_difference = abs_diff / max(price, usd_invert_conversion)
+        if relative_difference >= FVal('0.1'):
+            log.warn(
+                'Cryptocompare historical price data are incosistent.'
+                'Taking USD adjusted price. Check github issue #221',
+                from_asset=from_asset,
+                to_asset=to_asset,
+                incosistent_price=price,
+                usd_price=from_asset_usd,
+                adjusted_price=usd_invert_conversion,
+            )
+            return usd_invert_conversion
+        return price
+
     def get_historical_data(self, from_asset, to_asset, timestamp):
         """Get historical price data from cryptocompare"""
         log.debug(
@@ -282,7 +315,7 @@ class PriceHistorian(object):
             timestamp=timestamp,
         )
 
-        if from_asset not in self.cryptocompare_coin_list:
+        if from_asset not in self.cryptocompare_coin_list and from_asset not in FIAT_CURRENCIES:
             raise ValueError(
                 'Attempted to query historical price data for '
                 'unknown asset "{}"'.format(from_asset)
@@ -308,6 +341,7 @@ class PriceHistorian(object):
         else:
             end_date = timestamp
         while True:
+            no_data_for_timestamp = False
             pr_end_date = end_date
             end_date = end_date + (cryptocompare_hourquerylimit) * 3600
 
@@ -329,6 +363,19 @@ class PriceHistorian(object):
 
             resp = request_get(query_string)
             if 'Response' not in resp or resp['Response'] != 'Success':
+                no_data_for_timestamp = (
+                    'Unable to retrieve requested data at this time, please try again later' in resp['Message'] and
+                    resp['Type'] == 96
+                )
+                if no_data_for_timestamp:
+                    log.debug(
+                        'No hourly cryptocompare historical data for pair',
+                        from_asset=from_asset,
+                        to_asset=to_asset,
+                        timestamp=end_date,
+                    )
+                    continue
+
                 error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
                 if 'Message' in resp:
                     error_message += ". Error: {}".format(resp['Message'])
@@ -411,28 +458,41 @@ class PriceHistorian(object):
         if from_asset == to_asset:
             return 1
 
-        if from_asset not in self.cryptocompare_coin_list:
+        if from_asset in FIAT_CURRENCIES and to_asset in FIAT_CURRENCIES:
+            # if we are querying historical forex data then try something other than cryptocompare
+            price = self.inquirer.query_historical_fiat_exchange_rates(
+                from_asset,
+                to_asset,
+                timestamp,
+            )
+            if price is not None:
+                return price
+            # else cryptocompare also has historical fiat to fiat data
+
+        if from_asset not in self.cryptocompare_coin_list and from_asset not in FIAT_CURRENCIES:
             raise PriceQueryUnknownFromAsset(from_asset)
 
         data = self.get_historical_data(from_asset, to_asset, timestamp)
 
         # all data are sorted and timestamps are always increasing by 1 hour
         # find the closest entry to the provided timestamp
-        assert timestamp > data[0]['time']
+        if timestamp >= data[0]['time']:
+            index = convert_to_int((timestamp - data[0]['time']) / 3600, accept_only_exact=False)
+            # print("timestamp: {} index: {} data_length: {}".format(timestamp, index, len(data)))
+            diff = abs(data[index]['time'] - timestamp)
+            if index + 1 <= len(data) - 1:
+                diff_p1 = abs(data[index + 1]['time'] - timestamp)
+                if diff_p1 < diff:
+                    index = index + 1
 
-        index = convert_to_int((timestamp - data[0]['time']) / 3600, accept_only_exact=False)
-        # print("timestamp: {} index: {} data_length: {}".format(timestamp, index, len(data)))
-        diff = abs(data[index]['time'] - timestamp)
-        if index + 1 <= len(data) - 1:
-            diff_p1 = abs(data[index + 1]['time'] - timestamp)
-            if diff_p1 < diff:
-                index = index + 1
-
-        if data[index]['high'] is None or data[index]['low'] is None:
-            # If we get some None in the hourly set price to 0 so that we check daily price
-            price = FVal(0)
+            if data[index]['high'] is None or data[index]['low'] is None:
+                # If we get some None in the hourly set price to 0 so that we check alternatives
+                price = FVal(0)
+            else:
+                price = FVal((data[index]['high'] + data[index]['low'])) / 2
         else:
-            price = FVal((data[index]['high'] + data[index]['low'])) / 2
+            # no price found in the historical data from/to asset, try alternatives
+            price = FVal(0)
 
         if price == 0:
             if from_asset != 'BTC' and to_asset != 'BTC':
@@ -482,12 +542,24 @@ class PriceHistorian(object):
 
                 price = FVal(resp[cc_from_asset][cc_to_asset])
 
-                if price == 0:
-                    raise NoPriceForGivenTimestamp(
-                        from_asset,
-                        to_asset,
-                        tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
-                    )
+        comparison_to_nonusd_fiat = (
+            (to_asset in FIAT_CURRENCIES and to_asset != 'USD') or
+            (from_asset in FIAT_CURRENCIES and from_asset != 'USD')
+        )
+        if comparison_to_nonusd_fiat:
+            price = self.adjust_to_cryptocompare_price_incosistencies(
+                price=price,
+                from_asset=from_asset,
+                to_asset=to_asset,
+                timestamp=timestamp,
+            )
+
+        if price == 0:
+            raise NoPriceForGivenTimestamp(
+                from_asset,
+                to_asset,
+                tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
+            )
 
         log.debug(
             'Got historical price',

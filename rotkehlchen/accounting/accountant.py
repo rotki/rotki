@@ -348,6 +348,7 @@ class Accountant(object):
                 break
 
         self.events.calculate_asset_details()
+        self.price_historian.inquirer.save_historical_forex_data()
 
         sum_other_actions = (
             self.events.margin_positions_profit_loss +
