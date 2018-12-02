@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`219` Poloniex BTC settlement loss calculation is now correct.
+* :bug:`217` Tax report CSV exports should now agree with the app report.
 * :bug:`211` Handle the BCHSV fork in Kraken properly.
 
 * :release:`0.5.0 <2018-11-10>`
