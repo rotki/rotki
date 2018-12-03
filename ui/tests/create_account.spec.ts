@@ -10,6 +10,7 @@ chai.use(chaiAsPromised);
 describe('first usage', function () {
     // @ts-ignore
     this.timeout(GLOBAL_TIMEOUT);
+    this.retries(3);
     let app: Application;
 
     beforeEach(async () => {

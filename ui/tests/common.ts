@@ -2,8 +2,8 @@ import {Application, SpectronClient} from 'spectron';
 import * as electron from 'electron';
 import * as path from 'path';
 
-export const GLOBAL_TIMEOUT = 60_000;
-export const METHOD_TIMEOUT = 20_000;
+export const GLOBAL_TIMEOUT = 120_000;
+export const METHOD_TIMEOUT = 40_000;
 
 export function initialiseSpectron() {
 
@@ -45,8 +45,6 @@ export async function createAccount(app: Application, username: string, password
         // noinspection JSJQueryEfficiency
         $('.jconfirm-buttons>button').click();
     });
-
-    await app.client.pause(50);
 
     await app.client.waitForVisible('.jconfirm', METHOD_TIMEOUT, true);
 }

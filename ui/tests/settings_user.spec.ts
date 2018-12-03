@@ -11,6 +11,7 @@ chai.use(chaiAsPromised);
 describe('user settings', function () {
     // @ts-ignore
     this.timeout(GLOBAL_TIMEOUT);
+    this.retries(3);
     let app: Application;
     let client: SpectronClient;
 

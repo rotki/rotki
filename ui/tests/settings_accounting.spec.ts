@@ -1,9 +1,9 @@
 import {Application, SpectronClient} from 'spectron';
 import {createAccount, GLOBAL_TIMEOUT, initialiseSpectron, METHOD_TIMEOUT, navigateTo} from './common';
 import * as chai from 'chai';
+import {expect} from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import {Guid} from './guid';
-import {expect} from 'chai';
 
 chai.should();
 chai.use(chaiAsPromised);
@@ -18,6 +18,7 @@ async function dismissSuccessDialog(client: SpectronClient, message: string) {
 describe('accounting settings', function () {
     // @ts-ignore
     this.timeout(GLOBAL_TIMEOUT);
+    this.retries(3);
     let app: Application;
     let client: SpectronClient;
 
@@ -78,64 +79,55 @@ describe('accounting settings', function () {
         await dismissSuccessDialog(client, message);
     });
 
-    it('should be able to add and remove ignored assets', async () => {
-        const selection = 'Click to see all ignored assets and select one for removal';
-        await client.scroll('#ignored_assets_selection');
+    it('should be able to add and remove ignored assets', async function () {
+        this.retries(0);
 
-        const elements = (await client.elements('#ignored_assets_selection > option')).value.length;
-        expect(elements).to.be.equal(1, 'There should only be only one option in #ignored_assets_selection');
-        await client.getText('#ignored_assets_selection > option')
-            .should
-            .eventually
-            .equal(selection, 'Should only contain the default message');
+        let matchedElements = (await client.elements('#ignored_assets_selection > option')).value;
+        let numberOfElements = matchedElements.length;
+        expect(numberOfElements).to.be.equal(1, 'First there should only be only one option in #ignored_assets_selection');
 
-        await client.addValue('#ignored_asset_entry', 'KTT');
+        await addIgnoredAsset(client, 'KTT');
+        await addIgnoredAsset(client, 'TTT');
 
-        await client.getText('#modify_ignored_asset_button')
-            .should
-            .eventually
-            .equal('Add', 'Button should have the label add');
+        matchedElements = (await client.elements('#ignored_assets_selection > option')).value;
+        numberOfElements = matchedElements.length;
+        expect(numberOfElements).to.be.equal(3, 'After ignoring two there should only be only three options in #ignored_assets_selection');
 
-        await client.click('#modify_ignored_asset_button');
+        await removeIgnoredAsset(client, 'KTT');
+        await client.waitForExist('//option[@value="KTT"]', METHOD_TIMEOUT, true);
+        await removeIgnoredAsset(client, 'TTT');
+        await client.waitForExist('//option[@value="TTT"]', METHOD_TIMEOUT, true);
 
-        await client.waitUntil(async () => {
-            return client.getValue('#ignored_assets_selection').should.eventually.equal('KTT');
-        }, METHOD_TIMEOUT, 'Wait until selected value changes after delete');
+        matchedElements = (await client.elements('#ignored_assets_selection > option')).value;
+        numberOfElements = matchedElements.length;
 
-        await client.clearElement('#ignored_asset_entry');
-        await client.addValue('#ignored_asset_entry', 'TTT');
-
-        await client.click('#modify_ignored_asset_button');
-
-        await client.getValue('#ignored_asset_entry')
-            .should
-            .eventually
-            .equal('TTT');
-
-        await client.selectByValue('#ignored_assets_selection', 'KTT');
-        await client.getValue('#ignored_asset_entry')
-            .should
-            .eventually
-            .equal('KTT');
-
-        await client.getValue('#ignored_asset_entry');
-
-        await client.getText('#modify_ignored_asset_button')
-            .should
-            .eventually
-            .equal('Remove', 'Button should have the label Remove');
-
-        await client.click('#modify_ignored_asset_button');
-
-        await client.getValue('#ignored_assets_selection').should.eventually.equal('');
-
-        const options = (await client.elements('#ignored_assets_selection > option')).value.length;
-        expect(options).to.be.equal(2, 'There should only be only two option in #ignored_assets_selection');
-
-        await client.selectByIndex('#ignored_assets_selection', 0);
-        await client.getValue('#ignored_asset_entry')
-            .should
-            .eventually
-            .equal('');
+        expect(numberOfElements).to.be.equal(1, 'After removal there should only be only one option in #ignored_assets_selection');
     });
 });
+
+async function removeIgnoredAsset(client: SpectronClient, asset: string) {
+    await client.selectByValue('#ignored_assets_selection', asset);
+    await client.getValue('#ignored_asset_entry')
+        .should
+        .eventually
+        .equal(asset);
+    await client.getText('#modify_ignored_asset_button')
+        .should
+        .eventually
+        .equal('Remove', 'Button should have the label Remove');
+    await client.click('#modify_ignored_asset_button');
+}
+
+async function addIgnoredAsset(client: SpectronClient, asset: string) {
+    await client.clearElement('#ignored_asset_entry');
+    await client.scroll('#ignored_assets_selection');
+    await client.addValue('#ignored_asset_entry', asset);
+    await client.getText('#modify_ignored_asset_button')
+        .should
+        .eventually
+        .equal('Add', 'Button should have the label add');
+    await client.click('#modify_ignored_asset_button');
+    await client.waitUntil(async () => {
+        return client.getValue('#ignored_assets_selection').should.eventually.equal(asset);
+    }, METHOD_TIMEOUT, 'Wait until selected value changes after add');
+}

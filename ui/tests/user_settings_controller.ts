@@ -1,5 +1,5 @@
-import { SpectronClient } from 'spectron';
-import { METHOD_TIMEOUT } from './common';
+import {SpectronClient} from 'spectron';
+import {METHOD_TIMEOUT} from './common';
 
 export enum AccountType {
     ETH = 'ETH',
