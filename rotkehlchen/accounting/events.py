@@ -246,17 +246,17 @@ class TaxableEvents(object):
         if bought_asset not in self.events:
             self.events[bought_asset] = Events(list(), list())
 
-        fee_cost = fee_price_in_profit_currency * trade_fee
+        fee_cost_in_profit_currency = fee_price_in_profit_currency * trade_fee
         gross_cost = bought_amount * buy_rate
-        cost = gross_cost + fee_cost
+        cost_in_profit_currency = gross_cost + fee_cost_in_profit_currency
 
         self.events[bought_asset].buys.append(
             BuyEvent(
                 amount=bought_amount,
                 timestamp=timestamp,
                 rate=buy_rate,
-                fee_rate=fee_cost / bought_amount,
-                cost=cost
+                fee_rate=fee_cost_in_profit_currency / bought_amount,
+                cost=cost_in_profit_currency
             )
         )
         log.debug(
@@ -275,10 +275,10 @@ class TaxableEvents(object):
             self.csv_exporter.add_buy(
                 bought_asset=bought_asset,
                 rate=buy_rate,
-                fee_cost=fee_cost,
+                fee_cost=fee_cost_in_profit_currency,
                 amount=bought_amount,
                 gross_cost=gross_cost,
-                cost=cost,
+                cost=cost_in_profit_currency,
                 paid_with_asset=paid_with_asset,
                 paid_with_asset_rate=paid_with_asset_rate,
                 timestamp=timestamp,
@@ -496,7 +496,12 @@ class TaxableEvents(object):
                     is_virtual=is_virtual,
                 )
 
-    def search_buys_calculate_profit(self, selling_amount, selling_asset, timestamp):
+    def search_buys_calculate_profit(
+            self,
+            selling_amount: FVal,
+            selling_asset: Asset,
+            timestamp: Timestamp,
+    ):
         """
         When selling `selling_amount` of `selling_asset` at `timestamp` this function
         calculates using the first-in-first-out rule the corresponding buy/s from
