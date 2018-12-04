@@ -518,10 +518,11 @@ class TaxableEvents(object):
         """
         remaining_sold_amount = selling_amount
         stop_index = -1
-        taxfree_bought_cost = 0
-        taxable_bought_cost = 0
-        taxable_amount = 0
-        taxfree_amount = 0
+        taxfree_bought_cost = FVal(0)
+        taxable_bought_cost = FVal(0)
+        taxable_amount = FVal(0)
+        taxfree_amount = FVal(0)
+        remaining_amount_from_last_buy = -1
         for idx, buy_event in enumerate(self.events[selling_asset].buys):
             if self.taxfree_after_period is None:
                 at_taxfree_period = False
@@ -559,13 +560,17 @@ class TaxableEvents(object):
                 # stop iterating since we found all buys to satisfy this sell
                 break
             else:
+                buying_cost = buy_event.amount.fma(
+                    buy_event.rate,
+                    - (buy_event.fee_rate * buy_event.amount)
+                )
                 remaining_sold_amount -= buy_event.amount
                 if at_taxfree_period:
                     taxfree_amount += buy_event.amount
-                    taxfree_bought_cost += buy_event.cost
+                    taxfree_bought_cost += buying_cost
                 else:
                     taxable_amount += buy_event.amount
-                    taxable_bought_cost += buy_event.cost
+                    taxable_bought_cost += buying_cost
 
                 log.debug(
                     'Sell uses up entire historical buy',
@@ -578,7 +583,11 @@ class TaxableEvents(object):
                     trade_timestamp=buy_event.timestamp,
                 )
 
-        if stop_index == -1:
+                # If the sell used up the last historical buy
+                if idx == len(self.events[selling_asset].buys) - 1:
+                    stop_index = idx + 1
+
+        if len(self.events[selling_asset].buys) == 0:
             log.critical(
                 'No documented buy found for "{}" before {}'.format(
                     selling_asset,
@@ -588,14 +597,29 @@ class TaxableEvents(object):
             # That means we had no documented buy for that asset. This is not good
             # because we can't prove a corresponding buy and as such we are burdened
             # calculating the entire sell as profit which needs to be taxed
-            return selling_amount, 0, 0
+            return selling_amount, FVal(0), FVal(0)
 
         # Otherwise, delete all the used up buys from the list
         del self.events[selling_asset].buys[:stop_index]
-        # and modify the amount of the buy where we stopped
-        self.events[selling_asset].buys[0] = self.events[selling_asset].buys[0]._replace(
-            amount=remaining_amount_from_last_buy
-        )
+        # and modify the amount of the buy where we stopped if there is one
+        if remaining_amount_from_last_buy != -1:
+            self.events[selling_asset].buys[0] = self.events[selling_asset].buys[0]._replace(
+                amount=remaining_amount_from_last_buy
+            )
+        elif remaining_sold_amount != FVal(0):
+            # if we still have sold amount but no buys to satisfy it then we only
+            # found buys to partially satisfy the sell
+            adjusted_amount = selling_amount - taxfree_amount
+            log.critical(
+                'Not enough documented buys found for "{}" before {}.'
+                'Only found buys for {} {}'.format(
+                    selling_asset,
+                    tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+                    taxable_amount + taxfree_amount,
+                    selling_asset,
+                )
+            )
+            return adjusted_amount, taxable_bought_cost, taxfree_bought_cost
 
         return taxable_amount, taxable_bought_cost, taxfree_bought_cost
 
