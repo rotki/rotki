@@ -13,7 +13,7 @@
         "@types/chai": "^4.1.7",
         "@types/chai-as-promised": "^7.1.0",
         "@types/datatables.net": "^1.10.13",
-        "@types/jquery": "^3.3.22",
+        "@types/jquery": "3.3.21",
         "@types/jquery.contextmenu": "^1.7.34",
         "@types/mocha": "^5.2.5",
         "@types/node": "^8.10.38",
