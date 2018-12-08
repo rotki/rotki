@@ -172,10 +172,18 @@ class Accountant(object):
             rate = self.query_historical_price(
                 asset,
                 self.profit_currency,
-                timestamp
+                timestamp,
             )
         assert isinstance(rate, (FVal, int))  # TODO Remove. Is temporary assert
         return rate
+
+    def get_fee_in_profit_currency(self, trade: Trade) -> FVal:
+        fee_rate = self.query_historical_price(
+            trade.fee_currency,
+            self.profit_currency,
+            trade.timestamp,
+        )
+        return fee_rate * trade.fee
 
     def add_asset_movement_to_events(
             self,
@@ -249,15 +257,10 @@ class Accountant(object):
         selling_asset = trade_get_other_pair(trade, trade.cost_currency)
         selling_asset_rate = self.get_rate_in_profit_currency(
             trade.cost_currency,
-            trade.timestamp
+            trade.timestamp,
         )
         selling_rate = selling_asset_rate * trade.rate
-        fee_rate = self.query_historical_price(
-            trade.fee_currency,
-            self.profit_currency,
-            trade.timestamp
-        )
-        total_sell_fee_cost = fee_rate * trade.fee
+        fee_in_profit_currency = self.get_fee_in_profit_currency(trade)
         gain_in_profit_currency = selling_rate * trade.amount
 
         if not loan_settlement:
@@ -267,7 +270,7 @@ class Accountant(object):
                 receiving_asset=trade.cost_currency,
                 receiving_amount=trade.cost,
                 gain_in_profit_currency=gain_in_profit_currency,
-                total_fee_in_profit_currency=total_sell_fee_cost,
+                total_fee_in_profit_currency=fee_in_profit_currency,
                 trade_rate=trade.rate,
                 rate_in_profit_currency=selling_rate,
                 timestamp=trade.timestamp,
@@ -279,12 +282,12 @@ class Accountant(object):
                 receiving_asset=None,
                 receiving_amount=None,
                 gain_in_profit_currency=gain_in_profit_currency,
-                total_fee_in_profit_currency=total_sell_fee_cost,
+                total_fee_in_profit_currency=fee_in_profit_currency,
                 trade_rate=trade.rate,
                 rate_in_profit_currency=selling_rate,
                 timestamp=trade.timestamp,
                 loan_settlement=True,
-                is_virtual=False
+                is_virtual=False,
             )
 
     def process_history(
@@ -328,7 +331,7 @@ class Accountant(object):
             actions.extend(eth_transactions)
 
         actions.sort(
-            key=lambda action: action_get_timestamp(action)
+            key=lambda action: action_get_timestamp(action),
         )
 
         prev_time = Timestamp(0)
@@ -370,7 +373,7 @@ class Accountant(object):
                 'total_taxable_profit_loss': str(total_taxable_pl),
                 'total_profit_loss': str(
                     self.events.general_trade_profit_loss +
-                    sum_other_actions
+                    sum_other_actions,
                 ),
             },
             'all_events': self.csvexporter.all_events,
@@ -438,7 +441,7 @@ class Accountant(object):
                 amount=action.amount,
                 timestamp=action.timestamp,
                 exchange=action.exchange,
-                fee=action.fee
+                fee=action.fee,
             )
             return True, prev_time, count
         elif action_type == 'margin_position':
@@ -463,7 +466,7 @@ class Accountant(object):
         if not trade.cost.is_close(trade.amount * trade.rate, max_diff="1e-4"):
             raise CorruptData(
                 "Trade found with cost {} which is not equal to trade.amount"
-                "({}) * trade.rate({})".format(trade.cost, trade.amount, trade.rate)
+                "({}) * trade.rate({})".format(trade.cost, trade.amount, trade.rate),
             )
 
         # When you buy, you buy with the cost_currency and receive the other one
@@ -475,9 +478,9 @@ class Accountant(object):
                 bought_amount=trade.amount,
                 paid_with_asset=trade.cost_currency,
                 trade_rate=trade.rate,
-                trade_fee=trade.fee,
+                fee_in_profit_currency=self.get_fee_in_profit_currency(trade),
                 fee_currency=trade.fee_currency,
-                timestamp=trade.timestamp
+                timestamp=trade.timestamp,
             )
         elif trade.type == 'sell':
             self.trade_add_to_sell_events(trade, False)
@@ -490,15 +493,10 @@ class Accountant(object):
             selling_asset = S_BTC
             selling_asset_rate = self.get_rate_in_profit_currency(
                 selling_asset,
-                trade.timestamp
+                trade.timestamp,
             )
             selling_rate = selling_asset_rate * trade.rate
-            fee_rate = self.query_historical_price(
-                trade.fee_currency,
-                self.profit_currency,
-                trade.timestamp
-            )
-            total_sell_fee_cost = fee_rate * trade.fee
+            fee_in_profit_currency = self.get_fee_in_profit_currency(trade)
             gain_in_profit_currency = selling_rate * trade.amount
             self.events.add_sell(
                 selling_asset=selling_asset,
@@ -506,11 +504,11 @@ class Accountant(object):
                 receiving_asset=None,
                 receiving_amount=None,
                 gain_in_profit_currency=gain_in_profit_currency,
-                total_fee_in_profit_currency=total_sell_fee_cost,
+                total_fee_in_profit_currency=fee_in_profit_currency,
                 trade_rate=trade.rate,
                 rate_in_profit_currency=selling_rate,
                 timestamp=trade.timestamp,
-                loan_settlement=True
+                loan_settlement=True,
             )
         else:
             raise ValueError('Unknown trade type "{}" encountered'.format(trade.type))

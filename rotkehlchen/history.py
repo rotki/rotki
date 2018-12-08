@@ -831,27 +831,27 @@ class TradesHistorian(object):
                 poloniex_history_okay = True
                 if self.poloniex is not None:
                     poloniex_history_okay = self.poloniex.check_trades_cache(
-                        start_ts, end_at_least_ts
+                        start_ts, end_at_least_ts,
                     ) is not None
                 kraken_history_okay = True
                 if self.kraken is not None:
                     kraken_history_okay = self.kraken.check_trades_cache(
-                        start_ts, end_at_least_ts
+                        start_ts, end_at_least_ts,
                     ) is not None
                 bittrex_history_okay = True
                 if self.bittrex is not None:
                     bittrex_history_okay = self.bittrex.check_trades_cache(
-                        start_ts, end_at_least_ts
+                        start_ts, end_at_least_ts,
                     ) is not None
                 bitmex_history_okay = True
                 if self.bitmex is not None:
                     bitmex_history_okay = self.bitmex.check_trades_cache(
-                        start_ts, end_at_least_ts
+                        start_ts, end_at_least_ts,
                     ) is not None
                 binance_history_okay = True
                 if self.binance is not None:
                     binance_history_okay = self.binance.check_trades_cache(
-                        start_ts, end_at_least_ts
+                        start_ts, end_at_least_ts,
                     ) is not None
 
                 if not self.read_manual_margin_positions:
@@ -860,12 +860,12 @@ class TradesHistorian(object):
                     margin_history_is_okay = data_up_todate(
                         margin_file_contents,
                         start_ts,
-                        end_at_least_ts
+                        end_at_least_ts,
                     )
                 else:
                     margin_history_is_okay = True
                     margin_file_contents = do_read_manual_margin_positions(
-                        self.data_directory
+                        self.data_directory,
                     )
 
                 loansfile_path = os.path.join(self.data_directory, LOANS_HISTORYFILE)
@@ -945,7 +945,7 @@ class TradesHistorian(object):
                         self.db,
                         start_ts,
                         end_ts,
-                        history_trades
+                        history_trades,
                     )
 
                     # make sure that this is the same as what is returned
@@ -956,7 +956,7 @@ class TradesHistorian(object):
                         margin_trades,
                         loan_file_contents['data'],
                         asset_movements,
-                        eth_transactions
+                        eth_transactions,
                     )
 
         return self.create_history(start_ts, end_ts, end_at_least_ts)

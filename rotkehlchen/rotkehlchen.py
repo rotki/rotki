@@ -449,11 +449,11 @@ class Rotkehlchen(object):
             margin_history,
             loan_history,
             asset_movements,
-            eth_transactions
+            eth_transactions,
         ) = self.trades_historian.get_history(
             start_ts=0,  # For entire history processing we need to have full history available
             end_ts=ts_now(),
-            end_at_least_ts=end_ts
+            end_at_least_ts=end_ts,
         )
         result = self.accountant.process_history(
             start_ts,
@@ -462,7 +462,7 @@ class Rotkehlchen(object):
             margin_history,
             loan_history,
             asset_movements,
-            eth_transactions
+            eth_transactions,
         )
         return result, error_or_empty
 

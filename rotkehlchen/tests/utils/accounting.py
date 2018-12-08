@@ -18,7 +18,7 @@ def accounting_history_process(
     # For filtering the taxable actions list we start with 0 ts so that we have the
     # full history available
     trade_history = trades_from_dictlist(history_list, 0, end_ts)
-    margin_history = [] if not margin_list else trades_from_dictlist(margin_list, 0, end_ts)
+    margin_history = [] if not margin_list else margin_list
     loan_history = [] if not loans_list else loans_list
     asset_movements = list()
     if asset_movements_list:

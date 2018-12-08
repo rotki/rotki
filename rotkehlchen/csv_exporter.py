@@ -153,7 +153,7 @@ class CSVExporter(object):
             'taxable_gain_in_{}'.format(self.profit_currency): FVal(0),
             'taxable_profit_loss_in_{}'.format(self.profit_currency): FVal(0),
             'time': tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
-            'is_virtual': is_virtual
+            'is_virtual': is_virtual,
         })
         self.add_to_allevents(
             event_type=EV_BUY,

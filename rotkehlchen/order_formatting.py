@@ -11,14 +11,14 @@ BuyEvent = namedtuple(
         'rate',  # Rate in quote currency for which we buy 1 unit of the buying asset
         # Fee rate in profit currency which we paid for each unit of the buying asset
         'fee_rate',
-        'cost')  # Total cost including fees  in profit currency for this trade
+    ),
 )
 SellEvent = namedtuple('SellEvent', (
     'timestamp',
     'amount',  # Amount of the asset we sell
     'rate',  # Rate in 'profit_currency' for which we sell 1 unit of the sold asset
     'fee_rate',  # Fee rate in 'profit_currency' which we paid for each unit of the sold asset
-    'gain')  # Total gain in profit currency for this trade
+    'gain')  # Gain in profit currency for this trade. Fees are not counted here.
 )
 Trade = namedtuple(
     'Trade',

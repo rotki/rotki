@@ -12,7 +12,6 @@ def test_search_buys_calculate_profit_after_year(accountant):
             timestamp=1446979735,  # 08/11/2015
             rate=FVal(268.1),
             fee_rate=FVal(0.0001),
-            cost=FVal(1340.5),
         ),
     )
     events['BTC'].buys.append(
@@ -21,7 +20,6 @@ def test_search_buys_calculate_profit_after_year(accountant):
             timestamp=1467378304,  # 31/06/2016
             rate=FVal(612.45),
             fee_rate=FVal(0.0019),
-            cost=FVal(9186.75),
         ),
     )
 
@@ -36,8 +34,8 @@ def test_search_buys_calculate_profit_after_year(accountant):
     )
 
     assert taxable_amount == 3, '3 out of 8 should be taxable (within a year)'
-    assert taxfree_bought_cost.is_close(FVal('1340.4995'))
-    assert taxable_bought_cost.is_close(FVal('1837.3443'))
+    assert taxfree_bought_cost.is_close(FVal('1340.5005'))
+    assert taxable_bought_cost.is_close(FVal('1837.3557'))
 
     assert (len(accountant.events.events[asset].buys)) == 1, 'first buy should have been used'
     remaining_amount = accountant.events.events[asset].buys[0].amount
@@ -58,7 +56,6 @@ def test_search_buys_calculate_profit_1_buy_consumed_by_1_sell(accountant):
             timestamp=1446979735,  # 08/11/2015
             rate=FVal(268.1),
             fee_rate=FVal(0.0001),
-            cost=FVal(1340.5),
         ),
     )
 
@@ -73,7 +70,7 @@ def test_search_buys_calculate_profit_1_buy_consumed_by_1_sell(accountant):
     )
     assert taxable_amount == 5, '5 out of 5 should be taxable (within a year)'
     assert taxfree_bought_cost.is_close(FVal('0'))
-    assert taxable_bought_cost.is_close(FVal('1340.4995'))
+    assert taxable_bought_cost.is_close(FVal('1340.5005'))
 
     assert (len(accountant.events.events[asset].buys)) == 0, 'only buy should have been used'
 
@@ -93,7 +90,6 @@ def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxable(accountant):
             timestamp=1446979735,  # 08/11/2015
             rate=FVal(268.1),
             fee_rate=FVal(0.0001),
-            cost=FVal(1340.5),
         ),
     )
 
@@ -108,7 +104,7 @@ def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxable(accountant):
     )
     assert taxable_amount == 3, '3 out of 3 should be taxable (within a year)'
     assert taxfree_bought_cost.is_close(FVal('0'))
-    assert taxable_bought_cost.is_close(FVal('804.2997'))
+    assert taxable_bought_cost.is_close(FVal('804.3003'))
 
     assert (len(accountant.events.events[asset].buys)) == 1, 'whole buy was not used'
     remaining_amount = accountant.events.events[asset].buys[0].amount
@@ -126,7 +122,7 @@ def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxable(accountant):
     )
     assert taxable_amount == 2, '2 out of 2 should be taxable (within a year)'
     assert taxfree_bought_cost.is_close(FVal('0'))
-    assert taxable_bought_cost.is_close(FVal('536.1998'))
+    assert taxable_bought_cost.is_close(FVal('536.2002'))
 
     assert (len(accountant.events.events[asset].buys)) == 0, 'the buy should have been used'
 
@@ -146,7 +142,6 @@ def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxfree(accountant):
             timestamp=1446979735,  # 08/11/2015
             rate=FVal(268.1),
             fee_rate=FVal(0.0001),
-            cost=FVal(1340.5),
         ),
     )
 
@@ -160,7 +155,7 @@ def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxfree(accountant):
         timestamp=1480683904,  # 02/12/2016
     )
     assert taxable_amount == 0, '0 out of 3 should be taxable (after a year)'
-    assert taxfree_bought_cost.is_close(FVal('804.2997'))
+    assert taxfree_bought_cost.is_close(FVal('804.3003'))
     assert taxable_bought_cost.is_close(FVal('0'))
 
     assert (len(accountant.events.events[asset].buys)) == 1, 'whole buy was not used'
@@ -178,7 +173,7 @@ def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxfree(accountant):
         timestamp=1480683954,  # bit after previous sell
     )
     assert taxable_amount == 0, '0 out of 2 should be taxable (after a year)'
-    assert taxfree_bought_cost.is_close(FVal('536.1998'))
+    assert taxfree_bought_cost.is_close(FVal('536.2002'))
     assert taxable_bought_cost.is_close(FVal('0'))
 
     assert (len(accountant.events.events[asset].buys)) == 0, 'the buy should have been used'
@@ -194,7 +189,6 @@ def test_search_buys_calculate_profit_sell_more_than_bought_within_year(accounta
             timestamp=1446979735,  # 08/11/2015
             rate=FVal(268.1),
             fee_rate=FVal(0.0001),
-            cost=FVal(268.1),
         ),
     )
     events['BTC'].buys.append(
@@ -203,7 +197,6 @@ def test_search_buys_calculate_profit_sell_more_than_bought_within_year(accounta
             timestamp=1467378304,  # 31/06/2016
             rate=FVal(612.45),
             fee_rate=FVal(0.0019),
-            cost=FVal(612.45),
         ),
     )
 
@@ -219,7 +212,7 @@ def test_search_buys_calculate_profit_sell_more_than_bought_within_year(accounta
 
     assert taxable_amount == 3, '3 out of 3 should be taxable (within a year)'
     assert taxfree_bought_cost.is_close(FVal('0'))
-    assert taxable_bought_cost.is_close(FVal('880.548'))
+    assert taxable_bought_cost.is_close(FVal('880.552'))
 
     assert (len(accountant.events.events[asset].buys)) == 0, 'only buy should have been used'
 
@@ -234,7 +227,6 @@ def test_search_buys_calculate_profit_sell_more_than_bought_after_year(accountan
             timestamp=1446979735,  # 08/11/2015
             rate=FVal(268.1),
             fee_rate=FVal(0.0001),
-            cost=FVal(268.1),
         ),
     )
     events['BTC'].buys.append(
@@ -243,7 +235,6 @@ def test_search_buys_calculate_profit_sell_more_than_bought_after_year(accountan
             timestamp=1467378304,  # 31/06/2016
             rate=FVal(612.45),
             fee_rate=FVal(0.0019),
-            cost=FVal(612.45),
         ),
     )
 
@@ -258,7 +249,7 @@ def test_search_buys_calculate_profit_sell_more_than_bought_after_year(accountan
     )
 
     assert taxable_amount == 1, '1 out of 3 should be taxable (after a year)'
-    assert taxfree_bought_cost.is_close(FVal('880.548'))
+    assert taxfree_bought_cost.is_close(FVal('880.552'))
     assert taxable_bought_cost.is_close(FVal('0'))
 
     assert (len(accountant.events.events[asset].buys)) == 0, 'only buy should have been used'

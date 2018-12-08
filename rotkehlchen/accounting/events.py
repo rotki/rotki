@@ -84,7 +84,7 @@ class TaxableEvents(object):
             rate = self.price_historian.query_historical_price(
                 asset,
                 self.profit_currency,
-                timestamp
+                timestamp,
             )
         assert isinstance(rate, (FVal, int))  # TODO Remove. Is temporary assert
         return rate
@@ -95,9 +95,9 @@ class TaxableEvents(object):
             bought_amount,
             paid_with_asset,
             trade_rate,
-            trade_fee,
+            fee_in_profit_currency,
             fee_currency,
-            timestamp
+            timestamp,
     ):
         # TODO: Should fee also be taken into account here?
         if bought_asset == 'ETH' and timestamp < ETH_DAO_FORK_TS:
@@ -110,10 +110,10 @@ class TaxableEvents(object):
                 bought_amount,
                 paid_with_asset,
                 trade_rate,
-                0,
+                fee_in_profit_currency,
                 fee_currency,
                 timestamp,
-                is_virtual=True
+                is_virtual=True,
             )
 
         if bought_asset == 'BTC' and timestamp < BTC_BCH_FORK_TS:
@@ -127,10 +127,10 @@ class TaxableEvents(object):
                 bought_amount,
                 paid_with_asset,
                 trade_rate,
-                0,
+                fee_in_profit_currency,
                 fee_currency,
                 timestamp,
-                is_virtual=True
+                is_virtual=True,
             )
 
     def add_buy_and_corresponding_sell(
@@ -139,16 +139,16 @@ class TaxableEvents(object):
             bought_amount,
             paid_with_asset,
             trade_rate,
-            trade_fee,
+            fee_in_profit_currency,
             fee_currency,
-            timestamp
+            timestamp,
     ):
         self.add_buy(
             bought_asset=bought_asset,
             bought_amount=bought_amount,
             paid_with_asset=paid_with_asset,
             trade_rate=trade_rate,
-            trade_fee=trade_fee,
+            fee_in_profit_currency=fee_in_profit_currency,
             fee_currency=fee_currency,
             timestamp=timestamp,
             is_virtual=False,
@@ -159,12 +159,12 @@ class TaxableEvents(object):
 
         # else you are also selling some other asset to buy the bought asset
         log.debug(
-            f'Buying {bought_asset} with {paid_with_asset} also introduces a virtual sell event'
+            f'Buying {bought_asset} with {paid_with_asset} also introduces a virtual sell event',
         )
         try:
             bought_asset_rate_in_profit_currency = self.get_rate_in_profit_currency(
                 bought_asset,
-                timestamp
+                timestamp,
             )
         except (NoPriceForGivenTimestamp, PriceQueryUnknownFromAsset):
             bought_asset_rate_in_profit_currency = -1
@@ -182,7 +182,7 @@ class TaxableEvents(object):
 
         sold_asset_rate_in_profit_currency = self.get_rate_in_profit_currency(
             paid_with_asset,
-            timestamp
+            timestamp,
         )
         with_sold_asset_gain = sold_asset_rate_in_profit_currency * sold_amount
 
@@ -194,10 +194,6 @@ class TaxableEvents(object):
             trade_rate = sold_asset_rate_in_profit_currency
             rate_in_profit_currency = sold_asset_rate_in_profit_currency
             gain_in_profit_currency = with_sold_asset_gain
-
-        # add the fee
-        fee_rate = self.get_rate_in_profit_currency(fee_currency, timestamp)
-        fee_in_profit_currency = fee_rate * trade_fee
 
         self.add_sell(
             selling_asset=paid_with_asset,
@@ -218,46 +214,37 @@ class TaxableEvents(object):
             bought_amount,
             paid_with_asset,
             trade_rate,
-            trade_fee,
+            fee_in_profit_currency,
             fee_currency,
             timestamp,
-            is_virtual=False
+            is_virtual=False,
     ):
         paid_with_asset_rate = self.get_rate_in_profit_currency(paid_with_asset, timestamp)
         buy_rate = paid_with_asset_rate * trade_rate
-        fee_price_in_profit_currency = 0
-        if trade_fee != 0:
-            fee_price_in_profit_currency = self.price_historian.query_historical_price(
-                fee_currency,
-                self.profit_currency,
-                timestamp
-            )
 
         self.handle_prefork_acquisitions(
             bought_asset=bought_asset,
             bought_amount=bought_amount,
             paid_with_asset=paid_with_asset,
             trade_rate=trade_rate,
-            trade_fee=trade_fee,
+            fee_in_profit_currency=fee_in_profit_currency,
             fee_currency=fee_currency,
-            timestamp=timestamp
+            timestamp=timestamp,
         )
 
         if bought_asset not in self.events:
             self.events[bought_asset] = Events(list(), list())
 
-        fee_cost_in_profit_currency = fee_price_in_profit_currency * trade_fee
         gross_cost = bought_amount * buy_rate
-        cost_in_profit_currency = gross_cost + fee_cost_in_profit_currency
+        cost_in_profit_currency = gross_cost + fee_in_profit_currency
 
         self.events[bought_asset].buys.append(
             BuyEvent(
                 amount=bought_amount,
                 timestamp=timestamp,
                 rate=buy_rate,
-                fee_rate=fee_cost_in_profit_currency / bought_amount,
-                cost=cost_in_profit_currency
-            )
+                fee_rate=fee_in_profit_currency / bought_amount,
+            ),
         )
         log.debug(
             'Buy Event',
@@ -275,7 +262,7 @@ class TaxableEvents(object):
             self.csv_exporter.add_buy(
                 bought_asset=bought_asset,
                 rate=buy_rate,
-                fee_cost=fee_cost_in_profit_currency,
+                fee_cost=fee_in_profit_currency,
                 amount=bought_amount,
                 gross_cost=gross_cost,
                 cost=cost_in_profit_currency,
@@ -295,7 +282,8 @@ class TaxableEvents(object):
             total_fee_in_profit_currency,
             trade_rate,
             rate_in_profit_currency,
-            timestamp):
+            timestamp,
+    ):
         """
         Add and process a selling event to the events list
 
@@ -331,16 +319,15 @@ class TaxableEvents(object):
             return
 
         log.debug(
-            f'Selling {selling_asset} for {receiving_asset} also introduces a virtual buy event'
+            f'Selling {selling_asset} for {receiving_asset} also introduces a virtual buy event',
         )
         # else then you are also buying some other asset through your sell
-        # TODO: Account for trade fees in the virtual buy too
         self.add_buy(
             bought_asset=receiving_asset,
             bought_amount=receiving_amount,
             paid_with_asset=selling_asset,
             trade_rate=1 / trade_rate,
-            trade_fee=0,
+            fee_in_profit_currency=total_fee_in_profit_currency,
             fee_currency=receiving_amount,  # does not matter
             timestamp=timestamp,
             is_virtual=True,
@@ -371,7 +358,7 @@ class TaxableEvents(object):
                 rate=rate_in_profit_currency,
                 fee_rate=total_fee_in_profit_currency / selling_amount,
                 gain=gain_in_profit_currency,
-            )
+            ),
         )
 
         if loan_settlement:
@@ -400,13 +387,13 @@ class TaxableEvents(object):
                 timestamp=timestamp,
             )
 
-        # now search the buys for `paid_with_asset` and  calculate profit/loss
+        # now search the buys for `paid_with_asset` and calculate profit/loss
         (
             taxable_amount,
             taxable_bought_cost,
-            taxfree_bought_cost
+            taxfree_bought_cost,
         ) = self.search_buys_calculate_profit(
-            selling_amount, selling_asset, timestamp
+            selling_amount, selling_asset, timestamp,
         )
         general_profit_loss = 0
         taxable_profit_loss = 0
@@ -535,7 +522,7 @@ class TaxableEvents(object):
                 stop_index = idx
                 buying_cost = remaining_sold_amount.fma(
                     buy_event.rate,
-                    - (buy_event.fee_rate * remaining_sold_amount)
+                    (buy_event.fee_rate * remaining_sold_amount),
                 )
 
                 if at_taxfree_period:
@@ -562,7 +549,7 @@ class TaxableEvents(object):
             else:
                 buying_cost = buy_event.amount.fma(
                     buy_event.rate,
-                    - (buy_event.fee_rate * buy_event.amount)
+                    (buy_event.fee_rate * buy_event.amount),
                 )
                 remaining_sold_amount -= buy_event.amount
                 if at_taxfree_period:
@@ -591,7 +578,7 @@ class TaxableEvents(object):
             log.critical(
                 'No documented buy found for "{}" before {}'.format(
                     selling_asset,
-                    tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
+                    tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
                 )
             )
             # That means we had no documented buy for that asset. This is not good
@@ -630,7 +617,7 @@ class TaxableEvents(object):
             fee_in_asset,
             lent_amount,
             open_time,
-            close_time
+            close_time,
     ):
 
         timestamp = close_time
@@ -648,8 +635,7 @@ class TaxableEvents(object):
                 timestamp=timestamp,
                 rate=rate,
                 fee_rate=0,
-                cost=0
-            )
+            ),
         )
         # count profits if we are inside the query period
         if timestamp >= self.query_start_ts:
@@ -698,8 +684,7 @@ class TaxableEvents(object):
                     timestamp=timestamp,
                     rate=rate,
                     fee_rate=0,
-                    cost=0
-                )
+                ),
             )
         # count profit/loss if we are inside the query period
         if timestamp >= self.query_start_ts:
