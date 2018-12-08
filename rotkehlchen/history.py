@@ -363,8 +363,9 @@ class PriceHistorian(object):
 
             resp = request_get(query_string)
             if 'Response' not in resp or resp['Response'] != 'Success':
+                msg = 'Unable to retrieve requested data at this time, please try again later'
                 no_data_for_timestamp = (
-                    'Unable to retrieve requested data at this time, please try again later' in resp['Message'] and
+                    msg in resp['Message'] and
                     resp['Type'] == 96
                 )
                 if no_data_for_timestamp:

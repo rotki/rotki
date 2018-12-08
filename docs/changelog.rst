@@ -4,6 +4,7 @@ Changelog
 
 * :bug:`206` Fixes an error when adding a bitcoin account for the first time. 
 * :bug:`209` Fixes error during login due to invalid date being saved.
+* :bug:`223` Fix error in profit/loss calculation due to bugs in the search of the FIFO queue of buy events.
 * :feature:`221` Rotkehlchen is now shielded against incosistencies of cryptocompare FIAT data.
 * :bug:`219` Poloniex BTC settlement loss calculation is now correct.
 * :bug:`217` Tax report CSV exports should now agree with the app report.
