@@ -232,9 +232,11 @@ class Rotkehlchen(object):
             self.data.get_eth_accounts(),
             historical_data_start,
         )
+        self.inquirer = Inquirer(data_dir=self.data_dir, kraken=self.kraken)
         price_historian = PriceHistorian(
-            self.data_dir,
-            historical_data_start,
+            data_directory=self.data_dir,
+            history_date_start=historical_data_start,
+            inquirer=self.inquirer,
         )
         db_settings = self.data.db.get_settings()
         self.accountant = Accountant(
@@ -250,8 +252,6 @@ class Rotkehlchen(object):
 
         # Initialize the rotkehlchen logger
         LoggingSettings(anonymized_logs=db_settings['anonymized_logs'])
-
-        self.inquirer = Inquirer(kraken=self.kraken)
         self.initialize_exchanges(secret_data)
 
         ethchain = Ethchain(eth_rpc_port)
@@ -449,11 +449,11 @@ class Rotkehlchen(object):
             margin_history,
             loan_history,
             asset_movements,
-            eth_transactions
+            eth_transactions,
         ) = self.trades_historian.get_history(
             start_ts=0,  # For entire history processing we need to have full history available
             end_ts=ts_now(),
-            end_at_least_ts=end_ts
+            end_at_least_ts=end_ts,
         )
         result = self.accountant.process_history(
             start_ts,
@@ -462,7 +462,7 @@ class Rotkehlchen(object):
             margin_history,
             loan_history,
             asset_movements,
-            eth_transactions
+            eth_transactions,
         )
         return result, error_or_empty
 

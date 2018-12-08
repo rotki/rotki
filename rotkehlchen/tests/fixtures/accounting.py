@@ -1,11 +1,12 @@
-import pytest
-import os
 import errno
+import os
 
-from rotkehlchen.history import PriceHistorian
+import pytest
+
 from rotkehlchen.accounting.accountant import Accountant
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.constants import YEAR_IN_SECONDS
+from rotkehlchen.history import PriceHistorian
+from rotkehlchen.inquirer import Inquirer
 
 TEST_HISTORY_DATA_START = "01/01/2015"
 
@@ -18,7 +19,7 @@ def accounting_data_dir():
     if 'TRAVIS' in os.environ:
         data_directory = os.path.join(home, '.cache', '.rotkehlchen-test-dir')
     else:
-        data_directory = os.path.join(home, '.rotkehlchen', 'testadata')
+        data_directory = os.path.join(home, '.rotkehlchen', 'tests_data_directory')
 
     try:
         os.makedirs(data_directory)
@@ -30,8 +31,12 @@ def accounting_data_dir():
 
 
 @pytest.fixture
-def price_historian(accounting_data_dir):
-    return PriceHistorian(accounting_data_dir, TEST_HISTORY_DATA_START)
+def price_historian(accounting_data_dir, inquirer):
+    return PriceHistorian(
+        data_directory=accounting_data_dir,
+        history_date_start=TEST_HISTORY_DATA_START,
+        inquirer=inquirer,
+    )
 
 
 @pytest.fixture
@@ -87,6 +92,6 @@ def accountant(
     )
 
 
-@pytest.fixture(scope='session')
-def inquirer():
-    return Inquirer(kraken=None)
+@pytest.fixture
+def inquirer(accounting_data_dir):
+    return Inquirer(data_dir=accounting_data_dir, kraken=None)

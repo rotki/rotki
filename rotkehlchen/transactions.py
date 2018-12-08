@@ -111,7 +111,7 @@ def query_etherscan_for_transactions(accounts: List[EthAddress]) -> List[Ethereu
 
 
 def transactions_from_dictlist(
-        given_transactions: Dict,
+        given_transactions: List[Dict],
         start_ts: Timestamp,
         end_ts: Timestamp,
 ) -> List[EthereumTransaction]:
