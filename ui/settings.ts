@@ -152,7 +152,13 @@ export function add_settings_listeners() {
         }
 
         const anonymized_logs = $('#anonymized_logs_input').is(':checked');
-        const eth_rpc_port = $('#eth_rpc_port').val();
+        const eth_rpc_port = $('#eth_rpc_port').val() as number;
+
+        if (eth_rpc_port < 1 || eth_rpc_port > 65535) {
+            showError('Invalid port number', 'Please ensure that the specified port number is between 1 and 65535');
+            return;
+        }
+
         const balance_save_frequency = $('#balance_save_frequency').val();
         const send_payload = {
             'ui_floating_precision': settings.floating_precision,
@@ -165,7 +171,7 @@ export function add_settings_listeners() {
         // and now send the data to the python process
 
         service.set_settings(send_payload).then(result => {
-            let message = 'Succesfully modified settings.';
+            let message = 'Successfully modified settings.';
             if ('message' in result && result.message !== '') {
                 message = ` ${message}${result.message}`;
             }
@@ -175,7 +181,10 @@ export function add_settings_listeners() {
         });
     });
 
-    $('#historical_data_start').datetimepicker({timepicker: false});
+    $('#historical_data_start').datetimepicker({
+        timepicker: false,
+        format: 'd/m/Y',
+    });
 }
 
 export function create_settings_ui() {
@@ -183,7 +192,7 @@ export function create_settings_ui() {
     str += settings_panel('General Settings', 'general_settings');
     $('#page-wrapper').html(str);
 
-    str = form_entry('Floating Precision', 'floating_precision', settings.floating_precision.toString());
+    str = form_entry('Floating Precision', 'floating_precision', settings.floating_precision.toString(), '', 'number');
     str += form_checkbox('anonymized_logs_input', 'Should logs by anonymized?', settings.anonymized_logs);
     str += form_entry('Date from when to count historical data', 'historical_data_start', settings.historical_data_start);
     str += form_select(
@@ -192,12 +201,13 @@ export function create_settings_ui() {
         settings.CURRENCIES.map(x => x.ticker_symbol),
         settings.main_currency.ticker_symbol
     );
-    str += form_entry('Eth RPC Port', 'eth_rpc_port', settings.eth_rpc_port, '');
+    str += form_entry('Eth RPC Port', 'eth_rpc_port', settings.eth_rpc_port, '', 'number');
     str += form_entry(
         'Balance data saving frequency in hours',
         'balance_save_frequency',
         settings.balance_save_frequency.toString(),
-        ''
+        '',
+        'number'
     );
     $(str).appendTo($('.panel-body'));
 

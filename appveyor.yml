@@ -1,5 +1,7 @@
 version: 1.0.{build}
 
+os: unstable
+
 environment:
     python2_version: 2.7.15
     python3_version: 3.6.6

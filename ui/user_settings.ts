@@ -352,7 +352,12 @@ function add_blockchain_account(event: JQuery.Event) {
             recreate_ethchain_per_account_table(result.per_account['ETH']);
         } else if (blockchain === 'BTC') {
             const btcTable = BB_PER_ACCOUNT_TABLES['BTC'] as AssetTable;
-            btcTable.update_format(result.per_account['BTC']);
+
+            if (!btcTable) {
+                create_btcchain_per_account_table(result.per_account['BTC']);
+            } else {
+                btcTable.update_format(result.per_account['BTC']);
+            }
         }
         if (BB_PER_ASSET_TABLE == null) {
             throw new Error('Table was not supposed to be null');
@@ -506,6 +511,19 @@ function create_ethchain_per_account_table(eth_accounts: { [account: string]: As
     });
 }
 
+function create_btcchain_per_account_table(btc_accounts: { [asset: string]: AssetBalance }) {
+    BB_PER_ACCOUNT_TABLES['BTC'] = new AssetTable(
+        'account',
+        'btcchain_per_account',
+        PlacementType.insertAfter,
+        'btcchain_per_account_anchor',
+        btc_accounts,
+        'BTC Accounts',
+        'btcchain_per_account_header',
+        dt_edit_drawcallback('btcchain_per_account_table', null, delete_btc_account_row)
+    );
+}
+
 function create_blockchain_balances_tables(result: BlockchainBalances) {
 
     $('#blockchain_per_asset_placeholder').remove();
@@ -526,16 +544,7 @@ function create_blockchain_balances_tables(result: BlockchainBalances) {
 
     const btc_accounts = result['per_account']['BTC'];
     if (btc_accounts) {
-        BB_PER_ACCOUNT_TABLES['BTC'] = new AssetTable(
-            'account',
-            'btcchain_per_account',
-            PlacementType.insertAfter,
-            'btcchain_per_account_anchor',
-            btc_accounts,
-            'BTC Accounts',
-            'btcchain_per_account_header',
-            dt_edit_drawcallback('btcchain_per_account_table', null, delete_btc_account_row)
-        );
+        create_btcchain_per_account_table(btc_accounts);
     }
 
     enable_multiselect();
@@ -662,8 +671,15 @@ export function reload_user_settings_tables_if_existing() {
         BB_PER_ASSET_TABLE.reload();
     }
     for (const currency in BB_PER_ACCOUNT_TABLES) {
-        if (BB_PER_ACCOUNT_TABLES.hasOwnProperty(currency)) {
-            const table = BB_PER_ACCOUNT_TABLES[currency];
+        if (!BB_PER_ACCOUNT_TABLES.hasOwnProperty(currency)) {
+            continue;
+        }
+
+        const table = BB_PER_ACCOUNT_TABLES[currency];
+
+        if (table instanceof AssetTable) {
+            table.reload();
+        } else {
             reload_table_currency_val_if_existing(table as DataTables.Api, 2);
         }
     }

@@ -155,3 +155,12 @@ a:focus, a:hover {
     float: left;
     margin-left:120px;
 }
+
+.no-animations {
+    -webkit-transition-property: none !important;
+    transition-property: none !important;
+    -webkit-transform: none !important;
+    transform: none !important;
+    -webkit-animation: none !important;
+    animation: none !important;
+}

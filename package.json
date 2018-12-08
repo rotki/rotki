@@ -18,9 +18,12 @@
         "@types/mocha": "^5.2.5",
         "@types/node": "^8.10.38",
         "@types/tail": "^1.2.0",
+        "@types/webdriverio": "^4.10.4",
         "chai": "^4.2.0",
         "chai-as-promised": "^7.1.1",
+        "dotenv": "^6.1.0",
         "electron": "1.8.4",
+        "electron-context-menu": "^0.10.0",
         "electron-packager": "^8.7.2",
         "electron-rebuild": "^1.5.7",
         "mocha": "^5.2.0",
@@ -33,7 +36,8 @@
     },
     "scripts": {
         "build": "rimraf ui/dist && tsc",
-        "test": "rimraf ui/dist && tsc && mocha --require ts-node/register ui/tests/**/*.ts",
+        "test": "rimraf ui/dist && tsc && mocha --require dotenv/config --require ts-node/register \"ui/tests/**/*.spec.ts\"",
+        "test-single": "rimraf ui/dist && tsc && mocha --require dotenv/config --require ts-node/register",
         "start": "rimraf ui/dist && tsc && electron .",
         "lint": "tslint -c tslint.json -e 'ui/dist/*' --project tsconfig.json 'ui/**/*.ts'",
         "lint:fix": "tslint --fix -c tslint.json -e 'ui/dist/*' --project tsconfig.json 'ui/**/*.ts'"
