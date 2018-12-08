@@ -50,6 +50,9 @@ install:
 
 # Run the tests.
 script:
+  # fail fast - in case there is an error building, quit immediately.
+  # reference: https://github.com/travis-ci/travis-ci/issues/1066
+  - set -e
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source terryfy/test_tools.sh; fi
   - flake8 rotkehlchen/
   - pylint --disable=all --enable=no-value-for-parameter,too-many-format-args,no-member,bad-except-order rotkehlchen
@@ -62,6 +65,8 @@ script:
   - npm install
   - PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild
   - npm test
+  # back to default in case internal travis scripts return non zero response codes.
+  - set +e
 
 before_deploy:
   - ./package.sh
