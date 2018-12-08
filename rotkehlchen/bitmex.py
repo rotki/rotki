@@ -53,7 +53,7 @@ def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
         timestamp=close_time,
         profit_loss=profit_loss,
         currency=currency,
-        notes=notes
+        notes=notes,
     )
 
     return MarginPosition(
@@ -72,7 +72,7 @@ class Bitmex(Exchange):
             api_key: typing.ApiKey,
             secret: typing.ApiSecret,
             inquirer: Inquirer,
-            data_dir: typing.FilePath
+            data_dir: typing.FilePath,
     ):
         super(Bitmex, self).__init__('bitmex', api_key, secret, data_dir)
         self.uri = 'https://bitmex.com'
@@ -99,7 +99,7 @@ class Bitmex(Exchange):
         signature = hmac.new(
             self.secret,
             (verb.upper() + path + str(expires) + data).encode(),
-            hashlib.sha256
+            hashlib.sha256,
         ).hexdigest()
         self.session.headers.update({
             'api-signature': signature,
@@ -157,7 +157,7 @@ class Bitmex(Exchange):
                 'Bitmex api request for {} failed with HTTP status code {}'.format(
                     response.url,
                     response.status_code,
-                )
+                ),
             )
 
         try:
