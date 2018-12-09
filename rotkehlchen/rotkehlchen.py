@@ -232,10 +232,10 @@ class Rotkehlchen(object):
         historical_data_start = settings['historical_data_start']
         eth_rpc_port = settings['eth_rpc_port']
         self.trades_historian = TradesHistorian(
-            self.data_dir,
-            self.data.db,
-            self.data.get_eth_accounts(),
-            historical_data_start,
+            user_directory=self.user_directory,
+            db=self.data.db,
+            eth_accounts=self.data.get_eth_accounts(),
+            historical_data_start=historical_data_start,
         )
         self.inquirer = Inquirer(data_dir=self.data_dir, kraken=self.kraken)
         price_historian = PriceHistorian(
