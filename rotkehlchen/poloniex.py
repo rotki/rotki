@@ -344,7 +344,7 @@ class Poloniex(Exchange):
         It can throw OSError, IOError if the file does not exist and csv.Error if
         the file is not proper CSV"""
         # the default filename, and should be (if at all) inside the data directory
-        path = os.path.join(self.user_dir, "lendingHistory.csv")
+        path = os.path.join(self.user_directory, "lendingHistory.csv")
         lending_history = list()
         with open(path, 'r') as csvfile:
             history = csv.reader(csvfile, delimiter=',', quotechar='|')

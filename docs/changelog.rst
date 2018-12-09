@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`232` Multiple rotkehlchen users will no longer share same cache files.
 * :feature:`229` Rotkehlchen can now work and migrate to sqlcipher v4.
 * :bug:`206` Fixes an error when adding a bitcoin account for the first time. 
 * :bug:`209` Fixes error during login due to invalid date being saved.
