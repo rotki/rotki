@@ -381,5 +381,5 @@ def test_upgrade_sqlcipher_v3_to_v4(data_dir):
     )
 
     # the constructor should migrate it in-place and we should have a working DB
-    db = DBHandler(userdata_dir, username, '123')
+    db = DBHandler(userdata_dir, '123')
     assert db.get_version() == ROTKEHLCHEN_DB_VERSION

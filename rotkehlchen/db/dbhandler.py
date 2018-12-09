@@ -73,7 +73,7 @@ ROTKEHLCHEN_DB_VERSION = 2
 # http://www.sql-join.com/sql-join-types
 class DBHandler(object):
 
-    def __init__(self, user_data_dir: typing.FilePath, username: str, password: str):
+    def __init__(self, user_data_dir: typing.FilePath, password: str):
         self.user_data_dir = user_data_dir
         self.sqlcipher_version = detect_sqlcipher_version()
         self.connect(password)
