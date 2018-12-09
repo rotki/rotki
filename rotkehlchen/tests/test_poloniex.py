@@ -1,3 +1,4 @@
+import os
 from unittest.mock import patch
 
 from rotkehlchen.fval import FVal
@@ -42,21 +43,25 @@ def test_query_trade_history_not_shared_cache(data_dir):
     """Test that having 2 different poloniex instances does not use same cache
 
     Regression test for https://github.com/rotkehlchenio/rotkehlchen/issues/232
-    We are using poloniex as an example here. Essentially tests all caches.
+    We are using poloniex as an example here. Essentially tests all exchange caches.
     """
 
     def first_trades(currencyPair, start, end):
         return {'BTC': [{'data': 1}]}
 
-    def second_trades(currency_pair, start, end):
+    def second_trades(currencyPair, start, end):
         return {'BTC': [{'data': 2}]}
 
     end_ts = 99999999999
-    a = Poloniex(b'', b'', None, data_dir)
+    first_user_dir = os.path.join(data_dir, 'first')
+    os.mkdir(first_user_dir)
+    second_user_dir = os.path.join(data_dir, 'second')
+    os.mkdir(second_user_dir)
+    a = Poloniex(b'', b'', None, first_user_dir)
     with patch.object(a, 'returnTradeHistory', side_effect=first_trades):
         result1 = a.query_trade_history(0, end_ts, end_ts)
 
-    b = Poloniex(b'', b'', None, data_dir)
+    b = Poloniex(b'', b'', None, second_user_dir)
     with patch.object(b, 'returnTradeHistory', side_effect=second_trades):
         result2 = b.query_trade_history(0, end_ts, end_ts)
 

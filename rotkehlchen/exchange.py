@@ -37,7 +37,7 @@ class Exchange(object):
             name: str,
             api_key: typing.ApiKey,
             secret: typing.ApiSecret,
-            datadir: typing.FilePath,
+            user_directory: typing.FilePath,
     ):
         assert isinstance(api_key, typing.T_ApiKey), (
             'api key for {} should be a bytestring'.format(name)
@@ -46,7 +46,7 @@ class Exchange(object):
             'secret for {} should be a bytestring'.format(name)
         )
         self.name = name
-        self.data_dir = datadir
+        self.user_directory = user_directory
         self.api_key = api_key
         self.secret = secret
         self.first_connection_made = False
@@ -58,9 +58,9 @@ class Exchange(object):
 
     def _get_cachefile_name(self, special_name: str = None) -> str:
         if special_name is None:
-            return os.path.join(self.data_dir, "%s_trades.json" % self.name)
+            return os.path.join(self.user_directory, "%s_trades.json" % self.name)
         else:
-            return os.path.join(self.data_dir, "%s_%s.json" % (self.name, special_name))
+            return os.path.join(self.user_directory, "%s_%s.json" % (self.name, special_name))
 
     def check_trades_cache(
             self,

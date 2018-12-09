@@ -205,9 +205,9 @@ class Kraken(Exchange):
             self,
             api_key: typing.ApiKey,
             secret: typing.ApiSecret,
-            data_dir: typing.FilePath,
+            user_directory: typing.FilePath,
     ):
-        super(Kraken, self).__init__('kraken', api_key, secret, data_dir)
+        super(Kraken, self).__init__('kraken', api_key, secret, user_directory)
         self.apiversion = '0'
         self.uri = 'https://api.kraken.com/{}/'.format(self.apiversion)
         # typing TODO: Without a union of str and Asset we get lots of warning

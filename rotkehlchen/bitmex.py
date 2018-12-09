@@ -72,9 +72,9 @@ class Bitmex(Exchange):
             api_key: typing.ApiKey,
             secret: typing.ApiSecret,
             inquirer: Inquirer,
-            data_dir: typing.FilePath,
+            user_directory: typing.FilePath,
     ):
-        super(Bitmex, self).__init__('bitmex', api_key, secret, data_dir)
+        super(Bitmex, self).__init__('bitmex', api_key, secret, user_directory)
         self.uri = 'https://bitmex.com'
         self.inquirer = inquirer
         self.session.headers.update({'api-key': api_key})
