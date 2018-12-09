@@ -43,7 +43,7 @@ def trade_from_poloniex(poloniex_trade, pair):
     perc_fee = FVal(poloniex_trade['fee'])
     base_currency = get_pair_position(pair, 'first')
     quote_currency = get_pair_position(pair, 'second')
-    timestamp = createTimeStamp(poloniex_trade['date'], formatstr="%Y-%m-%d %H:%M:%S"),
+    timestamp = createTimeStamp(poloniex_trade['date'], formatstr="%Y-%m-%d %H:%M:%S")
     if trade_type == 'buy':
         cost = rate * amount
         cost_currency = base_currency
