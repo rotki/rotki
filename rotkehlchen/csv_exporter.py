@@ -106,7 +106,7 @@ class CSVExporter(object):
             'received_in_asset': received_in_asset,
             'net_profit_or_loss': net_profit_or_loss,
             'time': timestamp,
-            'is_virtual': is_virtual
+            'is_virtual': is_virtual,
         }
         log.debug('csv event', **make_sensitive(entry))
         self.all_events.append(entry)
@@ -164,7 +164,7 @@ class CSVExporter(object):
             received_in_asset=amount,
             taxable_received_in_profit_currency=FVal(0),
             timestamp=timestamp,
-            is_virtual=is_virtual
+            is_virtual=is_virtual,
         )
 
     def add_sell(
@@ -276,7 +276,7 @@ class CSVExporter(object):
             'gained_asset': gained_asset,
             'gained_amount': gained_amount,
             'lent_amount': lent_amount,
-            'profit_in_{}'.format(self.profit_currency): gain_in_profit_currency
+            'profit_in_{}'.format(self.profit_currency): gain_in_profit_currency,
         })
         self.add_to_allevents(
             event_type=EV_INTEREST_PAYMENT,

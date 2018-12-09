@@ -36,7 +36,7 @@ otc_fields = [
     'otc_fee',
     'otc_fee_currency',
     'otc_link',
-    'otc_notes'
+    'otc_notes',
 ]
 otc_optional_fields = ['otc_fee', 'otc_link', 'otc_notes']
 otc_numerical_fields = ['otc_amount', 'otc_rate', 'otc_fee']
@@ -54,14 +54,14 @@ VALID_SETTINGS = (
     'taxfree_after_period',
     'balance_save_frequency',
     'anonymized_logs',
-    'include_gas_costs'
+    'include_gas_costs',
 )
 
 BOOLEAN_SETTINGS = (
     'premium_should_sync',
     'include_crypto2crypto',
     'anonymized_logs',
-    'include_gas_costs'
+    'include_gas_costs',
 )
 
 
@@ -164,7 +164,7 @@ class DataHandler(object):
                 # user account can be created
                 shutil.move(
                     user_data_dir,
-                    os.path.join(self.data_directory, 'backup_%s' % username)
+                    os.path.join(self.data_directory, 'backup_%s' % username),
                 )
 
                 raise AuthenticationError(
@@ -219,7 +219,7 @@ class DataHandler(object):
     def set_premium_credentials(
             self,
             api_key: typing.ApiKey,
-            api_secret: typing.ApiSecret
+            api_secret: typing.ApiSecret,
     ) -> None:
         self.db.set_rotkehlchen_premium(api_key, api_secret)
 
@@ -256,7 +256,7 @@ class DataHandler(object):
                     settings[x] = 'False'
                 else:
                     raise ValueError(
-                        f'Setting {x} should have a True/False value but it has {settings[x]}'
+                        f'Setting {x} should have a True/False value but it has {settings[x]}',
                     )
 
         if not all_okay:
@@ -345,7 +345,7 @@ class DataHandler(object):
                 data_blob = f.read()
 
         original_data_hash = base64.b64encode(
-            hashlib.sha256(data_blob).digest()
+            hashlib.sha256(data_blob).digest(),
         ).decode()
         compressed_data = zlib.compress(data_blob, level=9)
         encrypted_data = encrypt(password.encode(), compressed_data)

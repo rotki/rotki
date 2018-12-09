@@ -159,12 +159,12 @@ def blockchain(
         ethchain_client,
         blockchain_accounts,
         all_eth_tokens,
-        inquirer
+        inquirer,
 ):
     return Blockchain(
-        blockchain_accounts,
-        all_eth_tokens,
-        [],
-        inquirer,
-        ethchain_client
+        blockchain_accounts=blockchain_accounts,
+        all_eth_tokens=all_eth_tokens,
+        owned_eth_tokens=[],
+        inquirer=inquirer,
+        ethchain=ethchain_client,
     )

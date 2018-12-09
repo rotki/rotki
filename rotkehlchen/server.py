@@ -102,7 +102,7 @@ class RotkehlchenServer(object):
             ))
         # also write an error for the task result
         result = {
-            'error': str(greenlet.exception)
+            'error': str(greenlet.exception),
         }
         self.write_task_result(greenlet.task_id, result)
 
@@ -117,7 +117,7 @@ class RotkehlchenServer(object):
             self._query_async,
             command,
             task_id,
-            **kwargs
+            **kwargs,
         )
         greenlet.task_id = task_id
         greenlet.link_exception(self.handle_killed_greenlets)
@@ -253,7 +253,7 @@ class RotkehlchenServer(object):
     def get_eth_tokens(self):
         result = {
             'all_eth_tokens': self.rotkehlchen.data.eth_tokens,
-            'owned_eth_tokens': self.rotkehlchen.blockchain.eth_tokens
+            'owned_eth_tokens': self.rotkehlchen.blockchain.eth_tokens,
         }
         return process_result(result)
 
@@ -271,7 +271,7 @@ class RotkehlchenServer(object):
 
     def get_ignored_assets(self):
         result = {
-            'ignored_assets': self.rotkehlchen.data.db.get_ignored_assets()
+            'ignored_assets': self.rotkehlchen.data.db.get_ignored_assets(),
         }
         return result
 
@@ -309,7 +309,7 @@ class RotkehlchenServer(object):
                 create_new,
                 sync_approval,
                 api_key,
-                api_secret
+                api_secret,
             )
             res['exchanges'] = self.rotkehlchen.connected_exchanges
             res['premium'] = self.rotkehlchen.premium is not None

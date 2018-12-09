@@ -579,7 +579,7 @@ class TaxableEvents(object):
                 'No documented buy found for "{}" before {}'.format(
                     selling_asset,
                     tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
-                )
+                ),
             )
             # That means we had no documented buy for that asset. This is not good
             # because we can't prove a corresponding buy and as such we are burdened
@@ -591,7 +591,7 @@ class TaxableEvents(object):
         # and modify the amount of the buy where we stopped if there is one
         if remaining_amount_from_last_buy != -1:
             self.events[selling_asset].buys[0] = self.events[selling_asset].buys[0]._replace(
-                amount=remaining_amount_from_last_buy
+                amount=remaining_amount_from_last_buy,
             )
         elif remaining_sold_amount != FVal(0):
             # if we still have sold amount but no buys to satisfy it then we only
@@ -604,7 +604,7 @@ class TaxableEvents(object):
                     tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
                     taxable_amount + taxfree_amount,
                     selling_asset,
-                )
+                ),
             )
             return adjusted_amount, taxable_bought_cost, taxfree_bought_cost
 

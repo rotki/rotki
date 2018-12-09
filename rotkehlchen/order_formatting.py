@@ -18,8 +18,8 @@ SellEvent = namedtuple('SellEvent', (
     'amount',  # Amount of the asset we sell
     'rate',  # Rate in 'profit_currency' for which we sell 1 unit of the sold asset
     'fee_rate',  # Fee rate in 'profit_currency' which we paid for each unit of the sold asset
-    'gain')  # Gain in profit currency for this trade. Fees are not counted here.
-)
+    'gain',  # Gain in profit currency for this trade. Fees are not counted here.
+))
 Trade = namedtuple(
     'Trade',
     (
@@ -33,8 +33,8 @@ Trade = namedtuple(
         'fee',
         'fee_currency',
         'amount',
-        'location'
-    )
+        'location',
+    ),
 )
 
 AssetMovement = namedtuple(
@@ -46,7 +46,7 @@ AssetMovement = namedtuple(
         'asset',
         'amount',
         'fee',
-    )
+    ),
 )
 
 MarginPosition = namedtuple(
@@ -58,7 +58,7 @@ MarginPosition = namedtuple(
         'profit_loss',
         'pl_currency',
         'notes',
-    )
+    ),
 )
 
 
@@ -114,7 +114,7 @@ def trades_from_dictlist(given_trades, start_ts, end_ts):
             fee=FVal(given_trade['fee']),
             fee_currency=given_trade['fee_currency'],
             amount=amount,
-            location=given_trade['location']
+            location=given_trade['location'],
         ))
     return returned_trades
 

@@ -90,7 +90,7 @@ def trade_from_binance(
         fee=fee,
         fee_currency=fee_currency,
         amount=amount,
-        location='binance'
+        location='binance',
     )
 
 
@@ -106,7 +106,7 @@ class Binance(Exchange):
             api_key: typing.ApiKey,
             secret: typing.ApiSecret,
             inquirer: Inquirer,
-            data_dir: typing.FilePath
+            data_dir: typing.FilePath,
     ):
         super(Binance, self).__init__('binance', api_key, secret, data_dir)
         self.apiversion = 'v3'
@@ -176,7 +176,7 @@ class Binance(Exchange):
                 signature = hmac.new(
                     self.secret,
                     urlencode(options).encode('utf-8'),
-                    hashlib.sha256
+                    hashlib.sha256,
                 ).hexdigest()
                 options['signature'] = signature
             elif method in V1_ENDPOINTS:

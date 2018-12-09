@@ -49,8 +49,8 @@ class NoPriceForGivenTimestamp(Exception):
     def __init__(self, from_asset, to_asset, timestamp):
         super(NoPriceForGivenTimestamp, self).__init__(
             'Unable to query a historical price for "{}" to "{}" at {}'.format(
-                from_asset, to_asset, timestamp
-            )
+                from_asset, to_asset, timestamp,
+            ),
         )
 
 
@@ -71,7 +71,7 @@ def do_read_manual_margin_positions(data_directory):
     else:
         margin_data = []
         logger.info(
-            'Could not find manual margins log file at {}'.format(manual_margin_path)
+            'Could not find manual margins log file at {}'.format(manual_margin_path),
         )
 
     # Now turn the manual margin data to our MarginPosition format
@@ -90,7 +90,7 @@ def do_read_manual_margin_positions(data_directory):
                 profit_loss=FVal(position['btc_profit_loss']),
                 pl_currency=NonEthTokenBlockchainAsset('BTC'),
                 notes=position['notes'],
-            )
+            ),
         )
 
     return margin_positions
@@ -148,7 +148,7 @@ def check_hourly_data_sanity(data, from_asset, to_asset):
         if diff != 3600:
             print(
                 "Problem at indices {} and {} of {}_to_{} prices. Time difference is: {}".format(
-                    index, index + 1, from_asset, to_asset, diff)
+                    index, index + 1, from_asset, to_asset, diff),
             )
             return False
 
@@ -318,13 +318,13 @@ class PriceHistorian(object):
         if from_asset not in self.cryptocompare_coin_list and from_asset not in FIAT_CURRENCIES:
             raise ValueError(
                 'Attempted to query historical price data for '
-                'unknown asset "{}"'.format(from_asset)
+                'unknown asset "{}"'.format(from_asset),
             )
 
         if to_asset not in self.cryptocompare_coin_list and to_asset not in FIAT_CURRENCIES:
             raise ValueError(
                 'Attempted to query historical price data for '
-                'unknown asset "{}"'.format(to_asset)
+                'unknown asset "{}"'.format(to_asset),
             )
 
         cache_key = from_asset + '_' + to_asset
@@ -394,7 +394,7 @@ class PriceHistorian(object):
                 if resp['Data'][diff // 3600]['time'] != pr_end_date:
                     raise ValueError(
                         'Expected to find the previous date timestamp during '
-                        'historical data fetching'
+                        'historical data fetching',
                     )
                 # just add only the part from the previous timestamp and on
                 resp['Data'] = resp['Data'][diff // 3600:]
@@ -418,7 +418,7 @@ class PriceHistorian(object):
         self.price_history[cache_key] = {
             'data': calculated_history,
             'start_time': self.historical_data_start,
-            'end_time': now_ts
+            'end_time': now_ts,
         }
         # and now since we actually queried the data let's also save them locally
         filename = os.path.join(self.data_directory, 'price_history_' + cache_key + '.json')
@@ -426,13 +426,13 @@ class PriceHistorian(object):
             'Updating price history cache',
             filename=filename,
             from_asset=from_asset,
-            to_asset=to_asset
+            to_asset=to_asset,
         )
         write_history_data_in_file(
             calculated_history,
             filename,
             self.historical_data_start,
-            now_ts
+            now_ts,
         )
         self.price_history_file[cache_key] = filename
 
@@ -559,7 +559,7 @@ class PriceHistorian(object):
             raise NoPriceForGivenTimestamp(
                 from_asset,
                 to_asset,
-                tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S')
+                tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'),
             )
 
         log.debug(
@@ -567,7 +567,7 @@ class PriceHistorian(object):
             from_asset=from_asset,
             to_asset=to_asset,
             timestamp=timestamp,
-            price=price
+            price=price,
         )
         return price
 
@@ -601,7 +601,7 @@ class TradesHistorian(object):
         elif exchange_obj:
             raise ValueError(
                 'Attempted to set {} exchange in TradesHistorian while it was '
-                'already set'.format(name)
+                'already set'.format(name),
             )
 
     def query_poloniex_history(self, history, asset_movements, start_ts, end_ts, end_at_least_ts):
@@ -617,7 +617,7 @@ class TradesHistorian(object):
             polo_history = self.poloniex.query_trade_history(
                 start_ts=start_ts,
                 end_ts=end_ts,
-                end_at_least_ts=end_at_least_ts
+                end_at_least_ts=end_at_least_ts,
             )
 
             for pair, trades in polo_history.items():
@@ -639,21 +639,21 @@ class TradesHistorian(object):
                     "poloniex margin trades list should be empty here"
                 )
                 poloniex_margin_trades = do_read_manual_margin_positions(
-                    self.data_directory
+                    self.data_directory,
                 )
             else:
                 poloniex_margin_trades.sort(key=lambda trade: trade.timestamp)
                 poloniex_margin_trades = limit_trade_list_to_period(
                     poloniex_margin_trades,
                     start_ts,
-                    end_ts
+                    end_ts,
                 )
 
             polo_loans = self.poloniex.query_loan_history(
                 start_ts=start_ts,
                 end_ts=end_ts,
                 end_at_least_ts=end_at_least_ts,
-                from_csv=True
+                from_csv=True,
             )
             polo_loans = process_polo_loans(polo_loans, start_ts, end_ts)
             polo_asset_movements = self.poloniex.query_deposits_withdrawals(
@@ -687,7 +687,7 @@ class TradesHistorian(object):
                 kraken_history = self.kraken.query_trade_history(
                     start_ts=start_ts,
                     end_ts=end_ts,
-                    end_at_least_ts=end_at_least_ts
+                    end_at_least_ts=end_at_least_ts,
                 )
                 for trade in kraken_history:
                     history.append(trade_from_kraken(trade))
@@ -755,7 +755,7 @@ class TradesHistorian(object):
                 binance_history = self.binance.query_trade_history(
                     start_ts=start_ts,
                     end_ts=end_ts,
-                    end_at_least_ts=end_at_least_ts
+                    end_at_least_ts=end_at_least_ts,
                 )
                 for trade in binance_history:
                     history.append(trade_from_binance(trade, self.binance.symbols_to_pair))
@@ -782,7 +782,7 @@ class TradesHistorian(object):
                 poloniex_margin_trades,
                 marginfile_path,
                 start_ts,
-                end_ts
+                end_ts,
             )
 
         if self.poloniex is not None:
@@ -874,20 +874,20 @@ class TradesHistorian(object):
                 loan_history_is_okay = data_up_todate(
                     loan_file_contents,
                     start_ts,
-                    end_at_least_ts
+                    end_at_least_ts,
                 )
 
                 assetmovementsfile_path = os.path.join(
                     self.data_directory,
-                    ASSETMOVEMENTS_HISTORYFILE
+                    ASSETMOVEMENTS_HISTORYFILE,
                 )
                 asset_movements_contents = get_jsonfile_contents_or_empty_dict(
-                    assetmovementsfile_path
+                    assetmovementsfile_path,
                 )
                 asset_movements_history_is_okay = data_up_todate(
                     asset_movements_contents,
                     start_ts,
-                    end_at_least_ts
+                    end_at_least_ts,
                 )
 
                 eth_tx_log_path = os.path.join(self.data_directory, ETHEREUM_TX_LOGFILE)
@@ -895,7 +895,7 @@ class TradesHistorian(object):
                 eth_tx_log_history_history_is_okay = data_up_todate(
                     eth_tx_log_contents,
                     start_ts,
-                    end_at_least_ts
+                    end_at_least_ts,
                 )
 
                 if (
@@ -920,13 +920,13 @@ class TradesHistorian(object):
                     history_trades = trades_from_dictlist(
                         history_json_data['data'],
                         start_ts,
-                        end_ts
+                        end_ts,
                     )
                     if not self.read_manual_margin_positions:
                         margin_trades = trades_from_dictlist(
                             margin_file_contents['data'],
                             start_ts,
-                            end_ts
+                            end_ts,
                         )
                     else:
                         margin_trades = margin_file_contents
@@ -934,12 +934,12 @@ class TradesHistorian(object):
                     eth_transactions = transactions_from_dictlist(
                         eth_tx_log_contents['data'],
                         start_ts,
-                        end_ts
+                        end_ts,
                     )
                     asset_movements = asset_movements_from_dictlist(
                         asset_movements_contents['data'],
                         start_ts,
-                        end_ts
+                        end_ts,
                     )
 
                     history_trades = include_external_trades(

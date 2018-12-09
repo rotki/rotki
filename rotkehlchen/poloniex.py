@@ -84,7 +84,7 @@ def trade_from_poloniex(poloniex_trade, pair):
         fee=fee,
         fee_currency=fee_currency,
         amount=amount,
-        location='poloniex'
+        location='poloniex',
     )
 
 
@@ -141,7 +141,7 @@ class Poloniex(Exchange):
                         if('datetime' in after['return'][x] and
                            'timestamp' not in after['return'][x]):
                             after['return'][x]['timestamp'] = float(
-                                createTimeStamp(after['return'][x]['datetime'])
+                                createTimeStamp(after['return'][x]['datetime']),
                             )
 
         return after
@@ -152,7 +152,7 @@ class Poloniex(Exchange):
             raise PoloniexError(
                 'Poloniex query for "{}" returned error: {}'.format(
                     command,
-                    result['error']
+                    result['error'],
                 ))
         return result
 
@@ -261,7 +261,7 @@ class Poloniex(Exchange):
         except Exception as e:
             log.error(
                 "\nException at main loop: {}\n{}\n".format(
-                    str(e), traceback.format_exc())
+                    str(e), traceback.format_exc()),
             )
 
     # ---- General exchanges interface ----
@@ -286,7 +286,7 @@ class Poloniex(Exchange):
                 entry['amount'] = available + on_orders
                 usd_price = self.inquirer.find_usd_price(
                     asset=currency,
-                    asset_btc_price=None
+                    asset_btc_price=None,
                 )
                 usd_value = entry['amount'] * usd_price
                 entry['usd_value'] = usd_value
@@ -317,7 +317,7 @@ class Poloniex(Exchange):
         result = self.returnTradeHistory(
             currencyPair='all',
             start=start_ts,
-            end=end_ts
+            end=end_ts,
         )
         # we know that returnTradeHistory returns a dict with currencyPair=all
         result = cast(Dict, result)
@@ -331,7 +331,7 @@ class Poloniex(Exchange):
         if results_length >= 10000:
             raise ValueError(
                 'Poloniex api has a 10k limit to trade history. Have not implemented'
-                ' a solution for more than 10k trades at the moment'
+                ' a solution for more than 10k trades at the moment',
             )
 
         with self.lock:
@@ -356,7 +356,7 @@ class Poloniex(Exchange):
                     'amount': FVal(row[2]),
                     'fee': FVal(row[5]),
                     'open': row[7],
-                    'close': row[8]
+                    'close': row[8],
                 })
         return lending_history
 
@@ -396,7 +396,7 @@ class Poloniex(Exchange):
         result = self.returnLendingHistory(
             start_ts=start_ts,
             end_ts=end_ts,
-            limit=loans_query_return_limit
+            limit=loans_query_return_limit,
         )
         data = list(result)
         log.debug('Poloniex loan history query', results_num=len(data))
@@ -418,7 +418,7 @@ class Poloniex(Exchange):
             result = self.returnLendingHistory(
                 start_ts=start_ts,
                 end_ts=min_ts,
-                limit=loans_query_return_limit
+                limit=loans_query_return_limit,
             )
             log.debug('Poloniex loan history query', results_num=len(result))
             for loan in result:
@@ -439,7 +439,7 @@ class Poloniex(Exchange):
             cache = self.check_trades_cache(
                 start_ts,
                 end_at_least_ts,
-                special_name='deposits_withdrawals'
+                special_name='deposits_withdrawals',
             )
             cache = cast(Dict, cache)
         if cache is None:
@@ -449,7 +449,7 @@ class Poloniex(Exchange):
                     result,
                     start_ts,
                     end_ts,
-                    special_name='deposits_withdrawals'
+                    special_name='deposits_withdrawals',
                 )
         else:
             result = cache
@@ -467,7 +467,7 @@ class Poloniex(Exchange):
                 timestamp=withdrawal['timestamp'],
                 asset=withdrawal['currency'],
                 amount=FVal(withdrawal['amount']),
-                fee=FVal(withdrawal['fee'])
+                fee=FVal(withdrawal['fee']),
             ))
 
         for deposit in result['deposits']:
@@ -477,7 +477,7 @@ class Poloniex(Exchange):
                 timestamp=deposit['timestamp'],
                 asset=deposit['currency'],
                 amount=FVal(deposit['amount']),
-                fee=0
+                fee=0,
             ))
 
         return movements

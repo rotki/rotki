@@ -72,7 +72,7 @@ def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
 def add_entries(a, b):
     return {
         'amount': a['amount'] + b['amount'],
-        'usd_value': a['usd_value'] + b['usd_value']
+        'usd_value': a['usd_value'] + b['usd_value'],
     }
 
 
@@ -208,7 +208,7 @@ def retry_calls(
                         location,
                         method,
                         times,
-                        e
+                        e,
                     ))
 
 
@@ -356,21 +356,21 @@ def get_system_spec():
     if sys.platform == 'darwin':
         system_info = 'macOS {} {}'.format(
             platform.mac_ver()[0],
-            platform.architecture()[0]
+            platform.architecture()[0],
         )
     else:
         system_info = '{} {} {} {}'.format(
             platform.system(),
             '_'.join(platform.architecture()),
             platform.release(),
-            platform.machine()
+            platform.machine(),
         )
 
     system_spec = dict(
         rotkehlchen=pkg_resources.require(rotkehlchen.__name__)[0].version,
         python_implementation=platform.python_implementation(),
         python_version=platform.python_version(),
-        system=system_info
+        system=system_info,
     )
     return system_spec
 
@@ -406,7 +406,7 @@ def accounts_result(per_account, totals):
         'result': True,
         'message': '',
         'per_account': per_account,
-        'totals': totals
+        'totals': totals,
     }
     return process_result(result)
 

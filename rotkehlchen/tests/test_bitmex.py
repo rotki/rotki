@@ -83,7 +83,7 @@ def test_bitmex_api_withdrawals_deposit(test_bitmex):
             timestamp=1537014656,
             asset='BTC',
             amount=FVal(0.16960386),
-            fee=FVal(0E-8)
+            fee=FVal(0E-8),
         ),
         AssetMovement(
             exchange='bitmex',

@@ -142,6 +142,6 @@ def kraken(session_data_dir):
     mock = MockKraken(
         api_key=base64.b64encode(make_random_b64bytes(128)),
         secret=base64.b64encode(make_random_b64bytes(128)),
-        data_dir=session_data_dir
+        data_dir=session_data_dir,
     )
     return mock

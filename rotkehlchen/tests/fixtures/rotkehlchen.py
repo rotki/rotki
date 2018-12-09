@@ -1,5 +1,6 @@
-import pytest
 from collections import namedtuple
+
+import pytest
 
 from rotkehlchen.rotkehlchen import Rotkehlchen
 
@@ -16,7 +17,7 @@ def cli_args(data_dir):
         'logfile',
         'logtarget',
         'loglevel',
-        'logfromothermodules'
+        'logfromothermodules',
     ])
     args.loglevel = 'debug'
     args.logfromothermodules = False

@@ -17,7 +17,7 @@ def test_process_result():
             'something': [
                 {'a': 'a', 'f': FVal(1.0)},
                 {'b': 'b', 'f': FVal(2.0)},
-            ]
+            ],
         },
     }
 

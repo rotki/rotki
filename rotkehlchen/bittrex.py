@@ -29,14 +29,14 @@ BITTREX_MARKET_METHODS = {
     'sellmarket',
     'selllimit',
     'buymarket',
-    'buylimit'
+    'buylimit',
 }
 BITTREX_ACCOUNT_METHODS = {
     'getbalances',
     'getbalance',
     'getdepositaddress',
     'withdraw',
-    'getorderhistory'
+    'getorderhistory',
 }
 
 
@@ -91,7 +91,7 @@ def trade_from_bittrex(bittrex_trade: Dict) -> Trade:
         fee=fee,
         fee_currency=base_currency,
         amount=amount,
-        location='bittrex'
+        location='bittrex',
     )
 
 
@@ -101,7 +101,7 @@ class Bittrex(Exchange):
             api_key: typing.ApiKey,
             secret: typing.ApiSecret,
             inquirer: Inquirer,
-            data_dir: typing.FilePath
+            data_dir: typing.FilePath,
     ):
         super(Bittrex, self).__init__('bittrex', api_key, secret, data_dir)
         self.apiversion = 'v1.1'
@@ -151,7 +151,7 @@ class Bittrex(Exchange):
         signature = hmac.new(
             self.secret,
             request_url.encode(),
-            hashlib.sha512
+            hashlib.sha512,
         ).hexdigest()
         self.session.headers.update({'apisign': signature})
         log.debug('Bittrex API query', request_url=request_url)
@@ -197,7 +197,7 @@ class Bittrex(Exchange):
             asset_btc_price = self.get_btc_price(currency)
             usd_price = self.inquirer.find_usd_price(
                 asset=currency,
-                asset_btc_price=asset_btc_price
+                asset_btc_price=asset_btc_price,
             )
 
             balance = dict()

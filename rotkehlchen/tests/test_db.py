@@ -101,7 +101,7 @@ def test_writting_fetching_data(data_dir, username):
     assert accounts.btc == ['1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS']
     assert set(accounts.eth) == set([
         '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
-        to_checksum_address('0x80b369799104a47e98a553f3329812a44a7facdc')
+        to_checksum_address('0x80b369799104a47e98a553f3329812a44a7facdc'),
 
     ])
     # Add existing account should fail
@@ -265,7 +265,7 @@ def test_upgrade_db_1_to_2(data_dir, username):
     cursor = data.db.conn.cursor()
     cursor.execute(
         'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-        ('version', str(1))
+        ('version', str(1)),
     )
     data.db.conn.commit()
     data.db.add_blockchain_account('ETH', '0xe3580c38b0106899f45845e361ea7f8a0062ef12')
