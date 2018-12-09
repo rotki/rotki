@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`229` Rotkehlchen can now work and migrate to sqlcipher v4.
 * :bug:`206` Fixes an error when adding a bitcoin account for the first time. 
 * :bug:`209` Fixes error during login due to invalid date being saved.
 * :bug:`223` Fix error in profit/loss calculation due to bugs in the search of the FIFO queue of buy events.

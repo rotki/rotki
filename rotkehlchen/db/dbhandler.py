@@ -54,7 +54,7 @@ def str_to_bool(s):
 
 
 def detect_sqlcipher_version() -> int:
-    conn = sqlcipher.connect(':memory:')
+    conn = sqlcipher.connect(':memory:')  # pylint: disable=no-member
     query = conn.execute('PRAGMA cipher_version;')
     version = query.fetchall()[0][0]
     # TODO: proper version comparison please -- don't be lazy
@@ -90,7 +90,7 @@ class DBHandler(object):
                 try:
                     self.conn.executescript(script)
                     self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
-                except sqlcipher.DatabaseError as e:
+                except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                     errstr = str(e)
                     migrated = False
 
