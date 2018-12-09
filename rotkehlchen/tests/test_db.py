@@ -1,5 +1,6 @@
 import os
 import time
+from shutil import copyfile
 
 import pytest
 from eth_utils.address import to_checksum_address
@@ -10,14 +11,16 @@ from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import (
     DEFAULT_ANONYMIZED_LOGS,
     DEFAULT_BALANCE_SAVE_FREQUENCY,
+    DEFAULT_INCLUDE_CRYPTO2CRYPTO,
+    DEFAULT_INCLUDE_GAS_COSTS,
     DEFAULT_MAIN_CURRENCY,
     DEFAULT_START_DATE,
     DEFAULT_UI_FLOATING_PRECISION,
-    DEFAULT_INCLUDE_CRYPTO2CRYPTO,
-    DEFAULT_INCLUDE_GAS_COSTS,
     ROTKEHLCHEN_DB_VERSION,
     BlockchainAccounts,
+    DBHandler,
     LocationData,
+    detect_sqlcipher_version,
 )
 from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.utils import createTimeStamp, ts_now
@@ -339,3 +342,27 @@ def test_balance_save_frequency_check(data_dir, username):
 
     last_save_ts = data.db.get_last_balance_save_time()
     assert last_save_ts == data_save_ts
+
+
+def test_upgrade_sqlcipher_v3_to_v4(data_dir):
+    """Test that we can upgrade from an sqlcipher v3 to v4 rotkehlchen database
+    Issue: https://github.com/rotkehlchenio/rotkehlchen/issues/229
+    """
+    sqlcipher_version = detect_sqlcipher_version()
+    if sqlcipher_version == 3:
+        # nothing to test
+        return
+
+    username = 'foo'
+    userdata_dir = os.path.join(data_dir, username)
+    os.mkdir(userdata_dir)
+    # get the v3 database file and copy it into the user's data directory
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    copyfile(
+        os.path.join(dir_path, 'data', 'sqlcipher_v3_rotkehlchen.db'),
+        os.path.join(userdata_dir, 'rotkehlchen.db'),
+    )
+
+    # the constructor should migrate it in-place and we should have a working DB
+    db = DBHandler(userdata_dir, username, '123')
+    assert db.get_version() == ROTKEHLCHEN_DB_VERSION

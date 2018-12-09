@@ -53,6 +53,19 @@ def str_to_bool(s):
     return True if s == 'True' else False
 
 
+def detect_sqlcipher_version() -> int:
+    conn = sqlcipher.connect(':memory:')  # pylint: disable=no-member
+    query = conn.execute('PRAGMA cipher_version;')
+    version = query.fetchall()[0][0]
+    # TODO: proper version comparison please -- don't be lazy
+    if '4.0.0' in version:
+        sqlcipher_version = 4
+    else:
+        sqlcipher_version = 3
+    conn.close()
+    return sqlcipher_version
+
+
 ROTKEHLCHEN_DB_VERSION = 2
 
 
@@ -62,14 +75,29 @@ class DBHandler(object):
 
     def __init__(self, user_data_dir: typing.FilePath, username: str, password: str):
         self.user_data_dir = user_data_dir
+        self.sqlcipher_version = detect_sqlcipher_version()
         self.connect(password)
         try:
             self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+            migrated = False
             errstr = str(e)
-            if errstr == 'file is not a database':
-                errstr = 'Wrong password while decrypting the database or not a database'
-            raise AuthenticationError(errstr)
+            if self.sqlcipher_version == 4:
+                migrated = True
+                # if we are at version 4 perhaps we are just upgrading from an
+                # sqlcipher3 database
+                script = f'PRAGMA KEY="{password}";PRAGMA cipher_migrate;COMMIT;'
+                try:
+                    self.conn.executescript(script)
+                    self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
+                except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+                    errstr = str(e)
+                    migrated = False
+
+            if self.sqlcipher_version != 4 or not migrated:
+                if errstr == 'file is not a database':
+                    errstr = 'Wrong password while decrypting the database or not a database'
+                raise AuthenticationError(errstr)
 
         self.run_updates()
         cursor = self.conn.cursor()
@@ -113,7 +141,10 @@ class DBHandler(object):
             os.path.join(self.user_data_dir, 'rotkehlchen.db'),
         )
         self.conn.text_factory = str
-        self.conn.executescript('PRAGMA key="{}"; PRAGMA kdf_iter={};'.format(password, KDF_ITER))
+        self.conn.executescript('PRAGMA key="{}";'.format(password))
+        if self.sqlcipher_version == 3:
+            script = f'PRAGMA key="{password}"; PRAGMA kdf_iter={KDF_ITER};'
+            self.conn.executescript(script)
         self.conn.execute('PRAGMA foreign_keys=ON')
 
     def disconnect(self):
@@ -150,12 +181,11 @@ class DBHandler(object):
 
             # Now attach to the unencrypted DB and copy it to our DB and encrypt it
             self.conn = sqlcipher.connect(tempdbpath)  # pylint: disable=no-member
-            self.conn.executescript(
-                'ATTACH DATABASE "{}" AS encrypted KEY "{}";'
-                'PRAGMA encrypted.kdf_iter={};'
-                'SELECT sqlcipher_export("encrypted");'
-                'DETACH DATABASE encrypted;'.format(rdbpath, password, KDF_ITER)
-            )
+            script = f'ATTACH DATABASE "{rdbpath}" AS encrypted KEY "{password}";'
+            if self.sqlcipher_version == 3:
+                script += f'PRAGMA encrypted.kdf_iter={KDF_ITER};'
+            script += 'SELECT sqlcipher_export("encrypted");DETACH DATABASE encrypted;'
+            self.conn.executescript(script)
             self.disconnect()
 
         self.connect(password)
