@@ -37,7 +37,7 @@ class Exchange(object):
             name: str,
             api_key: typing.ApiKey,
             secret: typing.ApiSecret,
-            datadir: typing.FilePath
+            datadir: typing.FilePath,
     ):
         assert isinstance(api_key, typing.T_ApiKey), (
             'api key for {} should be a bytestring'.format(name)
@@ -66,7 +66,7 @@ class Exchange(object):
             self,
             start_ts: typing.Timestamp,
             end_ts: typing.Timestamp,
-            special_name: str = None
+            special_name: str = None,
     ) -> Optional[Union[List, Dict]]:
         trades_file = self._get_cachefile_name(special_name)
         trades: dict = dict()
@@ -88,7 +88,7 @@ class Exchange(object):
             data: Union[List, Dict],
             start_ts: typing.Timestamp,
             end_ts: typing.Timestamp,
-            special_name: str = None
+            special_name: str = None,
     ) -> None:
         trades_file = self._get_cachefile_name(special_name)
         trades: Dict[str, Union[typing.Timestamp, List, Dict]] = dict()
@@ -116,7 +116,7 @@ class Exchange(object):
             end_at_least_ts: typing.Timestamp,
     ):
         raise NotImplementedError(
-            'query_deposits_withdrawals should only be implemented by subclasses'
+            'query_deposits_withdrawals should only be implemented by subclasses',
         )
 
     def first_connection(self):

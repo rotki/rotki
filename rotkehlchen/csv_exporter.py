@@ -14,6 +14,7 @@ from rotkehlchen.constants import (
     EV_TX_GAS_COST,
     S_EMPTYSTR,
     S_ETH,
+    ZERO,
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
@@ -72,8 +73,8 @@ class CSVExporter(object):
             taxable_received_in_profit_currency: FVal,
             timestamp: typing.Timestamp,
             is_virtual: bool = False,
-            taxable_amount: FVal = FVal(0),
-            taxable_bought_cost: FVal = FVal(0),
+            taxable_amount: FVal = ZERO,
+            taxable_bought_cost: FVal = ZERO,
     ) -> None:
         row = len(self.all_events_csv) + 2
         if event_type == EV_BUY:
@@ -106,7 +107,7 @@ class CSVExporter(object):
             'received_in_asset': received_in_asset,
             'net_profit_or_loss': net_profit_or_loss,
             'time': timestamp,
-            'is_virtual': is_virtual
+            'is_virtual': is_virtual,
         }
         log.debug('csv event', **make_sensitive(entry))
         self.all_events.append(entry)
@@ -164,7 +165,7 @@ class CSVExporter(object):
             received_in_asset=amount,
             taxable_received_in_profit_currency=FVal(0),
             timestamp=timestamp,
-            is_virtual=is_virtual
+            is_virtual=is_virtual,
         )
 
     def add_sell(
@@ -276,7 +277,7 @@ class CSVExporter(object):
             'gained_asset': gained_asset,
             'gained_amount': gained_amount,
             'lent_amount': lent_amount,
-            'profit_in_{}'.format(self.profit_currency): gain_in_profit_currency
+            'profit_in_{}'.format(self.profit_currency): gain_in_profit_currency,
         })
         self.add_to_allevents(
             event_type=EV_INTEREST_PAYMENT,

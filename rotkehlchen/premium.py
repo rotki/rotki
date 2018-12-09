@@ -1,15 +1,17 @@
-import time
+import base64
 import hashlib
 import hmac
-import base64
-import requests
+import logging
+import time
+from binascii import Error as binascii_error
 from http import HTTPStatus
 from urllib.parse import urlencode
-from binascii import Error as binascii_error
-from rotkehlchen.utils import rlk_jsonloads
-from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 
-import logging
+import requests
+
+from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
+from rotkehlchen.utils import rlk_jsonloads
+
 logger = logging.getLogger(__name__)
 
 HANDLABLE_STATUS_CODES = [
@@ -110,7 +112,7 @@ class Premium(object):
         signature = hmac.new(
             self.secret,
             message,
-            hashlib.sha512
+            hashlib.sha512,
         )
         return signature, req
 

@@ -60,7 +60,7 @@ def query_ethereum_txlist(
         # else unknown error
         raise ValueError(
             'Failed to query txlist from etherscan with query: {} . '
-            'Response was: {}'.format(reqstring, resp)
+            'Response was: {}'.format(reqstring, resp),
         )
 
     log.debug('Etherscan tx list query result', results_num=len(resp['result']))
@@ -93,7 +93,7 @@ def query_etherscan_for_transactions(accounts: List[EthAddress]) -> List[Ethereu
                 query_ethereum_txlist,
                 account,
                 False,
-            )
+            ),
         )
         transactions.extend(
             retry_calls(
@@ -103,7 +103,7 @@ def query_etherscan_for_transactions(accounts: List[EthAddress]) -> List[Ethereu
                 query_ethereum_txlist,
                 account,
                 True,
-            )
+            ),
         )
 
     transactions.sort(key=lambda tx: tx.timestamp)

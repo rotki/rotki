@@ -149,7 +149,7 @@ class Accountant(object):
     def set_main_currency(self, currency: FiatAsset) -> None:
         if currency not in FIAT_CURRENCIES:
             raise ValueError(
-                'Attempted to set unsupported "{}" as main currency.'.format(currency)
+                'Attempted to set unsupported "{}" as main currency.'.format(currency),
             )
 
         self.profit_currency = currency

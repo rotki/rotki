@@ -52,7 +52,7 @@ class Ethchain(object):
                 target = '0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3'
                 if genesis_hash != target:
                     log.warning(
-                        'Connected to a local ethereum node but it is not on the ethereum mainnet'
+                        'Connected to a local ethereum node but it is not on the ethereum mainnet',
                     )
                     self.connected = False
                     message = (
@@ -135,7 +135,7 @@ class Ethchain(object):
             )
             eth_resp = request_get(
                 'https://api.etherscan.io/api?module=account&action=balance&address=%s'
-                % account
+                % account,
             )
             if eth_resp['status'] != 1:
                 raise ValueError('Failed to query etherscan for accounts balance')
@@ -179,7 +179,7 @@ class Ethchain(object):
                 )
                 eth_resp = request_get(
                     'https://api.etherscan.io/api?module=account&action=balancemulti&address=%s' %
-                    ','.join(account_slice)
+                    ','.join(account_slice),
                 )
                 if eth_resp['status'] != 1:
                     raise ValueError('Failed to query etherscan for accounts balance')
@@ -222,7 +222,7 @@ class Ethchain(object):
         if self.connected:
             token_contract = self.web3.eth.contract(  # pylint: disable=no-member
                 address=token_address,
-                abi=self.token_abi
+                abi=self.token_abi,
             )
 
             for account in accounts:
@@ -274,7 +274,7 @@ class Ethchain(object):
                     eth_address=account,
                     token_address=token_address,
                     token_symbol=token_symbol,
-                    amount=token_amount
+                    amount=token_amount,
                 )
 
         return balances

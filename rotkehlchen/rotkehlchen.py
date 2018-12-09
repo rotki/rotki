@@ -99,7 +99,7 @@ class Rotkehlchen(object):
             self.kraken = Kraken(
                 str.encode(secret_data['kraken']['api_key']),
                 str.encode(secret_data['kraken']['api_secret']),
-                self.data_dir
+                self.data_dir,
             )
             self.connected_exchanges.append('kraken')
             self.trades_historian.set_exchange('kraken', self.kraken)
@@ -109,7 +109,7 @@ class Rotkehlchen(object):
                 str.encode(secret_data['poloniex']['api_key']),
                 str.encode(secret_data['poloniex']['api_secret']),
                 self.inquirer,
-                self.data_dir
+                self.data_dir,
             )
             self.connected_exchanges.append('poloniex')
             self.trades_historian.set_exchange('poloniex', self.poloniex)
@@ -119,7 +119,7 @@ class Rotkehlchen(object):
                 str.encode(secret_data['bittrex']['api_key']),
                 str.encode(secret_data['bittrex']['api_secret']),
                 self.inquirer,
-                self.data_dir
+                self.data_dir,
             )
             self.connected_exchanges.append('bittrex')
             self.trades_historian.set_exchange('bittrex', self.bittrex)
@@ -129,7 +129,7 @@ class Rotkehlchen(object):
                 str.encode(secret_data['binance']['api_key']),
                 str.encode(secret_data['binance']['api_secret']),
                 self.inquirer,
-                self.data_dir
+                self.data_dir,
             )
             self.connected_exchanges.append('binance')
             self.trades_historian.set_exchange('binance', self.binance)
@@ -139,7 +139,7 @@ class Rotkehlchen(object):
                 str.encode(secret_data['bitmex']['api_key']),
                 str.encode(secret_data['bitmex']['api_secret']),
                 self.inquirer,
-                self.data_dir
+                self.data_dir,
             )
             self.connected_exchanges.append('bitmex')
             self.trades_historian.set_exchange('bitmex', self.bitmex)
@@ -168,7 +168,7 @@ class Rotkehlchen(object):
                 shutil.rmtree(user_dir)
                 raise AuthenticationError(
                     'Could not verify keys for the new account. '
-                    '{}'.format(empty_or_error)
+                    '{}'.format(empty_or_error),
                 )
         else:
             # If we got premium initialize it and try to sync with the server
@@ -178,12 +178,12 @@ class Rotkehlchen(object):
                 api_secret = premium_credentials[1]
                 self.premium, valid, empty_or_error = premium_create_and_verify(
                     api_key,
-                    api_secret
+                    api_secret,
                 )
                 if not valid:
                     log.error(
                         'The API keys found in the Database are not valid. Perhaps '
-                        'they expired?'
+                        'they expired?',
                     )
                 del self.premium
                 self.premium = None
@@ -197,7 +197,7 @@ class Rotkehlchen(object):
                 log.info('DB data at server newer than local')
                 raise PermissionError(
                     'Rotkehlchen Server has newer version of your DB data. '
-                    'Should we replace local data with the server\'s?'
+                    'Should we replace local data with the server\'s?',
                 )
             elif sync_approval == 'yes' or sync_approval == 'unknown' and create_new:
                 log.info('User approved data sync from server')
@@ -247,7 +247,7 @@ class Rotkehlchen(object):
             ignored_assets=self.data.db.get_ignored_assets(),
             include_crypto2crypto=db_settings['include_crypto2crypto'],
             taxfree_after_period=db_settings['taxfree_after_period'],
-            include_gas_costs=db_settings['include_gas_costs']
+            include_gas_costs=db_settings['include_gas_costs'],
         )
 
         # Initialize the rotkehlchen logger
@@ -264,7 +264,7 @@ class Rotkehlchen(object):
         )
 
     def logout(self):
-        user = self.data.username,
+        user = self.data.username
         log.info(
             'Logging out user',
             user=user,
@@ -349,7 +349,7 @@ class Rotkehlchen(object):
             data,
             our_hash,
             our_last_write_ts,
-            'zlib'
+            'zlib',
         )
         if not success:
             log.debug('upload to server -- upload error', error=result_or_error)
@@ -475,7 +475,7 @@ class Rotkehlchen(object):
             usd_rate = query_fiat_pair(currency, 'USD')
             result[currency] = {
                 'amount': amount,
-                'usd_value': amount * usd_rate
+                'usd_value': amount * usd_rate,
             }
 
         return result
@@ -508,13 +508,13 @@ class Rotkehlchen(object):
 
         # calculate net usd value
         net_usd = FVal(0)
-        for k, v in combined.items():
+        for _, v in combined.items():
             net_usd += FVal(v['usd_value'])
 
         stats = {
             'location': {
             },
-            'net_usd': net_usd
+            'net_usd': net_usd,
         }
         for entry in total_usd_per_location:
             name = entry[0]

@@ -1,5 +1,6 @@
 # -*- coding: utf-8
 from binascii import hexlify
+
 from rotkehlchen.utils import int_to_big_endian
 
 GAS_LIMIT = 3141592  # Morden's gasLimit.
@@ -23,5 +24,5 @@ GENESIS_STUB = {
     'extraData': '0x' + hexlify(b'raiden').decode(),
     'gasLimit': GAS_LIMIT_HEX,
     # add precompiled addresses with minimal balance to avoid deletion
-    'alloc': {'%040x' % precompiled: {'balance': '0x1'} for precompiled in range(256)}
+    'alloc': {'%040x' % precompiled: {'balance': '0x1'} for precompiled in range(256)},
 }

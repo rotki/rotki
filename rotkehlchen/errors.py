@@ -50,5 +50,5 @@ class RemoteError(Exception):
 class PriceQueryUnknownFromAsset(Exception):
     def __init__(self, from_asset):
         super().__init__(
-            'Unable to query historical price for Unknown Asset: "{}"'.format(from_asset)
+            'Unable to query historical price for Unknown Asset: "{}"'.format(from_asset),
         )

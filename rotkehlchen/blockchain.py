@@ -22,7 +22,7 @@ log = RotkehlchenLogsAdapter(logger)
 # Type Aliases used in this module
 Balances = Dict[
     typing.BlockchainAsset,
-    Dict[typing.BlockchainAddress, Dict[Union[str, typing.Asset], FVal]]
+    Dict[typing.BlockchainAddress, Dict[Union[str, typing.Asset], FVal]],
 ]
 Totals = Dict[typing.BlockchainAsset, Dict[str, FVal]]
 BlockchainBalancesUpdate = Dict[str, Union[Balances, Totals]]
@@ -88,7 +88,7 @@ class Blockchain(object):
         except BadFunctionCallOutput as e:
             log.error(
                 'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
-                'exception: {}'.format(str(e))
+                'exception: {}'.format(str(e)),
             )
             msg = (
                 'Tried to use the ethereum chain of a local client to query '
@@ -101,7 +101,7 @@ class Blockchain(object):
 
     def query_btc_account_balance(self, account: typing.BTCAddress) -> FVal:
         btc_resp = request_get(
-            'https://blockchain.info/q/addressbalance/%s' % account
+            'https://blockchain.info/q/addressbalance/%s' % account,
         )
         return FVal(btc_resp) * FVal('0.00000001')  # result is in satoshis
 
@@ -117,7 +117,7 @@ class Blockchain(object):
             total += balance
             self.balances[S_BTC][account] = {
                 'amount': balance,
-                'usd_value': balance * btc_usd_price
+                'usd_value': balance * btc_usd_price,
             }
 
         self.totals[S_BTC] = {'amount': total, 'usd_value': total * btc_usd_price}
@@ -175,11 +175,11 @@ class Blockchain(object):
             raise ValueError('Programmer error: Should be append or remove')
         self.totals[S_BTC]['amount'] = add_or_sub(
             self.totals[S_BTC].get('amount', FVal(0)),
-            balance
+            balance,
         )
         self.totals[S_BTC]['usd_value'] = add_or_sub(
             self.totals[S_BTC].get('usd_value', FVal(0)),
-            usd_balance
+            usd_balance,
         )
 
     def modify_eth_account(
@@ -207,11 +207,11 @@ class Blockchain(object):
             raise ValueError('Programmer error: Should be append or remove')
         self.totals[S_ETH]['amount'] = add_or_sub(
             self.totals[S_ETH].get('amount', FVal(0)),
-            balance
+            balance,
         )
         self.totals[S_ETH]['usd_value'] = add_or_sub(
             self.totals[S_ETH].get('usd_value', FVal(0)),
-            usd_balance
+            usd_balance,
         )
 
         for token in self.owned_eth_tokens:
@@ -224,7 +224,7 @@ class Blockchain(object):
                 token,
                 self.all_eth_tokens[token]['address'],
                 self.all_eth_tokens[token]['decimal'],
-                account
+                account,
             )
             if token_balance == 0:
                 continue
@@ -243,7 +243,7 @@ class Blockchain(object):
                 'usd_value': add_or_sub(
                     self.totals[token].get('usd_value', FVal(0)),
                     usd_value,
-                )
+                ),
             }
 
     def add_blockchain_account(
@@ -288,17 +288,17 @@ class Blockchain(object):
             except BadFunctionCallOutput as e:
                 log.error(
                     'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
-                    'exception: {}'.format(str(e))
+                    'exception: {}'.format(str(e)),
                 )
                 raise EthSyncError(
                     'Tried to use the ethereum chain of a local client to edit '
-                    'an eth account but the chain is not synced.'
+                    'an eth account but the chain is not synced.',
                 )
 
         else:
             raise InputError(
                 'Unsupported blockchain {} provided at remove_blockchain_account'.format(
-                    blockchain)
+                    blockchain),
             )
 
         return {'per_account': self.balances, 'totals': self.totals}
@@ -334,7 +334,7 @@ class Blockchain(object):
 
             self.totals[token] = {
                 'amount': token_total,
-                'usd_value': token_total * token_usd_price[token]
+                'usd_value': token_total * token_usd_price[token],
             }
 
         self.balances[S_ETH] = cast(

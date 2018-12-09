@@ -1,5 +1,7 @@
 from typing import cast
+
 from rotkehlchen import typing
+from rotkehlchen.fval import FVal
 
 ETH_DAO_FORK_TS = 1469020840  # 2016-07-20 13:20:40 UTC
 BTC_BCH_FORK_TS = 1501593374  # 2017-08-01 13:16:14 UTC
@@ -34,3 +36,6 @@ EV_ASSET_MOVE = typing.EventType('asset_movement')
 EV_LOAN_SETTLE = typing.EventType('loan_settlement')
 EV_INTEREST_PAYMENT = typing.EventType('interest_rate_payment')
 EV_MARGIN_CLOSE = typing.EventType('margin_position_close')
+
+
+ZERO = FVal(0)

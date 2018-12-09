@@ -52,7 +52,7 @@ def query_cryptocompare_for_fiat_price(asset: typing.Asset) -> FVal:
         'requests.get',
         requests.get,
         u'https://min-api.cryptocompare.com/data/price?'
-        'fsym={}&tsyms=USD'.format(asset)
+        'fsym={}&tsyms=USD'.format(asset),
     )
 
     if resp.status_code != 200:
@@ -128,7 +128,7 @@ class Inquirer(object):
                         'Got cached forex rate',
                         from_currency=from_currency,
                         to_currency=to_currency,
-                        rate=rate
+                        rate=rate,
                     )
                 return rate
 

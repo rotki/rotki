@@ -135,7 +135,7 @@ def geth_wait_and_check(ethchain_client, rpc_port, privatekeys, random_marker):
             if running_marker != random_marker:
                 raise RuntimeError(
                     'the test marker does not match, maybe two tests are running in '
-                    'parallel with the same port?'
+                    'parallel with the same port?',
                 )
 
     if jsonrpc_running is False:

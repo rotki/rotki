@@ -196,7 +196,7 @@ def trade_from_kraken(kraken_trade):
         fee=fee,
         fee_currency=quote_currency,
         amount=amount,
-        location='kraken'
+        location='kraken',
     )
 
 
@@ -224,7 +224,7 @@ class Kraken(Exchange):
 
         resp = self.query_private(
             'TradeVolume',
-            req={'pair': 'XETHXXBT', 'fee-info': True}
+            req={'pair': 'XETHXXBT', 'fee-info': True},
         )
         with self.lock:
             # Assuming all fees are the same for all pairs that we trade here,
@@ -327,15 +327,15 @@ class Kraken(Exchange):
             signature = hmac.new(
                 base64.b64decode(self.secret),
                 message,
-                hashlib.sha512
+                hashlib.sha512,
             )
             self.session.headers.update({
-                'API-Sign': base64.b64encode(signature.digest())
+                'API-Sign': base64.b64encode(signature.digest()),
             })
             log.debug('Kraken Private API query', request_url=urlpath, data=post_data)
             response = self.session.post(
                 'https://api.kraken.com' + urlpath,
-                data=post_data.encode()
+                data=post_data.encode(),
             )
 
         return self.check_and_get_response(response, method)
@@ -355,7 +355,7 @@ class Kraken(Exchange):
     def get_fiat_prices_from_ticker(self):
         self.ticker = self.query_public(
             'Ticker',
-            req={'pair': ','.join(self.tradeable_pairs.keys())}
+            req={'pair': ','.join(self.tradeable_pairs.keys())},
         )
         self.eurprice['BTC'] = FVal(self.ticker['XXBTZEUR']['c'][0])
         self.usdprice['BTC'] = FVal(self.ticker['XXBTZUSD']['c'][0])
@@ -408,7 +408,7 @@ class Kraken(Exchange):
 
         if pair not in self.tradeable_pairs:
             raise ValueError(
-                'Could not find a BTC tradeable pair in kraken for "{}"'.format(asset)
+                'Could not find a BTC tradeable pair in kraken for "{}"'.format(asset),
             )
         btc_price = FVal(self.ticker[pair]['c'][0])
         common_name = KRAKEN_TO_WORLD[asset]
@@ -481,7 +481,7 @@ class Kraken(Exchange):
             endpoint=endpoint,
             start_ts=start_ts,
             end_ts=end_ts,
-            extra_dict=extra_dict
+            extra_dict=extra_dict,
         )
         count = response['count']
         offset = len(response[keyname])
@@ -499,7 +499,7 @@ class Kraken(Exchange):
                 start_ts=start_ts,
                 end_ts=end_ts,
                 offset=offset,
-                extra_dict=extra_dict
+                extra_dict=extra_dict,
             )
             assert count == response['count']
             response_length = len(response[keyname])
@@ -514,7 +514,7 @@ class Kraken(Exchange):
                 # send us enough results or thinks it has more than it really does
                 log.warning(
                     'Missing {} results when querying kraken endpoint {}'.format(
-                        count - offset, endpoint)
+                        count - offset, endpoint),
                 )
                 break
 
@@ -569,7 +569,7 @@ class Kraken(Exchange):
             cache = self.check_trades_cache(
                 start_ts,
                 end_at_least_ts,
-                special_name='deposits_withdrawals'
+                special_name='deposits_withdrawals',
             )
 
         if cache is not None:
@@ -595,7 +595,7 @@ class Kraken(Exchange):
                     result,
                     start_ts,
                     end_ts,
-                    special_name='deposits_withdrawals'
+                    special_name='deposits_withdrawals',
                 )
 
         log.debug('Kraken deposit/withdrawals query result', num_results=len(result))
@@ -609,7 +609,7 @@ class Kraken(Exchange):
                 timestamp=convert_to_int(movement['time'], accept_only_exact=False),
                 asset=KRAKEN_TO_WORLD[movement['asset']],
                 amount=FVal(movement['amount']),
-                fee=FVal(movement['fee'])
+                fee=FVal(movement['fee']),
             ))
 
         return movements
