@@ -264,7 +264,7 @@ class Rotkehlchen(object):
         )
 
     def logout(self):
-        user = self.data.username,
+        user = self.data.username
         log.info(
             'Logging out user',
             user=user,
@@ -508,7 +508,7 @@ class Rotkehlchen(object):
 
         # calculate net usd value
         net_usd = FVal(0)
-        for k, v in combined.items():
+        for _, v in combined.items():
             net_usd += FVal(v['usd_value'])
 
         stats = {

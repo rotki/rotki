@@ -14,6 +14,7 @@ from rotkehlchen.constants import (
     EV_TX_GAS_COST,
     S_EMPTYSTR,
     S_ETH,
+    ZERO,
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
@@ -72,8 +73,8 @@ class CSVExporter(object):
             taxable_received_in_profit_currency: FVal,
             timestamp: typing.Timestamp,
             is_virtual: bool = False,
-            taxable_amount: FVal = FVal(0),
-            taxable_bought_cost: FVal = FVal(0),
+            taxable_amount: FVal = ZERO,
+            taxable_bought_cost: FVal = ZERO,
     ) -> None:
         row = len(self.all_events_csv) + 2
         if event_type == EV_BUY:

@@ -154,7 +154,7 @@ def combine_stat_dicts(list_of_dicts):
 
 def dict_get_sumof(d, attribute, **args):
     sum = 0
-    for key, value in d.items():
+    for _, value in d.items():
         sum += value[attribute]
     return sum
 

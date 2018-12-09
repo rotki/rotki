@@ -630,13 +630,13 @@ class TradesHistorian(object):
                         if not self.read_manual_margin_positions:
                             poloniex_margin_trades.append(trade_from_poloniex(trade, pair))
                     else:
-                        raise ValueError("Unexpected poloniex trade category: {}".format(category))
+                        raise ValueError('Unexpected poloniex trade category: {}'.format(category))
 
             if self.read_manual_margin_positions:
                 # Just read the manual positions log and make virtual trades that
                 # correspond to the profits
                 assert poloniex_margin_trades == list(), (
-                    "poloniex margin trades list should be empty here"
+                    'poloniex margin trades list should be empty here'
                 )
                 poloniex_margin_trades = do_read_manual_margin_positions(
                     self.data_directory,

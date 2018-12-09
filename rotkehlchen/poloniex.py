@@ -323,7 +323,7 @@ class Poloniex(Exchange):
         result = cast(Dict, result)
 
         results_length = 0
-        for r, v in result.items():
+        for _, v in result.items():
             results_length += len(v)
 
         log.debug('Poloniex trade history query', results_num=results_length)
