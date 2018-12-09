@@ -302,8 +302,12 @@ class DataHandler(object):
     def get_fiat_balances(self) -> Dict[typing.FiatAsset, str]:
         return self.db.get_fiat_balances()
 
-    def get_external_trades(self) -> List[ExternalTrade]:
-        return self.db.get_external_trades()
+    def get_external_trades(
+            self,
+            from_ts: Optional[typing.Timestamp] = None,
+            to_ts: Optional[typing.Timestamp] = None,
+    ) -> List[ExternalTrade]:
+        return self.db.get_external_trades(from_ts, to_ts)
 
     def add_external_trade(
             self,

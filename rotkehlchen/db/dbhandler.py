@@ -698,7 +698,7 @@ class DBHandler(object):
             bindings = (from_ts,)
             if to_ts:
                 query += 'AND time <= ? '
-                bindings = (from_ts, to_ts,)
+                bindings = (from_ts, to_ts)
         elif to_ts:
             query += 'AND time <= ? '
             bindings = (to_ts,)

@@ -203,7 +203,7 @@ def test_writting_fetching_external_trades(data_dir, username):
         'otc_notes': 'a note',
     }
     trade2 = {
-        'otc_timestamp': '10/03/2018 23:35',
+        'otc_timestamp': '15/03/2018 23:35',
         'otc_pair': 'ETH_EUR',
         'otc_type': 'buy',
         'otc_amount': '5',
@@ -222,6 +222,23 @@ def test_writting_fetching_external_trades(data_dir, username):
     assert result[0] == from_otc_trade(trade1)
     del result[1]['id']
     assert result[1] == from_otc_trade(trade2)
+
+    # query trades in period
+    result = data.get_external_trades(
+        from_ts=1520553600,  # 09/03/2018
+        to_ts=1520726400,  # 11/03/2018
+    )
+    assert len(result) == 1
+    del result[0]['id']
+    assert result[0] == from_otc_trade(trade1)
+
+    # query trades only with to_ts
+    result = data.get_external_trades(
+        to_ts=1520726400,  # 11/03/2018
+    )
+    assert len(result) == 1
+    del result[0]['id']
+    assert result[0] == from_otc_trade(trade1)
 
     # edit a trade and check the edit made it in the DB
     trade1['otc_rate'] = '120'
