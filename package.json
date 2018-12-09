@@ -23,7 +23,6 @@
         "chai-as-promised": "^7.1.1",
         "dotenv": "^6.1.0",
         "electron": "1.8.4",
-        "electron-context-menu": "^0.10.0",
         "electron-packager": "^8.7.2",
         "electron-rebuild": "^1.5.7",
         "mocha": "^5.2.0",
