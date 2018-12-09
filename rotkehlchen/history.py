@@ -63,8 +63,8 @@ def include_external_trades(db, start_ts, end_ts, history):
     return history
 
 
-def do_read_manual_margin_positions(data_directory):
-    manual_margin_path = os.path.join(data_directory, MANUAL_MARGINS_LOGFILE)
+def do_read_manual_margin_positions(user_directory):
+    manual_margin_path = os.path.join(user_directory, MANUAL_MARGINS_LOGFILE)
     if os.path.isfile(manual_margin_path):
         with open(manual_margin_path, 'r') as f:
             margin_data = rlk_jsonloads(f.read())
@@ -576,7 +576,7 @@ class TradesHistorian(object):
 
     def __init__(
             self,
-            data_directory,
+            user_directory,
             db,
             eth_accounts,
             historical_data_start,
@@ -587,7 +587,7 @@ class TradesHistorian(object):
         self.bittrex = None
         self.bitmex = None
         self.binance = None
-        self.data_directory = data_directory
+        self.user_directory = user_directory
         self.db = db
         self.eth_accounts = eth_accounts
         # get the start date for historical data
@@ -639,7 +639,7 @@ class TradesHistorian(object):
                     'poloniex margin trades list should be empty here'
                 )
                 poloniex_margin_trades = do_read_manual_margin_positions(
-                    self.data_directory,
+                    self.user_directory,
                 )
             else:
                 poloniex_margin_trades.sort(key=lambda trade: trade.timestamp)
@@ -774,10 +774,10 @@ class TradesHistorian(object):
         history = limit_trade_list_to_period(history, start_ts, end_ts)
 
         # Write to files
-        historyfile_path = os.path.join(self.data_directory, TRADES_HISTORYFILE)
+        historyfile_path = os.path.join(self.user_directory, TRADES_HISTORYFILE)
         write_tupledata_history_in_file(history, historyfile_path, start_ts, end_ts)
         if self.poloniex is not None and not self.read_manual_margin_positions:
-            marginfile_path = os.path.join(self.data_directory, MARGIN_HISTORYFILE)
+            marginfile_path = os.path.join(self.user_directory, MARGIN_HISTORYFILE)
             write_tupledata_history_in_file(
                 poloniex_margin_trades,
                 marginfile_path,
@@ -786,11 +786,11 @@ class TradesHistorian(object):
             )
 
         if self.poloniex is not None:
-            loansfile_path = os.path.join(self.data_directory, LOANS_HISTORYFILE)
+            loansfile_path = os.path.join(self.user_directory, LOANS_HISTORYFILE)
             write_history_data_in_file(polo_loans, loansfile_path, start_ts, end_ts)
-        assetmovementsfile_path = os.path.join(self.data_directory, ASSETMOVEMENTS_HISTORYFILE)
+        assetmovementsfile_path = os.path.join(self.user_directory, ASSETMOVEMENTS_HISTORYFILE)
         write_tupledata_history_in_file(asset_movements, assetmovementsfile_path, start_ts, end_ts)
-        eth_tx_log_path = os.path.join(self.data_directory, ETHEREUM_TX_LOGFILE)
+        eth_tx_log_path = os.path.join(self.user_directory, ETHEREUM_TX_LOGFILE)
         write_tupledata_history_in_file(eth_transactions, eth_tx_log_path, start_ts, end_ts)
 
         # After writting everything to files include the external trades in the history
@@ -820,7 +820,7 @@ class TradesHistorian(object):
             end_at_least_ts=end_at_least_ts,
         )
 
-        historyfile_path = os.path.join(self.data_directory, TRADES_HISTORYFILE)
+        historyfile_path = os.path.join(self.user_directory, TRADES_HISTORYFILE)
         if os.path.isfile(historyfile_path):
             with open(historyfile_path, 'r') as infile:
                 try:
@@ -856,7 +856,7 @@ class TradesHistorian(object):
                     ) is not None
 
                 if not self.read_manual_margin_positions:
-                    marginfile_path = os.path.join(self.data_directory, MARGIN_HISTORYFILE)
+                    marginfile_path = os.path.join(self.user_directory, MARGIN_HISTORYFILE)
                     margin_file_contents = get_jsonfile_contents_or_empty_dict(marginfile_path)
                     margin_history_is_okay = data_up_todate(
                         margin_file_contents,
@@ -866,10 +866,10 @@ class TradesHistorian(object):
                 else:
                     margin_history_is_okay = True
                     margin_file_contents = do_read_manual_margin_positions(
-                        self.data_directory,
+                        self.user_directory,
                     )
 
-                loansfile_path = os.path.join(self.data_directory, LOANS_HISTORYFILE)
+                loansfile_path = os.path.join(self.user_directory, LOANS_HISTORYFILE)
                 loan_file_contents = get_jsonfile_contents_or_empty_dict(loansfile_path)
                 loan_history_is_okay = data_up_todate(
                     loan_file_contents,
@@ -878,7 +878,7 @@ class TradesHistorian(object):
                 )
 
                 assetmovementsfile_path = os.path.join(
-                    self.data_directory,
+                    self.user_directory,
                     ASSETMOVEMENTS_HISTORYFILE,
                 )
                 asset_movements_contents = get_jsonfile_contents_or_empty_dict(
@@ -890,7 +890,7 @@ class TradesHistorian(object):
                     end_at_least_ts,
                 )
 
-                eth_tx_log_path = os.path.join(self.data_directory, ETHEREUM_TX_LOGFILE)
+                eth_tx_log_path = os.path.join(self.user_directory, ETHEREUM_TX_LOGFILE)
                 eth_tx_log_contents = get_jsonfile_contents_or_empty_dict(eth_tx_log_path)
                 eth_tx_log_history_history_is_okay = data_up_todate(
                     eth_tx_log_contents,

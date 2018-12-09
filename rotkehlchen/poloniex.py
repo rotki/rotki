@@ -95,9 +95,9 @@ class Poloniex(Exchange):
             api_key: typing.ApiKey,
             secret: typing.ApiSecret,
             inquirer: Inquirer,
-            data_dir: typing.FilePath,
+            user_directory: typing.FilePath,
     ):
-        super(Poloniex, self).__init__('poloniex', api_key, secret, data_dir)
+        super(Poloniex, self).__init__('poloniex', api_key, secret, user_directory)
 
         self.uri = 'https://poloniex.com/'
         self.public_uri = self.uri + 'public?command='
@@ -344,7 +344,7 @@ class Poloniex(Exchange):
         It can throw OSError, IOError if the file does not exist and csv.Error if
         the file is not proper CSV"""
         # the default filename, and should be (if at all) inside the data directory
-        path = os.path.join(self.data_dir, "lendingHistory.csv")
+        path = os.path.join(self.user_directory, "lendingHistory.csv")
         lending_history = list()
         with open(path, 'r') as csvfile:
             history = csv.reader(csvfile, delimiter=',', quotechar='|')

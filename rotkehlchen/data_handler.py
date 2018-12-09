@@ -171,7 +171,7 @@ class DataHandler(object):
                     'User {} exists but DB is missing. Somehow must have been manually '
                     'deleted or is corrupt. Please recreate the user account.'.format(username))
 
-        self.db: DBHandler = DBHandler(user_data_dir, username, password)
+        self.db: DBHandler = DBHandler(user_data_dir, password)
         self.user_data_dir = user_data_dir
         return user_data_dir
 

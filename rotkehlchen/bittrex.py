@@ -101,9 +101,9 @@ class Bittrex(Exchange):
             api_key: typing.ApiKey,
             secret: typing.ApiSecret,
             inquirer: Inquirer,
-            data_dir: typing.FilePath,
+            user_directory: typing.FilePath,
     ):
-        super(Bittrex, self).__init__('bittrex', api_key, secret, data_dir)
+        super(Bittrex, self).__init__('bittrex', api_key, secret, user_directory)
         self.apiversion = 'v1.1'
         self.uri = 'https://bittrex.com/api/{}/'.format(self.apiversion)
         self.inquirer = inquirer

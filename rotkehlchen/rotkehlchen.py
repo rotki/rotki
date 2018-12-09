@@ -99,7 +99,7 @@ class Rotkehlchen(object):
             self.kraken = Kraken(
                 str.encode(secret_data['kraken']['api_key']),
                 str.encode(secret_data['kraken']['api_secret']),
-                self.data_dir,
+                self.user_directory,
             )
             self.connected_exchanges.append('kraken')
             self.trades_historian.set_exchange('kraken', self.kraken)
@@ -109,7 +109,7 @@ class Rotkehlchen(object):
                 str.encode(secret_data['poloniex']['api_key']),
                 str.encode(secret_data['poloniex']['api_secret']),
                 self.inquirer,
-                self.data_dir,
+                self.user_directory,
             )
             self.connected_exchanges.append('poloniex')
             self.trades_historian.set_exchange('poloniex', self.poloniex)
@@ -119,7 +119,7 @@ class Rotkehlchen(object):
                 str.encode(secret_data['bittrex']['api_key']),
                 str.encode(secret_data['bittrex']['api_secret']),
                 self.inquirer,
-                self.data_dir,
+                self.user_directory,
             )
             self.connected_exchanges.append('bittrex')
             self.trades_historian.set_exchange('bittrex', self.bittrex)
@@ -129,7 +129,7 @@ class Rotkehlchen(object):
                 str.encode(secret_data['binance']['api_key']),
                 str.encode(secret_data['binance']['api_secret']),
                 self.inquirer,
-                self.data_dir,
+                self.user_directory,
             )
             self.connected_exchanges.append('binance')
             self.trades_historian.set_exchange('binance', self.binance)
@@ -139,7 +139,7 @@ class Rotkehlchen(object):
                 str.encode(secret_data['bitmex']['api_key']),
                 str.encode(secret_data['bitmex']['api_secret']),
                 self.inquirer,
-                self.data_dir,
+                self.user_directory,
             )
             self.connected_exchanges.append('bitmex')
             self.trades_historian.set_exchange('bitmex', self.bitmex)
@@ -156,7 +156,7 @@ class Rotkehlchen(object):
         if self.bitmex is not None:
             self.delete_exchange_data('bitmex')
 
-    def try_premium_at_start(self, api_key, api_secret, create_new, sync_approval, user_dir):
+    def try_premium_at_start(self, api_key, api_secret, create_new, sync_approval):
         """Check if new user provided api pair or we already got one in the DB"""
 
         if api_key != '':
@@ -165,7 +165,7 @@ class Rotkehlchen(object):
                 log.error('Given API key is invalid')
                 # At this point we are at a new user trying to create an account with
                 # premium API keys and we failed. But a directory was created. Remove it.
-                shutil.rmtree(user_dir)
+                shutil.rmtree(self.user_directory)
                 raise AuthenticationError(
                     'Could not verify keys for the new account. '
                     '{}'.format(empty_or_error),
@@ -219,18 +219,23 @@ class Rotkehlchen(object):
         )
         # unlock or create the DB
         self.password = password
-        user_dir = self.data.unlock(user, password, create_new)
-        self.try_premium_at_start(api_key, api_secret, create_new, sync_approval, user_dir)
+        self.user_directory = self.data.unlock(user, password, create_new)
+        self.try_premium_at_start(
+            api_key=api_key,
+            api_secret=api_secret,
+            create_new=create_new,
+            sync_approval=sync_approval,
+        )
 
         secret_data = self.data.db.get_exchange_secrets()
         settings = self.data.db.get_settings()
         historical_data_start = settings['historical_data_start']
         eth_rpc_port = settings['eth_rpc_port']
         self.trades_historian = TradesHistorian(
-            self.data_dir,
-            self.data.db,
-            self.data.get_eth_accounts(),
-            historical_data_start,
+            user_directory=self.user_directory,
+            db=self.data.db,
+            eth_accounts=self.data.get_eth_accounts(),
+            historical_data_start=historical_data_start,
         )
         self.inquirer = Inquirer(data_dir=self.data_dir, kraken=self.kraken)
         price_historian = PriceHistorian(
@@ -242,7 +247,7 @@ class Rotkehlchen(object):
         self.accountant = Accountant(
             price_historian=price_historian,
             profit_currency=self.data.main_currency(),
-            user_directory=user_dir,
+            user_directory=self.user_directory,
             create_csv=True,
             ignored_assets=self.data.db.get_ignored_assets(),
             include_crypto2crypto=db_settings['include_crypto2crypto'],
