@@ -1,6 +1,6 @@
 import logging
 
-from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS
+from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
 from rotkehlchen.errors import PriceQueryUnknownFromAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import FIAT_CURRENCIES, NoPriceForGivenTimestamp
@@ -89,7 +89,38 @@ class TaxableEvents(object):
         assert isinstance(rate, (FVal, int))  # TODO Remove. Is temporary assert
         return rate
 
-    def handle_prefork_acquisitions(
+    def reduce_asset_amount(self, asset: Asset, amount: FVal) -> bool:
+        """Searches all buy events for asset and reduces them by amount
+        Returns True if enough buy events to reduce the asset by amount were
+        found and False otherwise.
+        """
+        if len(self.events[asset].buys) == 0:
+            return False
+
+        remaining_amount_from_last_buy = -1
+        remaining_amount = amount
+        for idx, buy_event in enumerate(self.events[asset].buys):
+            if remaining_amount < buy_event.amount:
+                stop_index = idx
+                remaining_amount_from_last_buy = buy_event.amount - remaining_amount
+            else:
+                remaining_amount -= buy_event.amount
+                if idx == len(self.events[asset].buys) - 1:
+                    stop_index = idx + 1
+
+        # Otherwise, delete all the used up buys from the list
+        del self.events[asset].buys[:stop_index]
+        # and modify the amount of the buy where we stopped if there is one
+        if remaining_amount_from_last_buy != -1:
+            self.events[asset].buys[0] = self.events[asset].buys[0]._replace(
+                amount=remaining_amount_from_last_buy,
+            )
+        elif remaining_amount != ZERO:
+            return False
+
+        return True
+
+    def handle_prefork_asset_buys(
             self,
             bought_asset,
             bought_amount,
@@ -101,10 +132,6 @@ class TaxableEvents(object):
     ):
         # TODO: Should fee also be taken into account here?
         if bought_asset == 'ETH' and timestamp < ETH_DAO_FORK_TS:
-            log.debug(
-                'Acquiring ETH before the DAO fork provides equal amount of ETC',
-                timestamp=timestamp,
-            )
             self.add_buy(
                 'ETC',
                 bought_amount,
@@ -118,10 +145,6 @@ class TaxableEvents(object):
 
         if bought_asset == 'BTC' and timestamp < BTC_BCH_FORK_TS:
             # Acquiring BTC before the BCH fork provides equal amount of BCH
-            log.debug(
-                'Acquiring BTC before the BCH fork provides equal amount of BCH',
-                timestamp=timestamp,
-            )
             self.add_buy(
                 'BCH',
                 bought_amount,
@@ -132,6 +155,23 @@ class TaxableEvents(object):
                 timestamp,
                 is_virtual=True,
             )
+
+    def handle_prefork_asset_sells(self, sold_asset, sold_amount, timestamp):
+        if sold_asset == 'ETH' and timestamp < ETH_DAO_FORK_TS:
+            if not self.reduce_asset_amount(asset='ETC', amount=sold_amount):
+                log.critical(
+                    'No documented buy found for ETC (ETH equivalent) before {}'.format(
+                        tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+                    ),
+                )
+
+        if sold_asset == 'BTC' and timestamp < BTC_BCH_FORK_TS:
+            if not self.reduce_asset_amount(asset='BCH', amount=sold_amount):
+                log.critical(
+                    'No documented buy found for BCH (BTC equivalent) before {}'.format(
+                        tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+                    ),
+                )
 
     def add_buy_and_corresponding_sell(
             self,
@@ -222,7 +262,7 @@ class TaxableEvents(object):
         paid_with_asset_rate = self.get_rate_in_profit_currency(paid_with_asset, timestamp)
         buy_rate = paid_with_asset_rate * trade_rate
 
-        self.handle_prefork_acquisitions(
+        self.handle_prefork_asset_buys(
             bought_asset=bought_asset,
             bought_amount=bought_amount,
             paid_with_asset=paid_with_asset,
@@ -360,6 +400,8 @@ class TaxableEvents(object):
                 gain=gain_in_profit_currency,
             ),
         )
+
+        self.handle_prefork_asset_sells(selling_asset, selling_amount, timestamp)
 
         if loan_settlement:
             log.debug(
@@ -593,7 +635,7 @@ class TaxableEvents(object):
             self.events[selling_asset].buys[0] = self.events[selling_asset].buys[0]._replace(
                 amount=remaining_amount_from_last_buy,
             )
-        elif remaining_sold_amount != FVal(0):
+        elif remaining_sold_amount != ZERO:
             # if we still have sold amount but no buys to satisfy it then we only
             # found buys to partially satisfy the sell
             adjusted_amount = selling_amount - taxfree_amount
