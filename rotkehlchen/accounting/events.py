@@ -94,7 +94,7 @@ class TaxableEvents(object):
         Returns True if enough buy events to reduce the asset by amount were
         found and False otherwise.
         """
-        if len(self.events[asset].buys) == 0:
+        if asset not in self.events or len(self.events[asset].buys) == 0:
             return False
 
         remaining_amount_from_last_buy = -1
@@ -103,6 +103,8 @@ class TaxableEvents(object):
             if remaining_amount < buy_event.amount:
                 stop_index = idx
                 remaining_amount_from_last_buy = buy_event.amount - remaining_amount
+                # stop iterating since we found all buys to satisfy reduction
+                break
             else:
                 remaining_amount -= buy_event.amount
                 if idx == len(self.events[asset].buys) - 1:
