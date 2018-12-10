@@ -158,42 +158,65 @@ def test_selling_crypto_bought_with_crypto(accountant):
     assert accountant.taxable_trade_pl.is_close("73.8764769569")
 
 
-history3 = [
-    {
-        "timestamp": 1446979735,
-        "pair": "ETH_EUR",
-        "type": "buy",
-        "rate": 0.2315893,
-        "cost": 335.804485,
-        "cost_currency": "EUR",
-        "fee": 0,
-        "fee_currency": "ETH",
-        "amount": 1450,
-        "location": "external",
-    }, {
-        'timestamp': 1481979135,
-        'pair': 'ETC_EUR',  # cryptocompare hourly ETC/EUR price: 1.78
-        'type': 'sell',
-        'rate': 1.78,
-        'cost': 979,
-        'cost_currency': 'EUR',
-        'fee': 0.9375,
-        'fee_currency': 'EUR',
-        'amount': 550,
-        'location': 'kraken',
-    },
-]
-
-
-def test_buying_eth_before_daofork(accountant):
+def test_buying_selling_eth_before_daofork(accountant):
+    history3 = [
+        {
+            "timestamp": 1446979735,  # 11/08/2015
+            "pair": "ETH_EUR",
+            "type": "buy",
+            "rate": 0.2315893,
+            "cost": 335.804485,
+            "cost_currency": "EUR",
+            "fee": 0,
+            "fee_currency": "ETH",
+            "amount": 1450,
+            "location": "external",
+        }, {  # selling ETH prefork should also reduce our ETC amount
+            'timestamp': 1461021812,  # 18/04/2016 (taxable)
+            'pair': 'ETH_EUR',  # cryptocompare hourly ETC/EUR price: 7.88
+            'type': 'sell',
+            'rate': 7.88,
+            'cost': 394,
+            'cost_currency': 'EUR',
+            'fee': 0.5215,
+            'fee_currency': 'EUR',
+            'amount': 50,
+            'location': 'kraken',
+        }, {  # sell ETC after the fork
+            'timestamp': 1481979135,  # 17/12/2016
+            'pair': 'ETC_EUR',  # cryptocompare hourly ETC/EUR price: 1.78
+            'type': 'sell',  # not-taxable -- considered bought with ETH so after year
+            'rate': 1.78,
+            'cost': 979,
+            'cost_currency': 'EUR',
+            'fee': 0.9375,
+            'fee_currency': 'EUR',
+            'amount': 550,
+            'location': 'kraken',
+        }, {  # selling ETH after fork should not affect ETC amount
+            'timestamp': 1482138141,  # 19/12/2016
+            'pair': 'ETH_EUR',  # cryptocompare hourly ETC/EUR price: 7.45
+            'type': 'sell',  # not taxable after 1 year
+            'rate': 7.45,
+            'cost': 74.5,
+            'cost_currency': 'EUR',
+            'fee': 0.12,
+            'fee_currency': 'EUR',
+            'amount': 10,
+            'location': 'kraken',
+        },
+    ]
     accounting_history_process(accountant, 1436979735, 1495751688, history3)
-    assert accountant.general_trade_pl.is_close("850.688385")
-    assert accountant.taxable_trade_pl.is_close("0")
+    # make sure that the intermediate ETH sell before the fork reduced our ETC
+    assert accountant.get_calculated_asset_amount('ETC') == FVal(850)
+    assert accountant.get_calculated_asset_amount('ETH') == FVal(1390)
+    assert accountant.general_trade_pl.is_close('1304.651527')
+    assert accountant.taxable_trade_pl.is_close('381.899035')
 
 
-def test_buying_btc_before_bchfork(accountant):
+def test_buying_selling_btc_before_bchfork(accountant):
     history = [{
-        "timestamp": 1491593374,
+        "timestamp": 1491593374,  # 04/07/2017
         "pair": "BTC_EUR",
         "type": "buy",
         "rate": 1128.905,
@@ -203,8 +226,19 @@ def test_buying_btc_before_bchfork(accountant):
         "fee_currency": "EUR",
         "amount": 6.5,
         "location": "external",
-    }, {
-        'timestamp': 1512693374,
+    }, {  # selling BTC prefork should also reduce the BCH equivalent -- taxable
+        "timestamp": 1500595200,  # 21/07/2017
+        "pair": "BTC_EUR",
+        "type": "sell",
+        "rate": 2380.835,
+        "cost": 1190.4175,
+        "cost_currency": "EUR",
+        "fee": 0.15,
+        "fee_currency": "EUR",
+        "amount": 0.5,
+        "location": "external",
+    }, {  # selling BCH after the fork -- taxable
+        'timestamp': 1512693374,  # 08/12/2017
         'pair': 'BCH_EUR',  # cryptocompare hourly BCH/EUR price: 995.935
         'type': 'sell',
         'rate': 995.935,
@@ -214,18 +248,33 @@ def test_buying_btc_before_bchfork(accountant):
         'fee_currency': 'EUR',
         'amount': 2.1,
         'location': 'kraken',
+    }, {
+        'timestamp': 1514937600,  # 03/01/2018
+        'pair': 'BTC_EUR',  # cryptocompare hourly BCH/EUR price: 995.935
+        'type': 'sell',
+        'rate': 12404.88,
+        'cost': 14885.856,
+        'cost_currency': 'EUR',
+        'fee': 0.52,
+        'fee_currency': 'EUR',
+        'amount': 1.2,
+        'location': 'kraken',
     }]
     accounting_history_process(accountant, 1436979735, 1519693374, history)
 
+    amount_BCH = FVal(3.9)
+    amount_BTC = FVal(4.8)
     buys = accountant.events.events['BCH'].buys
     assert len(buys) == 1
-    assert buys[0].amount == FVal(4.4)
+    assert buys[0].amount == amount_BCH
     assert buys[0].timestamp == 1491593374
     assert buys[0].rate == FVal('1128.905')
     assert buys[0].fee_rate.is_close(FVal('0.0846153846154'))
+    assert accountant.get_calculated_asset_amount('BCH') == amount_BCH
+    assert accountant.get_calculated_asset_amount('BTC') == amount_BTC
 
-    assert accountant.general_trade_pl.is_close("-279.67469231")
-    assert accountant.taxable_trade_pl.is_close("-279.67469231")
+    assert accountant.general_trade_pl.is_close("13876.6464615")
+    assert accountant.taxable_trade_pl.is_close("13876.6464615")
 
 
 history5 = history1 + [{
