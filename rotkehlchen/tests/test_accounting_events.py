@@ -22,6 +22,14 @@ def test_search_buys_calculate_profit_after_year(accountant):
             fee_rate=FVal(0.0019),
         ),
     )
+    events['BTC'].buys.append(
+        BuyEvent(
+            amount=FVal(3),  # 25/10/2016
+            timestamp=1477378304,
+            rate=FVal(603.415),
+            fee_rate=FVal(0.0017),
+        ),
+    )
 
     (
         taxable_amount,
@@ -37,7 +45,7 @@ def test_search_buys_calculate_profit_after_year(accountant):
     assert taxfree_bought_cost.is_close(FVal('1340.5005'))
     assert taxable_bought_cost.is_close(FVal('1837.3557'))
 
-    assert (len(accountant.events.events[asset].buys)) == 1, 'first buy should have been used'
+    assert (len(accountant.events.events[asset].buys)) == 2, 'first buy should have been used'
     remaining_amount = accountant.events.events[asset].buys[0].amount
     assert remaining_amount == FVal(12), '3 of 15 should have been consumed'
 
@@ -253,3 +261,93 @@ def test_search_buys_calculate_profit_sell_more_than_bought_after_year(accountan
     assert taxable_bought_cost.is_close(FVal('0'))
 
     assert (len(accountant.events.events[asset].buys)) == 0, 'only buy should have been used'
+
+
+def test_reduce_asset_amount(accountant):
+    asset = 'BTC'
+    events = accountant.events.events
+    events[asset] = Events(list(), list())
+    events[asset].buys.append(
+        BuyEvent(
+            amount=FVal(1),
+            timestamp=1446979735,  # 08/11/2015
+            rate=FVal(268.1),
+            fee_rate=FVal(0.0001),
+        ),
+    )
+    events['BTC'].buys.append(
+        BuyEvent(
+            amount=FVal(1),
+            timestamp=1467378304,  # 31/06/2016
+            rate=FVal(612.45),
+            fee_rate=FVal(0.0019),
+        ),
+    )
+    events['BTC'].buys.append(
+        BuyEvent(
+            amount=FVal(3),  # 25/10/2016
+            timestamp=1477378304,
+            rate=FVal(603.415),
+            fee_rate=FVal(0.0017),
+        ),
+    )
+
+    assert accountant.events.reduce_asset_amount(asset, FVal(1.5))
+    assert (len(accountant.events.events[asset].buys)) == 2, '1 buy should be used'
+    remaining_amount = accountant.events.events[asset].buys[0].amount
+    assert remaining_amount == FVal(0.5), '0.5 of 2nd buy should remain'
+
+
+def test_reduce_asset_amount_exact(accountant):
+    asset = 'BTC'
+    events = accountant.events.events
+    events[asset] = Events(list(), list())
+    events[asset].buys.append(
+        BuyEvent(
+            amount=FVal(1),
+            timestamp=1446979735,  # 08/11/2015
+            rate=FVal(268.1),
+            fee_rate=FVal(0.0001),
+        ),
+    )
+    events['BTC'].buys.append(
+        BuyEvent(
+            amount=FVal(1),
+            timestamp=1467378304,  # 31/06/2016
+            rate=FVal(612.45),
+            fee_rate=FVal(0.0019),
+        ),
+    )
+
+    assert accountant.events.reduce_asset_amount(asset, FVal(2))
+    assert (len(accountant.events.events[asset].buys)) == 0, 'all buys should be used'
+
+
+def test_reduce_asset_amount_not_bought(accountant):
+    asset = 'BTC'
+    assert not accountant.events.reduce_asset_amount(asset, FVal(3))
+
+
+def test_reduce_asset_amount_more_that_bought(accountant):
+    asset = 'BTC'
+    events = accountant.events.events
+    events[asset] = Events(list(), list())
+    events[asset].buys.append(
+        BuyEvent(
+            amount=FVal(1),
+            timestamp=1446979735,  # 08/11/2015
+            rate=FVal(268.1),
+            fee_rate=FVal(0.0001),
+        ),
+    )
+    events['BTC'].buys.append(
+        BuyEvent(
+            amount=FVal(1),
+            timestamp=1467378304,  # 31/06/2016
+            rate=FVal(612.45),
+            fee_rate=FVal(0.0019),
+        ),
+    )
+
+    assert not accountant.events.reduce_asset_amount(asset, FVal(3))
+    assert (len(accountant.events.events[asset].buys)) == 0, 'all buys should be used'

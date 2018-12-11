@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`231` Selling an asset that will fork, before it does now also reduces the forked asset amount.
 * :bug:`232` Multiple rotkehlchen users will no longer share same cache files.
 * :feature:`229` Rotkehlchen can now work and migrate to sqlcipher v4.
 * :bug:`206` Fixes an error when adding a bitcoin account for the first time. 
