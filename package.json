@@ -7,7 +7,7 @@
         "cryptocurrency-icons": "0.9.3",
         "datatables.net": "1.10.19",
         "datatables.net-dt": "1.10.19",
-        "zerorpc": "0.9.8"
+        "zerorpc-rotkehlchen": "0.1.0"
     },
     "devDependencies": {
         "@types/chai": "4.1.7",
@@ -22,12 +22,12 @@
         "chai": "4.2.0",
         "chai-as-promised": "7.1.1",
         "dotenv": "6.1.0",
-        "electron": "1.8.4",
-        "electron-packager": "8.7.2",
+        "electron": "3.0.12",
+        "electron-packager": "13.0.1",
         "electron-rebuild": "1.8.2",
         "mocha": "5.2.0",
         "rimraf": "2.6.2",
-        "spectron": "4.0.0",
+        "spectron": "5.0.0",
         "ts-node": "7.0.1",
         "tslint": "5.11.0",
         "tslint-eslint-rules": "5.4.0",

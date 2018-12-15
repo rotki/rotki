@@ -63,6 +63,9 @@ script:
   # that looks like this: https://www.npmjs.com/package/nan#compiling-against-nodejs-012-on-osx
   # - npm install --runtime=electron --target=1.8.4
   - npm install
+  # we need 3.0.0 since for some reason it's used as url of iojs release
+  # here: https://iojs.org/download/release/
+  - npm rebuild zeromq --runtime=electron --target=3.0.0
   - PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild
   - npm test
   # back to default in case internal travis scripts return non zero response codes.

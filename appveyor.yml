@@ -20,14 +20,14 @@ install:
     - cd pysqlcipher3
     - python setup.py build_amalgamation
     - python setup.py install
-    - cd ..     
+    - cd ..
     - pip install -r requirements.txt
 
 build_script:
     - npm install
     - npm config set python C:\Python27\python.exe
-    - set PYTHON="C:\Python27\python.exe" 
-    - npm rebuild zeromq --runtime=electron --target=1.8.4
+    - set PYTHON="C:\Python27\python.exe"
+    - npm rebuild zeromq --runtime=electron --target=3.0.0
     - node_modules\.bin\electron-rebuild
 
 test_script:
