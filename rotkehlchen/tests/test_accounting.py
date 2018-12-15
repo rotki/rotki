@@ -4,6 +4,9 @@ from rotkehlchen.errors import CorruptData
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
 
+DUMMY_ADDRESS = '0x0'
+DUMMY_HASH = '0x0'
+
 history1 = [
     {
         "timestamp": 1446979735,
@@ -348,3 +351,78 @@ def test_buy_event_creation(accountant):
     assert buys[1].timestamp == 1476979735
     assert buys[1].rate == FVal('578.505')
     assert buys[1].fee_rate == FVal('2.4e-4')
+
+
+@pytest.mark.parametrize('accounting_include_gas_costs', [False])
+def test_not_include_gas_costs(accountant):
+    history = [{
+        "timestamp": 1476979735,
+        "pair": "BTC_EUR",
+        "type": "buy",
+        "rate": 578.505,
+        "cost": 2892.525,
+        "cost_currency": "EUR",
+        "fee": 0.0012,
+        "fee_currency": "BTC",
+        "amount": 5,
+        "location": "kraken",
+    }, {
+        "timestamp": 1496979735,
+        "pair": "BTC_EUR",
+        "type": "sell",
+        "rate": 2519.62,
+        "cost": 2519.62,
+        "cost_currency": "EUR",
+        "fee": 0.02,
+        "fee_currency": "EUR",
+        "amount": 1,
+        "location": "kraken",
+    }]
+    eth_tx_list = [{
+        'timestamp': 1491062063,  # 01/04/2017
+        'block_number': 3458409,  # cryptocompare hourly ETH/EUR: 47.5
+        'hash': DUMMY_HASH,
+        'from_address': DUMMY_ADDRESS,
+        'to_address': DUMMY_ADDRESS,
+        'value': 12323,
+        'gas': 5000000,
+        'gas_price': 2000000000,
+        'gas_used': 1000000,
+    }]
+    result = accounting_history_process(
+        accountant,
+        1436979735,
+        1519693374,
+        history,
+        eth_transaction_list=eth_tx_list,
+    )
+    assert FVal(result['overview']['total_taxable_profit_loss']).is_close("1940.9561588")
+
+
+@pytest.mark.parametrize('accounting_ignored_assets', [['DASH']])
+def test_ignored_assets(accountant):
+    history = history1 + [{
+        "timestamp": 1476979735,
+        "pair": "DASH_EUR",
+        "type": "buy",
+        "rate": 9.76775956284,
+        "cost": 97.6775956284,
+        "cost_currency": "EUR",
+        "fee": 0.0011,
+        "fee_currency": "DASH",
+        "amount": 10,
+        "location": "kraken",
+    }, {
+        "timestamp": 1496979735,
+        "pair": "DASH_EUR",
+        "type": "sell",
+        "rate": 128.09,
+        "cost": 640.45,
+        "cost_currency": "EUR",
+        "fee": 0.015,
+        "fee_currency": "EUR",
+        "amount": 5,
+        "location": "kraken",
+    }]
+    result = accounting_history_process(accountant, 1436979735, 1519693374, history)
+    assert FVal(result['overview']['total_taxable_profit_loss']).is_close("557.528104903")
