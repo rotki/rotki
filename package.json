@@ -7,7 +7,7 @@
         "cryptocurrency-icons": "0.9.3",
         "datatables.net": "1.10.19",
         "datatables.net-dt": "1.10.19",
-        "zerorpc": "0.9.8"
+        "zerorpc-rotkehlchen": "0.1.0"
     },
     "devDependencies": {
         "@types/chai": "4.1.7",

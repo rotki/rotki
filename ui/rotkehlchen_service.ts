@@ -8,7 +8,7 @@ import {AsyncQueryResult} from './model/balance-result';
 import {EthTokensResult} from './model/eth_tokens_result';
 import {PeriodicClientQueryResult} from './model/periodic_client_query_result';
 
-const zerorpc = require('zerorpc');
+const zerorpc = require('zerorpc-rotkehlchen');
 // max timeout is now 9999 seconds
 const client = new zerorpc.Client({timeout: 9999, heartbeatInterval: 15000});
 
