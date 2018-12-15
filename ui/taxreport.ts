@@ -14,7 +14,7 @@ export function create_taxreport_ui() {
     str += form_button('Generate Report', 'generate_report');
     str += invisible_anchor('tax_report_anchor');
     str += table_html(2, 'report_overview');
-    str += table_html(10, 'report_details');
+    str += table_html(11, 'report_details');
     $('#page-wrapper').html(str);
 }
 
@@ -30,7 +30,7 @@ function clean_taxreport_ui() {
     $('#report_overview_table_wrapper').parent().remove();
     $('#report_details_table_wrapper').parent().remove();
     let str = table_html(2, 'report_overview');
-    str += table_html(10, 'report_details');
+    str += table_html(11, 'report_details');
     $(str).insertAfter('#tax_report_anchor');
 }
 
@@ -150,14 +150,21 @@ function create_taxreport_details(all_events: EventEntry[]) {
                 'render': (data: string) => show_float_or_empty(data)
             },
             {
-                'data': 'taxable_bought_cost',
-                'title': 'Taxable Bought Cost',
+                'data': 'taxable_bought_cost_in_profit_currency',
+                'title': 'Taxable Bought Cost in ' + settings.main_currency.ticker_symbol,
                 'render': (data: string) => show_float_or_empty(data)
             },
             {'data': 'received_asset', 'title': 'Received Asset'},
             {
-                'data': 'received_in_profit_currency',
-                'title': 'Received in ' + settings.main_currency.ticker_symbol,
+                'data': 'received_in_asset',
+                'title': 'Received In Asset',
+                'render': (data: string) => {
+                    return show_float_or_empty(data);
+                }
+            },
+            {
+                'data': 'taxable_received_in_profit_currency',
+                'title': 'Taxable Received in ' + settings.main_currency.ticker_symbol,
                 'render': (data: string) => {
                     // it's already in main currency
                     return show_float_or_empty(data);
@@ -176,7 +183,7 @@ function create_taxreport_details(all_events: EventEntry[]) {
             {'data': 'is_virtual', 'title': 'Virtual ?'}
         ],
         'pageLength': 25,
-        'order': [[8, 'asc']]
+        'order': [[9, 'asc']]
     };
     $('#report_details_table').DataTable(init_obj);
 }
