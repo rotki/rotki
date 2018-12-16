@@ -498,15 +498,16 @@ class Accountant(object):
             selling_rate = selling_asset_rate * trade.rate
             fee_in_profit_currency = self.get_fee_in_profit_currency(trade)
             gain_in_profit_currency = selling_rate * trade.amount
+            selling_amount = trade.cost
             self.events.add_sell(
                 selling_asset=selling_asset,
-                selling_amount=trade.amount,
+                selling_amount=selling_amount,
                 receiving_asset=None,
                 receiving_amount=None,
                 gain_in_profit_currency=gain_in_profit_currency,
                 total_fee_in_profit_currency=fee_in_profit_currency,
                 trade_rate=trade.rate,
-                rate_in_profit_currency=selling_rate,
+                rate_in_profit_currency=selling_asset_rate,
                 timestamp=trade.timestamp,
                 loan_settlement=True,
             )
