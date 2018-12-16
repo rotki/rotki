@@ -730,6 +730,17 @@ class TaxableEvents(object):
                     fee_rate=0,
                 ),
             )
+        elif net_gain_loss_amount < 0:
+            result = self.reduce_asset_amount(
+                asset=gain_loss_asset,
+                amount=-gain_loss_amount,
+            )
+            if not result:
+                log.critical(
+                    f'No documented buy found for {gain_loss_asset} before '
+                    f'{tsToDate(timestamp, formatstr="%d/%m/%Y %H:%M:%S")}',
+                )
+
         # count profit/loss if we are inside the query period
         if timestamp >= self.query_start_ts:
             self.margin_positions_profit_loss += gain_loss_in_profit_currency
