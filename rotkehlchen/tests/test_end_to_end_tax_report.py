@@ -105,6 +105,17 @@ trades_history = [
         'fee_currency': 'EUR',
         'amount': 10,
         'location': 'kraken',
+    }, {  # 0.0079275 * 810.49 + 0.15 * 12.4625608386372145 = 8.29454360079
+        'timestamp': 1484629704,  # 17/01/2017
+        'pair': 'BTC_DASH',  # DASH/EUR price: 12.4625608386372145
+        'type': 'settlement_buy',  # Buy DASH with BTC to settle. Essentially BTC loss
+        'rate': 0.015855,  # BTC/EUR price: 810.49
+        'cost': 0.0079275,
+        'cost_currency': 'BTC',
+        'fee': 0.15,
+        'fee_currency': 'DASH',
+        'amount': 0.5,
+        'location': 'poloniex',
     }, {  # 0.00244725 * 942.78 + 0.01*15.36169816590634019 = 2.46083533666
         'timestamp': 1486299904,  # 05/02/2017
         'pair': 'DASH_BTC',  # cryptocompare hourly DASH/EUR price: 15.36169816590634019
@@ -122,10 +133,10 @@ trades_history = [
         'type': 'sell',  # sell BTC for EUR -- partly taxable (within 1 year)
         'rate': 1146.22,  # cryptocompare hourly BTC/EUR price: 1146.22
         'cost': 2292.44,
-        'cost_currency': 'EUR',  # Non taxable BTC: 1.034862500. Then 0.554125
-        'fee': 0.01,             # from 1475042230 and 3.3039 from 1476536704
-        'fee_currency': 'EUR',   # Also note that fees at corresponding buys are
-        'amount': 2,             # not yet accounted
+        'cost_currency': 'EUR',
+        'fee': 0.01,
+        'fee_currency': 'EUR',
+        'amount': 2,
         'location': 'kraken',
     },
 ]
@@ -304,13 +315,13 @@ def test_end_to_end_tax_report(accountant):
     )
     result = result['overview']
     general_trade_pl = FVal(result['general_trade_profit_loss'])
-    assert general_trade_pl.is_close('5048.20025137')
+    assert general_trade_pl.is_close('5032.30394444')
     taxable_trade_pl = FVal(result['taxable_trade_profit_loss'])
-    assert taxable_trade_pl.is_close('3927.02376907')
+    assert taxable_trade_pl.is_close('3954.94067484')
     loan_profit = FVal(result['loan_profit'])
     assert loan_profit.is_close('0.114027511004')
     settlement_losses = FVal(result['settlement_losses'])
-    assert settlement_losses.is_close('3.56089563177')
+    assert settlement_losses.is_close('11.8554392326')
     asset_movement_fees = FVal(result['asset_movement_fees'])
     assert asset_movement_fees.is_close('2.39417915')
     ethereum_transaction_gas_costs = FVal(result['ethereum_transaction_gas_costs'])
@@ -352,13 +363,13 @@ def test_end_to_end_tax_report_in_period(accountant):
     )
     result = result['overview']
     general_trade_pl = FVal(result['general_trade_profit_loss'])
-    assert general_trade_pl.is_close('1522.86543605')
+    assert general_trade_pl.is_close('1506.96912912')
     taxable_trade_pl = FVal(result['taxable_trade_profit_loss'])
-    assert taxable_trade_pl.is_close('614.735631324')
+    assert taxable_trade_pl.is_close('642.652537097')
     loan_profit = FVal(result['loan_profit'])
     assert loan_profit.is_close('0.111881296004')
     settlement_losses = FVal(result['settlement_losses'])
-    assert settlement_losses.is_close('2.46083533666')
+    assert settlement_losses.is_close('10.7553789375')
     asset_movement_fees = FVal(result['asset_movement_fees'])
     assert asset_movement_fees.is_close('2.38526415')
     ethereum_transaction_gas_costs = FVal(result['ethereum_transaction_gas_costs'])
@@ -463,25 +474,47 @@ def test_end_to_end_tax_report_in_period(accountant):
 
 # profit: 129.2417 - 89.5410160122 = 39.7006839878
 
+# --> 1484629704 (taxable)
+
+# Buy Dash with BTC for settlement. BTC Loss
+
+# loss in EUR: 0.0079275 * 810.49 + 0.15 * 12.4625608386372145 = 8.29454360079
+# loss in BTC: 0.0079275
+
 # --> 1488373504 (partly taxable)
+
 
 # Sell 2 BTC for EUR
 
 # gain: 2292.44 - 0.01 = 2292.43
 
-# taxfree_bought_cost = 1.034862500 * 268.678317859 = 278.045115715
+# taxfree_bought_cost = 0.984935 * 268.678317859 = 264.630679
 
-# part_from_1st_btc_buy: 2.5-1.4651375 = 1.0348625
+# part_from_1st_btc_buy: 5-2.5-0.9291375-0.536-0.0079275  = 0.984935
 # part_from_1nd_margin_profit: 0.05
 # part_from_2nd_btc_buy: 0.554125
-# part_from_3rd_btc_buy: 2 - 1.0348625 - 0.554125 - 0.05 = 0.3610125
+# part_from_3rd_btc_buy: 2 - 0.984935 - 0.554125 - 0.05 = 0.41094
 
 # taxable_bought_cost = 0.05 * 422.90 + 0.554125 * ((1 / 0.022165) * 11.925) + 0.001 *11.925 +
-# 0.3610125 * ((1 / 0.018355) * 10.775) + (0.3610125/3.3039) * 0.01 * 10.775
-# taxable_bought_cost = 531.220132224
+# 0.41094 * ((1 / 0.018355) * 10.775) + (0.41094/3.3039) * 0.01 * 10.775
+# taxable_bought_cost = 560.530875871
 
-# general_pl = 2292.43 - (531.220132224 + 278.045115715)
-# general_pl = 1483.16475206
+# general_pl = 2292.43 - (560.530875871 + 264.630679)
+# general_pl = 1467.26844513
 
-# taxable_pl = ((0.554125+0.4110125)/2)*2292.43 - 531.220132224
-# taxable_pl = 575.034947336
+# taxable_pl = ((0.05+0.554125+0.41094)/2)*2292.43 - 560.530875871
+# taxable_pl = 602.951853109
+
+
+# ---> BTC movements appendix
+# 1446979735 - 1st buy: 5
+# 1464393600 - 1st margin: 0.05
+# 1467378304 - 1st sell: 2.5
+# 1473505138 - 2nd sell: 0.9291375
+# 1473897600 - 2nd margin: -0.042
+# 1475042230 - 2nd buy: 0.554125
+# 1476536704 - 3rd buy: 3.3039
+# 1479200704 - 3rd sell: 0.536
+# 1480683904 - 4th buy: 0.00146445
+# 1484629704 - 4th sell: 0.0079275
+# 1486299904 - 5th buy: 0.00244725
