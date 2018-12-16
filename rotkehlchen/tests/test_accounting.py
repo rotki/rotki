@@ -476,7 +476,7 @@ def test_settlement_buy(accountant):
     assert FVal(result['overview']['settlement_losses']).is_close('8.29454360079')
 
 
-def test_margin_events_affect_gaine_lost_amount(accountant):
+def test_margin_events_affect_gained_lost_amount(accountant):
     history = [{
         "timestamp": 1476979735,
         "pair": "BTC_EUR",
@@ -527,3 +527,27 @@ def test_margin_events_affect_gaine_lost_amount(accountant):
     assert FVal(result['overview']['general_trade_profit_loss']).is_close('1940.9561588')
     assert FVal(result['overview']['margin_positions_profit_loss']).is_close('-160.3975')
     assert FVal(result['overview']['total_taxable_profit_loss']).is_close('1780.5586588')
+
+
+def test_no_corresponding_buy_for_sell(accountant):
+    history = [{
+        "timestamp": 1496979735,
+        "pair": "BTC_EUR",
+        "type": "sell",
+        "rate": 2519.62,
+        "cost": 2519.62,
+        "cost_currency": "EUR",
+        "fee": 0.02,
+        "fee_currency": "EUR",
+        "amount": 1,
+        "location": "kraken",
+    }]
+
+    result = accounting_history_process(
+        accountant,
+        1436979735,
+        1519693374,
+        history,
+    )
+    assert FVal(result['overview']['general_trade_profit_loss']).is_close('2519.6')
+    assert FVal(result['overview']['total_taxable_profit_loss']).is_close('2519.6')
