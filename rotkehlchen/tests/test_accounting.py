@@ -426,3 +426,50 @@ def test_ignored_assets(accountant):
     }]
     result = accounting_history_process(accountant, 1436979735, 1519693374, history)
     assert FVal(result['overview']['total_taxable_profit_loss']).is_close("557.528104903")
+
+
+def test_settelement_buy(accountant):
+    history = [{
+        "timestamp": 1476979735,
+        "pair": "BTC_EUR",
+        "type": "buy",
+        "rate": 578.505,
+        "cost": 2892.525,
+        "cost_currency": "EUR",
+        "fee": 0.0012,
+        "fee_currency": "BTC",
+        "amount": 5,
+        "location": "kraken",
+    }, {  # 0.0079275 * 810.49 + 0.15 * 12.4625608386372145 = 8.29454360079
+        'timestamp': 1484629704,  # 17/01/2017
+        'pair': 'BTC_DASH',  # DASH/EUR price: 12.4625608386372145
+        'type': 'settlement_buy',  # Buy DASH with BTC to settle. Essentially BTC loss
+        'rate': 0.015855,  # BTC/EUR price: 810.49
+        'cost': 0.0079275,
+        'cost_currency': 'BTC',
+        'fee': 0.15,
+        'fee_currency': 'DASH',
+        'amount': 0.5,
+        'location': 'poloniex',
+    }, {
+        "timestamp": 1496979735,
+        "pair": "BTC_EUR",
+        "type": "sell",
+        "rate": 2519.62,
+        "cost": 2519.62,
+        "cost_currency": "EUR",
+        "fee": 0.02,
+        "fee_currency": "EUR",
+        "amount": 1,
+        "location": "kraken",
+    }]
+
+    result = accounting_history_process(
+        accountant,
+        1436979735,
+        1519693374,
+        history,
+    )
+    assert accountant.get_calculated_asset_amount('BTC').is_close('3.9920725')
+    assert FVal(result['overview']['total_taxable_profit_loss']).is_close('1932.6616152')
+    assert FVal(result['overview']['settlement_losses']).is_close('8.29454360079')  # TODO
