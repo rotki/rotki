@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`241` When incurring margin trade loss the lost asset's available amount is now also reduced.
+* :bug:`240` Poloniex settlement buys now incur the correct amount of BTC loss when processed.
 * :bug:`218` Tax report details in the UI should no longer show NaN values in some columns.
 * :bug:`231` Selling an asset that will fork, before it does now also reduces the forked asset amount.
 * :bug:`232` Multiple rotkehlchen users will no longer share same cache files.
