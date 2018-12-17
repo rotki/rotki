@@ -1,6 +1,7 @@
 import pytest
+
 from rotkehlchen.fval import FVal
-from rotkehlchen.utils import rlk_jsonloads, rlk_jsondumps
+from rotkehlchen.utils import rlk_jsondumps, rlk_jsonloads
 
 
 def test_simple_arithmetic():
@@ -17,6 +18,7 @@ def test_simple_arithmetic():
     assert a / b == FVal('2.457547169811320754716981132')
     assert a ** 3 == FVal('141.420761')
     assert a.fma(b, FVal(3.14)) == FVal('14.1852')
+    assert c // b == FVal('-10')
     assert -a == FVal('-5.21')
     assert abs(a) == FVal('5.21')
     assert abs(c) == FVal('23.124')
@@ -39,12 +41,14 @@ def test_arithmetic_with_int():
     assert a * 2 == FVal('10.42')
     assert a / 2 == FVal('2.605')
     assert a ** 3 == FVal('141.420761')
+    assert a // 2 == FVal('2')
 
     # and now the reverse operations
     assert 2 + a == FVal('7.21')
     assert 2 - a == FVal('-3.21')
     assert 2 * a == FVal('10.42')
     assert 2 / a == FVal('0.3838771593090211132437619962')
+    assert 2 // a == FVal('0')
 
 
 def test_comparison():
@@ -148,4 +152,16 @@ def test_conversion():
     a = 2.0123
     b = FVal('2.0123')
     c = float(b)
+    d = FVal('3.0')
     assert a == c
+    assert d.to_int(exact=True) == 3
+    with pytest.raises(ValueError):
+        b.to_int(exact=True)
+
+
+def test_to_percentage():
+    assert '50.0000%' == FVal('0.5').to_percentage()
+    assert '23.4500%' == FVal('0.2345').to_percentage()
+    assert '23.45%' == FVal('0.2345').to_percentage(2)
+    assert '23%' == FVal('0.2345').to_percentage(0)
+    assert '153.2100%' == FVal('1.5321').to_percentage()

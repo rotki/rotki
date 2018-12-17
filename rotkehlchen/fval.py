@@ -130,8 +130,8 @@ class FVal(object):
         evaluated_third = evaluate_input(third)
         return FVal(self.num.fma(evaluated_other, evaluated_third))
 
-    def to_percentage(self) -> str:
-        return '{:.5%}'.format(self.num)
+    def to_percentage(self, precision: int = 4) -> str:
+        return '{:.{}%}'.format(self.num, precision)
 
     def to_int(self, exact: bool) -> int:
         """Tries to convert to int, If `exact` is true then it will convert only if
