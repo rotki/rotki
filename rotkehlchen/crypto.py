@@ -1,11 +1,11 @@
 import base64
+from binascii import hexlify
 from typing import cast
-from binascii import hexlify, unhexlify
 
-from Crypto.Cipher import AES
-from Crypto.Hash import SHA256, SHA3_256
-from Crypto import Random
 from coincurve import PrivateKey
+from Crypto import Random
+from Crypto.Cipher import AES
+from Crypto.Hash import SHA3_256, SHA256
 
 from rotkehlchen import typing
 
@@ -55,10 +55,6 @@ def ishash(data: bytes) -> bool:
     return isinstance(data, bytes) and len(data) == 32
 
 
-def isaddress(data: bytes) -> bool:
-    return isinstance(data, bytes) and len(data) == 20
-
-
 def privatekey_to_publickey(private_key_bin: bytes) -> bytes:
     """ Returns public key in bitcoins 'bin' encoding. """
     if not ishash(private_key_bin):
@@ -78,12 +74,3 @@ def privatekey_to_address(private_key_bin: bytes) -> typing.BinaryEthAddress:
 def address_encoder(address: typing.BinaryEthAddress) -> typing.EthAddress:
     assert len(address) in (20, 0)
     return typing.EthAddress('0x' + hexlify(address).decode())
-
-
-def address_decoder(addr: str) -> typing.BinaryEthAddress:
-    if addr[:2] == '0x':
-        addr = addr[2:]
-
-    b_addr = unhexlify(addr)
-    assert len(b_addr) in (20, 0)
-    return typing.BinaryEthAddress(b_addr)
