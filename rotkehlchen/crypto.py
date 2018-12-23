@@ -5,7 +5,7 @@ from typing import cast
 from coincurve import PrivateKey
 from Crypto import Random
 from Crypto.Cipher import AES
-from Crypto.Hash import SHA3_256, SHA256
+from Crypto.Hash import SHA3_256, SHA256  # type: ignore
 
 from rotkehlchen import typing
 

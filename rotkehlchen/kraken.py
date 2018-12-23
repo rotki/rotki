@@ -214,7 +214,7 @@ class Kraken(Exchange):
         # How can this be avoided without too much pain?
         self.usdprice: Dict[Union[typing.Asset, str], FVal] = {}
         self.eurprice: Dict[Union[typing.Asset, str], FVal] = {}
-        self.session.headers.update({
+        self.session.headers.update({  # type: ignore
             'API-Key': self.api_key,
         })
 
@@ -329,7 +329,7 @@ class Kraken(Exchange):
                 message,
                 hashlib.sha512,
             )
-            self.session.headers.update({
+            self.session.headers.update({  # type: ignore
                 'API-Sign': base64.b64encode(signature.digest()),
             })
             log.debug('Kraken Private API query', request_url=urlpath, data=post_data)
