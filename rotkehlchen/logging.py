@@ -65,7 +65,6 @@ def make_sensitive(data):
 class LoggingSettings(object):
     __instance = None
 
-    @classmethod
     def __new__(cls, anonymized_logs=DEFAULT_ANONYMIZED_LOGS):
         if LoggingSettings.__instance is None:
             LoggingSettings.__instance = object.__new__(cls)
