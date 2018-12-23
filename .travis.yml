@@ -55,6 +55,7 @@ script:
   - set -e
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source terryfy/test_tools.sh; fi
   - flake8 rotkehlchen/
+  - mypy rotkehlchen/ --ignore-missing-imports
   - pylint --disable=all --enable=no-value-for-parameter,too-many-format-args,no-member,bad-except-order rotkehlchen
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then python -m pytest rotkehlchen; fi
   - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then pytest --cov=./ --travis-fold=always rotkehlchen/ $TEST_TYPE; fi

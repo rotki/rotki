@@ -112,7 +112,7 @@ class Binance(Exchange):
         self.apiversion = 'v3'
         self.uri = 'https://api.binance.com/api/'
         self.inquirer = inquirer
-        self.session.headers.update({
+        self.session.headers.update({  # type: ignore
             'Accept': 'application/json',
             'X-MBX-APIKEY': self.api_key,
         })

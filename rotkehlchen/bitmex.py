@@ -77,7 +77,7 @@ class Bitmex(Exchange):
         super(Bitmex, self).__init__('bitmex', api_key, secret, user_directory)
         self.uri = 'https://bitmex.com'
         self.inquirer = inquirer
-        self.session.headers.update({'api-key': api_key})
+        self.session.headers.update({'api-key': api_key})  # type: ignore
 
     def first_connection(self):
         self.first_connection_made = True

@@ -103,7 +103,7 @@ class Poloniex(Exchange):
         self.public_uri = self.uri + 'public?command='
         self.usdprice: Dict[typing.BlockchainAsset, FVal] = {}
         self.inquirer = inquirer
-        self.session.headers.update({
+        self.session.headers.update({  # type: ignore
             'Key': self.api_key,
         })
 

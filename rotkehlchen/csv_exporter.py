@@ -211,7 +211,7 @@ class CSVExporter(object):
             'time': tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
             'is_virtual': is_virtual,
         })
-        paid_in_profit_currency = 0
+        paid_in_profit_currency = ZERO
         self.add_to_allevents(
             event_type=EV_SELL,
             paid_in_profit_currency=paid_in_profit_currency,
