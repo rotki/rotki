@@ -1,4 +1,5 @@
-from typing import NewType, NamedTuple, Dict, Union
+from typing import Dict, NamedTuple, NewType, Union
+
 from rotkehlchen.fval import FVal
 
 T_BinaryEthAddress = bytes
@@ -48,6 +49,9 @@ EthTokenInfo = Dict[str, Union[EthToken, EthAddress, int]]
 
 T_EmptyStr = str
 EmptyStr = NewType('EmptyStr', T_EmptyStr)
+
+T_Fee = FVal
+Fee = NewType('Fee', T_Fee)
 
 
 class ResultCache(NamedTuple):

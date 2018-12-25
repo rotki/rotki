@@ -15,7 +15,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history import FIAT_CURRENCIES, NoPriceForGivenTimestamp
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import BuyEvent, Events, SellEvent
-from rotkehlchen.typing import Asset, Timestamp
+from rotkehlchen.typing import Asset, Fee, Timestamp
 from rotkehlchen.utils import taxable_gain_for_sell, ts_now, tsToDate
 
 logger = logging.getLogger(__name__)
@@ -137,7 +137,7 @@ class TaxableEvents(object):
             bought_amount: FVal,
             paid_with_asset: Asset,
             trade_rate: FVal,
-            fee_in_profit_currency: FVal,
+            fee_in_profit_currency: Fee,
             fee_currency: Asset,
             timestamp: Timestamp,
     ) -> None:
@@ -194,7 +194,7 @@ class TaxableEvents(object):
             bought_amount: FVal,
             paid_with_asset: Asset,
             trade_rate: FVal,
-            fee_in_profit_currency: FVal,
+            fee_in_profit_currency: Fee,
             fee_currency: Asset,
             timestamp: Timestamp,
     ) -> None:
@@ -269,7 +269,7 @@ class TaxableEvents(object):
             bought_amount: FVal,
             paid_with_asset: Asset,
             trade_rate: FVal,
-            fee_in_profit_currency: FVal,
+            fee_in_profit_currency: Fee,
             fee_currency: Asset,
             timestamp: Timestamp,
             is_virtual: bool = False,
@@ -334,7 +334,7 @@ class TaxableEvents(object):
             receiving_asset: Asset,
             receiving_amount: FVal,
             gain_in_profit_currency: FVal,
-            total_fee_in_profit_currency: FVal,
+            total_fee_in_profit_currency: Fee,
             trade_rate: FVal,
             rate_in_profit_currency: FVal,
             timestamp: Timestamp,
@@ -395,7 +395,7 @@ class TaxableEvents(object):
             receiving_asset: Optional[Asset],
             receiving_amount: Optional[FVal],
             gain_in_profit_currency: FVal,
-            total_fee_in_profit_currency: FVal,
+            total_fee_in_profit_currency: Fee,
             trade_rate: FVal,
             rate_in_profit_currency: FVal,
             timestamp: Timestamp,
@@ -672,7 +672,7 @@ class TaxableEvents(object):
             self,
             gained_asset: Asset,
             gained_amount: FVal,
-            fee_in_asset: FVal,
+            fee_in_asset: Fee,
             lent_amount: FVal,
             open_time: Timestamp,
             close_time: Timestamp,
@@ -722,7 +722,7 @@ class TaxableEvents(object):
             self,
             gain_loss_asset: Asset,
             gain_loss_amount: FVal,
-            fee_in_asset: FVal,
+            fee_in_asset: Fee,
             margin_notes: str,
             timestamp: Timestamp,
     ) -> None:
