@@ -123,9 +123,7 @@ class TaxableEvents(object):
         del self.events[asset].buys[:stop_index]
         # and modify the amount of the buy where we stopped if there is one
         if remaining_amount_from_last_buy != -1:
-            self.events[asset].buys[0] = self.events[asset].buys[0]._replace(
-                amount=remaining_amount_from_last_buy,
-            )
+            self.events[asset].buys[0].amount = remaining_amount_from_last_buy
         elif remaining_amount != ZERO:
             return False
 
@@ -648,9 +646,7 @@ class TaxableEvents(object):
         del self.events[selling_asset].buys[:stop_index]
         # and modify the amount of the buy where we stopped if there is one
         if remaining_amount_from_last_buy != -1:
-            self.events[selling_asset].buys[0] = self.events[selling_asset].buys[0]._replace(
-                amount=remaining_amount_from_last_buy,
-            )
+            self.events[selling_asset].buys[0].amount = remaining_amount_from_last_buy
         elif remaining_sold_amount != ZERO:
             # if we still have sold amount but no buys to satisfy it then we only
             # found buys to partially satisfy the sell
@@ -692,7 +688,7 @@ class TaxableEvents(object):
                 amount=net_gain_amount,
                 timestamp=timestamp,
                 rate=rate,
-                fee_rate=0,
+                fee_rate=ZERO,
             ),
         )
         # count profits if we are inside the query period
@@ -741,7 +737,7 @@ class TaxableEvents(object):
                     amount=net_gain_loss_amount,
                     timestamp=timestamp,
                     rate=rate,
-                    fee_rate=0,
+                    fee_rate=ZERO,
                 ),
             )
         elif net_gain_loss_amount < 0:
