@@ -1,6 +1,15 @@
 import logging
+from typing import Dict, Optional, Tuple
 
-from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
+from rotkehlchen.constants import (
+    BTC_BCH_FORK_TS,
+    ETH_DAO_FORK_TS,
+    S_BCH,
+    S_BTC,
+    S_ETC,
+    S_ETH,
+    ZERO,
+)
 from rotkehlchen.errors import PriceQueryUnknownFromAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import FIAT_CURRENCIES, NoPriceForGivenTimestamp
@@ -26,7 +35,7 @@ class TaxableEvents(object):
         # amount is taken as a loss
         self.count_profit_for_settlements = False
 
-    def reset(self, start_ts, end_ts):
+    def reset(self, start_ts: Timestamp, end_ts: Timestamp) -> None:
         self.events = dict()
         self.query_start_ts = start_ts
         self.query_end_ts = end_ts
@@ -37,32 +46,32 @@ class TaxableEvents(object):
         self.margin_positions_profit_loss = FVal(0)
 
     @property
-    def include_crypto2crypto(self):
+    def include_crypto2crypto(self) -> bool:
         return self._include_crypto2crypto
 
     @include_crypto2crypto.setter
-    def include_crypto2crypto(self, value):
+    def include_crypto2crypto(self, value: bool) -> None:
         self._include_crypto2crypto = value
 
     @property
-    def taxfree_after_period(self):
+    def taxfree_after_period(self) -> int:
         return self._taxfree_after_period
 
     @taxfree_after_period.setter
-    def taxfree_after_period(self, value):
+    def taxfree_after_period(self, value: int) -> None:
         is_valid = isinstance(value, int) or value is None
         assert is_valid, 'set taxfree_after_period should only get int or None'
         self._taxfree_after_period = value
 
-    def calculate_asset_details(self):
+    def calculate_asset_details(self) -> Dict[Asset, Tuple[FVal, FVal]]:
         """ Calculates what amount of all assets has been untouched for a year and
         is hence tax-free and also the average buy price for each asset"""
-        self.details = dict()
+        self.details: Dict[Asset, Tuple[FVal, FVal]] = dict()
         now = ts_now()
         for asset, events in self.events.items():
-            tax_free_amount_left = 0
-            amount_sum = 0
-            average = 0
+            tax_free_amount_left = ZERO
+            amount_sum = ZERO
+            average = ZERO
             for buy_event in events.buys:
                 if self.taxfree_after_period is not None:
                     if buy_event.timestamp + self.taxfree_after_period < now:
@@ -70,16 +79,16 @@ class TaxableEvents(object):
                 amount_sum += buy_event.amount
                 average += buy_event.amount * buy_event.rate
 
-            if amount_sum == 0:
-                self.details[asset] = (0, 0)
+            if amount_sum == ZERO:
+                self.details[asset] = (ZERO, ZERO)
             else:
                 self.details[asset] = (tax_free_amount_left, average / amount_sum)
 
         return self.details
 
-    def get_rate_in_profit_currency(self, asset, timestamp):
+    def get_rate_in_profit_currency(self, asset: Asset, timestamp: Timestamp) -> FVal:
         if asset == self.profit_currency:
-            rate = 1
+            rate = FVal(1)
         else:
             rate = self.price_historian.query_historical_price(
                 asset,
@@ -124,18 +133,18 @@ class TaxableEvents(object):
 
     def handle_prefork_asset_buys(
             self,
-            bought_asset,
-            bought_amount,
-            paid_with_asset,
-            trade_rate,
-            fee_in_profit_currency,
-            fee_currency,
-            timestamp,
-    ):
+            bought_asset: Asset,
+            bought_amount: FVal,
+            paid_with_asset: Asset,
+            trade_rate: FVal,
+            fee_in_profit_currency: FVal,
+            fee_currency: Asset,
+            timestamp: Timestamp,
+    ) -> None:
         # TODO: Should fee also be taken into account here?
         if bought_asset == 'ETH' and timestamp < ETH_DAO_FORK_TS:
             self.add_buy(
-                'ETC',
+                S_ETC,
                 bought_amount,
                 paid_with_asset,
                 trade_rate,
@@ -148,7 +157,7 @@ class TaxableEvents(object):
         if bought_asset == 'BTC' and timestamp < BTC_BCH_FORK_TS:
             # Acquiring BTC before the BCH fork provides equal amount of BCH
             self.add_buy(
-                'BCH',
+                S_BCH,
                 bought_amount,
                 paid_with_asset,
                 trade_rate,
@@ -158,17 +167,21 @@ class TaxableEvents(object):
                 is_virtual=True,
             )
 
-    def handle_prefork_asset_sells(self, sold_asset, sold_amount, timestamp):
-        if sold_asset == 'ETH' and timestamp < ETH_DAO_FORK_TS:
-            if not self.reduce_asset_amount(asset='ETC', amount=sold_amount):
+    def handle_prefork_asset_sells(
+            self, sold_asset: Asset,
+            sold_amount: FVal,
+            timestamp: Timestamp,
+    ) -> None:
+        if sold_asset == S_ETH and timestamp < ETH_DAO_FORK_TS:
+            if not self.reduce_asset_amount(asset=S_ETC, amount=sold_amount):
                 log.critical(
                     'No documented buy found for ETC (ETH equivalent) before {}'.format(
                         tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
                     ),
                 )
 
-        if sold_asset == 'BTC' and timestamp < BTC_BCH_FORK_TS:
-            if not self.reduce_asset_amount(asset='BCH', amount=sold_amount):
+        if sold_asset == S_BTC and timestamp < BTC_BCH_FORK_TS:
+            if not self.reduce_asset_amount(asset=S_BCH, amount=sold_amount):
                 log.critical(
                     'No documented buy found for BCH (BTC equivalent) before {}'.format(
                         tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
@@ -177,14 +190,14 @@ class TaxableEvents(object):
 
     def add_buy_and_corresponding_sell(
             self,
-            bought_asset,
-            bought_amount,
-            paid_with_asset,
-            trade_rate,
-            fee_in_profit_currency,
-            fee_currency,
-            timestamp,
-    ):
+            bought_asset: Asset,
+            bought_amount: FVal,
+            paid_with_asset: Asset,
+            trade_rate: FVal,
+            fee_in_profit_currency: FVal,
+            fee_currency: Asset,
+            timestamp: Timestamp,
+    ) -> None:
         self.add_buy(
             bought_asset=bought_asset,
             bought_amount=bought_amount,
@@ -209,9 +222,9 @@ class TaxableEvents(object):
                 timestamp,
             )
         except (NoPriceForGivenTimestamp, PriceQueryUnknownFromAsset):
-            bought_asset_rate_in_profit_currency = -1
+            bought_asset_rate_in_profit_currency = FVal(-1)
 
-        if bought_asset_rate_in_profit_currency != -1:
+        if bought_asset_rate_in_profit_currency != FVal(-1):
             # The asset bought does not have a price yet
             # Can happen for Token sales, presales e.t.c.
             with_bought_asset_gain = bought_asset_rate_in_profit_currency * bought_amount
@@ -252,15 +265,15 @@ class TaxableEvents(object):
 
     def add_buy(
             self,
-            bought_asset,
-            bought_amount,
-            paid_with_asset,
-            trade_rate,
-            fee_in_profit_currency,
-            fee_currency,
-            timestamp,
-            is_virtual=False,
-    ):
+            bought_asset: Asset,
+            bought_amount: FVal,
+            paid_with_asset: Asset,
+            trade_rate: FVal,
+            fee_in_profit_currency: FVal,
+            fee_currency: Asset,
+            timestamp: Timestamp,
+            is_virtual: bool = False,
+    ) -> None:
         paid_with_asset_rate = self.get_rate_in_profit_currency(paid_with_asset, timestamp)
         buy_rate = paid_with_asset_rate * trade_rate
 
@@ -316,16 +329,16 @@ class TaxableEvents(object):
 
     def add_sell_and_corresponding_buy(
             self,
-            selling_asset,
-            selling_amount,
-            receiving_asset,
-            receiving_amount,
-            gain_in_profit_currency,
-            total_fee_in_profit_currency,
-            trade_rate,
-            rate_in_profit_currency,
-            timestamp,
-    ):
+            selling_asset: Asset,
+            selling_amount: FVal,
+            receiving_asset: Asset,
+            receiving_amount: FVal,
+            gain_in_profit_currency: FVal,
+            total_fee_in_profit_currency: FVal,
+            trade_rate: FVal,
+            rate_in_profit_currency: FVal,
+            timestamp: Timestamp,
+    ) -> None:
         """
         Add and process a selling event to the events list
 
@@ -370,25 +383,25 @@ class TaxableEvents(object):
             paid_with_asset=selling_asset,
             trade_rate=1 / trade_rate,
             fee_in_profit_currency=total_fee_in_profit_currency,
-            fee_currency=receiving_amount,  # does not matter
+            fee_currency=receiving_asset,  # does not matter
             timestamp=timestamp,
             is_virtual=True,
         )
 
     def add_sell(
             self,
-            selling_asset,
-            selling_amount,
-            receiving_asset,
-            receiving_amount,
-            gain_in_profit_currency,
-            total_fee_in_profit_currency,
-            trade_rate,
-            rate_in_profit_currency,
-            timestamp,
-            loan_settlement=False,
-            is_virtual=False,
-    ):
+            selling_asset: Asset,
+            selling_amount: FVal,
+            receiving_asset: Optional[Asset],
+            receiving_amount: Optional[FVal],
+            gain_in_profit_currency: FVal,
+            total_fee_in_profit_currency: FVal,
+            trade_rate: FVal,
+            rate_in_profit_currency: FVal,
+            timestamp: Timestamp,
+            loan_settlement: bool = False,
+            is_virtual: bool = False,
+    ) -> None:
 
         if selling_asset not in self.events:
             self.events[selling_asset] = Events(list(), list())
@@ -509,6 +522,7 @@ class TaxableEvents(object):
                     timestamp=timestamp,
                 )
             else:
+                assert receiving_asset, 'Here receiving asset should have a value'
                 self.csv_exporter.add_sell(
                     selling_asset=selling_asset,
                     rate_in_profit_currency=rate_in_profit_currency,
@@ -532,7 +546,7 @@ class TaxableEvents(object):
             selling_amount: FVal,
             selling_asset: Asset,
             timestamp: Timestamp,
-    ):
+    ) -> Tuple[FVal, FVal, FVal]:
         """
         When selling `selling_amount` of `selling_asset` at `timestamp` this function
         calculates using the first-in-first-out rule the corresponding buy/s from
@@ -656,13 +670,13 @@ class TaxableEvents(object):
 
     def add_loan_gain(
             self,
-            gained_asset,
-            gained_amount,
-            fee_in_asset,
-            lent_amount,
-            open_time,
-            close_time,
-    ):
+            gained_asset: Asset,
+            gained_amount: FVal,
+            fee_in_asset: FVal,
+            lent_amount: FVal,
+            open_time: Timestamp,
+            close_time: Timestamp,
+    ) -> None:
 
         timestamp = close_time
         rate = self.get_rate_in_profit_currency(gained_asset, timestamp)
@@ -711,7 +725,7 @@ class TaxableEvents(object):
             fee_in_asset: FVal,
             margin_notes: str,
             timestamp: Timestamp,
-    ):
+    ) -> None:
 
         rate = self.get_rate_in_profit_currency(gain_loss_asset, timestamp)
 

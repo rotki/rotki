@@ -15,7 +15,9 @@ YEAR_IN_SECONDS = 31536000  # 60 * 60 * 24 * 365
 S_EMPTYSTR = typing.EmptyStr('')
 
 S_BTC = cast(typing.NonEthTokenBlockchainAsset, 'BTC')
+S_BCH = cast(typing.NonEthTokenBlockchainAsset, 'BCH')
 S_ETH = cast(typing.NonEthTokenBlockchainAsset, 'ETH')
+S_ETC = cast(typing.NonEthTokenBlockchainAsset, 'ETC')
 S_DATACOIN = cast(typing.NonEthTokenBlockchainAsset, 'DATAcoin')
 S_IOTA = cast(typing.NonEthTokenBlockchainAsset, 'IOTA')
 
