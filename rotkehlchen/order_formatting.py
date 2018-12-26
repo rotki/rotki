@@ -1,7 +1,6 @@
 from collections import namedtuple
-from typing import List, NamedTuple
-
 from dataclasses import dataclass
+from typing import List, NamedTuple, Optional
 
 from rotkehlchen import typing
 from rotkehlchen.fval import FVal
@@ -60,17 +59,14 @@ AssetMovement = namedtuple(
     ),
 )
 
-MarginPosition = namedtuple(
-    'MarginPosition',
-    (
-        'exchange',
-        'open_time',
-        'close_time',
-        'profit_loss',
-        'pl_currency',
-        'notes',
-    ),
-)
+
+class MarginPosition(NamedTuple):
+    exchange: str
+    open_time: Optional[typing.Timestamp]
+    close_time: typing.Timestamp
+    profit_loss: FVal
+    pl_currency: typing.Asset
+    notes: str
 
 
 def trade_get_other_pair(trade, asset):

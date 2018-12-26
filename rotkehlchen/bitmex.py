@@ -61,7 +61,7 @@ def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
         open_time=None,
         close_time=close_time,
         profit_loss=profit_loss,
-        pl_currency='BTC',
+        pl_currency=S_BTC,
         notes=notes,
     )
 
