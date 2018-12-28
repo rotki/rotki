@@ -1,6 +1,7 @@
 import os
 import time
 from shutil import copyfile
+from unittest.mock import patch
 
 import pytest
 from eth_utils.address import to_checksum_address
@@ -366,7 +367,7 @@ def test_upgrade_sqlcipher_v3_to_v4(data_dir):
     Issue: https://github.com/rotkehlchenio/rotkehlchen/issues/229
     """
     sqlcipher_version = detect_sqlcipher_version()
-    if sqlcipher_version == 3:
+    if sqlcipher_version != 4:
         # nothing to test
         return
 
@@ -383,3 +384,44 @@ def test_upgrade_sqlcipher_v3_to_v4(data_dir):
     # the constructor should migrate it in-place and we should have a working DB
     db = DBHandler(userdata_dir, '123')
     assert db.get_version() == ROTKEHLCHEN_DB_VERSION
+
+
+def test_sqlcipher_detect_version():
+    class QueryMock():
+        def __init__(self, version):
+            self.version = version
+
+        def fetchall(self):
+            return [[self.version]]
+
+    class ConnectionMock():
+        def __init__(self, version):
+            self.version = version
+
+        def execute(self, command):
+            return QueryMock(self.version)
+
+        def close(self):
+            pass
+
+    class SQLCipherMock():
+        def connect(path):
+            return ConnectionMock('doesnotmatter')
+
+    with patch('pysqlcipher3.dbapi2.connect') as sql_mock:
+        sql_mock.return_value = ConnectionMock('4.0.0 community')
+        assert detect_sqlcipher_version() == 4
+        sql_mock.return_value = ConnectionMock('4.0.1 something')
+        assert detect_sqlcipher_version() == 4
+        sql_mock.return_value = ConnectionMock('4.9.12 somethingelse')
+        assert detect_sqlcipher_version() == 4
+
+        sql_mock.return_value = ConnectionMock('5.10.13 somethingelse')
+        assert detect_sqlcipher_version() == 5
+
+        sql_mock.return_value = ConnectionMock('3.1.15 somethingelse')
+        assert detect_sqlcipher_version() == 3
+
+        with pytest.raises(ValueError):
+            sql_mock.return_value = ConnectionMock('no version')
+            detect_sqlcipher_version()

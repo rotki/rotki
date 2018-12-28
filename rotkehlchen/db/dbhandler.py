@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import shutil
 import tempfile
 import time
@@ -54,14 +55,16 @@ def str_to_bool(s):
 
 
 def detect_sqlcipher_version() -> int:
+    """Returns the major part of the version of the system's sqlcipher package"""
     conn = sqlcipher.connect(':memory:')  # pylint: disable=no-member
     query = conn.execute('PRAGMA cipher_version;')
     version = query.fetchall()[0][0]
-    # TODO: proper version comparison please -- don't be lazy
-    if '4.0.0' in version:
-        sqlcipher_version = 4
-    else:
-        sqlcipher_version = 3
+
+    match = re.search(r'(\d+).(\d+).(\d+)', version)
+    if not match:
+        raise ValueError(f'Could not process the version returned by sqlcipher: {version}')
+
+    sqlcipher_version = int(match.group(1))
     conn.close()
     return sqlcipher_version
 
