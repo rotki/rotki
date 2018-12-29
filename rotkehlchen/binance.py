@@ -283,26 +283,30 @@ class Binance(Exchange):
             markets = self._symbols_to_pair.keys()
 
         all_trades_history = list()
+        # Limit of results to return. 1000 is max limit according to docs
+        limit = 1000
         for symbol in markets:
             last_trade_id = 0
-            len_result = 1000
-            while len_result == 1000:
+            len_result = limit
+            while len_result == limit:
                 result = self.api_query(
                     'myTrades',
                     options={
                         'symbol': symbol,
                         'fromId': last_trade_id,
-                        'limit': 1000,
+                        'limit': limit,
                         # Not specifying them since binance does not seem to
                         # respect them and always return all trades
                         # 'startTime': start_ts * 1000,
                         # 'endTime': end_ts * 1000,
                     })
+                if result:
+                    last_trade_id = result[-1]['id'] + 1
                 len_result = len(result)
                 log.debug('binance myTrades query result', results_num=len_result)
                 for r in result:
                     r['symbol'] = symbol
-            all_trades_history.extend(result)
+                all_trades_history.extend(result)
 
         all_trades_history.sort(key=lambda x: x['time'])
 
