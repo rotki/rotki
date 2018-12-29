@@ -5,6 +5,8 @@ import time
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 from urllib.parse import urlencode
 
+import gevent
+
 from rotkehlchen import typing
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchange import Exchange
@@ -107,6 +109,8 @@ class Binance(Exchange):
             secret: typing.ApiSecret,
             inquirer: Inquirer,
             data_dir: typing.FilePath,
+            initial_backoff: int = 4,
+            backoff_limit: int = 180,
     ):
         super(Binance, self).__init__('binance', api_key, secret, data_dir)
         self.apiversion = 'v3'
@@ -116,6 +120,8 @@ class Binance(Exchange):
             'Accept': 'application/json',
             'X-MBX-APIKEY': self.api_key,
         })
+        self.initial_backoff = initial_backoff
+        self.backoff_limit = backoff_limit
 
     def first_connection(self):
         if self.first_connection_made:
@@ -164,44 +170,60 @@ class Binance(Exchange):
         if not options:
             options = {}
 
-        with self.lock:
-            # Protect this region with a lock since binance will reject
-            # non-increasing nonces. So if two greenlets come in here at
-            # the same time one of them will fail
-            if method in V3_ENDPOINTS:
-                api_version = 3
-                # Recommended recvWindows is 5000 but we get timeouts with it
-                options['recvWindow'] = 10000
-                options['timestamp'] = str(int(time.time() * 1000))
-                signature = hmac.new(
-                    self.secret,
-                    urlencode(options).encode('utf-8'),
-                    hashlib.sha256,
-                ).hexdigest()
-                options['signature'] = signature
-            elif method in V1_ENDPOINTS:
-                api_version = 1
+        backoff = self.initial_backoff
+
+        while True:
+            with self.lock:
+                # Protect this region with a lock since binance will reject
+                # non-increasing nonces. So if two greenlets come in here at
+                # the same time one of them will fail
+                if method in V3_ENDPOINTS:
+                    api_version = 3
+                    # Recommended recvWindows is 5000 but we get timeouts with it
+                    options['recvWindow'] = 10000
+                    options['timestamp'] = str(int(time.time() * 1000))
+                    signature = hmac.new(
+                        self.secret,
+                        urlencode(options).encode('utf-8'),
+                        hashlib.sha256,
+                    ).hexdigest()
+                    options['signature'] = signature
+                elif method in V1_ENDPOINTS:
+                    api_version = 1
+                else:
+                    raise ValueError('Unexpected binance api method {}'.format(method))
+
+                request_url = self.uri + 'v' + str(api_version) + '/' + method + '?'
+                request_url += urlencode(options)
+
+                log.debug('Binance API request', request_url=request_url)
+
+                response = self.session.get(request_url)
+
+            limit_ban = response.status_code == 429 and backoff > self.backoff_limit
+            if limit_ban or response.status_code not in (200, 429):
+                result = rlk_jsonloads(response.text)
+                raise RemoteError(
+                    'Binance API request {} for {} failed with HTTP status '
+                    'code: {}, error code: {} and error message: {}'.format(
+                        response.url,
+                        method,
+                        response.status_code,
+                        result['code'],
+                        result['msg'],
+                    ))
+            elif response.status_code == 429:
+                if backoff > self.backoff_limit:
+                    break
+                # Binance has limits and if we hit them we should backoff
+                # https://github.com/binance-exchange/binance-official-api-docs/blob/master/rest-api.md#limits
+                log.debug('Got 429 from Binance. Backing off', seconds=backoff)
+                gevent.sleep(backoff)
+                backoff = backoff * 2
+                continue
             else:
-                raise ValueError('Unexpected binance api method {}'.format(method))
-
-            request_url = self.uri + 'v' + str(api_version) + '/' + method + '?'
-            request_url += urlencode(options)
-
-            log.debug('Binance API request', request_url=request_url)
-
-            response = self.session.get(request_url)
-
-        if response.status_code != 200:
-            result = rlk_jsonloads(response.text)
-            raise RemoteError(
-                'Binance API request {} for {} failed with HTTP status '
-                'code: {}, error code: {} and error message: {}'.format(
-                    response.url,
-                    method,
-                    response.status_code,
-                    result['code'],
-                    result['msg'],
-                ))
+                # success
+                break
 
         json_ret = rlk_jsonloads(response.text)
         return json_ret
@@ -261,21 +283,30 @@ class Binance(Exchange):
             markets = self._symbols_to_pair.keys()
 
         all_trades_history = list()
+        # Limit of results to return. 1000 is max limit according to docs
+        limit = 1000
         for symbol in markets:
             last_trade_id = 0
-            len_result = 500
-            while len_result == 500:
+            len_result = limit
+            while len_result == limit:
                 result = self.api_query(
                     'myTrades',
                     options={
                         'symbol': symbol,
                         'fromId': last_trade_id,
+                        'limit': limit,
+                        # Not specifying them since binance does not seem to
+                        # respect them and always return all trades
+                        # 'startTime': start_ts * 1000,
+                        # 'endTime': end_ts * 1000,
                     })
+                if result:
+                    last_trade_id = result[-1]['id'] + 1
                 len_result = len(result)
                 log.debug('binance myTrades query result', results_num=len_result)
                 for r in result:
                     r['symbol'] = symbol
-            all_trades_history.extend(result)
+                all_trades_history.extend(result)
 
         all_trades_history.sort(key=lambda x: x['time'])
 

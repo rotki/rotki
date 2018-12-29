@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`134` When rotkehlchen makes too many requests to Binance and gets a 429 response it now backs off and waits a bit.
 * :bug:`241` When incurring margin trade loss the lost asset's available amount is now also reduced.
 * :bug:`240` Poloniex settlement buys now incur the correct amount of BTC loss when processed.
 * :bug:`218` Tax report details in the UI should no longer show NaN values in some columns.
