@@ -1,11 +1,11 @@
-import io
+# import io
 import json
 import logging
 import os
 import shutil
 import subprocess
-import sys
-import termios
+# import sys
+# import termios
 from binascii import hexlify
 
 import gevent
@@ -172,9 +172,9 @@ def geth_create_blockchain(
 
     cmd = geth_to_cmd(gethport, gethrpcport, nodedir, verbosity)
 
-    # save current term settings before running geth
-    if isinstance(sys.stdin, io.IOBase):  # check that the test is running on non-capture mode
-        term_settings = termios.tcgetattr(sys.stdin)
+    # # save current term settings before running geth
+    # if isinstance(sys.stdin, io.IOBase):  # check that the test is running on non-capture mode
+    #     term_settings = termios.tcgetattr(sys.stdin)
 
     stdout = None
     stderr = None
@@ -200,9 +200,10 @@ def geth_create_blockchain(
         process.terminate()
         raise e
     finally:
-        # reenter echo mode (disabled by geth pasphrase prompt)
-        if isinstance(sys.stdin, io.IOBase):
-            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, term_settings)
+        # # reenter echo mode (disabled by geth pasphrase prompt)
+        # if isinstance(sys.stdin, io.IOBase):
+        #     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, term_settings)
+        pass
 
     process.poll()
 
