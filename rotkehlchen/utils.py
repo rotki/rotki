@@ -57,16 +57,12 @@ def satoshis_to_btc(satoshis: FVal) -> FVal:
     return satoshis * FVal('0.00000001')
 
 
-def dateToTs(s: str):
+def dateToTs(s: str) -> Timestamp:
     return Timestamp(calendar.timegm(datetime.datetime.strptime(s, '%d/%m/%Y').timetuple()))
 
 
-def tsToDate(ts, formatstr='%d/%m/%Y %H:%M:%S'):
+def tsToDate(ts: Timestamp, formatstr: str = '%d/%m/%Y %H:%M:%S') -> str:
     return datetime.datetime.utcfromtimestamp(ts).strftime(formatstr)
-
-
-def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
-    return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
 
 def add_entries(a: Dict[str, FVal], b: Dict[str, FVal]) -> Dict[str, FVal]:
@@ -159,13 +155,6 @@ def dict_get_sumof(d: Dict[str, Dict[str, FVal]], attribute: str, **args) -> FVa
     return sum
 
 
-def get_pair_other(pair, this):
-    currencies = pair.split('_')
-    if len(currencies) != 2:
-        raise ValueError("Could not split {} pair".format(pair))
-    return currencies[0] if currencies[1] == this else currencies[1]
-
-
 def get_pair_position(pair: str, position: str) -> Asset:
     assert position == 'first' or position == 'second'
     currencies = pair.split('_')
@@ -238,19 +227,6 @@ def request_get(uri: str, timeout: int = ALL_REMOTES_TIMEOUT) -> Dict:
 def request_get_direct(uri: str, timeout: int = ALL_REMOTES_TIMEOUT) -> str:
     """Like request_get, but the endpoint only returns a direct value and not a dict"""
     return str(request_get(uri, timeout))
-
-
-def get_jsonfile_contents_or_empty_list(filepath):
-    if not os.path.isfile(filepath):
-        return list()
-
-    with open(filepath, 'r') as infile:
-        try:
-            data = rlk_jsonloads(infile.read())
-        except json.decoder.JSONDecodeError:
-            data = list()
-
-    return data
 
 
 def get_jsonfile_contents_or_empty_dict(filepath: FilePath) -> Dict:
