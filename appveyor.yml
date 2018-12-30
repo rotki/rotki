@@ -4,7 +4,7 @@ os: unstable
 
 environment:
     python2_version: 2.7.15
-    python3_version: 3.6.6
+    python3_version: 3.7.2
     matrix:
         - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
           arch: 32
@@ -22,6 +22,7 @@ install:
     - python setup.py install
     - cd ..
     - pip install -r requirements.txt
+    - pip install pytest
 
 build_script:
     - npm install
@@ -31,6 +32,7 @@ build_script:
     - node_modules\.bin\electron-rebuild
 
 test_script:
+    - pytest rotkehlchen/tests/
     - npm test
 
 deploy_script:

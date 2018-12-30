@@ -1,8 +1,10 @@
 #Inspiration for OSX from: https://github.com/bjones1/CodeChat/blob/master/.travis.yml
 os: linux
 language: python
+sudo: required
+dist: xenial
 python:
-  - 3.6
+  - 3.7
 env:
   global:
   - GETH_URL_LINUX='https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.8.13-225171a4.tar.gz'
@@ -14,10 +16,11 @@ matrix:
   include:
   - os: osx
     language: generic
-    env: INSTALL_TYPE=macpython VERSION=3.6 VENV=venv
+    osx_image: xcode10
+    env: INSTALL_TYPE=macpython VERSION=3.7.0 VENV=venv
   - os: linux
     language: python
-    python: '3.6'
+    python: '3.7'
 
 cache:
   pip: true
