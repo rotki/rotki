@@ -13,6 +13,7 @@ from urllib.parse import urlencode
 from requests import Response
 
 from rotkehlchen import typing
+from rotkehlchen.constants import S_EUR, S_USD
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
@@ -424,7 +425,7 @@ class Kraken(Exchange):
             old_balances = self.query_private('Balance', req={})
             # find USD price of EUR
             with self.lock:
-                self.usdprice['EUR'] = query_fiat_pair('EUR', 'USD')
+                self.usdprice['EUR'] = query_fiat_pair(S_EUR, S_USD)
 
         except RemoteError as e:
             msg = (

@@ -68,7 +68,7 @@ def query_ethereum_txlist(
         # internal tx list contains no gasprice
         gas_price = FVal(-1) if internal else FVal(v['gasPrice'])
         result.append(EthereumTransaction(
-            timestamp=convert_to_int(v['timeStamp']),
+            timestamp=Timestamp(convert_to_int(v['timeStamp'])),
             block_number=convert_to_int(v['blockNumber']),
             hash=v['hash'],
             from_address=v['from'],
@@ -125,7 +125,7 @@ def transactions_from_dictlist(
         if given_tx['timestamp'] > end_ts:
             break
 
-        timestamp = convert_to_int(given_tx['timestamp'])
+        timestamp = Timestamp(convert_to_int(given_tx['timestamp']))
         tx_hash = given_tx['hash']
         from_address = given_tx['from_address']
         to_address = given_tx['to_address']

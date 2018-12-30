@@ -80,6 +80,7 @@ def verify_otctrade_data(
             return None, '{} should be a number'.format(field)
 
     pair = data['otc_pair']
+    assert isinstance(pair, str)
     first = get_pair_position(pair, 'first')
     second = get_pair_position(pair, 'second')
     trade_type = cast(str, data['otc_type'])
@@ -88,6 +89,7 @@ def verify_otctrade_data(
     fee = FVal(data['otc_fee'])
     fee_currency = cast(typing.Asset, data['otc_fee_currency'])
     try:
+        assert isinstance(data['otc_timestamp'], str)
         timestamp = createTimeStamp(data['otc_timestamp'], formatstr='%d/%m/%Y %H:%M')
     except ValueError as e:
         return None, 'Could not process the given datetime: {}'.format(e)

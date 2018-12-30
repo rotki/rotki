@@ -14,7 +14,7 @@ from rotkehlchen.errors import EthSyncError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils import cache_response_timewise, request_get
+from rotkehlchen.utils import cache_response_timewise, request_get_direct
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -100,7 +100,7 @@ class Blockchain(object):
         return {'per_account': self.balances, 'totals': self.totals}, ''
 
     def query_btc_account_balance(self, account: typing.BTCAddress) -> FVal:
-        btc_resp = request_get(
+        btc_resp = request_get_direct(
             'https://blockchain.info/q/addressbalance/%s' % account,
         )
         return FVal(btc_resp) * FVal('0.00000001')  # result is in satoshis
