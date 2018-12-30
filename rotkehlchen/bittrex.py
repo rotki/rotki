@@ -17,7 +17,7 @@ from rotkehlchen.utils import (
     cache_response_timewise,
     createTimeStamp,
     get_pair_position,
-    rlk_jsonloads,
+    rlk_jsonloads_dict,
 )
 
 logger = logging.getLogger(__name__)
@@ -158,7 +158,7 @@ class Bittrex(Exchange):
         response = self.session.get(request_url)
 
         try:
-            json_ret = rlk_jsonloads(response.text)
+            json_ret = rlk_jsonloads_dict(response.text)
         except JSONDecodeError:
             raise RemoteError('Bittrex returned invalid JSON response')
 

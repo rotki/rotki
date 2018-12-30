@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def sfjson_loads(s: str) -> Dict:
+def sfjson_loads(s: str) -> Union[Dict, List]:
     """Exception safe json.loads()"""
     try:
         return rlk_jsonloads(s)
@@ -114,7 +114,7 @@ def query_fiat_pair(base: FiatAsset, quote: FiatAsset) -> FVal:
     )
     pair = '{}_{}'.format(base, quote)
     querystr = 'https://free.currencyconverterapi.com/api/v5/convert?q={}'.format(pair)
-    resp = request_get(querystr)
+    resp = request_get_dict(querystr)
     try:
         return FVal(resp['results'][pair]['val'])
     except ValueError:
@@ -202,7 +202,7 @@ def retry_calls(
                     ))
 
 
-def request_get(uri: str, timeout: int = ALL_REMOTES_TIMEOUT) -> Dict:
+def request_get(uri: str, timeout: int = ALL_REMOTES_TIMEOUT) -> Union[Dict, List]:
     # TODO make this a bit more smart. Perhaps conditional on the type of request.
     # Not all requests would need repeated attempts
     response = retry_calls(
@@ -225,8 +225,15 @@ def request_get(uri: str, timeout: int = ALL_REMOTES_TIMEOUT) -> Dict:
 
 
 def request_get_direct(uri: str, timeout: int = ALL_REMOTES_TIMEOUT) -> str:
-    """Like request_get, but the endpoint only returns a direct value and not a dict"""
+    """Like request_get, but the endpoint only returns a direct value"""
     return str(request_get(uri, timeout))
+
+
+def request_get_dict(uri: str, timeout: int = ALL_REMOTES_TIMEOUT) -> Dict:
+    """Like request_get, but the endpoint only returns a dict"""
+    response = request_get(uri, timeout)
+    assert isinstance(response, Dict)
+    return response
 
 
 def get_jsonfile_contents_or_empty_dict(filepath: FilePath) -> Dict:
@@ -235,7 +242,7 @@ def get_jsonfile_contents_or_empty_dict(filepath: FilePath) -> Dict:
 
     with open(filepath, 'r') as infile:
         try:
-            data = rlk_jsonloads(infile.read())
+            data = rlk_jsonloads_dict(infile.read())
         except json.decoder.JSONDecodeError:
             data = dict()
 
@@ -303,11 +310,23 @@ class RKLEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def rlk_jsonloads(data: str) -> Dict:
+def rlk_jsonloads(data: str) -> Union[Dict, List]:
     return json.loads(data, cls=RKLDecoder)
 
 
-def rlk_jsondumps(data: Dict) -> str:
+def rlk_jsonloads_dict(data: str) -> Dict:
+    value = rlk_jsonloads(data)
+    assert isinstance(value, dict)
+    return value
+
+
+def rlk_jsonloads_list(data: str) -> List:
+    value = rlk_jsonloads(data)
+    assert isinstance(value, list)
+    return value
+
+
+def rlk_jsondumps(data: Union[Dict, List]) -> str:
     return json.dumps(data, cls=RKLEncoder)
 
 

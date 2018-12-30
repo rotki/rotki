@@ -26,7 +26,7 @@ from rotkehlchen.utils import (
     get_pair_position,
     query_fiat_pair,
     retry_calls,
-    rlk_jsonloads,
+    rlk_jsonloads_dict,
 )
 
 logger = logging.getLogger(__name__)
@@ -271,7 +271,7 @@ class Kraken(Exchange):
                     response.status_code,
                 ))
 
-        result = rlk_jsonloads(response.text)
+        result = rlk_jsonloads_dict(response.text)
         if result['error']:
             if isinstance(result['error'], list):
                 error = result['error'][0]

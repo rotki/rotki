@@ -12,7 +12,14 @@ from rotkehlchen.constants import FIAT_CURRENCIES, S_DATACOIN, S_IOTA, S_RDN, S_
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils import query_fiat_pair, retry_calls, rlk_jsondumps, rlk_jsonloads, tsToDate
+from rotkehlchen.utils import (
+    query_fiat_pair,
+    retry_calls,
+    rlk_jsondumps,
+    rlk_jsonloads,
+    rlk_jsonloads_dict,
+    tsToDate,
+)
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -58,7 +65,7 @@ def query_cryptocompare_for_fiat_price(asset: typing.Asset) -> FVal:
     if resp.status_code != 200:
         raise RemoteError('Cant reach cryptocompare to get USD value of {}'.format(asset))
 
-    resp = rlk_jsonloads(resp.text)
+    resp = rlk_jsonloads_dict(resp.text)
 
     # If there is an error in the response skip this token
     if 'USD' not in resp:
@@ -155,7 +162,7 @@ class Inquirer(object):
             return None
 
         try:
-            result = rlk_jsonloads(resp.text)
+            result = rlk_jsonloads_dict(resp.text)
         except JSONDecodeError:
             return None
 

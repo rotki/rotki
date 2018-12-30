@@ -8,7 +8,7 @@ from web3 import HTTPProvider, Web3
 from rotkehlchen import typing
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils import from_wei, request_get, rlk_jsonloads
+from rotkehlchen.utils import from_wei, request_get_dict, rlk_jsonloads
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -118,7 +118,7 @@ class Ethchain(object):
 
         url = 'https://api.blockcypher.com/v1/eth/main'
         log.debug('Querying ETH highest block', url=url)
-        eth_resp = request_get(url)
+        eth_resp = request_get_dict(url)
 
         if 'height' not in eth_resp:
             return None
@@ -133,7 +133,7 @@ class Ethchain(object):
                 sensitive_log=True,
                 eth_address=account,
             )
-            eth_resp = request_get(
+            eth_resp = request_get_dict(
                 'https://api.etherscan.io/api?module=account&action=balance&address=%s'
                 % account,
             )
@@ -177,7 +177,7 @@ class Ethchain(object):
                     sensitive_log=True,
                     eth_accounts=account_slice,
                 )
-                eth_resp = request_get(
+                eth_resp = request_get_dict(
                     'https://api.etherscan.io/api?module=account&action=balancemulti&address=%s' %
                     ','.join(account_slice),
                 )
@@ -253,7 +253,7 @@ class Ethchain(object):
                     token_address=token_address,
                     token_symbol=token_symbol,
                 )
-                resp = request_get(
+                resp = request_get_dict(
                     'https://api.etherscan.io/api?module=account&action='
                     'tokenbalance&contractaddress={}&address={}'.format(
                         token_address,
