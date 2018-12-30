@@ -9,7 +9,7 @@ from gevent.lock import Semaphore
 
 from rotkehlchen import typing
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils import rlk_jsondumps, rlk_jsonloads
+from rotkehlchen.utils import rlk_jsondumps, rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -73,7 +73,7 @@ class Exchange(object):
         if os.path.isfile(trades_file):
             with open(trades_file, 'r') as f:
                 try:
-                    trades = rlk_jsonloads(f.read())
+                    trades = rlk_jsonloads_dict(f.read())
                 except JSONDecodeError:
                     pass
 

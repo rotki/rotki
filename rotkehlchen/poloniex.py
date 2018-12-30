@@ -23,6 +23,7 @@ from rotkehlchen.utils import (
     get_pair_position,
     retry_calls,
     rlk_jsonloads,
+    rlk_jsonloads_dict,
 )
 
 logger = logging.getLogger(__name__)
@@ -146,7 +147,7 @@ class Poloniex(Exchange):
 
         return after
 
-    def api_query(self, command: str, req: Optional[Dict] = None) -> Dict:
+    def api_query(self, command: str, req: Optional[Dict] = None) -> Union[Dict, List]:
         result = retry_calls(5, 'poloniex', command, self._api_query, command, req)
         if 'error' in result:
             raise PoloniexError(
@@ -156,7 +157,7 @@ class Poloniex(Exchange):
                 ))
         return result
 
-    def _api_query(self, command: str, req: Optional[Dict] = None) -> Dict:
+    def _api_query(self, command: str, req: Optional[Dict] = None) -> Union[Dict, List]:
         if req is None:
             req = {}
 
@@ -183,23 +184,27 @@ class Poloniex(Exchange):
                 )
                 ret = self.session.post('https://poloniex.com/tradingApi', req)
 
-            result = rlk_jsonloads(ret.text)
+            result = rlk_jsonloads_dict(ret.text)
             return self.post_process(result)
 
         return rlk_jsonloads(ret.text)
 
     def returnTicker(self) -> Dict:
-        return self.api_query("returnTicker")
+        # We know returnTicker response is a Dict
+        response = cast(Dict, self.api_query("returnTicker"))
+        return response
 
     def returnFeeInfo(self) -> Dict:
-        return self.api_query("returnFeeInfo")
+        # We know returnFeeInfo response is a Dict
+        response = cast(Dict, self.api_query("returnFeeInfo"))
+        return response
 
     def returnLendingHistory(
             self,
             start_ts: Optional[typing.Timestamp] = None,
             end_ts: Optional[typing.Timestamp] = None,
             limit: Optional[int] = None,
-    ) -> Dict:
+    ) -> List:
         """Default limit for this endpoint seems to be 500 when I tried.
         So to be sure all your loans are included put a very high limit per call
         and also check if the limit was reached after each call.
@@ -213,7 +218,10 @@ class Poloniex(Exchange):
             req['end'] = end_ts
         if limit is not None:
             req['limit'] = limit
-        return self.api_query("returnLendingHistory", req)
+
+        # we know returnLendingHistory returns a List of loans
+        response = cast(List, self.api_query("returnLendingHistory", req))
+        return response
 
     def returnTradeHistory(
             self,
@@ -236,7 +244,12 @@ class Poloniex(Exchange):
             start_ts: typing.Timestamp,
             end_ts: typing.Timestamp,
     ) -> Dict:
-        return self.api_query('returnDepositsWithdrawals', {'start': start_ts, 'end': end_ts})
+        # We know returnDepositsWithdrawals returns a Dict
+        response = cast(
+            Dict,
+            self.api_query('returnDepositsWithdrawals', {'start': start_ts, 'end': end_ts}),
+        )
+        return response
 
     def market_watcher(self):
         self.ticker = self.returnTicker()
@@ -269,6 +282,8 @@ class Poloniex(Exchange):
     def query_balances(self) -> Tuple[Optional[dict], str]:
         try:
             resp = self.api_query('returnCompleteBalances', {"account": "all"})
+            # We know returnCompleteBalances returns a dict
+            resp = cast(Dict, resp)
         except (RemoteError, PoloniexError) as e:
             msg = (
                 'Poloniex API request failed. Could not reach poloniex due '

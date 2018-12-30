@@ -19,7 +19,7 @@ from rotkehlchen.errors import AuthenticationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import FIAT_CURRENCIES
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils import createTimeStamp, get_pair_position, is_number, rlk_jsonloads
+from rotkehlchen.utils import createTimeStamp, get_pair_position, is_number, rlk_jsonloads_list
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -80,6 +80,7 @@ def verify_otctrade_data(
             return None, '{} should be a number'.format(field)
 
     pair = data['otc_pair']
+    assert isinstance(pair, str)
     first = get_pair_position(pair, 'first')
     second = get_pair_position(pair, 'second')
     trade_type = cast(str, data['otc_type'])
@@ -88,6 +89,7 @@ def verify_otctrade_data(
     fee = FVal(data['otc_fee'])
     fee_currency = cast(typing.Asset, data['otc_fee_currency'])
     try:
+        assert isinstance(data['otc_timestamp'], str)
         timestamp = createTimeStamp(data['otc_timestamp'], formatstr='%d/%m/%Y %H:%M')
     except ValueError as e:
         return None, 'Could not process the given datetime: {}'.format(e)
@@ -128,7 +130,8 @@ def verify_otctrade_data(
 def get_all_eth_tokens() -> List[typing.EthTokenInfo]:
     dir_path = os.path.dirname(os.path.realpath(__file__))
     with open(os.path.join(dir_path, 'data', 'eth_tokens.json'), 'r') as f:
-        return rlk_jsonloads(f.read())
+        # We know eth_tokens.json contains a list
+        return rlk_jsonloads_list(f.read())
 
 
 class DataHandler(object):

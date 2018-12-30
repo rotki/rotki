@@ -128,6 +128,7 @@ class Binance(Exchange):
             return
 
         # If it's the first time, populate the binance pair trade symbols
+        # We know exchangeInfo returns a dict
         exchange_data = self.api_query('exchangeInfo')
         self._populate_symbols_to_pair(exchange_data)
 
@@ -153,6 +154,7 @@ class Binance(Exchange):
 
     def validate_api_key(self) -> Tuple[bool, str]:
         try:
+            # We know account endpoint returns a dict
             self.api_query('account')
         except ValueError as e:
             error = str(e)
@@ -203,14 +205,19 @@ class Binance(Exchange):
             limit_ban = response.status_code == 429 and backoff > self.backoff_limit
             if limit_ban or response.status_code not in (200, 429):
                 result = rlk_jsonloads(response.text)
+                code = 'no code found'
+                msg = 'no message found'
+                if isinstance(result, dict):
+                    code = result['code']
+                    msg = result['msg']
                 raise RemoteError(
                     'Binance API request {} for {} failed with HTTP status '
                     'code: {}, error code: {} and error message: {}'.format(
                         response.url,
                         method,
                         response.status_code,
-                        result['code'],
-                        result['msg'],
+                        code,
+                        msg,
                     ))
             elif response.status_code == 429:
                 if backoff > self.backoff_limit:
@@ -289,6 +296,7 @@ class Binance(Exchange):
             last_trade_id = 0
             len_result = limit
             while len_result == limit:
+                # We know that myTrades returns a list from the api docs
                 result = self.api_query(
                     'myTrades',
                     options={

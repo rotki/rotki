@@ -61,7 +61,7 @@ def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
         open_time=None,
         close_time=close_time,
         profit_loss=profit_loss,
-        pl_currency='BTC',
+        pl_currency=S_BTC,
         notes=notes,
     )
 
@@ -165,7 +165,7 @@ class Bitmex(Exchange):
         except JSONDecodeError:
             raise RemoteError('Bitmex returned invalid JSON response')
 
-        if 'error' in json_ret:
+        if isinstance(json_ret, dict) and 'error' in json_ret:
             raise RemoteError(json_ret['error']['message'])
 
         return json_ret
@@ -215,6 +215,7 @@ class Bitmex(Exchange):
     ) -> List:
 
         try:
+            # We know user/walletHistory returns a list
             resp = self._api_query('get', 'user/walletHistory')
         except RemoteError as e:
             msg = (

@@ -1,6 +1,8 @@
+from rotkehlchen.constants import S_BTC
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import MarginPosition
 from rotkehlchen.tests.utils.accounting import accounting_history_process
+from rotkehlchen.typing import Timestamp
 
 DUMMY_HASH = '0x0'
 DUMMY_ADDRESS = '0x0'
@@ -273,31 +275,31 @@ eth_tx_list = [
 margin_history = [
     MarginPosition(  # before query period -- BTC/EUR: 422.90
         exchange='poloniex',
-        open_time=1463184190,  # 14/05/2016
-        close_time=1464393600,  # 28/05/2016
+        open_time=Timestamp(1463184190),  # 14/05/2016
+        close_time=Timestamp(1464393600),  # 28/05/2016
         profit_loss=FVal(0.05),
-        pl_currency='BTC',
+        pl_currency=S_BTC,
         notes='margin1',
     ), MarginPosition(  # before query period -- BTC/EUR: 542.87
         exchange='poloniex',
-        open_time=1472428800,  # 29/08/2016
-        close_time=1473897600,  # 15/09/2016
+        open_time=Timestamp(1472428800),  # 29/08/2016
+        close_time=Timestamp(1473897600),  # 15/09/2016
         profit_loss=FVal('-0.042'),
-        pl_currency='BTC',
+        pl_currency=S_BTC,
         notes='margin2',
     ), MarginPosition(  # BTC/EUR: 1039.935
         exchange='poloniex',
-        open_time=1489276800,  # 12/03/2017
-        close_time=1491177600,  # 03/04/2017
+        open_time=Timestamp(1489276800),  # 12/03/2017
+        close_time=Timestamp(1491177600),  # 03/04/2017
         profit_loss=FVal('-0.042'),
-        pl_currency='BTC',
+        pl_currency=S_BTC,
         notes='margin3',
     ), MarginPosition(  # BTC/EUR: 2244.255
         exchange='poloniex',
-        open_time=1496534400,  # 04/06/2017
-        close_time=1498694400,  # 29/06/2017
+        open_time=Timestamp(1496534400),  # 04/06/2017
+        close_time=Timestamp(1498694400),  # 29/06/2017
         profit_loss=FVal(0.124),
-        pl_currency='BTC',
+        pl_currency=S_BTC,
         notes='margin4',
     )]
 

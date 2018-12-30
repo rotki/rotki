@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 import gevent
 
 from rotkehlchen.accounting.events import TaxableEvents
-from rotkehlchen.constants import S_BTC, S_ETH
+from rotkehlchen.constants import S_BTC, S_ETH, ZERO
 from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.errors import CorruptData, PriceQueryUnknownFromAsset
 from rotkehlchen.fval import FVal
@@ -18,7 +18,7 @@ from rotkehlchen.order_formatting import (
     trade_get_other_pair,
 )
 from rotkehlchen.transactions import EthereumTransaction
-from rotkehlchen.typing import Asset, FiatAsset, FilePath, Timestamp
+from rotkehlchen.typing import Asset, Fee, FiatAsset, FilePath, Timestamp
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -177,7 +177,7 @@ class Accountant(object):
         assert isinstance(rate, (FVal, int))  # TODO Remove. Is temporary assert
         return rate
 
-    def get_fee_in_profit_currency(self, trade: Trade) -> FVal:
+    def get_fee_in_profit_currency(self, trade: Trade) -> Fee:
         fee_rate = self.query_historical_price(
             trade.fee_currency,
             self.profit_currency,
@@ -192,7 +192,7 @@ class Accountant(object):
             amount: FVal,
             timestamp: Timestamp,
             exchange: str,
-            fee: FVal,
+            fee: Fee,
     ) -> None:
         if timestamp < self.start_ts:
             return
@@ -449,7 +449,7 @@ class Accountant(object):
             self.events.add_margin_position(
                 gain_loss_asset=action.pl_currency,
                 gain_loss_amount=action.profit_loss,
-                fee_in_asset=FVal(0),
+                fee_in_asset=Fee(ZERO),
                 margin_notes=action.notes,
                 timestamp=action.close_time,
             )

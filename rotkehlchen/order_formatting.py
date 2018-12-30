@@ -1,25 +1,35 @@
 from collections import namedtuple
+from dataclasses import dataclass
+from typing import List, NamedTuple, Optional
 
+from rotkehlchen import typing
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils import get_pair_position
 
-Events = namedtuple('Events', ('buys', 'sells'))
-BuyEvent = namedtuple(
-    'BuyEvent', (
-        'timestamp',
-        'amount',  # Amount of the asset being bought
-        'rate',  # Rate in quote currency for which we buy 1 unit of the buying asset
-        # Fee rate in profit currency which we paid for each unit of the buying asset
-        'fee_rate',
-    ),
-)
-SellEvent = namedtuple('SellEvent', (
-    'timestamp',
-    'amount',  # Amount of the asset we sell
-    'rate',  # Rate in 'profit_currency' for which we sell 1 unit of the sold asset
-    'fee_rate',  # Fee rate in 'profit_currency' which we paid for each unit of the sold asset
-    'gain',  # Gain in profit currency for this trade. Fees are not counted here.
-))
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class BuyEvent:
+    timestamp: typing.Timestamp
+    amount: FVal  # Amount of the asset being bought
+    rate: FVal  # Rate in quote currency for which we buy 1 unit of the buying asset
+    # Fee rate in profit currency which we paid for each unit of the buying asset
+    fee_rate: FVal
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class SellEvent:
+    timestamp: typing.Timestamp
+    amount: FVal  # Amount of the asset we sell
+    rate: FVal  # Rate in 'profit_currency' for which we sell 1 unit of the sold asset
+    fee_rate: FVal  # Fee rate in 'profit_currency' which we paid for each unit of the sold asset
+    gain: FVal  # Gain in profit currency for this trade. Fees are not counted here.
+
+
+class Events(NamedTuple):
+    buys: List[BuyEvent]
+    sells: List[SellEvent]
+
+
 Trade = namedtuple(
     'Trade',
     (
@@ -49,17 +59,14 @@ AssetMovement = namedtuple(
     ),
 )
 
-MarginPosition = namedtuple(
-    'MarginPosition',
-    (
-        'exchange',
-        'open_time',
-        'close_time',
-        'profit_loss',
-        'pl_currency',
-        'notes',
-    ),
-)
+
+class MarginPosition(NamedTuple):
+    exchange: str
+    open_time: Optional[typing.Timestamp]
+    close_time: typing.Timestamp
+    profit_loss: FVal
+    pl_currency: typing.Asset
+    notes: str
 
 
 def trade_get_other_pair(trade, asset):

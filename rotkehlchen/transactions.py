@@ -4,7 +4,7 @@ from typing import Dict, List
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import EthAddress, EthereumTransaction, Timestamp
-from rotkehlchen.utils import convert_to_int, request_get, retry_calls
+from rotkehlchen.utils import convert_to_int, request_get_dict, retry_calls
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -41,7 +41,7 @@ def query_ethereum_txlist(
     if to_block:
         reqstring += '&endblock={}'.format(to_block)
 
-    resp = request_get(reqstring)
+    resp = request_get_dict(reqstring)
 
     if 'status' not in resp or convert_to_int(resp['status']) != 1:
         status = convert_to_int(resp['status'])
@@ -68,7 +68,7 @@ def query_ethereum_txlist(
         # internal tx list contains no gasprice
         gas_price = FVal(-1) if internal else FVal(v['gasPrice'])
         result.append(EthereumTransaction(
-            timestamp=convert_to_int(v['timeStamp']),
+            timestamp=Timestamp(convert_to_int(v['timeStamp'])),
             block_number=convert_to_int(v['blockNumber']),
             hash=v['hash'],
             from_address=v['from'],
@@ -125,7 +125,7 @@ def transactions_from_dictlist(
         if given_tx['timestamp'] > end_ts:
             break
 
-        timestamp = convert_to_int(given_tx['timestamp'])
+        timestamp = Timestamp(convert_to_int(given_tx['timestamp']))
         tx_hash = given_tx['hash']
         from_address = given_tx['from_address']
         to_address = given_tx['to_address']

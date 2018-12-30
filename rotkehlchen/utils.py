@@ -8,22 +8,22 @@ import os
 import sys
 import time
 from functools import wraps
-from typing import Any, Callable
+from typing import Any, Callable, Dict, List, Union, cast
 
 import requests
 from rlp.sedes import big_endian_int
 
-from rotkehlchen import typing
-from rotkehlchen.constants import ALL_REMOTES_TIMEOUT
+from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, ZERO
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.typing import Asset, Fee, FiatAsset, FilePath, ResultCache, Timestamp
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def sfjson_loads(s):
+def sfjson_loads(s: str) -> Union[Dict, List]:
     """Exception safe json.loads()"""
     try:
         return rlk_jsonloads(s)
@@ -31,7 +31,7 @@ def sfjson_loads(s):
         return {}
 
 
-def pretty_json_dumps(data):
+def pretty_json_dumps(data: Dict) -> str:
     return json.dumps(
         data,
         sort_keys=True,
@@ -41,15 +41,15 @@ def pretty_json_dumps(data):
     )
 
 
-def ts_now():
-    return int(time.time())
+def ts_now() -> Timestamp:
+    return Timestamp(int(time.time()))
 
 
-def createTimeStamp(datestr, formatstr='%Y-%m-%d %H:%M:%S'):
-    return int(calendar.timegm(time.strptime(datestr, formatstr)))
+def createTimeStamp(datestr: str, formatstr: str = '%Y-%m-%d %H:%M:%S') -> Timestamp:
+    return Timestamp(calendar.timegm(time.strptime(datestr, formatstr)))
 
 
-def iso8601ts_to_timestamp(datestr):
+def iso8601ts_to_timestamp(datestr: str) -> Timestamp:
     return createTimeStamp(datestr, formatstr='%Y-%m-%dT%H:%M:%S.%fZ')
 
 
@@ -57,26 +57,22 @@ def satoshis_to_btc(satoshis: FVal) -> FVal:
     return satoshis * FVal('0.00000001')
 
 
-def dateToTs(s):
-    return int(calendar.timegm(datetime.datetime.strptime(s, '%d/%m/%Y').timetuple()))
+def dateToTs(s: str) -> Timestamp:
+    return Timestamp(calendar.timegm(datetime.datetime.strptime(s, '%d/%m/%Y').timetuple()))
 
 
-def tsToDate(ts, formatstr='%d/%m/%Y %H:%M:%S'):
+def tsToDate(ts: Timestamp, formatstr: str = '%d/%m/%Y %H:%M:%S') -> str:
     return datetime.datetime.utcfromtimestamp(ts).strftime(formatstr)
 
 
-def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
-    return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
-
-
-def add_entries(a, b):
+def add_entries(a: Dict[str, FVal], b: Dict[str, FVal]) -> Dict[str, FVal]:
     return {
         'amount': a['amount'] + b['amount'],
         'usd_value': a['usd_value'] + b['usd_value'],
     }
 
 
-def cache_response_timewise(seconds=600):
+def cache_response_timewise(seconds: int = 600):
     """ This is a decorator for caching results of functions of objects.
     The objects must adhere to the interface of having:
         - A results_cache dictionary attribute
@@ -96,7 +92,7 @@ def cache_response_timewise(seconds=600):
             if cache_miss:
                 result = f(wrappingobj, *args)
                 with wrappingobj.lock:
-                    wrappingobj.results_cache[f.__name__] = typing.ResultCache(result, now)
+                    wrappingobj.results_cache[f.__name__] = ResultCache(result, now)
                 return result
 
             # else hit the cache
@@ -107,7 +103,7 @@ def cache_response_timewise(seconds=600):
     return _cache_response_timewise
 
 
-def query_fiat_pair(base, quote):
+def query_fiat_pair(base: FiatAsset, quote: FiatAsset) -> FVal:
     if base == quote:
         return FVal(1.0)
 
@@ -118,7 +114,7 @@ def query_fiat_pair(base, quote):
     )
     pair = '{}_{}'.format(base, quote)
     querystr = 'https://free.currencyconverterapi.com/api/v5/convert?q={}'.format(pair)
-    resp = request_get(querystr)
+    resp = request_get_dict(querystr)
     try:
         return FVal(resp['results'][pair]['val'])
     except ValueError:
@@ -130,18 +126,18 @@ def query_fiat_pair(base, quote):
         raise ValueError('Could not find a "{}" price for "{}"'.format(base, quote))
 
 
-def from_wei(wei_value):
+def from_wei(wei_value: FVal) -> FVal:
     return wei_value / FVal(10 ** 18)
 
 
-def combine_dicts(a, b, op=operator.add):
+def combine_dicts(a: Dict, b: Dict, op=operator.add) -> Dict:
     new_dict = a.copy()
     new_dict.update(b)
     new_dict.update([(k, op(a[k], b[k])) for k in set(b) & set(a)])
     return new_dict
 
 
-def combine_stat_dicts(list_of_dicts):
+def combine_stat_dicts(list_of_dicts: List[Dict]) -> Dict:
     if len(list_of_dicts) == 0:
         return {}
 
@@ -152,29 +148,23 @@ def combine_stat_dicts(list_of_dicts):
     return combined_dict
 
 
-def dict_get_sumof(d, attribute, **args):
-    sum = 0
+def dict_get_sumof(d: Dict[str, Dict[str, FVal]], attribute: str, **args) -> FVal:
+    sum = ZERO
     for _, value in d.items():
         sum += value[attribute]
     return sum
 
 
-def get_pair_other(pair, this):
-    currencies = pair.split('_')
-    if len(currencies) != 2:
-        raise ValueError("Could not split {} pair".format(pair))
-    return currencies[0] if currencies[1] == this else currencies[1]
-
-
-def get_pair_position(pair, position):
+def get_pair_position(pair: str, position: str) -> Asset:
     assert position == 'first' or position == 'second'
     currencies = pair.split('_')
     if len(currencies) != 2:
         raise ValueError("Could not split {} pair".format(pair))
-    return currencies[0] if position == 'first' else currencies[1]
+    currency = currencies[0] if position == 'first' else currencies[1]
+    return cast(Asset, currency)
 
 
-def merge_dicts(*dict_args):
+def merge_dicts(*dict_args: Dict) -> Dict:
     """
     Given any number of dicts, shallow copy and merge into a new dict,
     precedence goes to key value pairs in latter dicts.
@@ -212,7 +202,7 @@ def retry_calls(
                     ))
 
 
-def request_get(uri, timeout=ALL_REMOTES_TIMEOUT):
+def request_get(uri: str, timeout: int = ALL_REMOTES_TIMEOUT) -> Union[Dict, List]:
     # TODO make this a bit more smart. Perhaps conditional on the type of request.
     # Not all requests would need repeated attempts
     response = retry_calls(
@@ -234,33 +224,35 @@ def request_get(uri, timeout=ALL_REMOTES_TIMEOUT):
     return result
 
 
-def get_jsonfile_contents_or_empty_list(filepath):
-    if not os.path.isfile(filepath):
-        return list()
-
-    with open(filepath, 'r') as infile:
-        try:
-            data = rlk_jsonloads(infile.read())
-        except json.decoder.JSONDecodeError:
-            data = list()
-
-    return data
+def request_get_direct(uri: str, timeout: int = ALL_REMOTES_TIMEOUT) -> str:
+    """Like request_get, but the endpoint only returns a direct value"""
+    return str(request_get(uri, timeout))
 
 
-def get_jsonfile_contents_or_empty_dict(filepath):
+def request_get_dict(uri: str, timeout: int = ALL_REMOTES_TIMEOUT) -> Dict:
+    """Like request_get, but the endpoint only returns a dict"""
+    response = request_get(uri, timeout)
+    assert isinstance(response, Dict)
+    return response
+
+
+def get_jsonfile_contents_or_empty_dict(filepath: FilePath) -> Dict:
     if not os.path.isfile(filepath):
         return dict()
 
     with open(filepath, 'r') as infile:
         try:
-            data = rlk_jsonloads(infile.read())
+            data = rlk_jsonloads_dict(infile.read())
         except json.decoder.JSONDecodeError:
             data = dict()
 
     return data
 
 
-def convert_to_int(val, accept_only_exact=True):
+def convert_to_int(
+        val: Union[FVal, bytes, str, int, float],
+        accept_only_exact: bool = True,
+) -> int:
     """Try to convert to an int. Either from an FVal or a string. If it's a float
     and it's not whole (like 42.0) and accept_only_exact is False then raise"""
     if isinstance(val, FVal):
@@ -276,7 +268,9 @@ def convert_to_int(val, accept_only_exact=True):
     raise ValueError('Can not convert {} which is of type {} to int.'.format(val, type(val)))
 
 
-def rkl_decode_value(val):
+def rkl_decode_value(
+        val: Union[Dict, List, float, bytes, str],
+) -> Union[Dict, FVal, List, bytes, str]:
     if isinstance(val, dict):
         new_val = dict()
         for k, v in val.items():
@@ -293,6 +287,7 @@ def rkl_decode_value(val):
         except ValueError:
             pass
 
+    assert not isinstance(val, float)
     return val
 
 
@@ -315,27 +310,39 @@ class RKLEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def rlk_jsonloads(data):
+def rlk_jsonloads(data: str) -> Union[Dict, List]:
     return json.loads(data, cls=RKLDecoder)
 
 
-def rlk_jsondumps(data):
+def rlk_jsonloads_dict(data: str) -> Dict:
+    value = rlk_jsonloads(data)
+    assert isinstance(value, dict)
+    return value
+
+
+def rlk_jsonloads_list(data: str) -> List:
+    value = rlk_jsonloads(data)
+    assert isinstance(value, list)
+    return value
+
+
+def rlk_jsondumps(data: Union[Dict, List]) -> str:
     return json.dumps(data, cls=RKLEncoder)
 
 
 def taxable_gain_for_sell(
-        taxable_amount,
-        rate_in_profit_currency,
-        total_fee_in_profit_currency,
-        selling_amount,
-):
+        taxable_amount: FVal,
+        rate_in_profit_currency: FVal,
+        total_fee_in_profit_currency: Fee,
+        selling_amount: FVal,
+) -> FVal:
     return (
         rate_in_profit_currency * taxable_amount -
         total_fee_in_profit_currency * (taxable_amount / selling_amount)
     )
 
 
-def is_number(s):
+def is_number(s: Any) -> bool:
     try:
         float(s)
         return True
@@ -343,11 +350,11 @@ def is_number(s):
         return False
 
 
-def int_to_big_endian(x):
+def int_to_big_endian(x: int) -> bytes:
     return big_endian_int.serialize(x)
 
 
-def get_system_spec():
+def get_system_spec() -> Dict[str, str]:
     """Collect information about the system and installation."""
     import pkg_resources
     import platform
@@ -375,7 +382,7 @@ def get_system_spec():
     return system_spec
 
 
-def _process_entry(entry):
+def _process_entry(entry: Any) -> Union[str, List, Dict]:
     if isinstance(entry, FVal):
         return str(entry)
     elif isinstance(entry, list):
@@ -394,14 +401,16 @@ def _process_entry(entry):
         return entry
 
 
-def process_result(result):
+def process_result(result: Dict) -> Dict:
     """Before sending out a result a dictionary via the server we are turning
     all Decimals to strings so that the serialization to float/big number is handled
     by the client application and we lose nothing in the transfer"""
-    return _process_entry(result)
+    processed_result = _process_entry(result)
+    assert isinstance(processed_result, dict)
+    return processed_result
 
 
-def accounts_result(per_account, totals):
+def accounts_result(per_account, totals) -> Dict:
     result = {
         'result': True,
         'message': '',
@@ -411,5 +420,5 @@ def accounts_result(per_account, totals):
     return process_result(result)
 
 
-def simple_result(v, msg):
+def simple_result(v: Any, msg: str) -> Dict:
     return {'result': v, 'message': msg}
