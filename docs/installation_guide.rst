@@ -75,7 +75,7 @@ OSX
 
 The tl;dr version is:
 - install sqlcipher
-- use a virtual env with python 3.6.x
+- use a virtual env with python 3.7.x
 - make sure pip installed everything it says it installed
 - get your node under control with nvm. It has been tested with 8.9
 
@@ -96,7 +96,7 @@ If you wish to use Conda, use the following commands:::
     $ echo "export PATH=$PATH:/usr/local/anaconda3/bin" >> ~/.bash_profile
     $ echo ". /usr/local/anaconda3/etc/profile.d/conda.sh" >> ~/.bash_profile
     $ source ~/.bash_profile
-    $ conda create python=3.6 --name rotkehlchen
+    $ conda create python=3.7 --name rotkehlchen
     $ conda activate rotkehlchen
 
 If you wish to use Virtualenvwrapper use the following::
