@@ -16,7 +16,6 @@ from rotkehlchen.utils import (
     query_fiat_pair,
     retry_calls,
     rlk_jsondumps,
-    rlk_jsonloads,
     rlk_jsonloads_dict,
     tsToDate,
 )
@@ -37,7 +36,7 @@ def get_fiat_usd_exchange_rates(
     return rates
 
 
-def world_to_cryptocompare(asset):
+def world_to_cryptocompare(asset: typing.Asset) -> typing.Asset:
     # Adjust some ETH tokens to how cryptocompare knows them
     if asset == S_RDN:
         # remove this if cryptocompare changes the symbol
@@ -86,15 +85,16 @@ def query_cryptocompare_for_fiat_price(asset: typing.Asset) -> FVal:
 
 
 class Inquirer(object):
-    def __init__(self, data_dir, kraken=None):
+    def __init__(self, data_dir: typing.FilePath, kraken=None):
         self.kraken = kraken
         self.session = requests.session()
         self.data_directory = data_dir
 
         filename = os.path.join(self.data_directory, 'price_history_forex.json')
         try:
-            with open(filename, 'rb') as f:
-                data = rlk_jsonloads(f.read())
+            with open(filename, 'r') as f:
+                # we know price_history_forex contains a dict
+                data = rlk_jsonloads_dict(f.read())
                 self.cached_forex_data = data
         except (OSError, IOError, JSONDecodeError):
             self.cached_forex_data = dict()
@@ -182,7 +182,7 @@ class Inquirer(object):
         log.debug('Exchangeratesapi query succesful', rate=rate)
         return rate
 
-    def save_historical_forex_data(self):
+    def save_historical_forex_data(self) -> None:
         filename = os.path.join(self.data_directory, 'price_history_forex.json')
         with open(filename, 'w') as outfile:
             outfile.write(rlk_jsondumps(self.cached_forex_data))
