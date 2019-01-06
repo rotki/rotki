@@ -185,9 +185,9 @@ class Rotkehlchen(object):
                         'The API keys found in the Database are not valid. Perhaps '
                         'they expired?',
                     )
-                del self.premium
-                self.premium = None
-                return
+                    del self.premium
+                    self.premium = None
+                    return
             else:
                 # no premium credentials in the DB
                 return
