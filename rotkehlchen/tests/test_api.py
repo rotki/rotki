@@ -27,3 +27,16 @@ def test_add_remove_eth_tokens(rotkehlchen_instance):
     rotkehlchen_instance.remove_owned_eth_tokens(['STORJ', 'GNO'])
     db_tokens_list = rotkehlchen_instance.data.db.get_owned_tokens()
     assert len(db_tokens_list) == 1 and db_tokens_list[0] == 'RDN'
+
+
+def test_periodic_query(rotkehlchen_instance):
+    """Test that periodiq query returns expected dict values"""
+    result = rotkehlchen_instance.query_periodic_data()
+
+    assert len(result) == 3
+    assert result['last_balance_save'] == 0
+    assert (
+        isinstance(result['eth_node_connection'], bool) and
+        result['eth_node_connection'] is False
+    )
+    assert result['history_process_current_ts'] == -1

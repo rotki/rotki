@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 import logging
 import shutil
+from typing import Dict, Union
 
 import gevent
 from gevent.lock import Semaphore
 
-from rotkehlchen import typing
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.binance import Binance
 from rotkehlchen.bitmex import Bitmex
@@ -22,6 +22,7 @@ from rotkehlchen.kraken import Kraken
 from rotkehlchen.logging import DEFAULT_ANONYMIZED_LOGS, LoggingSettings, RotkehlchenLogsAdapter
 from rotkehlchen.poloniex import Poloniex
 from rotkehlchen.premium import premium_create_and_verify
+from rotkehlchen.typing import ResultCache, Timestamp
 from rotkehlchen.utils import (
     accounts_result,
     combine_stat_dicts,
@@ -42,7 +43,7 @@ class Rotkehlchen(object):
     def __init__(self, args):
         self.lock = Semaphore()
         self.lock.acquire()
-        self.results_cache: typing.ResultCache = dict()
+        self.results_cache: ResultCache = dict()
         self.premium = None
         self.connected_exchanges = []
 
@@ -659,6 +660,14 @@ class Rotkehlchen(object):
         # Success, remove it also from the DB
         self.data.db.remove_exchange(name)
         return True, ''
+
+    def query_periodic_data(self) -> Dict[str, Union[bool, Timestamp]]:
+        """Query for frequently changing data"""
+        result = {}
+        result['last_balance_save'] = self.data.db.get_last_balance_save_time()
+        result['eth_node_connection'] = self.blockchain.ethchain.connected
+        result['history_process_current_ts'] = self.accountant.currently_processed_timestamp
+        return result
 
     def shutdown(self):
         log.info("Shutting Down")

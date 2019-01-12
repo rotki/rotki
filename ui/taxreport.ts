@@ -7,6 +7,9 @@ import {TradeHistoryOverview, TradeHistoryResult} from './model/trade-history-re
 import {EventEntry} from './model/event-entry';
 import {service} from './rotkehlchen_service';
 
+let REPORT_START_TS = -1;
+let REPORT_END_TS = -1;
+
 export function create_taxreport_ui() {
     let str = page_header('Tax Report');
     str += form_entry('Start Date', 'analysis_start_date');
@@ -56,6 +59,8 @@ function generate_report_callback(event: JQuery.Event) {
 
     const start_ts = date_text_to_utc_ts(start_ts_text);
     const end_ts = date_text_to_utc_ts(end_ts_text);
+    REPORT_START_TS = start_ts;
+    REPORT_END_TS = end_ts;
     const now_ts = utc_now();
     if (end_ts <= start_ts) {
         showError('Input Error', 'The end time should be after the start time.');
@@ -75,7 +80,7 @@ function generate_report_callback(event: JQuery.Event) {
         );
         return;
     }
-    const str = loading_placeholder('tax_report_loading');
+    const str = loading_placeholder('tax_report_loading', '0%');
     $(str).insertAfter('#tax_report_anchor');
 
     clean_taxreport_ui();
@@ -90,6 +95,15 @@ function generate_report_callback(event: JQuery.Event) {
     }).catch((reason: Error) => {
         showError('Trade History Processing Error', reason.message);
     });
+}
+
+export function update_tax_report_progress(current_ts: number) {
+    if (!($('#tax_report_loading').length)) {
+        return;
+    }
+    const percentage = (current_ts - REPORT_START_TS) * (1 / (REPORT_END_TS - REPORT_START_TS));
+    const percentage_str = (percentage * 100).toFixed(2);
+    $('#tax_report_loading_extra_text').text(percentage_str + '%');
 }
 
 function show_float_or_empty(data: string) {
