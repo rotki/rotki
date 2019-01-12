@@ -1,0 +1,7 @@
+mypy==0.641
+pylint
+flake8
+flake8-commas
+flake8-bugbear
+flake8-tuple
+isort
