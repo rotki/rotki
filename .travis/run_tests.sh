@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
-set -ex
+set -e
+set -x
 
 COVERAGE_ARGS='--cov=./ --travis-fold=always'
 if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-    source terryfy/test_tools.sh;
+    # source terryfy/test_tools.sh;
     COVERAGE_ARGS=''
 fi
 
@@ -15,4 +16,5 @@ npm rebuild zeromq --runtime=electron --target=3.0.0
 PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild
 npm test
 
-set +ex
+set +e
+set +x

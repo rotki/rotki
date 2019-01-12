@@ -33,7 +33,6 @@ templates:
       - .travis/run_tests.sh
     after_success:
       - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then codecov; else true; fi
-    sudo: true
 
   job-template-deploy: &job-template-deploy
     before_install:
@@ -72,6 +71,13 @@ jobs:
       language: python
       python: '3.7'
       sudo: true
+      before_install:
+        # export PATH needs to be here and can't be inside before_install.sh
+        - mkdir -p $HOME/.bin
+        - export PATH=$PATH:$HOME/.bin
+        - .travis/before_install.sh
+        - export DISPLAY=:99.0;
+        - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
 
     - stage: test
       <<: *job-template-test
@@ -79,6 +85,23 @@ jobs:
       language: generic
       osx_image: xcode10
       env: INSTALL_TYPE=macpython VERSION=3.7.0 VENV=venv
+      before_install:
+        - mkdir -p $HOME/.bin
+        - export PATH=$PATH:$HOME/.bin
+        - git clone https://github.com/MacPython/terryfy.git
+        - source terryfy/travis_tools.sh
+        - get_python_environment $INSTALL_TYPE $VERSION $VENV
+        - .travis/before_install.sh
+      script:
+        # Unfortunately due to terryfy, we can't have the OSX case
+        # inside ./run_tests.sh but need to have them all here so
+        # that the environment is properly picked up
+        - source terryfy/test_tools.sh
+        - python -m pytest $COVERAGE_ARGS rotkehlchen/
+        - npm install
+        - npm rebuild zeromq --runtime=electron --target=3.0.0
+        - PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild
+        - npm test
 
     - stage: deploy
       <<: *job-template-deploy
