@@ -105,9 +105,13 @@ export function showWarning(title: string, content: string) {
 
 export function setup_client_auditor() {
     if (!client_auditor) {
-        // run it once and then let it run every minute
+        // TODO: When doing queries for which we need progress like tax report
+        // keep it frequent like now (4-5 secs)
+        // In other cases have bigger gap between queries
+
+        // run it once and then let it run every 5 seconds
         periodic_client_query();
-        client_auditor = setInterval(periodic_client_query, 60000);
+        client_auditor = setInterval(periodic_client_query, 5000);
     }
 }
 
