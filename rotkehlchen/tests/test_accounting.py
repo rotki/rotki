@@ -4,6 +4,7 @@ from rotkehlchen.errors import CorruptData
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import MarginPosition
 from rotkehlchen.tests.utils.accounting import accounting_history_process
+from rotkehlchen.tests.utils.history import prices
 
 DUMMY_ADDRESS = '0x0'
 DUMMY_HASH = '0x0'
@@ -57,6 +58,7 @@ history1 = [
 ]
 
 
+@pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_simple_accounting(accountant):
     accounting_history_process(accountant, 1436979735, 1495751688, history1)
     assert accountant.general_trade_pl.is_close("557.528104903")
@@ -105,6 +107,7 @@ bad_history2 = [
 ]
 
 
+@pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_mismatch_in_amount_rate_and_cost(accountant):
     with pytest.raises(CorruptData):
         accounting_history_process(accountant, 1436979735, 1495751688, bad_history1)
@@ -113,6 +116,7 @@ def test_mismatch_in_amount_rate_and_cost(accountant):
         accounting_history_process(accountant, 1436979735, 1495751688, bad_history2)
 
 
+@pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_selling_crypto_bought_with_crypto(accountant):
     history = [{
         "timestamp": 1446979735,
@@ -162,6 +166,7 @@ def test_selling_crypto_bought_with_crypto(accountant):
     assert accountant.taxable_trade_pl.is_close("73.8764769569")
 
 
+@pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_buying_selling_eth_before_daofork(accountant):
     history3 = [
         {
@@ -218,6 +223,7 @@ def test_buying_selling_eth_before_daofork(accountant):
     assert accountant.taxable_trade_pl.is_close('381.899035')
 
 
+@pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_buying_selling_btc_before_bchfork(accountant):
     history = [{
         "timestamp": 1491593374,  # 04/07/2017
@@ -295,6 +301,7 @@ history5 = history1 + [{
 }]
 
 
+@pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('accounting_include_crypto2crypto', [False])
 def test_nocrypto2crypto(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
@@ -302,6 +309,7 @@ def test_nocrypto2crypto(accountant):
     assert accountant.taxable_trade_pl.is_close("0")
 
 
+@pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('accounting_taxfree_after_period', [None])
 def test_no_taxfree_period(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
@@ -309,6 +317,7 @@ def test_no_taxfree_period(accountant):
     assert accountant.taxable_trade_pl.is_close("265250.961748")
 
 
+@pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('accounting_taxfree_after_period', [86400])
 def test_big_taxfree_period(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
@@ -316,6 +325,7 @@ def test_big_taxfree_period(accountant):
     assert accountant.taxable_trade_pl.is_close("0")
 
 
+@pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_buy_event_creation(accountant):
     history = [{
         "timestamp": 1476979735,
@@ -354,6 +364,7 @@ def test_buy_event_creation(accountant):
     assert buys[1].fee_rate == FVal('2.4e-4')
 
 
+@pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('accounting_include_gas_costs', [False])
 def test_not_include_gas_costs(accountant):
     history = [{
@@ -400,6 +411,7 @@ def test_not_include_gas_costs(accountant):
     assert FVal(result['overview']['total_taxable_profit_loss']).is_close("1940.9561588")
 
 
+@pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('accounting_ignored_assets', [['DASH']])
 def test_ignored_assets(accountant):
     history = history1 + [{
@@ -429,6 +441,7 @@ def test_ignored_assets(accountant):
     assert FVal(result['overview']['total_taxable_profit_loss']).is_close("557.528104903")
 
 
+@pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_settlement_buy(accountant):
     history = [{
         "timestamp": 1476979735,
@@ -476,6 +489,7 @@ def test_settlement_buy(accountant):
     assert FVal(result['overview']['settlement_losses']).is_close('8.29454360079')
 
 
+@pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_margin_events_affect_gained_lost_amount(accountant):
     history = [{
         "timestamp": 1476979735,
@@ -529,6 +543,7 @@ def test_margin_events_affect_gained_lost_amount(accountant):
     assert FVal(result['overview']['total_taxable_profit_loss']).is_close('1780.5586588')
 
 
+@pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_no_corresponding_buy_for_sell(accountant):
     history = [{
         "timestamp": 1496979735,
