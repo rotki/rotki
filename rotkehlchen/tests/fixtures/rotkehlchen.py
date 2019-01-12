@@ -27,8 +27,12 @@ def cli_args(data_dir):
 
 
 @pytest.fixture()
-def rotkehlchen_instance(cli_args, username, blockchain):
+def rotkehlchen_instance(cli_args, username, blockchain, accountant):
+    """A partially mocked rotkehlchen instance"""
     r = Rotkehlchen(cli_args)
     r.data.unlock(username, '123', create_new=True)
+    # Remember accountant fixture has a mocked accounting data dir
+    # different to the usual user one
+    r.accountant = accountant
     r.blockchain = blockchain
     return r
