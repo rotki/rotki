@@ -108,7 +108,14 @@ export const settings_panel = (text: string, id: string) => `<div class="row">
     </div>
 </div>`;
 
-export const loading_placeholder = (id: string) =>
-    `<div id="${id}" class=loadingtest><div class="loadingwrapper_text"></div></div>`;
+export function loading_placeholder(id: string, extra_text?: string) {
+    let str = `<div id="${id}" class="row"><div class="row loadingwrapper"></div>`;
+    if (extra_text) {
+        str += `<div id="${id}_extra_text" class="row loadingwrapper_text">${extra_text}</div>`;
+    }
+
+    str += '</div>';
+    return str;
+}
 
 export const invisible_anchor = (id: string) => `<div id="${id}" class="invisible-anchor"></div>`;

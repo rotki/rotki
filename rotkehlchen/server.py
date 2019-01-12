@@ -245,9 +245,7 @@ class RotkehlchenServer(object):
 
     def query_periodic_data(self):
         """Will query for some client data that can change frequently"""
-        result = {}
-        result['last_balance_save'] = self.rotkehlchen.data.db.get_last_balance_save_time()
-        result['eth_node_connection'] = self.rotkehlchen.blockchain.ethchain.connected
+        result = self.rotkehlchen.query_periodic_data()
         return process_result(result)
 
     def get_eth_tokens(self):

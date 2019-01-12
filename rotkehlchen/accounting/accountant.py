@@ -100,6 +100,8 @@ class Accountant(object):
         self.asset_movement_fees = FVal(0)
         self.last_gas_price = FVal(0)
 
+        self.currently_processed_timestamp = -1
+
         # Customizable Options
         self.ignored_assets = ignored_assets
         self.include_gas_costs = include_gas_costs
@@ -315,6 +317,7 @@ class Accountant(object):
         self.eth_transactions_gas_costs = FVal(0)
         self.asset_movement_fees = FVal(0)
         self.csvexporter.reset_csv_lists()
+        self.currently_processed_timestamp = start_ts
 
         actions: List[TaxableAction] = list(trade_history)
         # If we got loans, we need to interleave them with the full history and re-sort
@@ -408,6 +411,8 @@ class Accountant(object):
 
         if timestamp > end_ts:
             return False, prev_time, count
+
+        self.currently_processed_timestamp = timestamp
 
         action_type = action_get_type(action)
 
