@@ -11,6 +11,8 @@ stages:
   - name: lint
   - name: test
     if: tag IS NOT present
+  - name: ui-test
+    if: NOT commit_message =~ /\[no ui tests\] AND tag IS NOT present
   - name: deploy
     if: tag IS present
 
@@ -21,18 +23,46 @@ env:
   - GETH_VERSION='1.8.13'
 
 templates:
-  job-template-test: &job-template-test
+  job-template-linux: &job-template-linux
+    os: linux
+    language: python
+    python: '3.7'
+    sudo: true
     before_install:
+      # export PATH needs to be here and can't be inside before_install.sh
       - mkdir -p $HOME/.bin
       - export PATH=$PATH:$HOME/.bin
-      - git rev-parse HEAD
       - .travis/before_install.sh
+      - export DISPLAY=:99.0;
+      - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
     install:
       - .travis/install.sh
     script:
       - .travis/run_tests.sh
     after_success:
-      - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then codecov; else true; fi
+      - codecov
+
+  job-template-osx: &job-template-osx
+    os: osx
+    language: generic
+    osx_image: xcode10
+    env: INSTALL_TYPE=macpython VERSION=3.7.0 VENV=venv
+    before_install:
+      # export PATH needs to be here and can't be inside before_install.sh
+      - mkdir -p $HOME/.bin
+      - export PATH=$PATH:$HOME/.bin
+      - git clone https://github.com/MacPython/terryfy.git
+      - source terryfy/travis_tools.sh
+      - get_python_environment $INSTALL_TYPE $VERSION $VENV
+      - .travis/before_install.sh
+    install:
+      - .travis/install.sh
+    script:
+      # Unfortunately due to terryfy, we can't have the OSX case
+      # inside ./run_tests.sh but need to have them all here so
+      # that the environment is properly picked up
+      - source terryfy/test_tools.sh
+      - python -m pytest $COVERAGE_ARGS rotkehlchen/
 
   job-template-deploy: &job-template-deploy
     before_install:
@@ -66,36 +96,18 @@ jobs:
         - pylint --disable=all --enable=no-value-for-parameter,too-many-format-args,no-member,bad-except-order rotkehlchen
 
     - stage: test
-      <<: *job-template-test
-      os: linux
-      language: python
-      python: '3.7'
-      sudo: true
-      before_install:
-        # export PATH needs to be here and can't be inside before_install.sh
-        - mkdir -p $HOME/.bin
-        - export PATH=$PATH:$HOME/.bin
-        - .travis/before_install.sh
-        - export DISPLAY=:99.0;
-        - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+      <<: *job-template-linux
 
     - stage: test
-      <<: *job-template-test
-      os: osx
-      language: generic
-      osx_image: xcode10
-      env: INSTALL_TYPE=macpython VERSION=3.7.0 VENV=venv
-      before_install:
-        - mkdir -p $HOME/.bin
-        - export PATH=$PATH:$HOME/.bin
-        - git clone https://github.com/MacPython/terryfy.git
-        - source terryfy/travis_tools.sh
-        - get_python_environment $INSTALL_TYPE $VERSION $VENV
-        - .travis/before_install.sh
+      <<: *job-template-osx
+
+    - stage: ui-test
+      <<: *job-template-linux
+      env: TESTS_TYPE='UI'
+
+    - stage: ui-test
+      <<: *job-template-osx
       script:
-        # Unfortunately due to terryfy, we can't have the OSX case
-        # inside ./run_tests.sh but need to have them all here so
-        # that the environment is properly picked up
         - source terryfy/test_tools.sh
         - python -m pytest $COVERAGE_ARGS rotkehlchen/
         - npm install

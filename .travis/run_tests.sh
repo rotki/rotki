@@ -11,10 +11,12 @@ fi
 
 python -m pytest $COVERAGE_ARGS rotkehlchen/
 
-npm install
-npm rebuild zeromq --runtime=electron --target=3.0.0
-PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild
-npm test
+if [[ "$TESTS_TYPE" == "ui" ]]; then
+    npm install
+    npm rebuild zeromq --runtime=electron --target=3.0.0
+    PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild
+    npm test
+fi
 
 set +e
 set +x
