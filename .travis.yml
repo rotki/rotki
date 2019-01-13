@@ -10,9 +10,9 @@ python:
 stages:
   - name: lint
   - name: test
-    if: tag IS NOT present
+    if: NOT commit_message =~ /\[no ci tests\]/ AND tag IS NOT present
   - name: ui-test
-    if: NOT commit_message =~ /\[no ui tests\] AND tag IS NOT present
+    if: commit_message =~ /\[ui tests\]/ AND tag IS NOT present
   - name: deploy
     if: tag IS present
 
@@ -109,7 +109,6 @@ jobs:
       <<: *job-template-osx
       script:
         - source terryfy/test_tools.sh
-        - python -m pytest $COVERAGE_ARGS rotkehlchen/
         - npm install
         - npm rebuild zeromq --runtime=electron --target=3.0.0
         - PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild

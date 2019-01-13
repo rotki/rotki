@@ -37,7 +37,11 @@ def do_queries_for(from_asset, to_asset, price_historian):
     keys = random.sample(pair_map.keys(), min(queries, len(pair_map)))
     for timestamp in keys:
         price = price_historian.query_historical_price(from_asset, to_asset, timestamp)
-        assert price.is_close(pair_map[timestamp])
+        msg = (
+            f'Unexpected price for {from_asset} -> {to_asset} for {timestamp}. '
+            f'Got {price} expected {pair_map[timestamp]}'
+        )
+        assert price.is_close(pair_map[timestamp]), msg
 
 
 @pytest.mark.parametrize('should_mock_price_queries', [False])

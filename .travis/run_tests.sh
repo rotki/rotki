@@ -9,13 +9,14 @@ if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
     COVERAGE_ARGS=''
 fi
 
-python -m pytest $COVERAGE_ARGS rotkehlchen/
 
-if [[ "$TESTS_TYPE" == "ui" ]]; then
+if [[ "$TESTS_TYPE" == "UI" ]]; then
     npm install
     npm rebuild zeromq --runtime=electron --target=3.0.0
     PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild
     npm test
+else
+    python -m pytest $COVERAGE_ARGS rotkehlchen/
 fi
 
 set +e
