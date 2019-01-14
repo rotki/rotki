@@ -31,7 +31,8 @@
         "ts-node": "7.0.1",
         "tslint": "5.11.0",
         "tslint-eslint-rules": "5.4.0",
-        "typescript": "3.2.1"
+        "typescript": "3.2.1",
+        "promise-retry": "1.1.1"
     },
     "scripts": {
         "build": "rimraf ui/dist && tsc",

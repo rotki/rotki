@@ -3,6 +3,7 @@ import {createAccount, GLOBAL_TIMEOUT, initialiseSpectron, login, logout, METHOD
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import {Guid} from './guid';
+const retry = require('promise-retry');
 
 chai.should();
 chai.use(chaiAsPromised);
@@ -36,8 +37,12 @@ describe('general settings', function () {
     });
 
     it('should add wrong port number and get an error', async () => {
-        await client.clearElement('#eth_rpc_port');
-        await client.addValue('#eth_rpc_port', 500000);
+        await retry( async() => {
+            client.clearElement('#eth_rpc_port');
+        });
+        await retry( async() => {
+            client.addValue('#eth_rpc_port', 500000);
+        });
         await client.click('#settingssubmit');
 
         await client.waitUntilTextExists('.jconfirm-title', 'Invalid port number', METHOD_TIMEOUT);
@@ -50,23 +55,43 @@ describe('general settings', function () {
     });
 
     it('should change the general settings and save them', async () => {
-        await client.clearElement('#eth_rpc_port');
-        await client.addValue('#eth_rpc_port', 9001);
+        await retry( async() => {
+            client.clearElement('#eth_rpc_port');
+        });
+        await retry( async() => {
+            client.addValue('#eth_rpc_port', 9001);
+        });
 
-        await client.clearElement('#floating_precision');
-        await client.addValue('#floating_precision', 4);
+        await retry( async() => {
+            client.clearElement('#floating_precision');
+        });
+        await retry( async() => {
+            client.addValue('#floating_precision', 4);
+        });
 
-        await client.clearElement('#balance_save_frequency');
-        await client.addValue('#balance_save_frequency', 48);
+        await retry( async() => {
+            client.clearElement('#balance_save_frequency');
+        });
+        await retry( async() => {
+            client.addValue('#balance_save_frequency', 48);
+        });
 
-        await client.click('#anonymized_logs_input');
+        await retry( async() => {
+            client.click('#anonymized_logs_input');
+        });
 
-        await client.clearElement('#historical_data_start');
-        await client.addValue('#historical_data_start', '03/10/2018');
+        await retry( async() => {
+            client.clearElement('#historical_data_start');
+        });
+        await retry( async() => {
+            client.addValue('#historical_data_start', '03/10/2018');
+        });
 
         await client.selectByValue('#maincurrencyselector', 'JPY');
 
-        await client.click('#settingssubmit');
+        await retry( async() => {
+            client.click('#settingssubmit');
+        });
 
         await client.waitUntilTextExists('.jconfirm-title', 'Success', METHOD_TIMEOUT);
         await client.element('.jconfirm-content > div').getText()
@@ -74,7 +99,9 @@ describe('general settings', function () {
             .eventually
             .contain('Successfully modified settings.');
 
-        await client.click('.jconfirm-buttons > button');
+        await retry( async() => {
+            client.click('.jconfirm-buttons > button');
+        });
         await client.waitForExist('.jconfirm-box', METHOD_TIMEOUT, true);
 
         await logout(client);
