@@ -286,6 +286,10 @@ class PriceHistorian(object):
 
         This is due to incosistencies in the provided historical data from
         cryptocompare. https://github.com/rotkehlchenio/rotkehlchen/issues/221
+
+        Note: Since 12/01/2019 this seems to no longer be happening, but I will
+        keep the code around just in case a regression is introduced on the side
+        of cryptocompare.
         """
         from_asset_usd = self.query_historical_price(from_asset, 'USD', timestamp)
         to_asset_usd = self.query_historical_price(to_asset, 'USD', timestamp)
@@ -456,6 +460,7 @@ class PriceHistorian(object):
             to_asset=to_asset,
             timestamp=timestamp,
         )
+
         if from_asset == to_asset:
             return 1
 
@@ -569,6 +574,7 @@ class PriceHistorian(object):
             timestamp=timestamp,
             price=price,
         )
+
         return price
 
 

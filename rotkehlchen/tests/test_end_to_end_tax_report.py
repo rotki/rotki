@@ -1,7 +1,10 @@
+import pytest
+
 from rotkehlchen.constants import S_BTC
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import MarginPosition
 from rotkehlchen.tests.utils.accounting import accounting_history_process
+from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.typing import Timestamp
 
 DUMMY_HASH = '0x0'
@@ -304,6 +307,7 @@ margin_history = [
     )]
 
 
+@pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_end_to_end_tax_report(accountant):
     result = accounting_history_process(
         accountant=accountant,
@@ -352,6 +356,7 @@ def test_end_to_end_tax_report(accountant):
     assert expected_total_pl.is_close(total_pl)
 
 
+@pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_end_to_end_tax_report_in_period(accountant):
     result = accounting_history_process(
         accountant=accountant,

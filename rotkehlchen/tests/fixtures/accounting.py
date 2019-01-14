@@ -1,10 +1,12 @@
 import errno
 import os
+from collections import defaultdict
 
 import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.constants import YEAR_IN_SECONDS
+from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 
@@ -31,12 +33,36 @@ def accounting_data_dir():
 
 
 @pytest.fixture
-def price_historian(accounting_data_dir, inquirer):
-    return PriceHistorian(
+def should_mock_price_queries():
+    return True
+
+
+@pytest.fixture
+def mocked_price_queries():
+    return defaultdict(defaultdict)
+
+
+@pytest.fixture
+def price_historian(
+        accounting_data_dir,
+        inquirer,
+        should_mock_price_queries,
+        mocked_price_queries,
+):
+    historian = PriceHistorian(
         data_directory=accounting_data_dir,
         history_date_start=TEST_HISTORY_DATA_START,
         inquirer=inquirer,
     )
+    if should_mock_price_queries:
+        def mock_historical_price_query(from_asset, to_asset, timestamp):
+            if from_asset == to_asset:
+                return FVal(1)
+            return mocked_price_queries[from_asset][to_asset][timestamp]
+
+        historian.query_historical_price = mock_historical_price_query
+
+    return historian
 
 
 @pytest.fixture

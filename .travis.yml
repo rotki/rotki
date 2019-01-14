@@ -3,24 +3,78 @@ os: linux
 language: python
 sudo: required
 dist: xenial
+conditions: v1
 python:
   - 3.7
+
+stages:
+  - name: lint
+  - name: test
+    if: NOT commit_message =~ /\[no ci tests\]/ AND tag IS NOT present
+  - name: ui-test
+    if: commit_message =~ /\[ui tests\]/ AND tag IS NOT present
+  - name: deploy
+    if: tag IS present
+
 env:
   global:
   - GETH_URL_LINUX='https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.8.13-225171a4.tar.gz'
   - GETH_URL_MACOS='https://gethstore.blob.core.windows.net/builds/geth-darwin-amd64-1.8.13-225171a4.tar.gz'
   - GETH_VERSION='1.8.13'
 
+templates:
+  job-template-linux: &job-template-linux
+    os: linux
+    language: python
+    python: '3.7'
+    sudo: true
+    before_install:
+      # export PATH needs to be here and can't be inside before_install.sh
+      - mkdir -p $HOME/.bin
+      - export PATH=$PATH:$HOME/.bin
+      - .travis/before_install.sh
+      - export DISPLAY=:99.0;
+      - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+    install:
+      - .travis/install.sh
+    script:
+      - .travis/run_tests.sh
+    after_success:
+      - codecov
 
-matrix:
-  include:
-  - os: osx
+  job-template-osx: &job-template-osx
+    os: osx
     language: generic
     osx_image: xcode10
     env: INSTALL_TYPE=macpython VERSION=3.7.0 VENV=venv
-  - os: linux
-    language: python
-    python: '3.7'
+    before_install:
+      # export PATH needs to be here and can't be inside before_install.sh
+      - mkdir -p $HOME/.bin
+      - export PATH=$PATH:$HOME/.bin
+      - git clone https://github.com/MacPython/terryfy.git
+      - source terryfy/travis_tools.sh
+      - get_python_environment $INSTALL_TYPE $VERSION $VENV
+      - .travis/before_install.sh
+    install:
+      - .travis/install.sh
+    script:
+      # Unfortunately due to terryfy, we can't have the OSX case
+      # inside ./run_tests.sh but need to have them all here so
+      # that the environment is properly picked up
+      - source terryfy/test_tools.sh
+      - python -m pytest $COVERAGE_ARGS rotkehlchen/
+
+  job-template-deploy: &job-template-deploy
+    before_install:
+      - mkdir -p $HOME/.bin
+      - export PATH=$PATH:$HOME/.bin
+      - git fetch --unshallow
+      - git pull --tags
+      - .travis/before_install.sh
+    install:
+      - .travis/install.sh
+    script:
+      - ./package.sh
 
 cache:
   pip: true
@@ -30,77 +84,64 @@ cache:
     - $HOME/.ethash
     - $HOME/.bin
 
-before_install:
-  - openssl version
-  - mkdir -p $HOME/.bin
-  - export PATH=$PATH:$HOME/.bin
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./.travis/before_install.sh; fi
-  - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then sudo ./.travis/before_install.sh; fi
-  # This needs to be outside of the before_install.sh script or else the environment
-  # is not set properly for OSX
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source terryfy/travis_tools.sh; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then get_python_environment $INSTALL_TYPE $VERSION $VENV; fi
-  - if [[ $TRAVIS_OS_NAME = "linux" ]]; then
-      export DISPLAY=:99.0;
-      Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-    fi
+jobs:
+  include:
+    - stage: lint
+      sudo: false
+      install: pip install -r requirements_lint.txt
+      script:
+        - git rev-parse HEAD
+        - flake8 rotkehlchen/
+        - mypy rotkehlchen/ --ignore-missing-imports
+        - pylint --disable=all --enable=no-value-for-parameter,too-many-format-args,no-member,bad-except-order rotkehlchen
 
-install:
-  - python -m pip install -U pip
-  - pip install -U pip wheel codecov pytest-cov
-  - pip install pytest-travis-fold
-  - pip install -r requirements_dev.txt
+    - stage: test
+      <<: *job-template-linux
 
-# Run the tests.
-script:
-  # fail fast - in case there is an error building, quit immediately.
-  # reference: https://github.com/travis-ci/travis-ci/issues/1066
-  - set -e
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source terryfy/test_tools.sh; fi
-  - flake8 rotkehlchen/
-  - mypy rotkehlchen/ --ignore-missing-imports
-  - pylint --disable=all --enable=no-value-for-parameter,too-many-format-args,no-member,bad-except-order rotkehlchen
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then python -m pytest rotkehlchen; fi
-  - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then pytest --cov=./ --travis-fold=always rotkehlchen/ $TEST_TYPE; fi
-  - npm config set python python2.7
-  # If we add the specific electron runtime compile in OSX fails with an error
-  # that looks like this: https://www.npmjs.com/package/nan#compiling-against-nodejs-012-on-osx
-  # - npm install --runtime=electron --target=1.8.4
-  - npm install
-  # we need 3.0.0 since for some reason it's used as url of iojs release
-  # here: https://iojs.org/download/release/
-  - npm rebuild zeromq --runtime=electron --target=3.0.0
-  - PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild
-  - npm test
-  # back to default in case internal travis scripts return non zero response codes.
-  - set +e
+    - stage: test
+      <<: *job-template-osx
 
-after_success:
-  - codecov
+    - stage: ui-test
+      <<: *job-template-linux
+      env: TESTS_TYPE='UI'
 
-before_deploy:
-  - ./package.sh
+    - stage: ui-test
+      <<: *job-template-osx
+      script:
+        - source terryfy/test_tools.sh
+        - npm install
+        - npm rebuild zeromq --runtime=electron --target=3.0.0
+        - PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild
+        - npm test
 
-deploy:
-  - provider: releases
-    api_key:
-      secure: HaRYa6DxLldQJALMBGjbFo1A/c5343mUHbYE+BS5/x/yNwLw7A2dwrGbyKEyLwm01YB3l0RTQwldF0bavhJzpzbJuqhO1IoHFwFgBHczi7dBTKgaRzOIZsEEuCf5+niYcUJl5NRKpYBX36NV3v7II5d986+hjthmq0jU1zXby+tisEBCPefaWXSRbGZCz6Ph0RYitq5ahaFkc3rY3TXl6/P2Ch8ApztayQFLtmA/3Ajar34/lWhcMmWUMD33A8P+UjLZxDbUs1UAq5TA6Zaw8iXcd+Tmu59cpRf/uRkI7i9OuwClnukJ+ztfzvAqgtLmFIvwgA2dkkU9Ao7Qsa8THUMgtFfe7F+5euGeoraNNG0abwVDwZomX3ZfZmKT0yU5G7z4vszSkZUx+VRWO2Br8ilnAmFd8dm/d+Nmwt96q2VpnTVL5a1SEWeyGzOyL4tBe+b7e3K6XqG2ae6fg2RkKPOusoeHDezkkrCXPY9JqikAfKAH0r4+FzW3dZLps/4onJNlaAm0gGDL7Msqw0zOZnOAoWepOGmpDfAG/Hhpq0YTOEtdVCfKAE5oDRLkPoDJt5eYevrgS4Bf4/UapTTzfjfYbnydQvsMH7CeRRgxcxFGFyber5Nm0b18KQjD5JhFH3Nf067GDMxRJe5EMPH/JxBV/1vqWttVZpfoMvgsGy4=
-    file: rotkehlchen-linux-x64.zip
-    skip_cleanup: true
-    on:
-      tags: true
-      condition: $TRAVIS_OS_NAME = linux
-      repo: rotkehlchenio/rotkehlchen
-      branch: master
-  - provider: releases
-    api_key:
-      secure: HaRYa6DxLldQJALMBGjbFo1A/c5343mUHbYE+BS5/x/yNwLw7A2dwrGbyKEyLwm01YB3l0RTQwldF0bavhJzpzbJuqhO1IoHFwFgBHczi7dBTKgaRzOIZsEEuCf5+niYcUJl5NRKpYBX36NV3v7II5d986+hjthmq0jU1zXby+tisEBCPefaWXSRbGZCz6Ph0RYitq5ahaFkc3rY3TXl6/P2Ch8ApztayQFLtmA/3Ajar34/lWhcMmWUMD33A8P+UjLZxDbUs1UAq5TA6Zaw8iXcd+Tmu59cpRf/uRkI7i9OuwClnukJ+ztfzvAqgtLmFIvwgA2dkkU9Ao7Qsa8THUMgtFfe7F+5euGeoraNNG0abwVDwZomX3ZfZmKT0yU5G7z4vszSkZUx+VRWO2Br8ilnAmFd8dm/d+Nmwt96q2VpnTVL5a1SEWeyGzOyL4tBe+b7e3K6XqG2ae6fg2RkKPOusoeHDezkkrCXPY9JqikAfKAH0r4+FzW3dZLps/4onJNlaAm0gGDL7Msqw0zOZnOAoWepOGmpDfAG/Hhpq0YTOEtdVCfKAE5oDRLkPoDJt5eYevrgS4Bf4/UapTTzfjfYbnydQvsMH7CeRRgxcxFGFyber5Nm0b18KQjD5JhFH3Nf067GDMxRJe5EMPH/JxBV/1vqWttVZpfoMvgsGy4=
-    file: rotkehlchen-darwin-x64.zip
-    skip_cleanup: true
-    on:
-      tags: true
-      condition: $TRAVIS_OS_NAME = osx
-      repo: rotkehlchenio/rotkehlchen
-      branch: master
+    - stage: deploy
+      <<: *job-template-deploy
+      os: linux
+      deploy:
+        - provider: releases
+          api_key:
+            secure: HaRYa6DxLldQJALMBGjbFo1A/c5343mUHbYE+BS5/x/yNwLw7A2dwrGbyKEyLwm01YB3l0RTQwldF0bavhJzpzbJuqhO1IoHFwFgBHczi7dBTKgaRzOIZsEEuCf5+niYcUJl5NRKpYBX36NV3v7II5d986+hjthmq0jU1zXby+tisEBCPefaWXSRbGZCz6Ph0RYitq5ahaFkc3rY3TXl6/P2Ch8ApztayQFLtmA/3Ajar34/lWhcMmWUMD33A8P+UjLZxDbUs1UAq5TA6Zaw8iXcd+Tmu59cpRf/uRkI7i9OuwClnukJ+ztfzvAqgtLmFIvwgA2dkkU9Ao7Qsa8THUMgtFfe7F+5euGeoraNNG0abwVDwZomX3ZfZmKT0yU5G7z4vszSkZUx+VRWO2Br8ilnAmFd8dm/d+Nmwt96q2VpnTVL5a1SEWeyGzOyL4tBe+b7e3K6XqG2ae6fg2RkKPOusoeHDezkkrCXPY9JqikAfKAH0r4+FzW3dZLps/4onJNlaAm0gGDL7Msqw0zOZnOAoWepOGmpDfAG/Hhpq0YTOEtdVCfKAE5oDRLkPoDJt5eYevrgS4Bf4/UapTTzfjfYbnydQvsMH7CeRRgxcxFGFyber5Nm0b18KQjD5JhFH3Nf067GDMxRJe5EMPH/JxBV/1vqWttVZpfoMvgsGy4=
+          file: rotkehlchen-linux-x64.zip
+          skip_cleanup: true
+          on:
+            tags: true
+            condition: $TRAVIS_OS_NAME = linux
+            repo: rotkehlchenio/rotkehlchen
+            branch: master
+
+    - stage: deploy
+      <<: *job-template-deploy
+      os: osx
+      deploy:
+        - provider: releases
+          api_key:
+            secure: HaRYa6DxLldQJALMBGjbFo1A/c5343mUHbYE+BS5/x/yNwLw7A2dwrGbyKEyLwm01YB3l0RTQwldF0bavhJzpzbJuqhO1IoHFwFgBHczi7dBTKgaRzOIZsEEuCf5+niYcUJl5NRKpYBX36NV3v7II5d986+hjthmq0jU1zXby+tisEBCPefaWXSRbGZCz6Ph0RYitq5ahaFkc3rY3TXl6/P2Ch8ApztayQFLtmA/3Ajar34/lWhcMmWUMD33A8P+UjLZxDbUs1UAq5TA6Zaw8iXcd+Tmu59cpRf/uRkI7i9OuwClnukJ+ztfzvAqgtLmFIvwgA2dkkU9Ao7Qsa8THUMgtFfe7F+5euGeoraNNG0abwVDwZomX3ZfZmKT0yU5G7z4vszSkZUx+VRWO2Br8ilnAmFd8dm/d+Nmwt96q2VpnTVL5a1SEWeyGzOyL4tBe+b7e3K6XqG2ae6fg2RkKPOusoeHDezkkrCXPY9JqikAfKAH0r4+FzW3dZLps/4onJNlaAm0gGDL7Msqw0zOZnOAoWepOGmpDfAG/Hhpq0YTOEtdVCfKAE5oDRLkPoDJt5eYevrgS4Bf4/UapTTzfjfYbnydQvsMH7CeRRgxcxFGFyber5Nm0b18KQjD5JhFH3Nf067GDMxRJe5EMPH/JxBV/1vqWttVZpfoMvgsGy4=
+          file: rotkehlchen-darwin-x64.zip
+          skip_cleanup: true
+          on:
+            tags: true
+            condition: $TRAVIS_OS_NAME = osx
+            repo: rotkehlchenio/rotkehlchen
+            branch: master
 
 
