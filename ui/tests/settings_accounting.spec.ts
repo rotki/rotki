@@ -1,10 +1,19 @@
 import {Application, SpectronClient} from 'spectron';
-import {createAccount, GLOBAL_TIMEOUT, initialiseSpectron, METHOD_TIMEOUT, navigateTo} from './common';
+import {
+    createAccount,
+    GLOBAL_TIMEOUT,
+    initialiseSpectron,
+    METHOD_TIMEOUT,
+    navigateTo,
+    setupTest,
+    captureOnFailure
+} from './common';
 import * as chai from 'chai';
 import {expect} from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import {Guid} from './guid';
 
+const retry = require('promise-retry');
 chai.should();
 chai.use(chaiAsPromised);
 
@@ -15,32 +24,42 @@ async function dismissSuccessDialog(client: SpectronClient, message: string) {
     await client.waitForExist('.jconfirm-box', METHOD_TIMEOUT, true);
 }
 
+
 describe('accounting settings', function () {
     // @ts-ignore
     this.timeout(GLOBAL_TIMEOUT);
     this.retries(3);
+    const title = this.title;
     let app: Application;
     let client: SpectronClient;
 
     let username: string;
     const password: string = process.env.PASSWORD as string;
 
-    before(async () => {
+    before(async function () {
         username = Guid.newGuid().toString();
         app = initialiseSpectron();
         await app.start();
-        await createAccount(app, username, password);
-        client = app.client;
 
-        await navigateTo(client, '#accounting_settings_button');
+        await setupTest(app, title, async () => {
+            await createAccount(app, username, password);
+            client = app.client;
 
-        await client.waitUntilTextExists('.page-header', 'Accounting Settings', METHOD_TIMEOUT);
+            await retry( async() => {
+                await navigateTo(client, '#accounting_settings_button');
+            });
+            await client.waitUntilTextExists('.page-header', 'Accounting Settings', METHOD_TIMEOUT);
+        });
     });
 
     after(async () => {
         if (app && app.isRunning()) {
             await app.stop();
         }
+    });
+
+    afterEach(async function () {
+        await captureOnFailure(app, this.currentTest);
     });
 
     it('should change take into account crypto 2 crypto trades', async () => {

@@ -1,5 +1,15 @@
 import {Application, SpectronClient} from 'spectron';
-import {createAccount, GLOBAL_TIMEOUT, initialiseSpectron, login, logout, METHOD_TIMEOUT, navigateTo} from './common';
+import {
+    captureOnFailure,
+    createAccount,
+    GLOBAL_TIMEOUT,
+    initialiseSpectron,
+    login,
+    logout,
+    METHOD_TIMEOUT,
+    navigateTo,
+    setupTest
+} from './common';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import {Guid} from './guid';
@@ -12,28 +22,35 @@ describe('general settings', function () {
     // @ts-ignore
     this.timeout(GLOBAL_TIMEOUT);
     this.retries(3);
+    const title = this.title;
+
     let app: Application;
     let client: SpectronClient;
 
     let username: string;
     const password: string = process.env.PASSWORD as string;
 
-    before(async () => {
+    before(async function () {
         username = Guid.newGuid().toString();
         app = initialiseSpectron();
         await app.start();
-        await createAccount(app, username, password);
         client = app.client;
 
-        await navigateTo(client, '#settingsbutton');
-
-        await client.waitUntilTextExists('.page-header', 'Settings', METHOD_TIMEOUT);
+        await setupTest(app, title, async () => {
+            await createAccount(app, username, password);
+            await navigateTo(client, '#settingsbutton');
+            await client.waitUntilTextExists('.page-header', 'Settings', METHOD_TIMEOUT);
+        });
     });
 
     after(async () => {
         if (app && app.isRunning()) {
             await app.stop();
         }
+    });
+
+    afterEach(async function () {
+        await captureOnFailure(app, this.currentTest);
     });
 
     it('should add wrong port number and get an error', async () => {

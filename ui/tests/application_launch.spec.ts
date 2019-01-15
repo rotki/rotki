@@ -4,7 +4,7 @@
 import {Application} from 'spectron';
 import * as chaiAsPromised from 'chai-as-promised';
 import * as chai from 'chai';
-import {GLOBAL_TIMEOUT, initialiseSpectron} from './common';
+import {captureOnFailure, GLOBAL_TIMEOUT, initialiseSpectron} from './common';
 
 chai.should();
 chai.use(chaiAsPromised);
@@ -19,10 +19,12 @@ describe('application launch', function () {
         await app.start();
     });
 
-    afterEach(async () => {
+    afterEach(async function () {
         if (app && app.isRunning()) {
             await app.stop();
         }
+
+        await captureOnFailure(app, this.currentTest);
     });
 
     it('assert we got 1 window running', () => {
