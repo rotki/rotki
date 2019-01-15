@@ -46,6 +46,7 @@ class Rotkehlchen(object):
         self.results_cache: ResultCache = dict()
         self.premium = None
         self.connected_exchanges = []
+        self.user_is_logged_in = False
 
         logfilename = None
         if args.logtarget == 'file':
@@ -268,6 +269,7 @@ class Rotkehlchen(object):
             inquirer=self.inquirer,
             ethchain=ethchain,
         )
+        self.user_is_logged_in = True
 
     def logout(self):
         user = self.data.username
@@ -295,6 +297,7 @@ class Rotkehlchen(object):
         self.data.logout()
         self.password = None
 
+        self.user_is_logged_in = False
         log.info(
             'User successfully logged out',
             user=user,
@@ -664,9 +667,11 @@ class Rotkehlchen(object):
     def query_periodic_data(self) -> Dict[str, Union[bool, Timestamp]]:
         """Query for frequently changing data"""
         result = {}
-        result['last_balance_save'] = self.data.db.get_last_balance_save_time()
-        result['eth_node_connection'] = self.blockchain.ethchain.connected
-        result['history_process_current_ts'] = self.accountant.currently_processed_timestamp
+
+        if self.user_is_logged_in:
+            result['last_balance_save'] = self.data.db.get_last_balance_save_time()
+            result['eth_node_connection'] = self.blockchain.ethchain.connected
+            result['history_process_current_ts'] = self.accountant.currently_processed_timestamp
         return result
 
     def shutdown(self):
