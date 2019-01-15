@@ -18,16 +18,18 @@ def test_incosistent_prices_double_checking(price_historian):
     usd_price = price_historian.query_historical_price('DASH', 'USD', 1479200704)
     assert usd_price.is_close(FVal('9.63'))
     eur_price = price_historian.query_historical_price('DASH', 'EUR', 1479200704)
-    # Cryptocompare fixed the error so our incosistency adjustment code that would
-    # give the price of 8.495 is not hit
-    assert eur_price.is_close(FVal('9.0'), max_diff=0.001)
+    # 13/01/19 Cryptocompare fixed the error so our incosistency adjustment code that would
+    # give the price of 8.945657222 is not hit.
+    # 16/01/2019 They just reintroduced the error. So 9.0 is no longer returned
+    assert eur_price.is_close(FVal('8.945657222'), max_diff=0.001)
 
     inv_usd_price = price_historian.query_historical_price('USD', 'DASH', 1479200704)
     assert inv_usd_price.is_close(FVal('0.103842'), max_diff=0.0001)
     inv_eur_price = price_historian.query_historical_price('EUR', 'DASH', 1479200704)
-    # Cryptocompare fixed the error so our incosistency adjustment code that would
-    # give the price of 0.11179 is not hit
-    assert inv_eur_price.is_close(FVal('0.11115'), max_diff=0.0001)
+    # 13/01/19 Cryptocompare fixed the error so our incosistency adjustment code
+    # that would give the price of 0.11179 is not hit
+    # 16/01/2019 They just reintroduced the error. So 0.11115 is no longer returned
+    assert inv_eur_price.is_close(FVal('0.11179'), max_diff=0.0001)
 
 
 def do_queries_for(from_asset, to_asset, price_historian):
@@ -48,5 +50,7 @@ def do_queries_for(from_asset, to_asset, price_historian):
 def test_price_queries(price_historian):
     """Test some cryptocompare price queries making sure our querying mechanism works"""
     # TODO: Get rid of the cache here and then try again with the cache
+    # TODO2: Once historical price of DASH and other token stabilize perhaps also
+    #        include them in the tests
     do_queries_for('BTC', 'EUR', price_historian)
     do_queries_for('ETH', 'EUR', price_historian)

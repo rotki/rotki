@@ -39,6 +39,11 @@ let client_auditor: Timer;
  */
 function periodic_client_query() {
     service.query_periodic_data().then(result => {
+        if (Object.keys(result).length === 0) {
+            // an empty object means user is not logged in yet
+            return;
+        }
+
         settings.last_balance_save = result['last_balance_save'];
         update_eth_node_connection_status_ui(result['eth_node_connection']);
         update_tax_report_progress(result['history_process_current_ts']);

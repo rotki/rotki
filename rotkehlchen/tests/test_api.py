@@ -1,5 +1,7 @@
 import pytest
 
+from rotkehlchen.rotkehlchen import Rotkehlchen
+
 
 def test_add_remove_blockchain_account(rotkehlchen_instance):
     """Test for issue 66 https://github.com/rotkehlchenio/rotkehlchen/issues/66"""
@@ -30,7 +32,7 @@ def test_add_remove_eth_tokens(rotkehlchen_instance):
 
 
 def test_periodic_query(rotkehlchen_instance):
-    """Test that periodiq query returns expected dict values"""
+    """Test that periodic query returns expected dict values"""
     result = rotkehlchen_instance.query_periodic_data()
 
     assert len(result) == 3
@@ -40,3 +42,10 @@ def test_periodic_query(rotkehlchen_instance):
         result['eth_node_connection'] is False
     )
     assert result['history_process_current_ts'] == -1
+
+
+def test_periodic_data_before_login_completion(cli_args):
+    """Test that periodic query returns empty list if user is not yet logged in"""
+    rotkehlchen = Rotkehlchen(cli_args)
+    result = rotkehlchen.query_periodic_data()
+    assert len(result) == 0
