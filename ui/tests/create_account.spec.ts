@@ -1,5 +1,5 @@
 import {Application} from 'spectron';
-import {createAccount, GLOBAL_TIMEOUT, initialiseSpectron, METHOD_TIMEOUT} from './common';
+import {captureOnFailure, createAccount, GLOBAL_TIMEOUT, initialiseSpectron, METHOD_TIMEOUT} from './common';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import {Guid} from './guid';
@@ -18,10 +18,11 @@ describe('first usage', function () {
         await app.start();
     });
 
-    afterEach(async () => {
+    afterEach(async function () {
         if (app && app.isRunning()) {
             await app.stop();
         }
+        await captureOnFailure(app, this.currentTest);
     });
 
     it('create account', async () => {

@@ -1,5 +1,14 @@
 import {Application, SpectronClient} from 'spectron';
-import {closeAddYourSettingsPopup, createAccount, GLOBAL_TIMEOUT, initialiseSpectron, METHOD_TIMEOUT, navigateTo} from './common';
+import {
+    captureOnFailure,
+    closeAddYourSettingsPopup,
+    createAccount,
+    GLOBAL_TIMEOUT,
+    initialiseSpectron,
+    METHOD_TIMEOUT,
+    navigateTo,
+    setupTest
+} from './common';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import {Guid} from './guid';
@@ -12,6 +21,8 @@ describe('user settings', function () {
     // @ts-ignore
     this.timeout(GLOBAL_TIMEOUT);
     this.retries(3);
+    const title = this.title;
+
     let app: Application;
     let client: SpectronClient;
 
@@ -23,25 +34,33 @@ describe('user settings', function () {
     const ethAccount: string = process.env.ETH_ADDRESS as string;
     const btcAccount: string = process.env.BTC_ADDRESS as string;
 
-    before(async () => {
+    before(async function () {
         username = Guid.newGuid().toString();
         app = initialiseSpectron();
         await app.start();
-        await createAccount(app, username, password);
         client = app.client;
 
-        controller = new UserSettingsController(client);
+        await setupTest(app, title, async () => {
+            await createAccount(app, username, password);
 
-        await navigateTo(client, '#user_settings_button');
-        await closeAddYourSettingsPopup(client);
+            controller = new UserSettingsController(client);
 
-        await client.waitForVisible('#blockchain_balances_panel_body', METHOD_TIMEOUT);
+            await navigateTo(client, '#user_settings_button');
+            await closeAddYourSettingsPopup(client);
+
+            await client.waitForVisible('#blockchain_balances_panel_body', METHOD_TIMEOUT);
+        });
+
     });
 
     after(async () => {
         if (app && app.isRunning()) {
             await app.stop();
         }
+    });
+
+    afterEach(async function () {
+        await captureOnFailure(app, this.currentTest);
     });
 
     it('should add an ETH account and view the account balance', async () => {

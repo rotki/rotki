@@ -17,3 +17,4 @@ dist/
 .eggs
 docs/_build
 .idea
+failure-screenshots/

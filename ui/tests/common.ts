@@ -1,10 +1,13 @@
 import {Application, SpectronClient} from 'spectron';
 import * as electron from 'electron';
 import * as path from 'path';
+import * as fs from 'fs';
 const retry = require('promise-retry');
 
 export const GLOBAL_TIMEOUT = 120_000;
 export const METHOD_TIMEOUT = 40_000;
+
+type AsyncBlock = () => Promise<void>;
 
 export function initialiseSpectron() {
 
@@ -96,4 +99,44 @@ export async function login(client: SpectronClient, username: string, password: 
         client.click('.jconfirm-buttons>button');
     });
     await client.waitForVisible('.jconfirm', METHOD_TIMEOUT, true);
+}
+
+export function takeScreenshot(app: Application, title: string): Promise<void> {
+    const filename = getScreenshotFilename(title);
+    return new Promise<void>((resolve, reject) => {
+        app.browserWindow.capturePage().then(imageBuffer => {
+            fs.writeFile(filename, imageBuffer, (err: Error) => {
+                if (err) {
+                    console.log(err);
+                    reject(err);
+                } else {
+                    console.log(`Took screenshot: ${title}`);
+                    resolve();
+                }
+            });
+        });
+    });
+}
+
+function getScreenshotFilename(title: string) {
+    const directory = 'failure-screenshots';
+    if (!fs.existsSync(directory)) {
+        fs.mkdirSync(directory);
+    }
+    return `${directory}/${title.replace(/\s/g, '_')}.png`;
+}
+
+export async function setupTest(app: Application, title: string, block: AsyncBlock): Promise<void> {
+    try {
+        await block();
+    } catch (e) {
+        await takeScreenshot(app, title);
+        throw e;
+    }
+}
+
+export async function captureOnFailure(app: Application, currentTest?: Mocha.Test) {
+    if (currentTest && currentTest.state === 'failed') {
+        await takeScreenshot(app, currentTest.title);
+    }
 }

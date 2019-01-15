@@ -1,5 +1,6 @@
 import {Application, SpectronClient} from 'spectron';
 import {
+    captureOnFailure,
     closeAddYourSettingsPopup,
     createAccount,
     GLOBAL_TIMEOUT,
@@ -7,7 +8,8 @@ import {
     login,
     logout,
     METHOD_TIMEOUT,
-    navigateTo
+    navigateTo,
+    setupTest
 } from './common';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
@@ -31,21 +33,31 @@ describe('dashboard', function () {
     const ethAccount: string = process.env.ETH_ADDRESS as string;
     const btcAccount: string = process.env.BTC_ADDRESS as string;
 
-    before(async () => {
+    const title = this.title;
+
+    before(async function () {
         username = Guid.newGuid().toString();
         app = initialiseSpectron();
         await app.start();
-        await createAccount(app, username, password);
         client = app.client;
 
-        controller = new UserSettingsController(client);
-        await client.waitUntilTextExists('.page-header', 'Dashboard', METHOD_TIMEOUT);
+        console.log(title);
+
+        await setupTest(app, title, async () => {
+            await createAccount(app, username, password);
+
+            controller = new UserSettingsController(client);
+            await client.waitUntilTextExists('.page-header', 'Dashboard', METHOD_TIMEOUT);
+        });
+
     });
 
-    after(async () => {
+    after(async function () {
         if (app && app.isRunning()) {
             await app.stop();
         }
+
+        await captureOnFailure(app, this.currentTest);
     });
 
     it('should be originally empty', async () => {
@@ -57,26 +69,28 @@ describe('dashboard', function () {
         const apiKey = process.env.BITTREX_API_KEY as string;
         const apiSecret = process.env.BITTREX_API_SECRET as string;
 
-        before(async () => {
-            await retry( async() => {
-                navigateTo(client,  '#user_settings_button');
+        before(async function () {
+            await setupTest(app, `${title}_after_adding`, async () => {
+                await retry( async() => {
+                    await navigateTo(client, '#user_settings_button');
+                });
+                await closeAddYourSettingsPopup(client);
+
+                await client.waitForVisible('#blockchain_balances_panel_body', METHOD_TIMEOUT);
+
+                await controller.addAccount(AccountType.ETH, ethAccount);
+                await controller.addAccount(AccountType.BTC, btcAccount);
+
+                await client.waitForExist('#btcchain_per_account_table', METHOD_TIMEOUT);
+
+                await controller.addFiatValue();
+                await controller.addExchange(apiKey, apiSecret);
+
+                await navigateToDashboard(client);
+
+                await logout(client);
+                await login(client, username, password);
             });
-            await closeAddYourSettingsPopup(client);
-
-            await client.waitForVisible('#blockchain_balances_panel_body', METHOD_TIMEOUT);
-
-            await controller.addAccount(AccountType.ETH, ethAccount);
-            await controller.addAccount(AccountType.BTC, btcAccount);
-
-            await client.waitForExist('#btcchain_per_account_table', METHOD_TIMEOUT);
-
-            await controller.addFiatValue();
-            await controller.addExchange(apiKey, apiSecret);
-
-            await navigateToDashboard(client);
-
-            await logout(client);
-            await login(client, username, password);
         });
 
         it('should show the information to the user', async () => {
@@ -95,7 +109,7 @@ describe('dashboard', function () {
 });
 
 async function navigateToDashboard(client: SpectronClient) {
-    await retry( async() => {
+    await retry(async () => {
         client.click('#side-menu > li');
         client.waitUntilTextExists('.page-header', 'Dashboard', METHOD_TIMEOUT);
     });
