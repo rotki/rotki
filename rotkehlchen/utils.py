@@ -114,16 +114,26 @@ def query_fiat_pair(base: FiatAsset, quote: FiatAsset) -> FVal:
     )
     pair = '{}_{}'.format(base, quote)
     querystr = 'https://free.currencyconverterapi.com/api/v5/convert?q={}'.format(pair)
-    resp = request_get_dict(querystr)
     try:
+        resp = request_get_dict(querystr)
         return FVal(resp['results'][pair]['val'])
-    except ValueError:
+    except (ValueError, RemoteError, KeyError):
         log.error(
             'Querying free.currencyconverterapi.com fiat pair failed',
             base_currency=base,
             quote_currency=quote,
         )
-        raise ValueError('Could not find a "{}" price for "{}"'.format(base, quote))
+        querystr = f'https://api.exchangeratesapi.io/latest?base={base}&symbols={quote}'
+        try:
+            resp = request_get_dict(querystr)
+            return FVal(resp['rates'][quote])
+        except (ValueError, RemoteError, KeyError):
+            log.error(
+                'Querying api.exchangeratesapi.io for fiat pair failed',
+                base_currency=base,
+                quote_currency=quote,
+            )
+            raise ValueError('Could not find a "{}" price for "{}"'.format(base, quote))
 
 
 def from_wei(wei_value: FVal) -> FVal:
