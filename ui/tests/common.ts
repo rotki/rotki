@@ -1,6 +1,7 @@
 import {Application, SpectronClient} from 'spectron';
 import * as electron from 'electron';
 import * as path from 'path';
+const retry = require('promise-retry');
 
 export const GLOBAL_TIMEOUT = 120_000;
 export const METHOD_TIMEOUT = 40_000;
@@ -58,16 +59,24 @@ export async function navigateTo(client: SpectronClient, elementId: string) {
 
 export async function closeAddYourSettingsPopup(client: SpectronClient) {
     await client.waitUntilTextExists('.jconfirm-title', 'Add your settings', METHOD_TIMEOUT);
-    await client.click('.jconfirm-buttons>button');
+    await retry( async() => {
+        client.click('.jconfirm-buttons>button');
+    });
 }
 
 export async function logout(client: SpectronClient) {
-    await client.click('#user-dropdown');
+    await retry( async() => {
+        client.click('#user-dropdown');
+    });
     await client.waitForVisible('#logout_button', METHOD_TIMEOUT);
-    await client.click('#logout_button');
+    await retry( async() => {
+        client.click('#logout_button');
+    });
 
     await client.waitForVisible('.jconfirm', METHOD_TIMEOUT);
-    await client.click('.jconfirm-buttons>button');
+    await retry( async() => {
+        client.click('.jconfirm-buttons>button');
+    });
     await client.waitUntilTextExists('.jconfirm-title', 'Sign In', METHOD_TIMEOUT);
 }
 
@@ -78,9 +87,13 @@ export async function login(client: SpectronClient, username: string, password: 
     await client.clearElement('#password_entry');
     await client.addValue('#password_entry', password);
 
-    await client.click('.jconfirm-buttons>button');
+    await retry( async() => {
+        client.click('.jconfirm-buttons>button');
+    });
 
     await client.waitUntilTextExists('.jconfirm-title', 'Successful Sign In', METHOD_TIMEOUT);
-    await client.click('.jconfirm-buttons>button');
+    await retry( async() => {
+        client.click('.jconfirm-buttons>button');
+    });
     await client.waitForVisible('.jconfirm', METHOD_TIMEOUT, true);
 }

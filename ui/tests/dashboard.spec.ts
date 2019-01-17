@@ -14,7 +14,7 @@ import * as chaiAsPromised from 'chai-as-promised';
 import {Guid} from './guid';
 import {AccountType, UserSettingsController} from './user_settings_controller';
 
-
+const retry = require('promise-retry');
 chai.should();
 chai.use(chaiAsPromised);
 
@@ -58,7 +58,9 @@ describe('dashboard', function () {
         const apiSecret = process.env.BITTREX_API_SECRET as string;
 
         before(async () => {
-            await navigateTo(client, '#user_settings_button');
+            await retry( async() => {
+                navigateTo(client,  '#user_settings_button');
+            });
             await closeAddYourSettingsPopup(client);
 
             await client.waitForVisible('#blockchain_balances_panel_body', METHOD_TIMEOUT);
@@ -93,6 +95,8 @@ describe('dashboard', function () {
 });
 
 async function navigateToDashboard(client: SpectronClient) {
-    await client.click('#side-menu > li');
-    await client.waitUntilTextExists('.page-header', 'Dashboard', METHOD_TIMEOUT);
+    await retry( async() => {
+        client.click('#side-menu > li');
+        client.waitUntilTextExists('.page-header', 'Dashboard', METHOD_TIMEOUT);
+    });
 }
