@@ -64,18 +64,6 @@ templates:
       - source terryfy/test_tools.sh
       - python -m pytest $COVERAGE_ARGS rotkehlchen/
 
-  job-template-deploy: &job-template-deploy
-    before_install:
-      - mkdir -p $HOME/.bin
-      - export PATH=$PATH:$HOME/.bin
-      - git fetch --unshallow
-      - git pull --tags
-      - .travis/before_install.sh
-    install:
-      - .travis/install.sh
-    script:
-      - ./package.sh
-
 cache:
   pip: true
   directories:
@@ -115,8 +103,9 @@ jobs:
         - npm test
 
     - stage: deploy
-      <<: *job-template-deploy
-      os: linux
+      <<: *job-template-linux
+      script:
+        - ./package.sh
       deploy:
         - provider: releases
           api_key:
@@ -130,8 +119,9 @@ jobs:
             branch: master
 
     - stage: deploy
-      <<: *job-template-deploy
-      os: osx
+      <<: *job-template-osx
+      script:
+        - ./package.sh
       deploy:
         - provider: releases
           api_key:
