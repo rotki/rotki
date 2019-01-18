@@ -13,7 +13,6 @@ from urllib.parse import urlencode
 from requests import Response
 
 from rotkehlchen import typing
-from rotkehlchen.constants import S_EUR, S_USD
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
@@ -24,7 +23,6 @@ from rotkehlchen.utils import (
     cache_response_timewise,
     convert_to_int,
     get_pair_position,
-    query_fiat_pair,
     retry_calls,
     rlk_jsonloads_dict,
 )
@@ -207,6 +205,7 @@ class Kraken(Exchange):
             api_key: typing.ApiKey,
             secret: typing.ApiSecret,
             user_directory: typing.FilePath,
+            usd_eur_price: FVal,
     ):
         super(Kraken, self).__init__('kraken', api_key, secret, user_directory)
         self.apiversion = '0'
@@ -215,6 +214,8 @@ class Kraken(Exchange):
         # How can this be avoided without too much pain?
         self.usdprice: Dict[Union[typing.Asset, str], FVal] = {}
         self.eurprice: Dict[Union[typing.Asset, str], FVal] = {}
+
+        self.usdprice['EUR'] = usd_eur_price
         self.session.headers.update({  # type: ignore
             'API-Key': self.api_key,
         })
@@ -423,9 +424,6 @@ class Kraken(Exchange):
         try:
             self.first_connection()
             old_balances = self.query_private('Balance', req={})
-            # find USD price of EUR
-            with self.lock:
-                self.usdprice['EUR'] = query_fiat_pair(S_EUR, S_USD)
 
         except RemoteError as e:
             msg = (

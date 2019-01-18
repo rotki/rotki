@@ -17,7 +17,7 @@ from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, ZERO
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Asset, Fee, FiatAsset, FilePath, ResultCache, Timestamp
+from rotkehlchen.typing import Asset, Fee, FilePath, ResultCache, Timestamp
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -101,39 +101,6 @@ def cache_response_timewise(seconds: int = 600):
 
         return wrapper
     return _cache_response_timewise
-
-
-def query_fiat_pair(base: FiatAsset, quote: FiatAsset) -> FVal:
-    if base == quote:
-        return FVal(1.0)
-
-    log.debug(
-        'Query free.currencyconverterapi.com fiat pair',
-        base_currency=base,
-        quote_currency=quote,
-    )
-    pair = '{}_{}'.format(base, quote)
-    querystr = 'https://free.currencyconverterapi.com/api/v5/convert?q={}'.format(pair)
-    try:
-        resp = request_get_dict(querystr)
-        return FVal(resp['results'][pair]['val'])
-    except (ValueError, RemoteError, KeyError):
-        log.error(
-            'Querying free.currencyconverterapi.com fiat pair failed',
-            base_currency=base,
-            quote_currency=quote,
-        )
-        querystr = f'https://api.exchangeratesapi.io/latest?base={base}&symbols={quote}'
-        try:
-            resp = request_get_dict(querystr)
-            return FVal(resp['rates'][quote])
-        except (ValueError, RemoteError, KeyError):
-            log.error(
-                'Querying api.exchangeratesapi.io for fiat pair failed',
-                base_currency=base,
-                quote_currency=quote,
-            )
-            raise ValueError('Could not find a "{}" price for "{}"'.format(base, quote))
 
 
 def from_wei(wei_value: FVal) -> FVal:

@@ -11,7 +11,7 @@ from rotkehlchen.binance import Binance
 from rotkehlchen.bitmex import Bitmex
 from rotkehlchen.bittrex import Bittrex
 from rotkehlchen.blockchain import Blockchain
-from rotkehlchen.constants import SUPPORTED_EXCHANGES
+from rotkehlchen.constants import S_EUR, S_USD, SUPPORTED_EXCHANGES
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.errors import AuthenticationError, EthSyncError, InputError, PermissionError
 from rotkehlchen.ethchain import Ethchain
@@ -28,7 +28,6 @@ from rotkehlchen.utils import (
     combine_stat_dicts,
     dict_get_sumof,
     merge_dicts,
-    query_fiat_pair,
     simple_result,
     ts_now,
 )
@@ -91,6 +90,7 @@ class Rotkehlchen(object):
         self.binance = None
 
         self.data = DataHandler(self.data_dir)
+        self.inquirer = Inquirer(data_dir=self.data_dir)
 
         self.lock.release()
         self.shutdown_event = gevent.event.Event()
@@ -102,9 +102,11 @@ class Rotkehlchen(object):
                 str.encode(secret_data['kraken']['api_key']),
                 str.encode(secret_data['kraken']['api_secret']),
                 self.user_directory,
+                self.inquirer.query_fiat_pair(S_EUR, S_USD),
             )
             self.connected_exchanges.append('kraken')
             self.trades_historian.set_exchange('kraken', self.kraken)
+            self.inquirer.kraken = self.kraken
 
         if self.poloniex is None and 'poloniex' in secret_data:
             self.poloniex = Poloniex(
@@ -239,7 +241,6 @@ class Rotkehlchen(object):
             eth_accounts=self.data.get_eth_accounts(),
             historical_data_start=historical_data_start,
         )
-        self.inquirer = Inquirer(data_dir=self.data_dir, kraken=self.kraken)
         price_historian = PriceHistorian(
             data_directory=self.data_dir,
             history_date_start=historical_data_start,
@@ -481,7 +482,7 @@ class Rotkehlchen(object):
         balances = self.data.get_fiat_balances()
         for currency, amount in balances.items():
             amount = FVal(amount)
-            usd_rate = query_fiat_pair(currency, 'USD')
+            usd_rate = self.inquirer.query_fiat_pair(currency, 'USD')
             result[currency] = {
                 'amount': amount,
                 'usd_value': amount * usd_rate,
@@ -581,7 +582,7 @@ class Rotkehlchen(object):
         with self.lock:
             self.data.set_main_currency(currency, self.accountant)
             if currency != 'USD':
-                self.usd_to_main_currency_rate = query_fiat_pair('USD', currency)
+                self.usd_to_main_currency_rate = self.inquirer.query_fiat_pair('USD', currency)
 
     def set_settings(self, settings):
         log.info('Add new settings')
@@ -598,7 +599,10 @@ class Rotkehlchen(object):
             if 'main_currency' in settings:
                 main_currency = settings['main_currency']
                 if main_currency != 'USD':
-                    self.usd_to_main_currency_rate = query_fiat_pair('USD', main_currency)
+                    self.usd_to_main_currency_rate = self.inquirer.query_fiat_pair(
+                        'USD',
+                        main_currency,
+                    )
 
             res, msg = self.accountant.customize(settings)
             if not res:
@@ -615,7 +619,7 @@ class Rotkehlchen(object):
     def usd_to_main_currency(self, amount):
         main_currency = self.data.main_currency()
         if main_currency != 'USD' and not hasattr(self, 'usd_to_main_currency_rate'):
-            self.usd_to_main_currency_rate = query_fiat_pair('USD', main_currency)
+            self.usd_to_main_currency_rate = self.inquirer.query_fiat_pair('USD', main_currency)
 
         return self.usd_to_main_currency_rate * amount
 
