@@ -9,6 +9,7 @@ from rotkehlchen.binance import Binance, trade_from_binance
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade
+from rotkehlchen.tests.utils.mock import MockResponse
 
 
 @pytest.fixture
@@ -148,13 +149,6 @@ exchange_info_mock_text = '''{
 
 
 def test_binance_backoff_after_429(mock_binance):
-    class MockResponse():
-
-        def __init__(self, status_code, text):
-            self.status_code = status_code
-            self.text = text
-            self.url = 'http://someurl.com'
-
     count = 0
 
     def mock_429(url):

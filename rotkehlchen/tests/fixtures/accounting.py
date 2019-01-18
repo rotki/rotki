@@ -14,9 +14,18 @@ TEST_HISTORY_DATA_START = "01/01/2015"
 
 
 @pytest.fixture
-def accounting_data_dir():
+def use_clean_caching_directory():
+    """If this is set to True then a clean accounting directory will be used."""
+    return False
+
+
+@pytest.fixture
+def accounting_data_dir(use_clean_caching_directory, tmpdir_factory):
     """For accounting we have a dedicated test data dir so that it's easy to
     cache the results of the historic price queries also in Travis"""
+    if use_clean_caching_directory:
+        return tmpdir_factory.mktemp('accounting_data')
+
     home = os.path.expanduser("~")
     if 'TRAVIS' in os.environ:
         data_directory = os.path.join(home, '.cache', '.rotkehlchen-test-dir')
@@ -121,3 +130,8 @@ def accountant(
 @pytest.fixture
 def inquirer(accounting_data_dir):
     return Inquirer(data_dir=accounting_data_dir, kraken=None)
+
+
+@pytest.fixture(scope='session')
+def session_inquirer(session_data_dir):
+    return Inquirer(data_dir=session_data_dir, kraken=None)
