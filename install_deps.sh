@@ -30,11 +30,14 @@ trap cleanup EXIT
 # /etc/ld.so.conf
 SQLCIPHER_EXISTS=$(ldconfig -p | grep libsqlcipher)
 
+echo "SQLCIPHER_EXISTS: $SQLCIPHER_EXISTS";
 if [[ $SQLCIPHER_EXISTS == "" ]]; then
+    echo "Downloading and compiling sqlcipher";
     # Go into the directory and build sqlciper
     cd $WORK_DIR
     git clone https://github.com/sqlcipher/sqlcipher
     cd sqlcipher
+    git checkout v4.0.1
     ./configure \
 	--enable-tempstore=yes \
 	CFLAGS="-DSQLITE_HAS_CODEC -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_PARENTHESIS" \
