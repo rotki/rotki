@@ -98,9 +98,13 @@ class DBHandler(object):
                     migrated = False
 
             if self.sqlcipher_version != 4 or not migrated:
-                if errstr == 'file is not a database':
-                    errstr = 'Wrong password while decrypting the database or not a database'
-                raise AuthenticationError(errstr)
+                errstr = (
+                    'Wrong password while decrypting the database or not a database. Perhaps '
+                    'trying to use an sqlcipher 4 version DB with sqlciper 3?'
+                )
+                raise AuthenticationError(
+                    f'SQLCipher version: {self.sqlcipher_version} - {errstr}',
+                )
 
         self.run_updates()
         cursor = self.conn.cursor()
