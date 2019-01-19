@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
+
 from setuptools import setup
 
 
@@ -12,12 +13,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-install_requires_replacements = {
-    (
-        'git+https://github.com/ethereum/eth-typing.git'
-        '@a4eba0cd42c34e051ac8818177c8eb95ac67f5b5#egg=eth-typing'
-    ): 'eth-typing',
-}
+install_requires_replacements = {}
 
 install_requirements = list(set(
     install_requires_replacements.get(requirement.strip(), requirement.strip())

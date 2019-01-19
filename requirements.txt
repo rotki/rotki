@@ -10,5 +10,4 @@ psutil==5.4.3
 
 
 #constraints
-eth-typing==1.3.0
 setuptools==40.4.2
