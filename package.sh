@@ -69,6 +69,27 @@ npm run build
 				      --ignore="rotkehlchen$" \
 				      --ignore="rotkehlchen.egg-info" \
 				      --ignore="tools$" \
+				      --ignore="docs$" \
+				      --ignore="appveyor*" \
+				      --ignore=".eggs" \
+				      --ignore=".github" \
+				      --ignore=".gitignore" \
+				      --ignore=".nvmrc" \
+				      --ignore=".package-lock.json" \
+				      --ignore="requirements*" \
+				      --ignore="rotkehlchen.spec" \
+				      --ignore="setup.cfg" \
+				      --ignore="stubs" \
+				      --ignore=".travis*" \
+				      --ignore="tsconfig*" \
+				      --ignore="tsfmt.json" \
+				      --ignore="tslint.json" \
+				      --ignore=".bumpversion.cfg" \
+				      --ignore=".mypy_cache/" \
+				      --ignore=".coveragere" \
+				      --ignore=".env" \
+				      --ignore="README.md" \
+				      --ignore="rotkehlchen.log" \
 				      --ignore=".*\.sh" \
 				      --ignore=".*\.py"
 

@@ -1,8 +1,10 @@
 import {showError, showInfo} from './utils';
 import {form_button, form_checkbox, form_entry, form_select, page_header, settings_panel} from './elements';
 import * as fs from 'fs';
+import * as path from 'path';
 import {Currency} from './model/currency';
 import {service} from './rotkehlchen_service';
+
 
 export class Settings {
     user_logged = false;
@@ -74,17 +76,10 @@ export class Settings {
     }
 
     private get_icon_map(): { [asset: string]: string } {
-        const icon_dir = 'node_modules/cryptocurrency-icons/svg/color/';
-
-        let fs_dir: string;
-        if (!fs.existsSync(icon_dir)) {
-            fs_dir = `resources/app/${icon_dir}`;
-        } else {
-            fs_dir = icon_dir;
-        }
-
+        const root_dir = path.join(__dirname, '../../');
+        const icon_dir = path.join(root_dir, 'node_modules/cryptocurrency-icons/svg/color/');
         const icon_map: { [asset: string]: string } = {};
-        fs.readdirSync(fs_dir)
+        fs.readdirSync(icon_dir)
             .forEach(function(v) {
                 icon_map[v.substr(0, v.indexOf('.'))] = icon_dir + v;
             });
