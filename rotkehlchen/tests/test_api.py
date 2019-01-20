@@ -1,6 +1,10 @@
+import os
+from json.decoder import JSONDecodeError
+
 import pytest
 
 from rotkehlchen.rotkehlchen import Rotkehlchen
+from rotkehlchen.utils import rlk_jsonloads_dict
 
 
 def test_add_remove_blockchain_account(rotkehlchen_instance):
@@ -49,3 +53,21 @@ def test_periodic_data_before_login_completion(cli_args):
     rotkehlchen = Rotkehlchen(cli_args)
     result = rotkehlchen.query_periodic_data()
     assert len(result) == 0
+
+
+@pytest.mark.parametrize('number_of_accounts', [0])
+def test_dbinfo_is_written_at_shutdown(rotkehlchen_instance, username):
+    """Test that when rotkehlchen shuts down dbinfo is written"""
+    filepath = os.path.join(rotkehlchen_instance.data.user_data_dir, 'dbinfo.json')
+    sqlcipher_version = rotkehlchen_instance.data.db.sqlcipher_version
+    rotkehlchen_instance.shutdown()
+
+    assert os.path.exists(filepath), 'dbinfo.json was not written'
+    with open(filepath, 'r') as f:
+        try:
+            dbinfo = rlk_jsonloads_dict(f.read())
+        except JSONDecodeError:
+            assert False, 'Could not decode dbinfo.json'
+
+    assert dbinfo['sqlcipher_version'] == sqlcipher_version
+    assert 'md5_hash' in dbinfo

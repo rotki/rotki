@@ -10,6 +10,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.constants import YEAR_IN_SECONDS
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import (
+    DBINFO_FILENAME,
     DEFAULT_ANONYMIZED_LOGS,
     DEFAULT_BALANCE_SAVE_FREQUENCY,
     DEFAULT_INCLUDE_CRYPTO2CRYPTO,
@@ -24,7 +25,7 @@ from rotkehlchen.db.dbhandler import (
     detect_sqlcipher_version,
 )
 from rotkehlchen.errors import AuthenticationError, InputError
-from rotkehlchen.utils import createTimeStamp, ts_now
+from rotkehlchen.utils import createTimeStamp, rlk_jsondumps, ts_now
 
 TABLES_AT_INIT = [
     'timed_balances',
@@ -362,7 +363,7 @@ def test_balance_save_frequency_check(data_dir, username):
     assert last_save_ts == data_save_ts
 
 
-def test_upgrade_sqlcipher_v3_to_v4(data_dir):
+def test_upgrade_sqlcipher_v3_to_v4_without_dbinfo(data_dir):
     """Test that we can upgrade from an sqlcipher v3 to v4 rotkehlchen database
     Issue: https://github.com/rotkehlchenio/rotkehlchen/issues/229
     """
@@ -380,6 +381,30 @@ def test_upgrade_sqlcipher_v3_to_v4(data_dir):
         os.path.join(dir_path, 'data', 'sqlcipher_v3_rotkehlchen.db'),
         os.path.join(userdata_dir, 'rotkehlchen.db'),
     )
+
+    # the constructor should migrate it in-place and we should have a working DB
+    db = DBHandler(userdata_dir, '123')
+    assert db.get_version() == ROTKEHLCHEN_DB_VERSION
+
+
+def test_upgrade_sqlcipher_v3_to_v4_with_dbinfo(data_dir):
+    sqlcipher_version = detect_sqlcipher_version()
+    if sqlcipher_version != 4:
+        # nothing to test
+        return
+
+    username = 'foo'
+    userdata_dir = os.path.join(data_dir, username)
+    os.mkdir(userdata_dir)
+    # get the v3 database file and copy it into the user's data directory
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    copyfile(
+        os.path.join(dir_path, 'data', 'sqlcipher_v3_rotkehlchen.db'),
+        os.path.join(userdata_dir, 'rotkehlchen.db'),
+    )
+    dbinfo = {'sqlcipher_version': 3, 'md5_hash': '20c910c28ca42370e4a5f24d6d4a73d2'}
+    with open(os.path.join(userdata_dir, DBINFO_FILENAME), 'w') as f:
+        f.write(rlk_jsondumps(dbinfo))
 
     # the constructor should migrate it in-place and we should have a working DB
     db = DBHandler(userdata_dir, '123')

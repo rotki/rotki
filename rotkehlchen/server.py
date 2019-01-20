@@ -27,7 +27,10 @@ class RotkehlchenServer(object):
         self.stop_event = Event()
         mainloop_greenlet = self.rotkehlchen.start()
         mainloop_greenlet.link_exception(self.handle_killed_greenlets)
-        self.greenlets = [mainloop_greenlet]
+        # Greenlets that will be waited for when we shutdown
+        self.waited_greenlets = [mainloop_greenlet]
+        # Greenlets that can be killed instead of waited for when we shutdown
+        self.killable_greenlets = []
         self.task_lock = Semaphore()
         self.task_id = 0
         self.task_results = {}
@@ -52,11 +55,17 @@ class RotkehlchenServer(object):
     def shutdown(self):
         log.debug('Shutdown initiated')
         self.zerorpc.stop()
-        gevent.wait(self.greenlets)
         self.rotkehlchen.shutdown()
-        print("Shutting down zerorpc server")
+        log.debug('Waiting for greenlets')
+        gevent.wait(self.waited_greenlets)
+        log.debug('Waited for greenlets. Killing all other greenlets')
+        gevent.killall(self.killable_greenlets)
+        log.debug('Greenlets killed. Killing zerorpc greenlet')
+        self.zerorpc_greenlet.kill()
+        log.debug('Killed zerorpc greenlet')
         log.debug('Shutdown completed')
         logging.shutdown()
+        self.stop_event.set()
 
     def logout(self):
         # Kill all queries apart from the main loop -- perhaps a bit heavy handed
@@ -65,7 +74,7 @@ class RotkehlchenServer(object):
         #    All results would be discarded anyway since we are logging out.
         # 2. Have an intricate stop() notification system for each greenlet, but
         #   that is going to get complicated fast.
-        gevent.killall(self.greenlets[1:])
+        gevent.killall(self.killable_greenlets)
         with self.task_lock:
             self.task_results = {}
         self.rotkehlchen.logout()
@@ -120,7 +129,7 @@ class RotkehlchenServer(object):
         )
         greenlet.task_id = task_id
         greenlet.link_exception(self.handle_killed_greenlets)
-        self.greenlets.append(greenlet)
+        self.killable_greenlets.append(greenlet)
         return task_id
 
     def query_task_result(self, task_id):
@@ -326,6 +335,7 @@ class RotkehlchenServer(object):
         return text
 
     def main(self):
+        gevent.hub.signal(signal.SIGQUIT, self.shutdown)
         gevent.hub.signal(signal.SIGINT, self.shutdown)
         gevent.hub.signal(signal.SIGTERM, self.shutdown)
         # self.zerorpc = zerorpc.Server(self, heartbeat=15)
@@ -333,4 +343,5 @@ class RotkehlchenServer(object):
         addr = 'tcp://127.0.0.1:' + str(self.port())
         self.zerorpc.bind(addr)
         print('start running on {}'.format(addr))
-        self.zerorpc.run()
+        self.zerorpc_greenlet = gevent.spawn(self.zerorpc.run)
+        self.stop_event.wait()

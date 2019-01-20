@@ -35,5 +35,6 @@ def rotkehlchen_instance(cli_args, username, blockchain, accountant):
     # different to the usual user one
     r.accountant = accountant
     r.blockchain = blockchain
+    r.trades_historian = object()
     r.user_is_logged_in = True
     return r
