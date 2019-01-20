@@ -242,10 +242,10 @@ class Kraken(Exchange):
             else:
                 self.maker_fee = self.taker_fee
             self.tradeable_pairs = self.query_public('AssetPairs')
+            # also make sure to get fiat prices from ticker before considering
+            # kraken ready for external queries
+            self.get_fiat_prices_from_ticker()
             self.first_connection_made = True
-
-        # Also need to do at least a single pass of the main logic for the ticker
-        self.main_logic()
 
     def validate_api_key(self) -> Tuple[bool, str]:
         try:
