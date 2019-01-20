@@ -1,9 +1,12 @@
+import hashlib
 import logging
 import os
 import re
 import shutil
 import tempfile
 import time
+from enum import Enum
+from json.decoder import JSONDecodeError
 from typing import Dict, List, NamedTuple, Optional, Tuple, Union, cast
 
 from eth_utils.address import to_checksum_address
@@ -14,11 +17,13 @@ from rotkehlchen.constants import S_BTC, S_ETH, S_USD, SUPPORTED_EXCHANGES, YEAR
 from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
 from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.fval import FVal
-from rotkehlchen.utils import ts_now
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.utils import rlk_jsondumps, rlk_jsonloads_dict, ts_now
 
 from .utils import DB_SCRIPT_CREATE_TABLES, DB_SCRIPT_REIMPORT_DATA
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class BlockchainAccounts(NamedTuple):
@@ -37,6 +42,12 @@ class LocationData(NamedTuple):
     time: typing.Timestamp
     location: str
     usd_value: str
+
+
+class DBStartupAction(Enum):
+    NOTHING = 1
+    UPGRADE_3_4 = 2
+    STUCK_4_3 = 3
 
 
 DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
@@ -70,6 +81,7 @@ def detect_sqlcipher_version() -> int:
 
 
 ROTKEHLCHEN_DB_VERSION = 2
+DBINFO_FILENAME = 'dbinfo.json'
 
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
@@ -79,23 +91,35 @@ class DBHandler(object):
     def __init__(self, user_data_dir: typing.FilePath, password: str):
         self.user_data_dir = user_data_dir
         self.sqlcipher_version = detect_sqlcipher_version()
-        self.connect(password)
+        action = self.read_info_at_start()
+        if action == DBStartupAction.UPGRADE_3_4:
+            result, msg = self.upgrade_db_sqlcipher_3_to_4(password, False)
+            if not result:
+                log.error(
+                    'dbinfo determined we need an upgrade from sqlcipher version '
+                    '3 to version 4 but the upgrade failed.',
+                    error=msg,
+                )
+                raise AuthenticationError(msg)
+        elif action == DBStartupAction.STUCK_4_3:
+            msg = (
+                'dbinfo determined we are using sqlcipher version 3 but the '
+                'database has already been upgraded to version 4. Please find a '
+                'rotkehlchen binary that uses sqlcipher version 4 to open the '
+                'database'
+            )
+            log.error(msg)
+            raise AuthenticationError(msg)
+        else:
+            self.connect(password)
+
         try:
             self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
             migrated = False
             errstr = str(e)
             if self.sqlcipher_version == 4:
-                migrated = True
-                # if we are at version 4 perhaps we are just upgrading from an
-                # sqlcipher3 database
-                script = f'PRAGMA KEY="{password}";PRAGMA cipher_migrate;COMMIT;'
-                try:
-                    self.conn.executescript(script)
-                    self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
-                except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-                    errstr = str(e)
-                    migrated = False
+                migrated, errstr = self.upgrade_db_sqlcipher_3_to_4(password, True)
 
             if self.sqlcipher_version != 4 or not migrated:
                 errstr = (
@@ -116,6 +140,64 @@ class DBHandler(object):
 
     def __del__(self):
         self.disconnect()
+        dbinfo = {'sqlcipher_version': self.sqlcipher_version, 'md5_hash': self.get_md5hash()}
+        with open(os.path.join(self.user_data_dir, DBINFO_FILENAME), 'w') as f:
+            f.write(rlk_jsondumps(dbinfo))
+
+    def get_md5hash(self) -> str:
+        no_active_connection = not hasattr(self, 'conn') or not self.conn
+        assert no_active_connection, 'md5hash should be taken only with a closed DB'
+        filename = os.path.join(self.user_data_dir, 'rotkehlchen.db')
+        md5_hash = hashlib.md5()
+        with open(filename, 'rb') as f:
+            # Read and update hash in chunks of 4K
+            for byte_block in iter(lambda: f.read(4096), b''):
+                md5_hash.update(byte_block)
+
+        return md5_hash.hexdigest()
+
+    def read_info_at_start(self) -> DBStartupAction:
+        dbinfo = None
+        action = DBStartupAction.NOTHING
+        filepath = os.path.join(self.user_data_dir, DBINFO_FILENAME)
+
+        if not os.path.exists(filepath):
+            return action
+
+        with open(filepath, 'r') as f:
+            try:
+                dbinfo = rlk_jsonloads_dict(f.read())
+            except JSONDecodeError:
+                log.warning('dbinfo.json file is corrupt. Does not contain expected keys')
+                return action
+        current_md5_hash = self.get_md5hash()
+
+        if not dbinfo:
+            return action
+
+        if 'sqlcipher_version' not in dbinfo or 'md5_hash' not in dbinfo:
+            log.warning('dbinfo.json file is corrupt. Does not contain expected keys')
+            return action
+
+        if dbinfo['md5_hash'] != current_md5_hash:
+            log.warning(
+                'dbinfo.json contains an outdated hash. Was data changed outside the program?',
+            )
+            return action
+
+        if dbinfo['sqlcipher_version'] == 3 and self.sqlcipher_version == 3:
+            return DBStartupAction.NOTHING
+
+        if dbinfo['sqlcipher_version'] == 4 and self.sqlcipher_version == 4:
+            return DBStartupAction.NOTHING
+
+        if dbinfo['sqlcipher_version'] == 3 and self.sqlcipher_version == 4:
+            return DBStartupAction.UPGRADE_3_4
+
+        if dbinfo['sqlcipher_version'] == 4 and self.sqlcipher_version == 3:
+            return DBStartupAction.STUCK_4_3
+
+        raise ValueError('Unexpected values at dbinfo.json')
 
     def get_version(self) -> int:
         cursor = self.conn.cursor()
@@ -154,8 +236,28 @@ class DBHandler(object):
             self.conn.executescript(script)
         self.conn.execute('PRAGMA foreign_keys=ON')
 
+    def upgrade_db_sqlcipher_3_to_4(self, password, after_the_fact):
+        if hasattr(self, 'conn') and self.conn:
+            self.conn.close()
+            self.conn = None
+
+        self.connect(password)
+        success = True
+        msg = ''
+        self.conn.text_factory = str
+        script = f'PRAGMA KEY="{password}";PRAGMA cipher_migrate;'
+        try:
+            self.conn.executescript(script)
+            self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
+        except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+            msg = str(e)
+            success = False
+
+        return success, msg
+
     def disconnect(self):
         self.conn.close()
+        self.conn = None
 
     def reimport_all_tables(self) -> None:
         """Useful only when some table's column data type was modified and you
@@ -517,7 +619,7 @@ class DBHandler(object):
             elif entry[0] == S_BTC:
                 btc_list.append(entry[1])
             else:
-                logger.warning(
+                log.warning(
                     f'unknown blockchain type {entry[0]} found in DB. Ignoring...',
                 )
 

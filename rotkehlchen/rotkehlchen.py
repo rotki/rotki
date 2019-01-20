@@ -680,6 +680,7 @@ class Rotkehlchen(object):
 
     def shutdown(self):
         log.info("Shutting Down")
+        self.logout()
         self.shutdown_event.set()
 
 
