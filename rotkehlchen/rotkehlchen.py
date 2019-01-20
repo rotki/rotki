@@ -273,6 +273,9 @@ class Rotkehlchen(object):
         self.user_is_logged_in = True
 
     def logout(self):
+        if not self.user_is_logged_in:
+            return
+
         user = self.data.username
         log.info(
             'Logging out user',
@@ -407,7 +410,7 @@ class Rotkehlchen(object):
         return gevent.spawn(self.main_loop)
 
     def main_loop(self):
-        while True and not self.shutdown_event.is_set():
+        while self.shutdown_event.wait(MAIN_LOOP_SECS_DELAY) is not True:
             log.debug('Main loop start')
             if self.poloniex is not None:
                 self.poloniex.main_logic()
@@ -417,7 +420,6 @@ class Rotkehlchen(object):
             self.maybe_upload_data_to_server()
 
             log.debug('Main loop end')
-            gevent.sleep(MAIN_LOOP_SECS_DELAY)
 
     def add_blockchain_account(self, blockchain, account):
         try:
@@ -679,7 +681,6 @@ class Rotkehlchen(object):
         return result
 
     def shutdown(self):
-        log.info("Shutting Down")
         self.logout()
         self.shutdown_event.set()
 
