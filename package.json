@@ -1,6 +1,6 @@
 {
     "name": "rotkehlchen",
-    "version": "0.5.0",
+    "version": "0.6.0",
     "license": "BSD-3-Clause",
     "main": "main.js",
     "dependencies": {
