@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`0.6.0 <2019-01-21>`
 * :feature:`92` Cache and have multiple APIs to query for fiat price queries.
 * :feature:`222` Add a progress indicator during the tax report generation.
 * :bug:`134` When rotkehlchen makes too many requests to Binance and gets a 429 response it now backs off and waits a bit.
