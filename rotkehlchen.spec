@@ -1,7 +1,8 @@
 # -*- mode: python -*-
 from __future__ import print_function
-import sys
+
 import platform
+import sys
 from distutils.spawn import find_executable
 
 from rotkehlchen.utils import get_system_spec
@@ -79,6 +80,7 @@ a = Entrypoint(
         ('rotkehlchen/data/eth_tokens.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/token_abi.json', 'rotkehlchen/data'),
     ],
+    excludes=['FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter'],
 )
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=None)
