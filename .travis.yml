@@ -90,6 +90,8 @@ jobs:
     - stage: ui-test
       <<: *job-template-linux
       env: TESTS_TYPE='UI'
+      after_failure:
+        - ./tools/scripts/screenshot_upload.py ./failure-screenshots
 
     - stage: ui-test
       <<: *job-template-osx
@@ -99,6 +101,8 @@ jobs:
         - npm rebuild zeromq --runtime=electron --target=3.0.0
         - PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild
         - npm test
+      after_failure:
+        - ./tools/scripts/screenshot_upload.py ./failure-screenshots
 
     - stage: deploy
       <<: *job-template-linux
