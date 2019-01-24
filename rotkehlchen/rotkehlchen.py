@@ -13,7 +13,12 @@ from rotkehlchen.bittrex import Bittrex
 from rotkehlchen.blockchain import Blockchain
 from rotkehlchen.constants import S_EUR, S_USD, SUPPORTED_EXCHANGES
 from rotkehlchen.data_handler import DataHandler
-from rotkehlchen.errors import AuthenticationError, EthSyncError, InputError, PermissionError
+from rotkehlchen.errors import (
+    AuthenticationError,
+    EthSyncError,
+    InputError,
+    RotkehlchenPermissionError,
+)
 from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian, TradesHistorian
@@ -199,7 +204,7 @@ class Rotkehlchen(object):
         if self.can_sync_data_from_server():
             if sync_approval == 'unknown' and not create_new:
                 log.info('DB data at server newer than local')
-                raise PermissionError(
+                raise RotkehlchenPermissionError(
                     'Rotkehlchen Server has newer version of your DB data. '
                     'Should we replace local data with the server\'s?',
                 )

@@ -38,7 +38,7 @@ class AuthenticationError(Exception):
     pass
 
 
-class PermissionError(Exception):
+class RotkehlchenPermissionError(Exception):
     pass
 
 

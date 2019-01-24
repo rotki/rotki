@@ -2,7 +2,7 @@ import logging
 import os
 from typing import Dict, List, Optional, Tuple
 
-from requests.exceptions import ConnectionError
+import requests
 from web3 import HTTPProvider, Web3
 
 from rotkehlchen import typing
@@ -36,7 +36,7 @@ class Ethchain(object):
 
         try:
             self.web3 = Web3(HTTPProvider('http://localhost:{}'.format(ethrpc_port)))
-        except ConnectionError:
+        except requests.exceptions.ConnectionError:
             log.warning('Could not connect to a local ethereum node. Will use etherscan only')
             self.connected = False
             return False, 'Failed to connect to ethereum node at port {}'.format(ethrpc_port)
