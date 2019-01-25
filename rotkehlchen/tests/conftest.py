@@ -1,14 +1,13 @@
-from gevent import monkey
+from gevent import monkey  # isort:skip # noqa
+monkey.patch_all()  # isort:skip # noqa
 
-monkey.patch_all()
+import re
+import sys
 
-if True:
-    import re
-    import sys
+import py
+import pytest
 
-    import py
-    import pytest
-    from rotkehlchen.tests.fixtures import *  # noqa: F401,F403
+from rotkehlchen.tests.fixtures import *  # noqa: F401,F403
 
 
 def pytest_addoption(parser):

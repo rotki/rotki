@@ -81,7 +81,7 @@ jobs:
         - git rev-parse HEAD
         - flake8 rotkehlchen/
         - mypy rotkehlchen/ --ignore-missing-imports
-        - pylint pylint --rcfile .pylint.rc rotkehlchen/
+        - pylint --rcfile .pylint.rc rotkehlchen/
 
     - stage: test
       <<: *job-template-linux
