@@ -77,7 +77,7 @@ def test_export_import_db(data_dir, username):
     data.unlock(username, '123', create_new=True)
     data.set_fiat_balance('EUR', 10)
 
-    encoded_data, data_hash = data.compress_and_encrypt_db('123')
+    encoded_data, _ = data.compress_and_encrypt_db('123')
     # The server would return them decoded
     encoded_data = encoded_data.decode()
     data.decompress_and_decrypt_db('123', encoded_data)
@@ -428,10 +428,6 @@ def test_sqlcipher_detect_version():
 
         def close(self):
             pass
-
-    class SQLCipherMock():
-        def connect(path):
-            return ConnectionMock('doesnotmatter')
 
     with patch('pysqlcipher3.dbapi2.connect') as sql_mock:
         sql_mock.return_value = ConnectionMock('4.0.0 community')

@@ -44,7 +44,7 @@ no-space-check=trailing-comma
 [VARIABLES]
 
 callbacks=cb_,_cb
-dummy-variables-rgx=dummy
+dummy-variables-rgx=_
 ignored-argument-names=_.*
 
 [TYPECHECK]

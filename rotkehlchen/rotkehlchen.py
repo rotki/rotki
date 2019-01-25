@@ -378,7 +378,7 @@ class Rotkehlchen(object):
 
     def can_sync_data_from_server(self):
         log.debug('sync data from server -- start')
-        data, our_hash = self.data.compress_and_encrypt_db(self.password)
+        _, our_hash = self.data.compress_and_encrypt_db(self.password)
         success, result_or_error = self.premium.query_last_data_metadata()
         if not success:
             log.debug('sync data from server failed', error=result_or_error)
@@ -503,7 +503,7 @@ class Rotkehlchen(object):
         balances = {}
         problem_free = True
         for exchange in self.connected_exchanges:
-            exchange_balances, msg = getattr(self, exchange).query_balances()
+            exchange_balances, _ = getattr(self, exchange).query_balances()
             # If we got an error, disregard that exchange but make sure we don't save data
             if not exchange_balances:
                 problem_free = False
