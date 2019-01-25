@@ -126,10 +126,10 @@ def combine_stat_dicts(list_of_dicts: List[Dict]) -> Dict:
 
 
 def dict_get_sumof(d: Dict[str, Dict[str, FVal]], attribute: str, **args) -> FVal:
-    sum = ZERO
+    sum_ = ZERO
     for _, value in d.items():
-        sum += value[attribute]
-    return sum
+        sum_ += value[attribute]
+    return sum_
 
 
 def get_pair_position(pair: str, position: str) -> Asset:

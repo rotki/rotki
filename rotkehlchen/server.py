@@ -11,7 +11,7 @@ from gevent.event import Event
 from gevent.lock import Semaphore
 
 from rotkehlchen.args import app_args
-from rotkehlchen.errors import AuthenticationError, PermissionError
+from rotkehlchen.errors import AuthenticationError, RotkehlchenPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.utils import pretty_json_dumps, process_result
@@ -324,7 +324,7 @@ class RotkehlchenServer(object):
         except AuthenticationError as e:
             res['result'] = False
             res['message'] = str(e)
-        except PermissionError as e:
+        except RotkehlchenPermissionError as e:
             res['result'] = False
             res['permission_needed'] = True
             res['message'] = str(e)

@@ -81,7 +81,7 @@ jobs:
         - git rev-parse HEAD
         - flake8 rotkehlchen/
         - mypy rotkehlchen/ --ignore-missing-imports
-        - pylint --disable=all --enable=no-value-for-parameter,too-many-format-args,no-member,bad-except-order rotkehlchen
+        - pylint --disable=all --enable=no-value-for-parameter,too-many-format-args,no-member,bad-except-order,redefined-builtin rotkehlchen
 
     - stage: test
       <<: *job-template-linux
