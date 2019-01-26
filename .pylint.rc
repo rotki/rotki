@@ -1,0 +1,58 @@
+[MASTER]
+jobs=4
+persistent=yes
+suggestion-mode=yes
+unsafe-load-any-extension=no
+
+# Blacklist files or directories (basenames, not paths)
+ignore=
+
+# blacklist files or directories by regex  (basenames, not paths)
+ignore-patterns=
+
+[EXCEPTIONS]
+
+overgeneral-exceptions=Exception
+
+[BASIC]
+
+bad-names=foo,bar,baz,toto,tutu,tata
+good-names=i,j,k,_
+
+[LOGGING]
+
+logging-modules=logging
+
+[MESSAGES CONTROL]
+
+disable=all
+enable=no-value-for-parameter,too-many-format-args,no-member,bad-except-order,redefined-builtin,bad-continuation,unused-variable
+
+[REPORTS]
+
+reports=no
+score=no
+
+[FORMAT]
+
+expected-line-ending-format=LF
+ignore-long-lines=^\s*(# )?<?https?://\S+>?$
+max-line-length=100
+max-module-lines=1000
+no-space-check=trailing-comma
+
+[VARIABLES]
+
+callbacks=cb_,_cb
+dummy-variables-rgx=_
+ignored-argument-names=_.*
+
+[TYPECHECK]
+
+contextmanager-decorators=contextlib.contextmanager
+
+# List of class names for which member attributes should not be checked
+ignored-classes=
+
+# List of module names for which member attributes should not be checked
+ignored-modules=
