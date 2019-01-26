@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import logging
+import os
 import shutil
 from typing import Dict, Union
 
@@ -165,7 +166,7 @@ class Rotkehlchen(object):
         if self.bitmex is not None:
             self.delete_exchange_data('bitmex')
 
-    def try_premium_at_start(self, api_key, api_secret, create_new, sync_approval):
+    def try_premium_at_start(self, api_key, api_secret, username, create_new, sync_approval):
         """Check if new user provided api pair or we already got one in the DB"""
 
         if api_key != '':
@@ -175,6 +176,15 @@ class Rotkehlchen(object):
                 log.error('Given API key is invalid')
                 # At this point we are at a new user trying to create an account with
                 # premium API keys and we failed. But a directory was created. Remove it.
+                # But create a backup of it in case something went really wrong
+                # and the directory contained data we did not want to lose
+                shutil.move(
+                    self.user_directory,
+                    os.path.join(
+                        self.data_directory,
+                        f'auto_backup_{username}_{ts_now()}',
+                    ),
+                )
                 shutil.rmtree(self.user_directory)
                 raise AuthenticationError(
                     'Could not verify keys for the new account. '
@@ -233,6 +243,7 @@ class Rotkehlchen(object):
         self.try_premium_at_start(
             api_key=api_key,
             api_secret=api_secret,
+            username=user,
             create_new=create_new,
             sync_approval=sync_approval,
         )

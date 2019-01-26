@@ -19,7 +19,13 @@ from rotkehlchen.errors import AuthenticationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import FIAT_CURRENCIES
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils import createTimeStamp, get_pair_position, is_number, rlk_jsonloads_list
+from rotkehlchen.utils import (
+    createTimeStamp,
+    get_pair_position,
+    is_number,
+    rlk_jsonloads_list,
+    ts_now,
+)
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -167,12 +173,16 @@ class DataHandler(object):
                 # user account can be created
                 shutil.move(
                     user_data_dir,
-                    os.path.join(self.data_directory, 'backup_%s' % username),
+                    os.path.join(
+                        self.data_directory,
+                        f'auto_backup_{username}_{ts_now()}',
+                    ),
                 )
 
                 raise AuthenticationError(
                     'User {} exists but DB is missing. Somehow must have been manually '
-                    'deleted or is corrupt. Please recreate the user account.'.format(username))
+                    'deleted or is corrupt. Please recreate the user account. '
+                    'A backup of the user directory was created.'.format(username))
 
         self.db: DBHandler = DBHandler(user_data_dir, password)
         self.user_data_dir = user_data_dir
