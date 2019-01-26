@@ -169,6 +169,7 @@ class Rotkehlchen(object):
         """Check if new user provided api pair or we already got one in the DB"""
 
         if api_key != '':
+            assert create_new, 'We should never get here for an already existing account'
             self.premium, valid, empty_or_error = premium_create_and_verify(api_key, api_secret)
             if not valid:
                 log.error('Given API key is invalid')
