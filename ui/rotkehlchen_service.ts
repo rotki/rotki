@@ -7,6 +7,7 @@ import {Currency} from './model/currency';
 import {AsyncQueryResult} from './model/balance-result';
 import {EthTokensResult} from './model/eth_tokens_result';
 import {PeriodicClientQueryResult} from './model/periodic_client_query_result';
+import {NetvalueDataResult} from './model/query-netvalue-data-result';
 
 const zerorpc = require('zerorpc-rotkehlchen');
 // max timeout is now 9999 seconds
@@ -223,6 +224,34 @@ export class RotkehlchenService {
         return new Promise<boolean>(resolve => {
             client.invoke('query_task_result', id, (_error: Error, res: any) => {
                 resolve(res);
+            });
+        });
+    }
+
+    query_netvalue_data(): Promise<NetvalueDataResult> {
+        return new Promise<NetvalueDataResult>((resolve, reject) => {
+            client.invoke('query_netvalue_data', (error: Error, result: NetvalueDataResult) => {
+                if (error || result == null) {
+                    reject(error || new NoResponseError());
+                } else {
+                    resolve(result);
+                }
+            });
+        });
+    }
+
+    query_statistics_renderer(): Promise<string> {
+        return new Promise<string>((resolve, reject) => {
+            client.invoke('query_statistics_renderer', (error: Error, res: ActionResult<string>) => {
+                if (error || res == null) {
+                    reject(error || new NoResponseError());
+                } else {
+                    if (!res.result) {
+                        reject(new Error(res.message));
+                    } else {
+                        resolve(res.result);
+                    }
+                }
             });
         });
     }

@@ -1,8 +1,8 @@
 # Based on https://github.com/fyears/electron-python-example
 from __future__ import print_function
 
-import os
 import logging
+import os
 import signal
 import traceback
 
@@ -207,6 +207,30 @@ class RotkehlchenServer(object):
     def query_fiat_balances(self):
         res = self.rotkehlchen.query_fiat_balances()
         return process_result(res)
+
+    def query_netvalue_data(self):
+        res = self.rotkehlchen.data.db.get_netvalue_data()
+        result = {'times': res[0], 'data': res[1]}
+        return process_result(result)
+
+    def query_statistics_renderer(self):
+        result_dict = {'result': '', 'message': 'user does not have premium'}
+        if not self.rotkehlchen.premium:
+            return process_result(result_dict)
+
+        active, emptrystr_or_error = self.rotkehlchen.premium.is_active()
+        if not active:
+            return process_result(result_dict)
+
+        success, result_or_error = self.rotkehlchen.premium.query_statistics_renderer()
+
+        if not success:
+            result_dict['message'] = result_or_error
+        else:
+            result_dict['result'] = result_or_error
+            result_dict['message'] = ''
+
+        return process_result(result_dict)
 
     def set_fiat_balance(self, currency: Asset, balance: str):
         result, message = self.rotkehlchen.data.set_fiat_balance(currency, balance)
