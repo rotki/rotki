@@ -8,6 +8,7 @@ import {service} from './rotkehlchen_service';
 import {reset_tasks} from './monitor';
 import {reset_total_balances} from './balances_table';
 import {reset_exchange_tables} from './exchange';
+import {create_statistics_ui, add_statistics_listeners} from './statistics';
 
 export function determine_location(url: string) {
     const split = url.split('#');
@@ -79,7 +80,10 @@ export function init_navigation() {
             create_or_reload_dashboard();
         } else if (target_location === 'taxreport') {
             create_or_reload_page('taxreport', create_taxreport_ui, add_taxreport_listeners);
+        } else if (target_location === 'statistics') {
+            create_or_reload_page('statistics', create_statistics_ui, add_statistics_listeners);
         }
+
         // else do nothing -- no link
     });
 

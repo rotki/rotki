@@ -882,3 +882,21 @@ class DBHandler(object):
             return result[0]
         else:
             return None
+
+    def get_netvalue_data(self):
+        """Get all entries of net value data from the DB"""
+        cursor = self.conn.cursor()
+        result = cursor.execute(
+            'SELECT time, usd_value FROM timed_location_data '
+            'WHERE location="total" ORDER BY time ASC;'
+        )
+        result = result.fetchall()
+
+        data = []
+        times_int = []
+        for entry in result:
+            times_int.append(entry[0])
+            data.append(float(entry[1]))
+
+        return times_int, data
+

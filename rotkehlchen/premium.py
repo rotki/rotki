@@ -180,3 +180,20 @@ class Premium(object):
             return False, 'Could not connect to rotkehlchen server'
         success, result_or_error = _process_response(response)
         return success, result_or_error
+
+    def query_statistics_renderer(self):
+        signature, data = self.sign('statistics_renderer')
+        self.session.headers.update({
+            'API-SIGN': base64.b64encode(signature.digest()),
+        })
+
+        try:
+            response = self.session.get(
+                self.uri + 'statistics_renderer',
+                data=data,
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+            )
+        except requests.ConnectionError:
+            return False, 'Could not connect to rotkehlchen server'
+        success, result_or_error = self.process_response(response)
+        return success, result_or_error['data']
