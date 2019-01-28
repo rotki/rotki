@@ -181,7 +181,7 @@ class Rotkehlchen(object):
                 shutil.move(
                     self.user_directory,
                     os.path.join(
-                        self.data_directory,
+                        self.data_dir,
                         f'auto_backup_{username}_{ts_now()}',
                     ),
                 )
