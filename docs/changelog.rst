@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`268` Version name is now included in rotkehlchen binaries and other artifacts.
+
 * :release:`0.6.0 <2019-01-21>`
 * :feature:`92` Cache and have multiple APIs to query for fiat price queries.
 * :feature:`222` Add a progress indicator during the tax report generation.

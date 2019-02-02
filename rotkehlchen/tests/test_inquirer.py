@@ -1,3 +1,4 @@
+import os
 from unittest.mock import patch
 
 import pytest
@@ -8,6 +9,10 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.utils import ts_now, tsToDate
 
 
+@pytest.mark.skipif(
+    'TRAVIS' in os.environ,
+    reason='some of these APIs frequently become unavailable',
+)
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_query_realtime_price_apis(inquirer):
     result = inquirer._query_currency_converterapi('USD', 'EUR')

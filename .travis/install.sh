@@ -11,7 +11,9 @@ if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
     PIP_CMD="pip"
 fi
 
-$PIP_CMD install ${INSTALL_OPT} --upgrade pip wheel
+# Temporary pinning of pip < 19 due to pyinstaller bug
+# https://github.com/pypa/pip/issues/6163
+$PIP_CMD install ${INSTALL_OPT} --upgrade "pip<19.0.0" wheel
 $PIP_CMD install ${INSTALL_OPT} pytest-travis-fold codecov pytest-cov
 $PIP_CMD install ${INSTALL_OPT} -r requirements_dev.txt
 
