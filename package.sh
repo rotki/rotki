@@ -98,20 +98,32 @@ if [[ $? -ne 0 ]]; then
     exit 1
 fi
 
-NAME="rotkehlchen-${PLATFORM}-${ARCH}"
-
-if [[ $PLATFORM == "linux" ]]; then
-    mv $NAME/rotkehlchen $NAME/unwrapped_executable
+ROTKEHLCHEN_VERSION=$(python setup.py --version)
+if [[ $ROTKEHLCHEN_VERSION == *".dev"* ]]; then
+    # It's not a tagged release. Returned version
+    # looks similar to 0.6.1.dev12+ga5ed53d
+    DATE=$(date +%Y-%m-%dT%H-%M-%S)
+    export ARCHIVE_NAME="rotkehlchen-${PLATFORM}-${ARCH}-v${ROTKEHLCHEN_VERSION}"
+    EXEC_NAME="rotkehlchen-${DATE}-v${ROTKEHLCHEN_VERSION}"
+else
+    export ARCHIVE_NAME="rotkehlchen-${PLATFORM}-${ARCH}-v${ROTKEHLCHEN_VERSION}"
+    EXEC_NAME="rotkehlchen-v${ROTKEHLCHEN_VERSION}"
 fi
 
-cp tools/scripts/wrapper_script.sh $NAME/rotkehlchen
+GENERATED_ARCHIVE_NAME="rotkehlchen-${PLATFORM}-${ARCH}"
 
+if [[ $PLATFORM == "linux" ]]; then
+    mv $GENERATED_ARCHIVE_NAME/rotkehlchen $GENERATED_ARCHIVE_NAME/unwrapped_executable
+fi
+
+cp tools/scripts/wrapper_script.sh $GENERATED_ARCHIVE_NAME/$EXEC_NAME
 
 # Now try to zip the created bundle
-zip -r $NAME "$NAME/"
+mv $GENERATED_ARCHIVE_NAME $ARCHIVE_NAME
+zip -r $ARCHIVE_NAME.zip "$ARCHIVE_NAME/"
 if [[ $? -ne 0 ]]; then
     echo "package.sh - ERROR: zipping of final bundle failed"
     exit 1
 fi
 
-rm -rf $NAME
+rm -rf $ARCHIVE_NAME
