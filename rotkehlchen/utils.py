@@ -114,6 +114,15 @@ def combine_dicts(a: Dict, b: Dict, op=operator.add) -> Dict:
     return new_dict
 
 
+def add_ints_or_combine_dicts(a: Union[Dict, int], b: Union[Dict, int]) -> Union[Dict, int]:
+    if isinstance(a, Dict) and isinstance(b, Dict):
+        return combine_dicts(a, b)
+    elif isinstance(a, int) and isinstance(b, int):
+        return a + b
+
+    raise ValueError(f'Invalid input to add_ints_or_combine_dicts. a: {a}, b: {b}')
+
+
 def combine_stat_dicts(list_of_dicts: List[Dict]) -> Dict:
     if len(list_of_dicts) == 0:
         return {}
