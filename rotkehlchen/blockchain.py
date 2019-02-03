@@ -14,7 +14,11 @@ from rotkehlchen.errors import EthSyncError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils import cache_response_timewise, request_get_direct
+from rotkehlchen.utils import (
+    add_ints_or_combine_dicts,
+    cache_response_timewise,
+    request_get_direct,
+)
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -122,6 +126,46 @@ class Blockchain(object):
 
         self.totals[S_BTC] = {'amount': total, 'usd_value': total * btc_usd_price}
 
+    def query_token_balances(
+            self,
+            token_symbol: typing.EthToken,
+            query_callback: Callable,
+            **kwargs,
+    ):
+        """Query tokens by checking the eth_tokens mapping and using the respective query callback.
+
+        The callback is either self.ethchain.get_multitoken_balance or
+        self.ethchain.get_token_balance
+
+        Some special logic is needed here since some token names may have special
+        chararacters, for example for old/new migrated tokens."""
+        if token_symbol == 'MLN':
+            result1 = query_callback(
+                token_symbol,
+                self.all_eth_tokens['MLN (old)']['address'],
+                self.all_eth_tokens['MLN (old)']['decimal'],
+                **kwargs,
+            )
+            # TODO: Here is the place to start the warning event for the user if he
+            # has any balance in the old MLN token:
+            # https://github.com/rotkehlchenio/rotkehlchen/issues/277
+            result2 = query_callback(
+                token_symbol,
+                self.all_eth_tokens['MLN (new)']['address'],
+                self.all_eth_tokens['MLN (new)']['decimal'],
+                **kwargs,
+            )
+            result = add_ints_or_combine_dicts(result1, result2)
+        else:
+            result = query_callback(
+                token_symbol,
+                self.all_eth_tokens[token_symbol]['address'],
+                self.all_eth_tokens[token_symbol]['decimal'],
+                **kwargs,
+            )
+
+        return result
+
     def track_new_tokens(self, tokens: List[typing.EthToken]) -> BlockchainBalancesUpdate:
         intersection = set(tokens).intersection(set(self.owned_eth_tokens))
         if intersection != set():
@@ -220,11 +264,10 @@ class Blockchain(object):
                 # skip tokens that have no price
                 continue
 
-            token_balance = self.ethchain.get_token_balance(
-                token,
-                self.all_eth_tokens[token]['address'],
-                self.all_eth_tokens[token]['decimal'],
-                account,
+            token_balance = self.query_token_balances(
+                token_symbol=token,
+                query_callback=self.ethchain.get_token_balance,
+                account=account,
             )
             if token_balance == 0:
                 continue
@@ -317,11 +360,10 @@ class Blockchain(object):
                 continue
             token_usd_price[token] = usd_price
 
-            token_balances[token] = self.ethchain.get_multitoken_balance(
-                token,
-                self.all_eth_tokens[token]['address'],
-                self.all_eth_tokens[token]['decimal'],
-                self.accounts.eth,
+            token_balances[token] = self.query_token_balances(
+                token_symbol=token,
+                query_callback=self.ethchain.get_multitoken_balance,
+                accounts=self.accounts.eth,
             )
 
         for token, token_accounts in token_balances.items():
