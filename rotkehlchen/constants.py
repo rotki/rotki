@@ -20,6 +20,9 @@ S_ETH = cast(typing.NonEthTokenBlockchainAsset, 'ETH')
 S_ETC = cast(typing.NonEthTokenBlockchainAsset, 'ETC')
 S_DATACOIN = cast(typing.NonEthTokenBlockchainAsset, 'DATAcoin')
 S_IOTA = cast(typing.NonEthTokenBlockchainAsset, 'IOTA')
+S_MLN_OLD = typing.EthToken('MLN (old)')
+S_MLN_NEW = typing.EthToken('MLN (new)')
+S_MLN = typing.EthToken('MLN')
 
 S_RDN = cast(typing.EthToken, 'RDN')
 

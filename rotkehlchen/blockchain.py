@@ -8,7 +8,7 @@ from gevent.lock import Semaphore
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen import typing
-from rotkehlchen.constants import S_BTC, S_ETH
+from rotkehlchen.constants import S_BTC, S_ETH, S_MLN, S_MLN_NEW, S_MLN_OLD
 from rotkehlchen.db.dbhandler import BlockchainAccounts
 from rotkehlchen.errors import EthSyncError, InputError
 from rotkehlchen.fval import FVal
@@ -139,11 +139,11 @@ class Blockchain(object):
 
         Some special logic is needed here since some token names may have special
         chararacters, for example for old/new migrated tokens."""
-        if token_symbol == 'MLN':
+        if token_symbol == S_MLN:
             result1 = query_callback(
                 token_symbol,
-                self.all_eth_tokens['MLN (old)']['address'],
-                self.all_eth_tokens['MLN (old)']['decimal'],
+                self.all_eth_tokens[S_MLN_OLD]['address'],
+                self.all_eth_tokens[S_MLN_OLD]['decimal'],
                 **kwargs,
             )
             # TODO: Here is the place to start the warning event for the user if he
@@ -151,8 +151,8 @@ class Blockchain(object):
             # https://github.com/rotkehlchenio/rotkehlchen/issues/277
             result2 = query_callback(
                 token_symbol,
-                self.all_eth_tokens['MLN (new)']['address'],
-                self.all_eth_tokens['MLN (new)']['decimal'],
+                self.all_eth_tokens[S_MLN_NEW]['address'],
+                self.all_eth_tokens[S_MLN_NEW]['decimal'],
                 **kwargs,
             )
             result = add_ints_or_combine_dicts(result1, result2)
