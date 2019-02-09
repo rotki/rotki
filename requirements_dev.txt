@@ -1,7 +1,7 @@
 -r requirements.txt
 -r requirements_lint.txt
 
-pytest
+pytest==4.1.1
 bump2version==0.5.8
 
 # Documentation
