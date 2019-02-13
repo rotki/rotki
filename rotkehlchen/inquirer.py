@@ -6,8 +6,15 @@ from json.decoder import JSONDecodeError
 from typing import Dict, Iterable, Optional, cast
 
 import requests
-
-from rotkehlchen.constants import FIAT_CURRENCIES, S_DATACOIN, S_IOTA, S_RDN, S_USD
+from rotkehlchen.constants import (
+    FIAT_CURRENCIES,
+    S_DATACOIN,
+    S_IOTA,
+    S_NANO,
+    S_RAIBLOCKS,
+    S_RDN,
+    S_USD,
+)
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -41,6 +48,8 @@ def world_to_cryptocompare(asset: Asset) -> Asset:
         asset = cast(NonEthTokenBlockchainAsset, 'DATA')
     elif asset == S_IOTA:
         asset = cast(NonEthTokenBlockchainAsset, 'IOT')
+    elif asset == S_NANO:
+        return S_RAIBLOCKS
 
     return asset
 
