@@ -28,7 +28,7 @@ from rotkehlchen.kraken import Kraken
 from rotkehlchen.logging import DEFAULT_ANONYMIZED_LOGS, LoggingSettings, RotkehlchenLogsAdapter
 from rotkehlchen.poloniex import Poloniex
 from rotkehlchen.premium import premium_create_and_verify
-from rotkehlchen.typing import ResultCache, Timestamp
+from rotkehlchen.typing import ApiKey, ApiSecret, ResultCache, Timestamp
 from rotkehlchen.utils import (
     accounts_result,
     combine_stat_dicts,
@@ -230,7 +230,16 @@ class Rotkehlchen(object):
             else:
                 log.debug('Could sync data from server but user refused')
 
-    def unlock_user(self, user, password, create_new, sync_approval, api_key, api_secret):
+    def unlock_user(
+            self,
+            user: str,
+            password: str,
+            create_new: bool,
+            sync_approval: bool,
+            api_key: ApiKey,
+            api_secret: ApiSecret,
+    ) -> None:
+        """Unlocks an existing user or creates a new one if `create_new` is True"""
         log.info(
             'Unlocking user',
             user=user,
@@ -700,10 +709,3 @@ class Rotkehlchen(object):
     def shutdown(self):
         self.logout()
         self.shutdown_event.set()
-
-
-# For testing purposes only
-if __name__ == '__main__':
-    from rotkehlchen.args import app_args
-    args = app_args()
-    r = Rotkehlchen(args)

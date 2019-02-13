@@ -22,7 +22,11 @@ log = RotkehlchenLogsAdapter(logger)
 
 class RotkehlchenServer(object):
     def __init__(self):
-        self.args = app_args()
+        arg_parser = app_args(
+            prog='rotkehlchen',
+            description='Rotkehlchen Crypto Portfolio Management',
+        )
+        self.args = arg_parser.parse_args()
         self.rotkehlchen = Rotkehlchen(self.args)
         self.stop_event = Event()
         mainloop_greenlet = self.rotkehlchen.start()

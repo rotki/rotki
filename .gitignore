@@ -10,6 +10,7 @@ rotkehlchen.egg-info/
 rotkehlchen-linux-x64
 .DS_Store
 rotkehlchen.log
+tools/data_faker/data_faker.log
 .pytest_cache
 ui/.ignore
 pytestdebug.log
