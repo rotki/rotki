@@ -359,8 +359,8 @@ class PriceHistorian(object):
             query_string = (
                 'https://min-api.cryptocompare.com/data/histohour?'
                 'fsym={}&tsym={}&limit={}&toTs={}'.format(
-                    world_to_cryptocompare(from_asset),
-                    world_to_cryptocompare(to_asset),
+                    world_to_cryptocompare(from_asset, end_date),
+                    world_to_cryptocompare(to_asset, end_date),
                     cryptocompare_hourquerylimit,
                     end_date,
                 ))
@@ -516,8 +516,8 @@ class PriceHistorian(object):
                     f"{to_asset}. Attempting to get daily price...",
                 )
                 # attempt to get the daily price by timestamp
-                cc_from_asset = world_to_cryptocompare(from_asset)
-                cc_to_asset = world_to_cryptocompare(to_asset)
+                cc_from_asset = world_to_cryptocompare(from_asset, timestamp)
+                cc_to_asset = world_to_cryptocompare(to_asset, timestamp)
                 log.debug(
                     'Querying cryptocompare for daily historical price',
                     from_asset=from_asset,
