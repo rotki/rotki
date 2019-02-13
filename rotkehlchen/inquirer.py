@@ -14,6 +14,7 @@ from rotkehlchen.constants import (
     S_RAIBLOCKS,
     S_RDN,
     S_USD,
+    XRB_NANO_REBRAND_TS,
 )
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
@@ -39,7 +40,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def world_to_cryptocompare(asset: Asset) -> Asset:
+def world_to_cryptocompare(asset: Asset, timestamp: Timestamp = None) -> Asset:
     # Adjust some ETH tokens to how cryptocompare knows them
     if asset == S_RDN:
         # remove this if cryptocompare changes the symbol
@@ -48,7 +49,7 @@ def world_to_cryptocompare(asset: Asset) -> Asset:
         asset = cast(NonEthTokenBlockchainAsset, 'DATA')
     elif asset == S_IOTA:
         asset = cast(NonEthTokenBlockchainAsset, 'IOT')
-    elif asset == S_NANO:
+    elif asset == S_NANO and timestamp and timestamp < XRB_NANO_REBRAND_TS:
         return S_RAIBLOCKS
 
     return asset
