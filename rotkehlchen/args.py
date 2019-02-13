@@ -17,11 +17,11 @@ class VersionAction(argparse.Action):
         sys.exit(0)
 
 
-def app_args() -> argparse.Namespace:
-    """ Parse the arguments and create and return the arguments object"""
+def app_args(prog: str, description: str) -> argparse.ArgumentParser:
+    """Add the Rotkehlchen arguments to the argument parser and return it"""
     p = argparse.ArgumentParser(
-        prog='rotkehlchen',
-        description='Rotkehlchen Crypto Portfolio Management',
+        prog=prog,
+        description=description,
     )
 
     p.add_argument(
@@ -91,6 +91,4 @@ def app_args() -> argparse.Namespace:
         action=VersionAction,
     )
 
-    args = p.parse_args()
-
-    return args
+    return p
