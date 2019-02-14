@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS timed_location_data (
 
 DB_CREATE_USER_CREDENTIALS = """
 CREATE TABLE IF NOT EXISTS user_credentials (
-    name VARCHAR[24] NOT NULL PRIMARY KEY,
+    id INTEGER PRIMARY KEY,
+    name VARCHAR[24] NOT NULL,
     api_key TEXT,
     api_secret TEXT
 );

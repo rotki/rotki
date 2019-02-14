@@ -10,7 +10,6 @@ from typing import Dict, List, NamedTuple, Optional, Tuple, Union, cast
 
 from eth_utils.address import to_checksum_address
 from pysqlcipher3 import dbapi2 as sqlcipher
-
 from rotkehlchen.constants import S_BTC, S_ETH, S_USD, SUPPORTED_EXCHANGES, YEAR_IN_SECONDS
 from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
 from rotkehlchen.errors import AuthenticationError, InputError
@@ -697,10 +696,10 @@ class DBHandler(object):
         self.conn.commit()
         self.update_last_write()
 
-    def remove_exchange(self, name: str) -> None:
+    def remove_exchange(self, exchange_id: int) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
-            'DELETE FROM user_credentials WHERE name =?', (name,),
+            'DELETE FROM user_credentials WHERE id =?', (exchange_id,),
         )
         self.conn.commit()
         self.update_last_write()
@@ -708,17 +707,18 @@ class DBHandler(object):
     def get_exchange_secrets(self) -> Dict[str, Dict[str, str]]:
         cursor = self.conn.cursor()
         result = cursor.execute(
-            'SELECT name, api_key, api_secret FROM user_credentials;',
+            'SELECT id, name, api_key, api_secret FROM user_credentials;',
         )
         result = result.fetchall()
         secret_data = {}
         for entry in result:
             if entry == 'rotkehlchen':
                 continue
-            name = entry[0]
-            secret_data[name] = {
-                'api_key': str(entry[1]),
-                'api_secret': str(entry[2]),
+            _id = entry[0]
+            secret_data[_id] = {
+                'name': entry[1],
+                'api_key': str(entry[2]),
+                'api_secret': str(entry[3]),
             }
 
         return secret_data
