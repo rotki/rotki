@@ -98,7 +98,7 @@ def do_read_manual_margin_positions(user_directory):
 
 def write_history_data_in_file(data, filepath, start_ts, end_ts):
     log.info(
-        'Writting history file',
+        'Writing history file',
         filepath=filepath,
         start_time=start_ts,
         end_time=end_ts,
@@ -240,7 +240,7 @@ class PriceHistorian(object):
             # Also save the cache
             with open(coinlist_cache_path, 'w') as f:
                 now = ts_now()
-                log.info('Writting coinlist cache', timestamp=now)
+                log.info('Writing coinlist cache', timestamp=now)
                 write_data = {'time': now, 'data': data}
                 f.write(rlk_jsondumps(write_data))
         else:
