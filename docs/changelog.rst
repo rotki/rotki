@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`283` OTC Trades table is now properly rendered again
 * :feature:`268` Version name is now included in rotkehlchen binaries and other artifacts.
 
 * :release:`0.6.0 <2019-01-21>`
