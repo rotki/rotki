@@ -119,11 +119,15 @@ export class RotkehlchenService {
 
     query_otctrades(): Promise<OtcTrade[]> {
         return new Promise<OtcTrade[]>((resolve, reject) => {
-            client.invoke('query_otctrades', (error: Error, result: OtcTrade[]) => {
+            client.invoke('query_otctrades', (error: Error, result: ActionResult<OtcTrade[]>) => {
                 if (error || result == null) {
                     reject(error || new NoResponseError());
                 } else {
-                    resolve(result);
+                    if (!result.result) {
+                        reject(new Error(result.message));
+                    } else {
+                        resolve(result.result);
+                    }
                 }
             });
         });

@@ -160,7 +160,8 @@ class RotkehlchenServer(object):
 
     def query_otctrades(self):
         trades = self.rotkehlchen.data.get_external_trades()
-        return process_result(trades)
+        result = {'result': trades, 'message': ''}
+        return process_result(result)
 
     def add_otctrade(self, data):
         result, message = self.rotkehlchen.data.add_external_trade(data)
