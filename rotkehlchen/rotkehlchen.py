@@ -7,7 +7,6 @@ from typing import Any, Dict, Tuple, Union
 
 import gevent
 from gevent.lock import Semaphore
-
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.binance import Binance
 from rotkehlchen.bitmex import Bitmex
@@ -51,7 +50,7 @@ class Rotkehlchen(object):
         self.lock.acquire()
         self.results_cache: ResultCache = dict()
         self.premium = None
-        self.connected_exchanges = []
+        self.connected_exchanges = {}
         self.user_is_logged_in = False
 
         logfilename = None
@@ -90,12 +89,6 @@ class Rotkehlchen(object):
         self.args = args
         self.last_data_upload_ts = 0
 
-        self.poloniex = None
-        self.kraken = None
-        self.bittrex = None
-        self.bitmex = None
-        self.binance = None
-
         self.data = DataHandler(self.data_dir)
         self.inquirer = Inquirer(data_dir=self.data_dir)
 
@@ -103,69 +96,54 @@ class Rotkehlchen(object):
         self.shutdown_event = gevent.event.Event()
 
     def initialize_exchanges(self, secret_data):
+        for exchange_id, exchange_data in secret_data.items():
+            exchange_driver = self.get_exchange_driver(exchange_data)
+            self.connected_exchanges[exchange_id] = exchange_driver
+            self.trades_historian.set_exchange(exchange_id, exchange_driver)
+            if exchange_data['name'] == 'kraken':
+                self.inquirer.kraken = exchange_driver
+
+    def get_exchange_driver(self, exchange_data):
         # initialize exchanges for which we have keys and are not already initialized
-        if self.kraken is None and 'kraken' in secret_data:
-            self.kraken = Kraken(
-                str.encode(secret_data['kraken']['api_key']),
-                str.encode(secret_data['kraken']['api_secret']),
+        if exchange_data['name'] == 'kraken':
+            return Kraken(
+                str.encode(exchange_data['api_key']),
+                str.encode(exchange_data['api_secret']),
                 self.user_directory,
                 self.inquirer.query_fiat_pair(S_EUR, S_USD),
             )
-            self.connected_exchanges.append('kraken')
-            self.trades_historian.set_exchange('kraken', self.kraken)
-            self.inquirer.kraken = self.kraken
-
-        if self.poloniex is None and 'poloniex' in secret_data:
-            self.poloniex = Poloniex(
-                str.encode(secret_data['poloniex']['api_key']),
-                str.encode(secret_data['poloniex']['api_secret']),
+        elif exchange_data['name'] == 'poloniex':
+            return Poloniex(
+                str.encode(exchange_data['api_key']),
+                str.encode(exchange_data['api_secret']),
                 self.inquirer,
                 self.user_directory,
             )
-            self.connected_exchanges.append('poloniex')
-            self.trades_historian.set_exchange('poloniex', self.poloniex)
-
-        if self.bittrex is None and 'bittrex' in secret_data:
-            self.bittrex = Bittrex(
-                str.encode(secret_data['bittrex']['api_key']),
-                str.encode(secret_data['bittrex']['api_secret']),
+        elif exchange_data['name'] == 'bittrex':
+            return Bittrex(
+                str.encode(exchange_data['api_key']),
+                str.encode(exchange_data['api_secret']),
                 self.inquirer,
                 self.user_directory,
             )
-            self.connected_exchanges.append('bittrex')
-            self.trades_historian.set_exchange('bittrex', self.bittrex)
-
-        if self.binance is None and 'binance' in secret_data:
-            self.binance = Binance(
-                str.encode(secret_data['binance']['api_key']),
-                str.encode(secret_data['binance']['api_secret']),
+        elif exchange_data['name'] == 'binance':
+            return Binance(
+                str.encode(exchange_data['api_key']),
+                str.encode(exchange_data['api_secret']),
                 self.inquirer,
                 self.user_directory,
             )
-            self.connected_exchanges.append('binance')
-            self.trades_historian.set_exchange('binance', self.binance)
-
-        if self.bitmex is None and 'bitmex' in secret_data:
-            self.bitmex = Bitmex(
-                str.encode(secret_data['bitmex']['api_key']),
-                str.encode(secret_data['bitmex']['api_secret']),
+        if exchange_data['name'] == 'bitmex':
+            return Bitmex(
+                str.encode(exchange_data['api_key']),
+                str.encode(exchange_data['api_secret']),
                 self.inquirer,
                 self.user_directory,
             )
-            self.connected_exchanges.append('bitmex')
-            self.trades_historian.set_exchange('bitmex', self.bitmex)
 
     def remove_all_exchanges(self):
-        if self.kraken is not None:
-            self.delete_exchange_data('kraken')
-        if self.poloniex is not None:
-            self.delete_exchange_data('poloniex')
-        if self.bittrex is not None:
-            self.delete_exchange_data('bittrex')
-        if self.binance is not None:
-            self.delete_exchange_data('binance')
-        if self.bitmex is not None:
-            self.delete_exchange_data('bitmex')
+        for exchange_id in self.connected_exchanges.keys():
+            self.delete_exchange_data(exchange_id)
 
     def try_premium_at_start(self, api_key, api_secret, username, create_new, sync_approval):
         """Check if new user provided api pair or we already got one in the DB"""
@@ -536,13 +514,13 @@ class Rotkehlchen(object):
 
         balances = {}
         problem_free = True
-        for exchange in self.connected_exchanges:
-            exchange_balances, _ = getattr(self, exchange).query_balances()
+        for exchange_id, exchange in self.connected_exchanges.items():
+            exchange_balances, _ = exchange.query_balances()
             # If we got an error, disregard that exchange but make sure we don't save data
             if not isinstance(exchange_balances, dict):
                 problem_free = False
             else:
-                balances[exchange] = exchange_balances
+                balances[exchange_id] = exchange_balances
 
         result, error_or_empty = self.blockchain.query_balances()
         if error_or_empty == '':
@@ -618,7 +596,7 @@ class Rotkehlchen(object):
 
         except AttributeError:
             pass
-
+        log.debug(result_dict)
         return result_dict
 
     def set_main_currency(self, currency):
@@ -684,14 +662,12 @@ class Rotkehlchen(object):
         if getattr(self, name) is not None:
             return False, 'Exchange {} is already registered'.format(name)
 
-        secret_data = {}
-        secret_data[name] = {
+        secret_data = {
+            'name': name,
             'api_key': api_key,
             'api_secret': api_secret,
         }
-        self.initialize_exchanges(secret_data)
-
-        exchange = getattr(self, name)
+        exchange = self.get_exchange_driver(secret_data)
         result, message = exchange.validate_api_key()
         if not result:
             log.error(
@@ -706,19 +682,17 @@ class Rotkehlchen(object):
         self.data.db.add_exchange(name, api_key, api_secret)
         return True, ''
 
-    def delete_exchange_data(self, name):
-        self.connected_exchanges.remove(name)
-        self.trades_historian.set_exchange(name, None)
-        delattr(self, name)
-        setattr(self, name, None)
+    def delete_exchange_data(self, exchange_id):
+        del self.connected_exchanges[exchange_id]
+        self.trades_historian.set_exchange(exchange_id, None)
 
-    def remove_exchange(self, name):
-        if getattr(self, name) is None:
-            return False, 'Exchange {} is not registered'.format(name)
+    def remove_exchange(self, exchange_id):
+        if exchange_id not in self.connected_exchanges:
+            return False, 'Exchange {} is not registered'.format(exchange_id)
 
-        self.delete_exchange_data(name)
+        self.delete_exchange_data(exchange_id)
         # Success, remove it also from the DB
-        self.data.db.remove_exchange(name)
+        self.data.db.remove_exchange(exchange_id)
         return True, ''
 
     def query_periodic_data(self) -> Dict[str, Union[bool, Timestamp]]:
