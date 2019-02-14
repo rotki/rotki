@@ -9,7 +9,6 @@ import gevent
 import zerorpc
 from gevent.event import Event
 from gevent.lock import Semaphore
-
 from rotkehlchen.args import app_args
 from rotkehlchen.errors import AuthenticationError, RotkehlchenPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -148,8 +147,8 @@ class RotkehlchenServer(object):
     def get_settings(self):
         return process_result(self.rotkehlchen.data.db.get_settings())
 
-    def remove_exchange(self, name):
-        result, message = self.rotkehlchen.remove_exchange(name)
+    def remove_exchange(self, exchange_id):
+        result, message = self.rotkehlchen.remove_exchange(exchange_id)
         return {'result': result, 'message': message}
 
     def setup_exchange(self, name, api_key, api_secret):
@@ -181,9 +180,10 @@ class RotkehlchenServer(object):
         self.rotkehlchen.data.db.update_premium_sync(should_sync)
         return True
 
-    def query_exchange_balances(self, name):
-        res = {'name': name}
-        balances, msg = getattr(self.rotkehlchen, name).query_balances()
+    def query_exchange_balances(self, exchange_id):
+        exchange = self.rotkehlchen.connected_exchanges[int(exchange_id)]
+        res = {'name': exchange.name}
+        balances, msg = exchange.query_balances()
         if balances is None:
             res['error'] = msg
         else:
@@ -191,8 +191,8 @@ class RotkehlchenServer(object):
 
         return process_result(res)
 
-    def query_exchange_balances_async(self, name):
-        res = self.query_async('query_exchange_balances', name=name)
+    def query_exchange_balances_async(self, exchange_id):
+        res = self.query_async('query_exchange_balances', exchange_id=exchange_id)
         return {'task_id': res}
 
     def query_blockchain_balances(self):
@@ -328,7 +328,10 @@ class RotkehlchenServer(object):
                 api_key,
                 api_secret,
             )
-            res['exchanges'] = self.rotkehlchen.connected_exchanges
+            res['exchanges'] = {
+                exchange_id: exchange.name
+                for exchange_id, exchange in self.rotkehlchen.connected_exchanges.items()
+            }
             res['premium'] = self.rotkehlchen.premium is not None
             res['settings'] = self.rotkehlchen.data.db.get_settings()
         except AuthenticationError as e:
