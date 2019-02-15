@@ -26,10 +26,11 @@ logger = logging.getLogger(__name__)
 
 class ActionWriter(object):
 
-    def __init__(self, rotkehlchen):
+    def __init__(self, rotkehlchen, fake_kraken):
         self.current_ts = STARTING_TIMESTAMP
         self.funds = STARTING_FUNDS
         self.rotki = rotkehlchen
+        self.fake_kraken = fake_kraken
 
     def do():
         pass

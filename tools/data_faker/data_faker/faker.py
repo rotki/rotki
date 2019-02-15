@@ -4,6 +4,7 @@ import random
 from typing import Optional
 
 from data_faker.actions import ActionWriter
+from data_faker.fake_kraken import FakeKraken
 from faker import Faker
 
 from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -22,7 +23,11 @@ class DataFaker(object):
         random.seed(random_seed)
         self.faker = Faker()
 
-        self.writer = ActionWriter(rotkehlchen=self.rotki)
+        self.fake_kraken = FakeKraken()
+        self.writer = ActionWriter(
+            rotkehlchen=self.rotki,
+            fake_kraken=self.fake_kraken,
+        )
 
         self.create_new_user(args.user_name, args.user_password)
 
