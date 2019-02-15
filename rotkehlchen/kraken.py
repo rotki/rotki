@@ -18,7 +18,7 @@ from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import query_cryptocompare_for_fiat_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import AssetMovement, Trade
+from rotkehlchen.order_formatting import AssetMovement, Trade, pair_get_assets
 from rotkehlchen.utils import (
     cache_response_timewise,
     convert_to_int,
@@ -136,7 +136,7 @@ KRAKEN_ASSETS = (
 KRAKEN_DELISTED = ('XDAO', 'XXVN', 'ZKRW', 'XNMC')
 
 
-def kraken_to_world_pair(pair):
+def kraken_to_world_pair(pair: str) -> str:
     # handle dark pool pairs
     if pair[-2:] == '.d':
         pair = pair[:-2]
@@ -154,6 +154,17 @@ def kraken_to_world_pair(pair):
         base_currency = KRAKEN_TO_WORLD[base_currency]
     if quote_currency not in WORLD_TO_KRAKEN:
         quote_currency = KRAKEN_TO_WORLD[quote_currency]
+
+    return base_currency + '_' + quote_currency
+
+
+def world_to_kraken_pair(pair: str) -> str:
+    base_currency, quote_currency = pair_get_assets(pair)
+
+    if base_currency not in KRAKEN_TO_WORLD:
+        base_currency = WORLD_TO_KRAKEN[base_currency]
+    if quote_currency not in KRAKEN_TO_WORLD:
+        quote_currency = WORLD_TO_KRAKEN[quote_currency]
 
     return base_currency + '_' + quote_currency
 
@@ -224,23 +235,7 @@ class Kraken(Exchange):
         if self.first_connection_made:
             return
 
-        resp = self.query_private(
-            'TradeVolume',
-            req={'pair': 'XETHXXBT', 'fee-info': True},
-        )
         with self.lock:
-            # Assuming all fees are the same for all pairs that we trade here,
-            # as long as they are normal orders on normal pairs.
-
-            self.taker_fee = FVal(resp['fees']['XETHXXBT']['fee'])
-            # Note from kraken api: If an asset pair is on a maker/taker fee
-            # schedule, the taker side is given in "fees" and maker side in
-            # "fees_maker". For pairs not on maker/taker, they will only be
-            # given in "fees".
-            if 'fees_maker' in resp:
-                self.maker_fee = FVal(resp['fees_maker']['XETHXXBT']['fee'])
-            else:
-                self.maker_fee = self.taker_fee
             self.tradeable_pairs = self.query_public('AssetPairs')
             # also make sure to get fiat prices from ticker before considering
             # kraken ready for external queries
