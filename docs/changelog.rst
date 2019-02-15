@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`273` Fallback to fetching NANO Price using XRB (Raiblocks) symbol before the rebranding.
 * :bug:`283` OTC Trades table is now properly rendered again
 * :feature:`268` Version name is now included in rotkehlchen binaries and other artifacts.
 
@@ -15,7 +16,7 @@ Changelog
 * :bug:`231` Selling an asset that will fork, before it does now also reduces the forked asset amount.
 * :bug:`232` Multiple rotkehlchen users will no longer share same cache files.
 * :feature:`229` Rotkehlchen can now work and migrate to sqlcipher v4.
-* :bug:`206` Fixes an error when adding a bitcoin account for the first time. 
+* :bug:`206` Fixes an error when adding a bitcoin account for the first time.
 * :bug:`209` Fixes error during login due to invalid date being saved.
 * :bug:`223` Fix error in profit/loss calculation due to bugs in the search of the FIFO queue of buy events.
 * :feature:`221` Rotkehlchen is now shielded against incosistencies of cryptocompare FIAT data.
