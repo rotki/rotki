@@ -20,6 +20,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import query_cryptocompare_for_fiat_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import AssetMovement, Trade, pair_get_assets
+from rotkehlchen.typing import Asset
 from rotkehlchen.utils import (
     cache_response_timewise,
     convert_to_int,
@@ -66,7 +67,7 @@ KRAKEN_TO_WORLD = {
     'BSV': 'BCHSV',
 }
 
-WORLD_TO_KRAKEN = {
+WORLD_TO_KRAKEN = cast(Dict[Asset, Asset], {
     'ETC': 'XETC',
     'ETH': 'XETH',
     'LTC': 'XLTC',
@@ -98,7 +99,7 @@ WORLD_TO_KRAKEN = {
     'XDG': 'XXDG',
     'XTZ': 'XTZ',
     'BCHSV': 'BSV',
-}
+})
 
 KRAKEN_ASSETS = (
     'XDAO',

@@ -218,16 +218,16 @@ class RotkehlchenServer(object):
         result, message = self.rotkehlchen.data.set_fiat_balance(currency, balance)
         return {'result': result, 'message': message}
 
-    def query_trade_history(self, location: str, start_ts: Timestamp, end_ts: Timestamp):
-        start_ts = int(start_ts)
-        end_ts = int(end_ts)
+    def query_trade_history(self, location: str, start_ts: int, end_ts: int):
+        start_ts = Timestamp(start_ts)
+        end_ts = Timestamp(end_ts)
         if location == 'all':
             return self.rotkehlchen.trades_historian.get_history(start_ts, end_ts)
 
         try:
             exchange = getattr(self.rotkehlchen, location)
         except AttributeError:
-            raise "Unknown location {} given".format(location)
+            raise ValueError(f'Unknown location {location} given')
 
         return process_result_list(exchange.query_trade_history(start_ts, end_ts, end_ts))
 
