@@ -2,16 +2,14 @@ import json
 import logging
 from http import HTTPStatus
 
-# from data_faker.mock_apis.resources import (
-#     KrakenAssetPairsResource,
-#     KrakenBalanceResource,
-#     KrakenLedgersResource,
-#     KrakenTickerResource,
-#     KrakenTradesHistoryResource,
-#     KrakenTradeVolumeResource,
-#     create_blueprint,
-# )
-from data_faker.mock_apis.resources import KrakenTickerResource, create_blueprint
+from data_faker.mock_apis.resources import (
+    KrakenAssetPairsResource,
+    KrakenBalanceResource,
+    KrakenLedgersResource,
+    KrakenTickerResource,
+    KrakenTradesHistoryResource,
+    create_blueprint,
+)
 from flask import Flask, make_response
 from flask_restful import Api
 from gevent.pywsgi import WSGIServer
@@ -19,12 +17,11 @@ from gevent.pywsgi import WSGIServer
 logger = logging.getLogger(__name__)
 
 URLS = [
-    ('/kraken/Ticker', KrakenTickerResource),
-    # ('/kraken/AssetPairs', KrakenAssetPairsResource),
-    # ('/kraken/TradeVolume', KrakenTradeVolumeResource),
-    # ('/kraken/Balance', KrakenBalanceResource),
-    # ('/kraken/TradesHistory', KrakenTradesHistoryResource),
-    # ('/kraken/Ledgers', KrakenLedgersResource),
+    ('/kraken/mock/public/Ticker', KrakenTickerResource),
+    ('/kraken/mock/public/AssetPairs', KrakenAssetPairsResource),
+    ('/kraken/mock/private/Balance', KrakenBalanceResource),
+    ('/kraken/mock/private/TradesHistory', KrakenTradesHistoryResource),
+    ('/kraken/mock/private/Ledgers', KrakenLedgersResource),
 ]
 
 ERROR_STATUS_CODES = [
@@ -62,12 +59,10 @@ def restapi_setup_urls(flask_api_context, rest_api, urls):
 
 class APIServer(object):
 
-    _api_prefix = '/mock'
-
     def __init__(self, rest_api):
         flask_app = Flask(__name__)
         blueprint = create_blueprint()
-        flask_api_context = Api(blueprint, prefix=self._api_prefix)
+        flask_api_context = Api(blueprint)
 
         restapi_setup_urls(
             flask_api_context,
@@ -110,3 +105,15 @@ class RestAPI(object):
 
     def kraken_ticker(self):
         return self.kraken.query_ticker()
+
+    def kraken_asset_pairs(self):
+        return self.kraken.query_asset_pairs()
+
+    def kraken_balances(self):
+        return self.kraken.query_balances()
+
+    def kraken_trade_history(self):
+        return self.kraken.query_trade_history()
+
+    def kraken_ledgers(self):
+        return self.kraken.query_ledgers()

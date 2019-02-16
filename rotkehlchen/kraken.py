@@ -13,6 +13,7 @@ from urllib.parse import urlencode
 from requests import Response
 
 from rotkehlchen import typing
+from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
@@ -158,7 +159,7 @@ def kraken_to_world_pair(pair: str) -> str:
     return base_currency + '_' + quote_currency
 
 
-def world_to_kraken_pair(pair: str) -> str:
+def world_to_kraken_pair(tradeable_pairs: List[str], pair: str) -> str:
     base_currency, quote_currency = pair_get_assets(pair)
 
     if base_currency not in KRAKEN_TO_WORLD:
@@ -166,7 +167,17 @@ def world_to_kraken_pair(pair: str) -> str:
     if quote_currency not in KRAKEN_TO_WORLD:
         quote_currency = WORLD_TO_KRAKEN[quote_currency]
 
-    return base_currency + '_' + quote_currency
+    if base_currency + quote_currency in tradeable_pairs:
+        new_pair = base_currency + quote_currency
+    elif quote_currency + base_currency in tradeable_pairs:
+        new_pair = quote_currency + base_currency
+    else:
+        raise ValueError(
+            f'Unknown pair "{pair}" provided. Couldnt find {base_currency + quote_currency}'
+            f' or {quote_currency + base_currency} in tradeable pairs',
+        )
+
+    return new_pair
 
 
 def trade_from_kraken(kraken_trade):
@@ -219,8 +230,6 @@ class Kraken(Exchange):
             usd_eur_price: FVal,
     ):
         super(Kraken, self).__init__('kraken', api_key, secret, user_directory)
-        self.apiversion = '0'
-        self.uri = 'https://api.kraken.com/{}/'.format(self.apiversion)
         # typing TODO: Without a union of str and Asset we get lots of warning
         # How can this be avoided without too much pain?
         self.usdprice: Dict[Union[typing.Asset, str], FVal] = {}
@@ -290,7 +299,7 @@ class Kraken(Exchange):
         """
         if req is None:
             req = {}
-        urlpath = self.uri + 'public/' + method
+        urlpath = f'{KRAKEN_BASE_URL}/{KRAKEN_API_VERSION}/public/{method}'
         log.debug('Kraken Public API query', request_url=urlpath, data=req)
         response = self.session.post(urlpath, data=req)
         return self.check_and_get_response(response, method)
@@ -312,7 +321,7 @@ class Kraken(Exchange):
         if req is None:
             req = {}
 
-        urlpath = '/' + self.apiversion + '/private/' + method
+        urlpath = '/' + KRAKEN_API_VERSION + '/private/' + method
 
         with self.lock:
             # Protect this section, or else
@@ -331,23 +340,11 @@ class Kraken(Exchange):
             })
             log.debug('Kraken Private API query', request_url=urlpath, data=post_data)
             response = self.session.post(
-                'https://api.kraken.com' + urlpath,
+                KRAKEN_BASE_URL + urlpath,
                 data=post_data.encode(),
             )
 
         return self.check_and_get_response(response, method)
-
-    def world_to_kraken_pair(self, pair: str) -> str:
-        p1, p2 = pair.split('_')
-        kraken_p1 = WORLD_TO_KRAKEN[p1]
-        kraken_p2 = WORLD_TO_KRAKEN[p2]
-        if kraken_p1 + kraken_p2 in self.tradeable_pairs:
-            pair = kraken_p1 + kraken_p2
-        elif kraken_p2 + kraken_p1 in self.tradeable_pairs:
-            pair = kraken_p2 + kraken_p1
-        else:
-            raise ValueError('Unknown pair "{}" provided'.format(pair))
-        return pair
 
     def get_fiat_prices_from_ticker(self):
         self.ticker = self.query_public(

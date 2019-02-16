@@ -37,3 +37,33 @@ class KrakenTickerSchema(BaseSchema):
     class Meta:
         strict = True
         decoding_class = dict
+
+
+class KrakenAssetPairsSchema(BaseSchema):
+
+    class Meta:
+        strict = True
+        decoding_class = dict
+
+
+class KrakenBalanceSchema(BaseSchema):
+
+    class Meta:
+        strict = True
+        decoding_class = dict
+
+
+class KrakenTradesHistorySchema(BaseSchema):
+
+    class Meta:
+        strict = True
+        decoding_class = dict
+
+
+class KrakenLedgersSchema(BaseSchema):
+
+    nonce = fields.String(required=True)
+
+    class Meta:
+        strict = True
+        decoding_class = dict

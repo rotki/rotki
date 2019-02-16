@@ -8,6 +8,7 @@ from data_faker.fake_kraken import FakeKraken
 from faker import Faker
 
 from rotkehlchen.rotkehlchen import Rotkehlchen
+from rotkehlchen.tests.utils.factories import make_random_b64bytes
 
 logger = logging.getLogger(__name__)
 
@@ -23,15 +24,22 @@ class DataFaker(object):
         random.seed(random_seed)
         self.faker = Faker()
 
+        self.create_new_user(args.user_name, args.user_password)
+        # register the exchanges with the rotkehlchen DB of the new user
+        self.rotki.data.db.add_exchange(
+            name='kraken',
+            api_key=make_random_b64bytes(128),
+            api_secret=make_random_b64bytes(128),
+        )
+
         self.fake_kraken = FakeKraken()
         self.writer = ActionWriter(
+            trades_number=args.trades_number,
             rotkehlchen=self.rotki,
             fake_kraken=self.fake_kraken,
         )
 
-        self.create_new_user(args.user_name, args.user_password)
-
-        self.writer.create_action()
+        self.writer.generate_history()
 
     def create_new_user(self, user_name: Optional[str], given_password: str):
         if not user_name:
