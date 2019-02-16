@@ -222,13 +222,17 @@ export function init_dashboard() {
         if (result.error) {
             showError(
                 'Exchange Query Error',
-                `Querying ${result.name} died because of: ${result.error}. Check the logs for more details.`
+                `Querying ${result.name} failed because of: ${result.error}. Check the logs for more details.`
             );
             return;
         }
         const balances = result.balances;
         if (!balances) {
-            throw Error('Expected balances to have a value');
+            showError(
+                'Exchange Query Error',
+                `Querying ${result.name} failed. Result contains no balances. Check the logs for more details.`
+            );
+                return;
         }
         const total = get_total_assets_value(balances);
         create_exchange_box(

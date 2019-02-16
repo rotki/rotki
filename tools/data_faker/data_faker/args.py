@@ -18,5 +18,10 @@ def data_faker_args() -> argparse.ArgumentParser:
         help='The password for the new user',
         required=True,
     )
+    p.add_argument(
+        '--trades-number',
+        help='The number of trades to automatically generate',
+        default=100,
+    )
 
     return p

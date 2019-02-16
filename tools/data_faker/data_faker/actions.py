@@ -7,7 +7,7 @@ from rotkehlchen.typing import Asset, Trade
 
 STARTING_TIMESTAMP = 1464739200  # 01/06/2016
 NUMBER_OF_TRADES = 5
-STARTING_FUNDS = {'EUR': FVal(10000)}
+STARTING_FUNDS = {'EUR': FVal(100000)}
 
 MIN_SECONDS_BETWEEN_TRADES = 86400
 MAX_TRADE_DIFF_VARIANCE = 14400
@@ -17,7 +17,7 @@ KRAKEN_PAIRS = ['ETH_EUR', 'BTC_EUR']
 
 ALLOWED_ASSETS = ['ETH', 'BTC']
 
-MAX_TRADE_USD_VALUE = 100
+MAX_TRADE_USD_VALUE = FVal(100)
 MAX_FEE_USD_VALUE = 1
 
 
@@ -26,14 +26,23 @@ logger = logging.getLogger(__name__)
 
 class ActionWriter(object):
 
-    def __init__(self, rotkehlchen, fake_kraken):
+    def __init__(self, trades_number, rotkehlchen, fake_kraken):
+        self.trades_number = trades_number
         self.current_ts = STARTING_TIMESTAMP
         self.funds = STARTING_FUNDS
         self.rotki = rotkehlchen
         self.fake_kraken = fake_kraken
+        # for now since we only got kraken, deposit all starting funds to it
+        for asset, value in self.funds.items():
+            self.fake_kraken.deposit(
+                asset=asset,
+                amount=value,
+                time=STARTING_TIMESTAMP,
+            )
 
-    def do():
-        pass
+    def generate_history(self):
+        for _ in range(0, self.trades_number):
+            self.create_action()
 
     def query_historical_price(self, from_asset, to_asset, timestamp):
         return self.rotki.accountant.price_historian.query_historical_price(
@@ -42,16 +51,21 @@ class ActionWriter(object):
             timestamp=timestamp,
         )
 
-    def increase_asset(self, asset: Asset, amount: FVal) -> None:
+    def increase_asset(self, asset: Asset, amount: FVal, exchange='kraken') -> None:
         if asset not in self.funds:
             self.funds[asset] = amount
         else:
             self.funds[asset] += amount
 
-    def decrease_asset(self, asset: Asset, amount: FVal) -> None:
+        # TODO: here should select based on exchange
+        self.fake_kraken.increase_asset(asset, amount)
+
+    def decrease_asset(self, asset: Asset, amount: FVal, exchange='kraken') -> None:
         assert asset in self.funds, 'Asset should exist in funds'
         assert amount <= self.funds[asset], 'We should have enough funds to decrease asset'
         self.funds[asset] -= amount
+        # TODO: here should select based on exchange
+        self.fake_kraken.decrease_asset(asset, amount)
 
     def get_next_ts(self):
         current_ts = self.current_ts
@@ -95,13 +109,23 @@ class ActionWriter(object):
 
         # if we are buying we are going to spend from the quote asset
         if action_type == 'buy':
-            asset = quote
+            spending_asset = quote
         else:  # selling spends from the base asset
-            asset = base
-        # get a spending asset amount within our per-trade equivalent range
-        usd_rate = self.query_historical_price(asset, 'USD', ts)
+            spending_asset = base
+        # get a spending asset amount within our per-trade equivalent range and
+        # our available funds
+        spending_usd_rate = self.query_historical_price(spending_asset, 'USD', ts)
+        max_usd_in_spending_asset = spending_usd_rate * self.funds[spending_asset]
+        max_usd_equivalent_to_spend = min(max_usd_in_spending_asset, MAX_TRADE_USD_VALUE)
         rate = self.query_historical_price(base, quote, ts)
-        amount = FVal(random.uniform(0.01, MAX_TRADE_USD_VALUE)) / usd_rate
+        usd_to_spend = FVal(random.uniform(0.01, float(max_usd_equivalent_to_spend)))
+        amount_in_spending_asset = usd_to_spend / spending_usd_rate
+        # if we are buying then the amount of asset we bought
+        if action_type == 'buy':
+            amount = amount_in_spending_asset / rate
+        # if we are selling the amount is the spending asset amount
+        else:
+            amount = amount_in_spending_asset
 
         quote_asset_usd_rate = self.query_historical_price(base, quote, ts)
         fee_in_quote_currency = FVal(random.uniform(0, MAX_FEE_USD_VALUE)) / quote_asset_usd_rate
@@ -132,3 +156,7 @@ class ActionWriter(object):
             self.increase_asset(quote, amount * rate)
             # and decrease our base asset
             self.decrease_asset(base, amount)
+
+        # normally here you would input it into the appropriate fake exchange
+        # but since we only got kraken faker now ...
+        self.fake_kraken.append_trade(trade)

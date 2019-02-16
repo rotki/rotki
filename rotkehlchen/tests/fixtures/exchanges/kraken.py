@@ -6,7 +6,8 @@ from typing import Dict, List, Optional
 import pytest
 
 from rotkehlchen.constants import S_EUR, S_USD
-from rotkehlchen.kraken import KRAKEN_ASSETS, KRAKEN_DELISTED, Kraken
+from rotkehlchen.fval import FVal
+from rotkehlchen.kraken import KRAKEN_ASSETS, KRAKEN_DELISTED, Kraken, world_to_kraken_pair
 from rotkehlchen.tests.utils.factories import (
     make_random_b64bytes,
     make_random_positive_fval,
@@ -42,27 +43,67 @@ def generate_random_kraken_id() -> str:
     )
 
 
-def generate_random_kraken_trade_data(
+def create_kraken_trade(
         tradeable_pairs: List[str],
-        start_ts: Timestamp,
-        end_ts: Timestamp,
+        pair: Optional[str] = None,
+        time: Optional[Timestamp] = None,
+        start_ts: Optional[Timestamp] = None,
+        end_ts: Optional[Timestamp] = None,
+        trade_type: Optional[str] = None,
+        rate: Optional[FVal] = None,
+        amount: Optional[FVal] = None,
+        fee: Optional[FVal] = None,
 ) -> Dict[str, str]:
     trade = {}
     trade['ordertxid'] = str(generate_random_kraken_id())
     trade['postxid'] = str(generate_random_kraken_id())
-    trade['pair'] = random.choice(tradeable_pairs)
-    trade['time'] = str(make_random_timestamp(start=start_ts, end=end_ts)) + '.0000'
-    trade['type'] = random.choice(('buy', 'sell'))
+    if pair:
+        trade['pair'] = world_to_kraken_pair(tradeable_pairs=tradeable_pairs, pair=pair)
+    else:
+        trade['pair'] = random.choice(tradeable_pairs)
+    if time:
+        trade['time'] = str(time) + '.0000'
+    else:
+        trade['time'] = str(make_random_timestamp(start=start_ts, end=end_ts)) + '.0000'
+    if trade_type:
+        trade['type'] = trade_type
+    else:
+        trade['type'] = random.choice(('buy', 'sell'))
     trade['ordertype'] = random.choice(('limit', 'market'))
-    price = make_random_positive_fval()
-    volume = make_random_positive_fval()
+    if rate:
+        price = rate
+    else:
+        price = make_random_positive_fval()
     trade['price'] = str(price)
+
+    if amount:
+        volume = amount
+    else:
+        volume = make_random_positive_fval()
     trade['vol'] = str(volume)
+
+    if fee:
+        trade['fee'] = str(fee)
+    else:
+        trade['fee'] = str(make_random_positive_fval(max_num=2))
+
     trade['fee'] = str(make_random_positive_fval(max_num=2))
     trade['cost'] = str(price * volume)
     trade['margin'] = '0.0'
     trade['misc'] = ''
     return trade
+
+
+def generate_random_kraken_trade_data(
+        tradeable_pairs: List[str],
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+) -> Dict[str, str]:
+    return create_kraken_trade(
+        tradeable_pairs=tradeable_pairs,
+        start_ts=start_ts,
+        end_ts=end_ts,
+    )
 
 
 def generate_random_kraken_ledger_data(

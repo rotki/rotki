@@ -392,7 +392,14 @@ def process_result(result: Dict) -> Dict:
     all Decimals to strings so that the serialization to float/big number is handled
     by the client application and we lose nothing in the transfer"""
     processed_result = _process_entry(result)
-    assert isinstance(processed_result, dict)
+    assert isinstance(processed_result, Dict)
+    return processed_result
+
+
+def process_result_list(result: List) -> List:
+    """Just lke process_result but for lists"""
+    processed_result = _process_entry(result)
+    assert isinstance(processed_result, List)
     return processed_result
 
 

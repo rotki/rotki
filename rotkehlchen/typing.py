@@ -70,6 +70,8 @@ class Trade(NamedTuple):
     location: str
     pair: str
     trade_type: str
+    # The amount represents the amount bought if it's a buy or or the amount
+    # sold if it's a sell
     amount: FVal
     rate: FVal
     fee: FVal

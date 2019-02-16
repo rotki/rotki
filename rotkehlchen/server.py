@@ -14,7 +14,8 @@ from rotkehlchen.args import app_args
 from rotkehlchen.errors import AuthenticationError, RotkehlchenPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.utils import pretty_json_dumps, process_result
+from rotkehlchen.typing import Timestamp
+from rotkehlchen.utils import pretty_json_dumps, process_result, process_result_list
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -217,7 +218,7 @@ class RotkehlchenServer(object):
         result, message = self.rotkehlchen.data.set_fiat_balance(currency, balance)
         return {'result': result, 'message': message}
 
-    def query_trade_history(self, location, start_ts, end_ts):
+    def query_trade_history(self, location: str, start_ts: Timestamp, end_ts: Timestamp):
         start_ts = int(start_ts)
         end_ts = int(end_ts)
         if location == 'all':
@@ -228,7 +229,7 @@ class RotkehlchenServer(object):
         except AttributeError:
             raise "Unknown location {} given".format(location)
 
-        return process_result(exchange.query_trade_history(start_ts, end_ts, end_ts))
+        return process_result_list(exchange.query_trade_history(start_ts, end_ts, end_ts))
 
     def process_trade_history(self, start_ts, end_ts):
         start_ts = int(start_ts)
