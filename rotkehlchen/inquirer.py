@@ -51,6 +51,8 @@ def world_to_cryptocompare(asset: Asset, timestamp: Timestamp = None) -> Asset:
         asset = cast(NonEthTokenBlockchainAsset, 'IOT')
     elif asset == S_NANO and timestamp and timestamp < XRB_NANO_REBRAND_TS:
         return S_RAIBLOCKS
+    elif asset == S_RAIBLOCKS and timestamp and timestamp >= XRB_NANO_REBRAND_TS:
+        return S_NANO
 
     return asset
 
