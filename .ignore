@@ -1,1 +1,2 @@
-tools/data_faker/data_faker/data/*
+tools/data_faker/data_faker/data/kraken_asset_pairs.json
+tools/data_faker/data_faker/data/kraken_ticker.json
