@@ -8,7 +8,14 @@ from gevent.lock import Semaphore
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen import typing
-from rotkehlchen.constants import S_BTC, S_ETH, S_MLN, S_MLN_NEW, S_MLN_OLD
+from rotkehlchen.constants import (
+    CACHE_RESPONSE_FOR_SECS,
+    S_BTC,
+    S_ETH,
+    S_MLN,
+    S_MLN_NEW,
+    S_MLN_OLD,
+)
 from rotkehlchen.db.dbhandler import BlockchainAccounts
 from rotkehlchen.errors import EthSyncError, InputError
 from rotkehlchen.fval import FVal
@@ -85,7 +92,7 @@ class Blockchain(object):
     def eth_tokens(self) -> List[typing.EthToken]:
         return self.owned_eth_tokens
 
-    @cache_response_timewise()
+    @cache_response_timewise(CACHE_RESPONSE_FOR_SECS)
     def query_balances(self) -> Tuple[Dict[str, Dict], str]:
         try:
             self.query_ethereum_balances()

@@ -13,7 +13,7 @@ from urllib.parse import urlencode
 from requests import Response
 
 from rotkehlchen import typing
-from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
+from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS, KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
@@ -412,7 +412,7 @@ class Kraken(Exchange):
             self.eurprice[common_name] = btc_price * self.eurprice['BTC']
         return self.usdprice[common_name]
 
-    @cache_response_timewise()
+    @cache_response_timewise(CACHE_RESPONSE_FOR_SECS)
     def query_balances(self) -> Tuple[Optional[dict], str]:
         try:
             self.first_connection()

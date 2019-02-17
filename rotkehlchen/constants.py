@@ -48,6 +48,10 @@ EV_MARGIN_CLOSE = typing.EventType('margin_position_close')
 
 ZERO = FVal(0)
 
+# Seconds for which cached api queries will be cached
+# By default 10 minutes.
+# TODO: Make configurable!
+CACHE_RESPONSE_FOR_SECS = 600
 
 # API URLS
 KRAKEN_BASE_URL = 'https://api.kraken.com'
