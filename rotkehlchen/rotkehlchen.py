@@ -315,8 +315,7 @@ class Rotkehlchen(object):
         # Reset rotkehlchen logger to default
         LoggingSettings(anonymized_logs=DEFAULT_ANONYMIZED_LOGS)
 
-        del self.inquirer
-        self.inquirer = None
+        self.inquirer.kraken = None
         del self.accountant
         self.accountant = None
         del self.trades_historian

@@ -3,6 +3,8 @@ from json.decoder import JSONDecodeError
 
 import pytest
 
+from rotkehlchen.constants import S_EUR
+from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.utils import rlk_jsonloads_dict
 
@@ -71,3 +73,24 @@ def test_dbinfo_is_written_at_shutdown(rotkehlchen_instance, username):
 
     assert dbinfo['sqlcipher_version'] == sqlcipher_version
     assert 'md5_hash' in dbinfo
+
+
+@pytest.mark.parametrize('number_of_accounts', [0])
+def test_logout_and_login_again(rotkehlchen_instance, username):
+    """Test that when a rotkehlchen user logs out they can properly login again
+    Regression test for https://github.com/rotkehlchenio/rotkehlchen/issues/288
+    """
+    rotkehlchen_instance.logout()
+    assert not rotkehlchen_instance.user_is_logged_in
+    rotkehlchen_instance.unlock_user(
+        user=username,
+        password='123',
+        create_new=False,
+        sync_approval='unknown',
+        api_key='',
+        api_secret='',
+    )
+    assert rotkehlchen_instance.user_is_logged_in
+    # The bug for #288 was here. The inquirer instance was None and any
+    # queries utilizing it were throwing exceptions.
+    rotkehlchen_instance.inquirer.get_fiat_usd_exchange_rates(currencies=None)
