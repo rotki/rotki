@@ -7,6 +7,7 @@ from typing import Dict, List, Optional, Tuple, Union, cast
 from urllib.parse import urlencode
 
 from rotkehlchen import typing
+from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
@@ -178,7 +179,7 @@ class Bittrex(Exchange):
 
         return btc_price
 
-    @cache_response_timewise()
+    @cache_response_timewise(CACHE_RESPONSE_FOR_SECS)
     def query_balances(self) -> Tuple[Optional[dict], str]:
         try:
             self.markets = self.api_query('getmarketsummaries')

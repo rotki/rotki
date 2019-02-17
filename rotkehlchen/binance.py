@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 import gevent
 
 from rotkehlchen import typing
+from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
@@ -235,7 +236,7 @@ class Binance(Exchange):
         json_ret = rlk_jsonloads(response.text)
         return json_ret
 
-    @cache_response_timewise()
+    @cache_response_timewise(CACHE_RESPONSE_FOR_SECS)
     def query_balances(self) -> Tuple[Optional[dict], str]:
         self.first_connection()
 
