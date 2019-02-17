@@ -1,9 +1,10 @@
 import logging
 import random
 
+from rotkehlchen.constants import FIAT_CURRENCIES
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import pair_get_assets
-from rotkehlchen.typing import Asset, Trade
+from rotkehlchen.typing import Asset, Timestamp, Trade
 
 STARTING_TIMESTAMP = 1464739200  # 01/06/2016
 NUMBER_OF_TRADES = 5
@@ -20,6 +21,8 @@ ALLOWED_ASSETS = ['ETH', 'BTC']
 MAX_TRADE_USD_VALUE = FVal(100)
 MAX_FEE_USD_VALUE = 1
 
+MIN_DIFF_BETWEEN_BALANCE_SAVING = 172800
+
 
 logger = logging.getLogger(__name__)
 
@@ -29,16 +32,39 @@ class ActionWriter(object):
     def __init__(self, trades_number, rotkehlchen, fake_kraken):
         self.trades_number = trades_number
         self.current_ts = STARTING_TIMESTAMP
+        self.last_balance_save_ts = 0
         self.funds = STARTING_FUNDS
         self.rotki = rotkehlchen
         self.fake_kraken = fake_kraken
-        # for now since we only got kraken, deposit all starting funds to it
+
+        timestamp = self.get_next_ts()
         for asset, value in self.funds.items():
+            if asset in FIAT_CURRENCIES:
+                self.rotki.data.db.add_fiat_balance(asset, value)
+        self.rotki.query_balances(requested_save_data=True, timestamp=timestamp)
+
+        timestamp = self.get_next_ts()
+        # for now since we only got kraken, deposit half of our starting funds to it
+        for asset, value in self.funds.items():
+            amount = value / 2
             self.fake_kraken.deposit(
                 asset=asset,
-                amount=value,
-                time=STARTING_TIMESTAMP,
+                amount=amount,
+                time=timestamp,
             )
+            self.rotki.data.db.add_fiat_balance(asset, amount)
+        self.rotki.query_balances(requested_save_data=True, timestamp=timestamp)
+        self.last_balance_save_ts = timestamp
+
+    def maybe_save_balances(self, save_ts: Timestamp) -> None:
+        """Maybe Save all current balances in the fake user's DB at the current timestamp
+
+        If the save_ts is not after MIN_DIFF_BETWEEN_BALANCE_SAVING then nothing happens
+"""
+        if save_ts - self.last_balance_save_ts < MIN_DIFF_BETWEEN_BALANCE_SAVING:
+            return
+        self.rotki.query_balances(requested_save_data=True, timestamp=save_ts)
+        self.last_balance_save_ts = save_ts
 
     def generate_history(self):
         for _ in range(0, self.trades_number):
@@ -160,3 +186,5 @@ class ActionWriter(object):
         # normally here you would input it into the appropriate fake exchange
         # but since we only got kraken faker now ...
         self.fake_kraken.append_trade(trade)
+
+        self.maybe_save_balances(save_ts=ts)

@@ -19,5 +19,5 @@ Then to run it run it from inside the ``tools/data_faker/`` directory by doing: 
 
 Once the data generation is finished, the data faker will show that a REST API is running. That is the mock exchanges API.
 
-To use it from the rotkehlchen application edit ``rotkehlchen/rotkehlchen/constants.py`` to use the mock exchange APIs.
+To use it from the rotkehlchen application edit ``rotkehlchen/rotkehlchen/constants.py`` to use the mock exchange APIs and also to set the cache seconds to ``0``.
 

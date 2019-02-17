@@ -2,7 +2,8 @@
 import logging
 import os
 import shutil
-from typing import Dict, Union
+import time
+from typing import Any, Dict, Tuple, Union
 
 import gevent
 from gevent.lock import Semaphore
@@ -518,7 +519,20 @@ class Rotkehlchen(object):
 
         return result
 
-    def query_balances(self, requested_save_data=False):
+    def query_balances(
+            self,
+            requested_save_data: bool = False,
+            timestamp: Timestamp = None,
+    ) -> Dict[str, Any]:
+        """Query all balances rotkehlchen can see.
+
+        If requested_save_data is True then the data are saved in the DB.
+        If timestamp is None then the current timestamp is used.
+        If a timestamp is given then that is the time that the balances are going
+        to be saved in the DB
+
+        Returns a dictionary with the queried balances.
+        """
         log.info('query_balances called', requested_save_data=requested_save_data)
 
         balances = {}
@@ -526,7 +540,7 @@ class Rotkehlchen(object):
         for exchange in self.connected_exchanges:
             exchange_balances, _ = getattr(self, exchange).query_balances()
             # If we got an error, disregard that exchange but make sure we don't save data
-            if not exchange_balances:
+            if not isinstance(exchange_balances, dict):
                 problem_free = False
             else:
                 balances[exchange] = exchange_balances
@@ -549,7 +563,7 @@ class Rotkehlchen(object):
         for _, v in combined.items():
             net_usd += FVal(v['usd_value'])
 
-        stats = {
+        stats: Dict[str, Any] = {
             'location': {
             },
             'net_usd': net_usd,
@@ -577,7 +591,9 @@ class Rotkehlchen(object):
 
         allowed_to_save = requested_save_data or self.data.should_save_balances()
         if problem_free and allowed_to_save:
-            self.data.save_balances_data(result_dict)
+            if not timestamp:
+                timestamp = Timestamp(int(time.time()))
+            self.data.save_balances_data(data=result_dict, timestamp=timestamp)
             log.debug('query_balances data saved')
         else:
             log.debug('query_balances data not saved')
@@ -651,7 +667,17 @@ class Rotkehlchen(object):
 
         return self.usd_to_main_currency_rate * amount
 
-    def setup_exchange(self, name, api_key, api_secret):
+    def setup_exchange(
+            self,
+            name: str,
+            api_key: ApiKey,
+            api_secret: ApiSecret,
+    ) -> Tuple[bool, str]:
+        """
+        Setup a new exchange with an api key and an api secret
+
+        By default the api keys are always validated unless validate is False.
+        """
         log.info('setup_exchange', name=name)
         if name not in SUPPORTED_EXCHANGES:
             return False, 'Attempted to register unsupported exchange {}'.format(name)
