@@ -191,8 +191,9 @@ class DataHandler(object):
     def main_currency(self) -> typing.FiatAsset:
         return self.db.get_main_currency()
 
-    def save_balances_data(self, data: BalancesData) -> None:
-        self.db.write_balances_data(data)
+    def save_balances_data(self, data: BalancesData, timestamp: typing.Timestamp) -> None:
+        """Save the balances data at the given timestamp"""
+        self.db.write_balances_data(data=data, timestamp=timestamp)
 
     def write_owned_eth_tokens(self, tokens: List[typing.EthToken]) -> None:
         self.db.write_owned_tokens(tokens)
