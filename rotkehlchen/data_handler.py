@@ -297,11 +297,14 @@ class DataHandler(object):
         blockchain_accounts = self.db.get_blockchain_accounts()
         return blockchain_accounts.eth
 
-    def set_fiat_balance(self, currency: typing.FiatAsset, balance: FVal) -> Tuple[bool, str]:
+    def set_fiat_balance(self, currency: typing.FiatAsset, balance: str) -> Tuple[bool, str]:
         if currency not in FIAT_CURRENCIES:
             return False, 'Provided currency {} is unknown'
 
-        if balance == 0 or balance == '':
+        msg = 'Provided balance for set_fiat_balance should be a string'
+        assert isinstance(balance, str), msg
+
+        if balance == '':
             self.db.remove_fiat_balance(currency)
         else:
             try:

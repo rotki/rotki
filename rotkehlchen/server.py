@@ -14,7 +14,7 @@ from rotkehlchen.args import app_args
 from rotkehlchen.errors import AuthenticationError, RotkehlchenPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.typing import Asset, Timestamp
 from rotkehlchen.utils import pretty_json_dumps, process_result, process_result_list
 
 logger = logging.getLogger(__name__)
@@ -214,7 +214,7 @@ class RotkehlchenServer(object):
         res = self.rotkehlchen.query_fiat_balances()
         return process_result(res)
 
-    def set_fiat_balance(self, currency, balance):
+    def set_fiat_balance(self, currency: Asset, balance: str):
         result, message = self.rotkehlchen.data.set_fiat_balance(currency, balance)
         return {'result': result, 'message': message}
 
