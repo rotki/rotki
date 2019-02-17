@@ -7,7 +7,7 @@ import pytest
 from eth_utils.address import to_checksum_address
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.constants import YEAR_IN_SECONDS
+from rotkehlchen.constants import S_CNY, S_EUR, YEAR_IN_SECONDS
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import (
     DBINFO_FILENAME,
@@ -25,6 +25,7 @@ from rotkehlchen.db.dbhandler import (
     detect_sqlcipher_version,
 )
 from rotkehlchen.errors import AuthenticationError, InputError
+from rotkehlchen.fval import FVal
 from rotkehlchen.utils import createTimeStamp, rlk_jsondumps, ts_now
 
 TABLES_AT_INIT = [
@@ -446,3 +447,25 @@ def test_sqlcipher_detect_version():
         with pytest.raises(ValueError):
             sql_mock.return_value = ConnectionMock('no version')
             detect_sqlcipher_version()
+
+
+def test_data_set_fiat_balance(data_dir, username):
+    data = DataHandler(data_dir)
+    data.unlock(username, '123', create_new=True)
+
+    amount_eur = '100'
+    amount_cny = '500'
+
+    success, _ = data.set_fiat_balance(S_EUR, amount_eur)
+    assert success
+    success, _ = data.set_fiat_balance(S_CNY, amount_cny)
+    assert success
+    balances = data.get_fiat_balances()
+    assert len(balances) == 2
+    assert balances[S_EUR] == amount_eur
+    assert balances[S_CNY] == amount_cny
+
+    success, _ = data.set_fiat_balance(S_EUR, '')
+    balances = data.get_fiat_balances()
+    assert len(balances) == 1
+    assert balances[S_CNY] == amount_cny
