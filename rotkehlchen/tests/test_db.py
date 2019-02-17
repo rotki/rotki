@@ -25,7 +25,6 @@ from rotkehlchen.db.dbhandler import (
     detect_sqlcipher_version,
 )
 from rotkehlchen.errors import AuthenticationError, InputError
-from rotkehlchen.fval import FVal
 from rotkehlchen.utils import createTimeStamp, rlk_jsondumps, ts_now
 
 TABLES_AT_INIT = [
@@ -76,7 +75,7 @@ def test_export_import_db(data_dir, username):
     """Create a DB, write some data and then after export/import confirm it's there"""
     data = DataHandler(data_dir)
     data.unlock(username, '123', create_new=True)
-    data.set_fiat_balance('EUR', 10)
+    data.set_fiat_balance('EUR', '10')
 
     encoded_data, _ = data.compress_and_encrypt_db('123')
     # The server would return them decoded

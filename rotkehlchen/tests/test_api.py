@@ -3,8 +3,6 @@ from json.decoder import JSONDecodeError
 
 import pytest
 
-from rotkehlchen.constants import S_EUR
-from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.utils import rlk_jsonloads_dict
 
