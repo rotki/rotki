@@ -26,7 +26,7 @@ logging-modules=logging
 [MESSAGES CONTROL]
 
 disable=all
-enable=no-value-for-parameter,too-many-format-args,no-member,bad-except-order,redefined-builtin,bad-continuation,unused-variable
+enable=no-value-for-parameter,too-many-format-args,no-member,bad-except-order,redefined-builtin,bad-continuation,unused-variable,no-self-use
 
 [REPORTS]
 
