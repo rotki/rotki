@@ -91,13 +91,6 @@ class RotkehlchenServer(object):
         result, message = self.rotkehlchen.set_settings(settings)
         return {'result': result, 'message': message}
 
-    def get_total_in_usd(self, balances):
-        total = 0
-        for _, entry in balances.items():
-            total += entry['usd_value']
-
-        return total
-
     def handle_killed_greenlets(self, greenlet):
         if not greenlet.exception:
             log.warning('handle_killed_greenlets without an exception')
@@ -347,9 +340,6 @@ class RotkehlchenServer(object):
             res['message'] = str(e)
 
         return res
-
-    def echo(self, text):
-        return text
 
     def main(self):
         gevent.hub.signal(signal.SIGQUIT, self.shutdown)

@@ -90,6 +90,22 @@ def trade_from_poloniex(poloniex_trade, pair):
     )
 
 
+def _post_process(before: Dict) -> Dict:
+    """Poloniex uses datetimes so turn them into timestamps here"""
+    after = before
+    if('return' in after):
+        if(isinstance(after['return'], list)):
+            for x in range(0, len(after['return'])):
+                if(isinstance(after['return'][x], dict)):
+                    if('datetime' in after['return'][x] and
+                       'timestamp' not in after['return'][x]):
+                        after['return'][x]['timestamp'] = float(
+                            createTimeStamp(after['return'][x]['datetime']),
+                        )
+
+    return after
+
+
 class Poloniex(Exchange):
 
     def __init__(
@@ -132,22 +148,6 @@ class Poloniex(Exchange):
                 raise
         return True, ''
 
-    def post_process(self, before: Dict) -> Dict:
-        after = before
-
-        # Add timestamps if there isnt one but is a datetime
-        if('return' in after):
-            if(isinstance(after['return'], list)):
-                for x in range(0, len(after['return'])):
-                    if(isinstance(after['return'][x], dict)):
-                        if('datetime' in after['return'][x] and
-                           'timestamp' not in after['return'][x]):
-                            after['return'][x]['timestamp'] = float(
-                                createTimeStamp(after['return'][x]['datetime']),
-                            )
-
-        return after
-
     def api_query(self, command: str, req: Optional[Dict] = None) -> Union[Dict, List]:
         result = retry_calls(5, 'poloniex', command, self._api_query, command, req)
         if 'error' in result:
@@ -186,7 +186,7 @@ class Poloniex(Exchange):
                 ret = self.session.post('https://poloniex.com/tradingApi', req)
 
             result = rlk_jsonloads_dict(ret.text)
-            return self.post_process(result)
+            return _post_process(result)
 
         return rlk_jsonloads(ret.text)
 

@@ -111,7 +111,8 @@ class Ethchain(object):
             self.ethrpc_port = port
         return result, message
 
-    def query_eth_highest_block(self) -> Optional[int]:
+    @staticmethod
+    def query_eth_highest_block() -> Optional[int]:
         """ Attempts to query blockcypher for the block height
 
         Returns the highest blockNumber"""

@@ -5,6 +5,7 @@ import logging
 import time
 from binascii import Error as binascii_error
 from http import HTTPStatus
+from typing import Dict, List, Tuple, Union
 from urllib.parse import urlencode
 
 import requests
@@ -39,6 +40,25 @@ def premium_create_and_verify(api_key, api_secret):
         return None, False, 'incorrect api key format'
 
     return premium, valid, empty_or_error
+
+
+def _process_response(response: requests.Response) -> Tuple[bool, Union[Dict, List, str]]:
+    """Processess a response returned from the Rotkehlchen server and returns
+    the result for success or the error string if an error happened"""
+    result_or_error: Union[Dict, List, str] = ''
+    success = False
+    if response.status_code not in HANDLABLE_STATUS_CODES:
+        result_or_error = (
+            'Unexpected status response({}) from rotkehlchen server'.format(
+                response.status_code))
+    else:
+        result_or_error = rlk_jsonloads(response.text)
+        if isinstance(result_or_error, Dict) and 'error' in result_or_error:
+            result_or_error = result_or_error['error']
+        else:
+            success = True
+
+    return success, result_or_error
 
 
 class Premium(object):
@@ -84,22 +104,6 @@ class Premium(object):
         emptystr_or_error = '' if self.active else result_or_error
         return self.active, emptystr_or_error
 
-    def process_response(self, response):
-        result_or_error = ''
-        success = False
-        if response.status_code not in HANDLABLE_STATUS_CODES:
-            result_or_error = (
-                'Unexpected status response({}) from rotkehlchen server'.format(
-                    response.status_code))
-        else:
-            result_or_error = rlk_jsonloads(response.text)
-            if 'error' in result_or_error:
-                result_or_error = result_or_error['error']
-            else:
-                success = True
-
-        return success, result_or_error
-
     def sign(self, method, **kwargs):
         urlpath = '/api/' + self.apiversion + '/' + method
 
@@ -139,7 +143,7 @@ class Premium(object):
         except requests.ConnectionError:
             return False, 'Could not connect to rotkehlchen server'
 
-        success, result_or_error = self.process_response(response)
+        success, result_or_error = _process_response(response)
         return success, result_or_error
 
     def pull_data(self):
@@ -157,7 +161,7 @@ class Premium(object):
         except requests.ConnectionError:
             return False, 'Could not connect to rotkehlchen server'
 
-        success, result_or_error = self.process_response(response)
+        success, result_or_error = _process_response(response)
         return success, result_or_error
 
     def query_last_data_metadata(self):
@@ -174,5 +178,5 @@ class Premium(object):
             )
         except requests.ConnectionError:
             return False, 'Could not connect to rotkehlchen server'
-        success, result_or_error = self.process_response(response)
+        success, result_or_error = _process_response(response)
         return success, result_or_error
