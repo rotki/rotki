@@ -8,8 +8,8 @@ import pytest
 from rotkehlchen.binance import Binance, trade_from_binance
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.order_formatting import Trade
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.typing import Trade
 
 
 @pytest.fixture
@@ -79,52 +79,44 @@ def test_trade_from_binance(mock_binance):
     ]
     our_expected_list = [
         Trade(
-            timestamp=1512561941,
+            time=1512561941,
+            location='binance',
             pair='RDN_ETH',
-            type='buy',
+            trade_type='buy',
+            amount=FVal(5.0),
             rate=FVal(0.0063213),
-            cost=FVal(0.03160650),
-            cost_currency='ETH',
             fee=FVal(0.005),
             fee_currency='RDN',
-            amount=FVal(5.0),
-            location='binance',
         ),
         Trade(
-            timestamp=1531117990,
+            time=1531117990,
+            location='binance',
             pair='ETH_USDT',
-            type='sell',
+            trade_type='sell',
+            amount=FVal(0.505),
             rate=FVal(481.0),
-            cost=FVal(242.905),
-            cost_currency='USDT',
             fee=FVal(0.242905),
             fee_currency='USDT',
-            amount=FVal(0.505),
-            location='binance',
         ),
         Trade(
-            timestamp=1531728338,
+            time=1531728338,
+            location='binance',
             pair='BTC_USDT',
-            type='buy',
+            trade_type='buy',
+            amount=FVal(0.051942),
             rate=FVal(6376.39),
-            cost=FVal(331.20244938),
-            cost_currency='USDT',
             fee=FVal(0.00005194),
             fee_currency='BTC',
-            amount=FVal(0.051942),
-            location='binance',
         ),
         Trade(
-            timestamp=1531871806,
+            time=1531871806,
+            location='binance',
             pair='ADA_USDT',
-            type='sell',
+            trade_type='sell',
+            amount=FVal(285.2),
             rate=FVal(0.17442),
-            cost=FVal(49.744584),
-            cost_currency='USDT',
             fee=FVal(0.00180015),
             fee_currency='BNB',
-            amount=FVal(285.2),
-            location='binance',
         ),
     ]
 

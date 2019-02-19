@@ -59,7 +59,7 @@ class FakeKraken(object):
         kraken_trade = create_kraken_trade(
             tradeable_pairs=list(self.asset_pairs['result'].keys()),
             pair=trade.pair,
-            time=trade.time,
+            time=trade.timestamp,
             trade_type=trade.trade_type,
             rate=trade.rate,
             amount=trade.amount,

@@ -7,7 +7,7 @@ import hashlib
 import hmac
 import logging
 import time
-from typing import Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from urllib.parse import urlencode
 
 from requests import Response
@@ -19,8 +19,8 @@ from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import query_cryptocompare_for_fiat_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import AssetMovement, Trade, pair_get_assets
-from rotkehlchen.typing import Asset
+from rotkehlchen.order_formatting import AssetMovement, pair_get_assets
+from rotkehlchen.typing import Asset, Trade
 from rotkehlchen.utils import (
     cache_response_timewise,
     convert_to_int,
@@ -181,7 +181,7 @@ def world_to_kraken_pair(tradeable_pairs: List[str], pair: str) -> str:
     return new_pair
 
 
-def trade_from_kraken(kraken_trade):
+def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
     """Turn a kraken trade returned from kraken trade history to our common trade
     history format"""
     currency_pair = kraken_to_world_pair(kraken_trade['pair'])
@@ -193,6 +193,9 @@ def trade_from_kraken(kraken_trade):
     fee = FVal(kraken_trade['fee'])
     order_type = kraken_trade['type']
     rate = FVal(kraken_trade['price'])
+
+    if cost != amount * rate:
+        log.warning('cost ({cost}) != amount ({amount}) * rate ({rate}) for kraken trade')
 
     log.debug(
         'Processing kraken Trade',
@@ -210,15 +213,13 @@ def trade_from_kraken(kraken_trade):
 
     return Trade(
         timestamp=timestamp,
+        location='kraken',
         pair=currency_pair,
-        type=order_type,
+        trade_type=order_type,
+        amount=amount,
         rate=rate,
-        cost=cost,
-        cost_currency=quote_currency,
         fee=fee,
         fee_currency=quote_currency,
-        amount=amount,
-        location='kraken',
     )
 
 

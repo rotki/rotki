@@ -739,7 +739,7 @@ class DBHandler(object):
             '  notes)'
             'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             (
-                trade.time,
+                trade.timestamp,
                 trade.location,
                 trade.pair,
                 trade.trade_type,
@@ -773,7 +773,7 @@ class DBHandler(object):
             '  notes=? '
             'WHERE id=?',
             (
-                trade.time,
+                trade.timestamp,
                 trade.location,
                 trade.pair,
                 trade.trade_type,

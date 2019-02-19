@@ -1,10 +1,11 @@
 from collections import namedtuple
-from dataclasses import dataclass
 from typing import List, NamedTuple, Optional
+
+from dataclasses import dataclass
 
 from rotkehlchen import typing
 from rotkehlchen.fval import FVal
-from rotkehlchen.utils import get_pair_position
+from rotkehlchen.typing import Trade
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -29,23 +30,6 @@ class Events(NamedTuple):
     buys: List[BuyEvent]
     sells: List[SellEvent]
 
-
-Trade = namedtuple(
-    'Trade',
-    (
-        'timestamp',
-        'pair',
-        'type',
-        'rate',  # always in quote currency?
-        # TODO: Make sure is this total cost with fees or without fees, for all exchanges?
-        'cost',
-        'cost_currency',
-        'fee',
-        'fee_currency',
-        'amount',
-        'location',
-    ),
-)
 
 AssetMovement = namedtuple(
     'AssetMovement',
@@ -102,26 +86,25 @@ def trades_from_dictlist(given_trades, start_ts, end_ts):
         pair = given_trade['pair']
         rate = FVal(given_trade['rate'])
         amount = FVal(given_trade['amount'])
-        # Slowly trying to make cost go away as it can be calculated anyway
-        if 'cost' not in given_trade:
-            cost = rate * amount
-            # Cost is always on the quote currency
-            cost_currency = get_pair_position(pair, 'second')
-        else:
-            cost = FVal(given_trade['cost'])
-            cost_currency = given_trade['cost_currency']
+
+        trade_link = ''
+        if 'link' in given_trade:
+            trade_link = given_trade['link']
+        trade_notes = ''
+        if 'notes' in given_trade:
+            trade_notes = given_trade['notes']
 
         returned_trades.append(Trade(
             timestamp=given_trade['timestamp'],
+            location=given_trade['location'],
             pair=pair,
-            type=given_trade['type'],
+            trade_type=given_trade['type'],
+            amount=amount,
             rate=rate,
-            cost=cost,
-            cost_currency=cost_currency,
             fee=FVal(given_trade['fee']),
             fee_currency=given_trade['fee_currency'],
-            amount=amount,
-            location=given_trade['location'],
+            link=trade_link,
+            notes=trade_notes,
         ))
     return returned_trades
 

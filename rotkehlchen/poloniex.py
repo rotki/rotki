@@ -10,14 +10,14 @@ import traceback
 from typing import Dict, List, Optional, Tuple, Union, cast
 from urllib.parse import urlencode
 
-from rotkehlchen import typing
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.errors import PoloniexError, RemoteError
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import AssetMovement, Trade
+from rotkehlchen.order_formatting import AssetMovement
+from rotkehlchen.typing import ApiKey, ApiSecret, BlockchainAsset, FilePath, Timestamp, Trade
 from rotkehlchen.utils import (
     cache_response_timewise,
     createTimeStamp,
@@ -46,14 +46,11 @@ def trade_from_poloniex(poloniex_trade, pair):
     base_currency = get_pair_position(pair, 'first')
     quote_currency = get_pair_position(pair, 'second')
     timestamp = createTimeStamp(poloniex_trade['date'], formatstr="%Y-%m-%d %H:%M:%S")
+    cost = rate * amount
     if trade_type == 'buy':
-        cost = rate * amount
-        cost_currency = base_currency
         fee = amount * perc_fee
         fee_currency = quote_currency
     elif trade_type == 'sell':
-        cost = amount * rate
-        cost_currency = base_currency
         fee = cost * perc_fee
         fee_currency = base_currency
     else:
@@ -71,22 +68,19 @@ def trade_from_poloniex(poloniex_trade, pair):
         base_currency=base_currency,
         quote_currency=quote_currency,
         amount=amount,
-        cost=cost,
         fee=fee,
         rate=rate,
     )
 
     return Trade(
         timestamp=timestamp,
+        location='poloniex',
         pair=pair,
-        type=trade_type,
+        trade_type=trade_type,
+        amount=amount,
         rate=rate,
-        cost=cost,
-        cost_currency=cost_currency,
         fee=fee,
         fee_currency=fee_currency,
-        amount=amount,
-        location='poloniex',
     )
 
 
@@ -110,16 +104,16 @@ class Poloniex(Exchange):
 
     def __init__(
             self,
-            api_key: typing.ApiKey,
-            secret: typing.ApiSecret,
+            api_key: ApiKey,
+            secret: ApiSecret,
             inquirer: Inquirer,
-            user_directory: typing.FilePath,
+            user_directory: FilePath,
     ):
         super(Poloniex, self).__init__('poloniex', api_key, secret, user_directory)
 
         self.uri = 'https://poloniex.com/'
         self.public_uri = self.uri + 'public?command='
-        self.usdprice: Dict[typing.BlockchainAsset, FVal] = {}
+        self.usdprice: Dict[BlockchainAsset, FVal] = {}
         self.inquirer = inquirer
         self.session.headers.update({  # type: ignore
             'Key': self.api_key,
@@ -202,8 +196,8 @@ class Poloniex(Exchange):
 
     def returnLendingHistory(
             self,
-            start_ts: Optional[typing.Timestamp] = None,
-            end_ts: Optional[typing.Timestamp] = None,
+            start_ts: Optional[Timestamp] = None,
+            end_ts: Optional[Timestamp] = None,
             limit: Optional[int] = None,
     ) -> List:
         """Default limit for this endpoint seems to be 500 when I tried.
@@ -212,7 +206,7 @@ class Poloniex(Exchange):
 
         Also maximum limit seems to be 12660
         """
-        req: Dict[str, Union[int, typing.Timestamp]] = dict()
+        req: Dict[str, Union[int, Timestamp]] = dict()
         if start_ts is not None:
             req['start'] = start_ts
         if end_ts is not None:
@@ -227,8 +221,8 @@ class Poloniex(Exchange):
     def returnTradeHistory(
             self,
             currencyPair: str,
-            start: typing.Timestamp,
-            end: typing.Timestamp,
+            start: Timestamp,
+            end: Timestamp,
     ) -> Union[Dict, List]:
         """If `currencyPair` is all, then it returns a dictionary with each key
         being a pair and each value a list of trades. If `currencyPair` is a specific
@@ -242,8 +236,8 @@ class Poloniex(Exchange):
 
     def returnDepositsWithdrawals(
             self,
-            start_ts: typing.Timestamp,
-            end_ts: typing.Timestamp,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
     ) -> Dict:
         # We know returnDepositsWithdrawals returns a Dict
         response = cast(
@@ -320,9 +314,9 @@ class Poloniex(Exchange):
 
     def query_trade_history(
             self,
-            start_ts: typing.Timestamp,
-            end_ts: typing.Timestamp,
-            end_at_least_ts: typing.Timestamp,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            end_at_least_ts: Timestamp,
     ) -> Dict:
         with self.lock:
             cache = self.check_trades_cache(start_ts, end_at_least_ts)
@@ -378,9 +372,9 @@ class Poloniex(Exchange):
 
     def query_loan_history(
             self,
-            start_ts: typing.Timestamp,
-            end_ts: typing.Timestamp,
-            end_at_least_ts: typing.Timestamp,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            end_at_least_ts: Timestamp,
             from_csv: Optional[bool] = False,
     ) -> List:
         """
@@ -447,9 +441,9 @@ class Poloniex(Exchange):
 
     def query_deposits_withdrawals(
             self,
-            start_ts: typing.Timestamp,
-            end_ts: typing.Timestamp,
-            end_at_least_ts: typing.Timestamp,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            end_at_least_ts: Timestamp,
     ) -> List:
         with self.lock:
             cache = self.check_trades_cache(

@@ -2,8 +2,8 @@ import os
 from unittest.mock import patch
 
 from rotkehlchen.fval import FVal
-from rotkehlchen.order_formatting import Trade
 from rotkehlchen.poloniex import Poloniex, trade_from_poloniex
+from rotkehlchen.typing import Trade
 
 
 def test_trade_from_poloniex():
@@ -28,11 +28,10 @@ def test_trade_from_poloniex():
 
     assert isinstance(trade, Trade)
     assert isinstance(trade.timestamp, int)
-    assert trade.timestamp == 1500758317
-    assert trade.type == 'sell'
+    assert trade.time == 1500758317
+    assert trade.trade_type == 'sell'
     assert trade.rate == rate
     assert trade.amount == amount
-    assert trade.cost == cost
     assert trade.cost_currency == 'BTC'
     assert trade.fee == cost * perc_fee
     assert trade.fee_currency == 'BTC'
