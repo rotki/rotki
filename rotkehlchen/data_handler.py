@@ -118,7 +118,7 @@ def verify_otctrade_data(
         return None, 'Trade type can only be buy or sell'
 
     trade = typing.Trade(
-        time=timestamp,
+        timestamp=timestamp,
         location='external',
         pair=cast(str, pair),
         trade_type=trade_type,

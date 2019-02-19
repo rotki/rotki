@@ -158,7 +158,7 @@ class ActionWriter(object):
 
         # create the trade
         trade = Trade(
-            time=ts,
+            timestamp=ts,
             location='kraken',
             pair=pair,
             trade_type=action_type,

@@ -13,12 +13,11 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import (
     AssetMovement,
     MarginPosition,
-    Trade,
     trade_get_assets,
     trade_get_other_pair,
 )
 from rotkehlchen.transactions import EthereumTransaction
-from rotkehlchen.typing import Asset, Fee, FiatAsset, FilePath, Timestamp
+from rotkehlchen.typing import Asset, Fee, FiatAsset, FilePath, Timestamp, Trade
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -477,7 +476,7 @@ class Accountant(object):
         # When you buy, you buy with the cost_currency and receive the other one
         # When you sell, you sell the amount in non-cost_currency and receive
         # costs in cost_currency
-        if trade.type == 'buy':
+        if trade.trade_type == 'buy':
             self.events.add_buy_and_corresponding_sell(
                 bought_asset=trade_get_other_pair(trade, trade.cost_currency),
                 bought_amount=trade.amount,
@@ -487,12 +486,12 @@ class Accountant(object):
                 fee_currency=trade.fee_currency,
                 timestamp=trade.timestamp,
             )
-        elif trade.type == 'sell':
+        elif trade.trade_type == 'sell':
             self.trade_add_to_sell_events(trade, False)
-        elif trade.type == 'settlement_sell':
+        elif trade.trade_type == 'settlement_sell':
             # in poloniex settlements sell some asset to get BTC to repay a loan
             self.trade_add_to_sell_events(trade, True)
-        elif trade.type == 'settlement_buy':
+        elif trade.trade_type == 'settlement_buy':
             # in poloniex settlements you buy some asset with BTC to repay a loan
             # so in essense you sell BTC to repay the loan
             selling_asset = S_BTC
@@ -517,7 +516,7 @@ class Accountant(object):
                 loan_settlement=True,
             )
         else:
-            raise ValueError('Unknown trade type "{}" encountered'.format(trade.type))
+            raise ValueError(f'Unknown trade type "{trade.trade_type}" encountered')
 
         return True, prev_time, count
 

@@ -66,7 +66,7 @@ EventType = NewType('EventType', T_EventType)
 
 class Trade(NamedTuple):
     """Represents a Trade"""
-    time: Timestamp
+    timestamp: Timestamp
     location: str
     pair: str
     trade_type: str
@@ -76,8 +76,8 @@ class Trade(NamedTuple):
     rate: FVal
     fee: FVal
     fee_currency: Asset
-    link: str
-    notes: str
+    link: str = ''
+    notes: str = ''
 
 
 class EthereumTransaction(NamedTuple):

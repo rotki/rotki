@@ -7,14 +7,13 @@ from urllib.parse import urlencode
 
 import gevent
 
-from rotkehlchen import typing
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import Trade
+from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, Trade
 from rotkehlchen.utils import cache_response_timewise, rlk_jsonloads
 
 logger = logging.getLogger(__name__)
@@ -64,10 +63,8 @@ def trade_from_binance(
     else:
         order_type = 'sell'
 
-    cost_currency = quote_asset
     fee_currency = binance_trade['commissionAsset']
     fee = FVal(binance_trade['commission'])
-    cost = rate * amount
 
     log.debug(
         'Processing binance Trade',
@@ -85,15 +82,13 @@ def trade_from_binance(
 
     return Trade(
         timestamp=timestamp,
+        location='binance',
         pair=base_asset + '_' + quote_asset,
-        type=order_type,
+        trade_type=order_type,
+        amount=amount,
         rate=rate,
-        cost=cost,
-        cost_currency=cost_currency,
         fee=fee,
         fee_currency=fee_currency,
-        amount=amount,
-        location='binance',
     )
 
 
@@ -106,10 +101,10 @@ class Binance(Exchange):
     """
     def __init__(
             self,
-            api_key: typing.ApiKey,
-            secret: typing.ApiSecret,
+            api_key: ApiKey,
+            secret: ApiSecret,
             inquirer: Inquirer,
-            data_dir: typing.FilePath,
+            data_dir: FilePath,
             initial_backoff: int = 4,
             backoff_limit: int = 180,
     ):
@@ -275,9 +270,9 @@ class Binance(Exchange):
 
     def query_trade_history(
             self,
-            start_ts: typing.Timestamp,
-            end_ts: typing.Timestamp,
-            end_at_least_ts: typing.Timestamp,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            end_at_least_ts: Timestamp,
             markets: Optional[str] = None,
     ) -> List:
         cache = self.check_trades_cache(start_ts, end_at_least_ts)

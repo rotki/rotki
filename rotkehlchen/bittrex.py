@@ -6,14 +6,13 @@ from json.decoder import JSONDecodeError
 from typing import Dict, List, Optional, Tuple, Union, cast
 from urllib.parse import urlencode
 
-from rotkehlchen import typing
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import Trade
+from rotkehlchen.typing import ApiKey, ApiSecret, BlockchainAsset, FilePath, Timestamp, Trade
 from rotkehlchen.utils import (
     cache_response_timewise,
     createTimeStamp,
@@ -59,14 +58,11 @@ def trade_from_bittrex(bittrex_trade: Dict) -> Trade:
     bittrex_commission = FVal(bittrex_trade['Commission'])
     pair = bittrex_pair_to_world(bittrex_trade['Exchange'])
     base_currency = get_pair_position(pair, 'first')
+    fee = bittrex_commission
     if order_type == 'LIMIT_BUY':
         order_type = 'buy'
-        cost = bittrex_price + bittrex_commission
-        fee = bittrex_commission
     elif order_type == 'LIMIT_SEL':
         order_type = 'sell'
-        cost = bittrex_price - bittrex_commission
-        fee = bittrex_commission
     else:
         raise ValueError('Got unexpected order type "{}" for bittrex trade'.format(order_type))
 
@@ -84,25 +80,23 @@ def trade_from_bittrex(bittrex_trade: Dict) -> Trade:
 
     return Trade(
         timestamp=bittrex_trade['TimeStamp'],
+        location='bittrex',
         pair=pair,
-        type=order_type,
+        trade_type=order_type,
+        amount=amount,
         rate=rate,
-        cost=cost,
-        cost_currency=base_currency,
         fee=fee,
         fee_currency=base_currency,
-        amount=amount,
-        location='bittrex',
     )
 
 
 class Bittrex(Exchange):
     def __init__(
             self,
-            api_key: typing.ApiKey,
-            secret: typing.ApiSecret,
+            api_key: ApiKey,
+            secret: ApiSecret,
             inquirer: Inquirer,
-            user_directory: typing.FilePath,
+            user_directory: FilePath,
     ):
         super(Bittrex, self).__init__('bittrex', api_key, secret, user_directory)
         self.apiversion = 'v1.1'
@@ -167,7 +161,7 @@ class Bittrex(Exchange):
             raise RemoteError(json_ret['message'])
         return json_ret['result']
 
-    def get_btc_price(self, asset: typing.BlockchainAsset) -> Optional[FVal]:
+    def get_btc_price(self, asset: BlockchainAsset) -> Optional[FVal]:
         if asset == 'BTC':
             return None
         btc_price = None
@@ -218,9 +212,9 @@ class Bittrex(Exchange):
 
     def query_trade_history(
             self,
-            start_ts: typing.Timestamp,
-            end_ts: typing.Timestamp,
-            end_at_least_ts: typing.Timestamp,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            end_at_least_ts: Timestamp,
             market: Optional[str] = None,
             count: Optional[int] = None,
     ) -> List:
