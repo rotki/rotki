@@ -222,6 +222,35 @@ def trade_from_kraken(kraken_trade):
     )
 
 
+def _check_and_get_response(response: Response, method: str) -> dict:
+    """Checks the kraken response and if it's succesfull returns the result. If there
+    is an error an exception is raised"""
+    if response.status_code in (520, 525, 504):
+        raise RecoverableRequestError('kraken', 'Usual kraken 5xx shenanigans')
+    elif response.status_code != 200:
+        raise RemoteError(
+            'Kraken API request {} for {} failed with HTTP status '
+            'code: {}'.format(
+                response.url,
+                method,
+                response.status_code,
+            ))
+
+    result = rlk_jsonloads_dict(response.text)
+    if result['error']:
+        if isinstance(result['error'], list):
+            error = result['error'][0]
+        else:
+            error = result['error']
+
+        if 'Rate limit exceeded' in error:
+            raise RecoverableRequestError('kraken', 'Rate limited exceeded')
+        else:
+            raise RemoteError(error)
+
+    return result['result']
+
+
 class Kraken(Exchange):
     def __init__(
             self,
@@ -265,32 +294,6 @@ class Kraken(Exchange):
                 raise
         return True, ''
 
-    def check_and_get_response(self, response: Response, method: str) -> dict:
-        if response.status_code in (520, 525, 504):
-            raise RecoverableRequestError('kraken', 'Usual kraken 5xx shenanigans')
-        elif response.status_code != 200:
-            raise RemoteError(
-                'Kraken API request {} for {} failed with HTTP status '
-                'code: {}'.format(
-                    response.url,
-                    method,
-                    response.status_code,
-                ))
-
-        result = rlk_jsonloads_dict(response.text)
-        if result['error']:
-            if isinstance(result['error'], list):
-                error = result['error'][0]
-            else:
-                error = result['error']
-
-            if 'Rate limit exceeded' in error:
-                raise RecoverableRequestError('kraken', 'Rate limited exceeded')
-            else:
-                raise RemoteError(error)
-
-        return result['result']
-
     def _query_public(self, method: str, req: Optional[dict] = None) -> dict:
         """API queries that do not require a valid key/secret pair.
 
@@ -303,7 +306,7 @@ class Kraken(Exchange):
         urlpath = f'{KRAKEN_BASE_URL}/{KRAKEN_API_VERSION}/public/{method}'
         log.debug('Kraken Public API query', request_url=urlpath, data=req)
         response = self.session.post(urlpath, data=req)
-        return self.check_and_get_response(response, method)
+        return _check_and_get_response(response, method)
 
     def query_public(self, method: str, req: Optional[dict] = None) -> dict:
         return retry_calls(5, 'kraken', method, self._query_public, method, req)
@@ -345,7 +348,7 @@ class Kraken(Exchange):
                 data=post_data.encode(),
             )
 
-        return self.check_and_get_response(response, method)
+        return _check_and_get_response(response, method)
 
     def get_fiat_prices_from_ticker(self):
         self.ticker = self.query_public(

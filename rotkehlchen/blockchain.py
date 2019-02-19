@@ -110,7 +110,8 @@ class Blockchain(object):
         self.query_btc_balances()
         return {'per_account': self.balances, 'totals': self.totals}, ''
 
-    def query_btc_account_balance(self, account: typing.BTCAddress) -> FVal:
+    @staticmethod
+    def query_btc_account_balance(account: typing.BTCAddress) -> FVal:
         btc_resp = request_get_direct(
             'https://blockchain.info/q/addressbalance/%s' % account,
         )

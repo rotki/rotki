@@ -6,6 +6,7 @@ from json.decoder import JSONDecodeError
 from typing import Dict, Iterable, Optional, cast
 
 import requests
+
 from rotkehlchen.constants import (
     FIAT_CURRENCIES,
     S_DATACOIN,
@@ -90,6 +91,45 @@ def query_cryptocompare_for_fiat_price(asset: Asset) -> FVal:
     price = FVal(resp['USD'])
     log.debug('Got usd price from cryptocompare', asset=asset, price=price)
     return price
+
+
+def _query_exchanges_rateapi(base: FiatAsset, quote: FiatAsset) -> Optional[FVal]:
+    log.debug(
+        'Querying api.exchangeratesapi.io fiat pair',
+        base_currency=base,
+        quote_currency=quote,
+    )
+    querystr = f'https://api.exchangeratesapi.io/latest?base={base}&symbols={quote}'
+    try:
+        resp = request_get_dict(querystr)
+        return FVal(resp['rates'][quote])
+    except (ValueError, RemoteError, KeyError):
+        log.error(
+            'Querying api.exchangeratesapi.io for fiat pair failed',
+            base_currency=base,
+            quote_currency=quote,
+        )
+        return None
+
+
+def _query_currency_converterapi(base: FiatAsset, quote: FiatAsset) -> Optional[FVal]:
+    log.debug(
+        'Query free.currencyconverterapi.com fiat pair',
+        base_currency=base,
+        quote_currency=quote,
+    )
+    pair = '{}_{}'.format(base, quote)
+    querystr = 'https://free.currencyconverterapi.com/api/v5/convert?q={}'.format(pair)
+    try:
+        resp = request_get_dict(querystr)
+        return FVal(resp['results'][pair]['val'])
+    except (ValueError, RemoteError, KeyError):
+        log.error(
+            'Querying free.currencyconverterapi.com fiat pair failed',
+            base_currency=base,
+            quote_currency=quote,
+        )
+        return None
 
 
 class Inquirer(object):
@@ -235,43 +275,6 @@ class Inquirer(object):
         with open(filename, 'w') as outfile:
             outfile.write(rlk_jsondumps(self.cached_forex_data))
 
-    def _query_currency_converterapi(self, base: FiatAsset, quote: FiatAsset) -> Optional[FVal]:
-        log.debug(
-            'Query free.currencyconverterapi.com fiat pair',
-            base_currency=base,
-            quote_currency=quote,
-        )
-        pair = '{}_{}'.format(base, quote)
-        querystr = 'https://free.currencyconverterapi.com/api/v5/convert?q={}'.format(pair)
-        try:
-            resp = request_get_dict(querystr)
-            return FVal(resp['results'][pair]['val'])
-        except (ValueError, RemoteError, KeyError):
-            log.error(
-                'Querying free.currencyconverterapi.com fiat pair failed',
-                base_currency=base,
-                quote_currency=quote,
-            )
-            return None
-
-    def _query_exchanges_rateapi(self, base: FiatAsset, quote: FiatAsset) -> Optional[FVal]:
-        log.debug(
-            'Querying api.exchangeratesapi.io fiat pair',
-            base_currency=base,
-            quote_currency=quote,
-        )
-        querystr = f'https://api.exchangeratesapi.io/latest?base={base}&symbols={quote}'
-        try:
-            resp = request_get_dict(querystr)
-            return FVal(resp['rates'][quote])
-        except (ValueError, RemoteError, KeyError):
-            log.error(
-                'Querying api.exchangeratesapi.io for fiat pair failed',
-                base_currency=base,
-                quote_currency=quote,
-            )
-            return None
-
     def query_fiat_pair(self, base: FiatAsset, quote: FiatAsset) -> FVal:
         if base == quote:
             return FVal(1.0)
@@ -282,9 +285,9 @@ class Inquirer(object):
         if price:
             return price
 
-        price = self._query_currency_converterapi(base, quote)
+        price = _query_currency_converterapi(base, quote)
         if not price:
-            price = self._query_exchanges_rateapi(base, quote)
+            price = _query_exchanges_rateapi(base, quote)
 
         if not price:
             # Search the cache for any price in the last month

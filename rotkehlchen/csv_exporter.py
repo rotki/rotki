@@ -24,6 +24,20 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+def _dict_to_csv_file(path: typing.FilePath, dictionary_list: List) -> None:
+    """Takes a filepath and a list of dictionaries representing the rows and writes them
+    into the file as a CSV"""
+    if len(dictionary_list) == 0:
+        log.debug('Skipping writting empty CSV for {}'.format(path))
+        return
+
+    with open(path, 'w') as f:
+        w = csv.DictWriter(f, dictionary_list[0].keys())
+        w.writeheader()
+        for dic in dictionary_list:
+            w.writerow(dic)
+
+
 class CSVExporter(object):
 
     def __init__(
@@ -49,18 +63,6 @@ class CSVExporter(object):
             self.loan_settlements_csv: List[Dict[str, Any]] = list()
             self.all_events_csv: List[Dict[str, Any]] = list()
             self.all_events = list()
-
-    def dict_to_csv_file(self, path: typing.FilePath, dictionary_list: List) -> None:
-
-        if len(dictionary_list) == 0:
-            log.debug('Skipping writting empty CSV for {}'.format(path))
-            return
-
-        with open(path, 'w') as f:
-            w = csv.DictWriter(f, dictionary_list[0].keys())
-            w.writeheader()
-            for dic in dictionary_list:
-                w.writerow(dic)
 
     def add_to_allevents(
             self,
@@ -385,31 +387,31 @@ class CSVExporter(object):
             if not os.path.exists(dirpath):
                 os.makedirs(dirpath)
 
-            self.dict_to_csv_file(
+            _dict_to_csv_file(
                 typing.FilePath(os.path.join(dirpath, 'trades.csv')),
                 self.trades_csv,
             )
-            self.dict_to_csv_file(
+            _dict_to_csv_file(
                 typing.FilePath(os.path.join(dirpath, 'loan_profits.csv')),
                 self.loan_profits_csv,
             )
-            self.dict_to_csv_file(
+            _dict_to_csv_file(
                 typing.FilePath(os.path.join(dirpath, 'asset_movements.csv')),
                 self.asset_movements_csv,
             )
-            self.dict_to_csv_file(
+            _dict_to_csv_file(
                 typing.FilePath(os.path.join(dirpath, 'tx_gas_costs.csv')),
                 self.tx_gas_costs_csv,
             )
-            self.dict_to_csv_file(
+            _dict_to_csv_file(
                 typing.FilePath(os.path.join(dirpath, 'margin_positions.csv')),
                 self.margin_positions_csv,
             )
-            self.dict_to_csv_file(
+            _dict_to_csv_file(
                 typing.FilePath(os.path.join(dirpath, 'loan_settlements.csv')),
                 self.loan_settlements_csv,
             )
-            self.dict_to_csv_file(
+            _dict_to_csv_file(
                 typing.FilePath(os.path.join(dirpath, 'all_events.csv')),
                 self.all_events_csv,
             )
