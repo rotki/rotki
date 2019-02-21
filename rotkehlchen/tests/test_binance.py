@@ -8,8 +8,8 @@ import pytest
 from rotkehlchen.binance import Binance, trade_from_binance
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.order_formatting import Trade
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import Trade
 
 
 @pytest.fixture
@@ -79,7 +79,7 @@ def test_trade_from_binance(mock_binance):
     ]
     our_expected_list = [
         Trade(
-            time=1512561941,
+            timestamp=1512561941,
             location='binance',
             pair='RDN_ETH',
             trade_type='buy',
@@ -89,7 +89,7 @@ def test_trade_from_binance(mock_binance):
             fee_currency='RDN',
         ),
         Trade(
-            time=1531117990,
+            timestamp=1531117990,
             location='binance',
             pair='ETH_USDT',
             trade_type='sell',
@@ -99,7 +99,7 @@ def test_trade_from_binance(mock_binance):
             fee_currency='USDT',
         ),
         Trade(
-            time=1531728338,
+            timestamp=1531728338,
             location='binance',
             pair='BTC_USDT',
             trade_type='buy',
@@ -109,7 +109,7 @@ def test_trade_from_binance(mock_binance):
             fee_currency='BTC',
         ),
         Trade(
-            time=1531871806,
+            timestamp=1531871806,
             location='binance',
             pair='ADA_USDT',
             trade_type='sell',

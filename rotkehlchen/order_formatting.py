@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from rotkehlchen import typing
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Trade
+from rotkehlchen.typing import Asset, Timestamp
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -44,6 +44,43 @@ AssetMovement = namedtuple(
 )
 
 
+class Trade(NamedTuple):
+    """Represents a Trade
+
+    Pairs are represented as BASE_QUOTE. When a buy is made, then the BASE
+    asset is bought with QUOTE asset. When a sell is made then the BASE
+    asset is sold for QUOTE asset.
+
+    Exchanges don't use the same part of the pair to denote the same thing. For
+    example in Poloniex the pair is called BTC_ETH and you buy and sell ETH for
+    BTC. In Kraken XXBTZEUR translates to BTC_EUR. This means we buy BTC for EUR
+    or we sell BTC for EUR. So for some exchanges like poloniex when importing a
+    trade, the pair needs to be swapped.
+    """
+    timestamp: Timestamp
+    location: str
+    pair: str
+    trade_type: str
+    # The amount represents the amount bought if it's a buy or or the amount
+    # sold if it's a sell
+    amount: FVal
+    rate: FVal
+    fee: FVal
+    fee_currency: Asset
+    link: str = ''
+    notes: str = ''
+
+    @property
+    def base_asset(self) -> Asset:
+        base, _ = pair_get_assets(self.pair)
+        return base
+
+    @property
+    def quote_asset(self) -> Asset:
+        _, quote = pair_get_assets(self.pair)
+        return quote
+
+
 class MarginPosition(NamedTuple):
     exchange: str
     open_time: Optional[typing.Timestamp]
@@ -66,6 +103,11 @@ def pair_get_assets(pair):
         raise ValueError("Could not split {} pair".format(pair))
 
     return currencies[0], currencies[1]
+
+
+def invert_pair(pair: str) -> str:
+    left, right = pair_get_assets(pair)
+    return f'{right}_{left}'
 
 
 def trade_get_assets(trade):

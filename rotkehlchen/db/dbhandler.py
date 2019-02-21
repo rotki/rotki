@@ -16,6 +16,7 @@ from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
 from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.order_formatting import Trade
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -28,7 +29,6 @@ from rotkehlchen.typing import (
     FilePath,
     NonEthTokenBlockchainAsset,
     Timestamp,
-    Trade,
 )
 from rotkehlchen.utils import rlk_jsondumps, rlk_jsonloads_dict, ts_now
 
@@ -833,7 +833,6 @@ class DBHandler(object):
         for result in results:
             trades.append({
                 'id': result[0],
-                # At the moment all trades have "timestamp" and not time
                 'timestamp': result[1],
                 'location': result[2],
                 'pair': result[3],

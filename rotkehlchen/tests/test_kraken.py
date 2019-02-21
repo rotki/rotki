@@ -6,7 +6,7 @@ from rotkehlchen.kraken import (
     kraken_to_world_pair,
     trade_from_kraken,
 )
-from rotkehlchen.typing import Trade
+from rotkehlchen.order_formatting import Trade
 from rotkehlchen.utils import ts_now
 
 

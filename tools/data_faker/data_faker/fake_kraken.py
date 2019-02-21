@@ -3,8 +3,9 @@ import os
 
 from rotkehlchen.fval import FVal
 from rotkehlchen.kraken import WORLD_TO_KRAKEN
+from rotkehlchen.order_formatting import Trade
 from rotkehlchen.tests.fixtures.exchanges.kraken import create_kraken_trade
-from rotkehlchen.typing import Asset, Timestamp, Trade
+from rotkehlchen.typing import Asset, Timestamp
 from rotkehlchen.utils import process_result
 
 
