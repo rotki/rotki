@@ -13,7 +13,8 @@ from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, Trade
+from rotkehlchen.order_formatting import Trade
+from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp
 from rotkehlchen.utils import cache_response_timewise, rlk_jsonloads
 
 logger = logging.getLogger(__name__)

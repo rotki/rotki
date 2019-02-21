@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.errors import CorruptData
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import MarginPosition
 from rotkehlchen.tests.utils.accounting import accounting_history_process
@@ -15,8 +14,6 @@ history1 = [
         "pair": "BTC_EUR",
         "type": "buy",
         "rate": 268.678317859,
-        "cost": 22031.6220644,
-        "cost_currency": "EUR",
         "fee": 0,
         "fee_currency": "BTC",
         "amount": 82,
@@ -26,30 +23,24 @@ history1 = [
         "pair": "ETH_EUR",
         "type": "buy",
         "rate": 0.2315893,
-        "cost": 335.804485,
-        "cost_currency": "EUR",
         "fee": 0,
         "fee_currency": "ETH",
         "amount": 1450,
         "location": "external",
     }, {
         "timestamp": 1473505138,  # cryptocompare hourly BTC/EUR price: 556.435
-        "pair": "BTC_ETH",  # cryptocompare hourly ETH/EUR price: 10.365
+        "pair": "ETH_BTC",  # cryptocompare hourly ETH/EUR price: 10.365
         "type": "buy",  # Buy ETH with BTC
         "rate": 0.01858275,
-        "cost": 0.9291375,
-        "cost_currency": "BTC",
         "fee": 0.06999999999999999,
         "fee_currency": "ETH",
         "amount": 50.0,
         "location": "poloniex",
     }, {
         "timestamp": 1475042230,  # cryptocompare hourly BTC/EUR price: 537.805
-        "pair": "BTC_ETH",  # cryptocompare hourly ETH/EUR price: 11.925
+        "pair": "ETH_BTC",  # cryptocompare hourly ETH/EUR price: 11.925
         "type": "sell",  # Sell ETH for BTC
         "rate": 0.02209898,
-        "cost": 0.5524745,
-        "cost_currency": "BTC",
         "fee": 0.00082871175,
         "fee_currency": "BTC",
         "amount": 25.0,
@@ -65,57 +56,6 @@ def test_simple_accounting(accountant):
     assert accountant.taxable_trade_pl.is_close("557.528104903")
 
 
-bad_history1 = [
-    {
-        "timestamp": 1446979735,
-        "pair": "BTC_EUR",
-        "type": "buy",
-        "rate": 268.678317859,
-        "cost": 1131.6220644,
-        "cost_currency": "EUR",
-        "fee": 0,
-        "fee_currency": "BTC",
-        "amount": 82,
-        "location": "external",
-    },
-]
-
-bad_history2 = [
-    {
-        "timestamp": 1446979735,
-        "pair": "BTC_EUR",
-        "type": "buy",
-        "rate": 268.678317859,
-        "cost": 22031.6220644,
-        "cost_currency": "EUR",
-        "fee": 0,
-        "fee_currency": "BTC",
-        "amount": 82,
-        "location": "external",
-    }, {
-        "timestamp": 1475042230,
-        "pair": "BTC_ETH",
-        "type": "sell",
-        "rate": 0.02209898,
-        "cost": 0.1524745,
-        "cost_currency": "BTC",
-        "fee": 0.00082871175,
-        "fee_currency": "BTC",
-        "amount": 25.0,
-        "location": "poloniex",
-    },
-]
-
-
-@pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_mismatch_in_amount_rate_and_cost(accountant):
-    with pytest.raises(CorruptData):
-        accounting_history_process(accountant, 1436979735, 1495751688, bad_history1)
-
-    with pytest.raises(CorruptData):
-        accounting_history_process(accountant, 1436979735, 1495751688, bad_history2)
-
-
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_selling_crypto_bought_with_crypto(accountant):
     history = [{
@@ -123,19 +63,15 @@ def test_selling_crypto_bought_with_crypto(accountant):
         "pair": "BTC_EUR",
         "type": "buy",
         "rate": 268.678317859,
-        "cost": 22031.6220644,
-        "cost_currency": "EUR",
         "fee": 0,
         "fee_currency": "BTC",
         "amount": 82,
         "location": "external",
     }, {
         'timestamp': 1449809536,  # cryptocompare hourly BTC/EUR price: 386.175
-        'pair': 'BTC_XMR',  # cryptocompare hourly XMR/EUR price: 0.396987900
+        'pair': 'XMR_BTC',  # cryptocompare hourly XMR/EUR price: 0.396987900
         'type': 'buy',  # Buy XMR with BTC
         'rate': 0.0010275,
-        'cost': 0.3853125,
-        'cost_currency': 'BTC',
         'fee': 0.9375,
         'fee_currency': 'XMR',
         'amount': 375,
@@ -145,8 +81,6 @@ def test_selling_crypto_bought_with_crypto(accountant):
         'pair': 'XMR_EUR',
         'type': 'sell',  # Sell XMR for EUR
         'rate': 1.0443027675,
-        'cost': 46.9936245375,
-        'cost_currency': 'EUR',
         'fee': 0.117484061344,
         'fee_currency': 'EUR',
         'amount': 45,
@@ -174,8 +108,6 @@ def test_buying_selling_eth_before_daofork(accountant):
             "pair": "ETH_EUR",
             "type": "buy",
             "rate": 0.2315893,
-            "cost": 335.804485,
-            "cost_currency": "EUR",
             "fee": 0,
             "fee_currency": "ETH",
             "amount": 1450,
@@ -185,8 +117,6 @@ def test_buying_selling_eth_before_daofork(accountant):
             'pair': 'ETH_EUR',  # cryptocompare hourly ETC/EUR price: 7.88
             'type': 'sell',
             'rate': 7.88,
-            'cost': 394,
-            'cost_currency': 'EUR',
             'fee': 0.5215,
             'fee_currency': 'EUR',
             'amount': 50,
@@ -196,8 +126,6 @@ def test_buying_selling_eth_before_daofork(accountant):
             'pair': 'ETC_EUR',  # cryptocompare hourly ETC/EUR price: 1.78
             'type': 'sell',  # not-taxable -- considered bought with ETH so after year
             'rate': 1.78,
-            'cost': 979,
-            'cost_currency': 'EUR',
             'fee': 0.9375,
             'fee_currency': 'EUR',
             'amount': 550,
@@ -207,8 +135,6 @@ def test_buying_selling_eth_before_daofork(accountant):
             'pair': 'ETH_EUR',  # cryptocompare hourly ETC/EUR price: 7.45
             'type': 'sell',  # not taxable after 1 year
             'rate': 7.45,
-            'cost': 74.5,
-            'cost_currency': 'EUR',
             'fee': 0.12,
             'fee_currency': 'EUR',
             'amount': 10,
@@ -230,8 +156,6 @@ def test_buying_selling_btc_before_bchfork(accountant):
         "pair": "BTC_EUR",
         "type": "buy",
         "rate": 1128.905,
-        "cost": 7337.8825,
-        "cost_currency": "EUR",
         "fee": 0.55,
         "fee_currency": "EUR",
         "amount": 6.5,
@@ -241,8 +165,6 @@ def test_buying_selling_btc_before_bchfork(accountant):
         "pair": "BTC_EUR",
         "type": "sell",
         "rate": 2380.835,
-        "cost": 1190.4175,
-        "cost_currency": "EUR",
         "fee": 0.15,
         "fee_currency": "EUR",
         "amount": 0.5,
@@ -252,8 +174,6 @@ def test_buying_selling_btc_before_bchfork(accountant):
         'pair': 'BCH_EUR',  # cryptocompare hourly BCH/EUR price: 995.935
         'type': 'sell',
         'rate': 995.935,
-        'cost': 2091.4635,
-        'cost_currency': 'EUR',
         'fee': 0.26,
         'fee_currency': 'EUR',
         'amount': 2.1,
@@ -263,8 +183,6 @@ def test_buying_selling_btc_before_bchfork(accountant):
         'pair': 'BTC_EUR',  # cryptocompare hourly BCH/EUR price: 995.935
         'type': 'sell',
         'rate': 12404.88,
-        'cost': 14885.856,
-        'cost_currency': 'EUR',
         'fee': 0.52,
         'fee_currency': 'EUR',
         'amount': 1.2,
@@ -292,8 +210,6 @@ history5 = history1 + [{
     "pair": "BTC_EUR",  # cryptocompare hourly ETH/EUR price: 11.925
     "type": "sell",
     "rate": 13503.35,
-    "cost": 270067,
-    "cost_currency": "EUR",
     "fee": 0,
     "fee_currency": "BTC",
     "amount": 20.0,
@@ -332,8 +248,6 @@ def test_buy_event_creation(accountant):
         "pair": "BTC_EUR",
         "type": "buy",
         "rate": 578.505,
-        "cost": 2892.525,
-        "cost_currency": "EUR",
         "fee": 0.0012,
         "fee_currency": "BTC",
         "amount": 5,
@@ -343,8 +257,6 @@ def test_buy_event_creation(accountant):
         "pair": "BTC_EUR",
         "type": "buy",
         "rate": 578.505,
-        "cost": 2892.525,
-        "cost_currency": "EUR",
         "fee": 0.0012,
         "fee_currency": "EUR",
         "amount": 5,
@@ -372,8 +284,6 @@ def test_not_include_gas_costs(accountant):
         "pair": "BTC_EUR",
         "type": "buy",
         "rate": 578.505,
-        "cost": 2892.525,
-        "cost_currency": "EUR",
         "fee": 0.0012,
         "fee_currency": "BTC",
         "amount": 5,
@@ -383,8 +293,6 @@ def test_not_include_gas_costs(accountant):
         "pair": "BTC_EUR",
         "type": "sell",
         "rate": 2519.62,
-        "cost": 2519.62,
-        "cost_currency": "EUR",
         "fee": 0.02,
         "fee_currency": "EUR",
         "amount": 1,
@@ -419,8 +327,6 @@ def test_ignored_assets(accountant):
         "pair": "DASH_EUR",
         "type": "buy",
         "rate": 9.76775956284,
-        "cost": 97.6775956284,
-        "cost_currency": "EUR",
         "fee": 0.0011,
         "fee_currency": "DASH",
         "amount": 10,
@@ -430,8 +336,6 @@ def test_ignored_assets(accountant):
         "pair": "DASH_EUR",
         "type": "sell",
         "rate": 128.09,
-        "cost": 640.45,
-        "cost_currency": "EUR",
         "fee": 0.015,
         "fee_currency": "EUR",
         "amount": 5,
@@ -448,19 +352,15 @@ def test_settlement_buy(accountant):
         "pair": "BTC_EUR",
         "type": "buy",
         "rate": 578.505,
-        "cost": 2892.525,
-        "cost_currency": "EUR",
         "fee": 0.0012,
         "fee_currency": "BTC",
         "amount": 5,
         "location": "kraken",
     }, {  # 0.0079275 * 810.49 + 0.15 * 12.4625608386372145 = 8.29454360079
         'timestamp': 1484629704,  # 17/01/2017
-        'pair': 'BTC_DASH',  # DASH/EUR price: 12.4625608386372145
+        'pair': 'DASH_BTC',  # DASH/EUR price: 12.4625608386372145
         'type': 'settlement_buy',  # Buy DASH with BTC to settle. Essentially BTC loss
         'rate': 0.015855,  # BTC/EUR price: 810.49
-        'cost': 0.0079275,
-        'cost_currency': 'BTC',
         'fee': 0.15,
         'fee_currency': 'DASH',
         'amount': 0.5,
@@ -470,8 +370,6 @@ def test_settlement_buy(accountant):
         "pair": "BTC_EUR",
         "type": "sell",
         "rate": 2519.62,
-        "cost": 2519.62,
-        "cost_currency": "EUR",
         "fee": 0.02,
         "fee_currency": "EUR",
         "amount": 1,
@@ -496,8 +394,6 @@ def test_margin_events_affect_gained_lost_amount(accountant):
         "pair": "BTC_EUR",
         "type": "buy",
         "rate": 578.505,
-        "cost": 2892.525,
-        "cost_currency": "EUR",
         "fee": 0.0012,
         "fee_currency": "BTC",
         "amount": 5,
@@ -507,8 +403,6 @@ def test_margin_events_affect_gained_lost_amount(accountant):
         "pair": "BTC_EUR",
         "type": "sell",
         "rate": 2519.62,
-        "cost": 2519.62,
-        "cost_currency": "EUR",
         "fee": 0.02,
         "fee_currency": "EUR",
         "amount": 1,
@@ -550,8 +444,6 @@ def test_no_corresponding_buy_for_sell(accountant):
         "pair": "BTC_EUR",
         "type": "sell",
         "rate": 2519.62,
-        "cost": 2519.62,
-        "cost_currency": "EUR",
         "fee": 0.02,
         "fee_currency": "EUR",
         "amount": 1,

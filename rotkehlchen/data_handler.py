@@ -10,7 +10,6 @@ from typing import Dict, List, Optional, Tuple, cast
 
 from eth_utils.address import to_checksum_address
 
-from rotkehlchen import typing
 from rotkehlchen.constants import S_ETH
 from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
@@ -19,6 +18,20 @@ from rotkehlchen.errors import AuthenticationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import FIAT_CURRENCIES
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.order_formatting import Trade
+from rotkehlchen.typing import (
+    ApiKey,
+    ApiSecret,
+    Asset,
+    BlockchainAddress,
+    EthAddress,
+    EthToken,
+    EthTokenInfo,
+    FiatAsset,
+    FilePath,
+    NonEthTokenBlockchainAsset,
+    Timestamp,
+)
 from rotkehlchen.utils import (
     createTimeStamp,
     get_pair_position,
@@ -73,7 +86,7 @@ BOOLEAN_SETTINGS = (
 
 def verify_otctrade_data(
         data: ExternalTrade,
-) -> Tuple[Optional[typing.Trade], str]:
+) -> Tuple[Optional[Trade], str]:
     """Takes in the trade data dictionary, validates it and returns a trade instance"""
     for field in otc_fields:
         if field not in data:
@@ -93,7 +106,7 @@ def verify_otctrade_data(
     amount = FVal(data['otc_amount'])
     rate = FVal(data['otc_rate'])
     fee = FVal(data['otc_fee'])
-    fee_currency = cast(typing.Asset, data['otc_fee_currency'])
+    fee_currency = cast(Asset, data['otc_fee_currency'])
     try:
         assert isinstance(data['otc_timestamp'], str)
         timestamp = createTimeStamp(data['otc_timestamp'], formatstr='%d/%m/%Y %H:%M')
@@ -117,7 +130,7 @@ def verify_otctrade_data(
     if data['otc_type'] not in ('buy', 'sell'):
         return None, 'Trade type can only be buy or sell'
 
-    trade = typing.Trade(
+    trade = Trade(
         timestamp=timestamp,
         location='external',
         pair=cast(str, pair),
@@ -133,7 +146,7 @@ def verify_otctrade_data(
     return trade, ''
 
 
-def get_all_eth_tokens() -> List[typing.EthTokenInfo]:
+def get_all_eth_tokens() -> List[EthTokenInfo]:
     dir_path = os.path.dirname(os.path.realpath(__file__))
     with open(os.path.join(dir_path, 'data', 'eth_tokens.json'), 'r') as f:
         # We know eth_tokens.json contains a list
@@ -142,7 +155,7 @@ def get_all_eth_tokens() -> List[typing.EthTokenInfo]:
 
 class DataHandler(object):
 
-    def __init__(self, data_directory: typing.FilePath):
+    def __init__(self, data_directory: FilePath):
 
         self.data_directory = data_directory
         self.eth_tokens = get_all_eth_tokens()
@@ -154,9 +167,9 @@ class DataHandler(object):
         del self.db
         self.db = None
 
-    def unlock(self, username: str, password: str, create_new: bool) -> typing.FilePath:
+    def unlock(self, username: str, password: str, create_new: bool) -> FilePath:
         self.username = username
-        user_data_dir = cast(typing.FilePath, os.path.join(self.data_directory, username))
+        user_data_dir = cast(FilePath, os.path.join(self.data_directory, username))
         if create_new:
             if os.path.exists(user_data_dir):
                 raise AuthenticationError('User {} already exists'.format(username))
@@ -188,20 +201,20 @@ class DataHandler(object):
         self.user_data_dir = user_data_dir
         return user_data_dir
 
-    def main_currency(self) -> typing.FiatAsset:
+    def main_currency(self) -> FiatAsset:
         return self.db.get_main_currency()
 
-    def save_balances_data(self, data: BalancesData, timestamp: typing.Timestamp) -> None:
+    def save_balances_data(self, data: BalancesData, timestamp: Timestamp) -> None:
         """Save the balances data at the given timestamp"""
         self.db.write_balances_data(data=data, timestamp=timestamp)
 
-    def write_owned_eth_tokens(self, tokens: List[typing.EthToken]) -> None:
+    def write_owned_eth_tokens(self, tokens: List[EthToken]) -> None:
         self.db.write_owned_tokens(tokens)
 
     def add_blockchain_account(
             self,
-            blockchain: typing.NonEthTokenBlockchainAsset,
-            account: typing.BlockchainAddress,
+            blockchain: NonEthTokenBlockchainAsset,
+            account: BlockchainAddress,
     ) -> None:
         if blockchain == S_ETH:
             account = to_checksum_address(account)
@@ -209,21 +222,21 @@ class DataHandler(object):
 
     def remove_blockchain_account(
             self,
-            blockchain: typing.NonEthTokenBlockchainAsset,
-            account: typing.BlockchainAddress,
+            blockchain: NonEthTokenBlockchainAsset,
+            account: BlockchainAddress,
     ) -> None:
         if blockchain == S_ETH:
             account = to_checksum_address(account)
         self.db.remove_blockchain_account(blockchain, account)
 
-    def add_ignored_asset(self, asset: typing.Asset) -> Tuple[bool, str]:
+    def add_ignored_asset(self, asset: Asset) -> Tuple[bool, str]:
         ignored_assets = self.db.get_ignored_assets()
         if asset in ignored_assets:
             return False, '%s already in ignored assets' % asset
         self.db.add_to_ignored_assets(asset)
         return True, ''
 
-    def remove_ignored_asset(self, asset: typing.Asset) -> Tuple[bool, str]:
+    def remove_ignored_asset(self, asset: Asset) -> Tuple[bool, str]:
         ignored_assets = self.db.get_ignored_assets()
         if asset not in ignored_assets:
             return False, '%s not in ignored assets' % asset
@@ -232,14 +245,14 @@ class DataHandler(object):
 
     def set_premium_credentials(
             self,
-            api_key: typing.ApiKey,
-            api_secret: typing.ApiSecret,
+            api_key: ApiKey,
+            api_secret: ApiSecret,
     ) -> None:
         self.db.set_rotkehlchen_premium(api_key, api_secret)
 
     def set_main_currency(
             self,
-            currency: typing.FiatAsset,
+            currency: FiatAsset,
             accountant,  # TODO: Set type after cyclic dependency fix
     ) -> None:
         log.info('Set main currency', currency=currency)
@@ -290,16 +303,16 @@ class DataHandler(object):
         settings = self.db.get_settings()
         # Setting is saved in hours, convert to seconds here
         period = cast(int, settings['balance_save_frequency'] * 60 * 60)
-        now = cast(typing.Timestamp, int(time.time()))
+        now = cast(Timestamp, int(time.time()))
         return now - last_save > period
 
-    def get_eth_accounts(self) -> List[typing.EthAddress]:
+    def get_eth_accounts(self) -> List[EthAddress]:
         blockchain_accounts = self.db.get_blockchain_accounts()
         return blockchain_accounts.eth
 
     def set_fiat_balance(
             self,
-            currency: typing.FiatAsset,
+            currency: FiatAsset,
             provided_balance: str,
     ) -> Tuple[bool, str]:
         if currency not in FIAT_CURRENCIES:
@@ -320,13 +333,13 @@ class DataHandler(object):
 
         return True, ''
 
-    def get_fiat_balances(self) -> Dict[typing.FiatAsset, str]:
+    def get_fiat_balances(self) -> Dict[FiatAsset, str]:
         return self.db.get_fiat_balances()
 
     def get_external_trades(
             self,
-            from_ts: Optional[typing.Timestamp] = None,
-            to_ts: Optional[typing.Timestamp] = None,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
     ) -> List[ExternalTrade]:
         return self.db.get_external_trades(from_ts, to_ts)
 
@@ -364,7 +377,7 @@ class DataHandler(object):
         Returns a b64 encoded binary blob"""
         log.info('Compress and encrypt DB')
         with tempfile.TemporaryDirectory() as tmpdirname:
-            tempdb = cast(typing.FilePath, os.path.join(tmpdirname, 'temp.db'))
+            tempdb = cast(FilePath, os.path.join(tmpdirname, 'temp.db'))
             self.db.export_unencrypted(tempdb)
             with open(tempdb, 'rb') as f:
                 data_blob = f.read()

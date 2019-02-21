@@ -16,8 +16,8 @@ from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import AssetMovement
-from rotkehlchen.typing import ApiKey, ApiSecret, BlockchainAsset, FilePath, Timestamp, Trade
+from rotkehlchen.order_formatting import AssetMovement, Trade, invert_pair
+from rotkehlchen.typing import ApiKey, ApiSecret, BlockchainAsset, FilePath, Timestamp
 from rotkehlchen.utils import (
     cache_response_timewise,
     createTimeStamp,
@@ -72,6 +72,10 @@ def trade_from_poloniex(poloniex_trade, pair):
         rate=rate,
     )
 
+    # Since in Poloniex the base currency is the cost currency, iow in poloniex
+    # for BTC_ETH we buy ETH with BTC and sell ETH for BTC, we need to turn it
+    # into the Rotkehlchen way which is following the base/quote approach.
+    pair = invert_pair(pair)
     return Trade(
         timestamp=timestamp,
         location='poloniex',

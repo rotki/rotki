@@ -5,6 +5,7 @@ import pytest
 import requests
 
 from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import _query_currency_converterapi, _query_exchanges_rateapi
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.utils import ts_now, tsToDate
 
@@ -14,10 +15,10 @@ from rotkehlchen.utils import ts_now, tsToDate
     reason='some of these APIs frequently become unavailable',
 )
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_query_realtime_price_apis(inquirer):
-    result = inquirer._query_currency_converterapi('USD', 'EUR')
+def test_query_realtieme_price_apis(inquirer):
+    result = _query_currency_converterapi('USD', 'EUR')
     assert result and isinstance(result, FVal)
-    result = inquirer._query_exchanges_rateapi('USD', 'GBP')
+    result = _query_exchanges_rateapi('USD', 'GBP')
     assert result and isinstance(result, FVal)
     result = inquirer.query_historical_fiat_exchange_rates('USD', 'CNY', 1411603200)
     assert result == FVal('6.1371932033')

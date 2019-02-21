@@ -6,18 +6,13 @@ import gevent
 from rotkehlchen.accounting.events import TaxableEvents
 from rotkehlchen.constants import S_BTC, S_ETH, ZERO
 from rotkehlchen.csv_exporter import CSVExporter
-from rotkehlchen.errors import CorruptData, PriceQueryUnknownFromAsset
+from rotkehlchen.errors import PriceQueryUnknownFromAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import FIAT_CURRENCIES, PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import (
-    AssetMovement,
-    MarginPosition,
-    trade_get_assets,
-    trade_get_other_pair,
-)
+from rotkehlchen.order_formatting import AssetMovement, MarginPosition, Trade, trade_get_assets
 from rotkehlchen.transactions import EthereumTransaction
-from rotkehlchen.typing import Asset, Fee, FiatAsset, FilePath, Timestamp, Trade
+from rotkehlchen.typing import Asset, Fee, FiatAsset, FilePath, Timestamp
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -255,12 +250,13 @@ class Accountant(object):
         )
 
     def trade_add_to_sell_events(self, trade: Trade, loan_settlement: bool) -> None:
-        selling_asset = trade_get_other_pair(trade, trade.cost_currency)
-        selling_asset_rate = self.get_rate_in_profit_currency(
-            trade.cost_currency,
+        selling_asset = trade.base_asset
+        receiving_asset = trade.quote_asset
+        receiving_asset_rate = self.get_rate_in_profit_currency(
+            receiving_asset,
             trade.timestamp,
         )
-        selling_rate = selling_asset_rate * trade.rate
+        selling_rate = receiving_asset_rate * trade.rate
         fee_in_profit_currency = self.get_fee_in_profit_currency(trade)
         gain_in_profit_currency = selling_rate * trade.amount
 
@@ -268,8 +264,8 @@ class Accountant(object):
             self.events.add_sell_and_corresponding_buy(
                 selling_asset=selling_asset,
                 selling_amount=trade.amount,
-                receiving_asset=trade.cost_currency,
-                receiving_amount=trade.cost,
+                receiving_asset=receiving_asset,
+                receiving_amount=trade.amount * trade.rate,
                 gain_in_profit_currency=gain_in_profit_currency,
                 total_fee_in_profit_currency=fee_in_profit_currency,
                 trade_rate=trade.rate,
@@ -466,21 +462,14 @@ class Accountant(object):
         # if we get here it's a trade
         trade = cast(Trade, action)
 
-        # if the cost is not equal to rate * amount then the data is somehow corrupt
-        if not trade.cost.is_close(trade.amount * trade.rate, max_diff="1e-4"):
-            raise CorruptData(
-                "Trade found with cost {} which is not equal to trade.amount"
-                "({}) * trade.rate({})".format(trade.cost, trade.amount, trade.rate),
-            )
-
         # When you buy, you buy with the cost_currency and receive the other one
         # When you sell, you sell the amount in non-cost_currency and receive
         # costs in cost_currency
         if trade.trade_type == 'buy':
             self.events.add_buy_and_corresponding_sell(
-                bought_asset=trade_get_other_pair(trade, trade.cost_currency),
+                bought_asset=trade.base_asset,
                 bought_amount=trade.amount,
-                paid_with_asset=trade.cost_currency,
+                paid_with_asset=trade.quote_asset,
                 trade_rate=trade.rate,
                 fee_in_profit_currency=self.get_fee_in_profit_currency(trade),
                 fee_currency=trade.fee_currency,
@@ -502,7 +491,10 @@ class Accountant(object):
             selling_rate = selling_asset_rate * trade.rate
             fee_in_profit_currency = self.get_fee_in_profit_currency(trade)
             gain_in_profit_currency = selling_rate * trade.amount
-            selling_amount = trade.cost
+            # Since the original trade is a buy of some asset with BTC, then the
+            # when we invert the sell, the sold amount of BTC should be the cost
+            # (amount*rate) of the original buy
+            selling_amount = trade.rate * trade.amount
             self.events.add_sell(
                 selling_asset=selling_asset,
                 selling_amount=selling_amount,

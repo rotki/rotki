@@ -18,14 +18,6 @@ class RecoverableRequestError(Exception):
         return 'While querying {} got error: "{}"'.format(self.exchange, self.err)
 
 
-class CorruptData(Exception):
-    def __init__(self, err):
-        self.err = err
-
-    def __str__(self):
-        return self.err
-
-
 class InputError(Exception):
     pass
 

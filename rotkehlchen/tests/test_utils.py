@@ -3,6 +3,7 @@ import json
 import pytest
 
 from rotkehlchen.fval import FVal
+from rotkehlchen.order_formatting import invert_pair
 from rotkehlchen.server import process_result
 from rotkehlchen.utils import iso8601ts_to_timestamp
 
@@ -40,3 +41,10 @@ def test_iso8601ts_to_timestamp():
     assert iso8601ts_to_timestamp('2018-09-09T12:00:00.000Z') == 1536494400
     assert iso8601ts_to_timestamp('2011-01-01T04:13:22.220Z') == 1293855202
     assert iso8601ts_to_timestamp('1986-11-04T16:23:57.921Z') == 531505437
+
+
+def test_invert_pair():
+    assert invert_pair('BTC_ETH') == 'ETH_BTC'
+    assert invert_pair('XMR_EUR') == 'EUR_XMR'
+    with pytest.raises(ValueError):
+        assert invert_pair('sdsadasd')

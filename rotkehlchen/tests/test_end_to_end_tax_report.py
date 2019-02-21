@@ -16,8 +16,6 @@ trades_history = [
         'pair': 'BTC_EUR',
         'type': 'buy',
         'rate': 268.678317859,
-        'cost': 1343.3915893,
-        'cost_currency': 'EUR',
         'fee': 0,
         'fee_currency': 'BTC',
         'amount': 5,
@@ -27,8 +25,6 @@ trades_history = [
         'pair': 'ETH_EUR',
         'type': 'buy',
         'rate': 0.2315893,
-        'cost': 335.804485,
-        'cost_currency': 'EUR',
         'fee': 0,
         'fee_currency': 'ETH',
         'amount': 1450,
@@ -38,41 +34,33 @@ trades_history = [
         'pair': 'BTC_EUR',  # cryptocompare hourly BTC/EUR price 612.45
         'type': 'sell',
         'rate': 612.45,
-        'cost': 1531.125,
-        'cost_currency': 'EUR',
         'fee': '0.15',
         'fee_currency': 'EUR',
         'amount': 2.5,
         'location': 'kraken',
     }, {
         'timestamp': 1473505138,  # 10/09/2016
-        'pair': 'BTC_ETH',  # cryptocompare hourly ETH/EUR price: 10.365
+        'pair': 'ETH_BTC',  # cryptocompare hourly ETH/EUR price: 10.365
         'type': 'buy',  # Buy ETH with BTC -- taxable (within 1 year)
         'rate': 0.01858275,  # cryptocompare hourly BTC/EUR price: 556.435
-        'cost': 0.9291375,
-        'cost_currency': 'BTC',
         'fee': 0.06999999999999999,
         'fee_currency': 'ETH',
         'amount': 50.0,
         'location': 'poloniex',
     }, {
         'timestamp': 1475042230,  # 28/09/2016
-        'pair': 'BTC_ETH',  # cryptocompare hourly ETH/EUR price: 11.925
+        'pair': 'ETH_BTC',  # cryptocompare hourly ETH/EUR price: 11.925
         'type': 'sell',  # Sell ETH for BTC -- taxable (within 1 year)
         'rate': 0.022165,  # cryptocompare hourly BTC/EUR price: 537.805
-        'cost': 0.554125,
-        'cost_currency': 'BTC',  # reminder: we calculate buying cost with paid
         'fee': 0.001,            # asset. In this case 'ETH'. So BTC buy rate is:
         'fee_currency': 'ETH',   # (1 / 0.022165) * 11.925
         'amount': 25,
         'location': 'poloniex',
     }, {
         'timestamp': 1476536704,  # 15/10/2016
-        'pair': 'BTC_ETH',  # cryptocompare hourly ETH/EUR price: 10.775
+        'pair': 'ETH_BTC',  # cryptocompare hourly ETH/EUR price: 10.775
         'type': 'sell',  # Sell ETH for BTC -- taxable (within 1 year)
         'rate': 0.018355,  # cryptocompare hourly BTC/EUR price: 585.96
-        'cost': 3.3039,
-        'cost_currency': 'BTC',  # reminder: we calculate buying cost with paid
         'fee': 0.01,             # asset.In this case 'ETH'. So BTC buy rate is:
         'fee_currency': 'ETH',   # (1 / 0.018355) * 10.775
         'amount': 180.0,
@@ -82,8 +70,6 @@ trades_history = [
         'pair': 'DASH_BTC',  # cryptocompare hourly DASH/EUR price: 8.9456
         'type': 'buy',  # Buy DASH with BTC -- non taxable (after 1 year)
         'rate': 0.0134,  # cryptocompare hourly BTC/EUR price: 667.185
-        'cost': 0.536,
-        'cost_currency': 'BTC',
         'fee': 0.00082871175,
         'fee_currency': 'BTC',
         'amount': 40,
@@ -93,8 +79,6 @@ trades_history = [
         'pair': 'DASH_BTC',  # cryptocompare hourly DASH/EUR price: 8.104679571509114828039
         'type': 'settlement_sell',  # settlement sell DASH for BTC -- taxable (within 1 year)
         'rate': 0.011265,  # cryptocompare hourly BTC/EUR price: 723.505
-        'cost': 0.00146445,
-        'cost_currency': 'BTC',
         'fee': 0.005,
         'fee_currency': 'DASH',
         'amount': 0.13,
@@ -104,19 +88,15 @@ trades_history = [
         'pair': 'DASH_EUR',  # cryptocompare hourly DASH/EUR price: 12.92517
         'type': 'sell',  # Sell DASH for EUR -- taxable (within 1 year)
         'rate': 12.92517,
-        'cost': 129.2517,
-        'cost_currency': 'EUR',
         'fee': 0.01,
         'fee_currency': 'EUR',
         'amount': 10,
         'location': 'kraken',
     }, {  # 0.0079275 * 810.49 + 0.15 * 12.4625608386372145 = 8.29454360079
         'timestamp': 1484629704,  # 17/01/2017
-        'pair': 'BTC_DASH',  # DASH/EUR price: 12.4625608386372145
+        'pair': 'DASH_BTC',  # DASH/EUR price: 12.4625608386372145
         'type': 'settlement_buy',  # Buy DASH with BTC to settle. Essentially BTC loss
         'rate': 0.015855,  # BTC/EUR price: 810.49
-        'cost': 0.0079275,
-        'cost_currency': 'BTC',
         'fee': 0.15,
         'fee_currency': 'DASH',
         'amount': 0.5,
@@ -126,8 +106,6 @@ trades_history = [
         'pair': 'DASH_BTC',  # cryptocompare hourly DASH/EUR price: 15.36169816590634019
         'type': 'settlement_sell',  # settlement sell DASH for BTC -- taxable (within 1 year)
         'rate': 0.016315,  # cryptocompare hourly BTC/EUR price: 942.78
-        'cost': 0.00244725,
-        'cost_currency': 'BTC',
         'fee': 0.01,
         'fee_currency': 'DASH',
         'amount': 0.15,
@@ -137,8 +115,6 @@ trades_history = [
         'pair': 'BTC_EUR',  # cryptocompare hourly DASH/EUR price: 15.36169816590634019
         'type': 'sell',  # sell BTC for EUR -- partly taxable (within 1 year)
         'rate': 1146.22,  # cryptocompare hourly BTC/EUR price: 1146.22
-        'cost': 2292.44,
-        'cost_currency': 'EUR',
         'fee': 0.01,
         'fee_currency': 'EUR',
         'amount': 2,

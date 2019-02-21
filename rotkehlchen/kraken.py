@@ -12,15 +12,14 @@ from urllib.parse import urlencode
 
 from requests import Response
 
-from rotkehlchen import typing
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS, KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import query_cryptocompare_for_fiat_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import AssetMovement, pair_get_assets
-from rotkehlchen.typing import Asset, Trade
+from rotkehlchen.order_formatting import AssetMovement, Trade, pair_get_assets
+from rotkehlchen.typing import ApiKey, ApiSecret, Asset, EthToken, FilePath, Timestamp
 from rotkehlchen.utils import (
     cache_response_timewise,
     convert_to_int,
@@ -187,7 +186,7 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
     currency_pair = kraken_to_world_pair(kraken_trade['pair'])
     quote_currency = get_pair_position(currency_pair, 'second')
     # Kraken timestamps have floating point
-    timestamp = convert_to_int(kraken_trade['time'], accept_only_exact=False)
+    timestamp = Timestamp(convert_to_int(kraken_trade['time'], accept_only_exact=False))
     amount = FVal(kraken_trade['vol'])
     cost = FVal(kraken_trade['cost'])
     fee = FVal(kraken_trade['fee'])
@@ -255,16 +254,16 @@ def _check_and_get_response(response: Response, method: str) -> dict:
 class Kraken(Exchange):
     def __init__(
             self,
-            api_key: typing.ApiKey,
-            secret: typing.ApiSecret,
-            user_directory: typing.FilePath,
+            api_key: ApiKey,
+            secret: ApiSecret,
+            user_directory: FilePath,
             usd_eur_price: FVal,
     ):
         super(Kraken, self).__init__('kraken', api_key, secret, user_directory)
         # typing TODO: Without a union of str and Asset we get lots of warning
         # How can this be avoided without too much pain?
-        self.usdprice: Dict[Union[typing.Asset, str], FVal] = {}
-        self.eurprice: Dict[Union[typing.Asset, str], FVal] = {}
+        self.usdprice: Dict[Union[Asset, str], FVal] = {}
+        self.eurprice: Dict[Union[Asset, str], FVal] = {}
 
         self.usdprice['EUR'] = usd_eur_price
         self.session.headers.update({  # type: ignore
@@ -372,7 +371,7 @@ class Kraken(Exchange):
             return
         self.get_fiat_prices_from_ticker()
 
-    def find_fiat_price(self, asset: typing.Asset) -> FVal:
+    def find_fiat_price(self, asset: Asset) -> FVal:
         """Find USD/EUR price of asset. The asset should be in the kraken style.
         e.g.: XICN. Save both prices in the kraken object and then return the
         USD price.
@@ -393,7 +392,7 @@ class Kraken(Exchange):
             # ICN has been delisted by kraken at 31/10/2018 and withdrawals
             # will only last until 31/11/2018. For this period of time there
             # can be ICN in Kraken -- so use crypto compare for price info
-            return query_cryptocompare_for_fiat_price(typing.EthToken('ICN'))
+            return query_cryptocompare_for_fiat_price(EthToken('ICN'))
 
         # TODO: This is pretty ugly. Find a better way to check out kraken pairs
         # without this ugliness.
@@ -459,8 +458,8 @@ class Kraken(Exchange):
             self,
             endpoint: str,
             keyname: str,
-            start_ts: typing.Timestamp,
-            end_ts: typing.Timestamp,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
             extra_dict: Optional[dict] = None,
     ) -> List:
         """ Abstracting away the functionality of querying a kraken endpoint where
@@ -520,9 +519,9 @@ class Kraken(Exchange):
 
     def query_trade_history(
             self,
-            start_ts: typing.Timestamp,
-            end_ts: typing.Timestamp,
-            end_at_least_ts: typing.Timestamp,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            end_at_least_ts: Timestamp,
     ) -> List:
         with self.lock:
             cache = self.check_trades_cache(start_ts, end_at_least_ts)
@@ -540,12 +539,12 @@ class Kraken(Exchange):
     def _query_endpoint_for_period(
             self,
             endpoint: str,
-            start_ts: typing.Timestamp,
-            end_ts: typing.Timestamp,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
             offset: Optional[int] = None,
             extra_dict: Optional[dict] = None,
     ) -> dict:
-        request: Dict[str, Union[typing.Timestamp, int]] = dict()
+        request: Dict[str, Union[Timestamp, int]] = dict()
         request['start'] = start_ts
         request['end'] = end_ts
         if offset is not None:
@@ -557,9 +556,9 @@ class Kraken(Exchange):
 
     def query_deposits_withdrawals(
             self,
-            start_ts: typing.Timestamp,
-            end_ts: typing.Timestamp,
-            end_at_least_ts: typing.Timestamp,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            end_at_least_ts: Timestamp,
     ) -> List:
         with self.lock:
             cache = self.check_trades_cache(
