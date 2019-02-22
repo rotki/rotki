@@ -252,6 +252,9 @@ class PriceHistorian(object):
         # it's not in the coinlist so let's add them here.
         self.cryptocompare_coin_list['DAO'] = object()
         self.cryptocompare_coin_list['USDT'] = object()
+        # IOTA is known to cryptocompare as IOT, but add IOTA too since
+        # we have conversion code to handle it and we accept queries with it
+        self.cryptocompare_coin_list['IOTA'] = object()
 
     def got_cached_price(self, cache_key, timestamp):
         """Check if we got a price history for the timestamp cached"""

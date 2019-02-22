@@ -54,3 +54,16 @@ def test_price_queries(price_historian):
     #        include them in the tests
     do_queries_for('BTC', 'EUR', price_historian)
     do_queries_for('ETH', 'EUR', price_historian)
+
+
+@pytest.mark.parametrize('should_mock_price_queries', [False])
+def test_cryptocompare_iota_query(price_historian):
+    """
+    Test that IOTA can be properly queried from cryptocompare
+
+    Issue: https://github.com/rotkehlchenio/rotkehlchen/issues/299
+    """
+    usd_price = price_historian.query_historical_price('IOTA', 'USD', 1511793374)
+    assert usd_price.is_close(FVal('0.954'))
+    usd_price = price_historian.query_historical_price('IOT', 'USD', 1511793374)
+    assert usd_price.is_close(FVal('0.954'))
