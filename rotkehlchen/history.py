@@ -5,14 +5,14 @@ import re
 import time
 from json.decoder import JSONDecodeError
 
-from rotkehlchen.binance import trade_from_binance
-from rotkehlchen.bitmex import trade_from_bitmex
-from rotkehlchen.bittrex import trade_from_bittrex
+from rotkehlchen.binance import trade_from_binance  # noqa
+from rotkehlchen.bitmex import trade_from_bitmex  # noqa
+from rotkehlchen.bittrex import trade_from_bittrex  # noqa
 from rotkehlchen.errors import PriceQueryUnknownFromAsset, RemoteError
 from rotkehlchen.exchange import data_up_todate
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import FIAT_CURRENCIES, world_to_cryptocompare
-from rotkehlchen.kraken import trade_from_kraken
+from rotkehlchen.kraken import trade_from_kraken  # noqa
 from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
 from rotkehlchen.order_formatting import (
     MarginPosition,
@@ -43,6 +43,20 @@ MANUAL_MARGINS_LOGFILE = 'manual_margin_positions_log.json'
 LOANS_HISTORYFILE = 'loans_history.json'
 ETHEREUM_TX_LOGFILE = 'ethereum_tx_log.json'
 ASSETMOVEMENTS_HISTORYFILE = 'asset_movements_history.json'
+
+
+def trade_from_exchange(exchange, trade):
+    name = exchange.name.lower()
+    if name == 'bittrex':
+        return trade_from_bittrex(trade)
+    elif name == 'binance':
+        return trade_from_binance(trade, exchange.symbols_to_pair)
+    elif name == 'kraken':
+        return trade_from_kraken(trade)
+    elif name == 'bitmex':
+        return trade_from_bitmex(trade)
+    elif name == 'poloniex':
+        return trade_from_poloniex(trade)
 
 
 class NoPriceForGivenTimestamp(Exception):
@@ -587,12 +601,7 @@ class TradesHistorian(object):
             eth_accounts,
             historical_data_start,
     ):
-
-        self.poloniex = None
-        self.kraken = None
-        self.bittrex = None
-        self.bitmex = None
-        self.binance = None
+        self.exchanges = {}
         self.user_directory = user_directory
         self.db = db
         self.eth_accounts = eth_accounts
@@ -601,14 +610,20 @@ class TradesHistorian(object):
         # If this flag is true we attempt to read from the manually logged margin positions file
         self.read_manual_margin_positions = True
 
-    def set_exchange(self, name, exchange_obj):
-        if getattr(self, name) is None or exchange_obj is None:
-            setattr(self, name, exchange_obj)
+    def set_exchange(self, exchange_id, exchange_obj):
+        if self.exchanges.get(exchange_id) is None or exchange_obj is None:
+            self.exchanges[exchange_id] = exchange_obj
         elif exchange_obj:
             raise ValueError(
                 'Attempted to set {} exchange in TradesHistorian while it was '
-                'already set'.format(name),
+                'already set'.format(exchange_id),
             )
+
+    def get_exchange_by_name(self, name):
+        for exchange in self.exchanges.values():
+            if exchange.name == name:
+                return exchange
+        return None
 
     def query_poloniex_history(self, history, asset_movements, start_ts, end_ts, end_at_least_ts):
         log.info(
@@ -619,8 +634,9 @@ class TradesHistorian(object):
         )
         poloniex_margin_trades = list()
         polo_loans = list()
-        if self.poloniex is not None:
-            polo_history = self.poloniex.query_trade_history(
+        poloniex = self.get_exchange_by_name('Poloniex')
+        if poloniex is not None:
+            polo_history = poloniex.query_trade_history(
                 start_ts=start_ts,
                 end_ts=end_ts,
                 end_at_least_ts=end_at_least_ts,
@@ -655,14 +671,14 @@ class TradesHistorian(object):
                     end_ts,
                 )
 
-            polo_loans = self.poloniex.query_loan_history(
+            polo_loans = poloniex.query_loan_history(
                 start_ts=start_ts,
                 end_ts=end_ts,
                 end_at_least_ts=end_at_least_ts,
                 from_csv=True,
             )
             polo_loans = process_polo_loans(polo_loans, start_ts, end_ts)
-            polo_asset_movements = self.poloniex.query_deposits_withdrawals(
+            polo_asset_movements = poloniex.query_deposits_withdrawals(
                 start_ts=start_ts,
                 end_ts=end_ts,
                 end_at_least_ts=end_at_least_ts,
@@ -688,26 +704,6 @@ class TradesHistorian(object):
         asset_movements = list()
         empty_or_error = ''
 
-        if self.kraken is not None:
-            try:
-                kraken_history = self.kraken.query_trade_history(
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                    end_at_least_ts=end_at_least_ts,
-                )
-                for trade in kraken_history:
-                    history.append(trade_from_kraken(trade))
-
-                kraken_asset_movements = self.kraken.query_deposits_withdrawals(
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                    end_at_least_ts=end_at_least_ts,
-                )
-                asset_movements.extend(kraken_asset_movements)
-
-            except RemoteError as e:
-                empty_or_error += '\n' + str(e)
-
         try:
             (
                 history,
@@ -724,49 +720,29 @@ class TradesHistorian(object):
         except RemoteError as e:
             empty_or_error += '\n' + str(e)
 
-        if self.bittrex is not None:
+        for exchange in self.exchanges.values():
             try:
-                bittrex_history = self.bittrex.query_trade_history(
+                exchange_history = exchange.query_trade_history(
                     start_ts=start_ts,
                     end_ts=end_ts,
                     end_at_least_ts=end_at_least_ts,
                 )
-                for trade in bittrex_history:
-                    history.append(trade_from_bittrex(trade))
+                for trade in exchange_history:
+                    history.append(trade_from_exchange(exchange, trade))
             except RemoteError as e:
                 empty_or_error += '\n' + str(e)
 
-        if self.bitmex is not None:
-            try:
-                bitmex_history = self.bitmex.query_trade_history(
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                    end_at_least_ts=end_at_least_ts,
-                )
-                for trade in bitmex_history:
-                    history.append(trade_from_bitmex(trade))
+            if exchange.name == 'Bitmex' or exchange.name == 'Kraken':
+                try:
+                    asset_movements = exchange.query_deposits_withdrawals(
+                        start_ts=start_ts,
+                        end_ts=end_ts,
+                        end_at_least_ts=end_at_least_ts,
+                    )
+                    asset_movements.extend(asset_movements)
 
-                bitmex_asset_movements = self.bitmex.query_deposits_withdrawals(
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                    end_at_least_ts=end_at_least_ts,
-                )
-                asset_movements.extend(bitmex_asset_movements)
-
-            except RemoteError as e:
-                empty_or_error += '\n' + str(e)
-
-        if self.binance is not None:
-            try:
-                binance_history = self.binance.query_trade_history(
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                    end_at_least_ts=end_at_least_ts,
-                )
-                for trade in binance_history:
-                    history.append(trade_from_binance(trade, self.binance.symbols_to_pair))
-            except RemoteError as e:
-                empty_or_error += '\n' + str(e)
+                except RemoteError as e:
+                    empty_or_error += '\n' + str(e)
 
         try:
             eth_transactions = query_etherscan_for_transactions(self.eth_accounts)
@@ -779,10 +755,12 @@ class TradesHistorian(object):
         history.sort(key=lambda trade: trade.timestamp)
         history = limit_trade_list_to_period(history, start_ts, end_ts)
 
+        poloniex = self.get_exchange_by_name('Poloniex')
+
         # Write to files
         historyfile_path = os.path.join(self.user_directory, TRADES_HISTORYFILE)
         write_tupledata_history_in_file(history, historyfile_path, start_ts, end_ts)
-        if self.poloniex is not None and not self.read_manual_margin_positions:
+        if poloniex is not None and not self.read_manual_margin_positions:
             marginfile_path = os.path.join(self.user_directory, MARGIN_HISTORYFILE)
             write_tupledata_history_in_file(
                 poloniex_margin_trades,
@@ -791,7 +769,7 @@ class TradesHistorian(object):
                 end_ts,
             )
 
-        if self.poloniex is not None:
+        if poloniex is not None:
             loansfile_path = os.path.join(self.user_directory, LOANS_HISTORYFILE)
             write_history_data_in_file(polo_loans, loansfile_path, start_ts, end_ts)
         assetmovementsfile_path = os.path.join(self.user_directory, ASSETMOVEMENTS_HISTORYFILE)
@@ -835,29 +813,9 @@ class TradesHistorian(object):
                     pass
 
                 all_history_okay = data_up_todate(history_json_data, start_ts, end_at_least_ts)
-                poloniex_history_okay = True
-                if self.poloniex is not None:
-                    poloniex_history_okay = self.poloniex.check_trades_cache(
-                        start_ts, end_at_least_ts,
-                    ) is not None
-                kraken_history_okay = True
-                if self.kraken is not None:
-                    kraken_history_okay = self.kraken.check_trades_cache(
-                        start_ts, end_at_least_ts,
-                    ) is not None
-                bittrex_history_okay = True
-                if self.bittrex is not None:
-                    bittrex_history_okay = self.bittrex.check_trades_cache(
-                        start_ts, end_at_least_ts,
-                    ) is not None
-                bitmex_history_okay = True
-                if self.bitmex is not None:
-                    bitmex_history_okay = self.bitmex.check_trades_cache(
-                        start_ts, end_at_least_ts,
-                    ) is not None
-                binance_history_okay = True
-                if self.binance is not None:
-                    binance_history_okay = self.binance.check_trades_cache(
+                exchange_history_okay = {}
+                for exchange in self.exchanges.values():
+                    exchange_history_okay[exchange.name] = exchange.check_trades_cache(
                         start_ts, end_at_least_ts,
                     ) is not None
 
@@ -906,11 +864,7 @@ class TradesHistorian(object):
 
                 if (
                         all_history_okay and
-                        poloniex_history_okay and
-                        kraken_history_okay and
-                        bittrex_history_okay and
-                        bitmex_history_okay and
-                        binance_history_okay and
+                        all(exchange_history_okay) and
                         margin_history_is_okay and
                         loan_history_is_okay and
                         asset_movements_history_is_okay and

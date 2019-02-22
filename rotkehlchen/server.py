@@ -244,7 +244,7 @@ class RotkehlchenServer(object):
             save_data = True
 
         result = self.rotkehlchen.query_balances(save_data)
-        print(pretty_json_dumps(result))
+
         return process_result(result)
 
     def query_balances_async(self, save_data=False):

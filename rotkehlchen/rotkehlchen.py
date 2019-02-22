@@ -99,7 +99,7 @@ class Rotkehlchen(object):
         for exchange_id, exchange_data in secret_data.items():
             exchange_driver = self.get_exchange_driver(exchange_id, exchange_data)
             self.connected_exchanges[exchange_id] = exchange_driver
-            self.trades_historian.set_exchange(exchange_data['name'], exchange_driver)
+            self.trades_historian.set_exchange(exchange_id, exchange_driver)
             if exchange_data['name'] == 'kraken':
                 self.inquirer.kraken = exchange_driver
 
