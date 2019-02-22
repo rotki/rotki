@@ -103,45 +103,52 @@ class Rotkehlchen(object):
             if exchange_data['name'] == 'kraken':
                 self.inquirer.kraken = exchange_driver
 
+    def initialize_exchange_main_logic(self):
+        for exchange in self.connected_exchanges.values():
+            if exchange.name == 'poloniex':
+                exchange.main_logic()
+            elif exchange.name == 'kraken':
+                exchange.main_logic()
+
     def get_exchange_driver(self, exchange_id: int, exchange_data):
         # initialize exchanges for which we have keys and are not already initialized
         if exchange_data['name'] == 'kraken':
             return Kraken(
                 exchange_id,
-                str.encode(exchange_data['api_key']),
-                str.encode(exchange_data['api_secret']),
+                ApiKey(str.encode(exchange_data['api_key'])),
+                ApiSecret(str.encode(exchange_data['api_secret'])),
                 self.user_directory,
                 self.inquirer.query_fiat_pair(S_EUR, S_USD),
             )
         elif exchange_data['name'] == 'poloniex':
             return Poloniex(
                 exchange_id,
-                str.encode(exchange_data['api_key']),
-                str.encode(exchange_data['api_secret']),
+                ApiKey(str.encode(exchange_data['api_key'])),
+                ApiSecret(str.encode(exchange_data['api_secret'])),
                 self.inquirer,
                 self.user_directory,
             )
         elif exchange_data['name'] == 'bittrex':
             return Bittrex(
                 exchange_id,
-                str.encode(exchange_data['api_key']),
-                str.encode(exchange_data['api_secret']),
+                ApiKey(str.encode(exchange_data['api_key'])),
+                ApiSecret(str.encode(exchange_data['api_secret'])),
                 self.inquirer,
                 self.user_directory,
             )
         elif exchange_data['name'] == 'binance':
             return Binance(
                 exchange_id,
-                str.encode(exchange_data['api_key']),
-                str.encode(exchange_data['api_secret']),
+                ApiKey(str.encode(exchange_data['api_key'])),
+                ApiSecret(str.encode(exchange_data['api_secret'])),
                 self.inquirer,
                 self.user_directory,
             )
         if exchange_data['name'] == 'bitmex':
             return Bitmex(
                 exchange_id,
-                str.encode(exchange_data['api_key']),
-                str.encode(exchange_data['api_secret']),
+                ApiKey(str.encode(exchange_data['api_key'])),
+                ApiSecret(str.encode(exchange_data['api_secret'])),
                 self.inquirer,
                 self.user_directory,
             )
@@ -421,10 +428,8 @@ class Rotkehlchen(object):
     def main_loop(self):
         while self.shutdown_event.wait(MAIN_LOOP_SECS_DELAY) is not True:
             log.debug('Main loop start')
-            if self.poloniex is not None:
-                self.poloniex.main_logic()
-            if self.kraken is not None:
-                self.kraken.main_logic()
+
+            self.initialize_exchange_main_logic()
 
             self.maybe_upload_data_to_server()
 
@@ -672,7 +677,7 @@ class Rotkehlchen(object):
             'api_key': api_key,
             'api_secret': api_secret,
         }
-        exchange = self.get_exchange_driver(secret_data)
+        exchange = self.get_exchange_driver(0, secret_data)
         result, message = exchange.validate_api_key()
         if not result:
             log.error(
