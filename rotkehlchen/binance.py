@@ -205,8 +205,8 @@ class Binance(Exchange):
                 code = 'no code found'
                 msg = 'no message found'
                 if isinstance(result, dict):
-                    code = result['code']
-                    msg = result['msg']
+                    code = result.get('code', code)
+                    msg = result.get('msg', msg)
                 raise RemoteError(
                     'Binance API request {} for {} failed with HTTP status '
                     'code: {}, error code: {} and error message: {}'.format(
