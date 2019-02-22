@@ -171,9 +171,9 @@ export class RotkehlchenService {
         });
     }
 
-    query_exchange_balances_async(name: string): Promise<AsyncQueryResult> {
+    query_exchange_balances_async(id: string): Promise<AsyncQueryResult> {
         return new Promise<AsyncQueryResult>((resolve, reject) => {
-            client.invoke('query_exchange_balances_async', name, (error: Error, result: AsyncQueryResult) => {
+            client.invoke('query_exchange_balances_async', id, (error: Error, result: AsyncQueryResult) => {
                 if (error || result == null) {
                     reject(error || new NoResponseError());
                 } else {

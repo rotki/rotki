@@ -9,8 +9,8 @@ import {service} from './rotkehlchen_service';
 
 let SAVED_TABLES: { [name: string]: AssetTable } = {};
 
-export function query_exchange_balances_async(name: string, is_balance_task: boolean) {
-    service.query_exchange_balances_async(name).then(result => {
+export function query_exchange_balances_async(id: string, is_balance_task: boolean) {
+    service.query_exchange_balances_async(id).then(result => {
         console.log(`Query ${name} returned task id ${result.task_id}`);
         create_task(
             result.task_id,

@@ -8,7 +8,7 @@ export interface UnlockResult extends ActionResult<boolean> {
     readonly permission_needed?: boolean;
     readonly premium: boolean;
     readonly settings?: DBSettings;
-    readonly exchanges?: string[];
+    readonly exchanges?: { [exchange_id: number]: string };
 }
 
 export interface DBSettings {

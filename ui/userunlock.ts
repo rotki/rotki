@@ -281,11 +281,10 @@ function unlock_user(
     });
 }
 
-function load_dashboard_after_unlock(exchanges: string[], is_new_user: boolean) {
-    for (let i = 0; i < exchanges.length; i++) {
-        const exx = exchanges[i];
-        settings.connected_exchanges.push(exx);
-        query_exchange_balances_async(exx, true);
+function load_dashboard_after_unlock(exchanges: { [exchange_id: number]: string }, is_new_user: boolean) {
+    for (let exchange_id in exchanges) {
+        settings.connected_exchanges.push(exchanges[exchange_id]);
+        query_exchange_balances_async(exchange_id, true);
     }
 
     if (!is_new_user) {

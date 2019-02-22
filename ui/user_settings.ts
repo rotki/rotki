@@ -189,7 +189,7 @@ function setup_exchange_callback(event: JQuery.Event) {
         $(str).appendTo($('#exchange_badges'));
         stop_show_loading('#setup_exchange_button');
         // also query the balances to have them handy to be shown if needed
-        query_exchange_balances_async(exchange_name, false);
+        query_exchange_balances_async("1", false);
     }).catch((reason: Error) => {
         showError('Exchange Setup Error', `Error at setup of ${exchange_name}: ${reason.message}`);
         stop_show_loading('#setup_exchange_button');
