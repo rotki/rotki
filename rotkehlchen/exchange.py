@@ -6,7 +6,6 @@ from typing import Dict, List, Optional, Union
 
 import requests
 from gevent.lock import Semaphore
-
 from rotkehlchen import typing
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils import rlk_jsondumps, rlk_jsonloads_dict
@@ -35,6 +34,7 @@ class Exchange(object):
     def __init__(
             self,
             name: str,
+            identifier: int,
             api_key: typing.ApiKey,
             secret: typing.ApiSecret,
             user_directory: typing.FilePath,
@@ -46,6 +46,7 @@ class Exchange(object):
             'secret for {} should be a bytestring'.format(name)
         )
         self.name = name
+        self.identifier = identifier
         self.user_directory = user_directory
         self.api_key = api_key
         self.secret = secret
@@ -58,9 +59,15 @@ class Exchange(object):
 
     def _get_cachefile_name(self, special_name: str = None) -> str:
         if special_name is None:
-            return os.path.join(self.user_directory, "%s_trades.json" % self.name)
+            return os.path.join(
+                self.user_directory,
+                "%d_%s_trades.json" % (self.identifier, self.name)
+            )
         else:
-            return os.path.join(self.user_directory, "%s_%s.json" % (self.name, special_name))
+            return os.path.join(
+                self.user_directory,
+                "%d_%s_%s.json" % (self.identifier, self.name, special_name)
+            )
 
     def check_trades_cache(
             self,

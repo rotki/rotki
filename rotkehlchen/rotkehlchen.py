@@ -97,16 +97,17 @@ class Rotkehlchen(object):
 
     def initialize_exchanges(self, secret_data):
         for exchange_id, exchange_data in secret_data.items():
-            exchange_driver = self.get_exchange_driver(exchange_data)
+            exchange_driver = self.get_exchange_driver(exchange_id, exchange_data)
             self.connected_exchanges[exchange_id] = exchange_driver
-            self.trades_historian.set_exchange(exchange_id, exchange_driver)
+            self.trades_historian.set_exchange(exchange_data['name'], exchange_driver)
             if exchange_data['name'] == 'kraken':
                 self.inquirer.kraken = exchange_driver
 
-    def get_exchange_driver(self, exchange_data):
+    def get_exchange_driver(self, exchange_id: int, exchange_data):
         # initialize exchanges for which we have keys and are not already initialized
         if exchange_data['name'] == 'kraken':
             return Kraken(
+                exchange_id,
                 str.encode(exchange_data['api_key']),
                 str.encode(exchange_data['api_secret']),
                 self.user_directory,
@@ -114,6 +115,7 @@ class Rotkehlchen(object):
             )
         elif exchange_data['name'] == 'poloniex':
             return Poloniex(
+                exchange_id,
                 str.encode(exchange_data['api_key']),
                 str.encode(exchange_data['api_secret']),
                 self.inquirer,
@@ -121,6 +123,7 @@ class Rotkehlchen(object):
             )
         elif exchange_data['name'] == 'bittrex':
             return Bittrex(
+                exchange_id,
                 str.encode(exchange_data['api_key']),
                 str.encode(exchange_data['api_secret']),
                 self.inquirer,
@@ -128,6 +131,7 @@ class Rotkehlchen(object):
             )
         elif exchange_data['name'] == 'binance':
             return Binance(
+                exchange_id,
                 str.encode(exchange_data['api_key']),
                 str.encode(exchange_data['api_secret']),
                 self.inquirer,
@@ -135,6 +139,7 @@ class Rotkehlchen(object):
             )
         if exchange_data['name'] == 'bitmex':
             return Bitmex(
+                exchange_id,
                 str.encode(exchange_data['api_key']),
                 str.encode(exchange_data['api_secret']),
                 self.inquirer,
@@ -596,7 +601,7 @@ class Rotkehlchen(object):
 
         except AttributeError:
             pass
-        log.debug(result_dict)
+
         return result_dict
 
     def set_main_currency(self, currency):

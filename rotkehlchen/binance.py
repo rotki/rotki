@@ -6,7 +6,6 @@ from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 from urllib.parse import urlencode
 
 import gevent
-
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchange import Exchange
@@ -102,6 +101,7 @@ class Binance(Exchange):
     """
     def __init__(
             self,
+            identifier: int,
             api_key: ApiKey,
             secret: ApiSecret,
             inquirer: Inquirer,
@@ -109,7 +109,7 @@ class Binance(Exchange):
             initial_backoff: int = 4,
             backoff_limit: int = 180,
     ):
-        super(Binance, self).__init__('binance', api_key, secret, data_dir)
+        super(Binance, self).__init__('binance', identifier, api_key, secret, data_dir)
         self.apiversion = 'v3'
         self.uri = 'https://api.binance.com/api/'
         self.inquirer = inquirer

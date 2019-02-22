@@ -11,7 +11,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from urllib.parse import urlencode
 
 from requests import Response
-
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS, KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.exchange import Exchange
@@ -254,12 +253,13 @@ def _check_and_get_response(response: Response, method: str) -> dict:
 class Kraken(Exchange):
     def __init__(
             self,
+            identifier: int,
             api_key: ApiKey,
             secret: ApiSecret,
             user_directory: FilePath,
             usd_eur_price: FVal,
     ):
-        super(Kraken, self).__init__('kraken', api_key, secret, user_directory)
+        super(Kraken, self).__init__('kraken', identifier, api_key, secret, user_directory)
         # typing TODO: Without a union of str and Asset we get lots of warning
         # How can this be avoided without too much pain?
         self.usdprice: Dict[Union[Asset, str], FVal] = {}

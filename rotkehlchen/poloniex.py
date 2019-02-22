@@ -108,12 +108,13 @@ class Poloniex(Exchange):
 
     def __init__(
             self,
+            identifier: int,
             api_key: ApiKey,
             secret: ApiSecret,
             inquirer: Inquirer,
             user_directory: FilePath,
     ):
-        super(Poloniex, self).__init__('poloniex', api_key, secret, user_directory)
+        super(Poloniex, self).__init__('poloniex', identifier, api_key, secret, user_directory)
 
         self.uri = 'https://poloniex.com/'
         self.public_uri = self.uri + 'public?command='

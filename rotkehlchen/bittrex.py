@@ -99,12 +99,13 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
 class Bittrex(Exchange):
     def __init__(
             self,
+            identifier: int,
             api_key: ApiKey,
             secret: ApiSecret,
             inquirer: Inquirer,
             user_directory: FilePath,
     ):
-        super(Bittrex, self).__init__('bittrex', api_key, secret, user_directory)
+        super(Bittrex, self).__init__('bittrex', identifier, api_key, secret, user_directory)
         self.apiversion = 'v1.1'
         self.uri = 'https://bittrex.com/api/{}/'.format(self.apiversion)
         self.inquirer = inquirer

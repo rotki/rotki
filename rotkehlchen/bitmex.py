@@ -69,12 +69,13 @@ def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
 class Bitmex(Exchange):
     def __init__(
             self,
+            identifier: int,
             api_key: typing.ApiKey,
             secret: typing.ApiSecret,
             inquirer: Inquirer,
             user_directory: typing.FilePath,
     ):
-        super(Bitmex, self).__init__('bitmex', api_key, secret, user_directory)
+        super(Bitmex, self).__init__('bitmex', identifier, api_key, secret, user_directory)
         self.uri = 'https://bitmex.com'
         self.inquirer = inquirer
         self.session.headers.update({'api-key': api_key})  # type: ignore
