@@ -19,7 +19,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import query_cryptocompare_for_fiat_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import AssetMovement, Trade, pair_get_assets
-from rotkehlchen.typing import ApiKey, ApiSecret, Asset, EthToken, FilePath, Timestamp
+from rotkehlchen.typing import ApiKey, ApiSecret, Asset, EthToken, FilePath, Timestamp, TradePair
 from rotkehlchen.utils import (
     cache_response_timewise,
     convert_to_int,
@@ -137,44 +137,44 @@ KRAKEN_ASSETS = (
 KRAKEN_DELISTED = ('XDAO', 'XXVN', 'ZKRW', 'XNMC')
 
 
-def kraken_to_world_pair(pair: str) -> str:
+def kraken_to_world_pair(pair: str) -> TradePair:
     # handle dark pool pairs
     if pair[-2:] == '.d':
         pair = pair[:-2]
 
     if pair[0:3] in KRAKEN_ASSETS:
-        base_currency = pair[0:3]
-        quote_currency = pair[3:]
+        base_asset = pair[0:3]
+        quote_asset = pair[3:]
     elif pair[0:4] in KRAKEN_ASSETS:
-        base_currency = pair[0:4]
-        quote_currency = pair[4:]
+        base_asset = pair[0:4]
+        quote_asset = pair[4:]
     else:
         raise ValueError(f'Could not process kraken trade pair {pair}')
 
-    if base_currency not in WORLD_TO_KRAKEN:
-        base_currency = KRAKEN_TO_WORLD[base_currency]
-    if quote_currency not in WORLD_TO_KRAKEN:
-        quote_currency = KRAKEN_TO_WORLD[quote_currency]
+    if base_asset not in WORLD_TO_KRAKEN:
+        base_asset = KRAKEN_TO_WORLD[base_asset]
+    if quote_asset not in WORLD_TO_KRAKEN:
+        quote_asset = KRAKEN_TO_WORLD[quote_asset]
 
-    return base_currency + '_' + quote_currency
+    return TradePair(f'{base_asset}_{quote_asset}')
 
 
-def world_to_kraken_pair(tradeable_pairs: List[str], pair: str) -> str:
-    base_currency, quote_currency = pair_get_assets(pair)
+def world_to_kraken_pair(tradeable_pairs: List[str], pair: TradePair) -> str:
+    base_asset, quote_asset = pair_get_assets(pair)
 
-    if base_currency not in KRAKEN_TO_WORLD:
-        base_currency = WORLD_TO_KRAKEN[base_currency]
-    if quote_currency not in KRAKEN_TO_WORLD:
-        quote_currency = WORLD_TO_KRAKEN[quote_currency]
+    if base_asset not in KRAKEN_TO_WORLD:
+        base_asset = WORLD_TO_KRAKEN[base_asset]
+    if quote_asset not in KRAKEN_TO_WORLD:
+        quote_asset = WORLD_TO_KRAKEN[quote_asset]
 
-    if base_currency + quote_currency in tradeable_pairs:
-        new_pair = base_currency + quote_currency
-    elif quote_currency + base_currency in tradeable_pairs:
-        new_pair = quote_currency + base_currency
+    if base_asset + quote_asset in tradeable_pairs:
+        new_pair = base_asset + quote_asset
+    elif quote_asset + base_asset in tradeable_pairs:
+        new_pair = quote_asset + base_asset
     else:
         raise ValueError(
-            f'Unknown pair "{pair}" provided. Couldnt find {base_currency + quote_currency}'
-            f' or {quote_currency + base_currency} in tradeable pairs',
+            f'Unknown pair "{pair}" provided. Couldnt find {base_asset + quote_asset}'
+            f' or {quote_asset + base_asset} in tradeable pairs',
         )
 
     return new_pair

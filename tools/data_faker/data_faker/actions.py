@@ -4,7 +4,7 @@ import random
 from rotkehlchen.constants import FIAT_CURRENCIES
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade, pair_get_assets
-from rotkehlchen.typing import Asset, Timestamp
+from rotkehlchen.typing import Asset, Timestamp, TradePair
 
 STARTING_TIMESTAMP = 1464739200  # 01/06/2016
 NUMBER_OF_TRADES = 5
@@ -14,7 +14,7 @@ MIN_SECONDS_BETWEEN_TRADES = 86400
 MAX_TRADE_DIFF_VARIANCE = 14400
 
 ALLOWED_EXCHANGES = ['kraken']
-KRAKEN_PAIRS = ['ETH_EUR', 'BTC_EUR']
+KRAKEN_PAIRS = [TradePair('ETH_EUR'), TradePair('BTC_EUR')]
 
 ALLOWED_ASSETS = ['ETH', 'BTC']
 
@@ -102,7 +102,7 @@ class ActionWriter(object):
         self.current_ts += secs_in_future
         return current_ts
 
-    def choose_pair(self):
+    def choose_pair(self) -> TradePair:
         choices = set(KRAKEN_PAIRS)
         found = False
         while len(choices) != 0:

@@ -7,7 +7,7 @@ import logging
 import os
 import time
 import traceback
-from typing import Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from urllib.parse import urlencode
 
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
@@ -17,7 +17,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import AssetMovement, Trade, invert_pair
-from rotkehlchen.typing import ApiKey, ApiSecret, BlockchainAsset, FilePath, Timestamp
+from rotkehlchen.typing import ApiKey, ApiSecret, BlockchainAsset, FilePath, Timestamp, TradePair
 from rotkehlchen.utils import (
     cache_response_timewise,
     createTimeStamp,
@@ -35,7 +35,7 @@ def tsToDate(s):
     return datetime.datetime.fromtimestamp(s).strftime('%Y-%m-%d %H:%M:%S')
 
 
-def trade_from_poloniex(poloniex_trade, pair):
+def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trade:
     """Turn a poloniex trade returned from poloniex trade history to our common trade
     history format"""
 
@@ -224,7 +224,7 @@ class Poloniex(Exchange):
 
     def returnTradeHistory(
             self,
-            currencyPair: str,
+            currencyPair: Union[TradePair, str],
             start: Timestamp,
             end: Timestamp,
     ) -> Union[Dict, List]:

@@ -31,6 +31,7 @@ from rotkehlchen.typing import (
     FilePath,
     NonEthTokenBlockchainAsset,
     Timestamp,
+    TradePair,
 )
 from rotkehlchen.utils import (
     createTimeStamp,
@@ -98,8 +99,8 @@ def verify_otctrade_data(
         if field in otc_numerical_fields and not is_number(data[field]):
             return None, '{} should be a number'.format(field)
 
-    pair = data['otc_pair']
-    assert isinstance(pair, str)
+    assert isinstance(data['otc_pair'], str)
+    pair = TradePair(data['otc_pair'])
     first = get_pair_position(pair, 'first')
     second = get_pair_position(pair, 'second')
     trade_type = cast(str, data['otc_type'])
@@ -133,7 +134,7 @@ def verify_otctrade_data(
     trade = Trade(
         timestamp=timestamp,
         location='external',
-        pair=cast(str, pair),
+        pair=pair,
         trade_type=trade_type,
         amount=amount,
         rate=rate,
