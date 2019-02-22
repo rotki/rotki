@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`299` IOTA historical price queries now work properly.
 * :bug:`288` After a user re-login querying fiat prices will no longer throw exceptions.
 * :bug:`273` Fallback to fetching NANO Price using XRB (Raiblocks) symbol before the rebranding.
 * :bug:`283` OTC Trades table is now properly rendered again
