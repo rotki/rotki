@@ -14,7 +14,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import Trade
-from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp
+from rotkehlchen.typing import ApiKey, ApiSecret, Asset, FilePath, Timestamp, TradePair
 from rotkehlchen.utils import cache_response_timewise, rlk_jsonloads
 
 logger = logging.getLogger(__name__)
@@ -33,8 +33,8 @@ V1_ENDPOINTS = (
 
 class BinancePair(NamedTuple):
     symbol: str
-    base_asset: str
-    quote_asset: str
+    base_asset: Asset
+    quote_asset: Asset
 
 
 def trade_from_binance(
@@ -84,7 +84,7 @@ def trade_from_binance(
     return Trade(
         timestamp=timestamp,
         location='binance',
-        pair=base_asset + '_' + quote_asset,
+        pair=TradePair(f'{base_asset}_{quote_asset}'),
         trade_type=order_type,
         amount=amount,
         rate=rate,

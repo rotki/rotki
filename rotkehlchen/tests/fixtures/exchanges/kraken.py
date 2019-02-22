@@ -14,11 +14,11 @@ from rotkehlchen.tests.utils.factories import (
     make_random_timestamp,
     make_random_uppercasenumeric_string,
 )
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.typing import Asset, Timestamp, TradePair
 from rotkehlchen.utils import rlk_jsonloads
 
 
-def get_random_kraken_asset():
+def get_random_kraken_asset() -> Asset:
     kraken_assets = set(KRAKEN_ASSETS) - set(KRAKEN_DELISTED)
     return random.choice(kraken_assets)
 
@@ -45,7 +45,7 @@ def generate_random_kraken_id() -> str:
 
 def create_kraken_trade(
         tradeable_pairs: List[str],
-        pair: Optional[str] = None,
+        pair: Optional[TradePair] = None,
         time: Optional[Timestamp] = None,
         start_ts: Optional[Timestamp] = None,
         end_ts: Optional[Timestamp] = None,

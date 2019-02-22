@@ -1,6 +1,7 @@
 import os
 import time
 from shutil import copyfile
+from typing import Any, Dict
 from unittest.mock import patch
 
 import pytest
@@ -168,7 +169,7 @@ def test_writting_fetching_data(data_dir, username):
     assert 'nonexisting_setting' not in result
 
 
-def from_otc_trade(trade):
+def from_otc_trade(trade: Dict[str, Any]) -> Dict[str, Any]:
     ts = createTimeStamp(trade['otc_timestamp'], formatstr='%d/%m/%Y %H:%M')
     new_trade = {
         'timestamp': ts,

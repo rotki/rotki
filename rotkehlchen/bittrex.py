@@ -3,7 +3,7 @@ import hmac
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from urllib.parse import urlencode
 
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
@@ -13,7 +13,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import Trade, invert_pair
-from rotkehlchen.typing import ApiKey, ApiSecret, BlockchainAsset, FilePath, Timestamp
+from rotkehlchen.typing import ApiKey, ApiSecret, BlockchainAsset, FilePath, Timestamp, TradePair
 from rotkehlchen.utils import (
     cache_response_timewise,
     createTimeStamp,
@@ -41,15 +41,15 @@ BITTREX_ACCOUNT_METHODS = {
 }
 
 
-def bittrex_pair_to_world(pair: str) -> str:
-    return pair.replace('-', '_')
+def bittrex_pair_to_world(pair: str) -> TradePair:
+    return TradePair(pair.replace('-', '_'))
 
 
-def world_pair_to_bittrex(pair: str) -> str:
+def world_pair_to_bittrex(pair: TradePair) -> str:
     return pair.replace('_', '-')
 
 
-def trade_from_bittrex(bittrex_trade: Dict) -> Trade:
+def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
     """Turn a bittrex trade returned from bittrex trade history to our common trade
     history format"""
     amount = FVal(bittrex_trade['Quantity']) - FVal(bittrex_trade['QuantityRemaining'])
@@ -221,7 +221,7 @@ class Bittrex(Exchange):
             start_ts: Timestamp,
             end_ts: Timestamp,
             end_at_least_ts: Timestamp,
-            market: Optional[str] = None,
+            market: Optional[TradePair] = None,
             count: Optional[int] = None,
     ) -> List:
 

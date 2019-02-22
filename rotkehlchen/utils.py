@@ -17,7 +17,7 @@ from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, ZERO
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Asset, Fee, FilePath, ResultCache, Timestamp
+from rotkehlchen.typing import Asset, Fee, FilePath, ResultCache, Timestamp, TradePair
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -141,7 +141,7 @@ def dict_get_sumof(d: Dict[str, Dict[str, FVal]], attribute: str, **args) -> FVa
     return sum_
 
 
-def get_pair_position(pair: str, position: str) -> Asset:
+def get_pair_position(pair: TradePair, position: str) -> Asset:
     assert position == 'first' or position == 'second'
     currencies = pair.split('_')
     if len(currencies) != 2:

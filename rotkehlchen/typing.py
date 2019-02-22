@@ -18,6 +18,8 @@ ApiSecret = NewType('ApiSecret', T_ApiSecret)
 T_FilePath = str
 FilePath = NewType('FilePath', T_FilePath)
 
+T_TradePair = str
+TradePair = NewType('TradePair', T_TradePair)
 
 # The Symbol of an Ethereum Token. e.g. GNO, RDN e.t.c.
 T_EthToken = str

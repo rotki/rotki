@@ -1,16 +1,15 @@
 from collections import namedtuple
-from typing import List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, cast
 
 from dataclasses import dataclass
 
-from rotkehlchen import typing
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Asset, Timestamp
+from rotkehlchen.typing import Asset, Timestamp, TradePair
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class BuyEvent:
-    timestamp: typing.Timestamp
+    timestamp: Timestamp
     amount: FVal  # Amount of the asset being bought
     rate: FVal  # Rate in quote currency for which we buy 1 unit of the buying asset
     # Fee rate in profit currency which we paid for each unit of the buying asset
@@ -19,7 +18,7 @@ class BuyEvent:
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class SellEvent:
-    timestamp: typing.Timestamp
+    timestamp: Timestamp
     amount: FVal  # Amount of the asset we sell
     rate: FVal  # Rate in 'profit_currency' for which we sell 1 unit of the sold asset
     fee_rate: FVal  # Fee rate in 'profit_currency' which we paid for each unit of the sold asset
@@ -59,7 +58,7 @@ class Trade(NamedTuple):
     """
     timestamp: Timestamp
     location: str
-    pair: str
+    pair: TradePair
     trade_type: str
     # The amount represents the amount bought if it's a buy or or the amount
     # sold if it's a sell
@@ -83,38 +82,41 @@ class Trade(NamedTuple):
 
 class MarginPosition(NamedTuple):
     exchange: str
-    open_time: Optional[typing.Timestamp]
-    close_time: typing.Timestamp
+    open_time: Optional[Timestamp]
+    close_time: Timestamp
     profit_loss: FVal
-    pl_currency: typing.Asset
+    pl_currency: Asset
     notes: str
 
 
-def trade_get_other_pair(trade, asset):
-    currencies = trade.pair.split('_')
-    if len(currencies) != 2:
-        raise ValueError("Could not split {} pair".format(trade.pair))
-    return currencies[0] if currencies[1] == asset else currencies[1]
+def pair_get_assets(pair: TradePair) -> Tuple[Asset, Asset]:
+    """Returns a tuple with the (base, quote) assets"""
+    assets = pair.split('_')
+    if len(assets) != 2:
+        raise ValueError(f'Could not split {pair} pair')
+
+    return cast(Asset, assets[0]), cast(Asset, assets[1])
 
 
-def pair_get_assets(pair):
-    currencies = pair.split('_')
-    if len(currencies) != 2:
-        raise ValueError("Could not split {} pair".format(pair))
-
-    return currencies[0], currencies[1]
+def trade_get_other_pair(trade: Trade, asset: Asset) -> Asset:
+    base, quote = pair_get_assets(trade.pair)
+    return base if quote == asset else quote
 
 
-def invert_pair(pair: str) -> str:
+def invert_pair(pair: TradePair) -> TradePair:
     left, right = pair_get_assets(pair)
-    return f'{right}_{left}'
+    return TradePair(f'{right}_{left}')
 
 
 def trade_get_assets(trade):
     return pair_get_assets(trade.pair)
 
 
-def trades_from_dictlist(given_trades, start_ts, end_ts):
+def trades_from_dictlist(
+        given_trades: List[Dict[str, Any]],
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+) -> List[Trade]:
     """ Gets a list of dict trades, most probably read from the json files and
     a time period. Returns it as a list of the Trade tuples that are inside the time period
     """
@@ -151,7 +153,11 @@ def trades_from_dictlist(given_trades, start_ts, end_ts):
     return returned_trades
 
 
-def asset_movements_from_dictlist(given_data, start_ts, end_ts):
+def asset_movements_from_dictlist(
+        given_data: List[Dict[str, Any]],
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+) -> List[AssetMovement]:
     """ Gets a list of dict asset movements, most probably read from the json files and
     a time period. Returns it as a list of the AssetMovement tuples that are inside the time period
     """
