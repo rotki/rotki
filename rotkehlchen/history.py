@@ -55,8 +55,6 @@ def trade_from_exchange(exchange, trade):
         return trade_from_kraken(trade)
     elif name == 'bitmex':
         return trade_from_bitmex(trade)
-    elif name == 'poloniex':
-        return trade_from_poloniex(trade)
 
 
 class NoPriceForGivenTimestamp(Exception):

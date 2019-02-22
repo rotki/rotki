@@ -61,12 +61,12 @@ class Exchange(object):
         if special_name is None:
             return os.path.join(
                 self.user_directory,
-                "%d_%s_trades.json" % (self.identifier, self.name)
+                "%d_%s_trades.json" % (self.identifier, self.name),
             )
         else:
             return os.path.join(
                 self.user_directory,
-                "%d_%s_%s.json" % (self.identifier, self.name, special_name)
+                "%d_%s_%s.json" % (self.identifier, self.name, special_name),
             )
 
     def check_trades_cache(
