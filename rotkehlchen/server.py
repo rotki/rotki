@@ -14,7 +14,7 @@ from rotkehlchen.errors import AuthenticationError, RotkehlchenPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.typing import Asset, Timestamp
-from rotkehlchen.utils import pretty_json_dumps, process_result, process_result_list
+from rotkehlchen.utils import process_result, process_result_list
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

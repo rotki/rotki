@@ -4,7 +4,6 @@ import random
 from typing import Dict, List, Optional
 
 import pytest
-
 from rotkehlchen.constants import S_EUR, S_USD
 from rotkehlchen.fval import FVal
 from rotkehlchen.kraken import KRAKEN_ASSETS, KRAKEN_DELISTED, Kraken, world_to_kraken_pair
@@ -182,6 +181,7 @@ class MockKraken(Kraken):
 @pytest.fixture(scope='session')
 def kraken(session_data_dir, session_inquirer):
     mock = MockKraken(
+        identifier=0,
         api_key=base64.b64encode(make_random_b64bytes(128)),
         secret=base64.b64encode(make_random_b64bytes(128)),
         user_directory=session_data_dir,

@@ -4,7 +4,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-
 from rotkehlchen.binance import Binance, trade_from_binance
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
@@ -14,7 +13,13 @@ from rotkehlchen.tests.utils.mock import MockResponse
 
 @pytest.fixture
 def mock_binance(accounting_data_dir, inquirer):
-    binance = Binance(b'', b'', inquirer, accounting_data_dir)
+    binance = Binance(
+        identifier=1,
+        api_key=b'',
+        secret=b'',
+        inquirer=inquirer,
+        data_dir=accounting_data_dir,
+    )
     this_dir = os.path.dirname(os.path.abspath(__file__))
     json_path = Path(this_dir).parent / 'tests' / 'utils' / 'data' / 'binance_exchange_info.json'
     with json_path.open('r') as f:
