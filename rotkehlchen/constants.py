@@ -17,6 +17,7 @@ S_EMPTYSTR = typing.EmptyStr('')
 
 S_BTC = cast(typing.NonEthTokenBlockchainAsset, 'BTC')
 S_BCH = cast(typing.NonEthTokenBlockchainAsset, 'BCH')
+S_BCHSV = cast(typing.NonEthTokenBlockchainAsset, 'BCHSV')
 S_ETH = cast(typing.NonEthTokenBlockchainAsset, 'ETH')
 S_ETC = cast(typing.NonEthTokenBlockchainAsset, 'ETC')
 S_DATACOIN = cast(typing.NonEthTokenBlockchainAsset, 'DATAcoin')
