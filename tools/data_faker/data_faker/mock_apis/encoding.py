@@ -1,15 +1,4 @@
 from marshmallow import Schema, SchemaOpts, fields, post_load
-from marshmallow.exceptions import ValidationError
-
-
-class BytesField(fields.Field):
-    def _serialize(self, value):
-        if isinstance(value, bytes):
-            return value
-        elif isinstance(value, str):
-            return value.encode()
-        # else
-        raise ValidationError('Invalid input type for BytesField')
 
 
 class BaseOpts(SchemaOpts):
@@ -30,48 +19,6 @@ class BaseSchema(Schema):
         # the class Meta attributes
         decoding_class = self.opts.decoding_class  # pylint: disable=no-member
         return decoding_class(**data)
-
-
-class KrakenTickerSchema(BaseSchema):
-
-    class Meta:
-        strict = True
-        decoding_class = dict
-
-
-class KrakenAssetPairsSchema(BaseSchema):
-
-    class Meta:
-        strict = True
-        decoding_class = dict
-
-
-class KrakenBalanceSchema(BaseSchema):
-
-    class Meta:
-        strict = True
-        decoding_class = dict
-
-
-class KrakenTradesHistorySchema(BaseSchema):
-
-    class Meta:
-        strict = True
-        decoding_class = dict
-
-
-class BinanceAccountSchema(BaseSchema):
-
-    class Meta:
-        strict = True
-        decoding_class = dict
-
-
-class BinanceExchangeInfoSchema(BaseSchema):
-
-    class Meta:
-        strict = True
-        decoding_class = dict
 
 
 class BinanceMyTradesSchema(BaseSchema):
