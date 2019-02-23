@@ -1,13 +1,13 @@
 import datetime
 import logging
 import random
+from string import ascii_uppercase, digits
 from typing import Optional
 
 from data_faker.actions import ActionWriter
 from data_faker.fake_binance import FakeBinance
 from data_faker.fake_kraken import FakeKraken
 from data_faker.mock_apis.api import APIServer, RestAPI
-from faker import Faker
 
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
@@ -24,7 +24,6 @@ class DataFaker(object):
         random_seed = datetime.datetime.now()
         logger.info(f'Random seed used: {random_seed}')
         random.seed(random_seed)
-        self.faker = Faker()
 
         self.create_new_user(args.user_name, args.user_password)
 
@@ -62,7 +61,7 @@ class DataFaker(object):
 
     def create_new_user(self, user_name: Optional[str], given_password: str):
         if not user_name:
-            user_name = self.faker.user_name()
+            user_name = ''.join(random.choices(ascii_uppercase + digits, k=10))
 
         logger.info(f'Creating fake user {user_name} with password {given_password}')
 
