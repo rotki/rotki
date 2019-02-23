@@ -67,3 +67,12 @@ def test_cryptocompare_iota_query(price_historian):
     assert usd_price.is_close(FVal('0.954'))
     usd_price = price_historian.query_historical_price('IOT', 'USD', 1511793374)
     assert usd_price.is_close(FVal('0.954'))
+
+
+@pytest.mark.parametrize('should_mock_price_queries', [False])
+def test_cryptocompare_bchsv_query(price_historian):
+    """Test that BCHSV can be properly queried from cryptocompare (it's BSV there)"""
+    btc_price = price_historian.query_historical_price('BCHSV', 'BTC', 1550945818)
+    assert btc_price.is_close(FVal('0.01633'))
+    btc_price = price_historian.query_historical_price('BSV', 'BTC', 1550945818)
+    assert btc_price.is_close(FVal('0.01633'))
