@@ -60,9 +60,23 @@ class KrakenTradesHistorySchema(BaseSchema):
         decoding_class = dict
 
 
-class KrakenLedgersSchema(BaseSchema):
+class BinanceAccountSchema(BaseSchema):
 
-    nonce = fields.String(required=True)
+    class Meta:
+        strict = True
+        decoding_class = dict
+
+
+class BinanceExchangeInfoSchema(BaseSchema):
+
+    class Meta:
+        strict = True
+        decoding_class = dict
+
+
+class BinanceMyTradesSchema(BaseSchema):
+
+    symbol = fields.String(required=True)
 
     class Meta:
         strict = True

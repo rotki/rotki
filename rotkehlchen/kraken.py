@@ -61,7 +61,7 @@ KRAKEN_TO_WORLD = {
     'QTUM': 'QTUM',
     'XNMC': 'NMC',
     'XXVN': 'XVN',
-    'XXDG': 'XDG',
+    'XXDG': 'DOGE',
     'XTZ': 'XTZ',
     'BSV': 'BCHSV',
 }
@@ -95,7 +95,7 @@ WORLD_TO_KRAKEN = cast(Dict[Asset, Asset], {
     'QTUM': 'QTUM',
     'NMC': 'XNMC',
     'XVN': 'XXVN',
-    'XDG': 'XXDG',
+    'DOGE': 'XXDG',
     'XTZ': 'XTZ',
     'BCHSV': 'BSV',
 })
@@ -167,10 +167,30 @@ def world_to_kraken_pair(tradeable_pairs: List[str], pair: TradePair) -> str:
     if quote_asset not in KRAKEN_TO_WORLD:
         quote_asset = WORLD_TO_KRAKEN[quote_asset]
 
-    if base_asset + quote_asset in tradeable_pairs:
-        new_pair = base_asset + quote_asset
-    elif quote_asset + base_asset in tradeable_pairs:
-        new_pair = quote_asset + base_asset
+    pair1 = base_asset + quote_asset
+    pair2 = quote_asset + base_asset
+
+    # In some pairs, XXBT is XBT and ZEUR is EUR ...
+    pair3 = None
+    if 'XXBT' in pair1:
+        pair3 = pair1.replace('XXBT', 'XBT')
+    pair4 = None
+    if 'XXBT' in pair2:
+        pair4 = pair2.replace('XXBT', 'XBT')
+    if 'ZEUR' in pair1:
+        pair3 = pair1.replace('ZEUR', 'EUR')
+    pair4 = None
+    if 'ZEUR' in pair2:
+        pair4 = pair2.replace('ZEUR', 'EUR')
+
+    if pair1 in tradeable_pairs:
+        new_pair = pair1
+    elif pair2 in tradeable_pairs:
+        new_pair = pair2
+    elif pair3 in tradeable_pairs:
+        new_pair = pair3
+    elif pair4 in tradeable_pairs:
+        new_pair = pair4
     else:
         raise ValueError(
             f'Unknown pair "{pair}" provided. Couldnt find {base_asset + quote_asset}'

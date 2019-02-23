@@ -1,11 +1,15 @@
 import json
 import os
+import random
+from typing import Callable, Optional
+
+from data_faker.utils import assets_exist_at_time
 
 from rotkehlchen.fval import FVal
-from rotkehlchen.kraken import WORLD_TO_KRAKEN
-from rotkehlchen.order_formatting import Trade
+from rotkehlchen.kraken import WORLD_TO_KRAKEN, kraken_to_world_pair
+from rotkehlchen.order_formatting import Trade, pair_get_assets
 from rotkehlchen.tests.fixtures.exchanges.kraken import create_kraken_trade
-from rotkehlchen.typing import Asset, Timestamp
+from rotkehlchen.typing import Asset, Timestamp, TradePair
 from rotkehlchen.utils import process_result
 
 
@@ -13,12 +17,13 @@ class FakeKraken(object):
 
     def __init__(self):
 
-        # Use real data from 2019-02-15 for the 2 queried public endpoints
+        # Use real data from 2019-02-15 for the AssetPairs
         dir_path = os.path.dirname(os.path.realpath(__file__))
         with open(os.path.join(dir_path, 'data', 'kraken_asset_pairs.json'), 'r') as f:
 
             self.asset_pairs = json.loads(f.read())
 
+        # Use real data from 2019-02-23 for the Ticker
         with open(os.path.join(dir_path, 'data', 'kraken_ticker.json'), 'r') as f:
 
             self.ticker = json.loads(f.read())
@@ -27,6 +32,12 @@ class FakeKraken(object):
         self.balances_dict = {}
         self.deposits_ledger = []
         self.withdrawals_ledger = []
+        self.current_ledger_id = 1
+
+    def next_ledger_id(self):
+        ledger_id = self.current_ledger_id
+        self.current_ledger_id += 1
+        return ledger_id
 
     def increase_asset(self, asset: Asset, amount: FVal) -> None:
         asset = WORLD_TO_KRAKEN[asset]
@@ -41,11 +52,43 @@ class FakeKraken(object):
         assert amount <= self.balances_dict[asset], 'We should have enough funds to decrease asset'
         self.balances_dict[asset] -= amount
 
+    def choose_pair(
+            self,
+            timestamp: Timestamp,
+            price_query: Callable[[Asset, Asset, Timestamp], FVal],
+    ) -> TradePair:
+        """Choose a random pair to trade from the available pairs at the selected timestamp"""
+        choices = set(list(self.asset_pairs['result'].keys()))
+        found = False
+        while len(choices) != 0:
+            pair = random.choice(tuple(choices))
+            choices.remove(pair)
+            pair = kraken_to_world_pair(pair)
+            base, quote = pair_get_assets(pair)
+            kbase = WORLD_TO_KRAKEN[base]
+            kquote = WORLD_TO_KRAKEN[quote]
+            if kbase in self.balances_dict or kquote in self.balances_dict:
+                # Before choosing make sure that at the selected timestamp both of
+                # the pair assets exist (had a price)
+                if not assets_exist_at_time(base, quote, timestamp, price_query):
+                    continue
+                found = True
+                break
+
+        if not found:
+            raise ValueError('Could not find a pair to trade with the current funds')
+        return TradePair(f'{base}_{quote}')
+
+    def get_balance(self, asset: Asset) -> Optional[FVal]:
+        """Returns the balance of asset that's held in the exchance or None"""
+        kasset = WORLD_TO_KRAKEN[asset]
+        return self.balances_dict.get(kasset)
+
     def deposit(self, asset: Asset, amount: FVal, time: Timestamp) -> None:
         self.increase_asset(asset, amount)
         # and also add it to the ledgers
         entry = {
-            # 'refid': 'notusedbyrotkehlchen',
+            'refid': self.next_ledger_id(),
             'time': str(time) + '.0000',
             'type': 'deposit',
             # 'aclass': 'notusedbyrotkehlchen',
@@ -68,6 +111,7 @@ class FakeKraken(object):
         )
         self.trades_dict[kraken_trade['ordertxid']] = kraken_trade
 
+    # From here and on it's the exchange's API
     def query_asset_pairs(self):
         return self.asset_pairs
 
@@ -87,12 +131,20 @@ class FakeKraken(object):
         if ledger_type == 'all':
             result_list = self.deposits_ledger
             result_list.extend(self.withdrawals_ledger)
+            count = len(self.deposits_ledger)
+            count += len(self.withdrawals_ledger)
         elif ledger_type == 'deposit':
+            count = len(self.deposits_ledger)
             result_list = self.deposits_ledger
         elif ledger_type == 'withdrawal':
+            count = len(self.withdrawals_ledger)
             result_list = self.withdrawals_ledger
         else:
             raise ValueError(f'Invalid ledger_type {ledger_type} requested')
 
-        response = {'result': result_list, 'error': []}
+        ledger_dict = {}
+        for entry in result_list:
+            ledger_dict[entry['refid']] = entry
+        result = {'ledger': ledger_dict, 'count': count}
+        response = {'result': result, 'error': []}
         return process_result(response)

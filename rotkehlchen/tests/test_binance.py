@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.binance import Binance, trade_from_binance
+from rotkehlchen.binance import Binance, create_binance_symbols_to_pair, trade_from_binance
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade
@@ -20,7 +20,7 @@ def mock_binance(accounting_data_dir, inquirer):
     with json_path.open('r') as f:
         json_data = json.loads(f.read())
 
-    binance._populate_symbols_to_pair(json_data)
+    binance._symbols_to_pair = create_binance_symbols_to_pair(json_data)
     binance.first_connection_made = True
     return binance
 

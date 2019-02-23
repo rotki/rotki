@@ -20,6 +20,7 @@ def data_faker_args() -> argparse.ArgumentParser:
     )
     p.add_argument(
         '--trades-number',
+        type=int,
         help='The number of trades to automatically generate',
         default=100,
     )
