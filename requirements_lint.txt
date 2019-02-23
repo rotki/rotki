@@ -1,6 +1,6 @@
-mypy==0.641
+mypy==0.670
 pylint==2.2.2
-flake8==3.7.5
+flake8==3.7.6
 flake8-commas==2.0.0
 flake8-bugbear==18.8.0
 flake8-tuple==0.2.13
