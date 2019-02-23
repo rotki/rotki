@@ -1,11 +1,13 @@
-from flask import Blueprint
+from flask import Blueprint, request
 from flask_restful import Resource
 from webargs.flaskparser import use_kwargs
 
 from .encoding import (
+    BinanceAccountSchema,
+    BinanceExchangeInfoSchema,
+    BinanceMyTradesSchema,
     KrakenAssetPairsSchema,
     KrakenBalanceSchema,
-    KrakenLedgersSchema,
     KrakenTickerSchema,
     KrakenTradesHistorySchema,
 )
@@ -27,21 +29,11 @@ class BaseResource(Resource):
 class KrakenTickerResource(BaseResource):
 
     @use_kwargs(KrakenTickerSchema)
-    def get(self, **kwargs):
-        return self.rest_api.kraken_ticker()
-
-    @use_kwargs(KrakenTickerSchema)
     def post(self, **kwargs):
         return self.rest_api.kraken_ticker()
 
 
 class KrakenAssetPairsResource(BaseResource):
-
-    get_schema = KrakenAssetPairsSchema
-
-    @use_kwargs(KrakenAssetPairsSchema)
-    def get(self, **kwargs):
-        return self.rest_api.kraken_asset_pairs()
 
     @use_kwargs(KrakenAssetPairsSchema)
     def post(self, **kwargs):
@@ -51,19 +43,11 @@ class KrakenAssetPairsResource(BaseResource):
 class KrakenBalanceResource(BaseResource):
 
     @use_kwargs(KrakenBalanceSchema)
-    def get(self, **kwargs):
-        return self.rest_api.kraken_balances()
-
-    @use_kwargs(KrakenBalanceSchema)
     def post(self, **kwargs):
         return self.rest_api.kraken_balances()
 
 
 class KrakenTradesHistoryResource(BaseResource):
-
-    @use_kwargs(KrakenTradesHistorySchema)
-    def get(self, **kwargs):
-        return self.rest_api.kraken_trade_history()
 
     @use_kwargs(KrakenTradesHistorySchema)
     def post(self, **kwargs):
@@ -72,10 +56,37 @@ class KrakenTradesHistoryResource(BaseResource):
 
 class KrakenLedgersResource(BaseResource):
 
-    @use_kwargs(KrakenLedgersSchema)
-    def get(self, **kwargs):
-        return self.rest_api.kraken_ledgers()
-
-    @use_kwargs(KrakenLedgersSchema)
     def post(self, **kwargs):
-        return self.rest_api.kraken_ledgers()
+        # Not using a marshmallow schema here because no schema worked with
+        # the way rotkehlchen queries kraken. Not sure why yet. But one hacky way
+        # is to inspect the flask request directly
+        content_length = int(request.environ['CONTENT_LENGTH'])
+        data = str(request.environ['wsgi.input'].peek(content_length))
+        if 'deposit' in data:
+            ledger_type = 'deposit'
+        elif 'withdrawal' in data:
+            ledger_type = 'withdrawal'
+        else:
+            ledger_type = 'all'
+        return self.rest_api.kraken_ledgers(ledger_type=ledger_type)
+
+
+class BinanceAccountResource(BaseResource):
+
+    @use_kwargs(BinanceAccountSchema)
+    def get(self, **kwargs):
+        return self.rest_api.binance_account()
+
+
+class BinanceExchangeInfoResource(BaseResource):
+
+    @use_kwargs(BinanceExchangeInfoSchema)
+    def get(self, **kwargs):
+        return self.rest_api.binance_exchange_info()
+
+
+class BinanceMyTradesResource(BaseResource):
+
+    @use_kwargs(BinanceMyTradesSchema)
+    def get(self, **kwargs):
+        return self.rest_api.binance_my_trades(symbol=kwargs['symbol'])

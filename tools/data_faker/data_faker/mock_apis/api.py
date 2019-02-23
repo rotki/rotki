@@ -3,6 +3,9 @@ import logging
 from http import HTTPStatus
 
 from data_faker.mock_apis.resources import (
+    BinanceAccountResource,
+    BinanceExchangeInfoResource,
+    BinanceMyTradesResource,
     KrakenAssetPairsResource,
     KrakenBalanceResource,
     KrakenLedgersResource,
@@ -22,6 +25,9 @@ URLS = [
     ('/kraken/mock/private/Balance', KrakenBalanceResource),
     ('/kraken/mock/private/TradesHistory', KrakenTradesHistoryResource),
     ('/kraken/mock/private/Ledgers', KrakenLedgersResource),
+    ('/binance/api/v1/exchangeInfo', BinanceExchangeInfoResource),
+    ('/binance/api/v3/account', BinanceAccountResource),
+    ('/binance/api/v3/myTrades', BinanceMyTradesResource),
 ]
 
 ERROR_STATUS_CODES = [
@@ -100,8 +106,9 @@ class APIServer(object):
 
 
 class RestAPI(object):
-    def __init__(self, fake_kraken):
+    def __init__(self, fake_kraken, fake_binance):
         self.kraken = fake_kraken
+        self.binance = fake_binance
 
     def kraken_ticker(self):
         return self.kraken.query_ticker()
@@ -115,5 +122,14 @@ class RestAPI(object):
     def kraken_trade_history(self):
         return self.kraken.query_trade_history()
 
-    def kraken_ledgers(self):
-        return self.kraken.query_ledgers()
+    def kraken_ledgers(self, ledger_type):
+        return self.kraken.query_ledgers(ledger_type)
+
+    def binance_exchange_info(self):
+        return self.binance.query_exchange_info()
+
+    def binance_account(self):
+        return self.binance.query_account()
+
+    def binance_my_trades(self, symbol):
+        return self.binance.query_my_trades(symbol)

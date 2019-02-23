@@ -4,6 +4,7 @@ import random
 from typing import Optional
 
 from data_faker.actions import ActionWriter
+from data_faker.fake_binance import FakeBinance
 from data_faker.fake_kraken import FakeKraken
 from data_faker.mock_apis.api import APIServer, RestAPI
 from faker import Faker
@@ -31,7 +32,8 @@ class DataFaker(object):
         # history creation. We need it up so that we can emulate responses
         # from the exchanges
         self.fake_kraken = FakeKraken()
-        mock_api = RestAPI(fake_kraken=self.fake_kraken)
+        self.fake_binance = FakeBinance()
+        mock_api = RestAPI(fake_kraken=self.fake_kraken, fake_binance=self.fake_binance)
         self.mock_server = APIServer(rest_api=mock_api)
         self.mock_server.start()
 
@@ -40,11 +42,17 @@ class DataFaker(object):
             api_key=str(make_random_b64bytes(128)),
             api_secret=str(make_random_b64bytes(128)),
         )
+        self.rotki.setup_exchange(
+            name='binance',
+            api_key=str(make_random_b64bytes(128)),
+            api_secret=str(make_random_b64bytes(128)),
+        )
 
         self.writer = ActionWriter(
             trades_number=args.trades_number,
             rotkehlchen=self.rotki,
             fake_kraken=self.fake_kraken,
+            fake_binance=self.fake_binance,
         )
 
         self.writer.generate_history()

@@ -26,7 +26,8 @@ S_RAIBLOCKS = cast(typing.NonEthTokenBlockchainAsset, 'XRB')
 S_MLN_OLD = typing.EthToken('MLN (old)')
 S_MLN_NEW = typing.EthToken('MLN (new)')
 S_MLN = typing.EthToken('MLN')
-
+S_YOYOW = cast(typing.NonEthTokenBlockchainAsset, 'YOYOW')
+S_BQX = cast(typing.EthToken, 'BQX')
 S_RDN = cast(typing.EthToken, 'RDN')
 
 
@@ -35,7 +36,8 @@ S_EUR = typing.FiatAsset('EUR')
 S_GBP = typing.FiatAsset('GBP')
 S_JPY = typing.FiatAsset('JPY')
 S_CNY = typing.FiatAsset('CNY')
-FIAT_CURRENCIES = (S_USD, S_EUR, S_GBP, S_JPY, S_CNY)
+S_CAD = typing.FiatAsset('CAD')
+FIAT_CURRENCIES = (S_USD, S_EUR, S_GBP, S_JPY, S_CNY, S_CAD)
 
 EV_BUY = typing.EventType('buy')
 EV_SELL = typing.EventType('sell')
@@ -56,5 +58,7 @@ CACHE_RESPONSE_FOR_SECS = 600
 # API URLS
 KRAKEN_BASE_URL = 'https://api.kraken.com'
 KRAKEN_API_VERSION = '0'
+BINANCE_BASE_URL = 'https://api.binance.com/api/'
 # KRAKEN_BASE_URL = 'http://localhost:5001/kraken'
 # KRAKEN_API_VERSION = 'mock'
+# BINANCE_BASE_URL = 'http://localhost:5001/binance/api/'

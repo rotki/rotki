@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 
 import gevent
 
-from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
+from rotkehlchen.constants import BINANCE_BASE_URL, CACHE_RESPONSE_FOR_SECS, S_YOYOW
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
@@ -31,7 +31,22 @@ V1_ENDPOINTS = (
 )
 
 
+def world_to_binance(asset: Asset) -> Asset:
+    if asset == S_YOYOW:
+        return cast(Asset, 'YOYO')
+    return asset
+
+
+def binance_to_world(asset: Asset) -> Asset:
+    if asset == 'YOYO':
+        return S_YOYOW
+    return asset
+
+
 class BinancePair(NamedTuple):
+    """A binance pair. Contains the symbol in the Binance mode e.g. "ETHBTC" and
+    the base and quote assets of that symbol as parsed from exchangeinfo endpoint
+    result"""
     symbol: str
     base_asset: Asset
     quote_asset: Asset
@@ -52,11 +67,11 @@ def trade_from_binance(
     """
     amount = FVal(binance_trade['qty'])
     rate = FVal(binance_trade['price'])
-    pair = binance_symbols_to_pair[binance_trade['symbol']]
+    binance_pair = binance_symbols_to_pair[binance_trade['symbol']]
     timestamp = binance_trade['time']
 
-    base_asset = pair.base_asset
-    quote_asset = pair.quote_asset
+    base_asset = binance_to_world(binance_pair.base_asset)
+    quote_asset = binance_to_world(binance_pair.quote_asset)
 
     if binance_trade['isBuyer']:
         order_type = 'buy'
@@ -93,6 +108,23 @@ def trade_from_binance(
     )
 
 
+def create_binance_symbols_to_pair(exchange_data: Dict[str, Any]) -> Dict[str, BinancePair]:
+    """Parses the result of 'exchangeInfo' endpoint and creates the symbols_to_pair mapping"""
+    symbols_to_pair: Dict[str, BinancePair] = dict()
+    for symbol in exchange_data['symbols']:
+        symbol_str = symbol['symbol']
+        if isinstance(symbol_str, FVal):
+            symbol_str = str(symbol_str.to_int(exact=True))
+
+        symbols_to_pair[symbol_str] = BinancePair(
+            symbol=symbol_str,
+            base_asset=symbol['baseAsset'],
+            quote_asset=symbol['quoteAsset'],
+        )
+
+    return symbols_to_pair
+
+
 class Binance(Exchange):
     """Binance exchange api docs:
     https://github.com/binance-exchange/binance-official-api-docs/blob/master/rest-api.md
@@ -110,8 +142,7 @@ class Binance(Exchange):
             backoff_limit: int = 180,
     ):
         super(Binance, self).__init__('binance', api_key, secret, data_dir)
-        self.apiversion = 'v3'
-        self.uri = 'https://api.binance.com/api/'
+        self.uri = BINANCE_BASE_URL
         self.inquirer = inquirer
         self.session.headers.update({  # type: ignore
             'Accept': 'application/json',
@@ -127,22 +158,9 @@ class Binance(Exchange):
         # If it's the first time, populate the binance pair trade symbols
         # We know exchangeInfo returns a dict
         exchange_data = self.api_query('exchangeInfo')
-        self._populate_symbols_to_pair(exchange_data)
+        self._symbols_to_pair = create_binance_symbols_to_pair(exchange_data)
 
         self.first_connection_made = True
-
-    def _populate_symbols_to_pair(self, exchange_data: Dict[str, Any]):
-        self._symbols_to_pair: Dict[str, BinancePair] = dict()
-        for symbol in exchange_data['symbols']:
-            symbol_str = symbol['symbol']
-            if isinstance(symbol_str, FVal):
-                symbol_str = str(symbol_str.to_int(exact=True))
-
-            self._symbols_to_pair[symbol_str] = BinancePair(
-                symbol=symbol_str,
-                base_asset=symbol['baseAsset'],
-                quote_asset=symbol['quoteAsset'],
-            )
 
     @property
     def symbols_to_pair(self) -> Dict[str, BinancePair]:
@@ -252,17 +270,17 @@ class Binance(Exchange):
             amount = entry['free'] + entry['locked']
             if amount == FVal(0):
                 continue
-            currency = entry['asset']
-            usd_price = self.inquirer.find_usd_price(currency)
+            asset = binance_to_world(entry['asset'])
+            usd_price = self.inquirer.find_usd_price(asset)
             balance = dict()
             balance['amount'] = amount
             balance['usd_value'] = FVal(amount * usd_price)
-            returned_balances[currency] = balance
+            returned_balances[asset] = balance
 
             log.debug(
                 'binance balance query result',
                 sensitive_log=True,
-                currency=currency,
+                asset=asset,
                 amount=amount,
                 usd_value=balance['usd_value'],
             )
@@ -274,7 +292,7 @@ class Binance(Exchange):
             start_ts: Timestamp,
             end_ts: Timestamp,
             end_at_least_ts: Timestamp,
-            markets: Optional[str] = None,
+            markets: Optional[List[str]] = None,
     ) -> List:
         cache = self.check_trades_cache(start_ts, end_at_least_ts)
         cache = cast(List, cache)

@@ -14,7 +14,10 @@ def main():
     args = arg_parser.parse_args()
     faker = DataFaker(args)
 
-    rest_api = RestAPI(faker.fake_kraken)
+    rest_api = RestAPI(
+        fake_kraken=faker.fake_kraken,
+        fake_binance=faker.fake_binance,
+    )
     server = APIServer(rest_api)
     print('SERVER IS NOW RUNNING')
     # For some reason debug=True throws an exception:

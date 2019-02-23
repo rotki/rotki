@@ -9,6 +9,7 @@ import requests
 
 from rotkehlchen.constants import (
     FIAT_CURRENCIES,
+    S_BQX,
     S_DATACOIN,
     S_IOTA,
     S_NANO,
@@ -50,6 +51,8 @@ def world_to_cryptocompare(asset: Asset, timestamp: Timestamp = None) -> Asset:
         asset = cast(NonEthTokenBlockchainAsset, 'DATA')
     elif asset == S_IOTA:
         asset = cast(NonEthTokenBlockchainAsset, 'IOT')
+    elif asset == S_BQX:
+        asset = cast(EthToken, 'ETHOS')
     elif asset == S_NANO and timestamp and timestamp < XRB_NANO_REBRAND_TS:
         return S_RAIBLOCKS
     elif asset == S_RAIBLOCKS and timestamp and timestamp >= XRB_NANO_REBRAND_TS:
