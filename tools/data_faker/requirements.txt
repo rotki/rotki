@@ -1,5 +1,4 @@
 # rotkehlchen
-Faker==1.0.2
 webargs==2.0.0
 Flask-Restful==0.3.7
 Flask==1.0.2
