@@ -16,7 +16,13 @@ from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import AssetMovement, Trade, invert_pair
+from rotkehlchen.order_formatting import (
+    AssetMovement,
+    Trade,
+    TradeType,
+    invert_pair,
+    trade_type_from_string,
+)
 from rotkehlchen.typing import ApiKey, ApiSecret, BlockchainAsset, FilePath, Timestamp, TradePair
 from rotkehlchen.utils import (
     cache_response_timewise,
@@ -39,7 +45,7 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
     """Turn a poloniex trade returned from poloniex trade history to our common trade
     history format"""
 
-    trade_type = poloniex_trade['type']
+    trade_type = trade_type_from_string(poloniex_trade['type'])
     amount = FVal(poloniex_trade['amount'])
     rate = FVal(poloniex_trade['rate'])
     perc_fee = FVal(poloniex_trade['fee'])
@@ -47,17 +53,20 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
     quote_currency = get_pair_position(pair, 'second')
     timestamp = createTimeStamp(poloniex_trade['date'], formatstr="%Y-%m-%d %H:%M:%S")
     cost = rate * amount
-    if trade_type == 'buy':
+    if trade_type == TradeType.BUY:
         fee = amount * perc_fee
         fee_currency = quote_currency
-    elif trade_type == 'sell':
+    elif trade_type == TradeType.SELL:
         fee = cost * perc_fee
         fee_currency = base_currency
     else:
         raise ValueError('Got unexpected trade type "{}" for poloniex trade'.format(trade_type))
 
     if poloniex_trade['category'] == 'settlement':
-        trade_type = "settlement_%s" % trade_type
+        if trade_type == TradeType.BUY:
+            trade_type = TradeType.SETTLEMENT_BUY
+        else:
+            trade_type = TradeType.SETTLEMENT_SELL
 
     log.debug(
         'Processing poloniex Trade',

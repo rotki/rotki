@@ -18,7 +18,7 @@ from rotkehlchen.errors import AuthenticationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import FIAT_CURRENCIES
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import Trade
+from rotkehlchen.order_formatting import Trade, trade_type_from_string
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -103,7 +103,7 @@ def verify_otctrade_data(
     pair = TradePair(data['otc_pair'])
     first = get_pair_position(pair, 'first')
     second = get_pair_position(pair, 'second')
-    trade_type = cast(str, data['otc_type'])
+    trade_type = trade_type_from_string(str(data['otc_type']))
     amount = FVal(data['otc_amount'])
     rate = FVal(data['otc_rate'])
     fee = FVal(data['otc_fee'])

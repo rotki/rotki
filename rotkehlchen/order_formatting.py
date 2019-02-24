@@ -1,4 +1,5 @@
 from collections import namedtuple
+from enum import Enum
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, cast
 
 from dataclasses import dataclass
@@ -43,6 +44,39 @@ AssetMovement = namedtuple(
 )
 
 
+class TradeType(Enum):
+    BUY = 1
+    SELL = 2
+    SETTLEMENT_BUY = 3
+    SETTLEMENT_SELL = 4
+
+    def __str__(self) -> str:
+        if self == TradeType.BUY:
+            return 'buy'
+        elif self == TradeType.SELL:
+            return 'sell'
+        elif self == TradeType.SETTLEMENT_BUY:
+            return 'settlement_buy'
+        elif self == TradeType.SETTLEMENT_SELL:
+            return 'settlement_sell'
+
+        raise RuntimeError('Corrupt value for TradeType -- Should never happen')
+
+
+def trade_type_from_string(symbol: str) -> TradeType:
+    """Take a string and attempts to turn it into a TradeType"""
+    if symbol == 'buy':
+        return TradeType.BUY
+    elif symbol == 'sell':
+        return TradeType.SELL
+    elif symbol == 'settlement_buy':
+        return TradeType.SETTLEMENT_BUY
+    elif symbol == 'settlement_sell':
+        return TradeType.SETTLEMENT_SELL
+    else:
+        raise ValueError(f'Unknown symbol {symbol} for trade type')
+
+
 class Trade(NamedTuple):
     """Represents a Trade
 
@@ -59,7 +93,7 @@ class Trade(NamedTuple):
     timestamp: Timestamp
     location: str
     pair: TradePair
-    trade_type: str
+    trade_type: TradeType
     # The amount represents the amount bought if it's a buy or or the amount
     # sold if it's a sell
     amount: FVal
@@ -130,6 +164,7 @@ def trades_from_dictlist(
         pair = given_trade['pair']
         rate = FVal(given_trade['rate'])
         amount = FVal(given_trade['amount'])
+        trade_type = trade_type_from_string(given_trade['type'])
 
         trade_link = ''
         if 'link' in given_trade:
@@ -142,7 +177,7 @@ def trades_from_dictlist(
             timestamp=given_trade['timestamp'],
             location=given_trade['location'],
             pair=pair,
-            trade_type=given_trade['type'],
+            trade_type=trade_type,
             amount=amount,
             rate=rate,
             fee=FVal(given_trade['fee']),

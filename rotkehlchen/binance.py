@@ -13,7 +13,7 @@ from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import Trade
+from rotkehlchen.order_formatting import Trade, TradeType
 from rotkehlchen.typing import ApiKey, ApiSecret, Asset, FilePath, Timestamp, TradePair
 from rotkehlchen.utils import cache_response_timewise, rlk_jsonloads
 
@@ -74,10 +74,10 @@ def trade_from_binance(
     quote_asset = binance_to_world(binance_pair.quote_asset)
 
     if binance_trade['isBuyer']:
-        order_type = 'buy'
+        order_type = TradeType.BUY
         # e.g. in RDNETH we buy RDN by paying ETH
     else:
-        order_type = 'sell'
+        order_type = TradeType.SELL
 
     fee_currency = binance_trade['commissionAsset']
     fee = FVal(binance_trade['commission'])

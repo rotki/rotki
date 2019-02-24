@@ -8,7 +8,7 @@ from data_faker.utils import assets_exist_at_time
 
 from rotkehlchen.binance import binance_to_world, create_binance_symbols_to_pair, world_to_binance
 from rotkehlchen.fval import FVal
-from rotkehlchen.order_formatting import Trade, pair_get_assets
+from rotkehlchen.order_formatting import Trade, TradeType, pair_get_assets
 from rotkehlchen.typing import Asset, Timestamp, TradePair
 from rotkehlchen.utils import process_result, process_result_list
 
@@ -119,7 +119,7 @@ class FakeBinance(object):
             'commission': str(trade.fee),
             'commissionAsset': str(world_to_binance(trade.fee_currency)),
             'time': timestamp,
-            'isBuyer': trade.trade_type == 'buy',
+            'isBuyer': trade.trade_type == TradeType.BUY,
             'isMaker': True,
             'isBestMatch': True,
         }

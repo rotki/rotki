@@ -3,7 +3,7 @@ import random
 
 from rotkehlchen.constants import FIAT_CURRENCIES
 from rotkehlchen.fval import FVal
-from rotkehlchen.order_formatting import Trade, pair_get_assets
+from rotkehlchen.order_formatting import Trade, TradeType, pair_get_assets
 from rotkehlchen.typing import Asset, Timestamp, TradePair
 
 STARTING_TIMESTAMP = 1464739200  # 01/06/2016
@@ -129,15 +129,15 @@ class ActionWriter(object):
         # depending on our funds decide on what to do. Buy/sell
         base, quote = pair_get_assets(pair)
         if exchange.get_balance(base) is None:
-            action_type = 'buy'
+            action_type = TradeType.BUY
         elif exchange.get_balance(quote) is None:
-            action_type = 'sell'
+            action_type = TradeType.SELL
         else:
             # TODO: trade the one we have most of
-            action_type = random.choice(('buy', 'sell'))
+            action_type = random.choice(list(TradeType))
 
         # if we are buying we are going to spend from the quote asset
-        if action_type == 'buy':
+        if action_type == TradeType.BUY:
             spending_asset = quote
         else:  # selling spends from the base asset
             spending_asset = base
@@ -150,7 +150,7 @@ class ActionWriter(object):
         usd_to_spend = FVal(random.uniform(0.01, float(max_usd_equivalent_to_spend)))
         amount_in_spending_asset = usd_to_spend / spending_usd_rate
         # if we are buying then the amount is the amount of asset we bought
-        if action_type == 'buy':
+        if action_type == TradeType.BUY:
             amount = amount_in_spending_asset / rate
         # if we are selling the amount is the spending asset amount
         else:
@@ -175,7 +175,7 @@ class ActionWriter(object):
         logger.info(f'Created trade: {trade}')
 
         # Adjust our global and per exchange accounting
-        if action_type == 'buy':
+        if action_type == TradeType.BUY:
             # we buy so we increase our base asset by amount
             self.increase_asset(base, amount, exchange_name)
             # and decrease quote by amount * rate
