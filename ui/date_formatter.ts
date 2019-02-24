@@ -96,3 +96,5 @@ export class DateFormatter {
         return formattedString;
     }
 }
+
+export const displayDateFormatter = new DateFormatter();

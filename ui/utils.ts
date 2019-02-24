@@ -4,6 +4,7 @@ import {service} from './rotkehlchen_service';
 import {update_eth_node_connection_status_ui} from './dashboard';
 import {update_tax_report_progress} from './taxreport';
 import Timer = NodeJS.Timer;
+import {displayDateFormatter} from './date_formatter';
 
 // Prompt a directory selection dialog and pass selected directory to callback
 // Callback should be a function which accepts a single argument which will be
@@ -22,13 +23,7 @@ export function utc_now() {
 
 export function timestamp_to_date(ts: number) {
     const date = new Date(ts * 1000);
-    return (
-        ('0' + date.getUTCDate()).slice(-2) + '/' +
-        ('0' + (date.getUTCMonth() + 1)).slice(-2) + '/' +
-        date.getUTCFullYear() + ' ' +
-        ('0' + date.getUTCHours()).slice(-2) + ':' +
-        ('0' + date.getUTCMinutes()).slice(-2)
-    );
+    return displayDateFormatter.format(date, settings.date_display_format);
 }
 
 let client_auditor: Timer;

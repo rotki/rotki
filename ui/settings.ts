@@ -24,6 +24,7 @@ export class Settings {
     include_gas_costs = true;
     taxfree_after_period = 0;
     anonymized_logs = false;
+    date_display_format = '%d/%m/%Y %H:%M:%S %Z';
     private exchanges = ['kraken', 'poloniex', 'bittrex', 'bitmex', 'binance'];
     private currencies = [
         new Currency('United States Dollar', 'fa-usd', 'USD', '$'),
@@ -57,6 +58,7 @@ export class Settings {
         this.taxfree_after_period = 0;
         this.anonymized_logs = false;
         this.connected_exchanges = [];
+        this.date_display_format = '%d/%m/%Y %H:%M:%S %Z';
     }
 
     get EXCHANGES(): string[] {
@@ -155,13 +157,15 @@ export function add_settings_listeners() {
         }
 
         const balance_save_frequency = $('#balance_save_frequency').val();
+        const date_display_format = $('#date_display_format').val();
         const send_payload = {
             'ui_floating_precision': settings.floating_precision,
             'historical_data_start': settings.historical_data_start,
             'main_currency': main_currency,
             'eth_rpc_port': eth_rpc_port,
             'balance_save_frequency': balance_save_frequency,
-            'anonymized_logs': anonymized_logs
+            'anonymized_logs': anonymized_logs,
+            'date_display_format': date_display_format
         };
         // and now send the data to the python process
 
@@ -203,6 +207,12 @@ export function create_settings_ui() {
         settings.balance_save_frequency.toString(),
         '',
         'number'
+    );
+
+    str += form_entry(
+        'Date display format',
+        'date_display_format',
+        settings.date_display_format
     );
     $(str).appendTo($('.panel-body'));
 
