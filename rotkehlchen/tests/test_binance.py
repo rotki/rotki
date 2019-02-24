@@ -8,7 +8,7 @@ import pytest
 from rotkehlchen.binance import Binance, create_binance_symbols_to_pair, trade_from_binance
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.order_formatting import Trade
+from rotkehlchen.order_formatting import Trade, TradeType
 from rotkehlchen.tests.utils.mock import MockResponse
 
 
@@ -82,7 +82,7 @@ def test_trade_from_binance(mock_binance):
             timestamp=1512561941,
             location='binance',
             pair='RDN_ETH',
-            trade_type='buy',
+            trade_type=TradeType.BUY,
             amount=FVal(5.0),
             rate=FVal(0.0063213),
             fee=FVal(0.005),
@@ -92,7 +92,7 @@ def test_trade_from_binance(mock_binance):
             timestamp=1531117990,
             location='binance',
             pair='ETH_USDT',
-            trade_type='sell',
+            trade_type=TradeType.SELL,
             amount=FVal(0.505),
             rate=FVal(481.0),
             fee=FVal(0.242905),
@@ -102,7 +102,7 @@ def test_trade_from_binance(mock_binance):
             timestamp=1531728338,
             location='binance',
             pair='BTC_USDT',
-            trade_type='buy',
+            trade_type=TradeType.BUY,
             amount=FVal(0.051942),
             rate=FVal(6376.39),
             fee=FVal(0.00005194),
@@ -112,7 +112,7 @@ def test_trade_from_binance(mock_binance):
             timestamp=1531871806,
             location='binance',
             pair='ADA_USDT',
-            trade_type='sell',
+            trade_type=TradeType.SELL,
             amount=FVal(285.2),
             rate=FVal(0.17442),
             fee=FVal(0.00180015),

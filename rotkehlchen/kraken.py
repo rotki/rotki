@@ -18,7 +18,12 @@ from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import query_cryptocompare_for_fiat_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import AssetMovement, Trade, pair_get_assets
+from rotkehlchen.order_formatting import (
+    AssetMovement,
+    Trade,
+    pair_get_assets,
+    trade_type_from_string,
+)
 from rotkehlchen.typing import ApiKey, ApiSecret, Asset, EthToken, FilePath, Timestamp, TradePair
 from rotkehlchen.utils import (
     cache_response_timewise,
@@ -210,7 +215,7 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
     amount = FVal(kraken_trade['vol'])
     cost = FVal(kraken_trade['cost'])
     fee = FVal(kraken_trade['fee'])
-    order_type = kraken_trade['type']
+    order_type = trade_type_from_string(kraken_trade['type'])
     rate = FVal(kraken_trade['price'])
 
     if cost != amount * rate:

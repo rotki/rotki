@@ -10,7 +10,13 @@ from rotkehlchen.errors import PriceQueryUnknownFromAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import FIAT_CURRENCIES, PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import AssetMovement, MarginPosition, Trade, trade_get_assets
+from rotkehlchen.order_formatting import (
+    AssetMovement,
+    MarginPosition,
+    Trade,
+    TradeType,
+    trade_get_assets,
+)
 from rotkehlchen.transactions import EthereumTransaction
 from rotkehlchen.typing import Asset, Fee, FiatAsset, FilePath, Timestamp
 
@@ -465,7 +471,7 @@ class Accountant(object):
         # When you buy, you buy with the cost_currency and receive the other one
         # When you sell, you sell the amount in non-cost_currency and receive
         # costs in cost_currency
-        if trade.trade_type == 'buy':
+        if trade.trade_type == TradeType.BUY:
             self.events.add_buy_and_corresponding_sell(
                 bought_asset=trade.base_asset,
                 bought_amount=trade.amount,
@@ -475,12 +481,12 @@ class Accountant(object):
                 fee_currency=trade.fee_currency,
                 timestamp=trade.timestamp,
             )
-        elif trade.trade_type == 'sell':
+        elif trade.trade_type == TradeType.SELL:
             self.trade_add_to_sell_events(trade, False)
-        elif trade.trade_type == 'settlement_sell':
+        elif trade.trade_type == TradeType.SETTLEMENT_SELL:
             # in poloniex settlements sell some asset to get BTC to repay a loan
             self.trade_add_to_sell_events(trade, True)
-        elif trade.trade_type == 'settlement_buy':
+        elif trade.trade_type == TradeType.SETTLEMENT_BUY:
             # in poloniex settlements you buy some asset with BTC to repay a loan
             # so in essense you sell BTC to repay the loan
             selling_asset = S_BTC

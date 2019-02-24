@@ -12,7 +12,7 @@ from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import Trade, invert_pair
+from rotkehlchen.order_formatting import Trade, TradeType, invert_pair
 from rotkehlchen.typing import ApiKey, ApiSecret, BlockchainAsset, FilePath, Timestamp, TradePair
 from rotkehlchen.utils import (
     cache_response_timewise,
@@ -61,9 +61,9 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
     base_currency = get_pair_position(pair, 'first')
     fee = bittrex_commission
     if order_type == 'LIMIT_BUY':
-        order_type = 'buy'
+        order_type = TradeType.BUY
     elif order_type == 'LIMIT_SEL':
-        order_type = 'sell'
+        order_type = TradeType.SELL
     else:
         raise ValueError('Got unexpected order type "{}" for bittrex trade'.format(order_type))
 

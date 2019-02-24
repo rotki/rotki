@@ -8,6 +8,7 @@ import pytest
 from rotkehlchen.constants import S_EUR, S_USD
 from rotkehlchen.fval import FVal
 from rotkehlchen.kraken import KRAKEN_ASSETS, KRAKEN_DELISTED, Kraken, world_to_kraken_pair
+from rotkehlchen.order_formatting import TradeType
 from rotkehlchen.tests.utils.factories import (
     make_random_b64bytes,
     make_random_positive_fval,
@@ -49,7 +50,7 @@ def create_kraken_trade(
         time: Optional[Timestamp] = None,
         start_ts: Optional[Timestamp] = None,
         end_ts: Optional[Timestamp] = None,
-        trade_type: Optional[str] = None,
+        trade_type: Optional[TradeType] = None,
         rate: Optional[FVal] = None,
         amount: Optional[FVal] = None,
         fee: Optional[FVal] = None,
@@ -66,7 +67,7 @@ def create_kraken_trade(
     else:
         trade['time'] = str(make_random_timestamp(start=start_ts, end=end_ts)) + '.0000'
     if trade_type:
-        trade['type'] = trade_type
+        trade['type'] = str(trade_type)
     else:
         trade['type'] = random.choice(('buy', 'sell'))
     trade['ordertype'] = random.choice(('limit', 'market'))

@@ -2,7 +2,7 @@ import os
 from unittest.mock import patch
 
 from rotkehlchen.fval import FVal
-from rotkehlchen.order_formatting import Trade
+from rotkehlchen.order_formatting import Trade, TradeType
 from rotkehlchen.poloniex import Poloniex, trade_from_poloniex
 
 
@@ -29,7 +29,7 @@ def test_trade_from_poloniex():
     assert isinstance(trade, Trade)
     assert isinstance(trade.timestamp, int)
     assert trade.timestamp == 1500758317
-    assert trade.trade_type == 'sell'
+    assert trade.trade_type == TradeType.SELL
     assert trade.rate == rate
     assert trade.amount == amount
     assert trade.pair == 'ETH_BTC'
