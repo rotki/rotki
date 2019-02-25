@@ -6,7 +6,7 @@ import shutil
 import subprocess
 import sys
 if os.name != 'nt':
-     # termios does not exist in windows
+    # termios does not exist in windows
     import termios
 
 from binascii import hexlify
@@ -176,7 +176,8 @@ def geth_create_blockchain(
     cmd = geth_to_cmd(gethport, gethrpcport, nodedir, verbosity)
 
     # save current term settings before running geth
-    if os.name != 'nt' and isinstance(sys.stdin, io.IOBase):  # check that the test is running on non-capture mode
+    # check that the test is running on non-capture mode
+    if os.name != 'nt' and isinstance(sys.stdin, io.IOBase):
         term_settings = termios.tcgetattr(sys.stdin)
 
     stdout = None
