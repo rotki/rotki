@@ -5,7 +5,10 @@ import os
 import shutil
 import subprocess
 import sys
-import termios
+if os.name != 'nt':
+     # termios does not exist in windows
+    import termios
+
 from binascii import hexlify
 
 import gevent
@@ -173,7 +176,7 @@ def geth_create_blockchain(
     cmd = geth_to_cmd(gethport, gethrpcport, nodedir, verbosity)
 
     # save current term settings before running geth
-    if isinstance(sys.stdin, io.IOBase):  # check that the test is running on non-capture mode
+    if os.name != 'nt' and isinstance(sys.stdin, io.IOBase):  # check that the test is running on non-capture mode
         term_settings = termios.tcgetattr(sys.stdin)
 
     stdout = None
@@ -201,7 +204,7 @@ def geth_create_blockchain(
         raise e
     finally:
         # reenter echo mode (disabled by geth pasphrase prompt)
-        if isinstance(sys.stdin, io.IOBase):
+        if os.name != 'nt' and isinstance(sys.stdin, io.IOBase):
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, term_settings)
 
     process.poll()

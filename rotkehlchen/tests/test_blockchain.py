@@ -1,9 +1,14 @@
 import pytest
+import os
 
 from rotkehlchen.utils import from_wei
 from rotkehlchen.tests.utils.blockchain import DEFAULT_BALANCE
 
 
+@pytest.mark.skip(
+    os.name == 'nt',
+    reason='Not testing running with geth in windows at the moment',
+)
 @pytest.mark.parametrize('have_blockchain_backend', [True])
 def test_eth_connection_initial_balances(
         blockchain,
