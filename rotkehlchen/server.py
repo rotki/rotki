@@ -1,6 +1,7 @@
 # Based on https://github.com/fyears/electron-python-example
 from __future__ import print_function
 
+import os
 import logging
 import signal
 import traceback
@@ -342,7 +343,8 @@ class RotkehlchenServer(object):
         return res
 
     def main(self):
-        gevent.hub.signal(signal.SIGQUIT, self.shutdown)
+        if os.name != 'nt':
+            gevent.hub.signal(signal.SIGQUIT, self.shutdown)
         gevent.hub.signal(signal.SIGINT, self.shutdown)
         gevent.hub.signal(signal.SIGTERM, self.shutdown)
         # self.zerorpc = zerorpc.Server(self, heartbeat=15)
