@@ -7,6 +7,8 @@ import {service} from './rotkehlchen_service';
 
 
 export class Settings {
+    private static DEFAULT_DISPLAY_FORMAT =  '%d/%m/%Y %H:%M:%S %Z';
+
     user_logged = false;
     usd_to_fiat_exchange_rates: { [key: string]: number } = {};
     connected_exchanges: string[] = [];
@@ -24,7 +26,7 @@ export class Settings {
     include_gas_costs = true;
     taxfree_after_period = 0;
     anonymized_logs = false;
-    date_display_format = '%d/%m/%Y %H:%M:%S %Z';
+    date_display_format = Settings.DEFAULT_DISPLAY_FORMAT;
     private exchanges = ['kraken', 'poloniex', 'bittrex', 'bitmex', 'binance'];
     private currencies = [
         new Currency('United States Dollar', 'fa-usd', 'USD', '$'),
@@ -39,6 +41,7 @@ export class Settings {
     constructor() {
         this.reset();
         this.icon_map = this.get_icon_map();
+        this.date_display_format = localStorage.getItem('date_display_format') || Settings.DEFAULT_DISPLAY_FORMAT;
     }
 
     public reset() {
@@ -58,7 +61,7 @@ export class Settings {
         this.taxfree_after_period = 0;
         this.anonymized_logs = false;
         this.connected_exchanges = [];
-        this.date_display_format = '%d/%m/%Y %H:%M:%S %Z';
+        this.date_display_format = Settings.DEFAULT_DISPLAY_FORMAT;
     }
 
     get EXCHANGES(): string[] {
@@ -157,15 +160,14 @@ export function add_settings_listeners() {
         }
 
         const balance_save_frequency = $('#balance_save_frequency').val();
-        const date_display_format = $('#date_display_format').val();
+        const date_display_format = $('#date_display_format').val() as string;
         const send_payload = {
             'ui_floating_precision': settings.floating_precision,
             'historical_data_start': settings.historical_data_start,
             'main_currency': main_currency,
             'eth_rpc_port': eth_rpc_port,
             'balance_save_frequency': balance_save_frequency,
-            'anonymized_logs': anonymized_logs,
-            'date_display_format': date_display_format
+            'anonymized_logs': anonymized_logs
         };
         // and now send the data to the python process
 
@@ -178,6 +180,9 @@ export function add_settings_listeners() {
         }).catch((error: Error) => {
             showError('Settings Error', `Error at modifying settings: ${error.message}`);
         });
+
+        localStorage.setItem('date_display_format', date_display_format);
+        settings.date_display_format = date_display_format;
     });
 
     $('#historical_data_start').datetimepicker({
