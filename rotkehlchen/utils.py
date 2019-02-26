@@ -12,7 +12,7 @@ from typing import Any, Callable, Dict, List, Union, cast
 
 import requests
 from rlp.sedes import big_endian_int
-
+from rotkehlchen.order_formatting import TradeType
 from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, ZERO
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.fval import FVal
@@ -272,7 +272,6 @@ def rkl_decode_value(
             return FVal(val)
         except ValueError:
             pass
-
     assert not isinstance(val, float)
     return val
 
@@ -289,6 +288,8 @@ class RKLDecoder(json.JSONDecoder):
 class RKLEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, FVal):
+            return str(obj)
+        if isinstance(obj, TradeType):
             return str(obj)
         if isinstance(obj, float):
             raise ValueError("Trying to json encode a float.")
