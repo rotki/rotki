@@ -69,7 +69,7 @@ export class DateFormatter {
         const offset = date.getTimezoneOffset() * -1;
         const hours = Math.abs(Math.floor(offset / 60));
         const minutes = offset % 60;
-        const sign = offset > 0 ? '+' : '-';
+        const sign = offset >= 0 ? '+' : '-';
         return `${sign}${this.leftPad(hours.toString())}${this.leftPad(minutes.toString())}`;
     }
 
