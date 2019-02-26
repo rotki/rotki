@@ -6,9 +6,21 @@ chai.should();
 describe('DateFormatter', function () {
     const converter = new DateFormatter();
     let date: Date;
+    let originalOffset:  () => number;
+
+    function overrideTimezoneOffset(offset: number) {
+        Date.prototype.getTimezoneOffset = () => offset;
+    }
 
     beforeEach(function () {
-        date = new Date(Date.parse('03 Feb 2019 13:09:09 +01:00'));
+        process.env.TZ='UTC';
+        originalOffset = Date.prototype.getTimezoneOffset;
+        overrideTimezoneOffset(0);
+        date = new Date(Date.parse('03 Feb 2019 13:09:09 UTC'));
+    });
+
+    afterEach(function () {
+        Date.prototype.getTimezoneOffset = originalOffset;
     });
 
     it('should return the day in short form if the pattern is %a', function () {
@@ -96,17 +108,13 @@ describe('DateFormatter', function () {
     });
 
     it('should return the timezone if the pattern is %z', function () {
-        converter.format(date, '%z').should.equal('+0100');
-        const original = Date.prototype.getTimezoneOffset;
-        Date.prototype.getTimezoneOffset = function() {
-            return +120;
-        };
+        converter.format(date, '%z').should.equal('+0000');
+        overrideTimezoneOffset(+120);
         converter.format(new Date('2019-02-03T13:09:09-02:00'), '%z').should.equal('-0200');
-        Date.prototype.getTimezoneOffset = original;
     });
 
     it('should return the timezone if the pattern is %Z', function () {
-        converter.format(date, '%Z').should.equal('GMT+1');
+        converter.format(date, '%Z').should.be.oneOf(['UTC', 'GMT']);
     });
 
     it('should return the day of the year padded if the pattern is %j', function () {
