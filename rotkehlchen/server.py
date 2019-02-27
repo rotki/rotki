@@ -218,7 +218,7 @@ class RotkehlchenServer(object):
         if not self.rotkehlchen.premium:
             return process_result(result_dict)
 
-        active, emptrystr_or_error = self.rotkehlchen.premium.is_active()
+        active, _ = self.rotkehlchen.premium.is_active()
         if not active:
             return process_result(result_dict)
 

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`272` Added a statistics pane. Premium users can now see a graph of their net value over time there.
 * :bug:`299` IOTA historical price queries now work properly.
 * :bug:`288` After a user re-login querying fiat prices will no longer throw exceptions.
 * :bug:`273` Fallback to fetching NANO Price using XRB (Raiblocks) symbol before the rebranding.
