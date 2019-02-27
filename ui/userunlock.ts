@@ -255,6 +255,7 @@ function unlock_user(
                         settings.balance_save_frequency = db_settings.balance_save_frequency;
                         settings.last_balance_save = db_settings.last_balance_save;
                         settings.anonymized_logs = db_settings.anonymized_logs;
+                        settings.date_display_format = db_settings.date_display_format;
 
                         const is_new_user = create_true && api_key === '';
                         const exchanges = response.exchanges;

@@ -26,4 +26,5 @@ export interface DBSettings {
     readonly main_currency: string;
     readonly last_balance_save: number;
     readonly anonymized_logs: boolean;
+    readonly date_display_format: string;
 }
