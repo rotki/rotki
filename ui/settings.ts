@@ -41,7 +41,6 @@ export class Settings {
     constructor() {
         this.reset();
         this.icon_map = this.get_icon_map();
-        this.date_display_format = localStorage.getItem('date_display_format') || Settings.DEFAULT_DISPLAY_FORMAT;
     }
 
     public reset() {
@@ -161,13 +160,16 @@ export function add_settings_listeners() {
 
         const balance_save_frequency = $('#balance_save_frequency').val();
         const date_display_format = $('#date_display_format').val() as string;
+        settings.date_display_format = date_display_format;
+
         const send_payload = {
             'ui_floating_precision': settings.floating_precision,
             'historical_data_start': settings.historical_data_start,
             'main_currency': main_currency,
             'eth_rpc_port': eth_rpc_port,
             'balance_save_frequency': balance_save_frequency,
-            'anonymized_logs': anonymized_logs
+            'anonymized_logs': anonymized_logs,
+            'date_display_format': date_display_format
         };
         // and now send the data to the python process
 
@@ -180,9 +182,6 @@ export function add_settings_listeners() {
         }).catch((error: Error) => {
             showError('Settings Error', `Error at modifying settings: ${error.message}`);
         });
-
-        localStorage.setItem('date_display_format', date_display_format);
-        settings.date_display_format = date_display_format;
     });
 
     $('#historical_data_start').datetimepicker({

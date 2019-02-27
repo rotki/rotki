@@ -75,6 +75,7 @@ VALID_SETTINGS = (
     'balance_save_frequency',
     'anonymized_logs',
     'include_gas_costs',
+    'date_display_format',
 )
 
 BOOLEAN_SETTINGS = (
