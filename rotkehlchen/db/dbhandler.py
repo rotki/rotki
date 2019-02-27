@@ -650,7 +650,7 @@ class DBHandler(object):
         per location and finally the total balance
 
         The balances are saved in the DB at the given timestamp
-"""
+        """
         balances = []
         locations = []
 
@@ -888,7 +888,7 @@ class DBHandler(object):
         cursor = self.conn.cursor()
         result = cursor.execute(
             'SELECT time, usd_value FROM timed_location_data '
-            'WHERE location="total" ORDER BY time ASC;'
+            'WHERE location="total" ORDER BY time ASC;',
         )
         result = result.fetchall()
 
@@ -899,4 +899,3 @@ class DBHandler(object):
             data.append(float(entry[1]))
 
         return times_int, data
-
