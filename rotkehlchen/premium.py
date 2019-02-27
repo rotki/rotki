@@ -195,5 +195,5 @@ class Premium(object):
             )
         except requests.ConnectionError:
             return False, 'Could not connect to rotkehlchen server'
-        success, result_or_error = self.process_response(response)
+        success, result_or_error = _process_response(response)
         return success, result_or_error['data']
