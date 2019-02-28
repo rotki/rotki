@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`314` Exchangerates api is now queried with priority and as such there are no more delays at the startup of the application due to unresponsive FOREX api calls.
 * :feature:`272` Added a statistics pane. Premium users can now see a graph of their net value over time there.
 * :bug:`299` IOTA historical price queries now work properly.
 * :bug:`288` After a user re-login querying fiat prices will no longer throw exceptions.
