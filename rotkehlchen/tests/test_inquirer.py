@@ -15,7 +15,7 @@ from rotkehlchen.utils import ts_now, tsToDate
     reason='some of these APIs frequently become unavailable',
 )
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_query_realtieme_price_apis(inquirer):
+def test_query_realtime_price_apis(inquirer):
     result = _query_currency_converterapi('USD', 'EUR')
     assert result and isinstance(result, FVal)
     result = _query_exchanges_rateapi('USD', 'GBP')
@@ -29,14 +29,14 @@ def test_switching_to_backup_api(inquirer):
     count = 0
     original_get = requests.get
 
-    def mock_currency_converter_fail(uri):
+    def mock_exchanges_rateapi_fail(uri):
         nonlocal count
         count += 1
-        if 'currencyconverterapi' in uri:
+        if 'exchangeratesapi' in uri:
             return MockResponse(501, '{"msg": "some error")')
         return original_get(uri)
 
-    with patch('requests.get', side_effect=mock_currency_converter_fail):
+    with patch('requests.get', side_effect=mock_exchanges_rateapi_fail):
         result = inquirer.query_fiat_pair('USD', 'EUR')
         assert result and isinstance(result, FVal)
         assert count > 1, 'requests.get should have been called more than once'
