@@ -8,6 +8,7 @@ from typing import Dict, Iterable, Optional, cast
 import requests
 
 from rotkehlchen.constants import (
+    CURRENCYCONVERTER_API_KEY,
     FIAT_CURRENCIES,
     S_BCHSV,
     S_BQX,
@@ -124,8 +125,11 @@ def _query_currency_converterapi(base: FiatAsset, quote: FiatAsset) -> Optional[
         base_currency=base,
         quote_currency=quote,
     )
-    pair = '{}_{}'.format(base, quote)
-    querystr = 'https://free.currencyconverterapi.com/api/v5/convert?q={}'.format(pair)
+    pair = f'{base}_{quote}'
+    querystr = (
+        f'https://free.currencyconverterapi.com/api/v6/convert?'
+        f'q={pair}&apiKey={CURRENCYCONVERTER_API_KEY}'
+    )
     try:
         resp = request_get_dict(querystr)
         return FVal(resp['results'][pair]['val'])
@@ -291,9 +295,9 @@ class Inquirer(object):
         if price:
             return price
 
-        price = _query_currency_converterapi(base, quote)
+        price = _query_exchanges_rateapi(base, quote)
         if not price:
-            price = _query_exchanges_rateapi(base, quote)
+            price = _query_currency_converterapi(base, quote)
 
         if not price:
             # Search the cache for any price in the last month
