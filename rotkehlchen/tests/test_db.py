@@ -1,5 +1,6 @@
 import os
 import time
+from copy import deepcopy
 from shutil import copyfile
 from typing import Any, Dict
 from unittest.mock import patch
@@ -8,7 +9,7 @@ import pytest
 from eth_utils.address import to_checksum_address
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.constants import S_CNY, S_EUR, YEAR_IN_SECONDS
+from rotkehlchen.constants import S_BTC, S_CNY, S_ETH, S_EUR, S_USD, S_XMR, YEAR_IN_SECONDS
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import (
     DBINFO_FILENAME,
@@ -20,6 +21,7 @@ from rotkehlchen.db.dbhandler import (
     DEFAULT_START_DATE,
     DEFAULT_UI_FLOATING_PRECISION,
     ROTKEHLCHEN_DB_VERSION,
+    AssetBalance,
     BlockchainAccounts,
     DBHandler,
     LocationData,
@@ -469,3 +471,92 @@ def test_data_set_fiat_balance(data_dir, username):
     balances = data.get_fiat_balances()
     assert len(balances) == 1
     assert balances[S_CNY] == amount_cny
+
+
+asset_balances = [
+    AssetBalance(
+        time=1451606400,
+        name=S_USD,
+        amount='10',
+        usd_value='10',
+    ), AssetBalance(
+        time=1451606401,
+        name=S_ETH,
+        amount='2',
+        usd_value='1.7068',
+    ), AssetBalance(
+        time=1465171200,
+        name=S_USD,
+        amount='500',
+        usd_value='500',
+    ), AssetBalance(
+        time=1465171201,
+        name=S_ETH,
+        amount='10',
+        usd_value='123',
+    ), AssetBalance(
+        time=1485907200,
+        name=S_USD,
+        amount='350',
+        usd_value='350',
+    ), AssetBalance(
+        time=1485907201,
+        name=S_ETH,
+        amount='25',
+        usd_value='249.5',
+    ),
+]
+
+
+def test_query_timed_balances(data_dir, username):
+    data = DataHandler(data_dir)
+    data.unlock(username, '123', create_new=True)
+    data.db.add_multiple_balances(asset_balances)
+
+    result = data.db.query_timed_balances(
+        from_ts=1451606401,
+        to_ts=1485907100,
+        asset=S_USD,
+    )
+    assert len(result) == 1
+    assert result[0].time == 1465171200
+    assert result[0].amount == '500'
+    assert result[0].usd_value == '500'
+
+    result = data.db.query_timed_balances(
+        from_ts=1451606300,
+        to_ts=1485907000,
+        asset=S_ETH,
+    )
+    assert len(result) == 2
+    assert result[0].time == 1451606401
+    assert result[0].amount == '2'
+    assert result[0].usd_value == '1.7068'
+    assert result[1].time == 1465171201
+    assert result[1].amount == '10'
+    assert result[1].usd_value == '123'
+
+
+def test_query_owned_assets(data_dir, username):
+    data = DataHandler(data_dir)
+    data.unlock(username, '123', create_new=True)
+
+    balances = deepcopy(asset_balances)
+    balances.extend([
+        AssetBalance(
+            time=1488326400,
+            name=S_BTC,
+            amount='1',
+            usd_value='1222.66',
+        ),
+        AssetBalance(
+            time=1489326500,
+            name=S_XMR,
+            amount='2',
+            usd_value='33.8',
+        ),
+    ])
+    data.db.add_multiple_balances(balances)
+
+    assets_list = data.db.query_owned_assets()
+    assert assets_list == [S_USD, S_ETH, S_BTC, S_XMR]
