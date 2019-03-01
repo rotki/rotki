@@ -240,6 +240,17 @@ export class RotkehlchenService {
         });
     }
 
+    query_owned_assets(): Promise<string[]> {
+        return new Promise<string[]>((resolve, reject) => {
+            client.invoke('query_owned_assets', (error: Error, res: ActionResult<string[]>) => {
+                if (error || res == null) {
+                    reject(error || new NoResponseError());
+                } else {
+                    resolve(res.result);
+                }
+            });
+        });
+    }
     query_statistics_renderer(): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             client.invoke('query_statistics_renderer', (error: Error, res: ActionResult<string>) => {
