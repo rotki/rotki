@@ -1,5 +1,6 @@
 import {ActionResult, UnlockResult} from './model/action-result';
 import {AssetBalance} from './model/asset-balance';
+import {SingleAssetBalance} from './model/single-asset-balance';
 import {BlockchainAccountResult} from './model/blockchain_account_result';
 import {OtcTrade} from './model/otc-trade';
 import {IgnoredAssetsResponse} from './model/ignored_assets_response';
@@ -251,6 +252,25 @@ export class RotkehlchenService {
             });
         });
     }
+
+    query_timed_balances_data(asset: string, start_ts: number, end_ts: number): Promise<SingleAssetBalance[]> {
+        return new Promise<SingleAssetBalance[]>((resolve, reject) => {
+            client.invoke(
+                'query_timed_balances_data',
+                asset,
+                start_ts,
+                end_ts,
+                (error: Error, res: ActionResult<SingleAssetBalance[]>) => {
+                    console.log('ZZZ ' + res + ' ' + asset);
+                    if (error || res == null) {
+                        reject(error || new NoResponseError());
+                    } else {
+                        resolve(res.result);
+                    }
+                });
+        });
+    }
+
     query_statistics_renderer(): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             client.invoke('query_statistics_renderer', (error: Error, res: ActionResult<string>) => {

@@ -50,6 +50,12 @@ class AssetBalance(NamedTuple):
     usd_value: str
 
 
+class SingleAssetBalance(NamedTuple):
+    time: Timestamp
+    amount: str
+    usd_value: str
+
+
 class LocationData(NamedTuple):
     time: Timestamp
     location: str
@@ -899,6 +905,33 @@ class DBHandler(object):
             data.append(float(entry[1]))
 
         return times_int, data
+
+    def query_timed_balances(
+            self,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+            asset: Asset,
+    ) -> List[SingleAssetBalance]:
+        """Query all balance entries for an asset within a range of timestamps"""
+        cursor = self.conn.cursor()
+        results = cursor.execute(
+            f'SELECT time, amount, usd_value FROM timed_balances '
+            f'WHERE time BETWEEN {from_ts} AND {to_ts} AND currency="{asset}" '
+            f'ORDER BY time ASC;',
+        )
+        results = results.fetchall()
+        balances = []
+        for result in results:
+            balances.append(
+                SingleAssetBalance(
+                    time=result[0],
+                    amount=result[1],
+                    usd_value=result[2],
+                ),
+            )
+
+        return balances
+
     def query_owned_assets(self) -> List[Asset]:
         """Query the DB for a list of all assets ever owned"""
         cursor = self.conn.cursor()

@@ -213,6 +213,18 @@ class RotkehlchenServer(object):
         result = {'times': res[0], 'data': res[1]}
         return process_result(result)
 
+    def query_timed_balances_data(self, asset: str, start_ts: int, end_ts: int):
+        start_ts = Timestamp(start_ts)
+        end_ts = Timestamp(end_ts)
+        res = self.rotkehlchen.data.db.query_timed_balances(
+            from_ts=start_ts,
+            to_ts=end_ts,
+            asset=asset,
+        )
+        true_res = [{'time': a.time, 'amount': a.amount, 'usd_value': a.usd_value} for a in res]
+        result = {'result': true_res, 'messsage': ''}
+        return process_result(result)
+
     def query_owned_assets(self):
         res = self.rotkehlchen.data.db.query_owned_assets()
         result = {'result': res, 'message': ''}
