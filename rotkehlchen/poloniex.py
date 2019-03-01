@@ -7,6 +7,7 @@ import logging
 import os
 import time
 import traceback
+from json.decoder import JSONDecodeError
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from urllib.parse import urlencode
 
@@ -192,7 +193,16 @@ class Poloniex(Exchange):
                 )
                 ret = self.session.post('https://poloniex.com/tradingApi', req)
 
-            result = rlk_jsonloads_dict(ret.text)
+            if ret.status_code != 200:
+                raise RemoteError(
+                    f'Poloniex query responded with error status code: {ret.status_code}'
+                    f' and text: {ret.text}',
+                )
+
+            try:
+                result = rlk_jsonloads_dict(ret.text)
+            except JSONDecodeError:
+                raise RemoteError(f'Poloniex returned invalid JSON response: {ret.text}')
             return _post_process(result)
 
         return rlk_jsonloads(ret.text)
