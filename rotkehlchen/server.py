@@ -213,6 +213,11 @@ class RotkehlchenServer(object):
         result = {'times': res[0], 'data': res[1]}
         return process_result(result)
 
+    def query_owned_assets(self):
+        res = self.rotkehlchen.data.db.query_owned_assets()
+        result = {'result': res, 'message': ''}
+        return process_result(result)
+
     def query_statistics_renderer(self):
         result_dict = {'result': '', 'message': 'user does not have premium'}
         if not self.rotkehlchen.premium:

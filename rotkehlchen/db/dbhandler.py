@@ -899,3 +899,11 @@ class DBHandler(object):
             data.append(float(entry[1]))
 
         return times_int, data
+    def query_owned_assets(self) -> List[Asset]:
+        """Query the DB for a list of all assets ever owned"""
+        cursor = self.conn.cursor()
+        results = cursor.execute(
+            'SELECT DISTINCT currency FROM timed_balances ORDER BY time ASC;',
+        )
+
+        return [result[0] for result in results.fetchall()]
