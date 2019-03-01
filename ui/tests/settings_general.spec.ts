@@ -104,6 +104,10 @@ describe('general settings', function () {
             client.addValue('#historical_data_start', '03/10/2018');
         });
 
+        await retry( async() => {
+            client.addValue('#date_display_format', '%d-%m-%Y %H:%M:%S %z');
+        });
+
         await client.selectByValue('#maincurrencyselector', 'JPY');
 
         await retry( async() => {
@@ -136,5 +140,6 @@ describe('general settings', function () {
         await client.getValue('#eth_rpc_port').should.eventually.equal('8545');
         await client.isSelected('#anonymized_logs_input').should.eventually.be.true;
         await client.getValue('#maincurrencyselector').should.eventually.equal('JPY');
+        await client.getValue('#date_display_format').should.eventually.equal('%d-%m-%Y %H:%M:%S %z');
     });
 });
