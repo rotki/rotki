@@ -20,11 +20,11 @@ describe('application launch', function () {
     });
 
     afterEach(async function () {
+        await captureOnFailure(app, this.currentTest);
+
         if (app && app.isRunning()) {
             await app.stop();
         }
-
-        await captureOnFailure(app, this.currentTest);
     });
 
     it('assert we got 1 window running', () => {

@@ -53,11 +53,11 @@ describe('dashboard', function () {
     });
 
     after(async function () {
+        await captureOnFailure(app, this.currentTest);
+
         if (app && app.isRunning()) {
             await app.stop();
         }
-
-        await captureOnFailure(app, this.currentTest);
     });
 
     it('should be originally empty', async () => {
