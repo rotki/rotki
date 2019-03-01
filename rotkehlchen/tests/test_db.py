@@ -28,6 +28,7 @@ from rotkehlchen.db.dbhandler import (
     detect_sqlcipher_version,
 )
 from rotkehlchen.errors import AuthenticationError, InputError
+from rotkehlchen.typing import Timestamp
 from rotkehlchen.utils import createTimeStamp, rlk_jsondumps, ts_now
 
 TABLES_AT_INIT = [
@@ -475,32 +476,32 @@ def test_data_set_fiat_balance(data_dir, username):
 
 asset_balances = [
     AssetBalance(
-        time=1451606400,
+        time=Timestamp(1451606400),
         name=S_USD,
         amount='10',
         usd_value='10',
     ), AssetBalance(
-        time=1451606401,
+        time=Timestamp(1451606401),
         name=S_ETH,
         amount='2',
         usd_value='1.7068',
     ), AssetBalance(
-        time=1465171200,
+        time=Timestamp(1465171200),
         name=S_USD,
         amount='500',
         usd_value='500',
     ), AssetBalance(
-        time=1465171201,
+        time=Timestamp(1465171201),
         name=S_ETH,
         amount='10',
         usd_value='123',
     ), AssetBalance(
-        time=1485907200,
+        time=Timestamp(1485907200),
         name=S_USD,
         amount='350',
         usd_value='350',
     ), AssetBalance(
-        time=1485907201,
+        time=Timestamp(1485907201),
         name=S_ETH,
         amount='25',
         usd_value='249.5',
@@ -544,13 +545,13 @@ def test_query_owned_assets(data_dir, username):
     balances = deepcopy(asset_balances)
     balances.extend([
         AssetBalance(
-            time=1488326400,
+            time=Timestamp(1488326400),
             name=S_BTC,
             amount='1',
             usd_value='1222.66',
         ),
         AssetBalance(
-            time=1489326500,
+            time=Timestamp(1489326500),
             name=S_XMR,
             amount='2',
             usd_value='33.8',
