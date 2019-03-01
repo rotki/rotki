@@ -158,10 +158,16 @@ class Bittrex(Exchange):
         log.debug('Bittrex API query', request_url=request_url)
         response = self.session.get(request_url)
 
+        if response.status_code != 200:
+            raise RemoteError(
+                f'Bittrex query responded with error status code: {response.status_code}'
+                f' and text: {response.text}',
+            )
+
         try:
             json_ret = rlk_jsonloads_dict(response.text)
         except JSONDecodeError:
-            raise RemoteError('Bittrex returned invalid JSON response')
+            raise RemoteError(f'Bittrex returned invalid JSON response: {response.text}')
 
         if json_ret['success'] is not True:
             raise RemoteError(json_ret['message'])
