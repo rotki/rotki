@@ -477,32 +477,32 @@ def test_data_set_fiat_balance(data_dir, username):
 asset_balances = [
     AssetBalance(
         time=Timestamp(1451606400),
-        name=S_USD,
+        asset=S_USD,
         amount='10',
         usd_value='10',
     ), AssetBalance(
         time=Timestamp(1451606401),
-        name=S_ETH,
+        asset=S_ETH,
         amount='2',
         usd_value='1.7068',
     ), AssetBalance(
         time=Timestamp(1465171200),
-        name=S_USD,
+        asset=S_USD,
         amount='500',
         usd_value='500',
     ), AssetBalance(
         time=Timestamp(1465171201),
-        name=S_ETH,
+        asset=S_ETH,
         amount='10',
         usd_value='123',
     ), AssetBalance(
         time=Timestamp(1485907200),
-        name=S_USD,
+        asset=S_USD,
         amount='350',
         usd_value='350',
     ), AssetBalance(
         time=Timestamp(1485907201),
-        name=S_ETH,
+        asset=S_ETH,
         amount='25',
         usd_value='249.5',
     ),
@@ -546,13 +546,13 @@ def test_query_owned_assets(data_dir, username):
     balances.extend([
         AssetBalance(
             time=Timestamp(1488326400),
-            name=S_BTC,
+            asset=S_BTC,
             amount='1',
             usd_value='1222.66',
         ),
         AssetBalance(
             time=Timestamp(1489326500),
-            name=S_XMR,
+            asset=S_XMR,
             amount='2',
             usd_value='33.8',
         ),
@@ -639,28 +639,28 @@ def test_get_latest_asset_value_distribution(data_dir, username):
 
     btc = AssetBalance(
         time=Timestamp(1488326400),
-        name=S_BTC,
+        asset=S_BTC,
         amount='1',
         usd_value='1222.66',
     )
     balances.append(btc)
     eth = AssetBalance(
         time=Timestamp(1488326400),
-        name=S_ETH,
+        asset=S_ETH,
         amount='10',
         usd_value='4517.4',
     )
     balances.append(eth)
     eur = AssetBalance(
         time=Timestamp(1488326400),
-        name=S_EUR,
+        asset=S_EUR,
         amount='100',
         usd_value='119',
     )
     balances.append(eur)
     xmr = AssetBalance(
         time=Timestamp(1488326400),
-        name=S_XMR,
+        asset=S_XMR,
         amount='5',
         usd_value='61.5',
     )
