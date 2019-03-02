@@ -563,7 +563,7 @@ def test_query_owned_assets(data_dir, username):
     assert assets_list == [S_USD, S_ETH, S_BTC, S_XMR]
 
 
-def test_get_latest_value_distribution(data_dir, username):
+def test_get_latest_location_value_distribution(data_dir, username):
     data = DataHandler(data_dir)
     data.unlock(username, '123', create_new=True)
 
@@ -629,3 +629,47 @@ def test_get_latest_value_distribution(data_dir, username):
     assert distribution[2].usd_value == '2000'
     assert distribution[3].location == 'poloniex'
     assert distribution[3].usd_value == '100'
+
+
+def test_get_latest_asset_value_distribution(data_dir, username):
+    data = DataHandler(data_dir)
+    data.unlock(username, '123', create_new=True)
+
+    balances = deepcopy(asset_balances)
+
+    btc = AssetBalance(
+        time=Timestamp(1488326400),
+        name=S_BTC,
+        amount='1',
+        usd_value='1222.66',
+    )
+    balances.append(btc)
+    eth = AssetBalance(
+        time=Timestamp(1488326400),
+        name=S_ETH,
+        amount='10',
+        usd_value='4517.4',
+    )
+    balances.append(eth)
+    eur = AssetBalance(
+        time=Timestamp(1488326400),
+        name=S_EUR,
+        amount='100',
+        usd_value='119',
+    )
+    balances.append(eur)
+    xmr = AssetBalance(
+        time=Timestamp(1488326400),
+        name=S_XMR,
+        amount='5',
+        usd_value='61.5',
+    )
+    balances.append(xmr)
+    data.db.add_multiple_balances(balances)
+
+    assets = data.db.get_latest_asset_value_distribution()
+    assert len(assets) == 4
+    assert assets[0] == btc
+    assert assets[1] == eth
+    assert assets[2] == eur
+    assert assets[3] == xmr
