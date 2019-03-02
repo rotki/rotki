@@ -29,9 +29,9 @@ from rotkehlchen.kraken import Kraken
 from rotkehlchen.logging import DEFAULT_ANONYMIZED_LOGS, LoggingSettings, RotkehlchenLogsAdapter
 from rotkehlchen.poloniex import Poloniex
 from rotkehlchen.premium import premium_create_and_verify
+from rotkehlchen.serializer import process_result
 from rotkehlchen.typing import ApiKey, ApiSecret, ResultCache, Timestamp
 from rotkehlchen.utils import (
-    accounts_result,
     combine_stat_dicts,
     dict_get_sumof,
     merge_dicts,
@@ -43,6 +43,16 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 MAIN_LOOP_SECS_DELAY = 60
+
+
+def accounts_result(per_account, totals) -> Dict:
+    result = {
+        'result': True,
+        'message': '',
+        'per_account': per_account,
+        'totals': totals,
+    }
+    return process_result(result)
 
 
 class Rotkehlchen(object):

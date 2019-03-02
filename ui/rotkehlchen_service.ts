@@ -5,6 +5,7 @@ import {BlockchainAccountResult} from './model/blockchain_account_result';
 import {OtcTrade} from './model/otc-trade';
 import {IgnoredAssetsResponse} from './model/ignored_assets_response';
 import {Currency} from './model/currency';
+import {LocationData} from './model/location-data';
 import {AsyncQueryResult} from './model/balance-result';
 import {EthTokensResult} from './model/eth_tokens_result';
 import {PeriodicClientQueryResult} from './model/periodic_client_query_result';
@@ -261,7 +262,20 @@ export class RotkehlchenService {
                 start_ts,
                 end_ts,
                 (error: Error, res: ActionResult<SingleAssetBalance[]>) => {
-                    console.log('ZZZ ' + res + ' ' + asset);
+                    if (error || res == null) {
+                        reject(error || new NoResponseError());
+                    } else {
+                        resolve(res.result);
+                    }
+                });
+        });
+    }
+
+    query_latest_value_distribution(): Promise<LocationData[]> {
+        return new Promise<LocationData[]>((resolve, reject) => {
+            client.invoke(
+                'query_latest_value_distribution',
+                (error: Error, res: ActionResult<LocationData[]>) => {
                     if (error || res == null) {
                         reject(error || new NoResponseError());
                     } else {

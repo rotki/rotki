@@ -12,11 +12,12 @@ from typing import Any, Callable, Dict, List, Union, cast
 
 import requests
 from rlp.sedes import big_endian_int
-from rotkehlchen.order_formatting import TradeType
+
 from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, ZERO
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.order_formatting import TradeType
 from rotkehlchen.typing import Asset, Fee, FilePath, ResultCache, Timestamp, TradePair
 
 logger = logging.getLogger(__name__)
@@ -367,51 +368,6 @@ def get_system_spec() -> Dict[str, str]:
         system=system_info,
     )
     return system_spec
-
-
-def _process_entry(entry: Any) -> Union[str, List, Dict]:
-    if isinstance(entry, FVal):
-        return str(entry)
-    elif isinstance(entry, list):
-        new_list = list()
-        for new_entry in entry:
-            new_list.append(_process_entry(new_entry))
-        return new_list
-    elif isinstance(entry, dict):
-        new_dict = dict()
-        for k, v in entry.items():
-            new_dict[k] = _process_entry(v)
-        return new_dict
-    elif isinstance(entry, tuple):
-        raise ValueError('Query results should not contain tuples')
-    else:
-        return entry
-
-
-def process_result(result: Dict) -> Dict:
-    """Before sending out a result a dictionary via the server we are turning
-    all Decimals to strings so that the serialization to float/big number is handled
-    by the client application and we lose nothing in the transfer"""
-    processed_result = _process_entry(result)
-    assert isinstance(processed_result, Dict)
-    return processed_result
-
-
-def process_result_list(result: List) -> List:
-    """Just lke process_result but for lists"""
-    processed_result = _process_entry(result)
-    assert isinstance(processed_result, List)
-    return processed_result
-
-
-def accounts_result(per_account, totals) -> Dict:
-    result = {
-        'result': True,
-        'message': '',
-        'per_account': per_account,
-        'totals': totals,
-    }
-    return process_result(result)
 
 
 def simple_result(v: Any, msg: str) -> Dict:

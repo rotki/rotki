@@ -8,9 +8,9 @@ from data_faker.utils import assets_exist_at_time
 from rotkehlchen.fval import FVal
 from rotkehlchen.kraken import WORLD_TO_KRAKEN, kraken_to_world_pair
 from rotkehlchen.order_formatting import Trade, pair_get_assets
+from rotkehlchen.serializer import process_result
 from rotkehlchen.tests.fixtures.exchanges.kraken import create_kraken_trade
 from rotkehlchen.typing import Asset, Timestamp, TradePair
-from rotkehlchen.utils import process_result
 
 
 class FakeKraken(object):

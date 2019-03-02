@@ -9,8 +9,8 @@ from data_faker.utils import assets_exist_at_time
 from rotkehlchen.binance import binance_to_world, create_binance_symbols_to_pair, world_to_binance
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade, TradeType, pair_get_assets
+from rotkehlchen.serializer import process_result, process_result_list
 from rotkehlchen.typing import Asset, Timestamp, TradePair
-from rotkehlchen.utils import process_result, process_result_list
 
 # Disallow some assets for simplicity
 DISALLOWED_ASSETS = (

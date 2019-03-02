@@ -15,8 +15,9 @@ from rotkehlchen.args import app_args
 from rotkehlchen.errors import AuthenticationError, RotkehlchenPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.rotkehlchen import Rotkehlchen
+from rotkehlchen.serializer import process_result, process_result_list
 from rotkehlchen.typing import Asset, Timestamp
-from rotkehlchen.utils import pretty_json_dumps, process_result, process_result_list
+from rotkehlchen.utils import pretty_json_dumps
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -221,12 +222,16 @@ class RotkehlchenServer(object):
             to_ts=end_ts,
             asset=asset,
         )
-        true_res = [{'time': a.time, 'amount': a.amount, 'usd_value': a.usd_value} for a in res]
-        result = {'result': true_res, 'messsage': ''}
+        result = {'result': res, 'messsage': ''}
         return process_result(result)
 
     def query_owned_assets(self):
         res = self.rotkehlchen.data.db.query_owned_assets()
+        result = {'result': res, 'message': ''}
+        return process_result(result)
+
+    def query_latest_value_distribution(self):
+        res = self.rotkehlchen.data.db.get_latest_value_distribution()
         result = {'result': res, 'message': ''}
         return process_result(result)
 

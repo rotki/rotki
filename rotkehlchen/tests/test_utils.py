@@ -4,7 +4,7 @@ import pytest
 
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import invert_pair
-from rotkehlchen.server import process_result
+from rotkehlchen.serializer import process_result
 from rotkehlchen.utils import iso8601ts_to_timestamp
 
 
