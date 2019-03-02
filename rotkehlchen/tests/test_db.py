@@ -618,7 +618,7 @@ def test_get_latest_value_distribution(data_dir, username):
     ]
 
     data.db.add_multiple_location_data(locations)
-    distribution = data.db.get_latest_value_distribution()
+    distribution = data.db.get_latest_location_value_distribution()
     assert len(distribution) == 4
     assert all(entry.time == Timestamp(1491607800) for entry in distribution)
     assert distribution[0].location == 'banks'

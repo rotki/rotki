@@ -941,7 +941,7 @@ class DBHandler(object):
 
         return [result[0] for result in results.fetchall()]
 
-    def get_latest_value_distribution(self) -> List[LocationData]:
+    def get_latest_location_value_distribution(self) -> List[LocationData]:
         """Gets the latest location data
 
         Returns a list of `LocationData` all at the latest timestamp.

@@ -230,8 +230,8 @@ class RotkehlchenServer(object):
         result = {'result': res, 'message': ''}
         return process_result(result)
 
-    def query_latest_value_distribution(self):
-        res = self.rotkehlchen.data.db.get_latest_value_distribution()
+    def query_latest_location_value_distribution(self):
+        res = self.rotkehlchen.data.db.get_latest_location_value_distribution()
         result = {'result': res, 'message': ''}
         return process_result(result)
 
