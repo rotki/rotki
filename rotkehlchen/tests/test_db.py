@@ -561,3 +561,71 @@ def test_query_owned_assets(data_dir, username):
 
     assets_list = data.db.query_owned_assets()
     assert assets_list == [S_USD, S_ETH, S_BTC, S_XMR]
+
+
+def test_get_latest_value_distribution(data_dir, username):
+    data = DataHandler(data_dir)
+    data.unlock(username, '123', create_new=True)
+
+    locations = [
+        LocationData(
+            time=Timestamp(1451606400),
+            location='kraken',
+            usd_value='100',
+        ),
+        LocationData(
+            time=Timestamp(1451606400),
+            location='banks',
+            usd_value='1000',
+        ),
+
+        LocationData(
+            time=Timestamp(1461606500),
+            location='poloniex',
+            usd_value='50',
+        ),
+        LocationData(
+            time=Timestamp(1461606500),
+            location='kraken',
+            usd_value='200',
+        ),
+        LocationData(
+            time=Timestamp(1461606500),
+            location='banks',
+            usd_value='50000',
+        ),
+
+        LocationData(
+            time=Timestamp(1491607800),
+            location='poloniex',
+            usd_value='100',
+        ),
+        LocationData(
+            time=Timestamp(1491607800),
+            location='kraken',
+            usd_value='2000',
+        ),
+        LocationData(
+            time=Timestamp(1491607800),
+            location='banks',
+            usd_value='10000',
+        ),
+        LocationData(
+            time=Timestamp(1491607800),
+            location='blockchain',
+            usd_value='200000',
+        ),
+    ]
+
+    data.db.add_multiple_location_data(locations)
+    distribution = data.db.get_latest_value_distribution()
+    assert len(distribution) == 4
+    assert all(entry.time == Timestamp(1491607800) for entry in distribution)
+    assert distribution[0].location == 'banks'
+    assert distribution[0].usd_value == '10000'
+    assert distribution[1].location == 'blockchain'
+    assert distribution[1].usd_value == '200000'
+    assert distribution[2].location == 'kraken'
+    assert distribution[2].usd_value == '2000'
+    assert distribution[3].location == 'poloniex'
+    assert distribution[3].usd_value == '100'
