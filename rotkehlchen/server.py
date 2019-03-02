@@ -235,6 +235,11 @@ class RotkehlchenServer(object):
         result = {'result': res, 'message': ''}
         return process_result(result)
 
+    def query_latest_asset_value_distribution(self):
+        res = self.rotkehlchen.data.db.get_latest_asset_value_distribution()
+        result = {'result': res, 'message': ''}
+        return process_result(result)
+
     def query_statistics_renderer(self):
         result_dict = {'result': '', 'message': 'user does not have premium'}
         if not self.rotkehlchen.premium:

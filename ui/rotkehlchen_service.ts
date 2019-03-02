@@ -1,5 +1,6 @@
 import {ActionResult, UnlockResult} from './model/action-result';
 import {AssetBalance} from './model/asset-balance';
+import {DBAssetBalance} from './model/db-asset-balance';
 import {SingleAssetBalance} from './model/single-asset-balance';
 import {BlockchainAccountResult} from './model/blockchain_account_result';
 import {OtcTrade} from './model/otc-trade';
@@ -276,6 +277,20 @@ export class RotkehlchenService {
             client.invoke(
                 'query_latest_location_value_distribution',
                 (error: Error, res: ActionResult<LocationData[]>) => {
+                    if (error || res == null) {
+                        reject(error || new NoResponseError());
+                    } else {
+                        resolve(res.result);
+                    }
+                });
+        });
+    }
+
+    query_latest_asset_value_distribution(): Promise<DBAssetBalance[]> {
+        return new Promise<DBAssetBalance[]>((resolve, reject) => {
+            client.invoke(
+                'query_latest_asset_value_distribution',
+                (error: Error, res: ActionResult<DBAssetBalance[]>) => {
                     if (error || res == null) {
                         reject(error || new NoResponseError());
                     } else {

@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Union
 
-from rotkehlchen.db.dbhandler import LocationData, SingleAssetBalance
+from rotkehlchen.db.dbhandler import AssetBalance, LocationData, SingleAssetBalance
 from rotkehlchen.fval import FVal
 
 
@@ -21,6 +21,13 @@ def _process_entry(entry: Any) -> Union[str, List, Dict]:
         return {'time': entry.time, 'location': entry.location, 'usd_value': entry.usd_value}
     elif isinstance(entry, SingleAssetBalance):
         return {'time': entry.time, 'amount': entry.amount, 'usd_value': entry.usd_value}
+    elif isinstance(entry, AssetBalance):
+        return {
+            'time': entry.time,
+            'asset': entry.asset,
+            'amount': entry.amount,
+            'usd_value': entry.usd_value,
+        }
     elif isinstance(entry, tuple):
         raise ValueError('Query results should not contain tuples')
     else:

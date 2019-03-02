@@ -45,7 +45,7 @@ class BlockchainAccounts(NamedTuple):
 
 class AssetBalance(NamedTuple):
     time: Timestamp
-    name: Asset
+    asset: Asset
     amount: str
     usd_value: str
 
@@ -501,7 +501,7 @@ class DBHandler(object):
                 'INSERT INTO timed_balances('
                 '    time, currency, amount, usd_value) '
                 ' VALUES(?, ?, ?, ?)',
-                (entry.time, entry.name, entry.amount, entry.usd_value),
+                (entry.time, entry.asset, entry.amount, entry.usd_value),
             )
         self.conn.commit()
         self.update_last_write()
@@ -666,7 +666,7 @@ class DBHandler(object):
 
             balances.append(AssetBalance(
                 time=timestamp,
-                name=cast(Asset, key),
+                asset=cast(Asset, key),
                 amount=str(val['amount']),
                 usd_value=str(val['usd_value']),
             ))
@@ -947,10 +947,10 @@ class DBHandler(object):
         Returns a list of `LocationData` all at the latest timestamp.
         Essentially this returns the distribution of netvalue across all locations
         """
-        last_ts = self.get_last_balance_save_time()
         cursor = self.conn.cursor()
         results = cursor.execute(
-            f'SELECT time, location, usd_value FROM timed_location_data where time={last_ts}',
+            'SELECT time, location, usd_value FROM timed_location_data WHERE '
+            'time=(SELECT MAX(time) FROM timed_location_data);',
         )
         results = results.fetchall()
         locations = []
@@ -964,3 +964,28 @@ class DBHandler(object):
             )
 
         return locations
+
+    def get_latest_asset_value_distribution(self) -> List[AssetBalance]:
+        """Gets the latest asset distribution data
+
+        Returns a list of `AssetBalance` all at the latest timestamp.
+        Essentially this returns the distribution of netvalue across all assets
+        """
+        cursor = self.conn.cursor()
+        results = cursor.execute(
+            'SELECT time, currency, amount, usd_value FROM timed_balances WHERE '
+            'time=(SELECT MAX(time) from timed_balances);',
+        )
+        results = results.fetchall()
+        assets = []
+        for result in results:
+            assets.append(
+                AssetBalance(
+                    time=result[0],
+                    asset=result[1],
+                    amount=result[2],
+                    usd_value=result[3],
+                ),
+            )
+
+        return assets
