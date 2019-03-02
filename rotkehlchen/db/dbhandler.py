@@ -940,3 +940,27 @@ class DBHandler(object):
         )
 
         return [result[0] for result in results.fetchall()]
+
+    def get_latest_value_distribution(self) -> List[LocationData]:
+        """Gets the latest location data
+
+        Returns a list of `LocationData` all at the latest timestamp.
+        Essentially this returns the distribution of netvalue across all locations
+        """
+        last_ts = self.get_last_balance_save_time()
+        cursor = self.conn.cursor()
+        results = cursor.execute(
+            f'SELECT time, location, usd_value FROM timed_location_data where time={last_ts}',
+        )
+        results = results.fetchall()
+        locations = []
+        for result in results:
+            locations.append(
+                LocationData(
+                    time=result[0],
+                    location=result[1],
+                    usd_value=result[2],
+                ),
+            )
+
+        return locations
