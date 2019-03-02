@@ -271,10 +271,10 @@ export class RotkehlchenService {
         });
     }
 
-    query_latest_value_distribution(): Promise<LocationData[]> {
+    query_latest_location_value_distribution(): Promise<LocationData[]> {
         return new Promise<LocationData[]>((resolve, reject) => {
             client.invoke(
-                'query_latest_value_distribution',
+                'query_latest_location_value_distribution',
                 (error: Error, res: ActionResult<LocationData[]>) => {
                     if (error || res == null) {
                         reject(error || new NoResponseError());
