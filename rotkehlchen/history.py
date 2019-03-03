@@ -509,8 +509,8 @@ class PriceHistorian(object):
         if price == 0:
             if from_asset != 'BTC' and to_asset != 'BTC':
                 log.debug(
-                    f"Coudn't find historical price from {from_asset} to "
-                    f"{to_asset}. Comparing with BTC...",
+                    f"Couldn't find historical price from {from_asset} to "
+                    f"{to_asset} at timestamp {timestamp}. Comparing with BTC...",
                 )
                 # Just get the BTC price
                 asset_btc_price = self.query_historical_price(from_asset, 'BTC', timestamp)
@@ -518,8 +518,8 @@ class PriceHistorian(object):
                 price = asset_btc_price * btc_to_asset_price
             else:
                 log.debug(
-                    f"Coudn't find historical price from {from_asset} to "
-                    f"{to_asset}. Attempting to get daily price...",
+                    f"Couldn't find historical price from {from_asset} to "
+                    f"{to_asset} at timestamp {timestamp}. Attempting to get daily price...",
                 )
                 # attempt to get the daily price by timestamp
                 cc_from_asset = world_to_cryptocompare(from_asset, timestamp)
