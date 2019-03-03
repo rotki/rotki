@@ -63,7 +63,7 @@ export async function navigateTo(client: SpectronClient, elementId: string) {
 export async function closeAddYourSettingsPopup(client: SpectronClient) {
     await client.waitUntilTextExists('.jconfirm-title', 'Add your settings', METHOD_TIMEOUT);
     await retry( async() => {
-        client.click('.jconfirm-buttons>button');
+        await client.click('.jconfirm-buttons>button');
     });
 }
 
