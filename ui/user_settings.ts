@@ -21,7 +21,7 @@ import {
     settings_panel,
     table_html
 } from './elements';
-import {format_currency_value, get_fiat_usd_value, pages, settings} from './settings';
+import {format_currency_value, get_fiat_usd_value, settings} from './settings';
 import {query_exchange_balances_async} from './exchange';
 import {PlacementType} from './enums/PlacementType';
 import {ActionResult} from './model/action-result';
@@ -37,6 +37,11 @@ let FIAT_BALANCES: { [currency: string]: AssetBalance };
 let OWNED_TOKENS: string[] = [];
 let BB_PER_ASSET_TABLE: AssetTable;
 let BB_PER_ACCOUNT_TABLES: { [asset: string]: AssetTable | DataTables.Api } = {};
+// The following are the data saved in the front end so that when reloading
+// the user settings we don't need to query the back-end again
+let BB_ETH_ACCOUNT_DATA: { [account: string]: AssetBalance };
+let BB_BTC_ACCOUNT_DATA: { [account: string]: AssetBalance };
+let BB_PER_ASSET_DATA: { [asset: string]: AssetBalance };
 // awesome idea of template string plus destructuring/mapping taken from:
 // https://stackoverflow.com/a/39065147/110395
 const ExchangeBadge = ({name, css_class}: { name: string, css_class: string }) => `
@@ -57,6 +62,9 @@ export function reset_user_settings() {
     OWNED_TOKENS = [];
     BB_PER_ACCOUNT_TABLES = {};
     populate_eth_tokens_called = false;
+    BB_PER_ASSET_DATA = {};
+    BB_ETH_ACCOUNT_DATA = {};
+    BB_BTC_ACCOUNT_DATA = {};
 }
 
 function show_loading(selector?: string) {
@@ -232,7 +240,7 @@ function fiat_modify_callback(event: JQuery.Event) {
     });
 }
 
-export function add_user_settings_listeners() {
+function add_user_settings_listeners() {
     $('#setup_exchange').change((event) => {
         const value = $(event.target).val() as string;
         if (settings.connected_exchanges.indexOf(value) > -1) {
@@ -250,13 +258,14 @@ export function add_user_settings_listeners() {
     $('#fiat_type_entry').change(fiat_selection_callback);
     $('#modify_fiat_button').click(fiat_modify_callback);
     $('#add_account_button').click(add_blockchain_account);
+    populate_eth_tokens_called = false;
+    populate_eth_tokens();
 }
 
-export function create_user_settings() {
+function create_user_settings() {
     let str = page_header('User Settings');
     str += settings_panel('Premium Settings', 'premium');
     str += settings_panel('Exchange Settings', 'exchange');
-    str += settings_panel('Accounting Settings', 'accounting');
     str += settings_panel('Fiat Balances', 'fiat_balances');
     str += settings_panel('Blockchain Balances', 'blockchain_balances');
     $('#page-wrapper').html(str);
@@ -308,7 +317,6 @@ export function create_user_settings() {
     str += form_multiselect('Select ETH tokens to track', 'eth_tokens_select', []);
     $(str).appendTo($('#blockchain_balances_panel_body'));
 
-    populate_eth_tokens();
     str = '<h4 class="centered-title">Blockchain Balances Per Asset</h4>';
     str += loading_placeholder('blockchain_per_asset_placeholder');
     str += invisible_anchor('blockchain_per_asset_anchor');
@@ -317,13 +325,33 @@ export function create_user_settings() {
     str += invisible_anchor('ethchain_per_account_anchor');
     str += invisible_anchor('btcchain_per_account_anchor');
     $(str).appendTo($('#blockchain_balances_panel_body'));
-    service.query_blockchain_balances_async().then(value => {
-        create_task(value.task_id, 'user_settings_query_blockchain_balances', 'Query blockchain balances', false, true);
-    }).catch((reason: Error) => {
-        console.log(`Error at querying blockchain balances async: ${reason.message}`);
-    });
-    // also save the user settings page
-    pages.page_user_settings = $('#page-wrapper').html();
+
+    // If this is the first time user settings are loaded, query blockchain balances
+    if (!BB_PER_ASSET_TABLE) {
+        service.query_blockchain_balances_async().then(value => {
+            create_task(value.task_id, 'user_settings_query_blockchain_balances', 'Query blockchain balances', false, true);
+        }).catch((reason: Error) => {
+            console.log(`Error at querying blockchain balances async: ${reason.message}`);
+        });
+    } else {
+        // reloading user settings page from the saved data
+        $('#blockchain_per_asset_placeholder').remove();
+        $('#blockchain_per_account_placeholder').remove();
+        if (BB_PER_ASSET_TABLE) {
+            BB_PER_ASSET_TABLE.repopulate(BB_PER_ASSET_DATA);
+            BB_PER_ASSET_TABLE.reload();
+        }
+
+        if (BB_PER_ACCOUNT_TABLES['ETH']) {
+            recreate_ethchain_per_account_table(BB_ETH_ACCOUNT_DATA);
+        }
+
+        const btc_table = BB_PER_ACCOUNT_TABLES['BTC'] as AssetTable;
+        if (btc_table) {
+            btc_table.repopulate(BB_BTC_ACCOUNT_DATA);
+            btc_table.reload();
+        }
+    }
 
     // pulsate element if first time we open and user follows guide
     if (settings.start_suggestion === 'click_user_settings') {
@@ -341,6 +369,11 @@ export function create_user_settings() {
     }
 }
 
+export function create_or_reload_usersettings() {
+    create_user_settings();
+    add_user_settings_listeners();
+}
+
 function add_blockchain_account(event: JQuery.Event) {
     event.preventDefault();
     const blockchain = $('#crypto_type_entry').val() as string;
@@ -349,21 +382,28 @@ function add_blockchain_account(event: JQuery.Event) {
 
     service.add_blockchain_account(blockchain, account).then(result => {
         if (blockchain === 'ETH') {
-            recreate_ethchain_per_account_table(result.per_account['ETH']);
+            // save the data from the call
+            BB_ETH_ACCOUNT_DATA = result.per_account['ETH'];
+            // update the table with the data
+            recreate_ethchain_per_account_table(BB_ETH_ACCOUNT_DATA);
         } else if (blockchain === 'BTC') {
             const btcTable = BB_PER_ACCOUNT_TABLES['BTC'] as AssetTable;
-
+            // save the data from the call
+            BB_BTC_ACCOUNT_DATA = result.per_account['BTC'];
+            // update the table with the data
             if (!btcTable) {
-                create_btcchain_per_account_table(result.per_account['BTC']);
+                create_btcchain_per_account_table(BB_BTC_ACCOUNT_DATA);
             } else {
-                btcTable.update_format(result.per_account['BTC']);
+                btcTable.update_format(BB_BTC_ACCOUNT_DATA);
             }
         }
         if (BB_PER_ASSET_TABLE == null) {
             throw new Error('Table was not supposed to be null');
         }
-        // also reload the asset total tables
-        BB_PER_ASSET_TABLE.update_format(result['totals']);
+        // also reload the asset total tables by saving its data
+        BB_PER_ASSET_DATA = result['totals'];
+        // and then updating the table with it
+        BB_PER_ASSET_TABLE.update_format(BB_PER_ASSET_DATA);
 
         stop_show_loading('#account_entry');
     }).catch((reason: Error) => {
@@ -479,7 +519,10 @@ function delete_blockchain_account_row(blockchain: string, row: DataTables.RowMe
     service.remove_blockchain_account(blockchain, account).then(value => {
         // @ts-ignore
         row.remove().draw();
-        BB_PER_ASSET_TABLE.update_format(value.totals);
+        // save the returned data
+        BB_PER_ASSET_DATA = value.totals;
+        // and update the table with it
+        BB_PER_ASSET_TABLE.update_format(BB_PER_ASSET_DATA);
         stop_show_loading();
     }).catch((reason: Error) => {
         showError('Account Deletion Error', `Error at deleting ${blockchain} account ${account}: ${reason.message}`);
@@ -527,6 +570,9 @@ function create_btcchain_per_account_table(btc_accounts: { [asset: string]: Asse
 function create_blockchain_balances_tables(result: BlockchainBalances) {
 
     $('#blockchain_per_asset_placeholder').remove();
+    // save the data
+    BB_PER_ASSET_DATA = result.totals;
+    // create the table with it
     BB_PER_ASSET_TABLE = new AssetTable(
         'asset',
         'blockchain_per_asset',
@@ -537,19 +583,23 @@ function create_blockchain_balances_tables(result: BlockchainBalances) {
 
     // now the per accounts tables
     $('#blockchain_per_account_placeholder').remove();
-    const eth_accounts = result['per_account']['ETH'];
-    if (eth_accounts) {
-        create_ethchain_per_account_table(eth_accounts);
+    // save the data
+    BB_ETH_ACCOUNT_DATA = result['per_account']['ETH'];
+    // create the table with it
+    if (BB_ETH_ACCOUNT_DATA) {
+        create_ethchain_per_account_table(BB_ETH_ACCOUNT_DATA);
     }
 
-    const btc_accounts = result['per_account']['BTC'];
-    if (btc_accounts) {
-        create_btcchain_per_account_table(btc_accounts);
+    // save the data
+    BB_BTC_ACCOUNT_DATA = result['per_account']['BTC'];
+    // create the table with it
+    if (BB_BTC_ACCOUNT_DATA) {
+        create_btcchain_per_account_table(BB_BTC_ACCOUNT_DATA);
     }
 
+    // the multiselect must have been disabled from populate_eth_tokens()
+    // and now that the blockchain balances table has been created we re-enable it
     enable_multiselect();
-    // also save the user settings page
-    pages.page_user_settings = $('#page-wrapper').html();
 }
 
 function populate_eth_tokens() {
@@ -584,7 +634,13 @@ function populate_eth_tokens() {
                 $('#eth_tokens_select').multiSelect('select', OWNED_TOKENS);
                 // has to come after the setting of the selections
                 populate_eth_tokens_called = true;
-                disable_multiselect();
+
+                if (!BB_PER_ASSET_TABLE) {
+                    // even though the multiselect is created, disable it until
+                    // the blockchain balances table is first loaded so that any
+                    // changes to the multiselect are reflected in the table.
+                    disable_multiselect();
+                }
             }
         });
     }).catch((reason: Error) => {
@@ -615,9 +671,14 @@ function add_new_eth_tokens(tokens: string[]) {
             OWNED_TOKENS.push(tokens[i]);
         }
 
-        recreate_ethchain_per_account_table(result['per_account']['ETH']);
-        // also reload the asset total tables
-        BB_PER_ASSET_TABLE.update_format(result['totals']);
+        // save the data
+        BB_ETH_ACCOUNT_DATA = result['per_account']['ETH'];
+        // update the table with it
+        recreate_ethchain_per_account_table(BB_ETH_ACCOUNT_DATA);
+        // also reload the asset total tables by saving the data
+        BB_PER_ASSET_DATA = result['totals'];
+        // and updating the table with it
+        BB_PER_ASSET_TABLE.update_format(BB_PER_ASSET_DATA);
         enable_multiselect();
         stop_show_loading('#eth_tokens_select');
     }).catch(reason => {
@@ -639,9 +700,14 @@ function remove_eth_tokens(tokens: string[]) {
             OWNED_TOKENS.splice(index, 1);
         }
 
-        recreate_ethchain_per_account_table(result.per_account['ETH']);
-        // also reload the asset total tables
-        BB_PER_ASSET_TABLE.update_format(result.totals);
+        // save the data
+        BB_ETH_ACCOUNT_DATA = result['per_account']['ETH'];
+        // update the table with it
+        recreate_ethchain_per_account_table(BB_ETH_ACCOUNT_DATA);
+        // also reload the asset total tables by saving the data
+        BB_PER_ASSET_DATA = result.totals;
+        // and updating the table with it
+        BB_PER_ASSET_TABLE.update_format(BB_PER_ASSET_DATA);
         enable_multiselect();
         stop_show_loading('#eth_tokens_select');
     }).catch(reason => {
@@ -656,8 +722,6 @@ function create_fiat_table() {
         const str = '<h4 class="centered-title">Owned Fiat Currency Balances</h4>';
         $(str).appendTo($('#fiat_balances_panel_body'));
         FIAT_TABLE = new AssetTable('currency', 'fiat_balances', PlacementType.appendTo, 'fiat_balances_panel_body', value);
-        // also save the user settings page
-        pages.page_user_settings = $('#page-wrapper').html();
     }).catch(reason => {
         console.log(`Error at querying fiat balances: ${reason}`);
     });
