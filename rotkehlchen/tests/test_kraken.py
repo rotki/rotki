@@ -1,5 +1,6 @@
 import pytest
 
+from rotkehlchen.fval import FVal
 from rotkehlchen.kraken import (
     KRAKEN_ASSETS,
     WORLD_TO_KRAKEN,
@@ -64,3 +65,18 @@ def test_kraken_to_world_pair():
 
     with pytest.raises(ValueError):
         kraken_to_world_pair('GABOOBABOO')
+
+
+def test_find_fiat_price(kraken):
+    """
+    Testing that find_fiat_price works correctly
+
+    Also regression test for https://github.com/rotkehlchenio/rotkehlchen/issues/323
+    """
+    kraken.first_connection()
+    # A single YEN should cost less than 1 bitcoin
+    jpy_price = kraken.find_fiat_price('ZJPY')
+    assert jpy_price < FVal('1')
+
+    # Kraken fees have no value
+    kraken.find_fiat_price('KFEE') == FVal('0')
