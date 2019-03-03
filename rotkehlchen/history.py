@@ -257,6 +257,7 @@ class PriceHistorian(object):
         # cryptocompare and we got code to handle the conversion
         self.cryptocompare_coin_list['IOTA'] = object()  # IOT in cryptocompare
         self.cryptocompare_coin_list['BCHSV'] = object()  # BSV in cryptocompare
+        self.cryptocompare_coin_list['BQX'] = object()  # ETHOS in cryptocompare
 
     def got_cached_price(self, cache_key, timestamp):
         """Check if we got a price history for the timestamp cached"""
