@@ -424,16 +424,21 @@ class Kraken(Exchange):
         pair = asset + 'XXBT'
         pair2 = asset + 'XBT'
         pair3 = 'XXBT' + asset
+        inverse = False
         if pair2 in self.tradeable_pairs:
             pair = pair2
         elif pair3 in self.tradeable_pairs:
             pair = pair3
+            # here XXBT is the base asset so inverse
+            inverse = True
 
         if pair not in self.tradeable_pairs:
             raise ValueError(
                 'Could not find a BTC tradeable pair in kraken for "{}"'.format(asset),
             )
         btc_price = FVal(self.ticker[pair]['c'][0])
+        if inverse:
+            btc_price = FVal('1.0') / btc_price
         common_name = KRAKEN_TO_WORLD[asset]
         with self.lock:
             self.usdprice[common_name] = btc_price * self.usdprice['BTC']
