@@ -47,8 +47,14 @@ describe('user settings', function () {
 
             await navigateTo(client, '#user_settings_button');
             await closeAddYourSettingsPopup(client);
-
             await client.waitForVisible('#blockchain_balances_panel_body', METHOD_TIMEOUT);
+            // navigate to accounting settings and then back to user settings to
+            // try and recreate https://github.com/rotkehlchenio/rotkehlchen/issues/320
+            await navigateTo(client, '#accounting_settings_button');
+            await client.waitUntilTextExists('.page-header', 'Accounting Settings', METHOD_TIMEOUT);
+            await navigateTo(client, '#user_settings_button');
+            await client.waitForVisible('#blockchain_balances_panel_body', METHOD_TIMEOUT);
+
         });
 
     });
