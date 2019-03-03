@@ -1,5 +1,6 @@
 import logging
 import random
+from typing import Tuple
 
 from rotkehlchen.constants import FIAT_CURRENCIES
 from rotkehlchen.fval import FVal
@@ -20,8 +21,6 @@ ALLOWED_ASSETS = ['ETH', 'BTC']
 MAX_TRADE_USD_VALUE = FVal(100)
 MAX_FEE_USD_VALUE = 1
 
-MIN_DIFF_BETWEEN_BALANCE_SAVING = 172800
-
 
 logger = logging.getLogger(__name__)
 
@@ -32,20 +31,23 @@ class ActionWriter(object):
             self,
             trades_number: int,
             seconds_between_trades: int,
+            seconds_between_balance_save: int,
             rotkehlchen,
             fake_kraken,
             fake_binance,
     ):
         self.seconds_between_trades = seconds_between_trades
+        self.seconds_between_balance_save = seconds_between_balance_save
         self.trades_number = trades_number
         self.current_ts = STARTING_TIMESTAMP
+        self.last_trade_ts = 0
         self.last_balance_save_ts = 0
         self.funds = STARTING_FUNDS
         self.rotki = rotkehlchen
         self.kraken = fake_kraken
         self.binance = fake_binance
 
-        timestamp = self.get_next_ts()
+        timestamp, _, _ = self.get_next_ts()
         for asset, value in self.funds.items():
             if asset in FIAT_CURRENCIES:
                 self.rotki.data.db.add_fiat_balance(asset, value)
@@ -56,7 +58,7 @@ class ActionWriter(object):
         for asset, value in self.funds.items():
             amount = value / divide_by
             for exchange in ALLOWED_EXCHANGES:
-                timestamp = self.get_next_ts()
+                timestamp, _, _ = self.get_next_ts()
 
                 skip_exchange = asset in FIAT_CURRENCIES and exchange != 'kraken'
 
@@ -75,16 +77,24 @@ class ActionWriter(object):
     def maybe_save_balances(self, save_ts: Timestamp) -> None:
         """Maybe Save all current balances in the fake user's DB at the current timestamp
 
-        If the save_ts is not after MIN_DIFF_BETWEEN_BALANCE_SAVING then nothing happens
-"""
-        if save_ts - self.last_balance_save_ts < MIN_DIFF_BETWEEN_BALANCE_SAVING:
+        If the save_ts is not after the time we save balances then nothing happens
+        """
+        if save_ts - self.last_balance_save_ts < self.seconds_between_balance_save:
             return
         self.rotki.query_balances(requested_save_data=True, timestamp=save_ts)
         self.last_balance_save_ts = save_ts
 
     def generate_history(self):
-        for index in range(0, self.trades_number):
-            self.create_action(index)
+        created_trades = 0
+        while created_trades <= self.trades_number:
+            current_ts, save_balances, make_trade = self.get_next_ts()
+
+            if make_trade:
+                self.create_action(created_trades, current_ts)
+                created_trades += 1
+
+            if save_balances:
+                self.maybe_save_balances(save_ts=current_ts)
 
     def query_historical_price(self, from_asset, to_asset, timestamp):
         return self.rotki.accountant.price_historian.query_historical_price(
@@ -108,19 +118,28 @@ class ActionWriter(object):
 
         getattr(self, exchange).decrease_asset(asset, amount)
 
-    def get_next_ts(self):
+    def get_next_ts(self) -> Tuple[Timestamp, bool, bool]:
         current_ts = self.current_ts
+        advance_by_secs = min(self.seconds_between_trades, self.seconds_between_balance_save)
         secs_in_future = random.randint(
-            self.seconds_between_trades,
-            self.seconds_between_trades + MAX_TRADE_DIFF_VARIANCE,
+            advance_by_secs,
+            advance_by_secs + MAX_TRADE_DIFF_VARIANCE,
         )
         self.current_ts += secs_in_future
-        return current_ts
 
-    def create_action(self, index):
+        save_balances = False
+        if self.current_ts - self.last_balance_save_ts >= self.seconds_between_balance_save:
+            save_balances = True
+
+        make_trade = False
+        if self.current_ts - self.last_trade_ts >= self.seconds_between_trades:
+            make_trade = True
+
+        return Timestamp(current_ts), save_balances, make_trade
+
+    def create_action(self, index: int, ts: Timestamp):
         """Create a random trade action on a random exchange depending
         on the funds that are available in that exchange"""
-        ts = self.get_next_ts()
         # choose an exchange at random
         exchange_name = random.choice(ALLOWED_EXCHANGES)
         exchange = getattr(self, exchange_name)
@@ -193,6 +212,5 @@ class ActionWriter(object):
             # and decrease our base asset
             self.decrease_asset(base, amount, exchange_name)
 
-        # finally add it to the exchange and save overall balances at this timestamp
+        # finally add it to the exchange
         exchange.append_trade(trade)
-        self.maybe_save_balances(save_ts=ts)

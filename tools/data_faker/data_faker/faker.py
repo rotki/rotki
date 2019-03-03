@@ -50,6 +50,7 @@ class DataFaker(object):
         self.writer = ActionWriter(
             trades_number=args.trades_number,
             seconds_between_trades=args.seconds_between_trades,
+            seconds_between_balance_save=args.seconds_between_balance_save,
             rotkehlchen=self.rotki,
             fake_kraken=self.fake_kraken,
             fake_binance=self.fake_binance,

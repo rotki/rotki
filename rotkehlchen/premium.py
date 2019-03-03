@@ -66,7 +66,7 @@ class Premium(object):
     def __init__(self, api_key, api_secret):
         self.session = requests.session()
         self.apiversion = '1'
-        self.uri = 'http://localhost:5001/api/{}/'.format(self.apiversion)
+        self.uri = 'http://localhost:5002/api/{}/'.format(self.apiversion)
         self.reset_credentials(api_key, api_secret)
 
     def reset_credentials(self, api_key, api_secret):
