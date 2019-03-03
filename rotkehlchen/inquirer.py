@@ -6,7 +6,6 @@ from json.decoder import JSONDecodeError
 from typing import Dict, Iterable, Optional, cast
 
 import requests
-
 from rotkehlchen.constants import (
     CURRENCYCONVERTER_API_KEY,
     FIAT_CURRENCIES,
@@ -18,7 +17,6 @@ from rotkehlchen.constants import (
     S_RAIBLOCKS,
     S_RDN,
     S_USD,
-    XRB_NANO_REBRAND_TS,
 )
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
@@ -57,9 +55,7 @@ def world_to_cryptocompare(asset: Asset, timestamp: Timestamp = None) -> Asset:
         asset = cast(NonEthTokenBlockchainAsset, 'BSV')
     elif asset == S_BQX:
         asset = cast(EthToken, 'ETHOS')
-    elif asset == S_NANO and timestamp and timestamp < XRB_NANO_REBRAND_TS:
-        return S_RAIBLOCKS
-    elif asset == S_RAIBLOCKS and timestamp and timestamp >= XRB_NANO_REBRAND_TS:
+    elif asset == S_RAIBLOCKS:
         return S_NANO
 
     return asset
