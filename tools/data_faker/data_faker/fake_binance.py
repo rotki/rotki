@@ -24,6 +24,12 @@ DISALLOWED_ASSETS = (
     'VET',
     # This "red pulse" does not seem to be traded anymore
     'RPX',
+    # For some timestamps BTC to USDT does not work in cryptocompare while
+    # USDT to USD does. This is rather strange ... and probably would need
+    # some code adjustments to make it work for cryptocompare
+    # rotkehlchen.history.NoPriceForGivenTimestamp: Unable to query a historical
+    # price for "BTC" to "USDT" at 17/06/2016, 00:18:04
+    'USDT',
 )
 
 
