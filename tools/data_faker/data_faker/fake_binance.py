@@ -22,6 +22,8 @@ DISALLOWED_ASSETS = (
     # https://support.binance.com/hc/en-us/articles/360007439672-Information-Regarding-the-Upcoming-VEN-VET-Mainnet-Swap
     'VEN',
     'VET',
+    # This "red pulse" does not seem to be traded anymore
+    'RPX',
 )
 
 
