@@ -30,5 +30,11 @@ def data_faker_args() -> argparse.ArgumentParser:
         help='The min number of seconds between each trade. Default 1 day',
         default=86400,
     )
+    p.add_argument(
+        '--seconds-between-balance-save',
+        type=int,
+        help='The min number of seconds between each balance save. Default 1 day',
+        default=86400,
+    )
 
     return p
