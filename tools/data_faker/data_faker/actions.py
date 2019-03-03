@@ -10,7 +10,6 @@ STARTING_TIMESTAMP = 1464739200  # 01/06/2016
 NUMBER_OF_TRADES = 5
 STARTING_FUNDS = {'EUR': FVal(100000), 'BTC': FVal(10)}
 
-MIN_SECONDS_BETWEEN_TRADES = 86400
 MAX_TRADE_DIFF_VARIANCE = 14400
 
 ALLOWED_EXCHANGES = ['kraken', 'binance']
@@ -29,7 +28,15 @@ logger = logging.getLogger(__name__)
 
 class ActionWriter(object):
 
-    def __init__(self, trades_number, rotkehlchen, fake_kraken, fake_binance):
+    def __init__(
+            self,
+            trades_number: int,
+            seconds_between_trades: int,
+            rotkehlchen,
+            fake_kraken,
+            fake_binance,
+    ):
+        self.seconds_between_trades = seconds_between_trades
         self.trades_number = trades_number
         self.current_ts = STARTING_TIMESTAMP
         self.last_balance_save_ts = 0
@@ -104,8 +111,8 @@ class ActionWriter(object):
     def get_next_ts(self):
         current_ts = self.current_ts
         secs_in_future = random.randint(
-            MIN_SECONDS_BETWEEN_TRADES,
-            MIN_SECONDS_BETWEEN_TRADES + MAX_TRADE_DIFF_VARIANCE,
+            self.seconds_between_trades,
+            self.seconds_between_trades + MAX_TRADE_DIFF_VARIANCE,
         )
         self.current_ts += secs_in_future
         return current_ts
