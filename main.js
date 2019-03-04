@@ -30,6 +30,28 @@ function disableAnimationsForTest() {
     }
 }
 
+function setupInspectMenu() {
+    if (process.defaultApp) {
+        let rightClickPosition = null;
+
+        const menu = new electron.Menu();
+        const menuItem = new electron.MenuItem({
+            label: 'Inspect Element',
+            click: () => {
+                mainWindow.inspectElement(rightClickPosition.x, rightClickPosition.y)
+            }
+        });
+
+        menu.append(menuItem);
+
+        mainWindow.webContents.on('context-menu', (e, params) => {
+            e.preventDefault();
+            rightClickPosition = {x: params.x, y: params.y};
+            menu.popup(mainWindow)
+        }, false);
+    }
+}
+
 const createWindow = () => {
     mainWindow = new BrowserWindow({width: 800, height: 600});
     disableAnimationsForTest();
@@ -46,6 +68,8 @@ const createWindow = () => {
     mainWindow.on('closed', () => {
         mainWindow = null;
     });
+
+    setupInspectMenu();
 };
 
 app.on('ready', createWindow);
