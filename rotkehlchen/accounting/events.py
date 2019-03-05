@@ -24,7 +24,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 class TaxableEvents(object):
 
-    def __init__(self, price_historian, csv_exporter, profit_currency):
+    def __init__(self, price_historian, csv_exporter, profit_currency: Asset):
         self.events = dict()
         self.price_historian = price_historian
         self.csv_exporter = csv_exporter
