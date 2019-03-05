@@ -30,10 +30,16 @@ export default class OtcController {
                 await client.addValue(`#${key}`, datum);
             });
         }
+
         await retry(async function () {
             await client.click('#otctradesubmit');
         });
 
+        await this.closeSuccessDialog();
+    }
+
+    async closeSuccessDialog() {
+        const client = this.client;
         await client.waitUntilTextExists('.jconfirm-title', 'Success', METHOD_TIMEOUT);
 
         await retry(async () => {
