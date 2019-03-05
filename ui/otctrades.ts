@@ -52,7 +52,7 @@ function edit_otc_trade(row: DataTables.RowMethods) {
 function delete_otc_trade(row: DataTables.RowMethods) {
     const data = row.data() as OtcTrade;
     service.delete_otctrade(data.id).then(() => {
-        showInfo('Succcess', 'Trade Deleted');
+        showInfo('Success', 'Trade Deleted');
         reload_table_data();
     }).catch(reason => {
         showError('Error at Trade Deletion', reason.message);
