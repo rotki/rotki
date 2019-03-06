@@ -389,9 +389,9 @@ class DataHandler(object):
         compressed_data = zlib.compress(data_blob, level=9)
         encrypted_data = encrypt(password.encode(), compressed_data)
 
-        return encrypted_data.encode(), original_data_hash
+        return encrypted_data, original_data_hash
 
-    def decompress_and_decrypt_db(self, password: str, encrypted_data: bytes) -> None:
+    def decompress_and_decrypt_db(self, password: str, encrypted_data: str) -> None:
         """Decrypt and decompress the encrypted data we receive from the server
 
         If successful then replace our local Database"""
