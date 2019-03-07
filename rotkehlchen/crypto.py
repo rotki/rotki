@@ -11,7 +11,7 @@ from rotkehlchen import typing
 
 
 # AES encrypt/decrypt taken from here: https://stackoverflow.com/a/44212550/110395
-def encrypt(key: bytes, source: bytes) -> bytes:
+def encrypt(key: bytes, source: bytes) -> str:
     assert isinstance(key, bytes), 'key should be given in bytes'
     assert isinstance(source, bytes), 'source should be given in bytes'
     key = SHA256.new(key).digest()  # use SHA-256 over our key to get a proper-sized AES key
@@ -20,7 +20,7 @@ def encrypt(key: bytes, source: bytes) -> bytes:
     padding = AES.block_size - len(source) % AES.block_size  # calculate needed padding
     source += bytes([padding]) * padding  # Python 2.x: source += chr(padding) * padding
     data = IV + encryptor.encrypt(source)  # store the IV at the beginning and encrypt
-    return data
+    return base64.b64encode(data).decode("latin-1")
 
 
 def decrypt(key: bytes, given_source: str) -> bytes:

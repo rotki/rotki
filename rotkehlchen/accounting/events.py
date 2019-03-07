@@ -25,7 +25,7 @@ log = RotkehlchenLogsAdapter(logger)
 class TaxableEvents(object):
 
     def __init__(self, price_historian, csv_exporter, profit_currency: Asset):
-        self.events = dict()
+        self.events: Dict[Asset, Events] = dict()
         self.price_historian = price_historian
         self.csv_exporter = csv_exporter
         self.profit_currency = profit_currency
@@ -106,7 +106,7 @@ class TaxableEvents(object):
         if asset not in self.events or len(self.events[asset].buys) == 0:
             return False
 
-        remaining_amount_from_last_buy = -1
+        remaining_amount_from_last_buy = FVal('-1')
         remaining_amount = amount
         for idx, buy_event in enumerate(self.events[asset].buys):
             if remaining_amount < buy_event.amount:
@@ -122,7 +122,7 @@ class TaxableEvents(object):
         # Otherwise, delete all the used up buys from the list
         del self.events[asset].buys[:stop_index]
         # and modify the amount of the buy where we stopped if there is one
-        if remaining_amount_from_last_buy != -1:
+        if remaining_amount_from_last_buy != FVal('-1'):
             self.events[asset].buys[0].amount = remaining_amount_from_last_buy
         elif remaining_amount != ZERO:
             return False
@@ -565,7 +565,7 @@ class TaxableEvents(object):
         taxable_bought_cost = FVal(0)
         taxable_amount = FVal(0)
         taxfree_amount = FVal(0)
-        remaining_amount_from_last_buy = -1
+        remaining_amount_from_last_buy = FVal('-1')
         for idx, buy_event in enumerate(self.events[selling_asset].buys):
             if self.taxfree_after_period is None:
                 at_taxfree_period = False
@@ -645,7 +645,7 @@ class TaxableEvents(object):
         # Otherwise, delete all the used up buys from the list
         del self.events[selling_asset].buys[:stop_index]
         # and modify the amount of the buy where we stopped if there is one
-        if remaining_amount_from_last_buy != -1:
+        if remaining_amount_from_last_buy != FVal('-1'):
             self.events[selling_asset].buys[0].amount = remaining_amount_from_last_buy
         elif remaining_sold_amount != ZERO:
             # if we still have sold amount but no buys to satisfy it then we only
