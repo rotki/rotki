@@ -44,3 +44,8 @@ class PriceQueryUnknownFromAsset(Exception):
         super().__init__(
             'Unable to query historical price for Unknown Asset: "{}"'.format(from_asset),
         )
+
+
+class UnknownAsset(Exception):
+    def __init__(self, asset_name: str):
+        super().__init__(f'Unknown asset {asset_name} provided')
