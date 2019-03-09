@@ -261,7 +261,13 @@ def rkl_decode_value(
     if isinstance(val, dict):
         new_val = dict()
         for k, v in val.items():
-            new_val[k] = rkl_decode_value(v)
+            value = rkl_decode_value(v)
+            if k == 'symbol' and isinstance(value, FVal):
+                # In coin paprika's symbols and all the token's symbols
+                # there are some symbols like 1337 which are all numeric and
+                # are interpreted as numeric. Adjust for it here.
+                value = str(v)
+            new_val[k] = value
         return new_val
     elif isinstance(val, list):
         return [rkl_decode_value(x) for x in val]
