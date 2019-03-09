@@ -31,7 +31,7 @@ function disableAnimationsForTest() {
 }
 
 function setupInspectMenu() {
-    if (process.defaultApp) {
+    if (process.env.ROTKEHLCHEN_ENVIRONMENT === 'development') {
         let rightClickPosition = null;
 
         const menu = new electron.Menu();
