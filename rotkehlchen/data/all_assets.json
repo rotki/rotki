@@ -75,7 +75,7 @@
     },
     "ICN": {
         "name": "Iconomi",
-        "started": 1475193600,
+        "started": 1472083200,
         "type": "ethereum token"
     },
     "JPY": {
@@ -118,7 +118,7 @@
     "USDT": {
         "name": "Tether",
         "started": 1424822400,
-        "type": "own chain"
+        "type": "omni token"
     },
     "VEN": {
         "active": false,
