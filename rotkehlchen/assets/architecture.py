@@ -19,9 +19,9 @@ class AssetResolver():
 
         dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
         with open(os.path.join(dir_path, 'data', 'all_assets.json'), 'r') as f:
-            assets = set(rlk_jsonloads_dict(f.read()))
+            assets = rlk_jsonloads_dict(f.read())
 
-        AssetResolver.__instance.gateway = assets
+        AssetResolver.__instance.assets = assets
         return AssetResolver.__instance
 
     @staticmethod
