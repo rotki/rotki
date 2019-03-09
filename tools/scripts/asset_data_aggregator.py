@@ -16,6 +16,7 @@ or inaccurate?
 import json
 import os
 import sys
+from typing import Any, Dict, List
 
 from rotkehlchen.assets.architecture import AssetResolver
 from rotkehlchen.constants import FIAT_CURRENCIES
@@ -70,6 +71,14 @@ PREFER_OUR_STARTED = (
 )
 
 
+# Some symbols in coin paprika exists multiple times with different ids each time.
+# This requires manual intervention and a lock in of the id mapping by hand
+COINPAPRIKA_LOCK_SYMBOL_ID_MAP = {
+    # ICN has both icn-iconomi and icn-icoin. The correct one appears to be the first
+    'ICN': 'icn-iconomi',
+}
+
+
 def yes_or_no(question: str):
     """From https://gist.github.com/garrettdreyfus/8153571#gistcomment-2321568"""
     while "the answer is invalid":
@@ -80,6 +89,33 @@ def yes_or_no(question: str):
             return False
 
 
+def find_coin_id(asset: str, coins_list: List[Dict[str, Any]]) -> str:
+    found_coin_id = None
+
+    if asset in COINPAPRIKA_LOCK_SYMBOL_ID_MAP:
+        return COINPAPRIKA_LOCK_SYMBOL_ID_MAP[asset]
+
+    for coin in coins_list:
+        if coin['symbol'] == asset:
+            if found_coin_id:
+                print(
+                    f'Asset with symbol {asset} was found in coin paprika both '
+                    f'with id {found_coin_id} and {coin["id"]}',
+                )
+                sys.exit(1)
+
+            found_coin_id = coin['id']
+
+    if not found_coin_id:
+        print(
+            f"Could not find asset with canonical symbol {asset} in coin "
+            f"coinpaprika's coin list",
+        )
+        sys.exit(1)
+
+    return found_coin_id
+
+
 def main():
     our_data = AssetResolver().assets
     paprika = CoinPaprika()
@@ -87,6 +123,7 @@ def main():
 
     for asset in our_data.keys():
 
+        our_asset = our_data[asset]
         # Coin paprika does not have info on FIAT currencies
         if asset in FIAT_CURRENCIES:
             continue
@@ -96,28 +133,18 @@ def main():
         if asset in KNOWN_TO_MISS_FROM_COIN_PAPRIKA:
             continue
 
-        found_coin_id = None
-        for coin in coins_list:
-            if coin['symbol'] == asset:
-                found_coin_id = coin['id']
-                break
-
-        if not found_coin_id:
-            print(
-                f"Could not find asset with canonical symbol {asset} in coin "
-                f"coinpaprikas coin list",
-            )
-            sys.exit(1)
-
+        found_coin_id = find_coin_id(asset, coins_list)
         coin_data = paprika.get_coin_by_id(found_coin_id)
+
+        # Process the started_at data from coin paprika
         started = coin_data['started_at']
         if not started:
             print(f'Did not find a started date for asset {asset}')
         else:
             timestamp = createTimeStamp(started, formatstr='%Y-%m-%dT%H:%M:%SZ')
-            if timestamp != our_data[asset]['started']:
+            if timestamp != our_asset['started']:
                 prefix = (
-                    f"For asset {asset} our data have {our_data[asset]['started']} "
+                    f"For asset {asset} our data have {our_asset['started']} "
                     f"as starting timestamp while coin paprika has {timestamp}. "
                 )
                 if asset in PREFER_OUR_STARTED:
@@ -128,6 +155,29 @@ def main():
                 if yes_or_no(question):
                     our_data[asset]['started'] = timestamp
 
+        # Process whether the is_active info agree
+        if 'active' in our_asset and our_asset['active'] != coin_data['is_active']:
+            print(
+                f'Our data believe that {asset} active is {our_asset["active"]} '
+                f'but coin paprika believes active is {coin_data["is_active"]}',
+            )
+            sys.exit(1)
+
+        # Process whether the type info agree
+        mismatch = (
+            (our_asset['type'] == 'own chain' and coin_data['type'] != 'coin') or
+            (our_asset['type'] == 'ethereum token' and coin_data['type'] != 'token') or
+            (our_asset['type'] == 'omni token' and coin_data['type'] != 'token') or
+            (our_asset['type'] == 'ethereum token and own chain' and coin_data['type'] != 'coin')
+        )
+        if mismatch:
+            print(
+                f'Our data believe that {asset} type is {our_asset["type"]} '
+                f'but coin paprika believes it is {coin_data["type"]}',
+            )
+            sys.exit(1)
+
+    # Finally overwrite the all_assets.json with the modified assets
     dir_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
     with open(os.path.join(dir_path, 'rotkehlchen', 'data', 'all_assets.json'), 'w') as f:
         f.write(
