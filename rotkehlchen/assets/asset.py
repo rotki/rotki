@@ -62,7 +62,7 @@ class Asset():
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Asset):
-            return self == other
+            return self.name == other.name
         elif isinstance(other, str):
             return self.name == other
         else:
