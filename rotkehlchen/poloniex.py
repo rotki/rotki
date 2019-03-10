@@ -171,8 +171,8 @@ class Poloniex(Exchange):
         if req is None:
             req = {}
 
-        if command == "returnTicker":
-            log.debug('Querying poloniex for returnTicker')
+        if command == 'returnTicker' or command == 'returnCurrencies':
+            log.debug(f'Querying poloniex for {command}')
             ret = self.session.get(self.public_uri + command)
             return rlk_jsonloads(ret.text)
 
@@ -209,14 +209,19 @@ class Poloniex(Exchange):
         except JSONDecodeError:
             raise RemoteError(f'Poloniex returned invalid JSON response: {ret.text}')
 
+    def returnCurrencies(self) -> Dict:
+        # We know returnCurrencies response is a Dict
+        response = cast(Dict, self.api_query('returnCurrencies'))
+        return response
+
     def returnTicker(self) -> Dict:
         # We know returnTicker response is a Dict
-        response = cast(Dict, self.api_query("returnTicker"))
+        response = cast(Dict, self.api_query('returnTicker'))
         return response
 
     def returnFeeInfo(self) -> Dict:
         # We know returnFeeInfo response is a Dict
-        response = cast(Dict, self.api_query("returnFeeInfo"))
+        response = cast(Dict, self.api_query('returnFeeInfo'))
         return response
 
     def returnLendingHistory(
