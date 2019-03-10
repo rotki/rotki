@@ -1,6 +1,7 @@
 import os
 from unittest.mock import patch
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade, TradeType
 from rotkehlchen.poloniex import Poloniex, trade_from_poloniex
@@ -66,3 +67,9 @@ def test_query_trade_history_not_shared_cache(data_dir):
 
     assert result1['BTC'][0]['data'] == 1
     assert result2['BTC'][0]['data'] == 2
+
+
+def test_poloniex_assets_are_known(poloniex):
+    currencies = poloniex.returnCurrencies()
+    for poloniex_asset in currencies.keys():
+        asset = Asset(poloniex_asset)
