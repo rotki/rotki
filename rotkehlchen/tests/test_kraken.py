@@ -1,12 +1,9 @@
 import pytest
 
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.fval import FVal
-from rotkehlchen.kraken import (
-    KRAKEN_ASSETS,
-    WORLD_TO_KRAKEN,
-    kraken_to_world_pair,
-    trade_from_kraken,
-)
+from rotkehlchen.kraken import KRAKEN_ASSETS, kraken_to_world_pair, trade_from_kraken
 from rotkehlchen.order_formatting import Trade
 from rotkehlchen.utils import ts_now
 
@@ -17,6 +14,10 @@ def test_coverage_of_kraken_balances(kraken):
     assert len(diff) == 0, (
         f"Our known assets don't match kraken's assets. Difference: {diff}"
     )
+    # Make sure all assets are covered by our from and to functions
+    for kraken_asset in all_assets:
+        asset = asset_from_kraken(kraken_asset)
+        assert asset.to_kraken() == kraken_asset
 
 
 def test_querying_balances(kraken):
@@ -24,7 +25,8 @@ def test_querying_balances(kraken):
     assert error_or_empty == ''
     assert isinstance(result, dict)
     for name, entry in result.items():
-        assert name in WORLD_TO_KRAKEN
+        # Make sure this does not fail
+        Asset(name)
         assert 'usd_value' in entry
         assert 'amount' in entry
 

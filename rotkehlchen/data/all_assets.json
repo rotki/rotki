@@ -86,6 +86,10 @@
         "name": "Kraken fees",
         "type": "exchange specific"
     },
+    "KRW": {
+        "name": "Korean won",
+        "type": "fiat"
+    },
     "LTC": {
         "name": "Litecoin",
         "started": 1317972665,

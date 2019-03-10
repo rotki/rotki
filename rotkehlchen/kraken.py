@@ -12,6 +12,7 @@ from urllib.parse import urlencode
 
 from requests import Response
 
+from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS, KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.exchange import Exchange
@@ -35,77 +36,6 @@ from rotkehlchen.utils import (
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-KRAKEN_TO_WORLD = {
-    'ATOM': 'ATOM',
-    'XDAO': 'DAO',
-    'XETC': 'ETC',
-    'XETH': 'ETH',
-    'XLTC': 'LTC',
-    'XREP': 'REP',
-    'XXBT': 'BTC',
-    'XBT': 'BTC',
-    'XXMR': 'XMR',
-    'XXRP': 'XRP',
-    'XZEC': 'ZEC',
-    'ZEUR': 'EUR',
-    'ZUSD': 'USD',
-    'ZGBP': 'GBP',
-    'ZCAD': 'CAD',
-    'ZJPY': 'JPY',
-    'ZKRW': 'KRW',
-    'XMLN': 'MLN',
-    'XICN': 'ICN',
-    'GNO': 'GNO',
-    'BCH': 'BCH',
-    'XXLM': 'XLM',
-    'DASH': 'DASH',
-    'EOS': 'EOS',
-    'USDT': 'USDT',
-    'KFEE': 'KFEE',
-    'ADA': 'ADA',
-    'QTUM': 'QTUM',
-    'XNMC': 'NMC',
-    'XXVN': 'VEN',
-    'XXDG': 'DOGE',
-    'XTZ': 'XTZ',
-    'BSV': 'BCHSV',
-}
-
-WORLD_TO_KRAKEN = cast(Dict[Asset, Asset], {
-    'ATOM': 'ATOM',
-    'ETC': 'XETC',
-    'ETH': 'XETH',
-    'LTC': 'XLTC',
-    'REP': 'XREP',
-    'BTC': 'XXBT',
-    'XMR': 'XXMR',
-    'XRP': 'XXRP',
-    'ZEC': 'XZEC',
-    'EUR': 'ZEUR',
-    'USD': 'ZUSD',
-    'GBP': 'ZGBP',
-    'CAD': 'ZCAD',
-    'JPY': 'ZJPY',
-    'KRW': 'ZKRW',
-    'DAO': 'XDAO',
-    'MLN': 'XMLN',
-    'ICN': 'XICN',
-    'GNO': 'GNO',
-    'BCH': 'BCH',
-    'XLM': 'XXLM',
-    'DASH': 'DASH',
-    'EOS': 'EOS',
-    'USDT': 'USDT',
-    'KFEE': 'KFEE',
-    'ADA': 'ADA',
-    'QTUM': 'QTUM',
-    'NMC': 'XNMC',
-    'VEN': 'XXVN',
-    'DOGE': 'XXDG',
-    'XTZ': 'XTZ',
-    'BCHSV': 'BSV',
-})
 
 KRAKEN_ASSETS = (
     'ATOM',
@@ -159,10 +89,8 @@ def kraken_to_world_pair(pair: str) -> TradePair:
     else:
         raise ValueError(f'Could not process kraken trade pair {pair}')
 
-    if base_asset not in WORLD_TO_KRAKEN:
-        base_asset = KRAKEN_TO_WORLD[base_asset]
-    if quote_asset not in WORLD_TO_KRAKEN:
-        quote_asset = KRAKEN_TO_WORLD[quote_asset]
+    base_asset = asset_from_kraken(base_asset)
+    quote_asset = asset_from_kraken(quote_asset)
 
     return TradePair(f'{base_asset}_{quote_asset}')
 
@@ -170,10 +98,8 @@ def kraken_to_world_pair(pair: str) -> TradePair:
 def world_to_kraken_pair(tradeable_pairs: List[str], pair: TradePair) -> str:
     base_asset, quote_asset = pair_get_assets(pair)
 
-    if base_asset not in KRAKEN_TO_WORLD:
-        base_asset = WORLD_TO_KRAKEN[base_asset]
-    if quote_asset not in KRAKEN_TO_WORLD:
-        quote_asset = WORLD_TO_KRAKEN[quote_asset]
+    base_asset = base_asset.to_kraken()
+    quote_asset = quote_asset.to_kraken()
 
     pair1 = base_asset + quote_asset
     pair2 = quote_asset + base_asset
@@ -399,35 +325,35 @@ class Kraken(Exchange):
             return
         self.get_fiat_prices_from_ticker()
 
-    def find_fiat_price(self, asset: Asset) -> FVal:
+    def find_fiat_price(self, kraken_asset: str) -> FVal:
         """Find USD/EUR price of asset. The asset should be in the kraken style.
         e.g.: XICN. Save both prices in the kraken object and then return the
         USD price.
         """
-        if asset == 'KFEE':
+        if kraken_asset == 'KFEE':
             # Kraken fees have no value
             return FVal(0)
 
-        if asset == 'XXBT':
+        if kraken_asset == 'XXBT':
             return self.usdprice['BTC']
 
-        if asset == 'USDT':
+        if kraken_asset == 'USDT':
             price = FVal(self.ticker['USDTZUSD']['c'][0])
             self.usdprice['USDT'] = price
             return price
 
-        if asset == 'BSV':
+        if kraken_asset == 'BSV':
             # BSV has been delisted by kraken at 29/04/19
             # https://blog.kraken.com/post/2274/kraken-is-delisting-bsv/
             # Until May 31st there can be BSV in Kraken (even with 0 balance)
             # so keep this until then to get the price
-            return query_cryptocompare_for_fiat_price(asset)
+            return query_cryptocompare_for_fiat_price('BSV')
 
         # TODO: This is pretty ugly. Find a better way to check out kraken pairs
         # without this ugliness.
-        pair = asset + 'XXBT'
-        pair2 = asset + 'XBT'
-        pair3 = 'XXBT' + asset
+        pair = kraken_asset + 'XXBT'
+        pair2 = kraken_asset + 'XBT'
+        pair3 = 'XXBT' + kraken_asset
         inverse = False
         if pair2 in self.tradeable_pairs:
             pair = pair2
@@ -438,16 +364,16 @@ class Kraken(Exchange):
 
         if pair not in self.tradeable_pairs:
             raise ValueError(
-                'Could not find a BTC tradeable pair in kraken for "{}"'.format(asset),
+                'Could not find a BTC tradeable pair in kraken for "{}"'.format(kraken_asset),
             )
         btc_price = FVal(self.ticker[pair]['c'][0])
         if inverse:
             btc_price = FVal('1.0') / btc_price
-        common_name = KRAKEN_TO_WORLD[asset]
+        our_asset = asset_from_kraken(kraken_asset)
         with self.lock:
-            self.usdprice[common_name] = btc_price * self.usdprice['BTC']
-            self.eurprice[common_name] = btc_price * self.eurprice['BTC']
-        return self.usdprice[common_name]
+            self.usdprice[our_asset] = btc_price * self.usdprice['BTC']
+            self.eurprice[our_asset] = btc_price * self.eurprice['BTC']
+        return self.usdprice[our_asset]
 
     @cache_response_timewise(CACHE_RESPONSE_FOR_SECS)
     def query_balances(self) -> Tuple[Optional[dict], str]:
@@ -469,19 +395,19 @@ class Kraken(Exchange):
             if v == FVal(0):
                 continue
 
-            common_name = KRAKEN_TO_WORLD[k]
+            our_asset = asset_from_kraken(k)
             entry = {}
             entry['amount'] = v
-            if common_name in self.usdprice:
-                entry['usd_value'] = v * self.usdprice[common_name]
+            if our_asset in self.usdprice:
+                entry['usd_value'] = v * self.usdprice[our_asset]
             else:
                 entry['usd_value'] = v * self.find_fiat_price(k)
 
-            balances[common_name] = entry
+            balances[our_asset] = entry
             log.debug(
                 'kraken balance query result',
                 sensitive_log=True,
-                currency=common_name,
+                currency=our_asset,
                 amount=entry['amount'],
                 usd_value=entry['usd_value'],
             )
@@ -636,7 +562,7 @@ class Kraken(Exchange):
                 category=movement['type'],
                 # Kraken timestamps have floating point
                 timestamp=convert_to_int(movement['time'], accept_only_exact=False),
-                asset=KRAKEN_TO_WORLD[movement['asset']],
+                asset=asset_from_kraken(movement['asset']),
                 amount=FVal(movement['amount']),
                 fee=FVal(movement['fee']),
             ))
