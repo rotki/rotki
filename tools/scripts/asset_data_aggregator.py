@@ -18,7 +18,7 @@ import os
 import sys
 from typing import Any, Dict, List
 
-from rotkehlchen.assets.architecture import AssetResolver
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants import FIAT_CURRENCIES
 from rotkehlchen.externalapis.coinpaprika import CoinPaprika
 from rotkehlchen.utils import createTimeStamp

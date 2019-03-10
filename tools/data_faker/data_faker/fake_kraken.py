@@ -6,7 +6,7 @@ from typing import Callable, Optional
 from data_faker.utils import assets_exist_at_time
 
 from rotkehlchen.fval import FVal
-from rotkehlchen.kraken import WORLD_TO_KRAKEN, kraken_to_world_pair
+from rotkehlchen.kraken import kraken_to_world_pair
 from rotkehlchen.order_formatting import Trade, pair_get_assets
 from rotkehlchen.serializer import process_result
 from rotkehlchen.tests.fixtures.exchanges.kraken import create_kraken_trade
@@ -40,17 +40,18 @@ class FakeKraken(object):
         return ledger_id
 
     def increase_asset(self, asset: Asset, amount: FVal) -> None:
-        asset = WORLD_TO_KRAKEN[asset]
-        if asset not in self.balances_dict:
-            self.balances_dict[asset] = amount
+        kraken_asset = asset.to_kraken()
+        if kraken_asset not in self.balances_dict:
+            self.balances_dict[kraken_asset] = amount
         else:
-            self.balances_dict[asset] += amount
+            self.balances_dict[kraken_asset] += amount
 
     def decrease_asset(self, asset: Asset, amount: FVal) -> None:
-        asset = WORLD_TO_KRAKEN[asset]
-        assert asset in self.balances_dict, 'Asset should exist in funds'
-        assert amount <= self.balances_dict[asset], 'We should have enough funds to decrease asset'
-        self.balances_dict[asset] -= amount
+        kraken_asset = asset.to_kraken()
+        assert kraken_asset in self.balances_dict, 'Asset should exist in funds'
+        msg = 'We should have enough funds to decrease asset'
+        assert amount <= self.balances_dict[kraken_asset], msg
+        self.balances_dict[kraken_asset] -= amount
 
     def choose_pair(
             self,
@@ -65,8 +66,8 @@ class FakeKraken(object):
             choices.remove(pair)
             pair = kraken_to_world_pair(pair)
             base, quote = pair_get_assets(pair)
-            kbase = WORLD_TO_KRAKEN[base]
-            kquote = WORLD_TO_KRAKEN[quote]
+            kbase = base.to_kraken()
+            kquote = quote.to_kraken()
             if kbase in self.balances_dict or kquote in self.balances_dict:
                 # Before choosing make sure that at the selected timestamp both of
                 # the pair assets exist (had a price)
@@ -81,7 +82,7 @@ class FakeKraken(object):
 
     def get_balance(self, asset: Asset) -> Optional[FVal]:
         """Returns the balance of asset that's held in the exchance or None"""
-        kasset = WORLD_TO_KRAKEN[asset]
+        kasset = asset.to_kraken()
         return self.balances_dict.get(kasset)
 
     def deposit(self, asset: Asset, amount: FVal, time: Timestamp) -> None:
@@ -92,7 +93,7 @@ class FakeKraken(object):
             'time': str(time) + '.0000',
             'type': 'deposit',
             # 'aclass': 'notusedbyrotkehlchen',
-            'asset': WORLD_TO_KRAKEN[asset],
+            'asset': asset.to_kraken(),
             'amount': str(amount),
             'fee': '0',
             # 'balance': 'notusedbyrotkehlchen',

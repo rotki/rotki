@@ -10,8 +10,8 @@ import requests
 from rotkehlchen.constants import (
     CURRENCYCONVERTER_API_KEY,
     FIAT_CURRENCIES,
-    S_BCHSV,
     S_BQX,
+    S_BSV,
     S_DATACOIN,
     S_IOTA,
     S_NANO,
@@ -52,7 +52,7 @@ def world_to_cryptocompare(asset: Asset, timestamp: Timestamp = None) -> Asset:
         asset = cast(NonEthTokenBlockchainAsset, 'DATA')
     elif asset == S_IOTA:
         asset = cast(NonEthTokenBlockchainAsset, 'IOT')
-    elif asset == S_BCHSV:
+    elif asset == S_BSV:
         asset = cast(NonEthTokenBlockchainAsset, 'BSV')
     elif asset == S_BQX:
         asset = cast(EthToken, 'ETHOS')
