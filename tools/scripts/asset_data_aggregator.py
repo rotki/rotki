@@ -7,7 +7,8 @@ How do we manually get the started at if the coin paprika one is non-existent
 or inaccurate?
 
 1. Check internet to see if there was a presale and get its start date
-2. Get coinmarket's cap price start range
+2. Get coinmarket's cap price start range (not using their API due to the
+   derivative work ToS clause)
 3. If it is an own chain token find the first block mined timestamp
 4. It it's a token sale find when it started.
 
@@ -18,12 +19,13 @@ import os
 import sys
 from typing import Any, Dict, List
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants import FIAT_CURRENCIES
-from rotkehlchen.externalapis.coinpaprika import CoinPaprika
+from rotkehlchen.externalapis import CoinPaprika, Cryptocompare
 from rotkehlchen.utils import createTimeStamp
 
-KNOWN_TO_MISS_FROM_COIN_PAPRIKA = ('DAO', 'KFEE')
+KNOWN_TO_MISS_FROM_COIN_PAPRIKA = ('DAO', 'KFEE', '1CR')
 
 # These are just here for documentation and to make sure we search
 # for a started date for each of them
@@ -89,13 +91,13 @@ def yes_or_no(question: str):
             return False
 
 
-def find_coin_id(asset: str, coins_list: List[Dict[str, Any]]) -> str:
+def find_paprika_coin_id(asset: str, paprika_coins_list: List[Dict[str, Any]]) -> str:
     found_coin_id = None
 
     if asset in COINPAPRIKA_LOCK_SYMBOL_ID_MAP:
         return COINPAPRIKA_LOCK_SYMBOL_ID_MAP[asset]
 
-    for coin in coins_list:
+    for coin in paprika_coins_list:
         if coin['symbol'] == asset:
             if found_coin_id:
                 print(
@@ -119,7 +121,9 @@ def find_coin_id(asset: str, coins_list: List[Dict[str, Any]]) -> str:
 def main():
     our_data = AssetResolver().assets
     paprika = CoinPaprika()
-    coins_list = paprika.get_coins_list()
+    cryptocompare = Cryptocompare(data_directory='/tmp')
+    paprika_coins_list = paprika.get_coins_list()
+    cryptocompare_coins_map = cryptocompare.all_coins()
 
     for asset in our_data.keys():
 
@@ -133,7 +137,7 @@ def main():
         if asset in KNOWN_TO_MISS_FROM_COIN_PAPRIKA:
             continue
 
-        found_coin_id = find_coin_id(asset, coins_list)
+        found_coin_id = find_paprika_coin_id(asset, paprika_coins_list)
         coin_data = paprika.get_coin_by_id(found_coin_id)
 
         # Process the started_at data from coin paprika
@@ -142,7 +146,8 @@ def main():
             print(f'Did not find a started date for asset {asset}')
         else:
             timestamp = createTimeStamp(started, formatstr='%Y-%m-%dT%H:%M:%SZ')
-            if timestamp != our_asset['started']:
+            our_started = our_asset.get('started', None)
+            if our_started and timestamp != our_asset['started']:
                 prefix = (
                     f"For asset {asset} our data have {our_asset['started']} "
                     f"as starting timestamp while coin paprika has {timestamp}. "
@@ -154,6 +159,14 @@ def main():
                 question = f'{prefix} Replace ours with theirs?'
                 if yes_or_no(question):
                     our_data[asset]['started'] = timestamp
+            elif not our_started:
+                question = (
+                    f"For asset {asset} we have no starting timestamp "
+                    f"Should we use coinpaprika's {timestamp} ?"
+                )
+                if not yes_or_no(question):
+                    print("Can't find a starting timestamp for {asset}. Bailing ...")
+                    sys.exit(1)
 
         # Process whether the is_active info agree
         if 'active' in our_asset and our_asset['active'] != coin_data['is_active']:
@@ -175,6 +188,12 @@ def main():
                 f'Our data believe that {asset} type is {our_asset["type"]} '
                 f'but coin paprika believes it is {coin_data["type"]}',
             )
+            sys.exit(1)
+
+        # Make sure that the asset is also known to cryptocompare
+        assetobj = Asset(asset)
+        if assetobj.to_cryptocompare() not in cryptocompare_coins_map:
+            print(f'Asset {asset} is not in cryptocompare')
             sys.exit(1)
 
     # Finally overwrite the all_assets.json with the modified assets
