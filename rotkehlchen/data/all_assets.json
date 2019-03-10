@@ -1,4 +1,9 @@
 {
+    "1CR": {
+        "name": "1 credit",
+        "started": 1398556800,
+        "type": "own chain"
+    },
     "ADA": {
         "name": "Cardano",
         "started": 1506643200,
