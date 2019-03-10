@@ -22,14 +22,7 @@ from rotkehlchen.constants import (
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import (
-    Asset,
-    EthToken,
-    FiatAsset,
-    FilePath,
-    NonEthTokenBlockchainAsset,
-    Timestamp,
-)
+from rotkehlchen.typing import Asset, FiatAsset, FilePath, Timestamp
 from rotkehlchen.utils import (
     request_get_dict,
     retry_calls,
@@ -43,35 +36,16 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def world_to_cryptocompare(asset: Asset, timestamp: Timestamp = None) -> Asset:
-    # Adjust some ETH tokens to how cryptocompare knows them
-    if asset == S_RDN:
-        # remove this if cryptocompare changes the symbol
-        asset = cast(EthToken, 'RDN*')
-    elif asset == S_DATACOIN:
-        asset = cast(NonEthTokenBlockchainAsset, 'DATA')
-    elif asset == S_IOTA:
-        asset = cast(NonEthTokenBlockchainAsset, 'IOT')
-    elif asset == S_BSV:
-        asset = cast(NonEthTokenBlockchainAsset, 'BSV')
-    elif asset == S_BQX:
-        asset = cast(EthToken, 'ETHOS')
-    elif asset == S_RAIBLOCKS:
-        return S_NANO
-
-    return asset
-
-
 def query_cryptocompare_for_fiat_price(asset: Asset) -> FVal:
     log.debug('Get usd price from cryptocompare', asset=asset)
-    asset = world_to_cryptocompare(asset)
+    cc_asset_str = asset.to_cryptocompare()
     resp = retry_calls(
         5,
         'find_usd_price',
         'requests.get',
         requests.get,
         u'https://min-api.cryptocompare.com/data/price?'
-        'fsym={}&tsyms=USD'.format(asset),
+        'fsym={}&tsyms=USD'.format(cc_asset_str),
     )
 
     if resp.status_code != 200:

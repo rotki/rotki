@@ -1,6 +1,5 @@
-from typing import Any
-
 from dataclasses import dataclass
+from typing import Any
 
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.errors import UnknownAsset
@@ -39,6 +38,14 @@ WORLD_TO_KRAKEN = {
     'BSV': 'BSV',
 }
 
+WORLD_TO_CRYPTOCOMPARE = {
+    'RDN': 'RDN*',
+    'DATAcoin': 'DATA',
+    'IOTA': 'IOT',
+    'BQX': 'ETHOS',
+    'XRB': 'NANO',
+}
+
 
 @dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class Asset():
@@ -56,6 +63,9 @@ class Asset():
 
     def to_kraken(self) -> str:
         return WORLD_TO_KRAKEN[self.name]
+
+    def to_cryptocompare(self) -> str:
+        return WORLD_TO_CRYPTOCOMPARE.get(self.name, self.name)
 
     def __hash__(self):
         return hash(self.name)

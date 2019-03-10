@@ -1,4 +1,4 @@
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import WORLD_TO_CRYPTOCOMPARE, Asset
 
 KRAKEN_TO_WORLD = {
     'XDAO': 'DAO',
@@ -42,6 +42,12 @@ KRAKEN_TO_WORLD = {
     'BSV': 'BSV',
 }
 
+CRYPTOCOMPARE_TO_WORLD = {v: k for k, v in WORLD_TO_CRYPTOCOMPARE.items()}
+
 
 def asset_from_kraken(kraken_name: str) -> Asset:
     return Asset(KRAKEN_TO_WORLD[kraken_name])
+
+
+def asset_from_cryptocompare(cc_name: str) -> Asset:
+    return Asset(CRYPTOCOMPARE_TO_WORLD[cc_name])

@@ -11,7 +11,7 @@ from rotkehlchen.bittrex import trade_from_bittrex
 from rotkehlchen.errors import PriceQueryUnknownFromAsset, RemoteError
 from rotkehlchen.exchange import data_up_todate
 from rotkehlchen.fval import FVal
-from rotkehlchen.inquirer import FIAT_CURRENCIES, world_to_cryptocompare
+from rotkehlchen.inquirer import FIAT_CURRENCIES
 from rotkehlchen.kraken import trade_from_kraken
 from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
 from rotkehlchen.order_formatting import (
@@ -316,7 +316,7 @@ class PriceHistorian(object):
             return usd_invert_conversion
         return price
 
-    def get_historical_data(self, from_asset, to_asset, timestamp):
+    def get_historical_data(self, from_asset: Asset, to_asset: Asset, timestamp: Timestamp):
         """Get historical price data from cryptocompare"""
         log.debug(
             'Retrieving historical price data',
@@ -365,8 +365,8 @@ class PriceHistorian(object):
             query_string = (
                 'https://min-api.cryptocompare.com/data/histohour?'
                 'fsym={}&tsym={}&limit={}&toTs={}'.format(
-                    world_to_cryptocompare(from_asset, end_date),
-                    world_to_cryptocompare(to_asset, end_date),
+                    from_asset.to_cryptocompare(),
+                    to_asset.to_cryptocompare(),
                     cryptocompare_hourquerylimit,
                     end_date,
                 ))
@@ -522,8 +522,8 @@ class PriceHistorian(object):
                     f"{to_asset} at timestamp {timestamp}. Attempting to get daily price...",
                 )
                 # attempt to get the daily price by timestamp
-                cc_from_asset = world_to_cryptocompare(from_asset, timestamp)
-                cc_to_asset = world_to_cryptocompare(to_asset, timestamp)
+                cc_from_asset = from_asset.to_cryptocompare()
+                cc_to_asset = to_asset.to_cryptocompare()
                 log.debug(
                     'Querying cryptocompare for daily historical price',
                     from_asset=from_asset,
