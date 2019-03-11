@@ -20,6 +20,7 @@ PREFER_OUR_STARTED = (
     'USDT',
     'XRP',
     'XTZ',
+    'ABY',
 
     # Taking coin paprika's data here
     'ETH',

@@ -21,13 +21,15 @@ def name_check(
         # If we already got a name from manual input then keep it
         return our_data
 
-    paprika_name = paprika_data['name']
+    paprika_name = None
+    if paprika_data:
+        paprika_name = paprika_data['name']
     cmc_name = None
     if cmc_data:
         cmc_name = cmc_data['name']
 
     if not paprika_name and not cmc_name:
-        print('No name in any external api for asset {asset_symbol}')
+        print(f'No name in any external api for asset {asset_symbol}')
         sys.exit(1)
 
     if paprika_name == cmc_name:

@@ -9,7 +9,7 @@ def typeinfo_check(
         paprika_data: Dict[str, Any],
         cmc_data: Dict[str, Any],
 ):
-    if 'type' not in our_asset:
+    if 'type' not in our_asset and paprika_data:
         # If our data don't have a type, derive it from external data
         if paprika_data['type'] == 'coin':
             our_data[asset_symbol]['type'] = 'own chain'
@@ -34,7 +34,7 @@ def typeinfo_check(
 
     if not paprika_data:
         # Can't check for mismatch if paprika has no data
-        assert 'type' in our_asset
+        assert 'type' in our_asset, f'data for {asset_symbol} do not have a type'
         return our_data
 
     # Process whether the type info agree
@@ -53,5 +53,5 @@ def typeinfo_check(
         )
         sys.exit(1)
 
-    assert 'type' in our_asset
+    assert 'type' in our_asset, f'data for {asset_symbol} do not have a type'
     return our_data
