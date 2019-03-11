@@ -34,6 +34,8 @@ export class Settings {
         new Currency('British Pound', 'fa-gbp', 'GBP', '£'),
         new Currency('Japanese Yen', 'fa-jpy', 'JPY', '¥'),
         new Currency('Chinese Yuan', 'fa-jpy', 'CNY', '¥'),
+        new Currency('Korean Won', 'fa-krw', 'KRW', '₩'),
+        new Currency('Canadian Dollar', 'fa-cad', 'CAD', '$'),
     ];
     public main_currency: Currency = this.currencies[0];
     private readonly icon_map: { [asset: string]: string };
