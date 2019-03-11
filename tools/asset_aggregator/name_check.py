@@ -30,6 +30,11 @@ def name_check(
         print('No name in any external api for asset {asset_symbol}')
         sys.exit(1)
 
+    if paprika_name == cmc_name:
+        # If both external APIs agree just use their name
+        our_data[asset_symbol]['name'] = paprika_name
+        return our_data
+
     msg = (
         f'For asset {asset_symbol} the possible names are: \n'
         f'(1) Coinpaprika: {paprika_name}\n'
