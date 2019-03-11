@@ -72,5 +72,6 @@ class Cryptocompare():
         # cryptocompare system
         data['DAO'] = object()
         data['USDT'] = object()
+        data['VEN'] = object()
 
         return data

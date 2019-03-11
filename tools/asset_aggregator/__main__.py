@@ -3,22 +3,21 @@ Aggregates data from various sources along with manually input data from us
 in order to create the all_assets.json file
 
 
-How do we manually get the started at if the coin paprika one is non-existent
-or inaccurate?
+How do we manually get the started timestamps if no api has good enough data?
 
 1. Check internet to see if there was a presale and get its start date
-2. Get coinmarket's cap price start range (not using their API due to the
-   derivative work ToS clause)
-3. If it is an own chain token find the first block mined timestamp
-4. It it's a token sale find when it started.
+2. If it is an own chain token find the first block mined timestamp
+3. It it's a token sale find when it started.
 
 """
 
 import json
 import os
 import sys
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from asset_aggregator.active_check import active_check
 from asset_aggregator.args import aggregator_args
 from asset_aggregator.name_check import name_check
 from asset_aggregator.timerange_check import timerange_check
@@ -29,11 +28,11 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants import FIAT_CURRENCIES
 from rotkehlchen.externalapis import Coinmarketcap, CoinPaprika, Cryptocompare
 
-KNOWN_TO_MISS_FROM_COIN_PAPRIKA = ('DAO', 'KFEE', '1CR')
-
-# These are just here for documentation and to make sure we search
-# for a started date for each of them
-NO_STARTED_AT_COIN_PAPRIKA = ('BSV', 'ICN', 'MLN', 'VEN', 'REP')
+KNOWN_TO_MISS_FROM_PAPRIKA = ('DAO', 'KFEE', '1CR')
+KNOWN_TO_MISS_FROM_CMC = ('VEN', '1CR', 'DAO', 'KFEE')
+# TODO: For the ones missing from cryptocompare make sure to also
+# disallow price queries to cryptocompare for these assets
+KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = ('KFEE')
 
 # Some symbols in coin paprika exists multiple times with different ids each time.
 # This requires manual intervention and a lock in of the id mapping by hand
@@ -41,6 +40,10 @@ COINPAPRIKA_LOCK_SYMBOL_ID_MAP = {
     # ICN has both icn-iconomi and icn-icoin. The correct one appears to be the first
     'ICN': 'icn-iconomi',
 }
+
+# Info on where data was taken for coins which have no data anywhere
+# 1CR. Launch date: https://github.com/1credit/1credit
+#      End date: https://coinmarketcap.com/currencies/1credit/
 
 
 def yes_or_no(question: str):
@@ -54,8 +57,11 @@ def yes_or_no(question: str):
 
 
 def find_paprika_coin_id(asset_symbol: str, paprika_coins_list: List[Dict[str, Any]]) -> str:
-    found_coin_id = None
 
+    if asset_symbol in KNOWN_TO_MISS_FROM_PAPRIKA:
+        return None
+
+    found_coin_id = None
     if asset_symbol in COINPAPRIKA_LOCK_SYMBOL_ID_MAP:
         return COINPAPRIKA_LOCK_SYMBOL_ID_MAP[asset_symbol]
 
@@ -87,12 +93,15 @@ def find_cmc_coin_data(
     if not cmc_list:
         return None
 
+    if asset_symbol in KNOWN_TO_MISS_FROM_CMC:
+        return None
+
     found_coin_data = None
     for coin in cmc_list:
         if coin['symbol'] == asset_symbol:
             if found_coin_data:
                 print(
-                    f'Asset with symbol {asset_symbol} was found in cryptocompare '
+                    f'Asset with symbol {asset_symbol} was found in coinmarketcap '
                     f'both with id {found_coin_data["id"]} and {coin["id"]}',
                 )
                 sys.exit(1)
@@ -101,7 +110,7 @@ def find_cmc_coin_data(
     if not found_coin_data:
         print(
             f"Could not find asset with canonical symbol {asset_symbol} in "
-            f"cryptocompares's coin list",
+            f"coinmarketcap's coin list",
         )
         sys.exit(1)
 
@@ -115,14 +124,15 @@ def main():
     paprika = CoinPaprika()
     cmc = None
     cmc_list = None
+    data_directory = f'{Path.home()}/.rotkehlchen'
     if args.cmc_api_key:
         cmc = Coinmarketcap(
-            data_directory='~/.rotkehlchen',
+            data_directory=data_directory,
             api_key=args.cmc_api_key,
         )
         cmc_list = cmc.get_cryptocyrrency_map()
 
-    cryptocompare = Cryptocompare(data_directory='~/.rotkehlchen')
+    cryptocompare = Cryptocompare(data_directory=data_directory)
     paprika_coins_list = paprika.get_coins_list()
     cryptocompare_coins_map = cryptocompare.all_coins()
 
@@ -133,13 +143,11 @@ def main():
         if asset in FIAT_CURRENCIES:
             continue
 
-        # after experimentation found out that coin paprika does not have
-        # data for these tokens
-        if asset in KNOWN_TO_MISS_FROM_COIN_PAPRIKA:
-            continue
-
         found_coin_id = find_paprika_coin_id(asset, paprika_coins_list)
-        paprika_coin_data = paprika.get_coin_by_id(found_coin_id)
+        if found_coin_id:
+            paprika_coin_data = paprika.get_coin_by_id(found_coin_id)
+        else:
+            paprika_coin_data = None
         cmc_coin_data = find_cmc_coin_data(asset, cmc_list)
 
         our_data = timerange_check(
@@ -156,15 +164,28 @@ def main():
             paprika_data=paprika_coin_data,
             cmc_data=cmc_coin_data,
         )
-        typeinfo_check(
-            asset_symol=asset,
+        our_data = active_check(
+            asset_symbol=asset,
             our_asset=our_asset,
+            our_data=our_data,
             paprika_data=paprika_coin_data,
+            cmc_data=cmc_coin_data,
+        )
+        our_data = typeinfo_check(
+            asset_symbol=asset,
+            our_asset=our_asset,
+            our_data=our_data,
+            paprika_data=paprika_coin_data,
+            cmc_data=cmc_coin_data,
         )
 
         # Make sure that the asset is also known to cryptocompare
         assetobj = Asset(asset)
-        if assetobj.to_cryptocompare() not in cryptocompare_coins_map:
+        cryptocompare_problem = (
+            asset not in KNOWN_TO_MISS_FROM_CRYPTOCOMPARE and
+            assetobj.to_cryptocompare() not in cryptocompare_coins_map
+        )
+        if cryptocompare_problem:
             print(f'Asset {asset} is not in cryptocompare')
             sys.exit(1)
 
