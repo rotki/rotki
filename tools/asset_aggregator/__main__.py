@@ -28,11 +28,18 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants import FIAT_CURRENCIES
 from rotkehlchen.externalapis import Coinmarketcap, CoinPaprika, Cryptocompare
 
-KNOWN_TO_MISS_FROM_PAPRIKA = ('DAO', 'KFEE', '1CR')
-KNOWN_TO_MISS_FROM_CMC = ('VEN', '1CR', 'DAO', 'KFEE', 'AC')
+KNOWN_TO_MISS_FROM_PAPRIKA = ('DAO', 'KFEE', '1CR', 'ACH')
+KNOWN_TO_MISS_FROM_CMC = ('VEN', '1CR', 'DAO', 'KFEE', 'AC', 'ACH')
 # TODO: For the ones missing from cryptocompare make sure to also
 # disallow price queries to cryptocompare for these assets
-KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = ('KFEE')
+KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
+    # This is just kraken's internal fee token
+    'KFEE',
+    # For us ACH is the Altcoin Herald token. For cryptocompare it's
+    # Achievecoin
+    # https://www.cryptocompare.com/coins/ach/overview
+    'ACH',
+)
 
 # Some symbols in coin paprika exists multiple times with different ids each time.
 # This requires manual intervention and a lock in of the id mapping by hand
@@ -45,6 +52,7 @@ COINPAPRIKA_LOCK_SYMBOL_ID_MAP = {
 # 1CR. Launch date: https://github.com/1credit/1credit
 #      End date: https://coinmarketcap.com/currencies/1credit/
 # AC: https://coinmarketcap.com/currencies/asiacoin/#charts
+# ACH: https://coinmarketcap.com/currencies/ach/
 
 
 def yes_or_no(question: str):

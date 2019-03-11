@@ -13,10 +13,17 @@
     },
     "AC": {
         "active": false,
+        "ended": 1549411200,
         "name": "AsiaCoin",
-        "type": "own chain"
         "started": 1397952000,
-        "ended": 1549411200
+        "type": "own chain"
+    },
+    "ACH": {
+        "active": false,
+        "ended": 1434844800,
+        "name": "Altcoin Herald",
+        "started": 1412380800,
+        "type": "own chain"
     },
     "ADA": {
         "name": "Cardano",
