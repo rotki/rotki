@@ -29,7 +29,7 @@ from rotkehlchen.constants import FIAT_CURRENCIES
 from rotkehlchen.externalapis import Coinmarketcap, CoinPaprika, Cryptocompare
 
 KNOWN_TO_MISS_FROM_PAPRIKA = ('DAO', 'KFEE', '1CR')
-KNOWN_TO_MISS_FROM_CMC = ('VEN', '1CR', 'DAO', 'KFEE')
+KNOWN_TO_MISS_FROM_CMC = ('VEN', '1CR', 'DAO', 'KFEE', 'AC')
 # TODO: For the ones missing from cryptocompare make sure to also
 # disallow price queries to cryptocompare for these assets
 KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = ('KFEE')
@@ -44,6 +44,7 @@ COINPAPRIKA_LOCK_SYMBOL_ID_MAP = {
 # Info on where data was taken for coins which have no data anywhere
 # 1CR. Launch date: https://github.com/1credit/1credit
 #      End date: https://coinmarketcap.com/currencies/1credit/
+# AC: https://coinmarketcap.com/currencies/asiacoin/#charts
 
 
 def yes_or_no(question: str):

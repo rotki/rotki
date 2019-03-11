@@ -1,8 +1,22 @@
 {
     "1CR": {
+        "active": false,
+        "ended": 1506988800,
         "name": "1 credit",
         "started": 1398556800,
         "type": "own chain"
+    },
+    "ABY": {
+        "name": "ArtByte",
+        "started": 1398902400,
+        "type": "own chain"
+    },
+    "AC": {
+        "active": false,
+        "name": "AsiaCoin",
+        "type": "own chain"
+        "started": 1397952000,
+        "ended": 1549411200
     },
     "ADA": {
         "name": "Cardano",
