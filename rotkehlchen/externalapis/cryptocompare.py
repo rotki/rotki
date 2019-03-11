@@ -37,7 +37,7 @@ class Cryptocompare():
         invalidate_cache = True
         coinlist_cache_path = os.path.join(self.data_directory, 'cryptocompare_coinlist.json')
         if os.path.isfile(coinlist_cache_path):
-            log.info('Found coinlist cache', path=coinlist_cache_path)
+            log.info('Found cryptocompare coinlist cache', path=coinlist_cache_path)
             with open(coinlist_cache_path, 'rb') as f:
                 try:
                     data = rlk_jsonloads(f.read())
@@ -46,7 +46,7 @@ class Cryptocompare():
 
                     # If we got a cache and its' over a month old then requery cryptocompare
                     if data['time'] < now and now - data['time'] > 2629800:
-                        log.info('Coinlist cache is now invalidated')
+                        log.info('Cryptocompare coinlist cache is now invalidated')
                         invalidate_cache = True
                         data = data['data']
                 except JSONDecodeError:
