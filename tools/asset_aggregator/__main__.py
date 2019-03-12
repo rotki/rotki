@@ -165,6 +165,7 @@ def main():
             our_data=our_data,
             paprika_data=paprika_coin_data,
             cmc_data=cmc_coin_data,
+            always_keep_our_time=args.always_keep_our_time,
         )
         our_data = name_check(
             asset_symbol=asset,
