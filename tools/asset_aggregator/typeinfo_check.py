@@ -22,6 +22,8 @@ def typeinfo_check(
                 our_data[asset_symbol]['type'] = 'omni token'
             elif paprika_data['parent']['id'] == 'eth-ethereum':
                 our_data[asset_symbol]['type'] = 'ethereum token'
+            elif paprika_data['parent']['id'] == 'neo-neo':
+                our_data[asset_symbol]['type'] = 'neo token'
             else:
                 print(
                     f'Paprika data for asset {asset_symbol} has unknown '
