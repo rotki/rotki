@@ -30,6 +30,64 @@
         "started": 1506643200,
         "type": "own chain"
     },
+    "ADN": {
+        "active": false,
+        "ended": 1473120000,
+        "name": "Aiden",
+        "started": 1397520000,
+        "type": "own chain"
+    },
+    "AEON": {
+        "name": "Aeon",
+        "started": 1402012800,
+        "type": "own chain"
+    },
+    "AERO": {
+        "active": false,
+        "ended": 1420934400,
+        "name": "Aerocoin",
+        "started": 1403395200,
+        "swapped_for": "AM",
+        "type": "own chain"
+    },
+    "AIR": {
+        "active": false,
+        "ended": 1543276800,
+        "name": "Air token",
+        "started": 1507161600,
+        "type": "ethereum token"
+    },
+    "AIR-2": {
+        "active": false,
+        "ended": 1491955200,
+        "name": "Air coin",
+        "started": 1395273600,
+        "type": "own chain"
+    },
+    "AM": {
+        "active": false,
+        "ended": 1474761600,
+        "name": "AeroME",
+        "started": 1420934400,
+        "type": "own chain"
+    },
+    "AMP": {
+        "name": "HyperSpace",
+        "started": 1426723200,
+        "type": "omni token"
+    },
+    "APH": {
+        "name": "Aphelion",
+        "started": 1510693460,
+        "type": "neo token"
+    },
+    "APH-2": {
+        "active": false,
+        "ended": 1401408000,
+        "name": "Aphrodite coin",
+        "started": 1395446400,
+        "type": "own chain"
+    },
     "BCH": {
         "forked": "BTC",
         "name": "Bitcoin Cash",

@@ -11,6 +11,7 @@ from json.decoder import JSONDecodeError
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from urllib.parse import urlencode
 
+from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.errors import PoloniexError, RemoteError
 from rotkehlchen.exchange import Exchange
@@ -51,8 +52,8 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
     amount = FVal(poloniex_trade['amount'])
     rate = FVal(poloniex_trade['rate'])
     perc_fee = FVal(poloniex_trade['fee'])
-    base_currency = get_pair_position(pair, 'first')
-    quote_currency = get_pair_position(pair, 'second')
+    base_currency = asset_from_poloniex(get_pair_position(pair, 'first'))
+    quote_currency = asset_from_poloniex(get_pair_position(pair, 'second'))
     timestamp = createTimeStamp(poloniex_trade['date'], formatstr="%Y-%m-%d %H:%M:%S")
     cost = rate * amount
     if trade_type == TradeType.BUY:
@@ -318,24 +319,25 @@ class Poloniex(Exchange):
             return None, msg
 
         balances = dict()
-        for currency, v in resp.items():
+        for poloniex_asset, v in resp.items():
             available = FVal(v['available'])
             on_orders = FVal(v['onOrders'])
             if (available != FVal(0) or on_orders != FVal(0)):
+                asset = asset_from_poloniex(poloniex_asset)
                 entry = {}
                 entry['amount'] = available + on_orders
                 usd_price = self.inquirer.find_usd_price(
-                    asset=currency,
+                    asset=asset,
                     asset_btc_price=None,
                 )
                 usd_value = entry['amount'] * usd_price
                 entry['usd_value'] = usd_value
-                balances[currency] = entry
+                balances[asset] = entry
 
                 log.debug(
                     'Poloniex balance query',
                     sensitive_log=True,
-                    currency=currency,
+                    currency=asset,
                     amount=entry['amount'],
                     usd_value=usd_value,
                 )
@@ -391,7 +393,7 @@ class Poloniex(Exchange):
             next(history)  # skip header row
             for row in history:
                 lending_history.append({
-                    'currency': row[0],
+                    'currency': asset_from_poloniex(row[0]),
                     'earned': FVal(row[6]),
                     'amount': FVal(row[2]),
                     'fee': FVal(row[5]),
@@ -505,7 +507,7 @@ class Poloniex(Exchange):
                 exchange='poloniex',
                 category='withdrawal',
                 timestamp=withdrawal['timestamp'],
-                asset=withdrawal['currency'],
+                asset=asset_from_poloniex(withdrawal['currency']),
                 amount=FVal(withdrawal['amount']),
                 fee=FVal(withdrawal['fee']),
             ))
@@ -515,7 +517,7 @@ class Poloniex(Exchange):
                 exchange='poloniex',
                 category='deposit',
                 timestamp=deposit['timestamp'],
-                asset=deposit['currency'],
+                asset=asset_from_poloniex(deposit['currency']),
                 amount=FVal(deposit['amount']),
                 fee=0,
             ))
