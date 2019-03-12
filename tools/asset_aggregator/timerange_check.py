@@ -22,6 +22,8 @@ PREFER_OUR_STARTED = (
     'XTZ',
     'ABY',
 
+    # Taken from here: https://neotracker.io/asset/a0777c3ce2b169d4a23bcba4565e3225a0122d95
+    'APH',
     # Taking coin paprika's data here
     'ETH',
     # We use the exact timestamp of the BSV block fork
@@ -72,6 +74,7 @@ def timerange_check(
         our_data: Dict[str, Any],
         paprika_data: Dict[str, Any],
         cmc_data: Dict[str, Any],
+        always_keep_our_time: bool,
 ) -> Dict[str, Any]:
     """Process the started timestamps from coin paprika and coinmarketcap.
 
@@ -111,6 +114,9 @@ def timerange_check(
         if cmc_started == paprika_started and cmc_started is not None:
             our_data[asset_symbol]['started'] = cmc_started
             return our_data
+
+    if our_started and always_keep_our_time:
+        return our_data
 
     if our_started != cmc_started or our_started != paprika_started:
         msg = (
