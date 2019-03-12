@@ -1,5 +1,6 @@
-from dataclasses import dataclass
 from typing import Any
+
+from dataclasses import dataclass
 
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.errors import UnknownAsset
@@ -44,6 +45,14 @@ WORLD_TO_CRYPTOCOMPARE = {
     'IOTA': 'IOT',
     'BQX': 'ETHOS',
     'XRB': 'NANO',
+    'AIR-2': 'AIR*',
+}
+
+WORLD_TO_POLONIEX = {
+    # AIR-2 is aircoin for us and AIR is airtoken. Poloniex has only aircoin
+    'AIR-2': 'AIR',
+    # APH-2 is Aphrodite coin for us and APH is Aphelion. Poloniex has only aphrodite
+    'APH-2': 'APH',
 }
 
 

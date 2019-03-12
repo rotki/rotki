@@ -73,5 +73,6 @@ class Cryptocompare():
         data['DAO'] = object()
         data['USDT'] = object()
         data['VEN'] = object()
+        data['AIR*'] = object()  # This is Aircoin
 
         return data

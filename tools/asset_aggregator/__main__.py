@@ -28,8 +28,21 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants import FIAT_CURRENCIES
 from rotkehlchen.externalapis import Coinmarketcap, CoinPaprika, Cryptocompare
 
-KNOWN_TO_MISS_FROM_PAPRIKA = ('DAO', 'KFEE', '1CR', 'ACH')
-KNOWN_TO_MISS_FROM_CMC = ('VEN', '1CR', 'DAO', 'KFEE', 'AC', 'ACH')
+KNOWN_TO_MISS_FROM_PAPRIKA = ('DAO', 'KFEE', '1CR', 'ACH', 'AERO', 'AM', 'AIR-2', 'APH-2')
+KNOWN_TO_MISS_FROM_CMC = (
+    'VEN',
+    '1CR',
+    'DAO',
+    'KFEE',
+    'AC',
+    'ACH',
+    'ADN',
+    'AERO',
+    'AM',
+    'AIR-2',
+    'AIR',
+    'APH-2',
+)
 # TODO: For the ones missing from cryptocompare make sure to also
 # disallow price queries to cryptocompare for these assets
 KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
@@ -39,6 +52,9 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # Achievecoin
     # https://www.cryptocompare.com/coins/ach/overview
     'ACH',
+    # We got APH as Aphelion and APH-2 as a very shortlived Aphrodite coin
+    # Cryptocompare has no data for Aphrodite coin
+    'APH-2',
 )
 
 # Some symbols in coin paprika exists multiple times with different ids each time.
@@ -53,16 +69,19 @@ COINPAPRIKA_LOCK_SYMBOL_ID_MAP = {
 #      End date: https://coinmarketcap.com/currencies/1credit/
 # AC: https://coinmarketcap.com/currencies/asiacoin/#charts
 # ACH: https://coinmarketcap.com/currencies/ach/
-
-
-def yes_or_no(question: str):
-    """From https://gist.github.com/garrettdreyfus/8153571#gistcomment-2321568"""
-    while "the answer is invalid":
-        reply = str(input(question + ' (y/n): ')).lower().strip()
-        if reply[:1] == 'y':
-            return True
-        if reply[:1] == 'n':
-            return False
+# ADN: https://coinmarketcap.com/currencies/aiden/
+#      Note there is also "adrenaline" but we don't support it yet.
+#      If we did it would be with data from:
+#      https://coinmarketcap.com/currencies/adrenaline/ and with "ADN-2" symbol
+# AERO and AM:
+#      https://coinmarketcap.com/currencies/aerocoin/#charts
+#      https://www.cryptocompare.com/coins/aero/overview
+#      https://www.cryptocompare.com/coins/am/overview
+#      https://bitcointalk.org/index.php?topic=955204.0
+# AIR-2 is "Aircoin":
+#      https://coinmarketcap.com/currencies/aircoin/
+# AIR is "Airtoken":
+#      https://coinmarketcap.com/currencies/airtoken/#charts
 
 
 def find_paprika_coin_id(asset_symbol: str, paprika_coins_list: List[Dict[str, Any]]) -> str:
