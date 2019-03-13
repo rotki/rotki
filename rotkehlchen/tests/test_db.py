@@ -15,6 +15,7 @@ from rotkehlchen.db.dbhandler import (
     DBINFO_FILENAME,
     DEFAULT_ANONYMIZED_LOGS,
     DEFAULT_BALANCE_SAVE_FREQUENCY,
+    DEFAULT_DATE_DISPLAY_FORMAT,
     DEFAULT_INCLUDE_CRYPTO2CRYPTO,
     DEFAULT_INCLUDE_GAS_COSTS,
     DEFAULT_MAIN_CURRENCY,
@@ -152,6 +153,7 @@ def test_writting_fetching_data(data_dir, username):
         'last_balance_save': 0,
         'main_currency': DEFAULT_MAIN_CURRENCY,
         'anonymized_logs': DEFAULT_ANONYMIZED_LOGS,
+        'date_display_format': DEFAULT_DATE_DISPLAY_FORMAT,
     }
 
     # Check setting non-existing settings. Should be ignored
@@ -317,6 +319,7 @@ def test_settings_entry_types(data_dir, username):
         'eth_rpc_port': '8545',
         'balance_save_frequency': 24,
         'anonymized_logs': True,
+        'date_display_format': '%d/%m/%Y %H:%M:%S %z',
     })
     assert success
     assert msg == '', f'set settings returned error: "{msg}"'
@@ -345,6 +348,8 @@ def test_settings_entry_types(data_dir, username):
     assert res['main_currency'] == 'USD'
     assert isinstance(res['anonymized_logs'], bool)
     assert res['anonymized_logs'] is True
+    assert isinstance(res['date_display_format'], str)
+    assert res['date_display_format'] == '%d/%m/%Y %H:%M:%S %z'
 
 
 def test_balance_save_frequency_check(data_dir, username):

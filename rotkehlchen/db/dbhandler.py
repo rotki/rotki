@@ -76,6 +76,7 @@ DEFAULT_START_DATE = "01/08/2015"
 DEFAULT_UI_FLOATING_PRECISION = 2
 DEFAULT_BALANCE_SAVE_FREQUENCY = 24
 DEFAULT_MAIN_CURRENCY = S_USD
+DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z'
 KDF_ITER = 64000
 
 
@@ -431,6 +432,8 @@ class DBHandler(object):
             settings['anonymized_logs'] = DEFAULT_ANONYMIZED_LOGS
         if 'include_gas_costs' not in settings:
             settings['include_gas_costs'] = DEFAULT_INCLUDE_GAS_COSTS
+        if 'date_display_format' not in settings:
+            settings['date_display_format'] = DEFAULT_DATE_DISPLAY_FORMAT
 
         # populate values that are not saved in the setting but computed and returned
         # as part of the get_settings call
