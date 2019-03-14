@@ -2,6 +2,7 @@ import os
 from unittest.mock import patch
 
 from rotkehlchen.assets.converters import asset_from_poloniex
+from rotkehlchen.errors import UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade, TradeType
 from rotkehlchen.poloniex import Poloniex, trade_from_poloniex
@@ -93,4 +94,7 @@ def test_query_trade_history_not_shared_cache(data_dir):
 def test_poloniex_assets_are_known(poloniex):
     currencies = poloniex.returnCurrencies()
     for poloniex_asset in currencies.keys():
-        asset = asset_from_poloniex(poloniex_asset)
+        try:
+            _ = asset_from_poloniex(poloniex_asset)
+        except UnsupportedAsset:
+            assert poloniex_asset == 'AXIS'

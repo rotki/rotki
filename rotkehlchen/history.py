@@ -8,7 +8,7 @@ from json.decoder import JSONDecodeError
 from rotkehlchen.binance import trade_from_binance
 from rotkehlchen.bitmex import trade_from_bitmex
 from rotkehlchen.bittrex import trade_from_bittrex
-from rotkehlchen.errors import PriceQueryUnknownFromAsset, RemoteError
+from rotkehlchen.errors import PriceQueryUnknownFromAsset, RemoteError, UnsupportedAsset
 from rotkehlchen.exchange import data_up_todate
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import FIAT_CURRENCIES
@@ -636,13 +636,22 @@ class TradesHistorian(object):
                 for trade in trades:
                     category = trade['category']
 
-                    if category == 'exchange' or category == 'settlement':
-                        history.append(trade_from_poloniex(trade, pair))
-                    elif category == 'marginTrade':
-                        if not self.read_manual_margin_positions:
-                            poloniex_margin_trades.append(trade_from_poloniex(trade, pair))
-                    else:
-                        raise ValueError('Unexpected poloniex trade category: {}'.format(category))
+                    try:
+                        if category == 'exchange' or category == 'settlement':
+                            history.append(trade_from_poloniex(trade, pair))
+                        elif category == 'marginTrade':
+                            if not self.read_manual_margin_positions:
+                                poloniex_margin_trades.append(trade_from_poloniex(trade, pair))
+                        else:
+                            raise ValueError(
+                                f'Unexpected poloniex trade category: {category}',
+                            )
+                    except UnsupportedAsset as e:
+                        # TODO: This should be part of a more user-visible warning
+                        log.warning(
+                            f'Found poloniex trade with asset {e.asset_name}. Ignoring it.',
+                        )
+                        continue
 
             if self.read_manual_margin_positions:
                 # Just read the manual positions log and make virtual trades that
