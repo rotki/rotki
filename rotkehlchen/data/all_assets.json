@@ -88,6 +88,23 @@
         "started": 1395446400,
         "type": "own chain"
     },
+    "ARCH": {
+        "active": false,
+        "ended": 1491177600,
+        "name": "Archcoin",
+        "started": 1412553600,
+        "type": "own chain"
+    },
+    "ARDR": {
+        "name": "Ardor",
+        "started": 1469284805,
+        "type": "own chain"
+    },
+    "AUR": {
+        "name": "Auroracoin",
+        "started": 1393479207,
+        "type": "own chain"
+    },
     "BCH": {
         "forked": "BTC",
         "name": "Bitcoin Cash",

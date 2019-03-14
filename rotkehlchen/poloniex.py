@@ -13,7 +13,7 @@ from urllib.parse import urlencode
 
 from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
-from rotkehlchen.errors import PoloniexError, RemoteError
+from rotkehlchen.errors import PoloniexError, RemoteError, UnsupportedAsset
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -46,7 +46,11 @@ def tsToDate(s):
 
 def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trade:
     """Turn a poloniex trade returned from poloniex trade history to our common trade
-    history format"""
+    history format
+
+    Throws:
+        - UnsupportedAsset due to asset_from_poloniex()
+    """
 
     trade_type = trade_type_from_string(poloniex_trade['type'])
     amount = FVal(poloniex_trade['amount'])
@@ -323,7 +327,15 @@ class Poloniex(Exchange):
             available = FVal(v['available'])
             on_orders = FVal(v['onOrders'])
             if (available != FVal(0) or on_orders != FVal(0)):
-                asset = asset_from_poloniex(poloniex_asset)
+                try:
+                    asset = asset_from_poloniex(poloniex_asset)
+                except UnsupportedAsset as e:
+                    # TODO: This should be part of a more user-visible warning
+                    log.warning(
+                        f'Found unsupported poloniex asset {e.asset_name}. '
+                        f' Ignoring its balance query.',
+                    )
+                    continue
                 entry = {}
                 entry['amount'] = available + on_orders
                 usd_price = self.inquirer.find_usd_price(
@@ -392,14 +404,22 @@ class Poloniex(Exchange):
             history = csv.reader(csvfile, delimiter=',', quotechar='|')
             next(history)  # skip header row
             for row in history:
-                lending_history.append({
-                    'currency': asset_from_poloniex(row[0]),
-                    'earned': FVal(row[6]),
-                    'amount': FVal(row[2]),
-                    'fee': FVal(row[5]),
-                    'open': row[7],
-                    'close': row[8],
-                })
+                try:
+                    lending_history.append({
+                        'currency': asset_from_poloniex(row[0]),
+                        'earned': FVal(row[6]),
+                        'amount': FVal(row[2]),
+                        'fee': FVal(row[5]),
+                        'open': row[7],
+                        'close': row[8],
+                    })
+                except UnsupportedAsset as e:
+                    # TODO: This should be part of a more user-visible warning
+                    log.warning(
+                        f'Found loan with asset {e.asset_name}. Ignoring it.',
+                    )
+                    continue
+
         return lending_history
 
     def query_loan_history(
@@ -503,23 +523,37 @@ class Poloniex(Exchange):
 
         movements = list()
         for withdrawal in result['withdrawals']:
-            movements.append(AssetMovement(
-                exchange='poloniex',
-                category='withdrawal',
-                timestamp=withdrawal['timestamp'],
-                asset=asset_from_poloniex(withdrawal['currency']),
-                amount=FVal(withdrawal['amount']),
-                fee=FVal(withdrawal['fee']),
-            ))
+            try:
+                movements.append(AssetMovement(
+                    exchange='poloniex',
+                    category='withdrawal',
+                    timestamp=withdrawal['timestamp'],
+                    asset=asset_from_poloniex(withdrawal['currency']),
+                    amount=FVal(withdrawal['amount']),
+                    fee=FVal(withdrawal['fee']),
+                ))
+            except UnsupportedAsset as e:
+                # TODO: This should be part of a more user-visible warning
+                log.warning(
+                    f'Found withdrawal of unsupported poloniex asset {e.asset_name}. Ignoring it.',
+                )
+                continue
 
         for deposit in result['deposits']:
-            movements.append(AssetMovement(
-                exchange='poloniex',
-                category='deposit',
-                timestamp=deposit['timestamp'],
-                asset=asset_from_poloniex(deposit['currency']),
-                amount=FVal(deposit['amount']),
-                fee=0,
-            ))
+            try:
+                movements.append(AssetMovement(
+                    exchange='poloniex',
+                    category='deposit',
+                    timestamp=deposit['timestamp'],
+                    asset=asset_from_poloniex(deposit['currency']),
+                    amount=FVal(deposit['amount']),
+                    fee=0,
+                ))
+            except UnsupportedAsset as e:
+                # TODO: This should be part of a more user-visible warning
+                log.warning(
+                    f'Found deposit of unsupported poloniex asset {e.asset_name}. Ignoring it.',
+                )
+                continue
 
         return movements

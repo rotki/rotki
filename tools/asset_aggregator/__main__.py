@@ -28,7 +28,7 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants import FIAT_CURRENCIES
 from rotkehlchen.externalapis import Coinmarketcap, CoinPaprika, Cryptocompare
 
-KNOWN_TO_MISS_FROM_PAPRIKA = ('DAO', 'KFEE', '1CR', 'ACH', 'AERO', 'AM', 'AIR-2', 'APH-2')
+KNOWN_TO_MISS_FROM_PAPRIKA = ('DAO', 'KFEE', '1CR', 'ACH', 'AERO', 'AM', 'AIR-2', 'APH-2', 'ARCH')
 KNOWN_TO_MISS_FROM_CMC = (
     'VEN',
     '1CR',
@@ -42,6 +42,7 @@ KNOWN_TO_MISS_FROM_CMC = (
     'AIR-2',
     'AIR',
     'APH-2',
+    'ARCH',
 )
 # TODO: For the ones missing from cryptocompare make sure to also
 # disallow price queries to cryptocompare for these assets

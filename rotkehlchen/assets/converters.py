@@ -1,4 +1,5 @@
 from rotkehlchen.assets.asset import WORLD_TO_CRYPTOCOMPARE, WORLD_TO_POLONIEX, Asset
+from rotkehlchen.errors import UnsupportedAsset
 
 KRAKEN_TO_WORLD = {
     'XDAO': 'DAO',
@@ -56,4 +57,12 @@ def asset_from_cryptocompare(cc_name: str) -> Asset:
 
 
 def asset_from_poloniex(poloniex_name: str) -> Asset:
-    return Asset(POLONIEX_TO_WORLD[poloniex_name])
+    if poloniex_name == 'AXIS':
+        # This was a super shortlived coin and no data
+        # can be found for it anywhere. Thus rotkehlchen
+        # does not support "Axis coin"
+        # Only info is here: https://bitcointalk.org/index.php?topic=632818.0
+        raise UnsupportedAsset('AXIS')
+
+    our_name = POLONIEX_TO_WORLD[poloniex_name]
+    return Asset(our_name)
