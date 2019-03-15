@@ -100,8 +100,13 @@ describe('general settings', function () {
         await retry( async() => {
             client.clearElement('#historical_data_start');
         });
+
         await retry( async() => {
             client.addValue('#historical_data_start', '03/10/2018');
+        });
+
+        await retry( async() => {
+            client.clearElement('#date_display_format');
         });
 
         await retry( async() => {

@@ -33,7 +33,7 @@ function format(d: OtcTrade) {
 
 function edit_otc_trade(row: DataTables.RowMethods) {
     const data = row.data() as OtcTrade;
-    const ts = timestamp_to_date(data.timestamp);
+    const ts = timestamp_to_date(data.timestamp, false);
     $('#otc_timestamp').val(ts);
     $('#otc_pair').val(data.pair);
     $('#otc_type').val(data.type);
@@ -119,10 +119,10 @@ function create_otctrades_table() {
                 {'data': 'rate'},
                 {
                     'render': (data: number, type: string) => {
-                        if (type === 'sort') {
-                            return data;
+                        if (type === 'display') {
+                            return timestamp_to_date(data);
                         }
-                        return timestamp_to_date(data);
+                        return data;
                     },
                     'data': 'timestamp'
                 },

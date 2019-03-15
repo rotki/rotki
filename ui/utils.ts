@@ -21,9 +21,19 @@ export function utc_now() {
     return Math.floor(Date.now() / 1000);
 }
 
-export function timestamp_to_date(ts: number) {
+export function timestamp_to_date(ts: number, useFormatter = true) {
     const date = new Date(ts * 1000);
-    return displayDateFormatter.format(date, settings.date_display_format);
+    if (useFormatter) {
+        return displayDateFormatter.format(date, settings.date_display_format);
+    } else {
+        return (
+            ('0' + date.getUTCDate()).slice(-2) + '/' +
+            ('0' + (date.getUTCMonth() + 1)).slice(-2) + '/' +
+            date.getUTCFullYear() + ' ' +
+            ('0' + date.getUTCHours()).slice(-2) + ':' +
+            ('0' + date.getUTCMinutes()).slice(-2)
+        );
+    }
 }
 
 let client_auditor: Timer;
