@@ -4,10 +4,12 @@ import os
 import re
 import time
 from json.decoder import JSONDecodeError
+from typing import List
 
 from rotkehlchen.binance import trade_from_binance
 from rotkehlchen.bitmex import trade_from_bitmex
 from rotkehlchen.bittrex import trade_from_bittrex
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import PriceQueryUnknownFromAsset, RemoteError, UnsupportedAsset
 from rotkehlchen.exchange import data_up_todate
 from rotkehlchen.fval import FVal
@@ -21,7 +23,8 @@ from rotkehlchen.order_formatting import (
 )
 from rotkehlchen.poloniex import trade_from_poloniex
 from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
-from rotkehlchen.typing import Asset, NonEthTokenBlockchainAsset, Timestamp
+from rotkehlchen.typing import Asset, EthAddress, FilePath, NonEthTokenBlockchainAsset, Timestamp
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils import (
     convert_to_int,
     createTimeStamp,
@@ -588,10 +591,11 @@ class TradesHistorian(object):
 
     def __init__(
             self,
-            user_directory,
-            db,
-            eth_accounts,
-            historical_data_start,
+            user_directory: FilePath,
+            db: DBHandler,
+            eth_accounts: List[EthAddress],
+            historical_data_start: str,
+            msg_aggregator: MessagesAggregator,
     ):
 
         self.poloniex = None
@@ -599,6 +603,7 @@ class TradesHistorian(object):
         self.bittrex = None
         self.bitmex = None
         self.binance = None
+        self.msg_aggregator = msg_aggregator
         self.user_directory = user_directory
         self.db = db
         self.eth_accounts = eth_accounts
@@ -647,8 +652,7 @@ class TradesHistorian(object):
                                 f'Unexpected poloniex trade category: {category}',
                             )
                     except UnsupportedAsset as e:
-                        # TODO: This should be part of a more user-visible warning
-                        log.warning(
+                        self.msg_aggregator.add_warning(
                             f'Found poloniex trade with asset {e.asset_name}. Ignoring it.',
                         )
                         continue
