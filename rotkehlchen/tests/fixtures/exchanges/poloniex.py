@@ -4,6 +4,7 @@ import pytest
 
 from rotkehlchen.poloniex import Poloniex
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
+from rotkehlchen.user_messages import MessagesAggregator
 
 
 class MockPoloniex(Poloniex):
@@ -17,5 +18,6 @@ def poloniex(session_data_dir, session_inquirer):
         secret=base64.b64encode(make_random_b64bytes(128)),
         inquirer=session_inquirer,
         user_directory=session_data_dir,
+        msg_aggregator=MessagesAggregator(),
     )
     return mock

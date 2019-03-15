@@ -26,6 +26,7 @@ from rotkehlchen.order_formatting import (
     trade_type_from_string,
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, BlockchainAsset, FilePath, Timestamp, TradePair
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils import (
     cache_response_timewise,
     createTimeStamp,
@@ -128,6 +129,7 @@ class Poloniex(Exchange):
             secret: ApiSecret,
             inquirer: Inquirer,
             user_directory: FilePath,
+            msg_aggregator: MessagesAggregator,
     ):
         super(Poloniex, self).__init__('poloniex', api_key, secret, user_directory)
 
@@ -138,6 +140,7 @@ class Poloniex(Exchange):
         self.session.headers.update({  # type: ignore
             'Key': self.api_key,
         })
+        self.msg_aggregator = msg_aggregator
 
     def first_connection(self):
         if self.first_connection_made:
@@ -330,8 +333,7 @@ class Poloniex(Exchange):
                 try:
                     asset = asset_from_poloniex(poloniex_asset)
                 except UnsupportedAsset as e:
-                    # TODO: This should be part of a more user-visible warning
-                    log.warning(
+                    self.msg_aggregator.add_warning(
                         f'Found unsupported poloniex asset {e.asset_name}. '
                         f' Ignoring its balance query.',
                     )
@@ -414,8 +416,7 @@ class Poloniex(Exchange):
                         'close': row[8],
                     })
                 except UnsupportedAsset as e:
-                    # TODO: This should be part of a more user-visible warning
-                    log.warning(
+                    self.msg_aggregator.add_warning(
                         f'Found loan with asset {e.asset_name}. Ignoring it.',
                     )
                     continue
@@ -533,8 +534,7 @@ class Poloniex(Exchange):
                     fee=FVal(withdrawal['fee']),
                 ))
             except UnsupportedAsset as e:
-                # TODO: This should be part of a more user-visible warning
-                log.warning(
+                self.msg_aggregator.add_warning(
                     f'Found withdrawal of unsupported poloniex asset {e.asset_name}. Ignoring it.',
                 )
                 continue
@@ -550,8 +550,7 @@ class Poloniex(Exchange):
                     fee=0,
                 ))
             except UnsupportedAsset as e:
-                # TODO: This should be part of a more user-visible warning
-                log.warning(
+                self.msg_aggregator.add_warning(
                     f'Found deposit of unsupported poloniex asset {e.asset_name}. Ignoring it.',
                 )
                 continue

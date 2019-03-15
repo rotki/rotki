@@ -31,6 +31,7 @@ from rotkehlchen.poloniex import Poloniex
 from rotkehlchen.premium import premium_create_and_verify
 from rotkehlchen.serializer import process_result
 from rotkehlchen.typing import ApiKey, ApiSecret, ResultCache, Timestamp
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils import (
     combine_stat_dicts,
     dict_get_sumof,
@@ -108,6 +109,7 @@ class Rotkehlchen(object):
 
         self.data = DataHandler(self.data_dir)
         self.inquirer = Inquirer(data_dir=self.data_dir)
+        self.msg_aggregator = MessagesAggregator()
 
         self.lock.release()
         self.shutdown_event = gevent.event.Event()
@@ -131,6 +133,7 @@ class Rotkehlchen(object):
                 str.encode(secret_data['poloniex']['api_secret']),
                 self.inquirer,
                 self.user_directory,
+                self.msg_aggregator,
             )
             self.connected_exchanges.append('poloniex')
             self.trades_historian.set_exchange('poloniex', self.poloniex)
@@ -277,6 +280,7 @@ class Rotkehlchen(object):
             db=self.data.db,
             eth_accounts=self.data.get_eth_accounts(),
             historical_data_start=historical_data_start,
+            msg_aggregator=self.msg_aggregator,
         )
         price_historian = PriceHistorian(
             data_directory=self.data_dir,
