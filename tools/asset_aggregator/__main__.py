@@ -56,6 +56,10 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # We got APH as Aphelion and APH-2 as a very shortlived Aphrodite coin
     # Cryptocompare has no data for Aphrodite coin
     'APH-2',
+    # BitcoinTalkCoin is not in cryptocompare but it's in coin paprika
+    # https://api.coinpaprika.com/v1/coins/talk-btctalkcoin and in coinmarketcap
+    # https://coinmarketcap.com/currencies/btctalkcoin/#charts
+    'TALK',
 )
 
 # Some symbols in coin paprika exists multiple times with different ids each time.
@@ -63,6 +67,8 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
 COINPAPRIKA_LOCK_SYMBOL_ID_MAP = {
     # ICN has both icn-iconomi and icn-icoin. The correct one appears to be the first
     'ICN': 'icn-iconomi',
+    # In Rotkehlchen BAT means the basic attention token and not bat-batcoin
+    'BAT': 'bat-basic-attention-token',
 }
 
 # Info on where data was taken for coins which have no data anywhere

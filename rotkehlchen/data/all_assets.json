@@ -105,6 +105,16 @@
         "started": 1393479207,
         "type": "own chain"
     },
+    "BAT": {
+        "name": "Basic Attention Token",
+        "started": 1496294094,
+        "type": "ethereum token"
+    },
+    "BBR": {
+        "name": "Boolberry",
+        "started": 1400284800,
+        "type": "own chain"
+    },
     "BCH": {
         "forked": "BTC",
         "name": "Bitcoin Cash",
@@ -215,6 +225,11 @@
         "name": "Augur",
         "started": 1445904000,
         "type": "ethereum token"
+    },
+    "TALK": {
+        "name": "BTCtalkcoin",
+        "started": 1399053201,
+        "type": "own chain"
     },
     "USD": {
         "name": "United States Dollar",
