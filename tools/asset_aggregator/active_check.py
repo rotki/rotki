@@ -1,6 +1,24 @@
 import sys
 from typing import Any, Dict
 
+MANUALLY_CHECKED = {
+    # On 16/03/2019 BCY is still active and trading in one exchange
+    # https://coinmarketcap.com/currencies/bitcrystals/#charts
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'BCY': True,
+    # On 16/03/2019 TALK is still active and trading in one exchange
+    # https://coinmarketcap.com/currencies/btctalkcoin/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'TALK': True,
+    # On 16/03/2019 Bitmar is still active and trading in one exchange
+    # https://coinmarketcap.com/currencies/bitmark/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'BTM': True,
+}
+
 
 def active_check(
         asset_symbol: str,
@@ -21,6 +39,10 @@ def active_check(
     if paprika_data:
         paprika_active = paprika_data['is_active']
 
+    if asset_symbol in MANUALLY_CHECKED:
+        our_data[asset_symbol]['active'] = MANUALLY_CHECKED[asset_symbol]
+        return our_data
+
     if our_active:
         if paprika_active != our_active:
             print(
@@ -31,7 +53,7 @@ def active_check(
 
     if cmc_data and paprika_data and cmc_active != paprika_active:
         print(
-            f"For asset {asset_symbol}'s 'is_active' our coin paprika and "
+            f"For asset {asset_symbol}'s 'is_active' coin paprika and "
             f"coinmarketcap do not agree.",
         )
         sys.exit(1)

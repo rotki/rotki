@@ -8,6 +8,25 @@ from rotkehlchen.utils import rlk_jsonloads_dict, rlk_jsonloads_list
 
 INITIAL_BACKOFF = 3
 
+# Some symbols in coin paprika exists multiple times with different ids each time.
+# This requires manual intervention and a lock in of the id mapping by hand
+WORLD_TO_PAPRIKA_ID = {
+    # ICN has both icn-iconomi and icn-icoin. The correct one appears to be the first
+    'ICN': 'icn-iconomi',
+    # In Rotkehlchen BAT means the basic attention token and not bat-batcoin
+    'BAT': 'bat-basic-attention-token',
+    # For Rotkehlchen BITS is Bitstars and not Bitswift
+    'BITS': 'bits-bitstar',
+    # And then naturally BITS-2 is Bitswift
+    'BITS-2': 'bits-bitswift',
+    # For Rotkehlchen BTCS is BitcoinScrypt
+    'BTCS': 'btcs-bitcoin-scrypt',
+    # For Rotkehlchen BTM is Bitmark
+    'BTM': 'btm-bitmark',
+    # For Rotkehlchen BTM-2 is Bytom
+    'BTM-2': 'btm-bytom',
+}
+
 
 class CoinPaprika():
 

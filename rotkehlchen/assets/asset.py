@@ -46,6 +46,8 @@ WORLD_TO_CRYPTOCOMPARE = {
     'BQX': 'ETHOS',
     'XRB': 'NANO',
     'AIR-2': 'AIR*',
+    'BITS-2': 'BITS*',
+    'BTM-2': 'BTM*',
 }
 
 WORLD_TO_POLONIEX = {
@@ -56,6 +58,12 @@ WORLD_TO_POLONIEX = {
     # Poloniex listed BTCtalkcoin as BCC as it was its original ticker but the
     # ticker later changes and it is now known to the world  as TALK
     'TALK': 'BCC',
+    # Poloniex delisted BCH and listed it as BCHABC after the Bitcoin Cash
+    # ABC / SV fork. In Rotkehlchen we consider BCH to be the same as BCHABC
+    'BCH': 'BCHABC',
+    # Poloniex has the BCH Fork, Bitcoin Satoshi's vision listed as BCHSV.
+    # We know it as BSV
+    'BSV': 'BCHSV',
 }
 
 
