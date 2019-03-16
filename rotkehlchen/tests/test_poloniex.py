@@ -1,7 +1,7 @@
 import os
 from unittest.mock import patch
 
-from rotkehlchen.assets.converters import asset_from_poloniex
+from rotkehlchen.assets.converters import UNSUPPORTED_POLONIEX_ASSETS, asset_from_poloniex
 from rotkehlchen.errors import UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade, TradeType
@@ -99,4 +99,4 @@ def test_poloniex_assets_are_known(poloniex):
         try:
             _ = asset_from_poloniex(poloniex_asset)
         except UnsupportedAsset:
-            assert poloniex_asset == 'AXIS'
+            assert poloniex_asset in UNSUPPORTED_POLONIEX_ASSETS

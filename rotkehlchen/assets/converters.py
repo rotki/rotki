@@ -46,6 +46,30 @@ KRAKEN_TO_WORLD = {
 CRYPTOCOMPARE_TO_WORLD = {v: k for k, v in WORLD_TO_CRYPTOCOMPARE.items()}
 
 POLONIEX_TO_WORLD = {v: k for k, v in WORLD_TO_POLONIEX.items()}
+UNSUPPORTED_POLONIEX_ASSETS = (
+    # This was a super shortlived coin.
+    # Only info is here: https://bitcointalk.org/index.php?topic=632818.0
+    # No price info in cryptocompare or paprika. So we don't support it.
+    'AXIS',
+    # This was yet another shortlived coin whose announcement is here:
+    # https://bitcointalk.org/index.php?topic=843495 and coinmarketcap:
+    # https://coinmarketcap.com/currencies/snowballs/.
+    # No price info in cryptocompare or paprika. So we don't support it.
+    'BALLS',
+    # There are two coins with the name BankCoin, neither of which seems to
+    # be this. This market seems to have beend added in May 2014
+    # https://twitter.com/poloniex/status/468070096913432576
+    # but both other bank coins are in 2017 and 2018 respectively
+    # https://coinmarketcap.com/currencies/bankcoin/
+    # https://coinmarketcap.com/currencies/bank-coin/
+    # So this is an unknown coin
+    'BANK',
+    # BitBlock seems to be this: https://coinmarketcap.com/currencies/bitblock/
+    # and seems to have lived for less than a month. It does not seem to be the
+    # same as BBK, the BitBlocks project (https://www.cryptocompare.com/coins/bbk/overview)
+    # No price info in cryptocompare or paprika. So we don't support it.
+    'BBL',
+)
 
 
 def asset_from_kraken(kraken_name: str) -> Asset:
@@ -57,12 +81,8 @@ def asset_from_cryptocompare(cc_name: str) -> Asset:
 
 
 def asset_from_poloniex(poloniex_name: str) -> Asset:
-    if poloniex_name == 'AXIS':
-        # This was a super shortlived coin and no data
-        # can be found for it anywhere. Thus rotkehlchen
-        # does not support "Axis coin"
-        # Only info is here: https://bitcointalk.org/index.php?topic=632818.0
-        raise UnsupportedAsset('AXIS')
+    if poloniex_name in UNSUPPORTED_POLONIEX_ASSETS:
+        raise UnsupportedAsset(poloniex_name)
 
     our_name = POLONIEX_TO_WORLD[poloniex_name]
     return Asset(our_name)
