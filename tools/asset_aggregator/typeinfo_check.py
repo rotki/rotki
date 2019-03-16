@@ -24,6 +24,12 @@ def typeinfo_check(
                 our_data[asset_symbol]['type'] = 'ethereum token'
             elif paprika_data['parent']['id'] == 'neo-neo':
                 our_data[asset_symbol]['type'] = 'neo token'
+            elif paprika_data['parent']['id'] == 'xcp-counterparty':
+                our_data[asset_symbol]['type'] = 'counterparty token'
+            elif paprika_data['parent']['id'] == 'bts-bitshares':
+                our_data[asset_symbol]['type'] = 'bitshares token'
+            elif paprika_data['parent']['id'] == 'ardr-ardor':
+                our_data[asset_symbol]['type'] = 'ardor token'
             else:
                 print(
                     f'Paprika data for asset {asset_symbol} has unknown '

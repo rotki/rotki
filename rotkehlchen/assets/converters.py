@@ -69,6 +69,28 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     # same as BBK, the BitBlocks project (https://www.cryptocompare.com/coins/bbk/overview)
     # No price info in cryptocompare or paprika. So we don't support it.
     'BBL',
+    # Black Dragon Coin. Seems like a very short lived scam from Russia.
+    # Only info that I found is here: https://bitcointalk.org/index.php?topic=597006.0
+    # No price info in cryptocompare or paprika. So we don't support it.
+    'BDC',
+    # Badgercoin. A very shortlived coin. Only info found is here:
+    # https://coinmarketcap.com/currencies/badgercoin/
+    # Same symbol is used for an active coin called "Bitdegreee"
+    # https://coinmarketcap.com/currencies/bitdegree/
+    # No price info in cryptocompare or paprika. So we don't support it.
+    'BDG',
+    # Bonuscoin. A shortlived coin. Only info found is here:
+    # https://coinmarketcap.com/currencies/bonuscoin/
+    # No price info in cryptocompare or paprika. So we don't support it.
+    'BNS',
+    # Bonescoin. A shortlived coin. Only info found is here:
+    # https://coinmarketcap.com/currencies/bones/
+    # No price info in cryptocompare or paprika. So we don't support it.
+    'BONES',
+    # Burnercoin. A shortlived coind. Only info is here:
+    # https://coinmarketcap.com/currencies/burnercoin/
+    # No price info in cryptocompare or paprika. So we don't support it.
+    'BURN',
 )
 
 

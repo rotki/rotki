@@ -121,6 +121,67 @@
         "started": 1501593374,
         "type": "own chain"
     },
+    "BCN": {
+        "name": "Bytecoin",
+        "started": 1341360000,
+        "type": "own chain"
+    },
+    "BCY": {
+        "active": true,
+        "name": "BitCrystals",
+        "started": 1433203200,
+        "type": "counterparty token"
+    },
+    "BELA": {
+        "name": "Bela",
+        "started": 1388534400,
+        "type": "ethereum token"
+    },
+    "BITCNY": {
+        "name": "bitCNY",
+        "started": 1411446262,
+        "type": "bitshares token"
+    },
+    "BITS": {
+        "name": "Bitstar",
+        "started": 1397692800,
+        "type": "own chain"
+    },
+    "BITS-2": {
+        "name": "Bitswift",
+        "started": 1411948800,
+        "type": "ardor token"
+    },
+    "BITUSD": {
+        "name": "bitUSD",
+        "started": 1411446262,
+        "type": "bitshares token"
+    },
+    "BLK": {
+        "name": "BlackCoin",
+        "started": 1393200000,
+        "type": "own chain"
+    },
+    "BLOCK": {
+        "name": "Blocknet",
+        "started": 1413763200,
+        "type": "own chain"
+    },
+    "BLU": {
+        "name": "BlueCoin",
+        "started": 1398124800,
+        "type": "own chain"
+    },
+    "BNT": {
+        "name": "Bancor",
+        "started": 1497657600,
+        "type": "ethereum token"
+    },
+    "BOST": {
+        "name": "BoostCoin",
+        "started": 1400112000,
+        "type": "own chain"
+    },
     "BSV": {
         "forked": "BCH",
         "name": "Bitcoin Satoshi's Vision",
@@ -130,6 +191,39 @@
     "BTC": {
         "name": "Bitcoin",
         "started": 1231006505,
+        "type": "own chain"
+    },
+    "BTCD": {
+        "active": false,
+        "ended": 1538697600,
+        "name": "BitcoinDark",
+        "started": 1405468800,
+        "type": "own chain"
+    },
+    "BTCS": {
+        "name": "Bitcoin Scrypt",
+        "started": 1378598400,
+        "type": "own chain"
+    },
+    "BTM": {
+        "active": true,
+        "name": "Bitmark",
+        "started": 1408449563,
+        "type": "own chain"
+    },
+    "BTM-2": {
+        "name": "Bytom",
+        "started": 1497916800,
+        "type": "own chain"
+    },
+    "BTS": {
+        "name": "BitShares",
+        "started": 1405728000,
+        "type": "own chain"
+    },
+    "BURST": {
+        "name": "Burst",
+        "started": 1402531200,
         "type": "own chain"
     },
     "CAD": {
@@ -227,6 +321,7 @@
         "type": "ethereum token"
     },
     "TALK": {
+        "active": true,
         "name": "BTCtalkcoin",
         "started": 1399053201,
         "type": "own chain"

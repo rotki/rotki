@@ -27,6 +27,8 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants import FIAT_CURRENCIES
 from rotkehlchen.externalapis import Coinmarketcap, CoinPaprika, Cryptocompare
+from rotkehlchen.externalapis.coinmarketcap import WORLD_TO_CMC_ID
+from rotkehlchen.externalapis.coinpaprika import WORLD_TO_PAPRIKA_ID
 
 KNOWN_TO_MISS_FROM_PAPRIKA = ('DAO', 'KFEE', '1CR', 'ACH', 'AERO', 'AM', 'AIR-2', 'APH-2', 'ARCH')
 KNOWN_TO_MISS_FROM_CMC = (
@@ -43,6 +45,9 @@ KNOWN_TO_MISS_FROM_CMC = (
     'AIR',
     'APH-2',
     'ARCH',
+    # It's funny that BTCD is missing from their API data as it's in their
+    # website: https://coinmarketcap.com/currencies/bitcoindark/
+    'BTCD',
 )
 # TODO: For the ones missing from cryptocompare make sure to also
 # disallow price queries to cryptocompare for these assets
@@ -56,20 +61,11 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # We got APH as Aphelion and APH-2 as a very shortlived Aphrodite coin
     # Cryptocompare has no data for Aphrodite coin
     'APH-2',
-    # BitcoinTalkCoin is not in cryptocompare but it's in coin paprika
+    # BTCTalkCoin is not in cryptocompare but it's in coin paprika
     # https://api.coinpaprika.com/v1/coins/talk-btctalkcoin and in coinmarketcap
     # https://coinmarketcap.com/currencies/btctalkcoin/#charts
     'TALK',
 )
-
-# Some symbols in coin paprika exists multiple times with different ids each time.
-# This requires manual intervention and a lock in of the id mapping by hand
-COINPAPRIKA_LOCK_SYMBOL_ID_MAP = {
-    # ICN has both icn-iconomi and icn-icoin. The correct one appears to be the first
-    'ICN': 'icn-iconomi',
-    # In Rotkehlchen BAT means the basic attention token and not bat-batcoin
-    'BAT': 'bat-basic-attention-token',
-}
 
 # Info on where data was taken for coins which have no data anywhere
 # 1CR. Launch date: https://github.com/1credit/1credit
@@ -93,13 +89,13 @@ COINPAPRIKA_LOCK_SYMBOL_ID_MAP = {
 
 def find_paprika_coin_id(asset_symbol: str, paprika_coins_list: List[Dict[str, Any]]) -> str:
 
+    if asset_symbol in WORLD_TO_PAPRIKA_ID:
+        return WORLD_TO_PAPRIKA_ID[asset_symbol]
+
     if asset_symbol in KNOWN_TO_MISS_FROM_PAPRIKA:
         return None
 
     found_coin_id = None
-    if asset_symbol in COINPAPRIKA_LOCK_SYMBOL_ID_MAP:
-        return COINPAPRIKA_LOCK_SYMBOL_ID_MAP[asset_symbol]
-
     for coin in paprika_coins_list:
         if coin['symbol'] == asset_symbol:
             if found_coin_id:
@@ -128,6 +124,14 @@ def find_cmc_coin_data(
     if not cmc_list:
         return None
 
+    if asset_symbol in WORLD_TO_CMC_ID:
+        coin_id = WORLD_TO_CMC_ID[asset_symbol]
+        for coin in cmc_list:
+            if coin['id'] == coin_id:
+                return coin
+
+        assert False, 'The CMC id should alway be correct. Is our data corrupt?'
+
     if asset_symbol in KNOWN_TO_MISS_FROM_CMC:
         return None
 
@@ -137,7 +141,8 @@ def find_cmc_coin_data(
             if found_coin_data:
                 print(
                     f'Asset with symbol {asset_symbol} was found in coinmarketcap '
-                    f'both with id {found_coin_data["id"]} and {coin["id"]}',
+                    f'both as {found_coin_data["id"]} - {found_coin_data["name"]} '
+                    f'and {coin["id"]} - {coin["name"]}',
                 )
                 sys.exit(1)
             found_coin_data = coin

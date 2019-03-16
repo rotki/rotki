@@ -16,6 +16,19 @@ log = RotkehlchenLogsAdapter(logger)
 
 INITIAL_BACKOFF = 5
 
+# There can be multiple ids for the same symbol and for cases such as this
+# we use this mapping to manually map Rotkehlchen symbols to CMC IDs
+WORLD_TO_CMC_ID = {
+    # Bitstars
+    'BITS': 276,
+    # Bitswift
+    'BITS-2': 659,
+    # Bitmark
+    'BTM': 543,
+    # Bytom
+    'BTM-2': 1866,
+}
+
 
 class Coinmarketcap():
 
