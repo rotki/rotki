@@ -30,6 +30,8 @@ def typeinfo_check(
                 our_data[asset_symbol]['type'] = 'bitshares token'
             elif paprika_data['parent']['id'] == 'ardr-ardor':
                 our_data[asset_symbol]['type'] = 'ardor token'
+            elif paprika_data['parent']['id'] == 'nxt-nxt':
+                our_data[asset_symbol]['type'] = 'nxt token'
             else:
                 print(
                     f'Paprika data for asset {asset_symbol} has unknown '

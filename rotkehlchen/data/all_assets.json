@@ -226,9 +226,104 @@
         "started": 1402531200,
         "type": "own chain"
     },
+    "C2": {
+        "name": "Coin2.1",
+        "started": 1399334400,
+        "type": "own chain"
+    },
+    "CACH": {
+        "active": false,
+        "ended": 1541548800,
+        "name": "CacheCoin",
+        "started": 1388880000,
+        "type": "own chain"
+    },
     "CAD": {
         "name": "Canadian Dollar",
         "type": "fiat"
+    },
+    "CAIX": {
+        "active": false,
+        "ended": 1451952000,
+        "name": "Caishen",
+        "started": 1397520000,
+        "type": "own chain"
+    },
+    "CCN": {
+        "name": "CustomContractnetwork",
+        "started": 1540443520,
+        "type": "ethereum token"
+    },
+    "CCN-2": {
+        "active": false,
+        "ended": 1539129600,
+        "name": "CannaCoin",
+        "started": 1390348800,
+        "type": "own chain"
+    },
+    "CGA": {
+        "active": false,
+        "ended": 1483660800,
+        "name": "Cryptographic Anomaly",
+        "started": 1392940800,
+        "type": "own chain"
+    },
+    "CINNI": {
+        "active": false,
+        "ended": 1446422400,
+        "name": "Cinnicoin",
+        "started": 1398211200,
+        "type": "own chain"
+    },
+    "CLAM": {
+        "name": "Clams",
+        "started": 1399852800,
+        "type": "own chain"
+    },
+    "CNL": {
+        "active": false,
+        "ended": 1451952000,
+        "name": "ConcealCoin",
+        "started": 1405900800,
+        "type": "own chain"
+    },
+    "CNMT": {
+        "active": false,
+        "ended": 1479772800,
+        "name": "Coinomat",
+        "started": 1409875200,
+        "type": "nxt token"
+    },
+    "COMM": {
+        "active": false,
+        "ended": 1459036800,
+        "name": "CommunityCoin",
+        "started": 1397520000,
+        "type": "own chain"
+    },
+    "CRYPT": {
+        "active": false,
+        "ended": 1539043200,
+        "name": "CryptCoin",
+        "started": 1401062400,
+        "type": "own chain"
+    },
+    "CURE": {
+        "name": "Curecoin",
+        "started": 1398988800,
+        "type": "own chain"
+    },
+    "CVC": {
+        "name": "Civic",
+        "started": 1498003200,
+        "type": "ethereum token"
+    },
+    "CYC": {
+        "active": false,
+        "ended": 1455148800,
+        "name": "ConspiracyCoin",
+        "started": 1404518400,
+        "type": "own chain"
     },
     "DAO": {
         "active": false,
@@ -243,9 +338,72 @@
         "started": 1390095618,
         "type": "own chain"
     },
+    "DCR": {
+        "name": "Decred",
+        "started": 1450137600,
+        "type": "own chain"
+    },
+    "DGB": {
+        "name": "DigiByte",
+        "started": 1389312000,
+        "type": "own chain"
+    },
+    "DIEM": {
+        "active": false,
+        "ended": 1483660800,
+        "name": "CarpeDiemCoin",
+        "started": 1398643200,
+        "type": "own chain"
+    },
+    "DIME": {
+        "name": "Dimecoin",
+        "started": 1387756800,
+        "type": "own chain"
+    },
     "DOGE": {
         "name": "Dogecoin",
         "started": 1386325540,
+        "type": "own chain"
+    },
+    "DRKC": {
+        "active": false,
+        "ended": 1458259200,
+        "name": "DarkCash",
+        "started": 1406592000,
+        "type": "own chain"
+    },
+    "DRM": {
+        "active": true,
+        "name": "Dreamcoin",
+        "started": 1399420800,
+        "type": "own chain"
+    },
+    "DSH": {
+        "active": false,
+        "ended": 1542326400,
+        "name": "Dashcoin",
+        "started": 1404518400,
+        "type": "own chain"
+    },
+    "EAC": {
+        "name": "EarthCoin",
+        "started": 1387497600,
+        "type": "own chain"
+    },
+    "ECC": {
+        "name": "ECCoin",
+        "started": 1395292195,
+        "type": "own chain"
+    },
+    "EFL": {
+        "active": true,
+        "name": "e-Gulden",
+        "started": 1395187200,
+        "type": "own chain"
+    },
+    "EMC2": {
+        "name": "Einsteinium",
+        "started": 1388707200,
         "type": "own chain"
     },
     "EOS": {
@@ -268,6 +426,102 @@
         "name": "Euro",
         "started": 915148800,
         "type": "fiat"
+    },
+    "EXE": {
+        "active": false,
+        "ended": 1465171200,
+        "name": "Execoin",
+        "started": 1394409600,
+        "type": "own chain"
+    },
+    "EXP": {
+        "name": "Expanse",
+        "started": 1442188800,
+        "type": "own chain"
+    },
+    "FAIR": {
+        "name": "FairCoin",
+        "started": 1393286400,
+        "type": "own chain"
+    },
+    "FAIR-2": {
+        "name": "FairGame",
+        "started": 1512518400,
+        "type": "ethereum token"
+    },
+    "FCN": {
+        "active": false,
+        "ended": 1531440000,
+        "name": "Fantomcoin",
+        "started": 1401926400,
+        "type": "own chain"
+    },
+    "FCT": {
+        "name": "Factom",
+        "started": 1444003200,
+        "type": "own chain"
+    },
+    "FIBRE": {
+        "active": false,
+        "ended": 1473206400,
+        "name": "Fibrecoin",
+        "started": 1409356800,
+        "type": "own chain"
+    },
+    "FLAP": {
+        "active": false,
+        "ended": 1525651200,
+        "name": "FlappyCoin",
+        "started": 1393027200,
+        "type": "own chain"
+    },
+    "FLDC": {
+        "name": "FoldingCoin",
+        "started": 1405296000,
+        "type": "counterparty token"
+    },
+    "FLO": {
+        "name": "FLO",
+        "started": 1371427200,
+        "type": "own chain"
+    },
+    "FLT": {
+        "active": false,
+        "ended": 1543881600,
+        "name": "FlutterCoin",
+        "started": 1393804800,
+        "type": "own chain"
+    },
+    "FOAM": {
+        "name": "FOAM",
+        "started": 1532802665,
+        "type": "ethereum token"
+    },
+    "FRAC": {
+        "active": false,
+        "ended": 1452038400,
+        "name": "Fractalcoin",
+        "started": 1402790400,
+        "type": "own chain"
+    },
+    "FRK": {
+        "active": false,
+        "ended": 1522886400,
+        "name": "Franko",
+        "started": 1367366400,
+        "type": "own chain"
+    },
+    "GAME": {
+        "name": "GameCredits",
+        "started": 1392739140,
+        "type": "own chain"
+    },
+    "GAP": {
+        "active": false,
+        "name": "Gapcoin",
+        "started": 1413849600,
+        "ended": 1549497600,
+        "type": "own chain"
     },
     "GBP": {
         "name": "Great British Pound",

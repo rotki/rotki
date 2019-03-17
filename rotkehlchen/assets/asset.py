@@ -1,6 +1,5 @@
-from typing import Any
-
 from dataclasses import dataclass
+from typing import Any
 
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.errors import UnknownAsset
@@ -48,6 +47,10 @@ WORLD_TO_CRYPTOCOMPARE = {
     'AIR-2': 'AIR*',
     'BITS-2': 'BITS*',
     'BTM-2': 'BTM*',
+    # In Rotkehlchen CCN-2 is Cannacoin and CCN is CustomContractNetwork
+    'CCN-2': 'CCN',
+    # In Rotkehlchen FAIR-2 is FairGame and FAIR is FairCoin
+    'FAIR-2': 'FAIR*'
 }
 
 WORLD_TO_POLONIEX = {
@@ -64,6 +67,17 @@ WORLD_TO_POLONIEX = {
     # Poloniex has the BCH Fork, Bitcoin Satoshi's vision listed as BCHSV.
     # We know it as BSV
     'BSV': 'BCHSV',
+    # Caishen is known as CAI in Poloniex. This is before the swap to CAIX
+    'CAIX': 'CAI',
+    # CCN is Cannacoin in Poloniex but in Rotkehlchen we know it as CCN-2
+    'CCN-2': 'CCN',
+    # CCN is CustomContractNetwork in Rotkehlchen but does not exist in Cryptocompare
+    # Putting it as conversion to make sure we don't accidentally ask for wrong price
+    'CCN': '',
+    # Faircoin is known as FAIR outside of Poloniex. Seems to be the same as the
+    # now delisted Poloniex's FAC if you look at the bitcointalk announcement
+    # https://bitcointalk.org/index.php?topic=702675.0
+    'FAIR': 'FAC',
 }
 
 
