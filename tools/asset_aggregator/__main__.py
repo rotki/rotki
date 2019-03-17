@@ -23,12 +23,13 @@ from asset_aggregator.name_check import name_check
 from asset_aggregator.timerange_check import timerange_check
 from asset_aggregator.typeinfo_check import typeinfo_check
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import WORLD_TO_CRYPTOCOMPARE
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants import FIAT_CURRENCIES
 from rotkehlchen.externalapis import Coinmarketcap, CoinPaprika, Cryptocompare
 from rotkehlchen.externalapis.coinmarketcap import WORLD_TO_CMC_ID
 from rotkehlchen.externalapis.coinpaprika import WORLD_TO_PAPRIKA_ID
+from rotkehlchen.utils import rlk_jsonloads
 
 KNOWN_TO_MISS_FROM_PAPRIKA = (
     'DAO',
@@ -51,6 +52,9 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'EXE',
     'FIBRE',
     'FRAC',
+    'GEMZ',
+    'GPUC',
+    'GUE',
 )
 KNOWN_TO_MISS_FROM_CMC = (
     'VEN',
@@ -112,6 +116,14 @@ KNOWN_TO_MISS_FROM_CMC = (
     'FRK',
     # Missing from API, is in https://coinmarketcap.com/currencies/gapcoin/
     'GAP',
+    # Missing from API, is in https://coinmarketcap.com/currencies/gems/
+    'GEMZ',
+    # Missing from API, is in https://coinmarketcap.com/currencies/gameleaguecoin/
+    'GML',
+    # Missing from API, is in https://coinmarketcap.com/currencies/gpucoin/
+    'GPUC',
+    # Missing from API, is in https://coinmarketcap.com/currencies/guerillacoin/
+    'GUE',
 )
 # TODO: For the ones missing from cryptocompare make sure to also
 # disallow price queries to cryptocompare for these assets
@@ -231,6 +243,70 @@ def find_cmc_coin_data(
     return found_coin_data
 
 
+def process_asset(
+        our_data: Dict[str, Dict[str, Any]],
+        asset_symbol: str,
+        paprika_coins_list: List[Dict[str, Any]],
+        paprika: CoinPaprika,
+        cmc_list: Optional[List[Dict[str, Any]]],
+        cryptocompare_coins_map: Dict[str, Any],
+        always_keep_our_time: bool,
+):
+    our_asset = our_data[asset_symbol]
+    # Coin paprika does not have info on FIAT currencies
+    if asset_symbol in FIAT_CURRENCIES:
+        return our_data
+
+    found_coin_id = find_paprika_coin_id(asset_symbol, paprika_coins_list)
+    if found_coin_id:
+        paprika_coin_data = paprika.get_coin_by_id(found_coin_id)
+    else:
+        paprika_coin_data = None
+    cmc_coin_data = find_cmc_coin_data(asset_symbol, cmc_list)
+
+    our_data = timerange_check(
+        asset_symbol=asset_symbol,
+        our_asset=our_asset,
+        our_data=our_data,
+        paprika_data=paprika_coin_data,
+        cmc_data=cmc_coin_data,
+        always_keep_our_time=always_keep_our_time,
+    )
+    our_data = name_check(
+        asset_symbol=asset_symbol,
+        our_asset=our_asset,
+        our_data=our_data,
+        paprika_data=paprika_coin_data,
+        cmc_data=cmc_coin_data,
+    )
+    our_data = active_check(
+        asset_symbol=asset_symbol,
+        our_asset=our_asset,
+        our_data=our_data,
+        paprika_data=paprika_coin_data,
+        cmc_data=cmc_coin_data,
+    )
+    our_data = typeinfo_check(
+        asset_symbol=asset_symbol,
+        our_asset=our_asset,
+        our_data=our_data,
+        paprika_data=paprika_coin_data,
+        cmc_data=cmc_coin_data,
+    )
+
+    # Make sure that the asset is also known to cryptocompare
+    cryptocompare_symbol = WORLD_TO_CRYPTOCOMPARE.get(asset_symbol, asset_symbol)
+    cryptocompare_problem = (
+        asset_symbol not in KNOWN_TO_MISS_FROM_CRYPTOCOMPARE and
+        cryptocompare_symbol not in cryptocompare_coins_map
+    )
+    if cryptocompare_problem:
+        print(f'Asset {asset_symbol} is not in cryptocompare')
+        sys.exit(1)
+
+    return our_data
+
+
 def main():
     arg_parser = aggregator_args()
     args = arg_parser.parse_args()
@@ -250,59 +326,52 @@ def main():
     paprika_coins_list = paprika.get_coins_list()
     cryptocompare_coins_map = cryptocompare.all_coins()
 
-    for asset in our_data.keys():
-
-        our_asset = our_data[asset]
-        # Coin paprika does not have info on FIAT currencies
-        if asset in FIAT_CURRENCIES:
-            continue
-
-        found_coin_id = find_paprika_coin_id(asset, paprika_coins_list)
-        if found_coin_id:
-            paprika_coin_data = paprika.get_coin_by_id(found_coin_id)
-        else:
-            paprika_coin_data = None
-        cmc_coin_data = find_cmc_coin_data(asset, cmc_list)
-
-        our_data = timerange_check(
-            asset_symbol=asset,
-            our_asset=our_asset,
-            our_data=our_data,
-            paprika_data=paprika_coin_data,
-            cmc_data=cmc_coin_data,
-            always_keep_our_time=args.always_keep_our_time,
-        )
-        our_data = name_check(
-            asset_symbol=asset,
-            our_asset=our_asset,
-            our_data=our_data,
-            paprika_data=paprika_coin_data,
-            cmc_data=cmc_coin_data,
-        )
-        our_data = active_check(
-            asset_symbol=asset,
-            our_asset=our_asset,
-            our_data=our_data,
-            paprika_data=paprika_coin_data,
-            cmc_data=cmc_coin_data,
-        )
-        our_data = typeinfo_check(
-            asset_symbol=asset,
-            our_asset=our_asset,
-            our_data=our_data,
-            paprika_data=paprika_coin_data,
-            cmc_data=cmc_coin_data,
-        )
-
-        # Make sure that the asset is also known to cryptocompare
-        assetobj = Asset(asset)
-        cryptocompare_problem = (
-            asset not in KNOWN_TO_MISS_FROM_CRYPTOCOMPARE and
-            assetobj.to_cryptocompare() not in cryptocompare_coins_map
-        )
-        if cryptocompare_problem:
-            print(f'Asset {asset} is not in cryptocompare')
+    if args.input_file:
+        if not os.path.isfile(args.input_file):
+            print(f'Given input file {args.input_file} is not a file')
             sys.exit(1)
+
+        with open(args.input_file, 'rb') as f:
+            input_data = rlk_jsonloads(f.read())
+
+        given_symbols = set(input_data.keys())
+        current_symbols = set(our_data.keys())
+        if not given_symbols.isdisjoint(current_symbols):
+            print(
+                f'The following given input symbols already exist in the '
+                f'all_assets.json file {given_symbols.intersection(current_symbols)}',
+            )
+            sys.exit(1)
+
+        # If an input file is given, iterate only its assets and perform checks
+        for asset_symbol in input_data.keys():
+            input_data = process_asset(
+                our_data=input_data,
+                asset_symbol=asset_symbol,
+                paprika_coins_list=paprika_coins_list,
+                paprika=paprika,
+                cmc_list=cmc_list,
+                cryptocompare_coins_map=cryptocompare_coins_map,
+                always_keep_our_time=args.always_keep_our_time,
+            )
+
+        # and now combine the two dictionaries to get the final one. Note that no
+        # checks are perfomed for what was in all_assets.json before the script
+        # ran in this case
+        our_data = {**our_data, **input_data}
+
+    else:
+        # Iterate all of the assets of the all_assets.json file and perform checks
+        for asset_symbol in our_data.keys():
+            our_data = process_asset(
+                our_data=our_data,
+                asset_symbol=asset_symbol,
+                paprika_coins_list=paprika_coins_list,
+                paprika=paprika,
+                cmc_list=cmc_list,
+                cryptocompare_coins_map=cryptocompare_coins_map,
+                always_keep_our_time=args.always_keep_our_time,
+            )
 
     # Finally overwrite the all_assets.json with the modified assets
     dir_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
