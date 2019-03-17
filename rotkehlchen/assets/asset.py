@@ -1,5 +1,6 @@
-from dataclasses import dataclass
 from typing import Any
+
+from dataclasses import dataclass
 
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.errors import UnknownAsset
@@ -50,7 +51,10 @@ WORLD_TO_CRYPTOCOMPARE = {
     # In Rotkehlchen CCN-2 is Cannacoin and CCN is CustomContractNetwork
     'CCN-2': 'CCN',
     # In Rotkehlchen FAIR-2 is FairGame and FAIR is FairCoin
-    'FAIR-2': 'FAIR*'
+    'FAIR-2': 'FAIR*',
+    # Almosst 100% certain that GPUC (https://coinmarketcap.com/currencies/gpucoin/)
+    # is GPU in cryptocompare (https://www.cryptocompare.com/coins/gpu/overview)
+    'GPUC': 'GPU',
 }
 
 WORLD_TO_POLONIEX = {

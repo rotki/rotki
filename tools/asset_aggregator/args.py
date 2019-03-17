@@ -21,4 +21,12 @@ def aggregator_args() -> argparse.ArgumentParser:
             'and we do not compare to other APIs',
         ),
     )
+    p.add_argument(
+        '--input-file',
+        help=(
+            'A path to a secondary file for new assets to be added. If given, then '
+            'only the assets of that file are checked. Used for faster addition '
+            'of new assets to the assets list',
+        ),
+    )
     return p

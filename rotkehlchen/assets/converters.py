@@ -149,6 +149,27 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     # Fuzon. No data found except from here:
     # https://coinmarketcap.com/currencies/fuzon/
     'FZN',
+    # Global Denomination. No data found except from here:
+    # https://coinmarketcap.com/currencies/global-denomination/
+    'GDN',
+    # Giarcoin. No data found except from here:
+    # https://bitcointalk.org/index.php?topic=545529.0
+    'GIAR',
+    # Globe. No data found except from here:
+    # https://coinmarketcap.com/currencies/globe/
+    'GLB',
+    # GenesisCoin. No data found except from here:
+    # https://bitcointalk.org/index.php?topic=518258.0
+    'GNS',
+    # GoldEagles. No data found.
+    'GOLD',
+    # GroupCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/groupcoin/
+    'GPC',
+    # Gridcoin X. Not sure what this is. Perhaps a fork of Gridcoin
+    # https://coinmarketcap.com/currencies/gridcoin-classic/#charts
+    # In any case only poloniex lists it for a bit so ignoring it
+    'GRCX',
 )
 
 

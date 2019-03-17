@@ -518,19 +518,75 @@
     },
     "GAP": {
         "active": false,
+        "ended": 1549497600,
         "name": "Gapcoin",
         "started": 1413849600,
-        "ended": 1549497600,
         "type": "own chain"
+    },
+    "GAS": {
+        "name": "Gas",
+        "started": 1468540800,
+        "type": "neo token"
     },
     "GBP": {
         "name": "Great British Pound",
         "type": "fiat"
     },
+    "GEMZ": {
+        "active": false,
+        "ended": 1495411200,
+        "name": "GetGems",
+        "started": 1421020800,
+        "type": "counterparty token"
+    },
+    "GEO": {
+        "name": "GeoCoin",
+        "started": 1421650800,
+        "type": "Ubiq token"
+    },
+    "GML": {
+        "active": false,
+        "name": "GameLeagueCoin",
+        "type": "own chain"
+    },
     "GNO": {
         "name": "Gnosis token",
         "started": 1492992000,
         "type": "ethereum token"
+    },
+    "GNT": {
+        "name": "Golem",
+        "started": 1478810650,
+        "type": "ethereum token"
+    },
+    "GPUC": {
+        "active": false,
+        "ended": 1400889600,
+        "name": "GPU coin",
+        "started": 1395100800,
+        "type": "own chain"
+    },
+    "GRC": {
+        "name": "GridCoin",
+        "started": 1381881600,
+        "type": "own chain"
+    },
+    "GRIN": {
+        "name": "Grin",
+        "started": 1547683200,
+        "type": "own chain"
+    },
+    "GRS": {
+        "name": "Groestlcoin",
+        "started": 1395446400,
+        "type": "own chain"
+    },
+    "GUE": {
+        "active": false,
+        "ended": 1452038400,
+        "name": "Guerillacoin",
+        "started": 1403481600,
+        "type": "own chain"
     },
     "ICN": {
         "name": "Iconomi",
