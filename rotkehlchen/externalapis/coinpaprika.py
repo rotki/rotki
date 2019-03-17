@@ -25,6 +25,17 @@ WORLD_TO_PAPRIKA_ID = {
     'BTM': 'btm-bitmark',
     # For Rotkehlchen BTM-2 is Bytom
     'BTM-2': 'btm-bytom',
+    # For Rotkehlchen CCN is CustomContractNetwork
+    'CCN': 'ccn-customcontractnetwork',
+    # For Rotkehlchen CCN-2 is Cannacoin
+    'CCN-2': 'ccn-cannacoin',
+    # For Rotkehlchen CYC is conspiracy coin, but in paprika it's
+    # known as cycling coin, so mark it as unknown mapping
+    'CYC': None,
+    # For Rotkehlchen FAIR is FairCoin
+    'FAIR': 'fair-faircoin',
+    # For Rotkehlchen FAIR-2 is FairGame
+    'FAIR-2': 'fair-fairgame',
 }
 
 

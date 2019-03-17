@@ -12,11 +12,21 @@ MANUALLY_CHECKED = {
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'TALK': True,
-    # On 16/03/2019 Bitmar is still active and trading in one exchange
+    # On 16/03/2019 Bitmark is still active and trading in one exchange
     # https://coinmarketcap.com/currencies/bitmark/
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'BTM': True,
+    # On 17/03/2019 DreamCoin is still active and trading in 2 exchanges
+    # https://coinmarketcap.com/currencies/dreamcoin/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'DRM': True,
+    # On 17/03/2019 e-Gulden is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/e-gulden/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'EFL': True,
 }
 
 

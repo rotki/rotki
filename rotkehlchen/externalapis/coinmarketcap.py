@@ -27,6 +27,10 @@ WORLD_TO_CMC_ID = {
     'BTM': 543,
     # Bytom
     'BTM-2': 1866,
+    # FairCoin
+    'FAIR': 224,
+    # FairGame
+    'FAIR-2': 2366,
 }
 
 

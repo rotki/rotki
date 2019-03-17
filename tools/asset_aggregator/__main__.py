@@ -30,7 +30,28 @@ from rotkehlchen.externalapis import Coinmarketcap, CoinPaprika, Cryptocompare
 from rotkehlchen.externalapis.coinmarketcap import WORLD_TO_CMC_ID
 from rotkehlchen.externalapis.coinpaprika import WORLD_TO_PAPRIKA_ID
 
-KNOWN_TO_MISS_FROM_PAPRIKA = ('DAO', 'KFEE', '1CR', 'ACH', 'AERO', 'AM', 'AIR-2', 'APH-2', 'ARCH')
+KNOWN_TO_MISS_FROM_PAPRIKA = (
+    'DAO',
+    'KFEE',
+    '1CR',
+    'ACH',
+    'AERO',
+    'AM',
+    'AIR-2',
+    'APH-2',
+    'ARCH',
+    'CAIX',
+    'CGA',
+    'CINNI',
+    'CNL',
+    'CNMT',
+    'COMM',
+    'DIEM',
+    'DRKC',
+    'EXE',
+    'FIBRE',
+    'FRAC',
+)
 KNOWN_TO_MISS_FROM_CMC = (
     'VEN',
     '1CR',
@@ -45,9 +66,52 @@ KNOWN_TO_MISS_FROM_CMC = (
     'AIR',
     'APH-2',
     'ARCH',
-    # It's funny that BTCD is missing from their API data as it's in their
-    # website: https://coinmarketcap.com/currencies/bitcoindark/
+    # Missing from API but is in website: https://coinmarketcap.com/currencies/bitcoindark/
     'BTCD',
+    # Missing from API but is in website: https://coinmarketcap.com/currencies/cachecoin/
+    'CACH',
+    # Missing from API is in website https://coinmarketcap.com/currencies/caix/
+    'CAIX',
+    # Missing from API is in website https://coinmarketcap.com/currencies/cannacoin/
+    'CCN-2',
+    # Missing from API is in website https://coinmarketcap.com/currencies/cryptographic-anomaly/
+    'CGA',
+    # Missing from API, is in website https://coinmarketcap.com/currencies/cinni/
+    'CINNI',
+    # Missing from API, is in website https://coinmarketcap.com/currencies/concealcoin/
+    'CNL',
+    # Missing from API, is in website https://coinmarketcap.com/currencies/coinomat/
+    'CNMT',
+    # Missing from API, is in website https://coinmarketcap.com/currencies/communitycoin/
+    'COMM',
+    # Missing from API, is in website https://coinmarketcap.com/currencies/cryptcoin/
+    'CRYPT',
+    # Missing from API, is in https://coinmarketcap.com/currencies/conspiracycoin/
+    'CYC',
+    # Missing from API, is in https://coinmarketcap.com/currencies/diem/
+    'DIEM',
+    # Missing from API, is in https://coinmarketcap.com/currencies/darkcash/
+    'DRKC',
+    # Missing from API, is in https://coinmarketcap.com/currencies/dashcoin/
+    'DSH',
+    # Missing from API, is in https://coinmarketcap.com/currencies/earthcoin/
+    'EAC',
+    # Missing from API, is in https://coinmarketcap.com/currencies/execoin/
+    'EXE',
+    # Missing from API, is in https://coinmarketcap.com/currencies/fantomcoin/
+    'FCN',
+    # Missing from API, is in https://coinmarketcap.com/currencies/fibre/
+    'FIBRE',
+    # Missing from API, is in https://coinmarketcap.com/currencies/flappycoin/
+    'FLAP',
+    # Missing from API, is in https://coinmarketcap.com/currencies/fluttercoin/
+    'FLT',
+    # Missing from API, is in https://coinmarketcap.com/currencies/fractalcoin/
+    'FRAC',
+    # Missing from API, is in https://coinmarketcap.com/currencies/franko/
+    'FRK',
+    # Missing from API, is in https://coinmarketcap.com/currencies/gapcoin/
+    'GAP',
 )
 # TODO: For the ones missing from cryptocompare make sure to also
 # disallow price queries to cryptocompare for these assets
@@ -65,6 +129,12 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # https://api.coinpaprika.com/v1/coins/talk-btctalkcoin and in coinmarketcap
     # https://coinmarketcap.com/currencies/btctalkcoin/#charts
     'TALK',
+    # CCN is CustomContractNetwork in Rotkehlchen but Cannacoin in cryptocompare
+    # and cryptocompare does not have data for CustomContractNetwork
+    'CCN',
+    # Dreamcoin (https://coinmarketcap.com/currencies/dreamcoin/#charts) is not
+    # in cryptocompare.
+    'DRM',
 )
 
 # Info on where data was taken for coins which have no data anywhere
@@ -85,17 +155,21 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
 #      https://coinmarketcap.com/currencies/aircoin/
 # AIR is "Airtoken":
 #      https://coinmarketcap.com/currencies/airtoken/#charts
+# CAIX is "Caishen", known as CAI in poloniex
+# https://coinmarketcap.com/currencies/caix/
 
 
-def find_paprika_coin_id(asset_symbol: str, paprika_coins_list: List[Dict[str, Any]]) -> str:
-
+def find_paprika_coin_id(
+        asset_symbol: str,
+        paprika_coins_list: List[Dict[str, Any]],
+) -> Optional[str]:
+    found_coin_id = None
     if asset_symbol in WORLD_TO_PAPRIKA_ID:
         return WORLD_TO_PAPRIKA_ID[asset_symbol]
 
     if asset_symbol in KNOWN_TO_MISS_FROM_PAPRIKA:
         return None
 
-    found_coin_id = None
     for coin in paprika_coins_list:
         if coin['symbol'] == asset_symbol:
             if found_coin_id:

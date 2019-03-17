@@ -87,10 +87,68 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     # https://coinmarketcap.com/currencies/bones/
     # No price info in cryptocompare or paprika. So we don't support it.
     'BONES',
-    # Burnercoin. A shortlived coind. Only info is here:
+    # Burnercoin. A shortlived coind Only info is here:
     # https://coinmarketcap.com/currencies/burnercoin/
     # No price info in cryptocompare or paprika. So we don't support it.
     'BURN',
+    # Colbertcoin. Shortlived coin. Only info is here:
+    # https://coinmarketcap.com/currencies/colbertcoin/
+    # No price info in cryptocompare or paprika. So we don't support it.
+    'CC',
+    # Chancecoin.
+    # https://coinmarketcap.com/currencies/chancecoin/
+    'CHA',
+    # C-note. No data found anywhere. Only this:
+    # https://bitcointalk.org/index.php?topic=397916.0
+    'CNOTE',
+    # Coino. Shortlived coin with only data found here
+    # https://coinmarketcap.com/currencies/coino/
+    # A similar named token, coin(o) with symbol CNO has data
+    # both in cmc and paprika, but CON doesn't so we don't support it
+    'CON',
+    # CorgiCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/corgicoin/
+    'CORG',
+    # Neodice. No data found except from here:
+    # https://coinmarketcap.com/currencies/neodice/
+    # A lot more tokens with the DICE symbol exist so we don't support this
+    'DICE',
+    # Distrocoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/distrocoin/
+    'DIS',
+    # Bitshares DNS. No data found except from here:
+    # https://coin.market/crypto/dns
+    'DNS',
+    # DvoraKoin. No data found except from here:
+    # https://bitcointalk.org/index.php?topic=613854.0
+    'DVK',
+    # EBTcoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/ebtcoin/
+    'EBT',
+    # EmotiCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/emoticoin/
+    'EMO',
+    # EntropyCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/entropycoin/
+    'ENC',
+    # eToken. No data found except from here:
+    # https://coinmarketcap.com/currencies/etoken/
+    'eTOK',
+    # FoxCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/foxcoin/
+    'FOX',
+    # FairQuark. No data found except from here:
+    # https://coinmarketcap.com/currencies/fairquark/
+    'FRQ',
+    # FVZCoin. No data found except from here:
+    # https://coin.market/crypto/fvz
+    'FVZ',
+    # Frozen. No data found except from here:
+    # https://coinmarketcap.com/currencies/frozen/
+    'FZ',
+    # Fuzon. No data found except from here:
+    # https://coinmarketcap.com/currencies/fuzon/
+    'FZN',
 )
 
 
