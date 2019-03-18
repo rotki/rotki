@@ -36,6 +36,24 @@ WORLD_TO_PAPRIKA_ID = {
     'FAIR': 'fair-faircoin',
     # For Rotkehlchen FAIR-2 is FairGame
     'FAIR-2': 'fair-fairgame',
+    # For Rotkehlchen KEY is SelfKey
+    'KEY': 'key-selfkey',
+    # For Rotkehlchen KEY-2 is KEY
+    'KEY-2': 'key-key',
+    # For Rotkehlchen KNC is KyberNetwork
+    'KNC': 'knc-kyber-network',
+    # For Rotkehlchen KNC-2 is Kingn coin
+    'KNC-2': 'knc-kingn-coin',
+    # For Rotkehlchen MIN is Minerals coin but in paprika it's known
+    # as Mindol 'min-mindol', so mark it as unknown mapping
+    'MIN': None,
+    # For Rotkehlchen PRC is ProsperCoin and PRC-2 PRcoin
+    # In paprika there is data only for PRcoin
+    'PRC-2': 'prc-prcoin',
+    'PRC': None,
+    # For Rotkehlchen SILK is SilkCoin. In Paprika the only SILK is Silkchain
+    # which we don't support
+    'SILK': None,
 }
 
 

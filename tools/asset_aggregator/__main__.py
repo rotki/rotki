@@ -55,6 +55,37 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'GEMZ',
     'GPUC',
     'GUE',
+    'HUGE',
+    'HVC',
+    'HZ',
+    'KEY-3',  # KeyCoin
+    'LTBC',
+    'LTCX',
+    'MCN',
+    'MMC',
+    'MMNXT',
+    'MMXIV',
+    'NAUT',
+    'NRS',
+    'NXTI',
+    'POLY-2',  # Polybit
+    'RZR',
+    'SPA',
+    'SQL',
+    'SSD',
+    'SWARM',  # Swarmcoin  https://coinmarketcap.com/currencies/swarm/
+    'SYNC',
+    'ULTC',
+    'UTIL',
+    'VOOT',
+    'WOLF',
+    'XAI',
+    'XCR',
+    'XDP',
+    'XLB',
+    'XPB',
+    'XSI',
+    'YACC',
 )
 KNOWN_TO_MISS_FROM_CMC = (
     'VEN',
@@ -124,6 +155,117 @@ KNOWN_TO_MISS_FROM_CMC = (
     'GPUC',
     # Missing from API, is in https://coinmarketcap.com/currencies/guerillacoin/
     'GUE',
+    # Missing from API, is in https://coinmarketcap.com/currencies/bigcoin/
+    'HUGE',
+    # Missing from API, is in https://coinmarketcap.com/currencies/heavycoin/
+    'HVC',
+    # Missing from API, is in https://coinmarketcap.com/currencies/next-horizon/
+    'HZ',
+    # Missing from API, is in https://coinmarketcap.com/currencies/klondikecoin/
+    'KDC',
+    # Missing from API, is in https://coinmarketcap.com/currencies/keycoin/
+    'KEY-3',
+    # Missing from API, is in https://coinmarketcap.com/currencies/leafcoin/
+    'LEAF',
+    # Missing from API, is in https://coinmarketcap.com/currencies/ltbcoin/
+    'LTBC',
+    # Missing from API, is in https://coinmarketcap.com/currencies/litecoinx/
+    'LTCX',
+    # Missing from API, is in https://coinmarketcap.com/currencies/monetaverde/
+    'MCN',
+    # Missing from API, is in https://coinmarketcap.com/currencies/minerals/
+    'MIN',
+    # Missing from API, is in https://coinmarketcap.com/currencies/memorycoin/
+    'MMC',
+    # Missing from API, is in https://coinmarketcap.com/currencies/mmnxt/
+    'MMNXT',
+    # Missing from API, is in https://coinmarketcap.com/currencies/mmxiv/
+    'MMXIV',
+    # Missing from API, is in https://coinmarketcap.com/currencies/marscoin/
+    'MARS',
+    # Missing from API, is in https://coinmarketcap.com/currencies/mazacoin/
+    'MAZA',
+    # Missing from API, is in https://coinmarketcap.com/currencies/nautiluscoin/
+    'NAUT',
+    # Missing from API, is in https://coinmarketcap.com/currencies/noblecoin/
+    'NOBL',
+    # Missing from API, is in https://coinmarketcap.com/currencies/noirshares/
+    'NRS',
+    # Missing from API, is in https://coinmarketcap.com/currencies/nxtinspect/
+    'NXTI',
+    # Missing from API is https://coinmarketcap.com/currencies/polybit/
+    'POLY-2',
+    # Missing from API is https://coinmarketcap.com/currencies/prospercoin/
+    'PRC',
+    # Missing from API is https://coinmarketcap.com/currencies/prcoin/
+    'PRC-2',
+    # Missing from API is https://coinmarketcap.com/currencies/qubitcoin/
+    'Q2C',
+    # Missing from API is https://coinmarketcap.com/currencies/qibuck/
+    # and https://coinmarketcap.com/currencies/qibuck-asset/
+    'QBK',
+    # Missing from API is https://coinmarketcap.com/currencies/quazarcoin-old/
+    # There is also a new one but we don't support the symbol yet
+    # https://coinmarketcap.com/currencies/quasarcoin/ (QAC)
+    'QCN',
+    # Missing from API is https://coinmarketcap.com/currencies/qora/
+    'QORA',
+    # Missing from API is https://coinmarketcap.com/currencies/quatloo/
+    'QTL',
+    # Missing from API is https://coinmarketcap.com/currencies/riecoin/
+    'RIC',
+    # Missing from API is https://coinmarketcap.com/currencies/razor/
+    'RZR',
+    # Missing from API is https://coinmarketcap.com/currencies/shadowcash/
+    'SDC',
+    # Missing from API is https://coinmarketcap.com/currencies/silkcoin/
+    'SILK',
+    # Missing from API is https://coinmarketcap.com/currencies/spaincoin/
+    'SPA',
+    # Squallcoin. Completely missing ... but is in cryptocompare
+    'SQL',
+    # Missing from API is https://coinmarketcap.com/currencies/sonicscrewdriver/
+    'SSD',
+    # Missing from API is https://coinmarketcap.com/currencies/swarm/
+    'SWARM',
+    # Missing from API is https://coinmarketcap.com/currencies/sync/
+    'SYNC',
+    # Missing from API is https://coinmarketcap.com/currencies/torcoin-tor/
+    'TOR',
+    # Missing from API is https://coinmarketcap.com/currencies/trustplus/
+    'TRUST',
+    # Missing from API is https://coinmarketcap.com/currencies/unitus/
+    'UIS',
+    # Missing from API is https://coinmarketcap.com/currencies/umbrella-ltc/
+    'ULTC',
+    # Missing from API is https://coinmarketcap.com/currencies/supernet-unity/
+    'UNITY',
+    # Missing from API is https://coinmarketcap.com/currencies/uro/
+    'URO',
+    # Missing from API is https://coinmarketcap.com/currencies/usde/
+    'USDE',
+    # Missing from API is https://coinmarketcap.com/currencies/utilitycoin/
+    'UTIL',
+    # Missing from API is https://coinmarketcap.com/currencies/vootcoin/
+    'VOOT',
+    # InsanityCoin (WOLF). Completely missing ... but is in cryptocompare
+    'WOLF',
+    # Missing from API is https://coinmarketcap.com/currencies/sapience-aifx/
+    'XAI',
+    # Missing from API is https://coinmarketcap.com/currencies/crypti/
+    'XCR',
+    # Missing from API is https://coinmarketcap.com/currencies/dogeparty/
+    'XDP',
+    # Missing from API is https://coinmarketcap.com/currencies/libertycoin/
+    'XLB',
+    # Missing from API is https://coinmarketcap.com/currencies/pebblecoin/
+    'XPB',
+    # Missing from API is https://coinmarketcap.com/currencies/stabilityshares/
+    'XSI',
+    # Missing from API is https://coinmarketcap.com/currencies/vcash/
+    'XVC',
+    # Missing from API is https://coinmarketcap.com/currencies/yaccoin/
+    'YACC',
 )
 # TODO: For the ones missing from cryptocompare make sure to also
 # disallow price queries to cryptocompare for these assets
@@ -147,6 +289,16 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # Dreamcoin (https://coinmarketcap.com/currencies/dreamcoin/#charts) is not
     # in cryptocompare.
     'DRM',
+    # KEY (bihu) (https://coinmarketcap.com/currencies/key/) is not in
+    # cryptocompare. But it's in paprika
+    'KEY-2',
+    # MRS (Marginless) is not in cryptocompare. There is a coin with that
+    # symbol there, but it's the MARScoin
+    'MRS',
+    # PRcoin, known as PRC-2 in Rotkehlcen has no data in cryptocompare
+    'PRC-2',
+    # Wiki coin/token is not in cryptocompare but is in paprika wiki-wiki-token
+    'WIKI',
 )
 
 # Info on where data was taken for coins which have no data anywhere

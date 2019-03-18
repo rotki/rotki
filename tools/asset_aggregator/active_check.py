@@ -27,6 +27,26 @@ MANUALLY_CHECKED = {
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'EFL': True,
+    # On 18/03/2019 OPAL is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/opal/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'OPAL': True,
+    # On 18/03/2019 Piggy coin is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/piggycoin/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'PIGGY': True,
+    # On 18/03/2019 Smart coin is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/smartcoin/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'SMC': True,
+    # On 18/03/2019 Ultra coin is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/ultracoin/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'UTC': True,
 }
 
 

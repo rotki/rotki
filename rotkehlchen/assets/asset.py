@@ -55,6 +55,37 @@ WORLD_TO_CRYPTOCOMPARE = {
     # Almosst 100% certain that GPUC (https://coinmarketcap.com/currencies/gpucoin/)
     # is GPU in cryptocompare (https://www.cryptocompare.com/coins/gpu/overview)
     'GPUC': 'GPU',
+    # In Rotkehlchen we got 3 coins with KEY symbol. Cryptocompare does not have
+    # data for KEY-2
+    # KEY -> Selfkey
+    # KEY-2 -> KEY
+    # KEY-3 -> KeyCoin
+    'KEY-3': 'KEY*',
+    # In Rotkehlchen KNC is KyberNetwork and KNC-2 is KingN coin. In cryptocompare
+    # KNC** is KingN coin
+    'KNC-2': 'KNC**',
+    # Liquidity network is LQD in Rotkehlchen but LQDN in Cryptocompare
+    'LQD': 'LQDN',
+    # Monetaverde is as MNV in cryptocompare while it should be MCN
+    # https://www.cryptocompare.com/coins/mnv/overview
+    'MCN': 'MNV',
+    # Marscoin is as MRS in cryptocompare
+    # https://www.cryptocompare.com/coins/mrs/overview
+    'MARS': 'MRS',
+    # Marginless is not in cryptocompare. Asking for MRS will return MARScoin
+    'MRS': None,
+    # Mazacoin is as MZC in cryptocompare
+    'MAZA': 'MZC',
+    # NuBits is NBT in cryptocompare
+    'USNBT': 'NBT',
+    # Polymath is POLY in Rotkehlchen and POLY* in cryptocompare
+    'POLY': 'POLY*',
+    # Polybit is POLY-2 in Rotkehlchen and POLY in cryptocompare
+    'POLY-2': 'POLY',
+    # Steem dollars are SBD* in cryptocompare
+    'SBD': 'SBD*',
+    # YacCoin is YAC in cryptocompare
+    'YACC': 'YAC',
 }
 
 WORLD_TO_POLONIEX = {
@@ -82,6 +113,18 @@ WORLD_TO_POLONIEX = {
     # now delisted Poloniex's FAC if you look at the bitcointalk announcement
     # https://bitcointalk.org/index.php?topic=702675.0
     'FAIR': 'FAC',
+    # KeyCoin in Poloniex is KEY but in Rotkehlchen it's KEY-3
+    'KEY-3': 'KEY',
+    # Marscoin in Poloniex is MRS but in Rotkehlchen it's MARS
+    'MARS': 'MRS',
+    # Myriadcoin in Poloniex is MYR but in Rotkehlchen it's XMY
+    'XMY': 'MYR',
+    # NuBits in Poloniex is NBT but in Rotkehlchen it's USNBT
+    'USNBT': 'NBT',
+    # Stellar is XLM everywhere, apart from Poloniex
+    'XLM': 'STR',
+    # Poloniex still has the old name WC for WhiteCoin
+    'XWC': 'WC',
 }
 
 
