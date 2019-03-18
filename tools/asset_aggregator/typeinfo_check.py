@@ -34,6 +34,10 @@ def typeinfo_check(
                 our_data[asset_symbol]['type'] = 'nxt token'
             elif paprika_data['parent']['id'] == 'ubq-ubiq':
                 our_data[asset_symbol]['type'] = 'Ubiq token'
+            elif paprika_data['parent']['id'] == 'usnbt-nubits':
+                our_data[asset_symbol]['type'] = 'Nubits token'
+            elif paprika_data['parent']['id'] == 'burst-burst':
+                our_data[asset_symbol]['type'] = 'Burst token'
             else:
                 print(
                     f'Paprika data for asset {asset_symbol} has unknown '

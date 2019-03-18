@@ -31,6 +31,14 @@ WORLD_TO_CMC_ID = {
     'FAIR': 224,
     # FairGame
     'FAIR-2': 2366,
+    # Selfkey
+    'KEY': 2398,
+    # KEY (bihu)
+    'KEY-2': 2713,
+    # KyberNetwork
+    'KNC': 1982,
+    # KingN Coin
+    'KNC-2': 1743,
 }
 
 

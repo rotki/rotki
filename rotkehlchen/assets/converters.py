@@ -170,6 +170,179 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     # https://coinmarketcap.com/currencies/gridcoin-classic/#charts
     # In any case only poloniex lists it for a bit so ignoring it
     'GRCX',
+    # H2Ocoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/h2ocoin/
+    'H2O',
+    # Hirocoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/hirocoin/
+    'HIRO',
+    # Hotcoin. Super shortlived. No data found except from here:
+    # https://coinmarketcap.com/currencies/hotcoin/
+    # Note there are 2 more coins with this symbol.
+    # https://coinmarketcap.com/currencies/hydro-protocol/
+    # https://coinmarketcap.com/currencies/holo/
+    'HOT',
+    # CoinoIndex. No data found except from here:
+    # https://coinmarketcap.com/currencies/coinoindex/
+    'INDEX',
+    # InformationCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/informationcoin/
+    'ITC',
+    # jl777hodl. No data found except from here:
+    # https://coinmarketcap.com/currencies/jl777hodl/
+    'JLH',
+    # Jackpotcoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/jackpotcoin/
+    'JPC',
+    # Juggalocoin. No data found except from here:
+    # https://bitcointalk.org/index.php?topic=555896.0
+    'JUG',
+    # Limecoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/limecoin/
+    'LC',
+    # LimecoinLite. No data found except from here:
+    # https://coinmarketcap.com/currencies/limecoinlite/
+    'LCL',
+    # LogiCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/logicoin/
+    'LGC',
+    # LeagueCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/leaguecoin/
+    'LOL',
+    # LoveCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/lovecoin/
+    'LOVE',
+    # Mastiffcoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/mastiffcoin/
+    'MAST',
+    # CryptoMETH. No data found except from here:
+    # https://coinmarketcap.com/currencies/cryptometh/
+    'METH',
+    # Millenium coin. No data found except from here:
+    # https://coinmarketcap.com/currencies/millenniumcoin/
+    'MIL',
+    # Moneta. No data found except from here:
+    # https://coinmarketcap.com/currencies/moneta/
+    # There are other moneta coins like this:
+    # https://www.cryptocompare.com/coins/moneta/overview/BTC
+    # but they don't seem to bethe same
+    'MNTA',
+    # Monocle. No data found except from here:
+    # https://coinmarketcap.com/currencies/monocle/
+    'MON',
+    # MicroCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/microcoin/
+    'MRC',
+    # Metiscoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/metiscoin/
+    'MTS',
+    # Muniti. No data found except from here:
+    # https://coinmarketcap.com/currencies/muniti/
+    'MUN',
+    # N5coin. No data found except from here:
+    # https://coinmarketcap.com/currencies/n5coin/
+    'N5X',
+    # NAS. No data found except from here:
+    # https://coinmarketcap.com/currencies/nas/
+    # Note: This is not the Nebulas NAS token
+    'NAS',
+    # Nanolite. No data found except from here:
+    # https://www.reddit.com/r/CryptoCurrency/comments/26neqz/nanolite_a_new_x11_cryptocurrency_which_launched/
+    'NL',
+    # NobleNXT. No data found except from here:
+    # https://coinmarketcap.com/currencies/noblenxt/
+    'NOXT',
+    # NTX. No data found except from here:
+    # https://coinmarketcap.com/currencies/ntx/
+    'NTX',
+    # (PAND)a coin. No data found except here:
+    # https://coinmarketcap.com/currencies/pandacoin-panda/
+    # Note: This is not the PND Panda coin
+    'PANDA',
+    # Pawncoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/pawncoin/
+    'PAWN',
+    # Parallaxcoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/parallaxcoin/
+    # Note: This is not PLEX coin
+    'PLX',
+    # Premine. No data found except from here:
+    # https://coinmarketcap.com/currencies/premine/
+    'PMC',
+    # Particle. No data found except from here:
+    # https://coinmarketcap.com/currencies/particle/
+    'PRT',
+    # Bitshares PTS. No data found except from here:
+    # https://coinmarketcap.com/currencies/bitshares-pts/
+    'PTS',
+    # ShibeCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/shibecoin/
+    'SHIBE',
+    # ShopX. No data found except from here:
+    # https://coinmarketcap.com/currencies/shopx/
+    'SHOPX',
+    # SocialCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/socialcoin/
+    # Note this is not The SOCC Social coin
+    # https://coinmarketcap.com/currencies/socialcoin-socc/
+    'SOC',
+    # SourceCoin. No data found except from here:
+    # https://bitcointalk.org/index.php?topic=688494.160
+    'SRCC',
+    # SurgeCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/surgecoin/
+    'SRG',
+    # SummerCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/summercoin/
+    'SUM',
+    # SunCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/suncoin/
+    'SUN',
+    # TalkCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/talkcoin/
+    'TAC',
+    # Twecoin. No data found except from here:
+    # https://bitcointalk.org/index.php?topic=553593.0
+    'TWE',
+    # UniversityCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/universitycoin/
+    'UVC',
+    # Voxels. No data found except from here:
+    # https://coincodex.com/crypto/voxels/
+    'VOX',
+    # X13 coin. No data found. Except from maybe this:
+    # https://bitcointalk.org/index.php?topic=635382.200;wap2
+    'X13',
+    # ApiCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/apicoin/
+    'XAP',
+    # Xcurrency. No data found except from here:
+    # https://coinmarketcap.com/currencies/xcurrency/
+    'XC',
+    # ClearingHouse. No data found except from here:
+    # https://coinmarketcap.com/currencies/clearinghouse/
+    'XCH',
+    # HonorCoin. No data found except from here:
+    # https://bitcointalk.org/index.php?topic=639043.0
+    'XHC',
+    # SilliconValleyCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/siliconvalleycoin-old/
+    'XSV',
+    # CoinoUSD. No data found except from here:
+    # https://coinmarketcap.com/currencies/coinousd/
+    'XUSD',
+    # Creds. No data found except from here:
+    # https://bitcointalk.org/index.php?topic=513483.0
+    'XXC',
+    # YangCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/yangcoin/
+    'YANG',
+    # YellowCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/yellowcoin/
+    'YC',
+    # YinCoin. No data found except from here:
+    # https://coinmarketcap.com/currencies/yincoin/
+    'YIN',
 )
 
 
