@@ -653,7 +653,8 @@ class TradesHistorian(object):
                             )
                     except UnsupportedAsset as e:
                         self.msg_aggregator.add_warning(
-                            f'Found poloniex trade with asset {e.asset_name}. Ignoring it.',
+                            f'Found poloniex trade with unsupported asset '
+                            f' {e.asset_name}. Ignoring it.',
                         )
                         continue
 
@@ -751,7 +752,17 @@ class TradesHistorian(object):
                     end_at_least_ts=end_at_least_ts,
                 )
                 for trade in bittrex_history:
-                    history.append(trade_from_bittrex(trade))
+                    try:
+                        history.append(
+                            trade_from_bittrex(trade),
+                        )
+                    except UnsupportedAsset as e:
+                        self.msg_aggregator.add_warning(
+                            f'Found bittrex trade with unsupported asset '
+                            f'{e.asset_name}. Ignoring it.',
+                        )
+                        continue
+
             except RemoteError as e:
                 empty_or_error += '\n' + str(e)
 

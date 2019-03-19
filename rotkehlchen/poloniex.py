@@ -89,6 +89,8 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
         rate=rate,
     )
 
+    # Use the converted assets in our pair
+    pair = f'{base_currency}_{quote_currency}'
     # Since in Poloniex the base currency is the cost currency, iow in poloniex
     # for BTC_ETH we buy ETH with BTC and sell ETH for BTC, we need to turn it
     # into the Rotkehlchen way which is following the base/quote approach.
