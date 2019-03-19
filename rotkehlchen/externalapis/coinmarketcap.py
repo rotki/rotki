@@ -1,7 +1,8 @@
 import logging
 import os
+import sys
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import gevent
 import requests
@@ -15,6 +16,189 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 INITIAL_BACKOFF = 5
+
+
+KNOWN_TO_MISS_FROM_CMC = (
+    'VEN',
+    '1CR',
+    'DAO',
+    'KFEE',
+    'AC',
+    'ACH',
+    'ADN',
+    'AERO',
+    'AM',
+    'AIR-2',
+    'AIR',
+    'APH-2',
+    'ARCH',
+    # Missing from API but is in website: https://coinmarketcap.com/currencies/bitcoindark/
+    'BTCD',
+    # Missing from API but is in website: https://coinmarketcap.com/currencies/cachecoin/
+    'CACH',
+    # Missing from API is in website https://coinmarketcap.com/currencies/caix/
+    'CAIX',
+    # Missing from API is in website https://coinmarketcap.com/currencies/cannacoin/
+    'CCN-2',
+    # Missing from API is in website https://coinmarketcap.com/currencies/cryptographic-anomaly/
+    'CGA',
+    # Missing from API, is in website https://coinmarketcap.com/currencies/cinni/
+    'CINNI',
+    # Missing from API, is in website https://coinmarketcap.com/currencies/concealcoin/
+    'CNL',
+    # Missing from API, is in website https://coinmarketcap.com/currencies/coinomat/
+    'CNMT',
+    # Missing from API, is in website https://coinmarketcap.com/currencies/communitycoin/
+    'COMM',
+    # Missing from API, is in website https://coinmarketcap.com/currencies/cryptcoin/
+    'CRYPT',
+    # Missing from API, is in https://coinmarketcap.com/currencies/conspiracycoin/
+    'CYC',
+    # Missing from API, is in https://coinmarketcap.com/currencies/diem/
+    'DIEM',
+    # Missing from API, is in https://coinmarketcap.com/currencies/darkcash/
+    'DRKC',
+    # Missing from API, is in https://coinmarketcap.com/currencies/dashcoin/
+    'DSH',
+    # Missing from API, is in https://coinmarketcap.com/currencies/earthcoin/
+    'EAC',
+    # Missing from API, is in https://coinmarketcap.com/currencies/execoin/
+    'EXE',
+    # Missing from API, is in https://coinmarketcap.com/currencies/fantomcoin/
+    'FCN',
+    # Missing from API, is in https://coinmarketcap.com/currencies/fibre/
+    'FIBRE',
+    # Missing from API, is in https://coinmarketcap.com/currencies/flappycoin/
+    'FLAP',
+    # Missing from API, is in https://coinmarketcap.com/currencies/fluttercoin/
+    'FLT',
+    # Missing from API, is in https://coinmarketcap.com/currencies/fractalcoin/
+    'FRAC',
+    # Missing from API, is in https://coinmarketcap.com/currencies/franko/
+    'FRK',
+    # Missing from API, is in https://coinmarketcap.com/currencies/gapcoin/
+    'GAP',
+    # Missing from API, is in https://coinmarketcap.com/currencies/gems/
+    'GEMZ',
+    # Missing from API, is in https://coinmarketcap.com/currencies/gameleaguecoin/
+    'GML',
+    # Missing from API, is in https://coinmarketcap.com/currencies/gpucoin/
+    'GPUC',
+    # Missing from API, is in https://coinmarketcap.com/currencies/guerillacoin/
+    'GUE',
+    # Missing from API, is in https://coinmarketcap.com/currencies/bigcoin/
+    'HUGE',
+    # Missing from API, is in https://coinmarketcap.com/currencies/heavycoin/
+    'HVC',
+    # Missing from API, is in https://coinmarketcap.com/currencies/next-horizon/
+    'HZ',
+    # Missing from API, is in https://coinmarketcap.com/currencies/klondikecoin/
+    'KDC',
+    # Missing from API, is in https://coinmarketcap.com/currencies/keycoin/
+    'KEY-3',
+    # Missing from API, is in https://coinmarketcap.com/currencies/leafcoin/
+    'LEAF',
+    # Missing from API, is in https://coinmarketcap.com/currencies/ltbcoin/
+    'LTBC',
+    # Missing from API, is in https://coinmarketcap.com/currencies/litecoinx/
+    'LTCX',
+    # Missing from API, is in https://coinmarketcap.com/currencies/monetaverde/
+    'MCN',
+    # Missing from API, is in https://coinmarketcap.com/currencies/minerals/
+    'MIN',
+    # Missing from API, is in https://coinmarketcap.com/currencies/memorycoin/
+    'MMC',
+    # Missing from API, is in https://coinmarketcap.com/currencies/mmnxt/
+    'MMNXT',
+    # Missing from API, is in https://coinmarketcap.com/currencies/mmxiv/
+    'MMXIV',
+    # Missing from API, is in https://coinmarketcap.com/currencies/marscoin/
+    'MARS',
+    # Missing from API, is in https://coinmarketcap.com/currencies/mazacoin/
+    'MAZA',
+    # Missing from API, is in https://coinmarketcap.com/currencies/nautiluscoin/
+    'NAUT',
+    # Missing from API, is in https://coinmarketcap.com/currencies/noblecoin/
+    'NOBL',
+    # Missing from API, is in https://coinmarketcap.com/currencies/noirshares/
+    'NRS',
+    # Missing from API, is in https://coinmarketcap.com/currencies/nxtinspect/
+    'NXTI',
+    # Missing from API is https://coinmarketcap.com/currencies/polybit/
+    'POLY-2',
+    # Missing from API is https://coinmarketcap.com/currencies/prospercoin/
+    'PRC',
+    # Missing from API is https://coinmarketcap.com/currencies/prcoin/
+    'PRC-2',
+    # Missing from API is https://coinmarketcap.com/currencies/qubitcoin/
+    'Q2C',
+    # Missing from API is https://coinmarketcap.com/currencies/qibuck/
+    # and https://coinmarketcap.com/currencies/qibuck-asset/
+    'QBK',
+    # Missing from API is https://coinmarketcap.com/currencies/quazarcoin-old/
+    # There is also a new one but we don't support the symbol yet
+    # https://coinmarketcap.com/currencies/quasarcoin/ (QAC)
+    'QCN',
+    # Missing from API is https://coinmarketcap.com/currencies/qora/
+    'QORA',
+    # Missing from API is https://coinmarketcap.com/currencies/quatloo/
+    'QTL',
+    # Missing from API is https://coinmarketcap.com/currencies/riecoin/
+    'RIC',
+    # Missing from API is https://coinmarketcap.com/currencies/razor/
+    'RZR',
+    # Missing from API is https://coinmarketcap.com/currencies/shadowcash/
+    'SDC',
+    # Missing from API is https://coinmarketcap.com/currencies/silkcoin/
+    'SILK',
+    # Missing from API is https://coinmarketcap.com/currencies/spaincoin/
+    'SPA',
+    # Squallcoin. Completely missing ... but is in cryptocompare
+    'SQL',
+    # Missing from API is https://coinmarketcap.com/currencies/sonicscrewdriver/
+    'SSD',
+    # Missing from API is https://coinmarketcap.com/currencies/swarm/
+    'SWARM',
+    # Missing from API is https://coinmarketcap.com/currencies/sync/
+    'SYNC',
+    # Missing from API is https://coinmarketcap.com/currencies/torcoin-tor/
+    'TOR',
+    # Missing from API is https://coinmarketcap.com/currencies/trustplus/
+    'TRUST',
+    # Missing from API is https://coinmarketcap.com/currencies/unitus/
+    'UIS',
+    # Missing from API is https://coinmarketcap.com/currencies/umbrella-ltc/
+    'ULTC',
+    # Missing from API is https://coinmarketcap.com/currencies/supernet-unity/
+    'UNITY',
+    # Missing from API is https://coinmarketcap.com/currencies/uro/
+    'URO',
+    # Missing from API is https://coinmarketcap.com/currencies/usde/
+    'USDE',
+    # Missing from API is https://coinmarketcap.com/currencies/utilitycoin/
+    'UTIL',
+    # Missing from API is https://coinmarketcap.com/currencies/vootcoin/
+    'VOOT',
+    # InsanityCoin (WOLF). Completely missing ... but is in cryptocompare
+    'WOLF',
+    # Missing from API is https://coinmarketcap.com/currencies/sapience-aifx/
+    'XAI',
+    # Missing from API is https://coinmarketcap.com/currencies/crypti/
+    'XCR',
+    # Missing from API is https://coinmarketcap.com/currencies/dogeparty/
+    'XDP',
+    # Missing from API is https://coinmarketcap.com/currencies/libertycoin/
+    'XLB',
+    # Missing from API is https://coinmarketcap.com/currencies/pebblecoin/
+    'XPB',
+    # Missing from API is https://coinmarketcap.com/currencies/stabilityshares/
+    'XSI',
+    # Missing from API is https://coinmarketcap.com/currencies/vcash/
+    'XVC',
+    # Missing from API is https://coinmarketcap.com/currencies/yaccoin/
+    'YACC',
+)
+
 
 # There can be multiple ids for the same symbol and for cases such as this
 # we use this mapping to manually map Rotkehlchen symbols to CMC IDs
@@ -40,6 +224,47 @@ WORLD_TO_CMC_ID = {
     # KingN Coin
     'KNC-2': 1743,
 }
+
+
+def find_cmc_coin_data(
+        asset_symbol: str,
+        cmc_list: List[Dict[str, Any]],
+) -> Optional[Dict[str, Any]]:
+    """Given an asset's symbol find its data in the coinmarketcap list"""
+    if not cmc_list:
+        return None
+
+    if asset_symbol in WORLD_TO_CMC_ID:
+        coin_id = WORLD_TO_CMC_ID[asset_symbol]
+        for coin in cmc_list:
+            if coin['id'] == coin_id:
+                return coin
+
+        assert False, 'The CMC id should alway be correct. Is our data corrupt?'
+
+    if asset_symbol in KNOWN_TO_MISS_FROM_CMC:
+        return None
+
+    found_coin_data = None
+    for coin in cmc_list:
+        if coin['symbol'] == asset_symbol:
+            if found_coin_data:
+                print(
+                    f'Asset with symbol {asset_symbol} was found in coinmarketcap '
+                    f'both as {found_coin_data["id"]} - {found_coin_data["name"]} '
+                    f'and {coin["id"]} - {coin["name"]}',
+                )
+                sys.exit(1)
+            found_coin_data = coin
+
+    if not found_coin_data:
+        print(
+            f"Could not find asset with canonical symbol {asset_symbol} in "
+            f"coinmarketcap's coin list",
+        )
+        sys.exit(1)
+
+    return found_coin_data
 
 
 class Coinmarketcap():

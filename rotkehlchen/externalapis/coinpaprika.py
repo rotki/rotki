@@ -1,10 +1,69 @@
-from typing import Any, Dict, List
+import sys
+from typing import Any, Dict, List, Optional
 
 import gevent
 import requests
 
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.utils import rlk_jsonloads_dict, rlk_jsonloads_list
+
+KNOWN_TO_MISS_FROM_PAPRIKA = (
+    'DAO',
+    'KFEE',
+    '1CR',
+    'ACH',
+    'AERO',
+    'AM',
+    'AIR-2',
+    'APH-2',
+    'ARCH',
+    'CAIX',
+    'CGA',
+    'CINNI',
+    'CNL',
+    'CNMT',
+    'COMM',
+    'DIEM',
+    'DRKC',
+    'EXE',
+    'FIBRE',
+    'FRAC',
+    'GEMZ',
+    'GPUC',
+    'GUE',
+    'HUGE',
+    'HVC',
+    'HZ',
+    'KEY-3',  # KeyCoin
+    'LTBC',
+    'LTCX',
+    'MCN',
+    'MMC',
+    'MMNXT',
+    'MMXIV',
+    'NAUT',
+    'NRS',
+    'NXTI',
+    'POLY-2',  # Polybit
+    'RZR',
+    'SPA',
+    'SQL',
+    'SSD',
+    'SWARM',  # Swarmcoin  https://coinmarketcap.com/currencies/swarm/
+    'SYNC',
+    'ULTC',
+    'UTIL',
+    'VOOT',
+    'WOLF',
+    'XAI',
+    'XCR',
+    'XDP',
+    'XLB',
+    'XPB',
+    'XSI',
+    'YACC',
+)
+
 
 INITIAL_BACKOFF = 3
 
@@ -55,6 +114,39 @@ WORLD_TO_PAPRIKA_ID = {
     # which we don't support
     'SILK': None,
 }
+
+
+def find_paprika_coin_id(
+        asset_symbol: str,
+        paprika_coins_list: List[Dict[str, Any]],
+) -> Optional[str]:
+    """Given an asset's symbol find the paprika coin id from the paprika coins list"""
+    found_coin_id = None
+    if asset_symbol in WORLD_TO_PAPRIKA_ID:
+        return WORLD_TO_PAPRIKA_ID[asset_symbol]
+
+    if asset_symbol in KNOWN_TO_MISS_FROM_PAPRIKA:
+        return None
+
+    for coin in paprika_coins_list:
+        if coin['symbol'] == asset_symbol:
+            if found_coin_id:
+                print(
+                    f'Asset with symbol {asset_symbol} was found in coin paprika both '
+                    f'with id {found_coin_id} and {coin["id"]}',
+                )
+                sys.exit(1)
+
+            found_coin_id = coin['id']
+
+    if not found_coin_id:
+        print(
+            f"Could not find asset with canonical symbol {asset_symbol} in coin "
+            f"coinpaprika's coin list",
+        )
+        sys.exit(1)
+
+    return found_coin_id
 
 
 class CoinPaprika():

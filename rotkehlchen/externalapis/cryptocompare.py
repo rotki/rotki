@@ -11,6 +11,41 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+# TODO: For the ones missing from cryptocompare make sure to also
+# disallow price queries to cryptocompare for these assets
+KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
+    # This is just kraken's internal fee token
+    'KFEE',
+    # For us ACH is the Altcoin Herald token. For cryptocompare it's
+    # Achievecoin
+    # https://www.cryptocompare.com/coins/ach/overview
+    'ACH',
+    # We got APH as Aphelion and APH-2 as a very shortlived Aphrodite coin
+    # Cryptocompare has no data for Aphrodite coin
+    'APH-2',
+    # BTCTalkCoin is not in cryptocompare but it's in coin paprika
+    # https://api.coinpaprika.com/v1/coins/talk-btctalkcoin and in coinmarketcap
+    # https://coinmarketcap.com/currencies/btctalkcoin/#charts
+    'TALK',
+    # CCN is CustomContractNetwork in Rotkehlchen but Cannacoin in cryptocompare
+    # and cryptocompare does not have data for CustomContractNetwork
+    'CCN',
+    # Dreamcoin (https://coinmarketcap.com/currencies/dreamcoin/#charts) is not
+    # in cryptocompare.
+    'DRM',
+    # KEY (bihu) (https://coinmarketcap.com/currencies/key/) is not in
+    # cryptocompare. But it's in paprika
+    'KEY-2',
+    # MRS (Marginless) is not in cryptocompare. There is a coin with that
+    # symbol there, but it's the MARScoin
+    'MRS',
+    # PRcoin, known as PRC-2 in Rotkehlcen has no data in cryptocompare
+    'PRC-2',
+    # Wiki coin/token is not in cryptocompare but is in paprika wiki-wiki-token
+    'WIKI',
+)
+
+
 class Cryptocompare():
 
     def __init__(self, data_directory: FilePath):
