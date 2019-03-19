@@ -3,22 +3,11 @@ from __future__ import unicode_literals
 import logging
 import os
 from json.decoder import JSONDecodeError
-from typing import Dict, Iterable, Optional, cast
+from typing import Dict, Iterable, Optional
 
 import requests
 
-from rotkehlchen.constants import (
-    CURRENCYCONVERTER_API_KEY,
-    FIAT_CURRENCIES,
-    S_BQX,
-    S_BSV,
-    S_DATACOIN,
-    S_IOTA,
-    S_NANO,
-    S_RAIBLOCKS,
-    S_RDN,
-    S_USD,
-)
+from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, FIAT_CURRENCIES, S_USD
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
