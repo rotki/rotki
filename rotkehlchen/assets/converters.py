@@ -360,3 +360,7 @@ def asset_from_poloniex(poloniex_name: str) -> Asset:
 
     our_name = POLONIEX_TO_WORLD[poloniex_name]
     return Asset(our_name)
+
+
+def asset_from_bittrex(bittrex_name: str) -> Asset:
+    return Asset(bittrex_name)

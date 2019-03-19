@@ -145,6 +145,9 @@ class Asset():
     def to_kraken(self) -> str:
         return WORLD_TO_KRAKEN[self.name]
 
+    def to_bittrex(self) -> str:
+        return self.name
+
     def to_cryptocompare(self) -> str:
         return WORLD_TO_CRYPTOCOMPARE.get(self.name, self.name)
 
