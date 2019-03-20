@@ -1,4 +1,5 @@
-from typing import Dict, NamedTuple, NewType, Union
+from enum import Enum
+from typing import Dict, NamedTuple, NewType, Optional, Union
 
 from rotkehlchen.fval import FVal
 
@@ -77,3 +78,30 @@ class EthereumTransaction(NamedTuple):
     gas: FVal
     gas_price: FVal
     gas_used: FVal
+
+
+class AssetType(Enum):
+    FIAT = 1
+    OWN_CHAIN = 2
+    ETH_TOKEN = 3
+    OMNI_TOKEN = 4
+    NEO_TOKEN = 5
+    XCP_TOKEN = 6
+    BTS_TOKEN = 7
+    ARDOR_TOKEN = 8
+    NXT_TOKEN = 9
+    UBIQ_TOKEN = 10
+    NUBITS_TOKEN = 11
+    BURST_TOKEN = 12
+
+
+class AssetData(NamedTuple):
+    """Data of an asset. Keep in sync with assets/asset.py"""
+    symbol: str
+    name: str
+    active: bool
+    asset_type: AssetType
+    started: Timestamp
+    ended: Optional[Timestamp]
+    forked: Optional[str]
+    swapped_for: Optional[str]

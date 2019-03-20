@@ -113,6 +113,9 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen SILK is SilkCoin. In Paprika the only SILK is Silkchain
     # which we don't support
     'SILK': None,
+    # For Rotkehlchen GLC is GoldCoin, and GLC-2 is GlobalCoin
+    'GLC': 'gld-goldcoin',
+    'GLC-2': 'glc-globalcoin',
 }
 
 

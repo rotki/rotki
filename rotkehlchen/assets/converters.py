@@ -1,4 +1,9 @@
-from rotkehlchen.assets.asset import WORLD_TO_CRYPTOCOMPARE, WORLD_TO_POLONIEX, Asset
+from rotkehlchen.assets.asset import (
+    WORLD_TO_BITTREX,
+    WORLD_TO_CRYPTOCOMPARE,
+    WORLD_TO_POLONIEX,
+    Asset,
+)
 from rotkehlchen.errors import UnsupportedAsset
 
 KRAKEN_TO_WORLD = {
@@ -46,6 +51,8 @@ KRAKEN_TO_WORLD = {
 CRYPTOCOMPARE_TO_WORLD = {v: k for k, v in WORLD_TO_CRYPTOCOMPARE.items()}
 
 POLONIEX_TO_WORLD = {v: k for k, v in WORLD_TO_POLONIEX.items()}
+BITTREX_TO_WORLD = {v: k for k, v in WORLD_TO_BITTREX.items()}
+
 UNSUPPORTED_POLONIEX_ASSETS = (
     # This was a super shortlived coin.
     # Only info is here: https://bitcointalk.org/index.php?topic=632818.0
@@ -363,4 +370,5 @@ def asset_from_poloniex(poloniex_name: str) -> Asset:
 
 
 def asset_from_bittrex(bittrex_name: str) -> Asset:
-    return Asset(bittrex_name)
+    name = BITTREX_TO_WORLD.get(bittrex_name, bittrex_name)
+    return Asset(name)
