@@ -197,6 +197,10 @@ KNOWN_TO_MISS_FROM_CMC = (
     'XVC',
     # Missing from API is https://coinmarketcap.com/currencies/yaccoin/
     'YACC',
+    # GlobalCoin. Missing from API is https://coinmarketcap.com/currencies/globalcoin/
+    'GLC-2',
+    # Bytecent. Missing from API is https://coinmarketcap.com/currencies/bytecent/
+    'BYC',
 )
 
 
@@ -223,6 +227,9 @@ WORLD_TO_CMC_ID = {
     'KNC': 1982,
     # KingN Coin
     'KNC-2': 1743,
+    # Goldcoind (GLC in Rotkehlcen) is in coinmarketcap with ID 25
+    # and symbol GLD. Symbol discrepancy is the same as in cryptocompare
+    'GLC': 25,
 }
 
 

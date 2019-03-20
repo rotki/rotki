@@ -1,9 +1,10 @@
-from typing import Any
+from typing import Any, Optional
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.errors import UnknownAsset
+from rotkehlchen.typing import AssetType, Timestamp
 
 WORLD_TO_KRAKEN = {
     'ETC': 'XETC',
@@ -86,6 +87,12 @@ WORLD_TO_CRYPTOCOMPARE = {
     'SBD': 'SBD*',
     # YacCoin is YAC in cryptocompare
     'YACC': 'YAC',
+    # GoldCoin is GLD in cryptocompare, but GLC in most other places including Rotkehlcen
+    'GLC': 'GLD',
+    # In Rotkehlchen we have GlobalCoin as GLC-2. In Cryptocompare it's GLC
+    'GLC-2': 'GLC',
+    # In Rotkehlchen and everywhere else Bitbean is BITB but in cryptocompare BEAN
+    'BITB': 'BEAN',
 }
 
 WORLD_TO_POLONIEX = {
@@ -127,38 +134,63 @@ WORLD_TO_POLONIEX = {
     'XWC': 'WC',
 }
 
+WORLD_TO_BITTREX = {
+    # In Rotkehlcen Bitswift is BITS-2 but in Bittrex it's BITS
+    'BITS-2': 'BITS',
+    # In Rotkehlcen NuBits is USNBT but in Bittrex it's NBT
+    'USNBT': 'NBT',
+}
+
 
 @dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class Asset():
-    name: str
+    symbol: str
+    name: str = field(init=False)
+    active: bool = field(init=False)
+    asset_type: AssetType = field(init=False)
+    started: Timestamp = field(init=False)
+    ended: Optional[Timestamp] = field(init=False)
+    forked: Optional[str] = field(init=False)
+    swapped_for: Optional[str] = field(init=False)
 
     def __post_init__(self):
-        if not AssetResolver().is_name_canonical(self.name):
-            raise UnknownAsset(self.name)
+        if not AssetResolver().is_symbol_canonical(self.symbol):
+            raise UnknownAsset(self.symbol)
+        data = AssetResolver().get_asset_data(self.symbol)
+
+        # Ugly hack to set attributes of a frozen data class as post init
+        # https://docs.python.org/3/library/dataclasses.html#frozen-instances
+        object.__setattr__(self, 'name', data.name)
+        object.__setattr__(self, 'active', data.active)
+        object.__setattr__(self, 'asset_type', data.asset_type)
+        object.__setattr__(self, 'started', data.started)
+        object.__setattr__(self, 'ended', data.ended)
+        object.__setattr__(self, 'forked', data.forked)
+        object.__setattr__(self, 'swapped_for', data.swapped_for)
 
     def canonical(self) -> str:
-        return self.name
+        return self.symbol
 
     def __str__(self) -> str:
         return self.name
 
     def to_kraken(self) -> str:
-        return WORLD_TO_KRAKEN[self.name]
+        return WORLD_TO_KRAKEN[self.symbol]
 
     def to_bittrex(self) -> str:
-        return self.name
+        return WORLD_TO_BITTREX.get(self.symbol, self.symbol)
 
     def to_cryptocompare(self) -> str:
-        return WORLD_TO_CRYPTOCOMPARE.get(self.name, self.name)
+        return WORLD_TO_CRYPTOCOMPARE.get(self.symbol, self.symbol)
 
     def __hash__(self):
-        return hash(self.name)
+        return hash(self.symbol)
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Asset):
-            return self.name == other.name
+            return self.symbol == other.symbol
         elif isinstance(other, str):
-            return self.name == other
+            return self.symbol == other
         else:
             raise ValueError(f'Invalid comparison of asset with {type(other)}')
 
