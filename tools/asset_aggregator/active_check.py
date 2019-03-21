@@ -47,6 +47,11 @@ MANUALLY_CHECKED = {
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'UTC': True,
+    # On 21/03/2019 Mithril Ore token is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/mithril-ore/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'MORE-2': True,
 }
 
 

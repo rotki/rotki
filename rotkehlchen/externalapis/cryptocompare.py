@@ -43,6 +43,21 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     'PRC-2',
     # Wiki coin/token is not in cryptocompare but is in paprika wiki-wiki-token
     'WIKI',
+    # More token (https://coinmarketcap.com/currencies/more-coin/) is not in
+    # cryptocompare but is in paprika
+    'MORE',
+    # Mithril Ore token (https://coinmarketcap.com/currencies/mithril-ore/) is not in
+    # cryptocompare but is in paprika
+    'MORE-2',
+    # Aidus Token (https://coinmarketcap.com/currencies/aidus-token/) is not in
+    # cryptocompare but is in paprika
+    'AID-2',
+    # Cashbery coin (https://coinmarketcap.com/currencies/cashbery-coin/) is not
+    # in cryptocompare but is in paprika
+    'CBC-2',
+    # Cyber movie chain (https://coinmarketcap.com/currencies/cyber-movie-chain/)
+    # is not in cryptocompare but is in paprika
+    'CMCT-2',
 )
 
 

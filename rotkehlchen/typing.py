@@ -93,6 +93,7 @@ class AssetType(Enum):
     UBIQ_TOKEN = 10
     NUBITS_TOKEN = 11
     BURST_TOKEN = 12
+    WAVES_TOKEN = 13
 
 
 class AssetData(NamedTuple):
@@ -101,7 +102,9 @@ class AssetData(NamedTuple):
     name: str
     active: bool
     asset_type: AssetType
-    started: Timestamp
+    # Every asset should have a started timestamp except for FIAT which are
+    # most of the times older than epoch
+    started: Optional[Timestamp]
     ended: Optional[Timestamp]
     forked: Optional[str]
     swapped_for: Optional[str]

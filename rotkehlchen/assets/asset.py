@@ -1,6 +1,5 @@
-from typing import Any, Optional
-
 from dataclasses import dataclass, field
+from typing import Any, Optional
 
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.errors import UnknownAsset
@@ -93,6 +92,9 @@ WORLD_TO_CRYPTOCOMPARE = {
     'GLC-2': 'GLC',
     # In Rotkehlchen and everywhere else Bitbean is BITB but in cryptocompare BEAN
     'BITB': 'BEAN',
+    # For Rotkehlchen RCN is Ripio Credit Network and RCN-2 is Rcoin
+    # Rcoin is RCN* in cryptocompare
+    'RCN-2': 'RCN*',
 }
 
 WORLD_TO_POLONIEX = {
