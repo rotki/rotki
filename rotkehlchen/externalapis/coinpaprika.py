@@ -116,6 +116,24 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen GLC is GoldCoin, and GLC-2 is GlobalCoin
     'GLC': 'gld-goldcoin',
     'GLC-2': 'glc-globalcoin',
+    # For Rotkehlchen MORE is More coin and MORE-2 is Mithril Ore token
+    'MORE': 'more-more-coin',
+    'MORE-2': 'more-mithril-ore',
+    # For Rotkehlchen FUN is FunFair token. We don't support Tron fun token
+    # which is fun-tronfun-token in paprika
+    'FUN': 'fun-funfair',
+    # For Rotkehlchen RCN is Ripio Credit Network and RCN-2 is Rcoin
+    'RCN': 'rcn-ripio-credit-network',
+    'RCN-2': 'rcn-rcoin',
+    # For Rotkehlchen AID is Aid Coin and AID-2 is Aidus Token
+    'AID': 'aid-aidcoin',
+    'AID-2': 'aid-aidus-token',
+    # For Rotkehlchen CBC is Cashbet Coin and CBC-2 is Cashbery coin
+    'CBC': 'cbc-cashbet-coin',
+    'CBC-2': 'cbc-cashbery-coin',
+    # For Rotkehlcen CMCT is Crown machine token and CMCT-2 is Cyber movie chain token
+    'CMCT': 'cmct-crowd-machine',
+    'CMCT-2': 'cmct-cyber-movie-chain',
 }
 
 

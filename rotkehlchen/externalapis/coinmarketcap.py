@@ -201,6 +201,10 @@ KNOWN_TO_MISS_FROM_CMC = (
     'GLC-2',
     # Bytecent. Missing from API is https://coinmarketcap.com/currencies/bytecent/
     'BYC',
+    # Bytecent. Missing from API is https://coinmarketcap.com/currencies/apx/
+    'APX',
+    # RCoin. Missing from API is https://coinmarketcap.com/currencies/rcoin/
+    'RCN-2',
 )
 
 
@@ -230,6 +234,18 @@ WORLD_TO_CMC_ID = {
     # Goldcoind (GLC in Rotkehlcen) is in coinmarketcap with ID 25
     # and symbol GLD. Symbol discrepancy is the same as in cryptocompare
     'GLC': 25,
+    # For Rotkehlchen MORE is More coin and MORE-2 is Mithril Ore token
+    'MORE': 1722,
+    'MORE-2': 3206,
+    # For Rotkehlchen AID is AidCoin and AID-2 is Aidus token
+    'AID': 2462,
+    'AID-2': 3785,
+    # For Rotkehlchen CBC is Cashbet Coin and CBC-2 is Cashbery coin
+    'CBC': 2855,
+    'CBC-2': 3199,
+    # For Rotkehlcen CMCT is Crown machine token and CMCT-2 is Cyber movie chain token
+    'CMCT': 2708,
+    'CMCT-2': 3429,
 }
 
 

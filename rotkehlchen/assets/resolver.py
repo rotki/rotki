@@ -17,6 +17,7 @@ asset_type_mapping = {
     'Ubiq token': AssetType.UBIQ_TOKEN,
     'Nubits token': AssetType.NUBITS_TOKEN,
     'Burst token': AssetType.BURST_TOKEN,
+    'waves token': AssetType.WAVES_TOKEN,
 }
 
 
@@ -53,7 +54,7 @@ class AssetResolver():
             # If active is in the data use it, else we assume it's true
             active=data.get('active', True),
             asset_type=asset_type,
-            started=data['started'],
+            started=data.get('started', None),
             ended=data.get('ended', None),
             forked=data.get('forked', None),
             swapped_for=data.get('swapped_for', None),

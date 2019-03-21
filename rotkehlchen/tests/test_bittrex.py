@@ -8,7 +8,7 @@ def test_bittrex_assets_are_known(bittrex):
     # for bittrex_asset in currencies:
     #     _ = asset_from_bittrex(bittrex_asset['Currency'])
 
-    checking_index = 107
+    checking_index = 199
     for idx, bittrex_asset in enumerate(currencies):
         if idx >= checking_index:
             symbol = bittrex_asset['Currency']

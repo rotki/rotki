@@ -38,15 +38,20 @@ def typeinfo_check(
                 our_data[asset_symbol]['type'] = 'Nubits token'
             elif paprika_data['parent']['id'] == 'burst-burst':
                 our_data[asset_symbol]['type'] = 'Burst token'
+            elif paprika_data['parent']['id'] == 'waves-waves':
+                our_data[asset_symbol]['type'] = 'waves token'
             else:
                 print(
                     f'Paprika data for asset {asset_symbol} has unknown '
                     f'parent {paprika_data["parent"]["id"]}',
                 )
                 sys.exit(1)
+
         else:
             print(f'Unexpected type {paprika_data["type"]} for asset {asset_symbol}')
             sys.exit(1)
+
+        print(f'{asset_symbol} is a {our_data[asset_symbol]["type"]}')
 
     if not paprika_data:
         # Can't check for mismatch if paprika has no data
