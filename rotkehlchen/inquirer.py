@@ -6,6 +6,7 @@ from json.decoder import JSONDecodeError
 from typing import Dict, Iterable, Optional, cast
 
 import requests
+
 from rotkehlchen.constants import (
     CURRENCYCONVERTER_API_KEY,
     FIAT_CURRENCIES,
@@ -106,7 +107,7 @@ def _query_exchanges_rateapi(base: FiatAsset, quote: FiatAsset) -> Optional[FVal
     try:
         resp = request_get_dict(querystr)
         return FVal(resp['rates'][quote])
-    except (ValueError, RemoteError, KeyError):
+    except (ValueError, RemoteError, KeyError, requests.exceptions.TooManyRedirects):
         log.error(
             'Querying api.exchangeratesapi.io for fiat pair failed',
             base_currency=base,
