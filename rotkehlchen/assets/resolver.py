@@ -18,6 +18,10 @@ asset_type_mapping = {
     'Nubits token': AssetType.NUBITS_TOKEN,
     'Burst token': AssetType.BURST_TOKEN,
     'waves token': AssetType.WAVES_TOKEN,
+    'qtum token': AssetType.QTUM_TOKEN,
+    'stellar token': AssetType.STELLAR_TOKEN,
+    'tron token': AssetType.TRON_TOKEN,
+    'ontology token': AssetType.ONTOLOGY_TOKEN,
 }
 
 

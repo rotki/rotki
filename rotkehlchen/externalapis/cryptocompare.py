@@ -58,6 +58,29 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # Cyber movie chain (https://coinmarketcap.com/currencies/cyber-movie-chain/)
     # is not in cryptocompare but is in paprika
     'CMCT-2',
+    # BOXX (https://coinmarketcap.com/currencies/blockparty-boxx-token/)
+    # is not in cryptocompare but is in paprika
+    'BOXX',
+    # Moss (https://coinmarketcap.com/currencies/moss-coin/)
+    # is not in cryptocompare but is in paprika
+    'MOC',
+    # Solve.care (https://coinmarketcap.com/currencies/solve/) is not
+    # in cryptocompare but is in paprika
+    'SOLVE',
+    # Stronghold USD (https://coinmarketcap.com/currencies/stronghold-usd/)
+    # is not in cryptocompare but is in paprika
+    'USDS-2',
+    # HXRO (https://coinmarketcap.com/currencies/hxro/)
+    # is not in cryptocompare but is in paprika
+    'HXRO',
+    # SERV (https://coinmarketcap.com/currencies/serve/)
+    # is not in cryptocompare but is in paprika
+    'SERV',
+    # TTC (https://coinmarketcap.com/currencies/ttc-protocol/)
+    # is not in cryptocompare but is in paprika
+    # There is a "titcoin" as TTC in cryptocompare but that is wrong
+    # https://www.cryptocompare.com/coins/ttc/overview
+    'TTC',
 )
 
 
@@ -124,5 +147,7 @@ class Cryptocompare():
         data['USDT'] = object()
         data['VEN'] = object()
         data['AIR*'] = object()  # This is Aircoin
+        # This is SpendCoin (https://coinmarketcap.com/currencies/spendcoin/)
+        data['SPND'] = object()
 
         return data

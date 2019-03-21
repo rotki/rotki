@@ -1,5 +1,6 @@
-from dataclasses import dataclass, field
 from typing import Any, Optional
+
+from dataclasses import dataclass, field
 
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.errors import UnknownAsset
@@ -95,6 +96,28 @@ WORLD_TO_CRYPTOCOMPARE = {
     # For Rotkehlchen RCN is Ripio Credit Network and RCN-2 is Rcoin
     # Rcoin is RCN* in cryptocompare
     'RCN-2': 'RCN*',
+    # Metronome is MET in Rotkehlchen and MET* in cryptocompare
+    'MET': 'MET*',
+    # EDR is Endor Protocol in Rotkehlchen and EDR* in cryptocompare
+    'EDR': 'EDR*',
+    # EDR-2 is E-Dinar coin in Rotkehlchen and EDR in cryptocompare
+    'EDR-2': 'EDR',
+    # SPC is Spacechain in Rotkehlchen but SPC* in cryptocompare.
+    'SPC': 'SPC*',
+    # Blocktrade is BTT-2 in Rotkehlchen but BKT in cryptocompare.
+    'BTT-2': 'BKT',
+    # Ontology gas is ONG in Rotkehlchen but ONGAS in cryptocompare
+    'ONG': 'ONGAS',
+    # SoMee.Social is ONG-2 in Rotkehlchen but ONG in cryptocompare
+    'ONG-2': 'ONG',
+    # SLT is Smartlands in Rotkehlchen but SLST in cryptocompare
+    'SLT': 'SLST',
+    # SLT-2 is Social Lending Network in Rotkehlchen but SLT in cryptocompare
+    'SLT-2': 'SLT',
+    # PAI is Project Pai in Rotkehlchen but PAI* in cryptocompare
+    'PAI': 'PAI*',
+    # PAI-2 is PCHAIN in Rotkehlchen but PAI in cryptocompare
+    'PAI-2': 'PAI',
 }
 
 WORLD_TO_POLONIEX = {
@@ -137,10 +160,14 @@ WORLD_TO_POLONIEX = {
 }
 
 WORLD_TO_BITTREX = {
-    # In Rotkehlcen Bitswift is BITS-2 but in Bittrex it's BITS
+    # In Rotkehlchen Bitswift is BITS-2 but in Bittrex it's BITS
     'BITS-2': 'BITS',
-    # In Rotkehlcen NuBits is USNBT but in Bittrex it's NBT
+    # In Rotkehlchen NuBits is USNBT but in Bittrex it's NBT
     'USNBT': 'NBT',
+    # In Rotkehlchen BTM-2 is Bytom but in Bittrex it's BTM
+    'BTM-2': 'BTM',
+    # In Rotkehlchen PAI-2 is PCHAIN token but in Bittrex it's PI
+    'PAI-2': 'PI',
 }
 
 

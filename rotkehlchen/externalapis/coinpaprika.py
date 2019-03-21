@@ -131,9 +131,27 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen CBC is Cashbet Coin and CBC-2 is Cashbery coin
     'CBC': 'cbc-cashbet-coin',
     'CBC-2': 'cbc-cashbery-coin',
-    # For Rotkehlcen CMCT is Crown machine token and CMCT-2 is Cyber movie chain token
+    # For Rotkehlchen CMCT is Crown machine token and CMCT-2 is Cyber movie chain token
     'CMCT': 'cmct-crowd-machine',
     'CMCT-2': 'cmct-cyber-movie-chain',
+    # For Rotkehlchen EDR is Endor Protocol and EDR-2 is E-Dinar coin
+    'EDR': 'edr-endor-protocol',
+    'EDR-2': 'edr-e-dinar-coin',
+    # For Rotkehlchen USDS is Stable USD and USDS-2 is stronghold usd
+    'USDS': 'usds-stableusd',
+    'USDS-2': 'usds-stronghold-usd',
+    # For Rotkehlchen BTT is BitTorrent and BTT-2 is blocktrade token
+    'BTT': 'btt-bittorrent',
+    'BTT-2': 'btt-blocktrade-token',
+    # For Rotkehlchen ONG is Ontology gas and ONG-2 is SoMee.Social
+    'ONG': 'ong-ong',
+    'ONG-2': 'ong-someesocial',
+    # For Rotkehlchen SLT is SmartLands and SLT-2 is Social Lending Network
+    'SLT': 'slt-smartlands',
+    'SLT-2': 'slt-social-lending-token',
+    # For Rotkehlchen PAI is Project Pai and PAI-2 is PCHAIN
+    'PAI': 'pai-project-pai',
+    'PAI-2': 'pai-pchain',
 }
 
 
