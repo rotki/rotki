@@ -14,6 +14,12 @@ def typeinfo_check(
         if paprika_data['type'] == 'coin':
             our_data[asset_symbol]['type'] = 'own chain'
         elif paprika_data['type'] == 'token':
+
+            # a special case for which paprika has wrong/corrupt parent data
+            if asset_symbol == 'ZIL':
+                our_data[asset_symbol]['type'] = 'ethereum token'
+                return our_data
+
             if 'parent' not in paprika_data:
                 print(f'Paprika data for asset {asset_symbol} should have a parent')
                 sys.exit(1)
@@ -40,6 +46,14 @@ def typeinfo_check(
                 our_data[asset_symbol]['type'] = 'Burst token'
             elif paprika_data['parent']['id'] == 'waves-waves':
                 our_data[asset_symbol]['type'] = 'waves token'
+            elif paprika_data['parent']['id'] == 'qtum-qtum':
+                our_data[asset_symbol]['type'] = 'qtum token'
+            elif paprika_data['parent']['id'] == 'xlm-stellar':
+                our_data[asset_symbol]['type'] = 'stellar token'
+            elif paprika_data['parent']['id'] == 'trx-tron':
+                our_data[asset_symbol]['type'] = 'tron token'
+            elif paprika_data['parent']['id'] == 'ont-ontology':
+                our_data[asset_symbol]['type'] = 'ontology token'
             else:
                 print(
                     f'Paprika data for asset {asset_symbol} has unknown '

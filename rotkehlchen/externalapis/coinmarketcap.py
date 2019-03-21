@@ -246,6 +246,24 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlcen CMCT is Crown machine token and CMCT-2 is Cyber movie chain token
     'CMCT': 2708,
     'CMCT-2': 3429,
+    # For Rotkehlchen EDR is Endor Protocol and EDR-2 is E-Dinar coin
+    'EDR': 2835,
+    'EDR-2': 1358,
+    # For Rotkehlchen USDS is Stable USD and USDS-2 is stronghold usd
+    'USDS': 3719,
+    'USDS-2': 3641,
+    # For Rotkehlchen BTT is BitTorrent and BTT-2 is blocktrade token
+    'BTT': 3718,
+    'BTT-2': 3084,
+    # For Rotkehlchen ONG is Ontology gas and ONG-2 is SoMee.Social
+    'ONG': 3217,
+    'ONG-2': 2240,
+    # For Rotkehlchen SLT is SmartLands and SLT-2 is Social Lending Network
+    'SLT': 2471,
+    'SLT-2': 3117,
+    # For Rotkehlchen PAI is Project Pai and PAI-2 is PCHAIN
+    'PAI': 2900,
+    'PAI-2': 2838,
 }
 
 

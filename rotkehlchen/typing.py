@@ -94,6 +94,10 @@ class AssetType(Enum):
     NUBITS_TOKEN = 11
     BURST_TOKEN = 12
     WAVES_TOKEN = 13
+    QTUM_TOKEN = 14
+    STELLAR_TOKEN = 15
+    TRON_TOKEN = 16
+    ONTOLOGY_TOKEN = 17
 
 
 class AssetData(NamedTuple):

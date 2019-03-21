@@ -352,6 +352,13 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     'YIN',
 )
 
+UNSUPPORTED_BITTREX_ASSETS = (
+    # Foresting. As of 22/03/2019 no data found.
+    # Only exists in bittrex. Perhaps it will soon be added to other APIs.
+    # https://international.bittrex.com/Market/Index?MarketName=BTC-PTON
+    'PTON'
+)
+
 
 def asset_from_kraken(kraken_name: str) -> Asset:
     return Asset(KRAKEN_TO_WORLD[kraken_name])
@@ -370,5 +377,8 @@ def asset_from_poloniex(poloniex_name: str) -> Asset:
 
 
 def asset_from_bittrex(bittrex_name: str) -> Asset:
+    if bittrex_name in UNSUPPORTED_BITTREX_ASSETS:
+        raise UnsupportedAsset(bittrex_name)
+
     name = BITTREX_TO_WORLD.get(bittrex_name, bittrex_name)
     return Asset(name)
