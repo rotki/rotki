@@ -2,7 +2,8 @@
 Changelog
 =========
 
-* :feature:`194` Adds setting for date display format.
+* :feature:`194` Add setting for date display format.
+* :bug:`334` Handle too many requests error for the exchangerates api.
 * :bug:`323` Properly display usd value For JPY and some other assets in kraken where XXBT is the quote asset.
 * :bug:`320` The user settings pane is now always responsive, even when loaded a second time.
 * :feature:`313` Premium feature: The statistic pane now has two different graphs to explore the distribution of value of the user. One shows the distribution of the total net value across different locations and the other across all assets the user holds.
