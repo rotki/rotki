@@ -23,13 +23,15 @@ from asset_aggregator.name_check import name_check
 from asset_aggregator.timerange_check import timerange_check
 from asset_aggregator.typeinfo_check import typeinfo_check
 
-from rotkehlchen.assets.asset import WORLD_TO_CRYPTOCOMPARE
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants import FIAT_CURRENCIES
 from rotkehlchen.externalapis import Coinmarketcap, CoinPaprika, Cryptocompare
 from rotkehlchen.externalapis.coinmarketcap import find_cmc_coin_data
 from rotkehlchen.externalapis.coinpaprika import find_paprika_coin_id
-from rotkehlchen.externalapis.cryptocompare import KNOWN_TO_MISS_FROM_CRYPTOCOMPARE
+from rotkehlchen.externalapis.cryptocompare import (
+    KNOWN_TO_MISS_FROM_CRYPTOCOMPARE,
+    WORLD_TO_CRYPTOCOMPARE,
+)
 from rotkehlchen.utils import rlk_jsonloads
 
 
