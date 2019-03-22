@@ -26,6 +26,26 @@ from rotkehlchen.utils import (
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+
+WORLD_TO_BITTREX = {
+    # In Rotkehlchen Bitswift is BITS-2 but in Bittrex it's BITS
+    'BITS-2': 'BITS',
+    # In Rotkehlchen NuBits is USNBT but in Bittrex it's NBT
+    'USNBT': 'NBT',
+    # In Rotkehlchen BTM-2 is Bytom but in Bittrex it's BTM
+    'BTM-2': 'BTM',
+    # In Rotkehlchen PAI-2 is PCHAIN token but in Bittrex it's PI
+    'PAI-2': 'PI',
+}
+
+
+UNSUPPORTED_BITTREX_ASSETS = (
+    # Foresting. As of 22/03/2019 no data found.
+    # Only exists in bittrex. Perhaps it will soon be added to other APIs.
+    # https://international.bittrex.com/Market/Index?MarketName=BTC-PTON
+    'PTON'
+)
+
 BITTREX_MARKET_METHODS = {
     'getopenorders',
     'cancel',

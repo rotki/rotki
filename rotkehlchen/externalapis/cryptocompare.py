@@ -11,6 +11,86 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+WORLD_TO_CRYPTOCOMPARE = {
+    'RDN': 'RDN*',
+    'DATAcoin': 'DATA',
+    'IOTA': 'IOT',
+    'BQX': 'ETHOS',
+    'XRB': 'NANO',
+    'AIR-2': 'AIR*',
+    'BITS-2': 'BITS*',
+    'BTM-2': 'BTM*',
+    # In Rotkehlchen CCN-2 is Cannacoin and CCN is CustomContractNetwork
+    'CCN-2': 'CCN',
+    # In Rotkehlchen FAIR-2 is FairGame and FAIR is FairCoin
+    'FAIR-2': 'FAIR*',
+    # Almosst 100% certain that GPUC (https://coinmarketcap.com/currencies/gpucoin/)
+    # is GPU in cryptocompare (https://www.cryptocompare.com/coins/gpu/overview)
+    'GPUC': 'GPU',
+    # In Rotkehlchen we got 3 coins with KEY symbol. Cryptocompare does not have
+    # data for KEY-2
+    # KEY -> Selfkey
+    # KEY-2 -> KEY
+    # KEY-3 -> KeyCoin
+    'KEY-3': 'KEY*',
+    # In Rotkehlchen KNC is KyberNetwork and KNC-2 is KingN coin. In cryptocompare
+    # KNC** is KingN coin
+    'KNC-2': 'KNC**',
+    # Liquidity network is LQD in Rotkehlchen but LQDN in Cryptocompare
+    'LQD': 'LQDN',
+    # Monetaverde is as MNV in cryptocompare while it should be MCN
+    # https://www.cryptocompare.com/coins/mnv/overview
+    'MCN': 'MNV',
+    # Marscoin is as MRS in cryptocompare
+    # https://www.cryptocompare.com/coins/mrs/overview
+    'MARS': 'MRS',
+    # Marginless is not in cryptocompare. Asking for MRS will return MARScoin
+    'MRS': None,
+    # Mazacoin is as MZC in cryptocompare
+    'MAZA': 'MZC',
+    # NuBits is NBT in cryptocompare
+    'USNBT': 'NBT',
+    # Polymath is POLY in Rotkehlchen and POLY* in cryptocompare
+    'POLY': 'POLY*',
+    # Polybit is POLY-2 in Rotkehlchen and POLY in cryptocompare
+    'POLY-2': 'POLY',
+    # Steem dollars are SBD* in cryptocompare
+    'SBD': 'SBD*',
+    # YacCoin is YAC in cryptocompare
+    'YACC': 'YAC',
+    # GoldCoin is GLD in cryptocompare, but GLC in most other places including Rotkehlcen
+    'GLC': 'GLD',
+    # In Rotkehlchen we have GlobalCoin as GLC-2. In Cryptocompare it's GLC
+    'GLC-2': 'GLC',
+    # In Rotkehlchen and everywhere else Bitbean is BITB but in cryptocompare BEAN
+    'BITB': 'BEAN',
+    # For Rotkehlchen RCN is Ripio Credit Network and RCN-2 is Rcoin
+    # Rcoin is RCN* in cryptocompare
+    'RCN-2': 'RCN*',
+    # Metronome is MET in Rotkehlchen and MET* in cryptocompare
+    'MET': 'MET*',
+    # EDR is Endor Protocol in Rotkehlchen and EDR* in cryptocompare
+    'EDR': 'EDR*',
+    # EDR-2 is E-Dinar coin in Rotkehlchen and EDR in cryptocompare
+    'EDR-2': 'EDR',
+    # SPC is Spacechain in Rotkehlchen but SPC* in cryptocompare.
+    'SPC': 'SPC*',
+    # Blocktrade is BTT-2 in Rotkehlchen but BKT in cryptocompare.
+    'BTT-2': 'BKT',
+    # Ontology gas is ONG in Rotkehlchen but ONGAS in cryptocompare
+    'ONG': 'ONGAS',
+    # SoMee.Social is ONG-2 in Rotkehlchen but ONG in cryptocompare
+    'ONG-2': 'ONG',
+    # SLT is Smartlands in Rotkehlchen but SLST in cryptocompare
+    'SLT': 'SLST',
+    # SLT-2 is Social Lending Network in Rotkehlchen but SLT in cryptocompare
+    'SLT-2': 'SLT',
+    # PAI is Project Pai in Rotkehlchen but PAI* in cryptocompare
+    'PAI': 'PAI*',
+    # PAI-2 is PCHAIN in Rotkehlchen but PAI in cryptocompare
+    'PAI-2': 'PAI',
+}
+
 # TODO: For the ones missing from cryptocompare make sure to also
 # disallow price queries to cryptocompare for these assets
 KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
