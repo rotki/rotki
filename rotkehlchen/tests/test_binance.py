@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 from pathlib import Path
@@ -9,12 +10,20 @@ from rotkehlchen.binance import Binance, create_binance_symbols_to_pair, trade_f
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade, TradeType
+from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.user_messages import MessagesAggregator
 
 
 @pytest.fixture
 def mock_binance(accounting_data_dir, inquirer):
-    binance = Binance(b'', b'', inquirer, accounting_data_dir)
+    binance = Binance(
+        api_key=base64.b64encode(make_random_b64bytes(128)),
+        secret=base64.b64encode(make_random_b64bytes(128)),
+        inquirer=inquirer,
+        user_directory=accounting_data_dir,
+        msg_aggregator=MessagesAggregator(),
+    )
     this_dir = os.path.dirname(os.path.abspath(__file__))
     json_path = Path(this_dir).parent / 'tests' / 'utils' / 'data' / 'binance_exchange_info.json'
     with json_path.open('r') as f:

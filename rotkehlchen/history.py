@@ -794,7 +794,16 @@ class TradesHistorian(object):
                     end_at_least_ts=end_at_least_ts,
                 )
                 for trade in binance_history:
-                    history.append(trade_from_binance(trade, self.binance.symbols_to_pair))
+                    try:
+                        history.append(
+                            trade_from_binance(trade, self.binance.symbols_to_pair),
+                        )
+                    except UnsupportedAsset as e:
+                        self.msg_aggregator.add_warning(
+                            f'Found binance trade with unsupported asset '
+                            f'{e.asset_name}. Ignoring it.',
+                        )
+                        continue
             except RemoteError as e:
                 empty_or_error += '\n' + str(e)
 

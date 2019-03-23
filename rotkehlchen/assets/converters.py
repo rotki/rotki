@@ -1,4 +1,5 @@
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.binance import UNSUPPORTED_BINANCE_ASSETS, WORLD_TO_BINANCE
 from rotkehlchen.bittrex import UNSUPPORTED_BITTREX_ASSETS, WORLD_TO_BITTREX
 from rotkehlchen.errors import UnsupportedAsset
 from rotkehlchen.externalapis.cryptocompare import WORLD_TO_CRYPTOCOMPARE
@@ -50,6 +51,7 @@ CRYPTOCOMPARE_TO_WORLD = {v: k for k, v in WORLD_TO_CRYPTOCOMPARE.items()}
 
 POLONIEX_TO_WORLD = {v: k for k, v in WORLD_TO_POLONIEX.items()}
 BITTREX_TO_WORLD = {v: k for k, v in WORLD_TO_BITTREX.items()}
+BINANCE_TO_WORLD = {v: k for k, v in WORLD_TO_BINANCE.items()}
 
 
 def asset_from_kraken(kraken_name: str) -> Asset:
@@ -73,4 +75,12 @@ def asset_from_bittrex(bittrex_name: str) -> Asset:
         raise UnsupportedAsset(bittrex_name)
 
     name = BITTREX_TO_WORLD.get(bittrex_name, bittrex_name)
+    return Asset(name)
+
+
+def asset_from_binance(binance_name: str) -> Asset:
+    if binance_name in UNSUPPORTED_BINANCE_ASSETS:
+        raise UnsupportedAsset(binance_name)
+
+    name = BINANCE_TO_WORLD.get(binance_name, binance_name)
     return Asset(name)
