@@ -7,14 +7,16 @@ from urllib.parse import urlencode
 
 import gevent
 
-from rotkehlchen.constants import BINANCE_BASE_URL, CACHE_RESPONSE_FOR_SECS, S_YOYOW
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.assets.converters import asset_from_binance
+from rotkehlchen.constants import BINANCE_BASE_URL, CACHE_RESPONSE_FOR_SECS
+from rotkehlchen.errors import RemoteError, UnsupportedAsset
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import Trade, TradeType
-from rotkehlchen.typing import ApiKey, ApiSecret, Asset, FilePath, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils import cache_response_timewise, rlk_jsonloads
 
 logger = logging.getLogger(__name__)
@@ -30,17 +32,9 @@ V1_ENDPOINTS = (
     'exchangeInfo'
 )
 
-
-def world_to_binance(asset: Asset) -> Asset:
-    if asset == S_YOYOW:
-        return cast(Asset, 'YOYO')
-    return asset
-
-
-def binance_to_world(asset: Asset) -> Asset:
-    if asset == 'YOYO':
-        return S_YOYOW
-    return asset
+WORLD_TO_BINANCE = {
+}
+UNSUPPORTED_BINANCE_ASSETS = ()
 
 
 class BinancePair(NamedTuple):
@@ -48,8 +42,8 @@ class BinancePair(NamedTuple):
     the base and quote assets of that symbol as parsed from exchangeinfo endpoint
     result"""
     symbol: str
-    base_asset: Asset
-    quote_asset: Asset
+    binance_base_asset: str
+    binance_quote_asset: str
 
 
 def trade_from_binance(
@@ -64,14 +58,16 @@ def trade_from_binance(
 
     base asset refers to the asset that is the quantity of a symbol.
     quote asset refers to the asset that is the price of a symbol.
+
+    Can throw UnsupportedAsset due to asset_from_binance
     """
     amount = FVal(binance_trade['qty'])
     rate = FVal(binance_trade['price'])
     binance_pair = binance_symbols_to_pair[binance_trade['symbol']]
     timestamp = binance_trade['time']
 
-    base_asset = binance_to_world(binance_pair.base_asset)
-    quote_asset = binance_to_world(binance_pair.quote_asset)
+    base_asset = asset_from_binance(binance_pair.base_asset)
+    quote_asset = asset_from_binance(binance_pair.quote_asset)
 
     if binance_trade['isBuyer']:
         order_type = TradeType.BUY
@@ -109,7 +105,8 @@ def trade_from_binance(
 
 
 def create_binance_symbols_to_pair(exchange_data: Dict[str, Any]) -> Dict[str, BinancePair]:
-    """Parses the result of 'exchangeInfo' endpoint and creates the symbols_to_pair mapping"""
+    """Parses the result of 'exchangeInfo' endpoint and creates the symbols_to_pair mapping
+    """
     symbols_to_pair: Dict[str, BinancePair] = dict()
     for symbol in exchange_data['symbols']:
         symbol_str = symbol['symbol']
@@ -138,6 +135,7 @@ class Binance(Exchange):
             secret: ApiSecret,
             inquirer: Inquirer,
             data_dir: FilePath,
+            msg_aggregator: MessagesAggregator,
             initial_backoff: int = 4,
             backoff_limit: int = 180,
     ):
@@ -148,6 +146,7 @@ class Binance(Exchange):
             'Accept': 'application/json',
             'X-MBX-APIKEY': self.api_key,
         })
+        self.msg_aggregator = msg_aggregator
         self.initial_backoff = initial_backoff
         self.backoff_limit = backoff_limit
 
@@ -270,7 +269,14 @@ class Binance(Exchange):
             amount = entry['free'] + entry['locked']
             if amount == FVal(0):
                 continue
-            asset = binance_to_world(entry['asset'])
+            try:
+                asset = asset_from_binance(entry['asset'])
+            except UnsupportedAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found unsupported binance asset {e.asset_name}. '
+                    f' Ignoring its balance query.',
+                )
+                continue
             usd_price = self.inquirer.find_usd_price(asset)
             balance = dict()
             balance['amount'] = amount

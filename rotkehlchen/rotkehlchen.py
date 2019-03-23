@@ -118,10 +118,10 @@ class Rotkehlchen(object):
         # initialize exchanges for which we have keys and are not already initialized
         if self.kraken is None and 'kraken' in secret_data:
             self.kraken = Kraken(
-                str.encode(secret_data['kraken']['api_key']),
-                str.encode(secret_data['kraken']['api_secret']),
-                self.user_directory,
-                self.inquirer.query_fiat_pair(S_EUR, S_USD),
+                api_key=str.encode(secret_data['kraken']['api_key']),
+                secret=str.encode(secret_data['kraken']['api_secret']),
+                user_directory=self.user_directory,
+                usd_eur_price=self.inquirer.query_fiat_pair(S_EUR, S_USD),
             )
             self.connected_exchanges.append('kraken')
             self.trades_historian.set_exchange('kraken', self.kraken)
@@ -129,31 +129,33 @@ class Rotkehlchen(object):
 
         if self.poloniex is None and 'poloniex' in secret_data:
             self.poloniex = Poloniex(
-                str.encode(secret_data['poloniex']['api_key']),
-                str.encode(secret_data['poloniex']['api_secret']),
-                self.inquirer,
-                self.user_directory,
-                self.msg_aggregator,
+                api_key=str.encode(secret_data['poloniex']['api_key']),
+                api_secret=str.encode(secret_data['poloniex']['api_secret']),
+                inquirer=self.inquirer,
+                user_directory=self.user_directory,
+                msg_aggregator=self.msg_aggregator,
             )
             self.connected_exchanges.append('poloniex')
             self.trades_historian.set_exchange('poloniex', self.poloniex)
 
         if self.bittrex is None and 'bittrex' in secret_data:
             self.bittrex = Bittrex(
-                str.encode(secret_data['bittrex']['api_key']),
-                str.encode(secret_data['bittrex']['api_secret']),
-                self.inquirer,
-                self.user_directory,
+                api_key=str.encode(secret_data['bittrex']['api_key']),
+                api_secret=str.encode(secret_data['bittrex']['api_secret']),
+                inquirer=self.inquirer,
+                user_directory=self.user_directory,
+                msg_aggregator=self.msg_aggregator,
             )
             self.connected_exchanges.append('bittrex')
             self.trades_historian.set_exchange('bittrex', self.bittrex)
 
         if self.binance is None and 'binance' in secret_data:
             self.binance = Binance(
-                str.encode(secret_data['binance']['api_key']),
-                str.encode(secret_data['binance']['api_secret']),
-                self.inquirer,
-                self.user_directory,
+                api_key=str.encode(secret_data['binance']['api_key']),
+                api_secret=str.encode(secret_data['binance']['api_secret']),
+                inquirer=self.inquirer,
+                data_dir=self.user_directory,
+                msg_aggregator=self.msg_aggregator,
             )
             self.connected_exchanges.append('binance')
             self.trades_historian.set_exchange('binance', self.binance)

@@ -1,7 +1,9 @@
-from dataclasses import dataclass, field
 from typing import Any, Optional
 
+from dataclasses import dataclass, field
+
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.binance import WORLD_TO_BINANCE
 from rotkehlchen.bittrex import WORLD_TO_BITTREX
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.externalapis.cryptocompare import WORLD_TO_CRYPTOCOMPARE
@@ -46,6 +48,9 @@ class Asset():
 
     def to_bittrex(self) -> str:
         return WORLD_TO_BITTREX.get(self.symbol, self.symbol)
+
+    def to_binance(self) -> str:
+        return WORLD_TO_BINANCE.get(self.symbol, self.symbol)
 
     def to_cryptocompare(self) -> str:
         return WORLD_TO_CRYPTOCOMPARE.get(self.symbol, self.symbol)

@@ -6,7 +6,9 @@ from typing import Any, Callable, Dict, Optional
 
 from data_faker.utils import assets_exist_at_time
 
-from rotkehlchen.binance import binance_to_world, create_binance_symbols_to_pair, world_to_binance
+from rotkehlchen.assets.converters import asset_from_binance
+from rotkehlchen.binance import create_binance_symbols_to_pair
+from rotkehlchen.errors import UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade, TradeType, pair_get_assets
 from rotkehlchen.serializer import process_result, process_result_list
@@ -52,17 +54,18 @@ class FakeBinance(object):
         self.withdrawals_ledger = []
 
     def increase_asset(self, asset: Asset, amount: FVal) -> None:
-        asset = world_to_binance(asset)
-        if asset not in self.balances_dict:
-            self.balances_dict[asset] = amount
+        binance_symbol = asset.to_binance()
+        if binance_symbol not in self.balances_dict:
+            self.balances_dict[binance_symbol] = amount
         else:
-            self.balances_dict[asset] += amount
+            self.balances_dict[binance_symbol] += amount
 
     def decrease_asset(self, asset: Asset, amount: FVal) -> None:
-        asset = world_to_binance(asset)
-        assert asset in self.balances_dict, 'Asset should exist in funds'
-        assert amount <= self.balances_dict[asset], 'We should have enough funds to decrease asset'
-        self.balances_dict[asset] -= amount
+        binance_symbol = asset.to_binance()
+        assert binance_symbol in self.balances_dict, 'Asset should exist in funds'
+        msg = 'We should have enough funds to decrease asset'
+        assert amount <= self.balances_dict[binance_symbol], msg
+        self.balances_dict[binance_symbol] -= amount
 
     def choose_pair(
             self,
@@ -78,8 +81,12 @@ class FakeBinance(object):
             binance_pair = self._symbols_to_pair[pair]
             bbase = binance_pair.base_asset
             bquote = binance_pair.quote_asset
-            base = binance_to_world(bbase)
-            quote = binance_to_world(bquote)
+            try:
+                base = asset_from_binance(bbase)
+                quote = asset_from_binance(bquote)
+            except UnsupportedAsset:
+                continue
+
             if bbase in self.balances_dict or bquote in self.balances_dict:
                 if bbase in DISALLOWED_ASSETS or bquote in DISALLOWED_ASSETS:
                     continue
@@ -110,8 +117,8 @@ class FakeBinance(object):
     def trade_to_binance(self, trade: Trade) -> Dict[str, Any]:
         """Turns our trade into a binance trade"""
         base, quote = pair_get_assets(trade.pair)
-        bbase = world_to_binance(base)
-        bquote = world_to_binance(quote)
+        bbase = base.to_binance()
+        bquote = quote.to_binance()
         binance_symbol = bbase + bquote
         # Binance trades have timestamps with 3 extra zeros at the end
         timestamp = trade.timestamp * 1000
@@ -125,7 +132,7 @@ class FakeBinance(object):
             'price': str(trade.rate),
             'qty': str(trade.amount),
             'commission': str(trade.fee),
-            'commissionAsset': str(world_to_binance(trade.fee_currency)),
+            'commissionAsset': str(trade.fee_currency.to_binance()),
             'time': timestamp,
             'isBuyer': trade.trade_type == TradeType.BUY,
             'isMaker': True,
