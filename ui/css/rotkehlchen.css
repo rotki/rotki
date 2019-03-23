@@ -141,3 +141,72 @@ a:focus, a:hover {
     -webkit-animation: none !important;
     animation: none !important;
 }
+
+
+.notification-area {
+    width:340px;
+    height:300px;
+    background: #eeeeee;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    font-family: Roboto,sans-serif;
+    font-size: 1rem;
+    line-height: 1.75rem;
+    font-weight: 400;
+    letter-spacing: .009375em;
+    list-style-type: none;
+    color: rgba(0,0,0,.87);
+}
+
+.title {
+    font-size: 1.4rem;
+    padding: 8px 8px;
+    font-weight: 500;
+}
+
+.body {
+    padding: 4px 8px;
+    word-wrap: break-word;
+    font-size: 1.2rem;
+    color: rgba(0,0,0,.56)
+}
+
+.card {
+    background: #fff;
+    border-radius: 2px;
+    display: inline-block;
+    height: 150px;
+    margin: 0.5rem 1rem;
+    position: relative;
+    width: 300px;
+}
+
+.card-1 {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+}
+
+.notifications .badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    padding: 5px 10px;
+    border-radius: 50%;
+    background: red;
+    color: white;
+}
+
+.no-notifications {
+    height: 80%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: rgba(0,0,0, .57);
+}
+
+.no-notifications p {
+    margin-top: 8px;
+}

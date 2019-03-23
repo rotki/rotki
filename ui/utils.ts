@@ -5,6 +5,7 @@ import {update_eth_node_connection_status_ui} from './dashboard';
 import {update_tax_report_progress} from './taxreport';
 import Timer = NodeJS.Timer;
 import {displayDateFormatter} from './date_formatter';
+import {updateNotifications} from './notifications';
 
 // Prompt a directory selection dialog and pass selected directory to callback
 // Callback should be a function which accepts a single argument which will be
@@ -52,6 +53,7 @@ function periodic_client_query() {
         settings.last_balance_save = result['last_balance_save'];
         update_eth_node_connection_status_ui(result['eth_node_connection']);
         update_tax_report_progress(result['history_process_current_ts']);
+        updateNotifications();
     }).catch(reason => {
         const error_string = 'Error at periodic client query: ' + reason;
         showError('Periodic Client Query Error', error_string);
