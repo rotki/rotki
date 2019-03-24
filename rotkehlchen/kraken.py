@@ -37,39 +37,6 @@ from rotkehlchen.utils import (
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-WORLD_TO_KRAKEN = {
-    'ETC': 'XETC',
-    'ETH': 'XETH',
-    'LTC': 'XLTC',
-    'REP': 'XREP',
-    'BTC': 'XXBT',
-    'XMR': 'XXMR',
-    'XRP': 'XXRP',
-    'ZEC': 'XZEC',
-    'EUR': 'ZEUR',
-    'USD': 'ZUSD',
-    'GBP': 'ZGBP',
-    'CAD': 'ZCAD',
-    'JPY': 'ZJPY',
-    'KRW': 'ZKRW',
-    'DAO': 'XDAO',
-    'MLN': 'XMLN',
-    'ICN': 'XICN',
-    'GNO': 'GNO',
-    'BCH': 'BCH',
-    'XLM': 'XXLM',
-    'DASH': 'DASH',
-    'EOS': 'EOS',
-    'USDT': 'USDT',
-    'KFEE': 'KFEE',
-    'ADA': 'ADA',
-    'QTUM': 'QTUM',
-    'NMC': 'XNMC',
-    'VEN': 'XXVN',
-    'DOGE': 'XXDG',
-    'XTZ': 'XTZ',
-    'BSV': 'BSV',
-}
 
 KRAKEN_ASSETS = (
     'ATOM',

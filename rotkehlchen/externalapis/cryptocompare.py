@@ -15,7 +15,6 @@ WORLD_TO_CRYPTOCOMPARE = {
     'RDN': 'RDN*',
     'DATAcoin': 'DATA',
     'IOTA': 'IOT',
-    'BQX': 'ETHOS',
     'XRB': 'NANO',
     'AIR-2': 'AIR*',
     'BITS-2': 'BITS*',
@@ -89,6 +88,16 @@ WORLD_TO_CRYPTOCOMPARE = {
     'PAI': 'PAI*',
     # PAI-2 is PCHAIN in Rotkehlchen but PAI in cryptocompare
     'PAI-2': 'PAI',
+    # CMT-2 is CometCoin in Rotkehlchen but CMTC in cryptocompare
+    'CMT-2': 'CMTC',
+    # GXChain is GXC in Rotkehlcen and GXS in cryptocompare
+    'GXC': 'GXS',
+    # Harvest Masternode Coin is in HC-2 in Rotkehlchen and HMN in cryptocompare
+    'HC-2': 'HMN',
+    # For Rotkehlchen HOT is Holochain and HOT-2 is Hydro Protocol
+    # But for cryptocompare HOT is Hydro Protocol and HOT* is HoloChain
+    'HOT': 'HOT*',
+    'HOT-2': 'HOT',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also
@@ -161,6 +170,12 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # There is a "titcoin" as TTC in cryptocompare but that is wrong
     # https://www.cryptocompare.com/coins/ttc/overview
     'TTC',
+    # BlazeCoin (https://coinmarketcap.com/currencies/blazecoin/)
+    # is not in cryptocompare but is in paprika
+    'BLZ-2',
+    # Bitgem (https://coinmarketcap.com/currencies/bitgem/)
+    # is not in cryptocompare but is in paprika
+    'BTG-2',
 )
 
 

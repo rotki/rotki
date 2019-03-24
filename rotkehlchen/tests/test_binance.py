@@ -6,6 +6,9 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.converters import BINANCE_TO_WORLD, RENAMED_BINANCE_ASSETS
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.binance import Binance, create_binance_symbols_to_pair, trade_from_binance
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
@@ -21,7 +24,7 @@ def mock_binance(accounting_data_dir, inquirer):
         api_key=base64.b64encode(make_random_b64bytes(128)),
         secret=base64.b64encode(make_random_b64bytes(128)),
         inquirer=inquirer,
-        user_directory=accounting_data_dir,
+        data_dir=accounting_data_dir,
         msg_aggregator=MessagesAggregator(),
     )
     this_dir = os.path.dirname(os.path.abspath(__file__))
@@ -172,3 +175,39 @@ def test_binance_backoff_after_429(mock_binance):
         count = -9999999
         with pytest.raises(RemoteError):
             mock_binance.api_query('exchangeInfo')
+
+
+def test_binance_assets_are_known(accounting_data_dir, inquirer):
+    # use a real binance instance so that we always get the latest data
+    binance = Binance(
+        api_key=base64.b64encode(make_random_b64bytes(128)),
+        secret=base64.b64encode(make_random_b64bytes(128)),
+        inquirer=inquirer,
+        data_dir=accounting_data_dir,
+        msg_aggregator=MessagesAggregator(),
+    )
+
+    mapping = binance.symbols_to_pair
+    binance_assets = set()
+    for symbol, pair in mapping.items():
+        binance_assets.add(pair.binance_base_asset)
+        binance_assets.add(pair.binance_quote_asset)
+
+    sorted_assets = sorted(binance_assets)
+    length = len(sorted_assets)
+    for idx, binance_asset in enumerate(sorted_assets):
+        if binance_asset in RENAMED_BINANCE_ASSETS:
+            continue
+
+        binance_asset = BINANCE_TO_WORLD.get(binance_asset, binance_asset)
+
+        if not AssetResolver().is_symbol_canonical(binance_asset):
+            msg = (
+                f'{idx}/{length} - {binance_asset} is not known. '
+            )
+            assert False, msg
+        else:
+            asset = Asset(binance_asset)
+            print(
+                f'{idx}/{length} - {binance_asset} with name {asset.name} is known'
+            )
