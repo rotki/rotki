@@ -205,6 +205,13 @@ KNOWN_TO_MISS_FROM_CMC = (
     'APX',
     # RCoin. Missing from API is https://coinmarketcap.com/currencies/rcoin/
     'RCN-2',
+    # Blazecoin. Missing from API is https://coinmarketcap.com/currencies/blazecoin/
+    'BLZ-2',
+    # Bitgem. Missing from API is https://coinmarketcap.com/currencies/bitgem/
+    'BTG-2',
+    # Harvest Masternode coin. Missing from API but is in
+    # https://coinmarketcap.com/currencies/harvest-masternode-coin/
+    'HC-2',
 )
 
 
@@ -264,6 +271,12 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen PAI is Project Pai and PAI-2 is PCHAIN
     'PAI': 2900,
     'PAI-2': 2838,
+    # For Rotkehlchen CMT is CyberMiles and CMT-2 is CometCoin
+    'CMT': 2246,
+    'CMT-2': 1291,
+    # For Rotkehlchen HOT is Holochain and HOT-2 is Hydro Protocol
+    'HOT': 2682,
+    'HOT-2': 2430,
 }
 
 

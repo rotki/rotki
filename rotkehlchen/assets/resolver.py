@@ -7,6 +7,7 @@ from rotkehlchen.utils import rlk_jsonloads_dict
 asset_type_mapping = {
     'fiat': AssetType.FIAT,
     'own chain': AssetType.OWN_CHAIN,
+    'ethereum token and own chain': AssetType.OWN_CHAIN,
     'ethereum token': AssetType.ETH_TOKEN,
     'omni token': AssetType.OMNI_TOKEN,
     'neo token': AssetType.NEO_TOKEN,

@@ -28,7 +28,6 @@ S_MLN_OLD = typing.EthToken('MLN (old)')
 S_MLN_NEW = typing.EthToken('MLN (new)')
 S_MLN = typing.EthToken('MLN')
 S_YOYOW = cast(typing.NonEthTokenBlockchainAsset, 'YOYOW')
-S_BQX = cast(typing.EthToken, 'BQX')
 S_RDN = cast(typing.EthToken, 'RDN')
 
 

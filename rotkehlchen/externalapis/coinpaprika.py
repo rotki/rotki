@@ -152,6 +152,21 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen PAI is Project Pai and PAI-2 is PCHAIN
     'PAI': 'pai-project-pai',
     'PAI-2': 'pai-pchain',
+    # For Rotkehlchen BLZ is Bluezelle and BLZ-2 BlazeCoin
+    'BLZ': 'blz-bluzelle',
+    'BLZ-2': 'blz-blazecoin',
+    # For Rotkehlchen BTG is Bitcoin Gold and BTG-2 BitGem
+    'BTG': 'btg-bitcoin-gold',
+    'BTG-2': 'btg-bitgem',
+    # For Rotkehlchen CMT is CyberMiles and CMT-2 is CometCoin
+    'CMT': 'cmt-cybermiles',
+    'CMT-2': 'cmt-comet',
+    # For Rotkehlchen HC is Hypercash and HC-2 is Harvest Masternode Coin
+    'HC': 'hc-hypercash',
+    'HC-2': 'hc-harvest-masternode-coin',
+    # For Rotkehlchen HOT is Holochain and HOT-2 is Hydro Protocol
+    'HOT': 'hot-holo',
+    'HOT-2': 'hot-hydro-protocol',
 }
 
 
