@@ -172,6 +172,8 @@ WORLD_TO_PAPRIKA_ID = {
     # Paprika has two identical entries for OpenANX:
     # oax-oax and oax-openanx. Choosing the one with the most recent details.
     'OAX': 'oax-oax',
+    # YOYO is known as YOYOW in CoinPaprika
+    'YOYO': 'yoyow-yoyow',
 }
 
 

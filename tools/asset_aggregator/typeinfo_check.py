@@ -16,7 +16,7 @@ def typeinfo_check(
         elif paprika_data['type'] == 'token':
 
             # a special case for which paprika has wrong/corrupt parent data
-            if asset_symbol == 'ZIL':
+            if asset_symbol in ('ZIL', 'WTC'):
                 our_data[asset_symbol]['type'] = 'ethereum token'
                 return our_data
 
