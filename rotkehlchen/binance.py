@@ -105,17 +105,6 @@ def create_binance_symbols_to_pair(exchange_data: Dict[str, Any]) -> Dict[str, B
     """
     symbols_to_pair: Dict[str, BinancePair] = dict()
     for symbol in exchange_data['symbols']:
-        status = symbol.get('status', None)
-        if status:
-            if status != 'TRADING':
-                print(f'BINANCE: {symbol["symbol"]} has status {status}')
-            # if status == 'BREAK':
-            #     # For now ignore assets with break status, I think they are discontinued
-            #     # Asked in twitter for more info:
-            #     # https://twitter.com/LefterisJP/status/1109767636013985792
-            #     continue
-        else:
-            print(f'BINANCE: {symbol["symbol"]} has no status')
         symbol_str = symbol['symbol']
         if isinstance(symbol_str, FVal):
             symbol_str = str(symbol_str.to_int(exact=True))

@@ -100,6 +100,8 @@ WORLD_TO_CRYPTOCOMPARE = {
     'HOT-2': 'HOT',
     # For Rotkehlchen RDN is Raiden Network Token but it's RDN* in cryptocompare
     'RDN': 'RDN*',
+    # For Rotkehlchen YOYO is YOYOW but it's YOYOW in cryptocompare
+    'YOYO': 'YOYOW',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also

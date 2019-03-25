@@ -484,6 +484,11 @@
         "started": 1490659200,
         "type": "ethereum token"
     },
+    "CELR": {
+        "name": "Celer Network",
+        "started": 1548115200,
+        "type": "ethereum token"
+    },
     "CGA": {
         "active": false,
         "ended": 1483660800,
@@ -2506,6 +2511,16 @@
         "started": 1407974400,
         "type": "own chain"
     },
+    "WPR": {
+        "name": "WePower",
+        "started": 1515024000,
+        "type": "ethereum token"
+    },
+    "WTC": {
+        "name": "Waltonchain",
+        "started": 1500336000,
+        "type": "ethereum token"
+    },
     "XAI": {
         "active": false,
         "ended": 1471564800,
@@ -2656,6 +2671,11 @@
         "name": "YaCcoin",
         "started": 1367712000,
         "type": "own chain"
+    },
+    "YOYO": {
+        "name": "YOYOW",
+        "started": 1503165605,
+        "type": "ethereum token"
     },
     "ZCL": {
         "name": "ZClassic",

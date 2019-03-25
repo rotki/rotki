@@ -282,6 +282,8 @@ WORLD_TO_CMC_ID = {
     'HOT-2': 2430,
     # For Rotkehlchen IOTA is IOTA but in coimarketcap it's MIOTA
     'IOTA': 1720,
+    # For Rotkehlchen YOYOW if YOYO but in coinmarketcap it's YOYOW
+    'YOYO': 1899,
 }
 
 
