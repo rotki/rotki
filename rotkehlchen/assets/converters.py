@@ -364,8 +364,12 @@ RENAMED_BINANCE_ASSETS = {
     # The old BCC in binance forked into BCHABC and BCHSV
     # but for old trades the canonical chain is ABC (BCH in rotkehlchen)
     'BCC': 'BCH',
-    # # HCash (HSR) got swapped for Hyperchash (HC)
-    # 'HSR': 'HC',
+    # HCash (HSR) got swapped for Hyperchash (HC)
+    # https://support.binance.com/hc/en-us/articles/360012489731-Binance-Supports-Hcash-HSR-Mainnet-Swap-to-HyperCash-HC-
+    'HSR': 'HC',
+    # Red pulse got swapped for Phoenix
+    # https://support.binance.com/hc/en-us/articles/360012507711-Binance-Supports-Red-Pulse-RPX-Token-Swap-to-PHOENIX-PHX-
+    'RPX': 'PHX',
 }
 
 

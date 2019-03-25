@@ -167,6 +167,11 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen HOT is Holochain and HOT-2 is Hydro Protocol
     'HOT': 'hot-holo',
     'HOT-2': 'hot-hydro-protocol',
+    # For Rotkehlchen IOTA is IOTA but in paprika it's MIOTA
+    'IOTA': 'miota-iota',
+    # Paprika has two identical entries for OpenANX:
+    # oax-oax and oax-openanx. Choosing the one with the most recent details.
+    'OAX': 'oax-oax',
 }
 
 

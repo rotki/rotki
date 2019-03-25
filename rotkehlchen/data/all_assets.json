@@ -1169,6 +1169,11 @@
         "started": 1472083200,
         "type": "ethereum token"
     },
+    "ICX": {
+        "name": "ICON",
+        "started": 1508803200,
+        "type": "own chain"
+    },
     "IFC": {
         "name": "Infinitecoin",
         "started": 1370390400,
@@ -1189,6 +1194,11 @@
         "started": 1473120000,
         "type": "waves token"
     },
+    "INS": {
+        "name": "Insolar",
+        "started": 1512345600,
+        "type": "ethereum token"
+    },
     "IOC": {
         "name": "I/O Coin",
         "started": 1406073600,
@@ -1208,6 +1218,11 @@
         "name": "IOST",
         "started": 1514937600,
         "type": "ethereum token"
+    },
+    "IOTA": {
+        "name": "IOTA",
+        "started": 1497364209,
+        "type": "own chain"
     },
     "IOTX": {
         "name": "IoTeX",
@@ -1296,6 +1311,16 @@
         "name": "LeafCoin",
         "started": 1389398400,
         "type": "own chain"
+    },
+    "LEND": {
+        "name": "ETHLend",
+        "started": 1502755200,
+        "type": "ethereum token"
+    },
+    "LINK": {
+        "name": "Chainlink",
+        "started": 1505520000,
+        "type": "ethereum token"
     },
     "LMC": {
         "name": "LoMoCoin",
@@ -1390,6 +1415,11 @@
         "started": 1495065600,
         "type": "ethereum token"
     },
+    "MDA": {
+        "name": "Moeda Loyalty Points",
+        "started": 1500249600,
+        "type": "ethereum token"
+    },
     "MEC": {
         "name": "Megacoin",
         "started": 1369785600,
@@ -1437,6 +1467,11 @@
         "started": 1391644800,
         "type": "own chain"
     },
+    "MITH": {
+        "name": "Mithril",
+        "started": 1517875200,
+        "type": "ethereum token"
+    },
     "MLN": {
         "name": "Melonport",
         "started": 1487116800,
@@ -1473,6 +1508,12 @@
         "started": 1504656000,
         "type": "ethereum token"
     },
+    "MOD": {
+        "active": true,
+        "name": "Modum",
+        "started": 1502755200,
+        "type": "ethereum token"
+    },
     "MONA": {
         "name": "MonaCoin",
         "started": 1388534400,
@@ -1492,6 +1533,11 @@
     "MRS": {
         "name": "Marginless",
         "started": 1540306994,
+        "type": "ethereum token"
+    },
+    "MTH": {
+        "name": "Monetha",
+        "started": 1504051200,
         "type": "ethereum token"
     },
     "MTL": {
@@ -1514,6 +1560,16 @@
         "started": 1493596800,
         "type": "ethereum token"
     },
+    "NANO": {
+        "name": "Nano",
+        "started": 1444003200,
+        "type": "own chain"
+    },
+    "NAS": {
+        "name": "Nebulas",
+        "started": 1503462598,
+        "type": "own chain"
+    },
     "NAUT": {
         "active": false,
         "ended": 1511481600,
@@ -1530,6 +1586,11 @@
         "name": "Nucleus Vision",
         "started": 1511568000,
         "type": "ethereum token"
+    },
+    "NEBL": {
+        "name": "Neblio",
+        "started": 1485907200,
+        "type": "own chain"
     },
     "NEO": {
         "name": "NEO",
@@ -1600,6 +1661,11 @@
         "started": 1411430400,
         "type": "Nubits token"
     },
+    "NULS": {
+        "name": "NULS",
+        "started": 1504224000,
+        "type": "own chain"
+    },
     "NXC": {
         "name": "Nexium",
         "started": 1463563652,
@@ -1621,6 +1687,11 @@
         "name": "NXTInspect",
         "started": 1412812800,
         "type": "nxt token"
+    },
+    "OAX": {
+        "name": "OAX",
+        "started": 1496275200,
+        "type": "ethereum token"
     },
     "OCN": {
         "name": "Odyssey",
@@ -1703,6 +1774,11 @@
         "started": 1465171200,
         "type": "ethereum token"
     },
+    "PHX": {
+        "name": "Red Pulse Phoenix",
+        "started": 1507420800,
+        "type": "neo token"
+    },
     "PIGGY": {
         "active": true,
         "name": "Piggycoin",
@@ -1722,6 +1798,16 @@
     "PMA": {
         "name": "PumaPay",
         "started": 1521676800,
+        "type": "ethereum token"
+    },
+    "POA": {
+        "name": "POA Network",
+        "started": 1500508800,
+        "type": "own chain"
+    },
+    "POE": {
+        "name": "Po.et",
+        "started": 1502150400,
         "type": "ethereum token"
     },
     "POLY": {
@@ -1750,6 +1836,11 @@
         "name": "Peercoin",
         "started": 1345334400,
         "type": "own chain"
+    },
+    "PPT": {
+        "name": "Populous",
+        "started": 1491955200,
+        "type": "ethereum token"
     },
     "PRC": {
         "active": false,
@@ -1800,6 +1891,16 @@
         "name": "QuazarCoin",
         "started": 1399507200,
         "type": "own chain"
+    },
+    "QKC": {
+        "name": "QuarkChain",
+        "started": 1527897600,
+        "type": "ethereum token"
+    },
+    "QLC": {
+        "name": "QLC Chain",
+        "started": 1510444800,
+        "type": "neo token"
     },
     "QNT": {
         "name": "Quant",
@@ -1865,9 +1966,24 @@
         "started": 1390176000,
         "type": "own chain"
     },
+    "RDN": {
+        "name": "Raiden Network Token",
+        "started": 1506038400,
+        "type": "ethereum token"
+    },
+    "REN": {
+        "name": "Ren",
+        "started": 1514678400,
+        "type": "ethereum token"
+    },
     "REP": {
         "name": "Augur",
         "started": 1416182400,
+        "type": "ethereum token"
+    },
+    "REQ": {
+        "name": "Request",
+        "started": 1504137600,
         "type": "ethereum token"
     },
     "RFR": {
@@ -1964,6 +2080,11 @@
         "swapped_for": "STORJ",
         "type": "counterparty token"
     },
+    "SKY": {
+        "name": "Skycoin",
+        "started": 1387670400,
+        "type": "own chain"
+    },
     "SLR": {
         "name": "SolarCoin",
         "started": 1389484800,
@@ -1993,6 +2114,11 @@
     "SNGLS": {
         "name": "SingularDTV",
         "started": 1475366400,
+        "type": "ethereum token"
+    },
+    "SNM": {
+        "name": "SONM",
+        "started": 1485216000,
         "type": "ethereum token"
     },
     "SNT": {
@@ -2064,6 +2190,11 @@
         "started": 1465862400,
         "type": "own chain"
     },
+    "SUB": {
+        "name": "Substratum",
+        "started": 1501372800,
+        "type": "ethereum token"
+    },
     "SWT": {
         "name": "Swarm City",
         "started": 1488578683,
@@ -2102,6 +2233,11 @@
         "started": 1394323200,
         "type": "own chain"
     },
+    "THETA": {
+        "name": "THETA",
+        "started": 1511395200,
+        "type": "ethereum token"
+    },
     "TIX": {
         "name": "Blocktix",
         "started": 1499385600,
@@ -2111,6 +2247,16 @@
         "name": "Tokes",
         "started": 1480723200,
         "type": "waves token"
+    },
+    "TNB": {
+        "name": "Time New Bank",
+        "started": 1475280000,
+        "type": "ethereum token"
+    },
+    "TNT": {
+        "name": "Tierion",
+        "started": 1500249600,
+        "type": "ethereum token"
     },
     "TOR": {
         "active": false,
@@ -2123,6 +2269,13 @@
         "name": "OriginTrail",
         "started": 1511222400,
         "type": "ethereum token"
+    },
+    "TRIG": {
+        "active": false,
+        "ended": 1541203200,
+        "name": "Triggers",
+        "started": 1476057600,
+        "type": "counterparty token"
     },
     "TRST": {
         "name": "WeTrust",
@@ -2284,6 +2437,11 @@
         "started": 1500336000,
         "type": "ethereum token"
     },
+    "VIBE": {
+        "name": "VIBE",
+        "started": 1500422400,
+        "type": "ethereum token"
+    },
     "VITE": {
         "name": "VITE",
         "started": 1524614400,
@@ -2309,6 +2467,16 @@
     "VTC": {
         "name": "Vertcoin",
         "started": 1389139200,
+        "type": "own chain"
+    },
+    "WABI": {
+        "name": "Tael",
+        "started": 1500595200,
+        "type": "ethereum token"
+    },
+    "WAN": {
+        "name": "Wanchain",
+        "started": 1503360000,
         "type": "own chain"
     },
     "WAVES": {

@@ -212,6 +212,9 @@ KNOWN_TO_MISS_FROM_CMC = (
     # Harvest Masternode coin. Missing from API but is in
     # https://coinmarketcap.com/currencies/harvest-masternode-coin/
     'HC-2',
+    # Triggers. Missing from API but is in
+    # https://coinmarketcap.com/currencies/triggers/
+    'TRIG',
 )
 
 
@@ -277,6 +280,8 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen HOT is Holochain and HOT-2 is Hydro Protocol
     'HOT': 2682,
     'HOT-2': 2430,
+    # For Rotkehlchen IOTA is IOTA but in coimarketcap it's MIOTA
+    'IOTA': 1720,
 }
 
 
