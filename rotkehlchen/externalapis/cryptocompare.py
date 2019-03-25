@@ -98,6 +98,8 @@ WORLD_TO_CRYPTOCOMPARE = {
     # But for cryptocompare HOT is Hydro Protocol and HOT* is HoloChain
     'HOT': 'HOT*',
     'HOT-2': 'HOT',
+    # For Rotkehlchen RDN is Raiden Network Token but it's RDN* in cryptocompare
+    'RDN': 'RDN*',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also
