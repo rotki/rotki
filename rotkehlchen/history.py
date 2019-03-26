@@ -4,11 +4,13 @@ import os
 import re
 import time
 from json.decoder import JSONDecodeError
-from typing import List
+from typing import Any, Dict, List
 
+from rotkehlchen.assets import Asset
 from rotkehlchen.binance import trade_from_binance
 from rotkehlchen.bitmex import trade_from_bitmex
 from rotkehlchen.bittrex import trade_from_bittrex
+from rotkehlchen.constants import S_BTC
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import PriceQueryUnknownFromAsset, RemoteError, UnsupportedAsset
 from rotkehlchen.exchange import data_up_todate
@@ -23,13 +25,13 @@ from rotkehlchen.order_formatting import (
 )
 from rotkehlchen.poloniex import trade_from_poloniex
 from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
-from rotkehlchen.typing import Asset, EthAddress, FilePath, NonEthTokenBlockchainAsset, Timestamp
+from rotkehlchen.typing import EthAddress, FilePath, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils import (
     convert_to_int,
     createTimeStamp,
     get_jsonfile_contents_or_empty_dict,
-    request_get,
+    request_get_dict,
     rlk_jsondumps,
     rlk_jsonloads,
     ts_now,
@@ -91,7 +93,7 @@ def do_read_manual_margin_positions(user_directory):
                 open_time=position['open_time'],
                 close_time=position['close_time'],
                 profit_loss=FVal(position['btc_profit_loss']),
-                pl_currency=NonEthTokenBlockchainAsset('BTC'),
+                pl_currency=S_BTC,
                 notes=position['notes'],
             ),
         )
@@ -230,7 +232,7 @@ class PriceHistorian(object):
         if invalidate_cache:
             query_string = 'https://www.cryptocompare.com/api/data/coinlist/'
             log.debug('Querying cryptocompare', url=query_string)
-            resp = request_get(query_string)
+            resp = request_get_dict(query_string)
             if 'Response' not in resp or resp['Response'] != 'Success':
                 error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
                 if 'Message' in resp:
@@ -319,8 +321,19 @@ class PriceHistorian(object):
             return usd_invert_conversion
         return price
 
-    def get_historical_data(self, from_asset: Asset, to_asset: Asset, timestamp: Timestamp):
-        """Get historical price data from cryptocompare"""
+    def get_historical_data(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get historical price data from cryptocompare
+
+        Returns a list of dictionary entries. Each entry covers an 1 hour timeslot.
+        The list is sorted. Each entry should have the following key entries:
+        'time', 'low', 'high'. Perhaps turn into a named tuple?
+        """
         log.debug(
             'Retrieving historical price data',
             from_asset=from_asset,
@@ -340,14 +353,14 @@ class PriceHistorian(object):
                 'unknown asset "{}"'.format(to_asset),
             )
 
-        cache_key = from_asset + '_' + to_asset
+        cache_key = str(from_asset) + '_' + str(to_asset)
         got_cached_value = self.got_cached_price(cache_key, timestamp)
         if got_cached_value:
             return self.price_history[cache_key]['data']
 
         now_ts = int(time.time())
         cryptocompare_hourquerylimit = 2000
-        calculated_history = list()
+        calculated_history: List = list()
 
         if self.historical_data_start <= timestamp:
             end_date = self.historical_data_start
@@ -374,7 +387,7 @@ class PriceHistorian(object):
                     end_date,
                 ))
 
-            resp = request_get(query_string)
+            resp = request_get_dict(query_string)
             if 'Response' not in resp or resp['Response'] != 'Success':
                 msg = 'Unable to retrieve requested data at this time, please try again later'
                 no_data_for_timestamp = (
@@ -542,7 +555,7 @@ class PriceHistorian(object):
                     ))
                 if to_asset == 'BTC':
                     query_string += '&tryConversion=false'
-                resp = request_get(query_string)
+                resp = request_get_dict(query_string)
 
                 if cc_from_asset not in resp:
                     error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)

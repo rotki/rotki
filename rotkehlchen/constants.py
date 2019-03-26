@@ -1,6 +1,7 @@
 from typing import cast
 
 from rotkehlchen import typing
+from rotkehlchen.assets import Asset
 from rotkehlchen.fval import FVal
 
 ETH_DAO_FORK_TS = 1469020840  # 2016-07-20 13:20:40 UTC
@@ -14,7 +15,7 @@ YEAR_IN_SECONDS = 31536000  # 60 * 60 * 24 * 365
 
 S_EMPTYSTR = typing.EmptyStr('')
 
-S_BTC = cast(typing.NonEthTokenBlockchainAsset, 'BTC')
+S_BTC = Asset('BTC')
 S_BCH = cast(typing.NonEthTokenBlockchainAsset, 'BCH')
 S_BSV = cast(typing.NonEthTokenBlockchainAsset, 'BSV')
 S_ETH = cast(typing.NonEthTokenBlockchainAsset, 'ETH')

@@ -10,7 +10,7 @@ import requests
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import FilePath
-from rotkehlchen.utils import rlk_jsondumps, rlk_jsonloads, rlk_jsonloads_dict, ts_now
+from rotkehlchen.utils import rlk_jsondumps, rlk_jsonloads_dict, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -363,7 +363,7 @@ class Coinmarketcap():
     def _get_cryptocyrrency_map(self) -> List[Dict[str, Any]]:
         start = 1
         limit = 5000
-        result = []
+        result: List[Dict[str, Any]] = []
         while True:
             response_data = rlk_jsonloads_dict(
                 self._query(f'v1/cryptocurrency/map?start={start}&limit={limit}'),
@@ -382,17 +382,17 @@ class Coinmarketcap():
         coinlist_cache_path = os.path.join(self.data_directory, 'cmc_coinlist.json')
         if os.path.isfile(coinlist_cache_path):
             log.info('Found coinmarketcap coinlist cache', path=coinlist_cache_path)
-            with open(coinlist_cache_path, 'rb') as f:
+            with open(coinlist_cache_path, 'r') as f:
                 try:
-                    data = rlk_jsonloads(f.read())
+                    file_data = rlk_jsonloads_dict(f.read())
                     now = ts_now()
                     invalidate_cache = False
 
                     # If we got a cache and its' over a month old then requery coinmarketcap
-                    if data['time'] < now and now - data['time'] > 2629800:
+                    if file_data['time'] < now and now - file_data['time'] > 2629800:
                         log.info('Coinmarketcap coinlist cache is now invalidated')
                         invalidate_cache = True
-                        data = data['data']
+                        data = file_data['data']
                 except JSONDecodeError:
                     invalidate_cache = True
 

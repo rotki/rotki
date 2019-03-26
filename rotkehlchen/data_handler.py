@@ -10,11 +10,12 @@ from typing import Dict, List, Optional, Tuple, cast
 
 from eth_utils.address import to_checksum_address
 
+from rotkehlchen.assets import Asset
 from rotkehlchen.constants import S_ETH
 from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors import AuthenticationError
+from rotkehlchen.errors import AuthenticationError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import FIAT_CURRENCIES
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -22,7 +23,6 @@ from rotkehlchen.order_formatting import Trade, trade_type_from_string
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
-    Asset,
     BlockchainAddress,
     EthAddress,
     EthToken,
@@ -35,7 +35,7 @@ from rotkehlchen.typing import (
 )
 from rotkehlchen.utils import (
     createTimeStamp,
-    get_pair_position,
+    get_pair_position_asset,
     is_number,
     rlk_jsonloads_list,
     ts_now,
@@ -89,31 +89,42 @@ BOOLEAN_SETTINGS = (
 def verify_otctrade_data(
         data: ExternalTrade,
 ) -> Tuple[Optional[Trade], str]:
-    """Takes in the trade data dictionary, validates it and returns a trade instance"""
+    """
+    Takes in the trade data dictionary, validates it and returns a trade instance
+
+    If there is an error it returns an error message in the second part of the tuple
+    """
     for field in otc_fields:
         if field not in data:
-            return None, '{} was not provided'.format(field)
+            return None, f'{field} was not provided'
 
         if data[field] in ('', None) and field not in otc_optional_fields:
-            return None, '{} was empty'.format(field)
+            return None, f'{field} was empty'
 
         if field in otc_numerical_fields and not is_number(data[field]):
-            return None, '{} should be a number'.format(field)
+            return None, f'{field} should be a number'
 
+    # Satisfy mypy typing
     assert isinstance(data['otc_pair'], str)
+    assert isinstance(data['otc_fee_currency'], str)
+
     pair = TradePair(data['otc_pair'])
-    first = get_pair_position(pair, 'first')
-    second = get_pair_position(pair, 'second')
+    try:
+        first = get_pair_position_asset(pair, 'first')
+        second = get_pair_position_asset(pair, 'second')
+        fee_currency = Asset(data['otc_fee_currency'])
+    except UnknownAsset as e:
+        return None, f'Provided asset {e.asset_name} is not known to Rotkehlchen'
+
     trade_type = trade_type_from_string(str(data['otc_type']))
     amount = FVal(data['otc_amount'])
     rate = FVal(data['otc_rate'])
     fee = FVal(data['otc_fee'])
-    fee_currency = cast(Asset, data['otc_fee_currency'])
     try:
         assert isinstance(data['otc_timestamp'], str)
         timestamp = createTimeStamp(data['otc_timestamp'], formatstr='%d/%m/%Y %H:%M')
     except ValueError as e:
-        return None, 'Could not process the given datetime: {}'.format(e)
+        return None, f'Could not process the given datetime: {e}'
 
     log.debug(
         'Creating OTC trade data',

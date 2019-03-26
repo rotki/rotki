@@ -12,6 +12,7 @@ from urllib.parse import urlencode
 
 from requests import Response
 
+from rotkehlchen.assets import Asset
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS, KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
@@ -29,7 +30,7 @@ from rotkehlchen.typing import ApiKey, ApiSecret, Asset, FilePath, Timestamp, Tr
 from rotkehlchen.utils import (
     cache_response_timewise,
     convert_to_int,
-    get_pair_position,
+    get_pair_position_asset,
     retry_calls,
     rlk_jsonloads_dict,
 )
@@ -82,16 +83,16 @@ def kraken_to_world_pair(pair: str) -> TradePair:
         pair = pair[:-2]
 
     if pair[0:3] in KRAKEN_ASSETS:
-        base_asset = pair[0:3]
-        quote_asset = pair[3:]
+        base_asset_str = pair[0:3]
+        quote_asset_str = pair[3:]
     elif pair[0:4] in KRAKEN_ASSETS:
-        base_asset = pair[0:4]
-        quote_asset = pair[4:]
+        base_asset_str = pair[0:4]
+        quote_asset_str = pair[4:]
     else:
         raise ValueError(f'Could not process kraken trade pair {pair}')
 
-    base_asset = asset_from_kraken(base_asset)
-    quote_asset = asset_from_kraken(quote_asset)
+    base_asset = asset_from_kraken(base_asset_str)
+    quote_asset = asset_from_kraken(quote_asset_str)
 
     return TradePair(f'{base_asset}_{quote_asset}')
 
@@ -99,11 +100,11 @@ def kraken_to_world_pair(pair: str) -> TradePair:
 def world_to_kraken_pair(tradeable_pairs: List[str], pair: TradePair) -> str:
     base_asset, quote_asset = pair_get_assets(pair)
 
-    base_asset = base_asset.to_kraken()
-    quote_asset = quote_asset.to_kraken()
+    base_asset_str = base_asset.to_kraken()
+    quote_asset_str = quote_asset.to_kraken()
 
-    pair1 = base_asset + quote_asset
-    pair2 = quote_asset + base_asset
+    pair1 = base_asset_str + quote_asset_str
+    pair2 = quote_asset_str + base_asset_str
 
     # In some pairs, XXBT is XBT and ZEUR is EUR ...
     pair3 = None
@@ -128,8 +129,8 @@ def world_to_kraken_pair(tradeable_pairs: List[str], pair: TradePair) -> str:
         new_pair = pair4
     else:
         raise ValueError(
-            f'Unknown pair "{pair}" provided. Couldnt find {base_asset + quote_asset}'
-            f' or {quote_asset + base_asset} in tradeable pairs',
+            f'Unknown pair "{pair}" provided. Couldnt find {base_asset_str + quote_asset_str}'
+            f' or {quote_asset_str + base_asset_str} in tradeable pairs',
         )
 
     return new_pair
@@ -139,7 +140,7 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
     """Turn a kraken trade returned from kraken trade history to our common trade
     history format"""
     currency_pair = kraken_to_world_pair(kraken_trade['pair'])
-    quote_currency = get_pair_position(currency_pair, 'second')
+    quote_currency = get_pair_position_asset(currency_pair, 'second')
     # Kraken timestamps have floating point
     timestamp = Timestamp(convert_to_int(kraken_trade['time'], accept_only_exact=False))
     amount = FVal(kraken_trade['vol'])

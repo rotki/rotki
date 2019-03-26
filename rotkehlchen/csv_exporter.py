@@ -3,7 +3,7 @@ import logging
 import os
 from typing import Any, Dict, List, Tuple, Union
 
-from rotkehlchen import typing
+from rotkehlchen.assets import Asset
 from rotkehlchen.constants import (
     EV_ASSET_MOVE,
     EV_BUY,
@@ -18,13 +18,14 @@ from rotkehlchen.constants import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
+from rotkehlchen.typing import EmptyStr, EventType, Fee, FilePath, Timestamp
 from rotkehlchen.utils import taxable_gain_for_sell, tsToDate
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _dict_to_csv_file(path: typing.FilePath, dictionary_list: List) -> None:
+def _dict_to_csv_file(path: FilePath, dictionary_list: List) -> None:
     """Takes a filepath and a list of dictionaries representing the rows and writes them
     into the file as a CSV"""
     if len(dictionary_list) == 0:
@@ -42,8 +43,8 @@ class CSVExporter(object):
 
     def __init__(
             self,
-            profit_currency: typing.Asset,
-            user_directory: typing.FilePath,
+            profit_currency: Asset,
+            user_directory: FilePath,
             create_csv: bool,
     ):
         self.user_directory = user_directory
@@ -66,14 +67,14 @@ class CSVExporter(object):
 
     def add_to_allevents(
             self,
-            event_type: typing.EventType,
+            event_type: EventType,
             paid_in_profit_currency: FVal,
-            paid_asset: Union[typing.Asset, typing.EmptyStr],
+            paid_asset: Union[Asset, EmptyStr],
             paid_in_asset: FVal,
-            received_asset: Union[typing.Asset, typing.EmptyStr],
+            received_asset: Union[Asset, EmptyStr],
             received_in_asset: FVal,
             taxable_received_in_profit_currency: FVal,
-            timestamp: typing.Timestamp,
+            timestamp: Timestamp,
             is_virtual: bool = False,
             taxable_amount: FVal = ZERO,
             taxable_bought_cost: FVal = ZERO,
@@ -127,15 +128,15 @@ class CSVExporter(object):
 
     def add_buy(
             self,
-            bought_asset: typing.Asset,
+            bought_asset: Asset,
             rate: FVal,
-            fee_cost: typing.Fee,
+            fee_cost: Fee,
             amount: FVal,
             gross_cost: FVal,
             cost: FVal,
-            paid_with_asset: typing.Asset,
+            paid_with_asset: Asset,
             paid_with_asset_rate: FVal,
-            timestamp: typing.Timestamp,
+            timestamp: Timestamp,
             is_virtual: bool,
     ) -> None:
         if not self.create_csv:
@@ -172,17 +173,17 @@ class CSVExporter(object):
 
     def add_sell(
             self,
-            selling_asset: typing.Asset,
+            selling_asset: Asset,
             rate_in_profit_currency: FVal,
-            total_fee_in_profit_currency: typing.Fee,
+            total_fee_in_profit_currency: Fee,
             gain_in_profit_currency: FVal,
             selling_amount: FVal,
-            receiving_asset: typing.Asset,
+            receiving_asset: Asset,
             receiving_amount: FVal,
             receiving_asset_rate_in_profit_currency: FVal,
             taxable_amount: FVal,
             taxable_bought_cost: FVal,
-            timestamp: typing.Timestamp,
+            timestamp: Timestamp,
             is_virtual: bool,
     ):
         if not self.create_csv:
@@ -230,11 +231,11 @@ class CSVExporter(object):
 
     def add_loan_settlement(
             self,
-            asset: typing.Asset,
+            asset: Asset,
             amount: FVal,
             rate_in_profit_currency: FVal,
             total_fee_in_profit_currency: FVal,
-            timestamp: typing.Timestamp,
+            timestamp: Timestamp,
     ) -> None:
         if not self.create_csv:
             return
@@ -263,12 +264,12 @@ class CSVExporter(object):
 
     def add_loan_profit(
             self,
-            gained_asset: typing.Asset,
+            gained_asset: Asset,
             gained_amount: FVal,
             gain_in_profit_currency: FVal,
             lent_amount: FVal,
-            open_time: typing.Timestamp,
-            close_time: typing.Timestamp,
+            open_time: Timestamp,
+            close_time: Timestamp,
     ) -> None:
         if not self.create_csv:
             return
@@ -295,10 +296,10 @@ class CSVExporter(object):
     def add_margin_position(
             self,
             margin_notes: str,
-            gain_loss_asset: typing.Asset,
+            gain_loss_asset: Asset,
             net_gain_loss_amount: FVal,
             gain_loss_in_profit_currency: FVal,
-            timestamp: typing.Timestamp,
+            timestamp: Timestamp,
     ) -> None:
         if not self.create_csv:
             return
@@ -325,10 +326,10 @@ class CSVExporter(object):
             self,
             exchange: str,
             category: str,
-            asset: typing.Asset,
-            fee: typing.Fee,
+            asset: Asset,
+            fee: Fee,
             rate: FVal,
-            timestamp: typing.Timestamp,
+            timestamp: Timestamp,
     ) -> None:
         if not self.create_csv:
             return
@@ -357,7 +358,7 @@ class CSVExporter(object):
             transaction_hash: bytes,
             eth_burned_as_gas: FVal,
             rate: FVal,
-            timestamp: typing.Timestamp,
+            timestamp: Timestamp,
     ) -> None:
         if not self.create_csv:
             return
@@ -371,7 +372,7 @@ class CSVExporter(object):
         self.add_to_allevents(
             event_type=EV_TX_GAS_COST,
             paid_in_profit_currency=eth_burned_as_gas * rate,
-            paid_asset=S_ETH,
+            paid_asset=Asset(S_ETH),
             paid_in_asset=eth_burned_as_gas,
             received_asset=S_EMPTYSTR,
             received_in_asset=FVal(0),
@@ -379,7 +380,7 @@ class CSVExporter(object):
             timestamp=timestamp,
         )
 
-    def create_files(self, dirpath: typing.FilePath) -> Tuple[bool, str]:
+    def create_files(self, dirpath: FilePath) -> Tuple[bool, str]:
         if not self.create_csv:
             return True, ''
 
@@ -388,31 +389,31 @@ class CSVExporter(object):
                 os.makedirs(dirpath)
 
             _dict_to_csv_file(
-                typing.FilePath(os.path.join(dirpath, 'trades.csv')),
+                FilePath(os.path.join(dirpath, 'trades.csv')),
                 self.trades_csv,
             )
             _dict_to_csv_file(
-                typing.FilePath(os.path.join(dirpath, 'loan_profits.csv')),
+                FilePath(os.path.join(dirpath, 'loan_profits.csv')),
                 self.loan_profits_csv,
             )
             _dict_to_csv_file(
-                typing.FilePath(os.path.join(dirpath, 'asset_movements.csv')),
+                FilePath(os.path.join(dirpath, 'asset_movements.csv')),
                 self.asset_movements_csv,
             )
             _dict_to_csv_file(
-                typing.FilePath(os.path.join(dirpath, 'tx_gas_costs.csv')),
+                FilePath(os.path.join(dirpath, 'tx_gas_costs.csv')),
                 self.tx_gas_costs_csv,
             )
             _dict_to_csv_file(
-                typing.FilePath(os.path.join(dirpath, 'margin_positions.csv')),
+                FilePath(os.path.join(dirpath, 'margin_positions.csv')),
                 self.margin_positions_csv,
             )
             _dict_to_csv_file(
-                typing.FilePath(os.path.join(dirpath, 'loan_settlements.csv')),
+                FilePath(os.path.join(dirpath, 'loan_settlements.csv')),
                 self.loan_settlements_csv,
             )
             _dict_to_csv_file(
-                typing.FilePath(os.path.join(dirpath, 'all_events.csv')),
+                FilePath(os.path.join(dirpath, 'all_events.csv')),
                 self.all_events_csv,
             )
         except (PermissionError, OSError) as e:

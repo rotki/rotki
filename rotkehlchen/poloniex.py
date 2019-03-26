@@ -30,7 +30,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils import (
     cache_response_timewise,
     createTimeStamp,
-    get_pair_position,
+    get_pair_position_str,
     retry_calls,
     rlk_jsonloads,
     rlk_jsonloads_dict,
@@ -57,8 +57,8 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
     amount = FVal(poloniex_trade['amount'])
     rate = FVal(poloniex_trade['rate'])
     perc_fee = FVal(poloniex_trade['fee'])
-    base_currency = asset_from_poloniex(get_pair_position(pair, 'first'))
-    quote_currency = asset_from_poloniex(get_pair_position(pair, 'second'))
+    base_currency = asset_from_poloniex(get_pair_position_str(pair, 'first'))
+    quote_currency = asset_from_poloniex(get_pair_position_str(pair, 'second'))
     timestamp = createTimeStamp(poloniex_trade['date'], formatstr="%Y-%m-%d %H:%M:%S")
     cost = rate * amount
     if trade_type == TradeType.BUY:
@@ -90,7 +90,7 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
     )
 
     # Use the converted assets in our pair
-    pair = f'{base_currency}_{quote_currency}'
+    pair = TradePair(f'{base_currency}_{quote_currency}')
     # Since in Poloniex the base currency is the cost currency, iow in poloniex
     # for BTC_ETH we buy ETH with BTC and sell ETH for BTC, we need to turn it
     # into the Rotkehlchen way which is following the base/quote approach.

@@ -10,14 +10,12 @@ from rotkehlchen.typing import Timestamp, TradePair
 
 STARTING_TIMESTAMP = 1464739200  # 01/06/2016
 NUMBER_OF_TRADES = 5
-STARTING_FUNDS = {'EUR': FVal(100000), 'BTC': FVal(10)}
+STARTING_FUNDS = {Asset('EUR'): FVal(100000), Asset('BTC'): FVal(10)}
 
 MAX_TRADE_DIFF_VARIANCE = 14400
 
 ALLOWED_EXCHANGES = ['kraken', 'binance']
 KRAKEN_PAIRS = [TradePair('ETH_EUR'), TradePair('BTC_EUR')]
-
-ALLOWED_ASSETS = ['ETH', 'BTC']
 
 MAX_TRADE_USD_VALUE = FVal(100)
 MAX_FEE_USD_VALUE = 1

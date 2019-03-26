@@ -62,8 +62,8 @@ def trade_from_binance(
     binance_pair = binance_symbols_to_pair[binance_trade['symbol']]
     timestamp = binance_trade['time']
 
-    base_asset = asset_from_binance(binance_pair.base_asset)
-    quote_asset = asset_from_binance(binance_pair.quote_asset)
+    base_asset = asset_from_binance(binance_pair.binance_base_asset)
+    quote_asset = asset_from_binance(binance_pair.binance_quote_asset)
 
     if binance_trade['isBuyer']:
         order_type = TradeType.BUY
