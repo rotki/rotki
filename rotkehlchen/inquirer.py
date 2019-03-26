@@ -7,11 +7,12 @@ from typing import Dict, Iterable, Optional
 
 import requests
 
+from rotkehlchen.assets import Asset
 from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, FIAT_CURRENCIES, S_USD
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Asset, FiatAsset, FilePath, Timestamp
+from rotkehlchen.typing import FiatAsset, FilePath, Timestamp
 from rotkehlchen.utils import (
     request_get_dict,
     retry_calls,

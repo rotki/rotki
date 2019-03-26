@@ -8,17 +8,18 @@ import os
 import sys
 import time
 from functools import wraps
-from typing import Any, Callable, Dict, List, Union, cast
+from typing import Any, Callable, Dict, List, Union
 
 import requests
 from rlp.sedes import big_endian_int
 
+from rotkehlchen.assets import Asset
 from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, ZERO
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import TradeType
-from rotkehlchen.typing import Asset, Fee, FilePath, ResultCache, Timestamp, TradePair
+from rotkehlchen.typing import Fee, FilePath, ResultCache, Timestamp, TradePair
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -148,7 +149,7 @@ def get_pair_position(pair: TradePair, position: str) -> Asset:
     if len(currencies) != 2:
         raise ValueError("Could not split {} pair".format(pair))
     currency = currencies[0] if position == 'first' else currencies[1]
-    return cast(Asset, currency)
+    return Asset(currency)
 
 
 def merge_dicts(*dict_args: Dict) -> Dict:

@@ -22,12 +22,14 @@ class MessagesAggregator():
         result = []
         while len(self.warnings) != 0:
             result.append(self.warnings.pop())
+        return result
 
     def add_error(self, msg: str):
         logger.error(msg)
-        self.error.appendleft(msg)
+        self.errors.appendleft(msg)
 
     def consume_errors(self) -> List[str]:
         result = []
         while len(self.errors) != 0:
             result.append(self.errors.pop())
+        return result

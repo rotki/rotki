@@ -2,10 +2,11 @@ import logging
 import random
 from typing import Tuple
 
+from rotkehlchen.assets import Asset
 from rotkehlchen.constants import FIAT_CURRENCIES
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade, TradeType, pair_get_assets
-from rotkehlchen.typing import Asset, Timestamp, TradePair
+from rotkehlchen.typing import Timestamp, TradePair
 
 STARTING_TIMESTAMP = 1464739200  # 01/06/2016
 NUMBER_OF_TRADES = 5

@@ -6,8 +6,12 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.converters import BINANCE_TO_WORLD, RENAMED_BINANCE_ASSETS
+from rotkehlchen.assets import Asset
+from rotkehlchen.assets.converters import (
+    BINANCE_TO_WORLD,
+    RENAMED_BINANCE_ASSETS,
+    asset_from_binance,
+)
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.binance import Binance, create_binance_symbols_to_pair, trade_from_binance
 from rotkehlchen.errors import RemoteError
@@ -177,23 +181,12 @@ def test_binance_backoff_after_429(mock_binance):
             mock_binance.api_query('exchangeInfo')
 
 
-def test_binance_assets_are_known(accounting_data_dir, inquirer):
-    # use a real binance instance so that we always get the latest data
-    binance = Binance(
-        api_key=base64.b64encode(make_random_b64bytes(128)),
-        secret=base64.b64encode(make_random_b64bytes(128)),
-        inquirer=inquirer,
-        data_dir=accounting_data_dir,
-        msg_aggregator=MessagesAggregator(),
-    )
+def analyze_binance_assets(sorted_assets):
+    """Go through all binance assets and print info whether or not Rotkehlchen
+    supports each asset or not.
 
-    mapping = binance.symbols_to_pair
-    binance_assets = set()
-    for symbol, pair in mapping.items():
-        binance_assets.add(pair.binance_base_asset)
-        binance_assets.add(pair.binance_quote_asset)
-
-    sorted_assets = sorted(binance_assets)
+    This function should be used when wanting to analyze/categorize new Binance assets
+    """
     length = len(sorted_assets)
     for idx, binance_asset in enumerate(sorted_assets):
         if binance_asset in RENAMED_BINANCE_ASSETS:
@@ -209,5 +202,26 @@ def test_binance_assets_are_known(accounting_data_dir, inquirer):
         else:
             asset = Asset(binance_asset)
             print(
-                f'{idx}/{length} - {binance_asset} with name {asset.name} is known'
+                f'{idx}/{length} - {binance_asset} with name {asset.name} is known',
             )
+
+
+def test_binance_assets_are_known(accounting_data_dir, inquirer):
+    # use a real binance instance so that we always get the latest data
+    binance = Binance(
+        api_key=base64.b64encode(make_random_b64bytes(128)),
+        secret=base64.b64encode(make_random_b64bytes(128)),
+        inquirer=inquirer,
+        data_dir=accounting_data_dir,
+        msg_aggregator=MessagesAggregator(),
+    )
+
+    mapping = binance.symbols_to_pair
+    binance_assets = set()
+    for _, pair in mapping.items():
+        binance_assets.add(pair.binance_base_asset)
+        binance_assets.add(pair.binance_quote_asset)
+
+    sorted_assets = sorted(binance_assets)
+    for binance_asset in sorted_assets:
+        _ = asset_from_binance(binance_asset)

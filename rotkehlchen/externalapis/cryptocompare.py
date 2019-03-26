@@ -5,7 +5,7 @@ from typing import Any, Dict
 
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import FilePath
-from rotkehlchen.utils import request_get, rlk_jsondumps, rlk_jsonloads, ts_now
+from rotkehlchen.utils import request_get_dict, rlk_jsondumps, rlk_jsonloads_dict, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -192,7 +192,7 @@ class Cryptocompare():
     def _api_query(self, path: str) -> Dict[str, Any]:
         querystr = f'{self.prefix}{path}'
         log.debug('Querying cryptocompare', url=querystr)
-        resp = request_get(querystr)
+        resp = request_get_dict(querystr)
         if 'Response' not in resp or resp['Response'] != 'Success':
             error_message = 'Failed to query cryptocompare for: "{}"'.format(querystr)
             if 'Message' in resp:
@@ -210,9 +210,9 @@ class Cryptocompare():
         coinlist_cache_path = os.path.join(self.data_directory, 'cryptocompare_coinlist.json')
         if os.path.isfile(coinlist_cache_path):
             log.info('Found cryptocompare coinlist cache', path=coinlist_cache_path)
-            with open(coinlist_cache_path, 'rb') as f:
+            with open(coinlist_cache_path, 'r') as f:
                 try:
-                    data = rlk_jsonloads(f.read())
+                    data = rlk_jsonloads_dict(f.read())
                     now = ts_now()
                     invalidate_cache = False
 
