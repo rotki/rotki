@@ -28,7 +28,7 @@ asset_type_mapping = {
 
 class AssetResolver():
     __instance = None
-    assets: Dict[str, Dict[str, Any]] = None
+    assets: Dict[str, Dict[str, Any]] = {}
 
     def __new__(cls):
         if AssetResolver.__instance is not None:

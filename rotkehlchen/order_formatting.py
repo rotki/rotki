@@ -1,11 +1,12 @@
 from collections import namedtuple
 from enum import Enum
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, cast
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 from dataclasses import dataclass
 
+from rotkehlchen.assets import Asset
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Asset, Timestamp, TradePair
+from rotkehlchen.typing import Timestamp, TradePair
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -129,7 +130,9 @@ def pair_get_assets(pair: TradePair) -> Tuple[Asset, Asset]:
     if len(assets) != 2:
         raise ValueError(f'Could not split {pair} pair')
 
-    return cast(Asset, assets[0]), cast(Asset, assets[1])
+    base_asset = Asset(assets[0])
+    quote_asset = Asset(assets[1])
+    return base_asset, quote_asset
 
 
 def trade_get_other_pair(trade: Trade, asset: Asset) -> Asset:

@@ -35,9 +35,6 @@ BlockchainAsset = Union[EthToken, NonEthTokenBlockchainAsset]
 T_FiatAsset = str
 FiatAsset = NewType('FiatAsset', T_FiatAsset)
 
-# All types of assets
-Asset = Union[BlockchainAsset, FiatAsset]
-
 T_EthAddres = str
 EthAddress = NewType('EthAddress', T_EthAddres)
 ChecksumEthAddress = NewType('ChecksumEthAddress', EthAddress)
