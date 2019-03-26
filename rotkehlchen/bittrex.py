@@ -6,6 +6,7 @@ from json.decoder import JSONDecodeError
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from urllib.parse import urlencode
 
+from rotkehlchen.assets import Asset
 from rotkehlchen.assets.converters import asset_from_bittrex
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.errors import RemoteError, UnsupportedAsset
@@ -14,12 +15,13 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import Trade, TradeType, pair_get_assets
-from rotkehlchen.typing import ApiKey, ApiSecret, BlockchainAsset, FilePath, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils import (
     cache_response_timewise,
     createTimeStamp,
-    get_pair_position,
+    get_pair_position_asset,
+    get_pair_position_str,
     rlk_jsonloads_dict,
 )
 
@@ -44,33 +46,33 @@ BITTREX_ACCOUNT_METHODS = {
 }
 
 
-def bittrex_pair_to_world(pair: str) -> TradePair:
+def bittrex_pair_to_world(given_pair: str) -> TradePair:
     """
     Turns a pair written in the bittrex way to Rotkehlchen way
 
     Throws:
         - UnsupportedAsset due to asset_from_bittrex()
     """
-    pair = pair.replace('-', '_')
-    base_currency = asset_from_bittrex(get_pair_position(pair, 'first'))
-    quote_currency = asset_from_bittrex(get_pair_position(pair, 'second'))
+    pair = TradePair(given_pair.replace('-', '_'))
+    base_currency = asset_from_bittrex(get_pair_position_str(pair, 'first'))
+    quote_currency = asset_from_bittrex(get_pair_position_str(pair, 'second'))
 
     # Since in Bittrex the base currency is the cost currency, iow in Bittrex
     # for BTC_ETH we buy ETH with BTC and sell ETH for BTC, we need to turn it
     # into the Rotkehlchen way which is following the base/quote approach.
-    pair = f'{quote_currency}_{base_currency}'
-    return TradePair(pair)
+    pair = TradePair(f'{quote_currency}_{base_currency}')
+    return pair
 
 
 def world_pair_to_bittrex(pair: TradePair) -> str:
     """Turns a rotkehlchen pair to a bittrex pair"""
     base_asset, quote_asset = pair_get_assets(pair)
 
-    base_asset = base_asset.to_bittrex()
-    quote_asset = quote_asset.to_bittrex()
+    base_asset_str = base_asset.to_bittrex()
+    quote_asset_str = quote_asset.to_bittrex()
 
     # In bittrex the pairs are inverted and use '-'
-    return f'{quote_asset}-{base_asset}'
+    return f'{quote_asset_str}-{base_asset_str}'
 
 
 def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
@@ -86,7 +88,7 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
     bittrex_price = FVal(bittrex_trade['Price'])
     bittrex_commission = FVal(bittrex_trade['Commission'])
     pair = bittrex_pair_to_world(bittrex_trade['Exchange'])
-    quote_currency = get_pair_position(pair, 'second')
+    quote_currency = get_pair_position_asset(pair, 'second')
     fee = bittrex_commission
     if order_type == 'LIMIT_BUY':
         order_type = TradeType.BUY
@@ -198,11 +200,11 @@ class Bittrex(Exchange):
             raise RemoteError(json_ret['message'])
         return json_ret['result']
 
-    def get_btc_price(self, asset: BlockchainAsset) -> Optional[FVal]:
+    def get_btc_price(self, asset: Asset) -> Optional[FVal]:
         if asset == 'BTC':
             return None
         btc_price = None
-        btc_pair = 'BTC-' + asset
+        btc_pair = 'BTC-' + str(asset)
         for market in self.markets:
             if market['MarketName'] == btc_pair:
                 btc_price = FVal(market['Last'])
@@ -213,6 +215,8 @@ class Bittrex(Exchange):
     def get_currencies(self) -> List[Dict[str, Any]]:
         """Gets a list of all currencies supported by Bittrex"""
         result = self.api_query('getcurrencies')
+        # We know this API call returns a list
+        assert isinstance(result, List)
         return result
 
     @cache_response_timewise(CACHE_RESPONSE_FOR_SECS)

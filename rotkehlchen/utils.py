@@ -143,13 +143,23 @@ def dict_get_sumof(d: Dict[str, Dict[str, FVal]], attribute: str, **args) -> FVa
     return sum_
 
 
-def get_pair_position(pair: TradePair, position: str) -> Asset:
+def get_pair_position_str(pair: TradePair, position: str) -> str:
+    """Get the string representation of an asset of a trade pair"""
     assert position == 'first' or position == 'second'
     currencies = pair.split('_')
     if len(currencies) != 2:
         raise ValueError("Could not split {} pair".format(pair))
     currency = currencies[0] if position == 'first' else currencies[1]
-    return Asset(currency)
+    return currency
+
+
+def get_pair_position_asset(pair: TradePair, position: str) -> Asset:
+    """
+    Get the asset of a trade pair.
+
+    Can throw UnknownAsset if the asset is not known to Rotkehlchen
+    """
+    return Asset(get_pair_position_str(pair, position))
 
 
 def merge_dicts(*dict_args: Dict) -> Dict:

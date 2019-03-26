@@ -11,6 +11,7 @@ from typing import Dict, List, NamedTuple, Optional, Tuple, Union, cast
 from eth_utils.address import to_checksum_address
 from pysqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.assets import Asset
 from rotkehlchen.constants import S_BTC, S_ETH, S_USD, SUPPORTED_EXCHANGES, YEAR_IN_SECONDS
 from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
 from rotkehlchen.errors import AuthenticationError, InputError
@@ -20,7 +21,6 @@ from rotkehlchen.order_formatting import Trade
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
-    Asset,
     BlockchainAddress,
     BTCAddress,
     EthAddress,

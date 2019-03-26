@@ -3,7 +3,7 @@ from typing import Any, Optional
 from dataclasses import dataclass, field
 
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.errors import UnknownAsset
+from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
 from rotkehlchen.externalapis.cryptocompare import WORLD_TO_CRYPTOCOMPARE
 from rotkehlchen.typing import AssetType, Timestamp
 
@@ -144,7 +144,21 @@ class Asset():
         return WORLD_TO_BINANCE.get(self.symbol, self.symbol)
 
     def to_cryptocompare(self) -> str:
-        return WORLD_TO_CRYPTOCOMPARE.get(self.symbol, self.symbol)
+        cryptocompare_str = WORLD_TO_CRYPTOCOMPARE.get(self.symbol, self.symbol)
+        # There is a symbol which should not be queried in cryptocompare
+        if cryptocompare_str is None:
+            if self.symbol == 'MRS':
+                raise UnsupportedAsset(
+                    'Marginless is not in cryptocompare. Asking for MRS '
+                    'will return MARScoin',
+                )
+            else:
+                raise RuntimeError(
+                    f'Got {self.symbol} as a cryptocompare query but it is '
+                    f'documented as returning None and is not handled',
+                )
+
+        return cryptocompare_str
 
     def __hash__(self):
         return hash(self.symbol)
