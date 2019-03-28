@@ -163,7 +163,23 @@ def get_all_eth_tokens() -> List[EthTokenInfo]:
     dir_path = os.path.dirname(os.path.realpath(__file__))
     with open(os.path.join(dir_path, 'data', 'eth_tokens.json'), 'r') as f:
         # We know eth_tokens.json contains a list
-        return rlk_jsonloads_list(f.read())
+        data = rlk_jsonloads_list(f.read())
+
+    all_tokens = []
+    for entry in data:
+        try:
+            all_tokens.append(
+                EthTokenInfo(
+                    address=entry['address'],
+                    symbol=str(entry['symbol']),
+                    decimal=int(entry['decimal']),
+                ),
+            )
+        except (UnicodeDecodeError, UnicodeEncodeError):
+            # skip tokens with problems in unicode encoding decoding
+            continue
+
+    return all_tokens
 
 
 class DataHandler(object):

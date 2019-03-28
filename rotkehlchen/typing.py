@@ -45,7 +45,13 @@ BTCAddress = NewType('BTCAddress', T_BTCAddress)
 T_BlockchainAddress = str
 
 BlockchainAddress = Union[EthAddress, BTCAddress]
-EthTokenInfo = Dict[str, Union[EthToken, EthAddress, int]]
+
+
+class EthTokenInfo(NamedTuple):
+    address: ChecksumEthAddress
+    symbol: str
+    decimal: int
+
 
 T_EmptyStr = str
 EmptyStr = NewType('EmptyStr', T_EmptyStr)

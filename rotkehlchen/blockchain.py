@@ -7,38 +7,38 @@ from eth_utils.address import to_checksum_address
 from gevent.lock import Semaphore
 from web3.exceptions import BadFunctionCallOutput
 
-from rotkehlchen import typing
-from rotkehlchen.constants import (
-    CACHE_RESPONSE_FOR_SECS,
-    S_BTC,
-    S_ETH,
-    S_MLN,
-    S_MLN_NEW,
-    S_MLN_OLD,
-)
+from rotkehlchen.assets import Asset
+from rotkehlchen.assets.converters import asset_from_eth_token_symbol
+from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS, S_BTC, S_ETH
 from rotkehlchen.db.dbhandler import BlockchainAccounts
-from rotkehlchen.errors import EthSyncError, InputError
+from rotkehlchen.errors import EthSyncError, InputError, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils import (
-    add_ints_or_combine_dicts,
-    cache_response_timewise,
-    request_get_direct,
+from rotkehlchen.typing import (
+    BlockchainAddress,
+    BTCAddress,
+    ChecksumEthAddress,
+    EthAddress,
+    EthToken,
+    EthTokenInfo,
+    ResultCache,
 )
+from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils import cache_response_timewise, request_get_direct
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 # Type Aliases used in this module
 Balances = Dict[
-    typing.BlockchainAsset,
-    Dict[typing.BlockchainAddress, Dict[Union[str, typing.Asset], FVal]],
+    Asset,
+    Dict[BlockchainAddress, Dict[Union[str, Asset], FVal]],
 ]
-Totals = Dict[typing.BlockchainAsset, Dict[str, FVal]]
+Totals = Dict[Asset, Dict[str, FVal]]
 BlockchainBalancesUpdate = Dict[str, Union[Balances, Totals]]
-EthBalances = Dict[typing.EthAddress, Dict[Union[typing.BlockchainAsset, str], FVal]]
-AllEthTokens = Dict[typing.EthToken, Dict[str, Union[typing.ChecksumEthAddress, int]]]
+EthBalances = Dict[EthAddress, Dict[Union[Asset, str], FVal]]
+AllEthTokens = Dict[Asset, Dict[str, Union[ChecksumEthAddress, int]]]
 
 
 class Blockchain(object):
@@ -46,15 +46,17 @@ class Blockchain(object):
     def __init__(
             self,
             blockchain_accounts: BlockchainAccounts,
-            all_eth_tokens: List[typing.EthTokenInfo],
-            owned_eth_tokens: List[typing.EthToken],
+            all_eth_tokens: List[EthTokenInfo],
+            owned_eth_tokens: List[EthToken],
             inquirer: Inquirer,
             ethchain,  # TODO ethchain type not added yet due to Cyclic Dependency
+            msg_aggregator: MessagesAggregator,
     ):
         self.lock = Semaphore()
-        self.results_cache: Dict[str, typing.ResultCache] = {}
+        self.results_cache: Dict[str, ResultCache] = {}
         self.ethchain = ethchain
         self.inquirer = inquirer
+        self.msg_aggregator = msg_aggregator
 
         self.accounts = blockchain_accounts
         # go through ETH accounts and make sure they are EIP55 encoded
@@ -62,20 +64,33 @@ class Blockchain(object):
         # a named tuple. Move this into the named tuple constructor
         self.accounts._replace(eth=[to_checksum_address(x) for x in self.accounts.eth])
 
-        self.owned_eth_tokens = owned_eth_tokens
+        # The tokens we own
+        self.owned_eth_tokens: List[Asset] = []
+        for token_symbol in owned_eth_tokens:
+            try:
+                self.owned_eth_tokens.append(asset_from_eth_token_symbol(token_symbol))
+            except UnsupportedAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found owned eth token with symbol '
+                    f'{e.asset_name} that is not supported. Ignoring it.',
+                )
+                continue
 
         # All the known tokens, along with addresses and decimals
         self.all_eth_tokens: AllEthTokens = {}
-        for token in all_eth_tokens:
+        for token_info in all_eth_tokens:
             try:
-                token_symbol = cast(typing.EthToken, str(token['symbol']))
-            except (UnicodeDecodeError, UnicodeEncodeError):
-                # skip tokens with problems in unicode encoding decoding
+                token_asset = asset_from_eth_token_symbol(token_info.symbol)
+            except UnsupportedAsset as e:
+                log.warning(
+                    f'Ignoring eth token {e.asset_name} from the known '
+                    f'tokens list as it is not supported',
+                )
                 continue
 
-            self.all_eth_tokens[token_symbol] = {
-                'address': to_checksum_address(token['address']),
-                'decimal': cast(int, token['decimal']),
+            self.all_eth_tokens[token_asset] = {
+                'address': to_checksum_address(token_info.address),
+                'decimal': token_info.decimal,
             }
         # Per account balances
         self.balances: Balances = defaultdict(dict)
@@ -89,7 +104,7 @@ class Blockchain(object):
         return self.ethchain.set_rpc_port(port)
 
     @property
-    def eth_tokens(self) -> List[typing.EthToken]:
+    def eth_tokens(self) -> List[Asset]:
         return self.owned_eth_tokens
 
     @cache_response_timewise(CACHE_RESPONSE_FOR_SECS)
@@ -111,7 +126,7 @@ class Blockchain(object):
         return {'per_account': self.balances, 'totals': self.totals}, ''
 
     @staticmethod
-    def query_btc_account_balance(account: typing.BTCAddress) -> FVal:
+    def query_btc_account_balance(account: BTCAddress) -> FVal:
         btc_resp = request_get_direct(
             'https://blockchain.info/q/addressbalance/%s' % account,
         )
@@ -136,7 +151,7 @@ class Blockchain(object):
 
     def query_token_balances(
             self,
-            token_symbol: typing.EthToken,
+            token_asset: Asset,
             query_callback: Callable,
             **kwargs,
     ):
@@ -147,45 +162,72 @@ class Blockchain(object):
 
         Some special logic is needed here since some token names may have special
         chararacters, for example for old/new migrated tokens."""
-        if token_symbol == S_MLN:
-            result1 = query_callback(
-                token_symbol,
-                self.all_eth_tokens[S_MLN_OLD]['address'],
-                self.all_eth_tokens[S_MLN_OLD]['decimal'],
-                **kwargs,
-            )
-            # TODO: Here is the place to start the warning event for the user if he
-            # has any balance in the old MLN token:
-            # https://github.com/rotkehlchenio/rotkehlchen/issues/277
-            result2 = query_callback(
-                token_symbol,
-                self.all_eth_tokens[S_MLN_NEW]['address'],
-                self.all_eth_tokens[S_MLN_NEW]['decimal'],
-                **kwargs,
-            )
-            result = add_ints_or_combine_dicts(result1, result2)
-        else:
-            result = query_callback(
-                token_symbol,
-                self.all_eth_tokens[token_symbol]['address'],
-                self.all_eth_tokens[token_symbol]['decimal'],
-                **kwargs,
-            )
+
+        # TODO: Since all_eth_tokens now contains Assets as keys, checking up old
+        # symbols for querying balances for old tokens to warn the user or convert
+        # to new balance does not work from here anymore. Find a way to do it again
+        # with the new functionality
+
+        # if token_symbol == S_MLN:
+        #     result1 = query_callback(
+        #         token_symbol,
+        #         self.all_eth_tokens[S_MLN_OLD]['address'],
+        #         self.all_eth_tokens[S_MLN_OLD]['decimal'],
+        #         **kwargs,
+        #     )
+        #     # TODO: Here is the place to start the warning event for the user if he
+        #     # has any balance in the old MLN token:
+        #     # https://github.com/rotkehlchenio/rotkehlchen/issues/277
+        #     result2 = query_callback(
+        #         token_symbol,
+        #         self.all_eth_tokens[S_MLN_NEW]['address'],
+        #         self.all_eth_tokens[S_MLN_NEW]['decimal'],
+        #         **kwargs,
+        #     )
+        #     result = add_ints_or_combine_dicts(result1, result2)
+        # else:
+        result = query_callback(
+            token_asset,
+            self.all_eth_tokens[token_asset]['address'],
+            self.all_eth_tokens[token_asset]['decimal'],
+            **kwargs,
+        )
 
         return result
 
-    def track_new_tokens(self, tokens: List[typing.EthToken]) -> BlockchainBalancesUpdate:
-        intersection = set(tokens).intersection(set(self.owned_eth_tokens))
+    def track_new_tokens(self, tokens: List[EthToken]) -> BlockchainBalancesUpdate:
+
+        new_tokens = []
+        for token_symbol in tokens:
+            try:
+                new_tokens.append(asset_from_eth_token_symbol(token_symbol))
+            except UnsupportedAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Tried to add unsupported eth token with symbol '
+                    f'{e.asset_name}. Ignoring it.',
+                )
+                continue
+
+        intersection = set(new_tokens).intersection(set(self.owned_eth_tokens))
         if intersection != set():
             raise InputError('Some of the new provided tokens to track already exist')
 
-        self.owned_eth_tokens.extend(tokens)
+        self.owned_eth_tokens.extend(new_tokens)
         eth_balances = cast(EthBalances, self.balances[S_ETH])
-        self.query_ethereum_tokens(tokens, eth_balances)
+        self.query_ethereum_tokens(new_tokens, eth_balances)
         return {'per_account': self.balances, 'totals': self.totals}
 
-    def remove_eth_tokens(self, tokens: List[typing.EthToken]) -> BlockchainBalancesUpdate:
-        for token in tokens:
+    def remove_eth_tokens(self, tokens: List[EthToken]) -> BlockchainBalancesUpdate:
+        for token_symbol in tokens:
+            try:
+                token = asset_from_eth_token_symbol(token_symbol)
+            except UnsupportedAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Tried to remove unsupported eth token with symbol '
+                    f'{e.asset_name}. Ignoring it.',
+                )
+                continue
+
             usd_price = self.inquirer.find_usd_price(token)
             for account, account_data in self.balances[S_ETH].items():
                 if token not in account_data:
@@ -206,7 +248,7 @@ class Blockchain(object):
 
     def modify_btc_account(
             self,
-            account: typing.BTCAddress,
+            account: BTCAddress,
             append_or_remove: str,
             add_or_sub: Callable[[FVal, FVal], FVal],
     ) -> None:
@@ -236,7 +278,7 @@ class Blockchain(object):
 
     def modify_eth_account(
             self,
-            account: typing.EthAddress,
+            account: EthAddress,
             append_or_remove: str,
             add_or_sub: Callable[[FVal, FVal], FVal],
     ) -> None:
@@ -273,7 +315,7 @@ class Blockchain(object):
                 continue
 
             token_balance = self.query_token_balances(
-                token_symbol=token,
+                token_asset=token,
                 query_callback=self.ethchain.get_token_balance,
                 account=account,
             )
@@ -300,21 +342,21 @@ class Blockchain(object):
     def add_blockchain_account(
             self,
             blockchain: str,
-            account: typing.BlockchainAddress,
+            account: BlockchainAddress,
     ) -> BlockchainBalancesUpdate:
         return self.modify_blockchain_account(blockchain, account, 'append', operator.add)
 
     def remove_blockchain_account(
             self,
             blockchain: str,
-            account: typing.BlockchainAddress,
+            account: BlockchainAddress,
     ) -> BlockchainBalancesUpdate:
         return self.modify_blockchain_account(blockchain, account, 'remove', operator.sub)
 
     def modify_blockchain_account(
             self,
             blockchain: str,
-            account: typing.BlockchainAddress,
+            account: BlockchainAddress,
             append_or_remove: str,
             add_or_sub: Callable[[FVal, FVal], FVal],
     ) -> BlockchainBalancesUpdate:
@@ -325,7 +367,7 @@ class Blockchain(object):
 
             # above we check that account is a BTC account
             self.modify_btc_account(
-                typing.BTCAddress(account),
+                BTCAddress(account),
                 append_or_remove,
                 add_or_sub,
             )
@@ -335,7 +377,7 @@ class Blockchain(object):
                 raise InputError('Tried to remove a non existing ETH account')
             try:
                 # above we check that account is an ETH account
-                self.modify_eth_account(typing.EthAddress(account), append_or_remove, add_or_sub)
+                self.modify_eth_account(EthAddress(account), append_or_remove, add_or_sub)
             except BadFunctionCallOutput as e:
                 log.error(
                     'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
@@ -356,7 +398,7 @@ class Blockchain(object):
 
     def query_ethereum_tokens(
             self,
-            tokens: List[typing.EthToken],
+            tokens: List[Asset],
             eth_balances: EthBalances,
     ) -> None:
         token_balances = {}
@@ -369,7 +411,7 @@ class Blockchain(object):
             token_usd_price[token] = usd_price
 
             token_balances[token] = self.query_token_balances(
-                token_symbol=token,
+                token_asset=token,
                 query_callback=self.ethchain.get_multitoken_balance,
                 accounts=self.accounts.eth,
             )
@@ -388,7 +430,7 @@ class Blockchain(object):
             }
 
         self.balances[S_ETH] = cast(
-            Dict[typing.BlockchainAddress, Dict[Union[str, typing.Asset], FVal]],
+            Dict[BlockchainAddress, Dict[Union[str, Asset], FVal]],
             eth_balances,
         )
 
@@ -400,13 +442,17 @@ class Blockchain(object):
         eth_usd_price = self.inquirer.find_usd_price(S_ETH)
         balances = self.ethchain.get_multieth_balance(eth_accounts)
         eth_total = FVal(0)
-        eth_balances = {}
+        eth_balances: EthBalances = {}
         for account, balance in balances.items():
             eth_total += balance
             eth_balances[account] = {S_ETH: balance, 'usd_value': balance * eth_usd_price}
 
         self.totals[S_ETH] = {'amount': eth_total, 'usd_value': eth_total * eth_usd_price}
-        self.balances[S_ETH] = eth_balances  # but they are not complete until token query
+        # but they are not complete until token query
+        self.balances[S_ETH] = cast(
+            Dict[BlockchainAddress, Dict[Union[str, Asset], FVal]],
+            eth_balances,
+        )
 
         # And now for tokens
         self.query_ethereum_tokens(self.owned_eth_tokens, eth_balances)
