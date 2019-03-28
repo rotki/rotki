@@ -1,9 +1,10 @@
 from typing import Callable
 
+from rotkehlchen.assets import Asset
 from rotkehlchen.constants import S_USD, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import NoPriceForGivenTimestamp
-from rotkehlchen.typing import Asset, Timestamp
+from rotkehlchen.typing import Timestamp
 
 
 def assets_exist_at_time(

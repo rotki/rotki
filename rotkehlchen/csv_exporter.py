@@ -372,7 +372,7 @@ class CSVExporter(object):
         self.add_to_allevents(
             event_type=EV_TX_GAS_COST,
             paid_in_profit_currency=eth_burned_as_gas * rate,
-            paid_asset=Asset(S_ETH),
+            paid_asset=S_ETH,
             paid_in_asset=eth_burned_as_gas,
             received_asset=S_EMPTYSTR,
             received_in_asset=FVal(0),

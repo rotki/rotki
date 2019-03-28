@@ -559,13 +559,13 @@ class DBHandler(object):
 
     def add_blockchain_account(
             self,
-            blockchain: NonEthTokenBlockchainAsset,
+            blockchain: Asset,
             account: BlockchainAddress,
     ) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
-            (blockchain, account),
+            (str(blockchain), account),
         )
         self.conn.commit()
         self.update_last_write()

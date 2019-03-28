@@ -407,3 +407,12 @@ def asset_from_binance(binance_name: str) -> Asset:
 
     name = BINANCE_TO_WORLD.get(binance_name, binance_name)
     return Asset(name)
+
+
+def asset_from_eth_token_symbol(token_symbol: str) -> Asset:
+    """Takes an eth token symbol from the eth_tokens.json file and turns it
+    into an Asset.
+
+    If the token is not supported the functions throws UnsupportedAsset
+    """
+    return Asset(token_symbol)

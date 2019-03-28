@@ -312,6 +312,7 @@ class Rotkehlchen(object):
             owned_eth_tokens=self.data.db.get_owned_tokens(),
             inquirer=self.inquirer,
             ethchain=ethchain,
+            msg_aggregator=self.msg_aggregator,
         )
         self.user_is_logged_in = True
 
