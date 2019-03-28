@@ -12,11 +12,12 @@ from gevent.event import Event
 from gevent.lock import Semaphore
 
 from rotkehlchen.args import app_args
+from rotkehlchen.assets import Asset
 from rotkehlchen.errors import AuthenticationError, RotkehlchenPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serializer import process_result, process_result_list
-from rotkehlchen.typing import Asset, Timestamp
+from rotkehlchen.typing import Timestamp
 from rotkehlchen.utils import pretty_json_dumps
 
 logger = logging.getLogger(__name__)

@@ -9,7 +9,7 @@ import pytest
 from eth_utils.address import to_checksum_address
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.constants import S_BTC, S_CNY, S_ETH, S_EUR, S_USD, S_XMR, YEAR_IN_SECONDS
+from rotkehlchen.constants import A_BTC, A_ETH, A_USD, S_CNY, S_EUR, S_XMR, YEAR_IN_SECONDS
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import (
     DBINFO_FILENAME,
@@ -482,32 +482,32 @@ def test_data_set_fiat_balance(data_dir, username):
 asset_balances = [
     AssetBalance(
         time=Timestamp(1451606400),
-        asset=S_USD,
+        asset=A_USD,
         amount='10',
         usd_value='10',
     ), AssetBalance(
         time=Timestamp(1451606401),
-        asset=S_ETH,
+        asset=A_ETH,
         amount='2',
         usd_value='1.7068',
     ), AssetBalance(
         time=Timestamp(1465171200),
-        asset=S_USD,
+        asset=A_USD,
         amount='500',
         usd_value='500',
     ), AssetBalance(
         time=Timestamp(1465171201),
-        asset=S_ETH,
+        asset=A_ETH,
         amount='10',
         usd_value='123',
     ), AssetBalance(
         time=Timestamp(1485907200),
-        asset=S_USD,
+        asset=A_USD,
         amount='350',
         usd_value='350',
     ), AssetBalance(
         time=Timestamp(1485907201),
-        asset=S_ETH,
+        asset=A_ETH,
         amount='25',
         usd_value='249.5',
     ),
@@ -522,7 +522,7 @@ def test_query_timed_balances(data_dir, username):
     result = data.db.query_timed_balances(
         from_ts=1451606401,
         to_ts=1485907100,
-        asset=S_USD,
+        asset=A_USD,
     )
     assert len(result) == 1
     assert result[0].time == 1465171200
@@ -532,7 +532,7 @@ def test_query_timed_balances(data_dir, username):
     result = data.db.query_timed_balances(
         from_ts=1451606300,
         to_ts=1485907000,
-        asset=S_ETH,
+        asset=A_ETH,
     )
     assert len(result) == 2
     assert result[0].time == 1451606401
@@ -551,7 +551,7 @@ def test_query_owned_assets(data_dir, username):
     balances.extend([
         AssetBalance(
             time=Timestamp(1488326400),
-            asset=S_BTC,
+            asset=A_BTC,
             amount='1',
             usd_value='1222.66',
         ),
@@ -565,7 +565,7 @@ def test_query_owned_assets(data_dir, username):
     data.db.add_multiple_balances(balances)
 
     assets_list = data.db.query_owned_assets()
-    assert assets_list == [S_USD, S_ETH, S_BTC, S_XMR]
+    assert assets_list == [A_USD, A_ETH, A_BTC, S_XMR]
 
 
 def test_get_latest_location_value_distribution(data_dir, username):
@@ -644,14 +644,14 @@ def test_get_latest_asset_value_distribution(data_dir, username):
 
     btc = AssetBalance(
         time=Timestamp(1488326400),
-        asset=S_BTC,
+        asset=A_BTC,
         amount='1',
         usd_value='1222.66',
     )
     balances.append(btc)
     eth = AssetBalance(
         time=Timestamp(1488326400),
-        asset=S_ETH,
+        asset=A_ETH,
         amount='10',
         usd_value='4517.4',
     )

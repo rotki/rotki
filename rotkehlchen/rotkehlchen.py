@@ -13,7 +13,7 @@ from rotkehlchen.binance import Binance
 from rotkehlchen.bitmex import Bitmex
 from rotkehlchen.bittrex import Bittrex
 from rotkehlchen.blockchain import Blockchain
-from rotkehlchen.constants import S_EUR, S_USD, SUPPORTED_EXCHANGES
+from rotkehlchen.constants import A_USD, S_EUR, SUPPORTED_EXCHANGES
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.errors import (
     AuthenticationError,
@@ -121,7 +121,7 @@ class Rotkehlchen(object):
                 api_key=str.encode(secret_data['kraken']['api_key']),
                 secret=str.encode(secret_data['kraken']['api_secret']),
                 user_directory=self.user_directory,
-                usd_eur_price=self.inquirer.query_fiat_pair(S_EUR, S_USD),
+                usd_eur_price=self.inquirer.query_fiat_pair(S_EUR, A_USD),
             )
             self.connected_exchanges.append('kraken')
             self.trades_historian.set_exchange('kraken', self.kraken)
@@ -130,7 +130,7 @@ class Rotkehlchen(object):
         if self.poloniex is None and 'poloniex' in secret_data:
             self.poloniex = Poloniex(
                 api_key=str.encode(secret_data['poloniex']['api_key']),
-                api_secret=str.encode(secret_data['poloniex']['api_secret']),
+                secret=str.encode(secret_data['poloniex']['api_secret']),
                 inquirer=self.inquirer,
                 user_directory=self.user_directory,
                 msg_aggregator=self.msg_aggregator,
@@ -141,7 +141,7 @@ class Rotkehlchen(object):
         if self.bittrex is None and 'bittrex' in secret_data:
             self.bittrex = Bittrex(
                 api_key=str.encode(secret_data['bittrex']['api_key']),
-                api_secret=str.encode(secret_data['bittrex']['api_secret']),
+                secret=str.encode(secret_data['bittrex']['api_secret']),
                 inquirer=self.inquirer,
                 user_directory=self.user_directory,
                 msg_aggregator=self.msg_aggregator,
@@ -152,7 +152,7 @@ class Rotkehlchen(object):
         if self.binance is None and 'binance' in secret_data:
             self.binance = Binance(
                 api_key=str.encode(secret_data['binance']['api_key']),
-                api_secret=str.encode(secret_data['binance']['api_secret']),
+                secret=str.encode(secret_data['binance']['api_secret']),
                 inquirer=self.inquirer,
                 data_dir=self.user_directory,
                 msg_aggregator=self.msg_aggregator,
@@ -162,10 +162,10 @@ class Rotkehlchen(object):
 
         if self.bitmex is None and 'bitmex' in secret_data:
             self.bitmex = Bitmex(
-                str.encode(secret_data['bitmex']['api_key']),
-                str.encode(secret_data['bitmex']['api_secret']),
-                self.inquirer,
-                self.user_directory,
+                api_key=str.encode(secret_data['bitmex']['api_key']),
+                secret=str.encode(secret_data['bitmex']['api_secret']),
+                inquirer=self.inquirer,
+                user_directory=self.user_directory,
             )
             self.connected_exchanges.append('bitmex')
             self.trades_historian.set_exchange('bitmex', self.bitmex)

@@ -5,12 +5,13 @@ from typing import Callable, Optional
 
 from data_faker.utils import assets_exist_at_time
 
+from rotkehlchen.assets import Asset
 from rotkehlchen.fval import FVal
 from rotkehlchen.kraken import kraken_to_world_pair
 from rotkehlchen.order_formatting import Trade, pair_get_assets
 from rotkehlchen.serializer import process_result
 from rotkehlchen.tests.fixtures.exchanges.kraken import create_kraken_trade
-from rotkehlchen.typing import Asset, Timestamp, TradePair
+from rotkehlchen.typing import Timestamp, TradePair
 
 
 class FakeKraken(object):

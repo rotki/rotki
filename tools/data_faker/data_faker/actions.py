@@ -3,14 +3,14 @@ import random
 from typing import Tuple
 
 from rotkehlchen.assets import Asset
-from rotkehlchen.constants import FIAT_CURRENCIES
+from rotkehlchen.constants import A_BTC, A_EUR, A_USD, FIAT_CURRENCIES
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade, TradeType, pair_get_assets
 from rotkehlchen.typing import Timestamp, TradePair
 
 STARTING_TIMESTAMP = 1464739200  # 01/06/2016
 NUMBER_OF_TRADES = 5
-STARTING_FUNDS = {Asset('EUR'): FVal(100000), Asset('BTC'): FVal(10)}
+STARTING_FUNDS = {A_EUR: FVal(100000), A_BTC: FVal(10)}
 
 MAX_TRADE_DIFF_VARIANCE = 14400
 
@@ -48,8 +48,8 @@ class ActionWriter(object):
 
         timestamp, _, _ = self.get_next_ts()
         for asset, value in self.funds.items():
-            if asset in FIAT_CURRENCIES:
-                self.rotki.data.db.add_fiat_balance(asset, value)
+            if asset.is_fiat():
+                self.rotki.data.db.add_fiat_balance(str(asset), value)
         self.rotki.query_balances(requested_save_data=True, timestamp=timestamp)
 
         # divide our starting funds between exchanges and keep a part out
@@ -95,7 +95,7 @@ class ActionWriter(object):
             if save_balances:
                 self.maybe_save_balances(save_ts=current_ts)
 
-    def query_historical_price(self, from_asset, to_asset, timestamp):
+    def query_historical_price(self, from_asset: Asset, to_asset: Asset, timestamp: Timestamp):
         return self.rotki.accountant.price_historian.query_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,
@@ -168,7 +168,7 @@ class ActionWriter(object):
             spending_asset = base
         # get a spending asset amount within our per-trade equivalent range and
         # our available funds
-        spending_usd_rate = self.query_historical_price(spending_asset, 'USD', ts)
+        spending_usd_rate = self.query_historical_price(spending_asset, A_USD, ts)
         max_usd_in_spending_asset = spending_usd_rate * exchange.get_balance(spending_asset)
         max_usd_equivalent_to_spend = min(max_usd_in_spending_asset, MAX_TRADE_USD_VALUE)
         rate = self.query_historical_price(base, quote, ts)
@@ -181,7 +181,7 @@ class ActionWriter(object):
         else:
             amount = amount_in_spending_asset
 
-        quote_asset_usd_rate = self.query_historical_price(quote, 'USD', ts)
+        quote_asset_usd_rate = self.query_historical_price(quote, A_USD, ts)
         fee_in_quote_currency = FVal(random.uniform(0, MAX_FEE_USD_VALUE)) / quote_asset_usd_rate
 
         # create the trade

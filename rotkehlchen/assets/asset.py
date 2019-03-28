@@ -131,6 +131,9 @@ class Asset():
     def canonical(self) -> str:
         return self.symbol
 
+    def is_fiat(self) -> bool:
+        return self.asset_type == AssetType.FIAT
+
     def __str__(self) -> str:
         return self.name
 

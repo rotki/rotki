@@ -10,7 +10,7 @@ from rotkehlchen.assets import Asset
 from rotkehlchen.binance import trade_from_binance
 from rotkehlchen.bitmex import trade_from_bitmex
 from rotkehlchen.bittrex import trade_from_bittrex
-from rotkehlchen.constants import S_BTC
+from rotkehlchen.constants import A_BTC, A_USD
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import PriceQueryUnknownFromAsset, RemoteError, UnsupportedAsset
 from rotkehlchen.exchange import data_up_todate
@@ -93,7 +93,7 @@ def do_read_manual_margin_positions(user_directory):
                 open_time=position['open_time'],
                 close_time=position['close_time'],
                 profit_loss=FVal(position['btc_profit_loss']),
-                pl_currency=S_BTC,
+                pl_currency=A_BTC,
                 notes=position['notes'],
             ),
         )
@@ -302,8 +302,8 @@ class PriceHistorian(object):
         keep the code around just in case a regression is introduced on the side
         of cryptocompare.
         """
-        from_asset_usd = self.query_historical_price(from_asset, 'USD', timestamp)
-        to_asset_usd = self.query_historical_price(to_asset, 'USD', timestamp)
+        from_asset_usd = self.query_historical_price(from_asset, A_USD, timestamp)
+        to_asset_usd = self.query_historical_price(to_asset, A_USD, timestamp)
 
         usd_invert_conversion = from_asset_usd / to_asset_usd
         abs_diff = abs(usd_invert_conversion - price)
@@ -464,7 +464,7 @@ class PriceHistorian(object):
 
         return calculated_history
 
-    def query_historical_price(self, from_asset, to_asset, timestamp):
+    def query_historical_price(self, from_asset: Asset, to_asset: Asset, timestamp):
         """
         Query the historical price on `timestamp` for `from_asset` in `to_asset`.
         So how much `to_asset` does 1 unit of `from_asset` cost.
@@ -486,7 +486,7 @@ class PriceHistorian(object):
         if from_asset == to_asset:
             return 1
 
-        if from_asset in FIAT_CURRENCIES and to_asset in FIAT_CURRENCIES:
+        if from_asset.is_fiat() and to_asset.is_fiat():
             # if we are querying historical forex data then try something other than cryptocompare
             price = self.inquirer.query_historical_fiat_exchange_rates(
                 from_asset,
@@ -529,8 +529,8 @@ class PriceHistorian(object):
                     f"{to_asset} at timestamp {timestamp}. Comparing with BTC...",
                 )
                 # Just get the BTC price
-                asset_btc_price = self.query_historical_price(from_asset, 'BTC', timestamp)
-                btc_to_asset_price = self.query_historical_price('BTC', to_asset, timestamp)
+                asset_btc_price = self.query_historical_price(from_asset, A_BTC, timestamp)
+                btc_to_asset_price = self.query_historical_price(A_BTC, to_asset, timestamp)
                 price = asset_btc_price * btc_to_asset_price
             else:
                 log.debug(

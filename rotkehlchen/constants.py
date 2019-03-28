@@ -15,11 +15,25 @@ YEAR_IN_SECONDS = 31536000  # 60 * 60 * 24 * 365
 
 S_EMPTYSTR = typing.EmptyStr('')
 
-S_BTC = Asset('BTC')
-S_BCH = cast(typing.NonEthTokenBlockchainAsset, 'BCH')
+S_USD = typing.FiatAsset('USD')
+S_EUR = typing.FiatAsset('EUR')
+S_GBP = typing.FiatAsset('GBP')
+S_JPY = typing.FiatAsset('JPY')
+S_CNY = typing.FiatAsset('CNY')
+S_CAD = typing.FiatAsset('CAD')
+S_KRW = typing.FiatAsset('KRW')
+FIAT_CURRENCIES = (S_USD, S_EUR, S_GBP, S_JPY, S_CNY, S_CAD, S_KRW)
+
+S_ETC = 'ETC'
+S_BCH = 'BCH'
+S_BTC = 'BTC'
+S_ETH = 'ETH'
+
+A_BTC = Asset(S_BTC)
+A_BCH = Asset(S_BCH)
 S_BSV = cast(typing.NonEthTokenBlockchainAsset, 'BSV')
-S_ETH = Asset('ETH')
-S_ETC = cast(typing.NonEthTokenBlockchainAsset, 'ETC')
+A_ETH = Asset(S_ETH)
+A_ETC = Asset(S_ETC)
 S_DATACOIN = cast(typing.NonEthTokenBlockchainAsset, 'DATAcoin')
 S_XMR = cast(typing.NonEthTokenBlockchainAsset, 'XMR')
 S_NANO = cast(typing.NonEthTokenBlockchainAsset, 'NANO')
@@ -29,16 +43,8 @@ S_MLN_NEW = typing.EthToken('MLN (new)')
 S_MLN = typing.EthToken('MLN')
 S_YOYOW = cast(typing.NonEthTokenBlockchainAsset, 'YOYOW')
 S_RDN = cast(typing.EthToken, 'RDN')
-
-
-S_USD = Asset('USD')
-S_EUR = typing.FiatAsset('EUR')
-S_GBP = typing.FiatAsset('GBP')
-S_JPY = typing.FiatAsset('JPY')
-S_CNY = typing.FiatAsset('CNY')
-S_CAD = typing.FiatAsset('CAD')
-S_KRW = typing.FiatAsset('KRW')
-FIAT_CURRENCIES = (S_USD, S_EUR, S_GBP, S_JPY, S_CNY, S_CAD, S_KRW)
+A_USD = Asset(S_USD)
+A_EUR = Asset(S_EUR)
 
 EV_BUY = typing.EventType('buy')
 EV_SELL = typing.EventType('sell')

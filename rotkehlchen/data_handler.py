@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Tuple, cast
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.assets import Asset
-from rotkehlchen.constants import S_ETH
+from rotkehlchen.constants import A_ETH
 from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
 from rotkehlchen.db.dbhandler import DBHandler
@@ -230,7 +230,7 @@ class DataHandler(object):
         self.user_data_dir = user_data_dir
         return user_data_dir
 
-    def main_currency(self) -> FiatAsset:
+    def main_currency(self) -> Asset:
         return self.db.get_main_currency()
 
     def save_balances_data(self, data: BalancesData, timestamp: Timestamp) -> None:
@@ -245,7 +245,7 @@ class DataHandler(object):
             blockchain: NonEthTokenBlockchainAsset,
             account: BlockchainAddress,
     ) -> None:
-        if blockchain == S_ETH:
+        if blockchain == A_ETH:
             account = to_checksum_address(account)
         self.db.add_blockchain_account(blockchain, account)
 
@@ -254,7 +254,7 @@ class DataHandler(object):
             blockchain: NonEthTokenBlockchainAsset,
             account: BlockchainAddress,
     ) -> None:
-        if blockchain == S_ETH:
+        if blockchain == A_ETH:
             account = to_checksum_address(account)
         self.db.remove_blockchain_account(blockchain, account)
 

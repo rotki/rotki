@@ -12,7 +12,7 @@ from eth_utils.address import to_checksum_address
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets import Asset
-from rotkehlchen.constants import S_BTC, S_ETH, S_USD, SUPPORTED_EXCHANGES, YEAR_IN_SECONDS
+from rotkehlchen.constants import A_BTC, A_ETH, A_USD, S_USD, SUPPORTED_EXCHANGES, YEAR_IN_SECONDS
 from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
 from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.fval import FVal
@@ -238,11 +238,11 @@ class DBHandler(object):
             accounts = self.get_blockchain_accounts()
             cursor = self.conn.cursor()
             cursor.execute(
-                'DELETE FROM blockchain_accounts WHERE blockchain=?;', (S_ETH,),
+                'DELETE FROM blockchain_accounts WHERE blockchain=?;', (A_ETH,),
             )
             self.conn.commit()
             for account in accounts.eth:
-                self.add_blockchain_account(S_ETH, to_checksum_address(account))
+                self.add_blockchain_account(A_ETH, to_checksum_address(account))
 
     def connect(self, password: str) -> None:
         self.conn = sqlcipher.connect(  # pylint: disable=no-member
@@ -441,17 +441,17 @@ class DBHandler(object):
 
         return settings
 
-    def get_main_currency(self) -> FiatAsset:
+    def get_main_currency(self) -> Asset:
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT value FROM settings WHERE name="main_currency";',
         )
         query = query.fetchall()
         if len(query) == 0:
-            return S_USD
+            return A_USD
 
         result = query[0][0]
-        return FiatAsset(result)
+        return Asset(result)
 
     def set_main_currency(self, currency: FiatAsset) -> None:
         cursor = self.conn.cursor()
@@ -593,12 +593,13 @@ class DBHandler(object):
         self.conn.commit()
         self.update_last_write()
 
-    def add_fiat_balance(self, currency: FiatAsset, amount: FVal) -> None:
+    def add_fiat_balance(self, currency: Asset, amount: FVal) -> None:
+        assert currency.is_fiat()
         cursor = self.conn.cursor()
         # We don't care about previous value so this simple insert or replace should work
         cursor.execute(
             'INSERT OR REPLACE INTO current_balances(asset, amount) VALUES (?, ?)',
-            (currency, str(amount)),
+            (str(currency), str(amount)),
         )
         self.conn.commit()
         self.update_last_write()
@@ -635,9 +636,9 @@ class DBHandler(object):
         btc_list = list()
 
         for entry in query:
-            if entry[0] == S_ETH:
+            if entry[0] == A_ETH:
                 eth_list.append(entry[1])
-            elif entry[0] == S_BTC:
+            elif entry[0] == A_BTC:
                 btc_list.append(entry[1])
             else:
                 log.warning(
