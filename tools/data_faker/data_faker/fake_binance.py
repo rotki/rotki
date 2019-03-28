@@ -6,13 +6,14 @@ from typing import Any, Callable, Dict, Optional
 
 from data_faker.utils import assets_exist_at_time
 
+from rotkehlchen.assets import Asset
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.binance import create_binance_symbols_to_pair
 from rotkehlchen.errors import UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade, TradeType, pair_get_assets
 from rotkehlchen.serializer import process_result, process_result_list
-from rotkehlchen.typing import Asset, Timestamp, TradePair
+from rotkehlchen.typing import Timestamp, TradePair
 
 # Disallow some assets for simplicity
 DISALLOWED_ASSETS = (

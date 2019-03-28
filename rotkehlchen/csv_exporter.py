@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Tuple, Union
 
 from rotkehlchen.assets import Asset
 from rotkehlchen.constants import (
+    A_ETH,
     EV_ASSET_MOVE,
     EV_BUY,
     EV_INTEREST_PAYMENT,
@@ -13,7 +14,6 @@ from rotkehlchen.constants import (
     EV_SELL,
     EV_TX_GAS_COST,
     S_EMPTYSTR,
-    S_ETH,
     ZERO,
 )
 from rotkehlchen.fval import FVal
@@ -372,7 +372,7 @@ class CSVExporter(object):
         self.add_to_allevents(
             event_type=EV_TX_GAS_COST,
             paid_in_profit_currency=eth_burned_as_gas * rate,
-            paid_asset=S_ETH,
+            paid_asset=A_ETH,
             paid_in_asset=eth_burned_as_gas,
             received_asset=S_EMPTYSTR,
             received_in_asset=FVal(0),

@@ -13,6 +13,7 @@ from rotkehlchen.db.dbhandler import BlockchainAccounts
 from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.tests.utils.blockchain import geth_create_blockchain
 from rotkehlchen.tests.utils.tests import cleanup_tasks
+from rotkehlchen.user_messages import MessagesAggregator
 
 
 @pytest.fixture(scope='session')
@@ -167,4 +168,5 @@ def blockchain(
         owned_eth_tokens=[],
         inquirer=inquirer,
         ethchain=ethchain_client,
+        msg_aggregator=MessagesAggregator(),
     )

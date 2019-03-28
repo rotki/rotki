@@ -4,11 +4,12 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 import gevent
 
 from rotkehlchen.accounting.events import TaxableEvents
-from rotkehlchen.constants import S_BTC, S_ETH, ZERO
+from rotkehlchen.assets import Asset
+from rotkehlchen.constants import A_BTC, A_ETH, ZERO
 from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.errors import PriceQueryUnknownFromAsset
 from rotkehlchen.fval import FVal
-from rotkehlchen.history import FIAT_CURRENCIES, PriceHistorian
+from rotkehlchen.history import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import (
     AssetMovement,
@@ -18,7 +19,7 @@ from rotkehlchen.order_formatting import (
     trade_get_assets,
 )
 from rotkehlchen.transactions import EthereumTransaction
-from rotkehlchen.typing import Asset, Fee, FiatAsset, FilePath, Timestamp
+from rotkehlchen.typing import Fee, FilePath, Timestamp
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -68,7 +69,7 @@ def action_get_assets(
     elif isinstance(action, AssetMovement):
         return action.asset, None
     elif isinstance(action, EthereumTransaction):
-        return S_ETH, None
+        return A_ETH, None
     elif isinstance(action, MarginPosition):
         return action.pl_currency, None
     elif isinstance(action, dict):
@@ -84,7 +85,7 @@ class Accountant(object):
     def __init__(
             self,
             price_historian: PriceHistorian,
-            profit_currency: FiatAsset,
+            profit_currency: Asset,
             user_directory: FilePath,
             create_csv: bool,
             ignored_assets: List[Asset],
@@ -148,10 +149,10 @@ class Accountant(object):
 
         return True, ''
 
-    def set_main_currency(self, currency: FiatAsset) -> None:
-        if currency not in FIAT_CURRENCIES:
+    def set_main_currency(self, currency: Asset) -> None:
+        if not currency.is_fiat():
             raise ValueError(
-                'Attempted to set unsupported "{}" as main currency.'.format(currency),
+                f'Attempted to set unsupported "{str(currency)}" as main currency.',
             )
 
         self.profit_currency = currency
@@ -235,7 +236,7 @@ class Accountant(object):
             gas_price = transaction.gas_price
             self.last_gas_price = transaction.gas_price
 
-        rate = self.get_rate_in_profit_currency(S_ETH, transaction.timestamp)
+        rate = self.get_rate_in_profit_currency(A_ETH, transaction.timestamp)
         eth_burned_as_gas = (transaction.gas_used * gas_price) / FVal(10 ** 18)
         cost = eth_burned_as_gas * rate
         self.eth_transactions_gas_costs += cost
@@ -489,7 +490,7 @@ class Accountant(object):
         elif trade.trade_type == TradeType.SETTLEMENT_BUY:
             # in poloniex settlements you buy some asset with BTC to repay a loan
             # so in essense you sell BTC to repay the loan
-            selling_asset = S_BTC
+            selling_asset = A_BTC
             selling_asset_rate = self.get_rate_in_profit_currency(
                 selling_asset,
                 trade.timestamp,

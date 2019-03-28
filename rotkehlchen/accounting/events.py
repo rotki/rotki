@@ -1,13 +1,14 @@
 import logging
 from typing import Dict, Optional, Tuple
 
+from rotkehlchen.assets import Asset
 from rotkehlchen.constants import (
+    A_BCH,
+    A_BTC,
+    A_ETC,
+    A_ETH,
     BTC_BCH_FORK_TS,
     ETH_DAO_FORK_TS,
-    S_BCH,
-    S_BTC,
-    S_ETC,
-    S_ETH,
     ZERO,
 )
 from rotkehlchen.errors import PriceQueryUnknownFromAsset
@@ -15,7 +16,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history import FIAT_CURRENCIES, NoPriceForGivenTimestamp
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import BuyEvent, Events, SellEvent
-from rotkehlchen.typing import Asset, Fee, Timestamp
+from rotkehlchen.typing import Fee, Timestamp
 from rotkehlchen.utils import taxable_gain_for_sell, ts_now, tsToDate
 
 logger = logging.getLogger(__name__)
@@ -142,7 +143,7 @@ class TaxableEvents(object):
         # TODO: Should fee also be taken into account here?
         if bought_asset == 'ETH' and timestamp < ETH_DAO_FORK_TS:
             self.add_buy(
-                S_ETC,
+                A_ETC,
                 bought_amount,
                 paid_with_asset,
                 trade_rate,
@@ -155,7 +156,7 @@ class TaxableEvents(object):
         if bought_asset == 'BTC' and timestamp < BTC_BCH_FORK_TS:
             # Acquiring BTC before the BCH fork provides equal amount of BCH
             self.add_buy(
-                S_BCH,
+                A_BCH,
                 bought_amount,
                 paid_with_asset,
                 trade_rate,
@@ -170,16 +171,16 @@ class TaxableEvents(object):
             sold_amount: FVal,
             timestamp: Timestamp,
     ) -> None:
-        if sold_asset == S_ETH and timestamp < ETH_DAO_FORK_TS:
-            if not self.reduce_asset_amount(asset=S_ETC, amount=sold_amount):
+        if sold_asset == A_ETH and timestamp < ETH_DAO_FORK_TS:
+            if not self.reduce_asset_amount(asset=A_ETC, amount=sold_amount):
                 log.critical(
                     'No documented buy found for ETC (ETH equivalent) before {}'.format(
                         tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
                     ),
                 )
 
-        if sold_asset == S_BTC and timestamp < BTC_BCH_FORK_TS:
-            if not self.reduce_asset_amount(asset=S_BCH, amount=sold_amount):
+        if sold_asset == A_BTC and timestamp < BTC_BCH_FORK_TS:
+            if not self.reduce_asset_amount(asset=A_BCH, amount=sold_amount):
                 log.critical(
                     'No documented buy found for BCH (BTC equivalent) before {}'.format(
                         tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
