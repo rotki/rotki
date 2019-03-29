@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, Optional
 
 from data_faker.utils import assets_exist_at_time
 
-from rotkehlchen.assets import Asset
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.binance import create_binance_symbols_to_pair
 from rotkehlchen.errors import UnsupportedAsset

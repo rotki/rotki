@@ -7,7 +7,8 @@ from typing import Dict, List, Optional, Tuple, Union, cast
 from urllib.parse import urlencode
 
 from rotkehlchen import typing
-from rotkehlchen.constants import A_BTC, CACHE_RESPONSE_FOR_SECS
+from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
+from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal

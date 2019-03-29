@@ -4,8 +4,9 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 import gevent
 
 from rotkehlchen.accounting.events import TaxableEvents
-from rotkehlchen.assets import Asset
-from rotkehlchen.constants import A_BTC, A_ETH, ZERO
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.errors import PriceQueryUnknownFromAsset
 from rotkehlchen.fval import FVal

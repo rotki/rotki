@@ -3,9 +3,8 @@ import logging
 import os
 from typing import Any, Dict, List, Tuple, Union
 
-from rotkehlchen.assets import Asset
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import (
-    A_ETH,
     EV_ASSET_MOVE,
     EV_BUY,
     EV_INTEREST_PAYMENT,
@@ -16,6 +15,7 @@ from rotkehlchen.constants import (
     S_EMPTYSTR,
     ZERO,
 )
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
 from rotkehlchen.typing import EmptyStr, EventType, Fee, FilePath, Timestamp

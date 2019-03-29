@@ -1,6 +1,6 @@
 from typing import Dict, Union
 
-from rotkehlchen.assets import Asset
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.fval import FVal
 
 # Types used by dbhander and datahandler

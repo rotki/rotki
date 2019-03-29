@@ -5,7 +5,8 @@ from typing import Dict, List, Optional
 
 import pytest
 
-from rotkehlchen.constants import A_USD, S_EUR
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.assets import A_USD, S_EUR
 from rotkehlchen.fval import FVal
 from rotkehlchen.kraken import KRAKEN_ASSETS, KRAKEN_DELISTED, Kraken, world_to_kraken_pair
 from rotkehlchen.order_formatting import TradeType
@@ -15,7 +16,7 @@ from rotkehlchen.tests.utils.factories import (
     make_random_timestamp,
     make_random_uppercasenumeric_string,
 )
-from rotkehlchen.typing import Asset, Timestamp, TradePair
+from rotkehlchen.typing import Timestamp, TradePair
 from rotkehlchen.utils import rlk_jsonloads
 
 

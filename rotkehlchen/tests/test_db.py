@@ -9,7 +9,8 @@ import pytest
 from eth_utils.address import to_checksum_address
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.constants import A_BTC, A_ETH, A_USD, S_CNY, S_EUR, S_XMR, YEAR_IN_SECONDS
+from rotkehlchen.constants import YEAR_IN_SECONDS
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD, S_CNY, S_EUR, S_XMR
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import (
     DBINFO_FILENAME,

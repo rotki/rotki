@@ -22,6 +22,7 @@ from rotkehlchen.order_formatting import (
     AssetMovement,
     Trade,
     TradeType,
+    get_pair_position_str,
     invert_pair,
     trade_type_from_string,
 )
@@ -30,7 +31,6 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils import (
     cache_response_timewise,
     createTimeStamp,
-    get_pair_position_str,
     retry_calls,
     rlk_jsonloads,
     rlk_jsonloads_dict,

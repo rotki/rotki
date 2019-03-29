@@ -1,16 +1,9 @@
 import logging
 from typing import Dict, Optional, Tuple
 
-from rotkehlchen.assets import Asset
-from rotkehlchen.constants import (
-    A_BCH,
-    A_BTC,
-    A_ETC,
-    A_ETH,
-    BTC_BCH_FORK_TS,
-    ETH_DAO_FORK_TS,
-    ZERO,
-)
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
+from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETC, A_ETH
 from rotkehlchen.errors import PriceQueryUnknownFromAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import FIAT_CURRENCIES, NoPriceForGivenTimestamp

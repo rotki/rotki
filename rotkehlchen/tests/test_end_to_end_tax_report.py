@@ -1,6 +1,6 @@
 import pytest
 
-from rotkehlchen.constants import A_BTC
+from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import MarginPosition
 from rotkehlchen.tests.utils.accounting import accounting_history_process

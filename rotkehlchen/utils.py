@@ -13,13 +13,11 @@ from typing import Any, Callable, Dict, List, Union
 import requests
 from rlp.sedes import big_endian_int
 
-from rotkehlchen.assets import Asset
 from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, ZERO
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import TradeType
-from rotkehlchen.typing import Fee, FilePath, ResultCache, Timestamp, TradePair
+from rotkehlchen.typing import Fee, FilePath, ResultCache, Timestamp, TradeType
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -141,25 +139,6 @@ def dict_get_sumof(d: Dict[str, Dict[str, FVal]], attribute: str, **args) -> FVa
     for _, value in d.items():
         sum_ += value[attribute]
     return sum_
-
-
-def get_pair_position_str(pair: TradePair, position: str) -> str:
-    """Get the string representation of an asset of a trade pair"""
-    assert position == 'first' or position == 'second'
-    currencies = pair.split('_')
-    if len(currencies) != 2:
-        raise ValueError("Could not split {} pair".format(pair))
-    currency = currencies[0] if position == 'first' else currencies[1]
-    return currency
-
-
-def get_pair_position_asset(pair: TradePair, position: str) -> Asset:
-    """
-    Get the asset of a trade pair.
-
-    Can throw UnknownAsset if the asset is not known to Rotkehlchen
-    """
-    return Asset(get_pair_position_str(pair, position))
 
 
 def merge_dicts(*dict_args: Dict) -> Dict:

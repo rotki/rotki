@@ -1,7 +1,8 @@
 from typing import Callable
 
-from rotkehlchen.assets import Asset
-from rotkehlchen.constants import A_USD, ZERO
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import NoPriceForGivenTimestamp
 from rotkehlchen.typing import Timestamp

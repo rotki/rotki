@@ -5,7 +5,7 @@ from typing import Callable, Optional
 
 from data_faker.utils import assets_exist_at_time
 
-from rotkehlchen.assets import Asset
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.fval import FVal
 from rotkehlchen.kraken import kraken_to_world_pair
 from rotkehlchen.order_formatting import Trade, pair_get_assets
