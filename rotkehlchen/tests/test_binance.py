@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.assets import Asset
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import (
     BINANCE_TO_WORLD,
     RENAMED_BINANCE_ASSETS,

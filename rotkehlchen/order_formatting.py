@@ -1,12 +1,11 @@
 from collections import namedtuple
-from enum import Enum
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 from dataclasses import dataclass
 
-from rotkehlchen.assets import Asset
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Timestamp, TradePair
+from rotkehlchen.typing import Timestamp, TradePair, TradeType
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -43,25 +42,6 @@ AssetMovement = namedtuple(
         'fee',
     ),
 )
-
-
-class TradeType(Enum):
-    BUY = 1
-    SELL = 2
-    SETTLEMENT_BUY = 3
-    SETTLEMENT_SELL = 4
-
-    def __str__(self) -> str:
-        if self == TradeType.BUY:
-            return 'buy'
-        elif self == TradeType.SELL:
-            return 'sell'
-        elif self == TradeType.SETTLEMENT_BUY:
-            return 'settlement_buy'
-        elif self == TradeType.SETTLEMENT_SELL:
-            return 'settlement_sell'
-
-        raise RuntimeError('Corrupt value for TradeType -- Should never happen')
 
 
 def trade_type_from_string(symbol: str) -> TradeType:
@@ -143,6 +123,25 @@ def trade_get_other_pair(trade: Trade, asset: Asset) -> Asset:
 def invert_pair(pair: TradePair) -> TradePair:
     left, right = pair_get_assets(pair)
     return TradePair(f'{right}_{left}')
+
+
+def get_pair_position_str(pair: TradePair, position: str) -> str:
+    """Get the string representation of an asset of a trade pair"""
+    assert position == 'first' or position == 'second'
+    currencies = pair.split('_')
+    if len(currencies) != 2:
+        raise ValueError("Could not split {} pair".format(pair))
+    currency = currencies[0] if position == 'first' else currencies[1]
+    return currency
+
+
+def get_pair_position_asset(pair: TradePair, position: str) -> Asset:
+    """
+    Get the asset of a trade pair.
+
+    Can throw UnknownAsset if the asset is not known to Rotkehlchen
+    """
+    return Asset(get_pair_position_str(pair, position))
 
 
 def trade_get_assets(trade):

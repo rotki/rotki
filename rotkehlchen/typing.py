@@ -115,3 +115,22 @@ class AssetData(NamedTuple):
     ended: Optional[Timestamp]
     forked: Optional[str]
     swapped_for: Optional[str]
+
+
+class TradeType(Enum):
+    BUY = 1
+    SELL = 2
+    SETTLEMENT_BUY = 3
+    SETTLEMENT_SELL = 4
+
+    def __str__(self) -> str:
+        if self == TradeType.BUY:
+            return 'buy'
+        elif self == TradeType.SELL:
+            return 'sell'
+        elif self == TradeType.SETTLEMENT_BUY:
+            return 'settlement_buy'
+        elif self == TradeType.SETTLEMENT_SELL:
+            return 'settlement_sell'
+
+        raise RuntimeError('Corrupt value for TradeType -- Should never happen')

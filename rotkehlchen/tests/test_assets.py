@@ -1,6 +1,6 @@
 import pytest
 
-from rotkehlchen.assets import Asset
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import UnknownAsset
 
 

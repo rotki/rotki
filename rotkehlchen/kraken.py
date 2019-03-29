@@ -12,7 +12,7 @@ from urllib.parse import urlencode
 
 from requests import Response
 
-from rotkehlchen.assets import Asset
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS, KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
@@ -23,6 +23,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import (
     AssetMovement,
     Trade,
+    get_pair_position_asset,
     pair_get_assets,
     trade_type_from_string,
 )
@@ -30,7 +31,6 @@ from rotkehlchen.typing import ApiKey, ApiSecret, Asset, FilePath, Timestamp, Tr
 from rotkehlchen.utils import (
     cache_response_timewise,
     convert_to_int,
-    get_pair_position_asset,
     retry_calls,
     rlk_jsonloads_dict,
 )

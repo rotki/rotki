@@ -13,7 +13,8 @@ from rotkehlchen.binance import Binance
 from rotkehlchen.bitmex import Bitmex
 from rotkehlchen.bittrex import Bittrex
 from rotkehlchen.blockchain import Blockchain
-from rotkehlchen.constants import A_USD, S_EUR, SUPPORTED_EXCHANGES
+from rotkehlchen.constants import SUPPORTED_EXCHANGES
+from rotkehlchen.constants.assets import A_USD, S_EUR
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.errors import (
     AuthenticationError,

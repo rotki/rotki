@@ -1,5 +1,4 @@
-from rotkehlchen.assets import Asset
-from rotkehlchen.assets.asset import WORLD_TO_BINANCE, WORLD_TO_BITTREX, WORLD_TO_POLONIEX
+from rotkehlchen.assets.asset import WORLD_TO_BINANCE, WORLD_TO_BITTREX, WORLD_TO_POLONIEX, Asset
 from rotkehlchen.errors import UnsupportedAsset
 from rotkehlchen.externalapis.cryptocompare import WORLD_TO_CRYPTOCOMPARE
 

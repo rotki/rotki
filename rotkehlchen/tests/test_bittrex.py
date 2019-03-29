@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 
-from rotkehlchen.assets import Asset
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BITTREX_ASSETS, asset_from_bittrex
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.errors import UnsupportedAsset

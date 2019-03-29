@@ -6,7 +6,7 @@ from json.decoder import JSONDecodeError
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from urllib.parse import urlencode
 
-from rotkehlchen.assets import Asset
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bittrex
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.errors import RemoteError, UnsupportedAsset
@@ -14,16 +14,16 @@ from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import Trade, TradeType, pair_get_assets
-from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
-from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils import (
-    cache_response_timewise,
-    createTimeStamp,
+from rotkehlchen.order_formatting import (
+    Trade,
+    TradeType,
     get_pair_position_asset,
     get_pair_position_str,
-    rlk_jsonloads_dict,
+    pair_get_assets,
 )
+from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
+from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils import cache_response_timewise, createTimeStamp, rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

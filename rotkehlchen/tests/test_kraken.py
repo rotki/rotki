@@ -1,6 +1,6 @@
 import pytest
 
-from rotkehlchen.assets import Asset
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.fval import FVal
 from rotkehlchen.kraken import KRAKEN_ASSETS, kraken_to_world_pair, trade_from_kraken

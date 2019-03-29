@@ -6,11 +6,11 @@ import time
 from json.decoder import JSONDecodeError
 from typing import Any, Dict, List
 
-from rotkehlchen.assets import Asset
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.binance import trade_from_binance
 from rotkehlchen.bitmex import trade_from_bitmex
 from rotkehlchen.bittrex import trade_from_bittrex
-from rotkehlchen.constants import A_BTC, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_USD
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import PriceQueryUnknownFromAsset, RemoteError, UnsupportedAsset
 from rotkehlchen.exchange import data_up_todate

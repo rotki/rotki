@@ -7,9 +7,10 @@ from eth_utils.address import to_checksum_address
 from gevent.lock import Semaphore
 from web3.exceptions import BadFunctionCallOutput
 
-from rotkehlchen.assets import Asset
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_eth_token_symbol
-from rotkehlchen.constants import A_BTC, A_ETH, CACHE_RESPONSE_FOR_SECS
+from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.db.dbhandler import BlockchainAccounts
 from rotkehlchen.errors import EthSyncError, InputError, UnsupportedAsset
 from rotkehlchen.fval import FVal

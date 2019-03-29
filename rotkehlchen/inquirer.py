@@ -7,8 +7,9 @@ from typing import Dict, Iterable, Optional
 
 import requests
 
-from rotkehlchen.assets import Asset
-from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, FIAT_CURRENCIES, S_USD
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY
+from rotkehlchen.constants.assets import FIAT_CURRENCIES, S_USD
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter

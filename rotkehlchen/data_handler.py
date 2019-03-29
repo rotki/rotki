@@ -10,8 +10,8 @@ from typing import Dict, List, Optional, Tuple, cast
 
 from eth_utils.address import to_checksum_address
 
-from rotkehlchen.assets import Asset
-from rotkehlchen.constants import A_ETH
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
 from rotkehlchen.db.dbhandler import DBHandler
@@ -19,7 +19,7 @@ from rotkehlchen.errors import AuthenticationError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import FIAT_CURRENCIES
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import Trade, trade_type_from_string
+from rotkehlchen.order_formatting import Trade, get_pair_position_asset, trade_type_from_string
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -33,13 +33,7 @@ from rotkehlchen.typing import (
     Timestamp,
     TradePair,
 )
-from rotkehlchen.utils import (
-    createTimeStamp,
-    get_pair_position_asset,
-    is_number,
-    rlk_jsonloads_list,
-    ts_now,
-)
+from rotkehlchen.utils import createTimeStamp, is_number, rlk_jsonloads_list, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

@@ -12,7 +12,7 @@ from gevent.event import Event
 from gevent.lock import Semaphore
 
 from rotkehlchen.args import app_args
-from rotkehlchen.assets import Asset
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import AuthenticationError, RotkehlchenPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.rotkehlchen import Rotkehlchen

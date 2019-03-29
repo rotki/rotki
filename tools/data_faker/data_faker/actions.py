@@ -2,8 +2,8 @@ import logging
 import random
 from typing import Tuple
 
-from rotkehlchen.assets import Asset
-from rotkehlchen.constants import A_BTC, A_EUR, A_USD, FIAT_CURRENCIES
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.assets import A_BTC, A_EUR, A_USD, FIAT_CURRENCIES
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade, TradeType, pair_get_assets
 from rotkehlchen.typing import Timestamp, TradePair
