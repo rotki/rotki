@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 from asset_aggregator.utils import choose_multiple
 
-from rotkehlchen.constants import FIAT_CURRENCIES
+from rotkehlchen.constants.assets import FIAT_CURRENCIES
 from rotkehlchen.utils import createTimeStamp, iso8601ts_to_timestamp, tsToDate
 
 # For these assets we will definitely always use our data as they are more accurate

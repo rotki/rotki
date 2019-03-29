@@ -10,9 +10,9 @@ How do we manually get the started timestamps if no api has good enough data?
 3. It it's a token sale find when it started.
 
 """
-
 import json
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -23,8 +23,9 @@ from asset_aggregator.name_check import name_check
 from asset_aggregator.timerange_check import timerange_check
 from asset_aggregator.typeinfo_check import typeinfo_check
 
+from rotkehlchen.assets.converters import ETH_TOKENS_JSON_TO_WORLD, UNSUPPOPRTED_ETH_TOKENS_JSON
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.constants import FIAT_CURRENCIES
+from rotkehlchen.constants.assets import FIAT_CURRENCIES
 from rotkehlchen.externalapis import Coinmarketcap, CoinPaprika, Cryptocompare
 from rotkehlchen.externalapis.coinmarketcap import find_cmc_coin_data
 from rotkehlchen.externalapis.coinpaprika import find_paprika_coin_id
@@ -43,11 +44,17 @@ def process_asset(
         cmc_list: Optional[List[Dict[str, Any]]],
         cryptocompare_coins_map: Dict[str, Any],
         always_keep_our_time: bool,
+        given_by_eth_token_json: bool,
 ) -> Dict[str, Any]:
     """
     Process a single asset symbol. Compare to all external APIs and if there is no
     local data on the symbol query the user on which data to use for each asset attribute.
     """
+    if given_by_eth_token_json:
+        if asset_symbol in UNSUPPOPRTED_ETH_TOKENS_JSON:
+            return our_data
+        asset_symbol = ETH_TOKENS_JSON_TO_WORLD.get(asset_symbol, asset_symbol)
+
     our_asset = our_data[asset_symbol]
     # Coin paprika does not have info on FIAT currencies
     if asset_symbol in FIAT_CURRENCIES:
@@ -89,6 +96,14 @@ def process_asset(
         paprika_data=paprika_coin_data,
         cmc_data=cmc_coin_data,
     )
+    # add the symbol as an asset attribute in the data
+    symbol = asset_symbol
+    match = re.search('(.*)-\\d+', symbol)
+    # If our key is a numbered key, like 'PAI-2', 'PAI-3' e.t.c. use the
+    # non suffixed symbol, iow just 'PAI'
+    if match:
+        symbol = match.group(1)
+    our_data[asset_symbol] = symbol
 
     # Make sure that the asset is also known to cryptocompare
     cryptocompare_symbol = WORLD_TO_CRYPTOCOMPARE.get(asset_symbol, asset_symbol)
@@ -110,6 +125,7 @@ def main():
     paprika = CoinPaprika()
     cmc = None
     cmc_list = None
+    root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
     data_directory = f'{Path.home()}/.rotkehlchen'
     if args.cmc_api_key:
         cmc = Coinmarketcap(
@@ -127,7 +143,7 @@ def main():
             print(f'Given input file {args.input_file} is not a file')
             sys.exit(1)
 
-        with open(args.input_file, 'rb') as f:
+        with open(args.input_file, 'r') as f:
             input_data = rlk_jsonloads(f.read())
 
         given_symbols = set(input_data.keys())
@@ -149,12 +165,29 @@ def main():
                 cmc_list=cmc_list,
                 cryptocompare_coins_map=cryptocompare_coins_map,
                 always_keep_our_time=args.always_keep_our_time,
+                given_by_eth_token_json=False,
             )
 
         # and now combine the two dictionaries to get the final one. Note that no
         # checks are perfomed for what was in all_assets.json before the script
         # ran in this case
         our_data = {**our_data, **input_data}
+
+    elif args.process_eth_tokens:
+        with open(os.path.join(root_path, 'rotkehlchen', 'data', 'eth_tokens.json'), 'r') as f:
+            token_data = rlk_jsonloads(f.read())
+
+        for entry in token_data:
+            our_data = process_asset(
+                our_data=our_data,
+                asset_symbol=entry['symbol'],
+                paprika_coins_list=paprika_coins_list,
+                paprika=paprika,
+                cmc_list=cmc_list,
+                cryptocompare_coins_map=cryptocompare_coins_map,
+                always_keep_our_time=args.always_keep_our_time,
+                given_by_eth_token_json=True,
+            )
 
     else:
         # Iterate all of the assets of the all_assets.json file and perform checks
@@ -167,11 +200,11 @@ def main():
                 cmc_list=cmc_list,
                 cryptocompare_coins_map=cryptocompare_coins_map,
                 always_keep_our_time=args.always_keep_our_time,
+                given_by_eth_token_json=False,
             )
 
     # Finally overwrite the all_assets.json with the modified assets
-    dir_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-    with open(os.path.join(dir_path, 'rotkehlchen', 'data', 'all_assets.json'), 'w') as f:
+    with open(os.path.join(root_path, 'rotkehlchen', 'data', 'all_assets.json'), 'w') as f:
         f.write(
             json.dumps(
                 our_data, sort_keys=True, indent=4,
