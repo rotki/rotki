@@ -6,6 +6,7 @@ import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.constants import YEAR_IN_SECONDS
+from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
@@ -76,7 +77,7 @@ def price_historian(
 
 @pytest.fixture
 def profit_currency():
-    return 'EUR'
+    return A_EUR
 
 
 @pytest.fixture

@@ -44,17 +44,18 @@ class AssetResolver():
         return AssetResolver.__instance
 
     @staticmethod
-    def is_symbol_canonical(asset_symbol: str) -> bool:
-        """Checks if an asset symbol is canonical"""
-        return asset_symbol in AssetResolver().assets
+    def is_identifier_canonical(asset_identifier: str) -> bool:
+        """Checks if an asset identifier is canonical"""
+        return asset_identifier in AssetResolver().assets
 
     @staticmethod
-    def get_asset_data(asset_symbol: str) -> AssetData:
+    def get_asset_data(asset_identifier: str) -> AssetData:
         """Get all asset data from the known assets file for valid asset symbol"""
-        data = AssetResolver().assets[asset_symbol]
+        data = AssetResolver().assets[asset_identifier]
         asset_type = asset_type_mapping[data['type']]
         result = AssetData(
-            symbol=asset_symbol,
+            identifier=asset_identifier,
+            symbol=data['symbol'],
             name=data['name'],
             # If active is in the data use it, else we assume it's true
             active=data.get('active', True),
