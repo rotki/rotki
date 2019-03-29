@@ -4,21 +4,25 @@
         "ended": 1506988800,
         "name": "1 credit",
         "started": 1398556800,
+        "symbol": "1CR",
         "type": "own chain"
     },
     "1ST": {
         "name": "FirstBlood",
         "started": 1468022400,
+        "symbol": "1ST",
         "type": "ethereum token"
     },
     "2GIVE": {
         "name": "2GIVE",
         "started": 1460937600,
+        "symbol": "2GIVE",
         "type": "own chain"
     },
     "ABY": {
         "name": "ArtByte",
         "started": 1398902400,
+        "symbol": "ABY",
         "type": "own chain"
     },
     "AC": {
@@ -26,6 +30,7 @@
         "ended": 1549411200,
         "name": "AsiaCoin",
         "started": 1397952000,
+        "symbol": "AC",
         "type": "own chain"
     },
     "ACH": {
@@ -33,11 +38,13 @@
         "ended": 1434844800,
         "name": "Altcoin Herald",
         "started": 1412380800,
+        "symbol": "ACH",
         "type": "own chain"
     },
     "ADA": {
         "name": "Cardano",
         "started": 1506643200,
+        "symbol": "ADA",
         "type": "own chain"
     },
     "ADN": {
@@ -45,31 +52,37 @@
         "ended": 1473120000,
         "name": "Aiden",
         "started": 1397520000,
+        "symbol": "ADN",
         "type": "own chain"
     },
     "ADT": {
         "name": "adToken",
         "started": 1498435200,
+        "symbol": "ADT",
         "type": "ethereum token"
     },
     "ADX": {
         "name": "AdEx",
         "started": 1496102400,
+        "symbol": "ADX",
         "type": "ethereum token"
     },
     "AE": {
         "name": "Aeternity",
         "started": 1482969600,
+        "symbol": "AE",
         "type": "own chain"
     },
     "AEON": {
         "name": "Aeon",
         "started": 1402012800,
+        "symbol": "AEON",
         "type": "own chain"
     },
     "AERGO": {
         "name": "Aergo",
         "started": 1542844800,
+        "symbol": "AERGO",
         "type": "ethereum token"
     },
     "AERO": {
@@ -78,26 +91,31 @@
         "name": "Aerocoin",
         "started": 1403395200,
         "swapped_for": "AM",
+        "symbol": "AERO",
         "type": "own chain"
     },
     "AGI": {
         "name": "SingularityNET",
         "started": 1513296000,
+        "symbol": "AGI",
         "type": "ethereum token"
     },
     "AID": {
         "name": "AidCoin",
         "started": 1509580800,
+        "symbol": "AID",
         "type": "ethereum token"
     },
     "AID-2": {
         "name": "AIDUS TOKEN",
         "started": 1552002850,
+        "symbol": "AID",
         "type": "ethereum token"
     },
     "AION": {
         "name": "Aion",
         "started": 1506556800,
+        "symbol": "AION",
         "type": "own chain"
     },
     "AIR": {
@@ -105,6 +123,7 @@
         "ended": 1543276800,
         "name": "Air token",
         "started": 1507161600,
+        "symbol": "AIR",
         "type": "ethereum token"
     },
     "AIR-2": {
@@ -112,6 +131,7 @@
         "ended": 1491955200,
         "name": "Air coin",
         "started": 1395273600,
+        "symbol": "AIR",
         "type": "own chain"
     },
     "AM": {
@@ -119,31 +139,37 @@
         "ended": 1474761600,
         "name": "AeroME",
         "started": 1420934400,
+        "symbol": "AM",
         "type": "own chain"
     },
     "AMB": {
         "name": "Ambrosus",
         "started": 1500422400,
+        "symbol": "AMB",
         "type": "ethereum token"
     },
     "AMP": {
         "name": "HyperSpace",
         "started": 1426723200,
+        "symbol": "AMP",
         "type": "omni token"
     },
     "ANKR": {
         "name": "Ankr Network",
         "started": 1550707200,
+        "symbol": "ANKR",
         "type": "ethereum token"
     },
     "ANT": {
         "name": "Aragon",
         "started": 1493942400,
+        "symbol": "ANT",
         "type": "ethereum token"
     },
     "APH": {
         "name": "Aphelion",
         "started": 1510693460,
+        "symbol": "APH",
         "type": "neo token"
     },
     "APH-2": {
@@ -151,11 +177,13 @@
         "ended": 1401408000,
         "name": "Aphrodite coin",
         "started": 1395446400,
+        "symbol": "APH",
         "type": "own chain"
     },
     "APPC": {
         "name": "AppCoins",
         "started": 1509926400,
+        "symbol": "APPC",
         "type": "ethereum token"
     },
     "APX": {
@@ -163,6 +191,7 @@
         "ended": 1549411200,
         "name": "APX",
         "started": 1492646400,
+        "symbol": "APX",
         "type": "Ubiq token"
     },
     "ARCH": {
@@ -170,138 +199,165 @@
         "ended": 1491177600,
         "name": "Archcoin",
         "started": 1412553600,
+        "symbol": "ARCH",
         "type": "own chain"
     },
     "ARDR": {
         "name": "Ardor",
         "started": 1469284805,
+        "symbol": "ARDR",
         "type": "own chain"
     },
     "ARK": {
         "name": "Ark",
         "started": 1476489600,
+        "symbol": "ARK",
         "type": "own chain"
     },
     "ARN": {
         "name": "Aeron",
         "started": 1502323200,
+        "symbol": "ARN",
         "type": "ethereum token"
     },
     "AST": {
         "name": "AirSwap",
         "started": 1506384000,
+        "symbol": "AST",
         "type": "ethereum token"
     },
     "AUR": {
         "name": "Auroracoin",
         "started": 1393479207,
+        "symbol": "AUR",
         "type": "own chain"
     },
     "BAT": {
         "name": "Basic Attention Token",
         "started": 1496294094,
+        "symbol": "BAT",
         "type": "ethereum token"
     },
     "BAY": {
         "name": "BitBay",
         "started": 1415318400,
+        "symbol": "BAY",
         "type": "own chain"
     },
     "BBR": {
         "name": "Boolberry",
         "started": 1400284800,
+        "symbol": "BBR",
         "type": "own chain"
     },
     "BCD": {
         "name": "Bitcoin Diamond",
         "started": 1511481600,
+        "symbol": "BCD",
         "type": "own chain"
     },
     "BCH": {
         "forked": "BTC",
         "name": "Bitcoin Cash",
         "started": 1501593374,
+        "symbol": "BCH",
         "type": "own chain"
     },
     "BCN": {
         "name": "Bytecoin",
         "started": 1341360000,
+        "symbol": "BCN",
         "type": "own chain"
     },
     "BCPT": {
         "name": "BlockMason Credit Protocol",
         "started": 1491004800,
+        "symbol": "BCPT",
         "type": "ethereum token"
     },
     "BCY": {
         "active": true,
         "name": "BitCrystals",
         "started": 1433203200,
+        "symbol": "BCY",
         "type": "counterparty token"
     },
     "BELA": {
         "name": "Bela",
         "started": 1388534400,
+        "symbol": "BELA",
         "type": "ethereum token"
     },
     "BFT": {
         "name": "BnkToTheFuture",
         "started": 1517875200,
+        "symbol": "BFT",
         "type": "ethereum token"
     },
     "BITB": {
         "name": "Bean Cash",
         "started": 1423785600,
+        "symbol": "BITB",
         "type": "own chain"
     },
     "BITCNY": {
         "name": "bitCNY",
         "started": 1411446262,
+        "symbol": "BITCNY",
         "type": "bitshares token"
     },
     "BITS": {
         "name": "Bitstar",
         "started": 1397692800,
+        "symbol": "BITS",
         "type": "own chain"
     },
     "BITS-2": {
         "name": "Bitswift",
         "started": 1411948800,
+        "symbol": "BITS",
         "type": "ardor token"
     },
     "BITUSD": {
         "name": "bitUSD",
         "started": 1411446262,
+        "symbol": "BITUSD",
         "type": "bitshares token"
     },
     "BKX": {
         "name": "BANKEX",
         "started": 1499731200,
+        "symbol": "BKX",
         "type": "ethereum token"
     },
     "BLK": {
         "name": "BlackCoin",
         "started": 1393200000,
+        "symbol": "BLK",
         "type": "own chain"
     },
     "BLOCK": {
         "name": "Blocknet",
         "started": 1413763200,
+        "symbol": "BLOCK",
         "type": "own chain"
     },
     "BLT": {
         "name": "Bloom",
         "started": 1510272000,
+        "symbol": "BLT",
         "type": "ethereum token"
     },
     "BLU": {
         "name": "BlueCoin",
         "started": 1398124800,
+        "symbol": "BLU",
         "type": "own chain"
     },
     "BLZ": {
         "name": "Bluzelle",
         "started": 1509494400,
+        "symbol": "BLZ",
         "type": "ethereum token"
     },
     "BLZ-2": {
@@ -309,57 +365,68 @@
         "ended": 1549497600,
         "name": "BlazeCoin",
         "started": 1400803200,
+        "symbol": "BLZ",
         "type": "own chain"
     },
     "BNB": {
         "name": "Binance Coin",
         "started": 1498521600,
+        "symbol": "BNB",
         "type": "ethereum token"
     },
     "BNT": {
         "name": "Bancor",
         "started": 1497657600,
+        "symbol": "BNT",
         "type": "ethereum token"
     },
     "BOST": {
         "name": "BoostCoin",
         "started": 1400112000,
+        "symbol": "BOST",
         "type": "own chain"
     },
     "BOXX": {
         "name": "Blockparty (BOXX Token)",
         "started": 1527552000,
+        "symbol": "BOXX",
         "type": "ethereum token"
     },
     "BRD": {
         "name": "Bread",
         "started": 1512086400,
+        "symbol": "BRD",
         "type": "ethereum token"
     },
     "BRK": {
         "name": "Breakout",
         "started": 1425513600,
+        "symbol": "BRK",
         "type": "own chain"
     },
     "BRX": {
         "name": "Breakout Stake",
         "started": 1465776000,
+        "symbol": "BRX",
         "type": "own chain"
     },
     "BSD": {
         "name": "BitSend",
         "started": 1402099200,
+        "symbol": "BSD",
         "type": "own chain"
     },
     "BSV": {
         "forked": "BCH",
         "name": "Bitcoin Satoshi's Vision",
         "started": 1542300000,
+        "symbol": "BSV",
         "type": "own chain"
     },
     "BTC": {
         "name": "Bitcoin",
         "started": 1231006505,
+        "symbol": "BTC",
         "type": "own chain"
     },
     "BTCD": {
@@ -367,16 +434,19 @@
         "ended": 1538697600,
         "name": "BitcoinDark",
         "started": 1405468800,
+        "symbol": "BTCD",
         "type": "own chain"
     },
     "BTCS": {
         "name": "Bitcoin Scrypt",
         "started": 1378598400,
+        "symbol": "BTCS",
         "type": "own chain"
     },
     "BTG": {
         "name": "Bitcoin Gold",
         "started": 1508716800,
+        "symbol": "BTG",
         "type": "own chain"
     },
     "BTG-2": {
@@ -384,42 +454,50 @@
         "ended": 1532649600,
         "name": "Bitgem",
         "started": 1368403200,
+        "symbol": "BTG",
         "type": "own chain"
     },
     "BTM": {
         "active": true,
         "name": "Bitmark",
         "started": 1408449563,
+        "symbol": "BTM",
         "type": "own chain"
     },
     "BTM-2": {
         "name": "Bytom",
         "started": 1497916800,
+        "symbol": "BTM",
         "type": "own chain"
     },
     "BTS": {
         "name": "BitShares",
         "started": 1405728000,
+        "symbol": "BTS",
         "type": "own chain"
     },
     "BTT": {
         "name": "BitTorrent",
         "started": 1548633600,
+        "symbol": "BTT",
         "type": "tron token"
     },
     "BTT-2": {
         "name": "Blocktrade Token",
         "started": 1524614400,
+        "symbol": "BTT",
         "type": "ethereum token"
     },
     "BTU": {
         "name": "BTU Protocol",
         "started": 1525910400,
+        "symbol": "BTU",
         "type": "ethereum token"
     },
     "BURST": {
         "name": "Burst",
         "started": 1402531200,
+        "symbol": "BURST",
         "type": "own chain"
     },
     "BYC": {
@@ -427,11 +505,13 @@
         "ended": 1540080000,
         "name": "Bytecent",
         "started": 1414800000,
+        "symbol": "BYC",
         "type": "own chain"
     },
     "C2": {
         "name": "Coin2.1",
         "started": 1399334400,
+        "symbol": "C2",
         "type": "own chain"
     },
     "CACH": {
@@ -439,10 +519,12 @@
         "ended": 1541548800,
         "name": "CacheCoin",
         "started": 1388880000,
+        "symbol": "CACH",
         "type": "own chain"
     },
     "CAD": {
         "name": "Canadian Dollar",
+        "symbol": "CAD",
         "type": "fiat"
     },
     "CAIX": {
@@ -450,26 +532,31 @@
         "ended": 1451952000,
         "name": "Caishen",
         "started": 1397520000,
+        "symbol": "CAIX",
         "type": "own chain"
     },
     "CANN": {
         "name": "CannabisCoin",
         "started": 1399334400,
+        "symbol": "CANN",
         "type": "own chain"
     },
     "CBC": {
         "name": "CashBet Coin",
         "started": 1521590400,
+        "symbol": "CBC",
         "type": "ethereum token"
     },
     "CBC-2": {
         "name": "Cashbery Coin",
         "started": 1534976069,
+        "symbol": "CBC",
         "type": "own chain"
     },
     "CCN": {
         "name": "CustomContractnetwork",
         "started": 1540443520,
+        "symbol": "CCN",
         "type": "ethereum token"
     },
     "CCN-2": {
@@ -477,16 +564,19 @@
         "ended": 1539129600,
         "name": "CannaCoin",
         "started": 1390348800,
+        "symbol": "CCN",
         "type": "own chain"
     },
     "CDT": {
         "name": "Blox",
         "started": 1490659200,
+        "symbol": "CDT",
         "type": "ethereum token"
     },
     "CELR": {
         "name": "Celer Network",
         "started": 1548115200,
+        "symbol": "CELR",
         "type": "ethereum token"
     },
     "CGA": {
@@ -494,11 +584,13 @@
         "ended": 1483660800,
         "name": "Cryptographic Anomaly",
         "started": 1392940800,
+        "symbol": "CGA",
         "type": "own chain"
     },
     "CHAT": {
         "name": "ChatCoin",
         "started": 1489449600,
+        "symbol": "CHAT",
         "type": "own chain"
     },
     "CINNI": {
@@ -506,41 +598,49 @@
         "ended": 1446422400,
         "name": "Cinnicoin",
         "started": 1398211200,
+        "symbol": "CINNI",
         "type": "own chain"
     },
     "CLAM": {
         "name": "Clams",
         "started": 1399852800,
+        "symbol": "CLAM",
         "type": "own chain"
     },
     "CLOAK": {
         "name": "CloakCoin",
         "started": 1399161600,
+        "symbol": "CLOAK",
         "type": "own chain"
     },
     "CMCT": {
         "name": "Crowd Machine",
         "started": 1522540800,
+        "symbol": "CMCT",
         "type": "ethereum token"
     },
     "CMCT-2": {
         "name": "Cyber Movie Chain",
         "started": 1539275666,
+        "symbol": "CMCT",
         "type": "ethereum token"
     },
     "CMT": {
         "name": "CyberMiles",
         "started": 1509494400,
+        "symbol": "CMT",
         "type": "own chain"
     },
     "CMT-2": {
         "name": "Comet",
         "started": 1463529600,
+        "symbol": "CMT",
         "type": "own chain"
     },
     "CND": {
         "name": "Cindicator",
         "started": 1504828800,
+        "symbol": "CND",
         "type": "ethereum token"
     },
     "CNL": {
@@ -548,6 +648,7 @@
         "ended": 1451952000,
         "name": "ConcealCoin",
         "started": 1405900800,
+        "symbol": "CNL",
         "type": "own chain"
     },
     "CNMT": {
@@ -555,6 +656,7 @@
         "ended": 1479772800,
         "name": "Coinomat",
         "started": 1409875200,
+        "symbol": "CNMT",
         "type": "nxt token"
     },
     "COMM": {
@@ -562,26 +664,31 @@
         "ended": 1459036800,
         "name": "CommunityCoin",
         "started": 1397520000,
+        "symbol": "COMM",
         "type": "own chain"
     },
     "COVAL": {
         "name": "Circuits of Value",
         "started": 1415923200,
+        "symbol": "COVAL",
         "type": "counterparty token"
     },
     "CRB": {
         "name": "Creditbit",
         "started": 1446595200,
+        "symbol": "CRB",
         "type": "ethereum token"
     },
     "CRO": {
         "name": "Crypto.com Chain",
         "started": 1542153600,
+        "symbol": "CRO",
         "type": "ethereum token"
     },
     "CRW": {
         "name": "Crown",
         "started": 1413244800,
+        "symbol": "CRW",
         "type": "own chain"
     },
     "CRYPT": {
@@ -589,21 +696,25 @@
         "ended": 1539043200,
         "name": "CryptCoin",
         "started": 1401062400,
+        "symbol": "CRYPT",
         "type": "own chain"
     },
     "CTXC": {
         "name": "Cortex",
         "started": 1518048000,
+        "symbol": "CTXC",
         "type": "ethereum token"
     },
     "CURE": {
         "name": "Curecoin",
         "started": 1398988800,
+        "symbol": "CURE",
         "type": "own chain"
     },
     "CVC": {
         "name": "Civic",
         "started": 1498003200,
+        "symbol": "CVC",
         "type": "ethereum token"
     },
     "CYC": {
@@ -611,6 +722,7 @@
         "ended": 1455148800,
         "name": "ConspiracyCoin",
         "started": 1404518400,
+        "symbol": "CYC",
         "type": "own chain"
     },
     "DAO": {
@@ -619,41 +731,49 @@
         "name": "The DAO",
         "started": 1461980578,
         "swapped_for": "ETH",
+        "symbol": "DAO",
         "type": "ethereum token"
     },
     "DASH": {
         "name": "Dash",
         "started": 1390095618,
+        "symbol": "DASH",
         "type": "own chain"
     },
     "DATA": {
         "name": "Streamr DATAcoin",
         "started": 1507248000,
+        "symbol": "DATA",
         "type": "ethereum token"
     },
     "DCR": {
         "name": "Decred",
         "started": 1450137600,
+        "symbol": "DCR",
         "type": "own chain"
     },
     "DCT": {
         "name": "DECENT",
         "started": 1467244800,
+        "symbol": "DCT",
         "type": "own chain"
     },
     "DENT": {
         "name": "Dent",
         "started": 1499817600,
+        "symbol": "DENT",
         "type": "ethereum token"
     },
     "DGB": {
         "name": "DigiByte",
         "started": 1389312000,
+        "symbol": "DGB",
         "type": "own chain"
     },
     "DGD": {
         "name": "DigixDAO",
         "started": 1460996371,
+        "symbol": "DGD",
         "type": "ethereum token"
     },
     "DIEM": {
@@ -661,51 +781,61 @@
         "ended": 1483660800,
         "name": "CarpeDiemCoin",
         "started": 1398643200,
+        "symbol": "DIEM",
         "type": "own chain"
     },
     "DIME": {
         "name": "Dimecoin",
         "started": 1387756800,
+        "symbol": "DIME",
         "type": "own chain"
     },
     "DLT": {
         "name": "Agrello",
         "started": 1500163200,
+        "symbol": "DLT",
         "type": "ethereum token"
     },
     "DMD": {
         "name": "Diamond",
         "started": 1373673600,
+        "symbol": "DMD",
         "type": "own chain"
     },
     "DMT": {
         "name": "DMarket",
         "started": 1506038400,
+        "symbol": "DMT",
         "type": "ethereum token"
     },
     "DNT": {
         "name": "district0x",
         "started": 1501798507,
+        "symbol": "DNT",
         "type": "ethereum token"
     },
     "DOCK": {
         "name": "Dock",
         "started": 1516147200,
+        "symbol": "DOCK",
         "type": "ethereum token"
     },
     "DOGE": {
         "name": "Dogecoin",
         "started": 1386325540,
+        "symbol": "DOGE",
         "type": "own chain"
     },
     "DOPE": {
         "name": "DopeCoin",
         "started": 1390262400,
+        "symbol": "DOPE",
         "type": "own chain"
     },
     "DRGN": {
         "name": "Dragonchain",
         "started": 1502928000,
+        "symbol": "DRGN",
         "type": "ethereum token"
     },
     "DRKC": {
@@ -713,12 +843,14 @@
         "ended": 1458259200,
         "name": "DarkCash",
         "started": 1406592000,
+        "symbol": "DRKC",
         "type": "own chain"
     },
     "DRM": {
         "active": true,
         "name": "Dreamcoin",
         "started": 1399420800,
+        "symbol": "DRM",
         "type": "own chain"
     },
     "DSH": {
@@ -726,133 +858,159 @@
         "ended": 1542326400,
         "name": "Dashcoin",
         "started": 1404518400,
+        "symbol": "DSH",
         "type": "own chain"
     },
     "DTA": {
         "name": "DATA",
         "started": 1515628800,
+        "symbol": "DTA",
         "type": "ethereum token"
     },
     "DTB": {
         "name": "Databits",
         "started": 1484784000,
+        "symbol": "DTB",
         "type": "counterparty token"
     },
     "DYN": {
         "name": "Dynamic",
         "started": 1490547284,
+        "symbol": "DYN",
         "type": "own chain"
     },
     "EAC": {
         "name": "EarthCoin",
         "started": 1387497600,
+        "symbol": "EAC",
         "type": "own chain"
     },
     "EBST": {
         "name": "eBoost",
         "started": 1475107200,
+        "symbol": "EBST",
         "type": "own chain"
     },
     "ECC": {
         "name": "ECCoin",
         "started": 1395292195,
+        "symbol": "ECC",
         "type": "own chain"
     },
     "EDG": {
         "name": "Edgeless",
         "started": 1487894400,
+        "symbol": "EDG",
         "type": "ethereum token"
     },
     "EDO": {
         "name": "Eidoo",
         "started": 1506902400,
+        "symbol": "EDO",
         "type": "ethereum token"
     },
     "EDR": {
         "name": "Endor Protocol",
         "started": 1527465600,
+        "symbol": "EDR",
         "type": "ethereum token"
     },
     "EDR-2": {
         "name": "E-Dinar Coin",
         "started": 1472226274,
+        "symbol": "EDR",
         "type": "own chain"
     },
     "EFL": {
         "active": true,
         "name": "e-Gulden",
         "started": 1395187200,
+        "symbol": "EFL",
         "type": "own chain"
     },
     "EGC": {
         "name": "EverGreenCoin",
         "started": 1448928000,
+        "symbol": "EGC",
         "type": "own chain"
     },
     "ELF": {
         "name": "aelf",
         "started": 1513555200,
+        "symbol": "ELF",
         "type": "ethereum token"
     },
     "EMC": {
         "name": "Emercoin",
         "started": 1386460800,
+        "symbol": "EMC",
         "type": "own chain"
     },
     "EMC2": {
         "name": "Einsteinium",
         "started": 1388707200,
+        "symbol": "EMC2",
         "type": "own chain"
     },
     "ENG": {
         "name": "Enigma",
         "started": 1498867200,
+        "symbol": "ENG",
         "type": "ethereum token"
     },
     "ENJ": {
         "name": "Enjin Coin",
         "started": 1500854400,
+        "symbol": "ENJ",
         "type": "ethereum token"
     },
     "ENRG": {
         "name": "Energycoin",
         "started": 1398729600,
+        "symbol": "ENRG",
         "type": "own chain"
     },
     "EOS": {
         "name": "EOS.io",
         "started": 1494028800,
+        "symbol": "EOS",
         "type": "ethereum token and own chain"
     },
     "ETC": {
         "forked": "ETH",
         "name": "Ethereum classic",
         "started": 1469020840,
+        "symbol": "ETC",
         "type": "own chain"
     },
     "ETH": {
         "name": "Ethereum",
         "started": 1438214400,
+        "symbol": "ETH",
         "type": "own chain"
     },
     "ETHOS": {
         "name": "Ethos",
         "started": 1498608000,
+        "symbol": "ETHOS",
         "type": "ethereum token"
     },
     "EUR": {
         "name": "Euro",
         "started": 915148800,
+        "symbol": "EUR",
         "type": "fiat"
     },
     "EVX": {
         "name": "Everex",
         "started": 1500854400,
+        "symbol": "EVX",
         "type": "ethereum token"
     },
     "EXCL": {
         "name": "ExclusiveCoin",
         "started": 1412063661,
+        "symbol": "EXCL",
         "type": "own chain"
     },
     "EXE": {
@@ -860,21 +1018,25 @@
         "ended": 1465171200,
         "name": "Execoin",
         "started": 1394409600,
+        "symbol": "EXE",
         "type": "own chain"
     },
     "EXP": {
         "name": "Expanse",
         "started": 1442188800,
+        "symbol": "EXP",
         "type": "own chain"
     },
     "FAIR": {
         "name": "FairCoin",
         "started": 1393286400,
+        "symbol": "FAIR",
         "type": "own chain"
     },
     "FAIR-2": {
         "name": "FairGame",
         "started": 1512518400,
+        "symbol": "FAIR",
         "type": "ethereum token"
     },
     "FCN": {
@@ -882,16 +1044,19 @@
         "ended": 1531440000,
         "name": "Fantomcoin",
         "started": 1401926400,
+        "symbol": "FCN",
         "type": "own chain"
     },
     "FCT": {
         "name": "Factom",
         "started": 1444003200,
+        "symbol": "FCT",
         "type": "own chain"
     },
     "FET": {
         "name": "Fetch AI",
         "started": 1551398400,
+        "symbol": "FET",
         "type": "ethereum token"
     },
     "FIBRE": {
@@ -899,6 +1064,7 @@
         "ended": 1473206400,
         "name": "Fibrecoin",
         "started": 1409356800,
+        "symbol": "FIBRE",
         "type": "own chain"
     },
     "FLAP": {
@@ -906,16 +1072,19 @@
         "ended": 1525651200,
         "name": "FlappyCoin",
         "started": 1393027200,
+        "symbol": "FLAP",
         "type": "own chain"
     },
     "FLDC": {
         "name": "FoldingCoin",
         "started": 1405296000,
+        "symbol": "FLDC",
         "type": "counterparty token"
     },
     "FLO": {
         "name": "FLO",
         "started": 1371427200,
+        "symbol": "FLO",
         "type": "own chain"
     },
     "FLT": {
@@ -923,11 +1092,13 @@
         "ended": 1543881600,
         "name": "FlutterCoin",
         "started": 1393804800,
+        "symbol": "FLT",
         "type": "own chain"
     },
     "FOAM": {
         "name": "FOAM",
         "started": 1532802665,
+        "symbol": "FOAM",
         "type": "ethereum token"
     },
     "FRAC": {
@@ -935,6 +1106,7 @@
         "ended": 1452038400,
         "name": "Fractalcoin",
         "started": 1402790400,
+        "symbol": "FRAC",
         "type": "own chain"
     },
     "FRK": {
@@ -942,36 +1114,43 @@
         "ended": 1522886400,
         "name": "Franko",
         "started": 1367366400,
+        "symbol": "FRK",
         "type": "own chain"
     },
     "FSN": {
         "name": "Fusion",
         "started": 1516406400,
+        "symbol": "FSN",
         "type": "ethereum token"
     },
     "FTC": {
         "name": "Feathercoin",
         "started": 1366070400,
+        "symbol": "FTC",
         "type": "own chain"
     },
     "FUEL": {
         "name": "Etherparty",
         "started": 1506816000,
+        "symbol": "FUEL",
         "type": "ethereum token"
     },
     "FUN": {
         "name": "FunFair",
         "started": 1485907200,
+        "symbol": "FUN",
         "type": "ethereum token"
     },
     "GAM": {
         "name": "Gambit",
         "started": 1430784000,
+        "symbol": "GAM",
         "type": "ethereum token"
     },
     "GAME": {
         "name": "GameCredits",
         "started": 1392739140,
+        "symbol": "GAME",
         "type": "own chain"
     },
     "GAP": {
@@ -979,25 +1158,30 @@
         "ended": 1549497600,
         "name": "Gapcoin",
         "started": 1413849600,
+        "symbol": "GAP",
         "type": "own chain"
     },
     "GAS": {
         "name": "Gas",
         "started": 1468540800,
+        "symbol": "GAS",
         "type": "neo token"
     },
     "GBG": {
         "name": "Golos Gold",
         "started": 1476748800,
+        "symbol": "GBG",
         "type": "own chain"
     },
     "GBP": {
         "name": "Great British Pound",
+        "symbol": "GBP",
         "type": "fiat"
     },
     "GBYTE": {
         "name": "Obyte",
         "started": 1482624000,
+        "symbol": "GBYTE",
         "type": "own chain"
     },
     "GEMZ": {
@@ -1005,46 +1189,55 @@
         "ended": 1495411200,
         "name": "GetGems",
         "started": 1421020800,
+        "symbol": "GEMZ",
         "type": "counterparty token"
     },
     "GEO": {
         "name": "GeoCoin",
         "started": 1421650800,
+        "symbol": "GEO",
         "type": "Ubiq token"
     },
     "GLC": {
         "name": "GoldCoin",
         "started": 1368230400,
+        "symbol": "GLC",
         "type": "own chain"
     },
     "GLC-2": {
         "name": "GlobalCoin",
         "started": 1372204800,
+        "symbol": "GLC",
         "type": "own chain"
     },
     "GML": {
         "active": false,
         "name": "GameLeagueCoin",
+        "symbol": "GML",
         "type": "own chain"
     },
     "GNO": {
         "name": "Gnosis token",
         "started": 1492992000,
+        "symbol": "GNO",
         "type": "ethereum token"
     },
     "GNT": {
         "name": "Golem",
         "started": 1478810650,
+        "symbol": "GNT",
         "type": "ethereum token"
     },
     "GO": {
         "name": "GoChain",
         "started": 1526428800,
+        "symbol": "GO",
         "type": "own chain"
     },
     "GOLOS": {
         "name": "Golos",
         "started": 1474502400,
+        "symbol": "GOLOS",
         "type": "own chain"
     },
     "GPUC": {
@@ -1052,26 +1245,31 @@
         "ended": 1400889600,
         "name": "GPU coin",
         "started": 1395100800,
+        "symbol": "GPUC",
         "type": "own chain"
     },
     "GRC": {
         "name": "GridCoin",
         "started": 1381881600,
+        "symbol": "GRC",
         "type": "own chain"
     },
     "GRIN": {
         "name": "Grin",
         "started": 1547683200,
+        "symbol": "GRIN",
         "type": "own chain"
     },
     "GRS": {
         "name": "Groestlcoin",
         "started": 1395446400,
+        "symbol": "GRS",
         "type": "own chain"
     },
     "GTO": {
         "name": "Gifto",
         "started": 1513209600,
+        "symbol": "GTO",
         "type": "ethereum token"
     },
     "GUE": {
@@ -1079,26 +1277,31 @@
         "ended": 1452038400,
         "name": "Guerillacoin",
         "started": 1403481600,
+        "symbol": "GUE",
         "type": "own chain"
     },
     "GUP": {
         "name": "Matchpool Guppy",
         "started": 1484352000,
+        "symbol": "GUP",
         "type": "ethereum token"
     },
     "GVT": {
         "name": "Genesis Vision",
         "started": 1504310400,
+        "symbol": "GVT",
         "type": "ethereum token"
     },
     "GXC": {
         "name": "GXChain",
         "started": 1488585600,
+        "symbol": "GXC",
         "type": "own chain"
     },
     "HC": {
         "name": "HyperCash",
         "started": 1503240899,
+        "symbol": "HC",
         "type": "own chain"
     },
     "HC-2": {
@@ -1106,31 +1309,37 @@
         "ended": 1549065600,
         "name": "Harvest Masternode Coin",
         "started": 1515974400,
+        "symbol": "HC",
         "type": "own chain"
     },
     "HMQ": {
         "name": "Humaniq",
         "started": 1481414400,
+        "symbol": "HMQ",
         "type": "ethereum token"
     },
     "HOT": {
         "name": "Holo",
         "started": 1518739200,
+        "symbol": "HOT",
         "type": "ethereum token"
     },
     "HOT-2": {
         "name": "Hydro Protocol",
         "started": 1516060800,
+        "symbol": "HOT",
         "type": "ethereum token"
     },
     "HST": {
         "name": "Decision Token",
         "started": 1507161600,
+        "symbol": "HST",
         "type": "ethereum token"
     },
     "HUC": {
         "name": "HunterCoin",
         "started": 1391212800,
+        "symbol": "HUC",
         "type": "own chain"
     },
     "HUGE": {
@@ -1138,6 +1347,7 @@
         "ended": 1460761200,
         "name": "BIGcoin",
         "started": 1429830000,
+        "symbol": "HUGE",
         "type": "own chain"
     },
     "HVC": {
@@ -1145,21 +1355,25 @@
         "ended": 1452038400,
         "name": "Heavycoin",
         "started": 1394582400,
+        "symbol": "HVC",
         "type": "own chain"
     },
     "HXRO": {
         "name": "Hxro",
         "started": 1545350400,
+        "symbol": "HXRO",
         "type": "ethereum token"
     },
     "HYDRO": {
         "name": "Hydro",
         "started": 1521072000,
+        "symbol": "HYDRO",
         "type": "ethereum token"
     },
     "HYP": {
         "name": "HyperStake",
         "started": 1404604800,
+        "symbol": "HYP",
         "type": "own chain"
     },
     "HZ": {
@@ -1167,85 +1381,102 @@
         "ended": 1493942400,
         "name": "Horizon",
         "started": 1402531200,
+        "symbol": "HZ",
         "type": "own chain"
     },
     "ICN": {
         "name": "Iconomi",
         "started": 1472083200,
+        "symbol": "ICN",
         "type": "ethereum token"
     },
     "ICX": {
         "name": "ICON",
         "started": 1508803200,
+        "symbol": "ICX",
         "type": "own chain"
     },
     "IFC": {
         "name": "Infinitecoin",
         "started": 1370390400,
+        "symbol": "IFC",
         "type": "own chain"
     },
     "IGNIS": {
         "name": "Ignis",
         "started": 1501891200,
+        "symbol": "IGNIS",
         "type": "ardor token"
     },
     "IHT": {
         "name": "IHT Real Estate Protocol",
         "started": 1513036800,
+        "symbol": "IHT",
         "type": "ethereum token"
     },
     "INCNT": {
         "name": "Incent",
         "started": 1473120000,
+        "symbol": "INCNT",
         "type": "waves token"
     },
     "INS": {
         "name": "Insolar",
         "started": 1512345600,
+        "symbol": "INS",
         "type": "ethereum token"
     },
     "IOC": {
         "name": "I/O Coin",
         "started": 1406073600,
+        "symbol": "IOC",
         "type": "own chain"
     },
     "ION": {
         "name": "ION",
         "started": 1458432000,
+        "symbol": "ION",
         "type": "own chain"
     },
     "IOP": {
         "name": "Internet of People",
         "started": 1480418674,
+        "symbol": "IOP",
         "type": "own chain"
     },
     "IOST": {
         "name": "IOST",
         "started": 1514937600,
+        "symbol": "IOST",
         "type": "ethereum token"
     },
     "IOTA": {
         "name": "IOTA",
         "started": 1497364209,
+        "symbol": "IOTA",
         "type": "own chain"
     },
     "IOTX": {
         "name": "IoTeX",
         "started": 1526860800,
+        "symbol": "IOTX",
         "type": "ethereum token"
     },
     "IXC": {
         "name": "Ixcoin",
         "started": 1312934400,
+        "symbol": "IXC",
         "type": "own chain"
     },
     "JNT": {
         "name": "Jibrel Network",
         "started": 1511740800,
+        "symbol": "JNT",
         "type": "ethereum token"
     },
     "JPY": {
         "name": "Japanese Yen",
+        "symbol": "JPY",
         "type": "fiat"
     },
     "KDC": {
@@ -1253,16 +1484,19 @@
         "ended": 1539129600,
         "name": "KlondikeCoin",
         "started": 1389225600,
+        "symbol": "KDC",
         "type": "own chain"
     },
     "KEY": {
         "name": "Selfkey",
         "started": 1508803200,
+        "symbol": "KEY",
         "type": "ethereum token"
     },
     "KEY-2": {
         "name": "KEY",
         "started": 1507822985,
+        "symbol": "KEY",
         "type": "ethereum token"
     },
     "KEY-3": {
@@ -1270,44 +1504,53 @@
         "ended": 1452038400,
         "name": "KeyCoin",
         "started": 1405382400,
+        "symbol": "KEY",
         "type": "own chain"
     },
     "KFEE": {
         "name": "Kraken fees",
+        "symbol": "KFEE",
         "type": "exchange specific"
     },
     "KMD": {
         "name": "Komodo",
         "started": 1472688000,
+        "symbol": "KMD",
         "type": "own chain"
     },
     "KNC": {
         "name": "Kyber Network",
         "started": 1501545600,
+        "symbol": "KNC",
         "type": "ethereum token"
     },
     "KNC-2": {
         "name": "KingN Coin",
         "started": 1496620800,
+        "symbol": "KNC",
         "type": "own chain"
     },
     "KORE": {
         "name": "Kore",
         "started": 1402790400,
+        "symbol": "KORE",
         "type": "own chain"
     },
     "KRW": {
         "name": "Korean won",
+        "symbol": "KRW",
         "type": "fiat"
     },
     "LBA": {
         "name": "Cred",
         "started": 1523491200,
+        "symbol": "LBA",
         "type": "ethereum token"
     },
     "LBC": {
         "name": "LBRY Credits",
         "started": 1467763200,
+        "symbol": "LBC",
         "type": "own chain"
     },
     "LEAF": {
@@ -1315,46 +1558,55 @@
         "ended": 1525996800,
         "name": "LeafCoin",
         "started": 1389398400,
+        "symbol": "LEAF",
         "type": "own chain"
     },
     "LEND": {
         "name": "ETHLend",
         "started": 1502755200,
+        "symbol": "LEND",
         "type": "ethereum token"
     },
     "LINK": {
         "name": "Chainlink",
         "started": 1505520000,
+        "symbol": "LINK",
         "type": "ethereum token"
     },
     "LMC": {
         "name": "LoMoCoin",
         "started": 1460937600,
+        "symbol": "LMC",
         "type": "own chain"
     },
     "LOOM": {
         "name": "Loom Network",
         "started": 1520079604,
+        "symbol": "LOOM",
         "type": "ethereum token"
     },
     "LPT": {
         "name": "Livepeer",
         "started": 1525118631,
+        "symbol": "LPT",
         "type": "ethereum token"
     },
     "LQD": {
         "name": "Liquidity Network",
         "started": 1539882103,
+        "symbol": "LQD",
         "type": "ethereum token"
     },
     "LRC": {
         "name": "Loopring",
         "started": 1500422400,
+        "symbol": "LRC",
         "type": "ethereum token"
     },
     "LSK": {
         "name": "Lisk",
         "started": 1454284800,
+        "symbol": "LSK",
         "type": "own chain"
     },
     "LTBC": {
@@ -1362,11 +1614,13 @@
         "ended": 1509062400,
         "name": "LTBcoin",
         "started": 1406419200,
+        "symbol": "LTBC",
         "type": "counterparty token"
     },
     "LTC": {
         "name": "Litecoin",
         "started": 1317972665,
+        "symbol": "LTC",
         "type": "own chain"
     },
     "LTCX": {
@@ -1374,21 +1628,25 @@
         "ended": 1404864000,
         "name": "LitecoinX",
         "started": 1401494400,
+        "symbol": "LTCX",
         "type": "own chain"
     },
     "LUN": {
         "name": "Lunyr",
         "started": 1488931200,
+        "symbol": "LUN",
         "type": "ethereum token"
     },
     "MAID": {
         "name": "MaidSafeCoin",
         "started": 1398655286,
+        "symbol": "MAID",
         "type": "omni token"
     },
     "MANA": {
         "name": "Decentraland",
         "started": 1502824689,
+        "symbol": "MANA",
         "type": "ethereum token"
     },
     "MARS": {
@@ -1396,16 +1654,19 @@
         "ended": 1545350400,
         "name": "Marscoin",
         "started": 1390780800,
+        "symbol": "MARS",
         "type": "own chain"
     },
     "MAX": {
         "name": "Maxcoin",
         "started": 1391644800,
+        "symbol": "MAX",
         "type": "own chain"
     },
     "MAZA": {
         "name": "MazaCoin",
         "started": 1393200000,
+        "symbol": "MAZA",
         "type": "own chain"
     },
     "MCN": {
@@ -1413,51 +1674,61 @@
         "ended": 1473206400,
         "name": "Monetaverde",
         "started": 1402963200,
+        "symbol": "MCN",
         "type": "own chain"
     },
     "MCO": {
         "name": "Crypto.com",
         "started": 1495065600,
+        "symbol": "MCO",
         "type": "ethereum token"
     },
     "MDA": {
         "name": "Moeda Loyalty Points",
         "started": 1500249600,
+        "symbol": "MDA",
         "type": "ethereum token"
     },
     "MEC": {
         "name": "Megacoin",
         "started": 1369785600,
+        "symbol": "MEC",
         "type": "own chain"
     },
     "MEDX": {
         "name": "MediBlock",
         "started": 1527465600,
+        "symbol": "MEDX",
         "type": "ethereum token"
     },
     "MEME": {
         "name": "Memetic / PepeCoin",
         "started": 1425513600,
+        "symbol": "MEME",
         "type": "own chain"
     },
     "MER": {
         "name": "Mercury",
         "started": 1489536000,
+        "symbol": "MER",
         "type": "waves token"
     },
     "MET": {
         "name": "Metronome",
         "started": 1526947200,
+        "symbol": "MET",
         "type": "ethereum token"
     },
     "META": {
         "name": "Metadium",
         "started": 1534896000,
+        "symbol": "META",
         "type": "ethereum token"
     },
     "MFT": {
         "name": "Mainframe",
         "started": 1530662400,
+        "symbol": "MFT",
         "type": "ethereum token"
     },
     "MIN": {
@@ -1465,21 +1736,25 @@
         "ended": 1452038400,
         "name": "Minerals coin",
         "started": 1401926400,
+        "symbol": "MIN",
         "type": "own chain"
     },
     "MINT": {
         "name": "MintCoin",
         "started": 1391644800,
+        "symbol": "MINT",
         "type": "own chain"
     },
     "MITH": {
         "name": "Mithril",
         "started": 1517875200,
+        "symbol": "MITH",
         "type": "ethereum token"
     },
     "MLN": {
         "name": "Melonport",
         "started": 1487116800,
+        "symbol": "MLN",
         "type": "ethereum token"
     },
     "MMC": {
@@ -1487,6 +1762,7 @@
         "ended": 1473206400,
         "name": "Memorycoin",
         "started": 1387065600,
+        "symbol": "MMC",
         "type": "own chain"
     },
     "MMNXT": {
@@ -1494,6 +1770,7 @@
         "ended": 1483747200,
         "name": "MMNXT",
         "started": 1413936000,
+        "symbol": "MMNXT",
         "type": "own chain"
     },
     "MMXIV": {
@@ -1501,78 +1778,93 @@
         "ended": 1435881600,
         "name": "Maieuticoin",
         "started": 1400889600,
+        "symbol": "MMXIV",
         "type": "own chain"
     },
     "MOBI": {
         "name": "Mobius",
         "started": 1501632000,
+        "symbol": "MOBI",
         "type": "stellar token"
     },
     "MOC": {
         "name": "Moss Coin",
         "started": 1504656000,
+        "symbol": "MOC",
         "type": "ethereum token"
     },
     "MOD": {
         "active": true,
         "name": "Modum",
         "started": 1502755200,
+        "symbol": "MOD",
         "type": "ethereum token"
     },
     "MONA": {
         "name": "MonaCoin",
         "started": 1388534400,
+        "symbol": "MONA",
         "type": "own chain"
     },
     "MORE": {
         "name": "More Coin",
         "started": 1492473600,
+        "symbol": "MORE",
         "type": "ethereum token"
     },
     "MORE-2": {
         "active": true,
         "name": "Mithril Ore",
         "started": 1514678400,
+        "symbol": "MORE",
         "type": "ethereum token"
     },
     "MRS": {
         "name": "Marginless",
         "started": 1540306994,
+        "symbol": "MRS",
         "type": "ethereum token"
     },
     "MTH": {
         "name": "Monetha",
         "started": 1504051200,
+        "symbol": "MTH",
         "type": "ethereum token"
     },
     "MTL": {
         "name": "Metal",
         "started": 1496966400,
+        "symbol": "MTL",
         "type": "ethereum token"
     },
     "MUE": {
         "name": "MonetaryUnit",
         "started": 1406332800,
+        "symbol": "MUE",
         "type": "own chain"
     },
     "MUSIC": {
         "name": "Musicoin",
         "started": 1486944000,
+        "symbol": "MUSIC",
         "type": "own chain"
     },
     "MYST": {
         "name": "Mysterium",
         "started": 1493596800,
+        "symbol": "MYST",
         "type": "ethereum token"
     },
     "NANO": {
         "name": "Nano",
         "started": 1444003200,
+        "symbol": "NANO",
         "type": "own chain"
     },
     "NAS": {
         "name": "Nebulas",
         "started": 1503462598,
+        "symbol": "NAS",
         "type": "own chain"
     },
     "NAUT": {
@@ -1580,61 +1872,73 @@
         "ended": 1511481600,
         "name": "Nautilus coin",
         "started": 1400112000,
+        "symbol": "NAUT",
         "type": "nxt token"
     },
     "NAV": {
         "name": "NavCoin",
         "started": 1402012800,
+        "symbol": "NAV",
         "type": "own chain"
     },
     "NCASH": {
         "name": "Nucleus Vision",
         "started": 1511568000,
+        "symbol": "NCASH",
         "type": "ethereum token"
     },
     "NEBL": {
         "name": "Neblio",
         "started": 1485907200,
+        "symbol": "NEBL",
         "type": "own chain"
     },
     "NEO": {
         "name": "NEO",
         "started": 1473379200,
+        "symbol": "NEO",
         "type": "own chain"
     },
     "NEOS": {
         "name": "NeosCoin",
         "started": 1408838400,
+        "symbol": "NEOS",
         "type": "own chain"
     },
     "NGC": {
         "name": "NAGA",
         "started": 1509753600,
+        "symbol": "NGC",
         "type": "ethereum token"
     },
     "NKN": {
         "name": "New Kind of Network",
         "started": 1524182400,
+        "symbol": "NKN",
         "type": "neo token"
     },
     "NLC2": {
         "name": "NoLimitCoin",
         "started": 1473704375,
+        "symbol": "NLC2",
         "type": "own chain"
     },
     "NLG": {
         "name": "Gulden",
         "started": 1396396800,
+        "symbol": "NLG",
         "type": "own chain"
     },
     "NMC": {
         "name": "Namecoin",
         "started": 1303007201,
+        "symbol": "NMC",
         "type": "own chain"
     },
     "NMR": {
         "name": "Numeraire",
         "started": 1496952637,
+        "symbol": "NMR",
         "type": "ethereum token"
     },
     "NOBL": {
@@ -1642,16 +1946,19 @@
         "ended": 1549497600,
         "name": "NobleCoin",
         "started": 1389052800,
+        "symbol": "NOBL",
         "type": "own chain"
     },
     "NOTE": {
         "name": "DNotes",
         "started": 1392508800,
+        "symbol": "NOTE",
         "type": "own chain"
     },
     "NPXS": {
         "name": "Pundi X",
         "started": 1506470400,
+        "symbol": "NPXS",
         "type": "ethereum token"
     },
     "NRS": {
@@ -1659,31 +1966,37 @@
         "ended": 1473638400,
         "name": "Noir shares",
         "started": 1397952000,
+        "symbol": "NRS",
         "type": "own chain"
     },
     "NSR": {
         "name": "NuShares",
         "started": 1411430400,
+        "symbol": "NSR",
         "type": "Nubits token"
     },
     "NULS": {
         "name": "NULS",
         "started": 1504224000,
+        "symbol": "NULS",
         "type": "own chain"
     },
     "NXC": {
         "name": "Nexium",
         "started": 1463563652,
+        "symbol": "NXC",
         "type": "ethereum token"
     },
     "NXS": {
         "name": "Nexus",
         "started": 1403136000,
+        "symbol": "NXS",
         "type": "own chain"
     },
     "NXT": {
         "name": "Nxt",
         "started": 1385251200,
+        "symbol": "NXT",
         "type": "own chain"
     },
     "NXTI": {
@@ -1691,133 +2004,159 @@
         "ended": 1471219200,
         "name": "NXTInspect",
         "started": 1412812800,
+        "symbol": "NXTI",
         "type": "nxt token"
     },
     "OAX": {
         "name": "OAX",
         "started": 1496275200,
+        "symbol": "OAX",
         "type": "ethereum token"
     },
     "OCN": {
         "name": "Odyssey",
         "started": 1515974400,
+        "symbol": "OCN",
         "type": "ethereum token"
     },
     "OK": {
         "name": "OKCash",
         "started": 1416787200,
+        "symbol": "OK",
         "type": "own chain"
     },
     "OMG": {
         "name": "OmiseGO",
         "started": 1498176000,
+        "symbol": "OMG",
         "type": "ethereum token"
     },
     "OMNI": {
         "name": "Omni",
         "started": 1375228800,
+        "symbol": "OMNI",
         "type": "own chain"
     },
     "ONG": {
         "name": "Ontology Gas",
         "started": 1530316800,
+        "symbol": "ONG",
         "type": "ontology token"
     },
     "ONG-2": {
         "name": "SoMee.Social",
         "started": 1497657600,
+        "symbol": "ONG",
         "type": "ethereum token"
     },
     "ONT": {
         "name": "Ontology",
         "started": 1519603200,
+        "symbol": "ONT",
         "type": "own chain"
     },
     "OPAL": {
         "active": true,
         "name": "Opal",
         "started": 1410480000,
+        "symbol": "OPAL",
         "type": "own chain"
     },
     "OST": {
         "name": "OST",
         "started": 1507852800,
+        "symbol": "OST",
         "type": "ethereum token"
     },
     "PAI": {
         "name": "Project Pai",
         "started": 1509408000,
+        "symbol": "PAI",
         "type": "own chain"
     },
     "PAI-2": {
         "name": "PCHAIN",
         "started": 1527120000,
+        "symbol": "PAI",
         "type": "ethereum token"
     },
     "PAL": {
         "name": "Pal Network",
         "started": 1515628800,
+        "symbol": "PAL",
         "type": "ethereum token"
     },
     "PART": {
         "name": "Particl",
         "started": 1490054400,
+        "symbol": "PART",
         "type": "own chain"
     },
     "PASC": {
         "name": "Pascal Coin",
         "started": 1470873600,
+        "symbol": "PASC",
         "type": "own chain"
     },
     "PAX": {
         "name": "Paxos Standard Token",
         "started": 1536537600,
+        "symbol": "PAX",
         "type": "ethereum token"
     },
     "PAY": {
         "name": "TenX",
         "started": 1465171200,
+        "symbol": "PAY",
         "type": "ethereum token"
     },
     "PHX": {
         "name": "Red Pulse Phoenix",
         "started": 1507420800,
+        "symbol": "PHX",
         "type": "neo token"
     },
     "PIGGY": {
         "active": true,
         "name": "Piggycoin",
         "started": 1433894400,
+        "symbol": "PIGGY",
         "type": "own chain"
     },
     "PINK": {
         "name": "PinkCoin",
         "started": 1398988800,
+        "symbol": "PINK",
         "type": "own chain"
     },
     "PIVX": {
         "name": "PIVX",
         "started": 1448409600,
+        "symbol": "PIVX",
         "type": "own chain"
     },
     "PMA": {
         "name": "PumaPay",
         "started": 1521676800,
+        "symbol": "PMA",
         "type": "ethereum token"
     },
     "POA": {
         "name": "POA Network",
         "started": 1500508800,
+        "symbol": "POA",
         "type": "own chain"
     },
     "POE": {
         "name": "Po.et",
         "started": 1502150400,
+        "symbol": "POE",
         "type": "ethereum token"
     },
     "POLY": {
         "name": "Polymath Network",
         "started": 1514160000,
+        "symbol": "POLY",
         "type": "ethereum token"
     },
     "POLY-2": {
@@ -1825,26 +2164,31 @@
         "ended": 1444780800,
         "name": "Polybit",
         "started": 1433376000,
+        "symbol": "POLY",
         "type": "own chain"
     },
     "POT": {
         "name": "PotCoin",
         "started": 1390262400,
+        "symbol": "POT",
         "type": "own chain"
     },
     "POWR": {
         "name": "Power Ledger",
         "started": 1499212800,
+        "symbol": "POWR",
         "type": "ethereum token"
     },
     "PPC": {
         "name": "Peercoin",
         "started": 1345334400,
+        "symbol": "PPC",
         "type": "own chain"
     },
     "PPT": {
         "name": "Populous",
         "started": 1491955200,
+        "symbol": "PPT",
         "type": "ethereum token"
     },
     "PRC": {
@@ -1852,6 +2196,7 @@
         "ended": 1455235200,
         "name": "ProsperCoin",
         "started": 1390953600,
+        "symbol": "PRC",
         "type": "own chain"
     },
     "PRC-2": {
@@ -1859,21 +2204,25 @@
         "ended": 1549411200,
         "name": "PRCoin",
         "started": 1477958400,
+        "symbol": "PRC",
         "type": "own chain"
     },
     "PRO": {
         "name": "Propy",
         "started": 1500940800,
+        "symbol": "PRO",
         "type": "ethereum token"
     },
     "PTC": {
         "name": "Pesetacoin",
         "started": 1389052800,
+        "symbol": "PTC",
         "type": "own chain"
     },
     "PTOY": {
         "name": "Patientory",
         "started": 1493078400,
+        "symbol": "PTOY",
         "type": "ethereum token"
     },
     "Q2C": {
@@ -1881,6 +2230,7 @@
         "ended": 1549497600,
         "name": "QubitCoin",
         "started": 1389484800,
+        "symbol": "Q2C",
         "type": "own chain"
     },
     "QBK": {
@@ -1888,6 +2238,7 @@
         "ended": 1407628800,
         "name": "Qibuck Asset",
         "started": 1407628800,
+        "symbol": "QBK",
         "type": "Burst token"
     },
     "QCN": {
@@ -1895,21 +2246,25 @@
         "ended": 1528416000,
         "name": "QuazarCoin",
         "started": 1399507200,
+        "symbol": "QCN",
         "type": "own chain"
     },
     "QKC": {
         "name": "QuarkChain",
         "started": 1527897600,
+        "symbol": "QKC",
         "type": "ethereum token"
     },
     "QLC": {
         "name": "QLC Chain",
         "started": 1510444800,
+        "symbol": "QLC",
         "type": "neo token"
     },
     "QNT": {
         "name": "Quant",
         "started": 1529884800,
+        "symbol": "QNT",
         "type": "ethereum token"
     },
     "QORA": {
@@ -1917,16 +2272,19 @@
         "ended": 1529539200,
         "name": "Qora",
         "started": 1395187200,
+        "symbol": "QORA",
         "type": "own chain"
     },
     "QRL": {
         "name": "Quantum Resistant Ledger",
         "started": 1482796800,
+        "symbol": "QRL",
         "type": "own chain"
     },
     "QSP": {
         "name": "Quantstamp",
         "started": 1506816000,
+        "symbol": "QSP",
         "type": "ethereum token"
     },
     "QTL": {
@@ -1934,66 +2292,79 @@
         "ended": 1549497600,
         "name": "Quatloo",
         "started": 1403827200,
+        "symbol": "QTL",
         "type": "own chain"
     },
     "QTUM": {
         "name": "Qtum",
         "started": 1482105600,
+        "symbol": "QTUM",
         "type": "own chain"
     },
     "QWARK": {
         "name": "Qwark",
         "started": 1460937600,
+        "symbol": "QWARK",
         "type": "Ubiq token"
     },
     "RADS": {
         "name": "Radium",
         "started": 1453075200,
+        "symbol": "RADS",
         "type": "own chain"
     },
     "RBY": {
         "name": "Rubycoin",
         "started": 1393200000,
+        "symbol": "RBY",
         "type": "own chain"
     },
     "RCN": {
         "name": "Ripio Credit Network",
         "started": 1508198400,
+        "symbol": "RCN",
         "type": "ethereum token"
     },
     "RCN-2": {
         "name": "Rcoin",
         "started": 1472688000,
+        "symbol": "RCN",
         "type": "own chain"
     },
     "RDD": {
         "name": "ReddCoin",
         "started": 1390176000,
+        "symbol": "RDD",
         "type": "own chain"
     },
     "RDN": {
         "name": "Raiden Network Token",
         "started": 1506038400,
+        "symbol": "RDN",
         "type": "ethereum token"
     },
     "REN": {
         "name": "Ren",
         "started": 1514678400,
+        "symbol": "REN",
         "type": "ethereum token"
     },
     "REP": {
         "name": "Augur",
         "started": 1416182400,
+        "symbol": "REP",
         "type": "ethereum token"
     },
     "REQ": {
         "name": "Request",
         "started": 1504137600,
+        "symbol": "REQ",
         "type": "ethereum token"
     },
     "RFR": {
         "name": "Refereum",
         "started": 1506297600,
+        "symbol": "RFR",
         "type": "ethereum token"
     },
     "RIC": {
@@ -2001,26 +2372,31 @@
         "ended": 1533340800,
         "name": "Riecoin",
         "started": 1392076800,
+        "symbol": "RIC",
         "type": "own chain"
     },
     "RISE": {
         "name": "Rise",
         "started": 1466726400,
+        "symbol": "RISE",
         "type": "own chain"
     },
     "RLC": {
         "name": "iExec RLC",
         "started": 1484006400,
+        "symbol": "RLC",
         "type": "ethereum token"
     },
     "RVN": {
         "name": "Ravencoin",
         "started": 1514937600,
+        "symbol": "RVN",
         "type": "own chain"
     },
     "RVR": {
         "name": "RevolutionVR",
         "started": 1446508800,
+        "symbol": "RVR",
         "type": "own chain"
     },
     "RZR": {
@@ -2028,46 +2404,55 @@
         "ended": 1452038400,
         "name": "Razor",
         "started": 1403308800,
+        "symbol": "RZR",
         "type": "own chain"
     },
     "SALT": {
         "name": "SALT",
         "started": 1501200000,
+        "symbol": "SALT",
         "type": "ethereum token"
     },
     "SBD": {
         "name": "Steem Dollars",
         "started": 1464998400,
+        "symbol": "SBD",
         "type": "own chain"
     },
     "SC": {
         "name": "Siacoin",
         "started": 1426550400,
+        "symbol": "SC",
         "type": "own chain"
     },
     "SDC": {
         "name": "ShadowCash",
         "started": 1403049600,
+        "symbol": "SDC",
         "type": "own chain"
     },
     "SEQ": {
         "name": "Sequence",
         "started": 1474754073,
+        "symbol": "SEQ",
         "type": "own chain"
     },
     "SERV": {
         "name": "Serve",
         "started": 1549065600,
+        "symbol": "SERV",
         "type": "ethereum token"
     },
     "SHIFT": {
         "name": "Shift",
         "started": 1441460968,
+        "symbol": "SHIFT",
         "type": "own chain"
     },
     "SIB": {
         "name": "SIBCoin",
         "started": 1431129600,
+        "symbol": "SIB",
         "type": "own chain"
     },
     "SILK": {
@@ -2075,6 +2460,7 @@
         "ended": 1473206400,
         "name": "SilkCoin",
         "started": 1399766400,
+        "symbol": "SILK",
         "type": "own chain"
     },
     "SJCX": {
@@ -2083,57 +2469,68 @@
         "name": "Storjcoin X",
         "started": 1405641600,
         "swapped_for": "STORJ",
+        "symbol": "SJCX",
         "type": "counterparty token"
     },
     "SKY": {
         "name": "Skycoin",
         "started": 1387670400,
+        "symbol": "SKY",
         "type": "own chain"
     },
     "SLR": {
         "name": "SolarCoin",
         "started": 1389484800,
+        "symbol": "SLR",
         "type": "own chain"
     },
     "SLS": {
         "name": "SaluS",
         "started": 1452038400,
+        "symbol": "SLS",
         "type": "own chain"
     },
     "SLT": {
         "name": "Smartlands",
         "started": 1504742400,
+        "symbol": "SLT",
         "type": "stellar token"
     },
     "SLT-2": {
         "name": "Social Lending Token",
         "started": 1531440000,
+        "symbol": "SLT",
         "type": "ethereum token"
     },
     "SMC": {
         "active": true,
         "name": "SmartCoin",
         "started": 1388966400,
+        "symbol": "SMC",
         "type": "own chain"
     },
     "SNGLS": {
         "name": "SingularDTV",
         "started": 1475366400,
+        "symbol": "SNGLS",
         "type": "ethereum token"
     },
     "SNM": {
         "name": "SONM",
         "started": 1485216000,
+        "symbol": "SNM",
         "type": "ethereum token"
     },
     "SNT": {
         "name": "Status Network Token",
         "started": 1497889273,
+        "symbol": "SNT",
         "type": "ethereum token"
     },
     "SOLVE": {
         "name": "SOLVE",
         "started": 1528934400,
+        "symbol": "SOLVE",
         "type": "ethereum token"
     },
     "SPA": {
@@ -2141,31 +2538,37 @@
         "ended": 1452038400,
         "name": "SpainCoin",
         "started": 1394668800,
+        "symbol": "SPA",
         "type": "own chain"
     },
     "SPC": {
         "name": "SpaceChain",
         "started": 1516147466,
+        "symbol": "SPC",
         "type": "qtum token"
     },
     "SPHR": {
         "name": "Sphere",
         "started": 1430581765,
+        "symbol": "SPHR",
         "type": "own chain"
     },
     "SPND": {
         "name": "Spendcoin",
         "started": 1530057600,
+        "symbol": "SPND",
         "type": "ethereum token"
     },
     "SQL": {
         "name": "Squallcoin",
         "started": 1409356800,
+        "symbol": "SQL",
         "type": "own chain"
     },
     "SRN": {
         "name": "SIRIN LABS Token",
         "started": 1508284800,
+        "symbol": "SRN",
         "type": "ethereum token"
     },
     "SSD": {
@@ -2173,41 +2576,49 @@
         "ended": 1467331200,
         "name": "Sonic",
         "started": 1407542400,
+        "symbol": "SSD",
         "type": "own chain"
     },
     "STEEM": {
         "name": "Steem",
         "started": 1458777600,
+        "symbol": "STEEM",
         "type": "own chain"
     },
     "STORJ": {
         "name": "Storj",
         "started": 1497888995,
+        "symbol": "STORJ",
         "type": "ethereum token"
     },
     "STORM": {
         "name": "Storm",
         "started": 1509926400,
+        "symbol": "STORM",
         "type": "ethereum token"
     },
     "STRAT": {
         "name": "Stratis",
         "started": 1465862400,
+        "symbol": "STRAT",
         "type": "own chain"
     },
     "SUB": {
         "name": "Substratum",
         "started": 1501372800,
+        "symbol": "SUB",
         "type": "ethereum token"
     },
     "SWT": {
         "name": "Swarm City",
         "started": 1488578683,
+        "symbol": "SWT",
         "type": "ethereum token"
     },
     "SXC": {
         "name": "Sexcoin",
         "started": 1369699200,
+        "symbol": "SXC",
         "type": "own chain"
     },
     "SYNC": {
@@ -2215,52 +2626,62 @@
         "ended": 1514246400,
         "name": "SyncCoin",
         "started": 1400371200,
+        "symbol": "SYNC",
         "type": "own chain"
     },
     "SYNX": {
         "name": "Syndicate",
         "started": 1465862400,
+        "symbol": "SYNX",
         "type": "own chain"
     },
     "SYS": {
         "name": "Syscoin",
         "started": 1398556800,
+        "symbol": "SYS",
         "type": "own chain"
     },
     "TALK": {
         "active": true,
         "name": "BTCtalkcoin",
         "started": 1399053201,
+        "symbol": "TALK",
         "type": "own chain"
     },
     "THC": {
         "name": "HempCoin",
         "started": 1394323200,
+        "symbol": "THC",
         "type": "own chain"
     },
     "THETA": {
         "name": "THETA",
         "started": 1511395200,
+        "symbol": "THETA",
         "type": "ethereum token"
     },
     "TIX": {
         "name": "Blocktix",
         "started": 1499385600,
+        "symbol": "TIX",
         "type": "ethereum token"
     },
     "TKS": {
         "name": "Tokes",
         "started": 1480723200,
+        "symbol": "TKS",
         "type": "waves token"
     },
     "TNB": {
         "name": "Time New Bank",
         "started": 1475280000,
+        "symbol": "TNB",
         "type": "ethereum token"
     },
     "TNT": {
         "name": "Tierion",
         "started": 1500249600,
+        "symbol": "TNT",
         "type": "ethereum token"
     },
     "TOR": {
@@ -2268,11 +2689,13 @@
         "ended": 1525651200,
         "name": "Torcoin",
         "started": 1404432000,
+        "symbol": "TOR",
         "type": "own chain"
     },
     "TRAC": {
         "name": "OriginTrail",
         "started": 1511222400,
+        "symbol": "TRAC",
         "type": "ethereum token"
     },
     "TRIG": {
@@ -2280,11 +2703,13 @@
         "ended": 1541203200,
         "name": "Triggers",
         "started": 1476057600,
+        "symbol": "TRIG",
         "type": "counterparty token"
     },
     "TRST": {
         "name": "WeTrust",
         "started": 1481068800,
+        "symbol": "TRST",
         "type": "ethereum token"
     },
     "TRUST": {
@@ -2292,47 +2717,56 @@
         "ended": 1540857600,
         "name": "TrustPlus",
         "started": 1403308800,
+        "symbol": "TRUST",
         "type": "own chain"
     },
     "TRX": {
         "name": "TRON",
         "started": 1504051200,
+        "symbol": "TRX",
         "type": "own chain"
     },
     "TTC": {
         "name": "TTC Protocol",
         "started": 1529884800,
+        "symbol": "TTC",
         "type": "ethereum token"
     },
     "TUBE": {
         "name": "BitTube",
         "started": 1517356800,
+        "symbol": "TUBE",
         "type": "own chain"
     },
     "TUSD": {
         "name": "TrueUSD",
         "started": 1520310861,
+        "symbol": "TUSD",
         "type": "ethereum token"
     },
     "TX": {
         "name": "TransferCoin",
         "started": 1439251200,
+        "symbol": "TX",
         "type": "own chain"
     },
     "UBQ": {
         "name": "Ubiq",
         "started": 1410125962,
+        "symbol": "UBQ",
         "type": "own chain"
     },
     "UIS": {
         "active": false,
         "name": "Unitus",
         "started": 1419120000,
+        "symbol": "UIS",
         "type": "own chain"
     },
     "UKG": {
         "name": "Unikoin Gold",
         "started": 1506297600,
+        "symbol": "UKG",
         "type": "ethereum token"
     },
     "ULTC": {
@@ -2340,22 +2774,26 @@
         "ended": 1452038400,
         "name": "Umbrella-LTC",
         "started": 1405123200,
+        "symbol": "ULTC",
         "type": "own chain"
     },
     "UNITY": {
         "active": false,
         "name": "SuperNET",
         "started": 1409356800,
+        "symbol": "UNITY",
         "type": "nxt token"
     },
     "UP": {
         "name": "UpToken",
         "started": 1506038400,
+        "symbol": "UP",
         "type": "ethereum token"
     },
     "UPP": {
         "name": "Sentinel Protocol",
         "started": 1526947200,
+        "symbol": "UPP",
         "type": "ethereum token"
     },
     "URO": {
@@ -2363,15 +2801,18 @@
         "ended": 1528416000,
         "name": "Uro",
         "started": 1399593600,
+        "symbol": "URO",
         "type": "own chain"
     },
     "USD": {
         "name": "United States Dollar",
+        "symbol": "USD",
         "type": "fiat"
     },
     "USDC": {
         "name": "USD Coin",
         "started": 1533324504,
+        "symbol": "USDC",
         "type": "ethereum token"
     },
     "USDE": {
@@ -2379,32 +2820,38 @@
         "ended": 1517011200,
         "name": "USDe",
         "started": 1389484800,
+        "symbol": "USDE",
         "type": "own chain"
     },
     "USDS": {
         "name": "StableUSD",
         "started": 1534291200,
+        "symbol": "USDS",
         "type": "ethereum token"
     },
     "USDS-2": {
         "name": "Stronghold USD",
         "started": 1545259175,
+        "symbol": "USDS",
         "type": "stellar token"
     },
     "USDT": {
         "name": "Tether",
         "started": 1402358400,
+        "symbol": "USDT",
         "type": "omni token"
     },
     "USNBT": {
         "name": "NuBits",
         "started": 1411430400,
+        "symbol": "USNBT",
         "type": "own chain"
     },
     "UTC": {
         "active": true,
         "name": "UltraCoin",
         "started": 1391212800,
+        "symbol": "UTC",
         "type": "own chain"
     },
     "UTIL": {
@@ -2412,11 +2859,13 @@
         "ended": 1452038400,
         "name": "Utility coin",
         "started": 1411689600,
+        "symbol": "UTIL",
         "type": "own chain"
     },
     "VEE": {
         "name": "BLOCKv",
         "started": 1507766400,
+        "symbol": "VEE",
         "type": "ethereum token"
     },
     "VEN": {
@@ -2425,31 +2874,37 @@
         "name": "Vechain Token",
         "started": 1503360000,
         "swapped_for": "VET",
+        "symbol": "VEN",
         "type": "ethereum token"
     },
     "VET": {
         "name": "VeChain",
         "started": 1533254400,
+        "symbol": "VET",
         "type": "own chain"
     },
     "VIA": {
         "name": "Viacoin",
         "started": 1405641600,
+        "symbol": "VIA",
         "type": "own chain"
     },
     "VIB": {
         "name": "Viberate",
         "started": 1500336000,
+        "symbol": "VIB",
         "type": "ethereum token"
     },
     "VIBE": {
         "name": "VIBE",
         "started": 1500422400,
+        "symbol": "VIBE",
         "type": "ethereum token"
     },
     "VITE": {
         "name": "VITE",
         "started": 1524614400,
+        "symbol": "VITE",
         "type": "ethereum token"
     },
     "VOOT": {
@@ -2457,51 +2912,61 @@
         "ended": 1491091200,
         "name": "VootCoin",
         "started": 1401753600,
+        "symbol": "VOOT",
         "type": "own chain"
     },
     "VRC": {
         "name": "VeriCoin",
         "started": 1399680000,
+        "symbol": "VRC",
         "type": "own chain"
     },
     "VRM": {
         "name": "VeriumReserve",
         "started": 1473984000,
+        "symbol": "VRM",
         "type": "own chain"
     },
     "VTC": {
         "name": "Vertcoin",
         "started": 1389139200,
+        "symbol": "VTC",
         "type": "own chain"
     },
     "WABI": {
         "name": "Tael",
         "started": 1500595200,
+        "symbol": "WABI",
         "type": "ethereum token"
     },
     "WAN": {
         "name": "Wanchain",
         "started": 1503360000,
+        "symbol": "WAN",
         "type": "own chain"
     },
     "WAVES": {
         "name": "Waves",
         "started": 1460419200,
+        "symbol": "WAVES",
         "type": "own chain"
     },
     "WAX": {
         "name": "WAX",
         "started": 1507161600,
+        "symbol": "WAX",
         "type": "ethereum token"
     },
     "WDC": {
         "name": "WorldCoin",
         "started": 1368489600,
+        "symbol": "WDC",
         "type": "own chain"
     },
     "WINGS": {
         "name": "Wings DAO",
         "started": 1483142400,
+        "symbol": "WINGS",
         "type": "ethereum token"
     },
     "WOLF": {
@@ -2509,16 +2974,19 @@
         "ended": 1426636800,
         "name": "Insanity Coin",
         "started": 1407974400,
+        "symbol": "WOLF",
         "type": "own chain"
     },
     "WPR": {
         "name": "WePower",
         "started": 1515024000,
+        "symbol": "WPR",
         "type": "ethereum token"
     },
     "WTC": {
         "name": "Waltonchain",
         "started": 1500336000,
+        "symbol": "WTC",
         "type": "ethereum token"
     },
     "XAI": {
@@ -2526,21 +2994,25 @@
         "ended": 1471564800,
         "name": "Sapience AIFX",
         "started": 1416355200,
+        "symbol": "XAI",
         "type": "own chain"
     },
     "XBC": {
         "name": "Bitcoin Plus",
         "started": 1396137600,
+        "symbol": "XBC",
         "type": "own chain"
     },
     "XCN": {
         "name": "Cryptonite",
         "started": 1388620800,
+        "symbol": "XCN",
         "type": "own chain"
     },
     "XCP": {
         "name": "Counterparty",
         "started": 1392472776,
+        "symbol": "XCP",
         "type": "own chain"
     },
     "XCR": {
@@ -2548,11 +3020,13 @@
         "ended": 1473379200,
         "name": "Crypti",
         "started": 1407369600,
+        "symbol": "XCR",
         "type": "own chain"
     },
     "XDN": {
         "name": "DigitalNote",
         "started": 1401408000,
+        "symbol": "XDN",
         "type": "own chain"
     },
     "XDP": {
@@ -2560,21 +3034,25 @@
         "ended": 1465171200,
         "name": "Dogeparty",
         "started": 1406160000,
+        "symbol": "XDP",
         "type": "own chain"
     },
     "XEL": {
         "name": "XEL",
         "started": 1496880000,
+        "symbol": "XEL",
         "type": "own chain"
     },
     "XEM": {
         "name": "NEM",
         "started": 1402012800,
+        "symbol": "XEM",
         "type": "own chain"
     },
     "XHV": {
         "name": "Haven Protocol",
         "started": 1519171200,
+        "symbol": "XHV",
         "type": "own chain"
     },
     "XLB": {
@@ -2582,31 +3060,37 @@
         "ended": 1452038400,
         "name": "LibertyCoin",
         "started": 1399593600,
+        "symbol": "XLB",
         "type": "own chain"
     },
     "XLM": {
         "name": "Stellar Lumens",
         "started": 1374192000,
+        "symbol": "XLM",
         "type": "own chain"
     },
     "XMG": {
         "name": "Magi",
         "started": 1407801600,
+        "symbol": "XMG",
         "type": "own chain"
     },
     "XMR": {
         "name": "Monero",
         "started": 1397818194,
+        "symbol": "XMR",
         "type": "own chain"
     },
     "XMY": {
         "name": "MyriadCoin",
         "started": 1393113600,
+        "symbol": "XMY",
         "type": "own chain"
     },
     "XNK": {
         "name": "Ink Protocol",
         "started": 1510704000,
+        "symbol": "XNK",
         "type": "ethereum token"
     },
     "XPB": {
@@ -2614,16 +3098,19 @@
         "ended": 1473206400,
         "name": "Pebblecoin",
         "started": 1420070400,
+        "symbol": "XPB",
         "type": "own chain"
     },
     "XPM": {
         "name": "Primecoin",
         "started": 1373155200,
+        "symbol": "XPM",
         "type": "own chain"
     },
     "XRP": {
         "name": "Ripple",
         "started": 1364774400,
+        "symbol": "XRP",
         "type": "own chain"
     },
     "XSI": {
@@ -2631,16 +3118,19 @@
         "ended": 1514764800,
         "name": "Stability shares",
         "started": 1398211200,
+        "symbol": "XSI",
         "type": "own chain"
     },
     "XST": {
         "name": "StealthCoin",
         "started": 1403568000,
+        "symbol": "XST",
         "type": "own chain"
     },
     "XTZ": {
         "name": "Tezos",
         "started": 1498867200,
+        "symbol": "XTZ",
         "type": "own chain"
     },
     "XVC": {
@@ -2648,21 +3138,25 @@
         "ended": 1533340800,
         "name": "Vcash",
         "started": 1425600000,
+        "symbol": "XVC",
         "type": "own chain"
     },
     "XVG": {
         "name": "Verge",
         "started": 1412816400,
+        "symbol": "XVG",
         "type": "own chain"
     },
     "XWC": {
         "name": "WhiteCoin",
         "started": 1397347200,
+        "symbol": "XWC",
         "type": "own chain"
     },
     "XZC": {
         "name": "Zcoin",
         "started": 1474848000,
+        "symbol": "XZC",
         "type": "own chain"
     },
     "YACC": {
@@ -2670,36 +3164,43 @@
         "ended": 1473206400,
         "name": "YaCcoin",
         "started": 1367712000,
+        "symbol": "YACC",
         "type": "own chain"
     },
     "YOYO": {
         "name": "YOYOW",
         "started": 1503165605,
+        "symbol": "YOYO",
         "type": "ethereum token"
     },
     "ZCL": {
         "name": "ZClassic",
         "started": 1478390400,
+        "symbol": "ZCL",
         "type": "own chain"
     },
     "ZEC": {
         "name": "Zcash",
         "started": 1477671596,
+        "symbol": "ZEC",
         "type": "own chain"
     },
     "ZEN": {
         "name": "Horizen",
         "started": 1489017600,
+        "symbol": "ZEN",
         "type": "own chain"
     },
     "ZIL": {
         "name": "Zilliqa",
         "started": 1509926400,
+        "symbol": "ZIL",
         "type": "ethereum token"
     },
     "ZRX": {
         "name": "0x",
         "started": 1502476756,
+        "symbol": "ZRX",
         "type": "ethereum token"
     }
 }
