@@ -105,8 +105,9 @@ class AssetType(Enum):
 
 class AssetData(NamedTuple):
     """Data of an asset. Keep in sync with assets/asset.py"""
-    symbol: str
+    identifier: str
     name: str
+    symbol: str
     active: bool
     asset_type: AssetType
     # Every asset should have a started timestamp except for FIAT which are

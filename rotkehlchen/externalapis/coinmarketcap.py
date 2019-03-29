@@ -388,7 +388,7 @@ class Coinmarketcap():
                     now = ts_now()
                     invalidate_cache = False
 
-                    # If we got a cache and its' over a month old then requery coinmarketcap
+                    # If we got a cache and it's over a month old then requery coinmarketcap
                     if file_data['time'] < now and now - file_data['time'] > 2629800:
                         log.info('Coinmarketcap coinlist cache is now invalidated')
                         invalidate_cache = True
@@ -406,6 +406,6 @@ class Coinmarketcap():
                 f.write(rlk_jsondumps(write_data))
         else:
             # in any case take the data
-            data = data['data']
+            data = file_data['data']
 
         return data

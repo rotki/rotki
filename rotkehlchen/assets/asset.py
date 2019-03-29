@@ -104,8 +104,9 @@ WORLD_TO_BINANCE = {
 
 @dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class Asset():
-    symbol: str
+    identifier: str
     name: str = field(init=False)
+    symbol: str = field(init=False)
     active: bool = field(init=False)
     asset_type: AssetType = field(init=False)
     started: Timestamp = field(init=False)
@@ -114,9 +115,9 @@ class Asset():
     swapped_for: Optional[str] = field(init=False)
 
     def __post_init__(self):
-        if not AssetResolver().is_symbol_canonical(self.symbol):
-            raise UnknownAsset(self.symbol)
-        data = AssetResolver().get_asset_data(self.symbol)
+        if not AssetResolver().is_identifier_canonical(self.identifier):
+            raise UnknownAsset(self.identifier)
+        data = AssetResolver().get_asset_data(self.identifier)
 
         # Ugly hack to set attributes of a frozen data class as post init
         # https://docs.python.org/3/library/dataclasses.html#frozen-instances
@@ -129,7 +130,7 @@ class Asset():
         object.__setattr__(self, 'swapped_for', data.swapped_for)
 
     def canonical(self) -> str:
-        return self.symbol
+        return self.identifier
 
     def is_fiat(self) -> bool:
         return self.asset_type == AssetType.FIAT
@@ -138,39 +139,39 @@ class Asset():
         return self.name
 
     def to_kraken(self) -> str:
-        return WORLD_TO_KRAKEN[self.symbol]
+        return WORLD_TO_KRAKEN[self.identifier]
 
     def to_bittrex(self) -> str:
-        return WORLD_TO_BITTREX.get(self.symbol, self.symbol)
+        return WORLD_TO_BITTREX.get(self.identifier, self.identifier)
 
     def to_binance(self) -> str:
-        return WORLD_TO_BINANCE.get(self.symbol, self.symbol)
+        return WORLD_TO_BINANCE.get(self.identifier, self.identifier)
 
     def to_cryptocompare(self) -> str:
-        cryptocompare_str = WORLD_TO_CRYPTOCOMPARE.get(self.symbol, self.symbol)
-        # There is a symbol which should not be queried in cryptocompare
+        cryptocompare_str = WORLD_TO_CRYPTOCOMPARE.get(self.identifier, self.identifier)
+        # There is an asset which should not be queried in cryptocompare
         if cryptocompare_str is None:
-            if self.symbol == 'MRS':
+            if self.identifier == 'MRS':
                 raise UnsupportedAsset(
                     'Marginless is not in cryptocompare. Asking for MRS '
                     'will return MARScoin',
                 )
             else:
                 raise RuntimeError(
-                    f'Got {self.symbol} as a cryptocompare query but it is '
+                    f'Got {self.identifier} as a cryptocompare query but it is '
                     f'documented as returning None and is not handled',
                 )
 
         return cryptocompare_str
 
     def __hash__(self):
-        return hash(self.symbol)
+        return hash(self.identifier)
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Asset):
-            return self.symbol == other.symbol
+            return self.identifier == other.identifier
         elif isinstance(other, str):
-            return self.symbol == other
+            return self.identifier == other
         else:
             raise ValueError(f'Invalid comparison of asset with {type(other)}')
 
