@@ -57,6 +57,11 @@ MANUALLY_CHECKED = {
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'MOD': True,
+    # On 30/03/2019 Adcoin is still active and trading in 2 exchange
+    # https://coinmarketcap.com/currencies/adcoin/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'ACC': True,
 }
 
 

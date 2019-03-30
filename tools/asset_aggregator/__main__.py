@@ -53,6 +53,7 @@ def process_asset(
     if given_by_eth_token_json:
         if asset_symbol in UNSUPPORTED_ETH_TOKENS_JSON:
             return our_data
+
         asset_symbol = ETH_TOKENS_JSON_TO_WORLD.get(asset_symbol, asset_symbol)
 
         our_data[asset_symbol] = {}
@@ -181,22 +182,27 @@ def main():
         with open(os.path.join(root_path, 'rotkehlchen', 'data', 'eth_tokens.json'), 'r') as f:
             token_data = rlk_jsonloads(f.read())
 
-        start = 0
-        stop_after = 2
+        start = 16
+        stop_after = start + 2
         input_data = {}
-        for index, entry in enumerate(token_data, start):
-            input_data = process_asset(
-                our_data=input_data,
-                asset_symbol=entry['symbol'],
-                paprika_coins_list=paprika_coins_list,
-                paprika=paprika,
-                cmc_list=cmc_list,
-                cryptocompare_coins_map=cryptocompare_coins_map,
-                always_keep_our_time=args.always_keep_our_time,
-                given_by_eth_token_json=True,
-            )
+        for index, entry in enumerate(token_data[start:], start):
+            token_symbol = entry['symbol']
+            # at least for now skip all already known tokens
+            if ETH_TOKENS_JSON_TO_WORLD.get(token_symbol, token_symbol) in our_data:
+                print(f"Skipping ETH token {token_symbol} since it's already known")
+            else:
+                input_data = process_asset(
+                    our_data=input_data,
+                    asset_symbol=token_symbol,
+                    paprika_coins_list=paprika_coins_list,
+                    paprika=paprika,
+                    cmc_list=cmc_list,
+                    cryptocompare_coins_map=cryptocompare_coins_map,
+                    always_keep_our_time=args.always_keep_our_time,
+                    given_by_eth_token_json=True,
+                )
 
-            if index - start >= stop_after:
+            if index >= stop_after:
                 break
 
         # and now combine the two dictionaries to get the final one. Note that no

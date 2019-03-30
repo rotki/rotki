@@ -1,4 +1,10 @@
 {
+    "0xBTC": {
+        "name": "0xBitcoin",
+        "started": 1517875200,
+        "symbol": "0xBTC",
+        "type": "ethereum token"
+    },
     "1CR": {
         "active": false,
         "ended": 1506988800,
@@ -7,10 +13,22 @@
         "symbol": "1CR",
         "type": "own chain"
     },
+    "1SG": {
+        "name": "1SG",
+        "started": 1545696000,
+        "symbol": "1SG",
+        "type": "ethereum token"
+    },
     "1ST": {
         "name": "FirstBlood",
         "started": 1468022400,
         "symbol": "1ST",
+        "type": "ethereum token"
+    },
+    "1WO": {
+        "name": "1World",
+        "started": 1512000000,
+        "symbol": "1WO",
         "type": "ethereum token"
     },
     "2GIVE": {
@@ -19,11 +37,31 @@
         "symbol": "2GIVE",
         "type": "own chain"
     },
+    "300": {
+        "active": false,
+        "ended": 1549411200,
+        "name": "300 Token",
+        "started": 1498694400,
+        "symbol": "300",
+        "type": "ethereum token"
+    },
+    "ABT": {
+        "name": "Arcblock",
+        "started": 1515196800,
+        "symbol": "ABT",
+        "type": "ethereum token"
+    },
     "ABY": {
         "name": "ArtByte",
         "started": 1398902400,
         "symbol": "ABY",
         "type": "own chain"
+    },
+    "ABYSS": {
+        "name": "The Abyss",
+        "started": 1511913600,
+        "symbol": "ABYSS",
+        "type": "ethereum token"
     },
     "AC": {
         "active": false,
@@ -32,6 +70,25 @@
         "started": 1397952000,
         "symbol": "AC",
         "type": "own chain"
+    },
+    "ACC": {
+        "active": true,
+        "name": "AdCoin",
+        "started": 1500336000,
+        "symbol": "ACC",
+        "type": "own chain"
+    },
+    "ACC-2": {
+        "name": "ACChain",
+        "started": 1496275200,
+        "symbol": "ACC",
+        "type": "own chain"
+    },
+    "ACC-3": {
+        "name": "Accelerator Network",
+        "started": 1507248000,
+        "symbol": "ACC",
+        "type": "ethereum token"
     },
     "ACH": {
         "active": false,
