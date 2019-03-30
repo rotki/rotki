@@ -372,6 +372,14 @@ RENAMED_BINANCE_ASSETS = {
     'RPX': 'PHX',
 }
 
+ETH_TOKENS_JSON_TO_WORLD = {
+    '$HUR': 'HUR',
+}
+UNSUPPORTED_ETH_TOKENS_JSON = (
+    '$FFC',
+    '$FXY',
+)
+
 
 def asset_from_kraken(kraken_name: str) -> Asset:
     return Asset(KRAKEN_TO_WORLD[kraken_name])
@@ -414,4 +422,9 @@ def asset_from_eth_token_symbol(token_symbol: str) -> Asset:
 
     If the token is not supported the functions throws UnsupportedAsset
     """
+    if token_symbol in UNSUPPORTED_ETH_TOKENS_JSON:
+        raise UnsupportedAsset(token_symbol)
+
+    token_symbol = ETH_TOKENS_JSON_TO_WORLD.get(token_symbol, token_symbol)
+
     return Asset(token_symbol)
