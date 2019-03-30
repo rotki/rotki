@@ -23,7 +23,7 @@ from asset_aggregator.name_check import name_check
 from asset_aggregator.timerange_check import timerange_check
 from asset_aggregator.typeinfo_check import typeinfo_check
 
-from rotkehlchen.assets.converters import ETH_TOKENS_JSON_TO_WORLD, UNSUPPOPRTED_ETH_TOKENS_JSON
+from rotkehlchen.assets.converters import ETH_TOKENS_JSON_TO_WORLD, UNSUPPORTED_ETH_TOKENS_JSON
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import FIAT_CURRENCIES
 from rotkehlchen.externalapis import Coinmarketcap, CoinPaprika, Cryptocompare
@@ -51,9 +51,11 @@ def process_asset(
     local data on the symbol query the user on which data to use for each asset attribute.
     """
     if given_by_eth_token_json:
-        if asset_symbol in UNSUPPOPRTED_ETH_TOKENS_JSON:
+        if asset_symbol in UNSUPPORTED_ETH_TOKENS_JSON:
             return our_data
         asset_symbol = ETH_TOKENS_JSON_TO_WORLD.get(asset_symbol, asset_symbol)
+
+        our_data[asset_symbol] = {}
 
     our_asset = our_data[asset_symbol]
     # Coin paprika does not have info on FIAT currencies
@@ -96,6 +98,8 @@ def process_asset(
         paprika_data=paprika_coin_data,
         cmc_data=cmc_coin_data,
     )
+    if given_by_eth_token_json:
+        assert our_data[asset_symbol]['type'] == 'ethereum token'
     # add the symbol as an asset attribute in the data
     symbol = asset_symbol
     match = re.search('(.*)-\\d+', symbol)
@@ -103,7 +107,7 @@ def process_asset(
     # non suffixed symbol, iow just 'PAI'
     if match:
         symbol = match.group(1)
-    our_data[asset_symbol] = symbol
+    our_data[asset_symbol]['symbol'] = symbol
 
     # Make sure that the asset is also known to cryptocompare
     cryptocompare_symbol = WORLD_TO_CRYPTOCOMPARE.get(asset_symbol, asset_symbol)
@@ -177,9 +181,12 @@ def main():
         with open(os.path.join(root_path, 'rotkehlchen', 'data', 'eth_tokens.json'), 'r') as f:
             token_data = rlk_jsonloads(f.read())
 
-        for entry in token_data:
-            our_data = process_asset(
-                our_data=our_data,
+        start = 0
+        stop_after = 2
+        input_data = {}
+        for index, entry in enumerate(token_data, start):
+            input_data = process_asset(
+                our_data=input_data,
                 asset_symbol=entry['symbol'],
                 paprika_coins_list=paprika_coins_list,
                 paprika=paprika,
@@ -188,6 +195,14 @@ def main():
                 always_keep_our_time=args.always_keep_our_time,
                 given_by_eth_token_json=True,
             )
+
+            if index - start >= stop_after:
+                break
+
+        # and now combine the two dictionaries to get the final one. Note that no
+        # checks are perfomed for what was in all_assets.json before the script
+        # ran in this case
+        our_data = {**our_data, **input_data}
 
     else:
         # Iterate all of the assets of the all_assets.json file and perform checks

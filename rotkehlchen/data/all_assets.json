@@ -1350,6 +1350,12 @@
         "symbol": "HUGE",
         "type": "own chain"
     },
+    "HUR": {
+        "name": "Hurify",
+        "started": 1509494400,
+        "symbol": "HUR",
+        "type": "ethereum token"
+    },
     "HVC": {
         "active": false,
         "ended": 1452038400,
