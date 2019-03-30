@@ -102,6 +102,11 @@ WORLD_TO_CRYPTOCOMPARE = {
     'RDN': 'RDN*',
     # For Rotkehlchen YOYO is YOYOW but it's YOYOW in cryptocompare
     'YOYO': 'YOYOW',
+    # For Rotkehlchen 0xBTC is 0xBTC but in cryptocompare it's capitalized
+    '0xBTC': '0XBTC',
+    # For Rotkehlchen ACC is AdCoin, ACC-2 is ACChain and ACC-3 is Accelerator network
+    # In cryptocompare Accelerator Network is ACC*
+    'ACC-3': 'ACC*',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also
@@ -180,6 +185,12 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # Bitgem (https://coinmarketcap.com/currencies/bitgem/)
     # is not in cryptocompare but is in paprika
     'BTG-2',
+    # 1SG (https://coinmarketcap.com/currencies/1sg/)
+    # is not in cryptocompare but is in paprika
+    '1SG',
+    # ACChain (https://coinmarketcap.com/currencies/acchain/)
+    # is not in cryptocompare but is in paprika
+    'ACC-2',
 )
 
 

@@ -374,10 +374,18 @@ RENAMED_BINANCE_ASSETS = {
 
 ETH_TOKENS_JSON_TO_WORLD = {
     '$HUR': 'HUR',
+    'ACC': 'ACC-3',
 }
 UNSUPPORTED_ETH_TOKENS_JSON = (
     '$FFC',
     '$FXY',
+    '$TEAK',
+    '22x',
+    '2DC',
+    '3LT',
+    'A18',
+    'A18 (1)',
+    'ABCH',
 )
 
 

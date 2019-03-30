@@ -174,6 +174,10 @@ WORLD_TO_PAPRIKA_ID = {
     'OAX': 'oax-oax',
     # YOYO is known as YOYOW in CoinPaprika
     'YOYO': 'yoyow-yoyow',
+    # For Rotkehlchen ACC is AdCoin, ACC-2 is ACChain and ACC-3 is Accelerator network
+    'ACC': 'acc-adcoin',
+    'ACC-2': 'acc-acchain',
+    'ACC-3': 'acc-accelerator-network',
 }
 
 

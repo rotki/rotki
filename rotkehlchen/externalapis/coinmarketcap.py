@@ -215,6 +215,12 @@ KNOWN_TO_MISS_FROM_CMC = (
     # Triggers. Missing from API but is in
     # https://coinmarketcap.com/currencies/triggers/
     'TRIG',
+    # 300 token. Missing from API but is in
+    # https://coinmarketcap.com/currencies/300-token/
+    '300',
+    # Accelerator Network. Missing from API but is in
+    # https://coinmarketcap.com/currencies/accelerator-network/
+    'ACC-3',
 )
 
 
@@ -284,6 +290,9 @@ WORLD_TO_CMC_ID = {
     'IOTA': 1720,
     # For Rotkehlchen YOYOW if YOYO but in coinmarketcap it's YOYOW
     'YOYO': 1899,
+    # For Rotkehlchen ACC is AdCoin, ACC-2 is ACChain and ACC-3 is Accelerator network
+    'ACC': 1915,
+    'ACC-2': 2515,
 }
 
 
