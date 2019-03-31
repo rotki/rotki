@@ -77,6 +77,11 @@ MANUALLY_CHECKED = {
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'BET': True,
+    # On 31/03/2019 BrokerNekoNetwork is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/brokernekonetwork/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'BNN': True,
 }
 
 

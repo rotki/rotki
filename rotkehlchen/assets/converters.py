@@ -380,6 +380,10 @@ ETH_TOKENS_JSON_TO_WORLD = {
     'ACC': 'ACC-3',
     'ARC': 'ARC-2',
     'AVA': 'AVA-2',
+    'BLX (Iconomi)': 'BLX',
+    'BOX (ContentBox)': 'BOX-2',
+    'BQX': 'ETHOS',
+    'BTCR': 'BTCRED',
 }
 UNSUPPORTED_ETH_TOKENS_JSON = (
     '$FFC',
@@ -412,6 +416,21 @@ UNSUPPORTED_ETH_TOKENS_JSON = (
     'BCBC',
     'BCL',
     'BeerCoin',
+    'BHR',
+    'BIT',
+    'BKB',
+    'BKB (BetKing Bankroll Token)',
+    'BKRx',
+    'BLO',
+    'BLX (Bullion)',
+    'BNC (BNC)',
+    'BNFT',
+    'BOP',
+    'BRLN',
+    'BRP',
+    'BSDC',
+    'BST',
+    'BTE',
 )
 
 MOVED_ETH_TOKENS = {

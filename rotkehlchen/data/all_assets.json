@@ -718,10 +718,36 @@
         "symbol": "BET",
         "type": "own chain"
     },
+    "BETHER": {
+        "name": "Bethereum",
+        "started": 1523404800,
+        "symbol": "BETHER",
+        "type": "ethereum token"
+    },
+    "BETR": {
+        "name": "BetterBetting",
+        "started": 1513209600,
+        "symbol": "BETR",
+        "type": "ethereum token"
+    },
+    "BEZ": {
+        "name": "Bezop",
+        "started": 1510876800,
+        "symbol": "BEZ",
+        "type": "ethereum token"
+    },
     "BFT": {
         "name": "BnkToTheFuture",
         "started": 1517875200,
         "symbol": "BFT",
+        "type": "ethereum token"
+    },
+    "BHPC": {
+        "active": false,
+        "ended": 1547510400,
+        "name": "BHPCash",
+        "started": 1521075066,
+        "symbol": "BHPC",
         "type": "ethereum token"
     },
     "BITB": {
@@ -730,11 +756,23 @@
         "symbol": "BITB",
         "type": "own chain"
     },
+    "BITCAR": {
+        "name": "BitCar",
+        "started": 1517356800,
+        "symbol": "BITCAR",
+        "type": "ethereum token"
+    },
     "BITCNY": {
         "name": "bitCNY",
         "started": 1411446262,
         "symbol": "BITCNY",
         "type": "bitshares token"
+    },
+    "BITPARK": {
+        "name": "Bitpark Coin",
+        "started": 1471927931,
+        "symbol": "BITPARK",
+        "type": "ethereum token"
     },
     "BITS": {
         "name": "Bitstar",
@@ -754,6 +792,18 @@
         "symbol": "BITUSD",
         "type": "bitshares token"
     },
+    "BIX": {
+        "name": "Bibox Token",
+        "started": 1506657067,
+        "symbol": "BIX",
+        "type": "ethereum token"
+    },
+    "BKC": {
+        "name": "Bankcoin Cash",
+        "started": 1536969600,
+        "symbol": "BKC",
+        "type": "ethereum token"
+    },
     "BKX": {
         "name": "BANKEX",
         "started": 1499731200,
@@ -765,6 +815,12 @@
         "started": 1393200000,
         "symbol": "BLK",
         "type": "own chain"
+    },
+    "BLN": {
+        "name": "Bolenum",
+        "started": 1497889213,
+        "symbol": "BLN",
+        "type": "ethereum token"
     },
     "BLOCK": {
         "name": "Blocknet",
@@ -784,6 +840,20 @@
         "symbol": "BLU",
         "type": "own chain"
     },
+    "BLUE": {
+        "name": "Blue Protocol",
+        "started": 1508198400,
+        "symbol": "BLUE",
+        "type": "ethereum token"
+    },
+    "BLX": {
+        "active": false,
+        "ended": 1518307200,
+        "name": "Blockchain Index",
+        "started": 1503079928,
+        "symbol": "BLX",
+        "type": "ethereum token"
+    },
     "BLZ": {
         "name": "Bluzelle",
         "started": 1509494400,
@@ -798,10 +868,41 @@
         "symbol": "BLZ",
         "type": "own chain"
     },
+    "BMC": {
+        "name": "Blackmoon",
+        "started": 1502236800,
+        "symbol": "BMC",
+        "type": "ethereum token"
+    },
+    "BMT": {
+        "name": "BMChain",
+        "started": 1502928000,
+        "symbol": "BMT",
+        "type": "ethereum token"
+    },
+    "BMX": {
+        "name": "BitMart Token",
+        "started": 1514319340,
+        "symbol": "BMX",
+        "type": "ethereum token"
+    },
     "BNB": {
         "name": "Binance Coin",
         "started": 1498521600,
         "symbol": "BNB",
+        "type": "ethereum token"
+    },
+    "BNC": {
+        "name": "Bionic",
+        "started": 1520737614,
+        "symbol": "BNC",
+        "type": "ethereum token"
+    },
+    "BNN": {
+        "active": true,
+        "name": "BrokerNekoNetwork",
+        "started": 1529089438,
+        "symbol": "BNN",
         "type": "ethereum token"
     },
     "BNT": {
@@ -810,16 +911,70 @@
         "symbol": "BNT",
         "type": "ethereum token"
     },
+    "BNTY": {
+        "name": "Bounty0x",
+        "started": 1508284800,
+        "symbol": "BNTY",
+        "type": "ethereum token"
+    },
+    "BOB": {
+        "name": "Bob's Repair",
+        "started": 1513296000,
+        "symbol": "BOB",
+        "type": "ethereum token"
+    },
+    "BON": {
+        "name": "Bonpay",
+        "started": 1506816000,
+        "symbol": "BON",
+        "type": "ethereum token"
+    },
     "BOST": {
         "name": "BoostCoin",
         "started": 1400112000,
         "symbol": "BOST",
         "type": "own chain"
     },
+    "BOU": {
+        "name": "Boulle",
+        "started": 1503565345,
+        "symbol": "BOU",
+        "type": "ethereum token"
+    },
+    "BOUTS": {
+        "name": "BoutsPro",
+        "started": 1520640000,
+        "symbol": "BOUTS",
+        "type": "ethereum token"
+    },
+    "BOX": {
+        "name": "BOX Token",
+        "started": 1514073600,
+        "symbol": "BOX",
+        "type": "ethereum token"
+    },
+    "BOX-2": {
+        "name": "ContentBox",
+        "started": 1526428800,
+        "symbol": "BOX",
+        "type": "ethereum token"
+    },
     "BOXX": {
         "name": "Blockparty (BOXX Token)",
         "started": 1527552000,
         "symbol": "BOXX",
+        "type": "ethereum token"
+    },
+    "BPT": {
+        "name": "Blockport",
+        "started": 1512691200,
+        "symbol": "BPT",
+        "type": "ethereum token"
+    },
+    "BRAT": {
+        "name": "BROTHER",
+        "started": 1500236025,
+        "symbol": "BRAT",
         "type": "ethereum token"
     },
     "BRD": {
@@ -859,6 +1014,14 @@
         "symbol": "BTC",
         "type": "own chain"
     },
+    "BTCA": {
+        "active": false,
+        "ended": 1531008000,
+        "name": "Bitair",
+        "started": 1504828800,
+        "symbol": "BTCA",
+        "type": "ethereum token"
+    },
     "BTCD": {
         "active": false,
         "ended": 1538697600,
@@ -866,6 +1029,30 @@
         "started": 1405468800,
         "symbol": "BTCD",
         "type": "own chain"
+    },
+    "BTCE": {
+        "name": "EthereumBitcoin",
+        "started": 1508257238,
+        "symbol": "BTCE",
+        "type": "ethereum token"
+    },
+    "BTCL": {
+        "name": "BTC Lite",
+        "started": 1510617600,
+        "symbol": "BTCL",
+        "type": "ethereum token"
+    },
+    "BTCONE": {
+        "name": "BitCoin One",
+        "started": 1513552592,
+        "symbol": "BTCONE",
+        "type": "ethereum token"
+    },
+    "BTCRED": {
+        "name": "Bitcoin Red",
+        "started": 1508414234,
+        "symbol": "BTCRED",
+        "type": "ethereum token"
     },
     "BTCS": {
         "name": "Bitcoin Scrypt",
@@ -886,6 +1073,12 @@
         "started": 1368403200,
         "symbol": "BTG",
         "type": "own chain"
+    },
+    "BTH": {
+        "name": "Bytether",
+        "started": 1507680000,
+        "symbol": "BTH",
+        "type": "ethereum token"
     },
     "BTM": {
         "active": true,

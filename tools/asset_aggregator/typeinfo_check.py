@@ -5,6 +5,11 @@ MANUALLY_CHECKED_TYPES = {
     'AMIS': 'ethereum token',
     'AOA': 'ethereum token',
     'AVA-2': 'ethereum token',
+    'BITCAR': 'ethereum token',
+    'BMT': 'ethereum token',
+    'BOU': 'ethereum token',
+    'BTCE': 'ethereum token',
+    'BTH': 'ethereum token',
 }
 
 
