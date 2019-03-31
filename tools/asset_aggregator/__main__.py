@@ -28,7 +28,11 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import FIAT_CURRENCIES
 from rotkehlchen.externalapis import Coinmarketcap, CoinPaprika, Cryptocompare
 from rotkehlchen.externalapis.coinmarketcap import find_cmc_coin_data
-from rotkehlchen.externalapis.coinpaprika import find_paprika_coin_id
+from rotkehlchen.externalapis.coinpaprika import (
+    check_paprika_token_address,
+    find_paprika_coin_id,
+    get_paprika_data_eth_token_address,
+)
 from rotkehlchen.externalapis.cryptocompare import (
     KNOWN_TO_MISS_FROM_CRYPTOCOMPARE,
     WORLD_TO_CRYPTOCOMPARE,
@@ -50,7 +54,9 @@ def process_asset(
     Process a single asset symbol. Compare to all external APIs and if there is no
     local data on the symbol query the user on which data to use for each asset attribute.
     """
+    token_address = None
     if token_entry:
+        token_address = token_entry['address']
         if asset_symbol in UNSUPPORTED_ETH_TOKENS_JSON:
             return our_data
 
@@ -66,6 +72,13 @@ def process_asset(
     found_coin_id = find_paprika_coin_id(asset_symbol, paprika_coins_list)
     if found_coin_id:
         paprika_coin_data = paprika.get_coin_by_id(found_coin_id)
+        paprika_token_address = get_paprika_data_eth_token_address(paprika_coin_data)
+        check_paprika_token_address(
+            paprika_token_address=paprika_token_address,
+            given_token_address=token_address,
+            asset_symbol=asset_symbol,
+        )
+
     else:
         paprika_coin_data = None
     cmc_coin_data = find_cmc_coin_data(asset_symbol, cmc_list)
