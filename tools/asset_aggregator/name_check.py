@@ -3,6 +3,12 @@ from typing import Any, Dict
 
 from asset_aggregator.utils import choose_multiple
 
+# For assets we support but no API has names for. We manually input the names then.
+MANUALLY_CHECKED_NAMES = {
+    'AMIS': 'Amis',
+    'AVA-2': 'Avalon',
+}
+
 
 def name_check(
         asset_symbol: str,
@@ -21,6 +27,10 @@ def name_check(
         # If we already got a name from manual input then keep it
         return our_data
 
+    if asset_symbol in MANUALLY_CHECKED_NAMES:
+        our_data[asset_symbol]['name'] = MANUALLY_CHECKED_NAMES[asset_symbol]
+        return our_data
+
     paprika_name = None
     if paprika_data:
         paprika_name = paprika_data['name']
@@ -28,7 +38,7 @@ def name_check(
     if cmc_data:
         cmc_name = cmc_data['name']
 
-    if not paprika_name and not cmc_name:
+    if not paprika_name and not cmc_name and asset_symbol:
         print(f'No name in any external api for asset {asset_symbol}')
         sys.exit(1)
 

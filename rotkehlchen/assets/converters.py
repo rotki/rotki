@@ -372,9 +372,14 @@ RENAMED_BINANCE_ASSETS = {
     'RPX': 'PHX',
 }
 
+# TODO: Also input addresses into these mappings?
+# In case eth_tokens.json ever changes the mapping of symbol to
+# address? In any case always pay attention to any updates in eth_tokens.json
 ETH_TOKENS_JSON_TO_WORLD = {
     '$HUR': 'HUR',
     'ACC': 'ACC-3',
+    'ARC': 'ARC-2',
+    'AVA': 'AVA-2',
 }
 UNSUPPORTED_ETH_TOKENS_JSON = (
     '$FFC',
@@ -388,7 +393,30 @@ UNSUPPORTED_ETH_TOKENS_JSON = (
     'ABCH',
     'AEUR',
     'AFA',
+    'AKC',
+    'ALCO',
+    'ALTS',
+    'AMTC',
+    'APT',
+    'ARD',
+    'ARX',
+    'ARXT',
+    'ATH',
+    'ATH (AIgatha Token)',
+    'ATT',
+    'ATTN',
+    'AX1',
+    'AXP',
+    'BANX',
+    'BAR',
+    'BCBC',
+    'BCL',
+    'BeerCoin',
 )
+
+MOVED_ETH_TOKENS = {
+    'BCAP (1)': 'BCAP',
+}
 
 
 def asset_from_kraken(kraken_name: str) -> Asset:
