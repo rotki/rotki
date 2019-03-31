@@ -66,6 +66,11 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'YACC',
     'AMIS',
     'AVA-2',
+    'BITCAR',
+    'BMT',
+    'BOU',
+    'BTCE',
+    'BTH',
 )
 
 
@@ -199,6 +204,13 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen BET is Dao.Casino and BET-2 is BetaCoin
     'BET': 'bet-daocasino',
     'BET-2': 'bet-betacoin',
+    # For Rotkehlcen BHPCash is BHPC but in Paprika it's BHP
+    'BHPC': 'bhpc-bhpcash',
+    # For Rotkehlcen BITPARK is BITPARK but in Paprika it's BPC
+    'BITPARK': 'bpc-bitpark-coin',
+    # For Rotkehlchen BOX is BoxToken and BOX-2 is ContentBox
+    'BOX': 'box-box-token',
+    'BOX-2': 'box-contentbox',
 }
 
 
@@ -247,7 +259,7 @@ def get_paprika_data_eth_token_address(
     if paprika_data['parent']['id'] != 'eth-ethereum':
         return None
 
-    if 'links' not in paprika_data and 'explorer' not in paprika_data['links']:
+    if 'links' not in paprika_data or 'explorer' not in paprika_data['links']:
         return None
 
     links = paprika_data['links']['explorer']
@@ -277,8 +289,7 @@ def check_paprika_token_address(
         return
 
     address_matches = (
-        given_token_address != paprika_token_address or
-        given_token_address != paprika_token_address.lower()
+        given_token_address.lower() == paprika_token_address.lower()
     )
     if not address_matches:
         print(

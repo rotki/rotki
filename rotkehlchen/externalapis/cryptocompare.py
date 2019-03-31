@@ -134,6 +134,15 @@ WORLD_TO_CRYPTOCOMPARE = {
     # Dao.Caisno is BET* and BetaCoin is BET
     'BET': 'BET*',
     'BET-2': 'BET',
+    # Bollenum (https://coinmarketcap.com/currencies/bolenum/) is BLN
+    # in rotkehlchen but BLN* in cryptocompare
+    'BLN': 'BLN*',
+    # ContentBox (https://coinmarketcap.com/currencies/contentbox/) is BOX-2
+    # in rotkehlchen but BOX in cryptocompare
+    'BOX-2': 'BOX',
+    # Bytether (https://www.cryptocompare.com/coins/byther/overview) is BTH
+    # in rotkehlchen but BYTHER in cryptocompare
+    'BTH': 'BYTHER',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also
@@ -230,6 +239,24 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # BitcapitalVendor (https://coinmarketcap.com/currencies/bitcapitalvendor/)
     # is not in cryptocompare but is in paprika
     'BCV',
+    # BitPark (https://coinmarketcap.com/currencies/bitpark-coin/)
+    # is not in cryptocompare but is in paprika
+    'BITPARK',
+    # BankCoin Cash (https://bankcoin-cash.com/)
+    # is not in cryptocompare but is in paprika
+    'BKC',
+    # Bionic (https://coinmarketcap.com/currencies/bionic/)
+    # is not in cryptocompare but is in paprika
+    'BNC',
+    # BrokerNekoNetwork (https://coinmarketcap.com/currencies/brokernekonetwork/)
+    # is not in cryptocompare but is in paprika
+    'BNN',
+    # BoxToken (https://coinmarketcap.com/currencies/contentbox/)
+    # is not in cryptocompare but is in paprika
+    'BOX',
+    # BitcoinOne (https://coinmarketcap.com/currencies/bitcoin-one/)
+    # is not in cryptocompare but is in paprika
+    'BTCONE',
 )
 
 

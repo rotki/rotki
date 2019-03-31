@@ -248,6 +248,36 @@ KNOWN_TO_MISS_FROM_CMC = (
     # Bankcoin BCash (https://bankcoinbcash.com/)
     # is not in coinmarketcap but is in paprika
     'BCASH',
+    # BHPCash is in coinmarketcap only as the new native token BHP
+    # https://coinmarketcap.com/currencies/bhp-coin/
+    'BHPC',
+    # BITCAR (https://www.coingecko.com/en/coins/bitcar)
+    # is not in coinmarketcap but is in cryptocompare
+    'BITCAR',
+    # BITPARK (https://coinmarketcap.com/currencies/bitpark-coin/)
+    # is not in coinmarketcap but is in paprika
+    'BITPARK',
+    # BankCoin Cash (https://bankcoin-cash.com/)
+    # is not in coinmarketcap but is in paprika
+    'BKC',
+    # Blockchain Index (https://coinmarketcap.com/currencies/blockchain-index/)
+    # is not in coinmarketcap but is in cryptocompare
+    'BLX',
+    # BMChain (https://www.cryptocompare.com/coins/bmt/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'BMT',
+    # Boulle (https://www.cryptocompare.com/coins/bou/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'BOU',
+    # Bitair (https://coinmarketcap.com/currencies/bitair/)
+    # is not in coinmarketcap but is in cryptocompare
+    'BTCA',
+    # EthereumBitcoin (https://www.cryptocompare.com/coins/btce/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'BTCE',
+    # Bytether (https://www.cryptocompare.com/coins/byther/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'BTH',
 )
 
 
@@ -333,6 +363,9 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen BET is Dao.Casino and BET-2 is BetaCoin
     'BET': 1771,
     'BET-2': 70,
+    # For Rotkehlchen BOX is BoxToken and BOX-2 is ContentBox
+    'BOX': 3475,
+    'BOX-2': 2945,
 }
 
 

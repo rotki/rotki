@@ -7,6 +7,11 @@ from asset_aggregator.utils import choose_multiple
 MANUALLY_CHECKED_NAMES = {
     'AMIS': 'Amis',
     'AVA-2': 'Avalon',
+    'BITCAR': 'BitCar',
+    'BMT': 'BMChain',
+    'BOU': 'Boulle',
+    'BTCE': 'EthereumBitcoin',
+    'BTH': 'Bytether',
 }
 
 
