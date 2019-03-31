@@ -386,6 +386,8 @@ UNSUPPORTED_ETH_TOKENS_JSON = (
     'A18',
     'A18 (1)',
     'ABCH',
+    'AEUR',
+    'AFA',
 )
 
 

@@ -90,6 +90,12 @@
         "symbol": "ACC",
         "type": "ethereum token"
     },
+    "ACE": {
+        "name": "ACE (TokenStars)",
+        "started": 1509926400,
+        "symbol": "ACE",
+        "type": "ethereum token"
+    },
     "ACH": {
         "active": false,
         "ended": 1434844800,
@@ -104,6 +110,30 @@
         "symbol": "ADA",
         "type": "own chain"
     },
+    "ADB": {
+        "name": "adbank",
+        "started": 1510704000,
+        "symbol": "ADB",
+        "type": "ethereum token"
+    },
+    "ADH": {
+        "name": "AdHive",
+        "started": 1515456000,
+        "symbol": "ADH",
+        "type": "ethereum token"
+    },
+    "ADI": {
+        "name": "Aditus",
+        "started": 1511395200,
+        "symbol": "ADI",
+        "type": "ethereum token"
+    },
+    "ADL": {
+        "name": "Adelphoi",
+        "started": 1480982400,
+        "symbol": "ADL",
+        "type": "ethereum token"
+    },
     "ADN": {
         "active": false,
         "ended": 1473120000,
@@ -111,6 +141,12 @@
         "started": 1397520000,
         "symbol": "ADN",
         "type": "own chain"
+    },
+    "ADST": {
+        "name": "Adshares",
+        "started": 1499171296,
+        "symbol": "ADST",
+        "type": "ethereum token"
     },
     "ADT": {
         "name": "adToken",
