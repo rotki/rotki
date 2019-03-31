@@ -1,3 +1,4 @@
+import re
 import sys
 from typing import Any, Dict, List, Optional
 
@@ -5,6 +6,7 @@ import gevent
 import requests
 
 from rotkehlchen.errors import RemoteError
+from rotkehlchen.typing import EthAddress
 from rotkehlchen.utils import rlk_jsonloads_dict, rlk_jsonloads_list
 
 KNOWN_TO_MISS_FROM_PAPRIKA = (
@@ -212,6 +214,53 @@ def find_paprika_coin_id(
         sys.exit(1)
 
     return found_coin_id
+
+
+def get_paprika_data_eth_token_address(paprika_data: Dict[str, Any]) -> Optional[EthAddress]:
+    """If the coin paprika entry is an ethereum token get its ethereum address if possible"""
+
+    if 'parent' not in paprika_data:
+        return None
+
+    if paprika_data['parent']['id'] != 'eth-ethereum':
+        return None
+
+    if 'links' not in paprika_data and 'explorer' not in paprika_data['links']:
+        return None
+
+    links = paprika_data['links']['explorer']
+    if len(links) == 0:
+        return None
+
+    match = re.search('https://etherscan.io/token/(.*)', links[0])
+    if not match:
+        return None
+
+    if match:
+        return match.group(1)
+
+
+def check_paprika_token_address(
+        paprika_token_address: Optional[EthAddress],
+        given_token_address: Optional[EthAddress],
+        asset_symbol: str,
+):
+    if not paprika_token_address or not given_token_address:
+        return
+
+    address_matches = (
+        given_token_address != paprika_token_address or
+        given_token_address != paprika_token_address.lower()
+    )
+    if address_matches:
+        print(
+            f'For eth token with symbol {asset_symbol} we have address '
+            f'{given_token_address} but coin paprika has {paprika_token_address}',
+        )
+        sys.exit(1)
+
+    print(f'Verified eth address in paprika for eth token with symbol {asset_symbol}')
+    return
 
 
 class CoinPaprika():
