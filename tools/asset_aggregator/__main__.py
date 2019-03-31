@@ -183,7 +183,7 @@ def main():
             token_data = rlk_jsonloads(f.read())
 
         start = 16
-        stop_after = start + 2
+        stop_after = start + 12
         input_data = {}
         for index, entry in enumerate(token_data[start:], start):
             token_symbol = entry['symbol']

@@ -293,6 +293,8 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen ACC is AdCoin, ACC-2 is ACChain and ACC-3 is Accelerator network
     'ACC': 1915,
     'ACC-2': 2515,
+    # For Rotkehlchen ADST is Adshares but in coinmarketcap it's ADS
+    'ADST': 1883,
 }
 
 
