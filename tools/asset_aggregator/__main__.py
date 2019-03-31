@@ -44,13 +44,13 @@ def process_asset(
         cmc_list: Optional[List[Dict[str, Any]]],
         cryptocompare_coins_map: Dict[str, Any],
         always_keep_our_time: bool,
-        given_by_eth_token_json: bool,
+        token_entry=None,
 ) -> Dict[str, Any]:
     """
     Process a single asset symbol. Compare to all external APIs and if there is no
     local data on the symbol query the user on which data to use for each asset attribute.
     """
-    if given_by_eth_token_json:
+    if token_entry:
         if asset_symbol in UNSUPPORTED_ETH_TOKENS_JSON:
             return our_data
 
@@ -77,6 +77,7 @@ def process_asset(
         paprika_data=paprika_coin_data,
         cmc_data=cmc_coin_data,
         always_keep_our_time=always_keep_our_time,
+        token_address=token_entry['address'],
     )
     our_data = name_check(
         asset_symbol=asset_symbol,
@@ -99,7 +100,7 @@ def process_asset(
         paprika_data=paprika_coin_data,
         cmc_data=cmc_coin_data,
     )
-    if given_by_eth_token_json:
+    if token_entry:
         assert our_data[asset_symbol]['type'] == 'ethereum token'
     # add the symbol as an asset attribute in the data
     symbol = asset_symbol
@@ -170,7 +171,6 @@ def main():
                 cmc_list=cmc_list,
                 cryptocompare_coins_map=cryptocompare_coins_map,
                 always_keep_our_time=args.always_keep_our_time,
-                given_by_eth_token_json=False,
             )
 
         # and now combine the two dictionaries to get the final one. Note that no
@@ -199,7 +199,7 @@ def main():
                     cmc_list=cmc_list,
                     cryptocompare_coins_map=cryptocompare_coins_map,
                     always_keep_our_time=args.always_keep_our_time,
-                    given_by_eth_token_json=True,
+                    token_entry=entry,
                 )
 
             if index >= stop_after:
@@ -221,7 +221,6 @@ def main():
                 cmc_list=cmc_list,
                 cryptocompare_coins_map=cryptocompare_coins_map,
                 always_keep_our_time=args.always_keep_our_time,
-                given_by_eth_token_json=False,
             )
 
     # Finally overwrite the all_assets.json with the modified assets

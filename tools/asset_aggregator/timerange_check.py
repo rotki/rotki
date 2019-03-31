@@ -4,7 +4,8 @@ from typing import Any, Dict
 from asset_aggregator.utils import choose_multiple
 
 from rotkehlchen.constants.assets import FIAT_CURRENCIES
-from rotkehlchen.utils import createTimeStamp, iso8601ts_to_timestamp, tsToDate
+from rotkehlchen.typing import EthAddress, Timestamp
+from rotkehlchen.utils import createTimeStamp, iso8601ts_to_timestamp, request_get_dict, tsToDate
 
 # For these assets we will definitely always use our data as they are more accurate
 # than coin paprika or cryptocompare or we have already decided on a time
@@ -68,6 +69,20 @@ PREFER_OUR_STARTED = (
 )
 
 
+def get_token_contract_creation_time(token_address: str) -> Timestamp:
+    resp = request_get_dict(
+        f'http://api.etherscan.io/api?module=account&action=txlist&address='
+        f'{token_address}&startblock=0&endblock=999999999&sort=asc',
+    )
+    if resp['status'] != 1:
+        raise ValueError('Failed to query etherscan for token {token_address} creation')
+    tx_list = resp['result']
+    if len(tx_list) == 0:
+        raise ValueError('Etherscan query of {token_address} transactions returned empty list')
+
+    return Timestamp(tx_list[0]['timeStamp'].to_int(exact=True))
+
+
 def timerange_check(
         asset_symbol: str,
         our_asset: Dict[str, Any],
@@ -75,6 +90,7 @@ def timerange_check(
         paprika_data: Dict[str, Any],
         cmc_data: Dict[str, Any],
         always_keep_our_time: bool,
+        token_address: EthAddress = None,
 ) -> Dict[str, Any]:
     """Process the started timestamps from coin paprika and coinmarketcap.
 
@@ -109,6 +125,10 @@ def timerange_check(
 
     our_started = our_asset.get('started', None)
 
+    # if it's an eth token entry, get the contract creation time too
+    if token_address:
+        contract_creation_ts = get_token_contract_creation_time(token_address)
+
     if not our_started:
         # If we don't have any data and CMC and paprika agree just use their timestamp
         if cmc_started == paprika_started and cmc_started is not None:
@@ -119,6 +139,7 @@ def timerange_check(
         return our_data
 
     if our_started != cmc_started or our_started != paprika_started:
+        choices = (1, 2, 3)
         msg = (
             f'For asset {asset_symbol} the started times are: \n'
             f'(1) Our data: {our_started} -- {tsToDate(our_started) if our_started else ""}\n'
@@ -126,9 +147,16 @@ def timerange_check(
             f'{tsToDate(paprika_started_ts) if paprika_started_ts else ""}\n'
             f'(3) Coinmarketcap: {cmc_started_ts} -- '
             f'{tsToDate(cmc_started_ts) if cmc_started_ts else ""} \n'
-            f'Choose a number (1)-(3) to choose which timestamp to use: '
         )
-        choice = choose_multiple(msg, (1, 2, 3))
+        if token_address:
+            msg += (
+                f'(4) Contract creation: {contract_creation_ts} -- '
+                f'{tsToDate(contract_creation_ts) if contract_creation_ts else ""}\n'
+            )
+            choices = (1, 2, 3, 4)
+
+        msg += f'Choose a number (1)-({choices[-1]}) to choose which timestamp to use: '
+        choice = choose_multiple(msg, choices)
         if choice == 1:
             if not our_started:
                 print('Chose our timestamp but we got no timestamp. Bailing ...')
@@ -146,6 +174,12 @@ def timerange_check(
                 print("Chose coinmarketcap's timestamp but it's empty. Bailing ...")
                 sys.exit(1)
             timestamp = cmc_started_ts
+
+        elif choice == 4:
+            if not contract_creation_ts:
+                print("Chose contract creation timestamp but it's empty. Bailing ...")
+                sys.exit(1)
+            timestamp = contract_creation_ts
 
         our_data[asset_symbol]['started'] = timestamp
 
