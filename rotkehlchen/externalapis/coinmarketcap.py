@@ -221,6 +221,33 @@ KNOWN_TO_MISS_FROM_CMC = (
     # Accelerator Network. Missing from API but is in
     # https://coinmarketcap.com/currencies/accelerator-network/
     'ACC-3',
+    # Amis. Missing from API bus it in
+    # https://coinmarketcap.com/currencies/amis/
+    'AMIS',
+    # ArcadeCity token. Missing from API bus it in
+    # https://coinmarketcap.com/currencies/arcade-token/
+    'ARC-2',
+    # Astronaut token. Missing from API bus it in
+    # https://coinmarketcap.com/currencies/astro/
+    'ASTRO',
+    # Artex coin. Missing from API but is in
+    # https://coinmarketcap.com/currencies/artex-coin/
+    'ATX-2',
+    # Avalon coin. Missing from API but is in cryptocompare
+    # https://www.cryptocompare.com/coins/ava/overview
+    'AVA-2',
+    # BitAsean. Missing from API but is in
+    # https://coinmarketcap.com/currencies/bitasean/
+    'BAS',
+    # BelugaPay. Missing from API but is in
+    # https://coinmarketcap.com/currencies/belugapay/
+    'BBI',
+    # Blockchain.capital. Missing from API but is in
+    # https://coinmarketcap.com/currencies/bcap/
+    'BCAP',
+    # Bankcoin BCash (https://bankcoinbcash.com/)
+    # is not in coinmarketcap but is in paprika
+    'BCASH',
 )
 
 
@@ -295,6 +322,17 @@ WORLD_TO_CMC_ID = {
     'ACC-2': 2515,
     # For Rotkehlchen ADST is Adshares but in coinmarketcap it's ADS
     'ADST': 1883,
+    # For Rotkehlchen ARB is Arbitrage coin and ARB-2 is ARbit
+    'ARB': 2985,
+    'ARB-2': 938,
+    # Symbol for B2BX is B2B is coinmarketcap so we need to specify it
+    'B2BX': 2204,
+    # For Rotkehlchen BBK is BrickBlock and BBK-2 is Bitblocks
+    'BBK': 3015,
+    'BBK-2': 3051,
+    # For Rotkehlchen BET is Dao.Casino and BET-2 is BetaCoin
+    'BET': 1771,
+    'BET-2': 70,
 }
 
 

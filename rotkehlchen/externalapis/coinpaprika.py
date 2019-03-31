@@ -64,6 +64,8 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'XPB',
     'XSI',
     'YACC',
+    'AMIS',
+    'AVA-2',
 )
 
 
@@ -180,6 +182,23 @@ WORLD_TO_PAPRIKA_ID = {
     'ACC': 'acc-adcoin',
     'ACC-2': 'acc-acchain',
     'ACC-3': 'acc-accelerator-network',
+    # For Rotkehlchen ARB is Arbitrage coin and ARB-2 is ARbit
+    'ARB': 'arb-arbitrage',
+    'ARB-2': 'arb-arbit',
+    # For Rotkehlchen ARC is Advanced Technology Coin (Arctic) and ARC-2 is ArcadeCity
+    'ARC': 'arc-advanced-technology-coin',
+    'ARC-2': 'arc-arcade-token',
+    # For Rotkehlchen ATX is Astoin Coin and ATX-2 is ArtexCoin
+    'ATX': 'atx-aston',
+    'ATX-2': 'atx-artex-coin',
+    # For Rotkehlchen B2BX is B2BX but in paprika it's B2B
+    'B2BX': 'b2b-b2bx',
+    # For Rotkehlchen BBK is BrickBlock and BBK-2 is Bitblocks
+    'BBK': 'bbk-brickblock',
+    'BBK-2': 'bbk-bitblocks',
+    # For Rotkehlchen BET is Dao.Casino and BET-2 is BetaCoin
+    'BET': 'bet-daocasino',
+    'BET-2': 'bet-betacoin',
 }
 
 
@@ -216,7 +235,10 @@ def find_paprika_coin_id(
     return found_coin_id
 
 
-def get_paprika_data_eth_token_address(paprika_data: Dict[str, Any]) -> Optional[EthAddress]:
+def get_paprika_data_eth_token_address(
+        paprika_data: Dict[str, Any],
+        asset_symbol: str,
+) -> Optional[EthAddress]:
     """If the coin paprika entry is an ethereum token get its ethereum address if possible"""
 
     if 'parent' not in paprika_data:
@@ -237,7 +259,13 @@ def get_paprika_data_eth_token_address(paprika_data: Dict[str, Any]) -> Optional
         return None
 
     if match:
-        return match.group(1)
+        address = match.group(1)
+
+    if not address.startswith('0x'):
+        print(f'Paprika etherscan link for {asset_symbol} did not contain an address')
+        return None
+
+    return address
 
 
 def check_paprika_token_address(
@@ -252,7 +280,7 @@ def check_paprika_token_address(
         given_token_address != paprika_token_address or
         given_token_address != paprika_token_address.lower()
     )
-    if address_matches:
+    if not address_matches:
         print(
             f'For eth token with symbol {asset_symbol} we have address '
             f'{given_token_address} but coin paprika has {paprika_token_address}',

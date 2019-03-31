@@ -193,6 +193,13 @@
         "symbol": "AGI",
         "type": "ethereum token"
     },
+    "AI": {
+        "active": true,
+        "name": "POLY AI",
+        "started": 1507024045,
+        "symbol": "AI",
+        "type": "ethereum token"
+    },
     "AID": {
         "name": "AidCoin",
         "started": 1509580800,
@@ -227,6 +234,30 @@
         "symbol": "AIR",
         "type": "own chain"
     },
+    "AIX": {
+        "name": "Aigang",
+        "started": 1510652536,
+        "symbol": "AIX",
+        "type": "ethereum token"
+    },
+    "ALI": {
+        "name": "AiLink Token",
+        "started": 1516685501,
+        "symbol": "ALI",
+        "type": "ethereum token"
+    },
+    "ALIS": {
+        "name": "ALISmedia",
+        "started": 1503100800,
+        "symbol": "ALIS",
+        "type": "ethereum token"
+    },
+    "ALX": {
+        "name": "ALAX",
+        "started": 1516752000,
+        "symbol": "ALX",
+        "type": "ethereum token"
+    },
     "AM": {
         "active": false,
         "ended": 1474761600,
@@ -239,6 +270,32 @@
         "name": "Ambrosus",
         "started": 1500422400,
         "symbol": "AMB",
+        "type": "ethereum token"
+    },
+    "AMIS": {
+        "active": false,
+        "ended": 1511740800,
+        "name": "Amis",
+        "started": 1483404274,
+        "symbol": "AMIS",
+        "type": "ethereum token"
+    },
+    "AMLT": {
+        "name": "AMLT",
+        "started": 1510338416,
+        "symbol": "AMLT",
+        "type": "ethereum token"
+    },
+    "AMN": {
+        "name": "Amon",
+        "started": 1519510871,
+        "symbol": "AMN",
+        "type": "ethereum token"
+    },
+    "AMO": {
+        "name": "AMO Coin",
+        "started": 1522540800,
+        "symbol": "AMO",
         "type": "ethereum token"
     },
     "AMP": {
@@ -259,6 +316,12 @@
         "symbol": "ANT",
         "type": "ethereum token"
     },
+    "AOA": {
+        "name": "Aurora",
+        "started": 1526428800,
+        "symbol": "AOA",
+        "type": "ethereum token"
+    },
     "APH": {
         "name": "Aphelion",
         "started": 1510693460,
@@ -272,6 +335,12 @@
         "started": 1395446400,
         "symbol": "APH",
         "type": "own chain"
+    },
+    "APIS": {
+        "name": "APIS",
+        "started": 1520148246,
+        "symbol": "APIS",
+        "type": "ethereum token"
     },
     "APPC": {
         "name": "AppCoins",
@@ -287,6 +356,32 @@
         "symbol": "APX",
         "type": "Ubiq token"
     },
+    "ARB": {
+        "name": "ARBITRAGE",
+        "started": 1520208000,
+        "symbol": "ARB",
+        "type": "ethereum token"
+    },
+    "ARB-2": {
+        "name": "ARbit",
+        "started": 1431043200,
+        "symbol": "ARB",
+        "type": "own chain"
+    },
+    "ARC": {
+        "name": "Advanced Technology Coin",
+        "started": 1406160000,
+        "symbol": "ARC",
+        "type": "own chain"
+    },
+    "ARC-2": {
+        "active": false,
+        "ended": 1516838400,
+        "name": "Arcade City Token",
+        "started": 1477872000,
+        "symbol": "ARC",
+        "type": "ethereum token"
+    },
     "ARCH": {
         "active": false,
         "ended": 1491177600,
@@ -294,6 +389,12 @@
         "started": 1412553600,
         "symbol": "ARCH",
         "type": "own chain"
+    },
+    "ARCT": {
+        "name": "ArbitrageCT",
+        "started": 1507248000,
+        "symbol": "ARCT",
+        "type": "ethereum token"
     },
     "ARDR": {
         "name": "Ardor",
@@ -313,10 +414,74 @@
         "symbol": "ARN",
         "type": "ethereum token"
     },
+    "ART": {
+        "name": "Maecenas",
+        "started": 1504471004,
+        "symbol": "ART",
+        "type": "ethereum token"
+    },
+    "ARY": {
+        "name": "Block Array",
+        "started": 1513296000,
+        "symbol": "ARY",
+        "type": "ethereum token"
+    },
     "AST": {
         "name": "AirSwap",
         "started": 1506384000,
         "symbol": "AST",
+        "type": "ethereum token"
+    },
+    "ASTRO": {
+        "active": false,
+        "ended": 1540080000,
+        "name": "Astro",
+        "started": 1505606400,
+        "symbol": "ASTRO",
+        "type": "ethereum token"
+    },
+    "ATL": {
+        "name": "ATLANT",
+        "started": 1504299298,
+        "symbol": "ATL",
+        "type": "ethereum token"
+    },
+    "ATM": {
+        "name": "ATMChain",
+        "started": 1504051200,
+        "symbol": "ATM",
+        "type": "ethereum token"
+    },
+    "ATMI": {
+        "name": "Atonomi",
+        "started": 1527093185,
+        "symbol": "ATMI",
+        "type": "ethereum token"
+    },
+    "ATS": {
+        "name": "Authorship",
+        "started": 1500388369,
+        "symbol": "ATS",
+        "type": "ethereum token"
+    },
+    "ATX": {
+        "name": "Aston",
+        "started": 1519344000,
+        "symbol": "ATX",
+        "type": "ethereum token"
+    },
+    "ATX-2": {
+        "active": false,
+        "ended": 1539388800,
+        "name": "Artex Coin",
+        "started": 1470096000,
+        "symbol": "ATX",
+        "type": "own chain"
+    },
+    "AUC": {
+        "name": "Auctus",
+        "started": 1522090240,
+        "symbol": "AUC",
         "type": "ethereum token"
     },
     "AUR": {
@@ -325,10 +490,74 @@
         "symbol": "AUR",
         "type": "own chain"
     },
+    "AURA": {
+        "name": "Aurora DAO",
+        "started": 1506556800,
+        "symbol": "AURA",
+        "type": "ethereum token"
+    },
+    "AUTO": {
+        "name": "Cube",
+        "started": 1518620403,
+        "symbol": "AUTO",
+        "type": "ethereum token"
+    },
+    "AVA": {
+        "name": "Travala.com",
+        "started": 1527536681,
+        "symbol": "AVA",
+        "type": "neo token"
+    },
+    "AVA-2": {
+        "active": false,
+        "ended": 1554044593,
+        "name": "Avalon",
+        "started": 1503619200,
+        "symbol": "AVA",
+        "type": "ethereum token"
+    },
+    "AVT": {
+        "name": "Aventus",
+        "started": 1499990400,
+        "symbol": "AVT",
+        "type": "ethereum token"
+    },
+    "AXPR": {
+        "name": "aXpire",
+        "started": 1532111501,
+        "symbol": "AXPR",
+        "type": "ethereum token"
+    },
+    "B2BX": {
+        "name": "B2BX",
+        "started": 1504483200,
+        "symbol": "B2BX",
+        "type": "ethereum token"
+    },
+    "BANCA": {
+        "name": "Banca",
+        "started": 1517545620,
+        "symbol": "BANCA",
+        "type": "ethereum token"
+    },
+    "BAS": {
+        "active": false,
+        "ended": 1542412800,
+        "name": "BitAsean",
+        "started": 1496448000,
+        "symbol": "BAS",
+        "type": "ethereum token"
+    },
     "BAT": {
         "name": "Basic Attention Token",
         "started": 1496294094,
         "symbol": "BAT",
+        "type": "ethereum token"
+    },
+    "BAX": {
+        "name": "BABB",
+        "started": 1509580800,
+        "symbol": "BAX",
         "type": "ethereum token"
     },
     "BAY": {
@@ -337,17 +566,88 @@
         "symbol": "BAY",
         "type": "own chain"
     },
+    "BBC": {
+        "name": "TraDove B2BCoin",
+        "started": 1508371200,
+        "symbol": "BBC",
+        "type": "ethereum token"
+    },
+    "BBI": {
+        "active": false,
+        "ended": 1539993600,
+        "name": "BelugaPay",
+        "started": 1507939200,
+        "symbol": "BBI",
+        "type": "ethereum token"
+    },
+    "BBK": {
+        "name": "Brickblock",
+        "started": 1500249600,
+        "symbol": "BBK",
+        "type": "ethereum token"
+    },
+    "BBK-2": {
+        "name": "Bitblocks",
+        "started": 1517788800,
+        "symbol": "BBK",
+        "type": "own chain"
+    },
+    "BBN": {
+        "name": "Banyan Network",
+        "started": 1516419550,
+        "symbol": "BBN",
+        "type": "ethereum token"
+    },
+    "BBO": {
+        "name": "Bigbom",
+        "started": 1522854907,
+        "symbol": "BBO",
+        "type": "ethereum token"
+    },
     "BBR": {
         "name": "Boolberry",
         "started": 1400284800,
         "symbol": "BBR",
         "type": "own chain"
     },
+    "BC": {
+        "name": "Block-Chain.com",
+        "started": 1523465646,
+        "symbol": "BC",
+        "type": "ethereum token"
+    },
+    "BCAP": {
+        "active": false,
+        "ended": 1518307200,
+        "name": "Blockchain Capital",
+        "started": 1489622400,
+        "symbol": "BCAP",
+        "type": "ethereum token"
+    },
+    "BCASH": {
+        "name": "Bankcoin",
+        "started": 1545987364,
+        "symbol": "BCASH",
+        "type": "ethereum token"
+    },
     "BCD": {
         "name": "Bitcoin Diamond",
         "started": 1511481600,
         "symbol": "BCD",
         "type": "own chain"
+    },
+    "BCDN": {
+        "name": "BlockCDN",
+        "started": 1478681266,
+        "symbol": "BCDN",
+        "type": "ethereum token"
+    },
+    "BCDT": {
+        "active": true,
+        "name": "Blockchain Certified Data Token",
+        "started": 1513735057,
+        "symbol": "BCDT",
+        "type": "ethereum token"
     },
     "BCH": {
         "forked": "BTC",
@@ -368,6 +668,12 @@
         "symbol": "BCPT",
         "type": "ethereum token"
     },
+    "BCV": {
+        "name": "BitCapitalVendor",
+        "started": 1516996702,
+        "symbol": "BCV",
+        "type": "ethereum token"
+    },
     "BCY": {
         "active": true,
         "name": "BitCrystals",
@@ -375,11 +681,42 @@
         "symbol": "BCY",
         "type": "counterparty token"
     },
+    "BDG": {
+        "name": "BitDegree",
+        "started": 1506556800,
+        "symbol": "BDG",
+        "type": "ethereum token"
+    },
+    "BEE": {
+        "name": "Bee Token",
+        "started": 1506556800,
+        "symbol": "BEE",
+        "type": "ethereum token"
+    },
     "BELA": {
         "name": "Bela",
         "started": 1388534400,
         "symbol": "BELA",
         "type": "ethereum token"
+    },
+    "BERRY": {
+        "name": "Rentberry",
+        "started": 1519776000,
+        "symbol": "BERRY",
+        "type": "ethereum token"
+    },
+    "BET": {
+        "active": true,
+        "name": "DAO.Casino",
+        "started": 1490054400,
+        "symbol": "BET",
+        "type": "ethereum token"
+    },
+    "BET-2": {
+        "name": "BetaCoin",
+        "started": 1382572800,
+        "symbol": "BET",
+        "type": "own chain"
     },
     "BFT": {
         "name": "BnkToTheFuture",

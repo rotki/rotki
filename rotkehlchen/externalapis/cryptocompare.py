@@ -107,6 +107,33 @@ WORLD_TO_CRYPTOCOMPARE = {
     # For Rotkehlchen ACC is AdCoin, ACC-2 is ACChain and ACC-3 is Accelerator network
     # In cryptocompare Accelerator Network is ACC*
     'ACC-3': 'ACC*',
+    # For Rotkehlchen ARB is Arbitrage coin and ARB-2 is ARbit but in cryptocompare
+    # ARB* is arbitrage and ARB is ARbit
+    'ARB': 'ARB*',
+    'ARB-2': 'ARB',
+    # For Rotkehlchen ARC is Advanced Technology Coin (Arctic) and ARC-2 is ArcadeCity
+    # In Cryptocompare ARC* is ArcadeCity
+    'ARC-2': 'ARC*',
+    # For Rotkehlchen ATX is Astoin Coin and ATX-2 is ArtexCoin but in
+    # cryptocompare ATX* is Astoin Coin and ATX is ArtexCoin
+    'ATX': 'ATX*',
+    'ATX-2': 'ATX',
+    # For Rotkehlchen AVA is Travala and AVA-2 is Avalon but in
+    # cryptocompare AVALA is Travala and AVA is Avalon
+    'AVA': 'AVALA',
+    'AVA-2': 'AVA',
+    # Symbol for B2BX is B2B is cryptocompare so we need to specify it
+    'B2BX': 'B2B',
+    # For Rotkehlchen BBK is BrickBlock and BBK-2 is Bitblocks but in cryptocompare
+    # BrickBlock is XBB and Bitblocks is BBK
+    'BBK': 'XBB',
+    'BBK-2': 'BBK',
+    # For Rotkehlchen BBN is Banyan Network but in cryptocompare it's BBN*
+    'BBN': 'BBN*',
+    # For Rotkehlchen BET is Dao.Casino and BET-2 is BetaCoin but in cryptocompare
+    # Dao.Caisno is BET* and BetaCoin is BET
+    'BET': 'BET*',
+    'BET-2': 'BET',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also
@@ -191,6 +218,18 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # ACChain (https://coinmarketcap.com/currencies/acchain/)
     # is not in cryptocompare but is in paprika
     'ACC-2',
+    # PolyAI (https://coinmarketcap.com/currencies/poly-ai/)
+    # is not in cryptocompare but is in paprika
+    'AI',
+    # AiLink token (https://coinmarketcap.com/currencies/ailink-token/)
+    # is not in cryptocompare but is in paprika
+    'ALI',
+    # Bankcoin BCash (https://bankcoinbcash.com/)
+    # is not in cryptocompare but is in paprika
+    'BCASH',
+    # BitcapitalVendor (https://coinmarketcap.com/currencies/bitcapitalvendor/)
+    # is not in cryptocompare but is in paprika
+    'BCV',
 )
 
 

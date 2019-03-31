@@ -62,6 +62,21 @@ MANUALLY_CHECKED = {
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'ACC': True,
+    # On 31/03/2019 PolyAI is still active and trading in 2 exchange
+    # https://coinmarketcap.com/currencies/poly-ai/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'AI': True,
+    # On 31/03/2019 BlockchainData Token is still active and trading in 2 exchange
+    # https://coinmarketcap.com/currencies/blockchain-certified-data-token/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'BCDT': True,
+    # On 31/03/2019 Dao.Casino is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/dao-casino/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'BET': True,
 }
 
 

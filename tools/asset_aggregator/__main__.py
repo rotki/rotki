@@ -23,7 +23,11 @@ from asset_aggregator.name_check import name_check
 from asset_aggregator.timerange_check import timerange_check
 from asset_aggregator.typeinfo_check import typeinfo_check
 
-from rotkehlchen.assets.converters import ETH_TOKENS_JSON_TO_WORLD, UNSUPPORTED_ETH_TOKENS_JSON
+from rotkehlchen.assets.converters import (
+    ETH_TOKENS_JSON_TO_WORLD,
+    MOVED_ETH_TOKENS,
+    UNSUPPORTED_ETH_TOKENS_JSON,
+)
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import FIAT_CURRENCIES
 from rotkehlchen.externalapis import Coinmarketcap, CoinPaprika, Cryptocompare
@@ -57,7 +61,7 @@ def process_asset(
     token_address = None
     if token_entry:
         token_address = token_entry['address']
-        if asset_symbol in UNSUPPORTED_ETH_TOKENS_JSON:
+        if asset_symbol in UNSUPPORTED_ETH_TOKENS_JSON or asset_symbol in MOVED_ETH_TOKENS:
             return our_data
 
         asset_symbol = ETH_TOKENS_JSON_TO_WORLD.get(asset_symbol, asset_symbol)
@@ -72,7 +76,10 @@ def process_asset(
     found_coin_id = find_paprika_coin_id(asset_symbol, paprika_coins_list)
     if found_coin_id:
         paprika_coin_data = paprika.get_coin_by_id(found_coin_id)
-        paprika_token_address = get_paprika_data_eth_token_address(paprika_coin_data)
+        paprika_token_address = get_paprika_data_eth_token_address(
+            paprika_data=paprika_coin_data,
+            asset_symbol=asset_symbol,
+        )
         check_paprika_token_address(
             paprika_token_address=paprika_token_address,
             given_token_address=token_address,
@@ -90,7 +97,7 @@ def process_asset(
         paprika_data=paprika_coin_data,
         cmc_data=cmc_coin_data,
         always_keep_our_time=always_keep_our_time,
-        token_address=token_entry['address'],
+        token_address=token_address,
     )
     our_data = name_check(
         asset_symbol=asset_symbol,
@@ -195,8 +202,8 @@ def main():
         with open(os.path.join(root_path, 'rotkehlchen', 'data', 'eth_tokens.json'), 'r') as f:
             token_data = rlk_jsonloads(f.read())
 
-        start = 16
-        stop_after = start + 12
+        start = 100
+        stop_after = start + 6
         input_data = {}
         for index, entry in enumerate(token_data[start:], start):
             token_symbol = entry['symbol']

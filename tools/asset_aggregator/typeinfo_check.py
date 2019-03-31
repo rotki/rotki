@@ -1,6 +1,12 @@
 import sys
 from typing import Any, Dict
 
+MANUALLY_CHECKED_TYPES = {
+    'AMIS': 'ethereum token',
+    'AOA': 'ethereum token',
+    'AVA-2': 'ethereum token',
+}
+
 
 def typeinfo_check(
         asset_symbol: str,
@@ -9,6 +15,10 @@ def typeinfo_check(
         paprika_data: Dict[str, Any],
         cmc_data: Dict[str, Any],
 ):
+    if asset_symbol in MANUALLY_CHECKED_TYPES:
+        our_data[asset_symbol]['type'] = MANUALLY_CHECKED_TYPES[asset_symbol]
+        return our_data
+
     if 'type' not in our_asset and paprika_data:
         # If our data don't have a type, derive it from external data
         if paprika_data['type'] == 'coin':

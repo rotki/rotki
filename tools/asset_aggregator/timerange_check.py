@@ -107,7 +107,7 @@ def timerange_check(
     if cmc_data:
         cmc_started = cmc_data['first_historical_data']
 
-    if not cmc_started and not paprika_started:
+    if not cmc_started and not paprika_started and not token_address:
         print(f'Did not find a started date for asset {asset_symbol} in any of the external APIs')
         return our_data
 
@@ -138,7 +138,7 @@ def timerange_check(
     if our_started and always_keep_our_time:
         return our_data
 
-    if our_started != cmc_started or our_started != paprika_started:
+    if our_started is None or our_started != cmc_started or our_started != paprika_started:
         choices = (1, 2, 3)
         msg = (
             f'For asset {asset_symbol} the started times are: \n'
