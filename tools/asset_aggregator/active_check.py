@@ -82,6 +82,36 @@ MANUALLY_CHECKED = {
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'BNN': True,
+    # On 01/04/2019 Biotron is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/biotron/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'BTRN': True,
+    # On 01/04/2019 BlockCAT is still active and trading in 2 exchanges
+    # https://coinmarketcap.com/currencies/blockcat/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'CAT-2': True,
+    # On 01/04/2019 CoinEx is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/coinex-token/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'CET': True,
+    # On 01/04/2019 CruiseBit is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/cruisebit/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'CRBT': True,
+    # On 01/04/2019 Verify/CRED is still active and trading in 3 exchanges
+    # https://coinmarketcap.com/currencies/verify/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'CRED': True,
+    # On 01/04/2019 Cryptosolartech is still active and trading in 3 exchanges
+    # https://coinmarketcap.com/currencies/cryptosolartech/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'CST': True,
 }
 
 

@@ -10,6 +10,12 @@ MANUALLY_CHECKED_TYPES = {
     'BOU': 'ethereum token',
     'BTCE': 'ethereum token',
     'BTH': 'ethereum token',
+    'BTR-2': 'ethereum token',
+    'CET-2': 'ethereum token',
+    'CFTY': 'ethereum token',
+    'CO2': 'ethereum token',
+    'CRGO': 'ethereum token',
+    'CCRB': 'ethereum token',
 }
 
 

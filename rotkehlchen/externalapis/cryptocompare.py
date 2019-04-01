@@ -143,6 +143,31 @@ WORLD_TO_CRYPTOCOMPARE = {
     # Bytether (https://www.cryptocompare.com/coins/byther/overview) is BTH
     # in rotkehlchen but BYTHER in cryptocompare
     'BTH': 'BYTHER',
+    # Bither (https://www.cryptocompare.com/coins/btr/overview) is BTR-2
+    # in rotkehlchen but BTR in cryptocompare
+    'BTR-2': 'BTR',
+    # For Rotkehlchen CAN is CanYaCoin and CAN-2 is Content And Ad Network
+    # In cryptocompare, it's CAN and CAN*
+    'CAN-2': 'CAN*',
+    # For Rotkehlchen CAT is Bitclave and CAT-2 is BlockCAT but in cryptocompare
+    # Bitclave is CAT* and BlockCAT is BCAT
+    'CAT': 'CAT*',
+    'CAT-2': 'BCAT',
+    # For Rotkehlchen CET is CoinEX and CET-2 is DiceMoney but in cryptocompare
+    # CoinEX is CET and DiceMoney is CET*
+    'CET-2': 'CET*',
+    # For Rotkehlchen CPC is CPChain and CPC-2 is CapriCoin but in cryptocompare
+    # CPChain is CPC* and CapriCoin is CPC
+    'CPC': 'CPC*',
+    'CPC-2': 'CPC',
+    # For Rotkehlchen CRC is CryCash and CRC-2 is CrowdCoin but in cryptocompare
+    # Crycash is CRC** and CrowdCoin is CRC***
+    'CRC': 'CRC**',
+    'CRC-2': 'CRC***',
+    # For Rotkehlchen CS is Credits but it's CS* in cryptocompare
+    'CS': 'CS*',
+    # For Rotkehlchen CTX-2 is CarTaxi but it's CTX in cryptocompare
+    'CTX-2': 'CTX',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also
@@ -257,6 +282,45 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # BitcoinOne (https://coinmarketcap.com/currencies/bitcoin-one/)
     # is not in cryptocompare but is in paprika
     'BTCONE',
+    # BitcoinToken (https://coinmarketcap.com/currencies/bitcoin-token/)
+    # is not in cryptocompare but is in paprika
+    'BTK',
+    # Bitether (https://coinmarketcap.com/currencies/bitether/)
+    # is not in cryptocompare but is in paprika
+    'BTR',
+    # Blue whale token (https://coinmarketcap.com/currencies/blue-whale-token/)
+    # is not in cryptocompare but is in paprika
+    'BWX',
+    # Carboneum (https://coinmarketcap.com/currencies/carboneum-c8-token/)
+    # is not in cryptocompare but is in paprika
+    'C8',
+    # Cloudbrid (https://www.cloudbric.io/)
+    # is not in cryptocompare but is in paprika
+    'CLB',
+    # CruiseBit (https://coinmarketcap.com/currencies/cruisebit/)
+    # is not in cryptocompare but is in paprika
+    'CRBT',
+    # Cryptosolartech (https://coinmarketcap.com/currencies/cryptosolartech/)
+    # is not in cryptocompare but is in paprika
+    'CST',
+    # Centauri (https://coinmarketcap.com/currencies/centauri/)
+    # is not in cryptocompare but is in paprika
+    'CTX',
+    # CyberFM (https://coinmarketcap.com/currencies/cyberfm/)
+    # is not in cryptocompare but is in paprika
+    'CYFM',
+    # CyberMusic (https://coinmarketcap.com/currencies/cybermusic/)
+    # is not in cryptocompare but is in paprika
+    'CYMT',
+    # CanonChain (https://coinmarketcap.com/currencies/cononchain/)
+    # is not in cryptocompare but is in paprika
+    'CZR',
+    # DACSEE (https://coinmarketcap.com/currencies/dacsee/)
+    # is not in cryptocompare but is in paprika
+    'DACS',
+    # Dalecoin (https://coinmarketcap.com/currencies/dalecoin/)
+    # is not in cryptocompare but is in paprika
+    'DALC',
 )
 
 
