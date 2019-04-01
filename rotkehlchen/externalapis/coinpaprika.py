@@ -71,6 +71,11 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'BOU',
     'BTCE',
     'BTH',
+    'BTR-2',
+    'CET-2',
+    'CFTY',
+    'CO2',
+    'CRGO',
 )
 
 
@@ -211,6 +216,29 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen BOX is BoxToken and BOX-2 is ContentBox
     'BOX': 'box-box-token',
     'BOX-2': 'box-contentbox',
+    # For Rotkehlchen BTR is Bitether and BTR-2 is Bither. Paprika does not have Bither
+    'BTR': 'btr-bitether',
+    # For Rotkehlchen CAN is CanYaCoin and CAN-2 is Content And Ad Network
+    'CAN': 'can-canyacoin',
+    'CAN-2': 'can-content-and-ad-network',
+    # For Rotkehlchen CAT is Bitclave and CAT-2 is BlockCAT
+    'CAT': 'cat-bitclave',
+    'CAT-2': 'cat-blockcat',
+    # For Rotkehlchen CBT is Commerceblock
+    'CBT': 'cbt-commerceblock',
+    # For Rotkehlchen CDX is CDX Network
+    'CDX': 'cdx-network',
+    # For Rotkehlchen CET is CoinEx Token and CET-2 Dice Money
+    'CET': 'cet-coinex-token',
+    # For Rotkehlchen CPC is CPChain and CPC-2 is CapriCoin
+    'CPC': 'cpc-cpchain',
+    'CPC-2': 'cpc-capricoin',
+    # For Rotkehlchen CRC is CryCash and CRC-2 is CrowdCoin
+    'CRC': 'crc-crycash',
+    'CRC-2': 'crc-crowdcoin',
+    # For Rotkehlchen CTX is Centauri and CTX-2 is CarTaxi
+    'CTX': 'ctx-centauri',
+    'CTX-2': 'ctx-cartaxi-token',
 }
 
 
@@ -280,11 +308,19 @@ def get_paprika_data_eth_token_address(
     return address
 
 
+KNOWN_WRONG_PAPRIKA_DATA = (
+    'COIN',  # For Coinvest paprika has the old non-migrated contract address
+)
+
+
 def check_paprika_token_address(
         paprika_token_address: Optional[EthAddress],
         given_token_address: Optional[EthAddress],
         asset_symbol: str,
 ):
+    if asset_symbol in KNOWN_WRONG_PAPRIKA_DATA:
+        return
+
     if not paprika_token_address or not given_token_address:
         return
 

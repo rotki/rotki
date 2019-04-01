@@ -278,6 +278,36 @@ KNOWN_TO_MISS_FROM_CMC = (
     # Bytether (https://www.cryptocompare.com/coins/byther/overview)
     # is not in coinmarketcap but is in cryptocompare
     'BTH',
+    # Bither (https://www.cryptocompare.com/coins/btr/)
+    # is not in coinmarketcap but is in cryptocompare
+    'BTR-2',
+    # Dice Money (https://www.cryptocompare.com/coins/cetstar/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'CET-2',
+    # Cofoundit. Missing from API bus it in
+    # https://coinmarketcap.com/currencies/cofound-it/
+    'CFI',
+    # Crafty (https://www.cryptocompare.com/coins/cfty/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'CFTY',
+    # Climatecoin (https://www.cryptocompare.com/coins/co2/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'CO2',
+    # CoinPulseToken (https://www.cryptocompare.com/coins/cpex/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'CPEX',
+    # CrowdCoin (https://www.cryptocompare.com/coins/crcstarstarstar/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'CRC-2',
+    # CargoCoin (https://www.cryptocompare.com/coins/crgo/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'CRGO',
+    # Centra missing from API but is in
+    # https://coinmarketcap.com/currencies/centra/
+    'CTR',
+    # CarTaxi (https://www.cryptocompare.com/coins/ctx/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'CTX-2',
 )
 
 
@@ -366,6 +396,15 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen BOX is BoxToken and BOX-2 is ContentBox
     'BOX': 3475,
     'BOX-2': 2945,
+    # For Rotkehlchen CAN is CanYaCoin and CAN-2 is Content And Ad Network
+    'CAN': 2343,
+    'CAN-2': 2358,
+    # For Rotkehlchen CAT is Bitclave and CAT-2 is BlockCAT
+    'CAT': 2334,
+    'CAT-2': 1882,
+    # For Rotkehlchen CPC is CPChain and CPC-2 is CapriCoin
+    'CPC': 2482,
+    'CPC-2': 1008,
 }
 
 

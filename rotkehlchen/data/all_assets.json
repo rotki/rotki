@@ -1080,6 +1080,12 @@
         "symbol": "BTH",
         "type": "ethereum token"
     },
+    "BTK": {
+        "name": "Bitcoin Token",
+        "started": 1516319086,
+        "symbol": "BTK",
+        "type": "ethereum token"
+    },
     "BTM": {
         "active": true,
         "name": "Bitmark",
@@ -1092,6 +1098,31 @@
         "started": 1497916800,
         "symbol": "BTM",
         "type": "own chain"
+    },
+    "BTO": {
+        "name": "Bottos",
+        "started": 1510012800,
+        "symbol": "BTO",
+        "type": "ethereum token"
+    },
+    "BTR": {
+        "name": "Bitether",
+        "started": 1521936000,
+        "symbol": "BTR",
+        "type": "ethereum token"
+    },
+    "BTR-2": {
+        "name": "Bither",
+        "started": 1549411200,
+        "symbol": "BTR",
+        "type": "ethereum token"
+    },
+    "BTRN": {
+        "active": true,
+        "name": "Biotron",
+        "started": 1522934027,
+        "symbol": "BTRN",
+        "type": "ethereum token"
     },
     "BTS": {
         "name": "BitShares",
@@ -1123,6 +1154,12 @@
         "symbol": "BURST",
         "type": "own chain"
     },
+    "BWX": {
+        "name": "Blue Whale Token",
+        "started": 1521158400,
+        "symbol": "BWX",
+        "type": "ethereum token"
+    },
     "BYC": {
         "active": false,
         "ended": 1540080000,
@@ -1131,11 +1168,35 @@
         "symbol": "BYC",
         "type": "own chain"
     },
+    "BZ": {
+        "name": "Bit-Z Token",
+        "started": 1529575592,
+        "symbol": "BZ",
+        "type": "ethereum token"
+    },
+    "BZNT": {
+        "name": "Bezant",
+        "started": 1525171355,
+        "symbol": "BZNT",
+        "type": "ethereum token"
+    },
     "C2": {
         "name": "Coin2.1",
         "started": 1399334400,
         "symbol": "C2",
         "type": "own chain"
+    },
+    "C20": {
+        "name": "CRYPTO20",
+        "started": 1507932933,
+        "symbol": "C20",
+        "type": "ethereum token"
+    },
+    "C8": {
+        "name": "Carboneum [C8] Token",
+        "started": 1520697820,
+        "symbol": "C8",
+        "type": "ethereum token"
     },
     "CACH": {
         "active": false,
@@ -1150,6 +1211,12 @@
         "symbol": "CAD",
         "type": "fiat"
     },
+    "CAG": {
+        "name": "Change",
+        "started": 1504966676,
+        "symbol": "CAG",
+        "type": "ethereum token"
+    },
     "CAIX": {
         "active": false,
         "ended": 1451952000,
@@ -1158,11 +1225,60 @@
         "symbol": "CAIX",
         "type": "own chain"
     },
+    "CAN": {
+        "name": "CanYaCoin",
+        "started": 1506988800,
+        "symbol": "CAN",
+        "type": "ethereum token"
+    },
+    "CAN-2": {
+        "name": "Content and AD Network",
+        "started": 1507593600,
+        "symbol": "CAN",
+        "type": "ethereum token"
+    },
     "CANN": {
         "name": "CannabisCoin",
         "started": 1399334400,
         "symbol": "CANN",
         "type": "own chain"
+    },
+    "CAPP": {
+        "name": "Cappasity",
+        "started": 1504051200,
+        "symbol": "CAPP",
+        "type": "ethereum token"
+    },
+    "CAR": {
+        "name": "CarBlock",
+        "started": 1530154004,
+        "symbol": "CAR",
+        "type": "ethereum token"
+    },
+    "CARD": {
+        "name": "Cardstack",
+        "started": 1529884800,
+        "symbol": "CARD",
+        "type": "ethereum token"
+    },
+    "CAS": {
+        "name": "Cashaa",
+        "started": 1507766400,
+        "symbol": "CAS",
+        "type": "ethereum token"
+    },
+    "CAT": {
+        "name": "BitClave",
+        "started": 1499212800,
+        "symbol": "CAT",
+        "type": "ethereum token"
+    },
+    "CAT-2": {
+        "active": true,
+        "name": "BlockCAT",
+        "started": 1499990400,
+        "symbol": "CAT",
+        "type": "ethereum token"
     },
     "CBC": {
         "name": "CashBet Coin",
@@ -1175,6 +1291,18 @@
         "started": 1534976069,
         "symbol": "CBC",
         "type": "own chain"
+    },
+    "CBT": {
+        "name": "CommerceBlock",
+        "started": 1513710969,
+        "symbol": "CBT",
+        "type": "ethereum token"
+    },
+    "CCCX": {
+        "name": "Clipper Coin",
+        "started": 1524737013,
+        "symbol": "CCCX",
+        "type": "ethereum token"
     },
     "CCN": {
         "name": "CustomContractnetwork",
@@ -1190,16 +1318,79 @@
         "symbol": "CCN",
         "type": "own chain"
     },
+    "CCO": {
+        "name": "Ccore",
+        "started": 1506816000,
+        "symbol": "CCO",
+        "type": "ethereum token"
+    },
+    "CCRB": {
+        "name": "CryptoCarbon",
+        "started": 1471001504,
+        "symbol": "CCRB",
+        "type": "ethereum token"
+    },
+    "CCT": {
+        "name": "Crystal Clear",
+        "started": 1501459200,
+        "symbol": "CCT",
+        "type": "ethereum token"
+    },
     "CDT": {
         "name": "Blox",
         "started": 1490659200,
         "symbol": "CDT",
         "type": "ethereum token"
     },
+    "CDX": {
+        "name": "CDX Network",
+        "started": 1503393177,
+        "symbol": "CDX",
+        "type": "ethereum token"
+    },
+    "CEEK": {
+        "name": "CEEK VR",
+        "started": 1521808735,
+        "symbol": "CEEK",
+        "type": "ethereum token"
+    },
     "CELR": {
         "name": "Celer Network",
         "started": 1548115200,
         "symbol": "CELR",
+        "type": "ethereum token"
+    },
+    "CENNZ": {
+        "name": "Centrality",
+        "started": 1515492070,
+        "symbol": "CENNZ",
+        "type": "ethereum token"
+    },
+    "CET": {
+        "active": true,
+        "name": "CoinEx Token",
+        "started": 1531094400,
+        "symbol": "CET",
+        "type": "ethereum token"
+    },
+    "CET-2": {
+        "name": "DICE Money",
+        "started": 1521072000,
+        "symbol": "CET",
+        "type": "ethereum token"
+    },
+    "CFI": {
+        "active": false,
+        "ended": 1552089600,
+        "name": "Cofound.it",
+        "started": 1490918400,
+        "symbol": "CFI",
+        "type": "ethereum token"
+    },
+    "CFTY": {
+        "name": "Crafty",
+        "started": 1516574219,
+        "symbol": "CFTY",
         "type": "ethereum token"
     },
     "CGA": {
@@ -1216,6 +1407,24 @@
         "symbol": "CHAT",
         "type": "own chain"
     },
+    "CHP": {
+        "name": "CoinPoker",
+        "started": 1508803200,
+        "symbol": "CHP",
+        "type": "ethereum token"
+    },
+    "CHSB": {
+        "name": "SwissBorg",
+        "started": 1504828800,
+        "symbol": "CHSB",
+        "type": "ethereum token"
+    },
+    "CHX": {
+        "name": "Own",
+        "started": 1521967454,
+        "symbol": "CHX",
+        "type": "ethereum token"
+    },
     "CINNI": {
         "active": false,
         "ended": 1446422400,
@@ -1224,11 +1433,35 @@
         "symbol": "CINNI",
         "type": "own chain"
     },
+    "CJT": {
+        "name": "ConnectJob",
+        "started": 1518623183,
+        "symbol": "CJT",
+        "type": "ethereum token"
+    },
+    "CL": {
+        "name": "Coinlancer",
+        "started": 1506413116,
+        "symbol": "CL",
+        "type": "ethereum token"
+    },
     "CLAM": {
         "name": "Clams",
         "started": 1399852800,
         "symbol": "CLAM",
         "type": "own chain"
+    },
+    "CLB": {
+        "name": "Cloudbric",
+        "started": 1529050983,
+        "symbol": "CLB",
+        "type": "ethereum token"
+    },
+    "CLN": {
+        "name": "Colu Local Network",
+        "started": 1513123200,
+        "symbol": "CLN",
+        "type": "ethereum token"
     },
     "CLOAK": {
         "name": "CloakCoin",
@@ -1282,6 +1515,36 @@
         "symbol": "CNMT",
         "type": "nxt token"
     },
+    "CNN": {
+        "name": "Content Neutrality Network",
+        "started": 1519823488,
+        "symbol": "CNN",
+        "type": "ethereum token"
+    },
+    "CO2": {
+        "name": "Climatecoin",
+        "started": 1511710354,
+        "symbol": "CO2",
+        "type": "ethereum token"
+    },
+    "COB": {
+        "name": "Cobinhood",
+        "started": 1504508386,
+        "symbol": "COB",
+        "type": "ethereum token"
+    },
+    "COFI": {
+        "name": "CoinFi",
+        "started": 1513296000,
+        "symbol": "COFI",
+        "type": "ethereum token"
+    },
+    "COIN": {
+        "name": "Coinvest",
+        "started": 1513555200,
+        "symbol": "COIN",
+        "type": "ethereum token"
+    },
     "COMM": {
         "active": false,
         "ended": 1459036800,
@@ -1290,11 +1553,67 @@
         "symbol": "COMM",
         "type": "own chain"
     },
+    "COSM": {
+        "name": "Cosmo Coin",
+        "started": 1519862400,
+        "symbol": "COSM",
+        "type": "ethereum token"
+    },
+    "COSS": {
+        "name": "COSS",
+        "started": 1520148691,
+        "symbol": "COSS",
+        "type": "ethereum token"
+    },
+    "COV": {
+        "name": "Covesting",
+        "started": 1508508737,
+        "symbol": "COV",
+        "type": "ethereum token"
+    },
     "COVAL": {
         "name": "Circuits of Value",
         "started": 1415923200,
         "symbol": "COVAL",
         "type": "counterparty token"
+    },
+    "CPAY": {
+        "name": "Cryptopay",
+        "started": 1505606400,
+        "symbol": "CPAY",
+        "type": "ethereum token"
+    },
+    "CPC": {
+        "name": "CPChain",
+        "started": 1516060800,
+        "symbol": "CPC",
+        "type": "ethereum token"
+    },
+    "CPC-2": {
+        "name": "Capricoin",
+        "started": 1437350400,
+        "symbol": "CPC",
+        "type": "own chain"
+    },
+    "CPEX": {
+        "active": false,
+        "ended": 1551398400,
+        "name": "CoinPulse Token",
+        "started": 1521084334,
+        "symbol": "CPEX",
+        "type": "ethereum token"
+    },
+    "CPT": {
+        "name": "Cryptaur",
+        "started": 1516319070,
+        "symbol": "CPT",
+        "type": "ethereum token"
+    },
+    "CPY": {
+        "name": "COPYTRACK",
+        "started": 1512864000,
+        "symbol": "CPY",
+        "type": "ethereum token"
     },
     "CRB": {
         "name": "Creditbit",
@@ -1302,10 +1621,56 @@
         "symbol": "CRB",
         "type": "ethereum token"
     },
+    "CRBT": {
+        "active": true,
+        "name": "Cruisebit",
+        "started": 1532960185,
+        "symbol": "CRBT",
+        "type": "ethereum token"
+    },
+    "CRC": {
+        "name": "CryCash",
+        "started": 1524526765,
+        "symbol": "CRC",
+        "type": "ethereum token"
+    },
+    "CRC-2": {
+        "active": false,
+        "ended": 1543622400,
+        "name": "CrowdCoin",
+        "started": 1509580800,
+        "symbol": "CRC",
+        "type": "own chain"
+    },
+    "CRED": {
+        "active": true,
+        "name": "Verify",
+        "started": 1510099200,
+        "symbol": "CRED",
+        "type": "ethereum token"
+    },
+    "CREDO": {
+        "name": "Credo",
+        "started": 1496437557,
+        "symbol": "CREDO",
+        "type": "ethereum token"
+    },
+    "CRGO": {
+        "name": "CargoCoin",
+        "started": 1525118732,
+        "symbol": "CRGO",
+        "type": "ethereum token"
+    },
     "CRO": {
         "name": "Crypto.com Chain",
         "started": 1542153600,
         "symbol": "CRO",
+        "type": "ethereum token"
+    },
+    "CRPT": {
+        "name": "Crypterium",
+        "started": 1506556800,
+        "symbol": "CRPT",
         "type": "ethereum token"
     },
     "CRW": {
@@ -1321,6 +1686,47 @@
         "started": 1401062400,
         "symbol": "CRYPT",
         "type": "own chain"
+    },
+    "CS": {
+        "name": "Credits",
+        "started": 1510617600,
+        "symbol": "CS",
+        "type": "ethereum token"
+    },
+    "CSNO": {
+        "name": "BitDice",
+        "started": 1502755200,
+        "symbol": "CSNO",
+        "type": "ethereum token"
+    },
+    "CST": {
+        "active": true,
+        "name": "Cryptosolartech",
+        "started": 1524930693,
+        "symbol": "CST",
+        "type": "ethereum token"
+    },
+    "CTR": {
+        "active": false,
+        "ended": 1527984000,
+        "name": "Centra",
+        "started": 1500768000,
+        "symbol": "CTR",
+        "type": "ethereum token"
+    },
+    "CTX": {
+        "name": "Centauri",
+        "started": 1547682877,
+        "symbol": "CTX",
+        "type": "own chain"
+    },
+    "CTX-2": {
+        "active": false,
+        "ended": 1551398400,
+        "name": "CarTaxi Token",
+        "started": 1506211200,
+        "symbol": "CTX",
+        "type": "ethereum token"
     },
     "CTXC": {
         "name": "Cortex",
@@ -1340,6 +1746,18 @@
         "symbol": "CVC",
         "type": "ethereum token"
     },
+    "CVT": {
+        "name": "CyberVein",
+        "started": 1516888006,
+        "symbol": "CVT",
+        "type": "ethereum token"
+    },
+    "CXO": {
+        "name": "CargoX",
+        "started": 1513728000,
+        "symbol": "CXO",
+        "type": "ethereum token"
+    },
     "CYC": {
         "active": false,
         "ended": 1455148800,
@@ -1347,6 +1765,54 @@
         "started": 1404518400,
         "symbol": "CYC",
         "type": "own chain"
+    },
+    "CYFM": {
+        "name": "CyberFM",
+        "started": 1524173287,
+        "symbol": "CYFM",
+        "type": "ethereum token"
+    },
+    "CYMT": {
+        "name": "CyberMusic",
+        "started": 1535015874,
+        "symbol": "CYMT",
+        "type": "ethereum token"
+    },
+    "CZR": {
+        "name": "CanonChain",
+        "started": 1515725245,
+        "symbol": "CZR",
+        "type": "ethereum token"
+    },
+    "DACS": {
+        "name": "DACSEE",
+        "started": 1532878140,
+        "symbol": "DACS",
+        "type": "ethereum token"
+    },
+    "DADI": {
+        "name": "DADI",
+        "started": 1504224000,
+        "symbol": "DADI",
+        "type": "ethereum token"
+    },
+    "DAI": {
+        "name": "Dai",
+        "started": 1513586475,
+        "symbol": "DAI",
+        "type": "ethereum token"
+    },
+    "DALC": {
+        "name": "Dalecoin",
+        "started": 1498690907,
+        "symbol": "DALC",
+        "type": "ethereum token"
+    },
+    "DAN": {
+        "name": "Daneel",
+        "started": 1510499013,
+        "symbol": "DAN",
+        "type": "ethereum token"
     },
     "DAO": {
         "active": false,
@@ -1362,6 +1828,12 @@
         "started": 1390095618,
         "symbol": "DASH",
         "type": "own chain"
+    },
+    "DAT": {
+        "name": "Datum",
+        "started": 1501113600,
+        "symbol": "DAT",
+        "type": "ethereum token"
     },
     "DATA": {
         "name": "Streamr DATAcoin",

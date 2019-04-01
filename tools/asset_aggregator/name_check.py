@@ -12,6 +12,11 @@ MANUALLY_CHECKED_NAMES = {
     'BOU': 'Boulle',
     'BTCE': 'EthereumBitcoin',
     'BTH': 'Bytether',
+    'BTR-2': 'Bither',
+    'CET-2': 'DICE Money',
+    'CFTY': 'Crafty',
+    'CO2': 'Climatecoin',
+    'CRGO': 'CargoCoin',
 }
 
 
