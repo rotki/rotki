@@ -915,6 +915,11 @@
     "decimal": 6
   },
   {
+    "address": "0x5f3789907b35DCe5605b00C0bE0a7eCDBFa8A841",
+    "symbol": "CAN (content-and-ad-network)",
+    "decimal": 18
+  },
+  {
     "address": "0x04F2E7221fdb1B52A68169B25793E51478fF0329",
     "symbol": "CAPP",
     "decimal": 2
