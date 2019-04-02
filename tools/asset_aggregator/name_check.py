@@ -17,6 +17,9 @@ MANUALLY_CHECKED_NAMES = {
     'CFTY': 'Crafty',
     'CO2': 'Climatecoin',
     'CRGO': 'CargoCoin',
+    'DEPO': 'Depository Network',
+    'DIP': 'Etherisc',
+    'DPP': 'Digital Assets Power Play',
 }
 
 

@@ -76,6 +76,9 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'CFTY',
     'CO2',
     'CRGO',
+    'DEPO',
+    'DIP',
+    'DPP',
 )
 
 
@@ -239,6 +242,14 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen CTX is Centauri and CTX-2 is CarTaxi
     'CTX': 'ctx-centauri',
     'CTX-2': 'ctx-cartaxi-token',
+    # For Rotkehlchen DAV is DAV Coin
+    'DAV': 'dav-dav-coin',
+    # For Rotkehlchen DICE is Etheroll Dice
+    'DICE': 'dice-etheroll',
+    # For Rotkehlchen DTX is DataBroker DAO's DigitalExchange token and DTX-2
+    # is Digital Ticks
+    'DTX': 'dtx-data-exchange',
+    'DTX-2': 'dtx-digital-ticks',
 }
 
 
@@ -310,6 +321,7 @@ def get_paprika_data_eth_token_address(
 
 KNOWN_WRONG_PAPRIKA_DATA = (
     'COIN',  # For Coinvest paprika has the old non-migrated contract address
+    'DUBI',  # For Decentralized Universal Basic Income paprika has the old contract address
 )
 
 

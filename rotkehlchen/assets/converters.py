@@ -400,6 +400,12 @@ ETH_TOKENS_JSON_TO_WORLD = {
     'CPT (Cryptaur)': 'CPT',
     'CryptoCarbon': 'CCRB',
     'CTX': 'CTX-2',
+    'DEPO (Depository Network)': 'DEPO',
+    'DROP (dropil)': 'DROP',
+    'DRP (DCorp)': 'DRP',
+    'DTx': 'DTX-2',
+    'DUBI (DUBI)': 'DUBI',
+    'eBCH': 'EBCH',
 }
 UNSUPPORTED_ETH_TOKENS_JSON = (
     '$FFC',
@@ -493,6 +499,24 @@ UNSUPPORTED_ETH_TOKENS_JSON = (
     'CXC',
     'DAB',
     'DATABroker',
+    'DCA',
+    'DCL',
+    'DEEZ',
+    'DEPO',
+    'Devcon2 Token',
+    'DKP',
+    'DNX',
+    'DOW (1)',
+    'DROP',
+    'DRP',
+    'DRVH',
+    'DSC',
+    'DSCP',
+    'DST',
+    'DTT',
+    'E₹',
+    'ECN',
+    'ECO2',
 )
 
 MOVED_ETH_TOKENS = {
@@ -503,6 +527,9 @@ MOVED_ETH_TOKENS = {
     'COIN': 'COIN (Coinvest V3 Token)',
     'COSS': 'COSS (1)',
     'CPLO': 'VSF',
+    'DGX1': 'DGX',
+    'DUBI': 'DUBI (DUBI)',
+    'DUBI (1)': 'DUBI (DUBI)',
 }
 
 

@@ -112,6 +112,21 @@ MANUALLY_CHECKED = {
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'CST': True,
+    # On 02/04/2019 DEW is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/dew
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'DEW': True,
+    # On 02/04/2019 DOR is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/dorado/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'DOR': True,
+    # On 02/04/2019 EARTH is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/earth-token/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'EARTH': True,
 }
 
 
