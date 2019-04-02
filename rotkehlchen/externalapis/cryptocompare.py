@@ -168,6 +168,12 @@ WORLD_TO_CRYPTOCOMPARE = {
     'CS': 'CS*',
     # For Rotkehlchen CTX-2 is CarTaxi but it's CTX in cryptocompare
     'CTX-2': 'CTX',
+    # For Rotkehlchen DAV is DAV Token  but it's DAV* in cryptocompare
+    'DAV': 'DAV*',
+    # For Rotkehlchen DCC is Distributed Credit Chain but it's DCC* in cryptocompare
+    'DCC': 'DCC*',
+    # For Rotkehlchen DOW is DOW Coin Chain but it's Dow in cryptocompare
+    'DOW': 'Dow',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also
@@ -321,6 +327,34 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # Dalecoin (https://coinmarketcap.com/currencies/dalecoin/)
     # is not in cryptocompare but is in paprika
     'DALC',
+    # Digital Assets Exchange token
+    # (https://coinmarketcap.com/currencies/digital-asset-exchange-token/)
+    # is not in cryptocompare but is in paprika
+    'DAXT',
+    # Deltachain (https://coinmarketcap.com/currencies/delta-chain/)
+    # is not in cryptocompare but is in paprika
+    'DELTA',
+    # Dew (https://coinmarketcap.com/currencies/dew/)
+    # is not in cryptocompare but is in paprika
+    'DEW',
+    # DEX (https://coinmarketcap.com/currencies/dex/)
+    # is not in cryptocompare but is in paprika
+    'DEX',
+    # DragonGlass (https://coinmarketcap.com/currencies/dragonglass/)
+    # is not in cryptocompare but is in paprika
+    'DGS',
+    # DigitalInsuranceToken (https://coinmarketcap.com/currencies/digital-insurance-token/)
+    # is not in cryptocompare but is in paprika
+    'DIT',
+    # DigitalTicks (https://www.coingecko.com/en/coins/digital-ticks) is not in
+    # cryptocompate but is in paprika
+    'DTX-2',
+    # E4Row (https://coinmarketcap.com/currencies/ether-for-the-rest-of-the-world/) is not in
+    # cryptocompare but is in paprika
+    'E4ROW',
+    # EAGLE (https://coinmarketcap.com/currencies/eaglecoin/) is not in
+    # cryptocompare but is in paprika
+    'EAGLE',
 )
 
 
@@ -389,5 +423,7 @@ class Cryptocompare():
         data['AIR*'] = object()  # This is Aircoin
         # This is SpendCoin (https://coinmarketcap.com/currencies/spendcoin/)
         data['SPND'] = object()
+        # This is eBitcoinCash (https://coinmarketcap.com/currencies/ebitcoin-cash/)
+        data['EBCH'] = object()
 
         return data

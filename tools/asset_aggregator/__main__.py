@@ -75,6 +75,7 @@ def process_asset(
 
     found_coin_id = find_paprika_coin_id(asset_symbol, paprika_coins_list)
     if found_coin_id:
+        print(f'paprika id: {found_coin_id}')
         paprika_coin_data = paprika.get_coin_by_id(found_coin_id)
         paprika_token_address = get_paprika_data_eth_token_address(
             paprika_data=paprika_coin_data,
@@ -202,8 +203,8 @@ def main():
         with open(os.path.join(root_path, 'rotkehlchen', 'data', 'eth_tokens.json'), 'r') as f:
             token_data = rlk_jsonloads(f.read())
 
-        start = 290
-        stop_after = start + 7
+        start = 370
+        stop_after = start + 1
         input_data = {}
         for index, entry in enumerate(token_data[start:], start):
             token_symbol = entry['symbol']

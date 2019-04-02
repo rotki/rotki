@@ -308,6 +308,45 @@ KNOWN_TO_MISS_FROM_CMC = (
     # CarTaxi (https://www.cryptocompare.com/coins/ctx/overview)
     # is not in coinmarketcap but is in cryptocompare
     'CTX-2',
+    # Digital Developers Fund (https://coinmarketcap.com/currencies/digital-developers-fund/)
+    # is not in coinmarketcap but is in cryptocompare
+    'DDF',
+    # Depository Network (https://www.cryptocompare.com/coins/depo/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'DEPO',
+    # DigiPulse missing from API but is in
+    # https://coinmarketcap.com/currencies/digipulse/
+    'DGPT',
+    # Etherisc (https://www.cryptocompare.com/coins/dip/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'DIP',
+    # Divi Exchange Token (https://www.cryptocompare.com/coins/divx/)
+    # is not in coinmarketcap but is in cryptocompare
+    'DIVX',
+    # Digital Assets Power Play (https://www.cryptocompare.com/coins/dpp/)
+    # is not in coinmarketcap but is in cryptocompare
+    'DPP',
+    # DreamTeam Token (https://www.cryptocompare.com/coins/dream/)
+    # is not in coinmarketcap but is in cryptocompare
+    'DREAM',
+    # Dcorp (https://www.cryptocompare.com/coins/drp/)
+    # is not in coinmarketcap but is in cryptocompare
+    'DRP',
+    # DigitalTicks (https://www.coingecko.com/en/coins/digital-ticks)
+    # is not in coinmarketcap but is in paprika
+    'DTX-2',
+    # Decentralized Universal Basic Income (https://www.cryptocompare.com/coins/dubi/)
+    # is not in coinmarketcap but is in cryptocompare
+    'DUBI',
+    # E4ROW missing from API but is in
+    # https://coinmarketcap.com/currencies/ether-for-the-rest-of-the-world/
+    'E4ROW',
+    # EAGLE missing from API but is in
+    # https://coinmarketcap.com/currencies/eaglecoin/
+    'EAGLE',
+    # eBitcoinCash missing from API but is in
+    # https://coinmarketcap.com/currencies/ebitcoin-cash/
+    'EBCH',
 )
 
 

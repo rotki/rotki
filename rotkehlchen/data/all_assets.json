@@ -1841,6 +1841,54 @@
         "symbol": "DATA",
         "type": "ethereum token"
     },
+    "DATX": {
+        "name": "DATx",
+        "started": 1517657708,
+        "symbol": "DATX",
+        "type": "ethereum token"
+    },
+    "DAV": {
+        "name": "DAV Coin",
+        "started": 1528549816,
+        "symbol": "DAV",
+        "type": "ethereum token"
+    },
+    "DAX": {
+        "name": "DAEX",
+        "started": 1517981944,
+        "symbol": "DAX",
+        "type": "ethereum token"
+    },
+    "DAXT": {
+        "name": "Digital Asset Exchange Token",
+        "started": 1521249319,
+        "symbol": "DAXT",
+        "type": "ethereum token"
+    },
+    "DAY": {
+        "name": "Chronologic",
+        "started": 1505774047,
+        "symbol": "DAY",
+        "type": "ethereum token"
+    },
+    "DBET": {
+        "name": "DecentBet",
+        "started": 1505260800,
+        "symbol": "DBET",
+        "type": "ethereum token"
+    },
+    "DCC": {
+        "name": "Distributed Credit Chain",
+        "started": 1518401258,
+        "symbol": "DCC",
+        "type": "ethereum token"
+    },
+    "DCN": {
+        "name": "Dentacoin",
+        "started": 1487090430,
+        "symbol": "DCN",
+        "type": "ethereum token"
+    },
     "DCR": {
         "name": "Decred",
         "started": 1450137600,
@@ -1853,10 +1901,49 @@
         "symbol": "DCT",
         "type": "own chain"
     },
+    "DDF": {
+        "active": false,
+        "ended": 1542153600,
+        "name": "DigitalDevelopersFund",
+        "started": 1498504259,
+        "symbol": "DDF",
+        "type": "ethereum token"
+    },
+    "DEB": {
+        "name": "Debitum",
+        "started": 1508976000,
+        "symbol": "DEB",
+        "type": "ethereum token"
+    },
+    "DELTA": {
+        "name": "DeltaChain",
+        "started": 1530965520,
+        "symbol": "DELTA",
+        "type": "ethereum token"
+    },
     "DENT": {
         "name": "Dent",
         "started": 1499817600,
         "symbol": "DENT",
+        "type": "ethereum token"
+    },
+    "DEPO": {
+        "name": "Depository Network",
+        "started": 1529488628,
+        "symbol": "DEPO",
+        "type": "ethereum token"
+    },
+    "DEW": {
+        "active": true,
+        "name": "DEW",
+        "started": 1505433600,
+        "symbol": "DEW",
+        "type": "ethereum token"
+    },
+    "DEX": {
+        "name": "DEX",
+        "started": 1540376115,
+        "symbol": "DEX",
         "type": "ethereum token"
     },
     "DGB": {
@@ -1869,6 +1956,38 @@
         "name": "DigixDAO",
         "started": 1460996371,
         "symbol": "DGD",
+        "type": "ethereum token"
+    },
+    "DGPT": {
+        "active": false,
+        "ended": 1541548800,
+        "name": "DigiPulse",
+        "started": 1501804800,
+        "symbol": "DGPT",
+        "type": "ethereum token"
+    },
+    "DGS": {
+        "name": "Dragonglass",
+        "started": 1518771165,
+        "symbol": "DGS",
+        "type": "ethereum token"
+    },
+    "DGTX": {
+        "name": "Digitex Futures",
+        "started": 1516017214,
+        "symbol": "DGTX",
+        "type": "ethereum token"
+    },
+    "DGX": {
+        "name": "Digix Gold Token",
+        "started": 1521722301,
+        "symbol": "DGX",
+        "type": "ethereum token"
+    },
+    "DICE": {
+        "name": "Etheroll",
+        "started": 1486975816,
+        "symbol": "DICE",
         "type": "ethereum token"
     },
     "DIEM": {
@@ -1884,6 +2003,26 @@
         "started": 1387756800,
         "symbol": "DIME",
         "type": "own chain"
+    },
+    "DIP": {
+        "name": "Etherisc",
+        "started": 1529940316,
+        "symbol": "DIP",
+        "type": "ethereum token"
+    },
+    "DIT": {
+        "name": "Digital Insurance Token",
+        "started": 1533904316,
+        "symbol": "DIT",
+        "type": "ethereum token"
+    },
+    "DIVX": {
+        "active": false,
+        "ended": 1549065600,
+        "name": "Divi Exchange Token",
+        "started": 1505199359,
+        "symbol": "DIVX",
+        "type": "ethereum token"
     },
     "DLT": {
         "name": "Agrello",
@@ -1901,6 +2040,12 @@
         "name": "DMarket",
         "started": 1506038400,
         "symbol": "DMT",
+        "type": "ethereum token"
+    },
+    "DNA": {
+        "name": "EncrypGen",
+        "started": 1496275200,
+        "symbol": "DNA",
         "type": "ethereum token"
     },
     "DNT": {
@@ -1927,6 +2072,37 @@
         "symbol": "DOPE",
         "type": "own chain"
     },
+    "DOR": {
+        "active": true,
+        "name": "Dorado",
+        "started": 1517356800,
+        "symbol": "DOR",
+        "type": "ethereum token"
+    },
+    "DOV": {
+        "name": "Dovu",
+        "started": 1507027409,
+        "symbol": "DOV",
+        "type": "ethereum token"
+    },
+    "DOW": {
+        "name": "DOWCOIN",
+        "started": 1519803264,
+        "symbol": "DOW",
+        "type": "ethereum token"
+    },
+    "DPP": {
+        "name": "Digital Assets Power Play",
+        "started": 1505748922,
+        "symbol": "DPP",
+        "type": "ethereum token"
+    },
+    "DREAM": {
+        "name": "DreamTeam Token",
+        "started": 1529581022,
+        "symbol": "DREAM",
+        "type": "ethereum token"
+    },
     "DRGN": {
         "name": "Dragonchain",
         "started": 1502928000,
@@ -1948,6 +2124,30 @@
         "symbol": "DRM",
         "type": "own chain"
     },
+    "DROP": {
+        "name": "Dropil",
+        "started": 1516381267,
+        "symbol": "DROP",
+        "type": "ethereum token"
+    },
+    "DRP": {
+        "name": "DCORP",
+        "started": 1495411200,
+        "symbol": "DRP",
+        "type": "ethereum token"
+    },
+    "DRPU": {
+        "name": "DCORP Utility",
+        "started": 1509532630,
+        "symbol": "DRPU",
+        "type": "ethereum token"
+    },
+    "DRT": {
+        "name": "DomRaider",
+        "started": 1503964800,
+        "symbol": "DRT",
+        "type": "ethereum token"
+    },
     "DSH": {
         "active": false,
         "ended": 1542326400,
@@ -1968,11 +2168,63 @@
         "symbol": "DTB",
         "type": "counterparty token"
     },
+    "DTH": {
+        "name": "Dether",
+        "started": 1500854400,
+        "symbol": "DTH",
+        "type": "ethereum token"
+    },
+    "DTR": {
+        "name": "Dynamic Trading Rights",
+        "started": 1509408000,
+        "symbol": "DTR",
+        "type": "ethereum token"
+    },
+    "DTRC": {
+        "name": "Datarius Credit",
+        "started": 1511827200,
+        "symbol": "DTRC",
+        "type": "ethereum token"
+    },
+    "DTX": {
+        "name": "DaTa eXchange",
+        "started": 1521331200,
+        "symbol": "DTX",
+        "type": "ethereum token"
+    },
+    "DTX-2": {
+        "name": "Digital Ticks",
+        "started": 1521936000,
+        "symbol": "DTX",
+        "type": "ethereum token"
+    },
+    "DUBI": {
+        "active": false,
+        "ended": 1543708800,
+        "name": "Decentralized Universal Basic Income",
+        "started": 1537779731,
+        "symbol": "DUBI",
+        "type": "ethereum token"
+    },
+    "DXT": {
+        "name": "Datawallet",
+        "started": 1517774913,
+        "symbol": "DXT",
+        "type": "ethereum token"
+    },
     "DYN": {
         "name": "Dynamic",
         "started": 1490547284,
         "symbol": "DYN",
         "type": "own chain"
+    },
+    "E4ROW": {
+        "active": false,
+        "ended": 1515628800,
+        "name": "Ether for the rest of the world",
+        "started": 1498158578,
+        "symbol": "E4ROW",
+        "type": "ethereum token"
     },
     "EAC": {
         "name": "EarthCoin",
@@ -1980,17 +2232,58 @@
         "symbol": "EAC",
         "type": "own chain"
     },
+    "EAGLE": {
+        "active": false,
+        "ended": 1539129600,
+        "name": "EagleCoin",
+        "started": 1508281265,
+        "symbol": "EAGLE",
+        "type": "ethereum token"
+    },
+    "EARTH": {
+        "active": true,
+        "name": "Earth Token",
+        "started": 1508716800,
+        "symbol": "EARTH",
+        "type": "ethereum token"
+    },
+    "EBC": {
+        "name": "EBCoin",
+        "started": 1516060800,
+        "symbol": "EBC",
+        "type": "ethereum token"
+    },
+    "EBCH": {
+        "active": false,
+        "ended": 1542844800,
+        "name": "eBitcoinCash",
+        "started": 1507492020,
+        "symbol": "EBCH",
+        "type": "ethereum token"
+    },
     "EBST": {
         "name": "eBoost",
         "started": 1475107200,
         "symbol": "EBST",
         "type": "own chain"
     },
+    "EBTC": {
+        "name": "eBitcoin",
+        "started": 1506470400,
+        "symbol": "EBTC",
+        "type": "ethereum token"
+    },
     "ECC": {
         "name": "ECCoin",
         "started": 1395292195,
         "symbol": "ECC",
         "type": "own chain"
+    },
+    "ECOM": {
+        "name": "Omnitude",
+        "started": 1517418276,
+        "symbol": "ECOM",
+        "type": "ethereum token"
     },
     "EDG": {
         "name": "Edgeless",
