@@ -2309,6 +2309,18 @@
         "symbol": "EDR",
         "type": "own chain"
     },
+    "EDU": {
+        "name": "EduCoin",
+        "started": 1526399366,
+        "symbol": "EDU",
+        "type": "ethereum token"
+    },
+    "EDU-2": {
+        "name": "Open Source University",
+        "started": 1527292800,
+        "symbol": "EDU",
+        "type": "ethereum token"
+    },
     "EFL": {
         "active": true,
         "name": "e-Gulden",
@@ -2316,16 +2328,66 @@
         "symbol": "EFL",
         "type": "own chain"
     },
+    "EGAS": {
+        "active": false,
+        "ended": 1518307200,
+        "name": "ETHGAS",
+        "started": 1509494400,
+        "symbol": "EGAS",
+        "type": "ethereum token"
+    },
     "EGC": {
         "name": "EverGreenCoin",
         "started": 1448928000,
         "symbol": "EGC",
         "type": "own chain"
     },
+    "EGT": {
+        "name": "Egretia",
+        "started": 1523577600,
+        "symbol": "EGT",
+        "type": "ethereum token"
+    },
+    "EKO": {
+        "name": "EchoLink",
+        "started": 1510756506,
+        "symbol": "EKO",
+        "type": "ethereum token"
+    },
+    "EKT": {
+        "name": "EDUCare",
+        "started": 1514008091,
+        "symbol": "EKT",
+        "type": "ethereum token"
+    },
+    "ELEC": {
+        "name": "Electrify.Asia",
+        "started": 1517616000,
+        "symbol": "ELEC",
+        "type": "ethereum token"
+    },
     "ELF": {
         "name": "aelf",
         "started": 1513555200,
         "symbol": "ELF",
+        "type": "ethereum token"
+    },
+    "ELIX": {
+        "name": "Elixir",
+        "started": 1504209130,
+        "symbol": "ELIX",
+        "type": "ethereum token"
+    },
+    "ELTCOIN": {
+        "name": "ELTCOIN",
+        "started": 1507248000,
+        "symbol": "ELTCOIN",
+        "type": "ethereum token"
+    },
+    "ELY": {
+        "name": "Elysian",
+        "started": 1524579568,
+        "symbol": "ELY",
         "type": "ethereum token"
     },
     "EMC": {
@@ -2340,10 +2402,30 @@
         "symbol": "EMC2",
         "type": "own chain"
     },
+    "EMT": {
+        "name": "EasyMine",
+        "started": 1503574082,
+        "symbol": "EMT",
+        "type": "ethereum token"
+    },
+    "EMV": {
+        "active": false,
+        "ended": 1531958400,
+        "name": "Ethereum Movie Venture",
+        "started": 1469491200,
+        "symbol": "EMV",
+        "type": "ethereum token"
+    },
     "ENG": {
         "name": "Enigma",
         "started": 1498867200,
         "symbol": "ENG",
+        "type": "ethereum token"
+    },
+    "ENGT": {
+        "name": "Engagement Token",
+        "started": 1524156383,
+        "symbol": "ENGT",
         "type": "ethereum token"
     },
     "ENJ": {
@@ -2358,11 +2440,60 @@
         "symbol": "ENRG",
         "type": "own chain"
     },
+    "ENTRP": {
+        "name": "Hut34 Entropy Token",
+        "started": 1504742400,
+        "symbol": "ENTRP",
+        "type": "ethereum token"
+    },
     "EOS": {
         "name": "EOS.io",
         "started": 1494028800,
         "symbol": "EOS",
         "type": "ethereum token and own chain"
+    },
+    "EOSDAC": {
+        "name": "eosDAC",
+        "started": 1520115088,
+        "symbol": "EOSDAC",
+        "type": "ethereum token"
+    },
+    "EPY": {
+        "name": "Emphy",
+        "started": 1503014400,
+        "symbol": "EPY",
+        "type": "ethereum token"
+    },
+    "EQL": {
+        "name": "Equal",
+        "started": 1513673020,
+        "symbol": "EQL",
+        "type": "ethereum token"
+    },
+    "ERO": {
+        "name": "Eroscoin",
+        "started": 1505347200,
+        "symbol": "ERO",
+        "type": "ethereum token"
+    },
+    "ERT": {
+        "name": "Eristica",
+        "started": 1511740800,
+        "symbol": "ERT",
+        "type": "ethereum token"
+    },
+    "ESZ": {
+        "active": true,
+        "name": "EtherSportz",
+        "started": 1515655459,
+        "symbol": "ESZ",
+        "type": "ethereum token"
+    },
+    "ETBS": {
+        "name": "Ethbits",
+        "started": 1492214400,
+        "symbol": "ETBS",
+        "type": "ethereum token"
     },
     "ETC": {
         "forked": "ETH",
@@ -2371,16 +2502,42 @@
         "symbol": "ETC",
         "type": "own chain"
     },
+    "ETG": {
+        "name": "Ethereum Gold",
+        "started": 1507763838,
+        "symbol": "ETG",
+        "type": "ethereum token"
+    },
     "ETH": {
         "name": "Ethereum",
         "started": 1438214400,
         "symbol": "ETH",
         "type": "own chain"
     },
+    "ETHB": {
+        "name": "EtherBTC",
+        "started": 1499639401,
+        "symbol": "ETHB",
+        "type": "ethereum token"
+    },
+    "ETHD": {
+        "active": false,
+        "ended": 1549411200,
+        "name": "Ethereum Dark",
+        "started": 1505865600,
+        "symbol": "ETHD",
+        "type": "ethereum token"
+    },
     "ETHOS": {
         "name": "Ethos",
         "started": 1498608000,
         "symbol": "ETHOS",
+        "type": "ethereum token"
+    },
+    "ETK": {
+        "name": "EnergiToken",
+        "started": 1511494487,
+        "symbol": "ETK",
         "type": "ethereum token"
     },
     "EUR": {
@@ -2389,10 +2546,54 @@
         "symbol": "EUR",
         "type": "fiat"
     },
+    "EURS": {
+        "name": "STASIS EURS",
+        "started": 1529686012,
+        "symbol": "EURS",
+        "type": "ethereum token"
+    },
+    "EVC": {
+        "name": "EventChain",
+        "started": 1504117524,
+        "symbol": "EVC",
+        "type": "ethereum token"
+    },
+    "EVE": {
+        "name": "Devery",
+        "started": 1507334400,
+        "symbol": "EVE",
+        "type": "ethereum token"
+    },
+    "EVN": {
+        "name": "Envion",
+        "started": 1512086400,
+        "symbol": "EVN",
+        "type": "ethereum token"
+    },
+    "EVN-2": {
+        "name": "EvenCoin",
+        "started": 1504742400,
+        "symbol": "EVN",
+        "type": "ethereum token"
+    },
     "EVX": {
         "name": "Everex",
         "started": 1500854400,
         "symbol": "EVX",
+        "type": "ethereum token"
+    },
+    "EXC": {
+        "name": "Excaliburcoin",
+        "started": 1522627200,
+        "symbol": "EXC",
+        "type": "ethereum token"
+    },
+    "EXC-2": {
+        "active": false,
+        "ended": 1545091200,
+        "name": "Eximchain",
+        "started": 1524355200,
+        "symbol": "EXC",
         "type": "ethereum token"
     },
     "EXCL": {
@@ -2409,11 +2610,42 @@
         "symbol": "EXE",
         "type": "own chain"
     },
+    "EXMR": {
+        "name": "EXMR",
+        "started": 1507877843,
+        "symbol": "EXMR",
+        "type": "ethereum token"
+    },
     "EXP": {
         "name": "Expanse",
         "started": 1442188800,
         "symbol": "EXP",
         "type": "own chain"
+    },
+    "EXRN": {
+        "name": "EXRNchain",
+        "started": 1507553178,
+        "symbol": "EXRN",
+        "type": "ethereum token"
+    },
+    "EXY": {
+        "name": "Experty",
+        "started": 1510876800,
+        "symbol": "EXY",
+        "type": "ethereum token"
+    },
+    "EZT": {
+        "active": true,
+        "name": "EZToken",
+        "started": 1513900800,
+        "symbol": "EZT",
+        "type": "ethereum token"
+    },
+    "FACE": {
+        "name": "Faceter",
+        "started": 1516320000,
+        "symbol": "FACE",
+        "type": "ethereum token"
     },
     "FAIR": {
         "name": "FairCoin",
@@ -2441,10 +2673,24 @@
         "symbol": "FCT",
         "type": "own chain"
     },
+    "FDZ": {
+        "name": "Friendz",
+        "started": 1516752000,
+        "symbol": "FDZ",
+        "type": "ethereum token"
+    },
     "FET": {
         "name": "Fetch AI",
         "started": 1551398400,
         "symbol": "FET",
+        "type": "ethereum token"
+    },
+    "FGP": {
+        "active": false,
+        "ended": 1551398400,
+        "name": "FingerPrint",
+        "started": 1527811200,
+        "symbol": "FGP",
         "type": "ethereum token"
     },
     "FIBRE": {

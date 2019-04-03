@@ -127,6 +127,21 @@ MANUALLY_CHECKED = {
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'EARTH': True,
+    # On 03/04/2019 EDU-2 (EDU token) is still active and trading in 1 exchange
+    # https://coincodex.com/crypto/open-source-university/exchanges/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'EDU-2': True,
+    # On 03/04/2019 Ethersport is still active and trading in 2 exchanges
+    # https://coinmarketcap.com/currencies/ethersportz/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'ESZ': True,
+    # On 03/04/2019 EZToken is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/eztoken/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'EZT': True,
 }
 
 

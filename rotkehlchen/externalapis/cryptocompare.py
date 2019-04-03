@@ -174,6 +174,16 @@ WORLD_TO_CRYPTOCOMPARE = {
     'DCC': 'DCC*',
     # For Rotkehlchen DOW is DOW Coin Chain but it's Dow in cryptocompare
     'DOW': 'Dow',
+    # For Rotkehlchen EPY is Emphy Coin but it's EPY* in cryptocompare
+    'EPY': 'EPY*',
+    # For Rotkehlchen ERT is Eristica Coin but it's ERT* in cryptocompare
+    'ERT': 'ERT*',
+    # For Rotkehlchen EVN is Envion and EVN-2 is EvenCoin, but in cryptocompare
+    # Evencoin is EVN*
+    'EVN-2': 'EVN*',
+    # For Rotkehlchen EXC is ExcaliburCoin and EXC-2 is EximChain Token but in
+    # cryptocompare EXC is EximChain Token ans ExcaliburCoin is not supported
+    'EXC-2': 'EXC',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also
@@ -355,6 +365,15 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # EAGLE (https://coinmarketcap.com/currencies/eaglecoin/) is not in
     # cryptocompare but is in paprika
     'EAGLE',
+    # OpenSource university (https://os.university/) is not in
+    # cryptocompare but is in paprika
+    'EDU-2',
+    # ExcaliburCoin  (https://coinmarketcap.com/currencies/excaliburcoin/) is not
+    # in cryptocompare but is in paprika
+    'EXC',
+    # Fingerprint  (https://fingerprintcoin.org/) is not
+    # in cryptocompare but is in paprika
+    'FGP',
 )
 
 
@@ -425,5 +444,7 @@ class Cryptocompare():
         data['SPND'] = object()
         # This is eBitcoinCash (https://coinmarketcap.com/currencies/ebitcoin-cash/)
         data['EBCH'] = object()
+        # This is Educare (https://coinmarketcap.com/currencies/educare/)
+        data['EKT'] = object()
 
         return data

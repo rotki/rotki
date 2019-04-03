@@ -20,6 +20,9 @@ MANUALLY_CHECKED_NAMES = {
     'DEPO': 'Depository Network',
     'DIP': 'Etherisc',
     'DPP': 'Digital Assets Power Play',
+    'EMT': 'EasyMine',
+    'ENTRP': 'Hut34 Entropy Token',
+    'ETHB': 'EtherBTC',
 }
 
 
