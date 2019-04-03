@@ -79,6 +79,9 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'DEPO',
     'DIP',
     'DPP',
+    'EMT',
+    'ENTRP',
+    'ETHB',
 )
 
 
@@ -250,6 +253,15 @@ WORLD_TO_PAPRIKA_ID = {
     # is Digital Ticks
     'DTX': 'dtx-data-exchange',
     'DTX-2': 'dtx-digital-ticks',
+    # For Rotkehlchen EDU is Educoin and EDU-2 is opensource university
+    'EDU': 'edu-educoin',
+    'EDU-2': 'edu-open-source-university',
+    # For Rotkehlchen EVN is Envion and EVN-2 is EvenCoin
+    'EVN': 'evn-envion',
+    'EVN-2': 'evn-evencoin',
+    # For Rotkehlchen EXC is ExcaliburCoin and EXC-2 is EximChain Token
+    'EXC': 'exc-excaliburcoin',
+    'EXC-2': 'exc-eximchain',
 }
 
 

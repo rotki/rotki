@@ -347,6 +347,33 @@ KNOWN_TO_MISS_FROM_CMC = (
     # eBitcoinCash missing from API but is in
     # https://coinmarketcap.com/currencies/ebitcoin-cash/
     'EBCH',
+    # OpenSource university (https://os.university/) is not in
+    # coinmarketcap but is in paprika
+    'EDU-2',
+    # EGAS missing from API but is in
+    # https://coinmarketcap.com/currencies/ethgas/
+    'EGAS',
+    # EasyMine (https://www.cryptocompare.com/coins/emt/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'EMT',
+    # Ethereum Movie Venture missing from API but is in
+    # https://coinmarketcap.com/currencies/ethereum-movie-venture/
+    'EMV',
+    # Hut34 Entropy token (https://www.cryptocompare.com/coins/entrp/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'ENTRP',
+    # EtherBTC (https://www.cryptocompare.com/coins/ethb/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'ETHB',
+    # Ethereum Dark missing from API but is in
+    # https://coinmarketcap.com/currencies/ethereum-dark/
+    'ETHD',
+    # EximChain missing from API but is in
+    # https://coinmarketcap.com/currencies/eximchain/
+    'EXC-2',
+    # Fingerprint  (https://fingerprintcoin.org/) is not
+    # in coinmarketcap but is in paprika
+    'FGP',
 )
 
 
@@ -444,6 +471,9 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen CPC is CPChain and CPC-2 is CapriCoin
     'CPC': 2482,
     'CPC-2': 1008,
+    # For Rotkehlchen EVN is Envion and EVN-2 is EvenCoin
+    'EVN': 2526,
+    'EVN-2': 3261,
 }
 
 
