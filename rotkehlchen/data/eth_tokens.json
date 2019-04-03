@@ -2130,6 +2130,11 @@
     "decimal": 18
   },
   {
+    "address": "0x2c594E1cB006E86C3879b1d8191a8B059AF52bE7",
+    "symbol": "EXC (ExcaliburCoin)",
+    "decimal": 8
+  },
+  {
     "address": "0xc98e0639c6d2EC037A615341c369666B110e80E5",
     "symbol": "EXMR",
     "decimal": 8
