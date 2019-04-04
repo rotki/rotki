@@ -2325,6 +2325,11 @@
     "decimal": 18
   },
   {
+    "address": "0xd37532D304214D588aeeaC4c365E8F1d72e2304A",
+    "symbol": "FT (FCoin)",
+    "decimal": 18
+  },
+  {
     "address": "0xe6f74dcfa0E20883008d8C16b6d9a329189D0C30",
     "symbol": "FTC",
     "decimal": 2
