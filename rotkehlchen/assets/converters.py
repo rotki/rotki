@@ -414,6 +414,10 @@ ETH_TOKENS_JSON_TO_WORLD = {
     'EVN': 'EVN-2',
     'EXC (ExcaliburCoin)': 'EXC',
     'EXC (Eximchain Token)': 'EXC-2',
+    'FORK': 'FORK-2',
+    'FT (FCoin)': 'FT-2',
+    'FXC (Flexacoin)': 'FXC',
+    'GANA (1)': 'GANA',
 }
 UNSUPPORTED_ETH_TOKENS_JSON = (
     '$FFC',
@@ -546,6 +550,15 @@ UNSUPPORTED_ETH_TOKENS_JSON = (
     'FANX',
     'FANX (1)',
     'FAR',
+    'FLMC',
+    'FLMC (1)',
+    'FLR',
+    'FR8',
+    'FTC',
+    'FTR',
+    'FXC',
+    'Fzcoin',
+    'GANA (1)',
 )
 
 MOVED_ETH_TOKENS = {
@@ -559,6 +572,8 @@ MOVED_ETH_TOKENS = {
     'DGX1': 'DGX',
     'DUBI': 'DUBI (DUBI)',
     'DUBI (1)': 'DUBI (DUBI)',
+    'FUCK (FinallyUsableCryptoKarma)': 'FUCK',
+    'GANA': 'GANA (1)',
 }
 
 
