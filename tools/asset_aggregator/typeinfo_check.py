@@ -25,6 +25,9 @@ MANUALLY_CHECKED_TYPES = {
     'EOSDAC': 'ethereum token',
     'ETHB': 'ethereum token',
     'ETHD': 'ethereum token',
+    'FIH': 'ethereum token',
+    'FLX': 'ethereum token',
+    'FORK-2': 'ethereum token',
 }
 
 

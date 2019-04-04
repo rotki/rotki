@@ -2701,6 +2701,25 @@
         "symbol": "FIBRE",
         "type": "own chain"
     },
+    "FID": {
+        "active": true,
+        "name": "Fidelium",
+        "started": 1520951331,
+        "symbol": "FID",
+        "type": "ethereum token"
+    },
+    "FIH": {
+        "name": "FidelityHouse",
+        "started": 1543227347,
+        "symbol": "FIH",
+        "type": "ethereum token"
+    },
+    "FKX": {
+        "name": "Knoxstertoken",
+        "started": 1518783528,
+        "symbol": "FKX",
+        "type": "ethereum token"
+    },
     "FLAP": {
         "active": false,
         "ended": 1525651200,
@@ -2715,11 +2734,29 @@
         "symbol": "FLDC",
         "type": "counterparty token"
     },
+    "FLIXX": {
+        "name": "Flixxo",
+        "started": 1505088000,
+        "symbol": "FLIXX",
+        "type": "ethereum token"
+    },
     "FLO": {
         "name": "FLO",
         "started": 1371427200,
         "symbol": "FLO",
         "type": "own chain"
+    },
+    "FLOT": {
+        "name": "Fire Lotto",
+        "started": 1512983284,
+        "symbol": "FLOT",
+        "type": "ethereum token"
+    },
+    "FLP": {
+        "name": "FLIP",
+        "started": 1507858694,
+        "symbol": "FLP",
+        "type": "ethereum token"
     },
     "FLT": {
         "active": false,
@@ -2729,10 +2766,72 @@
         "symbol": "FLT",
         "type": "own chain"
     },
+    "FLUZ": {
+        "name": "Fluz Fluz",
+        "started": 1510185600,
+        "symbol": "FLUZ",
+        "type": "ethereum token"
+    },
+    "FLX": {
+        "name": "BitFlux",
+        "started": 1515283200,
+        "symbol": "FLX",
+        "type": "ethereum token"
+    },
+    "FMF": {
+        "name": "Formosa Financial",
+        "started": 1527675800,
+        "symbol": "FMF",
+        "type": "ethereum token"
+    },
+    "FND": {
+        "name": "FundRequest",
+        "started": 1480291200,
+        "symbol": "FND",
+        "type": "ethereum token"
+    },
+    "FNKOS": {
+        "name": "FNKOS",
+        "started": 1531693761,
+        "symbol": "FNKOS",
+        "type": "ethereum token"
+    },
+    "FNTB": {
+        "name": "Fintab",
+        "started": 1513209600,
+        "symbol": "FNTB",
+        "type": "ethereum token"
+    },
     "FOAM": {
         "name": "FOAM",
         "started": 1532802665,
         "symbol": "FOAM",
+        "type": "ethereum token"
+    },
+    "FOOD": {
+        "active": true,
+        "name": "FoodCoin",
+        "started": 1513036800,
+        "symbol": "FOOD",
+        "type": "ethereum token"
+    },
+    "FORK": {
+        "active": true,
+        "name": "Forkcoin",
+        "started": 1533856467,
+        "symbol": "FORK",
+        "type": "own chain"
+    },
+    "FORK-2": {
+        "name": "Gastro Advisor Token",
+        "started": 1539561600,
+        "symbol": "FORK",
+        "type": "ethereum token"
+    },
+    "FOTA": {
+        "name": "Fortuna",
+        "started": 1516554182,
+        "symbol": "FOTA",
         "type": "ethereum token"
     },
     "FRAC": {
@@ -2743,6 +2842,20 @@
         "symbol": "FRAC",
         "type": "own chain"
     },
+    "FRD": {
+        "active": false,
+        "ened": 1531008000,
+        "name": "Farad",
+        "started": 1501632000,
+        "symbol": "FRD",
+        "type": "ethereum token"
+    },
+    "FREC": {
+        "name": "Freyrchain",
+        "started": 1518019816,
+        "symbol": "FREC",
+        "type": "ethereum token"
+    },
     "FRK": {
         "active": false,
         "ended": 1522886400,
@@ -2751,10 +2864,31 @@
         "symbol": "FRK",
         "type": "own chain"
     },
+    "FRV": {
+        "active": false,
+        "ended": 1535673600,
+        "name": "Fitrova",
+        "started": 1518784824,
+        "symbol": "FRV",
+        "type": "ethereum token"
+    },
     "FSN": {
         "name": "Fusion",
         "started": 1516406400,
         "symbol": "FSN",
+        "type": "ethereum token"
+    },
+    "FT": {
+        "name": "Fabric Token",
+        "started": 1518480000,
+        "symbol": "FT",
+        "type": "ethereum token"
+    },
+    "FT-2": {
+        "active": true,
+        "name": "FCoin Token",
+        "started": 1527897600,
+        "symbol": "FT",
         "type": "ethereum token"
     },
     "FTC": {
@@ -2762,6 +2896,38 @@
         "started": 1366070400,
         "symbol": "FTC",
         "type": "own chain"
+    },
+    "FTI": {
+        "name": "FansTime",
+        "started": 1523776844,
+        "symbol": "FTI",
+        "type": "ethereum token"
+    },
+    "FTT": {
+        "name": "FarmaTrust",
+        "started": 1512086400,
+        "symbol": "FTT",
+        "type": "ethereum token"
+    },
+    "FTX": {
+        "name": "FintruX Network",
+        "started": 1503100800,
+        "symbol": "FTX",
+        "type": "ethereum token"
+    },
+    "FTXT": {
+        "name": "FUTURAX",
+        "started": 1534084234,
+        "symbol": "FTXT",
+        "type": "ethereum token"
+    },
+    "FUCK": {
+        "active": false,
+        "ended": 1525305600,
+        "name": "Finally Usable Crypto Karma",
+        "started": 1496361600,
+        "symbol": "FUCK",
+        "type": "ethereum token"
     },
     "FUEL": {
         "name": "Etherparty",
@@ -2773,6 +2939,32 @@
         "name": "FunFair",
         "started": 1485907200,
         "symbol": "FUN",
+        "type": "ethereum token"
+    },
+    "FXC": {
+        "name": "Flexacoin",
+        "started": 1553299450,
+        "symbol": "FXC",
+        "type": "ethereum token"
+    },
+    "FXT": {
+        "name": "FuzeX",
+        "started": 1515857283,
+        "symbol": "FXT",
+        "type": "ethereum token"
+    },
+    "FYN": {
+        "active": false,
+        "ended": 1540166400,
+        "name": "FundYourselfNow",
+        "started": 1464739200,
+        "symbol": "FYN",
+        "type": "ethereum token"
+    },
+    "FYP": {
+        "name": "FlypMe",
+        "started": 1506977585,
+        "symbol": "FYP",
         "type": "ethereum token"
     },
     "GAM": {
@@ -2800,6 +2992,12 @@
         "started": 1468540800,
         "symbol": "GAS",
         "type": "neo token"
+    },
+    "GAT": {
+        "name": "Global Awards Token",
+        "started": 1509148800,
+        "symbol": "GAT",
+        "type": "ethereum token"
     },
     "GBG": {
         "name": "Golos Gold",

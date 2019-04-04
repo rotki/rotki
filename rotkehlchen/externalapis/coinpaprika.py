@@ -82,6 +82,9 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'EMT',
     'ENTRP',
     'ETHB',
+    'FIH',
+    'FLX',
+    'FORK-2',
 )
 
 
@@ -262,6 +265,14 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen EXC is ExcaliburCoin and EXC-2 is EximChain Token
     'EXC': 'exc-excaliburcoin',
     'EXC-2': 'exc-eximchain',
+    # For Rotkehlchen FID is Fidelium
+    'FID': 'fid-fidelium',
+    # For Rotkehlchen FORK is ForkCoin and FORK-2 is GastroAdvisor. For
+    # coinpaprika only ForkCoin exists as FORK.
+    'FORK': 'fork-forkcoin',
+    # For Rotkehlchen FT is Fabric Token and FT-2 is FCoin
+    'FT': 'ft-fabric-token',
+    'FT-2': 'ft-fcoin-token',
 }
 
 

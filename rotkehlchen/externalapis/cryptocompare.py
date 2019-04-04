@@ -184,6 +184,11 @@ WORLD_TO_CRYPTOCOMPARE = {
     # For Rotkehlchen EXC is ExcaliburCoin and EXC-2 is EximChain Token but in
     # cryptocompare EXC is EximChain Token ans ExcaliburCoin is not supported
     'EXC-2': 'EXC',
+    # For Rotkehlchen FLX is Bitflux but it's FLX* in cryptocompare
+    'FLX': 'FLX*',
+    # For Rotkehlchen FORK is ForkCoin and FORK-2 is GastroAdvisor. For
+    # cryptocompare only GastroAdvisor exists as FORK.
+    'FORK-2': 'FORK',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also
@@ -374,6 +379,18 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # Fingerprint  (https://fingerprintcoin.org/) is not
     # in cryptocompare but is in paprika
     'FGP',
+    # Formosa Fincial Token  (https://coinmarketcap.com/currencies/formosa-financial/)
+    # is not in cryptocompare but is in paprika
+    'FMF',
+    # Fcoin token  (https://coinmarketcap.com/currencies/ftoken/)
+    # is not in cryptocompare but is in paprika
+    'FT-2',
+    # Futurax (https://coinmarketcap.com/currencies/futurax/)
+    # is not in cryptocompare but is in paprika
+    'FTXT',
+    # Flexacoin (https://coinmarketcap.com/currencies/flexacoin/)
+    # is not in cryptocompare but is in paprika
+    'FXC',
 )
 
 
@@ -446,5 +463,13 @@ class Cryptocompare():
         data['EBCH'] = object()
         # This is Educare (https://coinmarketcap.com/currencies/educare/)
         data['EKT'] = object()
+        # This is Fidelium (https://coinmarketcap.com/currencies/fidelium/)
+        data['FID'] = object()
+        # This is Knoxstertoken (https://coinmarketcap.com/currencies/knoxstertoken/)
+        data['FKX'] = object()
+        # This is FNKOS (https://coinmarketcap.com/currencies/fnkos/)
+        data['FNKOS'] = object()
+        # This is FansTime (https://coinmarketcap.com/currencies/fanstime/)
+        data['FTI'] = object()
 
         return data

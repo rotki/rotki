@@ -142,6 +142,26 @@ MANUALLY_CHECKED = {
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'EZT': True,
+    # On 04/04/2019 Fidelium is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/fidelium/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'FID': True,
+    # On 04/04/2019 FoodCoin is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/food/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'FOOD': True,
+    # On 04/04/2019 ForkCoin is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/forkcoin/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'FORK': True,
+    # On 04/04/2019 Fcoin Token is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/ftoken
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'FT-2': True,
 }
 
 

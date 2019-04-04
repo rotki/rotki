@@ -374,6 +374,29 @@ KNOWN_TO_MISS_FROM_CMC = (
     # Fingerprint  (https://fingerprintcoin.org/) is not
     # in coinmarketcap but is in paprika
     'FGP',
+    # FidelityHouse (https://www.cryptocompare.com/coins/fih/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'FIH',
+    # Bitflux (https://www.cryptocompare.com/coins/flxstar/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'FLX',
+    # GastroAdvisor (https://www.cryptocompare.com/coins/fork/)
+    # is not in coinmarketcap but is in cryptocompare. Note. Coinmarketcap
+    # has the same symbol (FORK) for another asset:
+    # https://coinmarketcap.com/currencies/forkcoin/#charts
+    'FORK-2',
+    # Farad missing from API but is in
+    # https://coinmarketcap.com/currencies/farad/
+    'FRD',
+    # Fitrova missing from API but is in
+    # https://coinmarketcap.com/currencies/fitrova/
+    'FRV',
+    # Finally Usable Crypto Karma token (FUCK) missing from API but is in
+    # https://coinmarketcap.com/currencies/fucktoken/
+    'FUCK',
+    # Fund Yourself Now (FYN) missing from API but is in
+    # https://coinmarketcap.com/currencies/fundyourselfnow/
+    'FYN',
 )
 
 
@@ -474,6 +497,9 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen EVN is Envion and EVN-2 is EvenCoin
     'EVN': 2526,
     'EVN-2': 3261,
+    # For Rotkehlchen FT is Fabric Token and FT-2 is FCoin
+    'FT': 2768,
+    'FT-2': 2904,
 }
 
 
