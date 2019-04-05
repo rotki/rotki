@@ -2475,6 +2475,11 @@
     "decimal": 8
   },
   {
+    "address": "0x884181554dfA9e578d36379919C05C25dC4a15bB",
+    "symbol": "GENE (Gene Source Code Chain)",
+    "decimal": 18
+  },
+  {
     "address": "0x8a854288a5976036A725879164Ca3e91d30c6A1B",
     "symbol": "GET",
     "decimal": 18
