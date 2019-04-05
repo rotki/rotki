@@ -2485,6 +2485,11 @@
     "decimal": 18
   },
   {
+    "address": "0x60c68a87bE1E8a84144b543AAcfA77199cd3d024",
+    "symbol": "GET (Themis)",
+    "decimal": 18
+  },
+  {
     "address": "0xFcD862985628b254061F7A918035B80340D045d3",
     "symbol": "GIF",
     "decimal": 18
