@@ -2540,6 +2540,11 @@
     "decimal": 18
   },
   {
+    "address": "0x613Fa2A6e6DAA70c659060E86bA1443D2679c9D7",
+    "symbol": "GOT (ParkingGO)",
+    "decimal": 18
+  },
+  {
     "address": "0x12B19D3e2ccc14Da04FAe33e63652ce469b3F2FD",
     "symbol": "GRID",
     "decimal": 12
