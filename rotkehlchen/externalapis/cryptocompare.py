@@ -189,6 +189,17 @@ WORLD_TO_CRYPTOCOMPARE = {
     # For Rotkehlchen FORK is ForkCoin and FORK-2 is GastroAdvisor. For
     # cryptocompare only GastroAdvisor exists as FORK.
     'FORK-2': 'FORK',
+    # For Rotkehlchen GBX is GoByte and GBX-2 is Globitex but in cryptocompare
+    # Globitex is GBXT
+    'GBX-2': 'GBXT',
+    # For Rotkehlchen GEN is Daostack but it's GEN* in cryptocompare
+    'GEN': 'GEN*',
+    # For Rotkehlchen GENE is ParkGene and GENE-2 is Gene Source Code Chain,
+    # in cryptocompare GENE-2 is GENE*
+    'GENE-2': 'GENE*',
+    # For Rotkehlchen GOT is Go Network Token and GOT-2 is ParkinGo, cryptocompare
+    # does not have ParkinGO and Go Network Token is GOT*
+    'GOT': 'GOT*',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also
@@ -391,6 +402,15 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # Flexacoin (https://coinmarketcap.com/currencies/flexacoin/)
     # is not in cryptocompare but is in paprika
     'FXC',
+    # Themis GET (https://coinmarketcap.com/currencies/themis/)
+    # is not in cryptocompare but is in paprika
+    'GET-2',
+    # ParkinGO (https://coinmarketcap.com/currencies/parkingo/)
+    # is not in cryptocompare but is in paprika
+    'GOT-2',
+    # GSENetwork (https://coinmarketcap.com/currencies/gsenetwork/)
+    # is not in cryptocompare but is in paprika
+    'GSE'
 )
 
 
@@ -471,5 +491,10 @@ class Cryptocompare():
         data['FNKOS'] = object()
         # This is FansTime (https://coinmarketcap.com/currencies/fanstime/)
         data['FTI'] = object()
+        # This is Gene Source Code Chain
+        # (https://coinmarketcap.com/currencies/gene-source-code-chain/)
+        data['GENE*'] = object()
+        # This is GazeCoin (https://coinmarketcap.com/currencies/gazecoin/)
+        data['GZE'] = object()
 
         return data

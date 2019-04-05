@@ -273,6 +273,20 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen FT is Fabric Token and FT-2 is FCoin
     'FT': 'ft-fabric-token',
     'FT-2': 'ft-fcoin-token',
+    # For Rotkehlchen GBX is GoByte and GBX-2 is Globitex
+    'GBX': 'gbx-gobyte',
+    'GBX-2': 'gbx-globitex',
+    # For Rotkehlchen GENE is ParkGene and GENE-2 is Gene Source Code Chain
+    'GENE': 'gene-parkgene',
+    'GENE-2': 'gene-gene-source-code-chain',
+    # For Rotkehlchen GET is Guaranteed Entrance Token and GET-2 is Themis
+    'GET': 'get-get-protocol',
+    'GET-2': 'get-themis',
+    # For Rotkehlchen GOT is Go Network Token and GOT-2 is ParkinGo
+    'GOT': 'got-gonetwork',
+    'GOT-2': 'got-parkingo',
+    # For Rotkehlchen GTC is Game.com
+    'GTC': 'gtc-gamecom',
 }
 
 

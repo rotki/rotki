@@ -3010,11 +3010,29 @@
         "symbol": "GBP",
         "type": "fiat"
     },
+    "GBX": {
+        "name": "GoByte",
+        "started": 1510790400,
+        "symbol": "GBX",
+        "type": "own chain"
+    },
+    "GBX-2": {
+        "name": "Globitex",
+        "started": 1507680000,
+        "symbol": "GBX",
+        "type": "ethereum token"
+    },
     "GBYTE": {
         "name": "Obyte",
         "started": 1482624000,
         "symbol": "GBYTE",
         "type": "own chain"
+    },
+    "GEM": {
+        "name": "Gems",
+        "started": 1515196800,
+        "symbol": "GEM",
+        "type": "ethereum token"
     },
     "GEMZ": {
         "active": false,
@@ -3024,11 +3042,57 @@
         "symbol": "GEMZ",
         "type": "counterparty token"
     },
+    "GEN": {
+        "name": "DAOstack",
+        "started": 1524996077,
+        "symbol": "GEN",
+        "type": "ethereum token"
+    },
+    "GENE": {
+        "name": "Parkgene",
+        "started": 1513900800,
+        "symbol": "GENE",
+        "type": "ethereum token"
+    },
+    "GENE-2": {
+        "name": "Gene Source Code Chain",
+        "started": 1517788800,
+        "symbol": "GENE",
+        "type": "ethereum token"
+    },
     "GEO": {
         "name": "GeoCoin",
         "started": 1421650800,
         "symbol": "GEO",
         "type": "Ubiq token"
+    },
+    "GET": {
+        "name": "GET Protocol",
+        "started": 1503360000,
+        "symbol": "GET",
+        "type": "ethereum token"
+    },
+    "GET-2": {
+        "name": "Themis",
+        "started": 1518307200,
+        "symbol": "GET",
+        "type": "ethereum token"
+    },
+    "GIM": {
+        "active": false,
+        "ended": 1518307200,
+        "name": "Gimli",
+        "started": 1505583229,
+        "symbol": "GIM",
+        "type": "ethereum token"
+    },
+    "GLA": {
+        "active": false,
+        "ended": 1552089600,
+        "name": "Gladius Token",
+        "started": 1509235200,
+        "symbol": "GLA",
+        "type": "ethereum token"
     },
     "GLC": {
         "name": "GoldCoin",
@@ -3048,6 +3112,14 @@
         "symbol": "GML",
         "type": "own chain"
     },
+    "GMT": {
+        "active": false,
+        "ended": 1534464000,
+        "name": "Mercury Protocol",
+        "started": 1508775213,
+        "symbol": "GMT",
+        "type": "ethereum token"
+    },
     "GNO": {
         "name": "Gnosis token",
         "started": 1492992000,
@@ -3058,6 +3130,12 @@
         "name": "Golem",
         "started": 1478810650,
         "symbol": "GNT",
+        "type": "ethereum token"
+    },
+    "GNX": {
+        "name": "Genaro Network",
+        "started": 1506528751,
+        "symbol": "GNX",
         "type": "ethereum token"
     },
     "GO": {
@@ -3071,6 +3149,18 @@
         "started": 1474502400,
         "symbol": "GOLOS",
         "type": "own chain"
+    },
+    "GOT": {
+        "name": "GoNetwork",
+        "started": 1523836800,
+        "symbol": "GOT",
+        "type": "ethereum token"
+    },
+    "GOT-2": {
+        "name": "ParkinGo",
+        "started": 1529366400,
+        "symbol": "GOT",
+        "type": "ethereum token"
     },
     "GPUC": {
         "active": false,
@@ -3086,17 +3176,48 @@
         "symbol": "GRC",
         "type": "own chain"
     },
+    "GRID": {
+        "name": "Grid+",
+        "started": 1499817600,
+        "symbol": "GRID",
+        "type": "ethereum token"
+    },
     "GRIN": {
         "name": "Grin",
         "started": 1547683200,
         "symbol": "GRIN",
         "type": "own chain"
     },
+    "GRMD": {
+        "active": true,
+        "name": "GreenMed",
+        "started": 1508952776,
+        "symbol": "GRMD",
+        "type": "ethereum token"
+    },
     "GRS": {
         "name": "Groestlcoin",
         "started": 1395446400,
         "symbol": "GRS",
         "type": "own chain"
+    },
+    "GSC": {
+        "name": "Global Social Chain",
+        "started": 1517544472,
+        "symbol": "GSC",
+        "type": "ethereum token"
+    },
+    "GSE": {
+        "name": "GSENetwork",
+        "started": 1528890581,
+        "symbol": "GSE",
+        "type": "ethereum token"
+    },
+    "GTC": {
+        "name": "Game.com",
+        "started": 1506671530,
+        "symbol": "GTC",
+        "type": "ethereum token"
     },
     "GTO": {
         "name": "Gifto",
@@ -3112,10 +3233,22 @@
         "symbol": "GUE",
         "type": "own chain"
     },
+    "GUESS": {
+        "name": "Peerguess",
+        "started": 1509148800,
+        "symbol": "GUESS",
+        "type": "ethereum token"
+    },
     "GUP": {
         "name": "Matchpool Guppy",
         "started": 1484352000,
         "symbol": "GUP",
+        "type": "ethereum token"
+    },
+    "GUSD": {
+        "name": "Gemini Dollar",
+        "started": 1536521774,
+        "symbol": "GUSD",
         "type": "ethereum token"
     },
     "GVT": {
@@ -3129,6 +3262,38 @@
         "started": 1488585600,
         "symbol": "GXC",
         "type": "own chain"
+    },
+    "GZE": {
+        "name": "GazeCoin",
+        "started": 1512910545,
+        "symbol": "GZE",
+        "type": "ethereum token"
+    },
+    "HAND": {
+        "name": "ShowHand",
+        "started": 1516438291,
+        "symbol": "HAND",
+        "type": "ethereum token"
+    },
+    "HAT": {
+        "active": false,
+        "ended": 1532649600,
+        "name": "Hat.Exchange",
+        "started": 1508284800,
+        "symbol": "HAT",
+        "type": "ethereum token"
+    },
+    "HB": {
+        "name": "HeartBout",
+        "started": 1521835971,
+        "symbol": "HB",
+        "type": "ethereum token"
+    },
+    "HBT": {
+        "name": "Hubii Network",
+        "started": 1503532800,
+        "symbol": "HBT",
+        "type": "ethereum token"
     },
     "HC": {
         "name": "HyperCash",

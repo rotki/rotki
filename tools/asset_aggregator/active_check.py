@@ -162,6 +162,11 @@ MANUALLY_CHECKED = {
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'FT-2': True,
+    # On 05/04/2019 GreenMed Token is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/greenmed/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'GRMD': True,
 }
 
 

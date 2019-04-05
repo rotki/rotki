@@ -397,6 +397,21 @@ KNOWN_TO_MISS_FROM_CMC = (
     # Fund Yourself Now (FYN) missing from API but is in
     # https://coinmarketcap.com/currencies/fundyourselfnow/
     'FYN',
+    # Globitex (https://www.cryptocompare.com/coins/gbxt/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'GBX-2',
+    # Gimli missing from API but is in
+    # https://coinmarketcap.com/currencies/gimli/
+    'GIM',
+    # Gladius token missing from API but is in
+    # https://coinmarketcap.com/currencies/gladius-token/
+    'GLA',
+    # Mercury Protocol missing from API but is in
+    # https://coinmarketcap.com/currencies/mercury-protocol/
+    'GMT',
+    # Hawala exchange token missing from API but is in
+    # https://coinmarketcap.com/currencies/hat-exchange/
+    'HAT',
 )
 
 
@@ -500,6 +515,15 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen FT is Fabric Token and FT-2 is FCoin
     'FT': 2768,
     'FT-2': 2904,
+    # For Rotkehlchen GENE is ParkGene and GENE-2 is Gene Source Code Chain
+    'GENE': 2720,
+    'GENE-2': 3297,
+    # For Rotkehlchen GET is Guaranteed Entrance Token and GET-2 is Themis
+    'GET': 2354,
+    'GET-2': 3127,
+    # For Rotkehlchen GOT is Go Network Token and GOT-2 is ParkinGo
+    'GOT': 2898,
+    'GOT-2': 3251,
 }
 
 
