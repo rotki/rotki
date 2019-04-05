@@ -418,6 +418,10 @@ ETH_TOKENS_JSON_TO_WORLD = {
     'FT (FCoin)': 'FT-2',
     'FXC (Flexacoin)': 'FXC',
     'GANA (1)': 'GANA',
+    'GBX': 'GBX-2',
+    'GENE (Gene Source Code Chain)': 'GENE-2',
+    'GET (Themis)': 'GET-2',
+    'GOT (ParkingGO)': 'GOT-2',
 }
 UNSUPPORTED_ETH_TOKENS_JSON = (
     '$FFC',
@@ -559,6 +563,24 @@ UNSUPPORTED_ETH_TOKENS_JSON = (
     'FXC',
     'Fzcoin',
     'GANA (1)',
+    'GAVEL',
+    'GBT',
+    'GCP',
+    'GEE',
+    'GELD',
+    'GIF',
+    'GNY',
+    'GOLDX',
+    'GROO',
+    'GROW',
+    'GTKT',
+    'GULD',
+    'GXC',
+    'GXVC',
+    'GZB',
+    'GZR',
+    'HAK',
+    'HAPPY',
 )
 
 MOVED_ETH_TOKENS = {
