@@ -3090,6 +3090,11 @@
     "decimal": 16
   },
   {
+    "address": "0x7CC62d8E80Be9bEa3947F3443aD136f50f75b505",
+    "symbol": "KNT (Knekted)",
+    "decimal": 18
+  },
+  {
     "address": "0xb5C33F965C8899D255c34CDD2A3efA8AbCbB3DeA",
     "symbol": "KPR",
     "decimal": 18
