@@ -424,6 +424,39 @@ KNOWN_TO_MISS_FROM_CMC = (
     # ICOS token missing from API but is in
     # https://coinmarketcap.com/currencies/icos/
     'ICOS',
+    # JOYSO (https://www.cryptocompare.com/coins/joystar/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'JOY',
+    # Kuende (https://www.cryptocompare.com/coins/kue/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'KUE',
+    # Lendconnect is missing from API but is in
+    # https://coinmarketcap.com/currencies/lendconnect/
+    'LCT',
+    # Liquorchain (https://etherscan.io/address/0x4A37A91eec4C97F9090CE66d21D3B3Aadf1aE5aD)
+    # is not in coinmarketcap but is in paprika
+    'LCT-2',
+    # Logarithm (https://www.cryptocompare.com/coins/lgr/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'LGR',
+    # Link Platform missing from API but is in
+    # https://coinmarketcap.com/currencies/link-platform/
+    'LNK',
+    # Live Start missing from API but is in
+    # https://coinmarketcap.com/currencies/live-stars/
+    'LIVE',
+    # Linker Coin  missing from API but is in
+    # https://coinmarketcap.com/currencies/linker-coin/
+    'LNC-2',
+    # Locus Chain (https://etherscan.io/address/0xC64500DD7B0f1794807e67802F8Abbf5F8Ffb054)
+    # is not in coinmarketcap but is in paprika
+    'LOCUS',
+    # Embers (https://coinmarketcap.com/currencies/embers/)
+    # is not in coinmarketcap but is in cryptocompare
+    'MBRS',
+    # Musiconomi (https://coinmarketcap.com/currencies/musiconomi/)
+    # is not in coinmarketcap but is in cryptocompare
+    'MCI',
 )
 
 
@@ -539,6 +572,9 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen HMC is Hi Mutual Society and HMC-2 is Harmony Coin
     'HMC': 2484,
     'HMC-2': 1832,
+    # For Rotkehlchen KNT is Kora Network Token and KNT-2 is Knekted
+    'KNT': 3086,
+    'KNT-2': 3383,
 }
 
 

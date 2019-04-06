@@ -29,6 +29,10 @@ MANUALLY_CHECKED_TYPES = {
     'FLX': 'ethereum token',
     'FORK-2': 'ethereum token',
     'HKG': 'ethereum token',
+    'JOY': 'ethereum token',
+    'KUE': 'ethereum token',
+    'LCT-2': 'ethereum token',
+    'LGR': 'ethereum token',
 }
 
 
@@ -50,7 +54,7 @@ def typeinfo_check(
         elif paprika_data['type'] == 'token':
 
             # a special case for which paprika has wrong/corrupt parent data
-            if asset_symbol in ('ZIL', 'WTC'):
+            if asset_symbol in ('ZIL', 'WTC', 'KIN', 'LOCUS'):
                 our_data[asset_symbol]['type'] = 'ethereum token'
                 return our_data
 

@@ -3483,11 +3483,35 @@
         "symbol": "IDH",
         "type": "ethereum token"
     },
+    "IDXM": {
+        "name": "IDEX Membership",
+        "started": 1516214877,
+        "symbol": "IDXM",
+        "type": "ethereum token"
+    },
+    "IETH": {
+        "name": "iEthereum",
+        "started": 1507543294,
+        "symbol": "IETH",
+        "type": "ethereum token"
+    },
     "IFC": {
         "name": "Infinitecoin",
         "started": 1370390400,
         "symbol": "IFC",
         "type": "own chain"
+    },
+    "IFT": {
+        "name": "InvestFeed",
+        "started": 1498608000,
+        "symbol": "IFT",
+        "type": "ethereum token"
+    },
+    "IG": {
+        "name": "IGToken",
+        "started": 1532199440,
+        "symbol": "IG",
+        "type": "ethereum token"
     },
     "IGNIS": {
         "name": "Ignis",
@@ -3501,16 +3525,58 @@
         "symbol": "IHT",
         "type": "ethereum token"
     },
+    "IMT": {
+        "name": "Moneytoken",
+        "started": 1524700800,
+        "symbol": "IMT",
+        "type": "ethereum token"
+    },
     "INCNT": {
         "name": "Incent",
         "started": 1473120000,
         "symbol": "INCNT",
         "type": "waves token"
     },
+    "IND": {
+        "name": "Indorse Token",
+        "started": 1502181444,
+        "symbol": "IND",
+        "type": "ethereum token"
+    },
+    "ING": {
+        "name": "Iungo",
+        "started": 1505952000,
+        "symbol": "ING",
+        "type": "ethereum token"
+    },
     "INS": {
         "name": "Insolar",
         "started": 1512345600,
         "symbol": "INS",
+        "type": "ethereum token"
+    },
+    "INSTAR": {
+        "name": "Insights Network",
+        "started": 1519774537,
+        "symbol": "INSTAR",
+        "type": "ethereum token"
+    },
+    "INT": {
+        "name": "Internet Node Token",
+        "started": 1503742714,
+        "symbol": "INT",
+        "type": "ethereum token"
+    },
+    "INV": {
+        "name": "Invacio",
+        "started": 1520812800,
+        "symbol": "INV",
+        "type": "ethereum token"
+    },
+    "INXT": {
+        "name": "Internxt",
+        "started": 1499558400,
+        "symbol": "INXT",
         "type": "ethereum token"
     },
     "IOC": {
@@ -3549,11 +3615,71 @@
         "symbol": "IOTX",
         "type": "ethereum token"
     },
+    "IPL": {
+        "name": "VouchForMe",
+        "started": 1516096372,
+        "symbol": "IPL",
+        "type": "ethereum token"
+    },
+    "IPSX": {
+        "name": "IP Exchange",
+        "started": 1504828800,
+        "symbol": "IPSX",
+        "type": "ethereum token"
+    },
+    "IQN": {
+        "name": "IQeon",
+        "started": 1513412375,
+        "symbol": "IQN",
+        "type": "ethereum token"
+    },
+    "ITC": {
+        "name": "IoT Chain",
+        "started": 1511511469,
+        "symbol": "ITC",
+        "type": "ethereum token"
+    },
+    "ITT": {
+        "name": "Intelligent Trading Foundation",
+        "started": 1503014400,
+        "symbol": "ITT",
+        "type": "ethereum token"
+    },
+    "IVY": {
+        "name": "Ivy",
+        "started": 1523827334,
+        "symbol": "IVY",
+        "type": "ethereum token"
+    },
     "IXC": {
         "name": "Ixcoin",
         "started": 1312934400,
         "symbol": "IXC",
         "type": "own chain"
+    },
+    "IXT": {
+        "name": "IXT",
+        "started": 1499739698,
+        "symbol": "IXT",
+        "type": "ethereum token"
+    },
+    "J8T": {
+        "name": "JET8",
+        "started": 1517443200,
+        "symbol": "J8T",
+        "type": "ethereum token"
+    },
+    "JC": {
+        "name": "Jesus Coin",
+        "started": 1505174400,
+        "symbol": "JC",
+        "type": "ethereum token"
+    },
+    "JET": {
+        "name": "Jetcoin",
+        "started": 1504820140,
+        "symbol": "JET",
+        "type": "ethereum token"
     },
     "JNT": {
         "name": "Jibrel Network",
@@ -3561,10 +3687,28 @@
         "symbol": "JNT",
         "type": "ethereum token"
     },
+    "JOT": {
+        "name": "Jury.Online Token",
+        "started": 1508627153,
+        "symbol": "JOT",
+        "type": "ethereum token"
+    },
+    "JOY": {
+        "name": "JOYSO",
+        "started": 1516340947,
+        "symbol": "JOY",
+        "type": "ethereum token"
+    },
     "JPY": {
         "name": "Japanese Yen",
         "symbol": "JPY",
         "type": "fiat"
+    },
+    "KAN": {
+        "name": "BitKan",
+        "started": 1518577961,
+        "symbol": "KAN",
+        "type": "ethereum token"
     },
     "KDC": {
         "active": false,
@@ -3581,7 +3725,7 @@
         "type": "ethereum token"
     },
     "KEY-2": {
-        "name": "KEY",
+        "name": "Bihu KEY",
         "started": 1507822985,
         "symbol": "KEY",
         "type": "ethereum token"
@@ -3598,6 +3742,24 @@
         "name": "Kraken fees",
         "symbol": "KFEE",
         "type": "exchange specific"
+    },
+    "KICK": {
+        "name": "KickCoin",
+        "started": 1501027200,
+        "symbol": "KICK",
+        "type": "ethereum token"
+    },
+    "KIN": {
+        "name": "Kin",
+        "started": 1495670400,
+        "symbol": "KIN",
+        "type": "ethereum token"
+    },
+    "KIND": {
+        "name": "Kind Ads Token",
+        "started": 1529166283,
+        "symbol": "KIND",
+        "type": "ethereum token"
     },
     "KMD": {
         "name": "Komodo",
@@ -3617,16 +3779,70 @@
         "symbol": "KNC",
         "type": "own chain"
     },
+    "KNDC": {
+        "name": "KanadeCoin",
+        "started": 1525019861,
+        "symbol": "KNDC",
+        "type": "ethereum token"
+    },
+    "KNT": {
+        "name": "Kora Network Token",
+        "started": 1529938379,
+        "symbol": "KNT",
+        "type": "ethereum token"
+    },
+    "KNT-2": {
+        "name": "Knekted",
+        "started": 1531936431,
+        "symbol": "KNT",
+        "type": "ethereum token"
+    },
     "KORE": {
         "name": "Kore",
         "started": 1402790400,
         "symbol": "KORE",
         "type": "own chain"
     },
+    "KRL": {
+        "name": "Kryll",
+        "started": 1525085278,
+        "symbol": "KRL",
+        "type": "ethereum token"
+    },
     "KRW": {
         "name": "Korean won",
         "symbol": "KRW",
         "type": "fiat"
+    },
+    "KUE": {
+        "name": "Kuende",
+        "started": 1528675200,
+        "symbol": "KUE",
+        "type": "ethereum token"
+    },
+    "KWATT": {
+        "name": "4NEW",
+        "started": 1534783482,
+        "symbol": "KWATT",
+        "type": "ethereum token"
+    },
+    "LA": {
+        "name": "LATOKEN",
+        "started": 1507600800,
+        "symbol": "LA",
+        "type": "ethereum token"
+    },
+    "LALA": {
+        "name": "LALA World",
+        "started": 1507939200,
+        "symbol": "LALA",
+        "type": "ethereum token"
+    },
+    "LATX": {
+        "name": "LatiumX",
+        "started": 1504051200,
+        "symbol": "LATX",
+        "type": "ethereum token"
     },
     "LBA": {
         "name": "Cred",
@@ -3640,6 +3856,32 @@
         "symbol": "LBC",
         "type": "own chain"
     },
+    "LCS": {
+        "name": "LocalCoinSwap",
+        "started": 1521030728,
+        "symbol": "LCS",
+        "type": "ethereum token"
+    },
+    "LCT": {
+        "active": false,
+        "ended": 1524268800,
+        "name": "LendConnect",
+        "started": 1511263649,
+        "symbol": "LCT",
+        "type": "ethereum token"
+    },
+    "LCT-2": {
+        "name": "Liquor chain",
+        "started": 1527811200,
+        "symbol": "LCT",
+        "type": "ethereum token"
+    },
+    "LDC": {
+        "name": "Leadcoin",
+        "started": 1519729218,
+        "symbol": "LDC",
+        "type": "ethereum token"
+    },
     "LEAF": {
         "active": false,
         "ended": 1525996800,
@@ -3648,10 +3890,58 @@
         "symbol": "LEAF",
         "type": "own chain"
     },
+    "LEDU": {
+        "name": "Education Ecosystem",
+        "started": 1508803200,
+        "symbol": "LEDU",
+        "type": "ethereum token"
+    },
+    "LEMO": {
+        "name": "LemoChain",
+        "started": 1530968235,
+        "symbol": "LEMO",
+        "type": "ethereum token"
+    },
     "LEND": {
         "name": "ETHLend",
         "started": 1502755200,
         "symbol": "LEND",
+        "type": "ethereum token"
+    },
+    "LEV": {
+        "name": "Leverj",
+        "started": 1510012800,
+        "symbol": "LEV",
+        "type": "ethereum token"
+    },
+    "LGO": {
+        "name": "LGO Exchange",
+        "started": 1517443200,
+        "symbol": "LGO",
+        "type": "ethereum token"
+    },
+    "LGR": {
+        "name": "Logarithm",
+        "started": 1509543413,
+        "symbol": "LGR",
+        "type": "ethereum token"
+    },
+    "LIF": {
+        "name": "Winding Tree",
+        "started": 1517270400,
+        "symbol": "LIF",
+        "type": "ethereum token"
+    },
+    "LIFE": {
+        "name": "LIFE",
+        "started": 1499613984,
+        "symbol": "LIFE",
+        "type": "ethereum token"
+    },
+    "LIKE": {
+        "name": "LikeCoin",
+        "started": 1518083488,
+        "symbol": "LIKE",
         "type": "ethereum token"
     },
     "LINK": {
@@ -3660,11 +3950,76 @@
         "symbol": "LINK",
         "type": "ethereum token"
     },
+    "LIVE": {
+        "active": false,
+        "ended": 1549065600,
+        "name": "Live Stars",
+        "started": 1505981621,
+        "symbol": "LIVE",
+        "type": "ethereum token"
+    },
+    "LKY": {
+        "active": true,
+        "name": "Linkey",
+        "started": 1521962096,
+        "symbol": "LKY",
+        "type": "ethereum token"
+    },
     "LMC": {
         "name": "LoMoCoin",
         "started": 1460937600,
         "symbol": "LMC",
         "type": "own chain"
+    },
+    "LML": {
+        "name": "Lisk Machine Learning",
+        "started": 1540179034,
+        "symbol": "LML",
+        "type": "ethereum token"
+    },
+    "LNC": {
+        "name": "Blocklancer",
+        "started": 1497830400,
+        "symbol": "LNC",
+        "type": "ethereum token"
+    },
+    "LNC-2": {
+        "name": "Linker Coin",
+        "started": 1512913904,
+        "symbol": "LNC",
+        "type": "ethereum token"
+    },
+    "LND": {
+        "name": "Lendingblock",
+        "started": 1520261623,
+        "symbol": "LND",
+        "type": "ethereum token"
+    },
+    "LNK": {
+        "active": false,
+        "ended": 1522886400,
+        "name": "Link Platform",
+        "started": 1491868800,
+        "symbol": "LNK",
+        "type": "ethereum token"
+    },
+    "LOC": {
+        "name": "LockTrip",
+        "started": 1506129300,
+        "symbol": "LOC",
+        "type": "ethereum token"
+    },
+    "LOCI": {
+        "name": "LOCIcoin",
+        "started": 1512419503,
+        "symbol": "LOCI",
+        "type": "ethereum token"
+    },
+    "LOCUS": {
+        "name": "Locus Chain",
+        "started": 1523348276,
+        "symbol": "LOCUS",
+        "type": "ethereum token"
     },
     "LOOM": {
         "name": "Loom Network",
@@ -3718,10 +4073,22 @@
         "symbol": "LTCX",
         "type": "own chain"
     },
+    "LUC": {
+        "name": "Level Up Coin",
+        "started": 1520812800,
+        "symbol": "LUC",
+        "type": "ethereum token"
+    },
     "LUN": {
         "name": "Lunyr",
         "started": 1488931200,
         "symbol": "LUN",
+        "type": "ethereum token"
+    },
+    "LYM": {
+        "name": "Lympo",
+        "started": 1514332800,
+        "symbol": "LYM",
         "type": "ethereum token"
     },
     "MAID": {
@@ -3729,6 +4096,12 @@
         "started": 1398655286,
         "symbol": "MAID",
         "type": "omni token"
+    },
+    "MAN": {
+        "name": "Matrix AI Network",
+        "started": 1514678400,
+        "symbol": "MAN",
+        "type": "ethereum token"
     },
     "MANA": {
         "name": "Decentraland",
@@ -3744,6 +4117,12 @@
         "symbol": "MARS",
         "type": "own chain"
     },
+    "MAS": {
+        "name": "MidasProtocol",
+        "started": 1530285057,
+        "symbol": "MAS",
+        "type": "ethereum token"
+    },
     "MAX": {
         "name": "Maxcoin",
         "started": 1391644800,
@@ -3755,6 +4134,29 @@
         "started": 1393200000,
         "symbol": "MAZA",
         "type": "own chain"
+    },
+    "MBRS": {
+        "active": false,
+        "ended": 1549411200,
+        "name": "Embers",
+        "started": 1494547200,
+        "symbol": "MBRS",
+        "type": "ethereum token"
+    },
+    "MCAP": {
+        "active": true,
+        "name": "MCAP",
+        "started": 1495634538,
+        "symbol": "MCAP",
+        "type": "ethereum token"
+    },
+    "MCI": {
+        "active": false,
+        "ended": 1549411200,
+        "name": "Musiconomi",
+        "started": 1499644800,
+        "symbol": "MCI",
+        "type": "ethereum token"
     },
     "MCN": {
         "active": false,
@@ -3774,6 +4176,12 @@
         "name": "Moeda Loyalty Points",
         "started": 1500249600,
         "symbol": "MDA",
+        "type": "ethereum token"
+    },
+    "MDS": {
+        "name": "MediShares",
+        "started": 1511415196,
+        "symbol": "MDS",
         "type": "ethereum token"
     },
     "MEC": {
