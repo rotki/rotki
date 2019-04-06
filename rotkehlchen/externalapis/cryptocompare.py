@@ -200,6 +200,9 @@ WORLD_TO_CRYPTOCOMPARE = {
     # For Rotkehlchen GOT is Go Network Token and GOT-2 is ParkinGo, cryptocompare
     # does not have ParkinGO and Go Network Token is GOT*
     'GOT': 'GOT*',
+    # For Rotkehlchen HMC is Hi Mutual Society and HMC-2 is Harmony Coin, in
+    # cryptocompare HMC is the same but HMC* is (perhaps) Harmony Coin
+    'HMC-2': 'HMC*',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also
@@ -496,5 +499,7 @@ class Cryptocompare():
         data['GENE*'] = object()
         # This is GazeCoin (https://coinmarketcap.com/currencies/gazecoin/)
         data['GZE'] = object()
+        # This is probaly HarmonyCoin (https://coinmarketcap.com/currencies/harmonycoin-hmc/)
+        data['HMC*'] = object()
 
         return data

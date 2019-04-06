@@ -3295,6 +3295,12 @@
         "symbol": "HBT",
         "type": "ethereum token"
     },
+    "HBZ": {
+        "name": "HBZ coin",
+        "started": 1518011362,
+        "symbol": "HBZ",
+        "type": "ethereum token"
+    },
     "HC": {
         "name": "HyperCash",
         "started": 1503240899,
@@ -3309,10 +3315,58 @@
         "symbol": "HC",
         "type": "own chain"
     },
+    "HDG": {
+        "name": "Hedge",
+        "started": 1504051200,
+        "symbol": "HDG",
+        "type": "ethereum token"
+    },
+    "HER": {
+        "name": "HeroNode",
+        "started": 1523947699,
+        "symbol": "HER",
+        "type": "ethereum token"
+    },
+    "HGT": {
+        "name": "HelloGold",
+        "started": 1503635388,
+        "symbol": "HGT",
+        "type": "ethereum token"
+    },
+    "HKG": {
+        "name": "Hacker Gold",
+        "started": 1476921600,
+        "symbol": "HKG",
+        "type": "ethereum token"
+    },
+    "HKN": {
+        "name": "Hacken",
+        "started": 1504051200,
+        "symbol": "HKN",
+        "type": "ethereum token"
+    },
+    "HMC": {
+        "name": "Hi Mutual Society",
+        "started": 1503964800,
+        "symbol": "HMC",
+        "type": "ethereum token"
+    },
+    "HMC-2": {
+        "name": "HarmonyCoin",
+        "started": 1500921003,
+        "symbol": "HMC",
+        "type": "own chain"
+    },
     "HMQ": {
         "name": "Humaniq",
         "started": 1481414400,
         "symbol": "HMQ",
+        "type": "ethereum token"
+    },
+    "HORSE": {
+        "name": "Ethorse",
+        "started": 1513036800,
+        "symbol": "HORSE",
         "type": "ethereum token"
     },
     "HOT": {
@@ -3331,6 +3385,12 @@
         "name": "Decision Token",
         "started": 1507161600,
         "symbol": "HST",
+        "type": "ethereum token"
+    },
+    "HT": {
+        "name": "Huobi Token",
+        "started": 1516579200,
+        "symbol": "HT",
         "type": "ethereum token"
     },
     "HUC": {
@@ -3361,6 +3421,12 @@
         "symbol": "HVC",
         "type": "own chain"
     },
+    "HVN": {
+        "name": "Hiveterminal Token",
+        "started": 1502668800,
+        "symbol": "HVN",
+        "type": "ethereum token"
+    },
     "HXRO": {
         "name": "Hxro",
         "started": 1545350400,
@@ -3387,10 +3453,22 @@
         "symbol": "HZ",
         "type": "own chain"
     },
+    "ICE": {
+        "name": "iDice",
+        "started": 1497225259,
+        "symbol": "ICE",
+        "type": "ethereum token"
+    },
     "ICN": {
         "name": "Iconomi",
         "started": 1472083200,
         "symbol": "ICN",
+        "type": "ethereum token"
+    },
+    "ICOS": {
+        "name": "ICO box",
+        "started": 1498867200,
+        "symbol": "ICOS",
         "type": "ethereum token"
     },
     "ICX": {
@@ -3398,6 +3476,12 @@
         "started": 1508803200,
         "symbol": "ICX",
         "type": "own chain"
+    },
+    "IDH": {
+        "name": "indaHash",
+        "started": 1510141391,
+        "symbol": "IDH",
+        "type": "ethereum token"
     },
     "IFC": {
         "name": "Infinitecoin",

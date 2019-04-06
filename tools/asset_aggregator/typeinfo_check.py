@@ -28,6 +28,7 @@ MANUALLY_CHECKED_TYPES = {
     'FIH': 'ethereum token',
     'FLX': 'ethereum token',
     'FORK-2': 'ethereum token',
+    'HKG': 'ethereum token',
 }
 
 

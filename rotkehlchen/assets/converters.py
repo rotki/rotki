@@ -422,6 +422,8 @@ ETH_TOKENS_JSON_TO_WORLD = {
     'GENE (Gene Source Code Chain)': 'GENE-2',
     'GET (Themis)': 'GET-2',
     'GOT (ParkingGO)': 'GOT-2',
+    'HOT (Holo)': 'HOT',
+    'HOT (Hydro)': 'HOT-2',
 }
 UNSUPPORTED_ETH_TOKENS_JSON = (
     '$FFC',
@@ -581,6 +583,21 @@ UNSUPPORTED_ETH_TOKENS_JSON = (
     'GZR',
     'HAK',
     'HAPPY',
+    'HDL',
+    'Hdp',
+    'Hdp.ф',
+    'HEY',
+    'HIBT',
+    'HIG',
+    'HKY',
+    'HLX',
+    'HNST',
+    'HODL',  # This is a fake token? Etherscan website points to the actual HODL coin
+    'HPB',  # This is a fake token? Etherscan website points to the actual coin
+    'HV',
+    'IAD',
+    'ICO',
+    'IDEA',
 )
 
 MOVED_ETH_TOKENS = {

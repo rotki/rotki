@@ -85,6 +85,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'FIH',
     'FLX',
     'FORK-2',
+    'HKG',
 )
 
 
@@ -287,6 +288,9 @@ WORLD_TO_PAPRIKA_ID = {
     'GOT-2': 'got-parkingo',
     # For Rotkehlchen GTC is Game.com
     'GTC': 'gtc-gamecom',
+    # For Rotkehlchen HMC is Hi Mutual Society and HMC-2 is Harmony Coin
+    'HMC': 'hmc-hi-mutual-society',
+    'HMC-2': 'hmc-harmonycoin',
 }
 
 

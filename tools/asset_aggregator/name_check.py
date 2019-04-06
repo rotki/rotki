@@ -26,6 +26,7 @@ MANUALLY_CHECKED_NAMES = {
     'FIH': 'FidelityHouse',
     'FLX': 'BitFlux',
     'FORK-2': 'Gastro Advisor Token',
+    'HKG': 'Hacker Gold',
 }
 
 
