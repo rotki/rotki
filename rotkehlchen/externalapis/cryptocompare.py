@@ -214,6 +214,17 @@ WORLD_TO_CRYPTOCOMPARE = {
     'LOC': 'LOC*',
     # For Rotkehlchen MAN is Matrix AI Network but in cryptocompare it's MAN*
     'MAN': 'MAN*',
+    # For Rotkehlchen MDT is Measurable Data Token but in cryptocompare it's MDT*
+    'MDT': 'MDT*',
+    # For Rotkehlchen MNT is Media Network Token but in cryptocompare it's MNT*
+    'MNT': 'MNT*',
+    # For Rotkehlchen MRP is MoneyReel but in cryptocompare it's MRP*
+    'MRP': 'MRP*',
+    # For Rotkehlchen MTC is doc.com Token and MTC-2 is Mesh Network but in
+    # cryptocompare Mesh Network is MTCMN
+    'MTC-2': 'MTCMN',
+    # For Rotkehlchen MTN is Medical Token but it's MTN* in cryptocompare
+    'MTN': 'MTN*',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also
@@ -458,6 +469,12 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # Midas Protocol (https://coinmarketcap.com/currencies/midasprotocol/)
     # is not in cryptocompare but is in paprika
     'MAS',
+    # Meshbox (https://coinlib.io/coin/MESH/MeshBox)
+    # is not in cryptocompare but is in paprika
+    'MESH',
+    # Nami ICO (https://etherscan.io/address/0x8d80de8A78198396329dfA769aD54d24bF90E7aa)
+    # is not in cryptocompate but is in paprika
+    'NAC',
 )
 
 
@@ -547,5 +564,7 @@ class Cryptocompare():
         data['HMC*'] = object()
         # This is IoTChain (https://coinmarketcap.com/currencies/iot-chain/)
         data['ITC'] = object()
+        # This is MFTU (https://coinmarketcap.com/currencies/mainstream-for-the-underground/)
+        data['MFTU'] = object()
 
         return data

@@ -203,8 +203,8 @@ def main():
         with open(os.path.join(root_path, 'rotkehlchen', 'data', 'eth_tokens.json'), 'r') as f:
             token_data = rlk_jsonloads(f.read())
 
-        start = 680
-        stop_after = start + 3
+        start = 720
+        stop_after = start + 17
         input_data = {}
         for index, entry in enumerate(token_data[start:], start):
             token_symbol = entry['symbol']

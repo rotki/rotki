@@ -177,6 +177,16 @@ MANUALLY_CHECKED = {
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'MCAP': True,
+    # On 06/04/2019 MindexCoin is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/mindexcoin/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'MIC': True,
+    # On 06/04/2019 ModulTrade is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/modultrade/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'MTRC': True,
 }
 
 

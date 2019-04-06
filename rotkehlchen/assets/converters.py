@@ -432,6 +432,12 @@ ETH_TOKENS_JSON_TO_WORLD = {
     'LINK Platform': 'LNK',
     'LNC (Linker Coin)': 'LNC-2',
     'LYM (1)': 'LYM',
+    'MESH': 'BMH',
+    'MESH (Meshbox)': 'MESH',
+    'MLN (new)': 'MLN',
+    'MORE (Mithril Ore)': 'MORE-2',
+    'MTC (MTC Mesh Network)': 'MTC-2',
+    'MTRc': 'MTRC',
 }
 UNSUPPORTED_ETH_TOKENS_JSON = (
     '$FFC',
@@ -634,6 +640,16 @@ UNSUPPORTED_ETH_TOKENS_JSON = (
     'MAD',
     'MART',
     'MBCASH',
+    'MEST',
+    'MIT',
+    'MIT (Mychatcoin)',
+    'MKT',
+    'MOZO',
+    'MRL',
+    'MTR',
+    'MUSD',
+    'MUXE',
+    'MYD',
 )
 
 MOVED_ETH_TOKENS = {
@@ -652,6 +668,7 @@ MOVED_ETH_TOKENS = {
     'LEMO (2)': 'LEMO',
     'LEMO (1)': 'LEMO',
     'LYM': 'LYM (1)',
+    'MLN (old)': 'MLN (new)',
 }
 
 
