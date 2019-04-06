@@ -86,6 +86,9 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'FLX',
     'FORK-2',
     'HKG',
+    'JOY',
+    'KUE',
+    'LGR',
 )
 
 
@@ -291,6 +294,17 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen HMC is Hi Mutual Society and HMC-2 is Harmony Coin
     'HMC': 'hmc-hi-mutual-society',
     'HMC-2': 'hmc-harmonycoin',
+    # For Rotkehlchen IPL is InsurePal (for some reason has 2 entires in paprika)
+    'IPL': 'ipl-vouchforme',
+    # For Rotkehlchen KNT is Kora Network Token and KNT-2 is Knekted
+    'KNT': 'knt-kora-network-token',
+    'KNT-2': 'knt-knekted',
+    # For Rotkehlchen LCT is LendConnect  and LCT-2 is Liquor-chain
+    'LCT': 'lct-lendconnect',
+    'LCT-2': 'lct-liquor-chain',
+    # For Rotkehlchen LNC is Blocklancer  and LNC-2 is Linker Coin
+    'LNC': 'lnc-blocklancer',
+    'LNC-2': 'lnc-linker-coin',
 }
 
 
@@ -363,6 +377,7 @@ def get_paprika_data_eth_token_address(
 KNOWN_WRONG_PAPRIKA_DATA = (
     'COIN',  # For Coinvest paprika has the old non-migrated contract address
     'DUBI',  # For Decentralized Universal Basic Income paprika has the old contract address
+    'LYM',  # For LYMPO paprika has the old contract address
 )
 
 

@@ -167,6 +167,16 @@ MANUALLY_CHECKED = {
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'GRMD': True,
+    # On 06/04/2019 Linkey is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/linkey/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'LKY': True,
+    # On 06/04/2019 MCAP is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/mcap/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'MCAP': True,
 }
 
 

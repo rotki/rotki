@@ -203,6 +203,17 @@ WORLD_TO_CRYPTOCOMPARE = {
     # For Rotkehlchen HMC is Hi Mutual Society and HMC-2 is Harmony Coin, in
     # cryptocompare HMC is the same but HMC* is (perhaps) Harmony Coin
     'HMC-2': 'HMC*',
+    # For Rotkehlchen INV is Invacio but it's INV* in cryptocompare
+    'INV': 'INV*',
+    # For Rotkehlchen JOY is Joy but it's INV* in cryptocompare
+    'JOY': 'JOY*',
+    # For Rotkehlchen LNC is Blocklancer  and LNC-2 is Linker Coin, but for
+    # cryptocompare linker coin is LNC*
+    'LNC-2': 'LNC*',
+    # For Rotkehlchen LOC is LockTrip but in cryptocompare it's LOC*
+    'LOC': 'LOC*',
+    # For Rotkehlchen MAN is Matrix AI Network but in cryptocompare it's MAN*
+    'MAN': 'MAN*',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also
@@ -413,7 +424,40 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     'GOT-2',
     # GSENetwork (https://coinmarketcap.com/currencies/gsenetwork/)
     # is not in cryptocompare but is in paprika
-    'GSE'
+    'GSE',
+    # Jury.Online Token (https://coinmarketcap.com/currencies/jury-online-token/)
+    # is not in cryptocompare but is in paprika
+    'JOT',
+    # KanadeCoin (https://coinmarketcap.com/currencies/kanadecoin/)
+    # is not in cryptocompare but is in paprika
+    'KNDC',
+    # KoraNetworkToken (https://coinmarketcap.com/currencies/kora-network-token/)
+    # is not in cryptocompare but is in paprika
+    'KNT',
+    # Knekted (https://coinmarketcap.com/currencies/knekted/)
+    # is not in cryptocompare but is in paprika
+    'KNT-2',
+    # 4NEW KWATT (https://coinmarketcap.com/currencies/4new/)
+    # is not in cryptocompare but is in paprika
+    'KWATT',
+    # Liquorchain Token (https://etherscan.io/address/0x4A37A91eec4C97F9090CE66d21D3B3Aadf1aE5aD)
+    # is not in cryptocompare but is in paprika
+    'LCT-2',
+    # LemoChain (https://coinmarketcap.com/currencies/lemochain/)
+    # is not in cryptocompare but is in paprika
+    'LEMO',
+    # Linkey (https://coinmarketcap.com/currencies/linkey/)
+    # is not in cryptocompare but is in paprika
+    'LKY',
+    # Lisk Machine Learning (https://coinmarketcap.com/currencies/lisk-machine-learning/)
+    # is not in cryptocompare but is in paprika
+    'LML',
+    # Locus Chain (https://etherscan.io/address/0xC64500DD7B0f1794807e67802F8Abbf5F8Ffb054)
+    # is not in cryptocompare but is in paprika
+    'LOCUS',
+    # Midas Protocol (https://coinmarketcap.com/currencies/midasprotocol/)
+    # is not in cryptocompare but is in paprika
+    'MAS',
 )
 
 
@@ -501,5 +545,7 @@ class Cryptocompare():
         data['GZE'] = object()
         # This is probaly HarmonyCoin (https://coinmarketcap.com/currencies/harmonycoin-hmc/)
         data['HMC*'] = object()
+        # This is IoTChain (https://coinmarketcap.com/currencies/iot-chain/)
+        data['ITC'] = object()
 
         return data
