@@ -89,6 +89,10 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'JOY',
     'KUE',
     'LGR',
+    'MILC',
+    'MNT',
+    'MRP',
+    'MRV',
 )
 
 
@@ -299,12 +303,15 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen KNT is Kora Network Token and KNT-2 is Knekted
     'KNT': 'knt-kora-network-token',
     'KNT-2': 'knt-knekted',
-    # For Rotkehlchen LCT is LendConnect  and LCT-2 is Liquor-chain
+    # For Rotkehlchen LCT is LendConnect and LCT-2 is Liquor-chain
     'LCT': 'lct-lendconnect',
     'LCT-2': 'lct-liquor-chain',
-    # For Rotkehlchen LNC is Blocklancer  and LNC-2 is Linker Coin
+    # For Rotkehlchen LNC is Blocklancer and LNC-2 is Linker Coin
     'LNC': 'lnc-blocklancer',
     'LNC-2': 'lnc-linker-coin',
+    # For Rotkehlchen MTC is doc.com Token and MTC-2 is Mesh Network
+    'MTC': 'mtc-docademic',
+    'MTC-2': 'mtc-mtc-mesh-network',
 }
 
 

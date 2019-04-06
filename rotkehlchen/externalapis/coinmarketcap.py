@@ -457,6 +457,27 @@ KNOWN_TO_MISS_FROM_CMC = (
     # Musiconomi (https://coinmarketcap.com/currencies/musiconomi/)
     # is not in coinmarketcap but is in cryptocompare
     'MCI',
+    # Meshbox (https://coinlib.io/coin/MESH/MeshBox)
+    # is not in coinmarketcap but is in paprika
+    'MESH',
+    # Micro Licensing Coin (https://www.cryptocompare.com/coins/milc/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'MILC',
+    # Media Network Token (https://www.cryptocompare.com/coins/mntstar/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'MNT',
+    # Money Rebel (https://www.cryptocompare.com/coins/mrpstar/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'MRP',
+    # Macroverse (https://www.cryptocompare.com/coins/mrv/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'MRV',
+    # Mothership missing from API but is in
+    # https://coinmarketcap.com/currencies/mothership/
+    'MSP',
+    # Nami ICO (https://etherscan.io/address/0x8d80de8A78198396329dfA769aD54d24bF90E7aa)
+    # is not in coinmarketcap but is in paprika
+    'NAC',
 )
 
 
@@ -575,6 +596,9 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen KNT is Kora Network Token and KNT-2 is Knekted
     'KNT': 3086,
     'KNT-2': 3383,
+    # For Rotkehlchen MTC is doc.com Token and MTC-2 is Mesh Network
+    'MTC': 2711,
+    'MTC-2': 2936,
 }
 
 

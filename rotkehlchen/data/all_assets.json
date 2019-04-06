@@ -874,6 +874,12 @@
         "symbol": "BMC",
         "type": "ethereum token"
     },
+    "BMH": {
+        "name": "BlockMesh",
+        "started": 1518760148,
+        "symbol": "BMH",
+        "type": "ethereum token"
+    },
     "BMT": {
         "name": "BMChain",
         "started": 1502928000,
@@ -4184,6 +4190,12 @@
         "symbol": "MDS",
         "type": "ethereum token"
     },
+    "MDT": {
+        "name": "Measurable Data Token",
+        "started": 1508371200,
+        "symbol": "MDT",
+        "type": "ethereum token"
+    },
     "MEC": {
         "name": "Megacoin",
         "started": 1369785600,
@@ -4208,6 +4220,12 @@
         "symbol": "MER",
         "type": "waves token"
     },
+    "MESH": {
+        "name": "MeshBox",
+        "started": 1516844993,
+        "symbol": "MESH",
+        "type": "ethereum token"
+    },
     "MET": {
         "name": "Metronome",
         "started": 1526947200,
@@ -4220,10 +4238,47 @@
         "symbol": "META",
         "type": "ethereum token"
     },
+    "METM": {
+        "name": "MetaMorph",
+        "started": 1523786444,
+        "symbol": "METM",
+        "type": "ethereum token"
+    },
+    "MFG": {
+        "name": "SyncFab",
+        "started": 1508284800,
+        "symbol": "MFG",
+        "type": "ethereum token"
+    },
     "MFT": {
         "name": "Mainframe",
         "started": 1530662400,
         "symbol": "MFT",
+        "type": "ethereum token"
+    },
+    "MFTU": {
+        "name": "Mainstream For The Underground",
+        "started": 1524257161,
+        "symbol": "MFTU",
+        "type": "ethereum token"
+    },
+    "MGO": {
+        "name": "MobileGo",
+        "started": 1487203200,
+        "symbol": "MGO",
+        "type": "ethereum token"
+    },
+    "MIC": {
+        "active": true,
+        "name": "Mindexcoin",
+        "started": 1516296249,
+        "symbol": "MIC",
+        "type": "ethereum token"
+    },
+    "MILC": {
+        "name": "Micro Licensing Coin",
+        "started": 1524051691,
+        "symbol": "MILC",
         "type": "ethereum token"
     },
     "MIN": {
@@ -4244,6 +4299,18 @@
         "name": "Mithril",
         "started": 1517875200,
         "symbol": "MITH",
+        "type": "ethereum token"
+    },
+    "MITX": {
+        "name": "Morpheus Labs",
+        "started": 1518652800,
+        "symbol": "MITX",
+        "type": "ethereum token"
+    },
+    "MKR": {
+        "name": "Maker",
+        "started": 1439596800,
+        "symbol": "MKR",
         "type": "ethereum token"
     },
     "MLN": {
@@ -4275,6 +4342,24 @@
         "started": 1400889600,
         "symbol": "MMXIV",
         "type": "own chain"
+    },
+    "MNE": {
+        "name": "Minereum",
+        "started": 1492128000,
+        "symbol": "MNE",
+        "type": "ethereum token"
+    },
+    "MNT": {
+        "name": "Media Network Token",
+        "started": 1513447053,
+        "symbol": "MNT",
+        "type": "ethereum token"
+    },
+    "MNTP": {
+        "name": "GoldMint",
+        "started": 1502755200,
+        "symbol": "MNTP",
+        "type": "ethereum token"
     },
     "MOBI": {
         "name": "Mobius",
@@ -4314,10 +4399,54 @@
         "symbol": "MORE",
         "type": "ethereum token"
     },
+    "MOT": {
+        "name": "Olympus Labs",
+        "started": 1510790400,
+        "symbol": "MOT",
+        "type": "ethereum token"
+    },
+    "MRK": {
+        "name": "MARK.SPACE",
+        "started": 1508509510,
+        "symbol": "MRK",
+        "type": "ethereum token"
+    },
+    "MRP": {
+        "name": "Money Rebel",
+        "started": 1506470400,
+        "symbol": "MRP",
+        "type": "ethereum token"
+    },
     "MRS": {
         "name": "Marginless",
         "started": 1540306994,
         "symbol": "MRS",
+        "type": "ethereum token"
+    },
+    "MRV": {
+        "name": "Macroverse",
+        "started": 1498366641,
+        "symbol": "MRV",
+        "type": "ethereum token"
+    },
+    "MSP": {
+        "active": false,
+        "ended": 1550275200,
+        "name": "Mothership",
+        "started": 1499212800,
+        "symbol": "MSP",
+        "type": "ethereum token"
+    },
+    "MTC": {
+        "name": "doc.com Token",
+        "started": 1515974400,
+        "symbol": "MTC",
+        "type": "ethereum token"
+    },
+    "MTC-2": {
+        "name": "MTC Mesh Network",
+        "started": 1524737120,
+        "symbol": "MTC",
         "type": "ethereum token"
     },
     "MTH": {
@@ -4332,6 +4461,25 @@
         "symbol": "MTL",
         "type": "ethereum token"
     },
+    "MTN": {
+        "name": "Medicalchain",
+        "started": 1496275200,
+        "symbol": "MTN",
+        "type": "ethereum token"
+    },
+    "MTRC": {
+        "active": true,
+        "name": "ModulTrade",
+        "started": 1511827200,
+        "symbol": "MTRC",
+        "type": "ethereum token"
+    },
+    "MTX": {
+        "name": "Matryx",
+        "started": 1504685050,
+        "symbol": "MTX",
+        "type": "ethereum token"
+    },
     "MUE": {
         "name": "MonetaryUnit",
         "started": 1406332800,
@@ -4344,10 +4492,42 @@
         "symbol": "MUSIC",
         "type": "own chain"
     },
+    "MVL": {
+        "name": "MVL",
+        "started": 1527762079,
+        "symbol": "MVL",
+        "type": "ethereum token"
+    },
+    "MVP": {
+        "name": "Merculet",
+        "started": 1523118839,
+        "symbol": "MVP",
+        "type": "ethereum token"
+    },
+    "MWAT": {
+        "name": "Restart Energy MWAT",
+        "started": 1513382400,
+        "symbol": "MWAT",
+        "type": "ethereum token"
+    },
     "MYST": {
         "name": "Mysterium",
         "started": 1493596800,
         "symbol": "MYST",
+        "type": "ethereum token"
+    },
+    "NAC": {
+        "active": false,
+        "ended": 1551398400,
+        "name": "Nami.Trade",
+        "started": 1517758116,
+        "symbol": "NAC",
+        "type": "ethereum token"
+    },
+    "NANJ": {
+        "name": "NANJCOIN",
+        "started": 1521575961,
+        "symbol": "NANJ",
         "type": "ethereum token"
     },
     "NANO": {
@@ -4375,6 +4555,18 @@
         "started": 1402012800,
         "symbol": "NAV",
         "type": "own chain"
+    },
+    "NAVI": {
+        "name": "Naviaddress",
+        "started": 1511568000,
+        "symbol": "NAVI",
+        "type": "ethereum token"
+    },
+    "NBAI": {
+        "name": "Nebula AI",
+        "started": 1522355674,
+        "symbol": "NBAI",
+        "type": "ethereum token"
     },
     "NCASH": {
         "name": "Nucleus Vision",
