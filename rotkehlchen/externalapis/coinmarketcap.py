@@ -412,6 +412,18 @@ KNOWN_TO_MISS_FROM_CMC = (
     # Hawala exchange token missing from API but is in
     # https://coinmarketcap.com/currencies/hat-exchange/
     'HAT',
+    # Hedge token missing from API but is in
+    # https://coinmarketcap.com/currencies/hedge/
+    'HDG',
+    # HackerGold token missing from API but is in
+    # https://coinmarketcap.com/currencies/hacker-gold/
+    'HKG',
+    # iDice token missing from API but is in
+    # https://coinmarketcap.com/currencies/idice/
+    'ICE',
+    # ICOS token missing from API but is in
+    # https://coinmarketcap.com/currencies/icos/
+    'ICOS',
 )
 
 
@@ -524,6 +536,9 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen GOT is Go Network Token and GOT-2 is ParkinGo
     'GOT': 2898,
     'GOT-2': 3251,
+    # For Rotkehlchen HMC is Hi Mutual Society and HMC-2 is Harmony Coin
+    'HMC': 2484,
+    'HMC-2': 1832,
 }
 
 
