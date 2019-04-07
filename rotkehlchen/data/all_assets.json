@@ -4568,10 +4568,50 @@
         "symbol": "NBAI",
         "type": "ethereum token"
     },
+    "NBC": {
+        "name": "Niobium Coin",
+        "started": 1512118339,
+        "symbol": "NBC",
+        "type": "ethereum token"
+    },
     "NCASH": {
         "name": "Nucleus Vision",
         "started": 1511568000,
         "symbol": "NCASH",
+        "type": "ethereum token"
+    },
+    "NCC": {
+        "name": "NeuroChain",
+        "started": 1521205388,
+        "symbol": "NCC",
+        "type": "ethereum token"
+    },
+    "NCC-2": {
+        "active": false,
+        "ended": 1554595200,
+        "name": "NeedsCoin",
+        "started": 1493942400,
+        "symbol": "NCC",
+        "type": "ethereum token"
+    },
+    "NCT": {
+        "name": "PolySwarm",
+        "started": 1519046836,
+        "symbol": "NCT",
+        "type": "ethereum token"
+    },
+    "NDC": {
+        "active": false,
+        "ended": 1554595200,
+        "name": "NEVERDIE",
+        "started": 1492742292,
+        "symbol": "NDC",
+        "type": "ethereum token"
+    },
+    "NDX": {
+        "name": "nDEX",
+        "started": 1534287453,
+        "symbol": "NDX",
         "type": "ethereum token"
     },
     "NEBL": {
@@ -4579,6 +4619,12 @@
         "started": 1485907200,
         "symbol": "NEBL",
         "type": "own chain"
+    },
+    "NEC": {
+        "name": "Ethfinex Nectar Token",
+        "started": 1512086400,
+        "symbol": "NEC",
+        "type": "ethereum token"
     },
     "NEO": {
         "name": "NEO",
@@ -4592,10 +4638,50 @@
         "symbol": "NEOS",
         "type": "own chain"
     },
+    "NEU": {
+        "name": "Neumark",
+        "started": 1502668800,
+        "symbol": "NEU",
+        "type": "ethereum token"
+    },
+    "NEWB": {
+        "active": false,
+        "ended": 1529280000,
+        "name": "Newbium",
+        "started": 1459296000,
+        "symbol": "NEWB",
+        "type": "ethereum token"
+    },
+    "NEXO": {
+        "name": "Nexo",
+        "started": 1524250249,
+        "symbol": "NEXO",
+        "type": "ethereum token"
+    },
     "NGC": {
         "name": "NAGA",
         "started": 1509753600,
         "symbol": "NGC",
+        "type": "ethereum token"
+    },
+    "NIM": {
+        "name": "Nimiq",
+        "started": 1496707200,
+        "symbol": "NIM",
+        "type": "ethereum token and own chain"
+    },
+    "NIMFA": {
+        "active": false,
+        "ended": 1518220800,
+        "name": "Nimfamoney",
+        "started": 1501401202,
+        "symbol": "NIMFA",
+        "type": "ethereum token"
+    },
+    "NIO": {
+        "name": "Autonio",
+        "started": 1506816000,
+        "symbol": "NIO",
         "type": "ethereum token"
     },
     "NKN": {
@@ -4628,6 +4714,12 @@
         "symbol": "NMR",
         "type": "ethereum token"
     },
+    "NOAH": {
+        "name": "Noah Coin",
+        "started": 1508500309,
+        "symbol": "NOAH",
+        "type": "ethereum token"
+    },
     "NOBL": {
         "active": false,
         "ended": 1549497600,
@@ -4636,11 +4728,35 @@
         "symbol": "NOBL",
         "type": "own chain"
     },
+    "NOBS": {
+        "name": "No BS Crypto",
+        "started": 1525392000,
+        "symbol": "NOBS",
+        "type": "ethereum token"
+    },
     "NOTE": {
         "name": "DNotes",
         "started": 1392508800,
         "symbol": "NOTE",
         "type": "own chain"
+    },
+    "NOX": {
+        "name": "Nitro",
+        "started": 1507593600,
+        "symbol": "NOX",
+        "type": "ethereum token"
+    },
+    "NPER": {
+        "name": "NPER",
+        "started": 1515628800,
+        "symbol": "NPER",
+        "type": "ethereum token"
+    },
+    "NPX": {
+        "name": "NaPoleonX",
+        "started": 1506643200,
+        "symbol": "NPX",
+        "type": "ethereum token"
     },
     "NPXS": {
         "name": "Pundi X",
@@ -4662,11 +4778,46 @@
         "symbol": "NSR",
         "type": "Nubits token"
     },
+    "NTK": {
+        "name": "Neurotoken",
+        "started": 1514979939,
+        "symbol": "NTK",
+        "type": "ethereum token"
+    },
+    "NTK-2": {
+        "name": "NetKoin",
+        "started": 1522107417,
+        "symbol": "NTK",
+        "type": "ethereum token"
+    },
+    "NTO": {
+        "active": false,
+        "ended": 1554595200,
+        "name": "Fujinto",
+        "started": 1501834392,
+        "symbol": "NTO",
+        "type": "ethereum token"
+    },
+    "NTWK": {
+        "active": false,
+        "ended": 1543622400,
+        "name": "Network Token",
+        "started": 1508690038,
+        "symbol": "NTWK",
+        "type": "ethereum token"
+    },
+    "NUG": {
+        "active": true,
+        "name": "Nuggets",
+        "started": 1531215031,
+        "symbol": "NUG",
+        "type": "ethereum token"
+    },
     "NULS": {
         "name": "NULS",
         "started": 1504224000,
         "symbol": "NULS",
-        "type": "own chain"
+        "type": "ethereum token"
     },
     "NXC": {
         "name": "Nexium",
@@ -4694,16 +4845,48 @@
         "symbol": "NXTI",
         "type": "nxt token"
     },
+    "NXX": {
+        "active": false,
+        "ended": 1524787200,
+        "name": "Nexxus",
+        "started": 1510155129,
+        "symbol": "NXX",
+        "type": "ethereum token"
+    },
+    "OAK": {
+        "name": "Acorn Collective",
+        "started": 1511740800,
+        "symbol": "OAK",
+        "type": "ethereum token"
+    },
     "OAX": {
-        "name": "OAX",
+        "name": "OpenANX",
         "started": 1496275200,
         "symbol": "OAX",
+        "type": "ethereum token"
+    },
+    "OCC": {
+        "name": "Octoin Coin",
+        "started": 1520894060,
+        "symbol": "OCC",
+        "type": "own chain"
+    },
+    "OCC-2": {
+        "name": "Original Crypto Coin",
+        "started": 1517655385,
+        "symbol": "OCC",
         "type": "ethereum token"
     },
     "OCN": {
         "name": "Odyssey",
         "started": 1515974400,
         "symbol": "OCN",
+        "type": "ethereum token"
+    },
+    "ODE": {
+        "name": "ODEM",
+        "started": 1519808432,
+        "symbol": "ODE",
         "type": "ethereum token"
     },
     "OK": {

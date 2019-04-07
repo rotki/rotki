@@ -34,6 +34,8 @@ MANUALLY_CHECKED_NAMES = {
     'MNT': 'Media Network Token',
     'MRP': 'Money Rebel',
     'MRV': 'Macroverse',
+    'OAK': 'Acorn Collective',
+    'OCC-2': 'Original Crypto Coin',
 }
 
 

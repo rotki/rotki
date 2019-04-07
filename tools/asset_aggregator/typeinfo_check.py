@@ -39,6 +39,8 @@ MANUALLY_CHECKED_TYPES = {
     'MRP': 'ethereum token',
     'MRV': 'ethereum token',
     'NAC': 'ethereum token',
+    'OAK': 'ethereum token',
+    'OCC-2': 'ethereum token',
 }
 
 

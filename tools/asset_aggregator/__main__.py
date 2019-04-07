@@ -25,6 +25,7 @@ from asset_aggregator.typeinfo_check import typeinfo_check
 
 from rotkehlchen.assets.converters import (
     ETH_TOKENS_JSON_TO_WORLD,
+    ETH_TOKENS_MOVED_TO_OWN_CHAIN,
     MOVED_ETH_TOKENS,
     UNSUPPORTED_ETH_TOKENS_JSON,
 )
@@ -61,7 +62,12 @@ def process_asset(
     token_address = None
     if token_entry:
         token_address = token_entry['address']
-        if asset_symbol in UNSUPPORTED_ETH_TOKENS_JSON or asset_symbol in MOVED_ETH_TOKENS:
+        skip_token = (
+            asset_symbol in UNSUPPORTED_ETH_TOKENS_JSON or
+            asset_symbol in MOVED_ETH_TOKENS or
+            asset_symbol in ETH_TOKENS_MOVED_TO_OWN_CHAIN
+        )
+        if skip_token:
             return our_data
 
         asset_symbol = ETH_TOKENS_JSON_TO_WORLD.get(asset_symbol, asset_symbol)
@@ -203,8 +209,8 @@ def main():
         with open(os.path.join(root_path, 'rotkehlchen', 'data', 'eth_tokens.json'), 'r') as f:
             token_data = rlk_jsonloads(f.read())
 
-        start = 720
-        stop_after = start + 17
+        start = 770
+        stop_after = start + 5
         input_data = {}
         for index, entry in enumerate(token_data[start:], start):
             token_symbol = entry['symbol']
