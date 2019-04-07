@@ -438,6 +438,12 @@ ETH_TOKENS_JSON_TO_WORLD = {
     'MORE (Mithril Ore)': 'MORE-2',
     'MTC (MTC Mesh Network)': 'MTC-2',
     'MTRc': 'MTRC',
+    'NCC': 'NCC-2',
+    'NCC (NeuroChain)': 'NCC',
+    'NTK': 'NTK-2',
+    'NTK (Neurotoken)': 'NTK',
+    'NxC': 'NXC',
+    'OCC': 'OCC-2',
 }
 UNSUPPORTED_ETH_TOKENS_JSON = (
     '$FFC',
@@ -650,6 +656,8 @@ UNSUPPORTED_ETH_TOKENS_JSON = (
     'MUSD',
     'MUXE',
     'MYD',
+    'NEEO',
+    'NONE',
 )
 
 MOVED_ETH_TOKENS = {
@@ -669,6 +677,12 @@ MOVED_ETH_TOKENS = {
     'LEMO (1)': 'LEMO',
     'LYM': 'LYM (1)',
     'MLN (old)': 'MLN (new)',
+    'NXX OLD': 'NXX',
+}
+
+ETH_TOKENS_MOVED_TO_OWN_CHAIN = {
+    'NET': 'NIM',
+    'EOS': 'EOS',
 }
 
 

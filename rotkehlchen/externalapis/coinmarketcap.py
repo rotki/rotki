@@ -478,6 +478,27 @@ KNOWN_TO_MISS_FROM_CMC = (
     # Nami ICO (https://etherscan.io/address/0x8d80de8A78198396329dfA769aD54d24bF90E7aa)
     # is not in coinmarketcap but is in paprika
     'NAC',
+    # NeedsCoin (https://etherscan.io/address/0x9344b383b1d59b5ce3468b234dab43c7190ba735)
+    # is not in coimarketcap but is in paprika
+    'NCC-2',
+    # Newbium missing from API but is in
+    # https://coinmarketcap.com/currencies/newbium/
+    'NEWB',
+    # Nimfamoney missing from API but is in
+    # https://coinmarketcap.com/currencies/nimfamoney/
+    'NIMFA',
+    # Network Token missing from API but is in
+    # https://coinmarketcap.com/currencies/network-token/
+    'NTWK',
+    # Nexxus missing from API but is in
+    # https://coinmarketcap.com/currencies/nexxus/
+    'NXX',
+    # Acorn Collective (https://www.cryptocompare.com/coins/oak/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'OAK',
+    # Original Crypto coin (https://www.cryptocompare.com/coins/occ/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'OCC-2',
 )
 
 
@@ -599,6 +620,9 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen MTC is doc.com Token and MTC-2 is Mesh Network
     'MTC': 2711,
     'MTC-2': 2936,
+    # For Rotkehlchen NTK is Neurotoken and NTK-2 is NetKoin
+    'NTK': 2536,
+    'NTK-2': 3149,
 }
 
 

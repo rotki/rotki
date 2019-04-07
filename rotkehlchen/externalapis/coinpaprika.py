@@ -93,6 +93,8 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'MNT',
     'MRP',
     'MRV',
+    'OAK',
+    'OCC-2',
 )
 
 
@@ -312,6 +314,12 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen MTC is doc.com Token and MTC-2 is Mesh Network
     'MTC': 'mtc-docademic',
     'MTC-2': 'mtc-mtc-mesh-network',
+    # For Rotkehlchen NCC is neurochain and NCC-2 is NeedsCoin
+    'NCC': 'ncc-neurochain',
+    'NCC-2': 'ncc-needscoin',
+    # For Rotkehlchen NTK is Neurotoken and NTK-2 is NetKoin
+    'NTK': 'ntk-neurotoken',
+    'NTK-2': 'ntk-netkoin',
 }
 
 

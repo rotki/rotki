@@ -225,6 +225,12 @@ WORLD_TO_CRYPTOCOMPARE = {
     'MTC-2': 'MTCMN',
     # For Rotkehlchen MTN is Medical Token but it's MTN* in cryptocompare
     'MTN': 'MTN*',
+    # For Rotkehlchen NEC is Ethfinex Nectar Token but it's NEC* in cryptocompare
+    'NEC': 'NEC*',
+    # For Rotkehlchen NIO is Autonio but it's NIO* in cryptocompare
+    'NIO': 'NIO*',
+    # For Rotkehlchen OCC-2 is Original Cryptocoin but it's OCC in cryptocompare
+    'OCC-2': 'OCC',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also
@@ -475,6 +481,22 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # Nami ICO (https://etherscan.io/address/0x8d80de8A78198396329dfA769aD54d24bF90E7aa)
     # is not in cryptocompate but is in paprika
     'NAC',
+    # For Rotkehlchen NCC is neurochain and NCC-2 is NeedsCoin and neither of them
+    # is in cryptocompare but they are both in paprika
+    'NCC',
+    'NCC-2',
+    # NDEX (https://coinmarketcap.com/currencies/ndex/)
+    # is not in cryptocompare but is in paprika
+    'NDX',
+    # NetKoin (https://coinmarketcap.com/currencies/netkoin/)
+    # is not in cryptocompare but is in paprika
+    'NTK-2',
+    # Nuggets (https://coinmarketcap.com/currencies/nuggets/)
+    # is not in cryptocompare but is in paprika
+    'NUG',
+    # OCtoin (https://coinmarketcap.com/currencies/octoin-coin/)
+    # is not in cryptocompare but is in paprika
+    'OCC',
 )
 
 
@@ -566,5 +588,7 @@ class Cryptocompare():
         data['ITC'] = object()
         # This is MFTU (https://coinmarketcap.com/currencies/mainstream-for-the-underground/)
         data['MFTU'] = object()
+        # This is Nexxus (https://coinmarketcap.com/currencies/nexxus/)
+        data['NXX'] = object()
 
         return data
