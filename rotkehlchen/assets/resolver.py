@@ -8,6 +8,7 @@ asset_type_mapping = {
     'fiat': AssetType.FIAT,
     'own chain': AssetType.OWN_CHAIN,
     'ethereum token and own chain': AssetType.OWN_CHAIN,
+    'ethereum token and more': AssetType.ETH_TOKEN_AND_MORE,
     'ethereum token': AssetType.ETH_TOKEN,
     'omni token': AssetType.OMNI_TOKEN,
     'neo token': AssetType.NEO_TOKEN,

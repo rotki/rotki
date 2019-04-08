@@ -4895,6 +4895,18 @@
         "symbol": "OK",
         "type": "own chain"
     },
+    "OLE": {
+        "name": "Olive",
+        "started": 1521276132,
+        "symbol": "OLE",
+        "type": "ethereum token"
+    },
+    "OLT": {
+        "name": "OneLedger",
+        "started": 1528848000,
+        "symbol": "OLT",
+        "type": "ethereum token"
+    },
     "OMG": {
         "name": "OmiseGO",
         "started": 1498176000,
@@ -4907,6 +4919,18 @@
         "symbol": "OMNI",
         "type": "own chain"
     },
+    "OMX": {
+        "name": "Shivom",
+        "started": 1510012800,
+        "symbol": "OMX",
+        "type": "ethereum token"
+    },
+    "ONE": {
+        "name": "Menlo One",
+        "started": 1537093791,
+        "symbol": "ONE",
+        "type": "ethereum token"
+    },
     "ONG": {
         "name": "Ontology Gas",
         "started": 1530316800,
@@ -4917,6 +4941,12 @@
         "name": "SoMee.Social",
         "started": 1497657600,
         "symbol": "ONG",
+        "type": "ethereum token"
+    },
+    "ONL": {
+        "name": "On.Live",
+        "started": 1516189720,
+        "symbol": "ONL",
         "type": "ethereum token"
     },
     "ONT": {
@@ -4932,10 +4962,70 @@
         "symbol": "OPAL",
         "type": "own chain"
     },
+    "OPEN": {
+        "name": "Open Platform",
+        "started": 1525380518,
+        "symbol": "OPEN",
+        "type": "ethereum token"
+    },
+    "OPT": {
+        "name": "Opus",
+        "started": 1499992958,
+        "symbol": "OPT",
+        "type": "ethereum token"
+    },
+    "OPTI": {
+        "name": "OptiToken",
+        "started": 1530886677,
+        "symbol": "OPTI",
+        "type": "ethereum token"
+    },
+    "ORBS": {
+        "name": "Orbs",
+        "started": 1527798219,
+        "symbol": "ORBS",
+        "type": "ethereum token"
+    },
+    "ORI": {
+        "name": "Origami",
+        "started": 1512345600,
+        "symbol": "ORI",
+        "type": "ethereum token"
+    },
+    "ORME": {
+        "name": "Ormeus Coin",
+        "started": 1501734910,
+        "symbol": "ORME",
+        "type": "ethereum token"
+    },
+    "ORS": {
+        "name": "Origin Sport",
+        "started": 1513987200,
+        "symbol": "ORS",
+        "type": "ethereum token"
+    },
+    "ORS-2": {
+        "name": "ORS Group",
+        "started": 1519171200,
+        "symbol": "ORS",
+        "type": "ethereum token"
+    },
     "OST": {
         "name": "OST",
         "started": 1507852800,
         "symbol": "OST",
+        "type": "ethereum token"
+    },
+    "OTN": {
+        "name": "Open Trading Network",
+        "started": 1506704561,
+        "symbol": "OTN",
+        "type": "ethereum token"
+    },
+    "OWN": {
+        "name": "OWNDATA",
+        "started": 1528538549,
+        "symbol": "OWN",
         "type": "ethereum token"
     },
     "PAI": {
@@ -4956,6 +5046,12 @@
         "symbol": "PAL",
         "type": "ethereum token"
     },
+    "PARETO": {
+        "name": "PARETO Rewards",
+        "started": 1509926400,
+        "symbol": "PARETO",
+        "type": "ethereum token"
+    },
     "PART": {
         "name": "Particl",
         "started": 1490054400,
@@ -4968,6 +5064,24 @@
         "symbol": "PASC",
         "type": "own chain"
     },
+    "PASS": {
+        "name": "Blockpass",
+        "started": 1526462846,
+        "symbol": "PASS",
+        "type": "ethereum token"
+    },
+    "PASS-2": {
+        "name": "Wisepass",
+        "started": 1533552737,
+        "symbol": "PASS",
+        "type": "ethereum token"
+    },
+    "PAT": {
+        "name": "Patron",
+        "started": 1519516800,
+        "symbol": "PAT",
+        "type": "ethereum token"
+    },
     "PAX": {
         "name": "Paxos Standard Token",
         "started": 1536537600,
@@ -4978,6 +5092,44 @@
         "name": "TenX",
         "started": 1465171200,
         "symbol": "PAY",
+        "type": "ethereum token"
+    },
+    "PBL": {
+        "active": false,
+        "ended": 1549065600,
+        "name": "Publica",
+        "started": 1502409600,
+        "symbol": "PBL",
+        "type": "ethereum token"
+    },
+    "PBT": {
+        "name": "Primalbase Token",
+        "started": 1495584000,
+        "symbol": "PBT",
+        "type": "ethereum token and more"
+    },
+    "PCH": {
+        "name": "POPCHAIN",
+        "started": 1525192236,
+        "symbol": "PCH",
+        "type": "ethereum token"
+    },
+    "PCL": {
+        "name": "Peculium",
+        "started": 1509926400,
+        "symbol": "PCL",
+        "type": "ethereum token"
+    },
+    "PFR": {
+        "name": "Payfair",
+        "started": 1507719567,
+        "symbol": "PFR",
+        "type": "ethereum token"
+    },
+    "PHI": {
+        "name": "PHI Token",
+        "started": 1519831304,
+        "symbol": "PHI",
         "type": "ethereum token"
     },
     "PHX": {

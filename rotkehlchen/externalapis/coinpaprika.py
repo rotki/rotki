@@ -320,6 +320,12 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen NTK is Neurotoken and NTK-2 is NetKoin
     'NTK': 'ntk-neurotoken',
     'NTK-2': 'ntk-netkoin',
+    # For Rotkehlchen ORS is OriginSport Token and ORS-2 is ORS group
+    'ORS': 'ors-origin-sport',
+    'ORS-2': 'ors-ors-group',
+    # For Rotkehlchen PASS is Blockpass, and PASS-2 is Wisepass
+    'PASS': 'pass-blockpass',
+    'PASS-2': 'pass-wisepass',
 }
 
 

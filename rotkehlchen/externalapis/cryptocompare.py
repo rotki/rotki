@@ -231,6 +231,10 @@ WORLD_TO_CRYPTOCOMPARE = {
     'NIO': 'NIO*',
     # For Rotkehlchen OCC-2 is Original Cryptocoin but it's OCC in cryptocompare
     'OCC-2': 'OCC',
+    # For Rotkehlchen ORS is OriginSport Token and ORS-2 is ORS group, but in
+    # cryptocompare OriginSport Token is ORS* and ORS Group is ORS
+    'ORS': 'ORS*',
+    'ORS-2': 'ORS',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also
@@ -497,6 +501,12 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # OCtoin (https://coinmarketcap.com/currencies/octoin-coin/)
     # is not in cryptocompare but is in paprika
     'OCC',
+    # OptiToken (https://coinmarketcap.com/currencies/optitoken/)
+    # is not in cryptocompare but is in paprika
+    'OPTI',
+    # Wisepass (https://coinmarketcap.com/currencies/wisepass/)
+    # is not in cryptocompare but is in paprika
+    'PASS-2',
 )
 
 
@@ -590,5 +600,7 @@ class Cryptocompare():
         data['MFTU'] = object()
         # This is Nexxus (https://coinmarketcap.com/currencies/nexxus/)
         data['NXX'] = object()
+        # This is Owndata (https://coinmarketcap.com/currencies/owndata/)
+        data['OWN'] = object()
 
         return data

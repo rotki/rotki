@@ -444,6 +444,10 @@ ETH_TOKENS_JSON_TO_WORLD = {
     'NTK (Neurotoken)': 'NTK',
     'NxC': 'NXC',
     'OCC': 'OCC-2',
+    'ONG': 'ONG-2',
+    'ORS (ORS Group)': 'ORS-2',
+    'PAI': 'PAI-2',
+    'PASS (PASS Token)': 'PASS-2',
 }
 UNSUPPORTED_ETH_TOKENS_JSON = (
     '$FFC',
@@ -658,6 +662,27 @@ UNSUPPORTED_ETH_TOKENS_JSON = (
     'MYD',
     'NEEO',
     'NONE',
+    'OGN',
+    'OHNI',
+    'OHNI (OHNI)',
+    'OJX',
+    'OMT',
+    'ONEK',
+    'ONOT',
+    'OPEN (OPEN)',
+    'ORCA',
+    'OWT',
+    'Ox Fina',
+    'PATENTS',
+    'PATH',
+    'PATR',
+    'PCH (PITCH)',
+    'PDATA',
+    'PEG',
+    'PEP',
+    'PET',
+    'PETRO',
+    'PEXT',
 )
 
 MOVED_ETH_TOKENS = {
@@ -678,6 +703,9 @@ MOVED_ETH_TOKENS = {
     'LYM': 'LYM (1)',
     'MLN (old)': 'MLN (new)',
     'NXX OLD': 'NXX',
+    'OLD_MKR': 'MKR',
+    'ORME (1)': 'ORME',
+    'PCLOLD': 'PCL',
 }
 
 ETH_TOKENS_MOVED_TO_OWN_CHAIN = {
