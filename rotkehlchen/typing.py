@@ -101,6 +101,7 @@ class AssetType(Enum):
     STELLAR_TOKEN = 15
     TRON_TOKEN = 16
     ONTOLOGY_TOKEN = 17
+    ETH_TOKEN_AND_MORE = 18
 
 
 class AssetData(NamedTuple):

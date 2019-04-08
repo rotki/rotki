@@ -128,7 +128,7 @@ def process_asset(
         cmc_data=cmc_coin_data,
     )
     if token_entry:
-        assert our_data[asset_symbol]['type'] == 'ethereum token'
+        assert our_data[asset_symbol]['type'] in ('ethereum token', 'ethereum token and more')
     # add the symbol as an asset attribute in the data
     symbol = asset_symbol
     match = re.search('(.*)-\\d+', symbol)
@@ -209,8 +209,8 @@ def main():
         with open(os.path.join(root_path, 'rotkehlchen', 'data', 'eth_tokens.json'), 'r') as f:
             token_data = rlk_jsonloads(f.read())
 
-        start = 770
-        stop_after = start + 5
+        start = 830
+        stop_after = start + 1
         input_data = {}
         for index, entry in enumerate(token_data[start:], start):
             token_symbol = entry['symbol']

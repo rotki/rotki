@@ -499,6 +499,12 @@ KNOWN_TO_MISS_FROM_CMC = (
     # Original Crypto coin (https://www.cryptocompare.com/coins/occ/overview)
     # is not in coinmarketcap but is in cryptocompare
     'OCC-2',
+    # Wisepass missing from API but is in
+    # https://coinmarketcap.com/currencies/wisepass/
+    'PASS-2',
+    # Publica missing from API but is in
+    # https://coinmarketcap.com/currencies/publica/
+    'PBL',
 )
 
 
@@ -623,6 +629,9 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen NTK is Neurotoken and NTK-2 is NetKoin
     'NTK': 2536,
     'NTK-2': 3149,
+    # For Rotkehlchen ORS is OriginSport Token and ORS-2 is ORS Group
+    'ORS': 2879,
+    'ORS-2': 2911,
 }
 
 

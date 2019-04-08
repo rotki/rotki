@@ -41,6 +41,14 @@ MANUALLY_CHECKED_TYPES = {
     'NAC': 'ethereum token',
     'OAK': 'ethereum token',
     'OCC-2': 'ethereum token',
+    # In reality this is ethereum token and Waves token but got no way to
+    # signify this with the current system apart from creating a new type.
+    # So now I created a new generic type.
+    # Either think of a change in the
+    # system or just ignore it if it's just one token. Essentially PrimalBase
+    # seems to have both an ethereum and a waves token. If more assets do this
+    # then perhaps the system needs to change
+    'PBT': 'ethereum token and more',
 }
 
 
@@ -62,7 +70,7 @@ def typeinfo_check(
         elif paprika_data['type'] == 'token':
 
             # a special case for which paprika has wrong/corrupt parent data
-            if asset_symbol in ('ZIL', 'WTC', 'KIN', 'LOCUS', 'MESH'):
+            if asset_symbol in ('ZIL', 'WTC', 'KIN', 'LOCUS', 'MESH', 'ORBS'):
                 our_data[asset_symbol]['type'] = 'ethereum token'
                 return our_data
 
