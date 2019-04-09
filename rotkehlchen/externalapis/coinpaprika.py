@@ -326,6 +326,11 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen PASS is Blockpass, and PASS-2 is Wisepass
     'PASS': 'pass-blockpass',
     'PASS-2': 'pass-wisepass',
+    # For Rotkehlchen PLAY is HeroCoin
+    'PLAY': 'play-herocoin',
+    # For Rotkehlchen POP is PopularCoin, and POP-2 is POP Chest Token
+    'POP': 'pop-popularcoin',
+    'POP-2': 'pop-pop-chest-token',
 }
 
 

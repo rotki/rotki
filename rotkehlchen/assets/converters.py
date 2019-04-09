@@ -448,6 +448,11 @@ ETH_TOKENS_JSON_TO_WORLD = {
     'ORS (ORS Group)': 'ORS-2',
     'PAI': 'PAI-2',
     'PASS (PASS Token)': 'PASS-2',
+    'POA20': 'POA',
+    'POP': 'POP-2',
+    'PRO': 'PRA',
+    'PRO (Propy)': 'PRO',
+    'PRPS (1)': 'PRPS',
 }
 UNSUPPORTED_ETH_TOKENS_JSON = (
     '$FFC',
@@ -683,6 +688,24 @@ UNSUPPORTED_ETH_TOKENS_JSON = (
     'PET',
     'PETRO',
     'PEXT',
+    'PIT',
+    'PLASMA',
+    'PLS',
+    'POIN',
+    'POOL',
+    'PRON',
+    'PRS',
+    'PRSP',
+    'PT',
+    'PTC',
+    'PTWO',
+    'PUC',
+    'PURC',
+    'PXT',
+    'QBX',
+    'QRG',
+    'QTQ',
+    'RAO',
 )
 
 MOVED_ETH_TOKENS = {
@@ -706,6 +729,8 @@ MOVED_ETH_TOKENS = {
     'OLD_MKR': 'MKR',
     'ORME (1)': 'ORME',
     'PCLOLD': 'PCL',
+    'PRPS': 'PRPS (1)',
+    'PRPS (2)': 'PRPS (1)',
 }
 
 ETH_TOKENS_MOVED_TO_OWN_CHAIN = {
