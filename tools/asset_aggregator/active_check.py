@@ -200,6 +200,11 @@ MANUALLY_CHECKED = {
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'NUG': True,
+    # On 09/04/2019 POS is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/postoken/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'POS': True,
 }
 
 

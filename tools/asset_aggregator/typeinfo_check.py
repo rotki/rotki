@@ -49,6 +49,7 @@ MANUALLY_CHECKED_TYPES = {
     # seems to have both an ethereum and a waves token. If more assets do this
     # then perhaps the system needs to change
     'PBT': 'ethereum token and more',
+    'POP-2': 'ethereum token',
 }
 
 

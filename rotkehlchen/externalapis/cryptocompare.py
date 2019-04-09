@@ -235,6 +235,8 @@ WORLD_TO_CRYPTOCOMPARE = {
     # cryptocompare OriginSport Token is ORS* and ORS Group is ORS
     'ORS': 'ORS*',
     'ORS-2': 'ORS',
+    # For Rotkehlchen PRE is Presearch but it's PRE* in cryptocompare
+    'PRE': 'PRE*',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also
@@ -507,6 +509,21 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # Wisepass (https://coinmarketcap.com/currencies/wisepass/)
     # is not in cryptocompare but is in paprika
     'PASS-2',
+    # Kleros (https://coinmarketcap.com/currencies/kleros/)
+    # is not in cryptocompare but is in paprika
+    # Note: Cryptocompare has SteamPunk as PNK ...
+    'PNK',
+    # For Rotkehlchen POP is PopularCoin, and POP-2 is POP Chest Token, but in
+    # cryptocompare POP Chest appears also as POP so I can only assume it's not
+    # supported https://www.cryptocompare.com/coins/popc/overview
+    'POP-2',
+    # Foresting (https://coinmarketcap.com/currencies/pton/)
+    # is not in cryptocompare but is in paprika
+    'PTON',
+    # Proton (https://coinmarketcap.com/currencies/proton-token/)
+    # is not in cryptocompare but is in paprika. Cryptocompare has
+    # Pink Taxi Token as PTT.
+    'PTT',
 )
 
 
@@ -602,5 +619,13 @@ class Cryptocompare():
         data['NXX'] = object()
         # This is Owndata (https://coinmarketcap.com/currencies/owndata/)
         data['OWN'] = object()
+        # This is PiplCoin (https://coinmarketcap.com/currencies/piplcoin/)
+        data['PIPL'] = object()
+        # This is PKG Token (https://coinmarketcap.com/currencies/pkg-token/)
+        data['PKG'] = object()
+        # This is Quibitica https://coinmarketcap.com/currencies/qubitica/
+        data['QBIT'] = object()
+        # This is DPRating https://coinmarketcap.com/currencies/dprating/
+        data['RATING'] = object()
 
         return data

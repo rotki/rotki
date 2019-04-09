@@ -505,6 +505,21 @@ KNOWN_TO_MISS_FROM_CMC = (
     # Publica missing from API but is in
     # https://coinmarketcap.com/currencies/publica/
     'PBL',
+    # POP Chest Token (https://www.cryptocompare.com/coins/popc/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'POP-2',
+    # Oyster missing from API but is in
+    # https://coinmarketcap.com/currencies/oyster/
+    'PRL',
+    # Purpose missing from API but is in
+    # https://coinmarketcap.com/currencies/purpose/
+    'PRPS',
+    # Quantum missing from API but is in
+    # https://coinmarketcap.com/currencies/quantum/
+    'QAU',
+    # Qvolta missing from API but is in
+    # https://coinmarketcap.com/currencies/qvolta/
+    'QVT',
 )
 
 

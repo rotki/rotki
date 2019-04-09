@@ -5151,16 +5151,76 @@
         "symbol": "PINK",
         "type": "own chain"
     },
+    "PIPL": {
+        "name": "PiplCoin",
+        "started": 1502201105,
+        "symbol": "PIPL",
+        "type": "ethereum token"
+    },
     "PIVX": {
         "name": "PIVX",
         "started": 1448409600,
         "symbol": "PIVX",
         "type": "own chain"
     },
+    "PIX": {
+        "name": "Lampix",
+        "started": 1502103095,
+        "symbol": "PIX",
+        "type": "ethereum token"
+    },
+    "PKG": {
+        "name": "PKG Token",
+        "started": 1524676722,
+        "symbol": "PKG",
+        "type": "ethereum token"
+    },
+    "PKT": {
+        "name": "Playkey",
+        "started": 1509513949,
+        "symbol": "PKT",
+        "type": "ethereum token"
+    },
+    "PLAY": {
+        "name": "HEROcoin",
+        "started": 1503532800,
+        "symbol": "PLAY",
+        "type": "ethereum token"
+    },
+    "PLBT": {
+        "name": "Polybius",
+        "started": 1490832000,
+        "symbol": "PLBT",
+        "type": "ethereum token"
+    },
+    "PLR": {
+        "name": "Pillar",
+        "started": 1498435200,
+        "symbol": "PLR",
+        "type": "ethereum token"
+    },
+    "PLU": {
+        "name": "Pluton",
+        "started": 1466467200,
+        "symbol": "PLU",
+        "type": "ethereum token"
+    },
     "PMA": {
         "name": "PumaPay",
         "started": 1521676800,
         "symbol": "PMA",
+        "type": "ethereum token"
+    },
+    "PMNT": {
+        "name": "Paymon",
+        "started": 1517501672,
+        "symbol": "PMNT",
+        "type": "ethereum token"
+    },
+    "PNK": {
+        "name": "Kleros",
+        "started": 1521078220,
+        "symbol": "PNK",
         "type": "ethereum token"
     },
     "POA": {
@@ -5173,6 +5233,12 @@
         "name": "Po.et",
         "started": 1502150400,
         "symbol": "POE",
+        "type": "ethereum token"
+    },
+    "POLL": {
+        "name": "ClearPoll",
+        "started": 1507680000,
+        "symbol": "POLL",
         "type": "ethereum token"
     },
     "POLY": {
@@ -5188,6 +5254,27 @@
         "started": 1433376000,
         "symbol": "POLY",
         "type": "own chain"
+    },
+    "POP": {
+        "name": "PopularCoin",
+        "started": 1390867200,
+        "symbol": "POP",
+        "type": "own chain"
+    },
+    "POP-2": {
+        "active": false,
+        "ended": 1554841762,
+        "name": "Pop Chest Token",
+        "started": 1544486400,
+        "symbol": "POP",
+        "type": "ethereum token"
+    },
+    "POS": {
+        "active": true,
+        "name": "PoSToken",
+        "started": 1503360000,
+        "symbol": "POS",
+        "type": "ethereum token"
     },
     "POT": {
         "name": "PotCoin",
@@ -5207,10 +5294,22 @@
         "symbol": "PPC",
         "type": "own chain"
     },
+    "PPP": {
+        "name": "PayPie",
+        "started": 1501632000,
+        "symbol": "PPP",
+        "type": "ethereum token"
+    },
     "PPT": {
         "name": "Populous",
         "started": 1491955200,
         "symbol": "PPT",
+        "type": "ethereum token"
+    },
+    "PRA": {
+        "name": "ProChain",
+        "started": 1511848519,
+        "symbol": "PRA",
         "type": "ethereum token"
     },
     "PRC": {
@@ -5229,10 +5328,50 @@
         "symbol": "PRC",
         "type": "own chain"
     },
+    "PRE": {
+        "name": "Presearch",
+        "started": 1499212800,
+        "symbol": "PRE",
+        "type": "ethereum token"
+    },
+    "PRG": {
+        "name": "Paragon",
+        "started": 1502755200,
+        "symbol": "PRG",
+        "type": "ethereum token"
+    },
+    "PRIX": {
+        "name": "Privatix",
+        "started": 1507593600,
+        "symbol": "PRIX",
+        "type": "ethereum token"
+    },
+    "PRL": {
+        "active": false,
+        "ended": 1545177600,
+        "name": "Oyster",
+        "started": 1506816000,
+        "symbol": "PRL",
+        "type": "ethereum token"
+    },
     "PRO": {
         "name": "Propy",
-        "started": 1500940800,
+        "started": 1500249600,
         "symbol": "PRO",
+        "type": "ethereum token"
+    },
+    "PRPS": {
+        "active": false,
+        "ended": 1554844109,
+        "name": "Purpose",
+        "started": 1517011200,
+        "symbol": "PRPS",
+        "type": "ethereum token"
+    },
+    "PST": {
+        "name": "Primas",
+        "started": 1528294326,
+        "symbol": "PST",
         "type": "ethereum token"
     },
     "PTC": {
@@ -5241,10 +5380,34 @@
         "symbol": "PTC",
         "type": "own chain"
     },
+    "PTON": {
+        "name": "Foresting",
+        "started": 1536887841,
+        "symbol": "PTON",
+        "type": "ethereum token"
+    },
     "PTOY": {
         "name": "Patientory",
         "started": 1493078400,
         "symbol": "PTOY",
+        "type": "ethereum token"
+    },
+    "PTT": {
+        "name": "Proton Token",
+        "started": 1521009514,
+        "symbol": "PTT",
+        "type": "ethereum token"
+    },
+    "PXG": {
+        "name": "PlayGame",
+        "started": 1530779450,
+        "symbol": "PXG",
+        "type": "ethereum token"
+    },
+    "PYLNT": {
+        "name": "Pylon Network",
+        "started": 1501372800,
+        "symbol": "PYLNT",
         "type": "ethereum token"
     },
     "Q2C": {
@@ -5254,6 +5417,26 @@
         "started": 1389484800,
         "symbol": "Q2C",
         "type": "own chain"
+    },
+    "QASH": {
+        "name": "QASH",
+        "started": 1506902400,
+        "symbol": "QASH",
+        "type": "ethereum token"
+    },
+    "QAU": {
+        "active": false,
+        "ended": 1536883200,
+        "name": "Quantum",
+        "started": 1492214400,
+        "symbol": "QAU",
+        "type": "ethereum token"
+    },
+    "QBIT": {
+        "name": "Qubitica",
+        "started": 1518090608,
+        "symbol": "QBIT",
+        "type": "ethereum token"
     },
     "QBK": {
         "active": false,
@@ -5301,7 +5484,7 @@
         "name": "Quantum Resistant Ledger",
         "started": 1482796800,
         "symbol": "QRL",
-        "type": "own chain"
+        "type": "ethereum token and more"
     },
     "QSP": {
         "name": "Quantstamp",
@@ -5321,7 +5504,19 @@
         "name": "Qtum",
         "started": 1482105600,
         "symbol": "QTUM",
-        "type": "own chain"
+        "type": "ethereum token and more"
+    },
+    "QUN": {
+        "name": "QunQun",
+        "started": 1511136000,
+        "symbol": "QUN",
+        "type": "ethereum token"
+    },
+    "QVT": {
+        "name": "Qvolta",
+        "started": 1506698912,
+        "symbol": "QVT",
+        "type": "ethereum token"
     },
     "QWARK": {
         "name": "Qwark",
@@ -5329,11 +5524,23 @@
         "symbol": "QWARK",
         "type": "Ubiq token"
     },
+    "R": {
+        "name": "Revain",
+        "started": 1501804800,
+        "symbol": "R",
+        "type": "ethereum token"
+    },
     "RADS": {
         "name": "Radium",
         "started": 1453075200,
         "symbol": "RADS",
         "type": "own chain"
+    },
+    "RATING": {
+        "name": "DPRating",
+        "started": 1527754376,
+        "symbol": "RATING",
+        "type": "ethereum token"
     },
     "RBY": {
         "name": "Rubycoin",
