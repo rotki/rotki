@@ -520,6 +520,36 @@ KNOWN_TO_MISS_FROM_CMC = (
     # Qvolta missing from API but is in
     # https://coinmarketcap.com/currencies/qvolta/
     'QVT',
+    # Realisto (https://www.cryptocompare.com/coins/rea/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'REA',
+    # Red Cab (https://www.cryptocompare.com/coins/redc/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'REDC',
+    # Rusgas missing from API but is in
+    # https://coinmarketcap.com/currencies/rusgas/
+    'RGS',
+    # Riptide Coin (https://www.cryptocompare.com/coins/ript/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'RIPT',
+    # RemiCoin missing from API but is in
+    # https://coinmarketcap.com/currencies/remicoin/
+    'RMC',
+    # Render Token (https://www.cryptocompare.com/coins/rndr/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'RNDR',
+    # RasputinOnlineCoin missing from API but is in
+    # https://coinmarketcap.com/currencies/rasputin-online-coin/
+    'ROC',
+    # SGPay (https://www.cryptocompare.com/coins/sgp/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'SGP',
+    # OysterShell missing from API but is in
+    # https://coinmarketcap.com/currencies/oyster-shell/
+    'SHL',
+    # Smart Investment Fund Token missing from API but is in
+    # https://coinmarketcap.com/currencies/smart-investment-fund-token/
+    'SIFT',
 )
 
 

@@ -50,6 +50,10 @@ MANUALLY_CHECKED_TYPES = {
     # then perhaps the system needs to change
     'PBT': 'ethereum token and more',
     'POP-2': 'ethereum token',
+    'REA': 'ethereum token',
+    'REDC': 'ethereum token',
+    'RIPT': 'ethereum token',
+    'RNDR': 'ethereum token',
 }
 
 

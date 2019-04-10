@@ -95,6 +95,10 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'MRV',
     'OAK',
     'OCC-2',
+    'REA',
+    'REDC',
+    'RIPT',
+    'RNDR',
 )
 
 
@@ -331,6 +335,12 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen POP is PopularCoin, and POP-2 is POP Chest Token
     'POP': 'pop-popularcoin',
     'POP-2': 'pop-pop-chest-token',
+    # For Rotkehlchen RED is Red token
+    'RED': 'red-red',
+    # For Rotkehlchen RMC is RemiCoin
+    'RMC': 'rmc-remicoin',
+    # For Rotkehlchen SAC is SmartApplicationChain
+    'SAC': 'sac-smart-application-chain',
 }
 
 

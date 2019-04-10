@@ -237,6 +237,12 @@ WORLD_TO_CRYPTOCOMPARE = {
     'ORS-2': 'ORS',
     # For Rotkehlchen PRE is Presearch but it's PRE* in cryptocompare
     'PRE': 'PRE*',
+    # For Rotkehlchen RDN is Raiden Network but it's RDN* in cryptocompare
+    'RDN': 'RDN*',
+    # For Rotkehlchen Sharpe Platform Token is SHP but it's SHP* in cryptocompare
+    'SHP': 'SHP*',
+    # For Rotkehlchen SKB is SakuraBloom but it's SKB* in cryptocompare
+    'SKB': 'SKB*',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also
@@ -524,6 +530,24 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # is not in cryptocompare but is in paprika. Cryptocompare has
     # Pink Taxi Token as PTT.
     'PTT',
+    # Rublix (https://coinmarketcap.com/currencies/rublix/)
+    # is not in cryptocompare but is in paprika
+    'RBLX',
+    # Red Token (https://coinmarketcap.com/currencies/red/)
+    # is not in cryptocompare but is in paprika
+    'RED',
+    # Rusgas (https://coinmarketcap.com/currencies/rusgas/)
+    # is not in cryptocompare but is in paprika
+    'RGS',
+    # RemiCoin (https://coinmarketcap.com/currencies/remicoin/)
+    # is not in cryptocompare but is in paprika
+    'RMC',
+    # Rotharium (https://coinmarketcap.com/currencies/rotharium/)
+    # is not in cryptocompare but is in paprika
+    'RTH',
+    # SmartApplicationChain (https://coinmarketcap.com/currencies/smart-application-chain/)
+    # is not in cryptocompare but is in paprika
+    'SAC',
 )
 
 
@@ -627,5 +651,9 @@ class Cryptocompare():
         data['QBIT'] = object()
         # This is DPRating https://coinmarketcap.com/currencies/dprating/
         data['RATING'] = object()
+        # This is RouletteToken https://coinmarketcap.com/currencies/roulettetoken/
+        data['RLT'] = object()
+        # This is RocketPool https://coinmarketcap.com/currencies/rocket-pool/
+        data['RPL'] = object()
 
         return data

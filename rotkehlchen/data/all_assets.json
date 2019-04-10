@@ -5542,6 +5542,12 @@
         "symbol": "RATING",
         "type": "ethereum token"
     },
+    "RBLX": {
+        "name": "Rublix",
+        "started": 1521245941,
+        "symbol": "RBLX",
+        "type": "ethereum token"
+    },
     "RBY": {
         "name": "Rubycoin",
         "started": 1393200000,
@@ -5560,6 +5566,12 @@
         "symbol": "RCN",
         "type": "own chain"
     },
+    "RCT": {
+        "name": "RealChain",
+        "started": 1515002327,
+        "symbol": "RCT",
+        "type": "ethereum token"
+    },
     "RDD": {
         "name": "ReddCoin",
         "started": 1390176000,
@@ -5572,8 +5584,50 @@
         "symbol": "RDN",
         "type": "ethereum token"
     },
+    "REA": {
+        "name": "Realisto",
+        "started": 1510908825,
+        "symbol": "REA",
+        "type": "ethereum token"
+    },
+    "REAL": {
+        "name": "REAL",
+        "started": 1504172987,
+        "symbol": "REAL",
+        "type": "ethereum token"
+    },
+    "REBL": {
+        "name": "REBL",
+        "started": 1509801893,
+        "symbol": "REBL",
+        "type": "ethereum token"
+    },
+    "RED": {
+        "name": "RED",
+        "started": 1515345440,
+        "symbol": "RED",
+        "type": "ethereum token"
+    },
+    "REDC": {
+        "name": "Red Cab",
+        "started": 1526203977,
+        "symbol": "REDC",
+        "type": "ethereum token"
+    },
+    "REF": {
+        "name": "RefToken",
+        "started": 1504483200,
+        "symbol": "REF",
+        "type": "ethereum token"
+    },
+    "REM": {
+        "name": "Remme",
+        "started": 1512145159,
+        "symbol": "REM",
+        "type": "ethereum token"
+    },
     "REN": {
-        "name": "Ren",
+        "name": "Republic",
         "started": 1514678400,
         "symbol": "REN",
         "type": "ethereum token"
@@ -5590,10 +5644,30 @@
         "symbol": "REQ",
         "type": "ethereum token"
     },
+    "REX": {
+        "name": "imbrex",
+        "started": 1501521922,
+        "symbol": "REX",
+        "type": "ethereum token"
+    },
     "RFR": {
         "name": "Refereum",
         "started": 1506297600,
         "symbol": "RFR",
+        "type": "ethereum token"
+    },
+    "RGS": {
+        "active": false,
+        "ended": 1545091200,
+        "name": "RusGas",
+        "started": 1521992773,
+        "symbol": "RGS",
+        "type": "ethereum token"
+    },
+    "RHOC": {
+        "name": "RChain",
+        "started": 1489972755,
+        "symbol": "RHOC",
         "type": "ethereum token"
     },
     "RIC": {
@@ -5604,16 +5678,112 @@
         "symbol": "RIC",
         "type": "own chain"
     },
+    "RIPT": {
+        "name": "RiptideCoin",
+        "started": 1504676852,
+        "symbol": "RIPT",
+        "type": "ethereum token"
+    },
     "RISE": {
         "name": "Rise",
         "started": 1466726400,
         "symbol": "RISE",
         "type": "own chain"
     },
+    "RIYA": {
+        "active": true,
+        "name": "Etheriya",
+        "started": 1497865684,
+        "symbol": "RIYA",
+        "type": "ethereum token"
+    },
     "RLC": {
         "name": "iExec RLC",
         "started": 1484006400,
         "symbol": "RLC",
+        "type": "ethereum token"
+    },
+    "RLT": {
+        "name": "RouletteToken",
+        "started": 1489449600,
+        "symbol": "RLT",
+        "type": "ethereum token"
+    },
+    "RLX": {
+        "name": "Relex",
+        "started": 1500881541,
+        "symbol": "RLX",
+        "type": "ethereum token"
+    },
+    "RMC": {
+        "active": false,
+        "ended": 1524009600,
+        "name": "Remicoin",
+        "started": 1497437827,
+        "symbol": "RMC",
+        "type": "ethereum token"
+    },
+    "RMESH": {
+        "name": "RightMesh",
+        "started": 1520571969,
+        "symbol": "RMESH",
+        "type": "ethereum token"
+    },
+    "RNDR": {
+        "name": "Render Token",
+        "started": 1507221459,
+        "symbol": "RNDR",
+        "type": "ethereum token"
+    },
+    "RNT": {
+        "name": "OneRoot Network",
+        "started": 1511886091,
+        "symbol": "RNT",
+        "type": "ethereum token"
+    },
+    "RNTB": {
+        "name": "BitRent",
+        "started": 1506556800,
+        "symbol": "RNTB",
+        "type": "ethereum token"
+    },
+    "ROC": {
+        "active": false,
+        "ended": 1518220800,
+        "name": "Rasputin Online Coin",
+        "started": 1499261991,
+        "symbol": "ROC",
+        "type": "ethereum token"
+    },
+    "ROCK2": {
+        "name": "ICE ROCK MINING",
+        "started": 1507507200,
+        "symbol": "ROCK2",
+        "type": "ethereum token"
+    },
+    "RPL": {
+        "name": "Rocket Pool",
+        "started": 1504750041,
+        "symbol": "RPL",
+        "type": "ethereum token"
+    },
+    "RTB": {
+        "active": true,
+        "name": "AB-Chain RTB",
+        "started": 1517900505,
+        "symbol": "RTB",
+        "type": "ethereum token"
+    },
+    "RTH": {
+        "name": "Rotharium",
+        "started": 1510394777,
+        "symbol": "RTH",
+        "type": "ethereum token"
+    },
+    "RUFF": {
+        "name": "Ruff",
+        "started": 1515648513,
+        "symbol": "RUFF",
         "type": "ethereum token"
     },
     "RVN": {
@@ -5628,6 +5798,12 @@
         "symbol": "RVR",
         "type": "own chain"
     },
+    "RVT": {
+        "name": "Rivetz",
+        "started": 1500940800,
+        "symbol": "RVT",
+        "type": "ethereum token"
+    },
     "RZR": {
         "active": false,
         "ended": 1452038400,
@@ -5636,10 +5812,23 @@
         "symbol": "RZR",
         "type": "own chain"
     },
+    "SAC": {
+        "active": true,
+        "name": "Smart Application Chain",
+        "started": 1525689856,
+        "symbol": "SAC",
+        "type": "ethereum token"
+    },
     "SALT": {
         "name": "SALT",
         "started": 1501200000,
         "symbol": "SALT",
+        "type": "ethereum token"
+    },
+    "SAN": {
+        "name": "Santiment Network Token",
+        "started": 1486598400,
+        "symbol": "SAN",
         "type": "ethereum token"
     },
     "SBD": {
@@ -5654,11 +5843,47 @@
         "symbol": "SC",
         "type": "own chain"
     },
+    "SCL": {
+        "name": "Sociall",
+        "started": 1501083937,
+        "symbol": "SCL",
+        "type": "ethereum token"
+    },
+    "SCRL": {
+        "name": "Scroll",
+        "started": 1504656000,
+        "symbol": "SCRL",
+        "type": "ethereum token"
+    },
     "SDC": {
         "name": "ShadowCash",
         "started": 1403049600,
         "symbol": "SDC",
         "type": "own chain"
+    },
+    "SEELE": {
+        "name": "Seele",
+        "started": 1516838400,
+        "symbol": "SEELE",
+        "type": "ethereum token"
+    },
+    "SENC": {
+        "name": "Sentinel Chain",
+        "started": 1516492800,
+        "symbol": "SENC",
+        "type": "ethereum token"
+    },
+    "SENSE": {
+        "name": "Sense",
+        "started": 1502928000,
+        "symbol": "SENSE",
+        "type": "ethereum token"
+    },
+    "SENT": {
+        "name": "Sentinel",
+        "started": 1506988800,
+        "symbol": "SENT",
+        "type": "ethereum token"
     },
     "SEQ": {
         "name": "Sequence",
@@ -5672,17 +5897,72 @@
         "symbol": "SERV",
         "type": "ethereum token"
     },
+    "SGN": {
+        "name": "Signals Network",
+        "started": 1519603200,
+        "symbol": "SGN",
+        "type": "ethereum token"
+    },
+    "SGP": {
+        "active": false,
+        "ended": 1554934557,
+        "name": "SGPay",
+        "started": 1516615619,
+        "symbol": "SGP",
+        "type": "ethereum token"
+    },
+    "SGR": {
+        "active": true,
+        "name": "Sugar Exchange",
+        "started": 1485907200,
+        "symbol": "SGR",
+        "type": "ethereum token"
+    },
     "SHIFT": {
         "name": "Shift",
         "started": 1441460968,
         "symbol": "SHIFT",
         "type": "own chain"
     },
+    "SHIP": {
+        "name": "ShipChain",
+        "started": 1515196800,
+        "symbol": "SHIP",
+        "type": "ethereum token"
+    },
+    "SHL": {
+        "active": false,
+        "ended": 1541548800,
+        "name": "Oyster Shell",
+        "started": 1523582002,
+        "symbol": "SHL",
+        "type": "ethereum token"
+    },
+    "SHP": {
+        "name": "Sharpe Platform Token",
+        "started": 1509989863,
+        "symbol": "SHP",
+        "type": "ethereum token"
+    },
     "SIB": {
         "name": "SIBCoin",
         "started": 1431129600,
         "symbol": "SIB",
         "type": "own chain"
+    },
+    "SIFT": {
+        "active": false,
+        "ended": 1518220800,
+        "name": "Smart Investment Fund Token",
+        "started": 1500325331,
+        "symbol": "SIFT",
+        "type": "ethereum token"
+    },
+    "SIG": {
+        "name": "Spectiv",
+        "started": 1512881971,
+        "symbol": "SIG",
+        "type": "ethereum token"
     },
     "SILK": {
         "active": false,
@@ -5700,6 +5980,18 @@
         "swapped_for": "STORJ",
         "symbol": "SJCX",
         "type": "counterparty token"
+    },
+    "SKB": {
+        "name": "Sakura Bloom",
+        "started": 1516067434,
+        "symbol": "SKB",
+        "type": "ethereum token"
+    },
+    "SKIN": {
+        "name": "SkinCoin",
+        "started": 1496793600,
+        "symbol": "SKIN",
+        "type": "ethereum token"
     },
     "SKY": {
         "name": "Skycoin",

@@ -453,6 +453,7 @@ ETH_TOKENS_JSON_TO_WORLD = {
     'PRO': 'PRA',
     'PRO (Propy)': 'PRO',
     'PRPS (1)': 'PRPS',
+    'RCT (RealChain)': 'RCT',
 }
 UNSUPPORTED_ETH_TOKENS_JSON = (
     '$FFC',
@@ -706,6 +707,29 @@ UNSUPPORTED_ETH_TOKENS_JSON = (
     'QRG',
     'QTQ',
     'RAO',
+    'RCT',
+    'REMI',
+    'RING',
+    'RING (1)',
+    'RLTY',
+    'ROCK',
+    'ROCK2PAY',
+    'ROK',
+    'ROUND',
+    'RTN',
+    'RUNE',
+    'RVL',
+    'S-A-PAT',
+    'S-ETH',
+    'SCANDI',
+    'SenSatorI',
+    'SET',
+    'SEXY',
+    'SGEL',
+    'SGT',
+    'SGT (SGT)',
+    'SHIT',
+    'SKE',
 )
 
 MOVED_ETH_TOKENS = {
@@ -731,6 +755,7 @@ MOVED_ETH_TOKENS = {
     'PCLOLD': 'PCL',
     'PRPS': 'PRPS (1)',
     'PRPS (2)': 'PRPS (1)',
+    'RKT': 'STACS',
 }
 
 ETH_TOKENS_MOVED_TO_OWN_CHAIN = {
