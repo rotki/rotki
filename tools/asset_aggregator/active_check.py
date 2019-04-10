@@ -205,6 +205,26 @@ MANUALLY_CHECKED = {
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'POS': True,
+    # On 10/04/2019 RIYA is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/etheriya
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'RIYA': True,
+    # On 10/04/2019 RTB is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/ab-chain-rtb/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'RTB': True,
+    # On 10/04/2019 SAC is still active and trading in 2 exchanges
+    # https://coinmarketcap.com/currencies/smart-application-chain/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'SAC': True,
+    # On 10/04/2019 SugarExchange is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/sugar-exchange/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'SGR': True,
 }
 
 

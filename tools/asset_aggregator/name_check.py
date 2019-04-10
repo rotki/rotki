@@ -36,6 +36,10 @@ MANUALLY_CHECKED_NAMES = {
     'MRV': 'Macroverse',
     'OAK': 'Acorn Collective',
     'OCC-2': 'Original Crypto Coin',
+    'REA': 'Realisto',
+    'REDC': 'Red Cab',
+    'RIPT': 'RiptideCoin',
+    'RNDR': 'Render Token',
 }
 
 
