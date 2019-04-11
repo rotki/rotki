@@ -40,6 +40,13 @@ MANUALLY_CHECKED_NAMES = {
     'REDC': 'Red Cab',
     'RIPT': 'RiptideCoin',
     'RNDR': 'Render Token',
+    'SKR': 'Skrilla Token',
+    'SKYM': 'Skymap',
+    'SPICE': 'Spice VC Token',
+    'SSH': 'StreamSpace',
+    'STP': 'StashPay',
+    'TAN': 'Taklimakan',
+    'TBT': 'T-Bot',
 }
 
 

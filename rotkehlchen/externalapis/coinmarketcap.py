@@ -550,6 +550,45 @@ KNOWN_TO_MISS_FROM_CMC = (
     # Smart Investment Fund Token missing from API but is in
     # https://coinmarketcap.com/currencies/smart-investment-fund-token/
     'SIFT',
+    # SkrillaToken (https://www.cryptocompare.com/coins/skrstar/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'SKR',
+    # Skraps (https://www.cryptocompare.com/coins/skrp/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'SKRP',
+    # SkyMap (https://www.cryptocompare.com/coins/skym/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'SKYM',
+    # SmartBillion (https://www.cryptocompare.com/coins/smartstar/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'SMART-2',
+    # snowball (https://etherscan.io/address/0x198A87b3114143913d4229Fb0f6D4BCb44aa8AFF)
+    # is not in coinmarketcap but is in paprika
+    'SNBL',
+    # SandCoin (https://www.cryptocompare.com/coins/snd/overview)
+    # is not in coinmarketcap but is in paprika. SND in coinmarketcap is SnodeCoin
+    'SND',
+    # Spice VC Token (https://www.cryptocompare.com/coins/spice/overview)
+    # is not in coinmarketcap but is in paprika
+    'SPICE',
+    # StreamSpace (https://www.cryptocompare.com/coins/ssh/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'SSH',
+    # StashPay (https://www.cryptocompare.com/coins/stp/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'STP',
+    # StarCredits missing from API but is in
+    # https://coinmarketcap.com/currencies/starcredits/
+    'STRC',
+    # Taklimakan (https://www.cryptocompare.com/coins/tan/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'TAN',
+    # T-Bot (https://www.cryptocompare.com/coins/tbt/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'TBT',
+    # TercetNetwork (https://etherscan.io/address/0x28d7F432d24ba6020d1cbD4f28BEDc5a82F24320)
+    # is not in coinmarketcap but is in paprika
+    'TCNX',
 )
 
 
@@ -677,6 +716,15 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen ORS is OriginSport Token and ORS-2 is ORS Group
     'ORS': 2879,
     'ORS-2': 2911,
+    # For Rotkehlchen SOUL is Phantasma and SOUL-2 is CryptoSoul
+    'SOUL': 2827,
+    'SOUL-2': 3501,
+    # For Rotkehlchen SPD is Spindle and SPD-2 is Stipend
+    'SPD': 2828,
+    'SPD-2': 2616,
+    # For Rotkehlchen TCH is ThoreCash and TCH-2 is TigerCash
+    'TCH': 3056,
+    'TCH-2': 3806,
 }
 
 

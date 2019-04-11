@@ -225,6 +225,31 @@ MANUALLY_CHECKED = {
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'SGR': True,
+    # On 11/04/2019 SpeedMiningService is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/speed-mining-service/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'SMS': True,
+    # On 11/04/2019 TALAO is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/talao/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'TALAO': True,
+    # On 11/04/2019 TigerCash is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/tigercash/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'TCH-2': True,
+    # On 11/04/2019 TargetCoin is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/target-coin/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'TGT': True,
+    # On 11/04/2019 Ties.DB is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/tiesdb/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'TIE': True,
 }
 
 

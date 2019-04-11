@@ -99,6 +99,13 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'REDC',
     'RIPT',
     'RNDR',
+    'SKR',
+    'SKYM',
+    'SPICE',
+    'SSH',
+    'STP',
+    'TAN',
+    'TBT',
 )
 
 
@@ -341,6 +348,24 @@ WORLD_TO_PAPRIKA_ID = {
     'RMC': 'rmc-remicoin',
     # For Rotkehlchen SAC is SmartApplicationChain
     'SAC': 'sac-smart-application-chain',
+    # For Rotkehlchen SMART is SmartCash, and SMART-2 is SmartBillions
+    'SMART': 'smart-smartcash',
+    'SMART-2': 'smart-smartbillions',
+    # For Rotkehlchen SND is SandCoin
+    'SND': 'snd-sand-coin',
+    # For Rotkehlchen SOUL is Phantasma and SOUL-2 is CryptoSoul
+    'SOUL': 'soul-phantasma',
+    'SOUL-2': 'soul-cryptosoul',
+    # For Rotkehlchen SPD is Spindle and SPD-2 is Stipend
+    'SPD': 'spd-spindle',
+    'SPD-2': 'spd-stipend',
+    # For Rotkehlchen STR is Staken
+    'STR': 'str-staker',
+    # For Rotkehlchen TCH is ThoreCash and TCH-2 is TigerCash
+    'TCH': 'tch-thore-cash',
+    'TCH-2': 'tch-tigercash',
+    # For Rotkehlchen TEAM is TokenStars Team
+    'TEAM': 'team-team-tokenstars',
 }
 
 

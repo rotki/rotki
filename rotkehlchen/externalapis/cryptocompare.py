@@ -243,6 +243,31 @@ WORLD_TO_CRYPTOCOMPARE = {
     'SHP': 'SHP*',
     # For Rotkehlchen SKB is SakuraBloom but it's SKB* in cryptocompare
     'SKB': 'SKB*',
+    # For Rotkehlchen SKR is SkrillaToken but it's SKR* in cryptocompare
+    'SKR': 'SKR*',
+    # For Rotkehlchen SMART is SmartCash, and SMART-2 is SmartBillions, but in
+    # cryptocompare SmartBillions is SMART*
+    'SMART-2': 'SMART*',
+    # For Rotkehlchen SMT is SmartMesh but it's SMT* in cryptocompare
+    'SMT': 'SMT*',
+    # For Rotkehlchen SOUL is Phantasma and SOUL-2 is CryptoSoul. But cryptocompare
+    # only has Phantasma as SOUL*
+    'SOUL': 'SOUL*',
+    # For Rotkehlchen SPD is Spindle and SPD-2 is Stipend, but in cryptocompare
+    # Spindle is SPD* and Stipend is SPD
+    'SPD': 'SPD*',
+    'SPD-2': 'SPD',
+    # For Rotkehlchen SPN is Sapien Network but it's SPN* in cryptocompare
+    'SPN': 'SPN*',
+    # For Rotkehlchen SPX is Sp8de Token but it's SPX* in cryptocompare
+    'SPX': 'SPX*',
+    # For Rotkehlchen STRC is Star Credits but it's SRC* in cryptocompare
+    'STRC': 'SRC*',
+    # For Rotkehlchen TCH is ThoreCash and TCH-2 is TigerCash but cryptocompare
+    # only has TigerCash as TCH
+    'TCH-2': 'TCH',
+    # For Rotkehlchen TEAM is TokenStars Team but cryptocompare has it as TEAMT
+    'TEAM': 'TEAMT',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also
@@ -548,6 +573,27 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # SmartApplicationChain (https://coinmarketcap.com/currencies/smart-application-chain/)
     # is not in cryptocompare but is in paprika
     'SAC',
+    # snowball (https://etherscan.io/address/0x198A87b3114143913d4229Fb0f6D4BCb44aa8AFF)
+    # is not in cryptocompare but is in paprika
+    'SNBL',
+    # Soniq (https://coinmarketcap.com/currencies/soniq/)
+    # is not in cryptocompare but is in paprika
+    'SONIQ',
+    # CryptoSoul (https://coinmarketcap.com/currencies/cryptosoul/)
+    # is not in cryptocompare but is in paprika
+    'SOUL-2',
+    # Staker (https://coinmarketcap.com/currencies/staker/)
+    # is not in cryptocompare but is in paprika
+    'STR',
+    # TigerCash (https://coinmarketcap.com/currencies/tigercash/)
+    # is not in cryptocompare but is in paprika
+    'TCH',
+    # TercetNetwork (https://etherscan.io/address/0x28d7F432d24ba6020d1cbD4f28BEDc5a82F24320)
+    # is not in cryptocompare but is in paprika
+    'TCNX',
+    # ThingsChain (https://coinmarketcap.com/currencies/thingschain/)
+    # is not in cryptocompare but is in paprika
+    'TIC',
 )
 
 
@@ -655,5 +701,11 @@ class Cryptocompare():
         data['RLT'] = object()
         # This is RocketPool https://coinmarketcap.com/currencies/rocket-pool/
         data['RPL'] = object()
+        # This is SpeedMiningService (https://coinmarketcap.com/currencies/speed-mining-service/)
+        data['SMS'] = object()
+        # This is SmartShare (https://coinmarketcap.com/currencies/smartshare/)
+        data['SSP'] = object()
+        # This is ThoreCoin (https://coinmarketcap.com/currencies/thorecoin/)
+        data['THR'] = object()
 
         return data

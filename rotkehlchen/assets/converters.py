@@ -454,6 +454,13 @@ ETH_TOKENS_JSON_TO_WORLD = {
     'PRO (Propy)': 'PRO',
     'PRPS (1)': 'PRPS',
     'RCT (RealChain)': 'RCT',
+    'SMART': 'SMART-2',
+    'SMT (SmartMesh)': 'SMT',
+    'SOUL': 'SOUL-2',
+    'SS (1)': 'SS',
+    'sUSD': 'SUSD',
+    'TaaS': 'TAAS',
+    'TCH (TigerCash)': 'TCH-2',
 }
 UNSUPPORTED_ETH_TOKENS_JSON = (
     '$FFC',
@@ -730,6 +737,29 @@ UNSUPPORTED_ETH_TOKENS_JSON = (
     'SGT (SGT)',
     'SHIT',
     'SKE',
+    'SKO1',
+    'SLT',
+    'SLY',
+    'SMT',
+    'SMT (Smart Node)',
+    'SNG',
+    'SPARC',
+    'SPARTA',
+    'SS',
+    'STABIT',
+    'STB',
+    'STC',
+    'STN',
+    'SYN',
+    'TBC2',
+    'TCA',
+    'TDH',
+    'TEL (Meditel)',
+    'Thar',
+    'THUG',
+    'TIC (Trust Invest)',
+    'TICO',
+    'TICO (1)',
 )
 
 MOVED_ETH_TOKENS = {
@@ -756,6 +786,9 @@ MOVED_ETH_TOKENS = {
     'PRPS': 'PRPS (1)',
     'PRPS (2)': 'PRPS (1)',
     'RKT': 'STACS',
+    'SKRP (2)': 'SKRP',
+    'SKRP (1)': 'SKRP',
+    'SUB (old)': 'SUB',
 }
 
 ETH_TOKENS_MOVED_TO_OWN_CHAIN = {

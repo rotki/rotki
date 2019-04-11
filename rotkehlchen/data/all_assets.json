@@ -5993,11 +5993,35 @@
         "symbol": "SKIN",
         "type": "ethereum token"
     },
+    "SKM": {
+        "name": "Skrumble Network",
+        "started": 1523120745,
+        "symbol": "SKM",
+        "type": "ethereum token"
+    },
+    "SKR": {
+        "name": "Skrilla Token",
+        "started": 1492128000,
+        "symbol": "SKR",
+        "type": "ethereum token"
+    },
+    "SKRP": {
+        "name": "Skraps",
+        "started": 1519583547,
+        "symbol": "SKRP",
+        "type": "ethereum token"
+    },
     "SKY": {
         "name": "Skycoin",
         "started": 1387670400,
         "symbol": "SKY",
         "type": "own chain"
+    },
+    "SKYM": {
+        "name": "Skymap",
+        "started": 1534118400,
+        "symbol": "SKYM",
+        "type": "ethereum token"
     },
     "SLR": {
         "name": "SolarCoin",
@@ -6023,6 +6047,20 @@
         "symbol": "SLT",
         "type": "ethereum token"
     },
+    "SMART": {
+        "name": "SmartCash",
+        "started": 1499731200,
+        "symbol": "SMART",
+        "type": "own chain"
+    },
+    "SMART-2": {
+        "active": false,
+        "ended": 1555010711,
+        "name": "SmartBillions",
+        "started": 1505347200,
+        "symbol": "SMART",
+        "type": "ethereum token"
+    },
     "SMC": {
         "active": true,
         "name": "SmartCoin",
@@ -6030,10 +6068,49 @@
         "symbol": "SMC",
         "type": "own chain"
     },
+    "SMS": {
+        "active": true,
+        "name": "Speed Mining Service",
+        "started": 1510393562,
+        "symbol": "SMS",
+        "type": "ethereum token"
+    },
+    "SMT": {
+        "name": "SmartMesh",
+        "started": 1484092800,
+        "symbol": "SMT",
+        "type": "ethereum token"
+    },
+    "SNBL": {
+        "name": "Snowball",
+        "started": 1516941614,
+        "symbol": "SNBL",
+        "type": "ethereum token"
+    },
+    "SNC": {
+        "name": "SunContract",
+        "started": 1495756800,
+        "symbol": "SNC",
+        "type": "ethereum token"
+    },
+    "SND": {
+        "active": false,
+        "ended": 1555011477,
+        "name": "Sand Coin",
+        "started": 1500673442,
+        "symbol": "SND",
+        "type": "ethereum token"
+    },
     "SNGLS": {
         "name": "SingularDTV",
         "started": 1475366400,
         "symbol": "SNGLS",
+        "type": "ethereum token"
+    },
+    "SNIP": {
+        "name": "SnipCoin",
+        "started": 1506668499,
+        "symbol": "SNIP",
         "type": "ethereum token"
     },
     "SNM": {
@@ -6042,16 +6119,70 @@
         "symbol": "SNM",
         "type": "ethereum token"
     },
+    "SNOV": {
+        "name": "Snovian.Space",
+        "started": 1503360000,
+        "symbol": "SNOV",
+        "type": "ethereum token"
+    },
     "SNT": {
         "name": "Status Network Token",
         "started": 1497889273,
         "symbol": "SNT",
         "type": "ethereum token"
     },
+    "SNTR": {
+        "name": "Silent Notary",
+        "started": 1510223037,
+        "symbol": "SNTR",
+        "type": "ethereum token"
+    },
+    "SNX": {
+        "name": "Synthetix Network Token",
+        "started": 1515283200,
+        "symbol": "SNX",
+        "type": "ethereum token"
+    },
+    "SOAR": {
+        "name": "Soarcoin",
+        "started": 1489104000,
+        "symbol": "SOAR",
+        "type": "ethereum token"
+    },
+    "SOC": {
+        "name": "All Sports",
+        "started": 1516031726,
+        "symbol": "SOC",
+        "type": "ethereum token"
+    },
+    "SOL": {
+        "name": "Sola Token",
+        "started": 1514467063,
+        "symbol": "SOL",
+        "type": "ethereum token"
+    },
     "SOLVE": {
         "name": "SOLVE",
         "started": 1528934400,
         "symbol": "SOLVE",
+        "type": "ethereum token"
+    },
+    "SONIQ": {
+        "name": "Soniq",
+        "started": 1526140454,
+        "symbol": "SONIQ",
+        "type": "ethereum token"
+    },
+    "SOUL": {
+        "name": "Phantasma",
+        "started": 1527536682,
+        "symbol": "SOUL",
+        "type": "neo token"
+    },
+    "SOUL-2": {
+        "name": "CryptoSoul",
+        "started": 1534432511,
+        "symbol": "SOUL",
         "type": "ethereum token"
     },
     "SPA": {
@@ -6062,11 +6193,35 @@
         "symbol": "SPA",
         "type": "own chain"
     },
+    "SPANK": {
+        "name": "SpankChain",
+        "started": 1503187200,
+        "symbol": "SPANK",
+        "type": "ethereum token"
+    },
     "SPC": {
         "name": "SpaceChain",
         "started": 1516147466,
         "symbol": "SPC",
         "type": "qtum token"
+    },
+    "SPD": {
+        "name": "SPINDLE",
+        "started": 1520553600,
+        "symbol": "SPD",
+        "type": "ethereum token"
+    },
+    "SPD-2": {
+        "name": "Stipend",
+        "started": 1522170861,
+        "symbol": "SPD",
+        "type": "own chain"
+    },
+    "SPF": {
+        "name": "SportyCo",
+        "started": 1506470400,
+        "symbol": "SPF",
+        "type": "ethereum token"
     },
     "SPHR": {
         "name": "Sphere",
@@ -6074,10 +6229,34 @@
         "symbol": "SPHR",
         "type": "own chain"
     },
+    "SPHTX": {
+        "name": "SophiaTX",
+        "started": 1506556800,
+        "symbol": "SPHTX",
+        "type": "ethereum token"
+    },
+    "SPICE": {
+        "name": "Spice VC Token",
+        "started": 1517443200,
+        "symbol": "SPICE",
+        "type": "ethereum token"
+    },
+    "SPN": {
+        "name": "Sapien",
+        "started": 1522345348,
+        "symbol": "SPN",
+        "type": "ethereum token"
+    },
     "SPND": {
         "name": "Spendcoin",
         "started": 1530057600,
         "symbol": "SPND",
+        "type": "ethereum token"
+    },
+    "SPX": {
+        "name": "Sp8de",
+        "started": 1515369600,
+        "symbol": "SPX",
         "type": "ethereum token"
     },
     "SQL": {
@@ -6092,6 +6271,12 @@
         "symbol": "SRN",
         "type": "ethereum token"
     },
+    "SS": {
+        "name": "Sharder",
+        "started": 1517875200,
+        "symbol": "SS",
+        "type": "ethereum token"
+    },
     "SSD": {
         "active": false,
         "ended": 1467331200,
@@ -6100,11 +6285,47 @@
         "symbol": "SSD",
         "type": "own chain"
     },
+    "SSH": {
+        "name": "StreamSpace",
+        "started": 1519859663,
+        "symbol": "SSH",
+        "type": "ethereum token"
+    },
+    "SSP": {
+        "name": "Smartshare",
+        "started": 1515628800,
+        "symbol": "SSP",
+        "type": "ethereum token"
+    },
+    "STAC": {
+        "name": "StarterCoin",
+        "started": 1511395200,
+        "symbol": "STAC",
+        "type": "ethereum token"
+    },
+    "STACS": {
+        "name": "STACS",
+        "started": 1542383860,
+        "symbol": "STACS",
+        "type": "ethereum token"
+    },
+    "STAR": {
+        "name": "Starbase",
+        "started": 1486252800,
+        "symbol": "STAR",
+        "type": "ethereum token"
+    },
     "STEEM": {
         "name": "Steem",
         "started": 1458777600,
         "symbol": "STEEM",
         "type": "own chain"
+    },
+    "STK": {
+        "name": "STK",
+        "started": 1506470400,
+        "symbol": "STK",
+        "type": "ethereum token"
     },
     "STORJ": {
         "name": "Storj",
@@ -6118,16 +6339,84 @@
         "symbol": "STORM",
         "type": "ethereum token"
     },
+    "STP": {
+        "name": "StashPay",
+        "started": 1503532800,
+        "symbol": "STP",
+        "type": "ethereum token"
+    },
+    "STQ": {
+        "name": "Storiqa",
+        "started": 1507060013,
+        "symbol": "STQ",
+        "type": "ethereum token"
+    },
+    "STR": {
+        "name": "Staker",
+        "started": 1532355818,
+        "symbol": "STR",
+        "type": "ethereum token"
+    },
     "STRAT": {
         "name": "Stratis",
         "started": 1465862400,
         "symbol": "STRAT",
         "type": "own chain"
     },
+    "STRC": {
+        "active": false,
+        "ended": 1539216000,
+        "name": "StarCredits",
+        "started": 1493164800,
+        "symbol": "STRC",
+        "type": "ethereum token"
+    },
+    "STU": {
+        "name": "bitJob",
+        "started": 1501632000,
+        "symbol": "STU",
+        "type": "ethereum token"
+    },
+    "STX": {
+        "name": "Stox",
+        "started": 1501618929,
+        "symbol": "STX",
+        "type": "ethereum token"
+    },
     "SUB": {
         "name": "Substratum",
         "started": 1501372800,
         "symbol": "SUB",
+        "type": "ethereum token"
+    },
+    "SUR": {
+        "name": "Suretly",
+        "started": 1492646400,
+        "symbol": "SUR",
+        "type": "ethereum token"
+    },
+    "SUSD": {
+        "name": "sUSD",
+        "started": 1528426090,
+        "symbol": "SUSD",
+        "type": "ethereum token"
+    },
+    "SVD": {
+        "name": "savedroid",
+        "started": 1513123200,
+        "symbol": "SVD",
+        "type": "ethereum token"
+    },
+    "SWFTC": {
+        "name": "SwftCoin",
+        "started": 1501903127,
+        "symbol": "SWFTC",
+        "type": "ethereum token"
+    },
+    "SWM": {
+        "name": "Swarm Fund",
+        "started": 1504742400,
+        "symbol": "SWM",
         "type": "ethereum token"
     },
     "SWT": {
@@ -6141,6 +6430,18 @@
         "started": 1369699200,
         "symbol": "SXC",
         "type": "own chain"
+    },
+    "SXDT": {
+        "name": "Spectre.ai Dividend Token",
+        "started": 1496361600,
+        "symbol": "SXDT",
+        "type": "ethereum token"
+    },
+    "SXUT": {
+        "name": "Spectre.ai Utility Token",
+        "started": 1496275200,
+        "symbol": "SXUT",
+        "type": "ethereum token"
     },
     "SYNC": {
         "active": false,
@@ -6162,12 +6463,111 @@
         "symbol": "SYS",
         "type": "own chain"
     },
+    "TAAS": {
+        "name": "Token As A Service",
+        "started": 1485993600,
+        "symbol": "TAAS",
+        "type": "ethereum token"
+    },
+    "TALAO": {
+        "active": true,
+        "name": "Talao",
+        "started": 1521936000,
+        "symbol": "TALAO",
+        "type": "ethereum token"
+    },
     "TALK": {
         "active": true,
         "name": "BTCtalkcoin",
         "started": 1399053201,
         "symbol": "TALK",
         "type": "own chain"
+    },
+    "TAN": {
+        "name": "Taklimakan",
+        "started": 1545745042,
+        "symbol": "TAN",
+        "type": "ethereum token"
+    },
+    "TAU": {
+        "name": "Lamden",
+        "started": 1510545560,
+        "symbol": "TAU",
+        "type": "ethereum token"
+    },
+    "TBT": {
+        "name": "T-Bot",
+        "started": 1506087291,
+        "symbol": "TBT",
+        "type": "ethereum token"
+    },
+    "TBX": {
+        "name": "Tokenbox",
+        "started": 1507248000,
+        "symbol": "TBX",
+        "type": "ethereum token"
+    },
+    "TCH": {
+        "name": "Thore Cash",
+        "started": 1522178999,
+        "symbol": "TCH",
+        "type": "ethereum token"
+    },
+    "TCH-2": {
+        "active": true,
+        "name": "TigerCash",
+        "started": 1510704000,
+        "symbol": "TCH",
+        "type": "ethereum token"
+    },
+    "TCNX": {
+        "name": "Tercet Network",
+        "started": 1544428515,
+        "symbol": "TCNX",
+        "type": "ethereum token"
+    },
+    "TEAM": {
+        "name": "TokenStars Team",
+        "started": 1519279480,
+        "symbol": "TEAM",
+        "type": "ethereum token"
+    },
+    "TEL": {
+        "name": "Telcoin",
+        "started": 1510358400,
+        "symbol": "TEL",
+        "type": "ethereum token"
+    },
+    "TEN": {
+        "name": "Tokenomy",
+        "started": 1515369600,
+        "symbol": "TEN",
+        "type": "ethereum token"
+    },
+    "TFD": {
+        "name": "TE-FOOD",
+        "started": 1505347200,
+        "symbol": "TFD",
+        "type": "ethereum token"
+    },
+    "TFL": {
+        "name": "TrueFlip",
+        "started": 1492646400,
+        "symbol": "TFL",
+        "type": "ethereum token"
+    },
+    "TGAME": {
+        "name": "Truegame",
+        "started": 1520263076,
+        "symbol": "TGAME",
+        "type": "ethereum token"
+    },
+    "TGT": {
+        "active": true,
+        "name": "Target Coin",
+        "started": 1498953600,
+        "symbol": "TGT",
+        "type": "ethereum token"
     },
     "THC": {
         "name": "HempCoin",
@@ -6179,6 +6579,31 @@
         "name": "THETA",
         "started": 1511395200,
         "symbol": "THETA",
+        "type": "ethereum token"
+    },
+    "THR": {
+        "name": "ThoreCoin",
+        "started": 1517321838,
+        "symbol": "THR",
+        "type": "ethereum token"
+    },
+    "THRT": {
+        "name": "Thrive Token",
+        "started": 1523532799,
+        "symbol": "THRT",
+        "type": "ethereum token"
+    },
+    "TIC": {
+        "name": "Thingschain",
+        "started": 1531172546,
+        "symbol": "TIC",
+        "type": "ethereum token"
+    },
+    "TIE": {
+        "active": true,
+        "name": "Ties.DB",
+        "started": 1502064000,
+        "symbol": "TIE",
         "type": "ethereum token"
     },
     "TIX": {
