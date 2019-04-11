@@ -54,6 +54,16 @@ MANUALLY_CHECKED_TYPES = {
     'REDC': 'ethereum token',
     'RIPT': 'ethereum token',
     'RNDR': 'ethereum token',
+    'SKR': 'ethereum token',
+    'SKYM': 'ethereum token',
+    'SPHTX': 'ethereum token',
+    'SPICE': 'ethereum token',
+    'SS': 'ethereum token',
+    'SSH': 'ethereum token',
+    'STP': 'ethereum token',
+    'TAN': 'ethereum token',
+    'TBT': 'ethereum token',
+    'TCH-2': 'ethereum token',
 }
 
 
@@ -75,7 +85,7 @@ def typeinfo_check(
         elif paprika_data['type'] == 'token':
 
             # a special case for which paprika has wrong/corrupt parent data
-            if asset_symbol in ('ZIL', 'WTC', 'KIN', 'LOCUS', 'MESH', 'ORBS'):
+            if asset_symbol in ('ZIL', 'WTC', 'KIN', 'LOCUS', 'MESH', 'ORBS', 'SMS', 'SNBL'):
                 our_data[asset_symbol]['type'] = 'ethereum token'
                 return our_data
 
