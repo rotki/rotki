@@ -174,42 +174,40 @@ class Poloniex(Exchange):
         if command == "returnTicker":
             log.debug('Querying poloniex for returnTicker')
             ret = self.session.get(self.public_uri + command)
-        else:
-            req['command'] = command
+            return rlk_jsonloads(ret.text)
 
-            with self.lock:
-                # Protect this region with a lock since poloniex will reject
-                # non-increasing nonces. So if two greenlets come in here at
-                # the same time one of them will fail
-                req['nonce'] = int(time.time() * 1000)
-                post_data = str.encode(urlencode(req))
+        req['command'] = command
+        with self.lock:
+            # Protect this region with a lock since poloniex will reject
+            # non-increasing nonces. So if two greenlets come in here at
+            # the same time one of them will fail
+            req['nonce'] = int(time.time() * 1000)
+            post_data = str.encode(urlencode(req))
 
-                sign = hmac.new(self.secret, post_data, hashlib.sha512).hexdigest()
-                self.session.headers.update({'Sign': sign})
+            sign = hmac.new(self.secret, post_data, hashlib.sha512).hexdigest()
+            self.session.headers.update({'Sign': sign})
 
-                log.debug(
-                    'Poloniex private API query',
-                    command=command,
-                    post_data=req,
-                )
-                ret = self.session.post('https://poloniex.com/tradingApi', req)
+            log.debug(
+                'Poloniex private API query',
+                command=command,
+                post_data=req,
+            )
+            ret = self.session.post('https://poloniex.com/tradingApi', req)
 
-            if ret.status_code != 200:
-                raise RemoteError(
-                    f'Poloniex query responded with error status code: {ret.status_code}'
-                    f' and text: {ret.text}',
-                )
+        if ret.status_code != 200:
+            raise RemoteError(
+                f'Poloniex query responded with error status code: {ret.status_code}'
+                f' and text: {ret.text}',
+            )
 
-            try:
-                if command == 'returnLendingHistory':
-                    result = rlk_jsonloads_list(ret.text)
-                else:
-                    result = rlk_jsonloads_dict(ret.text)
-            except JSONDecodeError:
-                raise RemoteError(f'Poloniex returned invalid JSON response: {ret.text}')
-            return _post_process(result)
-
-        return rlk_jsonloads(ret.text)
+        try:
+            if command == 'returnLendingHistory':
+                return rlk_jsonloads_list(ret.text)
+            else:
+                result = rlk_jsonloads_dict(ret.text)
+                return _post_process(result)
+        except JSONDecodeError:
+            raise RemoteError(f'Poloniex returned invalid JSON response: {ret.text}')
 
     def returnTicker(self) -> Dict:
         # We know returnTicker response is a Dict
