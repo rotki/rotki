@@ -5890,6 +5890,11 @@
     "decimal": 8
   },
   {
+    "address": "0xBfaA8cF522136C6FAfC1D53Fe4b85b4603c765b8",
+    "symbol": "WIN (Winchain Token",
+    "decimal": 18
+  },
+  {
     "address": "0x667088b212ce3d06a1b553a7221E1fD19000d9aF",
     "symbol": "WINGS",
     "decimal": 18
