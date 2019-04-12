@@ -106,6 +106,11 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'STP',
     'TAN',
     'TBT',
+    'URB',
+    'VENUS',
+    'WMK',
+    'WLK',
+    'ZIX',
 )
 
 
@@ -366,6 +371,20 @@ WORLD_TO_PAPRIKA_ID = {
     'TCH-2': 'tch-tigercash',
     # For Rotkehlchen TEAM is TokenStars Team
     'TEAM': 'team-team-tokenstars',
+    # For Rotkehlchen TOK is Tokok
+    'TOK': 'tok-tokok',
+    # For Rotkehlchen VIT is Vice Industry Token
+    'VIT': 'vit-vice-industry-token',
+    # For Rotkehlchen WBTC is Wrapped Bitcoin
+    'WBTC': 'wbtc-wrapped-bitcoin',
+    # For Rotkehlchen WEB is Webcoin and WEB-2 Webchain
+    'WEB': 'web-webcoin',
+    'WEB-2': 'web-webchain',
+    # For Rotkehlchen WIN is Winchain Token and WIN-2 WCoin
+    'WIN': 'win-wintoken',
+    'WIN-2': 'win-wcoin',
+    # For Rotkehlchen XID is Sphre Air
+    'XID': 'xid-sphre-air',
 }
 
 
@@ -439,6 +458,8 @@ KNOWN_WRONG_PAPRIKA_DATA = (
     'COIN',  # For Coinvest paprika has the old non-migrated contract address
     'DUBI',  # For Decentralized Universal Basic Income paprika has the old contract address
     'LYM',  # For LYMPO paprika has the old contract address
+    'TIO',  # For Trade.io paprika has the old contract address
+    'VSF',  # For Verisafe paprika has the old contract address
 )
 
 

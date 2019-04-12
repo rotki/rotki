@@ -268,6 +268,18 @@ WORLD_TO_CRYPTOCOMPARE = {
     'TCH-2': 'TCH',
     # For Rotkehlchen TEAM is TokenStars Team but cryptocompare has it as TEAMT
     'TEAM': 'TEAMT',
+    # For Rotkehlchen TMT is Traxia Membership Token but it's TMT** in cryptocompare
+    'TMT': 'TMT**',
+    # For Rotkehlchen VSF is Verisafe but it's CPLO in cryptocompare (the old name)
+    'VSF': 'CPLO',
+    # For Rotkehlchen WEB is Webcoin and WEB-2 Webchain, but in cryptocompare
+    # Webchain is WEB*
+    'WEB-2': 'WEB*',
+    # For Rotkehlchen WIN is Winchain Token and WIN-2 WCoin, but in cryptocompare
+    # Wcoin is WIN and there is no Winchain Token
+    'WIN-2': 'WIN',
+    # For Rotkehlchen BlitzPredict is XBP  but it's XBP* in cryptocompare
+    'XBP': 'XBP*',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also
@@ -594,6 +606,33 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # ThingsChain (https://coinmarketcap.com/currencies/thingschain/)
     # is not in cryptocompare but is in paprika
     'TIC',
+    # Tokok (https://coinmarketcap.com/currencies/tokok/)
+    # is not in cryptocompare but is in paprika
+    'TOK',
+    # Uchain (https://coinmarketcap.com/currencies/uchain/)
+    # is not in cryptocompare but is in paprika
+    'UCN',
+    # Bitcoin Card (https://etherscan.io/address/0x9a9bB9b4b11BF8eccff84B58a6CCCCD4058A7f0D)
+    # is not in cryptocompare but is in paprika
+    'VD',
+    # VeriDocGlobal (https://coinmarketcap.com/currencies/veridocglobal/)
+    # is not in cryptocompare but is in paprika
+    'VDG',
+    # Vikky Token (https://coinmarketcap.com/currencies/vikkytoken/)
+    # is not in cryptocompare but is in paprika
+    'VIKKY',
+    # Wibson (https://coinmarketcap.com/currencies/wibson/)
+    # is not in cryptocompare but is in paprika
+    'WIB',
+    # Winchain Token (https://coinmarketcap.com/currencies/wintoken/)
+    # is not in cryptocompare but is in paprika
+    'WIN',
+    # Yggdrash (https://coinmarketcap.com/currencies/yeed/)
+    # is not in cryptocompare but is in paprika
+    'YEED',
+    # ZeusNetwork (https://coinmarketcap.com/currencies/zeusnetwork/)
+    # is not in cryptocompare but is in paprika
+    'ZEUS',
 )
 
 
@@ -707,5 +746,11 @@ class Cryptocompare():
         data['SSP'] = object()
         # This is ThoreCoin (https://coinmarketcap.com/currencies/thorecoin/)
         data['THR'] = object()
+        # This is Transcodium (https://coinmarketcap.com/currencies/transcodium/)
+        data['TNS'] = object()
+        # This is XMedChainToken (https://coinmarketcap.com/currencies/xmct/)
+        data['XMCT'] = object()
+        # This is Xplay (https://coinmarketcap.com/currencies/xpa)
+        data['XPA'] = object()
 
         return data
