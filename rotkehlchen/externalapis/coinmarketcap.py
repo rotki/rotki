@@ -589,6 +589,51 @@ KNOWN_TO_MISS_FROM_CMC = (
     # TercetNetwork (https://etherscan.io/address/0x28d7F432d24ba6020d1cbD4f28BEDc5a82F24320)
     # is not in coinmarketcap but is in paprika
     'TCNX',
+    # Trade.io (https://www.cryptocompare.com/coins/tio/)
+    # is not in coinmarketcap but is in paprika and cryptocompare
+    'TIO',
+    # CryptoInsight is missing from API but is in
+    # https://coinmarketcap.com/currencies/trackr/
+    'TKR',
+    # TaTaTu is missing from API but is in
+    # https://coinmarketcap.com/currencies/tatatu/
+    'TTU',
+    # Urbit (https://www.cryptocompare.com/coins/urb/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'URB',
+    # Bitcoin Card (https://etherscan.io/address/0x9a9bB9b4b11BF8eccff84B58a6CCCCD4058A7f0D)
+    # is not in coinmarketcap but is in paprika
+    'VD',
+    # VenusEnergy (https://www.cryptocompare.com/coins/venus/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'VENUS',
+    # WhenCoin (https://www.cryptocompare.com/coins/when/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'WHEN',
+    # WildCrypto missing from API but is in
+    # https://coinmarketcap.com/currencies/wild-crypto/
+    'WILD',
+    # Wcoin missing from API but is in
+    # https://coinmarketcap.com/currencies/wawllet/
+    'WIN-2',
+    # WeMark (https://www.cryptocompare.com/coins/wmk/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'WMK',
+    # Wolk (https://www.cryptocompare.com/coins/wlk/overview)
+    # is not in coinmarketcap but is in cryptocompare
+    'WLK',
+    # Gigawatt missing from API but is in
+    # https://coinmarketcap.com/currencies/giga-watt-token/
+    'WTT',
+    # Sphere Identity missing from API but is in
+    # https://coinmarketcap.com/currencies/sphere-identity/
+    'XID',
+    # Rialto missing from API but is in
+    # https://coinmarketcap.com/currencies/rialto/
+    'XRL',
+    # ZIX (https://www.cryptocompare.com/coins/zix/)
+    # is not in coinmarketcap but is in cryptocompare
+    'ZIX',
 )
 
 
@@ -725,6 +770,9 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen TCH is ThoreCash and TCH-2 is TigerCash
     'TCH': 3056,
     'TCH-2': 3806,
+    # For Rotkehlchen WEB is Webcoin and WEB-2 Webchain
+    'WEB': 3027,
+    'WEB-2': 3361,
 }
 
 

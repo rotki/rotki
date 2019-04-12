@@ -6606,10 +6606,51 @@
         "symbol": "TIE",
         "type": "ethereum token"
     },
+    "TIG": {
+        "name": "Tigereum",
+        "started": 1491004800,
+        "symbol": "TIG",
+        "type": "ethereum token"
+    },
+    "TIME": {
+        "name": "Chronobank",
+        "started": 1487863971,
+        "symbol": "TIME",
+        "type": "ethereum token"
+    },
+    "TIO": {
+        "active": false,
+        "ended": 1555082478,
+        "name": "Trade Token",
+        "started": 1509494400,
+        "symbol": "TIO",
+        "type": "ethereum token"
+    },
     "TIX": {
         "name": "Blocktix",
         "started": 1499385600,
         "symbol": "TIX",
+        "type": "ethereum token"
+    },
+    "TKA": {
+        "active": true,
+        "name": "Tokia",
+        "started": 1514469699,
+        "symbol": "TKA",
+        "type": "ethereum token"
+    },
+    "TKN": {
+        "name": "TokenCard",
+        "started": 1493683200,
+        "symbol": "TKN",
+        "type": "ethereum token"
+    },
+    "TKR": {
+        "active": false,
+        "ended": 1549411200,
+        "name": "CryptoInsight",
+        "started": 1502482261,
+        "symbol": "TKR",
         "type": "ethereum token"
     },
     "TKS": {
@@ -6618,16 +6659,46 @@
         "symbol": "TKS",
         "type": "waves token"
     },
+    "TMT": {
+        "name": "TRAXIA",
+        "started": 1519516800,
+        "symbol": "TMT",
+        "type": "ethereum token"
+    },
+    "TMTG": {
+        "name": "The Midas Touch Gold",
+        "started": 1531180800,
+        "symbol": "TMTG",
+        "type": "ethereum token"
+    },
     "TNB": {
         "name": "Time New Bank",
         "started": 1475280000,
         "symbol": "TNB",
         "type": "ethereum token"
     },
+    "TNS": {
+        "name": "Transcodium",
+        "started": 1517371433,
+        "symbol": "TNS",
+        "type": "ethereum token"
+    },
     "TNT": {
         "name": "Tierion",
         "started": 1500249600,
         "symbol": "TNT",
+        "type": "ethereum token"
+    },
+    "TOK": {
+        "name": "TOKOK",
+        "started": 1522650493,
+        "symbol": "TOK",
+        "type": "ethereum token"
+    },
+    "TOMO": {
+        "name": "TomoChain",
+        "started": 1500076800,
+        "symbol": "TOMO",
         "type": "ethereum token"
     },
     "TOR": {
@@ -6642,6 +6713,25 @@
         "name": "OriginTrail",
         "started": 1511222400,
         "symbol": "TRAC",
+        "type": "ethereum token"
+    },
+    "TRAK": {
+        "active": true,
+        "name": "TrakInvest",
+        "started": 1513361766,
+        "symbol": "TRAK",
+        "type": "ethereum token"
+    },
+    "TRCT": {
+        "name": "Tracto",
+        "started": 1505235335,
+        "symbol": "TRCT",
+        "type": "ethereum token"
+    },
+    "TRDT": {
+        "name": "Trident Group",
+        "started": 1513900800,
+        "symbol": "TRDT",
         "type": "ethereum token"
     },
     "TRIG": {
@@ -6670,12 +6760,26 @@
         "name": "TRON",
         "started": 1504051200,
         "symbol": "TRX",
-        "type": "own chain"
+        "type": "ethereum token and more"
     },
     "TTC": {
         "name": "TTC Protocol",
         "started": 1529884800,
         "symbol": "TTC",
+        "type": "ethereum token"
+    },
+    "TTU": {
+        "active": false,
+        "ended": 1551398400,
+        "name": "TaTaTu",
+        "started": 1523119984,
+        "symbol": "TTU",
+        "type": "ethereum token"
+    },
+    "TTV": {
+        "name": "TV-TWO",
+        "started": 1526568632,
+        "symbol": "TTV",
         "type": "ethereum token"
     },
     "TUBE": {
@@ -6701,6 +6805,30 @@
         "started": 1410125962,
         "symbol": "UBQ",
         "type": "own chain"
+    },
+    "UBT": {
+        "name": "Unibright",
+        "started": 1515695966,
+        "symbol": "UBT",
+        "type": "ethereum token"
+    },
+    "UCASH": {
+        "name": "UNIVERSAL CASH",
+        "started": 1504915200,
+        "symbol": "UCASH",
+        "type": "ethereum token"
+    },
+    "UCN": {
+        "name": "UChain",
+        "started": 1529428707,
+        "symbol": "UCN",
+        "type": "ethereum token"
+    },
+    "UFR": {
+        "name": "Upfiring",
+        "started": 1506913700,
+        "symbol": "UFR",
+        "type": "ethereum token"
     },
     "UIS": {
         "active": false,
@@ -6740,6 +6868,18 @@
         "name": "Sentinel Protocol",
         "started": 1526947200,
         "symbol": "UPP",
+        "type": "ethereum token"
+    },
+    "UQC": {
+        "name": "Uquid Coin",
+        "started": 1504828800,
+        "symbol": "UQC",
+        "type": "ethereum token"
+    },
+    "URB": {
+        "name": "Urbit Data",
+        "started": 1524096000,
+        "symbol": "URB",
         "type": "ethereum token"
     },
     "URO": {
@@ -6808,6 +6948,42 @@
         "symbol": "UTIL",
         "type": "own chain"
     },
+    "UTK": {
+        "name": "UTRUST",
+        "started": 1503878400,
+        "symbol": "UTK",
+        "type": "ethereum token"
+    },
+    "UTNP": {
+        "name": "Universa",
+        "started": 1504137600,
+        "symbol": "UTNP",
+        "type": "ethereum token"
+    },
+    "UTT": {
+        "name": "United Traders Token",
+        "started": 1510272000,
+        "symbol": "UTT",
+        "type": "ethereum token"
+    },
+    "UUU": {
+        "name": "U Network",
+        "started": 1518068353,
+        "symbol": "UUU",
+        "type": "ethereum token"
+    },
+    "VD": {
+        "name": "Bitcoin Card",
+        "started": 1535991771,
+        "symbol": "VD",
+        "type": "ethereum token"
+    },
+    "VDG": {
+        "name": "VeriDocGlobal",
+        "started": 1523969334,
+        "symbol": "VDG",
+        "type": "ethereum token"
+    },
     "VEE": {
         "name": "BLOCKv",
         "started": 1507766400,
@@ -6821,6 +6997,18 @@
         "started": 1503360000,
         "swapped_for": "VET",
         "symbol": "VEN",
+        "type": "ethereum token"
+    },
+    "VENUS": {
+        "name": "VenusEnergy",
+        "started": 1509828819,
+        "symbol": "VENUS",
+        "type": "ethereum token"
+    },
+    "VERI": {
+        "name": "Veritaseum",
+        "started": 1492951503,
+        "symbol": "VERI",
         "type": "ethereum token"
     },
     "VET": {
@@ -6847,10 +7035,58 @@
         "symbol": "VIBE",
         "type": "ethereum token"
     },
+    "VIDT": {
+        "name": "V-ID",
+        "started": 1534609173,
+        "symbol": "VIDT",
+        "type": "ethereum token"
+    },
+    "VIEW": {
+        "name": "View",
+        "started": 1504742400,
+        "symbol": "VIEW",
+        "type": "ethereum token"
+    },
+    "VIKKY": {
+        "name": "VikkyToken",
+        "started": 1528518303,
+        "symbol": "VIKKY",
+        "type": "ethereum token"
+    },
+    "VIN": {
+        "name": "VINchain",
+        "started": 1509580800,
+        "symbol": "VIN",
+        "type": "ethereum token"
+    },
+    "VIT": {
+        "name": "Vice Industry Token",
+        "started": 1514764800,
+        "symbol": "VIT",
+        "type": "ethereum token"
+    },
     "VITE": {
         "name": "VITE",
         "started": 1524614400,
         "symbol": "VITE",
+        "type": "ethereum token"
+    },
+    "VIU": {
+        "name": "Viuly",
+        "started": 1506297600,
+        "symbol": "VIU",
+        "type": "ethereum token"
+    },
+    "VLD": {
+        "name": "Vetri",
+        "started": 1514764800,
+        "symbol": "VLD",
+        "type": "ethereum token"
+    },
+    "VOISE": {
+        "name": "Voise",
+        "started": 1490659200,
+        "symbol": "VOISE",
         "type": "ethereum token"
     },
     "VOOT": {
@@ -6873,11 +7109,42 @@
         "symbol": "VRM",
         "type": "own chain"
     },
+    "VRS": {
+        "name": "Veros",
+        "started": 1477958400,
+        "symbol": "VRS",
+        "type": "ethereum token"
+    },
+    "VSF": {
+        "active": true,
+        "name": "VeriSafe",
+        "started": 1536796800,
+        "symbol": "VSF",
+        "type": "ethereum token"
+    },
+    "VSL": {
+        "name": "vSlice",
+        "started": 1479147488,
+        "symbol": "VSL",
+        "type": "ethereum token"
+    },
     "VTC": {
         "name": "Vertcoin",
         "started": 1389139200,
         "symbol": "VTC",
         "type": "own chain"
+    },
+    "VZT": {
+        "name": "Vezt",
+        "started": 1505779200,
+        "symbol": "VZT",
+        "type": "ethereum token"
+    },
+    "WAB": {
+        "name": "WABnetwork",
+        "started": 1529247016,
+        "symbol": "WAB",
+        "type": "ethereum token"
     },
     "WABI": {
         "name": "Tael",
@@ -6903,16 +7170,100 @@
         "symbol": "WAX",
         "type": "ethereum token"
     },
+    "WBTC": {
+        "name": "Wrapped Bitcoin",
+        "started": 1543095952,
+        "symbol": "WBTC",
+        "type": "ethereum token"
+    },
     "WDC": {
         "name": "WorldCoin",
         "started": 1368489600,
         "symbol": "WDC",
         "type": "own chain"
     },
+    "WEB": {
+        "name": "Webcoin",
+        "started": 1506816000,
+        "symbol": "WEB",
+        "type": "ethereum token"
+    },
+    "WEB-2": {
+        "name": "Webchain",
+        "started": 1531047649,
+        "symbol": "WEB",
+        "type": "own chain"
+    },
+    "WETH": {
+        "name": "WETH",
+        "started": 1513077455,
+        "symbol": "WETH",
+        "type": "ethereum token"
+    },
+    "WHEN": {
+        "name": "WHEN Token",
+        "started": 1521411781,
+        "symbol": "WHEN",
+        "type": "ethereum token"
+    },
+    "WIB": {
+        "name": "Wibson",
+        "started": 1537279046,
+        "symbol": "WIB",
+        "type": "ethereum token"
+    },
+    "WIC": {
+        "active": false,
+        "ended": 1555090931,
+        "name": "Wi Coin",
+        "started": 1502110282,
+        "symbol": "WIC",
+        "type": "ethereum token"
+    },
+    "WILD": {
+        "active": false,
+        "ended": 1549065600,
+        "name": "Wild Crypto",
+        "started": 1502119706,
+        "symbol": "WILD",
+        "type": "ethereum token"
+    },
+    "WIN": {
+        "name": "WinToken",
+        "started": 1528126931,
+        "symbol": "WIN",
+        "type": "ethereum token"
+    },
+    "WIN-2": {
+        "active": false,
+        "ended": 1536192000,
+        "name": "WCOIN",
+        "started": 1514073600,
+        "symbol": "WIN",
+        "type": "ethereum token"
+    },
     "WINGS": {
         "name": "Wings DAO",
         "started": 1483142400,
         "symbol": "WINGS",
+        "type": "ethereum token"
+    },
+    "WISH": {
+        "name": "MyWish",
+        "started": 1505088000,
+        "symbol": "WISH",
+        "type": "ethereum token"
+    },
+    "WLK": {
+        "name": "Wolk",
+        "started": 1505001600,
+        "symbol": "WLK",
+        "type": "ethereum token"
+    },
+    "WMK": {
+        "name": "WeMark",
+        "started": 1524096000,
+        "symbol": "WMK",
         "type": "ethereum token"
     },
     "WOLF": {
@@ -6929,10 +7280,37 @@
         "symbol": "WPR",
         "type": "ethereum token"
     },
+    "WRC": {
+        "name": "Worldcore",
+        "started": 1502928000,
+        "symbol": "WRC",
+        "type": "ethereum token"
+    },
     "WTC": {
         "name": "Waltonchain",
         "started": 1500336000,
         "symbol": "WTC",
+        "type": "ethereum token"
+    },
+    "WTT": {
+        "active": false,
+        "ended": 1522281600,
+        "name": "Giga Watt Token",
+        "started": 1494547200,
+        "symbol": "WTT",
+        "type": "ethereum token"
+    },
+    "WYS": {
+        "active": true,
+        "name": "wys Token",
+        "started": 1506902400,
+        "symbol": "WYS",
+        "type": "ethereum token"
+    },
+    "X8X": {
+        "name": "X8X Token",
+        "started": 1509845197,
+        "symbol": "X8X",
         "type": "ethereum token"
     },
     "XAI": {
@@ -6943,11 +7321,37 @@
         "symbol": "XAI",
         "type": "own chain"
     },
+    "XAUR": {
+        "name": "Xaurum",
+        "started": 1470667584,
+        "symbol": "XAUR",
+        "type": "ethereum token"
+    },
     "XBC": {
         "name": "Bitcoin Plus",
         "started": 1396137600,
         "symbol": "XBC",
         "type": "own chain"
+    },
+    "XBL": {
+        "active": true,
+        "name": "Billionaire Token",
+        "started": 1501610896,
+        "symbol": "XBL",
+        "type": "ethereum token"
+    },
+    "XBP": {
+        "name": "BlitzPredict",
+        "started": 1512864000,
+        "symbol": "XBP",
+        "type": "ethereum token"
+    },
+    "XCLR": {
+        "active": true,
+        "name": "ClearCoin",
+        "started": 1515369600,
+        "symbol": "XCLR",
+        "type": "ethereum token"
     },
     "XCN": {
         "name": "Cryptonite",
@@ -6968,6 +7372,12 @@
         "started": 1407369600,
         "symbol": "XCR",
         "type": "own chain"
+    },
+    "XDCE": {
+        "name": "XinFin Network",
+        "started": 1498608000,
+        "symbol": "XDCE",
+        "type": "ethereum token"
     },
     "XDN": {
         "name": "DigitalNote",
@@ -6995,11 +7405,31 @@
         "symbol": "XEM",
         "type": "own chain"
     },
+    "XES": {
+        "name": "Proxeus",
+        "started": 1516953727,
+        "symbol": "XES",
+        "type": "ethereum token"
+    },
+    "XET": {
+        "name": "ETERNAL TOKEN",
+        "started": 1525067226,
+        "symbol": "XET",
+        "type": "ethereum token"
+    },
     "XHV": {
         "name": "Haven Protocol",
         "started": 1519171200,
         "symbol": "XHV",
         "type": "own chain"
+    },
+    "XID": {
+        "active": false,
+        "ended": 1552089600,
+        "name": "Sphere Identity",
+        "started": 1499082058,
+        "symbol": "XID",
+        "type": "ethereum token"
     },
     "XLB": {
         "active": false,
@@ -7015,6 +7445,12 @@
         "symbol": "XLM",
         "type": "own chain"
     },
+    "XMCT": {
+        "name": "XMCT",
+        "started": 1526555156,
+        "symbol": "XMCT",
+        "type": "ethereum token"
+    },
     "XMG": {
         "name": "Magi",
         "started": 1407801600,
@@ -7027,6 +7463,12 @@
         "symbol": "XMR",
         "type": "own chain"
     },
+    "XMX": {
+        "name": "XMax",
+        "started": 1506902400,
+        "symbol": "XMX",
+        "type": "ethereum token"
+    },
     "XMY": {
         "name": "MyriadCoin",
         "started": 1393113600,
@@ -7037,6 +7479,33 @@
         "name": "Ink Protocol",
         "started": 1510704000,
         "symbol": "XNK",
+        "type": "ethereum token"
+    },
+    "XNN": {
+        "active": false,
+        "ended": 1555104394,
+        "name": "Xenon",
+        "started": 1505981778,
+        "symbol": "XNN",
+        "type": "ethereum token"
+    },
+    "XOV": {
+        "name": "XOVBank",
+        "started": 1524920924,
+        "symbol": "XOV",
+        "type": "ethereum token"
+    },
+    "XPA": {
+        "active": true,
+        "name": "XPA",
+        "started": 1501891200,
+        "symbol": "XPA",
+        "type": "ethereum token"
+    },
+    "XPAT": {
+        "name": "Bitnation",
+        "started": 1492387200,
+        "symbol": "XPAT",
         "type": "ethereum token"
     },
     "XPB": {
@@ -7052,6 +7521,12 @@
         "started": 1373155200,
         "symbol": "XPM",
         "type": "own chain"
+    },
+    "XRL": {
+        "name": "Rialto",
+        "started": 1499339032,
+        "symbol": "XRL",
+        "type": "ethereum token"
     },
     "XRP": {
         "name": "Ripple",
@@ -7099,6 +7574,12 @@
         "symbol": "XWC",
         "type": "own chain"
     },
+    "XYO": {
+        "name": "XY Oracle",
+        "started": 1515221841,
+        "symbol": "XYO",
+        "type": "ethereum token"
+    },
     "XZC": {
         "name": "Zcoin",
         "started": 1474848000,
@@ -7113,10 +7594,41 @@
         "symbol": "YACC",
         "type": "own chain"
     },
+    "YEE": {
+        "name": "YEE",
+        "started": 1515456000,
+        "symbol": "YEE",
+        "type": "ethereum token"
+    },
+    "YEED": {
+        "name": "YGGDRASH",
+        "started": 1532414987,
+        "symbol": "YEED",
+        "type": "ethereum token"
+    },
     "YOYO": {
         "name": "YOYOW",
         "started": 1503165605,
         "symbol": "YOYO",
+        "type": "ethereum token"
+    },
+    "YOYOW": {
+        "name": "YOYOW",
+        "started": 1490054400,
+        "symbol": "YOYOW",
+        "type": "ethereum token"
+    },
+    "YUP": {
+        "active": true,
+        "name": "Crowdholding",
+        "started": 1520444035,
+        "symbol": "YUP",
+        "type": "ethereum token"
+    },
+    "ZAP": {
+        "name": "Zap",
+        "started": 1506985286,
+        "symbol": "ZAP",
         "type": "ethereum token"
     },
     "ZCL": {
@@ -7124,6 +7636,18 @@
         "started": 1478390400,
         "symbol": "ZCL",
         "type": "own chain"
+    },
+    "ZCN": {
+        "name": "0Chain",
+        "started": 1527724800,
+        "symbol": "ZCN",
+        "type": "ethereum token"
+    },
+    "ZCO": {
+        "name": "Zebi",
+        "started": 1517788800,
+        "symbol": "ZCO",
+        "type": "ethereum token"
     },
     "ZEC": {
         "name": "Zcash",
@@ -7137,16 +7661,78 @@
         "symbol": "ZEN",
         "type": "own chain"
     },
+    "ZEUS": {
+        "active": true,
+        "name": "ZeusNetwork",
+        "started": 1537847692,
+        "symbol": "ZEUS",
+        "type": "ethereum token"
+    },
     "ZIL": {
         "name": "Zilliqa",
         "started": 1509926400,
         "symbol": "ZIL",
         "type": "ethereum token"
     },
+    "ZINC": {
+        "active": true,
+        "name": "ZINC",
+        "started": 1504483200,
+        "symbol": "ZINC",
+        "type": "ethereum token"
+    },
+    "ZIP": {
+        "name": "Zipper",
+        "started": 1517144782,
+        "symbol": "ZIP",
+        "type": "ethereum token"
+    },
+    "ZIPT": {
+        "name": "Zippie",
+        "started": 1522297282,
+        "symbol": "ZIPT",
+        "type": "ethereum token"
+    },
+    "ZIX": {
+        "name": "Zeex Token",
+        "started": 1525132800,
+        "symbol": "ZIX",
+        "type": "ethereum token"
+    },
+    "ZLA": {
+        "name": "Zilla",
+        "started": 1512044787,
+        "symbol": "ZLA",
+        "type": "ethereum token"
+    },
+    "ZMN": {
+        "name": "ZMINE",
+        "started": 1516354221,
+        "symbol": "ZMN",
+        "type": "ethereum token"
+    },
+    "ZPR": {
+        "name": "ZPER",
+        "started": 1522281600,
+        "symbol": "ZPR",
+        "type": "ethereum token"
+    },
     "ZRX": {
         "name": "0x",
         "started": 1502476756,
         "symbol": "ZRX",
+        "type": "ethereum token"
+    },
+    "ZSC": {
+        "name": "Zeusshield",
+        "started": 1499618354,
+        "symbol": "ZSC",
+        "type": "ethereum token"
+    },
+    "ZXC": {
+        "name": "0xcert",
+        "started": 1530019175,
+        "symbol": "ZXC",
         "type": "ethereum token"
     }
 }

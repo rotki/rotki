@@ -250,6 +250,64 @@ MANUALLY_CHECKED = {
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'TIE': True,
+    # On 12/04/2019 Tokia is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/tokia/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'TKA': True,
+    # On 12/04/2019 Trakinvest is still active and trading in 2 exchanges
+    # https://coinmarketcap.com/currencies/trakinvest/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'TRAK': True,
+    # On 12/04/2019 Verisafe is still active and trading in 3 exchanges
+    # https://coinmarketcap.com/currencies/verisafe/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'VSF': True,
+    # On 12/04/2019 Wi Coin appears to be inactive and trading in 0 exchanges
+    # https://coinmarketcap.com/currencies/wi-coin/
+    # For some reason coinmarketcap does not show it as inactive yet
+    'WIC': False,
+    # On 12/04/2019 Wysker is still active and trading in 1 exchanges
+    # https://coinmarketcap.com/currencies/wys-token
+    # For some reason coin paprika thinks it's not so specify here we manually
+    # checked
+    'WYS': True,
+    # On 12/04/2019 Billionare token is still active and trading in 1 exchanges
+    # https://coinmarketcap.com/currencies/billionaire-token/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked
+    'XBL': True,
+    # On 12/04/2019 ClearCoin is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/clearcoin/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'XCLR': True,
+    # On 12/04/2019 Xenon appears to be inactive and trading in 0 exchanges
+    # https://coinmarketcap.com/currencies/xenon/
+    # For some reason coinmarketcap does not show it as inactive yet
+    'XNN': False,
+    # On 12/04/2019 XPlay is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/xpa/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'XPA': True,
+    # On 12/04/2019 Crowdholding is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/crowdholding/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'YUP': True,
+    # On 12/04/2019 ZeusNetwork is still active and trading in 2 exchanges
+    # https://coinmarketcap.com/currencies/zeusnetwork/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'ZEUS': True,
+    # On 12/04/2019 Zinc is still active and trading in 1 exchange
+    # https://coinmarketcap.com/currencies/zinc/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'ZINC': True,
 }
 
 

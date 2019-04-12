@@ -47,6 +47,11 @@ MANUALLY_CHECKED_NAMES = {
     'STP': 'StashPay',
     'TAN': 'Taklimakan',
     'TBT': 'T-Bot',
+    'URB': 'Urbit Data',
+    'VENUS': 'VenusEnergy',
+    'WMK': 'WeMark',
+    'WLK': 'Wolk',
+    'ZIX': 'Zeex Token',
 }
 
 
