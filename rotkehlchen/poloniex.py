@@ -32,6 +32,7 @@ from rotkehlchen.utils import (
     retry_calls,
     rlk_jsonloads,
     rlk_jsonloads_dict,
+    rlk_jsonloads_list,
 )
 
 logger = logging.getLogger(__name__)
@@ -200,7 +201,10 @@ class Poloniex(Exchange):
                 )
 
             try:
-                result = rlk_jsonloads_dict(ret.text)
+                if command == 'returnLendingHistory':
+                    result = rlk_jsonloads_list(ret.text)
+                else:
+                    result = rlk_jsonloads_dict(ret.text)
             except JSONDecodeError:
                 raise RemoteError(f'Poloniex returned invalid JSON response: {ret.text}')
             return _post_process(result)
