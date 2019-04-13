@@ -4236,7 +4236,7 @@
         "name": "Metadium",
         "started": 1534896000,
         "symbol": "META",
-        "type": "ethereum token"
+        "type": "ethereum token and own chain"
     },
     "METM": {
         "name": "MetaMorph",
