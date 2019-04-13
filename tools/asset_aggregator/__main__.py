@@ -28,6 +28,7 @@ from rotkehlchen.assets.converters import (
     ETH_TOKENS_MOVED_TO_OWN_CHAIN,
     MOVED_ETH_TOKENS,
     UNSUPPORTED_ETH_TOKENS_JSON,
+    WORLD_TO_ETH_TOKENS_JSON,
 )
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import FIAT_CURRENCIES
@@ -170,6 +171,8 @@ def main():
     cryptocompare = Cryptocompare(data_directory=data_directory)
     paprika_coins_list = paprika.get_coins_list()
     cryptocompare_coins_map = cryptocompare.all_coins()
+    with open(os.path.join(root_path, 'rotkehlchen', 'data', 'eth_tokens.json'), 'r') as f:
+        token_data = rlk_jsonloads(f.read())
 
     if args.input_file:
         if not os.path.isfile(args.input_file):
@@ -206,8 +209,6 @@ def main():
         our_data = {**our_data, **input_data}
 
     elif args.process_eth_tokens:
-        with open(os.path.join(root_path, 'rotkehlchen', 'data', 'eth_tokens.json'), 'r') as f:
-            token_data = rlk_jsonloads(f.read())
 
         start = 1240
         stop_after = start + 6
@@ -238,6 +239,7 @@ def main():
         our_data = {**our_data, **input_data}
 
     else:
+
         # Iterate all of the assets of the all_assets.json file and perform checks
         for asset_symbol in our_data.keys():
             our_data = process_asset(
@@ -250,6 +252,20 @@ def main():
                 always_keep_our_time=args.always_keep_our_time,
             )
 
+            # Make sure that our data have the ethereum address and decimals from eth_tokens.json
+            asset_type = our_data[asset_symbol]['type']
+            if 'ethereum token' not in asset_type:
+                continue
+
+            eth_token_symbol = WORLD_TO_ETH_TOKENS_JSON.get(asset_symbol, asset_symbol)
+            data = find_token_data(token_data, eth_token_symbol)
+            if not data:
+                print(f'Missing token data for {asset_symbol} ... sadness :(')
+                sys.exit(1)
+
+            our_data[asset_symbol]['ethereum_address'] = data['address']
+            our_data[asset_symbol]['ethereum_token_decimals'] = data['decimal']
+
     # Finally overwrite the all_assets.json with the modified assets
     with open(os.path.join(root_path, 'rotkehlchen', 'data', 'all_assets.json'), 'w') as f:
         f.write(
@@ -257,6 +273,14 @@ def main():
                 our_data, sort_keys=True, indent=4,
             ),
         )
+
+
+def find_token_data(token_data: Dict[str, Any], symbol: str):
+    for entry in token_data:
+        if symbol == entry['symbol']:
+            return entry
+
+    return None
 
 
 if __name__ == "__main__":
