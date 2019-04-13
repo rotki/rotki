@@ -3520,6 +3520,11 @@
     "decimal": 18
   },
   {
+    "address": "0xDE2F7766C8BF14CA67193128535E5c7454f8387C",
+    "symbol": "META",
+    "decimal": 18
+  },
+  {
     "address": "0xFEF3884b603C33EF8eD4183346E093A173C94da6",
     "symbol": "METM",
     "decimal": 18
@@ -3563,6 +3568,11 @@
     "address": "0xAd8DD4c725dE1D31b9E8F8D146089e9DC6882093",
     "symbol": "MIT (Mychatcoin)",
     "decimal": 6
+  },
+  {
+    "address": "0x3893b9422Cd5D70a81eDeFfe3d5A1c6A978310BB",
+    "symbol": "MITH",
+    "decimal": 18
   },
   {
     "address": "0x4a527d8fc13C5203AB24BA0944F4Cb14658D1Db6",
@@ -3647,6 +3657,11 @@
   {
     "address": "0x21f0F0fD3141Ee9E11B3d7f13a1028CD515f459c",
     "symbol": "MRP",
+    "decimal": 18
+  },
+  {
+    "address": "0x1254E59712e6e727dC71E0E3121Ae952b2c4c3b6",
+    "symbol": "MRS",
     "decimal": 18
   },
   {
@@ -3827,6 +3842,11 @@
   {
     "address": "0x72dD4b6bd852A3AA172Be4d6C5a6dbEc588cf131",
     "symbol": "NGC",
+    "decimal": 18
+  },
+  {
+    "address": "0xcfb98637bcae43C13323EAa1731cED2B716962fD",
+    "symbol": "NIM",
     "decimal": 18
   },
   {
@@ -4860,6 +4880,11 @@
     "decimal": 8
   },
   {
+    "address": "0x1237b0d12B15e3c609e37885597bFCad85745cf1",
+    "symbol": "SERV",
+    "decimal": 18
+  },
+  {
     "address": "0xe06eda7435bA749b047380CEd49121ddE93334Ae",
     "symbol": "SET",
     "decimal": 0
@@ -4985,6 +5010,11 @@
     "decimal": 3
   },
   {
+    "address": "0x851017523AE205adc9195e7F97D029f4Cfe7794c",
+    "symbol": "SLT (SocialLendingToken)",
+    "decimal": 9
+  },
+  {
     "address": "0x7928c8aBF1F74eF9F96D4D0a44e3b4209d360785",
     "symbol": "SLY",
     "decimal": 18
@@ -5085,6 +5115,11 @@
     "decimal": 6
   },
   {
+    "address": "0x446C9033E7516D820cc9a2ce2d0B7328b579406F",
+    "symbol": "SOLVE",
+    "decimal": 8
+  },
+  {
     "address": "0x1C62aCa2b7605Db3606eAcdA7Bc67A1857DDb8FF",
     "symbol": "SONIQ",
     "decimal": 18
@@ -5133,6 +5168,11 @@
     "address": "0x20F7A3DdF244dc9299975b4Da1C39F8D5D75f05A",
     "symbol": "SPN",
     "decimal": 6
+  },
+  {
+    "address": "0xDDD460bBD9F79847ea08681563e8A9696867210C",
+    "symbol": "SPND",
+    "decimal": 18
   },
   {
     "address": "0x05aAaA829Afa407D83315cDED1d45EB16025910c",
@@ -5507,6 +5547,11 @@
   {
     "address": "0x10086399DD8c1e3De736724AF52587a2044c9fA2",
     "symbol": "TMTG",
+    "decimal": 18
+  },
+  {
+    "address": "0xF7920B0768Ecb20A123fAc32311d07D193381d6f",
+    "symbol": "TNB",
     "decimal": 18
   },
   {
