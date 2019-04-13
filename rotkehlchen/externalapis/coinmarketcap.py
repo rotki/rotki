@@ -702,7 +702,7 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen IOTA is IOTA but in coimarketcap it's MIOTA
     'IOTA': 1720,
     # For Rotkehlchen YOYOW if YOYO but in coinmarketcap it's YOYOW
-    'YOYO': 1899,
+    'YOYOW': 1899,
     # For Rotkehlchen ACC is AdCoin, ACC-2 is ACChain and ACC-3 is Accelerator network
     'ACC': 1915,
     'ACC-2': 2515,

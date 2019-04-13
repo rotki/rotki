@@ -6162,7 +6162,7 @@
         "type": "ethereum token"
     },
     "SOLVE": {
-        "name": "SOLVE",
+        "name": "Solve.care",
         "started": 1528934400,
         "symbol": "SOLVE",
         "type": "ethereum token"
@@ -7604,12 +7604,6 @@
         "name": "YGGDRASH",
         "started": 1532414987,
         "symbol": "YEED",
-        "type": "ethereum token"
-    },
-    "YOYO": {
-        "name": "YOYOW",
-        "started": 1503165605,
-        "symbol": "YOYO",
         "type": "ethereum token"
     },
     "YOYOW": {

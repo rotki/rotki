@@ -101,7 +101,7 @@ WORLD_TO_CRYPTOCOMPARE = {
     # For Rotkehlchen RDN is Raiden Network Token but it's RDN* in cryptocompare
     'RDN': 'RDN*',
     # For Rotkehlchen YOYO is YOYOW but it's YOYOW in cryptocompare
-    'YOYO': 'YOYOW',
+    'YOYOW': 'YOYOW',
     # For Rotkehlchen 0xBTC is 0xBTC but in cryptocompare it's capitalized
     '0xBTC': '0XBTC',
     # For Rotkehlchen ACC is AdCoin, ACC-2 is ACChain and ACC-3 is Accelerator network
