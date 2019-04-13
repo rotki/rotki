@@ -135,6 +135,11 @@
     "decimal": 18
   },
   {
+    "address": "0xAE31b85Bfe62747d0836B82608B4830361a3d37a",
+    "symbol": "AERGO",
+    "decimal": 18
+  },
+  {
     "address": "0xc994a2dEb02543Db1f48688438b9903c4b305ce3",
     "symbol": "AEUR",
     "decimal": 2
@@ -157,6 +162,11 @@
   {
     "address": "0x37E8789bB9996CaC9156cD5F5Fd32599E6b91289",
     "symbol": "AID",
+    "decimal": 18
+  },
+  {
+    "address": "0xD178b20c6007572bD1FD01D205cC20D32B4A6015",
+    "symbol": "AID (Aidus)",
     "decimal": 18
   },
   {
@@ -233,6 +243,11 @@
     "address": "0x84936cF7630AA3e27Dd9AfF968b140d5AEE49F5a",
     "symbol": "AMTC",
     "decimal": 8
+  },
+  {
+    "address": "0x8290333ceF9e6D528dD5618Fb97a76f268f3EDD4",
+    "symbol": "ANKR",
+    "decimal": 18
   },
   {
     "address": "0x960b236A07cf122663c4303350609A66A7B288C0",
@@ -525,6 +540,11 @@
     "decimal": 0
   },
   {
+    "address": "0x2e98A6804E4b6c832ED0ca876a943abD3400b224",
+    "symbol": "BELA",
+    "decimal": 18
+  },
+  {
     "address": "0x6aEB95F06CDA84cA345c2dE0F3B7f96923a44f4c",
     "symbol": "BERRY",
     "decimal": 14
@@ -547,6 +567,11 @@
   {
     "address": "0x3839d8ba312751Aa0248fEd6a8bACB84308E20Ed",
     "symbol": "BEZ",
+    "decimal": 18
+  },
+  {
+    "address": "0x01fF50f8b7f74E4f00580d9596cd3D0d6d6E326f",
+    "symbol": "BFT",
     "decimal": 18
   },
   {
@@ -1038,6 +1063,11 @@
     "address": "0xd348e07A2806505B856123045d27aeeD90924b50",
     "symbol": "CCLC",
     "decimal": 8
+  },
+  {
+    "address": "0x17B26400621695c2D8C2D8869f6259E82D7544c4",
+    "symbol": "CCN",
+    "decimal": 18
   },
   {
     "address": "0x679BADc551626e01B23CeecEFBc9B877EA18fc46",
