@@ -378,6 +378,7 @@ RENAMED_BINANCE_ASSETS = {
 ETH_TOKENS_JSON_TO_WORLD = {
     '$HUR': 'HUR',
     'ACC': 'ACC-3',
+    'AID (Aidus)': 'AID-2',
     'ARC': 'ARC-2',
     'AVA': 'AVA-2',
     'BLX (Iconomi)': 'BLX',
@@ -395,6 +396,7 @@ ETH_TOKENS_JSON_TO_WORLD = {
     'CAT (BlockCAT)': 'CAT-2',
     'CDX (Commodity Ad Network)': 'CDX',
     'CET': 'CET-2',
+    'CMCT (CyberMovieChain)': 'CMCT-2',
     'COIN (Coinvest V3 Token)': 'COIN',
     'COSS (1)': 'COSS',
     'CPT (Cryptaur)': 'CPT',
@@ -415,6 +417,7 @@ ETH_TOKENS_JSON_TO_WORLD = {
     'EXC (ExcaliburCoin)': 'EXC',
     'EXC (Eximchain Token)': 'EXC-2',
     'FORK': 'FORK-2',
+    'FAIR': 'FAIR-2',
     'FT (FCoin)': 'FT-2',
     'FXC (Flexacoin)': 'FXC',
     'GANA (1)': 'GANA',
@@ -469,7 +472,9 @@ ETH_TOKENS_JSON_TO_WORLD = {
     'WOLK': 'WLK',
     'YEED (YGGDRASH)': 'YEED',
     'ZCS': 'ZSC',
+    'SLT (SocialLendingToken)': 'SLT-2',
 }
+WORLD_TO_ETH_TOKENS_JSON = {v: k for k, v in ETH_TOKENS_JSON_TO_WORLD.items()}
 UNSUPPORTED_ETH_TOKENS_JSON = (
     '$FFC',
     '$FXY',
@@ -855,6 +860,7 @@ MOVED_ETH_TOKENS = {
 ETH_TOKENS_MOVED_TO_OWN_CHAIN = {
     'NET': 'NIM',
     'EOS': 'EOS',
+    'META': 'META',
 }
 
 

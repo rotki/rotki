@@ -221,8 +221,8 @@ WORLD_TO_PAPRIKA_ID = {
     # Paprika has two identical entries for OpenANX:
     # oax-oax and oax-openanx. Choosing the one with the most recent details.
     'OAX': 'oax-oax',
-    # YOYO is known as YOYOW in CoinPaprika
-    'YOYO': 'yoyow-yoyow',
+    # YOYOW is known as YOYOW in CoinPaprika
+    'YOYOW': 'yoyow-yoyow',
     # For Rotkehlchen ACC is AdCoin, ACC-2 is ACChain and ACC-3 is Accelerator network
     'ACC': 'acc-adcoin',
     'ACC-2': 'acc-acchain',
