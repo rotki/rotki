@@ -1110,6 +1110,11 @@
     "decimal": 18
   },
   {
+    "address": "0x4F9254C83EB525f9FCf346490bbb3ed28a81C667",
+    "symbol": "CELR",
+    "decimal": 18
+  },
+  {
     "address": "0x1122B6a0E00DCe0563082b6e2953f3A943855c1F",
     "symbol": "CENNZ",
     "decimal": 18
@@ -1202,6 +1207,11 @@
   {
     "address": "0x47bc01597798DCD7506DCCA36ac4302fc93a8cFb",
     "symbol": "CMCT",
+    "decimal": 8
+  },
+  {
+    "address": "0x7aBc60B3290F68c85f495fD2e0c3Bd278837a313",
+    "symbol": "CMCT (CyberMovieChain)",
     "decimal": 8
   },
   {
@@ -1357,6 +1367,11 @@
   {
     "address": "0x9238bfB781A55eACC3Cf05F7DF94038c198CD9B9",
     "symbol": "CRMT",
+    "decimal": 8
+  },
+  {
+    "address": "0xA0b73E1Ff0B80914AB6fe0444E65848C4C34450b",
+    "symbol": "CRO",
     "decimal": 8
   },
   {
@@ -1790,6 +1805,11 @@
     "decimal": 18
   },
   {
+    "address": "0x69b148395Ce0015C13e36BFfBAd63f49EF874E03",
+    "symbol": "DTA",
+    "decimal": 18
+  },
+  {
     "address": "0x5adc961D6AC3f7062D2eA45FEFB8D8167d44b190",
     "symbol": "DTH",
     "decimal": 18
@@ -2195,6 +2215,11 @@
     "decimal": 18
   },
   {
+    "address": "0x9B20DaBcec77f6289113E61893F7BEeFAEB1990a",
+    "symbol": "FAIR",
+    "decimal": 18
+  },
+  {
     "address": "0x190e569bE071F40c704e15825F285481CB74B6cC",
     "symbol": "FAM",
     "decimal": 12
@@ -2222,6 +2247,11 @@
   {
     "address": "0x23352036E911A22Cfc692B5E2E196692658ADED9",
     "symbol": "FDZ",
+    "decimal": 18
+  },
+  {
+    "address": "0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD",
+    "symbol": "FET",
     "decimal": 18
   },
   {
@@ -2830,6 +2860,11 @@
     "decimal": 8
   },
   {
+    "address": "0x4bD70556ae3F8a6eC6C4080A0C327B24325438f3",
+    "symbol": "HXRO",
+    "decimal": 18
+  },
+  {
     "address": "0xEBBdf302c940c6bfd49C6b165f457fdb324649bc",
     "symbol": "HYDRO",
     "decimal": 18
@@ -3342,6 +3377,11 @@
   {
     "address": "0x58b6A8A3302369DAEc383334672404Ee733aB239",
     "symbol": "LPT",
+    "decimal": 18
+  },
+  {
+    "address": "0xD29F0b5b3F50b07Fe9a9511F7d86F4f4bAc3f8c4",
+    "symbol": "LQD",
     "decimal": 18
   },
   {
