@@ -65,5 +65,7 @@ class AssetResolver():
             ended=data.get('ended', None),
             forked=data.get('forked', None),
             swapped_for=data.get('swapped_for', None),
+            ethereum_address=data.get('ethereum_address', None),
+            decimals=data.get('ethereum_token_decimals', None),
         )
         return result

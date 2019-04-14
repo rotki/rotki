@@ -117,6 +117,8 @@ class AssetData(NamedTuple):
     ended: Optional[Timestamp]
     forked: Optional[str]
     swapped_for: Optional[str]
+    ethereum_address: Optional[ChecksumEthAddress]
+    decimals: Optional[int]
 
 
 class TradeType(Enum):
