@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
 from rotkehlchen.externalapis.cryptocompare import WORLD_TO_CRYPTOCOMPARE
-from rotkehlchen.typing import AssetType, Timestamp
+from rotkehlchen.typing import AssetType, ChecksumEthAddress, Timestamp
 
 WORLD_TO_BITTREX = {
     # In Rotkehlchen Bitswift is BITS-2 but in Bittrex it's BITS
@@ -177,3 +177,25 @@ class Asset():
 
     def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
+
+
+@dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
+class HasEthereumToken(Asset):
+    """ Marker to denote assets having an Ethereum token address """
+    ethereum_address: ChecksumEthAddress = field(init=False)
+    decimals: int = field(init=False)
+
+    def __post_init__(self):
+        super().__post_init__()
+        data = AssetResolver().get_asset_data(self.identifier)
+
+        if not data.ethereum_address:
+            raise ValueError('Tried to initialize a non Ethereum asset as Ethereum Token')
+
+        object.__setattr__(self, 'ethereum_address', data.ethereum_address)
+        object.__setattr__(self, 'decimals', data.decimals)
+
+
+@dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
+class EthereumToken(HasEthereumToken):
+    pass

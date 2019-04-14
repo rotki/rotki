@@ -1,7 +1,8 @@
 import pytest
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.errors import UnknownAsset
+from rotkehlchen.typing import AssetType
 
 
 def test_unknown_asset():
@@ -37,3 +38,13 @@ def test_asset_equals():
     assert btc_asset != 'ETH'
     assert btc_asset == other_btc_asset
     assert eth_asset == 'ETH'
+
+
+def test_ethereum_tokens():
+    rdn_asset = EthereumToken('RDN')
+    assert rdn_asset.ethereum_address == '0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6'
+    assert rdn_asset.decimals == 18
+    assert rdn_asset.asset_type == AssetType.ETH_TOKEN
+
+    with pytest.raises(ValueError):
+        EthereumToken('BTC')
