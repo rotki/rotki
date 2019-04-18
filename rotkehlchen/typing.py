@@ -59,6 +59,9 @@ EmptyStr = NewType('EmptyStr', T_EmptyStr)
 T_Fee = FVal
 Fee = NewType('Fee', T_Fee)
 
+T_Price = FVal
+Price = NewType('Price', T_Price)
+
 
 class ResultCache(NamedTuple):
     """Represents a time-cached result of some API query"""
