@@ -368,3 +368,18 @@ def get_system_spec() -> Dict[str, str]:
 
 def simple_result(v: Any, msg: str) -> Dict:
     return {'result': v, 'message': msg}
+
+
+def write_history_data_in_file(data, filepath, start_ts, end_ts):
+    log.info(
+        'Writing history file',
+        filepath=filepath,
+        start_time=start_ts,
+        end_time=end_ts,
+    )
+    with open(filepath, 'w') as outfile:
+        history_dict = dict()
+        history_dict['data'] = data
+        history_dict['start_time'] = start_ts
+        history_dict['end_time'] = end_ts
+        outfile.write(rlk_jsondumps(history_dict))

@@ -1,21 +1,18 @@
-import glob
 import logging
 import os
-import re
-import time
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List
+from typing import List
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.binance import trade_from_binance
 from rotkehlchen.bitmex import trade_from_bitmex
 from rotkehlchen.bittrex import trade_from_bittrex
-from rotkehlchen.constants.assets import A_BTC, A_USD
+from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors import PriceQueryUnknownFromAsset, RemoteError, UnsupportedAsset
+from rotkehlchen.errors import RemoteError, UnsupportedAsset
 from rotkehlchen.exchange import data_up_todate
+from rotkehlchen.externalapis import Cryptocompare
 from rotkehlchen.fval import FVal
-from rotkehlchen.inquirer import FIAT_CURRENCIES
 from rotkehlchen.kraken import trade_from_kraken
 from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
 from rotkehlchen.order_formatting import (
@@ -25,17 +22,13 @@ from rotkehlchen.order_formatting import (
 )
 from rotkehlchen.poloniex import trade_from_poloniex
 from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
-from rotkehlchen.typing import EthAddress, FilePath, Timestamp
+from rotkehlchen.typing import EthAddress, FilePath
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils import (
-    convert_to_int,
     createTimeStamp,
     get_jsonfile_contents_or_empty_dict,
-    request_get_dict,
-    rlk_jsondumps,
     rlk_jsonloads,
-    ts_now,
-    tsToDate,
+    write_history_data_in_file,
 )
 
 logger = logging.getLogger(__name__)
@@ -48,15 +41,6 @@ MANUAL_MARGINS_LOGFILE = 'manual_margin_positions_log.json'
 LOANS_HISTORYFILE = 'loans_history.json'
 ETHEREUM_TX_LOGFILE = 'ethereum_tx_log.json'
 ASSETMOVEMENTS_HISTORYFILE = 'asset_movements_history.json'
-
-
-class NoPriceForGivenTimestamp(Exception):
-    def __init__(self, from_asset, to_asset, timestamp):
-        super(NoPriceForGivenTimestamp, self).__init__(
-            'Unable to query a historical price for "{}" to "{}" at {}'.format(
-                from_asset, to_asset, timestamp,
-            ),
-        )
 
 
 def include_external_trades(db, start_ts, end_ts, history):
@@ -99,21 +83,6 @@ def do_read_manual_margin_positions(user_directory):
         )
 
     return margin_positions
-
-
-def write_history_data_in_file(data, filepath, start_ts, end_ts):
-    log.info(
-        'Writing history file',
-        filepath=filepath,
-        start_time=start_ts,
-        end_time=end_ts,
-    )
-    with open(filepath, 'w') as outfile:
-        history_dict = dict()
-        history_dict['data'] = data
-        history_dict['start_time'] = start_ts
-        history_dict['end_time'] = end_ts
-        outfile.write(rlk_jsondumps(history_dict))
 
 
 def write_tupledata_history_in_file(history, filepath, start_ts, end_ts):
@@ -193,276 +162,7 @@ class PriceHistorian(object):
         # get the start date for historical data
         self.historical_data_start = createTimeStamp(history_date_start, formatstr="%d/%m/%Y")
         self.inquirer = inquirer
-
-        self.price_history = dict()
-        self.price_history_file = dict()
-
-        # Check the data folder and remember the filenames of any cached history
-        prefix = os.path.join(self.data_directory, 'price_history_')
-        prefix = prefix.replace('\\', '\\\\')
-        regex = re.compile(prefix + r'(.*)\.json')
-        files_list = glob.glob(prefix + '*.json')
-
-        for file_ in files_list:
-            file_ = file_.replace('\\\\', '\\')
-            match = regex.match(file_)
-            assert match
-            cache_key = match.group(1)
-            self.price_history_file[cache_key] = file_
-
-        # Get coin list of crypto compare
-        invalidate_cache = True
-        coinlist_cache_path = os.path.join(self.data_directory, 'cryptocompare_coinlist.json')
-        if os.path.isfile(coinlist_cache_path):
-            log.info('Found coinlist cache', path=coinlist_cache_path)
-            with open(coinlist_cache_path, 'rb') as f:
-                try:
-                    data = rlk_jsonloads(f.read())
-                    now = ts_now()
-                    invalidate_cache = False
-
-                    # If we got a cache and its' over a month old then requery cryptocompare
-                    if data['time'] < now and now - data['time'] > 2629800:
-                        log.info('Coinlist cache is now invalidated')
-                        invalidate_cache = True
-                        data = data['data']
-                except JSONDecodeError:
-                    invalidate_cache = True
-
-        if invalidate_cache:
-            query_string = 'https://www.cryptocompare.com/api/data/coinlist/'
-            log.debug('Querying cryptocompare', url=query_string)
-            resp = request_get_dict(query_string)
-            if 'Response' not in resp or resp['Response'] != 'Success':
-                error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
-                if 'Message' in resp:
-                    error_message += ". Error: {}".format(resp['Message'])
-
-                log.error('Cryptocompare query failure', url=query_string, error=error_message)
-                raise ValueError(error_message)
-
-            data = resp['Data']
-
-            # Also save the cache
-            with open(coinlist_cache_path, 'w') as f:
-                now = ts_now()
-                log.info('Writing coinlist cache', timestamp=now)
-                write_data = {'time': now, 'data': data}
-                f.write(rlk_jsondumps(write_data))
-        else:
-            # in any case take the data
-            data = data['data']
-
-        self.cryptocompare_coin_list = data
-        # For some reason even though price for the following assets is returned
-        # it's not in the coinlist so let's add them here.
-        self.cryptocompare_coin_list['DAO'] = object()
-        self.cryptocompare_coin_list['USDT'] = object()
-        # Add the following here since they are known by other names in
-        # cryptocompare and we got code to handle the conversion
-        self.cryptocompare_coin_list['IOTA'] = object()  # IOT in cryptocompare
-        self.cryptocompare_coin_list['BCHSV'] = object()  # BSV in cryptocompare
-        self.cryptocompare_coin_list['BQX'] = object()  # ETHOS in cryptocompare
-
-    def got_cached_price(self, cache_key, timestamp):
-        """Check if we got a price history for the timestamp cached"""
-        if cache_key in self.price_history_file:
-            if cache_key not in self.price_history:
-                try:
-                    with open(self.price_history_file[cache_key], 'rb') as f:
-                        data = rlk_jsonloads(f.read())
-                        self.price_history[cache_key] = data
-                except (OSError, IOError, JSONDecodeError):
-                    return False
-
-            in_range = (
-                self.price_history[cache_key]['start_time'] <= timestamp and
-                self.price_history[cache_key]['end_time'] > timestamp
-            )
-            if in_range:
-                log.debug('Found cached price', cache_key=cache_key, timestamp=timestamp)
-                return True
-
-        return False
-
-    def adjust_to_cryptocompare_price_incosistencies(
-            self,
-            price: FVal,
-            from_asset: Asset,
-            to_asset: Asset,
-            timestamp: Timestamp,
-    ) -> FVal:
-        """Doublecheck against the USD rate, and if incosistencies are found
-        then take the USD adjusted price.
-
-        This is due to incosistencies in the provided historical data from
-        cryptocompare. https://github.com/rotkehlchenio/rotkehlchen/issues/221
-
-        Note: Since 12/01/2019 this seems to no longer be happening, but I will
-        keep the code around just in case a regression is introduced on the side
-        of cryptocompare.
-        """
-        from_asset_usd = self.query_historical_price(from_asset, A_USD, timestamp)
-        to_asset_usd = self.query_historical_price(to_asset, A_USD, timestamp)
-
-        usd_invert_conversion = from_asset_usd / to_asset_usd
-        abs_diff = abs(usd_invert_conversion - price)
-        relative_difference = abs_diff / max(price, usd_invert_conversion)
-        if relative_difference >= FVal('0.1'):
-            log.warning(
-                'Cryptocompare historical price data are incosistent.'
-                'Taking USD adjusted price. Check github issue #221',
-                from_asset=from_asset,
-                to_asset=to_asset,
-                incosistent_price=price,
-                usd_price=from_asset_usd,
-                adjusted_price=usd_invert_conversion,
-            )
-            return usd_invert_conversion
-        return price
-
-    def get_historical_data(
-            self,
-            from_asset: Asset,
-            to_asset: Asset,
-            timestamp: Timestamp,
-    ) -> List[Dict[str, Any]]:
-        """
-        Get historical price data from cryptocompare
-
-        Returns a list of dictionary entries. Each entry covers an 1 hour timeslot.
-        The list is sorted. Each entry should have the following key entries:
-        'time', 'low', 'high'. Perhaps turn into a named tuple?
-        """
-        log.debug(
-            'Retrieving historical price data',
-            from_asset=from_asset,
-            to_asset=to_asset,
-            timestamp=timestamp,
-        )
-
-        if from_asset not in self.cryptocompare_coin_list and from_asset not in FIAT_CURRENCIES:
-            raise ValueError(
-                'Attempted to query historical price data for '
-                'unknown asset "{}"'.format(from_asset),
-            )
-
-        if to_asset not in self.cryptocompare_coin_list and to_asset not in FIAT_CURRENCIES:
-            raise ValueError(
-                'Attempted to query historical price data for '
-                'unknown asset "{}"'.format(to_asset),
-            )
-
-        cache_key = str(from_asset) + '_' + str(to_asset)
-        got_cached_value = self.got_cached_price(cache_key, timestamp)
-        if got_cached_value:
-            return self.price_history[cache_key]['data']
-
-        now_ts = int(time.time())
-        cryptocompare_hourquerylimit = 2000
-        calculated_history: List = list()
-
-        if self.historical_data_start <= timestamp:
-            end_date = self.historical_data_start
-        else:
-            end_date = timestamp
-        while True:
-            no_data_for_timestamp = False
-            pr_end_date = end_date
-            end_date = end_date + (cryptocompare_hourquerylimit) * 3600
-
-            log.debug(
-                'Querying cryptocompare for hourly historical price',
-                from_asset=from_asset,
-                to_asset=to_asset,
-                cryptocompare_hourquerylimit=cryptocompare_hourquerylimit,
-                end_date=end_date,
-            )
-            query_string = (
-                'https://min-api.cryptocompare.com/data/histohour?'
-                'fsym={}&tsym={}&limit={}&toTs={}'.format(
-                    from_asset.to_cryptocompare(),
-                    to_asset.to_cryptocompare(),
-                    cryptocompare_hourquerylimit,
-                    end_date,
-                ))
-
-            resp = request_get_dict(query_string)
-            if 'Response' not in resp or resp['Response'] != 'Success':
-                msg = 'Unable to retrieve requested data at this time, please try again later'
-                no_data_for_timestamp = (
-                    msg in resp['Message'] and
-                    resp['Type'] == 96
-                )
-                if no_data_for_timestamp:
-                    log.debug(
-                        'No hourly cryptocompare historical data for pair',
-                        from_asset=from_asset,
-                        to_asset=to_asset,
-                        timestamp=end_date,
-                    )
-                    continue
-
-                error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
-                if 'Message' in resp:
-                    error_message += ". Error: {}".format(resp['Message'])
-
-                log.error(
-                    'Cryptocompare hourly historical price query failed',
-                    error=error_message,
-                )
-                raise ValueError(error_message)
-
-            if pr_end_date != resp['TimeFrom']:
-                # If we get more than we needed, since we are close to the now_ts
-                # then skip all the already included entries
-                diff = pr_end_date - resp['TimeFrom']
-                if resp['Data'][diff // 3600]['time'] != pr_end_date:
-                    raise ValueError(
-                        'Expected to find the previous date timestamp during '
-                        'historical data fetching',
-                    )
-                # just add only the part from the previous timestamp and on
-                resp['Data'] = resp['Data'][diff // 3600:]
-
-            if end_date < now_ts and resp['TimeTo'] != end_date:
-                raise ValueError('End dates no match')
-
-            # If last time slot and first new are the same, skip the first new slot
-            last_entry_equal_to_first = (
-                len(calculated_history) != 0 and
-                calculated_history[-1]['time'] == resp['Data'][0]['time']
-            )
-            if last_entry_equal_to_first:
-                resp['Data'] = resp['Data'][1:]
-            calculated_history += resp['Data']
-            if end_date >= now_ts:
-                break
-
-        # Let's always check for data sanity for the hourly prices.
-        assert check_hourly_data_sanity(calculated_history, from_asset, to_asset)
-        self.price_history[cache_key] = {
-            'data': calculated_history,
-            'start_time': self.historical_data_start,
-            'end_time': now_ts,
-        }
-        # and now since we actually queried the data let's also save them locally
-        filename = os.path.join(self.data_directory, 'price_history_' + cache_key + '.json')
-        log.info(
-            'Updating price history cache',
-            filename=filename,
-            from_asset=from_asset,
-            to_asset=to_asset,
-        )
-        write_history_data_in_file(
-            calculated_history,
-            filename,
-            self.historical_data_start,
-            now_ts,
-        )
-        self.price_history_file[cache_key] = filename
-
-        return calculated_history
+        self.cryptocompare = Cryptocompare(data_directory=data_directory)
 
     def query_historical_price(self, from_asset: Asset, to_asset: Asset, timestamp):
         """
@@ -497,107 +197,11 @@ class PriceHistorian(object):
                 return price
             # else cryptocompare also has historical fiat to fiat data
 
-        if from_asset not in self.cryptocompare_coin_list and from_asset not in FIAT_CURRENCIES:
-            raise PriceQueryUnknownFromAsset(from_asset)
-
-        data = self.get_historical_data(from_asset, to_asset, timestamp)
-
-        # all data are sorted and timestamps are always increasing by 1 hour
-        # find the closest entry to the provided timestamp
-        if timestamp >= data[0]['time']:
-            index = convert_to_int((timestamp - data[0]['time']) / 3600, accept_only_exact=False)
-            # print("timestamp: {} index: {} data_length: {}".format(timestamp, index, len(data)))
-            diff = abs(data[index]['time'] - timestamp)
-            if index + 1 <= len(data) - 1:
-                diff_p1 = abs(data[index + 1]['time'] - timestamp)
-                if diff_p1 < diff:
-                    index = index + 1
-
-            if data[index]['high'] is None or data[index]['low'] is None:
-                # If we get some None in the hourly set price to 0 so that we check alternatives
-                price = FVal(0)
-            else:
-                price = FVal((data[index]['high'] + data[index]['low'])) / 2
-        else:
-            # no price found in the historical data from/to asset, try alternatives
-            price = FVal(0)
-
-        if price == 0:
-            if from_asset != 'BTC' and to_asset != 'BTC':
-                log.debug(
-                    f"Couldn't find historical price from {from_asset} to "
-                    f"{to_asset} at timestamp {timestamp}. Comparing with BTC...",
-                )
-                # Just get the BTC price
-                asset_btc_price = self.query_historical_price(from_asset, A_BTC, timestamp)
-                btc_to_asset_price = self.query_historical_price(A_BTC, to_asset, timestamp)
-                price = asset_btc_price * btc_to_asset_price
-            else:
-                log.debug(
-                    f"Couldn't find historical price from {from_asset} to "
-                    f"{to_asset} at timestamp {timestamp}. Attempting to get daily price...",
-                )
-                # attempt to get the daily price by timestamp
-                cc_from_asset = from_asset.to_cryptocompare()
-                cc_to_asset = to_asset.to_cryptocompare()
-                log.debug(
-                    'Querying cryptocompare for daily historical price',
-                    from_asset=from_asset,
-                    to_asset=to_asset,
-                    timestamp=timestamp,
-                )
-                query_string = (
-                    'https://min-api.cryptocompare.com/data/pricehistorical?'
-                    'fsym={}&tsyms={}&ts={}'.format(
-                        cc_from_asset,
-                        cc_to_asset,
-                        timestamp,
-                    ))
-                if to_asset == 'BTC':
-                    query_string += '&tryConversion=false'
-                resp = request_get_dict(query_string)
-
-                if cc_from_asset not in resp:
-                    error_message = 'Failed to query cryptocompare for: "{}"'.format(query_string)
-                    log.error(
-                        'Cryptocompare query for daily historical price failed',
-                        from_asset=from_asset,
-                        to_asset=to_asset,
-                        timestamp=timestamp,
-                        error=error_message,
-                    )
-                    raise ValueError(error_message)
-
-                price = FVal(resp[cc_from_asset][cc_to_asset])
-
-        comparison_to_nonusd_fiat = (
-            (to_asset in FIAT_CURRENCIES and to_asset != 'USD') or
-            (from_asset in FIAT_CURRENCIES and from_asset != 'USD')
-        )
-        if comparison_to_nonusd_fiat:
-            price = self.adjust_to_cryptocompare_price_incosistencies(
-                price=price,
-                from_asset=from_asset,
-                to_asset=to_asset,
-                timestamp=timestamp,
-            )
-
-        if price == 0:
-            raise NoPriceForGivenTimestamp(
-                from_asset,
-                to_asset,
-                tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'),
-            )
-
-        log.debug(
-            'Got historical price',
+        return self.cryptocompare.query_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,
             timestamp=timestamp,
-            price=price,
         )
-
-        return price
 
 
 class TradesHistorian(object):
