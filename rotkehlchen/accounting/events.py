@@ -5,8 +5,8 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETC, A_ETH
 from rotkehlchen.errors import PriceQueryUnknownFromAsset
+from rotkehlchen.externalapis.cryptocompare import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
-from rotkehlchen.history import FIAT_CURRENCIES, NoPriceForGivenTimestamp
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import BuyEvent, Events, SellEvent
 from rotkehlchen.typing import Fee, Timestamp
@@ -201,7 +201,7 @@ class TaxableEvents(object):
             is_virtual=False,
         )
 
-        if paid_with_asset in FIAT_CURRENCIES or not self.include_crypto2crypto:
+        if paid_with_asset.is_fiat() or not self.include_crypto2crypto:
             return
 
         # else you are also selling some other asset to buy the bought asset
@@ -362,7 +362,7 @@ class TaxableEvents(object):
             is_virtual=False,
         )
 
-        if receiving_asset in FIAT_CURRENCIES or not self.include_crypto2crypto:
+        if receiving_asset.is_fiat() or not self.include_crypto2crypto:
             return
 
         log.debug(
@@ -448,7 +448,7 @@ class TaxableEvents(object):
         taxable_profit_loss = 0
 
         # If we don't include crypto2crypto and we sell for crypto, stop here
-        if receiving_asset not in FIAT_CURRENCIES and not self.include_crypto2crypto:
+        if receiving_asset and receiving_asset.is_fiat() and not self.include_crypto2crypto:
             return
 
         # calculate profit/loss

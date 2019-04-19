@@ -201,6 +201,7 @@ class PriceHistorian(object):
             from_asset=from_asset,
             to_asset=to_asset,
             timestamp=timestamp,
+            historical_data_start=self.historical_data_start,
         )
 
 
