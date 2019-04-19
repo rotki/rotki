@@ -11,6 +11,11 @@ def test_unknown_asset():
         Asset('jsakdjsladjsakdj')
 
 
+def test_repr():
+    btc_repr = repr(Asset('BTC'))
+    assert btc_repr == '<Asset identifier:BTC name:Bitcoin symbol:BTC>'
+
+
 def test_asset_hashes_properly():
     """Test that assets can be hashed and are equivalent to the canonical string"""
     btc_asset = Asset('BTC')

@@ -3,8 +3,8 @@ from typing import Any, Optional
 from dataclasses import dataclass, field
 
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.constants.cryptocompare import WORLD_TO_CRYPTOCOMPARE
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
-from rotkehlchen.externalapis.cryptocompare import WORLD_TO_CRYPTOCOMPARE
 from rotkehlchen.typing import AssetType, ChecksumEthAddress, Timestamp
 
 WORLD_TO_BITTREX = {
@@ -122,6 +122,7 @@ class Asset():
         # Ugly hack to set attributes of a frozen data class as post init
         # https://docs.python.org/3/library/dataclasses.html#frozen-instances
         object.__setattr__(self, 'name', data.name)
+        object.__setattr__(self, 'symbol', data.symbol)
         object.__setattr__(self, 'active', data.active)
         object.__setattr__(self, 'asset_type', data.asset_type)
         object.__setattr__(self, 'started', data.started)
@@ -137,6 +138,9 @@ class Asset():
 
     def __str__(self) -> str:
         return self.name
+
+    def __repr__(self) -> str:
+        return f'<Asset identifier:{self.identifier} name:{self.name} symbol:{self.symbol}>'
 
     def to_kraken(self) -> str:
         return WORLD_TO_KRAKEN[self.identifier]
