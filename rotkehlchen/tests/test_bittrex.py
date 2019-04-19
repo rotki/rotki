@@ -20,7 +20,7 @@ def analyze_bittrex_assets(currencies: List[Dict[str, Any]]):
                 print(f'{idx} - {symbol} is NOT SUPPORTED')
                 continue
 
-            if not AssetResolver().is_symbol_canonical(symbol):
+            if not AssetResolver().is_identifier_canonical(symbol):
                 msg = (
                     f'{idx} - {symbol} is not known. '
                     f'Bittrex name: {bittrex_asset["CurrencyLong"]}'

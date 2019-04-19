@@ -6,7 +6,8 @@ import time
 from json.decoder import JSONDecodeError
 from typing import Any, Dict, List, NamedTuple, NewType
 
-from rotkehlchen.assets import Asset
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_USD
 from rotkehlchen.errors import PriceQueryUnknownFromAsset
 from rotkehlchen.fval import FVal
@@ -16,7 +17,6 @@ from rotkehlchen.utils import (
     convert_to_int,
     request_get_dict,
     rlk_jsondumps,
-    rlk_jsonloads,
     rlk_jsonloads_dict,
     ts_now,
     tsToDate,
@@ -725,7 +725,7 @@ class Cryptocompare():
     def __init__(self, data_directory: FilePath) -> None:
         self.prefix = 'https://min-api.cryptocompare.com/data/'
         self.data_directory = data_directory
-        self.price_history: Dict[PairCacheKey, ] = dict()
+        self.price_history: Dict[PairCacheKey, PriceHistoryData] = dict()
         self.price_history_file: Dict[PairCacheKey, FilePath] = dict()
 
         # Check the data folder and remember the filenames of any cached history
@@ -735,10 +735,10 @@ class Cryptocompare():
         files_list = glob.glob(prefix + '*.json')
 
         for file_ in files_list:
-            file_ = file_.replace('\\\\', '\\')
+            file_ = FilePath(file_.replace('\\\\', '\\'))
             match = regex.match(file_)
             assert match
-            cache_key = match.group(1)
+            cache_key = PairCacheKey(match.group(1))
             self.price_history_file[cache_key] = file_
 
     def _api_query(self, path: str) -> Dict[str, Any]:
@@ -801,8 +801,8 @@ class Cryptocompare():
         if cache_key in self.price_history_file:
             if cache_key not in self.price_history:
                 try:
-                    with open(self.price_history_file[cache_key], 'rb') as f:
-                        data = rlk_jsonloads(f.read())
+                    with open(self.price_history_file[cache_key], 'r') as f:
+                        data = rlk_jsonloads_dict(f.read())
                         self.price_history[cache_key] = _dict_history_to_data(data)
                 except (OSError, IOError, JSONDecodeError):
                     return False
@@ -851,7 +851,7 @@ class Cryptocompare():
             end_date = timestamp
         while True:
             pr_end_date = end_date
-            end_date = end_date + (cryptocompare_hourquerylimit) * 3600
+            end_date = Timestamp(end_date + (cryptocompare_hourquerylimit) * 3600)
 
             log.debug(
                 'Querying cryptocompare for hourly historical price',
@@ -902,7 +902,9 @@ class Cryptocompare():
             'end_time': now_ts,
         }
         # and now since we actually queried the data let's also cache them
-        filename = os.path.join(self.data_directory, 'price_history_' + cache_key + '.json')
+        filename = FilePath(
+            os.path.join(self.data_directory, 'price_history_' + cache_key + '.json'),
+        )
         log.info(
             'Updating price history cache',
             filename=filename,
@@ -927,11 +929,17 @@ class Cryptocompare():
             from_asset: Asset,
             to_asset: Asset,
             timestamp: Timestamp,
+            historical_data_start: Timestamp,
     ) -> Price:
         if from_asset in KNOWN_TO_MISS_FROM_CRYPTOCOMPARE:
             raise PriceQueryUnknownFromAsset(from_asset)
 
-        data = self.get_historical_data(from_asset, to_asset, timestamp)
+        data = self.get_historical_data(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=timestamp,
+            historical_data_start=historical_data_start,
+        )
 
         # all data are sorted and timestamps are always increasing by 1 hour
         # find the closest entry to the provided timestamp
@@ -946,12 +954,12 @@ class Cryptocompare():
 
             if data[index].high is None or data[index].low is None:
                 # If we get some None in the hourly set price to 0 so that we check alternatives
-                price = Price(0)
+                price = Price(ZERO)
             else:
                 price = (data[index].high + data[index].low) / 2
         else:
             # no price found in the historical data from/to asset, try alternatives
-            price = Price(0)
+            price = Price(ZERO)
 
         if price == 0:
             if from_asset != 'BTC' and to_asset != 'BTC':
@@ -960,8 +968,18 @@ class Cryptocompare():
                     f"{to_asset} at timestamp {timestamp}. Comparing with BTC...",
                 )
                 # Just get the BTC price
-                asset_btc_price = self.query_historical_price(from_asset, A_BTC, timestamp)
-                btc_to_asset_price = self.query_historical_price(A_BTC, to_asset, timestamp)
+                asset_btc_price = self.query_historical_price(
+                    from_asset=from_asset,
+                    to_asset=A_BTC,
+                    timestamp=timestamp,
+                    historical_data_start=historical_data_start,
+                )
+                btc_to_asset_price = self.query_historical_price(
+                    from_asset=A_BTC,
+                    to_asset=to_asset,
+                    timestamp=timestamp,
+                    historical_data_start=historical_data_start,
+                )
                 price = asset_btc_price * btc_to_asset_price
             else:
                 log.debug(
@@ -981,6 +999,7 @@ class Cryptocompare():
                 from_asset=from_asset,
                 to_asset=to_asset,
                 timestamp=timestamp,
+                historical_data_start=historical_data_start,
             )
 
         if price == 0:
@@ -1006,7 +1025,8 @@ class Cryptocompare():
             from_asset: Asset,
             to_asset: Asset,
             timestamp: Timestamp,
-    ) -> FVal:
+            historical_data_start: Timestamp,
+    ) -> Price:
         """Doublecheck against the USD rate, and if incosistencies are found
         then take the USD adjusted price.
 
@@ -1017,8 +1037,18 @@ class Cryptocompare():
         keep the code around just in case a regression is introduced on the side
         of cryptocompare.
         """
-        from_asset_usd = self.query_historical_price(from_asset, A_USD, timestamp)
-        to_asset_usd = self.query_historical_price(to_asset, A_USD, timestamp)
+        from_asset_usd = self.query_historical_price(
+            from_asset=from_asset,
+            to_asset=A_USD,
+            timestamp=timestamp,
+            historical_data_start=historical_data_start,
+        )
+        to_asset_usd = self.query_historical_price(
+            from_asset=to_asset,
+            to_asset=A_USD,
+            timestamp=timestamp,
+            historical_data_start=historical_data_start,
+        )
 
         usd_invert_conversion = from_asset_usd / to_asset_usd
         abs_diff = abs(usd_invert_conversion - price)

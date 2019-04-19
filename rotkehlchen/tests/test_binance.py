@@ -194,7 +194,7 @@ def analyze_binance_assets(sorted_assets):
 
         binance_asset = BINANCE_TO_WORLD.get(binance_asset, binance_asset)
 
-        if not AssetResolver().is_symbol_canonical(binance_asset):
+        if not AssetResolver().is_identifier_canonical(binance_asset):
             msg = (
                 f'{idx}/{length} - {binance_asset} is not known. '
             )

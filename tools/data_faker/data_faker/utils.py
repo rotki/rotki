@@ -3,8 +3,8 @@ from typing import Callable
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.externalapis.cryptocompare import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
-from rotkehlchen.history import NoPriceForGivenTimestamp
 from rotkehlchen.typing import Timestamp
 
 
