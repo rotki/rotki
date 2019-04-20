@@ -6,6 +6,7 @@ import requests
 from web3 import HTTPProvider, Web3
 
 from rotkehlchen import typing
+from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils import from_wei, request_get_dict, rlk_jsonloads
@@ -211,9 +212,7 @@ class Ethchain(object):
 
     def get_multitoken_balance(
             self,
-            token_symbol: typing.EthToken,
-            token_address: typing.EthAddress,
-            token_decimals: int,
+            token: EthereumToken,
             accounts: List[typing.EthAddress],
     ) -> Dict[typing.EthAddress, FVal]:
         """Return a dictionary with keys being accounts and value balances of token
@@ -222,7 +221,7 @@ class Ethchain(object):
         balances = {}
         if self.connected:
             token_contract = self.web3.eth.contract(  # pylint: disable=no-member
-                address=token_address,
+                address=token.ethereum_address,
                 abi=self.token_abi,
             )
 
@@ -231,18 +230,18 @@ class Ethchain(object):
                     'Ethereum node query for token balance',
                     sensitive_log=True,
                     eth_address=account,
-                    token_address=token_address,
-                    token_symbol=token_symbol,
+                    token_address=token.ethereum_address,
+                    token_symbol=token.decimals,
                 )
                 token_amount = FVal(token_contract.functions.balanceOf(account).call())
                 if token_amount != 0:
-                    balances[account] = token_amount / (FVal(10) ** FVal(token_decimals))
+                    balances[account] = token_amount / (FVal(10) ** FVal(token.decimals))
                 log.debug(
                     'Ethereum node result for token balance',
                     sensitive_log=True,
                     eth_address=account,
-                    token_address=token_address,
-                    token_symbol=token_symbol,
+                    token_address=token.ethereum_address,
+                    token_symbol=token.symbol,
                     amount=token_amount,
                 )
         else:
@@ -251,30 +250,30 @@ class Ethchain(object):
                     'Querying Etherscan for token balance',
                     sensitive_log=True,
                     eth_address=account,
-                    token_address=token_address,
-                    token_symbol=token_symbol,
+                    token_address=token.ethereum_address,
+                    token_symbol=token.symbol,
                 )
                 resp = request_get_dict(
                     'https://api.etherscan.io/api?module=account&action='
                     'tokenbalance&contractaddress={}&address={}'.format(
-                        token_address,
+                        token.ethereum_address,
                         account,
                     ))
                 if resp['status'] != 1:
                     raise ValueError(
                         'Failed to query etherscan for {} token balance of {}'.format(
-                            token_symbol,
+                            token.symbol,
                             account,
                         ))
                 token_amount = FVal(resp['result'])
                 if token_amount != 0:
-                    balances[account] = token_amount / (FVal(10) ** FVal(token_decimals))
+                    balances[account] = token_amount / (FVal(10) ** FVal(token.decimals))
                 log.debug(
                     'Etherscan result for token balance',
                     sensitive_log=True,
                     eth_address=account,
-                    token_address=token_address,
-                    token_symbol=token_symbol,
+                    token_address=token.ethereum_address,
+                    token_symbol=token.symbol,
                     amount=token_amount,
                 )
 
@@ -282,12 +281,10 @@ class Ethchain(object):
 
     def get_token_balance(
             self,
-            token_symbol: typing.EthToken,
-            token_address: typing.EthAddress,
-            token_decimals: int,
+            token: EthereumToken,
             account: typing.EthAddress,
     ) -> FVal:
-        res = self.get_multitoken_balance(token_symbol, token_address, token_decimals, [account])
+        res = self.get_multitoken_balance(token=token, accounts=[account])
         return res.get(account, FVal(0))
 
     def get_block_by_number(self, num: int):

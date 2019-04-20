@@ -11,6 +11,7 @@ from typing import Dict, List, Optional, Tuple, cast
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
@@ -26,14 +27,13 @@ from rotkehlchen.typing import (
     BlockchainAddress,
     EthAddress,
     EthToken,
-    EthTokenInfo,
     FiatAsset,
     FilePath,
     NonEthTokenBlockchainAsset,
     Timestamp,
     TradePair,
 )
-from rotkehlchen.utils import createTimeStamp, is_number, rlk_jsonloads_list, ts_now
+from rotkehlchen.utils import createTimeStamp, is_number, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -153,35 +153,12 @@ def verify_otctrade_data(
     return trade, ''
 
 
-def get_all_eth_tokens() -> List[EthTokenInfo]:
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    with open(os.path.join(dir_path, 'data', 'eth_tokens.json'), 'r') as f:
-        # We know eth_tokens.json contains a list
-        data = rlk_jsonloads_list(f.read())
-
-    all_tokens = []
-    for entry in data:
-        try:
-            all_tokens.append(
-                EthTokenInfo(
-                    address=entry['address'],
-                    symbol=str(entry['symbol']),
-                    decimal=int(entry['decimal']),
-                ),
-            )
-        except (UnicodeDecodeError, UnicodeEncodeError):
-            # skip tokens with problems in unicode encoding decoding
-            continue
-
-    return all_tokens
-
-
 class DataHandler(object):
 
     def __init__(self, data_directory: FilePath):
 
         self.data_directory = data_directory
-        self.eth_tokens = get_all_eth_tokens()
+        self.eth_tokens = AssetResolver().get_all_eth_tokens()
         self.username = 'no_user'
 
     def logout(self):

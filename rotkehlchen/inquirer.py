@@ -8,12 +8,12 @@ from typing import Dict, Iterable, Optional
 import requests
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY
+from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, ZERO
 from rotkehlchen.constants.assets import FIAT_CURRENCIES, S_USD
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import FiatAsset, FilePath, Timestamp
+from rotkehlchen.typing import FiatAsset, FilePath, Price, Timestamp
 from rotkehlchen.utils import (
     request_get_dict,
     retry_calls,
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def query_cryptocompare_for_fiat_price(asset: Asset) -> FVal:
+def query_cryptocompare_for_fiat_price(asset: Asset) -> Price:
     log.debug('Get usd price from cryptocompare', asset=asset)
     cc_asset_str = asset.to_cryptocompare()
     resp = retry_calls(
@@ -55,9 +55,9 @@ def query_cryptocompare_for_fiat_price(asset: Asset) -> FVal:
             asset=asset,
             error=error_message,
         )
-        return FVal(0)
+        return Price(ZERO)
 
-    price = FVal(resp['USD'])
+    price = Price(FVal(resp['USD']))
     log.debug('Got usd price from cryptocompare', asset=asset, price=price)
     return price
 
@@ -123,7 +123,7 @@ class Inquirer(object):
             self,
             asset: Asset,
             asset_btc_price: FVal,
-    ) -> FVal:
+    ) -> Price:
         if asset == 'BTC':
             return self.kraken.usdprice['BTC']
         return asset_btc_price * self.kraken.usdprice['BTC']
@@ -132,7 +132,7 @@ class Inquirer(object):
             self,
             asset: Asset,
             asset_btc_price: Optional[FVal] = None,
-    ) -> FVal:
+    ) -> Price:
         if self.kraken and self.kraken.first_connection_made and asset_btc_price is not None:
             price = self.query_kraken_for_price(asset, asset_btc_price)
             log.debug('Get usd price from kraken', asset=asset, price=price)
