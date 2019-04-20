@@ -448,7 +448,7 @@ class TaxableEvents(object):
         taxable_profit_loss = 0
 
         # If we don't include crypto2crypto and we sell for crypto, stop here
-        if receiving_asset and receiving_asset.is_fiat() and not self.include_crypto2crypto:
+        if receiving_asset and not receiving_asset.is_fiat() and not self.include_crypto2crypto:
             return
 
         # calculate profit/loss
