@@ -1,7 +1,7 @@
 import os
-from typing import Any, Dict
+from typing import Any, Dict, List
 
-from rotkehlchen.typing import AssetData, AssetType
+from rotkehlchen.typing import AssetData, AssetType, ChecksumEthAddress, EthTokenInfo
 from rotkehlchen.utils import rlk_jsonloads_dict
 
 asset_type_mapping = {
@@ -69,3 +69,21 @@ class AssetResolver():
             decimals=data.get('ethereum_token_decimals', None),
         )
         return result
+
+    @staticmethod
+    def get_all_eth_tokens() -> List[EthTokenInfo]:
+        all_tokens = list()
+
+        for _, asset_data in AssetResolver().assets.items():
+            asset_type = asset_type_mapping[asset_data['type']]
+            if asset_type not in (AssetType.ETH_TOKEN_AND_MORE, AssetType.ETH_TOKEN):
+                continue
+
+            all_tokens.append(EthTokenInfo(
+                address=ChecksumEthAddress(asset_data['ethereum_address']),
+                symbol=asset_data['symbol'],
+                name=asset_data['name'],
+                decimal=int(asset_data['ethereum_token_decimals']),
+            ))
+
+        return all_tokens

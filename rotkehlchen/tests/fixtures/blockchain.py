@@ -5,20 +5,20 @@ from typing import List
 import pytest
 from eth_utils.address import to_checksum_address
 
-from rotkehlchen import typing
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.blockchain import Blockchain
 from rotkehlchen.crypto import address_encoder, privatekey_to_address, sha3
-from rotkehlchen.data_handler import get_all_eth_tokens
 from rotkehlchen.db.dbhandler import BlockchainAccounts
 from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.tests.utils.blockchain import geth_create_blockchain
 from rotkehlchen.tests.utils.tests import cleanup_tasks
+from rotkehlchen.typing import EthAddress, EthTokenInfo
 from rotkehlchen.user_messages import MessagesAggregator
 
 
 @pytest.fixture(scope='session')
-def all_eth_tokens():
-    return get_all_eth_tokens()
+def all_eth_tokens() -> List[EthTokenInfo]:
+    return AssetResolver().get_all_eth_tokens()
 
 
 @pytest.fixture
@@ -51,7 +51,7 @@ def private_keys(number_of_accounts, privatekey_seed):
 
 
 @pytest.fixture
-def ethereum_accounts(private_keys) -> List[typing.EthAddress]:
+def ethereum_accounts(private_keys) -> List[EthAddress]:
     return [
         to_checksum_address(address_encoder(privatekey_to_address(key)))
         for key in sorted(set(private_keys))
@@ -59,7 +59,7 @@ def ethereum_accounts(private_keys) -> List[typing.EthAddress]:
 
 
 @pytest.fixture
-def blockchain_accounts(ethereum_accounts: List[typing.EthAddress]) -> BlockchainAccounts:
+def blockchain_accounts(ethereum_accounts: List[EthAddress]) -> BlockchainAccounts:
     return BlockchainAccounts(eth=ethereum_accounts, btc=[])
 
 
@@ -159,12 +159,10 @@ def blockchain(
         blockchain_backend,
         ethchain_client,
         blockchain_accounts,
-        all_eth_tokens,
         inquirer,
 ):
     return Blockchain(
         blockchain_accounts=blockchain_accounts,
-        all_eth_tokens=all_eth_tokens,
         owned_eth_tokens=[],
         inquirer=inquirer,
         ethchain=ethchain_client,

@@ -11,7 +11,7 @@ from typing import Dict, List, NamedTuple, Optional, Tuple, Union, cast
 from eth_utils.address import to_checksum_address
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants import SUPPORTED_EXCHANGES, YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD, S_USD
 from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
@@ -550,13 +550,15 @@ class DBHandler(object):
         self.conn.commit()
         self.update_last_write()
 
-    def get_owned_tokens(self) -> List[EthToken]:
+    def get_owned_tokens(self) -> List[EthereumToken]:
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT value FROM multisettings WHERE name="eth_token";',
         )
-        query = query.fetchall()
-        return [q[0] for q in query]
+        result = [
+            EthereumToken(identifier=q[0]) for q in query
+        ]
+        return result
 
     def add_blockchain_account(
             self,

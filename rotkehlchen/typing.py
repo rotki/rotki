@@ -37,19 +37,22 @@ FiatAsset = NewType('FiatAsset', T_FiatAsset)
 
 T_EthAddres = str
 EthAddress = NewType('EthAddress', T_EthAddres)
-ChecksumEthAddress = NewType('ChecksumEthAddress', EthAddress)
+
+T_ChecksumEthAddress = str
+ChecksumEthAddress = NewType('ChecksumEthAddress', T_ChecksumEthAddress)
 
 T_BTCAddress = str
 BTCAddress = NewType('BTCAddress', T_BTCAddress)
 
 T_BlockchainAddress = str
 
-BlockchainAddress = Union[EthAddress, BTCAddress]
+BlockchainAddress = Union[EthAddress, BTCAddress, ChecksumEthAddress]
 
 
 class EthTokenInfo(NamedTuple):
     address: ChecksumEthAddress
     symbol: str
+    name: str
     decimal: int
 
 

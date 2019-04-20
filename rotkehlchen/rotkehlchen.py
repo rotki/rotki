@@ -3,12 +3,13 @@ import logging
 import os
 import shutil
 import time
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import gevent
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.accountant import Accountant
+from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.binance import Binance
 from rotkehlchen.bitmex import Bitmex
 from rotkehlchen.bittrex import Bittrex
@@ -31,7 +32,7 @@ from rotkehlchen.logging import DEFAULT_ANONYMIZED_LOGS, LoggingSettings, Rotkeh
 from rotkehlchen.poloniex import Poloniex
 from rotkehlchen.premium import premium_create_and_verify
 from rotkehlchen.serializer import process_result
-from rotkehlchen.typing import ApiKey, ApiSecret, ResultCache, Timestamp
+from rotkehlchen.typing import ApiKey, ApiSecret, ChecksumEthAddress, ResultCache, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils import (
     combine_stat_dicts,
@@ -309,7 +310,6 @@ class Rotkehlchen(object):
         ethchain = Ethchain(eth_rpc_port)
         self.blockchain = Blockchain(
             blockchain_accounts=self.data.db.get_blockchain_accounts(),
-            all_eth_tokens=self.data.eth_tokens,
             owned_eth_tokens=self.data.db.get_owned_tokens(),
             inquirer=self.inquirer,
             ethchain=ethchain,
@@ -465,7 +465,7 @@ class Rotkehlchen(object):
 
             log.debug('Main loop end')
 
-    def add_blockchain_account(self, blockchain, account):
+    def add_blockchain_account(self, blockchain: str, account: ChecksumEthAddress) -> Dict:
         try:
             new_data = self.blockchain.add_blockchain_account(blockchain, account)
         except (InputError, EthSyncError) as e:
@@ -481,18 +481,24 @@ class Rotkehlchen(object):
         self.data.remove_blockchain_account(blockchain, account)
         return accounts_result(new_data['per_account'], new_data['totals'])
 
-    def add_owned_eth_tokens(self, tokens):
+    def add_owned_eth_tokens(self, tokens: List[str]):
+        ethereum_tokens = [
+            EthereumToken(identifier=identifier) for identifier in tokens
+        ]
         try:
-            new_data = self.blockchain.track_new_tokens(tokens)
+            new_data = self.blockchain.track_new_tokens(ethereum_tokens)
         except (InputError, EthSyncError) as e:
             return simple_result(False, str(e))
 
         self.data.write_owned_eth_tokens(self.blockchain.owned_eth_tokens)
         return accounts_result(new_data['per_account'], new_data['totals'])
 
-    def remove_owned_eth_tokens(self, tokens):
+    def remove_owned_eth_tokens(self, tokens: List[str]):
+        ethereum_tokens = [
+            EthereumToken(identifier=identifier) for identifier in tokens
+        ]
         try:
-            new_data = self.blockchain.remove_eth_tokens(tokens)
+            new_data = self.blockchain.remove_eth_tokens(ethereum_tokens)
         except InputError as e:
             return simple_result(False, str(e))
         self.data.write_owned_eth_tokens(self.blockchain.owned_eth_tokens)

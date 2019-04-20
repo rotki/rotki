@@ -13,6 +13,7 @@ from typing import Any, Callable, Dict, List, Union
 import requests
 from rlp.sedes import big_endian_int
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, ZERO
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.fval import FVal
@@ -290,6 +291,8 @@ class RKLEncoder(json.JSONEncoder):
             return str(obj)
         if isinstance(obj, float):
             raise ValueError("Trying to json encode a float.")
+        if isinstance(obj, Asset):
+            return obj.identifier
 
         return json.JSONEncoder.default(self, obj)
 
