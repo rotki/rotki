@@ -5,7 +5,7 @@ import platform
 import sys
 from distutils.spawn import find_executable
 
-from rotkehlchen.utils import get_system_spec
+from rotkehlchen.utils.misc import get_system_spec
 
 """
 PyInstaller spec file to build single file or dir distributions

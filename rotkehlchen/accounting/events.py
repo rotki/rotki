@@ -10,7 +10,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import BuyEvent, Events, SellEvent
 from rotkehlchen.typing import Fee, Timestamp
-from rotkehlchen.utils import taxable_gain_for_sell, ts_now, tsToDate
+from rotkehlchen.utils.misc import taxable_gain_for_sell, ts_now, tsToDate
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

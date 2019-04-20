@@ -15,12 +15,8 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import AssetMovement, MarginPosition
-from rotkehlchen.utils import (
-    cache_response_timewise,
-    iso8601ts_to_timestamp,
-    rlk_jsonloads,
-    satoshis_to_btc,
-)
+from rotkehlchen.utils.misc import cache_response_timewise, iso8601ts_to_timestamp, satoshis_to_btc
+from rotkehlchen.utils.serialization import rlk_jsonloads
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

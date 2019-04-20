@@ -13,12 +13,12 @@ from typing import Any, Callable, Dict, List, Union
 import requests
 from rlp.sedes import big_endian_int
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, ZERO
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Fee, FilePath, ResultCache, Timestamp, TradeType
+from rotkehlchen.typing import Fee, FilePath, ResultCache, Timestamp
+from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads, rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -30,16 +30,6 @@ def sfjson_loads(s: str) -> Union[Dict, List]:
         return rlk_jsonloads(s)
     except json.decoder.JSONDecodeError:
         return {}
-
-
-def pretty_json_dumps(data: Dict) -> str:
-    return json.dumps(
-        data,
-        sort_keys=True,
-        indent=4,
-        separators=(',', ': '),
-        cls=RKLEncoder,
-    )
 
 
 def ts_now() -> Timestamp:
@@ -214,19 +204,6 @@ def request_get_dict(uri: str, timeout: int = ALL_REMOTES_TIMEOUT) -> Dict:
     return response
 
 
-def get_jsonfile_contents_or_empty_dict(filepath: FilePath) -> Dict:
-    if not os.path.isfile(filepath):
-        return dict()
-
-    with open(filepath, 'r') as infile:
-        try:
-            data = rlk_jsonloads_dict(infile.read())
-        except json.decoder.JSONDecodeError:
-            data = dict()
-
-    return data
-
-
 def convert_to_int(
         val: Union[FVal, bytes, str, int, float],
         accept_only_exact: bool = True,
@@ -244,77 +221,6 @@ def convert_to_int(
             return int(val)
 
     raise ValueError('Can not convert {} which is of type {} to int.'.format(val, type(val)))
-
-
-def rkl_decode_value(
-        val: Union[Dict, List, float, bytes, str],
-) -> Union[Dict, FVal, List, bytes, str]:
-    if isinstance(val, dict):
-        new_val = dict()
-        for k, v in val.items():
-            value = rkl_decode_value(v)
-            if k == 'symbol' and isinstance(value, FVal):
-                # In coin paprika's symbols and all the token's symbols
-                # there are some symbols like 1337 which are all numeric and
-                # are interpreted as numeric. Adjust for it here.
-                value = str(v)
-            new_val[k] = value
-        return new_val
-    elif isinstance(val, list):
-        return [rkl_decode_value(x) for x in val]
-    elif isinstance(val, float):
-        return FVal(val)
-    elif isinstance(val, (bytes, str)):
-        try:
-            val = float(val)
-            return FVal(val)
-        except ValueError:
-            pass
-    assert not isinstance(val, float)
-    return val
-
-
-class RKLDecoder(json.JSONDecoder):
-
-    def __init__(self, *args, **kwargs):
-        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
-
-    def object_hook(self, obj):  # pylint: disable=no-self-use
-        return rkl_decode_value(obj)
-
-
-class RKLEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, FVal):
-            return str(obj)
-        if isinstance(obj, TradeType):
-            return str(obj)
-        if isinstance(obj, float):
-            raise ValueError("Trying to json encode a float.")
-        if isinstance(obj, Asset):
-            return obj.identifier
-
-        return json.JSONEncoder.default(self, obj)
-
-
-def rlk_jsonloads(data: str) -> Union[Dict, List]:
-    return json.loads(data, cls=RKLDecoder)
-
-
-def rlk_jsonloads_dict(data: str) -> Dict:
-    value = rlk_jsonloads(data)
-    assert isinstance(value, dict)
-    return value
-
-
-def rlk_jsonloads_list(data: str) -> List:
-    value = rlk_jsonloads(data)
-    assert isinstance(value, list)
-    return value
-
-
-def rlk_jsondumps(data: Union[Dict, List]) -> str:
-    return json.dumps(data, cls=RKLEncoder)
 
 
 def taxable_gain_for_sell(
@@ -386,3 +292,16 @@ def write_history_data_in_file(data, filepath, start_ts, end_ts):
         history_dict['start_time'] = start_ts
         history_dict['end_time'] = end_ts
         outfile.write(rlk_jsondumps(history_dict))
+
+
+def get_jsonfile_contents_or_empty_dict(filepath: FilePath) -> Dict:
+    if not os.path.isfile(filepath):
+        return dict()
+
+    with open(filepath, 'r') as infile:
+        try:
+            data = rlk_jsonloads_dict(infile.read())
+        except json.decoder.JSONDecodeError:
+            data = dict()
+
+    return data

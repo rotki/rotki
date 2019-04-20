@@ -1,7 +1,7 @@
 import pytest
 
 from rotkehlchen.fval import FVal
-from rotkehlchen.utils import rlk_jsondumps, rlk_jsonloads
+from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads
 
 
 def test_simple_arithmetic():

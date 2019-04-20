@@ -4,7 +4,7 @@ from json.decoder import JSONDecodeError
 import pytest
 
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.utils import rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 
 def test_add_remove_blockchain_account(rotkehlchen_instance):

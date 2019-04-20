@@ -3,7 +3,7 @@ import os
 import pytest
 
 from rotkehlchen.tests.utils.blockchain import DEFAULT_BALANCE
-from rotkehlchen.utils import from_wei
+from rotkehlchen.utils.misc import from_wei
 
 
 @pytest.mark.skipif(

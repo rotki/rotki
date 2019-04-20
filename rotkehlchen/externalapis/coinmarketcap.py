@@ -10,7 +10,8 @@ import requests
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import FilePath
-from rotkehlchen.utils import rlk_jsondumps, rlk_jsonloads_dict, ts_now
+from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

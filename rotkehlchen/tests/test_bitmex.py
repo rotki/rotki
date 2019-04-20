@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.bitmex import Bitmex, trade_from_bitmex
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import AssetMovement, MarginPosition
-from rotkehlchen.utils import ts_now
+from rotkehlchen.utils.misc import ts_now
 
 TEST_BITMEX_API_KEY = b'XY98JYVL15Zn-iU9f7OsJeVf'
 TEST_BITMEX_API_SECRET = b'671tM6f64bt6KhteDakj2uCCNBt7HhZVEE7H5x16Oy4zb1ag'

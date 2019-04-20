@@ -7,7 +7,7 @@ import requests
 
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.typing import EthAddress
-from rotkehlchen.utils import rlk_jsonloads_dict, rlk_jsonloads_list
+from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsonloads_list
 
 KNOWN_TO_MISS_FROM_PAPRIKA = (
     'DAO',

@@ -33,7 +33,7 @@ from rotkehlchen.typing import (
     Timestamp,
     TradePair,
 )
-from rotkehlchen.utils import createTimeStamp, is_number, ts_now
+from rotkehlchen.utils.misc import createTimeStamp, is_number, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

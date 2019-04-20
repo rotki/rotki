@@ -5,7 +5,12 @@ from asset_aggregator.utils import choose_multiple
 
 from rotkehlchen.constants.assets import FIAT_CURRENCIES
 from rotkehlchen.typing import EthAddress, Timestamp
-from rotkehlchen.utils import createTimeStamp, iso8601ts_to_timestamp, request_get_dict, tsToDate
+from rotkehlchen.utils.misc import (
+    createTimeStamp,
+    iso8601ts_to_timestamp,
+    request_get_dict,
+    tsToDate,
+)
 
 # For these assets we will definitely always use our data as they are more accurate
 # than coin paprika or cryptocompare or we have already decided on a time

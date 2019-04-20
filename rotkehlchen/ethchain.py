@@ -9,7 +9,8 @@ from rotkehlchen import typing
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils import from_wei, request_get_dict, rlk_jsonloads
+from rotkehlchen.utils.misc import from_wei, request_get_dict
+from rotkehlchen.utils.serialization import rlk_jsonloads
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

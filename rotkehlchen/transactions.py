@@ -4,7 +4,7 @@ from typing import Dict, List
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import EthAddress, EthereumTransaction, Timestamp
-from rotkehlchen.utils import convert_to_int, request_get_dict, retry_calls
+from rotkehlchen.utils.misc import convert_to_int, request_get_dict, retry_calls
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

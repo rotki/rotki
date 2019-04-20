@@ -1,7 +1,7 @@
 # -*- coding: utf-8
 from binascii import hexlify
 
-from rotkehlchen.utils import int_to_big_endian
+from rotkehlchen.utils.misc import int_to_big_endian
 
 GAS_LIMIT = 3141592  # Morden's gasLimit.
 GAS_LIMIT_HEX = '0x' + hexlify(int_to_big_endian(GAS_LIMIT)).decode('utf-8')

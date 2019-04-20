@@ -1,8 +1,8 @@
+import json
 import os
 from typing import Any, Dict, List
 
 from rotkehlchen.typing import AssetData, AssetType, ChecksumEthAddress, EthTokenInfo
-from rotkehlchen.utils import rlk_jsonloads_dict
 
 asset_type_mapping = {
     'fiat': AssetType.FIAT,
@@ -39,7 +39,7 @@ class AssetResolver():
 
         dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
         with open(os.path.join(dir_path, 'data', 'all_assets.json'), 'r') as f:
-            assets = rlk_jsonloads_dict(f.read())
+            assets = json.loads(f.read())
 
         AssetResolver.__instance.assets = assets
         return AssetResolver.__instance

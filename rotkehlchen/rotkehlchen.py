@@ -34,7 +34,7 @@ from rotkehlchen.premium import premium_create_and_verify
 from rotkehlchen.serializer import process_result
 from rotkehlchen.typing import ApiKey, ApiSecret, ChecksumEthAddress, ResultCache, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils import (
+from rotkehlchen.utils.misc import (
     combine_stat_dicts,
     dict_get_sumof,
     merge_dicts,
