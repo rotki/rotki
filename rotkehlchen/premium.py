@@ -11,7 +11,7 @@ from urllib.parse import urlencode
 import requests
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
-from rotkehlchen.utils import rlk_jsonloads
+from rotkehlchen.utils.serialization import rlk_jsonloads
 
 logger = logging.getLogger(__name__)
 

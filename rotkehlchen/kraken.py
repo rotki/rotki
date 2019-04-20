@@ -27,13 +27,9 @@ from rotkehlchen.order_formatting import (
     pair_get_assets,
     trade_type_from_string,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Asset, FilePath, Timestamp, TradePair
-from rotkehlchen.utils import (
-    cache_response_timewise,
-    convert_to_int,
-    retry_calls,
-    rlk_jsonloads_dict,
-)
+from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
+from rotkehlchen.utils.misc import cache_response_timewise, convert_to_int, retry_calls
+from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

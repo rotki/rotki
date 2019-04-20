@@ -3,7 +3,7 @@ import argparse
 import sys
 
 from rotkehlchen.config import default_data_directory
-from rotkehlchen.utils import get_system_spec
+from rotkehlchen.utils.misc import get_system_spec
 
 
 class VersionAction(argparse.Action):

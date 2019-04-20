@@ -5,7 +5,7 @@ from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.fval import FVal
 from rotkehlchen.kraken import KRAKEN_ASSETS, kraken_to_world_pair, trade_from_kraken
 from rotkehlchen.order_formatting import Trade
-from rotkehlchen.utils import ts_now
+from rotkehlchen.utils.misc import ts_now
 
 
 def test_coverage_of_kraken_balances(kraken):

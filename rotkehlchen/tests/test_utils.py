@@ -5,7 +5,7 @@ import pytest
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import invert_pair
 from rotkehlchen.serializer import process_result
-from rotkehlchen.utils import iso8601ts_to_timestamp
+from rotkehlchen.utils.misc import iso8601ts_to_timestamp
 
 
 def test_process_result():

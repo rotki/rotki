@@ -31,7 +31,8 @@ from rotkehlchen.db.dbhandler import (
 )
 from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.typing import Timestamp
-from rotkehlchen.utils import createTimeStamp, rlk_jsondumps, ts_now
+from rotkehlchen.utils.misc import createTimeStamp, ts_now
+from rotkehlchen.utils.serialization import rlk_jsondumps
 
 TABLES_AT_INIT = [
     'timed_balances',

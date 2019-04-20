@@ -24,12 +24,12 @@ from rotkehlchen.poloniex import trade_from_poloniex
 from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
 from rotkehlchen.typing import EthAddress, FilePath
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils import (
+from rotkehlchen.utils.misc import (
     createTimeStamp,
     get_jsonfile_contents_or_empty_dict,
-    rlk_jsonloads,
     write_history_data_in_file,
 )
+from rotkehlchen.utils.serialization import rlk_jsonloads
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

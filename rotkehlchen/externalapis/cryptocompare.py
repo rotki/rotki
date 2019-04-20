@@ -14,15 +14,14 @@ from rotkehlchen.errors import PriceQueryUnknownFromAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import FilePath, Price, Timestamp
-from rotkehlchen.utils import (
+from rotkehlchen.utils.misc import (
     convert_to_int,
     request_get_dict,
-    rlk_jsondumps,
-    rlk_jsonloads_dict,
     ts_now,
     tsToDate,
     write_history_data_in_file,
 )
+from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

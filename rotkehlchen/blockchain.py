@@ -23,7 +23,7 @@ from rotkehlchen.typing import (
     ResultCache,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils import cache_response_timewise, request_get_direct
+from rotkehlchen.utils.misc import cache_response_timewise, request_get_direct
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

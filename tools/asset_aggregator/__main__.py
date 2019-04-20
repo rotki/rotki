@@ -43,7 +43,7 @@ from rotkehlchen.externalapis.coinpaprika import (
     find_paprika_coin_id,
     get_paprika_data_eth_token_address,
 )
-from rotkehlchen.utils import rlk_jsonloads
+from rotkehlchen.utils.serialization import rlk_jsonloads
 
 
 def process_asset(

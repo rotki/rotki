@@ -31,7 +31,8 @@ from rotkehlchen.typing import (
     NonEthTokenBlockchainAsset,
     Timestamp,
 )
-from rotkehlchen.utils import rlk_jsondumps, rlk_jsonloads_dict, ts_now
+from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
 from .utils import DB_SCRIPT_CREATE_TABLES, DB_SCRIPT_REIMPORT_DATA
 

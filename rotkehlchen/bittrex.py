@@ -23,7 +23,8 @@ from rotkehlchen.order_formatting import (
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils import cache_response_timewise, createTimeStamp, rlk_jsonloads_dict
+from rotkehlchen.utils.misc import cache_response_timewise, createTimeStamp
+from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

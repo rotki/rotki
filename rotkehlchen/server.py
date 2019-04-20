@@ -18,7 +18,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serializer import process_result, process_result_list
 from rotkehlchen.typing import Timestamp
-from rotkehlchen.utils import pretty_json_dumps
+from rotkehlchen.utils.serialization import pretty_json_dumps
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

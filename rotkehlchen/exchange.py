@@ -9,7 +9,7 @@ from gevent.lock import Semaphore
 
 from rotkehlchen import typing
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils import rlk_jsondumps, rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

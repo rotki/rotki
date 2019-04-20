@@ -7,7 +7,7 @@ import requests
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import _query_currency_converterapi, _query_exchanges_rateapi
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.utils import ts_now, tsToDate
+from rotkehlchen.utils.misc import ts_now, tsToDate
 
 
 @pytest.mark.skipif(

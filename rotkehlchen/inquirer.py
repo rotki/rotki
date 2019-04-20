@@ -14,14 +14,8 @@ from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import FiatAsset, FilePath, Price, Timestamp
-from rotkehlchen.utils import (
-    request_get_dict,
-    retry_calls,
-    rlk_jsondumps,
-    rlk_jsonloads_dict,
-    ts_now,
-    tsToDate,
-)
+from rotkehlchen.utils.misc import request_get_dict, retry_calls, ts_now, tsToDate
+from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

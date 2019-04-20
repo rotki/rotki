@@ -17,7 +17,7 @@ from rotkehlchen.tests.utils.factories import (
     make_random_uppercasenumeric_string,
 )
 from rotkehlchen.typing import Timestamp, TradePair
-from rotkehlchen.utils import rlk_jsonloads
+from rotkehlchen.utils.serialization import rlk_jsonloads
 
 
 def get_random_kraken_asset() -> Asset:

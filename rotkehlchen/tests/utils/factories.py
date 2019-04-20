@@ -3,7 +3,7 @@ import random
 import string
 
 from rotkehlchen.fval import FVal
-from rotkehlchen.utils import ts_now
+from rotkehlchen.utils.misc import ts_now
 
 
 def make_random_bytes(size):
