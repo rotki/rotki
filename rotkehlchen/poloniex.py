@@ -26,7 +26,7 @@ from rotkehlchen.order_formatting import (
     invert_pair,
     trade_type_from_string,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, BlockchainAsset, FilePath, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, createTimeStamp, retry_calls
 from rotkehlchen.utils.serialization import rlk_jsonloads, rlk_jsonloads_dict
@@ -131,7 +131,6 @@ class Poloniex(Exchange):
 
         self.uri = 'https://poloniex.com/'
         self.public_uri = self.uri + 'public?command='
-        self.usdprice: Dict[BlockchainAsset, FVal] = {}
         self.inquirer = inquirer
         self.session.headers.update({  # type: ignore
             'Key': self.api_key,
@@ -282,14 +281,6 @@ class Poloniex(Exchange):
 
     def market_watcher(self):
         self.ticker = self.returnTicker()
-        with self.lock:
-            self.usdprice['BTC'] = FVal(self.ticker['USDT_BTC']['last'])
-            self.usdprice['ETH'] = FVal(self.ticker['USDT_ETH']['last'])
-            self.usdprice['DASH'] = FVal(self.ticker['USDT_DASH']['last'])
-            self.usdprice['XMR'] = FVal(self.ticker['USDT_XMR']['last'])
-            self.usdprice['LTC'] = FVal(self.ticker['USDT_LTC']['last'])
-            self.usdprice['MAID'] = FVal(self.ticker['BTC_MAID']['last']) * self.usdprice['BTC']
-            self.usdprice['FCT'] = FVal(self.ticker['BTC_FCT']['last']) * self.usdprice['BTC']
 
     def main_logic(self):
         if not self.first_connection_made:
