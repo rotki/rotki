@@ -108,6 +108,7 @@ class AssetType(Enum):
     TRON_TOKEN = 16
     ONTOLOGY_TOKEN = 17
     ETH_TOKEN_AND_MORE = 18
+    EXCHANGE_SPECIFIC = 19
 
 
 class AssetData(NamedTuple):

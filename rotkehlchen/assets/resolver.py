@@ -24,6 +24,7 @@ asset_type_mapping = {
     'stellar token': AssetType.STELLAR_TOKEN,
     'tron token': AssetType.TRON_TOKEN,
     'ontology token': AssetType.ONTOLOGY_TOKEN,
+    'exchange specific': AssetType.EXCHANGE_SPECIFIC,
 }
 
 
