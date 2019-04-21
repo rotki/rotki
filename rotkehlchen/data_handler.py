@@ -10,7 +10,7 @@ from typing import Dict, List, Optional, Tuple, cast
 
 from eth_utils.address import to_checksum_address
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.crypto import decrypt, encrypt
@@ -26,7 +26,6 @@ from rotkehlchen.typing import (
     ApiSecret,
     BlockchainAddress,
     EthAddress,
-    EthToken,
     FiatAsset,
     FilePath,
     NonEthTokenBlockchainAsset,
@@ -208,7 +207,7 @@ class DataHandler(object):
         """Save the balances data at the given timestamp"""
         self.db.write_balances_data(data=data, timestamp=timestamp)
 
-    def write_owned_eth_tokens(self, tokens: List[EthToken]) -> None:
+    def write_owned_eth_tokens(self, tokens: List[EthereumToken]) -> None:
         self.db.write_owned_tokens(tokens)
 
     def add_blockchain_account(
