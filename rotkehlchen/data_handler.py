@@ -12,7 +12,6 @@ from eth_utils.address import to_checksum_address
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
 from rotkehlchen.db.dbhandler import DBHandler
@@ -28,7 +27,7 @@ from rotkehlchen.typing import (
     EthAddress,
     FiatAsset,
     FilePath,
-    NonEthTokenBlockchainAsset,
+    SupportedBlockchain,
     Timestamp,
     TradePair,
 )
@@ -212,19 +211,19 @@ class DataHandler(object):
 
     def add_blockchain_account(
             self,
-            blockchain: NonEthTokenBlockchainAsset,
+            blockchain: SupportedBlockchain,
             account: BlockchainAddress,
     ) -> None:
-        if blockchain == A_ETH:
+        if blockchain == SupportedBlockchain.ETHEREUM:
             account = to_checksum_address(account)
         self.db.add_blockchain_account(blockchain, account)
 
     def remove_blockchain_account(
             self,
-            blockchain: NonEthTokenBlockchainAsset,
+            blockchain: SupportedBlockchain,
             account: BlockchainAddress,
     ) -> None:
-        if blockchain == A_ETH:
+        if blockchain == SupportedBlockchain.ETHEREUM:
             account = to_checksum_address(account)
         self.db.remove_blockchain_account(blockchain, account)
 
