@@ -22,16 +22,6 @@ FilePath = NewType('FilePath', T_FilePath)
 T_TradePair = str
 TradePair = NewType('TradePair', T_TradePair)
 
-# The Symbol of an Ethereum Token. e.g. GNO, RDN e.t.c.
-T_EthToken = str
-EthToken = NewType('EthToken', T_EthToken)
-
-# All non eth token blockchain assets: e.g. 'ETH', 'BTC', 'XMR' e.t.c.
-T_NonEthTokenBlockchainAsset = str
-NonEthTokenBlockchainAsset = NewType('NonEthTokenBlockchainAsset', T_NonEthTokenBlockchainAsset)
-
-BlockchainAsset = Union[EthToken, NonEthTokenBlockchainAsset]
-
 T_FiatAsset = str
 FiatAsset = NewType('FiatAsset', T_FiatAsset)
 
@@ -87,6 +77,12 @@ class EthereumTransaction(NamedTuple):
     gas: FVal
     gas_price: FVal
     gas_used: FVal
+
+
+class SupportedBlockchain(Enum):
+    """These are the blockchains for which account tracking is supported """
+    ETHEREUM = 'ETH'
+    BITCOIN = 'BTC'
 
 
 class AssetType(Enum):

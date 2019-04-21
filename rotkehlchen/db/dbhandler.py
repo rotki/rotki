@@ -27,7 +27,7 @@ from rotkehlchen.typing import (
     EthAddress,
     FiatAsset,
     FilePath,
-    NonEthTokenBlockchainAsset,
+    SupportedBlockchain,
     Timestamp,
 )
 from rotkehlchen.utils.misc import ts_now
@@ -243,7 +243,10 @@ class DBHandler(object):
             )
             self.conn.commit()
             for account in accounts.eth:
-                self.add_blockchain_account(A_ETH, to_checksum_address(account))
+                self.add_blockchain_account(
+                    blockchain=SupportedBlockchain.ETHEREUM,
+                    account=to_checksum_address(account),
+                )
 
     def connect(self, password: str) -> None:
         self.conn = sqlcipher.connect(  # pylint: disable=no-member
@@ -562,7 +565,7 @@ class DBHandler(object):
 
     def add_blockchain_account(
             self,
-            blockchain: Asset,
+            blockchain: SupportedBlockchain,
             account: BlockchainAddress,
     ) -> None:
         cursor = self.conn.cursor()
@@ -575,13 +578,13 @@ class DBHandler(object):
 
     def remove_blockchain_account(
             self,
-            blockchain: NonEthTokenBlockchainAsset,
+            blockchain: SupportedBlockchain,
             account: BlockchainAddress,
     ) -> None:
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT COUNT(*) from blockchain_accounts WHERE '
-            'blockchain = ? and account = ?;', (blockchain, account),
+            'blockchain = ? and account = ?;', (str(blockchain), account),
         )
         query = query.fetchall()
         if query[0][0] == 0:
@@ -591,7 +594,7 @@ class DBHandler(object):
 
         cursor.execute(
             'DELETE FROM blockchain_accounts WHERE '
-            'blockchain = ? and account = ?;', (blockchain, account),
+            'blockchain = ? and account = ?;', (str(blockchain), account),
         )
         self.conn.commit()
         self.update_last_write()
