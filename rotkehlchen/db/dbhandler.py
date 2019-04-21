@@ -25,7 +25,6 @@ from rotkehlchen.typing import (
     BlockchainAddress,
     BTCAddress,
     EthAddress,
-    EthToken,
     FiatAsset,
     FilePath,
     NonEthTokenBlockchainAsset,
@@ -535,7 +534,7 @@ class DBHandler(object):
         self.conn.commit()
         self.update_last_write()
 
-    def write_owned_tokens(self, tokens: List[EthToken]) -> None:
+    def write_owned_tokens(self, tokens: List[EthereumToken]) -> None:
         """Execute addition of multiple tokens in the DB
 
         tokens should be a list of token symbols"""
@@ -546,7 +545,7 @@ class DBHandler(object):
         )
         cursor.executemany(
             'INSERT INTO multisettings(name,value) VALUES (?, ?)',
-            [('eth_token', t) for t in tokens],
+            [('eth_token', t.identifier) for t in tokens],
         )
         self.conn.commit()
         self.update_last_write()
