@@ -17,7 +17,8 @@ from rotkehlchen.errors import AuthenticationError, RotkehlchenPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serializer import process_result, process_result_list
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.typing import SupportedBlockchain, Timestamp
+from rotkehlchen.utils.misc import simple_result
 from rotkehlchen.utils.serialization import pretty_json_dumps
 
 logger = logging.getLogger(__name__)
@@ -322,11 +323,23 @@ class RotkehlchenServer(object):
     def remove_owned_eth_tokens(self, tokens):
         return self.rotkehlchen.remove_owned_eth_tokens(tokens)
 
-    def add_blockchain_account(self, blockchain, account):
-        return self.rotkehlchen.add_blockchain_account(blockchain, account)
+    def add_blockchain_account(self, given_blockchain: str, given_account: str):
+        try:
+            blockchain = SupportedBlockchain(given_blockchain)
+        except ValueError:
+            msg = f'Tried to add blockchain account for unsupported blockchain {given_blockchain}'
+            return simple_result(False, msg)
+        return self.rotkehlchen.add_blockchain_account(blockchain, given_account)
 
-    def remove_blockchain_account(self, blockchain, account):
-        return self.rotkehlchen.remove_blockchain_account(blockchain, account)
+    def remove_blockchain_account(self, given_blockchain: str, given_account: str):
+        try:
+            blockchain = SupportedBlockchain(given_blockchain)
+        except ValueError:
+            msg = (
+                f'Tried to remove blockchain account for unsupported blockchain {given_blockchain}'
+            )
+            return simple_result(False, msg)
+        return self.rotkehlchen.remove_blockchain_account(blockchain, given_account)
 
     def get_ignored_assets(self):
         result = {

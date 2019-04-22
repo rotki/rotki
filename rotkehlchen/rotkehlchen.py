@@ -32,7 +32,14 @@ from rotkehlchen.logging import DEFAULT_ANONYMIZED_LOGS, LoggingSettings, Rotkeh
 from rotkehlchen.poloniex import Poloniex
 from rotkehlchen.premium import premium_create_and_verify
 from rotkehlchen.serializer import process_result
-from rotkehlchen.typing import ApiKey, ApiSecret, ChecksumEthAddress, ResultCache, Timestamp
+from rotkehlchen.typing import (
+    ApiKey,
+    ApiSecret,
+    BlockchainAddress,
+    ResultCache,
+    SupportedBlockchain,
+    Timestamp,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
     combine_stat_dicts,
@@ -465,7 +472,11 @@ class Rotkehlchen(object):
 
             log.debug('Main loop end')
 
-    def add_blockchain_account(self, blockchain: str, account: ChecksumEthAddress) -> Dict:
+    def add_blockchain_account(
+            self,
+            blockchain: SupportedBlockchain,
+            account: BlockchainAddress,
+    ) -> Dict:
         try:
             new_data = self.blockchain.add_blockchain_account(blockchain, account)
         except (InputError, EthSyncError) as e:
@@ -473,7 +484,11 @@ class Rotkehlchen(object):
         self.data.add_blockchain_account(blockchain, account)
         return accounts_result(new_data['per_account'], new_data['totals'])
 
-    def remove_blockchain_account(self, blockchain, account):
+    def remove_blockchain_account(
+            self,
+            blockchain: SupportedBlockchain,
+            account: BlockchainAddress,
+    ):
         try:
             new_data = self.blockchain.remove_blockchain_account(blockchain, account)
         except (InputError, EthSyncError) as e:
