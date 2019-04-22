@@ -21,6 +21,7 @@ from rotkehlchen.typing import (
     ChecksumEthAddress,
     EthAddress,
     ResultCache,
+    SupportedBlockchain,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, request_get_direct
@@ -265,27 +266,27 @@ class Blockchain(object):
 
     def add_blockchain_account(
             self,
-            blockchain: str,
+            blockchain: SupportedBlockchain,
             account: BlockchainAddress,
     ) -> BlockchainBalancesUpdate:
         return self.modify_blockchain_account(blockchain, account, 'append', operator.add)
 
     def remove_blockchain_account(
             self,
-            blockchain: str,
+            blockchain: SupportedBlockchain,
             account: BlockchainAddress,
     ) -> BlockchainBalancesUpdate:
         return self.modify_blockchain_account(blockchain, account, 'remove', operator.sub)
 
     def modify_blockchain_account(
             self,
-            blockchain: str,
+            blockchain: SupportedBlockchain,
             account: BlockchainAddress,
             append_or_remove: str,
             add_or_sub: Callable[[FVal, FVal], FVal],
     ) -> BlockchainBalancesUpdate:
 
-        if blockchain == A_BTC:
+        if blockchain == SupportedBlockchain.BITCOIN:
             if append_or_remove == 'remove' and account not in self.accounts.btc:
                 raise InputError('Tried to remove a non existing BTC account')
 
@@ -296,7 +297,7 @@ class Blockchain(object):
                 add_or_sub,
             )
 
-        elif blockchain == A_ETH:
+        elif blockchain == SupportedBlockchain.ETHEREUM:
             if append_or_remove == 'remove' and account not in self.accounts.eth:
                 raise InputError('Tried to remove a non existing ETH account')
             try:
