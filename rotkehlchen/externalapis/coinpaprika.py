@@ -236,6 +236,9 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen ATX is Astoin Coin and ATX-2 is ArtexCoin
     'ATX': 'atx-aston',
     'ATX-2': 'atx-artex-coin',
+    # For Rotkehlcen ATOM is Cosmos and ATOM-2 is Atomic coin
+    'ATOM': 'atom-cosmos',
+    'ATOM-2': 'atom-atomic-coin',
     # For Rotkehlchen B2BX is B2BX but in paprika it's B2B
     'B2BX': 'b2b-b2bx',
     # For Rotkehlchen BBK is BrickBlock and BBK-2 is Bitblocks

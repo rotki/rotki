@@ -552,6 +552,18 @@
         "symbol": "ATMI",
         "type": "ethereum token"
     },
+    "ATOM": {
+        "name": "Cosmos",
+        "started": 1552596249,
+        "symbol": "ATOM",
+        "type": "own chain"
+    },
+    "ATOM-2": {
+        "name": "Atomic Coin",
+        "started": 1474588800,
+        "symbol": "ATOM",
+        "type": "own chain"
+    },
     "ATS": {
         "ethereum_address": "0x2dAEE1AA61D60A252DC80564499A69802853583A",
         "ethereum_token_decimals": 4,
@@ -5075,6 +5087,14 @@
         "name": "MidasProtocol",
         "started": 1530285057,
         "symbol": "MAS",
+        "type": "ethereum token"
+    },
+    "MATIC": {
+        "ethereum_address": "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0",
+        "ethereum_token_decimals": 18,
+        "name": "Matic Network",
+        "started": 1555718400,
+        "symbol": "MATIC",
         "type": "ethereum token"
     },
     "MAX": {

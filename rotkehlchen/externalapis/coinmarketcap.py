@@ -641,6 +641,12 @@ KNOWN_TO_MISS_FROM_CMC = (
 # There can be multiple ids for the same symbol and for cases such as this
 # we use this mapping to manually map Rotkehlchen symbols to CMC IDs
 WORLD_TO_CMC_ID = {
+    # For Rotkehlchen AID is AidCoin and AID-2 is Aidus token
+    'AID': 2462,
+    'AID-2': 3785,
+    # For Rotkehlchen ATOM is Cosmos and ATOM-2 is Atomic Coin
+    'ATOM': 3794,
+    'ATOM-2': 1420,
     # Bitstars
     'BITS': 276,
     # Bitswift
@@ -667,9 +673,6 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen MORE is More coin and MORE-2 is Mithril Ore token
     'MORE': 1722,
     'MORE-2': 3206,
-    # For Rotkehlchen AID is AidCoin and AID-2 is Aidus token
-    'AID': 2462,
-    'AID-2': 3785,
     # For Rotkehlchen CBC is Cashbet Coin and CBC-2 is Cashbery coin
     'CBC': 2855,
     'CBC-2': 3199,
