@@ -92,7 +92,7 @@ def trade_from_binance(
     return Trade(
         timestamp=timestamp,
         location='binance',
-        pair=TradePair(f'{base_asset}_{quote_asset}'),
+        pair=TradePair(f'{base_asset.identifier}_{quote_asset.identifier}'),
         trade_type=order_type,
         amount=amount,
         rate=rate,
