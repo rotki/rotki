@@ -281,6 +281,9 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # We got APH as Aphelion and APH-2 as a very shortlived Aphrodite coin
     # Cryptocompare has no data for Aphrodite coin
     'APH-2',
+    # Atomic coin (https://coinmarketcap.com/currencies/atomic-coin/) is not in
+    # cryptocompare but is in paprika
+    'ATOM-2',
     # BTCTalkCoin is not in cryptocompare but it's in coin paprika
     # https://api.coinpaprika.com/v1/coins/talk-btctalkcoin and in coinmarketcap
     # https://coinmarketcap.com/currencies/btctalkcoin/#charts
@@ -511,6 +514,9 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # Midas Protocol (https://coinmarketcap.com/currencies/midasprotocol/)
     # is not in cryptocompare but is in paprika
     'MAS',
+    # Matic (https://coinmarketcap.com/currencies/matic-network/)
+    # is not in cryptocompare but is in paprika
+    'MATIC',
     # Meshbox (https://coinlib.io/coin/MESH/MeshBox)
     # is not in cryptocompare but is in paprika
     'MESH',
