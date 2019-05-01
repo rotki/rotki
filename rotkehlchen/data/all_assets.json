@@ -6391,6 +6391,20 @@
         "symbol": "PKT",
         "type": "ethereum token"
     },
+    "PLA": {
+        "name": "Plair",
+        "started": 1527206400,
+        "symbol": "PLA",
+        "type": "vechain token"
+    },
+    "PLA-2": {
+        "ethereum_address": "0x0198f46f520F33cd4329bd4bE380a25a90536CD5",
+        "ethereum_token_decimals": 18,
+        "name": "PlayChip",
+        "started": 1544486400,
+        "symbol": "PLA",
+        "type": "ethereum token"
+    },
     "PLAY": {
         "ethereum_address": "0xE477292f1B3268687A29376116B0ED27A9c76170",
         "ethereum_token_decimals": 18,

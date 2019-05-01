@@ -16,6 +16,8 @@ WORLD_TO_BITTREX = {
     'BTM-2': 'BTM',
     # In Rotkehlchen PAI-2 is PCHAIN token but in Bittrex it's PI
     'PAI-2': 'PI',
+    # In Rotkehlchen PLA-2 is Playchip but in Bittrex is PLA
+    'PLA-2': 'PLA',
 }
 
 WORLD_TO_POLONIEX = {

@@ -25,6 +25,7 @@ asset_type_mapping = {
     'tron token': AssetType.TRON_TOKEN,
     'ontology token': AssetType.ONTOLOGY_TOKEN,
     'exchange specific': AssetType.EXCHANGE_SPECIFIC,
+    'vechain token': AssetType.VECHAIN_TOKEN,
 }
 
 
