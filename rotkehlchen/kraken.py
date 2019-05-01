@@ -15,6 +15,7 @@ from requests import Response
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS, KRAKEN_API_VERSION, KRAKEN_BASE_URL
+from rotkehlchen.constants.assets import A_BSV
 from rotkehlchen.errors import RecoverableRequestError, RemoteError
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
@@ -345,7 +346,7 @@ class Kraken(Exchange):
             # https://blog.kraken.com/post/2274/kraken-is-delisting-bsv/
             # Until May 31st there can be BSV in Kraken (even with 0 balance)
             # so keep this until then to get the price
-            return query_cryptocompare_for_fiat_price('BSV')
+            return query_cryptocompare_for_fiat_price(A_BSV)
 
         # TODO: This is pretty ugly. Find a better way to check out kraken pairs
         # without this ugliness.
