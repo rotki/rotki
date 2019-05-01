@@ -12,12 +12,14 @@ FIAT_CURRENCIES = (S_USD, S_EUR, S_GBP, S_JPY, S_CNY, S_CAD, S_KRW)
 
 S_ETC = 'ETC'
 S_BCH = 'BCH'
+S_BSV = 'BSV'
 S_BTC = 'BTC'
 S_ETH = 'ETH'
 S_XMR = 'XMR'
 
 A_BTC = Asset(S_BTC)
 A_BCH = Asset(S_BCH)
+A_BSV = Asset(S_BSV)
 A_ETH = Asset(S_ETH)
 A_ETC = Asset(S_ETC)
 A_USD = Asset(S_USD)
