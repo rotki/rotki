@@ -1,11 +1,12 @@
-import pytest
 import os
 
-from rotkehlchen.utils import from_wei
+import pytest
+
 from rotkehlchen.tests.utils.blockchain import DEFAULT_BALANCE
+from rotkehlchen.utils import from_wei
 
 
-@pytest.mark.skip(
+@pytest.mark.skipif(
     os.name == 'nt',
     reason='Not testing running with geth in windows at the moment',
 )
