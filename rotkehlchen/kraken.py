@@ -24,7 +24,7 @@ from rotkehlchen.order_formatting import (
     pair_get_assets,
     trade_type_from_string,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Asset, EthToken, FilePath, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Asset, FilePath, Timestamp, TradePair
 from rotkehlchen.utils import (
     cache_response_timewise,
     convert_to_int,
@@ -413,11 +413,12 @@ class Kraken(Exchange):
             self.usdprice['USDT'] = price
             return price
 
-        if asset == 'XICN':
-            # ICN has been delisted by kraken at 31/10/2018 and withdrawals
-            # will only last until 31/11/2018. For this period of time there
-            # can be ICN in Kraken -- so use crypto compare for price info
-            return query_cryptocompare_for_fiat_price(EthToken('ICN'))
+        if asset == 'BSV':
+            # BSV has been delisted by kraken at 29/04/19
+            # https://blog.kraken.com/post/2274/kraken-is-delisting-bsv/
+            # Until May 31st there can be BSV in Kraken (even with 0 balance)
+            # so keep this until then to get the price
+            return query_cryptocompare_for_fiat_price(asset)
 
         # TODO: This is pretty ugly. Find a better way to check out kraken pairs
         # without this ugliness.
