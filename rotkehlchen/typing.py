@@ -105,6 +105,7 @@ class AssetType(Enum):
     ONTOLOGY_TOKEN = 17
     ETH_TOKEN_AND_MORE = 18
     EXCHANGE_SPECIFIC = 19
+    VECHAIN_TOKEN = 20
 
 
 class AssetData(NamedTuple):

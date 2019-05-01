@@ -765,6 +765,9 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen ORS is OriginSport Token and ORS-2 is ORS Group
     'ORS': 2879,
     'ORS-2': 2911,
+    # For Rotkehlchen PLA is Plair and PLA-2 is Playchip
+    'PLA': 3711,
+    'PLA-2': 3731,
     # For Rotkehlchen SOUL is Phantasma and SOUL-2 is CryptoSoul
     'SOUL': 2827,
     'SOUL-2': 3501,

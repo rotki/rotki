@@ -224,6 +224,10 @@ WORLD_TO_CRYPTOCOMPARE = {
     'ORS-2': 'ORS',
     # For Rotkehlchen PRE is Presearch but it's PRE* in cryptocompare
     'PRE': 'PRE*',
+    # For Rotkehlchen PLA is Plair and PLA-2 is Playchip, but in cryptocompare
+    # PLA is Playchip and Plair is PLAI
+    'PLA': 'PLAI',
+    'PLA-2': 'PLA',
     # For Rotkehlchen RDN is Raiden Network but it's RDN* in cryptocompare
     'RDN': 'RDN*',
     # For Rotkehlchen Sharpe Platform Token is SHP but it's SHP* in cryptocompare
