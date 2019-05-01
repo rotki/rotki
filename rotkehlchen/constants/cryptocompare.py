@@ -288,6 +288,12 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # Atomic coin (https://coinmarketcap.com/currencies/atomic-coin/) is not in
     # cryptocompare but is in paprika
     'ATOM-2',
+    # BORA (https://coinmarketcap.com/currencies/bora/)
+    # is not in cryptocompare but is in paprika
+    'BORA',
+    # BOXX (https://coinmarketcap.com/currencies/blockparty-boxx-token/)
+    # is not in cryptocompare but is in paprika
+    'BOXX',
     # BTCTalkCoin is not in cryptocompare but it's in coin paprika
     # https://api.coinpaprika.com/v1/coins/talk-btctalkcoin and in coinmarketcap
     # https://coinmarketcap.com/currencies/btctalkcoin/#charts
@@ -323,9 +329,6 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # Cyber movie chain (https://coinmarketcap.com/currencies/cyber-movie-chain/)
     # is not in cryptocompare but is in paprika
     'CMCT-2',
-    # BOXX (https://coinmarketcap.com/currencies/blockparty-boxx-token/)
-    # is not in cryptocompare but is in paprika
-    'BOXX',
     # Moss (https://coinmarketcap.com/currencies/moss-coin/)
     # is not in cryptocompare but is in paprika
     'MOC',
@@ -473,6 +476,9 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # Futurax (https://coinmarketcap.com/currencies/futurax/)
     # is not in cryptocompare but is in paprika
     'FTXT',
+    # FunctionX (https://coinmarketcap.com/currencies/function-x/)
+    # is not in cryptocompare but is in paprika
+    'FX',
     # Flexacoin (https://coinmarketcap.com/currencies/flexacoin/)
     # is not in cryptocompare but is in paprika
     'FXC',
@@ -609,6 +615,9 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # Uchain (https://coinmarketcap.com/currencies/uchain/)
     # is not in cryptocompare but is in paprika
     'UCN',
+    # Veriblock (https://coinmarketcap.com/currencies/veriblock/)
+    # is not in cryptocompare but is in paprika
+    'VBK',
     # Bitcoin Card (https://etherscan.io/address/0x9a9bB9b4b11BF8eccff84B58a6CCCCD4058A7f0D)
     # is not in cryptocompare but is in paprika
     'VD',
