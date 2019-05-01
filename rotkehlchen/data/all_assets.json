@@ -1153,6 +1153,14 @@
         "symbol": "BON",
         "type": "ethereum token"
     },
+    "BORA": {
+        "ethereum_address": "0x26fb86579e371c7AEdc461b2DdEF0A8628c93d3B",
+        "ethereum_token_decimals": 18,
+        "name": "BORA",
+        "started": 1530489600,
+        "symbol": "BORA",
+        "type": "ethereum token"
+    },
     "BOST": {
         "name": "BoostCoin",
         "started": 1400112000,
@@ -3633,6 +3641,14 @@
         "name": "FunFair",
         "started": 1485907200,
         "symbol": "FUN",
+        "type": "ethereum token"
+    },
+    "FX": {
+        "ethereum_address": "0x8c15Ef5b4B21951d50E53E4fbdA8298FFAD25057",
+        "ethereum_token_decimals": 18,
+        "name": "Function X",
+        "started": 1545955200,
+        "symbol": "FX",
         "type": "ethereum token"
     },
     "FXC": {
@@ -8348,6 +8364,14 @@
         "symbol": "TRIG",
         "type": "counterparty token"
     },
+    "TRIO": {
+        "ethereum_address": "0x8B40761142B9aa6dc8964e61D0585995425C3D94",
+        "ethereum_token_decimals": 18,
+        "name": "Tripio",
+        "started": 1518480000,
+        "symbol": "TRIO",
+        "type": "ethereum token"
+    },
     "TRST": {
         "ethereum_address": "0xCb94be6f13A1182E4A4B6140cb7bf2025d28e41B",
         "ethereum_token_decimals": 6,
@@ -8619,6 +8643,12 @@
         "started": 1518068353,
         "symbol": "UUU",
         "type": "ethereum token"
+    },
+    "VBK": {
+        "name": "VeriBlock",
+        "started": 1554490449,
+        "symbol": "VBK",
+        "type": "own chain"
     },
     "VD": {
         "ethereum_address": "0x9a9bB9b4b11BF8eccff84B58a6CCCCD4058A7f0D",
