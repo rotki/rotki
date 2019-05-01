@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 KRAKEN_TO_WORLD = {
+    'ATOM': 'ATOM',
     'XDAO': 'DAO',
     'XETC': 'ETC',
     'XETH': 'ETH',
@@ -72,6 +73,7 @@ KRAKEN_TO_WORLD = {
 }
 
 WORLD_TO_KRAKEN = cast(Dict[Asset, Asset], {
+    'ATOM': 'ATOM',
     'ETC': 'XETC',
     'ETH': 'XETH',
     'LTC': 'XLTC',
@@ -106,6 +108,7 @@ WORLD_TO_KRAKEN = cast(Dict[Asset, Asset], {
 })
 
 KRAKEN_ASSETS = (
+    'ATOM',
     'XDAO',
     'XETC',
     'XETH',
@@ -139,7 +142,7 @@ KRAKEN_ASSETS = (
     'XTZ',
 )
 
-KRAKEN_DELISTED = ('XDAO', 'XXVN', 'ZKRW', 'XNMC')
+KRAKEN_DELISTED = ('XDAO', 'XXVN', 'ZKRW', 'XNMC', 'BSV', 'XICN')
 
 
 def kraken_to_world_pair(pair: str) -> TradePair:
