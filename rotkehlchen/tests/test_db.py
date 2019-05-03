@@ -9,8 +9,9 @@ import pytest
 from eth_utils.address import to_checksum_address
 from pysqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import YEAR_IN_SECONDS
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD, S_CNY, S_EUR, S_XMR
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD, FIAT_CURRENCIES, S_CNY, S_EUR
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import (
     DBINFO_FILENAME,
@@ -30,7 +31,8 @@ from rotkehlchen.db.dbhandler import (
     detect_sqlcipher_version,
 )
 from rotkehlchen.errors import AuthenticationError, InputError
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.tests.utils.constants import A_DAO, A_DOGE, A_GNO, A_RDN, A_XMR
+from rotkehlchen.typing import SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import createTimeStamp, ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
@@ -97,17 +99,25 @@ def test_writting_fetching_data(data_dir, username):
     data = DataHandler(data_dir)
     data.unlock(username, '123', create_new=True)
 
-    tokens = ['GNO', 'RDN']
+    tokens = [A_GNO, A_RDN]
     data.write_owned_eth_tokens(tokens)
     result = data.db.get_owned_tokens()
     assert set(tokens) == set(result)
 
-    data.add_blockchain_account('BTC', '1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS')
-    data.add_blockchain_account('ETH', '0xd36029d76af6fE4A356528e4Dc66B2C18123597D')
-    data.add_blockchain_account('ETH', '0x80b369799104a47e98a553f3329812a44a7facdc')
+    data.add_blockchain_account(SupportedBlockchain.BITCOIN, '1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS')
+    data.add_blockchain_account(
+        SupportedBlockchain.ETHEREUM,
+        '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
+    )
+    # Add a non checksummed address
+    data.add_blockchain_account(
+        SupportedBlockchain.ETHEREUM,
+        '0x80b369799104a47e98a553f3329812a44a7facdc',
+    )
     accounts = data.db.get_blockchain_accounts()
     assert isinstance(accounts, BlockchainAccounts)
     assert accounts.btc == ['1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS']
+    # See that after addition the address has been checksummed
     assert set(accounts.eth) == set([
         '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
         to_checksum_address('0x80b369799104a47e98a553f3329812a44a7facdc'),
@@ -115,12 +125,21 @@ def test_writting_fetching_data(data_dir, username):
     ])
     # Add existing account should fail
     with pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
-        data.add_blockchain_account('ETH', '0xd36029d76af6fE4A356528e4Dc66B2C18123597D')
+        data.add_blockchain_account(
+            SupportedBlockchain.ETHEREUM,
+            '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
+        )
     # Remove non-existing account
     with pytest.raises(InputError):
-        data.remove_blockchain_account('ETH', '0x136029d76af6fE4A356528e4Dc66B2C18123597D')
+        data.remove_blockchain_account(
+            SupportedBlockchain.ETHEREUM,
+            '0x136029d76af6fE4A356528e4Dc66B2C18123597D',
+        )
     # Remove existing account
-    data.remove_blockchain_account('ETH', '0xd36029d76af6fE4A356528e4Dc66B2C18123597D')
+    data.remove_blockchain_account(
+        SupportedBlockchain.ETHEREUM,
+        '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
+    )
     accounts = data.db.get_blockchain_accounts()
     assert accounts.eth == [to_checksum_address('0x80b369799104a47e98a553f3329812a44a7facdc')]
 
@@ -130,8 +149,20 @@ def test_writting_fetching_data(data_dir, username):
     assert result
     result, _ = data.add_ignored_asset('DOGE')
     assert not result
-    assert set(data.db.get_ignored_assets()) == set(['DAO', 'DOGE'])
-    result, _ = data.remove_ignored_asset('XXX')
+    # Test adding non existing asset
+    result, msg = data.add_ignored_asset('dsajdhskajdad')
+    assert not result
+    assert 'for ignoring is not known/supported' in msg
+
+    ignored_assets = data.db.get_ignored_assets()
+    assert all([isinstance(asset, Asset) for asset in ignored_assets])
+    assert set(ignored_assets) == set([A_DAO, A_DOGE])
+    # Test removing asset that is not in the list
+    result, msg = data.remove_ignored_asset('RDN')
+    assert 'not in ignored assets' in msg
+    # Test removing non existing asset
+    result, msg = data.remove_ignored_asset('dshajdhsjkahdjssad')
+    assert 'is not known/supported' in msg
     assert not result
     result, _ = data.remove_ignored_asset('DOGE')
     assert result
@@ -295,7 +326,10 @@ def test_upgrade_db_1_to_2(data_dir, username):
         ('version', str(1)),
     )
     data.db.conn.commit()
-    data.db.add_blockchain_account('ETH', '0xe3580c38b0106899f45845e361ea7f8a0062ef12')
+    data.db.add_blockchain_account(
+        SupportedBlockchain.ETHEREUM,
+        '0xe3580c38b0106899f45845e361ea7f8a0062ef12',
+    )
 
     # now relogin and check that the account has been re-saved as checksummed
     del data
@@ -480,6 +514,12 @@ def test_data_set_fiat_balance(data_dir, username):
     assert len(balances) == 1
     assert balances[S_CNY] == amount_cny
 
+    # also check that all the fiat assets in the fiat table are in
+    # all_assets.json
+    for fiat in FIAT_CURRENCIES:
+        success, _ = data.set_fiat_balance(fiat, '1')
+        assert success
+
 
 asset_balances = [
     AssetBalance(
@@ -559,7 +599,7 @@ def test_query_owned_assets(data_dir, username):
         ),
         AssetBalance(
             time=Timestamp(1489326500),
-            asset=S_XMR,
+            asset=A_XMR,
             amount='2',
             usd_value='33.8',
         ),
@@ -567,7 +607,8 @@ def test_query_owned_assets(data_dir, username):
     data.db.add_multiple_balances(balances)
 
     assets_list = data.db.query_owned_assets()
-    assert assets_list == [A_USD, A_ETH, A_BTC, S_XMR]
+    assert assets_list == [A_USD, A_ETH, A_BTC, A_XMR]
+    assert all([isinstance(x, Asset) for x in assets_list])
 
 
 def test_get_latest_location_value_distribution(data_dir, username):
@@ -660,14 +701,14 @@ def test_get_latest_asset_value_distribution(data_dir, username):
     balances.append(eth)
     eur = AssetBalance(
         time=Timestamp(1488326400),
-        asset=S_EUR,
+        asset=A_EUR,
         amount='100',
         usd_value='119',
     )
     balances.append(eur)
     xmr = AssetBalance(
         time=Timestamp(1488326400),
-        asset=S_XMR,
+        asset=A_XMR,
         amount='5',
         usd_value='61.5',
     )

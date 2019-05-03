@@ -227,14 +227,24 @@ class DataHandler(object):
             account = to_checksum_address(account)
         self.db.remove_blockchain_account(blockchain, account)
 
-    def add_ignored_asset(self, asset: Asset) -> Tuple[bool, str]:
+    def add_ignored_asset(self, given_asset: str) -> Tuple[bool, str]:
+        try:
+            asset = Asset(given_asset)
+        except UnknownAsset:
+            return False, 'given asset %s for ignoring is not known/supported'
+
         ignored_assets = self.db.get_ignored_assets()
         if asset in ignored_assets:
             return False, '%s already in ignored assets' % asset
         self.db.add_to_ignored_assets(asset)
         return True, ''
 
-    def remove_ignored_asset(self, asset: Asset) -> Tuple[bool, str]:
+    def remove_ignored_asset(self, given_asset: str) -> Tuple[bool, str]:
+        try:
+            asset = Asset(given_asset)
+        except UnknownAsset:
+            return False, 'given asset %s for ignoring is not known/supported'
+
         ignored_assets = self.db.get_ignored_assets()
         if asset not in ignored_assets:
             return False, '%s not in ignored assets' % asset
@@ -310,24 +320,26 @@ class DataHandler(object):
 
     def set_fiat_balance(
             self,
-            currency: FiatAsset,
+            currency: str,
             provided_balance: str,
     ) -> Tuple[bool, str]:
         if currency not in FIAT_CURRENCIES:
             return False, 'Provided currency {} is unknown'
 
+        currency_asset = Asset(currency)
+
         msg = 'Provided balance for set_fiat_balance should be a string'
         assert isinstance(provided_balance, str), msg
 
         if provided_balance == '':
-            self.db.remove_fiat_balance(currency)
+            self.db.remove_fiat_balance(currency_asset)
         else:
             try:
                 balance = FVal(provided_balance)
             except ValueError:
                 return False, 'Provided amount is not a number'
 
-            self.db.add_fiat_balance(currency, balance)
+            self.db.add_fiat_balance(currency_asset, balance)
 
         return True, ''
 
