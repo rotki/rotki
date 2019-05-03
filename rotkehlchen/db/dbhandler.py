@@ -13,7 +13,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants import SUPPORTED_EXCHANGES, YEAR_IN_SECONDS
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD, S_USD
+from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH, S_USD
 from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
 from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.fval import FVal
@@ -239,7 +239,7 @@ class DBHandler(object):
             accounts = self.get_blockchain_accounts()
             cursor = self.conn.cursor()
             cursor.execute(
-                'DELETE FROM blockchain_accounts WHERE blockchain=?;', (A_ETH,),
+                'DELETE FROM blockchain_accounts WHERE blockchain=?;', (S_ETH,),
             )
             self.conn.commit()
             for account in accounts.eth:
@@ -479,7 +479,7 @@ class DBHandler(object):
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT INTO multisettings(name, value) VALUES(?, ?)',
-            ('ignored_asset', asset),
+            ('ignored_asset', asset.identifier),
         )
         self.conn.commit()
 
@@ -487,17 +487,16 @@ class DBHandler(object):
         cursor = self.conn.cursor()
         cursor.execute(
             'DELETE FROM multisettings WHERE name="ignored_asset" AND value=?;',
-            (asset,),
+            (asset.identifier,),
         )
         self.conn.commit()
 
     def get_ignored_assets(self) -> List[Asset]:
         cursor = self.conn.cursor()
-        query = cursor.execute(
+        cursor.execute(
             'SELECT value FROM multisettings WHERE name="ignored_asset";',
         )
-        query = query.fetchall()
-        return [q[0] for q in query]
+        return [Asset(q[0]) for q in cursor]
 
     def add_multiple_balances(self, balances: List[AssetBalance]) -> None:
         """Execute addition of multiple balances in the DB"""
@@ -508,7 +507,7 @@ class DBHandler(object):
                 'INSERT INTO timed_balances('
                 '    time, currency, amount, usd_value) '
                 ' VALUES(?, ?, ?, ?)',
-                (entry.time, entry.asset, entry.amount, entry.usd_value),
+                (entry.time, entry.asset.identifier, entry.amount, entry.usd_value),
             )
         self.conn.commit()
         self.update_last_write()
@@ -571,7 +570,7 @@ class DBHandler(object):
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
-            (str(blockchain), account),
+            (blockchain.value, account),
         )
         self.conn.commit()
         self.update_last_write()
@@ -584,7 +583,7 @@ class DBHandler(object):
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT COUNT(*) from blockchain_accounts WHERE '
-            'blockchain = ? and account = ?;', (str(blockchain), account),
+            'blockchain = ? and account = ?;', (blockchain.value, account),
         )
         query = query.fetchall()
         if query[0][0] == 0:
@@ -594,7 +593,7 @@ class DBHandler(object):
 
         cursor.execute(
             'DELETE FROM blockchain_accounts WHERE '
-            'blockchain = ? and account = ?;', (str(blockchain), account),
+            'blockchain = ? and account = ?;', (blockchain.value, account),
         )
         self.conn.commit()
         self.update_last_write()
@@ -605,15 +604,15 @@ class DBHandler(object):
         # We don't care about previous value so this simple insert or replace should work
         cursor.execute(
             'INSERT OR REPLACE INTO current_balances(asset, amount) VALUES (?, ?)',
-            (str(currency), str(amount)),
+            (currency.identifier, str(amount)),
         )
         self.conn.commit()
         self.update_last_write()
 
-    def remove_fiat_balance(self, currency: FiatAsset) -> None:
+    def remove_fiat_balance(self, currency: Asset) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
-            'DELETE FROM current_balances WHERE asset = ?;', (currency,),
+            'DELETE FROM current_balances WHERE asset = ?;', (currency.identifier,),
         )
         self.conn.commit()
         self.update_last_write()
@@ -623,7 +622,6 @@ class DBHandler(object):
         query = cursor.execute(
             'SELECT asset, amount FROM current_balances;',
         )
-        query = query.fetchall()
 
         result = {}
         for entry in query:
@@ -642,9 +640,9 @@ class DBHandler(object):
         btc_list = list()
 
         for entry in query:
-            if entry[0] == A_ETH:
+            if entry[0] == S_ETH:
                 eth_list.append(entry[1])
-            elif entry[0] == A_BTC:
+            elif entry[0] == S_BTC:
                 btc_list.append(entry[1])
             else:
                 log.warning(
@@ -674,18 +672,19 @@ class DBHandler(object):
             if key in ('location', 'net_usd'):
                 continue
 
+            assert isinstance(key, Asset), 'at this point the key should only be Asset type'
             balances.append(AssetBalance(
                 time=timestamp,
-                asset=cast(Asset, key),
+                asset=key,
                 amount=str(val['amount']),
                 usd_value=str(val['usd_value']),
             ))
 
-        for key, val2 in data['location'].items():
+        for key2, val2 in data['location'].items():
             # Here we know val2 is just a Dict since the key to data is 'location'
             val2 = cast(Dict, val2)
             locations.append(LocationData(
-                time=timestamp, location=key, usd_value=str(val2['usd_value']),
+                time=timestamp, location=key2, usd_value=str(val2['usd_value']),
             ))
         locations.append(LocationData(
             time=timestamp,
@@ -762,7 +761,7 @@ class DBHandler(object):
                 str(trade.amount),
                 str(trade.rate),
                 str(trade.fee),
-                trade.fee_currency,
+                trade.fee_currency.identifier,
                 trade.link,
                 trade.notes,
             ),
@@ -796,7 +795,7 @@ class DBHandler(object):
                 str(trade.amount),
                 str(trade.rate),
                 str(trade.fee),
-                trade.fee_currency,
+                trade.fee_currency.identifier,
                 trade.link,
                 trade.notes,
                 trade_id,
@@ -926,7 +925,7 @@ class DBHandler(object):
         cursor = self.conn.cursor()
         results = cursor.execute(
             f'SELECT time, amount, usd_value FROM timed_balances '
-            f'WHERE time BETWEEN {from_ts} AND {to_ts} AND currency="{asset}" '
+            f'WHERE time BETWEEN {from_ts} AND {to_ts} AND currency="{asset.identifier}" '
             f'ORDER BY time ASC;',
         )
         results = results.fetchall()
@@ -949,7 +948,7 @@ class DBHandler(object):
             'SELECT DISTINCT currency FROM timed_balances ORDER BY time ASC;',
         )
 
-        return [result[0] for result in results.fetchall()]
+        return [Asset(result[0]) for result in results]
 
     def get_latest_location_value_distribution(self) -> List[LocationData]:
         """Gets the latest location data
@@ -992,7 +991,7 @@ class DBHandler(object):
             assets.append(
                 AssetBalance(
                     time=result[0],
-                    asset=result[1],
+                    asset=Asset(result[1]),
                     amount=result[2],
                     usd_value=result[3],
                 ),

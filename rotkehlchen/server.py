@@ -12,7 +12,6 @@ from gevent.event import Event
 from gevent.lock import Semaphore
 
 from rotkehlchen.args import app_args
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import AuthenticationError, RotkehlchenPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -261,7 +260,7 @@ class RotkehlchenServer(object):
 
         return process_result(result_dict)
 
-    def set_fiat_balance(self, currency: Asset, balance: str):
+    def set_fiat_balance(self, currency: str, balance: str):
         result, message = self.rotkehlchen.data.set_fiat_balance(currency, balance)
         return {'result': result, 'message': message}
 
@@ -343,15 +342,17 @@ class RotkehlchenServer(object):
 
     def get_ignored_assets(self):
         result = {
-            'ignored_assets': self.rotkehlchen.data.db.get_ignored_assets(),
+            'ignored_assets': [
+                identifier for identifier in self.rotkehlchen.data.db.get_ignored_assets()
+            ],
         }
         return result
 
-    def add_ignored_asset(self, asset):
+    def add_ignored_asset(self, asset: str):
         result, message = self.rotkehlchen.data.add_ignored_asset(asset)
         return {'result': result, 'message': message}
 
-    def remove_ignored_asset(self, asset):
+    def remove_ignored_asset(self, asset: str):
         result, message = self.rotkehlchen.data.remove_ignored_asset(asset)
         return {'result': result, 'message': message}
 
