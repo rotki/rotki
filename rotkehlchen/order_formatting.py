@@ -156,6 +156,34 @@ def trade_get_assets(trade: Trade) -> Tuple[Asset, Asset]:
     return pair_get_assets(trade.pair)
 
 
+def deserialize_trade(data: Dict) -> Trade:
+    """Takes a dict trade representation and serializes it into the Trade object"""
+    pair = data['pair']
+    rate = FVal(data['rate'])
+    amount = FVal(data['amount'])
+    trade_type = trade_type_from_string(data['type'])
+
+    trade_link = ''
+    if 'link' in data:
+        trade_link = data['link']
+    trade_notes = ''
+    if 'notes' in data:
+        trade_notes = data['notes']
+
+    return Trade(
+        timestamp=data['timestamp'],
+        location=data['location'],
+        pair=pair,
+        trade_type=trade_type,
+        amount=amount,
+        rate=rate,
+        fee=FVal(data['fee']),
+        fee_currency=data['fee_currency'],
+        link=trade_link,
+        notes=trade_notes,
+    )
+
+
 def trades_from_dictlist(
         given_trades: List[Dict[str, Any]],
         start_ts: Timestamp,
@@ -171,30 +199,7 @@ def trades_from_dictlist(
         if given_trade['timestamp'] > end_ts:
             break
 
-        pair = given_trade['pair']
-        rate = FVal(given_trade['rate'])
-        amount = FVal(given_trade['amount'])
-        trade_type = trade_type_from_string(given_trade['type'])
-
-        trade_link = ''
-        if 'link' in given_trade:
-            trade_link = given_trade['link']
-        trade_notes = ''
-        if 'notes' in given_trade:
-            trade_notes = given_trade['notes']
-
-        returned_trades.append(Trade(
-            timestamp=given_trade['timestamp'],
-            location=given_trade['location'],
-            pair=pair,
-            trade_type=trade_type,
-            amount=amount,
-            rate=rate,
-            fee=FVal(given_trade['fee']),
-            fee_currency=given_trade['fee_currency'],
-            link=trade_link,
-            notes=trade_notes,
-        ))
+        returned_trades.append(deserialize_trade(given_trade))
     return returned_trades
 
 
