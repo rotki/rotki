@@ -58,7 +58,7 @@ def test_poloniex_trade_with_asset_needing_conversion():
         'category': 'exchange',
     }
     trade = trade_from_poloniex(poloniex_trade, 'AIR_BTC')
-    assert trade.pair == 'AIR-2_BTC'
+    assert trade.pair == 'BTC_AIR-2'
     assert trade.location == 'poloniex'
 
 
