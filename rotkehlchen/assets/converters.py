@@ -881,7 +881,7 @@ def asset_from_poloniex(poloniex_name: str) -> Asset:
     if poloniex_name in UNSUPPORTED_POLONIEX_ASSETS:
         raise UnsupportedAsset(poloniex_name)
 
-    our_name = POLONIEX_TO_WORLD[poloniex_name]
+    our_name = POLONIEX_TO_WORLD.get(poloniex_name, poloniex_name)
     return Asset(our_name)
 
 

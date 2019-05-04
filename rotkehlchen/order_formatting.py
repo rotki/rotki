@@ -104,35 +104,43 @@ class MarginPosition(NamedTuple):
     notes: str
 
 
-def pair_get_assets(pair: TradePair) -> Tuple[Asset, Asset]:
-    """Returns a tuple with the (base, quote) assets"""
+def _split_pair(pair: TradePair) -> Tuple[str, str]:
     assets = pair.split('_')
     if len(assets) != 2:
         raise ValueError(f'Could not split {pair} pair')
 
-    base_asset = Asset(assets[0])
-    quote_asset = Asset(assets[1])
+    if len(assets[0]) == 0:
+        raise ValueError(f'Splitting {pair} yielded no base asset')
+
+    if len(assets[1]) == 0:
+        raise ValueError(f'Splitting {pair} yielded no quote asset')
+
+    return assets[0], assets[1]
+
+
+def trade_pair_from_assets(base: Asset, quote: Asset) -> TradePair:
+    return TradePair(f'{base.identifier}_{quote.identifier}')
+
+
+def pair_get_assets(pair: TradePair) -> Tuple[Asset, Asset]:
+    """Returns a tuple with the (base, quote) assets"""
+    base_str, quote_str = _split_pair(pair)
+
+    base_asset = Asset(base_str)
+    quote_asset = Asset(quote_str)
     return base_asset, quote_asset
-
-
-def trade_get_other_pair(trade: Trade, asset: Asset) -> Asset:
-    base, quote = pair_get_assets(trade.pair)
-    return base if quote == asset else quote
 
 
 def invert_pair(pair: TradePair) -> TradePair:
     left, right = pair_get_assets(pair)
-    return TradePair(f'{right}_{left}')
+    return trade_pair_from_assets(right, left)
 
 
 def get_pair_position_str(pair: TradePair, position: str) -> str:
     """Get the string representation of an asset of a trade pair"""
     assert position == 'first' or position == 'second'
-    currencies = pair.split('_')
-    if len(currencies) != 2:
-        raise ValueError("Could not split {} pair".format(pair))
-    currency = currencies[0] if position == 'first' else currencies[1]
-    return currency
+    base_str, quote_str = _split_pair(pair)
+    return base_str if position == 'first' else quote_str
 
 
 def get_pair_position_asset(pair: TradePair, position: str) -> Asset:
@@ -144,7 +152,7 @@ def get_pair_position_asset(pair: TradePair, position: str) -> Asset:
     return Asset(get_pair_position_str(pair, position))
 
 
-def trade_get_assets(trade):
+def trade_get_assets(trade: Trade) -> Tuple[Asset, Asset]:
     return pair_get_assets(trade.pair)
 
 

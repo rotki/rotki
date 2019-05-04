@@ -11,7 +11,7 @@ from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.binance import create_binance_symbols_to_pair
 from rotkehlchen.errors import UnsupportedAsset
 from rotkehlchen.fval import FVal
-from rotkehlchen.order_formatting import Trade, TradeType, pair_get_assets
+from rotkehlchen.order_formatting import Trade, TradeType, pair_get_assets, trade_pair_from_assets
 from rotkehlchen.serializer import process_result, process_result_list
 from rotkehlchen.typing import Timestamp, TradePair
 
@@ -102,7 +102,7 @@ class FakeBinance(object):
 
         if not found:
             raise ValueError('Could not find a pair to trade with the current funds')
-        return TradePair(f'{base}_{quote}')
+        return trade_pair_from_assets(base, quote)
 
     def get_balance(self, asset: Asset) -> Optional[FVal]:
         """Returns the balance of asset that's held in the exchance or None"""
