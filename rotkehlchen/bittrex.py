@@ -20,6 +20,7 @@ from rotkehlchen.order_formatting import (
     get_pair_position_asset,
     get_pair_position_str,
     pair_get_assets,
+    trade_pair_from_assets,
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
@@ -61,7 +62,7 @@ def bittrex_pair_to_world(given_pair: str) -> TradePair:
     # Since in Bittrex the base currency is the cost currency, iow in Bittrex
     # for BTC_ETH we buy ETH with BTC and sell ETH for BTC, we need to turn it
     # into the Rotkehlchen way which is following the base/quote approach.
-    pair = TradePair(f'{quote_currency}_{base_currency}')
+    pair = trade_pair_from_assets(quote_currency, base_currency)
     return pair
 
 

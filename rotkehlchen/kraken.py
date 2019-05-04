@@ -26,6 +26,7 @@ from rotkehlchen.order_formatting import (
     Trade,
     get_pair_position_asset,
     pair_get_assets,
+    trade_pair_from_assets,
     trade_type_from_string,
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
@@ -91,7 +92,7 @@ def kraken_to_world_pair(pair: str) -> TradePair:
     base_asset = asset_from_kraken(base_asset_str)
     quote_asset = asset_from_kraken(quote_asset_str)
 
-    return TradePair(f'{base_asset.identifier}_{quote_asset.identifier}')
+    return trade_pair_from_assets(base_asset, quote_asset)
 
 
 def world_to_kraken_pair(tradeable_pairs: List[str], pair: TradePair) -> str:

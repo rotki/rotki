@@ -24,6 +24,7 @@ from rotkehlchen.order_formatting import (
     TradeType,
     get_pair_position_str,
     invert_pair,
+    trade_pair_from_assets,
     trade_type_from_string,
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
@@ -84,7 +85,7 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
     )
 
     # Use the converted assets in our pair
-    pair = TradePair(f'{base_currency}_{quote_currency}')
+    pair = trade_pair_from_assets(base_currency, quote_currency)
     # Since in Poloniex the base currency is the cost currency, iow in poloniex
     # for BTC_ETH we buy ETH with BTC and sell ETH for BTC, we need to turn it
     # into the Rotkehlchen way which is following the base/quote approach.

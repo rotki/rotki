@@ -14,8 +14,8 @@ from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import Trade, TradeType
-from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
+from rotkehlchen.order_formatting import Trade, TradeType, trade_pair_from_assets
+from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise
 from rotkehlchen.utils.serialization import rlk_jsonloads
@@ -92,7 +92,7 @@ def trade_from_binance(
     return Trade(
         timestamp=timestamp,
         location='binance',
-        pair=TradePair(f'{base_asset.identifier}_{quote_asset.identifier}'),
+        pair=trade_pair_from_assets(base_asset, quote_asset),
         trade_type=order_type,
         amount=amount,
         rate=rate,
