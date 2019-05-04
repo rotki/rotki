@@ -258,7 +258,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     # (PAND)a coin. No data found except here:
     # https://coinmarketcap.com/currencies/pandacoin-panda/
     # Note: This is not the PND Panda coin
-    'PANDA',
+    'PAND',
     # Pawncoin. No data found except from here:
     # https://coinmarketcap.com/currencies/pawncoin/
     'PAWN',

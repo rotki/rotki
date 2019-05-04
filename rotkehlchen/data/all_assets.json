@@ -7946,6 +7946,14 @@
         "symbol": "SVD",
         "type": "ethereum token"
     },
+    "SWARM": {
+        "active": false,
+        "ended": 1473984000,
+        "name": "SwarmCoin",
+        "started": 1403568000,
+        "symbol": "SWARM",
+        "type": "own chain"
+    },
     "SWFTC": {
         "ethereum_address": "0x0bb217E40F8a5Cb79Adf04E1aAb60E5abd0dfC1e",
         "ethereum_token_decimals": 8,
@@ -8961,6 +8969,14 @@
         "name": "Wi Coin",
         "started": 1502110282,
         "symbol": "WIC",
+        "type": "ethereum token"
+    },
+    "WIKI": {
+        "ethereum_address": "0x66BaD545596fb17a0B4ebDC003a85dEF10E8F6Ae",
+        "ethereum_token_decimals": 18,
+        "name": "Wiki Token",
+        "started": 1533681266,
+        "symbol": "WIKI",
         "type": "ethereum token"
     },
     "WILD": {

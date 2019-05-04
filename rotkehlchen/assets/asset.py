@@ -49,6 +49,8 @@ WORLD_TO_POLONIEX = {
     'KEY-3': 'KEY',
     # Marscoin in Poloniex is MRS but in Rotkehlchen it's MARS
     'MARS': 'MRS',
+    # Mazacoin in Poloniex is MZC but in Rotkehlchen it's MAZA
+    'MAZA': 'MZC',
     # Myriadcoin in Poloniex is MYR but in Rotkehlchen it's XMY
     'XMY': 'MYR',
     # NuBits in Poloniex is NBT but in Rotkehlchen it's USNBT
