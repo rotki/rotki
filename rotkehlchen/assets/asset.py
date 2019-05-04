@@ -60,6 +60,7 @@ WORLD_TO_POLONIEX = {
 }
 
 WORLD_TO_KRAKEN = {
+    'ATOM': 'ATOM',
     'ETC': 'XETC',
     'ETH': 'XETH',
     'LTC': 'XLTC',

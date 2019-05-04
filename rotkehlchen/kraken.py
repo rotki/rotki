@@ -91,7 +91,7 @@ def kraken_to_world_pair(pair: str) -> TradePair:
     base_asset = asset_from_kraken(base_asset_str)
     quote_asset = asset_from_kraken(quote_asset_str)
 
-    return TradePair(f'{base_asset}_{quote_asset}')
+    return TradePair(f'{base_asset.identifier}_{quote_asset.identifier}')
 
 
 def world_to_kraken_pair(tradeable_pairs: List[str], pair: TradePair) -> str:

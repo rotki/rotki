@@ -3,6 +3,7 @@ from rotkehlchen.constants.cryptocompare import WORLD_TO_CRYPTOCOMPARE
 from rotkehlchen.errors import UnsupportedAsset
 
 KRAKEN_TO_WORLD = {
+    'ATOM': 'ATOM',
     'XDAO': 'DAO',
     'XETC': 'ETC',
     'XETH': 'ETH',

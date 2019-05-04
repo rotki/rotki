@@ -6,7 +6,7 @@ from typing import Dict, List, Optional
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_USD, S_EUR
+from rotkehlchen.constants.assets import S_EUR, S_USD
 from rotkehlchen.fval import FVal
 from rotkehlchen.kraken import KRAKEN_ASSETS, KRAKEN_DELISTED, Kraken, world_to_kraken_pair
 from rotkehlchen.order_formatting import TradeType
@@ -187,6 +187,6 @@ def kraken(session_data_dir, session_inquirer):
         api_key=base64.b64encode(make_random_b64bytes(128)),
         secret=base64.b64encode(make_random_b64bytes(128)),
         user_directory=session_data_dir,
-        usd_eur_price=session_inquirer.query_fiat_pair(S_EUR, A_USD),
+        usd_eur_price=session_inquirer.query_fiat_pair(S_EUR, S_USD),
     )
     return mock
