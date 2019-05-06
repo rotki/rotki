@@ -118,7 +118,6 @@ def accountant(
         accounting_include_gas_costs,
 ):
     return Accountant(
-        price_historian=price_historian,
         profit_currency=profit_currency,
         user_directory=accounting_data_dir,
         create_csv=accounting_create_csv,
@@ -131,6 +130,9 @@ def accountant(
 
 @pytest.fixture
 def inquirer(accounting_data_dir):
+    # Since this is a singleton and we want it initialized everytime the fixture
+    # is called make sure its instance is always starting from scratch
+    Inquirer._Inquirer__instance = None
     return Inquirer(data_dir=accounting_data_dir)
 
 
