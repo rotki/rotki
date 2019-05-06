@@ -12,6 +12,7 @@ from rotkehlchen.constants.assets import A_BTC, A_USD
 from rotkehlchen.constants.cryptocompare import KNOWN_TO_MISS_FROM_CRYPTOCOMPARE
 from rotkehlchen.errors import PriceQueryUnknownFromAsset
 from rotkehlchen.fval import FVal
+from rotkehlchen.history import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import FilePath, Price, Timestamp
 from rotkehlchen.utils.misc import (
@@ -117,7 +118,7 @@ class Cryptocompare():
             cache_key = PairCacheKey(match.group(1))
             self.price_history_file[cache_key] = file_
 
-    def _api_query(self, path: str) -> Dict[str, Any]:
+    def _api_query(self, path: str, only_data: bool = True) -> Dict[str, Any]:
         querystr = f'{self.prefix}{path}'
         log.debug('Querying cryptocompare', url=querystr)
         resp = request_get_dict(querystr)
@@ -129,7 +130,10 @@ class Cryptocompare():
             log.error('Cryptocompare query failure', url=querystr, error=error_message)
             raise ValueError(error_message)
 
-        return resp['Data']
+        if only_data:
+            return resp['Data']
+
+        return resp
 
     def query_endpoint_histohour(
             self,
@@ -145,7 +149,7 @@ class Cryptocompare():
             f'histohour?fsym={cc_from_asset_symbol}&tsym={cc_to_asset_symbol}'
             f'&limit={limit}&toTs={to_timestamp}'
         )
-        result = self._api_query(query_path)
+        result = self._api_query(path=query_path, only_data=False)
         return result
 
     def query_endpoint_pricehistorical(
@@ -272,11 +276,6 @@ class Cryptocompare():
 
         # Let's always check for data sanity for the hourly prices.
         assert _check_hourly_data_sanity(calculated_history, from_asset, to_asset)
-        full_history_data = {
-            'data': calculated_history,
-            'start_time': historical_data_start,
-            'end_time': now_ts,
-        }
         # and now since we actually queried the data let's also cache them
         filename = FilePath(
             os.path.join(self.data_directory, 'price_history_' + cache_key + '.json'),
@@ -288,15 +287,20 @@ class Cryptocompare():
             to_asset=to_asset,
         )
         write_history_data_in_file(
-            data=full_history_data,
+            data=calculated_history,
             filepath=filename,
             start_ts=historical_data_start,
             end_ts=now_ts,
         )
 
         # Finally save the objects in memory and return them
+        data_including_time = {
+            'data': calculated_history,
+            'start_time': historical_data_start,
+            'end_time': end_date,
+        }
         self.price_history_file[cache_key] = filename
-        self.price_history[cache_key] = _dict_history_to_data(full_history_data)
+        self.price_history[cache_key] = _dict_history_to_data(data_including_time)
 
         return self.price_history[cache_key].data
 
@@ -344,17 +348,15 @@ class Cryptocompare():
                     f"{to_asset} at timestamp {timestamp}. Comparing with BTC...",
                 )
                 # Just get the BTC price
-                asset_btc_price = self.query_historical_price(
+                asset_btc_price = PriceHistorian().query_historical_price(
                     from_asset=from_asset,
                     to_asset=A_BTC,
                     timestamp=timestamp,
-                    historical_data_start=historical_data_start,
                 )
-                btc_to_asset_price = self.query_historical_price(
+                btc_to_asset_price = PriceHistorian().query_historical_price(
                     from_asset=A_BTC,
                     to_asset=to_asset,
                     timestamp=timestamp,
-                    historical_data_start=historical_data_start,
                 )
                 price = asset_btc_price * btc_to_asset_price
             else:
@@ -370,12 +372,11 @@ class Cryptocompare():
             (from_asset.is_fiat() and from_asset != A_USD)
         )
         if comparison_to_nonusd_fiat:
-            price = self.adjust_to_cryptocompare_price_incosistencies(
+            price = self._adjust_to_cryptocompare_price_incosistencies(
                 price=price,
                 from_asset=from_asset,
                 to_asset=to_asset,
                 timestamp=timestamp,
-                historical_data_start=historical_data_start,
             )
 
         if price == 0:
@@ -395,13 +396,12 @@ class Cryptocompare():
 
         return price
 
-    def adjust_to_cryptocompare_price_incosistencies(
+    def _adjust_to_cryptocompare_price_incosistencies(
             self,
             price: Price,
             from_asset: Asset,
             to_asset: Asset,
             timestamp: Timestamp,
-            historical_data_start: Timestamp,
     ) -> Price:
         """Doublecheck against the USD rate, and if incosistencies are found
         then take the USD adjusted price.
@@ -413,17 +413,15 @@ class Cryptocompare():
         keep the code around just in case a regression is introduced on the side
         of cryptocompare.
         """
-        from_asset_usd = self.query_historical_price(
+        from_asset_usd = PriceHistorian().query_historical_price(
             from_asset=from_asset,
             to_asset=A_USD,
             timestamp=timestamp,
-            historical_data_start=historical_data_start,
         )
-        to_asset_usd = self.query_historical_price(
+        to_asset_usd = PriceHistorian().query_historical_price(
             from_asset=to_asset,
             to_asset=A_USD,
             timestamp=timestamp,
-            historical_data_start=historical_data_start,
         )
 
         usd_invert_conversion = from_asset_usd / to_asset_usd

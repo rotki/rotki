@@ -99,73 +99,68 @@ def _query_currency_converterapi(base: FiatAsset, quote: FiatAsset) -> Optional[
 
 
 class Inquirer(object):
-    def __init__(self, data_dir: FilePath, kraken=None):
-        self.kraken = kraken
-        self.session = requests.session()
-        self.data_directory = data_dir
+    __instance = None
 
-        filename = os.path.join(self.data_directory, 'price_history_forex.json')
+    def __new__(cls, data_dir: FilePath = None):
+        if Inquirer.__instance is not None:
+            return Inquirer.__instance
+
+        assert data_dir, 'arguments should be given at the first instantiation'
+
+        Inquirer.__instance = object.__new__(cls)
+
+        Inquirer.__instance.data_directory = data_dir
+        filename = os.path.join(data_dir, 'price_history_forex.json')
         try:
             with open(filename, 'r') as f:
                 # we know price_history_forex contains a dict
                 data = rlk_jsonloads_dict(f.read())
-                self.cached_forex_data = data
+                Inquirer.__instance.cached_forex_data = data
         except (OSError, IOError, JSONDecodeError):
-            self.cached_forex_data = dict()
+            Inquirer.__instance.cached_forex_data = dict()
 
-    def query_kraken_for_price(
-            self,
-            asset: Asset,
-            asset_btc_price: FVal,
-    ) -> Price:
-        if asset == 'BTC':
-            return self.kraken.usdprice['BTC']
-        return asset_btc_price * self.kraken.usdprice['BTC']
+        return Inquirer.__instance
 
+    @staticmethod
     def find_usd_price(
-            self,
             asset: Asset,
             asset_btc_price: Optional[FVal] = None,
     ) -> Price:
-        if self.kraken and self.kraken.first_connection_made and asset_btc_price is not None:
-            price = self.query_kraken_for_price(asset, asset_btc_price)
-            log.debug('Get usd price from kraken', asset=asset, price=price)
-            return price
-
         return query_cryptocompare_for_fiat_price(asset)
 
+    @staticmethod
     def get_fiat_usd_exchange_rates(
-            self,
             currencies: Optional[Iterable[FiatAsset]] = None,
     ) -> Dict[FiatAsset, FVal]:
         rates = {S_USD: FVal(1)}
         if not currencies:
             currencies = FIAT_CURRENCIES[1:]
         for currency in currencies:
-            rates[currency] = self.query_fiat_pair(S_USD, currency)
+            rates[currency] = Inquirer().query_fiat_pair(S_USD, currency)
         return rates
 
+    @staticmethod
     def query_historical_fiat_exchange_rates(
-            self,
-            from_currency: FiatAsset,
-            to_currency: FiatAsset,
+            from_fiat_currency: FiatAsset,
+            to_fiat_currency: FiatAsset,
             timestamp: Timestamp,
     ) -> Optional[FVal]:
         date = tsToDate(timestamp, formatstr='%Y-%m-%d')
-        rate = self._get_cached_forex_data(date, from_currency, to_currency)
+        instance = Inquirer()
+        rate = instance._get_cached_forex_data(date, from_fiat_currency, to_fiat_currency)
         if rate:
             return rate
 
         log.debug(
             'Querying exchangeratesapi',
-            from_currency=from_currency,
-            to_currency=to_currency,
+            from_fiat_currency=from_fiat_currency,
+            to_fiat_currency=to_fiat_currency,
             timestamp=timestamp,
         )
 
         query_str = (
             f'https://api.exchangeratesapi.io/{date}?'
-            f'base={from_currency}'
+            f'base={from_fiat_currency}'
         )
         resp = retry_calls(
             5,
@@ -183,49 +178,51 @@ class Inquirer(object):
         except JSONDecodeError:
             return None
 
-        if 'rates' not in result or to_currency not in result['rates']:
+        if 'rates' not in result or to_fiat_currency not in result['rates']:
             return None
 
-        if date not in self.cached_forex_data:
-            self.cached_forex_data[date] = {}
+        if date not in instance.cached_forex_data:
+            instance.cached_forex_data[date] = {}
 
-        if from_currency not in self.cached_forex_data[date]:
-            self.cached_forex_data[date][from_currency] = {}
+        if from_fiat_currency not in instance.cached_forex_data[date]:
+            instance.cached_forex_data[date][from_fiat_currency] = {}
 
         for key, value in result['rates'].items():
-            self.cached_forex_data[date][from_currency][key] = FVal(value)
+            instance.cached_forex_data[date][from_fiat_currency][key] = FVal(value)
 
-        rate = FVal(result['rates'][to_currency])
+        rate = FVal(result['rates'][to_fiat_currency])
         log.debug('Exchangeratesapi query succesful', rate=rate)
         return rate
 
+    @staticmethod
     def _save_forex_rate(
-            self,
             date: str,
             from_currency: FiatAsset,
             to_currency: FiatAsset,
             price: FVal,
     ):
-        if date not in self.cached_forex_data:
-            self.cached_forex_data[date] = {}
+        instance = Inquirer()
+        if date not in instance.cached_forex_data:
+            instance.cached_forex_data[date] = {}
 
-        if from_currency not in self.cached_forex_data[date]:
-            self.cached_forex_data[date][from_currency] = {}
+        if from_currency not in instance.cached_forex_data[date]:
+            instance.cached_forex_data[date][from_currency] = {}
 
         msg = 'Cached value should not already exist'
-        assert to_currency not in self.cached_forex_data[date][from_currency], msg
-        self.cached_forex_data[date][from_currency][to_currency] = price
-        self.save_historical_forex_data()
+        assert to_currency not in instance.cached_forex_data[date][from_currency], msg
+        instance.cached_forex_data[date][from_currency][to_currency] = price
+        instance.save_historical_forex_data()
 
+    @staticmethod
     def _get_cached_forex_data(
-            self,
             date: str,
             from_currency: FiatAsset,
             to_currency: FiatAsset,
-    ) -> Optional[FVal]:
-        if date in self.cached_forex_data:
-            if from_currency in self.cached_forex_data[date]:
-                rate = self.cached_forex_data[date][from_currency].get(to_currency)
+    ) -> Optional[Price]:
+        instance = Inquirer()
+        if date in instance.cached_forex_data:
+            if from_currency in instance.cached_forex_data[date]:
+                rate = instance.cached_forex_data[date][from_currency].get(to_currency)
                 if rate:
                     log.debug(
                         'Got cached forex rate',
@@ -236,18 +233,22 @@ class Inquirer(object):
                 return rate
         return None
 
-    def save_historical_forex_data(self) -> None:
-        filename = os.path.join(self.data_directory, 'price_history_forex.json')
+    @staticmethod
+    def save_historical_forex_data() -> None:
+        instance = Inquirer()
+        filename = os.path.join(instance.data_directory, 'price_history_forex.json')
         with open(filename, 'w') as outfile:
-            outfile.write(rlk_jsondumps(self.cached_forex_data))
+            outfile.write(rlk_jsondumps(instance.cached_forex_data))
 
-    def query_fiat_pair(self, base: FiatAsset, quote: FiatAsset) -> FVal:
+    @staticmethod
+    def query_fiat_pair(base: FiatAsset, quote: FiatAsset) -> Price:
         if base == quote:
-            return FVal(1.0)
+            return FVal('1')
 
+        instance = Inquirer()
         now = ts_now()
         date = tsToDate(ts_now(), formatstr='%Y-%m-%d')
-        price = self._get_cached_forex_data(date, base, quote)
+        price = instance._get_cached_forex_data(date, base, quote)
         if price:
             return price
 
@@ -260,7 +261,7 @@ class Inquirer(object):
             for i in range(1, 31):
                 now = Timestamp(now - Timestamp(86401))
                 date = tsToDate(now, formatstr='%Y-%m-%d')
-                price = self._get_cached_forex_data(date, base, quote)
+                price = instance._get_cached_forex_data(date, base, quote)
                 if price:
                     log.debug(
                         f'Could not query online apis for a fiat price. '
@@ -273,5 +274,5 @@ class Inquirer(object):
 
             raise ValueError('Could not find a "{}" price for "{}"'.format(base, quote))
 
-        self._save_forex_rate(date, base, quote, price)
+        instance._save_forex_rate(date, base, quote, price)
         return price

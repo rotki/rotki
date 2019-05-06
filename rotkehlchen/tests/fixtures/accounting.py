@@ -7,6 +7,7 @@ import pytest
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.constants import YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_EUR
+from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
@@ -62,7 +63,7 @@ def price_historian(
     historian = PriceHistorian(
         data_directory=accounting_data_dir,
         history_date_start=TEST_HISTORY_DATA_START,
-        inquirer=inquirer,
+        cryptocompare=Cryptocompare(data_directory=accounting_data_dir),
     )
     if should_mock_price_queries:
         def mock_historical_price_query(from_asset, to_asset, timestamp):
@@ -130,9 +131,9 @@ def accountant(
 
 @pytest.fixture
 def inquirer(accounting_data_dir):
-    return Inquirer(data_dir=accounting_data_dir, kraken=None)
+    return Inquirer(data_dir=accounting_data_dir)
 
 
 @pytest.fixture(scope='session')
 def session_inquirer(session_data_dir):
-    return Inquirer(data_dir=session_data_dir, kraken=None)
+    return Inquirer(data_dir=session_data_dir)

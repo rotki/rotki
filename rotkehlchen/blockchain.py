@@ -46,14 +46,12 @@ class Blockchain(object):
             self,
             blockchain_accounts: BlockchainAccounts,
             owned_eth_tokens: List[EthereumToken],
-            inquirer: Inquirer,
             ethchain,  # TODO ethchain type not added yet due to Cyclic Dependency
             msg_aggregator: MessagesAggregator,
     ):
         self.lock = Semaphore()
         self.results_cache: Dict[str, ResultCache] = {}
         self.ethchain = ethchain
-        self.inquirer = inquirer
         self.msg_aggregator = msg_aggregator
         self.owned_eth_tokens = owned_eth_tokens
 
@@ -108,7 +106,7 @@ class Blockchain(object):
             return
 
         self.balances[A_BTC] = {}
-        btc_usd_price = self.inquirer.find_usd_price(A_BTC)
+        btc_usd_price = Inquirer().find_usd_price(A_BTC)
         total = FVal(0)
         for account in self.accounts.btc:
             balance = self.query_btc_account_balance(account)
@@ -153,7 +151,7 @@ class Blockchain(object):
 
     def remove_eth_tokens(self, tokens: List[EthereumToken]) -> BlockchainBalancesUpdate:
         for token in tokens:
-            usd_price = self.inquirer.find_usd_price(token)
+            usd_price = Inquirer().find_usd_price(token)
             for account, account_data in self.balances[A_ETH].items():
                 if token not in account_data:
                     continue
@@ -183,7 +181,7 @@ class Blockchain(object):
         Call with 'remove', operator.sub to remove the account
         """
         getattr(self.accounts.btc, append_or_remove)(account)
-        btc_usd_price = self.inquirer.find_usd_price(A_BTC)
+        btc_usd_price = Inquirer().find_usd_price(A_BTC)
         balance = self.query_btc_account_balance(account)
         usd_balance = balance * btc_usd_price
         if append_or_remove == 'append':
@@ -215,7 +213,7 @@ class Blockchain(object):
         # Make sure account goes into web3.py as a properly checksummed address
         account = to_checksum_address(account)
         getattr(self.accounts.eth, append_or_remove)(account)
-        eth_usd_price = self.inquirer.find_usd_price(A_ETH)
+        eth_usd_price = Inquirer().find_usd_price(A_ETH)
         balance = self.ethchain.get_eth_balance(account)
         usd_balance = balance * eth_usd_price
         if append_or_remove == 'append':
@@ -234,7 +232,7 @@ class Blockchain(object):
         )
 
         for token in self.owned_eth_tokens:
-            usd_price = self.inquirer.find_usd_price(token)
+            usd_price = Inquirer().find_usd_price(token)
             if usd_price == 0:
                 # skip tokens that have no price
                 continue
@@ -329,7 +327,7 @@ class Blockchain(object):
         token_balances = {}
         token_usd_price = {}
         for token in tokens:
-            usd_price = self.inquirer.find_usd_price(token)
+            usd_price = Inquirer().find_usd_price(token)
             if usd_price == 0:
                 # skip tokens that have no price
                 continue
@@ -364,7 +362,7 @@ class Blockchain(object):
             return
 
         eth_accounts = self.accounts.eth
-        eth_usd_price = self.inquirer.find_usd_price(A_ETH)
+        eth_usd_price = Inquirer().find_usd_price(A_ETH)
         balances = self.ethchain.get_multieth_balance(eth_accounts)
         eth_total = FVal(0)
         eth_balances: EthBalances = {}

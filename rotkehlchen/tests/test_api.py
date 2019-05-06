@@ -3,6 +3,7 @@ from json.decoder import JSONDecodeError
 
 import pytest
 
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
@@ -91,4 +92,4 @@ def test_logout_and_login_again(rotkehlchen_instance, username):
     assert rotkehlchen_instance.user_is_logged_in
     # The bug for #288 was here. The inquirer instance was None and any
     # queries utilizing it were throwing exceptions.
-    rotkehlchen_instance.inquirer.get_fiat_usd_exchange_rates(currencies=None)
+    Inquirer().get_fiat_usd_exchange_rates(currencies=None)

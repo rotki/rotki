@@ -5,6 +5,7 @@ from typing import Tuple
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_EUR, A_USD, FIAT_CURRENCIES
 from rotkehlchen.fval import FVal
+from rotkehlchen.history import PriceHistorian
 from rotkehlchen.order_formatting import Trade, TradeType, pair_get_assets
 from rotkehlchen.typing import Timestamp, TradePair
 
@@ -96,7 +97,7 @@ class ActionWriter(object):
                 self.maybe_save_balances(save_ts=current_ts)
 
     def query_historical_price(self, from_asset: Asset, to_asset: Asset, timestamp: Timestamp):
-        return self.rotki.accountant.price_historian.query_historical_price(
+        return PriceHistorian().query_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,
             timestamp=timestamp,
