@@ -164,7 +164,6 @@ def blockchain(
     return Blockchain(
         blockchain_accounts=blockchain_accounts,
         owned_eth_tokens=[],
-        inquirer=inquirer,
         ethchain=ethchain_client,
         msg_aggregator=MessagesAggregator(),
     )
