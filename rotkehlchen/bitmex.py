@@ -68,12 +68,10 @@ class Bitmex(Exchange):
             self,
             api_key: typing.ApiKey,
             secret: typing.ApiSecret,
-            inquirer: Inquirer,
             user_directory: typing.FilePath,
     ):
         super(Bitmex, self).__init__('bitmex', api_key, secret, user_directory)
         self.uri = 'https://bitmex.com'
-        self.inquirer = inquirer
         self.session.headers.update({'api-key': api_key})  # type: ignore
 
     def first_connection(self):
@@ -183,7 +181,7 @@ class Bitmex(Exchange):
 
         # Bitmex shows only BTC balance
         returned_balances = dict()
-        usd_price = self.inquirer.find_usd_price(A_BTC)
+        usd_price = Inquirer().find_usd_price(A_BTC)
         # result is in satoshis
         amount = satoshis_to_btc(FVal(resp['amount']))
         usd_value = amount * usd_price

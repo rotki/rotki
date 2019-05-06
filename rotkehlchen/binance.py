@@ -130,7 +130,6 @@ class Binance(Exchange):
             self,
             api_key: ApiKey,
             secret: ApiSecret,
-            inquirer: Inquirer,
             data_dir: FilePath,
             msg_aggregator: MessagesAggregator,
             initial_backoff: int = 4,
@@ -138,7 +137,6 @@ class Binance(Exchange):
     ):
         super(Binance, self).__init__('binance', api_key, secret, data_dir)
         self.uri = BINANCE_BASE_URL
-        self.inquirer = inquirer
         self.session.headers.update({  # type: ignore
             'Accept': 'application/json',
             'X-MBX-APIKEY': self.api_key,
@@ -274,7 +272,7 @@ class Binance(Exchange):
                     f' Ignoring its balance query.',
                 )
                 continue
-            usd_price = self.inquirer.find_usd_price(asset)
+            usd_price = Inquirer().find_usd_price(asset)
             balance = dict()
             balance['amount'] = amount
             balance['usd_value'] = FVal(amount * usd_price)

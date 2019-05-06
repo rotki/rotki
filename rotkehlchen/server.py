@@ -13,6 +13,7 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.args import app_args
 from rotkehlchen.errors import AuthenticationError, RotkehlchenPermissionError
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serializer import process_result, process_result_list
@@ -144,7 +145,7 @@ class RotkehlchenServer(object):
         return ret
 
     def get_fiat_exchange_rates(self, currencies):
-        rates = self.rotkehlchen.inquirer.get_fiat_usd_exchange_rates(currencies)
+        rates = Inquirer().get_fiat_usd_exchange_rates(currencies)
         res = {'exchange_rates': rates}
         return process_result(res)
 

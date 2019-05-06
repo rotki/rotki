@@ -128,14 +128,12 @@ class Bittrex(Exchange):
             self,
             api_key: ApiKey,
             secret: ApiSecret,
-            inquirer: Inquirer,
             user_directory: FilePath,
             msg_aggregator: MessagesAggregator,
     ):
         super(Bittrex, self).__init__('bittrex', api_key, secret, user_directory)
         self.apiversion = 'v1.1'
         self.uri = 'https://bittrex.com/api/{}/'.format(self.apiversion)
-        self.inquirer = inquirer
         self.msg_aggregator = msg_aggregator
 
     def first_connection(self):
@@ -245,7 +243,7 @@ class Bittrex(Exchange):
                 )
                 continue
             asset_btc_price = self.get_btc_price(asset)
-            usd_price = self.inquirer.find_usd_price(
+            usd_price = Inquirer().find_usd_price(
                 asset=asset,
                 asset_btc_price=asset_btc_price,
             )

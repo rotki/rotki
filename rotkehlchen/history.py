@@ -1,7 +1,7 @@
 import logging
 import os
 from json.decoder import JSONDecodeError
-from typing import List
+from typing import TYPE_CHECKING, List
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.binance import trade_from_binance
@@ -11,8 +11,8 @@ from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import RemoteError, UnsupportedAsset
 from rotkehlchen.exchange import data_up_todate
-from rotkehlchen.externalapis import Cryptocompare
 from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.kraken import trade_from_kraken
 from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
 from rotkehlchen.order_formatting import (
@@ -22,7 +22,7 @@ from rotkehlchen.order_formatting import (
 )
 from rotkehlchen.poloniex import trade_from_poloniex
 from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
-from rotkehlchen.typing import EthAddress, FilePath
+from rotkehlchen.typing import EthAddress, FilePath, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
     createTimeStamp,
@@ -30,6 +30,9 @@ from rotkehlchen.utils.misc import (
     write_history_data_in_file,
 )
 from rotkehlchen.utils.serialization import rlk_jsonloads
+
+if TYPE_CHECKING:
+    from rotkehlchen.externalapis import Cryptocompare
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -156,15 +159,33 @@ def process_polo_loans(data, start_ts, end_ts):
 
 
 class PriceHistorian(object):
+    __instance = None
 
-    def __init__(self, data_directory, history_date_start, inquirer):
-        self.data_directory = data_directory
+    def __new__(
+            cls,
+            data_directory: FilePath = None,
+            history_date_start: str = None,
+            cryptocompare: 'Cryptocompare' = None,
+    ):
+        if PriceHistorian.__instance is not None:
+            return PriceHistorian.__instance
+        assert data_directory, 'arguments should be given at the first instantiation'
+        assert history_date_start, 'arguments should be given at the first instantiation'
+        assert cryptocompare, 'arguments should be given at the first instantiation'
+
+        PriceHistorian.__instance = object.__new__(cls)
+
         # get the start date for historical data
-        self.historical_data_start = createTimeStamp(history_date_start, formatstr="%d/%m/%Y")
-        self.inquirer = inquirer
-        self.cryptocompare = Cryptocompare(data_directory=data_directory)
+        PriceHistorian.historical_data_start = createTimeStamp(
+            datestr=history_date_start,
+            formatstr="%d/%m/%Y",
+        )
+        PriceHistorian.cryptocompare = cryptocompare
 
-    def query_historical_price(self, from_asset: Asset, to_asset: Asset, timestamp):
+        return PriceHistorian.__instance
+
+    @staticmethod
+    def query_historical_price(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:
         """
         Query the historical price on `timestamp` for `from_asset` in `to_asset`.
         So how much `to_asset` does 1 unit of `from_asset` cost.
@@ -188,20 +209,21 @@ class PriceHistorian(object):
 
         if from_asset.is_fiat() and to_asset.is_fiat():
             # if we are querying historical forex data then try something other than cryptocompare
-            price = self.inquirer.query_historical_fiat_exchange_rates(
-                from_asset,
-                to_asset,
-                timestamp,
+            price = Inquirer().query_historical_fiat_exchange_rates(
+                from_fiat_currency=from_asset.identifier,
+                to_fiat_currency=to_asset.identifier,
+                timestamp=timestamp,
             )
             if price is not None:
                 return price
             # else cryptocompare also has historical fiat to fiat data
 
-        return self.cryptocompare.query_historical_price(
+        instance = PriceHistorian()
+        return instance.cryptocompare.query_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,
             timestamp=timestamp,
-            historical_data_start=self.historical_data_start,
+            historical_data_start=instance.historical_data_start,
         )
 
 

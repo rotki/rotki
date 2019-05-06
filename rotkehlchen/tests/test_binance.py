@@ -27,7 +27,6 @@ def mock_binance(accounting_data_dir, inquirer):
     binance = Binance(
         api_key=base64.b64encode(make_random_b64bytes(128)),
         secret=base64.b64encode(make_random_b64bytes(128)),
-        inquirer=inquirer,
         data_dir=accounting_data_dir,
         msg_aggregator=MessagesAggregator(),
     )
@@ -211,7 +210,6 @@ def test_binance_assets_are_known(accounting_data_dir, inquirer):
     binance = Binance(
         api_key=base64.b64encode(make_random_b64bytes(128)),
         secret=base64.b64encode(make_random_b64bytes(128)),
-        inquirer=inquirer,
         data_dir=accounting_data_dir,
         msg_aggregator=MessagesAggregator(),
     )

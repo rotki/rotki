@@ -24,6 +24,7 @@ from rotkehlchen.errors import (
     RotkehlchenPermissionError,
 )
 from rotkehlchen.ethchain import Ethchain
+from rotkehlchen.externalapis import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian, TradesHistorian
 from rotkehlchen.inquirer import Inquirer
@@ -117,7 +118,8 @@ class Rotkehlchen(object):
         self.binance = None
 
         self.data = DataHandler(self.data_dir)
-        self.inquirer = Inquirer(data_dir=self.data_dir)
+        # Initialize the Inquirer singleton
+        Inquirer(data_dir=self.data_dir)
         self.msg_aggregator = MessagesAggregator()
 
         self.lock.release()
@@ -130,17 +132,15 @@ class Rotkehlchen(object):
                 api_key=str.encode(secret_data['kraken']['api_key']),
                 secret=str.encode(secret_data['kraken']['api_secret']),
                 user_directory=self.user_directory,
-                usd_eur_price=self.inquirer.query_fiat_pair(S_EUR, A_USD),
+                usd_eur_price=Inquirer().query_fiat_pair(S_EUR, A_USD),
             )
             self.connected_exchanges.append('kraken')
             self.trades_historian.set_exchange('kraken', self.kraken)
-            self.inquirer.kraken = self.kraken
 
         if self.poloniex is None and 'poloniex' in secret_data:
             self.poloniex = Poloniex(
                 api_key=str.encode(secret_data['poloniex']['api_key']),
                 secret=str.encode(secret_data['poloniex']['api_secret']),
-                inquirer=self.inquirer,
                 user_directory=self.user_directory,
                 msg_aggregator=self.msg_aggregator,
             )
@@ -151,7 +151,6 @@ class Rotkehlchen(object):
             self.bittrex = Bittrex(
                 api_key=str.encode(secret_data['bittrex']['api_key']),
                 secret=str.encode(secret_data['bittrex']['api_secret']),
-                inquirer=self.inquirer,
                 user_directory=self.user_directory,
                 msg_aggregator=self.msg_aggregator,
             )
@@ -162,7 +161,6 @@ class Rotkehlchen(object):
             self.binance = Binance(
                 api_key=str.encode(secret_data['binance']['api_key']),
                 secret=str.encode(secret_data['binance']['api_secret']),
-                inquirer=self.inquirer,
                 data_dir=self.user_directory,
                 msg_aggregator=self.msg_aggregator,
             )
@@ -173,7 +171,6 @@ class Rotkehlchen(object):
             self.bitmex = Bitmex(
                 api_key=str.encode(secret_data['bitmex']['api_key']),
                 secret=str.encode(secret_data['bitmex']['api_secret']),
-                inquirer=self.inquirer,
                 user_directory=self.user_directory,
             )
             self.connected_exchanges.append('bitmex')
@@ -293,14 +290,14 @@ class Rotkehlchen(object):
             historical_data_start=historical_data_start,
             msg_aggregator=self.msg_aggregator,
         )
-        price_historian = PriceHistorian(
+        # Initialize the price historian singleton
+        PriceHistorian(
             data_directory=self.data_dir,
             history_date_start=historical_data_start,
-            inquirer=self.inquirer,
+            cryptocompare=Cryptocompare(data_directory=self.data_dir)
         )
         db_settings = self.data.db.get_settings()
         self.accountant = Accountant(
-            price_historian=price_historian,
             profit_currency=self.data.main_currency(),
             user_directory=self.user_directory,
             create_csv=True,
@@ -318,7 +315,6 @@ class Rotkehlchen(object):
         self.blockchain = Blockchain(
             blockchain_accounts=self.data.db.get_blockchain_accounts(),
             owned_eth_tokens=self.data.db.get_owned_tokens(),
-            inquirer=self.inquirer,
             ethchain=ethchain,
             msg_aggregator=self.msg_aggregator,
         )
@@ -340,7 +336,6 @@ class Rotkehlchen(object):
         # Reset rotkehlchen logger to default
         LoggingSettings(anonymized_logs=DEFAULT_ANONYMIZED_LOGS)
 
-        self.inquirer.kraken = None
         del self.accountant
         self.accountant = None
         del self.trades_historian
@@ -549,7 +544,7 @@ class Rotkehlchen(object):
         balances = self.data.get_fiat_balances()
         for currency, amount in balances.items():
             amount = FVal(amount)
-            usd_rate = self.inquirer.query_fiat_pair(currency, 'USD')
+            usd_rate = Inquirer().query_fiat_pair(currency, 'USD')
             result[currency] = {
                 'amount': amount,
                 'usd_value': amount * usd_rate,
@@ -664,7 +659,7 @@ class Rotkehlchen(object):
         with self.lock:
             self.data.set_main_currency(currency, self.accountant)
             if currency != 'USD':
-                self.usd_to_main_currency_rate = self.inquirer.query_fiat_pair('USD', currency)
+                self.usd_to_main_currency_rate = Inquirer().query_fiat_pair('USD', currency)
 
     def set_settings(self, settings):
         log.info('Add new settings')
@@ -681,7 +676,7 @@ class Rotkehlchen(object):
             if 'main_currency' in settings:
                 main_currency = settings['main_currency']
                 if main_currency != 'USD':
-                    self.usd_to_main_currency_rate = self.inquirer.query_fiat_pair(
+                    self.usd_to_main_currency_rate = Inquirer().query_fiat_pair(
                         'USD',
                         main_currency,
                     )
@@ -701,7 +696,7 @@ class Rotkehlchen(object):
     def usd_to_main_currency(self, amount):
         main_currency = self.data.main_currency()
         if main_currency != 'USD' and not hasattr(self, 'usd_to_main_currency_rate'):
-            self.usd_to_main_currency_rate = self.inquirer.query_fiat_pair('USD', main_currency)
+            self.usd_to_main_currency_rate = Inquirer().query_fiat_pair('USD', main_currency)
 
         return self.usd_to_main_currency_rate * amount
 

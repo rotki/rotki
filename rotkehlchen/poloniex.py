@@ -124,7 +124,6 @@ class Poloniex(Exchange):
             self,
             api_key: ApiKey,
             secret: ApiSecret,
-            inquirer: Inquirer,
             user_directory: FilePath,
             msg_aggregator: MessagesAggregator,
     ):
@@ -132,7 +131,6 @@ class Poloniex(Exchange):
 
         self.uri = 'https://poloniex.com/'
         self.public_uri = self.uri + 'public?command='
-        self.inquirer = inquirer
         self.session.headers.update({  # type: ignore
             'Key': self.api_key,
         })
@@ -328,7 +326,7 @@ class Poloniex(Exchange):
                     continue
                 entry = {}
                 entry['amount'] = available + on_orders
-                usd_price = self.inquirer.find_usd_price(
+                usd_price = Inquirer().find_usd_price(
                     asset=asset,
                     asset_btc_price=None,
                 )

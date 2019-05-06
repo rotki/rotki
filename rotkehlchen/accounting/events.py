@@ -7,6 +7,7 @@ from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETC, A_ETH
 from rotkehlchen.errors import PriceQueryUnknownFromAsset
 from rotkehlchen.externalapis.cryptocompare import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
+from rotkehlchen.history import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import BuyEvent, Events, SellEvent
 from rotkehlchen.typing import Fee, Timestamp
@@ -18,9 +19,8 @@ log = RotkehlchenLogsAdapter(logger)
 
 class TaxableEvents(object):
 
-    def __init__(self, price_historian, csv_exporter, profit_currency: Asset):
+    def __init__(self, csv_exporter, profit_currency: Asset):
         self.events: Dict[Asset, Events] = dict()
-        self.price_historian = price_historian
         self.csv_exporter = csv_exporter
         self.profit_currency = profit_currency
 
@@ -84,10 +84,10 @@ class TaxableEvents(object):
         if asset == self.profit_currency:
             rate = FVal(1)
         else:
-            rate = self.price_historian.query_historical_price(
-                asset,
-                self.profit_currency,
-                timestamp,
+            rate = PriceHistorian().query_historical_price(
+                from_asset=asset,
+                to_asset=self.profit_currency,
+                timestamp=timestamp,
             )
         assert isinstance(rate, (FVal, int))  # TODO Remove. Is temporary assert
         return rate

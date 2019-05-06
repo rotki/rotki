@@ -81,11 +81,11 @@ def test_query_trade_history_not_shared_cache(data_dir):
     os.mkdir(first_user_dir)
     second_user_dir = os.path.join(data_dir, 'second')
     os.mkdir(second_user_dir)
-    a = Poloniex(b'', b'', None, first_user_dir, messages_aggregator)
+    a = Poloniex(b'', b'', first_user_dir, messages_aggregator)
     with patch.object(a, 'returnTradeHistory', side_effect=first_trades):
         result1 = a.query_trade_history(0, end_ts, end_ts)
 
-    b = Poloniex(b'', b'', None, second_user_dir, messages_aggregator)
+    b = Poloniex(b'', b'', second_user_dir, messages_aggregator)
     with patch.object(b, 'returnTradeHistory', side_effect=second_trades):
         result2 = b.query_trade_history(0, end_ts, end_ts)
 

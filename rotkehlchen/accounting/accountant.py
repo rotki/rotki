@@ -11,6 +11,7 @@ from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.errors import PriceQueryUnknownFromAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import (
     AssetMovement,
@@ -85,7 +86,6 @@ class Accountant(object):
 
     def __init__(
             self,
-            price_historian: PriceHistorian,
             profit_currency: Asset,
             user_directory: FilePath,
             create_csv: bool,
@@ -94,9 +94,8 @@ class Accountant(object):
             taxfree_after_period: int,
             include_gas_costs: bool,
     ):
-        self.price_historian = price_historian
         self.csvexporter = CSVExporter(profit_currency, user_directory, create_csv)
-        self.events = TaxableEvents(price_historian, self.csvexporter, profit_currency)
+        self.events = TaxableEvents(self.csvexporter, profit_currency)
         self.set_main_currency(profit_currency)
 
         self.asset_movement_fees = FVal(0)
@@ -113,7 +112,6 @@ class Accountant(object):
     def __del__(self):
         del self.events
         del self.csvexporter
-        del self.price_historian
 
     @property
     def general_trade_pl(self) -> FVal:
@@ -165,7 +163,7 @@ class Accountant(object):
             to_asset: Asset,
             timestamp: Timestamp,
     ) -> FVal:
-        price = self.price_historian.query_historical_price(from_asset, to_asset, timestamp)
+        price = PriceHistorian().query_historical_price(from_asset, to_asset, timestamp)
         return price
 
     def get_rate_in_profit_currency(self, asset: Asset, timestamp: Timestamp) -> FVal:
@@ -357,7 +355,7 @@ class Accountant(object):
                 break
 
         self.events.calculate_asset_details()
-        self.price_historian.inquirer.save_historical_forex_data()
+        Inquirer().save_historical_forex_data()
 
         sum_other_actions = (
             self.events.margin_positions_profit_loss +
