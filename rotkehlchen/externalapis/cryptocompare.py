@@ -396,8 +396,8 @@ class Cryptocompare():
 
         return price
 
+    @staticmethod
     def _adjust_to_cryptocompare_price_incosistencies(
-            self,
             price: Price,
             from_asset: Asset,
             to_asset: Asset,

@@ -144,7 +144,8 @@ class RotkehlchenServer(object):
                 log.debug("Found response for task {}".format(task_id))
         return ret
 
-    def get_fiat_exchange_rates(self, currencies):
+    @staticmethod
+    def get_fiat_exchange_rates(currencies):
         rates = Inquirer().get_fiat_usd_exchange_rates(currencies)
         res = {'exchange_rates': rates}
         return process_result(res)

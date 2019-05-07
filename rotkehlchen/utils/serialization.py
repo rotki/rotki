@@ -3,7 +3,6 @@ from typing import Dict, List, Union
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.fval import FVal
-from rotkehlchen.order_formatting import Trade, trade_type_from_string
 from rotkehlchen.typing import TradeType
 
 

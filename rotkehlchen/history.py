@@ -22,7 +22,7 @@ from rotkehlchen.order_formatting import (
 )
 from rotkehlchen.poloniex import trade_from_poloniex
 from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
-from rotkehlchen.typing import EthAddress, FilePath, Price, Timestamp
+from rotkehlchen.typing import EthAddress, FiatAsset, FilePath, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
     createTimeStamp,
@@ -160,6 +160,8 @@ def process_polo_loans(data, start_ts, end_ts):
 
 class PriceHistorian(object):
     __instance = None
+    _historical_data_start: Timestamp
+    _cryptocompare: 'Cryptocompare'
 
     def __new__(
             cls,
@@ -176,11 +178,11 @@ class PriceHistorian(object):
         PriceHistorian.__instance = object.__new__(cls)
 
         # get the start date for historical data
-        PriceHistorian.historical_data_start = createTimeStamp(
+        PriceHistorian._historical_data_start = createTimeStamp(
             datestr=history_date_start,
             formatstr="%d/%m/%Y",
         )
-        PriceHistorian.cryptocompare = cryptocompare
+        PriceHistorian._cryptocompare = cryptocompare
 
         return PriceHistorian.__instance
 
@@ -205,13 +207,13 @@ class PriceHistorian(object):
         )
 
         if from_asset == to_asset:
-            return 1
+            return Price(FVal('1'))
 
         if from_asset.is_fiat() and to_asset.is_fiat():
             # if we are querying historical forex data then try something other than cryptocompare
             price = Inquirer().query_historical_fiat_exchange_rates(
-                from_fiat_currency=from_asset.identifier,
-                to_fiat_currency=to_asset.identifier,
+                from_fiat_currency=FiatAsset(from_asset.identifier),
+                to_fiat_currency=FiatAsset(to_asset.identifier),
                 timestamp=timestamp,
             )
             if price is not None:
@@ -219,11 +221,11 @@ class PriceHistorian(object):
             # else cryptocompare also has historical fiat to fiat data
 
         instance = PriceHistorian()
-        return instance.cryptocompare.query_historical_price(
+        return instance._cryptocompare.query_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,
             timestamp=timestamp,
-            historical_data_start=instance.historical_data_start,
+            historical_data_start=instance._historical_data_start,
         )
 
 

@@ -157,8 +157,8 @@ class Accountant(object):
         self.profit_currency = currency
         self.events.profit_currency = currency
 
+    @staticmethod
     def query_historical_price(
-            self,
             from_asset: Asset,
             to_asset: Asset,
             timestamp: Timestamp,
