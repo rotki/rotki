@@ -56,7 +56,7 @@ def query_cryptocompare_for_fiat_price(asset: Asset) -> Price:
     return price
 
 
-def _query_exchanges_rateapi(base: FiatAsset, quote: FiatAsset) -> Optional[FVal]:
+def _query_exchanges_rateapi(base: FiatAsset, quote: FiatAsset) -> Optional[Price]:
     log.debug(
         'Querying api.exchangeratesapi.io fiat pair',
         base_currency=base,
@@ -65,7 +65,7 @@ def _query_exchanges_rateapi(base: FiatAsset, quote: FiatAsset) -> Optional[FVal
     querystr = f'https://api.exchangeratesapi.io/latest?base={base}&symbols={quote}'
     try:
         resp = request_get_dict(querystr)
-        return FVal(resp['rates'][quote])
+        return Price(FVal(resp['rates'][quote]))
     except (ValueError, RemoteError, KeyError, requests.exceptions.TooManyRedirects):
         log.error(
             'Querying api.exchangeratesapi.io for fiat pair failed',
@@ -75,7 +75,7 @@ def _query_exchanges_rateapi(base: FiatAsset, quote: FiatAsset) -> Optional[FVal
         return None
 
 
-def _query_currency_converterapi(base: FiatAsset, quote: FiatAsset) -> Optional[FVal]:
+def _query_currency_converterapi(base: FiatAsset, quote: FiatAsset) -> Optional[Price]:
     log.debug(
         'Query free.currencyconverterapi.com fiat pair',
         base_currency=base,
@@ -88,7 +88,7 @@ def _query_currency_converterapi(base: FiatAsset, quote: FiatAsset) -> Optional[
     )
     try:
         resp = request_get_dict(querystr)
-        return FVal(resp['results'][pair]['val'])
+        return Price(FVal(resp['results'][pair]['val']))
     except (ValueError, RemoteError, KeyError):
         log.error(
             'Querying free.currencyconverterapi.com fiat pair failed',
@@ -100,6 +100,8 @@ def _query_currency_converterapi(base: FiatAsset, quote: FiatAsset) -> Optional[
 
 class Inquirer(object):
     __instance = None
+    _cached_forex_data: Dict
+    _data_directory: FilePath
 
     def __new__(cls, data_dir: FilePath = None):
         if Inquirer.__instance is not None:
@@ -109,15 +111,15 @@ class Inquirer(object):
 
         Inquirer.__instance = object.__new__(cls)
 
-        Inquirer.__instance.data_directory = data_dir
+        Inquirer.__instance._data_directory = data_dir
         filename = os.path.join(data_dir, 'price_history_forex.json')
         try:
             with open(filename, 'r') as f:
                 # we know price_history_forex contains a dict
                 data = rlk_jsonloads_dict(f.read())
-                Inquirer.__instance.cached_forex_data = data
+                Inquirer.__instance._cached_forex_data = data
         except (OSError, IOError, JSONDecodeError):
-            Inquirer.__instance.cached_forex_data = dict()
+            Inquirer.__instance._cached_forex_data = dict()
 
         return Inquirer.__instance
 
@@ -144,7 +146,7 @@ class Inquirer(object):
             from_fiat_currency: FiatAsset,
             to_fiat_currency: FiatAsset,
             timestamp: Timestamp,
-    ) -> Optional[FVal]:
+    ) -> Optional[Price]:
         date = tsToDate(timestamp, formatstr='%Y-%m-%d')
         instance = Inquirer()
         rate = instance._get_cached_forex_data(date, from_fiat_currency, to_fiat_currency)
@@ -181,16 +183,16 @@ class Inquirer(object):
         if 'rates' not in result or to_fiat_currency not in result['rates']:
             return None
 
-        if date not in instance.cached_forex_data:
-            instance.cached_forex_data[date] = {}
+        if date not in instance._cached_forex_data:
+            instance._cached_forex_data[date] = {}
 
-        if from_fiat_currency not in instance.cached_forex_data[date]:
-            instance.cached_forex_data[date][from_fiat_currency] = {}
+        if from_fiat_currency not in instance._cached_forex_data[date]:
+            instance._cached_forex_data[date][from_fiat_currency] = {}
 
         for key, value in result['rates'].items():
-            instance.cached_forex_data[date][from_fiat_currency][key] = FVal(value)
+            instance._cached_forex_data[date][from_fiat_currency][key] = FVal(value)
 
-        rate = FVal(result['rates'][to_fiat_currency])
+        rate = Price(FVal(result['rates'][to_fiat_currency]))
         log.debug('Exchangeratesapi query succesful', rate=rate)
         return rate
 
@@ -202,15 +204,15 @@ class Inquirer(object):
             price: FVal,
     ):
         instance = Inquirer()
-        if date not in instance.cached_forex_data:
-            instance.cached_forex_data[date] = {}
+        if date not in instance._cached_forex_data:
+            instance._cached_forex_data[date] = {}
 
-        if from_currency not in instance.cached_forex_data[date]:
-            instance.cached_forex_data[date][from_currency] = {}
+        if from_currency not in instance._cached_forex_data[date]:
+            instance._cached_forex_data[date][from_currency] = {}
 
         msg = 'Cached value should not already exist'
-        assert to_currency not in instance.cached_forex_data[date][from_currency], msg
-        instance.cached_forex_data[date][from_currency][to_currency] = price
+        assert to_currency not in instance._cached_forex_data[date][from_currency], msg
+        instance._cached_forex_data[date][from_currency][to_currency] = price
         instance.save_historical_forex_data()
 
     @staticmethod
@@ -220,9 +222,9 @@ class Inquirer(object):
             to_currency: FiatAsset,
     ) -> Optional[Price]:
         instance = Inquirer()
-        if date in instance.cached_forex_data:
-            if from_currency in instance.cached_forex_data[date]:
-                rate = instance.cached_forex_data[date][from_currency].get(to_currency)
+        if date in instance._cached_forex_data:
+            if from_currency in instance._cached_forex_data[date]:
+                rate = instance._cached_forex_data[date][from_currency].get(to_currency)
                 if rate:
                     log.debug(
                         'Got cached forex rate',
@@ -236,14 +238,14 @@ class Inquirer(object):
     @staticmethod
     def save_historical_forex_data() -> None:
         instance = Inquirer()
-        filename = os.path.join(instance.data_directory, 'price_history_forex.json')
+        filename = os.path.join(instance._data_directory, 'price_history_forex.json')
         with open(filename, 'w') as outfile:
-            outfile.write(rlk_jsondumps(instance.cached_forex_data))
+            outfile.write(rlk_jsondumps(instance._cached_forex_data))
 
     @staticmethod
     def query_fiat_pair(base: FiatAsset, quote: FiatAsset) -> Price:
         if base == quote:
-            return FVal('1')
+            return Price(FVal('1'))
 
         instance = Inquirer()
         now = ts_now()

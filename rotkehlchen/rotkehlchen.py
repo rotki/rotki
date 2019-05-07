@@ -294,7 +294,7 @@ class Rotkehlchen(object):
         PriceHistorian(
             data_directory=self.data_dir,
             history_date_start=historical_data_start,
-            cryptocompare=Cryptocompare(data_directory=self.data_dir)
+            cryptocompare=Cryptocompare(data_directory=self.data_dir),
         )
         db_settings = self.data.db.get_settings()
         self.accountant = Accountant(
