@@ -60,6 +60,9 @@ def price_historian(
         should_mock_price_queries,
         mocked_price_queries,
 ):
+    # Since this is a singleton and we want it initialized everytime the fixture
+    # is called make sure its instance is always starting from scratch
+    PriceHistorian._PriceHistorian__instance = None
     historian = PriceHistorian(
         data_directory=accounting_data_dir,
         history_date_start=TEST_HISTORY_DATA_START,
