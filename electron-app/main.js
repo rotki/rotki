@@ -61,7 +61,7 @@ const createWindow = () => {
   disableAnimationsForTest();
 
   mainWindow.loadURL(require("url").format({
-    pathname: path.join(__dirname, "ui", "index.html"),
+    pathname: path.join(__dirname, "src", "index.html"),
     protocol: "file:",
     slashes: true
   }));
