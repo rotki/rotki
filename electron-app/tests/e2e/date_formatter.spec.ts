@@ -1,4 +1,4 @@
-import {DateFormatter} from '../date_formatter';
+import {DateFormatter} from '../../src/date_formatter';
 import * as chai from 'chai';
 
 chai.should();

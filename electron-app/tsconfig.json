@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "outDir": "./ui/dist",
+    "outDir": "./dist",
     "allowJs": false,
     "target": "es2016",
     "declaration": true,
@@ -40,10 +40,10 @@
     "jsx": "react"
   },
   "include": [
-    "./ui/**/*"
+    "./src/**/*"
   ],
   "exclude": [
-    "./ui/**/*.spec.ts",
-    "./ui/tests"
+    "./src/**/*.spec.ts",
+    "./tests"
   ]
 }

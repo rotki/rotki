@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "outDir": "./ui/tests/dist",
+        "outDir": "./tests/dist",
         "target": "es2016",
         "types": [
             "chai",
@@ -10,16 +10,17 @@
             "webdriverio"
         ],
         "lib": [
+            "es2015",
             "es2016",
             "dom"
         ]
     },
     "extends": "./tsconfig.json",
     "include": [
-        "./ui/**/*.spec.ts",
-        "./ui/tests/**/*"
+        "./src/**/*.spec.ts",
+        "./tests/**/*"
     ],
     "exclude": [
-        "./ui/**/*"
+        "./src/**/*"
     ]
 }
