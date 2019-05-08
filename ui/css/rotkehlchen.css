@@ -167,7 +167,7 @@ a:focus, a:hover {
 .body {
     padding: 4px 8px;
     word-wrap: break-word;
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     color: rgba(0,0,0,.56)
 }
 
@@ -175,7 +175,7 @@ a:focus, a:hover {
     background: #fff;
     border-radius: 2px;
     display: inline-block;
-    height: 150px;
+    height: 120px;
     margin: 0.5rem 1rem;
     position: relative;
     width: 300px;
@@ -184,6 +184,25 @@ a:focus, a:hover {
 .card-1 {
     box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
     transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+}
+
+.notification {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.notification:first-child {
+    flex-grow: 1;
+}
+
+.notification .icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #757575;
+    margin-right: 8px;
 }
 
 .notifications .badge {
