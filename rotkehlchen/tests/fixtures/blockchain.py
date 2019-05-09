@@ -133,7 +133,7 @@ def blockchain_backend(
         have_blockchain_backend,
 ):
     if not have_blockchain_backend:
-        return
+        return None
 
     genesis_path = None
     if cached_genesis:
@@ -156,10 +156,10 @@ def blockchain_backend(
 
 @pytest.fixture
 def blockchain(
-        blockchain_backend,
+        blockchain_backend,  # pylint: disable=unused-argument
         ethchain_client,
         blockchain_accounts,
-        inquirer,
+        inquirer,  # pylint: disable=unused-argument
 ):
     return Blockchain(
         blockchain_accounts=blockchain_accounts,

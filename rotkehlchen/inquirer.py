@@ -98,7 +98,7 @@ def _query_currency_converterapi(base: FiatAsset, quote: FiatAsset) -> Optional[
         return None
 
 
-class Inquirer(object):
+class Inquirer():
     __instance = None
     _cached_forex_data: Dict
     _data_directory: FilePath
@@ -124,10 +124,7 @@ class Inquirer(object):
         return Inquirer.__instance
 
     @staticmethod
-    def find_usd_price(
-            asset: Asset,
-            asset_btc_price: Optional[FVal] = None,
-    ) -> Price:
+    def find_usd_price(asset: Asset) -> Price:
         return query_cryptocompare_for_fiat_price(asset)
 
     @staticmethod

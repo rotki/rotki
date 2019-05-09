@@ -15,7 +15,7 @@ def test_eth_connection_initial_balances(
         blockchain,
         number_of_accounts,
         ethereum_accounts,
-        inquirer,
+        inquirer,  # pylint: disable=unused-argument
 ):
     res, empty_or_error = blockchain.query_balances()
     assert empty_or_error == ''

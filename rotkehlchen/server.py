@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class RotkehlchenServer(object):
+class RotkehlchenServer():
     def __init__(self):
         arg_parser = app_args(
             prog='rotkehlchen',
@@ -303,7 +303,7 @@ class RotkehlchenServer(object):
         return process_result(result)
 
     def query_balances_async(self, save_data=False):
-        res = self.query_async('query_balances')
+        res = self.query_async('query_balances', save_data=save_data)
         return {'task_id': res}
 
     def query_periodic_data(self):

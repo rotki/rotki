@@ -57,7 +57,7 @@ def test_periodic_data_before_login_completion(cli_args):
 
 
 @pytest.mark.parametrize('number_of_accounts', [0])
-def test_dbinfo_is_written_at_shutdown(rotkehlchen_instance, username):
+def test_dbinfo_is_written_at_shutdown(rotkehlchen_instance):
     """Test that when rotkehlchen shuts down dbinfo is written"""
     filepath = os.path.join(rotkehlchen_instance.data.user_data_dir, 'dbinfo.json')
     sqlcipher_version = rotkehlchen_instance.data.db.sqlcipher_version

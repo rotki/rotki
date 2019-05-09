@@ -40,7 +40,7 @@ EthBalances = Dict[EthAddress, Dict[Union[Asset, str], FVal]]
 AllEthTokens = Dict[Asset, Dict[str, Union[ChecksumEthAddress, int]]]
 
 
-class Blockchain(object):
+class Blockchain():
 
     def __init__(
             self,

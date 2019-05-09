@@ -81,4 +81,4 @@ def test_find_fiat_price(kraken):
     assert jpy_price < FVal('1')
 
     # Kraken fees have no value
-    kraken.find_fiat_price('KFEE') == FVal('0')
+    assert kraken.find_fiat_price('KFEE') == FVal('0')

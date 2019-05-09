@@ -326,10 +326,7 @@ class Poloniex(Exchange):
                     continue
                 entry = {}
                 entry['amount'] = available + on_orders
-                usd_price = Inquirer().find_usd_price(
-                    asset=asset,
-                    asset_btc_price=None,
-                )
+                usd_price = Inquirer().find_usd_price(asset=asset)
                 usd_value = entry['amount'] * usd_price
                 entry['usd_value'] = usd_value
                 balances[asset] = entry

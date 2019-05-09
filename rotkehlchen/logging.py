@@ -62,7 +62,7 @@ def make_sensitive(data):
     return dict(data, **{'sensitive_log': True})
 
 
-class LoggingSettings(object):
+class LoggingSettings():
     __instance = None
 
     def __new__(cls, anonymized_logs=DEFAULT_ANONYMIZED_LOGS):

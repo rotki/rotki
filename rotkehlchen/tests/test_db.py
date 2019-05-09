@@ -468,7 +468,7 @@ def test_sqlcipher_detect_version():
         def __init__(self, version):
             self.version = version
 
-        def execute(self, command):
+        def execute(self, command):  # pylint: disable=unused-argument
             return QueryMock(self.version)
 
         def close(self):

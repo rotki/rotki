@@ -61,7 +61,7 @@ def _process_response(response: requests.Response) -> Tuple[bool, Union[Dict, Li
     return success, result_or_error
 
 
-class Premium(object):
+class Premium():
 
     def __init__(self, api_key, api_secret):
         self.session = requests.session()

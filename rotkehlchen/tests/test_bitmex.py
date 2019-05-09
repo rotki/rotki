@@ -10,7 +10,7 @@ TEST_BITMEX_API_SECRET = b'671tM6f64bt6KhteDakj2uCCNBt7HhZVEE7H5x16Oy4zb1ag'
 
 
 @pytest.fixture
-def mock_bitmex(accounting_data_dir, inquirer):
+def mock_bitmex(accounting_data_dir, inquirer):  # pylint: disable=unused-argument
     # API key/secret from tests cases here: https://www.bitmex.com/app/apiKeysUsage
     bitmex = Bitmex(
         api_key=b'LAqUlngMIQkIUjXMUreyu3qn',
@@ -23,7 +23,7 @@ def mock_bitmex(accounting_data_dir, inquirer):
 
 
 @pytest.fixture
-def test_bitmex(accounting_data_dir, inquirer):
+def test_bitmex(accounting_data_dir, inquirer):  # pylint: disable=unused-argument
     # API key/secret from tests cases here: https://www.bitmex.com/app/apiKeysUsage
     bitmex = Bitmex(
         api_key=TEST_BITMEX_API_KEY,

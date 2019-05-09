@@ -106,14 +106,14 @@ DBINFO_FILENAME = 'dbinfo.json'
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
 # http://www.sql-join.com/sql-join-types
-class DBHandler(object):
+class DBHandler():
 
     def __init__(self, user_data_dir: FilePath, password: str):
         self.user_data_dir = user_data_dir
         self.sqlcipher_version = detect_sqlcipher_version()
         action = self.read_info_at_start()
         if action == DBStartupAction.UPGRADE_3_4:
-            result, msg = self.upgrade_db_sqlcipher_3_to_4(password, False)
+            result, msg = self.upgrade_db_sqlcipher_3_to_4(password)
             if not result:
                 log.error(
                     'dbinfo determined we need an upgrade from sqlcipher version '
@@ -139,7 +139,7 @@ class DBHandler(object):
             migrated = False
             errstr = str(e)
             if self.sqlcipher_version == 4:
-                migrated, errstr = self.upgrade_db_sqlcipher_3_to_4(password, True)
+                migrated, errstr = self.upgrade_db_sqlcipher_3_to_4(password)
 
             if self.sqlcipher_version != 4 or not migrated:
                 errstr = (
@@ -259,7 +259,7 @@ class DBHandler(object):
             self.conn.executescript(script)
         self.conn.execute('PRAGMA foreign_keys=ON')
 
-    def upgrade_db_sqlcipher_3_to_4(self, password, after_the_fact):
+    def upgrade_db_sqlcipher_3_to_4(self, password):
         if hasattr(self, 'conn') and self.conn:
             self.conn.close()
             self.conn = None

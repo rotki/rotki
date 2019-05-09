@@ -39,7 +39,7 @@ def _dict_to_csv_file(path: FilePath, dictionary_list: List) -> None:
             w.writerow(dic)
 
 
-class CSVExporter(object):
+class CSVExporter():
 
     def __init__(
             self,
@@ -132,7 +132,6 @@ class CSVExporter(object):
             rate: FVal,
             fee_cost: Fee,
             amount: FVal,
-            gross_cost: FVal,
             cost: FVal,
             paid_with_asset: Asset,
             paid_with_asset_rate: FVal,

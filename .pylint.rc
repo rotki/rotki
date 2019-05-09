@@ -26,7 +26,25 @@ logging-modules=logging
 [MESSAGES CONTROL]
 
 disable=all
-enable=no-value-for-parameter,too-many-format-args,no-member,bad-except-order,redefined-builtin,bad-continuation,unused-variable,no-self-use
+enable=
+    no-value-for-parameter,
+    too-many-format-args,
+    no-member,
+    bad-except-order,
+    redefined-builtin,
+    unused-variable,
+    no-self-use,
+    import-self,
+    gevent-joinall,
+    useless-object-inheritance,
+    unused-argument,
+    unexpected-keyword-arg,
+    expression-not-assigned,
+    pointless-statement,
+    unused-import,
+    inconsistent-return-statements,
+    reimported,
+    too-many-function-args
 
 [REPORTS]
 

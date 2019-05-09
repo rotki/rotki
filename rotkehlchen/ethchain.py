@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class Ethchain(object):
+class Ethchain():
     def __init__(self, ethrpc_port: int, attempt_connect: bool = True):
         self.web3: Web3 = None
         self.rpc_port = ethrpc_port
