@@ -82,7 +82,7 @@ def action_get_assets(
         raise ValueError('Unexpected action type found.')
 
 
-class Accountant(object):
+class Accountant():
 
     def __init__(
             self,
@@ -191,7 +191,6 @@ class Accountant(object):
             self,
             category: str,
             asset: Asset,
-            amount: FVal,
             timestamp: Timestamp,
             exchange: str,
             fee: Fee,
@@ -444,7 +443,6 @@ class Accountant(object):
             self.add_asset_movement_to_events(
                 category=action.category,
                 asset=action.asset,
-                amount=action.amount,
                 timestamp=action.timestamp,
                 exchange=action.exchange,
                 fee=action.fee,

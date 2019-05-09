@@ -158,7 +158,7 @@ def process_polo_loans(data, start_ts, end_ts):
     return new_data
 
 
-class PriceHistorian(object):
+class PriceHistorian():
     __instance = None
     _historical_data_start: Timestamp
     _cryptocompare: 'Cryptocompare'
@@ -229,7 +229,7 @@ class PriceHistorian(object):
         )
 
 
-class TradesHistorian(object):
+class TradesHistorian():
 
     def __init__(
             self,

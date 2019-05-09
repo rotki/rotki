@@ -242,11 +242,7 @@ class Bittrex(Exchange):
                     f' Ignoring its balance query.',
                 )
                 continue
-            asset_btc_price = self.get_btc_price(asset)
-            usd_price = Inquirer().find_usd_price(
-                asset=asset,
-                asset_btc_price=asset_btc_price,
-            )
+            usd_price = Inquirer().find_usd_price(asset=asset)
 
             balance = dict()
             balance['amount'] = FVal(entry['Balance'])

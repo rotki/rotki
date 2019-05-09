@@ -6,7 +6,7 @@ AcceptableFValInitInput = Union[float, bytes, Decimal, int, str, 'FVal']
 AcceptableFValOtherInput = Union[int, 'FVal']
 
 
-class FVal(object):
+class FVal():
     """A value to represent numbers for financial applications. At the moment
     we use the python Decimal library but the abstraction will help us change the
     underlying implementation if needed.

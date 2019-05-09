@@ -204,9 +204,9 @@ class Bitmex(Exchange):
             self,
             start_ts: typing.Timestamp,
             end_ts: typing.Timestamp,
-            end_at_least_ts: typing.Timestamp,
-            market: Optional[str] = None,
-            count: Optional[int] = None,
+            end_at_least_ts: typing.Timestamp,  # pylint: disable=unused-argument
+            market: Optional[str] = None,  # pylint: disable=unused-argument
+            count: Optional[int] = None,  # pylint: disable=unused-argument
     ) -> List:
 
         try:
@@ -243,8 +243,6 @@ class Bitmex(Exchange):
             start_ts: typing.Timestamp,
             end_ts: typing.Timestamp,
             end_at_least_ts: typing.Timestamp,
-            market: Optional[str] = None,
-            count: Optional[int] = None,
     ) -> List:
         # TODO: Implement cache like in other exchange calls
         try:

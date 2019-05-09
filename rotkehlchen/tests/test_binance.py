@@ -23,7 +23,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 
 
 @pytest.fixture
-def mock_binance(accounting_data_dir, inquirer):
+def mock_binance(accounting_data_dir, inquirer):  # pylint: disable=unused-argument
     binance = Binance(
         api_key=base64.b64encode(make_random_b64bytes(128)),
         secret=base64.b64encode(make_random_b64bytes(128)),
@@ -158,7 +158,7 @@ exchange_info_mock_text = '''{
 def test_binance_backoff_after_429(mock_binance):
     count = 0
 
-    def mock_429(url):
+    def mock_429(url):  # pylint: disable=unused-argument
         nonlocal count
         if count < 2:
             response = MockResponse(429, '{"code": -1103, "msg": "Too many requests"}')
@@ -205,7 +205,10 @@ def analyze_binance_assets(sorted_assets):
             )
 
 
-def test_binance_assets_are_known(accounting_data_dir, inquirer):
+def test_binance_assets_are_known(
+        accounting_data_dir,
+        inquirer,  # pylint: disable=unused-argument
+):
     # use a real binance instance so that we always get the latest data
     binance = Binance(
         api_key=base64.b64encode(make_random_b64bytes(128)),

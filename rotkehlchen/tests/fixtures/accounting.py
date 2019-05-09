@@ -56,7 +56,7 @@ def mocked_price_queries():
 @pytest.fixture
 def price_historian(
         accounting_data_dir,
-        inquirer,
+        inquirer,  # pylint: disable=unused-argument
         should_mock_price_queries,
         mocked_price_queries,
 ):
@@ -111,7 +111,7 @@ def accounting_include_gas_costs():
 
 @pytest.fixture
 def accountant(
-        price_historian,
+        price_historian,  # pylint: disable=unused-argument
         profit_currency,
         accounting_data_dir,
         accounting_create_csv,

@@ -66,7 +66,7 @@ def accounts_result(per_account, totals) -> Dict:
     return process_result(result)
 
 
-class Rotkehlchen(object):
+class Rotkehlchen():
     def __init__(self, args):
         self.lock = Semaphore()
         self.lock.acquire()

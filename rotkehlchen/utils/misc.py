@@ -125,7 +125,7 @@ def combine_stat_dicts(list_of_dicts: List[Dict]) -> Dict:
     return combined_dict
 
 
-def dict_get_sumof(d: Dict[str, Dict[str, FVal]], attribute: str, **args) -> FVal:
+def dict_get_sumof(d: Dict[str, Dict[str, FVal]], attribute: str) -> FVal:
     sum_ = ZERO
     for _, value in d.items():
         sum_ += value[attribute]
@@ -179,6 +179,7 @@ def request_get(uri: str, timeout: int = ALL_REMOTES_TIMEOUT) -> Union[Dict, Lis
         uri,
         requests.get,
         uri,
+        timeout,
     )
 
     if response.status_code != 200:

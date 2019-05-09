@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class TaxableEvents(object):
+class TaxableEvents():
 
     def __init__(self, csv_exporter, profit_currency: Asset):
         self.events: Dict[Asset, Events] = dict()
@@ -311,7 +311,6 @@ class TaxableEvents(object):
                 rate=buy_rate,
                 fee_cost=fee_in_profit_currency,
                 amount=bought_amount,
-                gross_cost=gross_cost,
                 cost=cost_in_profit_currency,
                 paid_with_asset=paid_with_asset,
                 paid_with_asset_rate=paid_with_asset_rate,

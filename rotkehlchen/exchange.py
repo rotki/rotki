@@ -30,7 +30,7 @@ def data_up_todate(json_data: dict, start_ts: typing.Timestamp, end_ts: typing.T
     return start_ts_ok and end_ts_ok
 
 
-class Exchange(object):
+class Exchange():
 
     def __init__(
             self,

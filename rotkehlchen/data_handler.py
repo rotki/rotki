@@ -151,7 +151,7 @@ def verify_otctrade_data(
     return trade, ''
 
 
-class DataHandler(object):
+class DataHandler():
 
     def __init__(self, data_directory: FilePath):
 

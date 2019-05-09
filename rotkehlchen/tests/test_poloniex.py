@@ -69,10 +69,10 @@ def test_query_trade_history_not_shared_cache(data_dir):
     We are using poloniex as an example here. Essentially tests all exchange caches.
     """
 
-    def first_trades(currencyPair, start, end):
+    def first_trades(currencyPair, start, end):  # pylint: disable=unused-argument
         return {'BTC': [{'data': 1}]}
 
-    def second_trades(currencyPair, start, end):
+    def second_trades(currencyPair, start, end):  # pylint: disable=unused-argument
         return {'BTC': [{'data': 2}]}
 
     messages_aggregator = MessagesAggregator()
