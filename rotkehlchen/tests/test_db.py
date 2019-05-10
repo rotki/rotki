@@ -31,7 +31,7 @@ from rotkehlchen.db.dbhandler import (
     detect_sqlcipher_version,
 )
 from rotkehlchen.errors import AuthenticationError, InputError
-from rotkehlchen.tests.utils.constants import A_DAO, A_DOGE, A_GNO, A_RDN, A_XMR
+from rotkehlchen.tests.utils.constants import A_BSV, A_DAO, A_DOGE, A_GNO, A_RDN, A_XMR
 from rotkehlchen.typing import SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import createTimeStamp, ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
@@ -315,7 +315,8 @@ def test_writting_fetching_external_trades(data_dir, username):
 
 
 def test_upgrade_db_1_to_2(data_dir, username):
-    """Test upgrading the DB from version 1 to version 2"""
+    """Test upgrading the DB from version 1 to version 2, which means that
+    ethereum accounts are now checksummed"""
     # Creating a new data dir should work
     data = DataHandler(data_dir)
     data.unlock(username, '123', create_new=True)
@@ -337,6 +338,111 @@ def test_upgrade_db_1_to_2(data_dir, username):
     data.unlock(username, '123', create_new=False)
     accounts = data.db.get_blockchain_accounts()
     assert accounts.eth[0] == '0xe3580C38B0106899F45845E361EA7F8a0062Ef12'
+    assert data.db.get_version() == ROTKEHLCHEN_DB_VERSION
+
+
+def test_upgrade_db_2_to_3(data_dir, username):
+    """Test upgrading the DB from version 2 to version 3, upgrade symbols of
+    assets that are known to have changed"""
+    # Creating a new data dir should work
+    data = DataHandler(data_dir)
+    data.unlock(username, '123', create_new=True)
+    # Manually set to version 2
+    cursor = data.db.conn.cursor()
+    cursor.execute(
+        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+        ('version', str(2)),
+    )
+    data.db.conn.commit()
+    # Manually input data to the affected tables.
+    # timed_balances, multisettings and (external) trades
+    cursor.execute(
+        'INSERT INTO timed_balances('
+        '   time, currency, amount, usd_value) '
+        ' VALUES(?, ?, ?, ?)',
+        ('1557499129', 'BCHSV', '10.1', '150')
+    )
+    cursor.execute(
+        'INSERT INTO timed_balances('
+        '   time, currency, amount, usd_value) '
+        ' VALUES(?, ?, ?, ?)',
+        ('1556392121', 'ETH', '5.5', '245')
+    )
+    cursor.execute(
+        'INSERT INTO multisettings(name, value) VALUES(?, ?)',
+        ('ignored_asset', 'BCHSV'),
+    )
+    cursor.execute(
+        'INSERT INTO multisettings(name, value) VALUES(?, ?)',
+        ('ignored_asset', 'RDN'),
+    )
+    cursor.execute(
+        'INSERT INTO trades('
+        '  time,'
+        '  location,'
+        '  pair,'
+        '  type,'
+        '  amount,'
+        '  rate,'
+        '  fee,'
+        '  fee_currency,'
+        '  link,'
+        '  notes)'
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        (
+            1543298883,
+            'kraken',
+            'ETH_EUR',
+            'buy',
+            '100',
+            '0.5',
+            '0.1',
+            'EUR',
+            '',
+            '',
+        ),
+    )
+    cursor.execute(
+        'INSERT INTO trades('
+        '  time,'
+        '  location,'
+        '  pair,'
+        '  type,'
+        '  amount,'
+        '  rate,'
+        '  fee,'
+        '  fee_currency,'
+        '  link,'
+        '  notes)'
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        (
+            1563298883,
+            'kraken',
+            'BCHSV_EUR',
+            'buy',
+            '100',
+            '0.5',
+            '0.1',
+            'BCHSV',
+            '',
+            '',
+        ),
+    )
+    data.db.conn.commit()
+
+    # now relogin and check that all tables have appropriate data
+    del data
+    data = DataHandler(data_dir)
+    data.unlock(username, '123', create_new=False)
+    ignored_assets = data.db.get_ignored_assets()
+    assert A_RDN in ignored_assets
+    assert A_BSV in ignored_assets
+    owned_assets = data.db.query_owned_assets()
+    assert A_ETH in owned_assets
+    assert A_BSV in owned_assets
+    external_trades = data.db.get_external_trades()
+    assert len(external_trades) == 2
+    assert external_trades[1].fee_currency == 'BSV'
     assert data.db.get_version() == ROTKEHLCHEN_DB_VERSION
 
 
