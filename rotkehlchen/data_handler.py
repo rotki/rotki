@@ -351,7 +351,7 @@ class DataHandler():
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
     ) -> List[ExternalTrade]:
-        return self.db.get_external_trades(from_ts, to_ts)
+        return self.db.get_trades(from_ts=from_ts, to_ts=to_ts, only_external=True)
 
     def add_external_trade(
             self,

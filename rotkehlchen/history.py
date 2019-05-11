@@ -47,7 +47,7 @@ ASSETMOVEMENTS_HISTORYFILE = 'asset_movements_history.json'
 
 
 def include_external_trades(db, start_ts, end_ts, history):
-    external_trades = db.get_external_trades()
+    external_trades = db.get_trades()
     external_trades = trades_from_dictlist(external_trades, start_ts, end_ts)
     history.extend(external_trades)
     history.sort(key=lambda trade: trade.timestamp)

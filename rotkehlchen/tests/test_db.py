@@ -258,23 +258,24 @@ def test_writting_fetching_external_trades(data_dir, username):
     assert result
     result, _ = data.add_external_trade(trade2)
     assert result
-    result = data.get_external_trades()
+    result = data.get_trades()
     del result[0]['id']
     assert result[0] == from_otc_trade(trade1)
     del result[1]['id']
     assert result[1] == from_otc_trade(trade2)
 
     # query trades in period
-    result = data.get_external_trades(
+    result = data.get_trades(
         from_ts=1520553600,  # 09/03/2018
         to_ts=1520726400,  # 11/03/2018
+        only_external=True,
     )
     assert len(result) == 1
     del result[0]['id']
     assert result[0] == from_otc_trade(trade1)
 
     # query trades only with to_ts
-    result = data.get_external_trades(
+    result = data.get_trades(
         to_ts=1520726400,  # 11/03/2018
     )
     assert len(result) == 1
@@ -286,7 +287,7 @@ def test_writting_fetching_external_trades(data_dir, username):
     trade1['otc_id'] = 1
     result, _ = data.edit_external_trade(trade1)
     assert result
-    result = data.get_external_trades()
+    result = data.get_trades()
     assert result[0] == from_otc_trade(trade1)
     del result[1]['id']
     assert result[1] == from_otc_trade(trade2)
@@ -298,7 +299,7 @@ def test_writting_fetching_external_trades(data_dir, username):
     assert not result
     trade1['otc_rate'] = '120'
     trade1['otc_id'] = 1
-    result = data.get_external_trades()
+    result = data.get_trades()
     assert result[0] == from_otc_trade(trade1)
     del result[1]['id']
     assert result[1] == from_otc_trade(trade2)
@@ -309,7 +310,7 @@ def test_writting_fetching_external_trades(data_dir, username):
 
     # delete an external trade
     result, _ = data.delete_external_trade(1)
-    result = data.get_external_trades()
+    result = data.get_trades()
     del result[0]['id']
     assert result[0] == from_otc_trade(trade2)
 
@@ -391,7 +392,7 @@ def test_upgrade_db_2_to_3(data_dir, username):
         'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         (
             1543298883,
-            'kraken',
+            'external',
             'ETH_EUR',
             'buy',
             '100',
@@ -428,6 +429,32 @@ def test_upgrade_db_2_to_3(data_dir, username):
             '',
         ),
     )
+    cursor.execute(
+        'INSERT INTO trades('
+        '  time,'
+        '  location,'
+        '  pair,'
+        '  type,'
+        '  amount,'
+        '  rate,'
+        '  fee,'
+        '  fee_currency,'
+        '  link,'
+        '  notes)'
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        (
+            1564218181,
+            'binance',
+            'BCHSV_EUR',
+            'buy',
+            '100',
+            '0.5',
+            '0.1',
+            'BNB',
+            '',
+            '',
+        ),
+    )
     data.db.conn.commit()
 
     # now relogin and check that all tables have appropriate data
@@ -440,9 +467,13 @@ def test_upgrade_db_2_to_3(data_dir, username):
     owned_assets = data.db.query_owned_assets()
     assert A_ETH in owned_assets
     assert A_BSV in owned_assets
-    external_trades = data.db.get_external_trades()
-    assert len(external_trades) == 2
-    assert external_trades[1].fee_currency == 'BSV'
+    trades = data.db.get_trades(only_external=False)
+    assert len(trades) == 3
+    assert trades[0]['fee_currency'] == 'EUR'
+    assert trades[0]['pair'] == 'ETH_EUR'
+    assert trades[1]['fee_currency'] == 'BSV'
+    assert trades[1]['pair'] == 'BSV_EUR'
+    assert trades[2]['pair'] == 'BSV_EUR'
     assert data.db.get_version() == ROTKEHLCHEN_DB_VERSION
 
 
