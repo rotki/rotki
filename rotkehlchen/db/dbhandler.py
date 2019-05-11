@@ -100,7 +100,7 @@ def detect_sqlcipher_version() -> int:
     return sqlcipher_version
 
 
-ROTKEHLCHEN_DB_VERSION = 2
+ROTKEHLCHEN_DB_VERSION = 3
 DBINFO_FILENAME = 'dbinfo.json'
 
 
@@ -150,7 +150,7 @@ class DBHandler():
                     f'SQLCipher version: {self.sqlcipher_version} - {errstr}',
                 )
 
-        self.run_updates()
+        self._run_updates()
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -231,22 +231,82 @@ class DBHandler():
 
         return int(query[0][0])
 
-    def run_updates(self) -> None:
-        current_version = self.get_version()
+    def _run_updates(self) -> None:
+        self._update_1_to_2()
+        self._update_2_to_3()
 
-        if current_version == 1:
-            # apply the 1 -> 2 updates
-            accounts = self.get_blockchain_accounts()
-            cursor = self.conn.cursor()
-            cursor.execute(
-                'DELETE FROM blockchain_accounts WHERE blockchain=?;', (S_ETH,),
+    def _update_1_to_2(self) -> None:
+        current_version = self.get_version()
+        if current_version != 1:
+            return
+
+        # apply the 1 -> 2 updates
+        accounts = self.get_blockchain_accounts()
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'DELETE FROM blockchain_accounts WHERE blockchain=?;', (S_ETH,),
+        )
+        self.conn.commit()
+        for account in accounts.eth:
+            self.add_blockchain_account(
+                blockchain=SupportedBlockchain.ETHEREUM,
+                account=to_checksum_address(account),
             )
-            self.conn.commit()
-            for account in accounts.eth:
-                self.add_blockchain_account(
-                    blockchain=SupportedBlockchain.ETHEREUM,
-                    account=to_checksum_address(account),
-                )
+
+    def _update_2_to_3(self) -> None:
+        current_version = self.get_version()
+        if current_version != 2:
+            return
+
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'SELECT value FROM multisettings WHERE name="ignored_asset";',
+        )
+        ignored_assets = []
+        for q in cursor:
+            if q[0] == 'BCHSV':
+                ignored_assets.append(('ignored_asset', 'BSV'))
+            else:
+                ignored_assets.append(('ignored_asset', q[0]))
+        cursor.execute(
+            'DELETE FROM multisettings WHERE name="ignored_asset"',
+        )
+        cursor.executemany(
+            'INSERT INTO multisettings(name, value) VALUES(?, ?)',
+            ignored_assets,
+        )
+
+        changed_symbols = [('BSV', 'BCHSV')]
+        cursor.executemany(
+            'UPDATE timed_balances SET currency=? WHERE currency=?',
+            changed_symbols,
+        )
+
+        replaced_symbols = ['BCHSV']
+        replaced_symbols_q = ['pair LIKE "%' + s + '%"' for s in replaced_symbols]
+        query_str = (
+            f'SELECT id, pair, fee_currency FROM trades WHERE fee_currency IN '
+            f'({",".join("?"*len(replaced_symbols))}) OR ('
+            f'{" OR ".join(replaced_symbols_q)})'
+        )
+        cursor.execute(query_str, replaced_symbols)
+        updated_trades = []
+        for q in cursor:
+            new_pair = q[1]
+            if 'BCHSV' in q[1]:
+                new_pair = q[1].replace('BCHSV', 'BSV')
+
+            new_fee_currency = q[2]
+            if 'BCHSV' == q[2]:
+                new_fee_currency = 'BSV'
+
+            updated_trades.append((new_pair, new_fee_currency, q[0]))
+
+        cursor.executemany(
+            'UPDATE trades SET pair=?, fee_currency=? WHERE id=?',
+            updated_trades,
+        )
+        # self.conn.commit()
 
     def connect(self, password: str) -> None:
         self.conn = sqlcipher.connect(  # pylint: disable=no-member
@@ -807,10 +867,11 @@ class DBHandler():
         self.conn.commit()
         return True, ''
 
-    def get_external_trades(
+    def get_trades(
             self,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
+            only_external: bool = True,
     ) -> List[ExternalTrade]:
         cursor = self.conn.cursor()
         query = (
@@ -824,8 +885,10 @@ class DBHandler():
             '  fee,'
             '  fee_currency,'
             '  link,'
-            '  notes FROM trades WHERE location="external" '
+            '  notes FROM trades '
         )
+        if only_external:
+            query += 'WHERE location="external" '
         bindings: Union[
             Tuple,
             Tuple[Timestamp],
