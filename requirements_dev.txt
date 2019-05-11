@@ -3,6 +3,7 @@
 
 pytest==4.1.1
 bump2version==0.5.8
+pytest-cov==2.7.1
 
 # Documentation
 sphinx

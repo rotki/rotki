@@ -1,6 +1,8 @@
 node_modules/
 *.pyc
 .mypy_cache/
+.coverage
+htmlcov/
 /tests/.cache
 error.log
 .cache/
