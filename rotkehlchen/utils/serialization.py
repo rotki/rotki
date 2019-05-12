@@ -9,7 +9,8 @@ from rotkehlchen.typing import TradeType
 class RKLDecoder(json.JSONDecoder):
 
     def __init__(self, *args, **kwargs):
-        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+        kwargs['object_hook'] = self.object_hook
+        json.JSONDecoder.__init__(self, *args, **kwargs)
 
     def object_hook(self, obj):  # pylint: disable=no-self-use
         return rkl_decode_value(obj)
@@ -73,6 +74,7 @@ def rkl_decode_value(
             return FVal(val)
         except ValueError:
             pass
+
     assert not isinstance(val, float)
     return val
 

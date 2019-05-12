@@ -1,6 +1,6 @@
 import logging
 from collections import deque
-from typing import List
+from typing import Deque, List
 
 logger = logging.getLogger(__name__)
 
@@ -11,10 +11,10 @@ class MessagesAggregator():
     """
 
     def __init__(self):
-        self.warnings = deque()
-        self.errors = deque()
+        self.warnings: Deque = deque()
+        self.errors: Deque = deque()
 
-    def add_warning(self, msg: str):
+    def add_warning(self, msg: str) -> None:
         logger.warning(msg)
         self.warnings.appendleft(msg)
 
@@ -24,7 +24,7 @@ class MessagesAggregator():
             result.append(self.warnings.pop())
         return result
 
-    def add_error(self, msg: str):
+    def add_error(self, msg: str) -> None:
         logger.error(msg)
         self.errors.appendleft(msg)
 
