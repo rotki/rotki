@@ -5,7 +5,7 @@ import pytest
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import invert_pair
 from rotkehlchen.serializer import process_result
-from rotkehlchen.utils.misc import iso8601ts_to_timestamp
+from rotkehlchen.utils.misc import combine_dicts, combine_stat_dicts, iso8601ts_to_timestamp
 
 
 def test_process_result():
@@ -48,3 +48,32 @@ def test_invert_pair():
     assert invert_pair('XMR_EUR') == 'EUR_XMR'
     with pytest.raises(ValueError):
         assert invert_pair('sdsadasd')
+
+
+def test_combine_dicts():
+    a = {'a': 1, 'b': 2, 'c': 3}
+    b = {'a': 4, 'c': 2}
+    result = combine_dicts(a, b)
+    assert result == {'a': 5, 'b': 2, 'c': 5}
+
+
+def test_combine_stat_dicts():
+    a = {
+        'EUR': {'amount': FVal('50.5'), 'usd_value': FVal('200.1')},
+        'BTC': {'amount': FVal('2.5'), 'usd_value': FVal('12200.5')},
+    }
+    b = {
+        'RDN': {'amount': FVal('15.5'), 'usd_value': FVal('105.9')},
+    }
+    c = {
+        'EUR': {'amount': FVal('15.5'), 'usd_value': FVal('105.9')},
+        'BTC': {'amount': FVal('3.5'), 'usd_value': FVal('18200.5')},
+        'ETH': {'amount': FVal('100.1'), 'usd_value': FVal('11200.1')},
+    }
+    result = combine_stat_dicts([a, b, c])
+    assert result == {
+        'EUR': {'amount': FVal('66'), 'usd_value': FVal('306')},
+        'RDN': {'amount': FVal('15.5'), 'usd_value': FVal('105.9')},
+        'ETH': {'amount': FVal('100.1'), 'usd_value': FVal('11200.1')},
+        'BTC': {'amount': FVal('6'), 'usd_value': FVal('30401')},
+    }

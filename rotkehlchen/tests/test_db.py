@@ -258,24 +258,23 @@ def test_writting_fetching_external_trades(data_dir, username):
     assert result
     result, _ = data.add_external_trade(trade2)
     assert result
-    result = data.get_trades()
+    result = data.get_external_trades()
     del result[0]['id']
     assert result[0] == from_otc_trade(trade1)
     del result[1]['id']
     assert result[1] == from_otc_trade(trade2)
 
     # query trades in period
-    result = data.get_trades(
+    result = data.get_external_trades(
         from_ts=1520553600,  # 09/03/2018
         to_ts=1520726400,  # 11/03/2018
-        only_external=True,
     )
     assert len(result) == 1
     del result[0]['id']
     assert result[0] == from_otc_trade(trade1)
 
     # query trades only with to_ts
-    result = data.get_trades(
+    result = data.get_external_trades(
         to_ts=1520726400,  # 11/03/2018
     )
     assert len(result) == 1
@@ -287,7 +286,7 @@ def test_writting_fetching_external_trades(data_dir, username):
     trade1['otc_id'] = 1
     result, _ = data.edit_external_trade(trade1)
     assert result
-    result = data.get_trades()
+    result = data.get_external_trades()
     assert result[0] == from_otc_trade(trade1)
     del result[1]['id']
     assert result[1] == from_otc_trade(trade2)
@@ -299,7 +298,7 @@ def test_writting_fetching_external_trades(data_dir, username):
     assert not result
     trade1['otc_rate'] = '120'
     trade1['otc_id'] = 1
-    result = data.get_trades()
+    result = data.get_external_trades()
     assert result[0] == from_otc_trade(trade1)
     del result[1]['id']
     assert result[1] == from_otc_trade(trade2)
@@ -310,7 +309,7 @@ def test_writting_fetching_external_trades(data_dir, username):
 
     # delete an external trade
     result, _ = data.delete_external_trade(1)
-    result = data.get_trades()
+    result = data.get_external_trades()
     del result[0]['id']
     assert result[0] == from_otc_trade(trade2)
 
@@ -361,13 +360,13 @@ def test_upgrade_db_2_to_3(data_dir, username):
         'INSERT INTO timed_balances('
         '   time, currency, amount, usd_value) '
         ' VALUES(?, ?, ?, ?)',
-        ('1557499129', 'BCHSV', '10.1', '150')
+        ('1557499129', 'BCHSV', '10.1', '150'),
     )
     cursor.execute(
         'INSERT INTO timed_balances('
         '   time, currency, amount, usd_value) '
         ' VALUES(?, ?, ?, ?)',
-        ('1556392121', 'ETH', '5.5', '245')
+        ('1556392121', 'ETH', '5.5', '245'),
     )
     cursor.execute(
         'INSERT INTO multisettings(name, value) VALUES(?, ?)',
