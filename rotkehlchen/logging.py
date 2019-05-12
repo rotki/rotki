@@ -2,6 +2,7 @@ import logging
 import random
 import string
 import time
+from typing import Any, Dict, Tuple
 
 from rotkehlchen.fval import FVal
 
@@ -82,14 +83,14 @@ class LoggingSettings():
 
 class RotkehlchenLogsAdapter(logging.LoggerAdapter):
 
-    def __init__(self, logger):
+    def __init__(self, logger: logging.Logger):
         return super().__init__(logger, extra={})
 
-    def process(self, msg, kwargs):
+    def process(self, msg: str, kwargs) -> Tuple[str, Dict]:
         """
         This is the main post-processing function for Rotkehlchen logs
 
-        It checks if the magive keyword argument 'sensitive_log' is in the kwargs
+        It checks if the magic keyword argument 'sensitive_log' is in the kwargs
         and if it is marks the log entry as sensitive. If it is sensitive the values
         of the kwargs are anonymized via the pre-specified rules
 
@@ -103,7 +104,7 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
             is_sensitive = True
 
         if is_sensitive and settings.anonymized_logs:
-            new_kwargs = {}
+            new_kwargs: Dict[str, Any] = {}
             for key, val in kwargs.items():
                 if key in ANONYMIZABLE_BIG_VALUES:
                     new_kwargs[key] = FVal(round(random.uniform(0, 10000), 3))

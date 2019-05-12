@@ -11,7 +11,7 @@ from urllib.parse import urlencode
 import requests
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
-from rotkehlchen.utils.serialization import rlk_jsonloads
+from rotkehlchen.utils.serialization import rlk_jsonloads, rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +42,8 @@ def premium_create_and_verify(api_key, api_secret):
     return premium, valid, empty_or_error
 
 
-def _process_response(response: requests.Response) -> Tuple[bool, Union[Dict, List, str]]:
-    """Processess a response returned from the Rotkehlchen server and returns
+def _process_dict_response(response: requests.Response) -> Tuple[bool, Union[Dict, str]]:
+    """Processess a dict response returned from the Rotkehlchen server and returns
     the result for success or the error string if an error happened"""
     result_or_error: Union[Dict, List, str] = ''
     success = False
@@ -52,8 +52,8 @@ def _process_response(response: requests.Response) -> Tuple[bool, Union[Dict, Li
             'Unexpected status response({}) from rotkehlchen server'.format(
                 response.status_code))
     else:
-        result_or_error = rlk_jsonloads(response.text)
-        if isinstance(result_or_error, Dict) and 'error' in result_or_error:
+        result_or_error = rlk_jsonloads_dict(response.text)
+        if 'error' in result_or_error:
             result_or_error = result_or_error['error']
         else:
             success = True
@@ -143,7 +143,7 @@ class Premium():
         except requests.ConnectionError:
             return False, 'Could not connect to rotkehlchen server'
 
-        success, result_or_error = _process_response(response)
+        success, result_or_error = _process_dict_response(response)
         return success, result_or_error
 
     def pull_data(self):
@@ -161,7 +161,7 @@ class Premium():
         except requests.ConnectionError:
             return False, 'Could not connect to rotkehlchen server'
 
-        success, result_or_error = _process_response(response)
+        success, result_or_error = _process_dict_response(response)
         return success, result_or_error
 
     def query_last_data_metadata(self):
@@ -178,10 +178,10 @@ class Premium():
             )
         except requests.ConnectionError:
             return False, 'Could not connect to rotkehlchen server'
-        success, result_or_error = _process_response(response)
+        success, result_or_error = _process_dict_response(response)
         return success, result_or_error
 
-    def query_statistics_renderer(self):
+    def query_statistics_renderer(self) -> Tuple[bool, str]:
         signature, data = self.sign('statistics_renderer')
         self.session.headers.update({
             'API-SIGN': base64.b64encode(signature.digest()),
@@ -195,5 +195,5 @@ class Premium():
             )
         except requests.ConnectionError:
             return False, 'Could not connect to rotkehlchen server'
-        success, result_or_error = _process_response(response)
+        success, result_or_error = _process_dict_response(response)
         return success, result_or_error['data']
