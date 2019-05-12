@@ -24,14 +24,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def sfjson_loads(s: str) -> Union[Dict, List]:
-    """Exception safe json.loads()"""
-    try:
-        return rlk_jsonloads(s)
-    except json.decoder.JSONDecodeError:
-        return {}
-
-
 def ts_now() -> Timestamp:
     return Timestamp(int(time.time()))
 
@@ -48,19 +40,8 @@ def satoshis_to_btc(satoshis: FVal) -> FVal:
     return satoshis * FVal('0.00000001')
 
 
-def dateToTs(s: str) -> Timestamp:
-    return Timestamp(calendar.timegm(datetime.datetime.strptime(s, '%d/%m/%Y').timetuple()))
-
-
 def tsToDate(ts: Timestamp, formatstr: str = '%d/%m/%Y %H:%M:%S') -> str:
     return datetime.datetime.utcfromtimestamp(ts).strftime(formatstr)
-
-
-def add_entries(a: Dict[str, FVal], b: Dict[str, FVal]) -> Dict[str, FVal]:
-    return {
-        'amount': a['amount'] + b['amount'],
-        'usd_value': a['usd_value'] + b['usd_value'],
-    }
 
 
 def cache_response_timewise(seconds: int = 600):
@@ -105,13 +86,11 @@ def combine_dicts(a: Dict, b: Dict, op=operator.add) -> Dict:
     return new_dict
 
 
-def add_ints_or_combine_dicts(a: Union[Dict, int], b: Union[Dict, int]) -> Union[Dict, int]:
-    if isinstance(a, Dict) and isinstance(b, Dict):
-        return combine_dicts(a, b)
-    elif isinstance(a, int) and isinstance(b, int):
-        return a + b
-
-    raise ValueError(f'Invalid input to add_ints_or_combine_dicts. a: {a}, b: {b}')
+def _add_entries(a: Dict[str, FVal], b: Dict[str, FVal]) -> Dict[str, FVal]:
+    return {
+        'amount': a['amount'] + b['amount'],
+        'usd_value': a['usd_value'] + b['usd_value'],
+    }
 
 
 def combine_stat_dicts(list_of_dicts: List[Dict]) -> Dict:
@@ -120,7 +99,7 @@ def combine_stat_dicts(list_of_dicts: List[Dict]) -> Dict:
 
     combined_dict = list_of_dicts[0]
     for d in list_of_dicts[1:]:
-        combined_dict = combine_dicts(combined_dict, d, add_entries)
+        combined_dict = combine_dicts(combined_dict, d, _add_entries)
 
     return combined_dict
 
