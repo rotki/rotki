@@ -12,7 +12,12 @@ from gevent.event import Event
 from gevent.lock import Semaphore
 
 from rotkehlchen.args import app_args
-from rotkehlchen.errors import AuthenticationError, RotkehlchenPermissionError
+from rotkehlchen.errors import (
+    AuthenticationError,
+    IncorrectApiKeyFormat,
+    RemoteError,
+    RotkehlchenPermissionError,
+)
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -179,8 +184,14 @@ class RotkehlchenServer():
         return {'result': result, 'message': message}
 
     def set_premium_credentials(self, api_key, api_secret):
-        result, empty_or_error = self.rotkehlchen.set_premium_credentials(api_key, api_secret)
-        return {'result': result, 'message': empty_or_error}
+        msg = ''
+        result = False
+        try:
+            self.rotkehlchen.set_premium_credentials(api_key, api_secret)
+            result = True
+        except (AuthenticationError, IncorrectApiKeyFormat) as e:
+            msg = str(e)
+        return {'result': result, 'message': msg}
 
     def set_premium_option_sync(self, should_sync):
         self.rotkehlchen.data.db.update_premium_sync(should_sync)
@@ -248,17 +259,16 @@ class RotkehlchenServer():
         if not self.rotkehlchen.premium:
             return process_result(result_dict)
 
-        active, _ = self.rotkehlchen.premium.is_active()
+        active = self.rotkehlchen.premium.is_active()
         if not active:
             return process_result(result_dict)
 
-        success, result_or_error = self.rotkehlchen.premium.query_statistics_renderer()
-
-        if not success:
-            result_dict['message'] = result_or_error
-        else:
-            result_dict['result'] = result_or_error
+        try:
+            result = self.rotkehlchen.premium.query_statistics_renderer()
+            result_dict['result'] = result
             result_dict['message'] = ''
+        except RemoteError as e:
+            result_dict['message'] = str(e)
 
         return process_result(result_dict)
 

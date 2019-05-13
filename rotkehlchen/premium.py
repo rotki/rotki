@@ -4,14 +4,17 @@ import hmac
 import logging
 import time
 from binascii import Error as binascii_error
+from enum import Enum
 from http import HTTPStatus
-from typing import Dict, List, Tuple, Union
+from typing import Dict, Tuple
 from urllib.parse import urlencode
 
 import requests
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
-from rotkehlchen.utils.serialization import rlk_jsonloads, rlk_jsonloads_dict
+from rotkehlchen.errors import AuthenticationError, IncorrectApiKeyFormat, RemoteError
+from rotkehlchen.typing import ApiKey, ApiSecret
+from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 
@@ -23,88 +26,98 @@ HANDLABLE_STATUS_CODES = [
 ]
 
 
-def premium_create_and_verify(api_key, api_secret):
+def premium_create_and_verify(api_key: ApiKey, api_secret: ApiSecret):
     """Create a Premium object with the key pairs and verify them.
 
-    Returns a tuple (premium_object, valid, empty_or_error) where:
+    Returns the created premium object
 
-    - premium_object: Is the initialized premium_object
-    - valid: A boolean indicating if the api keys are actually valid. This
-             is found out by making an API call.
-    - empty_or_error: A string containing an error message if something went wrong
+    raises IncorrectApiKeyFormat if the given key is in the wrong format
+    raises AuthenticationError if the given key is rejected by the server
     """
     try:
         premium = Premium(api_key, api_secret)
-        valid, empty_or_error = premium.is_active()
     except binascii_error:
-        return None, False, 'incorrect api key format'
+        raise IncorrectApiKeyFormat('Rotkehlchen api key is not in the correct format')
+    if premium.is_active():
+        return premium
 
-    return premium, valid, empty_or_error
+    raise AuthenticationError('Rotkehlchen API key was rejected by server')
 
 
-def _process_dict_response(response: requests.Response) -> Tuple[bool, Union[Dict, str]]:
+def _process_dict_response(response: requests.Response) -> Dict:
     """Processess a dict response returned from the Rotkehlchen server and returns
-    the result for success or the error string if an error happened"""
-    result_or_error: Union[Dict, List, str] = ''
-    success = False
+    the result for success or raises RemoteError if an error happened"""
     if response.status_code not in HANDLABLE_STATUS_CODES:
-        result_or_error = (
-            'Unexpected status response({}) from rotkehlchen server'.format(
-                response.status_code))
-    else:
-        result_or_error = rlk_jsonloads_dict(response.text)
-        if 'error' in result_or_error:
-            result_or_error = result_or_error['error']
-        else:
-            success = True
+        raise RemoteError(
+            f'Unexpected status response({response.status_code}) from '
+            'rotkehlchen server',
+        )
 
-    return success, result_or_error
+    result_dict = rlk_jsonloads_dict(response.text)
+    if 'error' in result_dict:
+        raise RemoteError(result_dict['error'])
+
+    return result_dict
+
+
+class SubscriptionStatus(Enum):
+    UNKNOWN = 1
+    ACTIVE = 2
+    INACTIVE = 3
 
 
 class Premium():
 
-    def __init__(self, api_key, api_secret):
+    def __init__(self, api_key: ApiKey, api_secret: ApiSecret):
+        self.status = SubscriptionStatus.UNKNOWN
         self.session = requests.session()
         self.apiversion = '1'
         self.uri = 'http://localhost:5002/api/{}/'.format(self.apiversion)
         self.reset_credentials(api_key, api_secret)
 
-    def reset_credentials(self, api_key, api_secret):
+    def reset_credentials(self, api_key: ApiKey, api_secret: ApiSecret) -> None:
         self.api_key = api_key
         self.secret = base64.b64decode(api_secret)
-        self.session.headers.update({
+        self.session.headers.update({  # type: ignore
             'API-KEY': self.api_key,
         })
 
-    def set_credentials(self, api_key, api_secret):
-        old_api_key = self.api_key
-        old_secret = base64.b64encode(self.secret)
+    def set_credentials(self, api_key: ApiKey, api_secret: ApiSecret) -> None:
+        """Try to set the credentials for a premium rotkehlchen subscription
 
-        # Forget the cached active value since we are trying new credentials
-        if hasattr(self, 'active'):
-            del self.active
+        Raises IncorrectApiKeyFormat if the given key is not in a proper format
+        Raises AuthenticationError if the given key is rejected by the Rotkehlchen server
+        """
+        old_api_key = self.api_key
+        old_secret = ApiSecret(base64.b64encode(self.secret))
+
+        # Forget the last active value since we are trying new credentials
+        self.status = SubscriptionStatus.UNKNOWN
 
         # If what's given is not even valid b64 encoding then stop here
         try:
             self.reset_credentials(api_key, api_secret)
         except binascii_error as e:
-            return False, 'Secret Key formatting error: {}'.format(e)
+            raise IncorrectApiKeyFormat(f'Secret Key formatting error: {str(e)}')
 
-        active, empty_or_error = self.is_active()
+        active = self.is_active()
         if not active:
             self.reset_credentials(old_api_key, old_secret)
-            return False, empty_or_error
-        return True, ''
+            raise AuthenticationError('Rotkehlchen API key was rejected by server')
 
-    def is_active(self):
-        if hasattr(self, 'active'):
-            return self.active, ''
-        else:
-            self.active, result_or_error = self.query_last_data_metadata()
-        emptystr_or_error = '' if self.active else result_or_error
-        return self.active, emptystr_or_error
+    def is_active(self) -> bool:
+        if self.status == SubscriptionStatus.ACTIVE:
+            return True
 
-    def sign(self, method, **kwargs):
+        try:
+            self.query_last_data_metadata()
+            self.status = SubscriptionStatus.ACTIVE
+            return True
+        except RemoteError:
+            self.status = SubscriptionStatus.INACTIVE
+            return False
+
+    def sign(self, method: str, **kwargs) -> Tuple[hmac.HMAC, Dict]:
         urlpath = '/api/' + self.apiversion + '/' + method
 
         req = kwargs
@@ -120,7 +133,18 @@ class Premium():
         )
         return signature, req
 
-    def upload_data(self, data_blob, our_hash, last_modify_ts, compression_type):
+    def upload_data(
+            self,
+            data_blob,
+            our_hash,
+            last_modify_ts,
+            compression_type,
+    ) -> Dict:
+        """Uploads data to the server and returns the response dict
+
+        Raises RemoteError if there are problems reaching the server or if
+        there is an error returned by the server
+        """
         signature, data = self.sign(
             'save_data',
             data_blob=data_blob,
@@ -130,7 +154,7 @@ class Premium():
             length=len(data_blob),
             compression=compression_type,
         )
-        self.session.headers.update({
+        self.session.headers.update({  # type: ignore
             'API-SIGN': base64.b64encode(signature.digest()),
         })
 
@@ -141,14 +165,18 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.ConnectionError:
-            return False, 'Could not connect to rotkehlchen server'
+            raise RemoteError('Could not connect to rotkehlchen server')
 
-        success, result_or_error = _process_dict_response(response)
-        return success, result_or_error
+        return _process_dict_response(response)
 
-    def pull_data(self):
+    def pull_data(self) -> Dict:
+        """Pulls data from the server and returns the response dict
+
+        Raises RemoteError if there are problems reaching the server or if
+        there is an error returned by the server
+        """
         signature, data = self.sign('get_saved_data')
-        self.session.headers.update({
+        self.session.headers.update({  # type: ignore
             'API-SIGN': base64.b64encode(signature.digest()),
         })
 
@@ -159,14 +187,18 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.ConnectionError:
-            return False, 'Could not connect to rotkehlchen server'
+            raise RemoteError('Could not connect to rotkehlchen server')
 
-        success, result_or_error = _process_dict_response(response)
-        return success, result_or_error
+        return _process_dict_response(response)
 
-    def query_last_data_metadata(self):
+    def query_last_data_metadata(self) -> Dict:
+        """Queries last metadata from the server and returns the response dict
+
+        Raises RemoteError if there are problems reaching the server or if
+        there is an error returned by the server
+        """
         signature, data = self.sign('last_data_metadata')
-        self.session.headers.update({
+        self.session.headers.update({  # type: ignore
             'API-SIGN': base64.b64encode(signature.digest()),
         })
 
@@ -177,13 +209,18 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.ConnectionError:
-            return False, 'Could not connect to rotkehlchen server'
-        success, result_or_error = _process_dict_response(response)
-        return success, result_or_error
+            raise RemoteError('Could not connect to rotkehlchen server')
 
-    def query_statistics_renderer(self) -> Tuple[bool, str]:
+        return _process_dict_response(response)
+
+    def query_statistics_renderer(self) -> str:
+        """Queries for the source of the statistics_renderer from the server
+
+        Raises RemoteError if there are problems reaching the server or if
+        there is an error returned by the server
+        """
         signature, data = self.sign('statistics_renderer')
-        self.session.headers.update({
+        self.session.headers.update({  # type: ignore
             'API-SIGN': base64.b64encode(signature.digest()),
         })
 
@@ -194,6 +231,7 @@ class Premium():
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.ConnectionError:
-            return False, 'Could not connect to rotkehlchen server'
-        success, result_or_error = _process_dict_response(response)
-        return success, result_or_error['data']
+            raise RemoteError('Could not connect to rotkehlchen server')
+
+        result = _process_dict_response(response)
+        return result['data']
