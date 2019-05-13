@@ -30,6 +30,10 @@ class AuthenticationError(Exception):
     pass
 
 
+class IncorrectApiKeyFormat(Exception):
+    pass
+
+
 class RotkehlchenPermissionError(Exception):
     pass
 

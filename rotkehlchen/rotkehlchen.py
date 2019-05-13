@@ -20,7 +20,9 @@ from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.errors import (
     AuthenticationError,
     EthSyncError,
+    IncorrectApiKeyFormat,
     InputError,
+    RemoteError,
     RotkehlchenPermissionError,
 )
 from rotkehlchen.ethchain import Ethchain
@@ -193,8 +195,9 @@ class Rotkehlchen():
 
         if api_key != '':
             assert create_new, 'We should never get here for an already existing account'
-            self.premium, valid, empty_or_error = premium_create_and_verify(api_key, api_secret)
-            if not valid:
+            try:
+                self.premium = premium_create_and_verify(api_key, api_secret)
+            except (IncorrectApiKeyFormat, AuthenticationError) as e:
                 log.error('Given API key is invalid')
                 # At this point we are at a new user trying to create an account with
                 # premium API keys and we failed. But a directory was created. Remove it.
@@ -210,29 +213,23 @@ class Rotkehlchen():
                 shutil.rmtree(self.user_directory)
                 raise AuthenticationError(
                     'Could not verify keys for the new account. '
-                    '{}'.format(empty_or_error),
+                    '{}'.format(str(e)),
                 )
-        else:
-            # If we got premium initialize it and try to sync with the server
-            premium_credentials = self.data.db.get_rotkehlchen_premium()
-            if premium_credentials:
-                api_key = premium_credentials[0]
-                api_secret = premium_credentials[1]
-                self.premium, valid, empty_or_error = premium_create_and_verify(
-                    api_key,
-                    api_secret,
+
+        # else, if we got premium initialize it and try to sync with the server
+        premium_credentials = self.data.db.get_rotkehlchen_premium()
+        if premium_credentials:
+            api_key = premium_credentials[0]
+            api_secret = premium_credentials[1]
+            try:
+                self.premium = premium_create_and_verify(api_key, api_secret)
+            except (IncorrectApiKeyFormat, AuthenticationError) as e:
+                log.error(
+                    f'Could not authenticate with the rotkehlchen server with '
+                    f'the API keys found in the Database. Error: {str(e)}',
                 )
-                if not valid:
-                    log.error(
-                        'The API keys found in the Database are not valid. Perhaps '
-                        'they expired?',
-                    )
-                    del self.premium
-                    self.premium = None
-                    return
-            else:
-                # no premium credentials in the DB
-                return
+                del self.premium
+                self.premium = None
 
         if self.can_sync_data_from_server():
             if sync_approval == 'unknown' and not create_new:
@@ -353,18 +350,19 @@ class Rotkehlchen():
             user=user,
         )
 
-    def set_premium_credentials(self, api_key, api_secret):
+    def set_premium_credentials(self, api_key: ApiKey, api_secret: ApiSecret) -> None:
+        """
+        Raises IncorrectApiKeyFormat if the given key is not in a proper format
+        Raises AuthenticationError if the given key is rejected by the Rotkehlchen server
+        """
         log.info('Setting new premium credentials')
-        if self.premium is not None:
-            valid, empty_or_error = self.premium.set_credentials(api_key, api_secret)
-        else:
-            self.premium, valid, empty_or_error = premium_create_and_verify(api_key, api_secret)
 
-        if valid:
-            self.data.set_premium_credentials(api_key, api_secret)
-            return True, ''
-        log.error('Setting new premium credentials failed', error=empty_or_error)
-        return False, empty_or_error
+        if self.premium is not None:
+            self.premium.set_credentials(api_key, api_secret)
+        else:
+            self.premium = premium_create_and_verify(api_key, api_secret)
+
+        self.data.set_premium_credentials(api_key, api_secret)
 
     def maybe_upload_data_to_server(self):
         # upload only if unlocked user has premium
@@ -376,80 +374,84 @@ class Rotkehlchen():
         if diff > 3600:
             self.upload_data_to_server()
 
-    def upload_data_to_server(self):
+    def upload_data_to_server(self) -> None:
         log.debug('upload to server -- start')
         data, our_hash = self.data.compress_and_encrypt_db(self.password)
-        success, result_or_error = self.premium.query_last_data_metadata()
-        if not success:
+        try:
+            result = self.premium.query_last_data_metadata()
+        except RemoteError as e:
             log.debug(
                 'upload to server -- query last metadata failed',
-                error=result_or_error,
+                error=str(e),
             )
             return
 
         log.debug(
             'CAN_PUSH',
             ours=our_hash,
-            theirs=result_or_error['data_hash'],
+            theirs=result['data_hash'],
         )
-        if our_hash == result_or_error['data_hash']:
+        if our_hash == result['data_hash']:
             log.debug('upload to server -- same hash')
             # same hash -- no need to upload anything
             return
 
         our_last_write_ts = self.data.db.get_last_write_ts()
-        if our_last_write_ts <= result_or_error['last_modify_ts']:
+        if our_last_write_ts <= result['last_modify_ts']:
             # Server's DB was modified after our local DB
             log.debug("CAN_PUSH -> 3")
             log.debug('upload to server -- remote db more recent than local')
             return
 
-        success, result_or_error = self.premium.upload_data(
-            data,
-            our_hash,
-            our_last_write_ts,
-            'zlib',
-        )
-        if not success:
-            log.debug('upload to server -- upload error', error=result_or_error)
+        try:
+            self.premium.upload_data(
+                data_blob=data,
+                our_hash=our_hash,
+                last_modify_ts=our_last_write_ts,
+                compression_type='zlib',
+            )
+        except RemoteError as e:
+            log.debug('upload to server -- upload error', error=str(e))
             return
 
         self.last_data_upload_ts = ts_now()
         log.debug('upload to server -- success')
 
-    def can_sync_data_from_server(self):
+    def can_sync_data_from_server(self) -> bool:
         log.debug('sync data from server -- start')
         _, our_hash = self.data.compress_and_encrypt_db(self.password)
-        success, result_or_error = self.premium.query_last_data_metadata()
-        if not success:
-            log.debug('sync data from server failed', error=result_or_error)
+        try:
+            result = self.premium.query_last_data_metadata()
+        except RemoteError as e:
+            log.debug('sync data from server failed', error=str(e))
             return False
 
         log.debug(
             'CAN_PULL',
             ours=our_hash,
-            theirs=result_or_error['data_hash'],
+            theirs=result['data_hash'],
         )
-        if our_hash == result_or_error['data_hash']:
+        if our_hash == result['data_hash']:
             log.debug('sync from server -- same hash')
             # same hash -- no need to get anything
             return False
 
         our_last_write_ts = self.data.db.get_last_write_ts()
-        if our_last_write_ts >= result_or_error['last_modify_ts']:
+        if our_last_write_ts >= result['last_modify_ts']:
             # Local DB is newer than Server DB
             log.debug('sync from server -- local DB more recent than remote')
             return False
 
         return True
 
-    def sync_data_from_server(self):
-        success, error_or_result = self.premium.pull_data()
-        if not success:
-            log.debug('sync from server -- pulling failed.', error=error_or_result)
+    def sync_data_from_server(self) -> bool:
+        try:
+            result = self.premium.pull_data()
+        except RemoteError as e:
+            log.debug('sync from server -- pulling failed.', error=str(e))
             return False
 
-        self.data.decompress_and_decrypt_db(self.password, error_or_result['data'])
+        self.data.decompress_and_decrypt_db(self.password, result)
         return True
 
     def start(self):
