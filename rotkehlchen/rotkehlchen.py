@@ -231,6 +231,9 @@ class Rotkehlchen():
                 del self.premium
                 self.premium = None
 
+        if not self.premium:
+            return
+
         if self.can_sync_data_from_server():
             if sync_approval == 'unknown' and not create_new:
                 log.info('DB data at server newer than local')
