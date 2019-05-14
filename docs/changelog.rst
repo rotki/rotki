@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`329` Maintain a list of supported assets and converters from/to each exchange or service.
 * :feature:`194` Add setting for date display format.
 * :bug:`334` Handle too many requests error for the exchangerates api.
 * :bug:`323` Properly display usd value For JPY and some other assets in kraken where XXBT is the quote asset.
