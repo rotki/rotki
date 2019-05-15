@@ -29,6 +29,17 @@ class RKLEncoder(json.JSONEncoder):
 
         return json.JSONEncoder.default(self, obj)
 
+    def _encode(self, obj):
+        if isinstance(obj, dict):
+            def transform_asset(o):
+                return self._encode(o.identifier if isinstance(o, Asset) else o)
+            return {transform_asset(k): transform_asset(v) for k, v in obj.items()}
+        else:
+            return obj
+
+    def encode(self, obj):
+        return super().encode(self._encode(obj))
+
 
 def rlk_jsonloads(data: str) -> Union[Dict, List]:
     return json.loads(data, cls=RKLDecoder)
