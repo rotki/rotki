@@ -357,7 +357,9 @@ UNSUPPORTED_BITTREX_ASSETS = (
 )
 
 
-UNSUPPORTED_BINANCE_ASSETS = ()
+UNSUPPORTED_BINANCE_ASSETS = (
+    'ETF',  # ETF is a dead coin given to all ETH holders. Just ignore
+)
 
 CRYPTOCOMPARE_TO_WORLD = {v: k for k, v in WORLD_TO_CRYPTOCOMPARE.items()}
 
