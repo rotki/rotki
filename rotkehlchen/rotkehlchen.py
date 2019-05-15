@@ -119,10 +119,10 @@ class Rotkehlchen():
         self.bitmex = None
         self.binance = None
 
-        self.data = DataHandler(self.data_dir)
+        self.msg_aggregator = MessagesAggregator()
+        self.data = DataHandler(self.data_dir, self.msg_aggregator)
         # Initialize the Inquirer singleton
         Inquirer(data_dir=self.data_dir)
-        self.msg_aggregator = MessagesAggregator()
 
         self.lock.release()
         self.shutdown_event = gevent.event.Event()

@@ -31,6 +31,7 @@ from rotkehlchen.typing import (
     Timestamp,
     TradePair,
 )
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import createTimeStamp, is_number, ts_now
 
 logger = logging.getLogger(__name__)
@@ -153,11 +154,12 @@ def verify_otctrade_data(
 
 class DataHandler():
 
-    def __init__(self, data_directory: FilePath):
+    def __init__(self, data_directory: FilePath, msg_aggregator: MessagesAggregator):
 
         self.data_directory = data_directory
         self.eth_tokens = AssetResolver().get_all_eth_tokens()
         self.username = 'no_user'
+        self.msg_aggregator = msg_aggregator
 
     def logout(self):
         self.username = 'no_user'
@@ -165,7 +167,12 @@ class DataHandler():
         del self.db
         self.db = None
 
-    def unlock(self, username: str, password: str, create_new: bool) -> FilePath:
+    def unlock(
+            self,
+            username: str,
+            password: str,
+            create_new: bool,
+    ) -> FilePath:
         self.username = username
         user_data_dir = cast(FilePath, os.path.join(self.data_directory, username))
         if create_new:
@@ -195,7 +202,7 @@ class DataHandler():
                     'deleted or is corrupt. Please recreate the user account. '
                     'A backup of the user directory was created.'.format(username))
 
-        self.db: DBHandler = DBHandler(user_data_dir, password)
+        self.db: DBHandler = DBHandler(user_data_dir, password, self.msg_aggregator)
         self.user_data_dir = user_data_dir
         return user_data_dir
 
