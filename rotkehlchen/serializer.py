@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Union
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.dbhandler import AssetBalance, LocationData, SingleAssetBalance
 from rotkehlchen.fval import FVal
 
@@ -15,6 +16,8 @@ def _process_entry(entry: Any) -> Union[str, List, Dict]:
     elif isinstance(entry, dict):
         new_dict = dict()
         for k, v in entry.items():
+            if isinstance(k, Asset):
+                k = k.identifier
             new_dict[k] = _process_entry(v)
         return new_dict
     elif isinstance(entry, LocationData):
@@ -30,14 +33,20 @@ def _process_entry(entry: Any) -> Union[str, List, Dict]:
         }
     elif isinstance(entry, tuple):
         raise ValueError('Query results should not contain tuples')
+    elif isinstance(entry, Asset):
+        return Asset.identifier
     else:
         return entry
 
 
 def process_result(result: Dict) -> Dict:
-    """Before sending out a result a dictionary via the server we are turning
-    all Decimals to strings so that the serialization to float/big number is handled
-    by the client application and we lose nothing in the transfer"""
+    """Before sending out a result a dictionary via the server we are turning:
+
+        - all Decimals to strings so that the serialization to float/big number
+          is handled by the client application and we lose nothing in the transfer
+
+        - if a dictionary has an Asset for a key use its identifier as the key value
+    """
     processed_result = _process_entry(result)
     assert isinstance(processed_result, Dict)
     return processed_result
