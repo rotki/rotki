@@ -158,7 +158,7 @@ def request_get(uri: str, timeout: int = ALL_REMOTES_TIMEOUT) -> Union[Dict, Lis
         uri,
         requests.get,
         uri,
-        timeout,
+        str(timeout),
     )
 
     if response.status_code != 200:
