@@ -1,7 +1,9 @@
+import operator
 import os
 
 import pytest
 
+from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.tests.utils.blockchain import DEFAULT_BALANCE
 from rotkehlchen.utils.misc import from_wei
 
@@ -34,3 +36,16 @@ def test_eth_connection_initial_balances(
     totals_eth = res['totals']['ETH']
     assert totals_eth['amount'] == number_of_accounts * eth_default_balance
     assert 'usd_value' in totals_eth
+
+
+def test_query_btc_balances(blockchain):
+    blockchain.query_btc_balances()
+    assert blockchain.totals[A_BTC] == {}
+    assert blockchain.balances[A_BTC] == {}
+
+    account = '3BZU33iFcAiyVyu2M2GhEpLNuh81GymzJ7'
+    blockchain.modify_btc_account(account, 'append', operator.add)
+
+    blockchain.query_btc_balances()
+    assert 'usd_value' in blockchain.totals[A_BTC]
+    assert 'amount' in blockchain.totals[A_BTC]
