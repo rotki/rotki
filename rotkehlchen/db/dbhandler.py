@@ -15,7 +15,7 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants import SUPPORTED_EXCHANGES, YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH, S_USD
 from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
-from rotkehlchen.errors import AuthenticationError, InputError
+from rotkehlchen.errors import AuthenticationError, InputError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import Trade
@@ -30,6 +30,7 @@ from rotkehlchen.typing import (
     SupportedBlockchain,
     Timestamp,
 )
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
@@ -108,7 +109,8 @@ DBINFO_FILENAME = 'dbinfo.json'
 # http://www.sql-join.com/sql-join-types
 class DBHandler():
 
-    def __init__(self, user_data_dir: FilePath, password: str):
+    def __init__(self, user_data_dir: FilePath, password: str, msg_aggregator: MessagesAggregator):
+        self.msg_aggregator = msg_aggregator
         self.user_data_dir = user_data_dir
         self.sqlcipher_version = detect_sqlcipher_version()
         action = self.read_info_at_start()
@@ -254,6 +256,7 @@ class DBHandler():
             )
 
     def _update_2_to_3(self) -> None:
+        """Update BCHSV to BSV (and other asset symbols known to need changing)"""
         current_version = self.get_version()
         if current_version != 2:
             return
@@ -306,7 +309,6 @@ class DBHandler():
             'UPDATE trades SET pair=?, fee_currency=? WHERE id=?',
             updated_trades,
         )
-        # self.conn.commit()
 
     def connect(self, password: str) -> None:
         self.conn = sqlcipher.connect(  # pylint: disable=no-member
@@ -617,9 +619,17 @@ class DBHandler():
         query = cursor.execute(
             'SELECT value FROM multisettings WHERE name="eth_token";',
         )
-        result = [
-            EthereumToken(identifier=q[0]) for q in query
-        ]
+        result = []
+        for q in query:
+            try:
+                result.append(EthereumToken(q[0]))
+            except UnknownAsset:
+                self.msg_aggregator.add_warning(
+                    f'Unknown/unsupported asset {q[0]} found in the database. '
+                    f'If you believe this should be supported open an issue in github',
+                )
+                continue
+
         return result
 
     def add_blockchain_account(

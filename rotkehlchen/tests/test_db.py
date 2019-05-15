@@ -9,7 +9,7 @@ import pytest
 from eth_utils.address import to_checksum_address
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants import YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD, FIAT_CURRENCIES, S_CNY, S_EUR
 from rotkehlchen.data_handler import DataHandler
@@ -33,6 +33,7 @@ from rotkehlchen.db.dbhandler import (
 from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.tests.utils.constants import A_BSV, A_DAO, A_DOGE, A_GNO, A_RDN, A_XMR
 from rotkehlchen.typing import SupportedBlockchain, Timestamp
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import createTimeStamp, ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
@@ -50,8 +51,9 @@ TABLES_AT_INIT = [
 
 def test_data_init_and_password(data_dir, username):
     """DB Creation logic and tables at start testing"""
+    msg_aggregator = MessagesAggregator()
     # Creating a new data dir should work
-    data = DataHandler(data_dir)
+    data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
     assert os.path.exists(os.path.join(data_dir, username))
 
@@ -65,7 +67,7 @@ def test_data_init_and_password(data_dir, username):
 
     # now relogin and check all tables are there
     del data
-    data = DataHandler(data_dir)
+    data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=False)
     cursor = data.db.conn.cursor()
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
@@ -75,14 +77,15 @@ def test_data_init_and_password(data_dir, username):
 
     # finally logging in with wrong password should also fail
     del data
-    data = DataHandler(data_dir)
+    data = DataHandler(data_dir, msg_aggregator)
     with pytest.raises(AuthenticationError):
         data.unlock(username, '1234', create_new=False)
 
 
 def test_export_import_db(data_dir, username):
     """Create a DB, write some data and then after export/import confirm it's there"""
-    data = DataHandler(data_dir)
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
     data.set_fiat_balance('EUR', '10')
 
@@ -96,7 +99,8 @@ def test_export_import_db(data_dir, username):
 
 
 def test_writting_fetching_data(data_dir, username):
-    data = DataHandler(data_dir)
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
 
     tokens = [A_GNO, A_RDN]
@@ -228,7 +232,8 @@ def from_otc_trade(trade: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def test_writting_fetching_external_trades(data_dir, username):
-    data = DataHandler(data_dir)
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
 
     # add 2 trades and check they are in the DB
@@ -318,7 +323,8 @@ def test_upgrade_db_1_to_2(data_dir, username):
     """Test upgrading the DB from version 1 to version 2, which means that
     ethereum accounts are now checksummed"""
     # Creating a new data dir should work
-    data = DataHandler(data_dir)
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
     # Manually set to version 1 and input a non checksummed account
     cursor = data.db.conn.cursor()
@@ -334,7 +340,7 @@ def test_upgrade_db_1_to_2(data_dir, username):
 
     # now relogin and check that the account has been re-saved as checksummed
     del data
-    data = DataHandler(data_dir)
+    data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=False)
     accounts = data.db.get_blockchain_accounts()
     assert accounts.eth[0] == '0xe3580C38B0106899F45845E361EA7F8a0062Ef12'
@@ -345,7 +351,8 @@ def test_upgrade_db_2_to_3(data_dir, username):
     """Test upgrading the DB from version 2 to version 3, upgrade symbols of
     assets that are known to have changed"""
     # Creating a new data dir should work
-    data = DataHandler(data_dir)
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
     # Manually set to version 2
     cursor = data.db.conn.cursor()
@@ -458,7 +465,7 @@ def test_upgrade_db_2_to_3(data_dir, username):
 
     # now relogin and check that all tables have appropriate data
     del data
-    data = DataHandler(data_dir)
+    data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=False)
     ignored_assets = data.db.get_ignored_assets()
     assert A_RDN in ignored_assets
@@ -477,7 +484,8 @@ def test_upgrade_db_2_to_3(data_dir, username):
 
 
 def test_settings_entry_types(data_dir, username):
-    data = DataHandler(data_dir)
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
 
     success, msg = data.set_settings({
@@ -525,7 +533,8 @@ def test_settings_entry_types(data_dir, username):
 
 
 def test_balance_save_frequency_check(data_dir, username):
-    data = DataHandler(data_dir)
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
 
     now = int(time.time())
@@ -564,7 +573,8 @@ def test_upgrade_sqlcipher_v3_to_v4_without_dbinfo(data_dir):
     )
 
     # the constructor should migrate it in-place and we should have a working DB
-    db = DBHandler(userdata_dir, '123')
+    msg_aggregator = MessagesAggregator()
+    db = DBHandler(userdata_dir, '123', msg_aggregator)
     assert db.get_version() == ROTKEHLCHEN_DB_VERSION
 
 
@@ -588,7 +598,8 @@ def test_upgrade_sqlcipher_v3_to_v4_with_dbinfo(data_dir):
         f.write(rlk_jsondumps(dbinfo))
 
     # the constructor should migrate it in-place and we should have a working DB
-    db = DBHandler(userdata_dir, '123')
+    msg_aggregator = MessagesAggregator()
+    db = DBHandler(userdata_dir, '123', msg_aggregator)
     assert db.get_version() == ROTKEHLCHEN_DB_VERSION
 
 
@@ -630,7 +641,8 @@ def test_sqlcipher_detect_version():
 
 
 def test_data_set_fiat_balance(data_dir, username):
-    data = DataHandler(data_dir)
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
 
     amount_eur = '100'
@@ -693,7 +705,8 @@ asset_balances = [
 
 
 def test_query_timed_balances(data_dir, username):
-    data = DataHandler(data_dir)
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
     data.db.add_multiple_balances(asset_balances)
 
@@ -722,7 +735,8 @@ def test_query_timed_balances(data_dir, username):
 
 
 def test_query_owned_assets(data_dir, username):
-    data = DataHandler(data_dir)
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
 
     balances = deepcopy(asset_balances)
@@ -748,7 +762,8 @@ def test_query_owned_assets(data_dir, username):
 
 
 def test_get_latest_location_value_distribution(data_dir, username):
-    data = DataHandler(data_dir)
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
 
     locations = [
@@ -816,7 +831,8 @@ def test_get_latest_location_value_distribution(data_dir, username):
 
 
 def test_get_latest_asset_value_distribution(data_dir, username):
-    data = DataHandler(data_dir)
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
 
     balances = deepcopy(asset_balances)
@@ -857,3 +873,22 @@ def test_get_latest_asset_value_distribution(data_dir, username):
     assert assets[1] == eth
     assert assets[2] == eur
     assert assets[3] == xmr
+
+
+def test_get_owned_tokens_with_unknown(data_dir, username):
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
+    data.unlock(username, '123', create_new=True)
+    cursor = data.db.conn.cursor()
+    tokens = ['RDN', 'GNO', 'DASDSADSAD']
+    cursor.executemany(
+        'INSERT INTO multisettings(name, value) VALUES(?, ?)',
+        [('eth_token', t) for t in tokens],
+    )
+    data.db.conn.commit()
+
+    tokens = data.db.get_owned_tokens()
+    assert tokens == [EthereumToken('GNO'), EthereumToken('RDN')]
+    warnings = data.db.msg_aggregator.consume_warnings()
+    assert len(warnings) == 1
+    assert 'Unknown/unsupported asset DASDSADSAD' in warnings[0]
