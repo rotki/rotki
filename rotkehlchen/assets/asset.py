@@ -1,3 +1,4 @@
+from functools import total_ordering
 from typing import Any, Optional
 
 from dataclasses import dataclass, field
@@ -109,6 +110,7 @@ WORLD_TO_BINANCE = {
 }
 
 
+@total_ordering
 @dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
 class Asset():
     identifier: str
@@ -188,6 +190,14 @@ class Asset():
 
     def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
+
+    def __lt__(self, other: Any) -> bool:
+        if isinstance(other, Asset):
+            return self.identifier < other.identifier
+        elif isinstance(other, str):
+            return self.identifier < other
+        else:
+            raise ValueError(f'Invalid comparison of asset with {type(other)}')
 
 
 @dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
