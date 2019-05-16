@@ -349,11 +349,15 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # Foresting. As of 22/03/2019 no data found.
     # Only exists in bittrex. Perhaps it will soon be added to other APIs.
     # https://international.bittrex.com/Market/Index?MarketName=BTC-PTON
-    'PTON'
-    # Ocean ICO. As of 02/05/2019 no data found.
+    'PTON',
+    # Ocean IEO. As of 02/05/2019 no data found.
     # Only exists in bittrex. Perhaps it will soon be added to other APIs.
     # https://international.bittrex.com/Market/Index?MarketName=BTC-OCEAN
-    'OCEAN'
+    'OCEAN',
+    # VDX IEO. As of 16/05/2019 no data found.
+    # Only exists in bittrex. Perhaps it will soon be added to other APIs.
+    # https://international.bittrex.com/Market/Index?MarketName=BTC-VDX
+    'VDX',
 )
 
 
