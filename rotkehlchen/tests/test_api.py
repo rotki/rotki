@@ -20,9 +20,9 @@ def check_positive_balances_result(response, asset_symbols, account):
     for asset_symbol in asset_symbols:
         if asset_symbol != 'BTC':
             assert asset_symbol in response['per_account']['ETH'][account]
-        assert 'usd_value' in response['per_account']['ETH'][account]
-        assert 'amount' in response['totals']['ETH']
-        assert 'usd_value' in response['totals']['ETH']
+        assert 'usd_value' in response['per_account'][asset_symbol][account]
+        assert 'amount' in response['totals'][asset_symbol]
+        assert 'usd_value' in response['totals'][asset_symbol]
 
 
 def check_no_balances_result(response, asset_symbols, check_per_account=True):
@@ -102,10 +102,10 @@ def test_periodic_query(rotkehlchen_server):
     assert result['history_process_current_ts'] == -1
 
 
-def test_periodic_data_before_login_completion(cli_args):
+@pytest.mark.parametrize('start_with_logged_in_user', [False])
+def test_periodic_data_before_login_completion(rotkehlchen_server):
     """Test that periodic query returns empty list if user is not yet logged in"""
-    rotkehlchen = Rotkehlchen(cli_args)
-    result = rotkehlchen.query_periodic_data()
+    result = rotkehlchen_server.query_periodic_data()
     assert len(result) == 0
 
 
