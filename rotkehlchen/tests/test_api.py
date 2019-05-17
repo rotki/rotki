@@ -8,7 +8,6 @@ from rotkehlchen.data_handler import VALID_SETTINGS
 from rotkehlchen.db.dbhandler import ROTKEHLCHEN_DB_VERSION, AssetBalance
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.typing import Timestamp
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
@@ -34,6 +33,16 @@ def check_no_balances_result(response, asset_symbols, check_per_account=True):
             assert response['per_account'][asset_symbol] == {}
         assert FVal(response['totals'][asset_symbol]['amount']) == FVal('0')
         assert FVal(response['totals'][asset_symbol]['usd_value']) == FVal('0')
+
+
+def check_proper_unlock_result(response):
+    assert response['result'] is True
+    assert response['message'] == ''
+    assert isinstance(response['exchanges'], list)
+    assert 'premium' in response
+    assert response['settings']['db_version'] == ROTKEHLCHEN_DB_VERSION
+    for setting in VALID_SETTINGS:
+        assert setting in response['settings']
 
 
 def test_add_remove_blockchain_account(rotkehlchen_server):
@@ -149,15 +158,44 @@ def test_logout_and_login_again(rotkehlchen_server, username):
         api_key='',
         api_secret='',
     )
-    assert response['result'] is True
-    assert response['message'] == ''
-    assert isinstance(response['exchanges'], list)
-    assert 'premium' in response
-    assert response['settings']['db_version'] == ROTKEHLCHEN_DB_VERSION
-    for setting in VALID_SETTINGS:
-        assert setting in response['settings']
+    check_proper_unlock_result(response)
 
     assert rotkehlchen_server.rotkehlchen.user_is_logged_in
     # The bug for #288 was here. The inquirer instance was None and any
     # queries utilizing it were throwing exceptions.
     Inquirer().get_fiat_usd_exchange_rates(currencies=None)
+
+
+@pytest.mark.parametrize('number_of_accounts', [0])
+def test_query_owned_assets(rotkehlchen_server):
+    """Test that query_owned_assets API call works as expected and that
+    it properly serializes assets but also ignores unknown ones
+    """
+    datahandler = rotkehlchen_server.rotkehlchen.data
+    balances = [
+        AssetBalance(
+            time=Timestamp(1488326400),
+            asset=A_BTC,
+            amount='1',
+            usd_value='1222.66',
+        ),
+        AssetBalance(
+            time=Timestamp(1489326500),
+            asset=A_XMR,
+            amount='2',
+            usd_value='33.8',
+        ),
+    ]
+    datahandler.db.add_multiple_balances(balances)
+    cursor = datahandler.db.conn.cursor()
+    cursor.execute(
+        'INSERT INTO timed_balances('
+        '    time, currency, amount, usd_value) '
+        ' VALUES(?, ?, ?, ?)',
+        (1469326500, 'ADSADX', '10.1', '100.5'),
+    )
+    datahandler.db.conn.commit()
+
+    response = rotkehlchen_server.query_owned_assets()
+    assert response['message'] == ''
+    assert response['result'] == ['BTC', 'XMR']
