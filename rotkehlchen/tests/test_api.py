@@ -3,21 +3,63 @@ from json.decoder import JSONDecodeError
 
 import pytest
 
+from rotkehlchen.constants.assets import A_BTC
+from rotkehlchen.db.dbhandler import AssetBalance
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.rotkehlchen import Rotkehlchen
+from rotkehlchen.tests.utils.constants import A_XMR
+from rotkehlchen.typing import Timestamp
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 
-def test_add_remove_blockchain_account(rotkehlchen_instance):
-    """Test for issue 66 https://github.com/rotkehlchenio/rotkehlchen/issues/66"""
-    rotkehlchen_instance.add_blockchain_account(
+def test_add_remove_blockchain_account(rotkehlchen_server):
+    """
+    Test that the api call to add or remove a blockchain account correctly appends
+    the accounts and properly updates the balances
+
+    Also serves as regression for issue https://github.com/rotkehlchenio/rotkehlchen/issues/66
+    """
+    response = rotkehlchen_server.add_blockchain_account(
         'ETH',
         '0x00d74c25bbf93df8b2a41d82b0076843b4db0349',
     )
-    rotkehlchen_instance.remove_blockchain_account(
+    checksummed = '0x00d74C25bBf93Df8B2A41d82B0076843B4dB0349'
+    assert response['result'] is True
+    assert response['message'] == ''
+    assert 'ETH' in response['per_account']['ETH'][checksummed]
+    assert 'usd_value' in response['per_account']['ETH'][checksummed]
+    assert 'amount' in response['totals']['ETH']
+    assert 'usd_value' in response['totals']['ETH']
+    response = rotkehlchen_server.remove_blockchain_account(
         'ETH',
         '0x00d74C25bBf93Df8B2A41d82B0076843B4dB0349',
     )
+    assert response['result'] is True
+    assert response['message'] == ''
+    assert response['per_account']['ETH'] == {}
+    assert response['totals']['ETH']['amount'] == '0'
+    assert response['totals']['ETH']['usd_value'] == '0'
+
+    # Now check a bitcoin account
+    btc_account = '3BZU33iFcAiyVyu2M2GhEpLNuh81GymzJ7'
+    response = rotkehlchen_server.add_blockchain_account(
+        'BTC',
+        btc_account,
+    )
+    assert response['result'] is True
+    assert response['message'] == ''
+    assert 'usd_value' in response['per_account']['BTC'][btc_account]
+    assert 'amount' in response['totals']['BTC']
+    assert 'usd_value' in response['totals']['BTC']
+    response = rotkehlchen_server.remove_blockchain_account(
+        'BTC',
+        btc_account,
+    )
+    assert response['result'] is True
+    assert response['message'] == ''
+    assert response['per_account']['BTC'] == {}
+    assert response['totals']['BTC']['amount'] == '0'
+    assert response['totals']['BTC']['usd_value'] == '0'
 
 
 @pytest.mark.parametrize('number_of_accounts', [0])
