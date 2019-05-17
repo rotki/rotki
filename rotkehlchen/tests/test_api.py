@@ -5,11 +5,34 @@ import pytest
 
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.dbhandler import AssetBalance
+from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.typing import Timestamp
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
+
+
+def check_positive_balances_result(response, asset_symbols, account):
+    assert response['result'] is True
+    assert response['message'] == ''
+
+    for asset_symbol in asset_symbols:
+        if asset_symbol != 'BTC':
+            assert asset_symbol in response['per_account']['ETH'][account]
+        assert 'usd_value' in response['per_account']['ETH'][account]
+        assert 'amount' in response['totals']['ETH']
+        assert 'usd_value' in response['totals']['ETH']
+
+
+def check_no_balances_result(response, asset_symbols, check_per_account=True):
+    for asset_symbol in asset_symbols:
+        assert response['result'] is True
+        assert response['message'] == ''
+        if check_per_account:
+            assert response['per_account'][asset_symbol] == {}
+        assert FVal(response['totals'][asset_symbol]['amount']) == FVal('0')
+        assert FVal(response['totals'][asset_symbol]['usd_value']) == FVal('0')
 
 
 def test_add_remove_blockchain_account(rotkehlchen_server):
@@ -24,21 +47,12 @@ def test_add_remove_blockchain_account(rotkehlchen_server):
         '0x00d74c25bbf93df8b2a41d82b0076843b4db0349',
     )
     checksummed = '0x00d74C25bBf93Df8B2A41d82B0076843B4dB0349'
-    assert response['result'] is True
-    assert response['message'] == ''
-    assert 'ETH' in response['per_account']['ETH'][checksummed]
-    assert 'usd_value' in response['per_account']['ETH'][checksummed]
-    assert 'amount' in response['totals']['ETH']
-    assert 'usd_value' in response['totals']['ETH']
+    check_positive_balances_result(response, ['ETH'], checksummed)
     response = rotkehlchen_server.remove_blockchain_account(
         'ETH',
         '0x00d74C25bBf93Df8B2A41d82B0076843B4dB0349',
     )
-    assert response['result'] is True
-    assert response['message'] == ''
-    assert response['per_account']['ETH'] == {}
-    assert response['totals']['ETH']['amount'] == '0'
-    assert response['totals']['ETH']['usd_value'] == '0'
+    check_no_balances_result(response, ['ETH'])
 
     # Now check a bitcoin account
     btc_account = '3BZU33iFcAiyVyu2M2GhEpLNuh81GymzJ7'
@@ -46,36 +60,33 @@ def test_add_remove_blockchain_account(rotkehlchen_server):
         'BTC',
         btc_account,
     )
-    assert response['result'] is True
-    assert response['message'] == ''
-    assert 'usd_value' in response['per_account']['BTC'][btc_account]
-    assert 'amount' in response['totals']['BTC']
-    assert 'usd_value' in response['totals']['BTC']
+    check_positive_balances_result(response, ['BTC'], btc_account)
     response = rotkehlchen_server.remove_blockchain_account(
         'BTC',
         btc_account,
     )
-    assert response['result'] is True
-    assert response['message'] == ''
-    assert response['per_account']['BTC'] == {}
-    assert response['totals']['BTC']['amount'] == '0'
-    assert response['totals']['BTC']['usd_value'] == '0'
+    check_no_balances_result(response, ['BTC'])
 
 
 @pytest.mark.parametrize('number_of_accounts', [0])
-def test_add_remove_eth_tokens(rotkehlchen_instance):
+def test_add_remove_eth_tokens(rotkehlchen_server):
     """Test for issue 83 https://github.com/rotkehlchenio/rotkehlchen/issues/83"""
     # Addition of tokens into the DB fires up balance checks for each account
     # we got. For that reason we give 0 accounts for this test
 
     tokens_to_add = ['STORJ', 'GNO', 'RDN']
-    rotkehlchen_instance.add_owned_eth_tokens(tokens_to_add)
-    db_tokens_list = rotkehlchen_instance.data.db.get_owned_tokens()
-    assert set(tokens_to_add) == set(db_tokens_list)
+    response = rotkehlchen_server.add_owned_eth_tokens(tokens_to_add)
+    check_no_balances_result(response, tokens_to_add, check_per_account=False)
 
-    rotkehlchen_instance.remove_owned_eth_tokens(['STORJ', 'GNO'])
-    db_tokens_list = rotkehlchen_instance.data.db.get_owned_tokens()
-    assert len(db_tokens_list) == 1 and db_tokens_list[0] == 'RDN'
+    response = rotkehlchen_server.get_eth_tokens()
+    assert set(tokens_to_add) == set(response['owned_eth_tokens'])
+    assert 'all_eth_tokens' in response
+
+    response = rotkehlchen_server.remove_owned_eth_tokens(['STORJ', 'GNO'])
+    check_no_balances_result(response, ['RDN'], check_per_account=False)
+    response = rotkehlchen_server.get_eth_tokens()
+    assert 'all_eth_tokens' in response
+    assert len(response['owned_eth_tokens']) == 1 and response['owned_eth_tokens'][0] == 'RDN'
 
 
 def test_periodic_query(rotkehlchen_instance):
