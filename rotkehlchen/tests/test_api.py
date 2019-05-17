@@ -89,9 +89,9 @@ def test_add_remove_eth_tokens(rotkehlchen_server):
     assert len(response['owned_eth_tokens']) == 1 and response['owned_eth_tokens'][0] == 'RDN'
 
 
-def test_periodic_query(rotkehlchen_instance):
+def test_periodic_query(rotkehlchen_server):
     """Test that periodic query returns expected dict values"""
-    result = rotkehlchen_instance.query_periodic_data()
+    result = rotkehlchen_server.query_periodic_data()
 
     assert len(result) == 3
     assert result['last_balance_save'] == 0
