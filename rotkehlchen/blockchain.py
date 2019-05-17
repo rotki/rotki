@@ -190,14 +190,20 @@ class Blockchain():
             del self.balances[A_BTC][account]
         else:
             raise ValueError('Programmer error: Should be append or remove')
-        self.totals[A_BTC]['amount'] = add_or_sub(
-            self.totals[A_BTC].get('amount', FVal(0)),
-            balance,
-        )
-        self.totals[A_BTC]['usd_value'] = add_or_sub(
-            self.totals[A_BTC].get('usd_value', FVal(0)),
-            usd_balance,
-        )
+
+        if len(self.balances[A_BTC]) == 0:
+            # If the last account was removed balance should be 0
+            self.totals[A_BTC]['amount'] = FVal(0)
+            self.totals[A_BTC]['usd_value'] = FVal(0)
+        else:
+            self.totals[A_BTC]['amount'] = add_or_sub(
+                self.totals[A_BTC].get('amount', FVal(0)),
+                balance,
+            )
+            self.totals[A_BTC]['usd_value'] = add_or_sub(
+                self.totals[A_BTC].get('usd_value', FVal(0)),
+                usd_balance,
+            )
 
     def modify_eth_account(
             self,
@@ -222,14 +228,20 @@ class Blockchain():
             del self.balances[A_ETH][account]
         else:
             raise ValueError('Programmer error: Should be append or remove')
-        self.totals[A_ETH]['amount'] = add_or_sub(
-            self.totals[A_ETH].get('amount', FVal(0)),
-            balance,
-        )
-        self.totals[A_ETH]['usd_value'] = add_or_sub(
-            self.totals[A_ETH].get('usd_value', FVal(0)),
-            usd_balance,
-        )
+
+        if len(self.balances[A_ETH]) == 0:
+            # If the last account was removed balance should be 0
+            self.totals[A_ETH]['amount'] = FVal(0)
+            self.totals[A_ETH]['usd_value'] = FVal(0)
+        else:
+            self.totals[A_ETH]['amount'] = add_or_sub(
+                self.totals[A_ETH].get('amount', FVal(0)),
+                balance,
+            )
+            self.totals[A_ETH]['usd_value'] = add_or_sub(
+                self.totals[A_ETH].get('usd_value', FVal(0)),
+                usd_balance,
+            )
 
         for token in self.owned_eth_tokens:
             usd_price = Inquirer().find_usd_price(token)
