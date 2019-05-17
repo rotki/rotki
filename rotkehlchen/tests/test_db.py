@@ -735,6 +735,7 @@ def test_query_timed_balances(data_dir, username):
 
 
 def test_query_owned_assets(data_dir, username):
+    """Test the get_owned_assets with also an unknown asset in the DB"""
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
@@ -755,10 +756,21 @@ def test_query_owned_assets(data_dir, username):
         ),
     ])
     data.db.add_multiple_balances(balances)
+    cursor = data.db.conn.cursor()
+    cursor.execute(
+        'INSERT INTO timed_balances('
+        '    time, currency, amount, usd_value) '
+        ' VALUES(?, ?, ?, ?)',
+        (1469326500, 'ADSADX', '10.1', '100.5'),
+    )
+    data.db.conn.commit()
 
     assets_list = data.db.query_owned_assets()
     assert assets_list == [A_USD, A_ETH, A_BTC, A_XMR]
     assert all([isinstance(x, Asset) for x in assets_list])
+    warnings = data.db.msg_aggregator.consume_warnings()
+    assert len(warnings) == 1
+    assert 'Unknown/unsupported asset ADSADX' in warnings[0]
 
 
 def test_get_latest_location_value_distribution(data_dir, username):
@@ -875,7 +887,8 @@ def test_get_latest_asset_value_distribution(data_dir, username):
     assert assets[3] == xmr
 
 
-def test_get_owned_tokens_with_unknown(data_dir, username):
+def test_get_owned_tokens(data_dir, username):
+    """Test the get_owned_tokens with also an unknown token in the DB"""
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)

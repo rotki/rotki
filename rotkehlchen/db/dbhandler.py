@@ -1017,11 +1017,22 @@ class DBHandler():
     def query_owned_assets(self) -> List[Asset]:
         """Query the DB for a list of all assets ever owned"""
         cursor = self.conn.cursor()
-        results = cursor.execute(
+        query = cursor.execute(
             'SELECT DISTINCT currency FROM timed_balances ORDER BY time ASC;',
         )
 
-        return [Asset(result[0]) for result in results]
+        results = []
+        for result in query:
+            try:
+                results.append(Asset(result[0]))
+            except UnknownAsset:
+                self.msg_aggregator.add_warning(
+                    f'Unknown/unsupported asset {result[0]} found in the database. '
+                    f'If you believe this should be supported open an issue in github',
+                )
+                continue
+
+        return results
 
     def get_latest_location_value_distribution(self) -> List[LocationData]:
         """Gets the latest location data
