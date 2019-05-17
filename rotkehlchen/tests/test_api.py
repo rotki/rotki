@@ -4,7 +4,8 @@ from json.decoder import JSONDecodeError
 import pytest
 
 from rotkehlchen.constants.assets import A_BTC
-from rotkehlchen.db.dbhandler import AssetBalance
+from rotkehlchen.data_handler import VALID_SETTINGS
+from rotkehlchen.db.dbhandler import ROTKEHLCHEN_DB_VERSION, AssetBalance
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -110,11 +111,14 @@ def test_periodic_data_before_login_completion(rotkehlchen_server):
 
 
 @pytest.mark.parametrize('number_of_accounts', [0])
-def test_dbinfo_is_written_at_shutdown(rotkehlchen_instance):
+def test_dbinfo_is_written_at_shutdown(rotkehlchen_server):
     """Test that when rotkehlchen shuts down dbinfo is written"""
-    filepath = os.path.join(rotkehlchen_instance.data.user_data_dir, 'dbinfo.json')
-    sqlcipher_version = rotkehlchen_instance.data.db.sqlcipher_version
-    rotkehlchen_instance.shutdown()
+    r = rotkehlchen_server.rotkehlchen
+    filepath = os.path.join(r.data.user_data_dir, 'dbinfo.json')
+    sqlcipher_version = r.data.db.sqlcipher_version
+    # Using rotkehlchen instance's shutdown and not server's since the
+    # server is not mocked well here for this.
+    r.shutdown()
 
     assert os.path.exists(filepath), 'dbinfo.json was not written'
     with open(filepath, 'r') as f:
@@ -128,13 +132,16 @@ def test_dbinfo_is_written_at_shutdown(rotkehlchen_instance):
 
 
 @pytest.mark.parametrize('number_of_accounts', [0])
-def test_logout_and_login_again(rotkehlchen_instance, username):
+def test_logout_and_login_again(rotkehlchen_server, username):
     """Test that when a rotkehlchen user logs out they can properly login again
-    Regression test for https://github.com/rotkehlchenio/rotkehlchen/issues/288
+
+    Tests that unlock works correctly and returns proper response
+
+    Also regression test for https://github.com/rotkehlchenio/rotkehlchen/issues/288
     """
-    rotkehlchen_instance.logout()
-    assert not rotkehlchen_instance.user_is_logged_in
-    rotkehlchen_instance.unlock_user(
+    rotkehlchen_server.logout()
+    assert not rotkehlchen_server.rotkehlchen.user_is_logged_in
+    response = rotkehlchen_server.unlock_user(
         user=username,
         password='123',
         create_new=False,
@@ -142,7 +149,15 @@ def test_logout_and_login_again(rotkehlchen_instance, username):
         api_key='',
         api_secret='',
     )
-    assert rotkehlchen_instance.user_is_logged_in
+    assert response['result'] is True
+    assert response['message'] == ''
+    assert isinstance(response['exchanges'], list)
+    assert 'premium' in response
+    assert response['settings']['db_version'] == ROTKEHLCHEN_DB_VERSION
+    for setting in VALID_SETTINGS:
+        assert setting in response['settings']
+
+    assert rotkehlchen_server.rotkehlchen.user_is_logged_in
     # The bug for #288 was here. The inquirer instance was None and any
     # queries utilizing it were throwing exceptions.
     Inquirer().get_fiat_usd_exchange_rates(currencies=None)

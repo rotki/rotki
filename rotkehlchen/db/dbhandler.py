@@ -74,6 +74,7 @@ DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
 DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
 DEFAULT_INCLUDE_GAS_COSTS = True
 DEFAULT_ANONYMIZED_LOGS = False
+DEFAULT_PREMIUM_SHOULD_SYNC = False
 DEFAULT_START_DATE = "01/08/2015"
 DEFAULT_UI_FLOATING_PRECISION = 2
 DEFAULT_BALANCE_SAVE_FREQUENCY = 24
@@ -500,6 +501,12 @@ class DBHandler():
             settings['include_gas_costs'] = DEFAULT_INCLUDE_GAS_COSTS
         if 'date_display_format' not in settings:
             settings['date_display_format'] = DEFAULT_DATE_DISPLAY_FORMAT
+        if 'premium_should_sync' not in settings:
+            settings['premium_should_sync'] = DEFAULT_PREMIUM_SHOULD_SYNC
+        if 'last_write_ts' not in settings:
+            settings['last_write_ts'] = 0
+        if 'last_data_upload_ts' not in settings:
+            settings['last_data_upload_ts'] = 0
 
         # populate values that are not saved in the setting but computed and returned
         # as part of the get_settings call
