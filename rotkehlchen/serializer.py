@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Union
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.dbhandler import AssetBalance, LocationData, SingleAssetBalance
 from rotkehlchen.fval import FVal
+from rotkehlchen.typing import EthTokenInfo
 
 
 def _process_entry(entry: Any) -> Union[str, List, Dict]:
@@ -31,10 +32,12 @@ def _process_entry(entry: Any) -> Union[str, List, Dict]:
             'amount': entry.amount,
             'usd_value': entry.usd_value,
         }
+    elif isinstance(entry, EthTokenInfo):
+        return entry._asdict()
     elif isinstance(entry, tuple):
         raise ValueError('Query results should not contain tuples')
     elif isinstance(entry, Asset):
-        return Asset.identifier
+        return entry.identifier
     else:
         return entry
 
