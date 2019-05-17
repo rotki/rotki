@@ -191,6 +191,8 @@ def test_writting_fetching_data(data_dir, username):
         'main_currency': DEFAULT_MAIN_CURRENCY,
         'anonymized_logs': DEFAULT_ANONYMIZED_LOGS,
         'date_display_format': DEFAULT_DATE_DISPLAY_FORMAT,
+        'last_data_upload_ts': 0,
+        'premium_should_sync': False,
     }
 
     # Check setting non-existing settings. Should be ignored
