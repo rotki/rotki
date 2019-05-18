@@ -634,7 +634,11 @@ class Rotkehlchen():
             self.data.save_balances_data(data=result_dict, timestamp=timestamp)
             log.debug('query_balances data saved')
         else:
-            log.debug('query_balances data not saved')
+            log.debug(
+                'query_balances data not saved',
+                allowed_to_save=allowed_to_save,
+                problem_free=problem_free
+            )
 
         # After adding it to the saved file we can overlay additional data that
         # is not required to be saved in the history file
