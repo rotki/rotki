@@ -187,6 +187,7 @@ def test_query_owned_assets(rotkehlchen_server):
         ),
     ]
     datahandler.db.add_multiple_balances(balances)
+    # Also add an unknown/invalid asset. This will generate a warning
     cursor = datahandler.db.conn.cursor()
     cursor.execute(
         'INSERT INTO timed_balances('
@@ -199,3 +200,11 @@ def test_query_owned_assets(rotkehlchen_server):
     response = rotkehlchen_server.query_owned_assets()
     assert response['message'] == ''
     assert response['result'] == ['BTC', 'XMR']
+
+    # Check that we can get the warning for the unknown asset via the api
+    response = rotkehlchen_server.consume_messages()
+    assert response['message'] == ''
+    assert response['result']['errors'] == []
+    warnings = response['result']['warnings']
+    assert len(warnings) == 1
+    assert 'Unknown/unsupported asset ADSADX found in the database' in warnings[0]
