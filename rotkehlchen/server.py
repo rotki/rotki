@@ -5,6 +5,7 @@ import logging
 import os
 import signal
 import traceback
+from typing import Dict
 
 import gevent
 import zerorpc
@@ -12,11 +13,13 @@ from gevent.event import Event
 from gevent.lock import Semaphore
 
 from rotkehlchen.args import app_args
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import (
     AuthenticationError,
     IncorrectApiKeyFormat,
     RemoteError,
     RotkehlchenPermissionError,
+    UnknownAsset,
 )
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -228,15 +231,20 @@ class RotkehlchenServer():
         result = {'times': res[0], 'data': res[1]}
         return process_result(result)
 
-    def query_timed_balances_data(self, asset: str, start_ts: int, end_ts: int):
+    def query_timed_balances_data(self, given_asset: str, start_ts: int, end_ts: int) -> Dict:
         start_ts = Timestamp(start_ts)
         end_ts = Timestamp(end_ts)
+        try:
+            asset = Asset(given_asset)
+        except UnknownAsset as e:
+            return {'result': False, 'message': str(e)}
+
         res = self.rotkehlchen.data.db.query_timed_balances(
             from_ts=start_ts,
             to_ts=end_ts,
             asset=asset,
         )
-        result = {'result': res, 'messsage': ''}
+        result = {'result': res, 'message': ''}
         return process_result(result)
 
     def query_owned_assets(self):
