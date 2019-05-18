@@ -14,27 +14,28 @@ install:
     - ps: appveyor\install.ps1
     - git clone https://github.com/journeyapps/node-sqlcipher.git
     - git clone https://github.com/rigglemania/pysqlcipher3.git
-    - tar -xvzf node-sqlcipher/deps/sqlcipher-amalgamation-3020001.tar.gz
-    - robocopy sqlcipher-amalgamation-3020001\ pysqlcipher3\amalgamation\ & exit 0
-    - robocopy sqlcipher-amalgamation-3020001\ c:\python36\include\sqlcipher\ & exit 0
-    - cd pysqlcipher3
-    - python setup.py build_amalgamation
-    - python setup.py install
-    - cd ..
-    - pip install -r requirements.txt
-    - pip install pytest
+    # - tar -xvzf node-sqlcipher/deps/sqlcipher-amalgamation-3020001.tar.gz
+    # - robocopy sqlcipher-amalgamation-3020001\ pysqlcipher3\amalgamation\ & exit 0
+    # - robocopy sqlcipher-amalgamation-3020001\ c:\python36\include\sqlcipher\ & exit 0
+    # - cd pysqlcipher3
+    # - python setup.py build_amalgamation
+    # - python setup.py install
+    # - cd ..
+    # - pip install -r requirements.txt
+    # - pip install pytest
 
 build_script:
-    - npm install
-    - npm config set python C:\Python27\python.exe
-    - set PYTHON="C:\Python27\python.exe"
-    - npm rebuild zeromq --runtime=electron --target=3.0.0
-    - node_modules\.bin\electron-rebuild
+    - ls  # Remove me. I am just here so that build script has content
+    # - npm install
+    # - npm config set python C:\Python27\python.exe
+    # - set PYTHON="C:\Python27\python.exe"
+    # - npm rebuild zeromq --runtime=electron --target=3.0.0
+    # - node_modules\.bin\electron-rebuild
 
 test_script:
-    - pytest rotkehlchen/tests/
-    - npm test
+    # - pytest rotkehlchen/tests/
+    # - npm test
 
 deploy_script:
-    - node_modules\.bin\electron-packager . --overwrite --ignore="rotkehlchen$" --ignore="rotkehlchen.egg-info" --ignore="tools$" --ignore=".*\.sh" --ignore=".*\.py"
+    # - node_modules\.bin\electron-packager . --overwrite --ignore="rotkehlchen$" --ignore="rotkehlchen.egg-info" --ignore="tools$" --ignore=".*\.sh" --ignore=".*\.py"
 
