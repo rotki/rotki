@@ -33,22 +33,64 @@ def add_starting_balances(datahandler):
 
     location_data = [
         LocationData(
-            time=Timestamp(1488326400),
-            location='total',
-            usd_value='1500.1',
-        ), LocationData(
-            time=Timestamp(1498326400),
-            location='total',
-            usd_value='1800.5',
+            time=Timestamp(1451606400),
+            location='kraken',
+            usd_value='100',
         ),
         LocationData(
-            time=Timestamp(1488326400),
+            time=Timestamp(1451606400),
+            location='banks',
+            usd_value='1000',
+        ),
+        LocationData(
+            time=Timestamp(1461606500),
+            location='poloniex',
+            usd_value='50',
+        ),
+        LocationData(
+            time=Timestamp(1461606500),
             location='kraken',
-            usd_value='150',
-        ), LocationData(
-            time=Timestamp(1498326400),
+            usd_value='200',
+        ),
+        LocationData(
+            time=Timestamp(1461606500),
+            location='banks',
+            usd_value='50000',
+        ),
+        LocationData(
+            time=Timestamp(1491607800),
+            location='poloniex',
+            usd_value='100',
+        ),
+        LocationData(
+            time=Timestamp(1491607800),
             location='kraken',
-            usd_value='250.5',
+            usd_value='2000',
+        ),
+        LocationData(
+            time=Timestamp(1491607800),
+            location='banks',
+            usd_value='10000',
+        ),
+        LocationData(
+            time=Timestamp(1491607800),
+            location='blockchain',
+            usd_value='200000',
+        ),
+        LocationData(
+            time=Timestamp(1451606400),
+            location='total',
+            usd_value='1500',
+        ),
+        LocationData(
+            time=Timestamp(1461606500),
+            location='total',
+            usd_value='4500',
+        ),
+        LocationData(
+            time=Timestamp(1491607800),
+            location='total',
+            usd_value='10700.5',
         ),
     ]
     datahandler.db.add_multiple_location_data(location_data)
