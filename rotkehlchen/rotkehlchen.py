@@ -637,7 +637,7 @@ class Rotkehlchen():
             log.debug(
                 'query_balances data not saved',
                 allowed_to_save=allowed_to_save,
-                problem_free=problem_free
+                problem_free=problem_free,
             )
 
         # After adding it to the saved file we can overlay additional data that
