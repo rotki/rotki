@@ -254,6 +254,13 @@ class RotkehlchenServer():
         result = {'result': res, 'message': ''}
         return process_result(result)
 
+    def consume_messages(self):
+        """Consumes all errors and warnings from the messages aggregator"""
+        warnings = self.rotkehlchen.msg_aggregator.consume_warnings()
+        errors = self.rotkehlchen.msg_aggregator.consume_errors()
+        result = {'result': {'warnings': warnings, 'errors': errors}, 'message': ''}
+        return process_result(result)
+
     def query_statistics_renderer(self):
         result_dict = {'result': '', 'message': 'user does not have premium'}
         if not self.rotkehlchen.premium:
