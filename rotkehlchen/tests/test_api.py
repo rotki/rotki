@@ -9,6 +9,7 @@ from rotkehlchen.db.dbhandler import ROTKEHLCHEN_DB_VERSION, AssetBalance
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.constants import A_XMR
+from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
 from rotkehlchen.typing import Timestamp
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
@@ -171,31 +172,7 @@ def test_query_owned_assets(rotkehlchen_server):
     """Test that query_owned_assets API call works as expected and that
     it properly serializes assets but also ignores unknown ones
     """
-    datahandler = rotkehlchen_server.rotkehlchen.data
-    balances = [
-        AssetBalance(
-            time=Timestamp(1488326400),
-            asset=A_BTC,
-            amount='1',
-            usd_value='1222.66',
-        ),
-        AssetBalance(
-            time=Timestamp(1489326500),
-            asset=A_XMR,
-            amount='2',
-            usd_value='33.8',
-        ),
-    ]
-    datahandler.db.add_multiple_balances(balances)
-    # Also add an unknown/invalid asset. This will generate a warning
-    cursor = datahandler.db.conn.cursor()
-    cursor.execute(
-        'INSERT INTO timed_balances('
-        '    time, currency, amount, usd_value) '
-        ' VALUES(?, ?, ?, ?)',
-        (1469326500, 'ADSADX', '10.1', '100.5'),
-    )
-    datahandler.db.conn.commit()
+    add_starting_balances(rotkehlchen_server)
 
     response = rotkehlchen_server.query_owned_assets()
     assert response['message'] == ''
@@ -208,3 +185,19 @@ def test_query_owned_assets(rotkehlchen_server):
     warnings = response['result']['warnings']
     assert len(warnings) == 1
     assert 'Unknown/unsupported asset ADSADX found in the database' in warnings[0]
+
+
+def test_query_timed_balances_data(rotkehlchen_server):
+    """Test that query_timed_balances_data API call works as expected and that
+    it properly serializes assets but also ignores unknown ones
+    """
+    add_starting_balances(rotkehlchen_server)
+
+    response = rotkehlchen_server.query_timed_balances_data('BTC', 0, 99999999999)
+    assert response['message'] == ''
+    assert len(response['result']) == 1
+    assert response['result'][0] == {'time': 1488326400, 'amount': '1', 'usd_value': '1222.66'}
+
+    response = rotkehlchen_server.query_timed_balances_data('DSXXADA', 0, 99999999999)
+    assert not response['result']
+    assert response['message'] == 'Unknown asset DSXXADA provided'
