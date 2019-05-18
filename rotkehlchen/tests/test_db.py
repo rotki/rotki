@@ -781,59 +781,9 @@ def test_get_latest_location_value_distribution(data_dir, username):
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
 
-    locations = [
-        LocationData(
-            time=Timestamp(1451606400),
-            location='kraken',
-            usd_value='100',
-        ),
-        LocationData(
-            time=Timestamp(1451606400),
-            location='banks',
-            usd_value='1000',
-        ),
-
-        LocationData(
-            time=Timestamp(1461606500),
-            location='poloniex',
-            usd_value='50',
-        ),
-        LocationData(
-            time=Timestamp(1461606500),
-            location='kraken',
-            usd_value='200',
-        ),
-        LocationData(
-            time=Timestamp(1461606500),
-            location='banks',
-            usd_value='50000',
-        ),
-
-        LocationData(
-            time=Timestamp(1491607800),
-            location='poloniex',
-            usd_value='100',
-        ),
-        LocationData(
-            time=Timestamp(1491607800),
-            location='kraken',
-            usd_value='2000',
-        ),
-        LocationData(
-            time=Timestamp(1491607800),
-            location='banks',
-            usd_value='10000',
-        ),
-        LocationData(
-            time=Timestamp(1491607800),
-            location='blockchain',
-            usd_value='200000',
-        ),
-    ]
-
-    data.db.add_multiple_location_data(locations)
+    add_starting_balances(data)
     distribution = data.db.get_latest_location_value_distribution()
-    assert len(distribution) == 4
+    assert len(distribution) == 5
     assert all(entry.time == Timestamp(1491607800) for entry in distribution)
     assert distribution[0].location == 'banks'
     assert distribution[0].usd_value == '10000'
@@ -843,6 +793,8 @@ def test_get_latest_location_value_distribution(data_dir, username):
     assert distribution[2].usd_value == '2000'
     assert distribution[3].location == 'poloniex'
     assert distribution[3].usd_value == '100'
+    assert distribution[4].location == 'total'
+    assert distribution[4].usd_value == '10700.5'
 
 
 def test_get_latest_asset_value_distribution(data_dir, username):
@@ -917,9 +869,11 @@ def test_get_netvalue_data(data_dir, username):
     add_starting_balances(data)
 
     times, values = data.db.get_netvalue_data()
-    assert len(times) == 2
-    assert times[0] == 1488326400
-    assert times[1] == 1498326400
-    assert len(values) == 2
-    assert values[0] == '1500.1'
-    assert values[1] == '1800.5'
+    assert len(times) == 3
+    assert times[0] == 1451606400
+    assert times[1] == 1461606500
+    assert times[2] == 1491607800
+    assert len(values) == 3
+    assert values[0] == '1500'
+    assert values[1] == '4500'
+    assert values[2] == '10700.5'

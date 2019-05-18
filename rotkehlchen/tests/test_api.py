@@ -210,9 +210,31 @@ def test_query_netvalue_data(rotkehlchen_server):
     response = rotkehlchen_server.query_netvalue_data()
     times = response['times']
     values = response['data']
-    assert len(times) == 2
-    assert times[0] == 1488326400
-    assert times[1] == 1498326400
-    assert len(values) == 2
-    assert values[0] == '1500.1'
-    assert values[1] == '1800.5'
+    assert len(times) == 3
+    assert times[0] == 1451606400
+    assert times[1] == 1461606500
+    assert times[2] == 1491607800
+    assert len(values) == 3
+    assert values[0] == '1500'
+    assert values[1] == '4500'
+    assert values[2] == '10700.5'
+
+
+def test_query_latest_location_value_distribution(rotkehlchen_server):
+    """Test that query_latest_location_value_distribution API call works as expected"""
+    add_starting_balances(rotkehlchen_server.rotkehlchen.data)
+
+    response = rotkehlchen_server.query_latest_location_value_distribution()
+    assert response['message'] == ''
+    distribution = response['result']
+    assert all(entry['time'] == Timestamp(1491607800) for entry in distribution)
+    assert distribution[0]['location'] == 'banks'
+    assert distribution[0]['usd_value'] == '10000'
+    assert distribution[1]['location'] == 'blockchain'
+    assert distribution[1]['usd_value'] == '200000'
+    assert distribution[2]['location'] == 'kraken'
+    assert distribution[2]['usd_value'] == '2000'
+    assert distribution[3]['location'] == 'poloniex'
+    assert distribution[3]['usd_value'] == '100'
+    assert distribution[4]['location'] == 'total'
+    assert distribution[4]['usd_value'] == '10700.5'
