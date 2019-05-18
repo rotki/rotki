@@ -3,12 +3,10 @@ from json.decoder import JSONDecodeError
 
 import pytest
 
-from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.data_handler import VALID_SETTINGS
-from rotkehlchen.db.dbhandler import ROTKEHLCHEN_DB_VERSION, AssetBalance
+from rotkehlchen.db.dbhandler import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
 from rotkehlchen.typing import Timestamp
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
@@ -176,7 +174,7 @@ def test_query_owned_assets(rotkehlchen_server):
 
     response = rotkehlchen_server.query_owned_assets()
     assert response['message'] == ''
-    assert response['result'] == ['BTC', 'XMR']
+    assert response['result'] == ['BTC', 'ETH', 'EUR', 'XMR']
 
     # Check that we can get the warning for the unknown asset via the api
     response = rotkehlchen_server.consume_messages()
@@ -238,3 +236,40 @@ def test_query_latest_location_value_distribution(rotkehlchen_server):
     assert distribution[3]['usd_value'] == '100'
     assert distribution[4]['location'] == 'total'
     assert distribution[4]['usd_value'] == '10700.5'
+
+
+def test_query_latest_asset_value_distribution(rotkehlchen_server):
+    """Test that query_latest_asset_value_distribution API call works as expected"""
+    add_starting_balances(rotkehlchen_server.rotkehlchen.data)
+
+    response = rotkehlchen_server.query_latest_asset_value_distribution()
+    assert response['message'] == ''
+    distribution = response['result']
+    assert isinstance(distribution[0]['asset'], str)
+    assert distribution[0] == {
+        'time': 1488326400,
+        'asset': 'BTC',
+        'amount': '1',
+        'usd_value': '1222.66',
+    }
+    assert isinstance(distribution[1]['asset'], str)
+    assert distribution[1] == {
+        'time': 1488326400,
+        'asset': 'ETH',
+        'amount': '10',
+        'usd_value': '4517.4',
+    }
+    assert isinstance(distribution[2]['asset'], str)
+    assert distribution[2] == {
+        'time': 1488326400,
+        'asset': 'EUR',
+        'amount': '100',
+        'usd_value': '119',
+    }
+    assert isinstance(distribution[3]['asset'], str)
+    assert distribution[3] == {
+        'time': 1488326400,
+        'asset': 'XMR',
+        'amount': '5',
+        'usd_value': '61.5',
+    }
