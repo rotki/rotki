@@ -1,12 +1,11 @@
 from rotkehlchen.constants.assets import A_BTC
-from rotkehlchen.db.dbhandler import AssetBalance
+from rotkehlchen.db.dbhandler import AssetBalance, LocationData
 from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.typing import Timestamp
 
 
-def add_starting_balances(rotkehlchen_server):
-    """Adds some starting balances to the rotkehlchen server instance"""
-    datahandler = rotkehlchen_server.rotkehlchen.data
+def add_starting_balances(datahandler):
+    """Adds some starting balances to the a testing instance"""
     balances = [
         AssetBalance(
             time=Timestamp(1488326400),
@@ -31,3 +30,25 @@ def add_starting_balances(rotkehlchen_server):
         (1469326500, 'ADSADX', '10.1', '100.5'),
     )
     datahandler.db.conn.commit()
+
+    location_data = [
+        LocationData(
+            time=Timestamp(1488326400),
+            location='total',
+            usd_value='1500.1',
+        ), LocationData(
+            time=Timestamp(1498326400),
+            location='total',
+            usd_value='1800.5',
+        ),
+        LocationData(
+            time=Timestamp(1488326400),
+            location='kraken',
+            usd_value='150',
+        ), LocationData(
+            time=Timestamp(1498326400),
+            location='kraken',
+            usd_value='250.5',
+        ),
+    ]
+    datahandler.db.add_multiple_location_data(location_data)

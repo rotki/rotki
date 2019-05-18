@@ -32,6 +32,7 @@ from rotkehlchen.db.dbhandler import (
 )
 from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.tests.utils.constants import A_BSV, A_DAO, A_DOGE, A_GNO, A_RDN, A_XMR
+from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
 from rotkehlchen.typing import SupportedBlockchain, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import createTimeStamp, ts_now
@@ -907,3 +908,18 @@ def test_get_owned_tokens(data_dir, username):
     warnings = data.db.msg_aggregator.consume_warnings()
     assert len(warnings) == 1
     assert 'Unknown/unsupported asset DASDSADSAD' in warnings[0]
+
+
+def test_get_netvalue_data(data_dir, username):
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
+    data.unlock(username, '123', create_new=True)
+    add_starting_balances(data)
+
+    times, values = data.db.get_netvalue_data()
+    assert len(times) == 2
+    assert times[0] == 1488326400
+    assert times[1] == 1498326400
+    assert len(values) == 2
+    assert values[0] == '1500.1'
+    assert values[1] == '1800.5'

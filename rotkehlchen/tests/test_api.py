@@ -172,7 +172,7 @@ def test_query_owned_assets(rotkehlchen_server):
     """Test that query_owned_assets API call works as expected and that
     it properly serializes assets but also ignores unknown ones
     """
-    add_starting_balances(rotkehlchen_server)
+    add_starting_balances(rotkehlchen_server.rotkehlchen.data)
 
     response = rotkehlchen_server.query_owned_assets()
     assert response['message'] == ''
@@ -191,7 +191,7 @@ def test_query_timed_balances_data(rotkehlchen_server):
     """Test that query_timed_balances_data API call works as expected and that
     it properly serializes assets but also ignores unknown ones
     """
-    add_starting_balances(rotkehlchen_server)
+    add_starting_balances(rotkehlchen_server.rotkehlchen.data)
 
     response = rotkehlchen_server.query_timed_balances_data('BTC', 0, 99999999999)
     assert response['message'] == ''
@@ -201,3 +201,18 @@ def test_query_timed_balances_data(rotkehlchen_server):
     response = rotkehlchen_server.query_timed_balances_data('DSXXADA', 0, 99999999999)
     assert not response['result']
     assert response['message'] == 'Unknown asset DSXXADA provided'
+
+
+def test_query_netvalue_data(rotkehlchen_server):
+    """Test that query_netvalue_data API call works as expected"""
+    add_starting_balances(rotkehlchen_server.rotkehlchen.data)
+
+    response = rotkehlchen_server.query_netvalue_data()
+    times = response['times']
+    values = response['data']
+    assert len(times) == 2
+    assert times[0] == 1488326400
+    assert times[1] == 1498326400
+    assert len(values) == 2
+    assert values[0] == '1500.1'
+    assert values[1] == '1800.5'
