@@ -11,7 +11,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants import YEAR_IN_SECONDS
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD, FIAT_CURRENCIES, S_CNY, S_EUR
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD, FIAT_CURRENCIES, S_CNY, S_EUR
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import (
     DBINFO_FILENAME,
@@ -802,44 +802,14 @@ def test_get_latest_asset_value_distribution(data_dir, username):
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
 
-    balances = deepcopy(asset_balances)
-
-    btc = AssetBalance(
-        time=Timestamp(1488326400),
-        asset=A_BTC,
-        amount='1',
-        usd_value='1222.66',
-    )
-    balances.append(btc)
-    eth = AssetBalance(
-        time=Timestamp(1488326400),
-        asset=A_ETH,
-        amount='10',
-        usd_value='4517.4',
-    )
-    balances.append(eth)
-    eur = AssetBalance(
-        time=Timestamp(1488326400),
-        asset=A_EUR,
-        amount='100',
-        usd_value='119',
-    )
-    balances.append(eur)
-    xmr = AssetBalance(
-        time=Timestamp(1488326400),
-        asset=A_XMR,
-        amount='5',
-        usd_value='61.5',
-    )
-    balances.append(xmr)
-    data.db.add_multiple_balances(balances)
+    balances = add_starting_balances(data)
 
     assets = data.db.get_latest_asset_value_distribution()
     assert len(assets) == 4
-    assert assets[0] == btc
-    assert assets[1] == eth
-    assert assets[2] == eur
-    assert assets[3] == xmr
+    assert assets[0] == balances[0]
+    assert assets[1] == balances[1]
+    assert assets[2] == balances[2]
+    assert assets[3] == balances[3]
 
 
 def test_get_owned_tokens(data_dir, username):
