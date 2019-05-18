@@ -28,7 +28,7 @@ def _process_entry(entry: Any) -> Union[str, List, Dict]:
     elif isinstance(entry, AssetBalance):
         return {
             'time': entry.time,
-            'asset': entry.asset,
+            'asset': entry.asset.identifier,
             'amount': entry.amount,
             'usd_value': entry.usd_value,
         }
