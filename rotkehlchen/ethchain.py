@@ -30,6 +30,7 @@ class Ethchain():
             del self.web3
 
     def attempt_connect(self, ethrpc_endpoint: str, mainnet_check=True) -> Tuple[bool, str]:
+        message = ''
         if self.rpc_endpoint == ethrpc_endpoint and self.connected:
             # We are already connected
             return True, 'Already connected to an ethereum node'
@@ -40,8 +41,8 @@ class Ethchain():
         try:
             parsed_eth_rpc_endpoint = urlparse(ethrpc_endpoint)
             if not parsed_eth_rpc_endpoint.scheme:
-                eth_rpc_endpoint = f"http://{ethrpc_endpoint}"
-            self.web3 = Web3(HTTPProvider(eth_rpc_endpoint))
+                ethrpc_endpoint = f"http://{ethrpc_endpoint}"
+            self.web3 = Web3(HTTPProvider(ethrpc_endpoint))
         except requests.exceptions.ConnectionError:
             log.warning('Could not connect to a local ethereum node. Will use etherscan only')
             self.connected = False
@@ -95,6 +96,7 @@ class Ethchain():
         Returns a tuple (results, message)
             - result: Boolean for confirmation of synchronized
             - message: A message containing information on what the status is. """
+        message = ''
         if current_block < (latest_block - 20):
             message = (
                 'Found local ethereum node but it is out of sync. Will use etherscan.'
