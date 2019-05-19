@@ -20,7 +20,7 @@ def cli_args(data_dir):
         'notify',
         'data_dir',
         'zerorpc_port',
-        'ethrpc_port',
+        'ethrpc_endpoint',
         'logfile',
         'logtarget',
         'loglevel',

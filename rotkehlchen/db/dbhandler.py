@@ -102,7 +102,7 @@ def detect_sqlcipher_version() -> int:
     return sqlcipher_version
 
 
-ROTKEHLCHEN_DB_VERSION = 3
+ROTKEHLCHEN_DB_VERSION = 4
 DBINFO_FILENAME = 'dbinfo.json'
 
 
@@ -237,6 +237,7 @@ class DBHandler():
     def _run_updates(self) -> None:
         self._update_1_to_2()
         self._update_2_to_3()
+        self._update_3_to_4()
 
     def _update_1_to_2(self) -> None:
         current_version = self.get_version()
@@ -310,6 +311,28 @@ class DBHandler():
             'UPDATE trades SET pair=?, fee_currency=? WHERE id=?',
             updated_trades,
         )
+
+    def _update_3_to_4(self) -> None:
+        """Upgrade the eth_rpc_port setting to eth_rpc_endpoint"""
+        current_version = self.get_version()
+        if current_version != 3:
+            return
+
+        # apply the 3 -> 4 updates
+        cursor = self.conn.cursor()
+        query = cursor.execute('SELECT value FROM settings where name="eth_rpc_port";')
+        query = query.fetchall()
+        if len(query) == 0:
+            port = '8545'
+        else:
+            port = query[0][0]
+
+        cursor.execute('DELETE FROM settings where name="eth_rpc_port";')
+        cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?);',
+            ('eth_rpc_endpoint', f'http://localhost:{port}'),
+        )
+        self.conn.commit()
 
     def connect(self, password: str) -> None:
         self.conn = sqlcipher.connect(  # pylint: disable=no-member

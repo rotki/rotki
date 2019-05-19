@@ -5,10 +5,6 @@ import os
 import shutil
 import subprocess
 import sys
-if os.name != 'nt':
-    # termios does not exist in windows
-    import termios
-
 from binascii import hexlify
 
 import gevent
@@ -16,6 +12,13 @@ from web3.middleware import geth_poa_middleware
 
 from rotkehlchen.crypto import address_encoder, privatekey_to_address
 from rotkehlchen.tests.utils.genesis import GENESIS_STUB
+
+if os.name != 'nt':
+    # termios does not exist in windows
+    import termios
+
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -118,13 +121,13 @@ def geth_to_cmd(port, rpcport, datadir, verbosity):
     return cmd
 
 
-def geth_wait_and_check(ethchain_client, rpc_port, privatekeys, random_marker):
+def geth_wait_and_check(ethchain_client, rpc_endpoint, privatekeys, random_marker):
     """ Wait until the geth cluster is ready. """
     jsonrpc_running = False
 
     tries = 5
     while not jsonrpc_running and tries > 0:
-        success, _ = ethchain_client.attempt_connect(rpc_port, mainnet_check=False)
+        success, _ = ethchain_client.attempt_connect(rpc_endpoint, mainnet_check=False)
         if not success:
             gevent.sleep(0.5)
             tries -= 1
@@ -149,6 +152,7 @@ def geth_create_blockchain(
         ethchain_client,
         private_keys,
         gethport,
+        gethrpcendpoint,
         gethrpcport,
         base_datadir,
         verbosity,
@@ -197,7 +201,7 @@ def geth_create_blockchain(
     )
 
     try:
-        geth_wait_and_check(ethchain_client, gethrpcport, private_keys, random_marker)
+        geth_wait_and_check(ethchain_client, gethrpcendpoint, private_keys, random_marker)
     except (ValueError, RuntimeError, KeyError) as e:
         # if something goes wrong in the above function make sure to kill the geth
         # process before quitting the tests
