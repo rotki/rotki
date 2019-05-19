@@ -9,7 +9,7 @@ import gevent
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.accountant import Accountant
-from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.binance import Binance
 from rotkehlchen.bitmex import Bitmex
 from rotkehlchen.bittrex import Bittrex
@@ -24,6 +24,7 @@ from rotkehlchen.errors import (
     InputError,
     RemoteError,
     RotkehlchenPermissionError,
+    UnknownAsset,
 )
 from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.externalapis import Cryptocompare
@@ -683,11 +684,23 @@ class Rotkehlchen():
                     message += "\nEthereum RPC endpoint not set: " + msg
 
             if 'main_currency' in settings:
-                main_currency = settings['main_currency']
-                if main_currency != 'USD':
+                given_symbol = settings['main_currency']
+                try:
+                    main_currency = Asset(given_symbol)
+                except UnknownAsset:
+                    return False, f'Unknown fiat currency {given_symbol} provided'
+
+                if not main_currency.is_fiat():
+                    msg = (
+                        f'Provided symbol for main currency {given_symbol} is '
+                        f'not a fiat currency'
+                    )
+                    return False, msg
+
+                if main_currency != A_USD:
                     self.usd_to_main_currency_rate = Inquirer().query_fiat_pair(
                         'USD',
-                        main_currency,
+                        main_currency.identifier,
                     )
 
             res, msg = self.accountant.customize(settings)

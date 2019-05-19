@@ -45,7 +45,7 @@ class Ethchain():
             provider = HTTPProvider(ethrpc_endpoint)
             self.web3 = Web3(provider)
         except requests.exceptions.ConnectionError:
-            log.warning('Could not connect to a local ethereum node. Will use etherscan only')
+            log.warning('Could not connect to an ethereum node. Will use etherscan only')
             self.connected = False
             return False, f'Failed to connect to ethereum node at endpoint {ethrpc_endpoint}'
 
@@ -55,12 +55,14 @@ class Ethchain():
                 self.token_abi = rlk_jsonloads(f.read())
 
             # Also make sure we are actually connected to the Ethereum mainnet
+            synchronized = True
+            msg = ''
             if mainnet_check:
                 genesis_hash = self.web3.eth.getBlock(0)['hash'].hex()  # pylint: disable=no-member
                 target = '0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3'
                 if genesis_hash != target:
                     log.warning(
-                        'Connected to a local ethereum node but it is not on the ethereum mainnet',
+                        'Connected to an ethereum node but it is not on the ethereum mainnet',
                     )
                     self.connected = False
                     message = (
@@ -72,18 +74,22 @@ class Ethchain():
                 if self.web3.eth.syncing:  # pylint: disable=no-member
                     current_block = self.web3.eth.syncing.currentBlock  # pylint: disable=no-member
                     latest_block = self.web3.eth.syncing.highestBlock  # pylint: disable=no-member
-                    return self.is_synchronized(current_block, latest_block)
+                    synchronized, msg = self.is_synchronized(current_block, latest_block)
                 else:
                     current_block = self.web3.eth.blockNumber  # pylint: disable=no-member
                     latest_block = self.query_eth_highest_block()
                     if latest_block is None:
                         return False, 'Could not query latest block from blockcypher.'
-                    return self.is_synchronized(current_block, latest_block)
+                    synchronized, msg = self.is_synchronized(current_block, latest_block)
+
+            if not synchronized:
+                return False, msg
 
             self.connected = True
+            log.info(f'Connected to ethereum node at {ethrpc_endpoint}')
             return True, ''
         else:
-            log.warning('Could not connect to a local ethereum node. Will use etherscan only')
+            log.warning('Could not connect to an ethereum node. Will use etherscan only')
             self.connected = False
             message = f'Failed to connect to ethereum node at endpoint {ethrpc_endpoint}'
 
@@ -91,7 +97,7 @@ class Ethchain():
         return False, message
 
     def is_synchronized(self, current_block: int, latest_block: int) -> Tuple[bool, str]:
-        """ Validate that the local ethereum node is synchronized
+        """ Validate that the ethereum node is synchronized
             within 20 blocks of latest block
 
         Returns a tuple (results, message)
@@ -100,7 +106,7 @@ class Ethchain():
         message = ''
         if current_block < (latest_block - 20):
             message = (
-                'Found local ethereum node but it is out of sync. Will use etherscan.'
+                'Found ethereum node but it is out of sync. Will use etherscan.'
             )
             log.warning(message)
             self.connected = False
