@@ -90,7 +90,6 @@ export class DateFormatter {
             m.forEach((match) => {
                 const matched = match.substr(1);
                 formattedString = formattedString.replace(match, this.translations[matched](date, this.locale) || '');
-                console.log(formattedString);
             });
         }
         return formattedString;
