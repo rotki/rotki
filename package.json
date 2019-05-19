@@ -39,6 +39,7 @@
         "test": "rimraf ui/dist && tsc && mocha --require dotenv/config --require ts-node/register \"ui/tests/**/*.spec.ts\"",
         "test-single": "rimraf ui/dist && tsc && mocha --require dotenv/config --require ts-node/register",
         "start": "rimraf ui/dist && tsc && electron .",
+        "start:development": "rimraf ui/dist && tsc && env ROTKEHLCHEN_ENVIRONMENT=development electron .",
         "lint": "tslint -c tslint.json -e 'ui/dist/*' --project tsconfig.json 'ui/**/*.ts'",
         "lint:fix": "tslint --fix -c tslint.json -e 'ui/dist/*' --project tsconfig.json 'ui/**/*.ts'"
     }
