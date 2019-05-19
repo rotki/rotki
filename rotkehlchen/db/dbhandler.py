@@ -483,8 +483,8 @@ class DBHandler():
         # populate defaults for values not in the DB yet
         if 'historical_data_start' not in settings:
             settings['historical_data_start'] = DEFAULT_START_DATE
-        if 'eth_rpc_port' not in settings:
-            settings['eth_rpc_port'] = '8545'
+        if 'eth_rpc_endpoint' not in settings:
+            settings['eth_rpc_endpoint'] = 'http://localhost:8545'
         if 'ui_floating_precision' not in settings:
             settings['ui_floating_precision'] = DEFAULT_UI_FLOATING_PRECISION
         if 'include_crypto2crypto' not in settings:

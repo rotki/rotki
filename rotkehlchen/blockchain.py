@@ -69,8 +69,8 @@ class Blockchain():
     def __del__(self):
         del self.ethchain
 
-    def set_eth_rpc_port(self, port: int) -> Tuple[bool, str]:
-        return self.ethchain.set_rpc_port(port)
+    def set_eth_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
+        return self.ethchain.set_rpc_endpoint(endpoint)
 
     @property
     def eth_tokens(self) -> List[EthereumToken]:

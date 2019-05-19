@@ -55,10 +55,10 @@ describe('general settings', function () {
 
     it('should add wrong port number and get an error', async () => {
         await retry( async() => {
-            client.clearElement('#eth_rpc_port');
+            client.clearElement('#eth_rpc_endpoint');
         });
         await retry( async() => {
-            client.addValue('#eth_rpc_port', 500000);
+            client.addValue('#eth_rpc_endpoint', 500000);
         });
         await client.click('#settingssubmit');
 
@@ -73,10 +73,10 @@ describe('general settings', function () {
 
     it('should change the general settings and save them', async () => {
         await retry( async() => {
-            client.clearElement('#eth_rpc_port');
+            client.clearElement('#eth_rpc_endpoint');
         });
         await retry( async() => {
-            client.addValue('#eth_rpc_port', 9001);
+            client.addValue('#eth_rpc_endpoint', 9001);
         });
 
         await retry( async() => {
@@ -142,7 +142,7 @@ describe('general settings', function () {
         await client.getValue('#floating_precision').should.eventually.equal('4');
         await client.getValue('#historical_data_start').should.eventually.equal('03/10/2018');
         await client.getValue('#balance_save_frequency').should.eventually.equal('48');
-        await client.getValue('#eth_rpc_port').should.eventually.equal('8545');
+        await client.getValue('#eth_rpc_endpoint').should.eventually.equal('http://localhost:8545');
         await client.isSelected('#anonymized_logs_input').should.eventually.be.true;
         await client.getValue('#maincurrencyselector').should.eventually.equal('JPY');
         await client.getValue('#date_display_format').should.eventually.equal('%d-%m-%Y %H:%M:%S %z');
