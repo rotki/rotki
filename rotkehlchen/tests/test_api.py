@@ -300,3 +300,33 @@ def test_set_settings(rotkehlchen_server):
     assert response['message'] == ''
     settings = rotkehlchen_server.get_settings()
     assert settings['eth_rpc_endpoint'] == 'http://working.nodes.com:8545'
+
+    # Test that changing the main currency to a valid fiat works
+    given_settings = {
+        'main_currency': 'CAD',
+    }
+    response = rotkehlchen_server.set_settings(given_settings)
+    assert response['result'] is True
+    assert response['message'] == ''
+    settings = rotkehlchen_server.get_settings()
+    assert settings['main_currency'] == 'CAD'
+
+    # Test that using a nonsence currency for main currencly fails with message
+    given_settings = {
+        'main_currency': 'XDADADAD',
+    }
+    response = rotkehlchen_server.set_settings(given_settings)
+    assert response['result'] is False
+    assert response['message'] == 'Unknown fiat currency XDADADAD provided'
+    settings = rotkehlchen_server.get_settings()
+    assert settings['main_currency'] == 'CAD'
+
+    # Test that using a crypto currency for main currencly fails with message
+    given_settings = {
+        'main_currency': 'BTC',
+    }
+    response = rotkehlchen_server.set_settings(given_settings)
+    assert response['result'] is False
+    assert response['message'] == 'Provided symbol for main currency BTC is not a fiat currency'
+    settings = rotkehlchen_server.get_settings()
+    assert settings['main_currency'] == 'CAD'
