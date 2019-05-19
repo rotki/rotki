@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`349` Copy paste should now work on OSX.
 * :feature:`350` Add support for remote ethereum nodes and not just local ones.
 * :feature:`329` Maintain a list of supported assets and converters from/to each exchange or service.
 * :feature:`194` Add setting for date display format.
