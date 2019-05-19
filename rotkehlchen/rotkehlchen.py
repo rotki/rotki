@@ -282,7 +282,7 @@ class Rotkehlchen():
         secret_data = self.data.db.get_exchange_secrets()
         settings = self.data.db.get_settings()
         historical_data_start = settings['historical_data_start']
-        eth_rpc_port = settings['eth_rpc_port']
+        eth_rpc_endpoint = settings['eth_rpc_endpoint']
         self.trades_historian = TradesHistorian(
             user_directory=self.user_directory,
             db=self.data.db,
@@ -311,7 +311,7 @@ class Rotkehlchen():
         LoggingSettings(anonymized_logs=db_settings['anonymized_logs'])
         self.initialize_exchanges(secret_data)
 
-        ethchain = Ethchain(eth_rpc_port)
+        ethchain = Ethchain(eth_rpc_endpoint)
         self.blockchain = Blockchain(
             blockchain_accounts=self.data.db.get_blockchain_accounts(),
             owned_eth_tokens=self.data.db.get_owned_tokens(),
@@ -675,12 +675,12 @@ class Rotkehlchen():
 
         message = ''
         with self.lock:
-            if 'eth_rpc_port' in settings:
-                result, msg = self.blockchain.set_eth_rpc_port(settings['eth_rpc_port'])
+            if 'eth_rpc_endpoint' in settings:
+                result, msg = self.blockchain.set_eth_rpc_endpoint(settings['eth_rpc_endpoint'])
                 if not result:
                     # Don't save it in the DB
-                    del settings['eth_rpc_port']
-                    message += "\nEthereum RPC port not set: " + msg
+                    del settings['eth_rpc_endpoint']
+                    message += "\nEthereum RPC endpoint not set: " + msg
 
             if 'main_currency' in settings:
                 main_currency = settings['main_currency']

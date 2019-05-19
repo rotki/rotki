@@ -22,7 +22,7 @@ export interface DBSettings {
     readonly taxfree_after_period: number;
     readonly balance_save_frequency: number;
     readonly historical_data_start: string;
-    readonly eth_rpc_port: string;
+    readonly eth_rpc_endpoint: string;
     readonly main_currency: string;
     readonly last_balance_save: number;
     readonly anonymized_logs: boolean;

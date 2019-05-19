@@ -1,6 +1,7 @@
 import logging
 import os
 from typing import Dict, List, Optional, Tuple
+from urllib.parse import urlparse
 
 import requests
 from web3 import HTTPProvider, Web3
@@ -17,19 +18,19 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class Ethchain():
-    def __init__(self, ethrpc_port: int, attempt_connect: bool = True):
+    def __init__(self, ethrpc_endpoint: str, attempt_connect: bool = True):
         self.web3: Web3 = None
-        self.rpc_port = ethrpc_port
+        self.rpc_endpoint = ethrpc_endpoint
         self.connected = False
         if attempt_connect:
-            self.attempt_connect(ethrpc_port)
+            self.attempt_connect(ethrpc_endpoint)
 
     def __del__(self):
         if self.web3:
             del self.web3
 
-    def attempt_connect(self, ethrpc_port: int, mainnet_check=True) -> Tuple[bool, str]:
-        if self.rpc_port == ethrpc_port and self.connected:
+    def attempt_connect(self, ethrpc_endpoint: str, mainnet_check=True) -> Tuple[bool, str]:
+        if self.rpc_endpoint == ethrpc_endpoint and self.connected:
             # We are already connected
             return True, 'Already connected to an ethereum node'
 
@@ -37,11 +38,14 @@ class Ethchain():
             del self.web3
 
         try:
-            self.web3 = Web3(HTTPProvider('http://localhost:{}'.format(ethrpc_port)))
+            parsed_eth_rpc_endpoint = urlparse(ethrpc_endpoint)
+            if not parsed_eth_rpc_endpoint.scheme:
+                eth_rpc_endpoint = f"http://{ethrpc_endpoint}"
+            self.web3 = Web3(HTTPProvider(eth_rpc_endpoint))
         except requests.exceptions.ConnectionError:
             log.warning('Could not connect to a local ethereum node. Will use etherscan only')
             self.connected = False
-            return False, 'Failed to connect to ethereum node at port {}'.format(ethrpc_port)
+            return False, f'Failed to connect to ethereum node at endpoint {ethrpc_endpoint}'
 
         if self.web3.isConnected():
             dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -58,10 +62,11 @@ class Ethchain():
                     )
                     self.connected = False
                     message = (
-                        'Connected to ethereum node at port {} but it is not on '
-                        'the ethereum mainnet'.format(ethrpc_port)
+                        f'Connected to ethereum node at endpoint {ethrpc_endpoint} but '
+                        f'it is not on the ethereum mainnet'
                     )
                     return False, message
+
                 if self.web3.eth.syncing:  # pylint: disable=no-member
                     current_block = self.web3.eth.syncing.currentBlock  # pylint: disable=no-member
                     latest_block = self.web3.eth.syncing.highestBlock  # pylint: disable=no-member
@@ -78,7 +83,7 @@ class Ethchain():
         else:
             log.warning('Could not connect to a local ethereum node. Will use etherscan only')
             self.connected = False
-            message = 'Failed to connect to ethereum node at port {}'.format(ethrpc_port)
+            message = f'Failed to connect to ethereum node at endpoint {ethrpc_endpoint}'
 
         # If we get here we did not connnect
         return False, message
@@ -100,17 +105,17 @@ class Ethchain():
 
         return True, message
 
-    def set_rpc_port(self, port: int) -> Tuple[bool, str]:
-        """ Attempts to set the RPC port for the ethereum client.
+    def set_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
+        """ Attempts to set the RPC endpoint for the ethereum client.
 
         Returns a tuple (result, message)
-            - result: Boolean for success or failure of changing the rpc port
+            - result: Boolean for success or failure of changing the rpc endpoint
             - message: A message containing information on what happened. Can
                        be populated both in case of success or failure"""
-        result, message = self.attempt_connect(port)
+        result, message = self.attempt_connect(endpoint)
         if result:
-            log.info('Setting ETH RPC port', port=port)
-            self.ethrpc_port = port
+            log.info('Setting ETH RPC endpoint', endpoint=endpoint)
+            self.ethrpc_endpoint = endpoint
         return result, message
 
     @staticmethod

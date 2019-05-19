@@ -19,7 +19,7 @@ export class Settings {
     has_premium = false;
     premium_should_sync = false;
     start_suggestion = 'inactive';
-    eth_rpc_port = '8545';
+    eth_rpc_endpoint = 'http://localhost:8545';
     balance_save_frequency = 24;
     last_balance_save = 0;
     include_crypto2crypto = true;
@@ -54,7 +54,7 @@ export class Settings {
         this.has_premium = false;
         this.premium_should_sync = false;
         this.start_suggestion = 'inactive';
-        this.eth_rpc_port = '8545';
+        this.eth_rpc_endpoint = 'http://localhost:8545';
         this.balance_save_frequency = 24;
         this.last_balance_save = 0;
         this.include_crypto2crypto = true;
@@ -153,12 +153,7 @@ export function add_settings_listeners() {
         }
 
         const anonymized_logs = $('#anonymized_logs_input').is(':checked');
-        const eth_rpc_port = $('#eth_rpc_port').val() as number;
-
-        if (eth_rpc_port < 1 || eth_rpc_port > 65535) {
-            showError('Invalid port number', 'Please ensure that the specified port number is between 1 and 65535');
-            return;
-        }
+        const eth_rpc_endpoint = $('#eth_rpc_endpoint').val() as string;
 
         const balance_save_frequency = $('#balance_save_frequency').val();
         const date_display_format = $('#date_display_format').val() as string;
@@ -168,7 +163,7 @@ export function add_settings_listeners() {
             'ui_floating_precision': settings.floating_precision,
             'historical_data_start': settings.historical_data_start,
             'main_currency': main_currency,
-            'eth_rpc_port': eth_rpc_port,
+            'eth_rpc_endpoint': eth_rpc_endpoint,
             'balance_save_frequency': balance_save_frequency,
             'anonymized_logs': anonymized_logs,
             'date_display_format': date_display_format
@@ -206,7 +201,7 @@ export function create_settings_ui() {
         settings.CURRENCIES.map(x => x.ticker_symbol),
         settings.main_currency.ticker_symbol
     );
-    str += form_entry('Eth RPC Port', 'eth_rpc_port', settings.eth_rpc_port, '', 'number');
+    str += form_entry('Eth RPC Endpoint', 'eth_rpc_endpoint', settings.eth_rpc_endpoint, '');
     str += form_entry(
         'Balance data saving frequency in hours',
         'balance_save_frequency',

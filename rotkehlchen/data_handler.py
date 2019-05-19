@@ -57,7 +57,7 @@ otc_numerical_fields = ['otc_amount', 'otc_rate', 'otc_fee']
 VALID_SETTINGS = (
     'main_currency',
     'historical_data_start',
-    'eth_rpc_port',
+    'eth_rpc_endpoint',
     'ui_floating_precision',
     'last_write_ts',
     'db_version',
