@@ -83,6 +83,7 @@ div.invisible-anchor {
 :root {
     --elements-bg-color: #7e4a3b;
     --elements-link-color: #e45325;
+    --notification-background: #eeeeee;
 }
 
 a>.fa-fw , a{
@@ -142,11 +143,21 @@ a:focus, a:hover {
     animation: none !important;
 }
 
+.notification-clear {
+    display: flex;
+    flex-direction: row-reverse;
+    background: var(--notification-background);
+}
+
+.notification-clear > * {
+    padding: 8px;
+    color: var(--elements-bg-color);
+}
 
 .notification-area {
     width:340px;
     height:300px;
-    background: #eeeeee;
+    background: var(--notification-background);
     overflow-y: scroll;
     overflow-x: hidden;
     font-family: Roboto,sans-serif;
@@ -190,6 +201,7 @@ a:focus, a:hover {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    padding: 6px;
 }
 
 .notification:first-child {
@@ -203,6 +215,7 @@ a:focus, a:hover {
     justify-content: center;
     color: #757575;
     margin-right: 8px;
+    padding-left: 4px;
 }
 
 .notifications .badge {
@@ -228,4 +241,8 @@ a:focus, a:hover {
 
 .no-notifications p {
     margin-top: 8px;
+}
+
+#notification-messages  {
+    background-color: var(--notification-background) !important;
 }

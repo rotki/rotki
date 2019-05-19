@@ -3,9 +3,15 @@ import {remote} from 'electron';
 import {service} from './rotkehlchen_service';
 import {update_eth_node_connection_status_ui} from './dashboard';
 import {update_tax_report_progress} from './taxreport';
-import Timer = NodeJS.Timer;
 import {displayDateFormatter} from './date_formatter';
-import {updateNotifications} from './notifications';
+import {
+    Notification,
+    notificationManager,
+    setupNotificationHandlers,
+    Severity,
+    updateNotifications
+} from './notifications';
+import Timer = NodeJS.Timer;
 
 // Prompt a directory selection dialog and pass selected directory to callback
 // Callback should be a function which accepts a single argument which will be
@@ -53,7 +59,6 @@ function periodic_client_query() {
         settings.last_balance_save = result['last_balance_save'];
         update_eth_node_connection_status_ui(result['eth_node_connection']);
         update_tax_report_progress(result['history_process_current_ts']);
-        updateNotifications();
     }).catch(reason => {
         const error_string = 'Error at periodic client query: ' + reason;
         showError('Periodic Client Query Error', error_string);
@@ -125,6 +130,43 @@ export function setup_client_auditor() {
         periodic_client_query();
         client_auditor = setInterval(periodic_client_query, 5000);
     }
+}
+
+let monitorMessages: Timer;
+
+export function setupMessageRetrieval() {
+
+    if (monitorMessages) {
+        return;
+    }
+
+    const toNotification = (message: string, severity: Severity, id: number): Notification => ({
+        title: '',
+        message: message,
+        severity: severity,
+        id: id
+    });
+
+    const consume = () => {
+        service.consumeMessages().then(value => {
+            let id = notificationManager.getNextId();
+            const errors = value.errors.map(error => {
+                return toNotification(error, Severity.ERROR, id++);
+            });
+            const warnings = value.warnings.map(warning => {
+                return toNotification(warning, Severity.WARNING, id++);
+            });
+
+            notificationManager.mergeToCache(errors.concat(warnings));
+            updateNotifications();
+            setupNotificationHandlers();
+        })
+            .catch(reason => {
+                console.error(reason);
+            });
+    };
+    consume();
+    monitorMessages = setInterval(consume, 15000);
 }
 
 

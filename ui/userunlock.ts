@@ -1,5 +1,5 @@
 import {form_entry} from './elements';
-import {setup_client_auditor, showError, showInfo, suggest_element, unsuggest_element} from './utils';
+import {setup_client_auditor, setupMessageRetrieval, showError, showInfo, suggest_element, unsuggest_element} from './utils';
 import {set_ui_main_currency} from './topmenu';
 import {get_total_assets_value, total_table_add_balances} from './balances_table';
 import {create_box, create_or_reload_dashboard} from './dashboard';
@@ -222,6 +222,7 @@ function unlock_user(
                     $('#welcome_text').html(`Welcome ${username}!`);
 
                     setup_client_auditor();
+                    setupMessageRetrieval();
                     settings.user_logged = true;
                     settings.has_premium = response.premium;
                     if (db_settings.premium_should_sync) {

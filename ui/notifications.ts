@@ -1,34 +1,15 @@
-const notificationBadge = (notifications: Notification[]) => `
-<i class="fa fa-info-circle fa-fw"></i>
-<i class="fa fa-caret-down"></i>
-<span class="badge">${notifications.length}</span>
-`;
+export enum Severity {
+    WARNING = 'warning',
+    ERROR = 'error',
+    INFO = 'info'
+}
 
-const empty = `
-<div class="no-notifications">
-    <i class="fa fa-info-circle fa-fw"></i>
-    <p>No messages!</p>
-</div>
-`;
-
-const notificationMessages = (notifications: Notification[]) => `
-<div class='notification-area'>
-  ${notifications.length > 0 ? notifications.map(value => singleNotification(value)) : empty}
-</div>`;
-
-const singleNotification = (notification: Notification) => `
- <div class='notification card card-1' id="${notification.id}">
-    <div>
-        <div class='title'>${notification.title}</div>
-        <div class='body'>
-            ${notification.message}
-        </div>
-    </div>
-    <div class="icon">
-        <i class="fa ${icon(notification)} fa-2x ${colorClass(notification)}"></i>
-    </div>
-  </div>
-`;
+export interface Notification {
+    readonly id: number;
+    readonly title: string;
+    readonly message: string;
+    readonly severity: Severity;
+}
 
 const icon = (notification: Notification) => {
     switch (notification.severity) {
@@ -52,43 +33,46 @@ const colorClass = (notification: Notification) => {
     }
 };
 
-export interface Notification {
-    readonly id: number;
-    readonly title: string;
-    readonly message: string;
-    readonly severity: Severity;
-}
+const notificationBadge = (notifications: Notification[]) => `
+<i class="fa fa-info-circle fa-fw"></i>
+<i class="fa fa-caret-down"></i>
+<span class="badge">${notifications.length}</span>
+`;
 
-export enum Severity {
-    WARNING = 'warning',
-    ERROR = 'error',
-    INFO = 'info'
-}
+const empty = `
+<div class="no-notifications">
+    <i class="fa fa-info-circle fa-fw"></i>
+    <p>No messages!</p>
+</div>
+`;
+
+const singleNotification = (notification: Notification) => `
+<div class='notification card card-1' id="notification-${notification.id}">
+    <div>
+        <div class='title'>${notification.title}</div>
+        <div class='body'>
+            ${notification.message}
+        </div>
+    </div>
+    <div class="icon">
+        <i class="fa ${icon(notification)} fa-2x ${colorClass(notification)}"></i>
+    </div>
+</div>
+`;
+
+const notificationMessages = (notifications: Notification[]) => `
+<div class="notification-clear css-tooltip">
+    <i class="fa fa-trash fa-2x" id="notifications-clear-all"></i>
+</div>
+<div class='notification-area'>
+  ${notifications.length > 0 ? notifications.reverse().map(value => singleNotification(value)).join('') : empty}
+</div>`;
 
 export class NotificationManager {
 
     private static NOTIFICATION_KEY = 'service_notifications';
 
-    private notifications: Notification[] = [
-        {
-            id: 1,
-            title: 'Dummy Info',
-            message: 'Dummy Message',
-            severity: Severity.INFO
-        },
-        {
-            id: 2,
-            title: 'Dummy Warning',
-            message: 'Dummy Message',
-            severity: Severity.WARNING
-        },
-        {
-            id: 3,
-            title: 'Dummy Error',
-            message: 'Dummy Message',
-            severity: Severity.ERROR
-        },
-    ];
+    private notifications: Notification[] = [];
 
     getNotifications(): Notification[] {
         return this.notifications;
@@ -100,6 +84,7 @@ export class NotificationManager {
             this.notifications.splice(index, 1);
         }
         this.toCache(this.notifications);
+        console.log(this.notifications);
     }
 
     mergeToCache(notifications: Notification[]) {
@@ -112,6 +97,19 @@ export class NotificationManager {
     clearAll() {
         this.notifications = [];
         this.toCache(this.notifications);
+    }
+
+    getNextId(): number {
+        const ids = this.notifications.map(value => value.id)
+            .sort((a, b) => b - a);
+
+        let nextId: number;
+        if (ids.length > 0) {
+            nextId = ids[0] + 1;
+        } else {
+            nextId = 1;
+        }
+        return nextId;
     }
 
     private toCache(notifications: Notification[]) {
@@ -128,20 +126,55 @@ export class NotificationManager {
     }
 }
 
+export const notificationManager = new NotificationManager();
+
+function updateNotificationMessages(notifications: Notification[], elements: JQuery<HTMLElement>) {
+    for (const notification of notifications) {
+        const element = elements.filter(`#notification-${notification.id}`);
+        if (element.html()) {
+            continue;
+        }
+        $('.notification-area').prepend(singleNotification(notification));
+    }
+
+}
 export function updateNotifications() {
     const notifications = notificationManager.getNotifications();
     const badge = $('#notification-badge');
     const messages = $('#notification-messages');
+
     badge.html(notificationBadge(notifications));
-    messages.html(notificationMessages(notifications));
 
     const elements = $('.notification');
-    elements.off('click');
-    elements.on('click', function (event: JQuery.Event) {
-        event.preventDefault();
-        notificationManager.dismissNotification(parseInt(this.id, 10));
-    });
-}
+    if (elements.length === 0) {
+        messages.html(notificationMessages(notifications));
+    } else {
+        updateNotificationMessages(notifications, elements);
+    }
 
-export const notificationManager = new NotificationManager();
+}
+export function setupNotificationHandlers() {
+    const $notification = $('.notification');
+
+    const $clear = $('#notifications-clear-all');
+    $notification.off('click');
+
+    $clear.off('click');
+
+    $notification.on('click', function (event: JQuery.Event) {
+        event.preventDefault();
+        $(event.target).closest('.notification').remove();
+        const notificationId = parseInt(this.id.replace('notification-', ''), 10);
+        notificationManager.dismissNotification(notificationId);
+        const badge = $('.badge');
+        badge.text(parseInt(badge.text(), 10) - 1);
+    });
+    $clear.on('click', function (event: JQuery.Event) {
+        event.preventDefault();
+        notificationManager.clearAll();
+        $('.badge').text(0);
+        $('.notification-area').html(empty);
+    });
+
+}
 
