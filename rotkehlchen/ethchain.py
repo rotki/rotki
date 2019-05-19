@@ -42,7 +42,8 @@ class Ethchain():
             parsed_eth_rpc_endpoint = urlparse(ethrpc_endpoint)
             if not parsed_eth_rpc_endpoint.scheme:
                 ethrpc_endpoint = f"http://{ethrpc_endpoint}"
-            self.web3 = Web3(HTTPProvider(ethrpc_endpoint))
+            provider = HTTPProvider(ethrpc_endpoint)
+            self.web3 = Web3(provider)
         except requests.exceptions.ConnectionError:
             log.warning('Could not connect to a local ethereum node. Will use etherscan only')
             self.connected = False
