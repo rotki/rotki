@@ -65,21 +65,19 @@ def blockchain_accounts(ethereum_accounts: List[EthAddress]) -> BlockchainAccoun
 
 @pytest.fixture
 def ethrpc_port(port_generator):
-    return next(port_generator)
-
-
-@pytest.fixture
-def ethrpc_endpoint(ethrpc_port):
-    return f'http://localhost:{ethrpc_port}'
+    port = next(port_generator)
+    return port
 
 
 @pytest.fixture
 def eth_p2p_port(port_generator):
-    return next(port_generator)
+    port = next(port_generator)
+    return port
 
 
 @pytest.fixture
-def ethchain_client(ethrpc_endpoint):
+def ethchain_client(ethrpc_port):
+    ethrpc_endpoint = f'http://localhost:{ethrpc_port}'
     return Ethchain(ethrpc_endpoint, attempt_connect=False)
 
 
@@ -133,13 +131,13 @@ def blockchain_backend(
         ethchain_client,
         private_keys,
         ethrpc_port,
-        ethrpc_endpoint,
         eth_p2p_port,
         tmpdir,
         random_marker,
         cached_genesis,
         have_blockchain_backend,
 ):
+    ethrpc_endpoint = f'http://localhost:{ethrpc_port}'
     if not have_blockchain_backend:
         return None
 

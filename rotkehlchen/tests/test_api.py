@@ -293,7 +293,7 @@ def test_set_settings(rotkehlchen_server):
         'eth_rpc_endpoint': 'http://working.nodes.com:8545',
     }
     block_query = patch('rotkehlchen.ethchain.Ethchain.query_eth_highest_block', return_value=0)
-    mock_web3 = patch('web3.main.Web3.__new__', MockWeb3)
+    mock_web3 = patch('rotkehlchen.ethchain.Web3', MockWeb3)
     with block_query, mock_web3:
         response = rotkehlchen_server.set_settings(given_settings)
     assert response['result'] is True
