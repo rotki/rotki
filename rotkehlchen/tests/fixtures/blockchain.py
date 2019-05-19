@@ -69,13 +69,18 @@ def ethrpc_port(port_generator):
 
 
 @pytest.fixture
+def ethrpc_endpoint(ethrpc_port):
+    return f'http://localhost:{ethrpc_port}'
+
+
+@pytest.fixture
 def eth_p2p_port(port_generator):
     return next(port_generator)
 
 
 @pytest.fixture
-def ethchain_client(ethrpc_port):
-    return Ethchain(ethrpc_port, attempt_connect=False)
+def ethchain_client(ethrpc_endpoint):
+    return Ethchain(ethrpc_endpoint, attempt_connect=False)
 
 
 def _geth_blockchain(
@@ -83,7 +88,8 @@ def _geth_blockchain(
         ethchain_client,
         private_keys,
         eth_p2p_port,
-        eth_rpc_port,
+        ethrpc_endpoint,
+        ethrpc_port,
         tmpdir,
         random_marker,
         genesis_path,
@@ -94,7 +100,8 @@ def _geth_blockchain(
         ethchain_client=ethchain_client,
         private_keys=private_keys,
         gethport=eth_p2p_port,
-        gethrpcport=eth_rpc_port,
+        gethrpcendpoint=ethrpc_endpoint,
+        gethrpcport=ethrpc_port,
         base_datadir=str(tmpdir),
         verbosity=request.config.option.verbose,
         random_marker=random_marker,

@@ -486,6 +486,39 @@ def test_upgrade_db_2_to_3(data_dir, username):
     assert data.db.get_version() == ROTKEHLCHEN_DB_VERSION
 
 
+def test_upgrade_db_3_to_4(data_dir, username):
+    """Test upgrading the DB from version 3 to version 4, which means that
+    the eth_rpc_port setting is changed to eth_rpc_endpoint"""
+    # Creating a new data dir should work
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
+    data.unlock(username, '123', create_new=True)
+    # Manually set to version 3 and input the old rpcport setting
+    cursor = data.db.conn.cursor()
+    cursor.execute(
+        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+        ('version', str(3)),
+    )
+    cursor.execute(
+        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+        ('eth_rpc_port', '8585'),
+    )
+    data.db.conn.commit()
+
+    # now relogin and check that the setting has been changed and the version bumped
+    del data
+    data = DataHandler(data_dir, msg_aggregator)
+    data.unlock(username, '123', create_new=False)
+    cursor = data.db.conn.cursor()
+    query = cursor.execute('SELECT value FROM settings where name="eth_rpc_endpoint";')
+    query = query.fetchall()
+    assert query[0][0] == 'http://localhost:8585'
+    query = cursor.execute('SELECT value FROM settings where name="eth_rpc_port";')
+    query = query.fetchall()
+    assert len(query) == 0
+    assert data.db.get_version() == ROTKEHLCHEN_DB_VERSION
+
+
 def test_settings_entry_types(data_dir, username):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
