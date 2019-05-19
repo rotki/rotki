@@ -96,7 +96,7 @@ class Accountant():
     ):
         self.csvexporter = CSVExporter(profit_currency, user_directory, create_csv)
         self.events = TaxableEvents(self.csvexporter, profit_currency)
-        self.set_main_currency(profit_currency)
+        self.set_main_currency(profit_currency.identifier)
 
         self.asset_movement_fees = FVal(0)
         self.last_gas_price = FVal(0)
@@ -148,11 +148,10 @@ class Accountant():
 
         return True, ''
 
-    def set_main_currency(self, currency: Asset) -> None:
-        if not currency.is_fiat():
-            raise ValueError(
-                f'Attempted to set unsupported "{str(currency)}" as main currency.',
-            )
+    def set_main_currency(self, given_currency: str) -> None:
+        currency = Asset(given_currency)
+        msg = 'main currency checks should have happened at rotkehlchen.set_settings()'
+        assert currency.is_fiat(), msg
 
         self.profit_currency = currency
         self.events.profit_currency = currency
