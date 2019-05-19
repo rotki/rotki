@@ -1,5 +1,6 @@
 import os
 from json.decoder import JSONDecodeError
+from unittest.mock import patch
 
 import pytest
 
@@ -7,6 +8,7 @@ from rotkehlchen.data_handler import VALID_SETTINGS
 from rotkehlchen.db.dbhandler import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.tests.utils.mock import MockWeb3
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
 from rotkehlchen.typing import Timestamp
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
@@ -273,3 +275,28 @@ def test_query_latest_asset_value_distribution(rotkehlchen_server):
         'amount': '5',
         'usd_value': '61.5',
     }
+
+
+def test_set_settings(rotkehlchen_server):
+    # Test that failing to connect to an rpc endpoint returns an error
+    given_settings = {
+        'eth_rpc_endpoint': 'http://foo.boo.nodes.com:8545',
+    }
+    response = rotkehlchen_server.set_settings(given_settings)
+    assert response['result'] is True
+    assert 'Failed to connect to ethereum node at endpoint' in response['message']
+    settings = rotkehlchen_server.get_settings()
+    assert settings['eth_rpc_endpoint'] == 'http://localhost:8545'
+
+    # Test that when connection is a success all is good with the set value
+    given_settings = {
+        'eth_rpc_endpoint': 'http://working.nodes.com:8545',
+    }
+    block_query = patch('rotkehlchen.ethchain.Ethchain.query_eth_highest_block', return_value=0)
+    mock_web3 = patch('web3.main.Web3.__new__', MockWeb3)
+    with block_query, mock_web3:
+        response = rotkehlchen_server.set_settings(given_settings)
+    assert response['result'] is True
+    assert response['message'] == ''
+    settings = rotkehlchen_server.get_settings()
+    assert settings['eth_rpc_endpoint'] == 'http://working.nodes.com:8545'

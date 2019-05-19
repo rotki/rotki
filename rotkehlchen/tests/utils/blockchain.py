@@ -18,8 +18,6 @@ if os.name != 'nt':
     import termios
 
 
-
-
 logger = logging.getLogger(__name__)
 
 DEFAULT_BALANCE = (10 ** 18) * 1000000

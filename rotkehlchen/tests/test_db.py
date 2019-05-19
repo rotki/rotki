@@ -181,7 +181,7 @@ def test_writting_fetching_data(data_dir, username):
     del result['last_write_ts']
     assert result == {
         'historical_data_start': DEFAULT_START_DATE,
-        'eth_rpc_port': '8545',
+        'eth_rpc_endpoint': 'http://localhost:8545',
         'ui_floating_precision': DEFAULT_UI_FLOATING_PRECISION,
         'db_version': ROTKEHLCHEN_DB_VERSION,
         'include_crypto2crypto': DEFAULT_INCLUDE_CRYPTO2CRYPTO,
@@ -202,14 +202,14 @@ def test_writting_fetching_data(data_dir, username):
     assert msg != '' and 'nonexisting_setting' in msg
     _, msg = data.set_settings({
         'nonexisting_setting': 1,
-        'eth_rpc_port': '8555',
+        'eth_rpc_endpoint': 'http://localhost:8555',
         'ui_floating_precision': 3,
     }, accountant=None)
     assert msg != '' and 'nonexisting_setting' in msg
 
     # Now check nothing funny made it in the db
     result = data.db.get_settings()
-    assert result['eth_rpc_port'] == '8555'
+    assert result['eth_rpc_endpoint'] == 'http://localhost:8555'
     assert result['ui_floating_precision'] == 3
     assert 'nonexisting_setting' not in result
 
@@ -532,7 +532,7 @@ def test_settings_entry_types(data_dir, username):
         'ui_floating_precision': 1,
         'taxfree_after_period': 1,
         'historical_data_start': '01/08/2015',
-        'eth_rpc_port': '8545',
+        'eth_rpc_endpoint': 'http://localhost:8545',
         'balance_save_frequency': 24,
         'anonymized_logs': True,
         'date_display_format': '%d/%m/%Y %H:%M:%S %z',
@@ -554,8 +554,8 @@ def test_settings_entry_types(data_dir, username):
     assert res['taxfree_after_period'] == 1
     assert isinstance(res['historical_data_start'], str)
     assert res['historical_data_start'] == '01/08/2015'
-    assert isinstance(res['eth_rpc_port'], str)
-    assert res['eth_rpc_port'] == '8545'
+    assert isinstance(res['eth_rpc_endpoint'], str)
+    assert res['eth_rpc_endpoint'] == 'http://localhost:8545'
     assert isinstance(res['balance_save_frequency'], int)
     assert res['balance_save_frequency'] == 24
     assert isinstance(res['last_balance_save'], int)
