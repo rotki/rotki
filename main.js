@@ -1,5 +1,6 @@
 const electron = require('electron');
 const app = electron.app;
+const Menu = electron.Menu;
 const ipcMain = electron.ipcMain;
 const BrowserWindow = electron.BrowserWindow;
 const path = require('path');
@@ -64,6 +65,27 @@ const createWindow = () => {
 
     // uncomment for the final app to have dev tools opened
     // mainWindow.webContents.openDevTools();
+
+  // Check if we are on a MAC
+    if (process.platform === 'darwin') {
+        // Create our menu entries so that we can use MAC shortcuts
+        Menu.setApplicationMenu(Menu.buildFromTemplate([
+            {
+                label: 'Edit',
+                submenu: [
+                    { role: 'undo' },
+                    { role: 'redo' },
+                    { type: 'separator' },
+                    { role: 'cut' },
+                    { role: 'copy' },
+                    { role: 'paste' },
+                    { role: 'pasteandmatchstyle' },
+                    { role: 'delete' },
+                    { role: 'selectall' }
+                ]
+            }
+        ]));
+    }
 
     mainWindow.on('closed', () => {
         mainWindow = null;
