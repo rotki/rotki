@@ -54,8 +54,11 @@ const singleNotification = (notification: Notification) => `
             ${notification.message}
         </div>
     </div>
-    <div class="icon">
-        <i class="fa ${icon(notification)} fa-2x ${colorClass(notification)}"></i>
+    <div class="icons">
+        <div data-tooltip="Dismisses notification" class="tooltip-left">
+            <i class="fa fa-close fa-2x notification-dismiss"></i>
+        </div>
+        <i class="fa ${icon(notification)} fa-2x ${colorClass(notification)} icon"></i>
     </div>
 </div>
 `;
@@ -84,7 +87,6 @@ export class NotificationManager {
             this.notifications.splice(index, 1);
         }
         this.toCache(this.notifications);
-        console.log(this.notifications);
     }
 
     mergeToCache(notifications: Notification[]) {
@@ -139,6 +141,7 @@ function updateNotificationMessages(notifications: Notification[]) {
     }
 
 }
+
 export function updateNotifications() {
     const notifications = notificationManager.getNotifications();
     const badge = $('#notification-badge');
@@ -153,8 +156,9 @@ export function updateNotifications() {
     }
 
 }
+
 export function setupNotificationHandlers() {
-    const $notification = $('.notification');
+    const $notification = $('.notification-dismiss');
 
     const $clear = $('#notifications-clear-all');
     $notification.off('click');
@@ -163,11 +167,15 @@ export function setupNotificationHandlers() {
 
     $notification.on('click', function (event: JQuery.Event) {
         event.preventDefault();
-        $(event.target).closest('.notification').remove();
-        const notificationId = parseInt(this.id.replace('notification-', ''), 10);
-        notificationManager.dismissNotification(notificationId);
-        const badge = $('.badge');
-        badge.text(parseInt(badge.text(), 10) - 1);
+        const notification = $(event.target).closest('.notification');
+        const id = notification.attr('id');
+        if (id) {
+            const notificationId = parseInt(id.replace('notification-', ''), 10);
+            notification.remove();
+            notificationManager.dismissNotification(notificationId);
+            const badge = $('.badge');
+            badge.text(parseInt(badge.text(), 10) - 1);
+        }
     });
 
     $clear.on('click', function (event: JQuery.Event) {
@@ -184,7 +192,8 @@ export function setupNotificationHandlers() {
             content: 'This action will clear all the active notifications. Do you want to proceed?',
             buttons: {
                 confirm: confirm,
-                cancel: () => {}
+                cancel: () => {
+                }
             }
         });
 
