@@ -34,7 +34,7 @@ const colorClass = (notification: Notification) => {
 };
 
 const notificationBadge = (notifications: Notification[]) => `
-<i class="fa fa-info-circle fa-fw"></i>
+<i class="fa fa-bell fa-fw"></i>
 <i class="fa fa-caret-down"></i>
 <span class="badge">${notifications.length}</span>
 `;
@@ -61,8 +61,8 @@ const singleNotification = (notification: Notification) => `
 `;
 
 const notificationMessages = (notifications: Notification[]) => `
-<div class="notification-clear css-tooltip">
-    <i class="fa fa-trash fa-2x" id="notifications-clear-all"></i>
+<div class="notification-clear tooltip-right" data-tooltip="Clears all notifications">
+    <i class="fa fa-trash fa-1x" id="notifications-clear-all"></i>
 </div>
 <div class='notification-area'>
   ${notifications.length > 0 ? notifications.reverse().map(value => singleNotification(value)).join('') : empty}
@@ -128,7 +128,8 @@ export class NotificationManager {
 
 export const notificationManager = new NotificationManager();
 
-function updateNotificationMessages(notifications: Notification[], elements: JQuery<HTMLElement>) {
+function updateNotificationMessages(notifications: Notification[]) {
+    const elements = $('.notification');
     for (const notification of notifications) {
         const element = elements.filter(`#notification-${notification.id}`);
         if (element.html()) {
@@ -144,12 +145,11 @@ export function updateNotifications() {
     const messages = $('#notification-messages');
 
     badge.html(notificationBadge(notifications));
-
-    const elements = $('.notification');
-    if (elements.length === 0) {
+    const content = $('.notification-area').children();
+    if (content.length === 0) {
         messages.html(notificationMessages(notifications));
     } else {
-        updateNotificationMessages(notifications, elements);
+        updateNotificationMessages(notifications);
     }
 
 }
@@ -169,11 +169,25 @@ export function setupNotificationHandlers() {
         const badge = $('.badge');
         badge.text(parseInt(badge.text(), 10) - 1);
     });
+
     $clear.on('click', function (event: JQuery.Event) {
         event.preventDefault();
-        notificationManager.clearAll();
-        $('.badge').text(0);
-        $('.notification-area').html(empty);
+
+        const confirm = () => {
+            notificationManager.clearAll();
+            $('.badge').text(0);
+            $('.notification-area').html(empty);
+        };
+
+        $.confirm({
+            title: 'Clear active notifications',
+            content: 'This action will clear all the active notifications. Do you want to proceed?',
+            buttons: {
+                confirm: confirm,
+                cancel: () => {}
+            }
+        });
+
     });
 
 }
