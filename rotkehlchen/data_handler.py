@@ -238,11 +238,11 @@ class DataHandler():
         try:
             asset = Asset(given_asset)
         except UnknownAsset:
-            return False, 'given asset %s for ignoring is not known/supported'
+            return False, f'Given asset {given_asset} for ignoring is not known/supported'
 
         ignored_assets = self.db.get_ignored_assets()
         if asset in ignored_assets:
-            return False, '%s already in ignored assets' % asset
+            return False, f'{asset.identifier} is already in ignored assets'
         self.db.add_to_ignored_assets(asset)
         return True, ''
 
@@ -250,11 +250,11 @@ class DataHandler():
         try:
             asset = Asset(given_asset)
         except UnknownAsset:
-            return False, 'given asset %s for ignoring is not known/supported'
+            return False, f'Given asset {given_asset} for ignoring is not known/supported'
 
         ignored_assets = self.db.get_ignored_assets()
         if asset not in ignored_assets:
-            return False, '%s not in ignored assets' % asset
+            return False, f'{asset.identifier} is not in ignored assets'
         self.db.remove_from_ignored_assets(asset)
         return True, ''
 
