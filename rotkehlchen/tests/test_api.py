@@ -330,3 +330,47 @@ def test_set_settings(rotkehlchen_server):
     assert response['message'] == 'Provided symbol for main currency BTC is not a fiat currency'
     settings = rotkehlchen_server.get_settings()
     assert settings['main_currency'] == 'CAD'
+
+
+def test_ignored_assets(rotkehlchen_server):
+    response = rotkehlchen_server.get_ignored_assets()
+    assert response['ignored_assets'] == []
+
+    response = rotkehlchen_server.add_ignored_asset('RDN')
+    assert response['result'] is True
+    assert response['message'] == ''
+
+    response = rotkehlchen_server.add_ignored_asset('GNO')
+    assert response['result'] is True
+    assert response['message'] == ''
+
+    response = rotkehlchen_server.get_ignored_assets()
+    assert response['ignored_assets'] == ['GNO', 'RDN']
+
+    # Test that adding an unknown asset is an error
+    response = rotkehlchen_server.add_ignored_asset('ADSAD')
+    assert response['result'] is False
+    assert response['message'] == 'Given asset ADSAD for ignoring is not known/supported'
+
+    # Test that adding an already ignored asset is an error
+    response = rotkehlchen_server.add_ignored_asset('RDN')
+    assert response['result'] is False
+    assert response['message'] == 'RDN is already in ignored assets'
+
+    # Test that removing works
+    response = rotkehlchen_server.remove_ignored_asset('RDN')
+    assert response['result'] is True
+    assert response['message'] == ''
+
+    response = rotkehlchen_server.get_ignored_assets()
+    assert response['ignored_assets'] == ['GNO']
+
+    # Test that removing an unknown asset is an error
+    response = rotkehlchen_server.remove_ignored_asset('DSADAD')
+    assert response['result'] is False
+    assert response['message'] == 'Given asset DSADAD for ignoring is not known/supported'
+
+    # Test that removing a non-ignored asset is an error
+    response = rotkehlchen_server.remove_ignored_asset('BTC')
+    assert response['result'] is False
+    assert response['message'] == 'BTC is not in ignored assets'
