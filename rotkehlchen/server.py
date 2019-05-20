@@ -373,7 +373,7 @@ class RotkehlchenServer():
                 identifier for identifier in self.rotkehlchen.data.db.get_ignored_assets()
             ],
         }
-        return result
+        return process_result(result)
 
     def add_ignored_asset(self, asset: str):
         result, message = self.rotkehlchen.data.add_ignored_asset(asset)
