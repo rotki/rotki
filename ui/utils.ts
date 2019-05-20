@@ -166,7 +166,7 @@ export function setupMessageRetrieval() {
             });
     };
     consume();
-    monitorMessages = setInterval(consume, 15000);
+    monitorMessages = setInterval(consume, 5000);
 }
 
 
