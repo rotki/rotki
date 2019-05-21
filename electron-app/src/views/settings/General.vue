@@ -132,7 +132,7 @@ export default class General extends Vue {
     this.floatingPrecision = settings.floatingPrecision;
     this.anonymizedLogs = settings.anonymizedLogs;
     this.historicDataStart = settings.historicDataStart;
-    this.rpcPort = settings.rpcPort;
+    this.rpcPort = settings.ethRpcEndpoint;
     this.balanceSaveFrequency = settings.balanceSaveFrequency;
     this.dateDisplayFormat = settings.dateDisplayFormat;
 
@@ -163,7 +163,7 @@ export default class General extends Vue {
     const generalSettings: GeneralSettings = {
       floatingPrecision: this.floatingPrecision,
       historicDataStart: this.historicDataStart,
-      rpcPort: this.rpcPort,
+      ethRpcEndpoint: this.rpcPort,
       balanceSaveFrequency: this.balanceSaveFrequency,
       anonymizedLogs: this.anonymizedLogs,
       dateDisplayFormat: this.dateDisplayFormat,

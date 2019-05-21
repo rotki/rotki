@@ -2,8 +2,8 @@ import Vue from 'vue';
 import Vuex, { StoreOptions } from 'vuex';
 import { Currency } from '@/model/currency';
 import { currencies } from '@/data/currencies';
-import { GeneralSettings } from '@/typing/types';
-import { defaultSettings } from '@/data/factories';
+import { AccountingSettings, GeneralSettings } from '@/typing/types';
+import { defaultAccountingSettings, defaultSettings } from '@/data/factories';
 
 Vue.use(Vuex);
 
@@ -12,7 +12,10 @@ let store: StoreOptions<RotkehlchenState> = {
     currency: currencies[0],
     userLogged: false,
     settings: defaultSettings(),
-    logout: false
+    accountingSettings: defaultAccountingSettings(),
+    logout: false,
+    premium: false,
+    premiumSync: false
   },
   mutations: {
     defaultCurrency(state: RotkehlchenState, currency: Currency) {
@@ -26,6 +29,18 @@ let store: StoreOptions<RotkehlchenState> = {
     },
     settings(state: RotkehlchenState, settings: GeneralSettings) {
       state.settings = Object.assign({}, settings);
+    },
+    premium(state: RotkehlchenState, premium: boolean) {
+      state.premium = premium;
+    },
+    premiumSync(state: RotkehlchenState, premiumSync: boolean) {
+      state.premiumSync = premiumSync;
+    },
+    accountingSettings(
+      state: RotkehlchenState,
+      accountingSettings: AccountingSettings
+    ) {
+      state.accountingSettings = Object.assign({}, accountingSettings);
     }
   },
   actions: {}
@@ -36,5 +51,8 @@ export interface RotkehlchenState {
   currency: Currency;
   userLogged: boolean;
   settings: GeneralSettings;
+  accountingSettings: AccountingSettings;
   logout: boolean;
+  premium: boolean;
+  premiumSync: boolean;
 }
