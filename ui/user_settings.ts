@@ -204,7 +204,7 @@ function setup_exchange_callback(event: JQuery.Event) {
     });
 }
 
-function fiat_selection_callback(event: JQuery.Event) {
+function fiat_selection_callback(event: JQuery.TriggeredEvent) {
     if (!FIAT_BALANCES) {
         return;
     }

@@ -104,7 +104,7 @@ function prompt_new_account() {
         },
         onContentReady: function() {
             const $content = $(document);
-            $content.find('form').on('submit', (e: JQuery.Event) => {
+            $content.find('form').on('submit', (e: JQuery.TriggeredEvent) => {
                 // if the user submits the form by pressing enter in the field.
                 e.preventDefault();
                 $(e.target).trigger('click'); // reference the button and click it
@@ -147,7 +147,7 @@ export function prompt_sign_in() {
         },
         onContentReady: () => {
             const $content = $(document);
-            $content.find('form').on('submit', function(e: JQuery.Event) {
+            $content.find('form').on('submit', function(e: JQuery.TriggeredEvent) {
                 e.preventDefault();
                 $(e.target).trigger('click'); // reference the button and click it
             });

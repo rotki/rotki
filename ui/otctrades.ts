@@ -221,7 +221,7 @@ export function add_otctrades_listeners() {
         format: settings.datetime_format
     });
     // Add event listener for opening and closing details
-    $('#table_otctrades tbody').on('click', 'td.details-control', (event: JQuery.Event) => {
+    $('#table_otctrades tbody').on('click', 'td.details-control', (event: JQuery.TriggeredEvent) => {
         const tr = $(event.target).closest('tr');
         const tdi = tr.find('i.fa');
         const row = OTC_TRADES_TABLE.row(tr);
