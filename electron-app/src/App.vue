@@ -91,7 +91,22 @@
       @confirm="logoutUser()"
       @cancel="cancelLogout()"
     ></confirmation>
-    <login v-if="!userLogged" @login="login($event)"></login>
+    <message-dialog
+      v-if="error"
+      title="Login Failed"
+      :message="error"
+      @confirm="ok()"
+    ></message-dialog>
+    <login
+      v-if="!userLogged && !error"
+      @login="login($event)"
+      @new-account="newAccount = true"
+    ></login>
+    <create-account
+      v-if="newAccount"
+      @cancel="newAccount = false"
+      @confirm="createAccount($event)"
+    ></create-account>
   </div>
 </template>
 
@@ -110,11 +125,16 @@ import { reset_exchange_tables } from '@/legacy/exchange';
 import { reset_user_settings } from '@/legacy/user_settings';
 import { create_or_reload_dashboard } from '@/legacy/dashboard';
 import Login from '@/components/Login.vue';
-import { Credentials } from '@/typing/types';
-import { unlock_user } from '@/legacy/userunlock';
+import { AccountData, Credentials } from '@/typing/types';
+import { handleUnlockResult } from '@/legacy/userunlock';
+import MessageDialog from '@/components/MessageDialog.vue';
+import CreateAccount from '@/components/CreateAccount.vue';
+import { UnlockResult } from '@/model/action-result';
 
 @Component({
   components: {
+    CreateAccount,
+    MessageDialog,
     Login,
     Confirmation,
     CurrencyDropDown,
@@ -127,6 +147,11 @@ export default class App extends Vue {
   logout!: boolean;
   userLogged!: boolean;
 
+  newAccount: boolean = false;
+
+  permissionNeeded: string = '';
+  error: string = '';
+
   get visibleModal(): boolean {
     return this.logout;
   }
@@ -135,8 +160,49 @@ export default class App extends Vue {
     this.$rpc.connect();
   }
 
+  ok() {
+    this.error = '';
+    this.permissionNeeded = '';
+  }
+
   async login(credentials: Credentials) {
-    unlock_user(credentials.username, credentials.password, false, 'unknown');
+    this.$rpc
+      .unlock_user(credentials.username, credentials.password)
+      .then(unlockResult => this.completeLogin(unlockResult))
+      .catch((reason: Error) => {
+        this.error = reason.message;
+      });
+  }
+
+  private completeLogin(unlockResult: UnlockResult) {
+    this.newAccount = false;
+    console.log(unlockResult);
+    if (!unlockResult.result) {
+      if (unlockResult.permission_needed) {
+        this.permissionNeeded = unlockResult.message;
+      } else {
+        this.error = unlockResult.message;
+      }
+      return;
+    }
+
+    handleUnlockResult(unlockResult);
+  }
+
+  async createAccount(accountData: AccountData) {
+    this.$rpc
+      .unlock_user(
+        accountData.username,
+        accountData.password,
+        true,
+        'unknown',
+        accountData.apiKey,
+        accountData.apiSecret
+      )
+      .then(unlockResult => this.completeLogin(unlockResult))
+      .catch((reason: Error) => {
+        this.error = reason.message;
+      });
   }
 
   logoutUser() {

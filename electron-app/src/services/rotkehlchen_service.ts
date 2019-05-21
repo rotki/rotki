@@ -458,10 +458,10 @@ export class RotkehlchenService {
   unlock_user(
     username: string,
     password: string,
-    create_true: boolean,
-    sync_approval: string,
-    api_key: string,
-    api_secret: string
+    create_true: boolean = false,
+    sync_approval: 'yes' | 'no' | 'unknown' = 'unknown',
+    api_key: string = '',
+    api_secret: string = ''
   ): Promise<UnlockResult> {
     return new Promise<UnlockResult>((resolve, reject) => {
       client.invoke(
