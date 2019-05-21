@@ -1,27 +1,26 @@
 <template>
-  <div>
-    <Transition name="fade-transition" mode="out-in">
-      <div v-show="visibleModal" class="overlay"></div>
-    </Transition>
-    <nav
-      class="navbar navbar-default navbar-static-top"
-      role="navigation"
-      style="margin-bottom: 0"
+  <v-app id="rotkehlchen">
+    <v-navigation-drawer
+      v-model="drawer"
+      fixed
+      :clipped="$vuetify.breakpoint.mdAndUp"
+      class="grey lighten-4"
+      app
     >
-      <div class="navbar-header">
-        <button
-          type="button"
-          class="navbar-toggle"
-          data-toggle="collapse"
-          data-target=".navbar-collapse"
-        >
-          <span class="sr-only">Toggle navigation</span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-        </button>
-        <a class="navbar-brand" href="">Rotkehlchen</a>
+      <div class="text-center">
+        <img
+          id="rotkehlchen_no_text"
+          :src="require('./assets/images/rotkehlchen_no_text.png')"
+          class="rounded"
+          alt=""
+        />
       </div>
+      <div id="welcome_text" class="text-center"></div>
+      <navigation-menu></navigation-menu>
+    </v-navigation-drawer>
+    <v-toolbar app fixed clipped-left>
+      <v-toolbar-side-icon @click="drawer = !drawer"></v-toolbar-side-icon>
+      <v-toolbar-title class="font-weight-light">Rotkehlchen</v-toolbar-title>
 
       <ul class="nav navbar-top-links navbar-status-icons">
         <ul class="list-group lg-status-icons">
@@ -46,6 +45,7 @@
           </li>
         </ul>
       </ul>
+      <v-spacer></v-spacer>
       <ul class="nav navbar-top-links navbar-right">
         <li class="dropdown">
           <a class="dropdown-toggle" data-toggle="dropdown" href="#">
@@ -68,24 +68,10 @@
         <user-dropdown></user-dropdown>
         <currency-drop-down></currency-drop-down>
       </ul>
-
-      <div class="navbar-default sidebar" role="navigation">
-        <div class="text-center">
-          <img
-            id="rotkehlchen_no_text"
-            :src="require('./assets/images/rotkehlchen_no_text.png')"
-            class="rounded"
-            alt=""
-          />
-        </div>
-        <div id="welcome_text" class="text-center"></div>
-        <navigation-menu></navigation-menu>
-      </div>
-    </nav>
-
-    <div id="page-wrapper">
+    </v-toolbar>
+    <v-content v-if="userLogged">
       <router-view></router-view>
-    </div>
+    </v-content>
     <confirmation
       v-if="logout"
       @confirm="logoutUser()"
@@ -107,7 +93,7 @@
       @cancel="newAccount = false"
       @confirm="createAccount($event)"
     ></create-account>
-  </div>
+  </v-app>
 </template>
 
 <script lang="ts">
@@ -148,6 +134,7 @@ export default class App extends Vue {
   userLogged!: boolean;
 
   newAccount: boolean = false;
+  drawer = true;
 
   permissionNeeded: string = '';
   error: string = '';
