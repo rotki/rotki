@@ -1,5 +1,5 @@
 import { DBSettings } from '@/model/action-result';
-import { GeneralSettings } from '@/typing/types';
+import { AccountingSettings, GeneralSettings } from '@/typing/types';
 
 export const convertToGeneralSettings = (
   settings: DBSettings
@@ -9,6 +9,15 @@ export const convertToGeneralSettings = (
   selectedCurrency: settings.main_currency,
   dateDisplayFormat: settings.date_display_format,
   balanceSaveFrequency: settings.balance_save_frequency,
-  rpcPort: parseInt(settings.eth_rpc_port, 10),
+  ethRpcEndpoint: settings.eth_rpc_endpoint,
   anonymizedLogs: settings.anonymized_logs
+});
+
+export const convertToAccountingSettings = (
+  settings: DBSettings
+): AccountingSettings => ({
+  taxfreeAfterPeriod: settings.taxfree_after_period,
+  includeGasCosts: settings.include_gas_costs,
+  includeCrypto2Crypto: settings.include_crypto2crypto,
+  lastBalanceSave: settings.last_balance_save
 });

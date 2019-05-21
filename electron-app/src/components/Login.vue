@@ -60,7 +60,11 @@
                       >
                         Sign In
                       </button>
-                      <button type="button" class="btn btn-blue">
+                      <button
+                        type="button"
+                        class="btn btn-blue"
+                        @click="newAccount()"
+                      >
                         Create New Account
                       </button>
                     </div>
@@ -77,7 +81,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Emit, Vue } from 'vue-property-decorator';
 import { Credentials } from '@/typing/types';
 import { verify_userpass } from '@/legacy/userunlock';
 
@@ -96,6 +100,9 @@ export default class Login extends Vue {
     };
     this.$emit('login', credentials);
   }
+
+  @Emit()
+  newAccount() {}
 }
 </script>
 
