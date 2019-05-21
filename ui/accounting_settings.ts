@@ -21,7 +21,7 @@ function populate_ignored_assets() {
     });
 }
 
-function ignored_asset_modify_callback(event: JQuery.Event) {
+function ignored_asset_modify_callback(event: JQuery.TriggeredEvent) {
     event.preventDefault();
     const button_type = $('#modify_ignored_asset_button').html();
     const asset = $('#ignored_asset_entry').val() as string;
@@ -51,7 +51,7 @@ function ignored_asset_modify_callback(event: JQuery.Event) {
     });
 }
 
-function ignored_asset_selection_callback(event: JQuery.Event) {
+function ignored_asset_selection_callback(event: JQuery.TriggeredEvent) {
     const asset = $(event.target).val() as string;
     $('#ignored_asset_entry').val(asset);
     if (asset !== '') {
@@ -61,7 +61,7 @@ function ignored_asset_selection_callback(event: JQuery.Event) {
     }
 }
 
-function crypto2crypto_callback(event: JQuery.Event) {
+function crypto2crypto_callback(event: JQuery.TriggeredEvent) {
     const element = $(event.target);
     const name = element.val();
     const is_checked = element.prop('checked');
@@ -83,7 +83,7 @@ function crypto2crypto_callback(event: JQuery.Event) {
     });
 }
 
-function include_gas_costs_callback(event: JQuery.Event) {
+function include_gas_costs_callback(event: JQuery.TriggeredEvent) {
     const element = $(event.target);
     const name = element.val();
     const is_checked = element.prop('checked');
