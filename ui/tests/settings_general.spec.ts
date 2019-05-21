@@ -53,24 +53,6 @@ describe('general settings', function () {
         await captureOnFailure(app, this.currentTest);
     });
 
-    it('should add wrong port number and get an error', async () => {
-        await retry( async() => {
-            client.clearElement('#eth_rpc_endpoint');
-        });
-        await retry( async() => {
-            client.addValue('#eth_rpc_endpoint', 500000);
-        });
-        await client.click('#settingssubmit');
-
-        await client.waitUntilTextExists('.jconfirm-title', 'Invalid port number', METHOD_TIMEOUT);
-        await client.element('.jconfirm-content > div').getText()
-            .should
-            .eventually
-            .contain('Please ensure that the specified port number is between 1 and 65535');
-        await client.click('.jconfirm-buttons > button');
-        await client.waitForExist('.jconfirm-box', METHOD_TIMEOUT, true);
-    });
-
     it('should change the general settings and save them', async () => {
         await retry( async() => {
             client.clearElement('#eth_rpc_endpoint');
