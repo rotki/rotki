@@ -105,17 +105,17 @@ describe('accounting settings', function () {
         let numberOfElements = matchedElements.length;
         expect(numberOfElements).to.be.equal(1, 'First there should only be only one option in #ignored_assets_selection');
 
-        await addIgnoredAsset(client, 'KTT');
-        await addIgnoredAsset(client, 'TTT');
+        await addIgnoredAsset(client, 'BSV');
+        await addIgnoredAsset(client, 'GNT');
 
         matchedElements = (await client.elements('#ignored_assets_selection > option')).value;
         numberOfElements = matchedElements.length;
         expect(numberOfElements).to.be.equal(3, 'After ignoring two there should only be only three options in #ignored_assets_selection');
 
-        await removeIgnoredAsset(client, 'KTT');
-        await client.waitForExist('//option[@value="KTT"]', METHOD_TIMEOUT, true);
-        await removeIgnoredAsset(client, 'TTT');
-        await client.waitForExist('//option[@value="TTT"]', METHOD_TIMEOUT, true);
+        await removeIgnoredAsset(client, 'BSV');
+        await client.waitForExist('//option[@value="BSV"]', METHOD_TIMEOUT, true);
+        await removeIgnoredAsset(client, 'GNT');
+        await client.waitForExist('//option[@value="GNT"]', METHOD_TIMEOUT, true);
 
         matchedElements = (await client.elements('#ignored_assets_selection > option')).value;
         numberOfElements = matchedElements.length;
