@@ -1,5 +1,3 @@
-import { settings } from '@/legacy/settings';
-
 export interface GeneralSettings {
   readonly floatingPrecision: number;
   readonly anonymizedLogs: boolean;
@@ -14,7 +12,7 @@ export interface AccountingSettings {
   readonly lastBalanceSave: number;
   readonly includeCrypto2Crypto: boolean;
   readonly includeGasCosts: boolean;
-  readonly taxfreeAfterPeriod: number;
+  readonly taxFreeAfterPeriod: number | null;
 }
 
 interface Credentials {
