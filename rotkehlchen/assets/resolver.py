@@ -26,6 +26,7 @@ asset_type_mapping = {
     'ontology token': AssetType.ONTOLOGY_TOKEN,
     'exchange specific': AssetType.EXCHANGE_SPECIFIC,
     'vechain token': AssetType.VECHAIN_TOKEN,
+    'binance token': AssetType.BINANCE_TOKEN,
 }
 
 
