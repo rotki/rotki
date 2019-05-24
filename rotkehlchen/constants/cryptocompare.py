@@ -271,6 +271,8 @@ WORLD_TO_CRYPTOCOMPARE = {
     'WIN-2': 'WIN',
     # For Rotkehlchen BlitzPredict is XBP  but it's XBP* in cryptocompare
     'XBP': 'XBP*',
+    # For Cryptocompare PHX has not been updated to PHB
+    'PHB': 'PHX',
 }
 
 # TODO: For the ones missing from cryptocompare make sure to also
