@@ -6347,6 +6347,12 @@
         "symbol": "PFR",
         "type": "ethereum token"
     },
+    "PHB": {
+        "name": "Red Pulse Phoenix Binance",
+        "started": 1558497600,
+        "symbol": "PHB",
+        "type": "binance token"
+    },
     "PHI": {
         "ethereum_address": "0x13C2fab6354d3790D8ece4f0f1a3280b4A25aD96",
         "ethereum_token_decimals": 18,
@@ -6358,6 +6364,8 @@
     "PHX": {
         "name": "Red Pulse Phoenix",
         "started": 1507420800,
+        "ended": 1558497600,
+        "swapped_for": "PHB",
         "symbol": "PHX",
         "type": "neo token"
     },
