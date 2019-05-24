@@ -165,7 +165,7 @@ export function setupNotificationHandlers() {
 
     $clear.off('click');
 
-    $notification.on('click', function (event: JQuery.Event) {
+    $notification.on('click', function (event: JQuery.TriggeredEvent) {
         event.preventDefault();
         const notification = $(event.target).closest('.notification');
         const id = notification.attr('id');
