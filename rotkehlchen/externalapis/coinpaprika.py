@@ -391,6 +391,8 @@ WORLD_TO_PAPRIKA_ID = {
     'WIN-2': 'win-wcoin',
     # For Rotkehlchen XID is Sphre Air
     'XID': 'xid-sphre-air',
+    # For Paprika PHX has not been updated to PHB
+    'PHB': 'phx-red-pulse-phoenix',
 }
 
 

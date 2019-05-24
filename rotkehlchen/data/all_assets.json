@@ -8149,6 +8149,12 @@
         "symbol": "TFL",
         "type": "ethereum token"
     },
+    "TFUEL": {
+        "name": "Theta Fuel",
+        "started": 1542931200,
+        "symbol": "TFUEL",
+        "type": "own chain"
+    },
     "TGAME": {
         "ethereum_address": "0xF8e06E4e4A80287FDCa5b02dcCecAa9D0954840F",
         "ethereum_token_decimals": 18,
