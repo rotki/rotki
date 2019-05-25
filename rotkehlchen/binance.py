@@ -9,7 +9,7 @@ import gevent
 
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import BINANCE_BASE_URL, CACHE_RESPONSE_FOR_SECS
-from rotkehlchen.errors import RemoteError, UnsupportedAsset
+from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -266,9 +266,9 @@ class Binance(Exchange):
                 continue
             try:
                 asset = asset_from_binance(entry['asset'])
-            except UnsupportedAsset as e:
+            except (UnsupportedAsset, UnknownAsset) as e:
                 self.msg_aggregator.add_warning(
-                    f'Found unsupported binance asset {e.asset_name}. '
+                    f'Found unsupported/unknown binance asset {e.asset_name}. '
                     f' Ignoring its balance query.',
                 )
                 continue
