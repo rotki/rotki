@@ -14,6 +14,7 @@ from rotkehlchen.assets.converters import (
 )
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.binance import Binance, create_binance_symbols_to_pair, trade_from_binance
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade, TradeType
@@ -226,3 +227,55 @@ def test_binance_assets_are_known(
     sorted_assets = sorted(binance_assets)
     for binance_asset in sorted_assets:
         _ = asset_from_binance(binance_asset)
+
+
+def test_binance_query_balances_unknown_asset(mock_binance):
+    """Test that if a binance balance query returns unknown asset no exception
+    is raised and a warning is generated"""
+    def mock_unknown_asset_return(url):  # pylint: disable=unused-argument
+        response = MockResponse(
+            200,
+            """
+            {
+  "makerCommission": 15,
+  "takerCommission": 15,
+  "buyerCommission": 0,
+  "sellerCommission": 0,
+  "canTrade": true,
+  "canWithdraw": true,
+  "canDeposit": true,
+  "updateTime": 123456789,
+  "balances": [
+    {
+      "asset": "BTC",
+      "free": "4723846.89208129",
+      "locked": "0.00000000"
+    }, {
+      "asset": "ETH",
+      "free": "4763368.68006011",
+      "locked": "0.00000000"
+    }, {
+      "asset": "IDONTEXIST",
+      "free": "5.0",
+      "locked": "0.0"
+    }, {
+      "asset": "ETF",
+      "free": "5.0",
+      "locked": "0.0"
+    }]}""")
+        return response
+
+    with patch.object(mock_binance.session, 'get', side_effect=mock_unknown_asset_return):
+        # Test that after querying the assets only ETH and BTC are there
+        # result = mock_binance.api_query('account')
+        balances, msg = mock_binance.query_balances()
+
+    assert msg == ''
+    assert len(balances) == 2
+    assert balances[A_BTC]['amount'] == FVal('4723846.89208129')
+    assert balances[A_ETH]['amount'] == FVal('4763368.68006011')
+
+    warnings = mock_binance.msg_aggregator.consume_warnings()
+    assert len(warnings) == 2
+    assert 'unsupported/unknown binance asset IDONTEXIST' in warnings[0]
+    assert 'unsupported/unknown binance asset ETF' in warnings[1]
