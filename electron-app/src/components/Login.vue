@@ -1,99 +1,72 @@
 <template>
-  <div class="jconfirm jconfirm-light jconfirm-open">
-    <div class="jconfirm-bg"></div>
-    <div class="jconfirm-scrollpane">
-      <div class="jconfirm-row">
-        <div class="jconfirm-cell">
-          <div
-            class="jconfirm-holder"
-            style="padding-top: 40px; padding-bottom: 40px;"
-          >
-            <div class="jc-bs3-container container">
-              <div
-                class="jc-bs3-row row justify-content-md-center justify-content-sm-center justify-content-xs-center justify-content-lg-center"
-              >
-                <div
-                  class="jconfirm-box-container jconfirm-animated col-md-4 col-md-offset-4 col-sm-6 col-sm-offset-3 col-xs-10 col-xs-offset-1 jconfirm-no-transition"
-                >
-                  <div
-                    class="jconfirm-box jconfirm-hilight-shake jconfirm-type-default jconfirm-type-animated"
-                    role="dialog"
-                    aria-labelledby="jconfirm-box55253"
-                    tabindex="-1"
-                  >
-                    <div class="jconfirm-closeIcon" style="display: none;">
-                      ×
-                    </div>
-                    <div class="jconfirm-title-c">
-                      <span class="jconfirm-icon-c"></span
-                      ><span class="jconfirm-title">Sign In</span>
-                    </div>
-                    <div class="jconfirm-content-pane no-scroll">
-                      <div id="jconfirm-box55253" class="jconfirm-content">
-                        <div>
-                          <div class="form-group input-group">
-                            <span class="input-group-addon">User Name:</span
-                            ><input
-                              id="username_entry"
-                              v-model="username"
-                              class="form-control"
-                              type="text"
-                            />
-                          </div>
-                          <div class="form-group input-group">
-                            <span class="input-group-addon">Password:</span
-                            ><input
-                              id="password_entry"
-                              v-model="password"
-                              class="form-control"
-                              type="password"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="jconfirm-buttons">
-                      <button
-                        type="button"
-                        class="btn btn-blue"
-                        @click="login()"
-                      >
-                        Sign In
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-blue"
-                        @click="newAccount()"
-                      >
-                        Create New Account
-                      </button>
-                    </div>
-                    <div class="jconfirm-clear"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <v-dialog v-model="displayed" persistent max-width="450">
+    <v-card>
+      <v-toolbar card>
+        <v-toolbar-title>Sign In</v-toolbar-title>
+      </v-toolbar>
+      <v-card-text>
+        <v-form ref="form" v-model="valid">
+          <v-text-field
+            id="username_entry"
+            v-model="username"
+            label="Username"
+            prepend-icon="fa-user"
+            :rules="usernameRules"
+            required
+          ></v-text-field>
+          <v-text-field
+            id="password_entry"
+            v-model="password"
+            label="Password"
+            prepend-icon="fa-lock"
+            :rules="passwordRules"
+            type="password"
+            required
+          ></v-text-field>
+        </v-form>
+      </v-card-text>
+      <v-card-actions>
+        <v-btn depressed color="primary" :disabled="!valid" @click="login()">
+          Sign In
+        </v-btn>
+        <v-btn depressed color="primary" @click="newAccount()">
+          Create New Account
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
-
 <script lang="ts">
-import { Component, Emit, Vue } from 'vue-property-decorator';
+import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { Credentials } from '@/typing/types';
-import { verify_userpass } from '@/legacy/userunlock';
 
 @Component({})
 export default class Login extends Vue {
+  @Prop({ required: true })
+  displayed!: boolean;
+
+  @Watch('displayed')
+  onDisplayChange() {
+    this.username = '';
+    this.password = '';
+    (this.$refs.form as any).reset();
+  }
+
   username: string = '';
   password: string = '';
 
+  valid = false;
+
+  readonly usernameRules = [
+    (v: string) => !!v || 'Please provide a user name',
+    (v: string) =>
+      (v && /^[0-9a-zA-Z_.-]+$/.test(v)) ||
+      'A username must contain only alphanumeric characters and have no spaces'
+  ];
+
+  readonly passwordRules = [(v: string) => !!v || 'Please provide a password'];
+
   login() {
-    if (!verify_userpass(this.username, this.password)) {
-      return;
-    }
     const credentials: Credentials = {
       username: this.username,
       password: this.password

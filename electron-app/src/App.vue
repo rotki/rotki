@@ -48,10 +48,17 @@
       <v-spacer></v-spacer>
       <ul class="nav navbar-top-links navbar-right">
         <li class="dropdown">
-          <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-            <i class="fa fa-bell fa-fw"></i> <i class="fa fa-caret-down"></i>
+          <a
+            id="notification-badge"
+            class="dropdown-toggle"
+            data-toggle="dropdown"
+            href="#"
+          >
+            <i class="fa fa-bell fa-fw"></i>
+            <i class="fa fa-caret-down"></i>
+            <span class="badge">0</span>
           </a>
-          <ul class="dropdown-menu dropdown-alerts"></ul>
+          <ul id="notification-messages" class="dropdown-menu"></ul>
         </li>
 
         <li class="dropdown">
@@ -84,7 +91,7 @@
       @confirm="ok()"
     ></message-dialog>
     <login
-      v-if="!userLogged && !error"
+      :displayed="!userLogged && !error"
       @login="login($event)"
       @new-account="newAccount = true"
     ></login>
