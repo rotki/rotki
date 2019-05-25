@@ -1,3 +1,5 @@
+import { AssetBalance } from '@/model/asset-balance';
+
 export interface GeneralSettings {
   readonly floatingPrecision: number;
   readonly anonymizedLogs: boolean;
@@ -32,4 +34,14 @@ interface AccountData {
   readonly password: string;
   readonly apiKey: string;
   readonly apiSecret: string;
+}
+
+type UsdToFiatExchangeRates = { [key: string]: number };
+
+export type Balances = { [asset: string]: AssetBalance };
+
+interface AssetInformation {
+  readonly name: string;
+  readonly amount: number;
+  readonly usdValue: number;
 }

@@ -4,6 +4,7 @@ import App from './App.vue';
 import router from './router';
 import store from './store';
 import './registerServiceWorker';
+import './filters';
 import { Rpc } from '@/plugins/rpc';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'font-awesome/css/font-awesome.css';

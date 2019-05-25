@@ -1,8 +1,8 @@
-import { AssetBalance } from './asset-balance';
+import { Balances } from '@/typing/types';
 
 export interface BlockchainBalances {
   readonly per_account: {
-    [asset: string]: { [account: string]: AssetBalance };
+    [asset: string]: Balances;
   };
-  readonly totals: { [asset: string]: AssetBalance };
+  readonly totals: Balances;
 }

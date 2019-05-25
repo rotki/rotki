@@ -24,14 +24,7 @@
 
       <ul class="nav navbar-top-links navbar-status-icons">
         <ul class="list-group lg-status-icons">
-          <li class="list-group-item eth-node-status">
-            <a class="eth-node-status-link" href="#">
-              <i class="fa fa-link fa-fw"></i>
-            </a>
-            <ul class="dropdown-menu dropdown-eth-status alert-success">
-              <p>Connected to a local ethereum node</p>
-            </ul>
-          </li>
+          <node-status></node-status>
           <li class="list-group-item balance-save-status">
             <a class="balances-saved-status-link" href="#">
               <i class="fa fa-save fa-fw"></i>
@@ -128,9 +121,12 @@ import MessageDialog from '@/components/MessageDialog.vue';
 import CreateAccount from '@/components/CreateAccount.vue';
 import { UnlockResult } from '@/model/action-result';
 import SyncPermission from '@/components/dialogs/SyncPermission.vue';
+import { monitor } from '@/services/monitoring';
+import NodeStatus from '@/components/status/NodeStatus.vue';
 
 @Component({
   components: {
+    NodeStatus,
     SyncPermission,
     CreateAccount,
     MessageDialog,
@@ -269,6 +265,7 @@ export default class App extends Vue {
         reset_user_settings();
         $('#page-wrapper').html('');
         create_or_reload_dashboard();
+        monitor.stop();
         this.$store.commit('logout', false);
         this.$store.commit('logged', false);
       })
