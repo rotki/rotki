@@ -15,6 +15,13 @@ export interface AccountingSettings {
   readonly taxFreeAfterPeriod: number | null;
 }
 
+export interface AccountingSettingsUpdate {
+  readonly lastBalanceSave?: number;
+  readonly includeCrypto2Crypto?: boolean;
+  readonly includeGasCosts?: boolean;
+  readonly taxFreeAfterPeriod?: number | null;
+}
+
 interface Credentials {
   readonly username: string;
   readonly password: string;

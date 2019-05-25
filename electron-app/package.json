@@ -21,7 +21,6 @@
     "font-awesome": "^4.7.0",
     "register-service-worker": "latest",
     "roboto-fontface": "*",
-    "vee-validate": "^2.2.7",
     "vue": "2.6.10",
     "vue-class-component": "7.1.0",
     "vue-property-decorator": "8.1.1",

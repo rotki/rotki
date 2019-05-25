@@ -2,7 +2,11 @@ import Vue from 'vue';
 import Vuex, { StoreOptions } from 'vuex';
 import { Currency } from '@/model/currency';
 import { currencies } from '@/data/currencies';
-import { AccountingSettings, GeneralSettings } from '@/typing/types';
+import {
+  AccountingSettings,
+  AccountingSettingsUpdate,
+  GeneralSettings
+} from '@/typing/types';
 import { defaultAccountingSettings, defaultSettings } from '@/data/factories';
 
 Vue.use(Vuex);
@@ -41,6 +45,16 @@ let store: StoreOptions<RotkehlchenState> = {
       accountingSettings: AccountingSettings
     ) {
       state.accountingSettings = Object.assign({}, accountingSettings);
+    },
+    updateAccountingSetting(
+      state: RotkehlchenState,
+      setting: AccountingSettingsUpdate
+    ) {
+      state.accountingSettings = Object.assign(
+        {},
+        state.accountingSettings,
+        setting
+      );
     }
   },
   actions: {}
