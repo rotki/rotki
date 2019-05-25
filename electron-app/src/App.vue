@@ -96,10 +96,14 @@
       @new-account="newAccount = true"
     ></login>
     <create-account
-      v-if="newAccount"
+      :displayed="newAccount"
       @cancel="newAccount = false"
       @confirm="createAccount($event)"
     ></create-account>
+    <sync-permission
+      :displayed="permissionNeeded !== ''"
+      :message="permissionNeeded"
+    ></sync-permission>
   </v-app>
 </template>
 
@@ -123,9 +127,11 @@ import { handleUnlockResult } from '@/legacy/userunlock';
 import MessageDialog from '@/components/MessageDialog.vue';
 import CreateAccount from '@/components/CreateAccount.vue';
 import { UnlockResult } from '@/model/action-result';
+import SyncPermission from '@/components/dialogs/SyncPermission.vue';
 
 @Component({
   components: {
+    SyncPermission,
     CreateAccount,
     MessageDialog,
     Login,
@@ -146,6 +152,8 @@ export default class App extends Vue {
   permissionNeeded: string = '';
   error: string = '';
 
+  private accountData?: AccountData;
+
   get visibleModal(): boolean {
     return this.logout;
   }
@@ -159,6 +167,52 @@ export default class App extends Vue {
     this.permissionNeeded = '';
   }
 
+  confirmSync() {
+    const accountData = this.accountData;
+    if (!accountData) {
+      throw new Error('no stored account');
+    }
+    this.$rpc
+      .unlock_user(
+        accountData.username,
+        accountData.password,
+        true,
+        'yes',
+        accountData.apiKey,
+        accountData.apiSecret
+      )
+      .then(unlockResult => {
+        this.$store.commit('newUser', true);
+        handleUnlockResult(unlockResult);
+      })
+      .catch((reason: Error) => {
+        this.error = reason.message;
+      });
+  }
+
+  cancelSync() {
+    const accountData = this.accountData;
+    if (!accountData) {
+      throw new Error('no stored account');
+    }
+    this.$rpc
+      .unlock_user(
+        accountData.username,
+        accountData.password,
+        true,
+        'no',
+        accountData.apiKey,
+        accountData.apiSecret
+      )
+      .then(unlockResult => {
+        this.$store.commit('newUser', true);
+        handleUnlockResult(unlockResult);
+      })
+      .catch((reason: Error) => {
+        this.error = reason.message;
+      });
+  }
+
   async login(credentials: Credentials) {
     this.$rpc
       .unlock_user(credentials.username, credentials.password)
@@ -168,12 +222,12 @@ export default class App extends Vue {
       });
   }
 
-  private completeLogin(unlockResult: UnlockResult) {
+  private completeLogin(unlockResult: UnlockResult, accountData?: AccountData) {
     this.newAccount = false;
-    console.log(unlockResult);
     if (!unlockResult.result) {
       if (unlockResult.permission_needed) {
         this.permissionNeeded = unlockResult.message;
+        this.accountData = accountData;
       } else {
         this.error = unlockResult.message;
       }
@@ -193,7 +247,10 @@ export default class App extends Vue {
         accountData.apiKey,
         accountData.apiSecret
       )
-      .then(unlockResult => this.completeLogin(unlockResult))
+      .then(unlockResult => {
+        this.$store.commit('newUser', true);
+        this.completeLogin(unlockResult, accountData);
+      })
       .catch((reason: Error) => {
         this.error = reason.message;
       });
