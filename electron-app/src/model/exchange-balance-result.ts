@@ -1,7 +1,7 @@
-import { AssetBalance } from './asset-balance';
+import { Balances } from '@/typing/types';
 
 export interface ExchangeBalanceResult {
   readonly name: string;
   readonly error?: string;
-  readonly balances?: { [asset: string]: AssetBalance };
+  readonly balances?: Balances;
 }
