@@ -5,9 +5,12 @@ import { currencies } from '@/data/currencies';
 import {
   AccountingSettings,
   AccountingSettingsUpdate,
-  GeneralSettings
+  UsdToFiatExchangeRates,
+  GeneralSettings,
+  Balances
 } from '@/typing/types';
 import { defaultAccountingSettings, defaultSettings } from '@/data/factories';
+import { BlockchainBalances } from '@/model/blockchain-balances';
 
 Vue.use(Vuex);
 
@@ -20,7 +23,17 @@ let store: StoreOptions<RotkehlchenState> = {
     accountingSettings: defaultAccountingSettings(),
     logout: false,
     premium: false,
-    premiumSync: false
+    premiumSync: false,
+    usdToFiatExchangeRates: {},
+    balances: {},
+    nodeConnection: false,
+    historyProcess: 0,
+    blockchainBalances: {
+      per_account: {},
+      totals: {}
+    },
+    fiatTotal: 0,
+    blockchainTotal: 0
   },
   mutations: {
     defaultCurrency(state: RotkehlchenState, currency: Currency) {
@@ -59,9 +72,44 @@ let store: StoreOptions<RotkehlchenState> = {
     },
     newUser(state: RotkehlchenState, newUser: boolean) {
       state.newUser = newUser;
+    },
+    usdToFiatExchangeRates(
+      state: RotkehlchenState,
+      usdToFiatExchangeRates: UsdToFiatExchangeRates
+    ) {
+      state.usdToFiatExchangeRates = usdToFiatExchangeRates;
+    },
+    balances(state: RotkehlchenState, balances: Balances) {
+      state.balances = balances;
+    },
+    nodeConnection(state: RotkehlchenState, nodeConnection: boolean) {
+      state.nodeConnection = nodeConnection;
+    },
+    historyProcess(state: RotkehlchenState, historyProcess: number) {
+      state.historyProcess = historyProcess;
+    },
+    blockchainBalances(
+      state: RotkehlchenState,
+      blockchainBalances: BlockchainBalances
+    ) {
+      state.blockchainBalances = blockchainBalances;
+    },
+    fiatTotal(state: RotkehlchenState, fiatTotal: number) {
+      state.fiatTotal = fiatTotal;
+    },
+    blockchainTotal(state: RotkehlchenState, blockchainTotal: number) {
+      state.blockchainTotal = blockchainTotal;
     }
   },
-  actions: {}
+  actions: {},
+  getters: {
+    blockchainTotals: (state: RotkehlchenState) => {
+      return Object.values(state.blockchainBalances.totals);
+    },
+    floatingPrecision: (state: RotkehlchenState) => {
+      return state.settings.floatingPrecision;
+    }
+  }
 };
 export default new Vuex.Store(store);
 
@@ -74,4 +122,11 @@ export interface RotkehlchenState {
   logout: boolean;
   premium: boolean;
   premiumSync: boolean;
+  usdToFiatExchangeRates: UsdToFiatExchangeRates;
+  balances: Balances;
+  nodeConnection: boolean;
+  historyProcess: number;
+  blockchainBalances: BlockchainBalances;
+  fiatTotal: number;
+  blockchainTotal: number;
 }
