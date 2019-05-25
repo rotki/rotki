@@ -13,6 +13,7 @@ Vue.use(Vuex);
 
 let store: StoreOptions<RotkehlchenState> = {
   state: {
+    newUser: false,
     currency: currencies[0],
     userLogged: false,
     settings: defaultSettings(),
@@ -55,6 +56,9 @@ let store: StoreOptions<RotkehlchenState> = {
         state.accountingSettings,
         setting
       );
+    },
+    newUser(state: RotkehlchenState, newUser: boolean) {
+      state.newUser = newUser;
     }
   },
   actions: {}
@@ -62,6 +66,7 @@ let store: StoreOptions<RotkehlchenState> = {
 export default new Vuex.Store(store);
 
 export interface RotkehlchenState {
+  newUser: boolean;
   currency: Currency;
   userLogged: boolean;
   settings: GeneralSettings;
