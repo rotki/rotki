@@ -876,7 +876,8 @@ ETH_TOKENS_MOVED_TO_OWN_CHAIN = {
 
 
 def asset_from_kraken(kraken_name: str) -> Asset:
-    return Asset(KRAKEN_TO_WORLD[kraken_name])
+    name = KRAKEN_TO_WORLD.get(kraken_name, kraken_name)
+    return Asset(name)
 
 
 def asset_from_cryptocompare(cc_name: str) -> Asset:

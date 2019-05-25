@@ -321,7 +321,7 @@ def test_set_settings(rotkehlchen_server):
     settings = rotkehlchen_server.get_settings()
     assert settings['main_currency'] == 'CAD'
 
-    # Test that using a crypto currency for main currencly fails with message
+    # Test that using a crypto currency for main currency fails with message
     given_settings = {
         'main_currency': 'BTC',
     }

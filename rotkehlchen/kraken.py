@@ -16,7 +16,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS, KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_BSV
-from rotkehlchen.errors import RecoverableRequestError, RemoteError
+from rotkehlchen.errors import RecoverableRequestError, RemoteError, UnknownAsset
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import query_cryptocompare_for_fiat_price
@@ -395,7 +395,15 @@ class Kraken(Exchange):
             if v == FVal(0):
                 continue
 
-            our_asset = asset_from_kraken(k)
+            try:
+                our_asset = asset_from_kraken(k)
+            except (UnknownAsset) as e:
+                self.msg_aggregator.add_warning(
+                    f'Found unsupported/unknown kraken asset {e.asset_name}. '
+                    f' Ignoring its balance query.',
+                )
+                continue
+
             entry = {}
             entry['amount'] = v
             if our_asset in self.usdprice:

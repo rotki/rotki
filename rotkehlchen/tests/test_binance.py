@@ -231,7 +231,7 @@ def test_binance_assets_are_known(
 
 def test_binance_query_balances_unknown_asset(mock_binance):
     """Test that if a binance balance query returns unknown asset no exception
-    is raised and a warning is generated"""
+    is raised and a warning is generated. Same for unsupported asset."""
     def mock_unknown_asset_return(url):  # pylint: disable=unused-argument
         response = MockResponse(
             200,
@@ -267,7 +267,6 @@ def test_binance_query_balances_unknown_asset(mock_binance):
 
     with patch.object(mock_binance.session, 'get', side_effect=mock_unknown_asset_return):
         # Test that after querying the assets only ETH and BTC are there
-        # result = mock_binance.api_query('account')
         balances, msg = mock_binance.query_balances()
 
     assert msg == ''
