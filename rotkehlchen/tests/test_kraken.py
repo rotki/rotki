@@ -1,7 +1,10 @@
+from unittest.mock import patch
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_kraken
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.kraken import KRAKEN_ASSETS, kraken_to_world_pair, trade_from_kraken
 from rotkehlchen.order_formatting import Trade
@@ -82,3 +85,25 @@ def test_find_fiat_price(kraken):
 
     # Kraken fees have no value
     assert kraken.find_fiat_price('KFEE') == FVal('0')
+
+
+def test_kraken_query_balances_unknown_asset(function_scope_kraken):
+    """Test that if a kraken balance query returns unknown asset no exception
+    is raised and a warning is generated"""
+    kraken = function_scope_kraken
+    from rotkehlchen.tests.fixtures.exchanges.kraken import generate_random_kraken_balance_response
+    generate_random_kraken_balance_response()
+
+    target = 'rotkehlchen.tests.fixtures.exchanges.kraken.generate_random_kraken_balance_response'
+    value = {'XXBT': '5.0', 'XETH': '10.0', 'NOTAREALASSET': '15.0'}
+    with patch(target, return_value=value):
+        balances, msg = kraken.query_balances()
+
+    assert msg == ''
+    assert len(balances) == 2
+    assert balances[A_BTC]['amount'] == FVal('5.0')
+    assert balances[A_ETH]['amount'] == FVal('10.0')
+
+    warnings = kraken.msg_aggregator.consume_warnings()
+    assert len(warnings) == 1
+    assert 'unsupported/unknown kraken asset NOTAREALASSET' in warnings[0]
