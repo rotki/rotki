@@ -9,7 +9,7 @@ from urllib.parse import urlencode
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bittrex
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
-from rotkehlchen.errors import RemoteError, UnsupportedAsset
+from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -236,9 +236,9 @@ class Bittrex(Exchange):
         for entry in resp:
             try:
                 asset = asset_from_bittrex(entry['Currency'])
-            except UnsupportedAsset as e:
+            except (UnsupportedAsset, UnknownAsset) as e:
                 self.msg_aggregator.add_warning(
-                    f'Found unsupported bittrex asset {e.asset_name}. '
+                    f'Found unsupported/unknown bittrex asset {e.asset_name}. '
                     f' Ignoring its balance query.',
                 )
                 continue
