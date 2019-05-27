@@ -2,7 +2,7 @@ export interface OtcTrade {
   readonly id: number;
   readonly timestamp: number;
   readonly pair: string;
-  readonly trade_type: string;
+  readonly trade_type: 'buy' | 'sell';
   readonly amount: string;
   readonly rate: string;
   readonly fee: string;

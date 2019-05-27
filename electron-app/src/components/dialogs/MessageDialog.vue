@@ -41,7 +41,7 @@ export default class MessageDialog extends Vue {
   @Prop({ required: true })
   message!: string;
 
-  @Prop({ default: false })
+  @Prop({ default: false, type: Boolean })
   success!: boolean;
 
   visible(): boolean {
