@@ -1,5 +1,7 @@
 <template>
-  <div id="tax-report"></div>
+  <v-container>
+    <div id="tax-report"></div>
+  </v-container>
 </template>
 
 <script lang="ts">

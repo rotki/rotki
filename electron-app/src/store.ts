@@ -108,6 +108,9 @@ let store: StoreOptions<RotkehlchenState> = {
     },
     floatingPrecision: (state: RotkehlchenState) => {
       return state.settings.floatingPrecision;
+    },
+    dateDisplayFormat: (state: RotkehlchenState) => {
+      return state.settings.dateDisplayFormat;
     }
   }
 };
