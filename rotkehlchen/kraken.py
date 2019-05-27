@@ -397,7 +397,7 @@ class Kraken(Exchange):
 
             try:
                 our_asset = asset_from_kraken(k)
-            except (UnknownAsset) as e:
+            except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found unsupported/unknown kraken asset {e.asset_name}. '
                     f' Ignoring its balance query.',

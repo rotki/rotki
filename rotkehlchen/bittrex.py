@@ -236,12 +236,19 @@ class Bittrex(Exchange):
         for entry in resp:
             try:
                 asset = asset_from_bittrex(entry['Currency'])
-            except (UnsupportedAsset, UnknownAsset) as e:
+            except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found unsupported/unknown bittrex asset {e.asset_name}. '
+                    f'Found unsupported bittrex asset {e.asset_name}. '
                     f' Ignoring its balance query.',
                 )
                 continue
+            except UnknownAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found unknown bittrex asset {e.asset_name}. '
+                    f' Ignoring its balance query.',
+                )
+                continue
+
             usd_price = Inquirer().find_usd_price(asset=asset)
 
             balance = dict()

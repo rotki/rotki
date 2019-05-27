@@ -83,6 +83,15 @@ def test_bittrex_query_balances_unknown_asset(bittrex):
       "CryptoAddress": "0xb55a183bf5db01665f9fc5dfba71fc6f8b5e42e6",
       "Requested": false,
       "Uuid": null
+    },
+    {
+      "Currency": "PTON",
+      "Balance": "15.0",
+      "Available": "15.0",
+      "Pending": 0,
+      "CryptoAddress": "0xb55a183bf5db01665f9fc5dfba71fc6f8b5e42e6",
+      "Requested": false,
+      "Uuid": null
     }
   ]
 }
@@ -100,5 +109,6 @@ def test_bittrex_query_balances_unknown_asset(bittrex):
     assert balances[A_ETH]['amount'] == FVal('10.0')
 
     warnings = bittrex.msg_aggregator.consume_warnings()
-    assert len(warnings) == 1
-    assert 'unsupported/unknown bittrex asset IDONTEXIST' in warnings[0]
+    assert len(warnings) == 2
+    assert 'unknown bittrex asset IDONTEXIST' in warnings[0]
+    assert 'unsupported bittrex asset PTON' in warnings[1]
