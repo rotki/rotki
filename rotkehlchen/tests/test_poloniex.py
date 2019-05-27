@@ -104,21 +104,23 @@ def test_poloniex_assets_are_known(poloniex):
             assert poloniex_asset in UNSUPPORTED_POLONIEX_ASSETS
 
 
-def test_poloniex_query_balances_unnown_asset(poloniex):
+def test_poloniex_query_balances_unnown_asset(function_scope_poloniex):
     """Test that if a poloniex balance query returns unknown asset no exception
-    is raised and a warning is generated."""
-    def mock_unknown_asset_return(url):  # pylint: disable=unused-argument
+    is raised and a warning is generated. Same for unsupported assets"""
+    poloniex = function_scope_poloniex
+
+    def mock_unknown_asset_return(url, req):  # pylint: disable=unused-argument
         response = MockResponse(
             200,
-            """
-            {
-            'BTC': {'available': '5.0', 'onOrders': '0.5'},
-            'ETH': {'available': '10.0', 'onOrders': '1.0'},
-            'IDONTEXIST': {'available': '1.0', 'onOrders': '2.0'},
-            """)
+            """{
+            "BTC": {"available": "5.0", "onOrders": "0.5"},
+            "ETH": {"available": "10.0", "onOrders": "1.0"},
+            "IDONTEXIST": {"available": "1.0", "onOrders": "2.0"},
+            "CNOTE": {"available": "2.0", "onOrders": "3.0"}
+            }""")
         return response
 
-    with patch.object(poloniex.session, 'get', side_effect=mock_unknown_asset_return):
+    with patch.object(poloniex.session, 'post', side_effect=mock_unknown_asset_return):
         # Test that after querying the assets only ETH and BTC are there
         balances, msg = poloniex.query_balances()
 
@@ -129,4 +131,5 @@ def test_poloniex_query_balances_unnown_asset(poloniex):
 
     warnings = poloniex.msg_aggregator.consume_warnings()
     assert len(warnings) == 2
-    assert 'unsupported/unknown poloniex asset IDONTEXIST' in warnings[0]
+    assert 'unknown poloniex asset IDONTEXIST' in warnings[0]
+    assert 'unsupported poloniex asset CNOTE' in warnings[1]
