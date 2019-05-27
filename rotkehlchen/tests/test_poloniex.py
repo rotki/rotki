@@ -2,10 +2,12 @@ import os
 from unittest.mock import patch
 
 from rotkehlchen.assets.converters import UNSUPPORTED_POLONIEX_ASSETS, asset_from_poloniex
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade, TradeType
 from rotkehlchen.poloniex import Poloniex, trade_from_poloniex
+from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -100,3 +102,31 @@ def test_poloniex_assets_are_known(poloniex):
             _ = asset_from_poloniex(poloniex_asset)
         except UnsupportedAsset:
             assert poloniex_asset in UNSUPPORTED_POLONIEX_ASSETS
+
+
+def test_poloniex_query_balances_unnown_asset(poloniex):
+    """Test that if a poloniex balance query returns unknown asset no exception
+    is raised and a warning is generated."""
+    def mock_unknown_asset_return(url):  # pylint: disable=unused-argument
+        response = MockResponse(
+            200,
+            """
+            {
+            'BTC': {'available': '5.0', 'onOrders': '0.5'},
+            'ETH': {'available': '10.0', 'onOrders': '1.0'},
+            'IDONTEXIST': {'available': '1.0', 'onOrders': '2.0'},
+            """)
+        return response
+
+    with patch.object(poloniex.session, 'get', side_effect=mock_unknown_asset_return):
+        # Test that after querying the assets only ETH and BTC are there
+        balances, msg = poloniex.query_balances()
+
+    assert msg == ''
+    assert len(balances) == 2
+    assert balances[A_BTC]['amount'] == FVal('5.5')
+    assert balances[A_ETH]['amount'] == FVal('11.0')
+
+    warnings = poloniex.msg_aggregator.consume_warnings()
+    assert len(warnings) == 2
+    assert 'unsupported/unknown poloniex asset IDONTEXIST' in warnings[0]
