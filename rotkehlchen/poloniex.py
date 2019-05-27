@@ -13,7 +13,7 @@ from urllib.parse import urlencode
 
 from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
-from rotkehlchen.errors import PoloniexError, RemoteError, UnsupportedAsset
+from rotkehlchen.errors import PoloniexError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -324,6 +324,13 @@ class Poloniex(Exchange):
                         f' Ignoring its balance query.',
                     )
                     continue
+                except UnknownAsset as e:
+                    self.msg_aggregator.add_warning(
+                        f'Found unknown poloniex asset {e.asset_name}. '
+                        f' Ignoring its balance query.',
+                    )
+                    continue
+
                 entry = {}
                 entry['amount'] = available + on_orders
                 usd_price = Inquirer().find_usd_price(asset=asset)
