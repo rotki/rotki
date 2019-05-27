@@ -104,7 +104,7 @@ def test_poloniex_assets_are_known(poloniex):
             assert poloniex_asset in UNSUPPORTED_POLONIEX_ASSETS
 
 
-def test_poloniex_query_balances_unnown_asset(function_scope_poloniex):
+def test_poloniex_query_balances_unknown_asset(function_scope_poloniex):
     """Test that if a poloniex balance query returns unknown asset no exception
     is raised and a warning is generated. Same for unsupported assets"""
     poloniex = function_scope_poloniex
@@ -133,3 +133,62 @@ def test_poloniex_query_balances_unnown_asset(function_scope_poloniex):
     assert len(warnings) == 2
     assert 'unknown poloniex asset IDONTEXIST' in warnings[0]
     assert 'unsupported poloniex asset CNOTE' in warnings[1]
+
+
+def test_poloniex_deposits_withdrawal_unknown_asset(function_scope_poloniex):
+    """Test that if a poloniex asset movement query returns unknown asset no exception
+    is raised and a warning is generated. Same for unsupported assets"""
+    poloniex = function_scope_poloniex
+
+    def mock_api_return(url, req):  # pylint: disable=unused-argument
+        response = MockResponse(
+            200,
+            """{
+            "withdrawals": [
+            {"currency": "BTC", "timestamp": 1458994442, "amount": "5.0", "fee": "0.5"},
+            {"currency": "ETH", "timestamp": 1468994442, "amount": "10.0", "fee": "0.1"},
+            {"currency": "IDONTEXIST", "timestamp": 1478994442, "amount": "10.0", "fee": "0.1"},
+            {"currency": "DIS", "timestamp": 1478994442, "amount": "10.0", "fee": "0.1"}],
+            "deposits": [
+            {"currency": "BTC", "timestamp": 1448994442, "amount": "50.0"},
+            {"currency": "ETH", "timestamp": 1438994442, "amount": "100.0"},
+            {"currency": "IDONTEXIST", "timestamp": 1478994442, "amount": "10.0"},
+            {"currency": "EBT", "timestamp": 1478994442, "amount": "10.0"}]
+            }""")
+        return response
+
+    with patch.object(poloniex.session, 'post', side_effect=mock_api_return):
+        # Test that after querying the api only ETH and BTC assets are there
+        asset_movements = poloniex.query_deposits_withdrawals(
+            start_ts=0,
+            end_ts=1488994442,
+            end_at_least_ts=1488994442,
+        )
+
+    assert len(asset_movements) == 4
+    assert asset_movements[0].category == 'withdrawal'
+    assert asset_movements[0].timestamp == 1458994442
+    assert asset_movements[0].asset == A_BTC
+    assert asset_movements[0].amount == FVal('5.0')
+    assert asset_movements[0].fee == FVal('0.5')
+    assert asset_movements[1].category == 'withdrawal'
+    assert asset_movements[1].timestamp == 1468994442
+    assert asset_movements[1].asset == A_ETH
+    assert asset_movements[1].amount == FVal('10.0')
+    assert asset_movements[1].fee == FVal('0.1')
+
+    assert asset_movements[2].category == 'deposit'
+    assert asset_movements[2].timestamp == 1448994442
+    assert asset_movements[2].asset == A_BTC
+    assert asset_movements[2].amount == FVal('50.0')
+    assert asset_movements[3].category == 'deposit'
+    assert asset_movements[3].timestamp == 1438994442
+    assert asset_movements[3].asset == A_ETH
+    assert asset_movements[3].amount == FVal('100.0')
+
+    warnings = poloniex.msg_aggregator.consume_warnings()
+    assert len(warnings) == 4
+    assert 'Found withdrawal of unknown poloniex asset IDONTEXIST' in warnings[0]
+    assert 'Found withdrawal of unsupported poloniex asset DIS' in warnings[1]
+    assert 'Found deposit of unknown poloniex asset IDONTEXIST' in warnings[2]
+    assert 'Found deposit of unsupported poloniex asset EBT' in warnings[3]

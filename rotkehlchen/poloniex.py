@@ -528,6 +528,11 @@ class Poloniex(Exchange):
                     f'Found withdrawal of unsupported poloniex asset {e.asset_name}. Ignoring it.',
                 )
                 continue
+            except UnknownAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found withdrawal of unknown poloniex asset {e.asset_name}. Ignoring it.',
+                )
+                continue
 
         for deposit in result['deposits']:
             try:
@@ -542,6 +547,11 @@ class Poloniex(Exchange):
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found deposit of unsupported poloniex asset {e.asset_name}. Ignoring it.',
+                )
+                continue
+            except UnknownAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found deposit of unknown poloniex asset {e.asset_name}. Ignoring it.',
                 )
                 continue
 
