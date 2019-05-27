@@ -1,32 +1,32 @@
 <template>
-  <div id="statistics">
-    <div class="row">
-      <div class="col-lg-12">
-        <h1 class="page-header">Statistics</h1>
+  <v-container>
+    <div id="statistics">
+      <div class="row">
+        <div class="col-lg-12">
+          <h1 class="page-header">Statistics</h1>
+        </div>
+      </div>
+      <div v-if="!premium">
+        No premium subscription detected. Statistics are only available to
+        premium users.
       </div>
     </div>
-    <div v-if="premium">
-      <div>
-        <p>
-          No premium subscription detected. Statistics are only available to
-          premium users.
-        </p>
-      </div>
-    </div>
-  </div>
+  </v-container>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { settings } from '@/legacy/settings';
 import { showError } from '@/legacy/utils';
+import { mapState } from 'vuex';
 
-@Component({})
+@Component({
+  computed: mapState(['premium'])
+})
 export default class Statistics extends Vue {
-  premium: boolean = false;
-  mounted() {
-    this.premium = settings.has_premium;
+  premium!: boolean;
 
+  mounted() {
     if (!this.premium) {
       return;
     }

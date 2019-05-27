@@ -32,7 +32,6 @@ import { Currency } from '@/model/currency';
 import { settings } from '@/legacy/settings';
 import { showError } from '@/legacy/utils';
 import { currencies } from '@/data/currencies';
-import { set_ui_main_currency } from '@/legacy/topmenu';
 import { mapState } from 'vuex';
 
 @Component({
@@ -54,8 +53,6 @@ export default class CurrencyDropDown extends Vue {
       .set_main_currency(currency)
       .then(value => {
         this.$store.commit('defaultCurrency', value);
-        settings.main_currency = value;
-        set_ui_main_currency(value);
       })
       .catch((reason: Error) => {
         showError('Error', `Error at setting main currency: ${reason.message}`);
