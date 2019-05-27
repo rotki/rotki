@@ -276,5 +276,5 @@ def test_binance_query_balances_unknown_asset(mock_binance):
 
     warnings = mock_binance.msg_aggregator.consume_warnings()
     assert len(warnings) == 2
-    assert 'unsupported/unknown binance asset IDONTEXIST' in warnings[0]
-    assert 'unsupported/unknown binance asset ETF' in warnings[1]
+    assert 'unknown binance asset IDONTEXIST' in warnings[0]
+    assert 'unsupported binance asset ETF' in warnings[1]

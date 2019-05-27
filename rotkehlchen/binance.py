@@ -266,12 +266,19 @@ class Binance(Exchange):
                 continue
             try:
                 asset = asset_from_binance(entry['asset'])
-            except (UnsupportedAsset, UnknownAsset) as e:
+            except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found unsupported/unknown binance asset {e.asset_name}. '
+                    f'Found unsupported binance asset {e.asset_name}. '
                     f' Ignoring its balance query.',
                 )
                 continue
+            except UnknownAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found unknown binance asset {e.asset_name}. '
+                    f' Ignoring its balance query.',
+                )
+                continue
+
             usd_price = Inquirer().find_usd_price(asset)
             balance = dict()
             balance['amount'] = amount
