@@ -135,7 +135,6 @@ class MockKraken(Kraken):
         self.tradeable_pairs = self.query_public('AssetPairs')
         self.get_fiat_prices_from_ticker()
         self.first_connection_made = True
-        self.msg_aggregator = MessagesAggregator()
         return
 
     def main_logic(self):
@@ -189,6 +188,7 @@ def kraken(session_data_dir, session_inquirer):
         api_key=base64.b64encode(make_random_b64bytes(128)),
         secret=base64.b64encode(make_random_b64bytes(128)),
         user_directory=session_data_dir,
+        msg_aggregator=MessagesAggregator(),
         usd_eur_price=session_inquirer.query_fiat_pair(S_EUR, S_USD),
     )
     return mock
@@ -200,6 +200,7 @@ def function_scope_kraken(accounting_data_dir, inquirer):
         api_key=base64.b64encode(make_random_b64bytes(128)),
         secret=base64.b64encode(make_random_b64bytes(128)),
         user_directory=accounting_data_dir,
+        msg_aggregator=MessagesAggregator(),
         usd_eur_price=inquirer.query_fiat_pair(S_EUR, S_USD),
     )
     return mock

@@ -135,6 +135,7 @@ class Rotkehlchen():
                 api_key=str.encode(secret_data['kraken']['api_key']),
                 secret=str.encode(secret_data['kraken']['api_secret']),
                 user_directory=self.user_directory,
+                msg_aggregator=self.msg_aggregator,
                 usd_eur_price=Inquirer().query_fiat_pair(S_EUR, A_USD),
             )
             self.connected_exchanges.append('kraken')
