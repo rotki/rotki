@@ -30,6 +30,7 @@ from rotkehlchen.order_formatting import (
     trade_type_from_string,
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, convert_to_int, retry_calls
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
@@ -211,9 +212,11 @@ class Kraken(Exchange):
             api_key: ApiKey,
             secret: ApiSecret,
             user_directory: FilePath,
+            msg_aggregator: MessagesAggregator,
             usd_eur_price: FVal,
     ):
         super(Kraken, self).__init__('kraken', api_key, secret, user_directory)
+        self.msg_aggregator = msg_aggregator
         # typing TODO: Without a union of str and Asset we get lots of warning
         # How can this be avoided without too much pain?
         self.usdprice: Dict[Union[Asset, str], FVal] = {}
