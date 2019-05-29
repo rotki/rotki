@@ -109,7 +109,7 @@ def generate_random_kraken_trade_data(
     )
 
 
-def generate_random_kraken_ledger_data(
+def generate_random_single_kraken_ledger_data(
         start_ts: Timestamp,
         end_ts: Timestamp,
         ledger_type: str,
@@ -124,6 +124,22 @@ def generate_random_kraken_ledger_data(
     ledger['balance'] = str(make_random_positive_fval())
     ledger['fee'] = str(make_random_positive_fval(max_num=2))
     return ledger
+
+
+def generate_random_kraken_ledger_data(start: Timestamp, end: Timestamp, ledger_type):
+    ledgers_num = random.randint(1, 49)
+    # Ledgers is a dict with txid as the key
+    ledgers = {}
+    for _ in range(ledgers_num):
+        ledger = generate_random_single_kraken_ledger_data(
+            start_ts=start,
+            end_ts=end,
+            ledger_type=ledger_type,
+        )
+        ledgers[ledger['refid']] = ledger
+
+    response_str = json.dumps({'ledger': ledgers, 'count': ledgers_num})
+    return rlk_jsonloads(response_str)
 
 
 class MockKraken(Kraken):
@@ -162,22 +178,11 @@ class MockKraken(Kraken):
             response_str = json.dumps({'trades': trades, 'count': trades_num})
             return rlk_jsonloads(response_str)
         elif method == 'Ledgers':
-            ledgers_num = random.randint(1, 49)
-            start = req['start']
-            end = req['end']
-            ledger_type = req['type']
-            # Ledgers is a dict with txid as the key
-            ledgers = {}
-            for _ in range(ledgers_num):
-                ledger = generate_random_kraken_ledger_data(
-                    start_ts=start,
-                    end_ts=end,
-                    ledger_type=ledger_type,
-                )
-                ledgers[ledger['refid']] = ledger
-
-            response_str = json.dumps({'ledger': ledgers, 'count': ledgers_num})
-            return rlk_jsonloads(response_str)
+            return generate_random_kraken_ledger_data(
+                start=req['start'],
+                end=req['end'],
+                ledger_type=req['type'],
+            )
 
         return super().query_private(method, req)
 

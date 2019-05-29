@@ -1,5 +1,6 @@
-import pytest
 import random
+
+import pytest
 
 from rotkehlchen.ports import get_free_port
 

@@ -568,14 +568,21 @@ class Kraken(Exchange):
 
         movements = list()
         for movement in result:
-            movements.append(AssetMovement(
-                exchange='kraken',
-                category=movement['type'],
-                # Kraken timestamps have floating point
-                timestamp=convert_to_int(movement['time'], accept_only_exact=False),
-                asset=asset_from_kraken(movement['asset']),
-                amount=FVal(movement['amount']),
-                fee=FVal(movement['fee']),
-            ))
+            try:
+                movements.append(AssetMovement(
+                    exchange='kraken',
+                    category=movement['type'],
+                    # Kraken timestamps have floating point
+                    timestamp=convert_to_int(movement['time'], accept_only_exact=False),
+                    asset=asset_from_kraken(movement['asset']),
+                    amount=FVal(movement['amount']),
+                    fee=FVal(movement['fee']),
+                ))
+            except UnknownAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found unsupported/unknown kraken asset {e.asset_name}. '
+                    f' Ignoring its deposit/withdrawals query.',
+                )
+                continue
 
         return movements
