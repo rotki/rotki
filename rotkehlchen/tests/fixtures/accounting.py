@@ -17,7 +17,7 @@ TEST_HISTORY_DATA_START = "01/01/2015"
 
 @pytest.fixture
 def use_clean_caching_directory():
-    """If this is set to True then a clean accounting directory will be used."""
+    """If this is set to True then a clean test user directory will be used."""
     return False
 
 
