@@ -302,6 +302,7 @@ class Rotkehlchen():
         self.accountant = Accountant(
             profit_currency=self.data.main_currency(),
             user_directory=self.user_directory,
+            msg_aggregator=self.msg_aggregator,
             create_csv=True,
             ignored_assets=self.data.db.get_ignored_assets(),
             include_crypto2crypto=db_settings['include_crypto2crypto'],

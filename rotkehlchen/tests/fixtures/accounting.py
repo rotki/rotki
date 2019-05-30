@@ -11,6 +11,7 @@ from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.user_messages import MessagesAggregator
 
 TEST_HISTORY_DATA_START = "01/01/2015"
 
@@ -123,6 +124,7 @@ def accountant(
     return Accountant(
         profit_currency=profit_currency,
         user_directory=accounting_data_dir,
+        msg_aggregator=MessagesAggregator(),
         create_csv=accounting_create_csv,
         ignored_assets=accounting_ignored_assets,
         include_crypto2crypto=accounting_include_crypto2crypto,
