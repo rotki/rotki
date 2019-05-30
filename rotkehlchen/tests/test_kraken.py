@@ -91,10 +91,8 @@ def test_kraken_query_balances_unknown_asset(function_scope_kraken):
     """Test that if a kraken balance query returns unknown asset no exception
     is raised and a warning is generated"""
     kraken = function_scope_kraken
-    target = 'rotkehlchen.tests.fixtures.exchanges.kraken.generate_random_kraken_balance_response'
-    value = {'XXBT': '5.0', 'XETH': '10.0', 'NOTAREALASSET': '15.0'}
-    with patch(target, return_value=value):
-        balances, msg = kraken.query_balances()
+    kraken.random_balance_data = False
+    balances, msg = kraken.query_balances()
 
     assert msg == ''
     assert len(balances) == 2
@@ -111,88 +109,13 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(function_scope_kraken):
     """Test that if a kraken deposits_withdrawals query returns unknown asset
     no exception is raised and a warning is generated"""
     kraken = function_scope_kraken
-    target = 'rotkehlchen.tests.fixtures.exchanges.kraken.generate_random_kraken_ledger_data'
+    kraken.random_ledgers_data = False
 
-    def mock_create(start, end, ledger_type):  # pylint: disable=unused-argument
-        if ledger_type == 'deposit':
-            return {
-                'ledger': {
-                    '1': {
-                        'refid': '1',
-                        'time': '1458994442',
-                        'type': 'deposit',
-                        'aclass': 'currency',
-                        'asset': 'BTC',
-                        'amount': '5.0',
-                        'balance': '10.0',
-                        'fee': '0.1',
-                    },
-                    '2': {
-                        'refid': '2',
-                        'time': '1448994442',
-                        'type': 'deposit',
-                        'aclass': 'currency',
-                        'asset': 'ETH',
-                        'amount': '10.0',
-                        'balance': '100.0',
-                        'fee': '0.11',
-                    },
-                    '3': {
-                        'refid': '3',
-                        'time': '1438994442',
-                        'type': 'deposit',
-                        'aclass': 'currency',
-                        'asset': 'IDONTEXIST',
-                        'amount': '10.0',
-                        'balance': '100.0',
-                        'fee': '0.11',
-                    },
-                },
-                'count': 3,
-            }
-        else:
-            return {
-                'ledger': {
-                    '1': {
-                        'refid': '1',
-                        'time': '1428994442',
-                        'type': 'withdrawal',
-                        'aclass': 'currency',
-                        'asset': 'BTC',
-                        'amount': '5.0',
-                        'balance': '10.0',
-                        'fee': '0.1',
-                    },
-                    '2': {
-                        'refid': '2',
-                        'time': '1418994442',
-                        'type': 'withdrawal',
-                        'aclass': 'currency',
-                        'asset': 'ETH',
-                        'amount': '10.0',
-                        'balance': '100.0',
-                        'fee': '0.11',
-                    },
-                    '3': {
-                        'refid': '3',
-                        'time': '1408994442',
-                        'type': 'withdrawal',
-                        'aclass': 'currency',
-                        'asset': 'IDONTEXISTEITHER',
-                        'amount': '10.0',
-                        'balance': '100.0',
-                        'fee': '0.11',
-                    },
-                },
-                'count': 3,
-            }
-
-    with patch(target, side_effect=mock_create):
-        movements = kraken.query_deposits_withdrawals(
-            start_ts=1408994442,
-            end_ts=1498994442,
-            end_at_least_ts=1498994442,
-        )
+    movements = kraken.query_deposits_withdrawals(
+        start_ts=1408994442,
+        end_ts=1498994442,
+        end_at_least_ts=1498994442,
+    )
 
     assert len(movements) == 4
     assert movements[0].asset == A_BTC

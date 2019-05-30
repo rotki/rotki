@@ -16,7 +16,7 @@ from rotkehlchen.tests.utils.factories import (
     make_random_timestamp,
     make_random_uppercasenumeric_string,
 )
-from rotkehlchen.typing import Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.serialization import rlk_jsonloads
 
@@ -142,7 +142,131 @@ def generate_random_kraken_ledger_data(start: Timestamp, end: Timestamp, ledger_
     return rlk_jsonloads(response_str)
 
 
+def generate_random_kraken_trades_data(
+        start: Timestamp,
+        end: Timestamp,
+        tradeable_pairs: List[str],
+):
+    trades_num = random.randint(1, 49)
+
+    # Trades is a dict with txid as the key
+    trades = {}
+    for _ in range(trades_num):
+        trade = generate_random_kraken_trade_data(
+            tradeable_pairs,
+            start,
+            end,
+        )
+        trades[trade['ordertxid']] = trade
+
+    response_str = json.dumps({'trades': trades, 'count': trades_num})
+    return rlk_jsonloads(response_str)
+
+
+def specific_ledger_data_generation(
+        start: Timestamp,
+        end: Timestamp,
+        ledger_type: str,
+) -> Dict:
+    """A premade callback for specific test data generation for kraken ledgers"""
+    if ledger_type == 'deposit':
+        return {
+            'ledger': {
+                '1': {
+                    'refid': '1',
+                    'time': '1458994442',
+                    'type': 'deposit',
+                    'aclass': 'currency',
+                    'asset': 'BTC',
+                    'amount': '5.0',
+                    'balance': '10.0',
+                    'fee': '0.1',
+                },
+                '2': {
+                    'refid': '2',
+                    'time': '1448994442',
+                    'type': 'deposit',
+                    'aclass': 'currency',
+                    'asset': 'ETH',
+                    'amount': '10.0',
+                    'balance': '100.0',
+                    'fee': '0.11',
+                },
+                '3': {
+                    'refid': '3',
+                    'time': '1438994442',
+                    'type': 'deposit',
+                    'aclass': 'currency',
+                    'asset': 'IDONTEXIST',
+                    'amount': '10.0',
+                    'balance': '100.0',
+                    'fee': '0.11',
+                },
+            },
+            'count': 3,
+        }
+    else:
+        return {
+            'ledger': {
+                '1': {
+                    'refid': '1',
+                    'time': '1428994442',
+                    'type': 'withdrawal',
+                    'aclass': 'currency',
+                    'asset': 'BTC',
+                    'amount': '5.0',
+                    'balance': '10.0',
+                    'fee': '0.1',
+                },
+                '2': {
+                    'refid': '2',
+                    'time': '1418994442',
+                    'type': 'withdrawal',
+                    'aclass': 'currency',
+                    'asset': 'ETH',
+                    'amount': '10.0',
+                    'balance': '100.0',
+                    'fee': '0.11',
+                },
+                '3': {
+                    'refid': '3',
+                    'time': '1408994442',
+                    'type': 'withdrawal',
+                    'aclass': 'currency',
+                    'asset': 'IDONTEXISTEITHER',
+                    'amount': '10.0',
+                    'balance': '100.0',
+                    'fee': '0.11',
+                },
+            },
+            'count': 3,
+        }
+
+
 class MockKraken(Kraken):
+
+    def __init__(
+            self,
+            api_key: ApiKey,
+            secret: ApiSecret,
+            user_directory: FilePath,
+            msg_aggregator: MessagesAggregator,
+            usd_eur_price: FVal,
+    ):
+        super(MockKraken, self).__init__(
+            api_key=api_key,
+            secret=secret,
+            user_directory=user_directory,
+            msg_aggregator=msg_aggregator,
+            usd_eur_price=usd_eur_price,
+        )
+
+        self.random_trade_data = True
+        self.random_balance_data = True
+        self.random_ledgers_data = True
+
+        self.balance_data_return = {'XXBT': '5.0', 'XETH': '10.0', 'NOTAREALASSET': '15.0'}
+        self.ledger_data_generate_cb = specific_ledger_data_generation
 
     def first_connection(self):
         if self.first_connection_made:
@@ -159,26 +283,26 @@ class MockKraken(Kraken):
     def query_private(self, method: str, req: Optional[dict] = None) -> dict:
         self.first_connection()
         if method == 'Balance':
-            return generate_random_kraken_balance_response()
+            if self.random_balance_data:
+                return generate_random_kraken_balance_response()
+            # else
+            return self.balance_data_return
         elif method == 'TradesHistory':
-            trades_num = random.randint(1, 49)
-            start = req['start']
-            end = req['end']
-
-            # Trades is a dict with txid as the key
-            trades = {}
-            for _ in range(trades_num):
-                trade = generate_random_kraken_trade_data(
-                    list(self.tradeable_pairs.keys()),
-                    start,
-                    end,
+            if self.random_trade_data:
+                return generate_random_kraken_trades_data(
+                    start=req['start'],
+                    end=req['end'],
+                    tradeable_pairs=list(self.tradeable_pairs.keys()),
                 )
-                trades[trade['ordertxid']] = trade
-
-            response_str = json.dumps({'trades': trades, 'count': trades_num})
-            return rlk_jsonloads(response_str)
         elif method == 'Ledgers':
-            return generate_random_kraken_ledger_data(
+            if self.random_ledgers_data:
+                return generate_random_kraken_ledger_data(
+                    start=req['start'],
+                    end=req['end'],
+                    ledger_type=req['type'],
+                )
+            # else
+            return self.ledger_data_generate_cb(
                 start=req['start'],
                 end=req['end'],
                 ledger_type=req['type'],
