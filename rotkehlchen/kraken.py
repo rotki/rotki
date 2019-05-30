@@ -137,7 +137,10 @@ def world_to_kraken_pair(tradeable_pairs: List[str], pair: TradePair) -> str:
 
 def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
     """Turn a kraken trade returned from kraken trade history to our common trade
-    history format"""
+    history format
+
+    Can raise UnknownAsset due to kraken_to_world_pair
+    """
     currency_pair = kraken_to_world_pair(kraken_trade['pair'])
     quote_currency = get_pair_position_asset(currency_pair, 'second')
     # Kraken timestamps have floating point

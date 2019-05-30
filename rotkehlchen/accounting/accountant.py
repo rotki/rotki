@@ -8,7 +8,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.csv_exporter import CSVExporter
-from rotkehlchen.errors import PriceQueryUnknownFromAsset
+from rotkehlchen.errors import PriceQueryUnknownFromAsset, UnknownAsset, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
@@ -22,6 +22,7 @@ from rotkehlchen.order_formatting import (
 )
 from rotkehlchen.transactions import EthereumTransaction
 from rotkehlchen.typing import Fee, FilePath, Timestamp
+from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -88,12 +89,14 @@ class Accountant():
             self,
             profit_currency: Asset,
             user_directory: FilePath,
+            msg_aggregator: MessagesAggregator,
             create_csv: bool,
             ignored_assets: List[Asset],
             include_crypto2crypto: bool,
             taxfree_after_period: int,
             include_gas_costs: bool,
     ):
+        self.msg_aggregator = msg_aggregator
         self.csvexporter = CSVExporter(profit_currency, user_directory, create_csv)
         self.events = TaxableEvents(self.csvexporter, profit_currency)
         self.set_main_currency(profit_currency.identifier)
@@ -415,7 +418,20 @@ class Accountant():
 
         action_type = action_get_type(action)
 
-        asset1, asset2 = action_get_assets(action)
+        try:
+            asset1, asset2 = action_get_assets(action)
+        except UnknownAsset as e:
+            self.msg_aggregator.add_warning(
+                f'At history processing found trade with unknown asset {e.asset_name}. '
+                f'Ignoring the trade.',
+            )
+            return True, prev_time, count
+        except UnsupportedAsset as e:
+            self.msg_aggregator.add_warning(
+                f'At history processing found trade with unsupported asset {e.asset_name}. '
+                f'Ignoring the trade.',
+            )
+            return True, prev_time, count
         if asset1 in self.ignored_assets or asset2 in self.ignored_assets:
             log.debug(
                 'Ignoring action with ignored asset',
