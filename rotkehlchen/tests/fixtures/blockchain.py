@@ -167,10 +167,11 @@ def blockchain(
         ethchain_client,
         blockchain_accounts,
         inquirer,  # pylint: disable=unused-argument
+        messages_aggregator,
 ):
     return Blockchain(
         blockchain_accounts=blockchain_accounts,
         owned_eth_tokens=[],
         ethchain=ethchain_client,
-        msg_aggregator=MessagesAggregator(),
+        msg_aggregator=messages_aggregator,
     )
