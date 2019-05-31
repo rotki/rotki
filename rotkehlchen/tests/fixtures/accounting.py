@@ -120,11 +120,12 @@ def accountant(
         accounting_include_crypto2crypto,
         accounting_taxfree_after_period,
         accounting_include_gas_costs,
+        messages_aggregator,
 ):
     return Accountant(
         profit_currency=profit_currency,
         user_directory=accounting_data_dir,
-        msg_aggregator=MessagesAggregator(),
+        msg_aggregator=messages_aggregator,
         create_csv=accounting_create_csv,
         ignored_assets=accounting_ignored_assets,
         include_crypto2crypto=accounting_include_crypto2crypto,

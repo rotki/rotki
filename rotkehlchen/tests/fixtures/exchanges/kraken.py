@@ -312,24 +312,24 @@ class MockKraken(Kraken):
 
 
 @pytest.fixture(scope='session')
-def kraken(session_data_dir, session_inquirer):
+def kraken(session_data_dir, session_inquirer, messages_aggregator):
     mock = MockKraken(
         api_key=base64.b64encode(make_random_b64bytes(128)),
         secret=base64.b64encode(make_random_b64bytes(128)),
         user_directory=session_data_dir,
-        msg_aggregator=MessagesAggregator(),
+        msg_aggregator=messages_aggregator,
         usd_eur_price=session_inquirer.query_fiat_pair(S_EUR, S_USD),
     )
     return mock
 
 
 @pytest.fixture(scope='function')
-def function_scope_kraken(accounting_data_dir, inquirer):
+def function_scope_kraken(accounting_data_dir, inquirer, messages_aggregator):
     mock = MockKraken(
         api_key=base64.b64encode(make_random_b64bytes(128)),
         secret=base64.b64encode(make_random_b64bytes(128)),
         user_directory=accounting_data_dir,
-        msg_aggregator=MessagesAggregator(),
+        msg_aggregator=messages_aggregator,
         usd_eur_price=inquirer.query_fiat_pair(S_EUR, S_USD),
     )
     return mock

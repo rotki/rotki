@@ -7,5 +7,6 @@ from rotkehlchen.tests.fixtures.db import *  # type: ignore
 from rotkehlchen.tests.fixtures.exchanges.bittrex import *  # type: ignore
 from rotkehlchen.tests.fixtures.exchanges.kraken import *  # type: ignore
 from rotkehlchen.tests.fixtures.exchanges.poloniex import *  # type: ignore
+from rotkehlchen.tests.fixtures.messages import *  # type: ignore
 from rotkehlchen.tests.fixtures.rotkehlchen import *  # type: ignore
 from rotkehlchen.tests.fixtures.variables import *  # type: ignore

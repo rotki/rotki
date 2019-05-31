@@ -24,12 +24,16 @@ from rotkehlchen.user_messages import MessagesAggregator
 
 
 @pytest.fixture
-def mock_binance(accounting_data_dir, inquirer):  # pylint: disable=unused-argument
+def mock_binance(
+        accounting_data_dir,
+        inquirer,  # pylint: disable=unused-argument
+        messages_aggregator,
+):
     binance = Binance(
         api_key=base64.b64encode(make_random_b64bytes(128)),
         secret=base64.b64encode(make_random_b64bytes(128)),
         data_dir=accounting_data_dir,
-        msg_aggregator=MessagesAggregator(),
+        msg_aggregator=messages_aggregator,
     )
     this_dir = os.path.dirname(os.path.abspath(__file__))
     json_path = Path(this_dir).parent / 'tests' / 'utils' / 'data' / 'binance_exchange_info.json'
