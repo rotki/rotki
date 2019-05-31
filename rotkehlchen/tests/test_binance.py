@@ -1,7 +1,4 @@
 import base64
-import json
-import os
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -13,7 +10,7 @@ from rotkehlchen.assets.converters import (
     asset_from_binance,
 )
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.binance import Binance, create_binance_symbols_to_pair, trade_from_binance
+from rotkehlchen.binance import Binance, trade_from_binance
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
@@ -23,29 +20,8 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.user_messages import MessagesAggregator
 
 
-@pytest.fixture
-def mock_binance(
-        accounting_data_dir,
-        inquirer,  # pylint: disable=unused-argument
-        messages_aggregator,
-):
-    binance = Binance(
-        api_key=base64.b64encode(make_random_b64bytes(128)),
-        secret=base64.b64encode(make_random_b64bytes(128)),
-        data_dir=accounting_data_dir,
-        msg_aggregator=messages_aggregator,
-    )
-    this_dir = os.path.dirname(os.path.abspath(__file__))
-    json_path = Path(this_dir).parent / 'tests' / 'utils' / 'data' / 'binance_exchange_info.json'
-    with json_path.open('r') as f:
-        json_data = json.loads(f.read())
-
-    binance._symbols_to_pair = create_binance_symbols_to_pair(json_data)
-    binance.first_connection_made = True
-    return binance
-
-
-def test_trade_from_binance(mock_binance):
+def test_trade_from_binance(function_scope_binance):
+    binance = function_scope_binance
     binance_trades_list = [
         {
             'symbol': 'RDNETH',
@@ -141,7 +117,7 @@ def test_trade_from_binance(mock_binance):
     ]
 
     for idx, binance_trade in enumerate(binance_trades_list):
-        our_trade = trade_from_binance(binance_trade, mock_binance.symbols_to_pair)
+        our_trade = trade_from_binance(binance_trade, binance.symbols_to_pair)
         assert our_trade == our_expected_list[idx]
 
 
@@ -160,8 +136,9 @@ exchange_info_mock_text = '''{
 }'''
 
 
-def test_binance_backoff_after_429(mock_binance):
+def test_binance_backoff_after_429(function_scope_binance):
     count = 0
+    binance = function_scope_binance
 
     def mock_429(url):  # pylint: disable=unused-argument
         nonlocal count
@@ -172,17 +149,17 @@ def test_binance_backoff_after_429(mock_binance):
         count += 1
         return response
 
-    mock_binance.initial_backoff = 0.5
-    mock_binance.backoff_limit = 2
-    with patch.object(mock_binance.session, 'get', side_effect=mock_429):
+    binance.initial_backoff = 0.5
+    binance.backoff_limit = 2
+    with patch.object(binance.session, 'get', side_effect=mock_429):
         # test that after 2 429 cals we finally succeed in the API call
-        result = mock_binance.api_query('exchangeInfo')
+        result = binance.api_query('exchangeInfo')
         assert 'timezone' in result
 
         # Test the backoff_limit properly returns an error when hit
         count = -9999999
         with pytest.raises(RemoteError):
-            mock_binance.api_query('exchangeInfo')
+            binance.api_query('exchangeInfo')
 
 
 def analyze_binance_assets(sorted_assets):
@@ -233,9 +210,11 @@ def test_binance_assets_are_known(
         _ = asset_from_binance(binance_asset)
 
 
-def test_binance_query_balances_unknown_asset(mock_binance):
+def test_binance_query_balances_unknown_asset(function_scope_binance):
     """Test that if a binance balance query returns unknown asset no exception
     is raised and a warning is generated. Same for unsupported asset."""
+    binance = function_scope_binance
+
     def mock_unknown_asset_return(url):  # pylint: disable=unused-argument
         response = MockResponse(
             200,
@@ -269,16 +248,16 @@ def test_binance_query_balances_unknown_asset(mock_binance):
     }]}""")
         return response
 
-    with patch.object(mock_binance.session, 'get', side_effect=mock_unknown_asset_return):
+    with patch.object(binance.session, 'get', side_effect=mock_unknown_asset_return):
         # Test that after querying the assets only ETH and BTC are there
-        balances, msg = mock_binance.query_balances()
+        balances, msg = binance.query_balances()
 
     assert msg == ''
     assert len(balances) == 2
     assert balances[A_BTC]['amount'] == FVal('4723846.89208129')
     assert balances[A_ETH]['amount'] == FVal('4763368.68006011')
 
-    warnings = mock_binance.msg_aggregator.consume_warnings()
+    warnings = binance.msg_aggregator.consume_warnings()
     assert len(warnings) == 2
     assert 'unknown binance asset IDONTEXIST' in warnings[0]
     assert 'unsupported binance asset ETF' in warnings[1]

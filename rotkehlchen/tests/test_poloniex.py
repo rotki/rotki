@@ -7,6 +7,7 @@ from rotkehlchen.errors import UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade, TradeType
 from rotkehlchen.poloniex import Poloniex, trade_from_poloniex
+from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -143,18 +144,8 @@ def test_poloniex_deposits_withdrawal_unknown_asset(function_scope_poloniex):
     def mock_api_return(url, req):  # pylint: disable=unused-argument
         response = MockResponse(
             200,
-            """{
-            "withdrawals": [
-            {"currency": "BTC", "timestamp": 1458994442, "amount": "5.0", "fee": "0.5"},
-            {"currency": "ETH", "timestamp": 1468994442, "amount": "10.0", "fee": "0.1"},
-            {"currency": "IDONTEXIST", "timestamp": 1478994442, "amount": "10.0", "fee": "0.1"},
-            {"currency": "DIS", "timestamp": 1478994442, "amount": "10.0", "fee": "0.1"}],
-            "deposits": [
-            {"currency": "BTC", "timestamp": 1448994442, "amount": "50.0"},
-            {"currency": "ETH", "timestamp": 1438994442, "amount": "100.0"},
-            {"currency": "IDONTEXIST", "timestamp": 1478994442, "amount": "10.0"},
-            {"currency": "EBT", "timestamp": 1478994442, "amount": "10.0"}]
-            }""")
+            POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE,
+        )
         return response
 
     with patch.object(poloniex.session, 'post', side_effect=mock_api_return):

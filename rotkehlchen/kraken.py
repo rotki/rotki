@@ -16,7 +16,12 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS, KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_BSV
-from rotkehlchen.errors import RecoverableRequestError, RemoteError, UnknownAsset
+from rotkehlchen.errors import (
+    RecoverableRequestError,
+    RemoteError,
+    UnknownAsset,
+    UnprocessableTradePair,
+)
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import query_cryptocompare_for_fiat_price
@@ -77,6 +82,13 @@ KRAKEN_DELISTED = ('XDAO', 'XXVN', 'ZKRW', 'XNMC', 'BSV', 'XICN')
 
 
 def kraken_to_world_pair(pair: str) -> TradePair:
+    """Turns a pair from kraken to our pair type
+
+    Can throw:
+        - UknownAsset if one of the assets of the pair are not known
+        - UnprocessableKrakenPair if the pair can't be processed and
+          split into its base/quote assets
+"""
     # handle dark pool pairs
     if pair[-2:] == '.d':
         pair = pair[:-2]
@@ -88,7 +100,7 @@ def kraken_to_world_pair(pair: str) -> TradePair:
         base_asset_str = pair[0:4]
         quote_asset_str = pair[4:]
     else:
-        raise ValueError(f'Could not process kraken trade pair {pair}')
+        raise UnprocessableTradePair(pair)
 
     base_asset = asset_from_kraken(base_asset_str)
     quote_asset = asset_from_kraken(quote_asset_str)
@@ -139,7 +151,8 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
     """Turn a kraken trade returned from kraken trade history to our common trade
     history format
 
-    Can raise UnknownAsset due to kraken_to_world_pair
+    - Can raise UnknownAsset due to kraken_to_world_pair
+    - Can raise UnprocessableTradePair due to kraken_to_world_pair
     """
     currency_pair = kraken_to_world_pair(kraken_trade['pair'])
     quote_currency = get_pair_position_asset(currency_pair, 'second')
@@ -583,8 +596,8 @@ class Kraken(Exchange):
                 ))
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found unsupported/unknown kraken asset {e.asset_name}. '
-                    f' Ignoring its deposit/withdrawals query.',
+                    f'Found unknown kraken asset {e.asset_name}. '
+                    f'Ignoring its deposit/withdrawals query.',
                 )
                 continue
 

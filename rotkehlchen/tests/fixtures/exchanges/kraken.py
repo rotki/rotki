@@ -10,6 +10,7 @@ from rotkehlchen.constants.assets import S_EUR, S_USD
 from rotkehlchen.fval import FVal
 from rotkehlchen.kraken import KRAKEN_ASSETS, KRAKEN_DELISTED, Kraken, world_to_kraken_pair
 from rotkehlchen.order_formatting import TradeType
+from rotkehlchen.tests.utils.exchanges import KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE
 from rotkehlchen.tests.utils.factories import (
     make_random_b64bytes,
     make_random_positive_fval,
@@ -294,6 +295,8 @@ class MockKraken(Kraken):
                     end=req['end'],
                     tradeable_pairs=list(self.tradeable_pairs.keys()),
                 )
+            # else
+            return KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE
         elif method == 'Ledgers':
             if self.random_ledgers_data:
                 return generate_random_kraken_ledger_data(
