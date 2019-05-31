@@ -247,7 +247,7 @@ class Poloniex(Exchange):
             req['limit'] = limit
 
         # we know returnLendingHistory returns a List of loans
-        response = cast(List, self.api_query("returnLendingHistory", req))
+        response = cast(List, self.api_query('returnLendingHistory', req))
         return response
 
     def returnTradeHistory(

@@ -9,7 +9,7 @@ from rotkehlchen.bitmex import trade_from_bitmex
 from rotkehlchen.bittrex import trade_from_bittrex
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors import RemoteError, UnsupportedAsset
+from rotkehlchen.errors import RemoteError, UnknownAsset, UnprocessableTradePair, UnsupportedAsset
 from rotkehlchen.exchange import data_up_todate
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -264,6 +264,9 @@ class TradesHistorian():
             )
 
     def query_poloniex_history(self, history, asset_movements, start_ts, end_ts, end_at_least_ts):
+        if not self.poloniex:
+            return history, asset_movements, [], []
+
         log.info(
             'Starting poloniex history query',
             start_ts=start_ts,
@@ -272,64 +275,69 @@ class TradesHistorian():
         )
         poloniex_margin_trades = list()
         polo_loans = list()
-        if self.poloniex is not None:
-            polo_history = self.poloniex.query_trade_history(
-                start_ts=start_ts,
-                end_ts=end_ts,
-                end_at_least_ts=end_at_least_ts,
-            )
+        polo_history = self.poloniex.query_trade_history(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            end_at_least_ts=end_at_least_ts,
+        )
 
-            for pair, trades in polo_history.items():
-                for trade in trades:
-                    category = trade['category']
+        for pair, trades in polo_history.items():
+            for trade in trades:
+                category = trade['category']
 
-                    try:
-                        if category == 'exchange' or category == 'settlement':
-                            history.append(trade_from_poloniex(trade, pair))
-                        elif category == 'marginTrade':
-                            if not self.read_manual_margin_positions:
-                                poloniex_margin_trades.append(trade_from_poloniex(trade, pair))
-                        else:
-                            raise ValueError(
-                                f'Unexpected poloniex trade category: {category}',
-                            )
-                    except UnsupportedAsset as e:
-                        self.msg_aggregator.add_warning(
-                            f'Found poloniex trade with unsupported asset '
-                            f' {e.asset_name}. Ignoring it.',
+                try:
+                    if category == 'exchange' or category == 'settlement':
+                        history.append(trade_from_poloniex(trade, pair))
+                    elif category == 'marginTrade':
+                        if not self.read_manual_margin_positions:
+                            poloniex_margin_trades.append(trade_from_poloniex(trade, pair))
+                    else:
+                        raise ValueError(
+                            f'Unexpected poloniex trade category: {category}',
                         )
-                        continue
+                except UnsupportedAsset as e:
+                    self.msg_aggregator.add_warning(
+                        f'Found poloniex trade with unsupported asset'
+                        f' {e.asset_name}. Ignoring it.',
+                    )
+                    continue
+                except UnknownAsset as e:
+                    self.msg_aggregator.add_warning(
+                        f'Found poloniex trade with unknown asset'
+                        f' {e.asset_name}. Ignoring it.',
+                    )
+                    continue
 
-            if self.read_manual_margin_positions:
-                # Just read the manual positions log and make virtual trades that
-                # correspond to the profits
-                assert poloniex_margin_trades == list(), (
-                    'poloniex margin trades list should be empty here'
-                )
-                poloniex_margin_trades = do_read_manual_margin_positions(
-                    self.user_directory,
-                )
-            else:
-                poloniex_margin_trades.sort(key=lambda trade: trade.timestamp)
-                poloniex_margin_trades = limit_trade_list_to_period(
-                    poloniex_margin_trades,
-                    start_ts,
-                    end_ts,
-                )
+        if self.read_manual_margin_positions:
+            # Just read the manual positions log and make virtual trades that
+            # correspond to the profits
+            assert poloniex_margin_trades == list(), (
+                'poloniex margin trades list should be empty here'
+            )
+            poloniex_margin_trades = do_read_manual_margin_positions(
+                self.user_directory,
+            )
+        else:
+            poloniex_margin_trades.sort(key=lambda trade: trade.timestamp)
+            poloniex_margin_trades = limit_trade_list_to_period(
+                poloniex_margin_trades,
+                start_ts,
+                end_ts,
+            )
 
-            polo_loans = self.poloniex.query_loan_history(
-                start_ts=start_ts,
-                end_ts=end_ts,
-                end_at_least_ts=end_at_least_ts,
-                from_csv=True,
-            )
-            polo_loans = process_polo_loans(polo_loans, start_ts, end_ts)
-            polo_asset_movements = self.poloniex.query_deposits_withdrawals(
-                start_ts=start_ts,
-                end_ts=end_ts,
-                end_at_least_ts=end_at_least_ts,
-            )
-            asset_movements.extend(polo_asset_movements)
+        polo_loans = self.poloniex.query_loan_history(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            end_at_least_ts=end_at_least_ts,
+            from_csv=True,
+        )
+        polo_loans = process_polo_loans(polo_loans, start_ts, end_ts)
+        polo_asset_movements = self.poloniex.query_deposits_withdrawals(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            end_at_least_ts=end_at_least_ts,
+        )
+        asset_movements.extend(polo_asset_movements)
 
         return history, asset_movements, poloniex_margin_trades, polo_loans
 
@@ -358,7 +366,19 @@ class TradesHistorian():
                     end_at_least_ts=end_at_least_ts,
                 )
                 for trade in kraken_history:
-                    history.append(trade_from_kraken(trade))
+                    try:
+                        history.append(trade_from_kraken(trade))
+                    except UnknownAsset as e:
+                        self.msg_aggregator.add_warning(
+                            f'Found kraken trade with unknown asset '
+                            f'{e.asset_name}. Ignoring it.',
+                        )
+                        continue
+                    except UnprocessableTradePair as e:
+                        self.msg_aggregator.add_warning(
+                            f'Found kraken trade with unprocessable pair '
+                            f'{e.pair}. Ignoring it.',
+                        )
 
                 kraken_asset_movements = self.kraken.query_deposits_withdrawals(
                     start_ts=start_ts,
@@ -370,6 +390,9 @@ class TradesHistorian():
             except RemoteError as e:
                 empty_or_error += '\n' + str(e)
 
+        poloniex_query_error = False
+        poloniex_margin_trades = []
+        polo_loans = []
         try:
             (
                 history,
@@ -385,6 +408,7 @@ class TradesHistorian():
             )
         except RemoteError as e:
             empty_or_error += '\n' + str(e)
+            poloniex_query_error = True
 
         if self.bittrex is not None:
             try:
@@ -463,16 +487,17 @@ class TradesHistorian():
         # Write to files
         historyfile_path = os.path.join(self.user_directory, TRADES_HISTORYFILE)
         write_tupledata_history_in_file(history, historyfile_path, start_ts, end_ts)
-        if self.poloniex is not None and not self.read_manual_margin_positions:
-            marginfile_path = os.path.join(self.user_directory, MARGIN_HISTORYFILE)
-            write_tupledata_history_in_file(
-                poloniex_margin_trades,
-                marginfile_path,
-                start_ts,
-                end_ts,
-            )
-
         if self.poloniex is not None:
+            if not self.read_manual_margin_positions and not poloniex_query_error:
+                marginfile_path = os.path.join(self.user_directory, MARGIN_HISTORYFILE)
+                write_tupledata_history_in_file(
+                    poloniex_margin_trades,
+                    marginfile_path,
+                    start_ts,
+                    end_ts,
+                )
+
+        if not poloniex_query_error:
             loansfile_path = os.path.join(self.user_directory, LOANS_HISTORYFILE)
             write_history_data_in_file(polo_loans, loansfile_path, start_ts, end_ts)
         assetmovementsfile_path = os.path.join(self.user_directory, ASSETMOVEMENTS_HISTORYFILE)

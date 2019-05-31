@@ -50,13 +50,19 @@ class PriceQueryUnknownFromAsset(Exception):
         )
 
 
+class UnprocessableTradePair(Exception):
+    def __init__(self, pair: str):
+        self.pair = pair
+        super().__init__(f'Unprocessable pair {pair} encountered.')
+
+
 class UnknownAsset(Exception):
     def __init__(self, asset_name: str):
         self.asset_name = asset_name
-        super().__init__(f'Unknown asset {asset_name} provided')
+        super().__init__(f'Unknown asset {asset_name} provided.')
 
 
 class UnsupportedAsset(Exception):
     def __init__(self, asset_name: str):
         self.asset_name = asset_name
-        super().__init__(f'Found asset {asset_name} which is not supported')
+        super().__init__(f'Found asset {asset_name} which is not supported.')
