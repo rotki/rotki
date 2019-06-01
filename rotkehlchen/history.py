@@ -1,7 +1,7 @@
 import logging
 import os
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Dict, List
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.binance import trade_from_binance
@@ -21,7 +21,7 @@ from rotkehlchen.order_formatting import (
     asset_movements_from_dictlist,
     trades_from_dictlist,
 )
-from rotkehlchen.poloniex import trade_from_poloniex
+from rotkehlchen.poloniex import asset_from_poloniex, trade_from_poloniex
 from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
 from rotkehlchen.typing import EthAddress, FiatAsset, FilePath, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -139,31 +139,6 @@ def check_hourly_data_sanity(data, from_asset, to_asset):
     return True
 
 
-def process_polo_loans(data, start_ts, end_ts):
-    new_data = list()
-    for loan in reversed(data):
-        close_time = createTimeStamp(loan['close'], formatstr="%Y-%m-%d %H:%M:%S")
-        open_time = createTimeStamp(loan['open'], formatstr="%Y-%m-%d %H:%M:%S")
-        if open_time < start_ts:
-            continue
-        if close_time > end_ts:
-            break
-
-        loan_data = {
-            'open_time': open_time,
-            'close_time': close_time,
-            'currency': loan['currency'],
-            'fee': FVal(loan['fee']),
-            'earned': FVal(loan['earned']),
-            'amount_lent': FVal(loan['amount']),
-        }
-        log.debug('processing poloniex loan', **make_sensitive(loan_data))
-        new_data.append(loan_data)
-
-    new_data.sort(key=lambda loan: loan['open_time'])
-    return new_data
-
-
 class PriceHistorian():
     __instance = None
     _historical_data_start: Timestamp
@@ -269,6 +244,52 @@ class TradesHistorian():
                 'already set'.format(name),
             )
 
+    def process_polo_loans(
+            self,
+            data: List[Dict],
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> List[Dict]:
+        """Takes in the list of loans from poloniex as returned by the returnLendingHistory
+        api call, processes it and returns it into our loan format
+        """
+        new_data = list()
+        for loan in reversed(data):
+            close_time = createTimeStamp(loan['close'], formatstr="%Y-%m-%d %H:%M:%S")
+            open_time = createTimeStamp(loan['open'], formatstr="%Y-%m-%d %H:%M:%S")
+            if open_time < start_ts:
+                continue
+            if close_time > end_ts:
+                break
+
+            try:
+                loan_data = {
+                    'open_time': open_time,
+                    'close_time': close_time,
+                    'currency': asset_from_poloniex(loan['currency']),
+                    'fee': FVal(loan['fee']),
+                    'earned': FVal(loan['earned']),
+                    'amount_lent': FVal(loan['amount']),
+                }
+            except UnsupportedAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found poloniex loan with unsupported asset'
+                    f' {e.asset_name}. Ignoring it.',
+                )
+                continue
+            except UnknownAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found poloniex loan with unknown asset'
+                    f' {e.asset_name}. Ignoring it.',
+                )
+                continue
+
+            log.debug('processing poloniex loan', **make_sensitive(loan_data))
+            new_data.append(loan_data)
+
+        new_data.sort(key=lambda loan: loan['open_time'])
+        return new_data
+
     def query_poloniex_history(self, history, asset_movements, start_ts, end_ts, end_at_least_ts):
         if not self.poloniex:
             return history, asset_movements, [], []
@@ -336,7 +357,7 @@ class TradesHistorian():
             end_at_least_ts=end_at_least_ts,
             from_csv=True,
         )
-        polo_loans = process_polo_loans(polo_loans, start_ts, end_ts)
+        polo_loans = self.process_polo_loans(polo_loans, start_ts, end_ts)
         polo_asset_movements = self.poloniex.query_deposits_withdrawals(
             start_ts=start_ts,
             end_ts=end_ts,
