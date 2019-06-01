@@ -17,6 +17,7 @@ from rotkehlchen.kraken import trade_from_kraken
 from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
 from rotkehlchen.order_formatting import (
     MarginPosition,
+    Trade,
     asset_movements_from_dictlist,
     trades_from_dictlist,
 )
@@ -93,17 +94,22 @@ def write_tupledata_history_in_file(history, filepath, start_ts, end_ts):
     write_history_data_in_file(out_history, filepath, start_ts, end_ts)
 
 
-def limit_trade_list_to_period(trades_list, start_ts, end_ts):
+def limit_trade_list_to_period(
+        trades_list: List[Trade],
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+) -> List[Trade]:
     """Accepts a SORTED by timestamp trades_list and returns a shortened version
     of that list limited to a specific time period"""
 
     start_idx = None
-    end_idx = -1
+    end_idx = None
     for idx, trade in enumerate(trades_list):
         if start_idx is None and trade.timestamp >= start_ts:
             start_idx = idx
-        elif end_idx == -1 and trade.timestamp > end_ts:
-            end_idx = idx - 1 if idx >= 1 else 0
+
+        if end_idx is None and trade.timestamp > end_ts:
+            end_idx = idx if idx >= 1 else 0
             break
 
     return trades_list[start_idx:end_idx] if start_idx is not None else list()

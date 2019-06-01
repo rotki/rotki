@@ -3,6 +3,9 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.fval import FVal
+from rotkehlchen.history import limit_trade_list_to_period
 from rotkehlchen.order_formatting import AssetMovement, Trade
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -26,7 +29,7 @@ def check_result_of_history_creation(
     assert start_ts == 0, 'should be same as given to process_history'
     assert end_ts == TEST_END_TS, 'should be same as given to process_history'
 
-    assert len(trade_history) == 8
+    assert len(trade_history) == 9
     # TODO: Add more assertions/check for each trade
     # OR instead do it in tests for conversion of trades from exchange to our
     # format for each exchange
@@ -54,6 +57,9 @@ def check_result_of_history_creation(
     assert trade_history[7].location == 'poloniex'
     assert trade_history[7].pair == 'ETH_BTC'
     assert trade_history[7].trade_type == TradeType.BUY
+    assert trade_history[8].location == 'poloniex'
+    assert trade_history[8].pair == 'XMR_ETH'
+    assert trade_history[8].trade_type == TradeType.BUY
 
     return {}
 
@@ -64,6 +70,10 @@ def test_history_creation(
         accountant,
         trades_historian_with_exchanges,
 ):
+    """This is a big test that contacts all exchange mocks and returns mocked
+    trades and other data from exchanges in order to create the accounting history
+    for a specific period and see that rotkehlchen handles the creation of that
+    history correctly"""
     server = rotkehlchen_server_with_exchanges
     rotki = server.rotkehlchen
     rotki.accountant = accountant
@@ -356,3 +366,54 @@ def test_history_creation(
     assert 'bittrex trade with unsupported asset PTON' in warnings[11]
     assert 'bittrex trade with unknown asset IDONTEXIST' in warnings[12]
     assert 'bittrex trade with unprocessable pair %$#%$#%#$%' in warnings[13]
+
+
+def test_limit_trade_list_to_period():
+    trade1 = Trade(
+        timestamp=1459427707,
+        location='kraken',
+        pair='ETH_BTC',
+        trade_type=TradeType.BUY,
+        amount=FVal(1),
+        rate=FVal(1),
+        fee=FVal('0.1'),
+        fee_currency=A_ETH,
+    )
+    trade2 = Trade(
+        timestamp=1469427707,
+        location='poloniex',
+        pair='ETH_BTC',
+        trade_type=TradeType.BUY,
+        amount=FVal(1),
+        rate=FVal(1),
+        fee=FVal('0.1'),
+        fee_currency=A_ETH,
+    )
+    trade3 = Trade(
+        timestamp=1479427707,
+        location='poloniex',
+        pair='ETH_BTC',
+        trade_type=TradeType.BUY,
+        amount=FVal(1),
+        rate=FVal(1),
+        fee=FVal('0.1'),
+        fee_currency=A_ETH,
+    )
+
+    full_list = [trade1, trade2, trade3]
+    assert limit_trade_list_to_period(full_list, 1459427706, 1479427708) == full_list
+    assert limit_trade_list_to_period(full_list, 1459427707, 1479427708) == full_list
+    assert limit_trade_list_to_period(full_list, 1459427707, 1479427707) == full_list
+
+    expected = [trade2, trade3]
+    assert limit_trade_list_to_period(full_list, 1459427708, 1479427707) == expected
+    expected = [trade2]
+    assert limit_trade_list_to_period(full_list, 1459427708, 1479427706) == expected
+    assert limit_trade_list_to_period(full_list, 0, 10) == []
+    assert limit_trade_list_to_period(full_list, 1479427708, 1479427719) == []
+    assert limit_trade_list_to_period([trade1], 1459427707, 1459427707) == [trade1]
+    assert limit_trade_list_to_period([trade2], 1469427707, 1469427707) == [trade2]
+    assert limit_trade_list_to_period([trade3], 1479427707, 1479427707) == [trade3]
+    assert limit_trade_list_to_period(full_list, 1459427707, 1459427707) == [trade1]
+    assert limit_trade_list_to_period(full_list, 1469427707, 1469427707) == [trade2]
+    assert limit_trade_list_to_period(full_list, 1479427707, 1479427707) == [trade3]
