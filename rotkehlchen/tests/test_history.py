@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import limit_trade_list_to_period
 from rotkehlchen.order_formatting import AssetMovement, Trade
@@ -29,10 +29,10 @@ def check_result_of_history_creation(
     assert start_ts == 0, 'should be same as given to process_history'
     assert end_ts == TEST_END_TS, 'should be same as given to process_history'
 
+    # TODO: Add more assertions/check for each action
+    # OR instead do it in tests for conversion of actions(trades, loans, deposits e.t.c.)
+    # from exchange to our format for each exchange
     assert len(trade_history) == 9
-    # TODO: Add more assertions/check for each trade
-    # OR instead do it in tests for conversion of trades from exchange to our
-    # format for each exchange
     assert trade_history[0].location == 'kraken'
     assert trade_history[0].pair == 'ETH_EUR'
     assert trade_history[0].trade_type == TradeType.BUY
@@ -60,6 +60,16 @@ def check_result_of_history_creation(
     assert trade_history[8].location == 'poloniex'
     assert trade_history[8].pair == 'XMR_ETH'
     assert trade_history[8].trade_type == TradeType.BUY
+
+    assert len(loan_history) == 2
+    assert loan_history[0]['currency'] == A_ETH
+    assert loan_history[0]['earned'] == FVal('0.00000001')
+    assert loan_history[1]['currency'] == A_BTC
+    assert loan_history[1]['earned'] == FVal('0.00000005')
+
+    # The history creation for these is not yet tested
+    assert len(margin_history) == 0
+    assert len(eth_transactions) == 0
 
     return {}
 
@@ -209,7 +219,7 @@ def test_history_creation(
                 "close": "2017-01-01 23:38:45"
             }, {
                 "id": 246294776,
-                "currency": "NOEXISTINGASSET",
+                "currency": "NOTEXISTINGASSET",
                 "rate": "0.00013890",
                 "amount": "0.03764586",
                 "duration": "0.00150000",
@@ -350,7 +360,7 @@ def test_history_creation(
     # And now make sure that warnings have also been generated for the query of
     # the unsupported/unknown assets
     warnings = rotki.msg_aggregator.consume_warnings()
-    assert len(warnings) == 14
+    assert len(warnings) == 16
     assert 'kraken trade with unprocessable pair IDONTEXISTZEUR' in warnings[0]
     assert 'kraken trade with unknown asset IDONTEXISTTOO' in warnings[1]
     assert 'kraken trade with unprocessable pair %$#%$#%$#%$#%$#%' in warnings[2]
@@ -359,13 +369,15 @@ def test_history_creation(
     assert msg in warnings[4]
     assert 'poloniex trade with unknown asset NOEXISTINGASSET' in warnings[5]
     assert 'poloniex trade with unsupported asset BALLS' in warnings[6]
-    assert 'withdrawal of unknown poloniex asset IDONTEXIST' in warnings[7]
-    assert 'withdrawal of unsupported poloniex asset DIS' in warnings[8]
-    assert 'deposit of unknown poloniex asset IDONTEXIST' in warnings[9]
-    assert 'deposit of unsupported poloniex asset EBT' in warnings[10]
-    assert 'bittrex trade with unsupported asset PTON' in warnings[11]
-    assert 'bittrex trade with unknown asset IDONTEXIST' in warnings[12]
-    assert 'bittrex trade with unprocessable pair %$#%$#%#$%' in warnings[13]
+    assert 'poloniex loan with unsupported asset BDC' in warnings[7]
+    assert 'poloniex loan with unknown asset NOTEXISTINGASSET' in warnings[8]
+    assert 'withdrawal of unknown poloniex asset IDONTEXIST' in warnings[9]
+    assert 'withdrawal of unsupported poloniex asset DIS' in warnings[10]
+    assert 'deposit of unknown poloniex asset IDONTEXIST' in warnings[11]
+    assert 'deposit of unsupported poloniex asset EBT' in warnings[12]
+    assert 'bittrex trade with unsupported asset PTON' in warnings[13]
+    assert 'bittrex trade with unknown asset IDONTEXIST' in warnings[14]
+    assert 'bittrex trade with unprocessable pair %$#%$#%#$%' in warnings[15]
 
 
 def test_limit_trade_list_to_period():
