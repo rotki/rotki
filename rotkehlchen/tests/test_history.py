@@ -18,12 +18,50 @@ def test_history_creation(
     rotki.accountant = accountant
     rotki.trades_historian = trades_historian_with_exchanges
     # Temporarily remove other
-    rotki.trades_historian.binance = None
+    # rotki.trades_historian.binance = None
     # rotki.trades_historian.kraken = None
     rotki.trades_historian.bittrex = None
     rotki.kraken.random_trade_data = False
     rotki.kraken.random_ledgers_data = False
     end_ts = ts_now()
+
+    def mock_binance_api_queries(url):
+        if 'myTrades' in url:
+            # Can't mock unknown assets in binance trade query since
+            # only all known pairs are queried
+            payload = '[]'
+            if 'symbol=ETHBTC' in url:
+                payload = """[{
+                "symbol": "ETHBTC",
+                "id": 1,
+                "orderId": 1,
+                "price": "0.0063213",
+                "qty": "5.0",
+                "commission": "0.005",
+                "commissionAsset": "ETH",
+                "time": 1512561941,
+                "isBuyer": true,
+                "isMaker": false,
+                "isBestMatch": true
+                }]"""
+            elif 'symbol=RDNETH' in url:
+                payload = """[{
+                "symbol": "RDNETH",
+                "id": 2,
+                "orderId": 2,
+                "price": "0.0063213",
+                "qty": "5.0",
+                "commission": "0.005",
+                "commissionAsset": "RDN",
+                "time": 1512561942,
+                "isBuyer": true,
+                "isMaker": false,
+                "isBestMatch": true
+                }]"""
+        else:
+            raise RuntimeError(f'Binance test mock got unexpected/unmocked url {url}')
+
+        return MockResponse(200, payload)
 
     def mock_poloniex_api_queries(url, req):  # pylint: disable=unused-argument
         payload = ''
@@ -139,7 +177,9 @@ def test_history_creation(
         elif 'returnDepositsWithdrawals' == req['command']:
             payload = POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
         else:
-            raise RuntimeError(f'Test mock got unexpected/unmocked command {req["command"]}')
+            raise RuntimeError(
+                f'Poloniex test mock got unexpected/unmocked command {req["command"]}'
+            )
         return MockResponse(200, payload)
 
     polo_patch = patch.object(
@@ -147,12 +187,17 @@ def test_history_creation(
         'post',
         side_effect=mock_poloniex_api_queries,
     )
+    binance_patch = patch.object(
+        rotki.binance.session,
+        'get',
+        side_effect=mock_binance_api_queries,
+    )
     accountant_patch = patch.object(  # Patch away processing of history
         rotki.accountant,
         'process_history',
         return_value={},
     )
-    with polo_patch, accountant_patch:
+    with accountant_patch, polo_patch, binance_patch:
         response = server.process_trade_history(start_ts='0', end_ts=str(end_ts))
 
     # The history processing is completely mocked away and omitted in this test.
