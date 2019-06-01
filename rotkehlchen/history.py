@@ -307,7 +307,6 @@ class TradesHistorian():
                         f' {e.asset_name}. Ignoring it.',
                     )
                     continue
-
         if self.read_manual_margin_positions:
             # Just read the manual positions log and make virtual trades that
             # correspond to the profits
@@ -422,12 +421,23 @@ class TradesHistorian():
                         history.append(
                             trade_from_bittrex(trade),
                         )
+                    except UnknownAsset as e:
+                        self.msg_aggregator.add_warning(
+                            f'Found bittrex trade with unknown asset '
+                            f'{e.asset_name}. Ignoring it.',
+                        )
+                        continue
                     except UnsupportedAsset as e:
                         self.msg_aggregator.add_warning(
                             f'Found bittrex trade with unsupported asset '
                             f'{e.asset_name}. Ignoring it.',
                         )
                         continue
+                    except UnprocessableTradePair as e:
+                        self.msg_aggregator.add_warning(
+                            f'Found bittrex trade with unprocessable pair '
+                            f'{e.pair}. Ignoring it.',
+                        )
 
             except RemoteError as e:
                 empty_or_error += '\n' + str(e)

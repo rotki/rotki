@@ -4,6 +4,7 @@ from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 from dataclasses import dataclass
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.errors import UnprocessableTradePair
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Timestamp, TradePair, TradeType
 
@@ -107,13 +108,12 @@ class MarginPosition(NamedTuple):
 def _split_pair(pair: TradePair) -> Tuple[str, str]:
     assets = pair.split('_')
     if len(assets) != 2:
-        raise ValueError(f'Could not split {pair} pair')
+        # Could not split the pair
+        raise UnprocessableTradePair(pair)
 
-    if len(assets[0]) == 0:
-        raise ValueError(f'Splitting {pair} yielded no base asset')
-
-    if len(assets[1]) == 0:
-        raise ValueError(f'Splitting {pair} yielded no quote asset')
+    if len(assets[0]) == 0 or len(assets[1]) == 0:
+        # no base or no quote asset
+        raise UnprocessableTradePair(pair)
 
     return assets[0], assets[1]
 

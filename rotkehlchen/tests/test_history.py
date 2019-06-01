@@ -1,10 +1,61 @@
+from typing import Any, Dict, List
 from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.order_formatting import AssetMovement, Trade
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.transactions import EthereumTransaction
+from rotkehlchen.typing import Timestamp, TradeType
+
+TEST_END_TS = 1559427707
+
+
+def check_result_of_history_creation(
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+        trade_history: List[Trade],
+        margin_history: List[Trade],
+        loan_history: Dict,
+        asset_movements: List[AssetMovement],
+        eth_transactions: List[EthereumTransaction],
+) -> Dict[str, Any]:
+    # Some simple assertions on the result of created history. The entire processing
+    # part of the history is mocked away by this checking function
+    assert start_ts == 0, 'should be same as given to process_history'
+    assert end_ts == TEST_END_TS, 'should be same as given to process_history'
+
+    assert len(trade_history) == 8
+    # TODO: Add more assertions/check for each trade
+    # OR instead do it in tests for conversion of trades from exchange to our
+    # format for each exchange
+    assert trade_history[0].location == 'kraken'
+    assert trade_history[0].pair == 'ETH_EUR'
+    assert trade_history[0].trade_type == TradeType.BUY
+    assert trade_history[1].location == 'kraken'
+    assert trade_history[1].pair == 'BTC_EUR'
+    assert trade_history[1].trade_type == TradeType.BUY
+    assert trade_history[2].location == 'bittrex'
+    assert trade_history[2].pair == 'LTC_BTC'
+    assert trade_history[2].trade_type == TradeType.BUY
+    assert trade_history[3].location == 'bittrex'
+    assert trade_history[3].pair == 'LTC_ETH'
+    assert trade_history[3].trade_type == TradeType.SELL
+    assert trade_history[4].location == 'binance'
+    assert trade_history[4].pair == 'ETH_BTC'
+    assert trade_history[4].trade_type == TradeType.BUY
+    assert trade_history[5].location == 'binance'
+    assert trade_history[5].pair == 'RDN_ETH'
+    assert trade_history[5].trade_type == TradeType.SELL
+    assert trade_history[6].location == 'poloniex'
+    assert trade_history[6].pair == 'ETH_BTC'
+    assert trade_history[6].trade_type == TradeType.SELL
+    assert trade_history[7].location == 'poloniex'
+    assert trade_history[7].pair == 'ETH_BTC'
+    assert trade_history[7].trade_type == TradeType.BUY
+
+    return {}
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -17,13 +68,8 @@ def test_history_creation(
     rotki = server.rotkehlchen
     rotki.accountant = accountant
     rotki.trades_historian = trades_historian_with_exchanges
-    # Temporarily remove other
-    # rotki.trades_historian.binance = None
-    # rotki.trades_historian.kraken = None
-    rotki.trades_historian.bittrex = None
     rotki.kraken.random_trade_data = False
     rotki.kraken.random_ledgers_data = False
-    end_ts = ts_now()
 
     def mock_binance_api_queries(url):
         if 'myTrades' in url:
@@ -39,7 +85,7 @@ def test_history_creation(
                 "qty": "5.0",
                 "commission": "0.005",
                 "commissionAsset": "ETH",
-                "time": 1512561941,
+                "time": 1512561941000,
                 "isBuyer": true,
                 "isMaker": false,
                 "isBestMatch": true
@@ -53,8 +99,8 @@ def test_history_creation(
                 "qty": "5.0",
                 "commission": "0.005",
                 "commissionAsset": "RDN",
-                "time": 1512561942,
-                "isBuyer": true,
+                "time": 1512561942000,
+                "isBuyer": false,
                 "isMaker": false,
                 "isBestMatch": true
                 }]"""
@@ -93,7 +139,7 @@ def test_history_creation(
                 "ETH_XMR": [{
                     "globalTradeID": 394131415,
                     "tradeID": "5455036",
-                    "date": "2018-10-16 18:07:17",
+                    "date": "2018-10-16 18:07:18",
                     "rate": "0.06935244",
                     "amount": "1.40308443",
                     "total": "0.09730732",
@@ -178,8 +224,87 @@ def test_history_creation(
             payload = POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
         else:
             raise RuntimeError(
-                f'Poloniex test mock got unexpected/unmocked command {req["command"]}'
+                f'Poloniex test mock got unexpected/unmocked command {req["command"]}',
             )
+        return MockResponse(200, payload)
+
+    def mock_bittrex_api_queries(url):
+        if 'getorderhistory' in url:
+            payload = """
+{
+  "success": true,
+  "message": "''",
+  "result": [{
+      "OrderUuid": "fd97d393-e9b9-4dd1-9dbf-f288fc72a185",
+      "Exchange": "BTC-LTC",
+      "TimeStamp": "2017-05-01T15:00:00.00",
+      "OrderType": "LIMIT_BUY",
+      "Limit": 1e-8,
+      "Quantity": 667.03644955,
+      "QuantityRemaining": 0,
+      "Commission": 0.00004921,
+      "Price": 0.01968424,
+      "PricePerUnit": 0.0000295,
+      "IsConditional": false,
+      "ImmediateOrCancel": false
+    }, {
+      "OrderUuid": "ad97d393-e9b9-4dd1-9dbf-f288fc72a185",
+      "Exchange": "ETH-LTC",
+      "TimeStamp": "2017-05-02T15:00:00.00",
+      "OrderType": "LIMIT_SELL",
+      "Limit": 1e-8,
+      "Quantity": 667.03644955,
+      "QuantityRemaining": 0,
+      "Commission": 0.00004921,
+      "Price": 0.01968424,
+      "PricePerUnit": 0.0000295,
+      "IsConditional": false,
+      "ImmediateOrCancel": false
+    }, {
+      "OrderUuid": "ed97d393-e9b9-4dd1-9dbf-f288fc72a185",
+      "Exchange": "PTON-ETH",
+      "TimeStamp": "2017-05-02T15:00:00.00",
+      "OrderType": "LIMIT_SELL",
+      "Limit": 1e-8,
+      "Quantity": 667.03644955,
+      "QuantityRemaining": 0,
+      "Commission": 0.00004921,
+      "Price": 0.01968424,
+      "PricePerUnit": 0.0000295,
+      "IsConditional": false,
+      "ImmediateOrCancel": false
+    }, {
+      "OrderUuid": "1d97d393-e9b9-4dd1-9dbf-f288fc72a185",
+      "Exchange": "ETH-IDONTEXIST",
+      "TimeStamp": "2017-05-02T15:00:00.00",
+      "OrderType": "LIMIT_SELL",
+      "Limit": 1e-8,
+      "Quantity": 667.03644955,
+      "QuantityRemaining": 0,
+      "Commission": 0.00004921,
+      "Price": 0.01968424,
+      "PricePerUnit": 0.0000295,
+      "IsConditional": false,
+      "ImmediateOrCancel": false
+    }, {
+      "OrderUuid": "2d97d393-e9b9-4dd1-9dbf-f288fc72a185",
+      "Exchange": "%$#%$#%#$%",
+      "TimeStamp": "2017-05-02T15:00:00.00",
+      "OrderType": "LIMIT_BUY",
+      "Limit": 1e-8,
+      "Quantity": 667.03644955,
+      "QuantityRemaining": 0,
+      "Commission": 0.00004921,
+      "Price": 0.01968424,
+      "PricePerUnit": 0.0000295,
+      "IsConditional": false,
+      "ImmediateOrCancel": false
+}]
+}
+"""
+        else:
+            raise RuntimeError(f'Bittrex test mock got unexpected/unmocked url {url}')
+
         return MockResponse(200, payload)
 
     polo_patch = patch.object(
@@ -192,13 +317,18 @@ def test_history_creation(
         'get',
         side_effect=mock_binance_api_queries,
     )
+    bittrex_patch = patch.object(
+        rotki.bittrex.session,
+        'get',
+        side_effect=mock_bittrex_api_queries,
+    )
     accountant_patch = patch.object(  # Patch away processing of history
         rotki.accountant,
         'process_history',
-        return_value={},
+        side_effect=check_result_of_history_creation,
     )
-    with accountant_patch, polo_patch, binance_patch:
-        response = server.process_trade_history(start_ts='0', end_ts=str(end_ts))
+    with accountant_patch, polo_patch, binance_patch, bittrex_patch:
+        response = server.process_trade_history(start_ts='0', end_ts=str(TEST_END_TS))
 
     # The history processing is completely mocked away and omitted in this test.
     # because it is only for the history creation not its processing.
@@ -210,7 +340,7 @@ def test_history_creation(
     # And now make sure that warnings have also been generated for the query of
     # the unsupported/unknown assets
     warnings = rotki.msg_aggregator.consume_warnings()
-    assert len(warnings) == 11
+    assert len(warnings) == 14
     assert 'kraken trade with unprocessable pair IDONTEXISTZEUR' in warnings[0]
     assert 'kraken trade with unknown asset IDONTEXISTTOO' in warnings[1]
     assert 'kraken trade with unprocessable pair %$#%$#%$#%$#%$#%' in warnings[2]
@@ -223,3 +353,6 @@ def test_history_creation(
     assert 'withdrawal of unsupported poloniex asset DIS' in warnings[8]
     assert 'deposit of unknown poloniex asset IDONTEXIST' in warnings[9]
     assert 'deposit of unsupported poloniex asset EBT' in warnings[10]
+    assert 'bittrex trade with unsupported asset PTON' in warnings[11]
+    assert 'bittrex trade with unknown asset IDONTEXIST' in warnings[12]
+    assert 'bittrex trade with unprocessable pair %$#%$#%#$%' in warnings[13]

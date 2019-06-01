@@ -54,6 +54,7 @@ def bittrex_pair_to_world(given_pair: str) -> TradePair:
 
     Throws:
         - UnsupportedAsset due to asset_from_bittrex()
+        - UnprocessableTradePair if the pair can't be split into its parts
     """
     pair = TradePair(given_pair.replace('-', '_'))
     base_currency = asset_from_bittrex(get_pair_position_str(pair, 'first'))
@@ -94,7 +95,7 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
     fee = bittrex_commission
     if order_type == 'LIMIT_BUY':
         order_type = TradeType.BUY
-    elif order_type == 'LIMIT_SEL':
+    elif order_type == 'LIMIT_SELL':
         order_type = TradeType.SELL
     else:
         raise ValueError('Got unexpected order type "{}" for bittrex trade'.format(order_type))
