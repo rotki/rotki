@@ -358,6 +358,9 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # Only exists in bittrex. Perhaps it will soon be added to other APIs.
     # https://international.bittrex.com/Market/Index?MarketName=BTC-VDX
     'VDX',
+    # Origo. As of 02/06/2019 no data found outside of bittrex
+    # https://international.bittrex.com/Market/Index?MarketName=BTC-OGO
+    'OGO',
 )
 
 
