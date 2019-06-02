@@ -200,7 +200,7 @@ def test_query_timed_balances_data(rotkehlchen_server):
 
     response = rotkehlchen_server.query_timed_balances_data('DSXXADA', 0, 99999999999)
     assert not response['result']
-    assert response['message'] == 'Unknown asset DSXXADA provided'
+    assert response['message'] == 'Unknown asset DSXXADA provided.'
 
 
 def test_query_netvalue_data(rotkehlchen_server):

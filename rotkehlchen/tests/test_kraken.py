@@ -132,5 +132,5 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(function_scope_kraken):
 
     warnings = kraken.msg_aggregator.consume_warnings()
     assert len(warnings) == 2
-    assert 'unsupported/unknown kraken asset IDONTEXIST' in warnings[0]
-    assert 'unsupported/unknown kraken asset IDONTEXISTEITHER' in warnings[1]
+    assert 'unknown kraken asset IDONTEXIST' in warnings[0]
+    assert 'unknown kraken asset IDONTEXISTEITHER' in warnings[1]
