@@ -1092,11 +1092,14 @@ class DBHandler():
 
         Returns a list of `AssetBalance` all at the latest timestamp.
         Essentially this returns the distribution of netvalue across all assets
+
+        The list is sorted by usd value going from higher to lower
         """
         cursor = self.conn.cursor()
         results = cursor.execute(
             'SELECT time, currency, amount, usd_value FROM timed_balances WHERE '
-            'time=(SELECT MAX(time) from timed_balances);',
+            'time=(SELECT MAX(time) from timed_balances) ORDER BY '
+            'CAST(usd_value AS REAL) DESC;',
         )
         results = results.fetchall()
         assets = []
