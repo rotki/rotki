@@ -31,6 +31,7 @@ from rotkehlchen.db.dbhandler import (
     detect_sqlcipher_version,
 )
 from rotkehlchen.errors import AuthenticationError, InputError
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_BSV, A_DAO, A_DOGE, A_GNO, A_RDN, A_XMR
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
 from rotkehlchen.typing import SupportedBlockchain, Timestamp
@@ -839,10 +840,14 @@ def test_get_latest_asset_value_distribution(data_dir, username):
 
     assets = data.db.get_latest_asset_value_distribution()
     assert len(assets) == 4
-    assert assets[0] == balances[0]
-    assert assets[1] == balances[1]
-    assert assets[2] == balances[2]
-    assert assets[3] == balances[3]
+    # Make sure they are sorted by usd value
+    assert assets[0] == balances[1]
+    assert assets[1] == balances[0]
+    assert FVal(assets[0].usd_value) > FVal(assets[1].usd_value)
+    assert assets[2] == balances[3]
+    assert FVal(assets[1].usd_value) > FVal(assets[2].usd_value)
+    assert assets[3] == balances[2]
+    assert FVal(assets[2].usd_value) > FVal(assets[3].usd_value)
 
 
 def test_get_owned_tokens(data_dir, username):

@@ -247,34 +247,35 @@ def test_query_latest_asset_value_distribution(rotkehlchen_server):
     response = rotkehlchen_server.query_latest_asset_value_distribution()
     assert response['message'] == ''
     distribution = response['result']
+    # should be sorted by usd value
     assert isinstance(distribution[0]['asset'], str)
     assert distribution[0] == {
-        'time': 1488326400,
-        'asset': 'BTC',
-        'amount': '1',
-        'usd_value': '1222.66',
-    }
-    assert isinstance(distribution[1]['asset'], str)
-    assert distribution[1] == {
         'time': 1488326400,
         'asset': 'ETH',
         'amount': '10',
         'usd_value': '4517.4',
     }
+    assert isinstance(distribution[1]['asset'], str)
+    assert distribution[1] == {
+        'time': 1488326400,
+        'asset': 'BTC',
+        'amount': '1',
+        'usd_value': '1222.66',
+    }
     assert isinstance(distribution[2]['asset'], str)
     assert distribution[2] == {
         'time': 1488326400,
-        'asset': 'EUR',
-        'amount': '100',
-        'usd_value': '119',
-    }
-    assert isinstance(distribution[3]['asset'], str)
-    assert distribution[3] == {
-        'time': 1488326400,
         'asset': 'XMR',
         'amount': '5',
+        'usd_value': '135.6',
+    }
+    assert distribution[3] == {
+        'time': 1488326400,
+        'asset': 'EUR',
+        'amount': '100',
         'usd_value': '61.5',
     }
+    assert isinstance(distribution[3]['asset'], str)
 
 
 def test_set_settings(rotkehlchen_server):

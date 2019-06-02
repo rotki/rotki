@@ -23,12 +23,12 @@ def add_starting_balances(datahandler) -> List[AssetBalance]:
             time=Timestamp(1488326400),
             asset=A_EUR,
             amount='100',
-            usd_value='119',
+            usd_value='61.5',
         ), AssetBalance(
             time=Timestamp(1488326400),
             asset=A_XMR,
             amount='5',
-            usd_value='61.5',
+            usd_value='135.6',
         ),
     ]
     datahandler.db.add_multiple_balances(balances)
