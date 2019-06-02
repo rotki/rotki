@@ -3,6 +3,7 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.errors import UnprocessableTradePair
 from rotkehlchen.fval import FVal
 from rotkehlchen.kraken import KRAKEN_ASSETS, kraken_to_world_pair, trade_from_kraken
 from rotkehlchen.order_formatting import Trade
@@ -66,7 +67,7 @@ def test_kraken_to_world_pair():
     assert kraken_to_world_pair('XTZETH') == 'XTZ_ETH'
     assert kraken_to_world_pair('XXBTZGBP.d') == 'BTC_GBP'
 
-    with pytest.raises(ValueError):
+    with pytest.raises(UnprocessableTradePair):
         kraken_to_world_pair('GABOOBABOO')
 
 

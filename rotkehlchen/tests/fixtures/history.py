@@ -35,14 +35,14 @@ def price_historian(
 
 
 @pytest.fixture
-def trades_historian(accounting_data_dir, messages_aggregator):
-    database = DBHandler(accounting_data_dir, '123', messages_aggregator)
+def trades_historian(accounting_data_dir, function_scope_messages_aggregator):
+    database = DBHandler(accounting_data_dir, '123', function_scope_messages_aggregator)
     historian = TradesHistorian(
         user_directory=accounting_data_dir,
         db=database,
         eth_accounts=[],
         historical_data_start=TEST_HISTORY_DATA_START,
-        msg_aggregator=messages_aggregator,
+        msg_aggregator=function_scope_messages_aggregator,
     )
     return historian
 

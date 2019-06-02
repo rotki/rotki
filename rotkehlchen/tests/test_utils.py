@@ -2,6 +2,7 @@ import json
 
 import pytest
 
+from rotkehlchen.errors import UnprocessableTradePair
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import invert_pair
 from rotkehlchen.serializer import process_result
@@ -46,7 +47,7 @@ def test_iso8601ts_to_timestamp():
 def test_invert_pair():
     assert invert_pair('BTC_ETH') == 'ETH_BTC'
     assert invert_pair('XMR_EUR') == 'EUR_XMR'
-    with pytest.raises(ValueError):
+    with pytest.raises(UnprocessableTradePair):
         assert invert_pair('sdsadasd')
 
 
