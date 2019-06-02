@@ -40,7 +40,7 @@ def rotkehlchen_server(
         blockchain,
         accountant,
         start_with_logged_in_user,
-        messages_aggregator,
+        function_scope_messages_aggregator,
 ):
     """A partially mocked rotkehlchen server instance"""
     with patch.object(argparse.ArgumentParser, 'parse_args', return_value=cli_args):
@@ -48,6 +48,14 @@ def rotkehlchen_server(
 
     r = server.rotkehlchen
     if start_with_logged_in_user:
+        # Rotkehlchen initializes its own messages aggregator normally but here we
+        # should use the one all other fixtures use so that the same aggregator is
+        # used across all objects in a test
+        # TODO: Find a better way to achieve this
+        r.msg_aggregator = function_scope_messages_aggregator
+        r.data.msg_aggregator = r.msg_aggregator
+        # Unlock must come after we have set the aggregator if we are to get the
+        # messages caused by DB initialization
         r.data.unlock(username, '123', create_new=True)
         # Remember accountant fixture has a mocked accounting data dir
         # different to the usual user one
@@ -55,10 +63,6 @@ def rotkehlchen_server(
         r.blockchain = blockchain
         r.trades_historian = object()
         r.user_is_logged_in = True
-        # Rotkehlchen initializes its own messages aggregator normally but here we
-        # should use the one all other fixtures use so that the same aggregator is
-        # used across all objects in a test
-        r.msg_aggregator = messages_aggregator
     return server
 
 

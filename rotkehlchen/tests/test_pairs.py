@@ -2,7 +2,7 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
-from rotkehlchen.errors import UnknownAsset
+from rotkehlchen.errors import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.order_formatting import (
     get_pair_position_asset,
     get_pair_position_str,
@@ -26,13 +26,13 @@ def test_pair_get_assets():
     assert isinstance(a2, Asset)
     assert a2 == A_BTC
 
-    with pytest.raises(ValueError):
+    with pytest.raises(UnprocessableTradePair):
         pair_get_assets('_')
-    with pytest.raises(ValueError):
+    with pytest.raises(UnprocessableTradePair):
         pair_get_assets('ETH_')
-    with pytest.raises(ValueError):
+    with pytest.raises(UnprocessableTradePair):
         pair_get_assets('_BTC')
-    with pytest.raises(ValueError):
+    with pytest.raises(UnprocessableTradePair):
         pair_get_assets('ETH_BTC_USD')
 
     with pytest.raises(UnknownAsset):
@@ -51,13 +51,13 @@ def test_invert_pair():
     pair = invert_pair('ETH_BTC')
     assert pair == TradePair('BTC_ETH')
 
-    with pytest.raises(ValueError):
+    with pytest.raises(UnprocessableTradePair):
         invert_pair('_')
-    with pytest.raises(ValueError):
+    with pytest.raises(UnprocessableTradePair):
         invert_pair('ETH_')
-    with pytest.raises(ValueError):
+    with pytest.raises(UnprocessableTradePair):
         invert_pair('_BTC')
-    with pytest.raises(ValueError):
+    with pytest.raises(UnprocessableTradePair):
         invert_pair('ETH_BTC_USD')
 
     with pytest.raises(UnknownAsset):
@@ -78,13 +78,13 @@ def test_get_pair_position_str():
     with pytest.raises(AssertionError):
         get_pair_position_str('ETH_BTC', 'sdsadsad')
 
-    with pytest.raises(ValueError):
+    with pytest.raises(UnprocessableTradePair):
         get_pair_position_str('_', 'first')
-    with pytest.raises(ValueError):
+    with pytest.raises(UnprocessableTradePair):
         get_pair_position_str('ETH_', 'first')
-    with pytest.raises(ValueError):
+    with pytest.raises(UnprocessableTradePair):
         get_pair_position_str('_BTC', 'second')
-    with pytest.raises(ValueError):
+    with pytest.raises(UnprocessableTradePair):
         get_pair_position_str('ETH_BTC_USD', 'first')
 
     # This function does not checks for known assets
@@ -108,13 +108,13 @@ def test_get_pair_position_asset():
     with pytest.raises(AssertionError):
         get_pair_position_asset('ETH_BTC', 'sdsadsad')
 
-    with pytest.raises(ValueError):
+    with pytest.raises(UnprocessableTradePair):
         get_pair_position_asset('_', 'first')
-    with pytest.raises(ValueError):
+    with pytest.raises(UnprocessableTradePair):
         get_pair_position_asset('ETH_', 'first')
-    with pytest.raises(ValueError):
+    with pytest.raises(UnprocessableTradePair):
         get_pair_position_asset('_BTC', 'second')
-    with pytest.raises(ValueError):
+    with pytest.raises(UnprocessableTradePair):
         get_pair_position_asset('ETH_BTC_USD', 'first')
 
     with pytest.raises(UnknownAsset):

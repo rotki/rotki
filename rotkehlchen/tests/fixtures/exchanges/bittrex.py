@@ -22,11 +22,11 @@ def bittrex(session_data_dir, session_inquirer, messages_aggregator):
 
 
 @pytest.fixture(scope='function')
-def function_scope_bittrex(accounting_data_dir, messages_aggregator):
+def function_scope_bittrex(accounting_data_dir, function_scope_messages_aggregator):
     mock = MockBittrex(
         api_key=base64.b64encode(make_random_b64bytes(128)),
         secret=base64.b64encode(make_random_b64bytes(128)),
         user_directory=accounting_data_dir,
-        msg_aggregator=messages_aggregator,
+        msg_aggregator=function_scope_messages_aggregator,
     )
     return mock
