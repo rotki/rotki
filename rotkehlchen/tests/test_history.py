@@ -24,8 +24,9 @@ def check_result_of_history_creation(
         asset_movements: List[AssetMovement],
         eth_transactions: List[EthereumTransaction],
 ) -> Dict[str, Any]:
-    # Some simple assertions on the result of created history. The entire processing
-    # part of the history is mocked away by this checking function
+    """This function offers Some simple assertions on the result of the
+    created history. The entire processing part of the history is mocked
+    away by this checking function"""
     assert start_ts == 0, 'should be same as given to process_history'
     assert end_ts == TEST_END_TS, 'should be same as given to process_history'
 
@@ -66,6 +67,32 @@ def check_result_of_history_creation(
     assert loan_history[0]['earned'] == FVal('0.00000001')
     assert loan_history[1]['currency'] == A_BTC
     assert loan_history[1]['earned'] == FVal('0.00000005')
+
+    assert len(asset_movements) == 8
+    assert asset_movements[0].exchange == 'kraken'
+    assert asset_movements[0].category == 'deposit'
+    assert asset_movements[0].asset == A_BTC
+    assert asset_movements[1].exchange == 'kraken'
+    assert asset_movements[1].category == 'deposit'
+    assert asset_movements[1].asset == A_ETH
+    assert asset_movements[2].exchange == 'kraken'
+    assert asset_movements[2].category == 'withdrawal'
+    assert asset_movements[2].asset == A_BTC
+    assert asset_movements[3].exchange == 'kraken'
+    assert asset_movements[3].category == 'withdrawal'
+    assert asset_movements[3].asset == A_ETH
+    assert asset_movements[4].exchange == 'poloniex'
+    assert asset_movements[4].category == 'withdrawal'
+    assert asset_movements[4].asset == A_BTC
+    assert asset_movements[5].exchange == 'poloniex'
+    assert asset_movements[5].category == 'withdrawal'
+    assert asset_movements[5].asset == A_ETH
+    assert asset_movements[6].exchange == 'poloniex'
+    assert asset_movements[6].category == 'deposit'
+    assert asset_movements[6].asset == A_BTC
+    assert asset_movements[7].exchange == 'poloniex'
+    assert asset_movements[7].category == 'deposit'
+    assert asset_movements[7].asset == A_ETH
 
     # The history creation for these is not yet tested
     assert len(margin_history) == 0
