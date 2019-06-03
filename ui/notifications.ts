@@ -73,8 +73,6 @@ const notificationMessages = (notifications: Notification[]) => `
 
 export class NotificationManager {
 
-    private static NOTIFICATION_KEY = 'service_notifications';
-
     private notifications: Notification[] = [];
 
     getNotifications(): Notification[] {
@@ -86,19 +84,14 @@ export class NotificationManager {
         if (index > -1) {
             this.notifications.splice(index, 1);
         }
-        this.toCache(this.notifications);
     }
 
-    mergeToCache(notifications: Notification[]) {
-        const data = this.fromCache().concat(notifications);
-        this.toCache(data);
-        localStorage.setItem(NotificationManager.NOTIFICATION_KEY, JSON.stringify(data));
-        this.notifications = data;
+    update(notifications: Notification[]) {
+        this.notifications = this.notifications.concat(notifications);
     }
 
     clearAll() {
         this.notifications = [];
-        this.toCache(this.notifications);
     }
 
     getNextId(): number {
@@ -112,19 +105,6 @@ export class NotificationManager {
             nextId = 1;
         }
         return nextId;
-    }
-
-    private toCache(notifications: Notification[]) {
-        localStorage.setItem(NotificationManager.NOTIFICATION_KEY, JSON.stringify(notifications));
-    }
-
-    private fromCache(): Notification[] {
-        const stored = localStorage.getItem(NotificationManager.NOTIFICATION_KEY);
-        let cached: Notification[] = [];
-        if (stored) {
-            cached = JSON.parse(stored);
-        }
-        return cached;
     }
 }
 
