@@ -157,7 +157,7 @@ export function setupMessageRetrieval() {
                 return toNotification(warning, Severity.WARNING, id++);
             });
 
-            notificationManager.mergeToCache(errors.concat(warnings));
+            notificationManager.update(errors.concat(warnings));
             updateNotifications();
             setupNotificationHandlers();
         })
