@@ -38,7 +38,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 DEFAULT_START_DATE = "01/08/2015"
-STATS_FILE = "value.txt"
 
 otc_fields = [
     'otc_timestamp',

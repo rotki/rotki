@@ -15,7 +15,6 @@ S_BCH = 'BCH'
 S_BSV = 'BSV'
 S_BTC = 'BTC'
 S_ETH = 'ETH'
-S_XMR = 'XMR'
 
 A_BTC = Asset(S_BTC)
 A_BCH = Asset(S_BCH)
