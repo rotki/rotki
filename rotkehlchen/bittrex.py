@@ -6,7 +6,6 @@ from json.decoder import JSONDecodeError
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from urllib.parse import urlencode
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bittrex
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
@@ -200,18 +199,6 @@ class Bittrex(Exchange):
         if json_ret['success'] is not True:
             raise RemoteError(json_ret['message'])
         return json_ret['result']
-
-    def get_btc_price(self, asset: Asset) -> Optional[FVal]:
-        if asset == 'BTC':
-            return None
-        btc_price = None
-        btc_pair = 'BTC-' + str(asset)
-        for market in self.markets:
-            if market['MarketName'] == btc_pair:
-                btc_price = FVal(market['Last'])
-                break
-
-        return btc_price
 
     def get_currencies(self) -> List[Dict[str, Any]]:
         """Gets a list of all currencies supported by Bittrex"""

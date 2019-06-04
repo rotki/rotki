@@ -139,9 +139,6 @@ class Asset():
         object.__setattr__(self, 'forked', data.forked)
         object.__setattr__(self, 'swapped_for', data.swapped_for)
 
-    def canonical(self) -> str:
-        return self.identifier
-
     def is_fiat(self) -> bool:
         return self.asset_type == AssetType.FIAT
 

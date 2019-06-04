@@ -18,7 +18,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
     BlockchainAddress,
     BTCAddress,
-    ChecksumEthAddress,
     EthAddress,
     ResultCache,
     SupportedBlockchain,
@@ -37,7 +36,6 @@ Balances = Dict[
 Totals = Dict[Asset, Dict[str, FVal]]
 BlockchainBalancesUpdate = Dict[str, Union[Balances, Totals]]
 EthBalances = Dict[EthAddress, Dict[Union[Asset, str], FVal]]
-AllEthTokens = Dict[Asset, Dict[str, Union[ChecksumEthAddress, int]]]
 
 
 class Blockchain():
