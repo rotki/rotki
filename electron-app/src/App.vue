@@ -81,7 +81,7 @@
       v-if="error"
       title="Login Failed"
       :message="error"
-      @confirm="ok()"
+      @dismiss="ok()"
     ></message-dialog>
     <login
       :displayed="!userLogged && !error"
@@ -117,7 +117,7 @@ import { create_or_reload_dashboard } from '@/legacy/dashboard';
 import Login from '@/components/Login.vue';
 import { AccountData, Credentials } from '@/typing/types';
 import { handleUnlockResult } from '@/legacy/userunlock';
-import MessageDialog from '@/components/MessageDialog.vue';
+import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import CreateAccount from '@/components/CreateAccount.vue';
 import { UnlockResult } from '@/model/action-result';
 import SyncPermission from '@/components/dialogs/SyncPermission.vue';
