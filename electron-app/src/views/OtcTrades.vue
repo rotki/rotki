@@ -1,6 +1,11 @@
 <template>
   <v-container>
-    <otc-form :edit-mode="editMode" @save="saveItem($event)"></otc-form>
+    <otc-form
+      :edit-mode="editMode"
+      :otc-trade="editableItem"
+      @save="saveItem($event)"
+      @cancel="cancelEdit()"
+    ></otc-form>
     <v-layout>
       <v-flex>
         <h1>OTC Trades List</h1>
@@ -114,6 +119,7 @@ export default class OtcTrades extends Vue {
   y: number = 0;
 
   selectedItem?: OtcTrade;
+  editableItem?: OtcTrade;
 
   otcTrades: OtcTrade[] = [];
 
@@ -149,11 +155,13 @@ export default class OtcTrades extends Vue {
       .finally(() => {
         this.editMode = false;
         this.selectedItem = undefined;
+        this.editableItem = undefined;
       });
   }
 
   editItem() {
     this.editMode = true;
+    this.editableItem = this.selectedItem;
   }
 
   deleteItem() {
@@ -161,7 +169,8 @@ export default class OtcTrades extends Vue {
       .delete_otctrade(this.selectedItem!.id)
       .then(() => {
         this.successMessage = 'Trade Deleted';
-        //todo remove item;
+        const index = this.otcTrades.indexOf(this.selectedItem!!);
+        this.otcTrades.splice(index, 1);
       })
       .catch(reason => {
         this.errorMessage = `Error at Trade Deletion: ${reason.message}`;
@@ -169,6 +178,12 @@ export default class OtcTrades extends Vue {
       .finally(() => {
         this.selectedItem = undefined;
       });
+  }
+
+  cancelEdit() {
+    this.editMode = false;
+    this.selectedItem = undefined;
+    this.editableItem = undefined;
   }
 
   created() {

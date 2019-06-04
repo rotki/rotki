@@ -73,6 +73,15 @@
             >
               {{ editMode ? 'Modify Trade' : 'Add  Trade' }}
             </v-btn>
+            <v-btn
+              v-if="editMode"
+              id="modify_cancel"
+              depressed=""
+              color="primary"
+              @click="cancel"
+            >
+              Cancel
+            </v-btn>
           </v-card-actions>
         </v-card>
       </v-flex>
@@ -81,14 +90,17 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { OtcTrade } from '@/model/otc-trade';
 
 @Component({})
 export default class OtcForm extends Vue {
   @Prop({ required: true })
   editMode!: boolean;
+  @Prop({ required: false })
+  otcTrade?: OtcTrade;
 
+  id: number = 0;
   pair: string = '';
   timestamp: number = 0;
   amount: string = '';
@@ -98,6 +110,41 @@ export default class OtcForm extends Vue {
   link: string = '';
   notes: string = '';
   type: 'buy' | 'sell' = 'buy';
+
+  @Watch('otcTrade')
+  onTradeChange() {
+    if (!this.otcTrade) {
+      this.resetFields();
+    } else {
+      this.updateFields(this.otcTrade);
+    }
+  }
+
+  private updateFields(trade: OtcTrade) {
+    this.pair = trade.pair;
+    this.timestamp = trade.timestamp;
+    this.amount = trade.amount;
+    this.rate = trade.rate;
+    this.fee = trade.fee;
+    this.feeCurrency = trade.fee_currency;
+    this.link = trade.link;
+    this.notes = trade.notes;
+    this.type = trade.type;
+    this.id = trade.id;
+  }
+
+  private resetFields() {
+    this.id = 0;
+    this.pair = '';
+    this.timestamp = 0;
+    this.amount = '';
+    this.rate = '';
+    this.fee = '';
+    this.feeCurrency = '';
+    this.link = '';
+    this.notes = '';
+    this.type = 'buy';
+  }
 
   addTrade() {
     const trade: OtcTrade = {
@@ -110,11 +157,14 @@ export default class OtcForm extends Vue {
       rate: this.rate,
       timestamp: this.timestamp,
       type: this.type,
-      id: 0
+      id: this.editMode ? this.id : 0
     };
 
     this.$emit('save', trade);
   }
+
+  @Emit()
+  cancel() {}
 }
 </script>
 
