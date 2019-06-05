@@ -112,7 +112,6 @@ class Rotkehlchen():
         self.sleep_secs = args.sleep_secs
         self.data_dir = args.data_dir
         self.args = args
-        self.last_data_upload_ts = 0
 
         self.poloniex = None
         self.kraken = None
@@ -273,6 +272,7 @@ class Rotkehlchen():
         # unlock or create the DB
         self.password = password
         self.user_directory = self.data.unlock(user, password, create_new)
+        self.last_data_upload_ts = self.data.db.get_last_data_upload_ts()
         self.try_premium_at_start(
             api_key=api_key,
             api_secret=api_secret,
@@ -420,7 +420,9 @@ class Rotkehlchen():
             log.debug('upload to server -- upload error', error=str(e))
             return
 
+        # update the last data upload value
         self.last_data_upload_ts = ts_now()
+        self.data.db.update_last_data_upload_ts(self.last_data_upload_ts)
         log.debug('upload to server -- success')
 
     def can_sync_data_from_server(self) -> bool:

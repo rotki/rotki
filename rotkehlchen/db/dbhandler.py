@@ -431,11 +431,11 @@ class DBHandler():
             ts = int(query[0][0])
         return Timestamp(ts)
 
-    def update_last_data_upload_ts(self) -> None:
+    def update_last_data_upload_ts(self, ts: Timestamp) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-            ('last_data_upload_ts', str(ts_now())),
+            ('last_data_upload_ts', str(ts)),
         )
         self.conn.commit()
 
