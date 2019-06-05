@@ -31,3 +31,8 @@ def random_marker():
 def port_generator(request):
     """ count generator used to get a unique port number. """
     return get_free_port('127.0.0.1', request.config.option.initial_port)
+
+
+@pytest.fixture
+def db_password():
+    return '123'
