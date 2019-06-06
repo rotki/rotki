@@ -361,6 +361,9 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # Origo. As of 02/06/2019 no data found outside of bittrex
     # https://international.bittrex.com/Market/Index?MarketName=BTC-OGO
     'OGO',
+    # STPT. As of 06/06/2019 no data found outside of bittrex
+    # https://twitter.com/BittrexIntl/status/1136045052164227079
+    'STPT',
 )
 
 
