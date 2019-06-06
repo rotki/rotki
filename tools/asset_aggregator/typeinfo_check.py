@@ -29,6 +29,7 @@ MANUALLY_CHECKED_TYPES = {
     'FLX': 'ethereum token',
     'FORK-2': 'ethereum token',
     'HKG': 'ethereum token',
+    'ITM': 'ethereum token',
     'JOY': 'ethereum token',
     'KUE': 'ethereum token',
     'LCT-2': 'ethereum token',

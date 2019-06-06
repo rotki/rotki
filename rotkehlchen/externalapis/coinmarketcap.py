@@ -425,6 +425,8 @@ KNOWN_TO_MISS_FROM_CMC = (
     # ICOS token missing from API but is in
     # https://coinmarketcap.com/currencies/icos/
     'ICOS',
+    # Intimate. Completely missing ... but is in cryptocompare
+    'ITM',
     # JOYSO (https://www.cryptocompare.com/coins/joystar/overview)
     # is not in coinmarketcap but is in cryptocompare
     'JOY',

@@ -87,6 +87,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'FORK-2',
     'HKG',
     'JOY',
+    'ITM',
     'KUE',
     'LGR',
     'MILC',
