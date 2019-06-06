@@ -4506,6 +4506,14 @@
         "symbol": "ITC",
         "type": "ethereum token"
     },
+    "ITM": {
+        "ethereum_address": "0x1dbED266D20D27d0bd1c4707FC002dEfE7E0267B",
+        "ethereum_token_decimals": 18,
+        "started": 1524614400,
+        "name": "Intimate",
+        "symbol": "ITM",
+        "type": "ethereum token"
+    },
     "ITT": {
         "ethereum_address": "0x0aeF06DcCCC531e581f0440059E6FfCC206039EE",
         "ethereum_token_decimals": 8,
@@ -6362,9 +6370,9 @@
         "type": "ethereum token"
     },
     "PHX": {
+        "ended": 1558497600,
         "name": "Red Pulse Phoenix",
         "started": 1507420800,
-        "ended": 1558497600,
         "swapped_for": "PHB",
         "symbol": "PHX",
         "type": "neo token"

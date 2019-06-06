@@ -27,6 +27,7 @@ MANUALLY_CHECKED_NAMES = {
     'FLX': 'BitFlux',
     'FORK-2': 'Gastro Advisor Token',
     'HKG': 'Hacker Gold',
+    'ITM': 'Intimate',
     'JOY': 'JOYSO',
     'KUE': 'Kuende',
     'LGR': 'Logarithm',
