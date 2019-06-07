@@ -718,13 +718,6 @@ class Rotkehlchen():
             # Always return success here but with a message
             return True, message
 
-    def usd_to_main_currency(self, amount):
-        main_currency = self.data.main_currency()
-        if main_currency != 'USD' and not hasattr(self, 'usd_to_main_currency_rate'):
-            self.usd_to_main_currency_rate = Inquirer().query_fiat_pair('USD', main_currency)
-
-        return self.usd_to_main_currency_rate * amount
-
     def setup_exchange(
             self,
             name: str,
