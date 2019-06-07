@@ -210,7 +210,6 @@ class Bittrex(Exchange):
     @cache_response_timewise(CACHE_RESPONSE_FOR_SECS)
     def query_balances(self) -> Tuple[Optional[dict], str]:
         try:
-            self.markets = self.api_query('getmarketsummaries')
             resp = self.api_query('getbalances')
         except RemoteError as e:
             msg = (
