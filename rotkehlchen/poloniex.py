@@ -140,10 +140,7 @@ class Poloniex(Exchange):
         if self.first_connection_made:
             return
 
-        fees_resp = self.returnFeeInfo()
         with self.lock:
-            self.maker_fee = FVal(fees_resp['makerFee'])
-            self.taker_fee = FVal(fees_resp['takerFee'])
             self.first_connection_made = True
         # Also need to do at least a single pass of the market watcher for the ticker
         self.market_watcher()
