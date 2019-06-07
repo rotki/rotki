@@ -34,8 +34,6 @@ ChecksumEthAddress = NewType('ChecksumEthAddress', T_ChecksumEthAddress)
 T_BTCAddress = str
 BTCAddress = NewType('BTCAddress', T_BTCAddress)
 
-T_BlockchainAddress = str
-
 BlockchainAddress = Union[EthAddress, BTCAddress, ChecksumEthAddress]
 
 
