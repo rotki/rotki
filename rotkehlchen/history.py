@@ -121,24 +121,6 @@ def pairwise(iterable):
     return zip(a, a)
 
 
-def check_hourly_data_sanity(data, from_asset, to_asset):
-    """Check that the hourly data is an array of objects having timestamps
-    increasing by 1 hour.
-    """
-    index = 0
-    for n1, n2 in pairwise(data):
-        diff = n2['time'] - n1['time']
-        if diff != 3600:
-            print(
-                "Problem at indices {} and {} of {}_to_{} prices. Time difference is: {}".format(
-                    index, index + 1, from_asset, to_asset, diff),
-            )
-            return False
-
-        index += 2
-    return True
-
-
 class PriceHistorian():
     __instance = None
     _historical_data_start: Timestamp
@@ -217,7 +199,6 @@ class TradesHistorian():
             user_directory: FilePath,
             db: DBHandler,
             eth_accounts: List[EthAddress],
-            historical_data_start: str,
             msg_aggregator: MessagesAggregator,
     ):
 
@@ -230,8 +211,6 @@ class TradesHistorian():
         self.user_directory = user_directory
         self.db = db
         self.eth_accounts = eth_accounts
-        # get the start date for historical data
-        self.historical_data_start = createTimeStamp(historical_data_start, formatstr="%d/%m/%Y")
         # If this flag is true we attempt to read from the manually logged margin positions file
         self.read_manual_margin_positions = True
 

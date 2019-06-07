@@ -289,7 +289,6 @@ class Rotkehlchen():
             user_directory=self.user_directory,
             db=self.data.db,
             eth_accounts=self.data.get_eth_accounts(),
-            historical_data_start=historical_data_start,
             msg_aggregator=self.msg_aggregator,
         )
         # Initialize the price historian singleton
