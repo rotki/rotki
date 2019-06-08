@@ -4509,8 +4509,8 @@
     "ITM": {
         "ethereum_address": "0x1dbED266D20D27d0bd1c4707FC002dEfE7E0267B",
         "ethereum_token_decimals": 18,
-        "started": 1524614400,
         "name": "Intimate",
+        "started": 1524614400,
         "symbol": "ITM",
         "type": "ethereum token"
     },
@@ -4759,6 +4759,14 @@
         "name": "LALA World",
         "started": 1507939200,
         "symbol": "LALA",
+        "type": "ethereum token"
+    },
+    "LAMB": {
+        "ethereum_address": "0x8971f9fd7196e5cEE2C1032B50F656855af7Dd26",
+        "ethereum_token_decimals": 18,
+        "name": "Lambda",
+        "started": 1537228800,
+        "symbol": "LAMB",
         "type": "ethereum token"
     },
     "LATX": {
