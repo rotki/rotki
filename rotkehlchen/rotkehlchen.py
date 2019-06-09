@@ -191,7 +191,14 @@ class Rotkehlchen():
         if self.bitmex is not None:
             self.delete_exchange_data('bitmex')
 
-    def try_premium_at_start(self, api_key, api_secret, username, create_new, sync_approval):
+    def try_premium_at_start(
+            self,
+            api_key: ApiKey,
+            api_secret: ApiSecret,
+            username: str,
+            create_new: bool,
+            sync_approval: bool,
+    ) -> None:
         """Check if new user provided api pair or we already got one in the DB"""
 
         if api_key != '':
@@ -217,9 +224,10 @@ class Rotkehlchen():
                     '{}'.format(str(e)),
                 )
 
-        # else, if we got premium initialize it and try to sync with the server
+        # else, if we got premium data in the DB initialize it and try to sync with the server
         premium_credentials = self.data.db.get_rotkehlchen_premium()
         if premium_credentials:
+            assert not create_new, 'We should never get here for a new account'
             api_key = premium_credentials[0]
             api_secret = premium_credentials[1]
             try:
@@ -458,7 +466,7 @@ class Rotkehlchen():
             log.debug('sync from server -- pulling failed.', error=str(e))
             return False
 
-        self.data.decompress_and_decrypt_db(self.password, result)
+        self.data.decompress_and_decrypt_db(self.password, result['data'])
         return True
 
     def start(self):
