@@ -11,6 +11,9 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import ApiKey, ApiSecret
 from rotkehlchen.utils.misc import ts_now
 
+# Remote data containing a different main currency (GBP)
+REMOTE_DATA = b'qLQdzIvX6c8jJyucladYh2wZvpPbna/hmokjLu8NX64blb+lM/HxIGtCq5YH9TNUV51VHGMqMBhUeHqdtdOh1/VLg5q2NuzNmiCUroV0u97YMYM5dsGrKpy+J9d1Hbq33dlx8YcQxBsJEM2lSmLXiW8DQ/AfNJfT7twe6u+w1i9soFF7hbkafnrg2s7QGukB8D4CY1sIcZd2VRlMy7ATwtOF9ur8KDrKfVpZSQlTsWfyfiWyJmcVTmvPjqPAmZ0PEDlwqmNETe6yeRnkKgU0T2xTrTAJkawoGn41g0LnYi+ghTBPTboiLVTqASk/C71ofdEjN0gacy/9wNIBrq3cvfZBsrTpjzt88W2pnPHbLdfxrycToeGKNBASexs42uzBWOqa6BFPEiy7mSzKClLp4q+hiZtasyhnwMzUYvsIb25BvXBAPJQnjcBW+hzuiwQp+C3hynxTSPY1v2S80i3fqDK7BKY8VpPpjV+tC5B0pn6PsBETKZjB1pPKQ//m/I8HI0bWb+0fpVs4NbK9nFpRN6Capd8wJTzWtSp7vGbHOoaDAwtNtp61QI7eDsiMZGYXFy5jn8CmE+uWC4zDhLmoAUwAehuUSjv0v5RJGX/IAgWxoRMhAEra54bRwZ0vY1YRBS/Xf/AXp17BRzqE8NwSAUstgizOk7ryT3BQaTqybrt4y4omyw1VVpeisJROVK0fcFJFFH1zYUbbUB+0CBRq20y54faSSNNjc05pYHv456BBBIwpUwMS4M7yZz+HwP8b/OIq0LMr7d5SJdDjG9Ut1siZbaGRdyqv86WNTiSrlMmTASHi7+z+Z8CX9GnmEgVJna5mvvOhBC/zIpZiRLzwbYjdvrtw3N9X+NHzIaDGrAo1LtWh+eGmRHPKlb+CICOMj4TGvtGKlL/IfzBcrBfeTwkNSge2l4mOFG9l82ci4RZ7I4Yr6WUQJ+NU6DYQYKb5wMz+xTJmenHHaQxy0fsTulO5/RKfY8u1O9xT5kDtNc/R00CDheqcTS773NLDL4dqHEE/+lVxoVdFT/VvxzHrBKnI6M1UyJgDHu1BFIto2/z2wS0GjVXkBVFvMfQTYMZmb88RP/04F00kt3wqg/lrhAqr60BaC/FzIKG9lepDXXBAhHZyy+a1HYCkJlA43QoX3duu3fauViP+2RN306/tFw6HJvkRiCU7E3T9tLOHU508PLhcN8a5ON7aVyBtzdGO5i57j6Xm96di79IsfwStowS31kDix+B1mYeD8R1nvthWOKgL2KiAl/UpbXDPOuVBYubZ+V4/D8jxRCivM2ukME+SCIGzraR3EBqAdvjp3dLC1tomnawaEzAQYTUHbHndYatmIYnzEsTzFd8OWoX/gy0KGaZJ/mUGDTFBbkWIDE8='  # noqa: E501
+
 
 def patched_create_premium(
         api_key: ApiKey,
@@ -127,7 +130,8 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
     # Write anything in the DB to set a non-zero last_write_ts
     rotkehlchen_instance.data.db.set_main_currency('EUR')
     last_write_ts = rotkehlchen_instance.data.db.get_last_write_ts()
-    _, data_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
+    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
+    remote_hash = 'a' + our_hash[1:]
 
     def mock_succesfull_upload_data_to_server(
             url,  # pylint: disable=unused-argument
@@ -137,7 +141,7 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
         # Can't compare data blobs as they are encrypted and as such can be
         # different each time
         assert 'data_blob' in data
-        assert data['original_hash'] == data_hash
+        assert data['original_hash'] == our_hash
         assert data['last_modify_ts'] == last_write_ts
         assert 'index' in data
         assert len(data['data_blob']) == data['length']
@@ -155,7 +159,7 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
     patched_get = create_patched_premium_session_get(
         session=rotkehlchen_instance.premium.session,
         metadata_last_modify_ts=0,
-        metadata_data_hash=data_hash,
+        metadata_data_hash=remote_hash,
         saved_data='foo',
     )
 
@@ -177,6 +181,37 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
     assert last_ts == rotkehlchen_instance.data.db.get_last_data_upload_ts()
 
 
+def test_upload_data_to_server_same_hash(rotkehlchen_instance, username, db_password):
+    """Test that if the server has same data hash as we no upload happens"""
+    rotkehlchen_instance.premium = Premium(
+        api_key=base64.b64encode(make_random_b64bytes(128)),
+        api_secret=base64.b64encode(make_random_b64bytes(128)),
+    )
+    last_ts = rotkehlchen_instance.data.db.get_last_data_upload_ts()
+    assert last_ts == 0
+
+    # Write anything in the DB to set a non-zero last_write_ts
+    rotkehlchen_instance.data.db.set_main_currency('EUR')
+    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
+
+    patched_put = patch.object(
+        rotkehlchen_instance.premium.session,
+        'put',
+        return_value=None,
+    )
+    patched_get = create_patched_premium_session_get(
+        session=rotkehlchen_instance.premium.session,
+        metadata_last_modify_ts=0,
+        metadata_data_hash=our_hash,
+        saved_data='foo',
+    )
+
+    with patched_get, patched_put as put_mock:
+        rotkehlchen_instance.upload_data_to_server()
+        # The upload mock should not have been called since the hash is the same
+        assert not put_mock.called
+
+
 # TODO: Seems that the premium_should_sync option is not used. Write test for it
 def test_try_premium_at_start_new_account_can_pull_data(
         rotkehlchen_instance,
@@ -187,8 +222,9 @@ def test_try_premium_at_start_new_account_can_pull_data(
     assert rotkehlchen_instance.data.db.get_main_currency() == A_USD
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
 
+    # remote hash should be different
     remote_hash = 'a' + our_hash[1:]
-    remote_data = b'qLQdzIvX6c8jJyucladYh2wZvpPbna/hmokjLu8NX64blb+lM/HxIGtCq5YH9TNUV51VHGMqMBhUeHqdtdOh1/VLg5q2NuzNmiCUroV0u97YMYM5dsGrKpy+J9d1Hbq33dlx8YcQxBsJEM2lSmLXiW8DQ/AfNJfT7twe6u+w1i9soFF7hbkafnrg2s7QGukB8D4CY1sIcZd2VRlMy7ATwtOF9ur8KDrKfVpZSQlTsWfyfiWyJmcVTmvPjqPAmZ0PEDlwqmNETe6yeRnkKgU0T2xTrTAJkawoGn41g0LnYi+ghTBPTboiLVTqASk/C71ofdEjN0gacy/9wNIBrq3cvfZBsrTpjzt88W2pnPHbLdfxrycToeGKNBASexs42uzBWOqa6BFPEiy7mSzKClLp4q+hiZtasyhnwMzUYvsIb25BvXBAPJQnjcBW+hzuiwQp+C3hynxTSPY1v2S80i3fqDK7BKY8VpPpjV+tC5B0pn6PsBETKZjB1pPKQ//m/I8HI0bWb+0fpVs4NbK9nFpRN6Capd8wJTzWtSp7vGbHOoaDAwtNtp61QI7eDsiMZGYXFy5jn8CmE+uWC4zDhLmoAUwAehuUSjv0v5RJGX/IAgWxoRMhAEra54bRwZ0vY1YRBS/Xf/AXp17BRzqE8NwSAUstgizOk7ryT3BQaTqybrt4y4omyw1VVpeisJROVK0fcFJFFH1zYUbbUB+0CBRq20y54faSSNNjc05pYHv456BBBIwpUwMS4M7yZz+HwP8b/OIq0LMr7d5SJdDjG9Ut1siZbaGRdyqv86WNTiSrlMmTASHi7+z+Z8CX9GnmEgVJna5mvvOhBC/zIpZiRLzwbYjdvrtw3N9X+NHzIaDGrAo1LtWh+eGmRHPKlb+CICOMj4TGvtGKlL/IfzBcrBfeTwkNSge2l4mOFG9l82ci4RZ7I4Yr6WUQJ+NU6DYQYKb5wMz+xTJmenHHaQxy0fsTulO5/RKfY8u1O9xT5kDtNc/R00CDheqcTS773NLDL4dqHEE/+lVxoVdFT/VvxzHrBKnI6M1UyJgDHu1BFIto2/z2wS0GjVXkBVFvMfQTYMZmb88RP/04F00kt3wqg/lrhAqr60BaC/FzIKG9lepDXXBAhHZyy+a1HYCkJlA43QoX3duu3fauViP+2RN306/tFw6HJvkRiCU7E3T9tLOHU508PLhcN8a5ON7aVyBtzdGO5i57j6Xm96di79IsfwStowS31kDix+B1mYeD8R1nvthWOKgL2KiAl/UpbXDPOuVBYubZ+V4/D8jxRCivM2ukME+SCIGzraR3EBqAdvjp3dLC1tomnawaEzAQYTUHbHndYatmIYnzEsTzFd8OWoX/gy0KGaZJ/mUGDTFBbkWIDE8='  # noqa: E501
+    remote_data = REMOTE_DATA
     api_key, api_secret, patched_premium, patched_get = create_patched_premium_with_keypair(
         patch_get=True,
         metadata_last_modify_ts=our_last_write_ts + 10,  # Remote DB is newer
@@ -215,6 +251,70 @@ def test_try_premium_at_start_new_account_can_pull_data(
     assert len(files) == 2
     assert 'rotkehlchen.db' in files[0]
     assert 'backup' in files[1]
+
+
+def test_try_premium_at_start_new_account_same_hash(
+        rotkehlchen_instance,
+        username,
+        db_password,
+):
+    our_last_write_ts = rotkehlchen_instance.data.db.get_last_write_ts()
+    assert rotkehlchen_instance.data.db.get_main_currency() == A_USD
+    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
+
+    # same hash, nothing should happen
+    remote_hash = our_hash
+    remote_data = REMOTE_DATA
+    api_key, api_secret, patched_premium, patched_get = create_patched_premium_with_keypair(
+        patch_get=True,
+        metadata_last_modify_ts=our_last_write_ts + 10,  # Remote DB is newer
+        metadata_data_hash=remote_hash,
+        saved_data=remote_data,
+    )
+
+    with patched_premium, patched_get:
+        rotkehlchen_instance.try_premium_at_start(
+            api_key=api_key,
+            api_secret=api_secret,
+            username=username,
+            create_new=True,
+            sync_approval='yes',
+        )
+
+    # DB should not have changed
+    assert rotkehlchen_instance.data.db.get_main_currency() == A_USD
+
+
+def test_try_premium_at_start_new_account_older_remote_ts(
+        rotkehlchen_instance,
+        username,
+        db_password,
+):
+    our_last_write_ts = rotkehlchen_instance.data.db.get_last_write_ts()
+    assert rotkehlchen_instance.data.db.get_main_currency() == A_USD
+    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
+
+    # remote hash should be different
+    remote_hash = 'a' + our_hash[1:]
+    remote_data = REMOTE_DATA
+    api_key, api_secret, patched_premium, patched_get = create_patched_premium_with_keypair(
+        patch_get=True,
+        metadata_last_modify_ts=our_last_write_ts - 10,  # Remote DB is older
+        metadata_data_hash=remote_hash,
+        saved_data=remote_data,
+    )
+
+    with patched_premium, patched_get:
+        rotkehlchen_instance.try_premium_at_start(
+            api_key=api_key,
+            api_secret=api_secret,
+            username=username,
+            create_new=True,
+            sync_approval='yes',
+        )
+
+    # DB should not have changed
+    assert rotkehlchen_instance.data.db.get_main_currency() == A_USD
 
 
 def test_pulling_data_from_server(rotkehlchen_instance, username, db_password):
