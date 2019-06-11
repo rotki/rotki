@@ -10,19 +10,19 @@
         <v-card>
           <v-toolbar card>Register New Trade</v-toolbar>
           <v-card-text>
-            <v-text-field
-              v-model="time"
+            <date-time-picker
+              v-model="datetime"
               label="Time"
               persistent-hint
               hint="Time that the trade took place"
-            ></v-text-field>
+            ></date-time-picker>
             <v-text-field
               v-model="pair"
               label="Pair"
               persistent-hint
               hint="Pair for the trade. BASECURRENCY_QUOTE_CURRENCY"
             ></v-text-field>
-            <v-radio-group v-model="type" label="trade type">
+            <v-radio-group v-model="type" label="Trade type">
               <v-radio label="Buy" value="buy"></v-radio>
               <v-radio label="Sell" value="sell"></v-radio>
             </v-radio-group>
@@ -91,9 +91,13 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import { OtcTrade } from '@/model/otc-trade';
+import { OtcPayload, OtcTrade } from '@/model/otc-trade';
+import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
+import { timestamp_to_date } from '@/legacy/utils';
 
-@Component({})
+@Component({
+  components: { DateTimePicker }
+})
 export default class OtcForm extends Vue {
   @Prop({ required: true })
   editMode!: boolean;
@@ -102,7 +106,7 @@ export default class OtcForm extends Vue {
 
   id: number = 0;
   pair: string = '';
-  timestamp: number = 0;
+  datetime: string = '';
   amount: string = '';
   rate: string = '';
   fee: string = '';
@@ -122,7 +126,7 @@ export default class OtcForm extends Vue {
 
   private updateFields(trade: OtcTrade) {
     this.pair = trade.pair;
-    this.timestamp = trade.timestamp;
+    this.datetime = timestamp_to_date(trade.timestamp, false);
     this.amount = trade.amount;
     this.rate = trade.rate;
     this.fee = trade.fee;
@@ -136,7 +140,7 @@ export default class OtcForm extends Vue {
   private resetFields() {
     this.id = 0;
     this.pair = '';
-    this.timestamp = 0;
+    this.datetime = '';
     this.amount = '';
     this.rate = '';
     this.fee = '';
@@ -147,17 +151,17 @@ export default class OtcForm extends Vue {
   }
 
   addTrade() {
-    const trade: OtcTrade = {
-      amount: this.amount,
-      fee: this.fee,
-      fee_currency: this.feeCurrency,
-      link: this.link,
-      notes: this.notes,
-      pair: this.pair,
-      rate: this.rate,
-      timestamp: this.timestamp,
-      type: this.type,
-      id: this.editMode ? this.id : 0
+    const trade: OtcPayload = {
+      otc_amount: this.amount,
+      otc_fee: this.fee,
+      otc_fee_currency: this.feeCurrency,
+      otc_link: this.link,
+      otc_notes: this.notes,
+      otc_pair: this.pair,
+      otc_rate: this.rate,
+      otc_timestamp: this.datetime,
+      otc_type: this.type,
+      otc_id: this.editMode ? this.id : null
     };
 
     this.$emit('save', trade);

@@ -25,11 +25,11 @@
                 @click="props.expanded = !props.expanded"
                 @contextmenu="show($event, props.item)"
               >
-                <td class="text-xs-right">{{ props.item.pair }}</td>
-                <td class="text-xs-right">{{ props.item.type }}</td>
-                <td class="text-xs-right">{{ props.item.amount }}</td>
-                <td class="text-xs-right">{{ props.item.rate }}</td>
-                <td class="text-xs-right">
+                <td>{{ props.item.pair }}</td>
+                <td>{{ props.item.type }}</td>
+                <td>{{ props.item.amount }}</td>
+                <td>{{ props.item.rate }}</td>
+                <td>
                   {{ props.item.timestamp | formatDate(dateDisplayFormat) }}
                 </td>
               </tr>
@@ -94,12 +94,8 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import {
-  add_otctrades_listeners,
-  create_otctrades_ui
-} from '@/legacy/otctrades';
 import { create_or_reload_page } from '@/legacy/navigation';
-import { OtcTrade } from '@/model/otc-trade';
+import { OtcPayload, OtcTrade } from '@/model/otc-trade';
 import OtcForm from '@/components/OtcForm.vue';
 import { mapGetters } from 'vuex';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
@@ -142,9 +138,9 @@ export default class OtcTrades extends Vue {
     this.selectedItem = item;
   }
 
-  saveItem(otcTrade: OtcTrade) {
+  saveItem(otcTrade: OtcPayload) {
     this.$rpc
-      .modify_otc_trades(this.editMode, otcTrade)
+      .modify_otc_trades(!this.editMode, otcTrade)
       .then(() => {
         this.successMessage = 'Trade submitted';
         this.fetchData();
@@ -199,15 +195,6 @@ export default class OtcTrades extends Vue {
       .catch(reason => {
         this.errorMessage = `Trade loading failed: ${reason.message}`;
       });
-  }
-
-  mounted() {
-    create_or_reload_page(
-      'otctrades',
-      create_otctrades_ui,
-      add_otctrades_listeners,
-      'otc-trades'
-    );
   }
 }
 </script>
