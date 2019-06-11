@@ -45,6 +45,8 @@ function save_current_location() {
     } else if (settings.current_location === 'taxreport') {
         console.log('Saving tax report ...');
         pages.page_taxreport = $('#page-wrapper').html();
+    } else if (settings.current_location === 'statistics') {
+        pages.page_statistics = $('#page-wrapper').html();
     } else {
         throw new Error('Invalid link location ' + settings.current_location);
     }

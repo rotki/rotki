@@ -229,6 +229,7 @@ interface Pages {
     page_user_settings?: string;
     page_accounting_settings?: string;
     page_taxreport?: string;
+    page_statistics?: string;
     page_exchange: { [name: string]: string };
 
     [key: string]: string | { [name: string]: string } | undefined;
