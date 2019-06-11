@@ -106,11 +106,28 @@ describe('dashboard', function () {
             await client.getText('#table_balances_total_body > tr:nth-child(3) > td:nth-child(1)').should.eventually.contain('USD');
         });
     });
+
+    describe('navigate to statistics and back', () => {
+        it('should navigate to statistics', async () => {
+           await navigateToStatistics(client);
+        });
+
+        it('should navigate to dashboard', async () => {
+            await navigateToDashboard(client);
+        });
+    });
 });
 
 async function navigateToDashboard(client: SpectronClient) {
     await retry(async () => {
         client.click('#side-menu > li');
         client.waitUntilTextExists('.page-header', 'Dashboard', METHOD_TIMEOUT);
+    });
+}
+
+async function navigateToStatistics(client: SpectronClient) {
+    await retry(async () => {
+        client.click('#side-menu > li:nth-child(3)');
+        client.waitUntilTextExists('.page-header', 'Statistics', METHOD_TIMEOUT);
     });
 }
