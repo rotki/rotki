@@ -6,9 +6,12 @@
         :class="{ 'fa-link': nodeConnection, 'fa-unlink': !nodeConnection }"
       ></i>
     </a>
-    <ul class="dropdown-menu dropdown-eth-status alert-success">
-      <p v-if="nodeConnection">Connected to a local ethereum node</p>
-      <p v-else="nodeConnection">Not connected to a local ethereum node</p>
+    <ul
+      class="dropdown-menu dropdown-eth-status "
+      :class="{ success: nodeConnection, warning: !nodeConnection }"
+    >
+      <li v-if="nodeConnection">Connected to a local ethereum node</li>
+      <li v-else>Not connected to a local ethereum node</li>
     </ul>
   </li>
 </template>
