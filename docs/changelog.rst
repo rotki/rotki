@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`368` Fixes broken navigation after visiting Statistics page.
 * :bug:`361` Rotkehlchen no longer misses the last trade when processing history inside a timerange.
 * :bug:`349` Copy paste should now work on OSX.
 * :feature:`332` Add notifications area for actionable warnings/errors.
