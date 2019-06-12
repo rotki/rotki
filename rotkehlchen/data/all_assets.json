@@ -3598,6 +3598,14 @@
         "symbol": "FTI",
         "type": "ethereum token"
     },
+    "FTM": {
+        "ethereum_address": "0x4E15361FD6b4BB609Fa63C81A2be19d873717870",
+        "ethereum_token_decimals": 18,
+        "name": "Fantom",
+        "started": 1528934400,
+        "symbol": "FTM",
+        "type": "ethereum token"
+    },
     "FTT": {
         "ethereum_address": "0x2AEC18c5500f21359CE1BEA5Dc1777344dF4C0Dc",
         "ethereum_token_decimals": 18,
