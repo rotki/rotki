@@ -441,6 +441,9 @@ class Rotkehlchen():
             log.debug('sync data from server failed', error=str(e))
             return False
 
+        if not self.data.db.get_premium_sync():
+            return False
+
         log.debug(
             'CAN_PULL',
             ours=our_hash,

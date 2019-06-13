@@ -466,10 +466,10 @@ class DBHandler():
             'SELECT value FROM settings where name=?;', ('premium_should_sync',),
         )
         query = query.fetchall()
-        # If setting is not set, it's false by default
+        # If setting is not set, return default
         if len(query) == 0:
-            return False
-        return str_to_bool(query[0])
+            return DEFAULT_PREMIUM_SHOULD_SYNC
+        return str_to_bool(query[0][0])
 
     def get_settings(self) -> DBSettings:
         cursor = self.conn.cursor()
