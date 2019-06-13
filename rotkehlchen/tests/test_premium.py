@@ -49,9 +49,6 @@ def mock_query_last_metadata(last_modify_ts, data_hash):
         assert len(data) == 1
         assert 'nonce' in data
         assert timeout == ROTKEHLCHEN_SERVER_TIMEOUT
-        # data_hash = base64.b64encode(
-        #     hashlib.sha256(b'a').digest(),
-        # ).decode()
         payload = (
             f'{{"upload_ts": 1337, '
             f'"last_modify_ts": {last_modify_ts}, '
@@ -181,7 +178,7 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
     assert last_ts == rotkehlchen_instance.data.db.get_last_data_upload_ts()
 
 
-def test_upload_data_to_server_same_hash(rotkehlchen_instance, username, db_password):
+def test_upload_data_to_server_same_hash(rotkehlchen_instance, db_password):
     """Test that if the server has same data hash as we no upload happens"""
     rotkehlchen_instance.premium = Premium(
         api_key=base64.b64encode(make_random_b64bytes(128)),
@@ -218,6 +215,8 @@ def test_try_premium_at_start_new_account_can_pull_data(
         username,
         db_password,
 ):
+    # Set the can_sync setting to true
+    rotkehlchen_instance.data.db.update_premium_sync(True)
     our_last_write_ts = rotkehlchen_instance.data.db.get_last_write_ts()
     assert rotkehlchen_instance.data.db.get_main_currency() == A_USD
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
@@ -290,6 +289,8 @@ def test_try_premium_at_start_new_account_older_remote_ts(
         username,
         db_password,
 ):
+    # Set the can_sync setting to true
+    rotkehlchen_instance.data.db.update_premium_sync(True)
     our_last_write_ts = rotkehlchen_instance.data.db.get_last_write_ts()
     assert rotkehlchen_instance.data.db.get_main_currency() == A_USD
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
@@ -317,6 +318,35 @@ def test_try_premium_at_start_new_account_older_remote_ts(
     assert rotkehlchen_instance.data.db.get_main_currency() == A_USD
 
 
-def test_pulling_data_from_server(rotkehlchen_instance, username, db_password):
-    """Test our side of retrieving data from the server"""
-    pass
+def test_try_premium_at_start_new_account_no_sync(
+        rotkehlchen_instance,
+        username,
+        db_password,
+):
+    # Set the can_sync setting to false
+    rotkehlchen_instance.data.db.update_premium_sync(False)
+    our_last_write_ts = rotkehlchen_instance.data.db.get_last_write_ts()
+    assert rotkehlchen_instance.data.db.get_main_currency() == A_USD
+    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
+
+    # remote hash should be different
+    remote_hash = 'a' + our_hash[1:]
+    remote_data = REMOTE_DATA
+    api_key, api_secret, patched_premium, patched_get = create_patched_premium_with_keypair(
+        patch_get=True,
+        metadata_last_modify_ts=our_last_write_ts + 10,  # Remote DB is newer
+        metadata_data_hash=remote_hash,
+        saved_data=remote_data,
+    )
+
+    with patched_premium, patched_get:
+        rotkehlchen_instance.try_premium_at_start(
+            api_key=api_key,
+            api_secret=api_secret,
+            username=username,
+            create_new=True,
+            sync_approval='yes',
+        )
+
+    # DB should not have changed
+    assert rotkehlchen_instance.data.db.get_main_currency() == A_USD
