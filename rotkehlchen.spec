@@ -77,7 +77,6 @@ a = Entrypoint(
     hookspath=['tools/pyinstaller_hooks'],
     hiddenimports=['cytoolz.utils', 'cytoolz._signatures'],
     datas=[
-        ('rotkehlchen/data/eth_tokens.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/token_abi.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/all_assets.json', 'rotkehlchen/data'),
     ],
