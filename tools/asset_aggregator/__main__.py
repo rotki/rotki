@@ -206,13 +206,5 @@ def main():
         )
 
 
-def find_token_data(token_data: Dict[str, Any], symbol: str):
-    for entry in token_data:
-        if symbol == entry['symbol']:
-            return entry
-
-    return None
-
-
 if __name__ == "__main__":
     main()
