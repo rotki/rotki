@@ -8,6 +8,7 @@ from rotkehlchen.tests.utils.constants import A_BSV, A_DASH, A_IOTA
 from rotkehlchen.tests.utils.history import prices
 
 
+@pytest.mark.skip("https://github.com/rotkehlchenio/rotkehlchen/issues/377")
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_incosistent_prices_double_checking(price_historian):
     """ This is a regression test for the incosistent DASH/EUR and DASH/USD prices
@@ -48,6 +49,7 @@ def do_queries_for(from_asset, to_asset, price_historian):
         assert price.is_close(pair_map[timestamp]), msg
 
 
+@pytest.mark.skip("https://github.com/rotkehlchenio/rotkehlchen/issues/377")
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_price_queries(price_historian):
     """Test some cryptocompare price queries making sure our querying mechanism works"""
