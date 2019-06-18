@@ -6,6 +6,7 @@
       </v-flex>
     </v-layout>
     <premium-settings></premium-settings>
+    <exchange-settings></exchange-settings>
     <div id="settings-user"></div>
   </v-container>
 </template>
@@ -14,9 +15,10 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { create_or_reload_usersettings } from '@/legacy/user_settings';
 import PremiumSettings from '@/components/settings/PremiumSettings.vue';
+import ExchangeSettings from '@/components/settings/ExchangeSettings.vue';
 
 @Component({
-  components: { PremiumSettings }
+  components: { ExchangeSettings, PremiumSettings }
 })
 export default class User extends Vue {
   mounted() {
