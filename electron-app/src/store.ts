@@ -33,7 +33,8 @@ let store: StoreOptions<RotkehlchenState> = {
       totals: {}
     },
     fiatTotal: 0,
-    blockchainTotal: 0
+    blockchainTotal: 0,
+    connectedExchanges: []
   },
   mutations: {
     defaultCurrency(state: RotkehlchenState, currency: Currency) {
@@ -99,6 +100,18 @@ let store: StoreOptions<RotkehlchenState> = {
     },
     blockchainTotal(state: RotkehlchenState, blockchainTotal: number) {
       state.blockchainTotal = blockchainTotal;
+    },
+    connectedExchanges(state: RotkehlchenState, connectedExchanges: string[]) {
+      state.connectedExchanges = connectedExchanges;
+    },
+    addExchange(state: RotkehlchenState, exchangeName: string) {
+      state.connectedExchanges.push(exchangeName);
+    },
+    removeExchange(state: RotkehlchenState, exchangeName: string) {
+      const index = state.connectedExchanges.findIndex(
+        value => value === exchangeName
+      );
+      state.connectedExchanges.splice(index, 1);
     }
   },
   actions: {},
@@ -132,4 +145,5 @@ export interface RotkehlchenState {
   blockchainBalances: BlockchainBalances;
   fiatTotal: number;
   blockchainTotal: number;
+  connectedExchanges: string[];
 }
