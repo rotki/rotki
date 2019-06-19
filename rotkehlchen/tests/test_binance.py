@@ -7,12 +7,13 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import (
     BINANCE_TO_WORLD,
     RENAMED_BINANCE_ASSETS,
+    UNSUPPORTED_BINANCE_ASSETS,
     asset_from_binance,
 )
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.binance import Binance, trade_from_binance
 from rotkehlchen.constants.assets import A_BTC, A_ETH
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.errors import RemoteError, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade, TradeType
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
@@ -207,7 +208,10 @@ def test_binance_assets_are_known(
 
     sorted_assets = sorted(binance_assets)
     for binance_asset in sorted_assets:
-        _ = asset_from_binance(binance_asset)
+        try:
+            _ = asset_from_binance(binance_asset)
+        except UnsupportedAsset:
+            assert binance_asset in UNSUPPORTED_BINANCE_ASSETS
 
 
 def test_binance_query_balances_unknown_asset(function_scope_binance):
