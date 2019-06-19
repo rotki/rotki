@@ -7,6 +7,12 @@
     </v-layout>
     <v-layout>
       <v-flex xs12>
+        <exchange-box
+          v-for="exchange in exchanges"
+          :key="exchange.name"
+          :name="exchange.name"
+          :amount="exchange.total"
+        ></exchange-box>
         <information-box
           v-if="blockchainTotal > 0"
           id="blockchain_box"
@@ -68,13 +74,14 @@ import { Component, Vue } from 'vue-property-decorator';
 import { create_or_reload_dashboard } from '@/legacy/dashboard';
 import InformationBox from '@/components/InformationBox.vue';
 import { mapGetters, mapState } from 'vuex';
-import { Balances } from '@/typing/types';
+import { Balances, ExchangeInfo } from '@/typing/types';
 import { AssetBalance } from '@/model/asset-balance';
+import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
 
 @Component({
-  components: { InformationBox },
+  components: { ExchangeBox, InformationBox },
   computed: {
-    ...mapGetters(['blockchainTotals', 'floatingPrecision']),
+    ...mapGetters(['blockchainTotals', 'floatingPrecision', 'exchanges']),
     ...mapState(['fiatTotal', 'blockchainTotal'])
   }
 })
@@ -82,6 +89,7 @@ export default class Dashboard extends Vue {
   fiatTotal!: number;
   blockchainTotal!: number;
   floatingPrecision!: number;
+  exchanges!: ExchangeInfo;
 
   get total(): number {
     return this.fiatTotal + this.blockchainTotal;

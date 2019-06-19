@@ -89,9 +89,13 @@ export default class ExchangeSettings extends Vue {
     this.resetFields();
   }
 
-  private resetFields() {
+  private resetFields(includeExchange: boolean = false) {
     this.apiKey = '';
     this.apiSecret = '';
+
+    if (includeExchange) {
+      this.selectedExchange = exchanges[0];
+    }
   }
 
   readonly confirmTitle = 'Confirmation Required';
@@ -126,7 +130,7 @@ export default class ExchangeSettings extends Vue {
     this.$rpc
       .setup_exchange(exchangeName, this.apiKey, this.apiSecret)
       .then(() => {
-        this.resetFields();
+        this.resetFields(true);
         this.$store.commit('addExchange', exchangeName);
         query_exchange_balances_async(exchangeName, false);
       })
@@ -142,7 +146,7 @@ export default class ExchangeSettings extends Vue {
     this.$rpc
       .remove_exchange(exchangeName)
       .then(() => {
-        this.resetFields();
+        this.resetFields(true);
         const exchangeIndex = this.connectedExchanges.findIndex(
           value => value === exchangeName
         );

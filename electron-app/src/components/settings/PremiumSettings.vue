@@ -7,6 +7,7 @@
           <v-text-field
             id="premium_api_key_entry"
             v-model="apiKey"
+            prepend-icon="fa-key"
             label="Rotkehlchen API Key"
             type="text"
           ></v-text-field>
@@ -14,6 +15,7 @@
           <v-text-field
             id="premium_api_secret_entry"
             v-model="apiSecret"
+            prepend-icon="fa-user-secret"
             label="Rotkehlchen API Key"
             type="text"
           ></v-text-field>
@@ -24,6 +26,7 @@
             depressed
             color="primary"
             type="submit"
+            :disable="premium"
             @click="setupPremium()"
           >
             Setup
@@ -36,11 +39,16 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import { mapState } from 'vuex';
 
-@Component({})
+@Component({
+  computed: mapState(['premium'])
+})
 export default class PremiumSettings extends Vue {
   apiKey: string = '';
   apiSecret: string = '';
+
+  premium!: boolean;
 
   setupPremium() {}
 }

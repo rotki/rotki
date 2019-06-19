@@ -7,6 +7,7 @@
     </v-layout>
     <premium-settings></premium-settings>
     <exchange-settings></exchange-settings>
+    <fiat-balances></fiat-balances>
     <div id="settings-user"></div>
   </v-container>
 </template>
@@ -16,9 +17,10 @@ import { Component, Vue } from 'vue-property-decorator';
 import { create_or_reload_usersettings } from '@/legacy/user_settings';
 import PremiumSettings from '@/components/settings/PremiumSettings.vue';
 import ExchangeSettings from '@/components/settings/ExchangeSettings.vue';
+import FiatBalances from '@/components/settings/FiatBalances.vue';
 
 @Component({
-  components: { ExchangeSettings, PremiumSettings }
+  components: { FiatBalances, ExchangeSettings, PremiumSettings }
 })
 export default class User extends Vue {
   mounted() {
