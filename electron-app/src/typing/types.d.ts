@@ -40,6 +40,14 @@ type UsdToFiatExchangeRates = { [key: string]: number };
 
 export type Balances = { [asset: string]: AssetBalance };
 
+export type ExchangeInfo = {
+  name: string;
+  balances: Balances;
+  totals?: number;
+};
+
+export type ExchangeData = { [exchange: string]: Balances };
+
 interface AssetInformation {
   readonly name: string;
   readonly amount: number;

@@ -6,8 +6,8 @@
       </v-card-title>
       <v-layout align-center>
         <v-flex xs2>
-          <v-icon class="dialog-icon">
-            fa fa-question-circle
+          <v-icon class="dialog-icon" color="primary">
+            fa fa-question-circle fa-3x
           </v-icon>
         </v-flex>
         <v-flex xs10>
@@ -17,8 +17,11 @@
 
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="primary" flat @click="dismiss()">
-          Ok
+        <v-btn color="primary" flat @click="cancel()">
+          Cancel
+        </v-btn>
+        <v-btn color="primary" flat @click="confirm()">
+          Confirm
         </v-btn>
       </v-card-actions>
     </v-card>
