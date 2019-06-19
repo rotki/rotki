@@ -7,10 +7,13 @@ import {
   AccountingSettingsUpdate,
   UsdToFiatExchangeRates,
   GeneralSettings,
-  Balances
+  Balances,
+  ExchangeInfo,
+  ExchangeData
 } from '@/typing/types';
 import { defaultAccountingSettings, defaultSettings } from '@/data/factories';
 import { BlockchainBalances } from '@/model/blockchain-balances';
+import { assetSum } from '@/utils/calculation';
 
 Vue.use(Vuex);
 
@@ -25,7 +28,6 @@ let store: StoreOptions<RotkehlchenState> = {
     premium: false,
     premiumSync: false,
     usdToFiatExchangeRates: {},
-    balances: {},
     nodeConnection: false,
     historyProcess: 0,
     blockchainBalances: {
@@ -34,7 +36,8 @@ let store: StoreOptions<RotkehlchenState> = {
     },
     fiatTotal: 0,
     blockchainTotal: 0,
-    connectedExchanges: []
+    connectedExchanges: [],
+    exchangeBalances: {}
   },
   mutations: {
     defaultCurrency(state: RotkehlchenState, currency: Currency) {
@@ -80,9 +83,6 @@ let store: StoreOptions<RotkehlchenState> = {
     ) {
       state.usdToFiatExchangeRates = usdToFiatExchangeRates;
     },
-    balances(state: RotkehlchenState, balances: Balances) {
-      state.balances = balances;
-    },
     nodeConnection(state: RotkehlchenState, nodeConnection: boolean) {
       state.nodeConnection = nodeConnection;
     },
@@ -112,6 +112,15 @@ let store: StoreOptions<RotkehlchenState> = {
         value => value === exchangeName
       );
       state.connectedExchanges.splice(index, 1);
+    },
+    addExchangeBalances(state: RotkehlchenState, data: ExchangeInfo) {
+      const update: ExchangeData = {};
+      update[data.name] = data.balances;
+      state.exchangeBalances = Object.assign(
+        {},
+        state.exchangeBalances,
+        update
+      );
     }
   },
   actions: {},
@@ -124,6 +133,14 @@ let store: StoreOptions<RotkehlchenState> = {
     },
     dateDisplayFormat: (state: RotkehlchenState) => {
       return state.settings.dateDisplayFormat;
+    },
+    exchanges: (state: RotkehlchenState) => {
+      const balances = state.exchangeBalances;
+      return Object.keys(balances).map(value => ({
+        name: value,
+        balances: balances[value],
+        totals: assetSum(balances[value])
+      }));
     }
   }
 };
@@ -139,11 +156,11 @@ export interface RotkehlchenState {
   premium: boolean;
   premiumSync: boolean;
   usdToFiatExchangeRates: UsdToFiatExchangeRates;
-  balances: Balances;
   nodeConnection: boolean;
   historyProcess: number;
   blockchainBalances: BlockchainBalances;
   fiatTotal: number;
   blockchainTotal: number;
   connectedExchanges: string[];
+  exchangeBalances: ExchangeData;
 }
