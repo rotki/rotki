@@ -12,7 +12,7 @@ import {
   ExchangeData
 } from '@/typing/types';
 import { defaultAccountingSettings, defaultSettings } from '@/data/factories';
-import { BlockchainBalances } from '@/model/blockchain-balances';
+import { BlockchainBalances, EthBalances } from '@/model/blockchain-balances';
 import { assetSum } from '@/utils/calculation';
 
 Vue.use(Vuex);
@@ -37,7 +37,8 @@ let store: StoreOptions<RotkehlchenState> = {
     fiatTotal: 0,
     blockchainTotal: 0,
     connectedExchanges: [],
-    exchangeBalances: {}
+    exchangeBalances: {},
+    ethBalances: {}
   },
   mutations: {
     defaultCurrency(state: RotkehlchenState, currency: Currency) {
@@ -163,4 +164,5 @@ export interface RotkehlchenState {
   blockchainTotal: number;
   connectedExchanges: string[];
   exchangeBalances: ExchangeData;
+  ethBalances: EthBalances;
 }

@@ -8,6 +8,7 @@
     <premium-settings></premium-settings>
     <exchange-settings></exchange-settings>
     <fiat-balances></fiat-balances>
+    <blockchain-balances></blockchain-balances>
     <div id="settings-user"></div>
   </v-container>
 </template>
@@ -18,9 +19,15 @@ import { create_or_reload_usersettings } from '@/legacy/user_settings';
 import PremiumSettings from '@/components/settings/PremiumSettings.vue';
 import ExchangeSettings from '@/components/settings/ExchangeSettings.vue';
 import FiatBalances from '@/components/settings/FiatBalances.vue';
+import BlockchainBalances from '@/components/settings/BlockchainBalances.vue';
 
 @Component({
-  components: { FiatBalances, ExchangeSettings, PremiumSettings }
+  components: {
+    BlockchainBalances,
+    FiatBalances,
+    ExchangeSettings,
+    PremiumSettings
+  }
 })
 export default class User extends Vue {
   mounted() {
