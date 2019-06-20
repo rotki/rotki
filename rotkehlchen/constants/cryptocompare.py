@@ -1,15 +1,16 @@
 WORLD_TO_CRYPTOCOMPARE = {
-    'RDN': 'RDN*',
     'DATAcoin': 'DATA',
-    'IOTA': 'IOT',
+    'IOTA': 'MIOTA',
     'XRB': 'NANO',
     'AIR-2': 'AIR*',
-    'BITS-2': 'BITS*',
+    # In Rotkehlchen Bitswift is BITS-2 but in cryptocompare it's BITSW
+    'BITS-2': 'BITSW',
     'BTM-2': 'BTM*',
     # In Rotkehlchen CCN-2 is Cannacoin and CCN is CustomContractNetwork
     'CCN-2': 'CCN',
-    # In Rotkehlchen FAIR-2 is FairGame and FAIR is FairCoin
-    'FAIR-2': 'FAIR*',
+    # In Rotkehlchen FAIR-2 is FairGame and FAIR is FairCoin, but in
+    # cryptocompare FairGame is FAIRG
+    'FAIR-2': 'FAIRG',
     # Almosst 100% certain that GPUC (https://coinmarketcap.com/currencies/gpucoin/)
     # is GPU in cryptocompare (https://www.cryptocompare.com/coins/gpu/overview)
     'GPUC': 'GPU',
@@ -18,10 +19,10 @@ WORLD_TO_CRYPTOCOMPARE = {
     # KEY -> Selfkey
     # KEY-2 -> KEY
     # KEY-3 -> KeyCoin
-    'KEY-3': 'KEY*',
+    'KEY-3': 'KEYC',
     # In Rotkehlchen KNC is KyberNetwork and KNC-2 is KingN coin. In cryptocompare
-    # KNC** is KingN coin
-    'KNC-2': 'KNC**',
+    # KNGN is KingN coin
+    'KNC-2': 'KNGN',
     # Liquidity network is LQD in Rotkehlchen but LQDN in Cryptocompare
     'LQD': 'LQDN',
     # Monetaverde is as MNV in cryptocompare while it should be MCN
@@ -36,12 +37,10 @@ WORLD_TO_CRYPTOCOMPARE = {
     'MAZA': 'MZC',
     # NuBits is NBT in cryptocompare
     'USNBT': 'NBT',
-    # Polymath is POLY in Rotkehlchen and POLY* in cryptocompare
-    'POLY': 'POLY*',
+    # Polymath is POLY in Rotkehlchen and POLYN in cryptocompare
+    'POLY': 'POLYN',
     # Polybit is POLY-2 in Rotkehlchen and POLY in cryptocompare
     'POLY-2': 'POLY',
-    # Steem dollars are SBD* in cryptocompare
-    'SBD': 'SBD*',
     # YacCoin is YAC in cryptocompare
     'YACC': 'YAC',
     # GoldCoin is GLD in cryptocompare, but GLC in most other places including Rotkehlcen
@@ -51,16 +50,14 @@ WORLD_TO_CRYPTOCOMPARE = {
     # In Rotkehlchen and everywhere else Bitbean is BITB but in cryptocompare BEAN
     'BITB': 'BEAN',
     # For Rotkehlchen RCN is Ripio Credit Network and RCN-2 is Rcoin
-    # Rcoin is RCN* in cryptocompare
-    'RCN-2': 'RCN*',
-    # Metronome is MET in Rotkehlchen and MET* in cryptocompare
-    'MET': 'MET*',
-    # EDR is Endor Protocol in Rotkehlchen and EDR* in cryptocompare
-    'EDR': 'EDR*',
+    # Rcoin is RCOIN in cryptocompare
+    'RCN-2': 'RCOIN',
+    # EDR is Endor Protocol in Rotkehlchen and EPT in cryptocompare
+    'EDR': 'EPT',
     # EDR-2 is E-Dinar coin in Rotkehlchen and EDR in cryptocompare
     'EDR-2': 'EDR',
-    # SPC is Spacechain in Rotkehlchen but SPC* in cryptocompare.
-    'SPC': 'SPC*',
+    # SPC is Spacechain in Rotkehlchen but APCC in cryptocompare.
+    'SPC': 'APCC',
     # Blocktrade is BTT-2 in Rotkehlchen but BKT in cryptocompare.
     'BTT-2': 'BKT',
     # Ontology gas is ONG in Rotkehlchen but ONGAS in cryptocompare
@@ -71,8 +68,8 @@ WORLD_TO_CRYPTOCOMPARE = {
     'SLT': 'SLST',
     # SLT-2 is Social Lending Network in Rotkehlchen but SLT in cryptocompare
     'SLT-2': 'SLT',
-    # PAI is Project Pai in Rotkehlchen but PAI* in cryptocompare
-    'PAI': 'PAI*',
+    # PAI is Project Pai in Rotkehlchen but PPAI in cryptocompare
+    'PAI': 'PPAI',
     # PAI-2 is PCHAIN in Rotkehlchen but PAI in cryptocompare
     'PAI-2': 'PAI',
     # CMT-2 is CometCoin in Rotkehlchen but CMTC in cryptocompare
@@ -82,28 +79,26 @@ WORLD_TO_CRYPTOCOMPARE = {
     # Harvest Masternode Coin is in HC-2 in Rotkehlchen and HMN in cryptocompare
     'HC-2': 'HMN',
     # For Rotkehlchen HOT is Holochain and HOT-2 is Hydro Protocol
-    # But for cryptocompare HOT is Hydro Protocol and HOT* is HoloChain
-    'HOT': 'HOT*',
+    # But for cryptocompare HOT is Hydro Protocol and HOLO is HoloChain
+    'HOT': 'HOLO',
     'HOT-2': 'HOT',
-    # For Rotkehlchen RDN is Raiden Network Token but it's RDN* in cryptocompare
-    'RDN': 'RDN*',
     # For Rotkehlchen YOYO is YOYOW but it's YOYOW in cryptocompare
     'YOYOW': 'YOYOW',
     # For Rotkehlchen 0xBTC is 0xBTC but in cryptocompare it's capitalized
     '0xBTC': '0XBTC',
     # For Rotkehlchen ACC is AdCoin, ACC-2 is ACChain and ACC-3 is Accelerator network
-    # In cryptocompare Accelerator Network is ACC*
-    'ACC-3': 'ACC*',
+    # In cryptocompare Accelerator Network is ACCN
+    'ACC-3': 'ACCN',
     # For Rotkehlchen ARB is Arbitrage coin and ARB-2 is ARbit but in cryptocompare
-    # ARB* is arbitrage and ARB is ARbit
-    'ARB': 'ARB*',
+    # ARBT is arbitrage and ARB is ARbit
+    'ARB': 'ARBT',
     'ARB-2': 'ARB',
     # For Rotkehlchen ARC is Advanced Technology Coin (Arctic) and ARC-2 is ArcadeCity
     # In Cryptocompare ARC* is ArcadeCity
     'ARC-2': 'ARC*',
     # For Rotkehlchen ATX is Astoin Coin and ATX-2 is ArtexCoin but in
-    # cryptocompare ATX* is Astoin Coin and ATX is ArtexCoin
-    'ATX': 'ATX*',
+    # cryptocompare ASTO is Astoin Coin and ATX is ArtexCoin
+    'ATX': 'ASTO',
     'ATX-2': 'ATX',
     # For Rotkehlchen AVA is Travala and AVA-2 is Avalon but in
     # cryptocompare AVALA is Travala and AVA is Avalon
@@ -115,15 +110,15 @@ WORLD_TO_CRYPTOCOMPARE = {
     # BrickBlock is XBB and Bitblocks is BBK
     'BBK': 'XBB',
     'BBK-2': 'BBK',
-    # For Rotkehlchen BBN is Banyan Network but in cryptocompare it's BBN*
-    'BBN': 'BBN*',
+    # For Rotkehlchen BBN is Banyan Network but in cryptocompare it's BNN
+    'BBN': 'BNN',
     # For Rotkehlchen BET is Dao.Casino and BET-2 is BetaCoin but in cryptocompare
-    # Dao.Caisno is BET* and BetaCoin is BET
-    'BET': 'BET*',
+    # Dao.Casino is DAOC and BetaCoin is BET
+    'BET': 'DAOC',
     'BET-2': 'BET',
     # Bollenum (https://coinmarketcap.com/currencies/bolenum/) is BLN
-    # in rotkehlchen but BLN* in cryptocompare
-    'BLN': 'BLN*',
+    # in rotkehlchen but BLNM in cryptocompare
+    'BLN': 'BLNM',
     # ContentBox (https://coinmarketcap.com/currencies/contentbox/) is BOX-2
     # in rotkehlchen but BOX in cryptocompare
     'BOX-2': 'BOX',
@@ -134,40 +129,36 @@ WORLD_TO_CRYPTOCOMPARE = {
     # in rotkehlchen but BTR in cryptocompare
     'BTR-2': 'BTR',
     # For Rotkehlchen CAN is CanYaCoin and CAN-2 is Content And Ad Network
-    # In cryptocompare, it's CAN and CAN*
-    'CAN-2': 'CAN*',
+    # In cryptocompare, it's CAN and CADN
+    'CAN-2': 'CADN',
     # For Rotkehlchen CAT is Bitclave and CAT-2 is BlockCAT but in cryptocompare
     # Bitclave is CAT* and BlockCAT is BCAT
     'CAT': 'CAT*',
     'CAT-2': 'BCAT',
     # For Rotkehlchen CET is CoinEX and CET-2 is DiceMoney but in cryptocompare
-    # CoinEX is CET and DiceMoney is CET*
-    'CET-2': 'CET*',
+    # CoinEX is CET and DiceMoney is DICEM
+    'CET-2': 'DICEM',
     # For Rotkehlchen CPC is CPChain and CPC-2 is CapriCoin but in cryptocompare
-    # CPChain is CPC* and CapriCoin is CPC
-    'CPC': 'CPC*',
+    # CPChain is CPCH and CapriCoin is CPC
+    'CPC': 'CPCH',
     'CPC-2': 'CPC',
     # For Rotkehlchen CRC is CryCash and CRC-2 is CrowdCoin but in cryptocompare
-    # Crycash is CRC** and CrowdCoin is CRC***
-    'CRC': 'CRC**',
-    'CRC-2': 'CRC***',
-    # For Rotkehlchen CS is Credits but it's CS* in cryptocompare
-    'CS': 'CS*',
+    # Crycash is CRYC and CrowdCoin is CRC
+    'CRC': 'CRYC',
+    'CRC-2': 'CRC',
+    # For Rotkehlchen CS is Credits but it's CRDTS in cryptocompare
+    'CS': 'CRDTS',
     # For Rotkehlchen CTX-2 is CarTaxi but it's CTX in cryptocompare
     'CTX-2': 'CTX',
-    # For Rotkehlchen DAV is DAV Token  but it's DAV* in cryptocompare
-    'DAV': 'DAV*',
-    # For Rotkehlchen DCC is Distributed Credit Chain but it's DCC* in cryptocompare
-    'DCC': 'DCC*',
     # For Rotkehlchen DOW is DOW Coin Chain but it's Dow in cryptocompare
     'DOW': 'Dow',
-    # For Rotkehlchen EPY is Emphy Coin but it's EPY* in cryptocompare
-    'EPY': 'EPY*',
-    # For Rotkehlchen ERT is Eristica Coin but it's ERT* in cryptocompare
-    'ERT': 'ERT*',
+    # For Rotkehlchen EPY is Emphy Coin but it's EMPH in cryptocompare
+    'EPY': 'EMPHY',
+    # For Rotkehlchen ERT is Eristica Coin but it's ERIS in cryptocompare
+    'ERT': 'ERIS',
     # For Rotkehlchen EVN is Envion and EVN-2 is EvenCoin, but in cryptocompare
-    # Evencoin is EVN*
-    'EVN-2': 'EVN*',
+    # Evencoin is EVENC
+    'EVN-2': 'EVENC',
     # For Rotkehlchen EXC is ExcaliburCoin and EXC-2 is EximChain Token but in
     # cryptocompare EXC is EximChain Token ans ExcaliburCoin is not supported
     'EXC-2': 'EXC',
@@ -179,79 +170,69 @@ WORLD_TO_CRYPTOCOMPARE = {
     # For Rotkehlchen GBX is GoByte and GBX-2 is Globitex but in cryptocompare
     # Globitex is GBXT
     'GBX-2': 'GBXT',
-    # For Rotkehlchen GEN is Daostack but it's GEN* in cryptocompare
-    'GEN': 'GEN*',
+    # For Rotkehlchen GEN is Daostack but it's GENS in cryptocompare
+    'GEN': 'GENS',
     # For Rotkehlchen GENE is ParkGene and GENE-2 is Gene Source Code Chain,
     # in cryptocompare GENE-2 is GENE*
     'GENE-2': 'GENE*',
     # For Rotkehlchen GOT is Go Network Token and GOT-2 is ParkinGo, cryptocompare
-    # does not have ParkinGO and Go Network Token is GOT*
-    'GOT': 'GOT*',
+    # does not have ParkinGO and Go Network Token is GTK
+    'GOT': 'GTK',
     # For Rotkehlchen HMC is Hi Mutual Society and HMC-2 is Harmony Coin, in
     # cryptocompare HMC is the same but HMC* is (perhaps) Harmony Coin
     'HMC-2': 'HMC*',
-    # For Rotkehlchen INV is Invacio but it's INV* in cryptocompare
-    'INV': 'INV*',
-    # For Rotkehlchen JOY is Joy but it's INV* in cryptocompare
+    # For Rotkehlchen INV is Invacio but it's INVC in cryptocompare
+    'INV': 'INVC',
+    # For Rotkehlchen JOY is Joy but it's JOY* in cryptocompare
     'JOY': 'JOY*',
     # For Rotkehlchen LNC is Blocklancer  and LNC-2 is Linker Coin, but for
-    # cryptocompare linker coin is LNC*
-    'LNC-2': 'LNC*',
-    # For Rotkehlchen LOC is LockTrip but in cryptocompare it's LOC*
-    'LOC': 'LOC*',
-    # For Rotkehlchen MAN is Matrix AI Network but in cryptocompare it's MAN*
-    'MAN': 'MAN*',
-    # For Rotkehlchen MDT is Measurable Data Token but in cryptocompare it's MDT*
-    'MDT': 'MDT*',
+    # cryptocompare linker coin is LNKC
+    'LNC-2': 'LNKC',
+    # For Rotkehlchen LOC is LockTrip but in cryptocompare it's LOCK
+    'LOC': 'LOCK',
+    # For Rotkehlchen MAN is Matrix AI Network but in cryptocompare it's MXAI
+    'MAN': 'MXAI',
+    # For Rotkehlchen MDT is Measurable Data Token but in cryptocompare it's MSDT
+    'MDT': 'MSDT',
     # For Rotkehlchen MNT is Media Network Token but in cryptocompare it's MNT*
     'MNT': 'MNT*',
-    # For Rotkehlchen MRP is MoneyReel but in cryptocompare it's MRP*
-    'MRP': 'MRP*',
+    # For Rotkehlchen MRP is MoneyReel but in cryptocompare it's MNRB
+    'MRP': 'MNRB',
     # For Rotkehlchen MTC is doc.com Token and MTC-2 is Mesh Network but in
     # cryptocompare Mesh Network is MTCMN
     'MTC-2': 'MTCMN',
-    # For Rotkehlchen MTN is Medical Token but it's MTN* in cryptocompare
-    'MTN': 'MTN*',
-    # For Rotkehlchen NEC is Ethfinex Nectar Token but it's NEC* in cryptocompare
-    'NEC': 'NEC*',
-    # For Rotkehlchen NIO is Autonio but it's NIO* in cryptocompare
-    'NIO': 'NIO*',
+    # For Rotkehlchen MTN is Medical Token but it's MDCL in cryptocompare
+    'MTN': 'MDCL',
     # For Rotkehlchen OCC-2 is Original Cryptocoin but it's OCC in cryptocompare
     'OCC-2': 'OCC',
     # For Rotkehlchen ORS is OriginSport Token and ORS-2 is ORS group, but in
-    # cryptocompare OriginSport Token is ORS* and ORS Group is ORS
-    'ORS': 'ORS*',
+    # cryptocompare OriginSport Token is OGSP and ORS Group is ORS
+    'ORS': 'OGSP',
     'ORS-2': 'ORS',
-    # For Rotkehlchen PRE is Presearch but it's PRE* in cryptocompare
-    'PRE': 'PRE*',
+    # For Rotkehlchen PRE is Presearch but it's SRCH in cryptocompare
+    'PRE': 'SRCH',
     # For Rotkehlchen PLA is Plair and PLA-2 is Playchip, but in cryptocompare
     # PLA is Playchip and Plair is PLAI
     'PLA': 'PLAI',
     'PLA-2': 'PLA',
-    # For Rotkehlchen RDN is Raiden Network but it's RDN* in cryptocompare
-    'RDN': 'RDN*',
-    # For Rotkehlchen Sharpe Platform Token is SHP but it's SHP* in cryptocompare
-    'SHP': 'SHP*',
-    # For Rotkehlchen SKB is SakuraBloom but it's SKB* in cryptocompare
-    'SKB': 'SKB*',
+    # For Rotkehlchen RDN is Raiden Network but it's RDNN in cryptocompare
+    'RDN': 'RDNN',
+    # For Rotkehlchen SKB is SakuraBloom but it's SKRB in cryptocompare
+    'SKB': 'SKRB',
     # For Rotkehlchen SKR is SkrillaToken but it's SKR* in cryptocompare
-    'SKR': 'SKR*',
+    'SKR': 'SKRT',
     # For Rotkehlchen SMART is SmartCash, and SMART-2 is SmartBillions, but in
     # cryptocompare SmartBillions is SMART*
     'SMART-2': 'SMART*',
-    # For Rotkehlchen SMT is SmartMesh but it's SMT* in cryptocompare
-    'SMT': 'SMT*',
     # For Rotkehlchen SOUL is Phantasma and SOUL-2 is CryptoSoul. But cryptocompare
-    # only has Phantasma as SOUL*
-    'SOUL': 'SOUL*',
+    # only has Phantasma as GOST
+    'SOUL': 'GOST',
     # For Rotkehlchen SPD is Spindle and SPD-2 is Stipend, but in cryptocompare
-    # Spindle is SPD* and Stipend is SPD
-    'SPD': 'SPD*',
+    # Spindle is SPND and Stipend is SPD
+    'SPD': 'SPND',
     'SPD-2': 'SPD',
-    # For Rotkehlchen SPN is Sapien Network but it's SPN* in cryptocompare
-    'SPN': 'SPN*',
-    # For Rotkehlchen SPX is Sp8de Token but it's SPX* in cryptocompare
-    'SPX': 'SPX*',
+    # For Rotkehlchen SPX is Sp8de Token but it's SPCIE in cryptocompare
+    'SPX': 'SPCIE',
     # For Rotkehlchen STRC is Star Credits but it's SRC* in cryptocompare
     'STRC': 'SRC*',
     # For Rotkehlchen TCH is ThoreCash and TCH-2 is TigerCash but cryptocompare
@@ -259,18 +240,16 @@ WORLD_TO_CRYPTOCOMPARE = {
     'TCH-2': 'TCH',
     # For Rotkehlchen TEAM is TokenStars Team but cryptocompare has it as TEAMT
     'TEAM': 'TEAMT',
-    # For Rotkehlchen TMT is Traxia Membership Token but it's TMT** in cryptocompare
-    'TMT': 'TMT**',
     # For Rotkehlchen VSF is Verisafe but it's CPLO in cryptocompare (the old name)
     'VSF': 'CPLO',
     # For Rotkehlchen WEB is Webcoin and WEB-2 Webchain, but in cryptocompare
-    # Webchain is WEB*
-    'WEB-2': 'WEB*',
+    # Webchain is WEBC
+    'WEB-2': 'WEBC',
     # For Rotkehlchen WIN is Winchain Token and WIN-2 WCoin, but in cryptocompare
     # Wcoin is WIN and there is no Winchain Token
     'WIN-2': 'WIN',
-    # For Rotkehlchen BlitzPredict is XBP  but it's XBP* in cryptocompare
-    'XBP': 'XBP*',
+    # For Rotkehlchen BlitzPredict is XBP  but it's BPX in cryptocompare
+    'XBP': 'BPX',
     # For Cryptocompare PHX has not been updated to PHB
     'PHB': 'PHX',
 }
