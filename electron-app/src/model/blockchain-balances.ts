@@ -6,3 +6,12 @@ export interface BlockchainBalances {
   };
   readonly totals: Balances;
 }
+
+export interface EthBalance {
+  readonly ETH: string;
+  readonly usd_value: string;
+}
+
+export interface EthBalances {
+  [account: string]: EthBalance;
+}
