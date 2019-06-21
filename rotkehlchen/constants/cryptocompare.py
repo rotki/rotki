@@ -5,7 +5,10 @@ WORLD_TO_CRYPTOCOMPARE = {
     'AIR-2': 'AIR*',
     # In Rotkehlchen Bitswift is BITS-2 but in cryptocompare it's BITSW
     'BITS-2': 'BITSW',
-    'BTM-2': 'BTM*',
+    # In Rotkehlchen BTM is Bitmark and BTM-2 is Bytom but in
+    # Cryptocompare Bytom is BTM and Bitmark is BTMK
+    'BTM': 'BTMK',
+    'BTM-2': 'BTM',
     # In Rotkehlchen CCN-2 is Cannacoin and CCN is CustomContractNetwork
     'CCN-2': 'CCN',
     # In Rotkehlchen FAIR-2 is FairGame and FAIR is FairCoin, but in
