@@ -135,9 +135,8 @@ WORLD_TO_CRYPTOCOMPARE = {
     # In cryptocompare, it's CAN and CADN
     'CAN-2': 'CADN',
     # For Rotkehlchen CAT is Bitclave and CAT-2 is BlockCAT but in cryptocompare
-    # Bitclave is CAT* and BlockCAT is BCAT
-    'CAT': 'CAT*',
-    'CAT-2': 'BCAT',
+    # Bitclave is BCAT and BlockCat is not supported
+    'CAT': 'BCAT',
     # For Rotkehlchen CET is CoinEX and CET-2 is DiceMoney but in cryptocompare
     # CoinEX is CET and DiceMoney is DICEM
     'CET-2': 'DICEM',
@@ -623,4 +622,7 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # ZeusNetwork (https://coinmarketcap.com/currencies/zeusnetwork/)
     # is not in cryptocompare but is in paprika
     'ZEUS',
+    # BlockCat (https://coinmarketcap.com/currencies/blockcat/)
+    # is not in cryptocompare but is in paprika
+    'CAT-2',
 )
