@@ -10,6 +10,7 @@ from rotkehlchen.typing import EthAddress
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsonloads_list
 
 KNOWN_TO_MISS_FROM_PAPRIKA = (
+    'ALGO',
     'DAO',
     'KFEE',
     '1CR',
