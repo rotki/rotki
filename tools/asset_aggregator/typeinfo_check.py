@@ -74,6 +74,7 @@ MANUALLY_CHECKED_TYPES = {
     'YOYOW': 'ethereum token',
     'ZEUS': 'ethereum token',
     'ZIX': 'ethereum token',
+    'ALGO': 'own chain',
 }
 
 
