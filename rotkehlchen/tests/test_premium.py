@@ -248,8 +248,9 @@ def test_try_premium_at_start_new_account_can_pull_data(
     directory = os.path.join(rotkehlchen_instance.data.data_directory, username)
     files = list(os.path.join(directory, f) for f in os.listdir(directory))
     assert len(files) == 2
-    assert 'rotkehlchen.db' in files[0]
-    assert 'backup' in files[1]
+    # The order of the files is not guaranteed
+    assert 'rotkehlchen.db' in files[0] or 'rotkehlchen.db' in files[1]
+    assert 'backup' in files[0] or 'backup' in files[1]
 
 
 def test_try_premium_at_start_new_account_same_hash(
