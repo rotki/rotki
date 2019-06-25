@@ -25,11 +25,10 @@ def analyze_bittrex_assets(currencies: List[Dict[str, Any]]):
                 continue
 
             if not AssetResolver().is_identifier_canonical(symbol):
-                msg = (
+                raise AssertionError(
                     f'{idx} - {symbol} is not known. '
-                    f'Bittrex name: {bittrex_asset["CurrencyLong"]}'
+                    f'Bittrex name: {bittrex_asset["CurrencyLong"]}',
                 )
-                assert False, msg
             else:
                 asset = Asset(symbol)
                 print(

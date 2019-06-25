@@ -799,7 +799,7 @@ def find_cmc_coin_data(
             if coin['id'] == coin_id:
                 return coin
 
-        assert False, 'The CMC id should alway be correct. Is our data corrupt?'
+        raise AssertionError('The CMC id should always be correct. Is our data corrupt?')
 
     if asset_symbol in KNOWN_TO_MISS_FROM_CMC:
         return None
