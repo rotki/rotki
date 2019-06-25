@@ -135,7 +135,7 @@ def test_dbinfo_is_written_at_shutdown(rotkehlchen_server):
         try:
             dbinfo = rlk_jsonloads_dict(f.read())
         except JSONDecodeError:
-            assert False, 'Could not decode dbinfo.json'
+            raise AssertionError('Could not decode dbinfo.json')
 
     assert dbinfo['sqlcipher_version'] == sqlcipher_version
     assert 'md5_hash' in dbinfo
