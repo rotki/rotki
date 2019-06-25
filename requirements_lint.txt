@@ -1,4 +1,4 @@
-mypy==0.670
+mypy==0.711
 pylint==2.2.2
 flake8==3.7.6
 flake8-commas==2.0.0

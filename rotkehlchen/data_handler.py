@@ -155,16 +155,18 @@ class DataHandler():
 
     def __init__(self, data_directory: FilePath, msg_aggregator: MessagesAggregator):
 
+        self.logged_in = False
         self.data_directory = data_directory
         self.eth_tokens = AssetResolver().get_all_eth_tokens()
         self.username = 'no_user'
         self.msg_aggregator = msg_aggregator
 
     def logout(self):
-        self.username = 'no_user'
-        self.user_data_dir = None
-        del self.db
-        self.db = None
+        if self.logged_in:
+            self.username = 'no_user'
+            self.user_data_dir = None
+            del self.db
+            self.logged_in = False
 
     def unlock(
             self,
@@ -203,6 +205,7 @@ class DataHandler():
 
         self.db: DBHandler = DBHandler(user_data_dir, password, self.msg_aggregator)
         self.user_data_dir = user_data_dir
+        self.logged_in = True
         return user_data_dir
 
     def main_currency(self) -> Asset:
@@ -316,7 +319,7 @@ class DataHandler():
         last_save = self.db.get_last_balance_save_time()
         settings = self.db.get_settings()
         # Setting is saved in hours, convert to seconds here
-        period = cast(int, settings['balance_save_frequency'] * 60 * 60)
+        period = cast(int, settings['balance_save_frequency']) * 60 * 60
         now = cast(Timestamp, int(time.time()))
         return now - last_save > period
 
