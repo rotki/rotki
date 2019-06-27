@@ -1,7 +1,7 @@
 import logging
 import operator
 from collections import defaultdict
-from typing import Callable, Dict, List, Tuple, Union, cast
+from typing import TYPE_CHECKING, Callable, Dict, List, Tuple, Union, cast
 
 from eth_utils.address import to_checksum_address
 from gevent.lock import Semaphore
@@ -25,6 +25,9 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, request_get_direct
 
+if TYPE_CHECKING:
+    from rotkehlchen.ethchain import Ethchain
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -44,7 +47,7 @@ class Blockchain():
             self,
             blockchain_accounts: BlockchainAccounts,
             owned_eth_tokens: List[EthereumToken],
-            ethchain,  # TODO ethchain type not added yet due to Cyclic Dependency
+            ethchain: 'Ethchain',
             msg_aggregator: MessagesAggregator,
     ):
         self.lock = Semaphore()
