@@ -7,7 +7,7 @@ import hashlib
 import hmac
 import logging
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
 
 from requests import Response
@@ -511,8 +511,7 @@ class Kraken(Exchange):
             end_at_least_ts: Timestamp,
     ) -> List:
         with self.lock:
-            cache = self.check_trades_cache(start_ts, end_at_least_ts)
-            cache = cast(List, cache)
+            cache = self.check_trades_cache_list(start_ts, end_at_least_ts)
 
         if cache is not None:
             return cache

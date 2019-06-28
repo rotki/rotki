@@ -2,7 +2,7 @@ import hashlib
 import hmac
 import logging
 import time
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 from urllib.parse import urlencode
 
 import gevent
@@ -151,7 +151,7 @@ class Binance(Exchange):
 
         # If it's the first time, populate the binance pair trade symbols
         # We know exchangeInfo returns a dict
-        exchange_data = self.api_query('exchangeInfo')
+        exchange_data = self.api_query_dict('exchangeInfo')
         self._symbols_to_pair = create_binance_symbols_to_pair(exchange_data)
 
         self.first_connection_made = True
@@ -164,7 +164,7 @@ class Binance(Exchange):
     def validate_api_key(self) -> Tuple[bool, str]:
         try:
             # We know account endpoint returns a dict
-            self.api_query('account')
+            self.api_query_dict('account')
         except ValueError as e:
             error = str(e)
             if 'API-key format invalid' in error:
@@ -244,13 +244,23 @@ class Binance(Exchange):
         json_ret = rlk_jsonloads(response.text)
         return json_ret
 
+    def api_query_dict(self, method: str, options: Optional[Dict] = None) -> Dict:
+        result = self.api_query(method, options)
+        assert isinstance(result, Dict)
+        return result
+
+    def api_query_list(self, method: str, options: Optional[Dict] = None) -> List:
+        result = self.api_query(method, options)
+        assert isinstance(result, List)
+        return result
+
     @cache_response_timewise(CACHE_RESPONSE_FOR_SECS)
     def query_balances(self) -> Tuple[Optional[dict], str]:
         self.first_connection()
 
         try:
             # account data returns a dict as per binance docs
-            account_data = cast(Dict, self.api_query('account'))
+            account_data = self.api_query_dict('account')
         except RemoteError as e:
             msg = (
                 'Binance API request failed. Could not reach binance due '
@@ -302,25 +312,26 @@ class Binance(Exchange):
             end_at_least_ts: Timestamp,
             markets: Optional[List[str]] = None,
     ) -> List:
-        cache = self.check_trades_cache(start_ts, end_at_least_ts)
-        cache = cast(List, cache)
+        cache = self.check_trades_cache_list(start_ts, end_at_least_ts)
         if cache is not None:
             return cache
 
         self.first_connection()
 
         if not markets:
-            markets = self._symbols_to_pair.keys()
+            iter_markets = self._symbols_to_pair.keys()
+        else:
+            iter_markets = markets
 
         all_trades_history = list()
         # Limit of results to return. 1000 is max limit according to docs
         limit = 1000
-        for symbol in markets:
+        for symbol in iter_markets:
             last_trade_id = 0
             len_result = limit
             while len_result == limit:
                 # We know that myTrades returns a list from the api docs
-                result = self.api_query(
+                result = self.api_query_list(
                     'myTrades',
                     options={
                         'symbol': symbol,
