@@ -1,13 +1,12 @@
 import base64
 from binascii import hexlify
-from typing import cast
 
 from coincurve import PrivateKey
 from Crypto import Random
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA3_256, SHA256  # type: ignore
 
-from rotkehlchen import typing
+from rotkehlchen.typing import BinaryEthAddress, EthAddress
 
 
 # AES encrypt/decrypt taken from here: https://stackoverflow.com/a/44212550/110395
@@ -61,14 +60,14 @@ def privatekey_to_publickey(private_key_bin: bytes) -> bytes:
     return private_key.public_key.format(compressed=False)
 
 
-def publickey_to_address(publickey: bytes) -> typing.BinaryEthAddress:
-    return cast(typing.BinaryEthAddress, sha3(publickey[1:])[12:])
+def publickey_to_address(publickey: bytes) -> BinaryEthAddress:
+    return BinaryEthAddress(sha3(publickey[1:])[12:])
 
 
-def privatekey_to_address(private_key_bin: bytes) -> typing.BinaryEthAddress:
+def privatekey_to_address(private_key_bin: bytes) -> BinaryEthAddress:
     return publickey_to_address(privatekey_to_publickey(private_key_bin))
 
 
-def address_encoder(address: typing.BinaryEthAddress) -> typing.EthAddress:
+def address_encoder(address: BinaryEthAddress) -> EthAddress:
     assert len(address) in (20, 0)
-    return typing.EthAddress('0x' + hexlify(address).decode())
+    return EthAddress('0x' + hexlify(address).decode())

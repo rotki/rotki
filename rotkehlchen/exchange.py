@@ -83,6 +83,30 @@ class Exchange():
 
         return None
 
+    def check_trades_cache_dict(
+            self,
+            start_ts: typing.Timestamp,
+            end_ts: typing.Timestamp,
+            special_name: str = None,
+    ) -> Optional[Dict]:
+        response = self.check_trades_cache(start_ts, end_ts, special_name)
+        if not response:
+            return None
+        assert isinstance(response, Dict)
+        return response
+
+    def check_trades_cache_list(
+            self,
+            start_ts: typing.Timestamp,
+            end_ts: typing.Timestamp,
+            special_name: str = None,
+    ) -> Optional[List]:
+        response = self.check_trades_cache(start_ts, end_ts, special_name)
+        if not response:
+            return None
+        assert isinstance(response, List)
+        return response
+
     def update_trades_cache(
             self,
             data: Union[List, Dict],

@@ -8,8 +8,10 @@ import os
 import time
 import traceback
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, overload
 from urllib.parse import urlencode
+
+from typing_extensions import Literal
 
 from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
@@ -166,6 +168,16 @@ class Poloniex(Exchange):
                 ))
         return result
 
+    def api_query_dict(self, command: str, req: Optional[Dict] = None) -> Dict:
+        result = self.api_query(command, req)
+        assert isinstance(result, Dict)
+        return result
+
+    def api_query_list(self, command: str, req: Optional[Dict] = None) -> List:
+        result = self.api_query(command, req)
+        assert isinstance(result, List)
+        return result
+
     def _api_query(self, command: str, req: Optional[Dict] = None) -> Union[Dict, List]:
         if req is None:
             req = {}
@@ -209,18 +221,15 @@ class Poloniex(Exchange):
             raise RemoteError(f'Poloniex returned invalid JSON response: {ret.text}')
 
     def returnCurrencies(self) -> Dict:
-        # We know returnCurrencies response is a Dict
-        response = cast(Dict, self.api_query('returnCurrencies'))
+        response = self.api_query_dict('returnCurrencies')
         return response
 
     def returnTicker(self) -> Dict:
-        # We know returnTicker response is a Dict
-        response = cast(Dict, self.api_query('returnTicker'))
+        response = self.api_query_dict('returnTicker')
         return response
 
     def returnFeeInfo(self) -> Dict:
-        # We know returnFeeInfo response is a Dict
-        response = cast(Dict, self.api_query('returnFeeInfo'))
+        response = self.api_query_dict('returnFeeInfo')
         return response
 
     def returnLendingHistory(
@@ -243,11 +252,30 @@ class Poloniex(Exchange):
         if limit is not None:
             req['limit'] = limit
 
-        # we know returnLendingHistory returns a List of loans
-        response = cast(List, self.api_query('returnLendingHistory', req))
+        response = self.api_query_list('returnLendingHistory', req)
         return response
 
-    def returnTradeHistory(
+    @overload
+    def returnTradeHistory(  # pylint: disable=unused-argument, no-self-use
+            self,
+            currencyPair: Literal['all'],
+            start: Timestamp,
+            end: Timestamp,
+    ) -> Dict:
+        ...
+
+    @overload  # noqa: F811
+    def returnTradeHistory(  # pylint: disable=unused-argument, no-self-use
+            self,
+            currencyPair: Union[TradePair, str],
+            start: Timestamp,
+            end: Timestamp,
+    ) -> Union[Dict, List]:
+        ...
+
+    # TODO: As soon as a pyflakes release is made including
+    # https://github.com/PyCQA/pyflakes/pull/435 then remove the noqa from here ande above
+    def returnTradeHistory(  # noqa: F811
             self,
             currencyPair: Union[TradePair, str],
             start: Timestamp,
@@ -268,10 +296,9 @@ class Poloniex(Exchange):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> Dict:
-        # We know returnDepositsWithdrawals returns a Dict
-        response = cast(
-            Dict,
-            self.api_query('returnDepositsWithdrawals', {'start': start_ts, 'end': end_ts}),
+        response = self.api_query_dict(
+            'returnDepositsWithdrawals',
+            {'start': start_ts, 'end': end_ts},
         )
         return response
 
@@ -297,9 +324,7 @@ class Poloniex(Exchange):
     @cache_response_timewise(CACHE_RESPONSE_FOR_SECS)
     def query_balances(self) -> Tuple[Optional[dict], str]:
         try:
-            resp = self.api_query('returnCompleteBalances', {"account": "all"})
-            # We know returnCompleteBalances returns a dict
-            resp = cast(Dict, resp)
+            resp = self.api_query_dict('returnCompleteBalances', {"account": "all"})
         except (RemoteError, PoloniexError) as e:
             msg = (
                 'Poloniex API request failed. Could not reach poloniex due '
@@ -352,9 +377,8 @@ class Poloniex(Exchange):
             end_at_least_ts: Timestamp,
     ) -> Dict:
         with self.lock:
-            cache = self.check_trades_cache(start_ts, end_at_least_ts)
+            cache = self.check_trades_cache_dict(start_ts, end_at_least_ts)
         if cache is not None:
-            assert isinstance(cache, Dict), 'Poloniex trade history should be a dict'
             return cache
 
         result = self.returnTradeHistory(
@@ -362,8 +386,6 @@ class Poloniex(Exchange):
             start=start_ts,
             end=end_ts,
         )
-        # we know that returnTradeHistory returns a dict with currencyPair=all
-        result = cast(Dict, result)
 
         results_length = 0
         for _, v in result.items():
@@ -435,9 +457,10 @@ class Poloniex(Exchange):
 
         with self.lock:
             # We know Loan history cache is a list
-            cache = cast(
-                List,
-                self.check_trades_cache(start_ts, end_at_least_ts, special_name='loan_history'),
+            cache = self.check_trades_cache_list(
+                start_ts=start_ts,
+                end_ts=end_at_least_ts,
+                special_name='loan_history',
             )
         if cache is not None:
             return cache
@@ -486,12 +509,11 @@ class Poloniex(Exchange):
             end_at_least_ts: Timestamp,
     ) -> List:
         with self.lock:
-            cache = self.check_trades_cache(
+            cache = self.check_trades_cache_dict(
                 start_ts,
                 end_at_least_ts,
                 special_name='deposits_withdrawals',
             )
-            cache = cast(Dict, cache)
         if cache is None:
             result = self.returnDepositsWithdrawals(start_ts, end_ts)
             with self.lock:

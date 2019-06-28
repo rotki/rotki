@@ -3,7 +3,7 @@ import hmac
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import Dict, List, Optional, Tuple, Union, cast
+from typing import Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
 
 from rotkehlchen import typing
@@ -165,10 +165,30 @@ class Bitmex(Exchange):
 
         return json_ret
 
+    def _api_query_dict(
+            self,
+            verb: str,
+            path: str,
+            options: Optional[Dict] = None,
+    ) -> Dict:
+        result = self._api_query(verb, path, options)
+        assert isinstance(result, Dict)
+        return result
+
+    def _api_query_list(
+            self,
+            verb: str,
+            path: str,
+            options: Optional[Dict] = None,
+    ) -> List:
+        result = self._api_query(verb, path, options)
+        assert isinstance(result, List)
+        return result
+
     @cache_response_timewise(CACHE_RESPONSE_FOR_SECS)
     def query_balances(self) -> Tuple[Optional[dict], str]:
         try:
-            resp = self._api_query('get', 'user/wallet', {'currency': 'XBt'})
+            resp = self._api_query_dict('get', 'user/wallet', {'currency': 'XBt'})
         except RemoteError as e:
             msg = (
                 'Bitmex API request failed. Could not reach bitmex due '
@@ -176,8 +196,6 @@ class Bitmex(Exchange):
             )
             log.error(msg)
             return None, msg
-        # get /user/wallet returns Dict
-        resp = cast(Dict, resp)
 
         # Bitmex shows only BTC balance
         returned_balances = dict()
@@ -211,7 +229,7 @@ class Bitmex(Exchange):
 
         try:
             # We know user/walletHistory returns a list
-            resp = self._api_query('get', 'user/walletHistory')
+            resp = self._api_query_list('get', 'user/walletHistory')
         except RemoteError as e:
             msg = (
                 'Bitmex API request failed. Could not reach bitmex due '
@@ -246,7 +264,7 @@ class Bitmex(Exchange):
     ) -> List:
         # TODO: Implement cache like in other exchange calls
         try:
-            resp = self._api_query('get', 'user/walletHistory')
+            resp = self._api_query_list('get', 'user/walletHistory')
         except RemoteError as e:
             msg = (
                 'Bitmex API request failed. Could not reach bitmex due '

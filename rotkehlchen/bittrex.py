@@ -3,7 +3,7 @@ import hmac
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
 
 from rotkehlchen.assets.converters import asset_from_bittrex
@@ -263,8 +263,7 @@ class Bittrex(Exchange):
     ) -> List:
 
         options: Dict[str, Union[str, int]] = dict()
-        cache = self.check_trades_cache(start_ts, end_at_least_ts)
-        cache = cast(List, cache)
+        cache = self.check_trades_cache_list(start_ts, end_at_least_ts)
         if market is not None:
             options['market'] = world_pair_to_bittrex(market)
         elif cache is not None:

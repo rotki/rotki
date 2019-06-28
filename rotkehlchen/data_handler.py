@@ -6,7 +6,7 @@ import shutil
 import tempfile
 import time
 import zlib
-from typing import Dict, List, Optional, Tuple, cast
+from typing import Dict, List, Optional, Tuple
 
 from eth_utils.address import to_checksum_address
 
@@ -144,8 +144,8 @@ def verify_otctrade_data(
         rate=rate,
         fee=fee,
         fee_currency=fee_currency,
-        link=cast(str, data['otc_link']),
-        notes=cast(str, data['otc_notes']),
+        link=str(data['otc_link']),
+        notes=str(data['otc_notes']),
     )
 
     return trade, ''
@@ -175,7 +175,7 @@ class DataHandler():
             create_new: bool,
     ) -> FilePath:
         self.username = username
-        user_data_dir = cast(FilePath, os.path.join(self.data_directory, username))
+        user_data_dir = FilePath(os.path.join(self.data_directory, username))
         if create_new:
             if os.path.exists(user_data_dir):
                 raise AuthenticationError('User {} already exists'.format(username))
@@ -318,9 +318,12 @@ class DataHandler():
         the balance data saving frequency setting"""
         last_save = self.db.get_last_balance_save_time()
         settings = self.db.get_settings()
+        # TODO: When https://github.com/rotkehlchenio/rotkehlchen/issues/388 is done
+        # the assert should go away
+        assert isinstance(settings['balance_save_frequency'], int)
         # Setting is saved in hours, convert to seconds here
-        period = cast(int, settings['balance_save_frequency']) * 60 * 60
-        now = cast(Timestamp, int(time.time()))
+        period = settings['balance_save_frequency'] * 60 * 60
+        now = Timestamp(int(time.time()))
         return now - last_save > period
 
     def get_eth_accounts(self) -> List[EthAddress]:
@@ -380,7 +383,7 @@ class DataHandler():
             return False, message
 
         result, message = self.db.edit_external_trade(
-            trade_id=cast(int, data['otc_id']),
+            trade_id=int(data['otc_id']),
             trade=trade,
         )
 
@@ -396,7 +399,7 @@ class DataHandler():
         Returns a b64 encoded binary blob"""
         log.info('Compress and encrypt DB')
         with tempfile.TemporaryDirectory() as tmpdirname:
-            tempdb = cast(FilePath, os.path.join(tmpdirname, 'temp.db'))
+            tempdb = FilePath(os.path.join(tmpdirname, 'temp.db'))
             self.db.export_unencrypted(tempdb)
             with open(tempdb, 'rb') as f:
                 data_blob = f.read()
