@@ -21,6 +21,12 @@
             Add
           </v-btn>
           <token-track></token-track>
+          <per-account-balance
+            name="ETH"
+            :balances="perAccountEth"
+          ></per-account-balance>
+          <per-account-balance name="BTC" :balances="perAccountBtc">
+          </per-account-balance>
         </v-card-text>
       </v-card>
     </v-flex>
@@ -36,9 +42,14 @@
 import { Component, Vue } from 'vue-property-decorator';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import TokenTrack from '@/components/settings/TokenTrack.vue';
+import { AccountBalance, EthBalances } from '@/model/blockchain-balances';
+import { mapGetters } from 'vuex';
+import PerAccountBalance from '@/components/settings/PerAccountBalance.vue';
+import { convertEthBalances } from '@/utils/conversion';
 
 @Component({
-  components: { TokenTrack, MessageDialog }
+  components: { PerAccountBalance, TokenTrack, MessageDialog },
+  computed: mapGetters(['perAccountEth'])
 })
 export default class BlockchainBalances extends Vue {
   selected: 'ETH' | 'BTC' = 'ETH';
@@ -48,6 +59,11 @@ export default class BlockchainBalances extends Vue {
   errorTitle: string = '';
   errorMessage: string = '';
 
+  perAccountEth!: AccountBalance[];
+  perAccountBtc: AccountBalance[] = [];
+
+  created() {}
+
   addAccount() {
     const account = this.accountAddress;
     const blockchain = this.selected;
@@ -55,11 +71,12 @@ export default class BlockchainBalances extends Vue {
       .add_blockchain_account(blockchain, account)
       .then(result => {
         if (blockchain === 'ETH') {
-          let perAccountElement = result.per_account['ETH'];
-          console.log(perAccountElement);
+          const balances: EthBalances = convertEthBalances(
+            result.per_account['ETH']
+          );
+          this.$store.commit('addPerAccountEth', balances);
         } else if (blockchain === 'BTC') {
-          let perAccountElement = result.per_account['BTC'];
-          console.log(perAccountElement);
+          this.$store.commit('addPerAccountBtc', result.per_account['BTC']);
         }
 
         console.log(result['totals']);
