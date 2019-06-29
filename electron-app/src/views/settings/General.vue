@@ -64,7 +64,6 @@
             <v-text-field
               id="eth_rpc_endpoint"
               v-model="rpcEndpoint"
-              v-validate="{ url: { require_protocol: true } }"
               label="Eth RPC Endpoint"
               type="text"
               data-vv-name="eth_rpc_endpoint"
