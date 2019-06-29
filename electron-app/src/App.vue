@@ -261,7 +261,7 @@ export default class App extends Vue {
         reset_pages();
         reset_tasks();
         reset_exchange_tables();
-        reset_user_settings();
+
         $('#page-wrapper').html('');
         create_or_reload_dashboard();
         monitor.stop();
@@ -282,4 +282,5 @@ export default class App extends Vue {
 
 <style lang="scss">
 @import '~datatables.net-dt/css/jquery.dataTables.min.css';
+@import 'main';
 </style>
