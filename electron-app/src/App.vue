@@ -112,7 +112,6 @@ import { reset_pages, settings } from '@/legacy/settings';
 import { reset_total_balances } from '@/legacy/balances_table';
 import { reset_tasks } from '@/legacy/monitor';
 import { reset_exchange_tables } from '@/legacy/exchange';
-import { reset_user_settings } from '@/legacy/user_settings';
 import { create_or_reload_dashboard } from '@/legacy/dashboard';
 import Login from '@/components/Login.vue';
 import { AccountData, Credentials } from '@/typing/types';

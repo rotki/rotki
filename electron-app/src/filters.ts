@@ -14,6 +14,12 @@ function formatDate(value: number, format: string): string {
   return displayDateFormatter.format(new Date(value * 1000), format);
 }
 
+function formatPrice(value: number, precision: number) {
+  let val = value.toFixed(precision).replace('.', ',');
+  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
 Vue.filter('percentage', percentage);
 Vue.filter('precision', precision);
 Vue.filter('formatDate', formatDate);
+Vue.filter('formatPrice', formatPrice);

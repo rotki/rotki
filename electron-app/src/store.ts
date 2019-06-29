@@ -12,7 +12,13 @@ import {
   ExchangeData
 } from '@/typing/types';
 import { defaultAccountingSettings, defaultSettings } from '@/data/factories';
-import { BlockchainBalances, EthBalances } from '@/model/blockchain-balances';
+import {
+  BlockchainBalances,
+  ApiBalances,
+  ApiEthBalances,
+  EthBalances,
+  AccountBalance
+} from '@/model/blockchain-balances';
 import { assetSum } from '@/utils/calculation';
 
 Vue.use(Vuex);
@@ -38,7 +44,8 @@ let store: StoreOptions<RotkehlchenState> = {
     blockchainTotal: 0,
     connectedExchanges: [],
     exchangeBalances: {},
-    ethBalances: {}
+    ethBalances: {},
+    btcBalances: {}
   },
   mutations: {
     defaultCurrency(state: RotkehlchenState, currency: Currency) {
@@ -122,6 +129,12 @@ let store: StoreOptions<RotkehlchenState> = {
         state.exchangeBalances,
         update
       );
+    },
+    addPerAccountBtc(state: RotkehlchenState, data: ApiBalances) {
+      state.btcBalances = Object.assign({}, data);
+    },
+    addPerAccountEth(state: RotkehlchenState, data: EthBalances) {
+      state.ethBalances = Object.assign({}, data);
     }
   },
   actions: {},
@@ -142,6 +155,17 @@ let store: StoreOptions<RotkehlchenState> = {
         balances: balances[value],
         totals: assetSum(balances[value])
       }));
+    },
+    perAccountEth: (state: RotkehlchenState) => {
+      let balances = state.ethBalances;
+      return Object.keys(balances).map(
+        value =>
+          ({
+            account: value,
+            amount: balances[value].eth,
+            usdValue: balances[value].usdValue
+          } as AccountBalance)
+      );
     }
   }
 };
@@ -165,4 +189,5 @@ export interface RotkehlchenState {
   connectedExchanges: string[];
   exchangeBalances: ExchangeData;
   ethBalances: EthBalances;
+  btcBalances: ApiBalances;
 }
