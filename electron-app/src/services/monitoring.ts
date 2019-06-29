@@ -5,6 +5,7 @@ class Monitoring {
   private monitoring?: NodeJS.Timer;
 
   private fetch() {
+    store.dispatch('notifications/consume');
     service
       .query_periodic_data()
       .then(result => {

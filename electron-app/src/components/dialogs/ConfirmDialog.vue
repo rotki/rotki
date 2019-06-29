@@ -32,7 +32,7 @@
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 
 @Component({})
-export default class MessageDialog extends Vue {
+export default class ConfirmDialog extends Vue {
   @Prop({ required: true })
   title!: string;
   @Prop({ required: true })
