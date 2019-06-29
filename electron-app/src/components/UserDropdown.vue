@@ -1,32 +1,49 @@
-<template>
-  <li id="user-dropdown" class="dropdown">
-    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-      <i class="fa fa-user fa-fw"></i> <i class="fa fa-caret-down"></i>
-    </a>
-    <ul class="dropdown-menu dropdown-user">
-      <li id="user_settings_button">
-        <router-link to="/settings/user">
-          <i class="fa fa-user fa-fw"></i> User Settings
-        </router-link>
-      </li>
-      <li id="accounting_settings_button">
-        <router-link to="/settings/accounting">
-          <i class="fa fa-book fa-fw"></i>Accounting Settings
-        </router-link>
-      </li>
-      <li id="settingsbutton">
-        <router-link to="/settings/general">
-          <i class="fa fa-gear fa-fw"></i> Settings
-        </router-link>
-      </li>
-      <li class="divider"></li>
-      <li id="logout_button">
-        <a @click="logoutClicked()">
-          <i class="fa fa-sign-out fa-fw"></i> Logout
-        </a>
-      </li>
-    </ul>
-  </li>
+<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
+  <v-menu id="user-dropdown" transition="slide-y-transition" bottom>
+    <template v-slot:activator="{ on }">
+      <v-btn color="primary" dark icon flat v-on="on">
+        <v-icon>fa fa-user fa-fw</v-icon>
+        <v-icon>fa fa-caret-down</v-icon>
+      </v-btn>
+    </template>
+    <v-list>
+      <v-list-tile
+        id="user_settings_button"
+        key="user-settings"
+        to="/settings/user"
+      >
+        <v-list-tile-avatar>
+          <v-icon color="primary">fa fa-user fa-fw</v-icon>
+        </v-list-tile-avatar>
+        <v-list-tile-title>User Settings</v-list-tile-title>
+      </v-list-tile>
+      <v-list-tile
+        id="accounting_settings_button"
+        key="accounting-settings"
+        to="/settings/accounting"
+      >
+        <v-list-tile-avatar>
+          <v-icon color="primary">fa fa-book fa-fw</v-icon>
+        </v-list-tile-avatar>
+        <v-list-tile-title>Accounting Settings</v-list-tile-title>
+      </v-list-tile>
+
+      <v-list-tile id="settings_button" key="settings" to="/settings/general">
+        <v-list-tile-avatar>
+          <v-icon color="primary">fa fa-gear fa-fw</v-icon>
+        </v-list-tile-avatar>
+        <v-list-tile-title>Settings</v-list-tile-title>
+      </v-list-tile>
+      <v-divider></v-divider>
+
+      <v-list-tile id="logout_button" key="logout" @click="logoutClicked()">
+        <v-list-tile-avatar>
+          <v-icon color="primary">fa fa-sign-out fa-fw</v-icon>
+        </v-list-tile-avatar>
+        <v-list-tile-title>Logout</v-list-tile-title>
+      </v-list-tile>
+    </v-list>
+  </v-menu>
 </template>
 
 <script lang="ts">
