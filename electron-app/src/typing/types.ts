@@ -48,8 +48,15 @@ export type ExchangeInfo = {
 
 export type ExchangeData = { [exchange: string]: Balances };
 
-interface AssetInformation {
-  readonly name: string;
-  readonly amount: number;
-  readonly usdValue: number;
+export enum Severity {
+  WARNING = 'warning',
+  ERROR = 'error',
+  INFO = 'info'
+}
+
+export interface NotificationData {
+  readonly id: number;
+  readonly title: string;
+  readonly message: string;
+  readonly severity: Severity;
 }

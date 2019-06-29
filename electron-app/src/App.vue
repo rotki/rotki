@@ -1,4 +1,4 @@
-<template>
+<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
   <v-app id="rotkehlchen">
     <v-navigation-drawer
       v-model="drawer"
@@ -21,53 +21,13 @@
     <v-toolbar app fixed clipped-left>
       <v-toolbar-side-icon @click="drawer = !drawer"></v-toolbar-side-icon>
       <v-toolbar-title class="font-weight-light">Rotkehlchen</v-toolbar-title>
-
-      <ul class="nav navbar-top-links navbar-status-icons">
-        <ul class="list-group lg-status-icons">
-          <node-status></node-status>
-          <li class="list-group-item balance-save-status">
-            <a class="balances-saved-status-link" href="#">
-              <i class="fa fa-save fa-fw"></i>
-            </a>
-            <ul class="dropdown-menu dropdown-balance-save-status">
-              <p>
-                Balances last saved:<br />
-                <span id="last_balance_save_field">Never</span>
-              </p>
-            </ul>
-          </li>
-        </ul>
-      </ul>
+      <node-status-indicator></node-status-indicator>
+      <balance-saved-indicator></balance-saved-indicator>
       <v-spacer></v-spacer>
-      <ul class="nav navbar-top-links navbar-right">
-        <li class="dropdown">
-          <a
-            id="notification-badge"
-            class="dropdown-toggle"
-            data-toggle="dropdown"
-            href="#"
-          >
-            <i class="fa fa-bell fa-fw"></i>
-            <i class="fa fa-caret-down"></i>
-            <span class="badge">0</span>
-          </a>
-          <ul id="notification-messages" class="dropdown-menu"></ul>
-        </li>
-
-        <li class="dropdown">
-          <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-            <i
-              id="top-loading-icon"
-              class="fa fa-circle-o-notch fa-spin fa-fw"
-            ></i>
-            <i class="fa fa-caret-down"></i>
-          </a>
-          <ul class="dropdown-menu dropdown-tasks"></ul>
-        </li>
-
-        <user-dropdown></user-dropdown>
-        <currency-drop-down></currency-drop-down>
-      </ul>
+      <notification-indicator></notification-indicator>
+      <progress-indicator></progress-indicator>
+      <user-dropdown></user-dropdown>
+      <currency-drop-down></currency-drop-down>
     </v-toolbar>
     <v-content v-if="userLogged">
       <router-view></router-view>
@@ -121,11 +81,17 @@ import CreateAccount from '@/components/CreateAccount.vue';
 import { UnlockResult } from '@/model/action-result';
 import SyncPermission from '@/components/dialogs/SyncPermission.vue';
 import { monitor } from '@/services/monitoring';
-import NodeStatus from '@/components/status/NodeStatus.vue';
+import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
+import BalanceSavedIndicator from '@/components/status/BalanceSavedIndicator.vue';
+import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
+import ProgressIndicator from '@/components/status/ProgressIndicator.vue';
 
 @Component({
   components: {
-    NodeStatus,
+    ProgressIndicator,
+    NotificationIndicator,
+    BalanceSavedIndicator,
+    NodeStatusIndicator,
     SyncPermission,
     CreateAccount,
     MessageDialog,
@@ -279,8 +245,3 @@ export default class App extends Vue {
   }
 }
 </script>
-
-<style lang="scss">
-@import '~datatables.net-dt/css/jquery.dataTables.min.css';
-@import 'main';
-</style>

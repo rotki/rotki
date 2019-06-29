@@ -7,7 +7,6 @@ import {
   AccountingSettingsUpdate,
   UsdToFiatExchangeRates,
   GeneralSettings,
-  Balances,
   ExchangeInfo,
   ExchangeData
 } from '@/typing/types';
@@ -15,11 +14,11 @@ import { defaultAccountingSettings, defaultSettings } from '@/data/factories';
 import {
   BlockchainBalances,
   ApiBalances,
-  ApiEthBalances,
   EthBalances,
   AccountBalance
 } from '@/model/blockchain-balances';
 import { assetSum } from '@/utils/calculation';
+import { notifications } from '@/notifications';
 
 Vue.use(Vuex);
 
@@ -167,6 +166,9 @@ let store: StoreOptions<RotkehlchenState> = {
           } as AccountBalance)
       );
     }
+  },
+  modules: {
+    notifications
   }
 };
 export default new Vuex.Store(store);
