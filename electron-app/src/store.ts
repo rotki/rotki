@@ -12,7 +12,7 @@ import {
 } from '@/typing/types';
 import { defaultAccountingSettings, defaultSettings } from '@/data/factories';
 import { assetSum } from '@/utils/calculation';
-import { notifications } from '@/notifications';
+import { notifications } from '@/store/notifications';
 import { balances } from '@/store/balances';
 
 Vue.use(Vuex);

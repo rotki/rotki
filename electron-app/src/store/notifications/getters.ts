@@ -1,5 +1,5 @@
 import { GetterTree } from 'vuex';
-import { NotificationState } from '@/notifications/state';
+import { NotificationState } from '@/store/notifications/state';
 import { RotkehlchenState } from '@/store';
 
 export const getters: GetterTree<NotificationState, RotkehlchenState> = {
