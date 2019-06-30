@@ -20,13 +20,26 @@
           >
             Add
           </v-btn>
+          <v-divider></v-divider>
           <token-track></token-track>
-          <per-account-balance
+          <v-divider></v-divider>
+          <asset-balances
+            title="Blockchain Balances per Asset"
+            :balances="totals"
+          >
+          </asset-balances>
+          <v-divider></v-divider>
+          <account-balances
+            title="ETH per account balances"
             name="ETH"
-            :balances="perAccountEth"
-          ></per-account-balance>
-          <per-account-balance name="BTC" :balances="perAccountBtc">
-          </per-account-balance>
+            :balances="ethAccounts"
+          ></account-balances>
+          <v-divider></v-divider>
+          <account-balances
+            title="BTC per account balances"
+            name="BTC"
+            :balances="btcAccounts"
+          ></account-balances>
         </v-card-text>
       </v-card>
     </v-flex>
@@ -43,13 +56,17 @@ import { Component, Vue } from 'vue-property-decorator';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import TokenTrack from '@/components/settings/TokenTrack.vue';
 import { AccountBalance, EthBalances } from '@/model/blockchain-balances';
-import { mapGetters } from 'vuex';
-import PerAccountBalance from '@/components/settings/PerAccountBalance.vue';
+import { createNamespacedHelpers } from 'vuex';
 import { convertEthBalances } from '@/utils/conversion';
+import AccountBalances from '@/components/settings/AccountBalances.vue';
+import { create_task } from '@/legacy/monitor';
+import AssetBalances from '@/components/settings/AssetBalances.vue';
+
+const { mapGetters } = createNamespacedHelpers('balances');
 
 @Component({
-  components: { PerAccountBalance, TokenTrack, MessageDialog },
-  computed: mapGetters(['perAccountEth'])
+  components: { AccountBalances, AssetBalances, TokenTrack, MessageDialog },
+  computed: mapGetters(['ethAccounts', 'btcAccounts', 'totals'])
 })
 export default class BlockchainBalances extends Vue {
   selected: 'ETH' | 'BTC' = 'ETH';
@@ -59,10 +76,28 @@ export default class BlockchainBalances extends Vue {
   errorTitle: string = '';
   errorMessage: string = '';
 
-  perAccountEth!: AccountBalance[];
-  perAccountBtc: AccountBalance[] = [];
+  ethAccounts!: AccountBalance[];
+  btcAccounts!: AccountBalance[];
+  totals!: AccountBalance[];
 
-  created() {}
+  created() {
+    this.$rpc
+      .query_blockchain_balances_async()
+      .then(value => {
+        create_task(
+          value.task_id,
+          'user_settings_query_blockchain_balances',
+          'Query blockchain balances',
+          false,
+          true
+        );
+      })
+      .catch((reason: Error) => {
+        console.log(
+          `Error at querying blockchain balances async: ${reason.message}`
+        );
+      });
+  }
 
   addAccount() {
     const account = this.accountAddress;

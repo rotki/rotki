@@ -1,10 +1,11 @@
-import { Balances } from '@/typing/types';
+import { ApiBalances, ApiEthBalances } from '@/model/blockchain-balances';
 
 export interface BlockchainAccountResult {
   readonly result: boolean;
   readonly message: string;
   readonly per_account: {
-    [asset: string]: Balances;
+    ETH: ApiEthBalances;
+    BTC: ApiBalances;
   };
-  readonly totals: Balances;
+  readonly totals: ApiBalances;
 }

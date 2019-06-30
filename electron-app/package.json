@@ -14,9 +14,8 @@
     "test:unit": "vue-cli-service test:unit"
   },
   "dependencies": {
+    "bignumber.js": "^9.0.0",
     "cryptocurrency-icons": "0.16.0",
-    "datatables.net": "1.10.19",
-    "datatables.net-dt": "1.10.19",
     "font-awesome": "4.7.0",
     "lodash": "4.17.11",
     "register-service-worker": "latest",
