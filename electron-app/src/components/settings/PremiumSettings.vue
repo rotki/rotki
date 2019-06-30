@@ -21,12 +21,6 @@
             type="text"
           ></v-text-field>
         </v-card-text>
-        <v-switch
-          v-if="premium && !edit"
-          v-model="sync"
-          label="Allow data sync with Rotkehlchen Server"
-          @change="onSyncChange()"
-        ></v-switch>
         <v-card-actions>
           <v-btn
             id="setup_premium_button"
@@ -47,6 +41,12 @@
           >
             Cancel
           </v-btn>
+          <v-switch
+            v-if="premium && !edit"
+            v-model="sync"
+            label="Allow data sync with Rotkehlchen Server"
+            @change="onSyncChange()"
+          ></v-switch>
         </v-card-actions>
       </v-card>
     </v-flex>
