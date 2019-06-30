@@ -1,8 +1,8 @@
 <template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
-  <div>
+  <div class="balance-table">
     <v-layout row>
       <v-flex>
-        <h3>{{ name }} balances per Account</h3>
+        <h3 class="text-xs-center">{{ title }}</h3>
       </v-flex>
     </v-layout>
     <v-data-table :headers="headers" :items="balances">
@@ -24,13 +24,20 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { AccountBalance } from '@/model/blockchain-balances';
+import { mapState } from 'vuex';
 
-@Component({})
-export default class PerAccountEth extends Vue {
+@Component({
+  computed: mapState(['floatingPrecision'])
+})
+export default class AccountBalances extends Vue {
   @Prop({ required: true })
   balances!: AccountBalance[];
   @Prop({ required: true })
   name!: string;
+  @Prop({ required: true })
+  title!: string;
+
+  floatingPrecision!: number;
 
   headers = [
     { text: 'Account', value: 'account' },
@@ -40,4 +47,9 @@ export default class PerAccountEth extends Vue {
 }
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+.balance-table {
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+</style>

@@ -1,13 +1,3 @@
-.loadingwrapper {
-  z-index: 1000;
-  height: 100px;
-  background: rgba(255, 255, 255, 0.8) url('./assets/images/loading-circle.gif')
-    50% 50% no-repeat;
-}
-
-.loadingwrapper_text {
-  text-align: center;
-}
 
 html.wait,
 html.wait * {
@@ -71,14 +61,6 @@ div.rotkehlchen-table {
 
 div.invisible-anchor {
   display: none;
-}
-
-#rotkehlchen_no_text {
-  width: 150px;
-  display: block;
-  margin: 10px auto;
-  padding: 15px;
-  /* outline: 1px solid #e45325; */
 }
 
 /* Color customization */

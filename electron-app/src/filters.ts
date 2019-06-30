@@ -1,5 +1,6 @@
 import Vue from 'vue';
 import { displayDateFormatter } from '@/data/date_formatter';
+import BigNumber from 'bignumber.js';
 
 function percentage(value: string, total: string, precision: number): string {
   const percentage = parseFloat(value) / parseFloat(total);
@@ -14,9 +15,8 @@ function formatDate(value: number, format: string): string {
   return displayDateFormatter.format(new Date(value * 1000), format);
 }
 
-function formatPrice(value: number, precision: number) {
-  let val = value.toFixed(precision).replace('.', ',');
-  return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+function formatPrice(value: BigNumber, precision: number) {
+  return value.toPrecision(precision);
 }
 
 Vue.filter('percentage', percentage);

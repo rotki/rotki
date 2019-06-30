@@ -11,8 +11,9 @@
         <img
           id="rotkehlchen_no_text"
           :src="require('./assets/images/rotkehlchen_no_text.png')"
-          class="rounded"
+          class="logo"
           alt=""
+          @click="shell.openExternal('http://rotkehlchen.io')"
         />
       </div>
       <div id="welcome_text" class="text-center"></div>
@@ -32,11 +33,13 @@
     <v-content v-if="userLogged">
       <router-view></router-view>
     </v-content>
-    <confirmation
-      v-if="logout"
+    <confirm-dialog
+      title="Confirmation Required"
+      message="Are you sure you want to log out of your current rotkehlchen session?"
+      :display="logout"
       @confirm="logoutUser()"
       @cancel="cancelLogout()"
-    ></confirmation>
+    ></confirm-dialog>
     <message-dialog
       v-if="error"
       title="Login Failed"
@@ -66,7 +69,6 @@ import { Component, Vue } from 'vue-property-decorator';
 import UserDropdown from '@/components/UserDropdown.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
-import Confirmation from '@/components/Confirmation.vue';
 import { mapState } from 'vuex';
 import { reset_pages, settings } from '@/legacy/settings';
 import { reset_total_balances } from '@/legacy/balances_table';
@@ -85,7 +87,8 @@ import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
 import BalanceSavedIndicator from '@/components/status/BalanceSavedIndicator.vue';
 import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
 import ProgressIndicator from '@/components/status/ProgressIndicator.vue';
-
+import './services/task_manager';
+import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 @Component({
   components: {
     ProgressIndicator,
@@ -96,7 +99,7 @@ import ProgressIndicator from '@/components/status/ProgressIndicator.vue';
     CreateAccount,
     MessageDialog,
     Login,
-    Confirmation,
+    ConfirmDialog,
     CurrencyDropDown,
     NavigationMenu,
     UserDropdown
@@ -245,3 +248,16 @@ export default class App extends Vue {
   }
 }
 </script>
+
+<style scoped lang="scss">
+.logo {
+  max-height: 150px;
+}
+#rotkehlchen_no_text {
+  width: 150px;
+  display: block;
+  margin: 10px auto;
+  padding: 15px;
+  /* outline: 1px solid #e45325; */
+}
+</style>

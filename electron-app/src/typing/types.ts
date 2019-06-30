@@ -24,19 +24,19 @@ export interface AccountingSettingsUpdate {
   readonly taxFreeAfterPeriod?: number | null;
 }
 
-interface Credentials {
+export interface Credentials {
   readonly username: string;
   readonly password: string;
 }
 
-interface AccountData {
+export interface AccountData {
   readonly username: string;
   readonly password: string;
   readonly apiKey: string;
   readonly apiSecret: string;
 }
 
-type UsdToFiatExchangeRates = { [key: string]: number };
+export type UsdToFiatExchangeRates = { [key: string]: number };
 
 export type Balances = { [asset: string]: AssetBalance };
 

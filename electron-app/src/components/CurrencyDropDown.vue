@@ -50,7 +50,7 @@ export default class CurrencyDropDown extends Vue {
   }
 
   onSelected(currency: Currency) {
-    if (currency.ticker_symbol === settings.main_currency.ticker_symbol) {
+    if (currency.ticker_symbol === this.$store.state.currency.ticker_symbol) {
       return;
     }
 

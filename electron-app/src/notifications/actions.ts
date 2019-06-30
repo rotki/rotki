@@ -2,18 +2,8 @@ import { ActionTree } from 'vuex';
 import { NotificationState } from '@/notifications/state';
 import { RotkehlchenState } from '@/store';
 import { service } from '@/services/rotkehlchen_service';
-import { NotificationData, Severity } from '@/typing/types';
-
-const toNotification = (
-  message: string,
-  severity: Severity,
-  id: number
-): NotificationData => ({
-  title: '',
-  message: message,
-  severity: severity,
-  id: id
-});
+import { Severity } from '@/typing/types';
+import { toNotification } from '@/notifications/utils';
 
 export const actions: ActionTree<NotificationState, RotkehlchenState> = {
   consume({ commit, getters }): any {
