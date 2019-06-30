@@ -6,7 +6,7 @@ import store from '@/store';
 import { convertBalances, convertEthBalances } from '@/utils/conversion';
 import { ExchangeBalanceResult } from '@/model/exchange-balance-result';
 import { TaskType } from '@/model/task';
-import { notify } from '@/notifications/utils';
+import { notify } from '@/store/notifications/utils';
 
 monitor_add_callback(
   TaskType.USER_SETTINGS_QUERY_BLOCKCHAIN_BALANCES,

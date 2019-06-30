@@ -1,5 +1,5 @@
 import { ActionTree } from 'vuex';
-import { NotificationState } from '@/notifications/state';
+import { NotificationState } from '@/store/notifications/state';
 import { RotkehlchenState } from '@/store';
 import { service } from '@/services/rotkehlchen_service';
 import { NotificationData, Severity } from '@/typing/types';
