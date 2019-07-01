@@ -20,14 +20,14 @@ Linux
 
 Go to the `releases <https://github.com/rotkehlchenio/rotkehlchen/releases>`_ page and download the linux-x64 package from the `latest release <https://github.com/rotkehlchenio/rotkehlchen/releases/latest>`_.
 
-Unzip it in a directory of your choice. In the root directory of the unzipped archive there is a ``rotkehlchen`` executable. Run it to start rotkehlchen.
+Unzip it in a directory of your choice. In the root directory of the unzipped archive there is a ``rotkehlchen`` executable. Run it via the terminal to start rotkehlchen.
 
 OSX
 ***
 
 Go to the `releases <https://github.com/rotkehlchenio/rotkehlchen/releases>`_ page and download the darwin-x64 package from the `latest release <https://github.com/rotkehlchenio/rotkehlchen/releases/latest>`_.
 
-Unzip it in a directory of your choice. In the root directory of the unzipped archive there is a `rotkehlchen` executable. Run it to start rotkehlchen.
+Unzip it in a directory of your choice. In the root directory of the unzipped archive there is a `rotkehlchen` executable. Run it **from a terminal window** to start rotkehlchen. Clicking on it **will not work**.
 
 Build from Source
 =================
