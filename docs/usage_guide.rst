@@ -30,7 +30,7 @@ Connecting to an Ethereum Client
 
 When Rotkehlchen begins it tries to connect to a local ethereum node running with an rpc port set at the default port ``8545``. If no client is running then all blockchain queries will use etherscan and this will be rather slower.
 
-If you want to connect to an ethereum client running in a non-default port you can set that through the settings. Click the person icon on the top right menu and select "Settings" from the drop down menu. This will take you to the settings page. Write the desired port in the ETH RPC Port textbox
+If you want to connect to an ethereum client running in a non-default port you can set that through the settings. Click the person icon on the top right menu and select "Settings" from the drop down menu. This will take you to the settings page. Write the desired url/port port in ETH RPC endpoing textbox.
 
 Adding an Exchange
 =====================
@@ -46,7 +46,7 @@ If all went well, then you will get a confirmation that the connection was succe
 Adding Fiat Balances
 =====================
 
-Rotkehlchen is an asset management application. Thus you can track all your assets in one place including the FIAT balances you have.
+Rotkehlchen is an asset analytics application. Thus you can track all your assets in one place including the FIAT balances you have.
 
 To add or modify the amount of an owned FIAT currency, go to the user settings page, scroll down to the "Fiat Balances" section and choose the currency from the dropdown menu. Input the modified balance in the text box and press the Modify button.
 
@@ -94,7 +94,7 @@ Creating a Tax Report
 
 Rotkehlchen creates a tax report for you based on your trades and some settings which you can configure at the user settings page. This is essentially a calculation of profit or loss for all your trades based on the given dates.
 
-Some settings are at the moment hard coded, for the German tax jurisdiction. For example all profit/loss calculation is done for trades on a first-in/first-out basis and profits from selling crypto assets after 1 year are non taxable. These settings will be made adjustable soon.
+The default settings are at the moment set for the German tax jurisdiction. For example all profit/loss calculation is done for trades on a first-in/first-out basis and profits from selling crypto assets after 1 year are non taxable. These settings can be adjusted.
 
 
 To create a tax report click on the "Tax Report" button from the left menu. Choose a start and an end date for the report and then click the "Generate Report" button.
@@ -104,3 +104,19 @@ The calculation may take some time. Once done you have an overview of the profit
 Additionally below the overview you get a table containing all of the taxable events that were taken into account in the calculation along with how much of the ``profit_currency`` you lost or gained through that event.
 
 Finally you can get a nice CSV export by pressing the "Export CSV" button. This export is meant to be imported into google sheets. Press the button and then choose a directory to write the CSV files to. Once done you can import the CSV files into google sheets via its import menu.
+
+
+Analytics
+=========
+
+If you have a premium subscription you can get analytics on your all your assets and trades.
+
+Click on the analytics page on the left sidebar to go to your analytics page.
+
+Since Rotkehlchen is tracking all your assets over time the first thing you can see is a value/time graph of your entire net value.
+
+Following that you can see a graph of quantity of an asset superimposed on its USD value over time.
+
+Furthermore you can see a piechart of the distribution of your netvalue across different locations. So you can determine how exposed you are to having a big part of your net value in exchanges, in banks e.t.c.
+
+Finally you can see a piechart of the distribution of your netvalue across all of the assets you own. This is an important analytics tool as it can help you determine your exposure on each asset and if some rebalancing of your portfolio is in order.
