@@ -686,6 +686,8 @@ function add_new_eth_tokens(tokens: string[]) {
         BB_PER_ASSET_DATA = result['totals'];
         // and updating the table with it
         BB_PER_ASSET_TABLE.update_format(BB_PER_ASSET_DATA);
+        // finally also update the dashboard table
+        total_table_modify_all_balances_for_location('blockchain', result.totals);
         enable_multiselect();
         stop_show_loading('#eth_tokens_select');
     }).catch(reason => {
@@ -715,6 +717,8 @@ function remove_eth_tokens(tokens: string[]) {
         BB_PER_ASSET_DATA = result.totals;
         // and updating the table with it
         BB_PER_ASSET_TABLE.update_format(BB_PER_ASSET_DATA);
+        // finally also update the dashboard table
+        total_table_modify_all_balances_for_location('blockchain', result.totals);
         enable_multiselect();
         stop_show_loading('#eth_tokens_select');
     }).catch(reason => {
