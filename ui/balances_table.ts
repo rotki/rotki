@@ -43,8 +43,15 @@ function create_full_data(): AssetBalance[] {
         if (!inter_data.hasOwnProperty(asset)) {
             continue;
         }
-        total_usd += inter_data[asset]['usd_value'] as number;
+        let asset_usd_value;
+        if (typeof inter_data[asset].usd_value === 'string') {
+            asset_usd_value = parseFloat(inter_data[asset].usd_value as string);
+        } else {
+            asset_usd_value = inter_data[asset].usd_value as number;
+        }
+        total_usd += asset_usd_value;
     }
+
 
     const full_data: AssetBalance[] = [];
     // we should have all balances by now
@@ -52,9 +59,20 @@ function create_full_data(): AssetBalance[] {
         if (!inter_data.hasOwnProperty(asset)) {
             continue;
         }
-        const amount = inter_data[asset].amount as number;
+        let amount;
+        if (typeof inter_data[asset].amount  === 'string') {
+            amount = parseFloat(inter_data[asset].amount as string);
+        } else {
+            amount = inter_data[asset].amount as number;
+        }
+
         const amountStr = amount.toFixed(settings.floating_precision);
-        const value = inter_data[asset].usd_value as number;
+        let value;
+        if (typeof inter_data[asset].usd_value === 'string') {
+            value = parseFloat(inter_data[asset].usd_value as string);
+        } else {
+            value = inter_data[asset].usd_value as number;
+        }
         const percentage = value / total_usd;
         const percentageStr = (percentage * 100).toFixed(settings.floating_precision);
         const valueStr = value.toFixed(settings.floating_precision);
@@ -120,6 +138,28 @@ export function total_table_add_balances(location: string, query_result: { [asse
         data[asset] = {amount: amount, usd_value: value};
     }
     SAVED_BALANCES[location] = data;
+    total_table_recreate();
+}
+
+export function total_table_modify_balance_for_asset(location: string, asset: string, data: AssetBalance) {
+    if (!SAVED_BALANCES.hasOwnProperty(location)) {
+        SAVED_BALANCES[location] = {};
+    }
+    SAVED_BALANCES[location][asset] = data;
+    total_table_recreate();
+}
+
+export function total_table_modify_balance_for_assets(location: string, data: { [asset: string]: AssetBalance }) {
+    if (!SAVED_BALANCES.hasOwnProperty(location)) {
+        SAVED_BALANCES[location] = {};
+    }
+    for (const asset in data) {
+        if (!data.hasOwnProperty(asset)) {
+            continue;
+        }
+        SAVED_BALANCES[location][asset] = data[asset];
+    }
+
     total_table_recreate();
 }
 
