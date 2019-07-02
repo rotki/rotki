@@ -149,17 +149,11 @@ export function total_table_modify_balance_for_asset(location: string, asset: st
     total_table_recreate();
 }
 
-export function total_table_modify_balance_for_assets(location: string, data: { [asset: string]: AssetBalance }) {
+export function total_table_modify_all_balances_for_location(location: string, data: { [asset: string]: AssetBalance }) {
     if (!SAVED_BALANCES.hasOwnProperty(location)) {
         SAVED_BALANCES[location] = {};
     }
-    for (const asset in data) {
-        if (!data.hasOwnProperty(asset)) {
-            continue;
-        }
-        SAVED_BALANCES[location][asset] = data[asset];
-    }
-
+    SAVED_BALANCES[location] = data;
     total_table_recreate();
 }
 
