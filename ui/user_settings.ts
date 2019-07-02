@@ -1,5 +1,5 @@
 import {AssetTable} from './asset_table';
-import {total_table_modify_balance_for_asset, total_table_modify_balance_for_assets} from './balances_table';
+import {total_table_modify_balance_for_asset, total_table_modify_all_balances_for_location} from './balances_table';
 import {create_task, monitor_add_callback} from './monitor';
 import {
     dt_edit_drawcallback,
@@ -388,7 +388,7 @@ function add_blockchain_account(event: JQuery.Event) {
             // update the table with the data
             recreate_ethchain_per_account_table(BB_ETH_ACCOUNT_DATA);
             // also update the data of the dashboard's totals table
-            total_table_modify_balance_for_assets('blockchain', result.totals);
+            total_table_modify_all_balances_for_location('blockchain', result.totals);
         } else if (blockchain === 'BTC') {
             const btcTable = BB_PER_ACCOUNT_TABLES['BTC'] as AssetTable;
             // save the data from the call
@@ -528,6 +528,8 @@ function delete_blockchain_account_row(blockchain: string, row: DataTables.RowMe
         BB_PER_ASSET_DATA = value.totals;
         // and update the table with it
         BB_PER_ASSET_TABLE.update_format(BB_PER_ASSET_DATA);
+        // and finally also update the dashboard table
+        total_table_modify_all_balances_for_location('blockchain', value.totals);
         stop_show_loading();
     }).catch((reason: Error) => {
         showError('Account Deletion Error', `Error at deleting ${blockchain} account ${account}: ${reason.message}`);
