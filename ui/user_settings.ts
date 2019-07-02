@@ -1,4 +1,5 @@
 import {AssetTable} from './asset_table';
+import {total_table_modify_balance_for_asset, total_table_modify_balance_for_assets} from './balances_table';
 import {create_task, monitor_add_callback} from './monitor';
 import {
     dt_edit_drawcallback,
@@ -386,6 +387,8 @@ function add_blockchain_account(event: JQuery.Event) {
             BB_ETH_ACCOUNT_DATA = result.per_account['ETH'];
             // update the table with the data
             recreate_ethchain_per_account_table(BB_ETH_ACCOUNT_DATA);
+            // also update the data of the dashboard's totals table
+            total_table_modify_balance_for_assets('blockchain', result.totals);
         } else if (blockchain === 'BTC') {
             const btcTable = BB_PER_ACCOUNT_TABLES['BTC'] as AssetTable;
             // save the data from the call
@@ -396,6 +399,8 @@ function add_blockchain_account(event: JQuery.Event) {
             } else {
                 btcTable.update_format(BB_BTC_ACCOUNT_DATA);
             }
+            // also update the data of the dashboard's totals table
+            total_table_modify_balance_for_asset('blockchain', 'BTC', result.totals['BTC']);
         }
         if (BB_PER_ASSET_TABLE == null) {
             throw new Error('Table was not supposed to be null');
