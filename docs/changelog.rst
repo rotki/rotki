@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`392` Revising usersettings properly updates per account tables if an account has been deleted before.
 * :bug:`325` Tracking accounts/tokens in user settings will now be immediately reflected on the dashboard.
 * :bug:`368` Fixes broken navigation after visiting Statistics page.
 * :bug:`361` Rotkehlchen no longer misses the last trade when processing history inside a timerange.
