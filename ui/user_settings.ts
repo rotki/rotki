@@ -522,12 +522,23 @@ function delete_blockchain_account_row(blockchain: string, row: DataTables.RowMe
     const account = data['account'];
     show_loading();
     service.remove_blockchain_account(blockchain, account).then(value => {
+        // Remove the row in the table
         // @ts-ignore
         row.remove().draw();
         // save the returned data
         BB_PER_ASSET_DATA = value.totals;
         // and update the table with it
         BB_PER_ASSET_TABLE.update_format(BB_PER_ASSET_DATA);
+        // also update the BB_ETH_ACCOUNT_DATA and BB_BTC_ACCOUNT_DATA so that
+        // tables are recreated properly next time this page is visited.
+        if (blockchain === 'BTC') {
+            BB_BTC_ACCOUNT_DATA = value.per_account['BTC'];
+        } else if (blockchain === 'ETH') {
+            BB_ETH_ACCOUNT_DATA = value.per_account['ETH'];
+        } else {
+            // should never happen
+            console.log('Error: Unexpected blockchain type');
+        }
         // and finally also update the dashboard table
         total_table_modify_all_balances_for_location('blockchain', value.totals);
         stop_show_loading();
@@ -738,13 +749,19 @@ function create_fiat_table() {
     });
 }
 
+/**
+ * This function is to be called from outside this module to update
+ * user settings tables if they exist. For example when the main currency changes
+*/
 export function reload_user_settings_tables_if_existing() {
     if (FIAT_TABLE) {
         FIAT_TABLE.reload();
     }
+
     if (BB_PER_ASSET_TABLE) {
         BB_PER_ASSET_TABLE.reload();
     }
+
     for (const currency in BB_PER_ACCOUNT_TABLES) {
         if (!BB_PER_ACCOUNT_TABLES.hasOwnProperty(currency)) {
             continue;
