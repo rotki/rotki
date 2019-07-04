@@ -23,6 +23,7 @@ MANUALLY_CHECKED_TYPES = {
     'EMT': 'ethereum token',
     'ENTRP': 'ethereum token',
     'EOSDAC': 'ethereum token',
+    'ERD': 'binance token',
     'ETHB': 'ethereum token',
     'ETHD': 'ethereum token',
     'FIH': 'ethereum token',

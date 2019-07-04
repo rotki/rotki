@@ -3073,6 +3073,12 @@
         "symbol": "EQL",
         "type": "ethereum token"
     },
+    "ERD": {
+        "name": "Elrond",
+        "started": 1552694400,
+        "symbol": "ERD",
+        "type": "binance token"
+    },
     "ERO": {
         "ethereum_address": "0x74CEDa77281b339142A36817Fa5F9E29412bAb85",
         "ethereum_token_decimals": 8,
