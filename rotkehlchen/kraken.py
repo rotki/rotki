@@ -545,13 +545,14 @@ class Kraken(Exchange):
             start_ts: Timestamp,
             end_ts: Timestamp,
             end_at_least_ts: Timestamp,
-    ) -> List:
+    ) -> List[AssetMovement]:
         with self.lock:
-            cache = self.check_trades_cache(
+            cache = self.check_trades_cache_list(
                 start_ts,
                 end_at_least_ts,
                 special_name='deposits_withdrawals',
             )
+        result: List[Any]
 
         if cache is not None:
             result = cache
