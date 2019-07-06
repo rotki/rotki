@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List
+from typing import Any, Dict, List, Optional
 
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -13,8 +13,8 @@ log = RotkehlchenLogsAdapter(logger)
 def query_ethereum_txlist(
         address: EthAddress,
         internal: bool,
-        from_block: int = None,
-        to_block: int = None,
+        from_block: Optional[int] = None,
+        to_block: Optional[int] = None,
 ) -> List[EthereumTransaction]:
     log.debug(
         'Querying etherscan for tx list',
@@ -111,7 +111,7 @@ def query_etherscan_for_transactions(accounts: List[EthAddress]) -> List[Ethereu
 
 
 def transactions_from_dictlist(
-        given_transactions: List[Dict],
+        given_transactions: List[Dict[str, Any]],
         start_ts: Timestamp,
         end_ts: Timestamp,
 ) -> List[EthereumTransaction]:

@@ -330,7 +330,7 @@ class Rotkehlchen():
         )
         self.user_is_logged_in = True
 
-    def logout(self):
+    def logout(self) -> None:
         if not self.user_is_logged_in:
             return
 
@@ -340,22 +340,18 @@ class Rotkehlchen():
             user=user,
         )
         del self.blockchain
-        self.blockchain = None
         self.remove_all_exchanges()
 
         # Reset rotkehlchen logger to default
         LoggingSettings(anonymized_logs=DEFAULT_ANONYMIZED_LOGS)
 
         del self.accountant
-        self.accountant = None
         del self.trades_historian
-        self.trades_historian = None
 
         if self.premium is not None:
             del self.premium
-            self.premium = None
         self.data.logout()
-        self.password = None
+        self.password = ''
 
         self.user_is_logged_in = False
         log.info(
@@ -377,7 +373,7 @@ class Rotkehlchen():
 
         self.data.set_premium_credentials(api_key, api_secret)
 
-    def maybe_upload_data_to_server(self):
+    def maybe_upload_data_to_server(self) -> None:
         # upload only if unlocked user has premium
         if self.premium is None:
             return
