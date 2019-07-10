@@ -1,7 +1,7 @@
 import logging
 import os
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.binance import trade_from_binance
@@ -9,7 +9,13 @@ from rotkehlchen.bitmex import trade_from_bitmex
 from rotkehlchen.bittrex import trade_from_bittrex
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors import RemoteError, UnknownAsset, UnprocessableTradePair, UnsupportedAsset
+from rotkehlchen.errors import (
+    HistoryCacheInvalid,
+    RemoteError,
+    UnknownAsset,
+    UnprocessableTradePair,
+    UnsupportedAsset,
+)
 from rotkehlchen.exchange import data_up_todate
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -47,9 +53,72 @@ ETHEREUM_TX_LOGFILE = 'ethereum_tx_log.json'
 ASSETMOVEMENTS_HISTORYFILE = 'asset_movements_history.json'
 
 
-def include_external_trades(db, start_ts, end_ts, history):
+def delete_all_history_cache(directory: FilePath) -> None:
+    try:
+        os.remove(os.path.join(directory, TRADES_HISTORYFILE))
+    except OSError:
+        pass
+    try:
+        os.remove(os.path.join(directory, 'kraken_trades.json'))
+    except OSError:
+        pass
+    try:
+        os.remove(os.path.join(directory, 'bittrex_trades.json'))
+    except OSError:
+        pass
+    try:
+        os.remove(os.path.join(directory, 'binance_trades.json'))
+    except OSError:
+        pass
+    try:
+        os.remove(os.path.join(directory, 'bitmex_trades.json'))
+    except OSError:
+        pass
+    try:
+        os.remove(os.path.join(directory, 'poloniex_trades.json'))
+    except OSError:
+        pass
+    try:
+        os.remove(os.path.join(directory, LOANS_HISTORYFILE))
+    except OSError:
+        pass
+    try:
+        os.remove(os.path.join(directory, MARGIN_HISTORYFILE))
+    except OSError:
+        pass
+    try:
+        os.remove(os.path.join(directory, MANUAL_MARGINS_LOGFILE))
+    except OSError:
+        pass
+    try:
+        os.remove(os.path.join(directory, ASSETMOVEMENTS_HISTORYFILE))
+    except OSError:
+        pass
+    try:
+        os.remove(os.path.join(directory, ETHEREUM_TX_LOGFILE))
+    except OSError:
+        pass
+
+
+def maybe_add_external_trades_to_history(
+        db: DBHandler,
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+        history: List[Dict[str, Any]],
+        msg_aggregator: MessagesAggregator,
+) -> Dict[str, Any]:
+    """
+    Queries the DB to get any external trades, adds them to the provided history and returns it.
+
+    If there is an unexpected error at the external trade deserialization an error is logged.
+    """
     external_trades = db.get_trades()
-    external_trades = trades_from_dictlist(external_trades, start_ts, end_ts)
+    try:
+        external_trades = trades_from_dictlist(external_trades, start_ts, end_ts)
+    except KeyError:
+        msg_aggregator.add_error('External trades in the DB are in an unrecognized format')
+        return history
+
     history.extend(external_trades)
     history.sort(key=lambda trade: trade.timestamp)
 
@@ -522,7 +591,13 @@ class TradesHistorian():
         write_tupledata_history_in_file(eth_transactions, eth_tx_log_path, start_ts, end_ts)
 
         # After writting everything to files include the external trades in the history
-        history = include_external_trades(self.db, start_ts, end_ts, history)
+        history = maybe_add_external_trades_to_history(
+            db=self.db,
+            start_ts=start_ts,
+            end_ts=end_ts,
+            history=history,
+            msg_aggregator=self.msg_aggregator,
+        )
 
         return (
             empty_or_error,
@@ -538,154 +613,203 @@ class TradesHistorian():
         `end_at_least` is given and we have a cache history which satisfies it we
         return the cache
         """
-        if end_at_least_ts is None:
-            end_at_least_ts = end_ts
-
         log.info(
             'Get or create trade history',
             start_ts=start_ts,
             end_ts=end_ts,
             end_at_least_ts=end_at_least_ts,
         )
+        try:
+            (
+                history_trades,
+                poloniex_margin_trades,
+                polo_loans,
+                asset_movements,
+                eth_transactions,
+            ) = self.get_cached_history(start_ts, end_ts, end_at_least_ts)
+            return (
+                '',
+                history_trades,
+                poloniex_margin_trades,
+                polo_loans,
+                asset_movements,
+                eth_transactions,
+            )
+        except HistoryCacheInvalid:
+            # If for some reason cache history is invalidated then we should
+            # delete all history related cache files
+            delete_all_history_cache(self.user_directory)
+            return self.create_history(start_ts, end_ts, end_at_least_ts)
+
+    def get_cached_history(self, start_ts, end_ts, end_at_least_ts=None):
+        """Gets all the cached history data instead of querying all external sources
+        to create the history through create_history()
+
+        Can raise:
+            - HistoryCacheInvalid:
+                If any of the cache files are corrupt in any way, missing or
+                do not cover the given time range
+        """
+        if end_at_least_ts is None:
+            end_at_least_ts = end_ts
 
         historyfile_path = os.path.join(self.user_directory, TRADES_HISTORYFILE)
-        if os.path.isfile(historyfile_path):
-            with open(historyfile_path, 'r') as infile:
-                try:
-                    history_json_data = rlk_jsonloads(infile.read())
-                except JSONDecodeError:
-                    pass
+        if not os.path.isfile(historyfile_path):
+            raise HistoryCacheInvalid()
 
-                all_history_okay = data_up_todate(history_json_data, start_ts, end_at_least_ts)
-                poloniex_history_okay = True
-                if self.poloniex is not None:
-                    poloniex_history_okay = self.poloniex.check_trades_cache(
-                        start_ts, end_at_least_ts,
-                    ) is not None
-                kraken_history_okay = True
-                if self.kraken is not None:
-                    kraken_history_okay = self.kraken.check_trades_cache(
-                        start_ts, end_at_least_ts,
-                    ) is not None
-                bittrex_history_okay = True
-                if self.bittrex is not None:
-                    bittrex_history_okay = self.bittrex.check_trades_cache(
-                        start_ts, end_at_least_ts,
-                    ) is not None
-                bitmex_history_okay = True
-                if self.bitmex is not None:
-                    bitmex_history_okay = self.bitmex.check_trades_cache(
-                        start_ts, end_at_least_ts,
-                    ) is not None
-                binance_history_okay = True
-                if self.binance is not None:
-                    binance_history_okay = self.binance.check_trades_cache(
-                        start_ts, end_at_least_ts,
-                    ) is not None
+        with open(historyfile_path, 'r') as infile:
+            try:
+                history_json_data = rlk_jsonloads(infile.read())
+            except JSONDecodeError:
+                pass
 
-                if not self.read_manual_margin_positions:
-                    marginfile_path = os.path.join(self.user_directory, MARGIN_HISTORYFILE)
-                    margin_file_contents = get_jsonfile_contents_or_empty_dict(marginfile_path)
-                    margin_history_is_okay = data_up_todate(
-                        margin_file_contents,
-                        start_ts,
-                        end_at_least_ts,
-                    )
-                else:
-                    margin_history_is_okay = True
-                    margin_file_contents = do_read_manual_margin_positions(
-                        self.user_directory,
-                    )
+        if not data_up_todate(history_json_data, start_ts, end_at_least_ts):
+            raise HistoryCacheInvalid('Historical trades cache invalid')
+        try:
+            history_trades = trades_from_dictlist(
+                history_json_data['data'],
+                start_ts,
+                end_ts,
+            )
+        except KeyError:
+            raise HistoryCacheInvalid('Historical trades cache invalid')
+        history_trades = maybe_add_external_trades_to_history(
+            db=self.db,
+            start_ts=start_ts,
+            end_ts=end_ts,
+            history=history_trades,
+            msg_aggregator=self.msg_aggregator,
+        )
 
-                loansfile_path = os.path.join(self.user_directory, LOANS_HISTORYFILE)
-                loan_file_contents = get_jsonfile_contents_or_empty_dict(loansfile_path)
-                loan_history_is_okay = data_up_todate(
-                    loan_file_contents,
+        kraken_okay = (
+            self.kraken is None or
+            self.kraken.check_trades_cache(
+                start_ts, end_at_least_ts,
+            ) is not None
+        )
+        if not kraken_okay:
+            raise HistoryCacheInvalid('Kraken cache is invalid')
+
+        bittrex_okay = (
+            self.bittrex is None or
+            self.bittrex.check_trades_cache(
+                start_ts, end_at_least_ts,
+            ) is not None
+        )
+        if not bittrex_okay:
+            raise HistoryCacheInvalid('Bittrex cache is invalid')
+
+        binance_okay = (
+            self.binance is None or
+            self.binance.check_trades_cache(
+                start_ts, end_at_least_ts,
+            ) is not None
+        )
+        if not binance_okay:
+            raise HistoryCacheInvalid('Binance cache is invalid')
+
+        bitmex_okay = (
+            self.bitmex is None or
+            self.bitmex.check_trades_cache(
+                start_ts, end_at_least_ts,
+            ) is not None
+        )
+        if not bitmex_okay:
+            raise HistoryCacheInvalid('Bitmex cache is invalid')
+
+        # Poloniex specific
+        loan_data = []
+        if self.poloniex:
+            if not self.poloniex.check_trades_cache(start_ts, end_at_least_ts):
+                raise HistoryCacheInvalid('Poloniex cache is invalid')
+
+            loansfile_path = os.path.join(self.user_directory, LOANS_HISTORYFILE)
+            loan_file_contents = get_jsonfile_contents_or_empty_dict(loansfile_path)
+            loan_history_is_okay = data_up_todate(
+                loan_file_contents,
+                start_ts,
+                end_at_least_ts,
+            )
+            if not loan_history_is_okay:
+                raise HistoryCacheInvalid('Poloniex loan cache is invalid')
+            loan_data = loan_file_contents['data']
+
+        # margin positions that have been manually input
+        if not self.read_manual_margin_positions:
+            marginfile_path = os.path.join(self.user_directory, MARGIN_HISTORYFILE)
+            margin_file_contents = get_jsonfile_contents_or_empty_dict(marginfile_path)
+            margin_history_is_okay = data_up_todate(
+                margin_file_contents,
+                start_ts,
+                end_at_least_ts,
+            )
+            if not margin_history_is_okay:
+                raise HistoryCacheInvalid('Margin Positions cache is invalid')
+
+            try:
+                margin_trades = trades_from_dictlist(
+                    margin_file_contents['data'],
                     start_ts,
-                    end_at_least_ts,
+                    end_ts,
                 )
+            except KeyError:
+                raise HistoryCacheInvalid('Margin Positions cache is invalid')
 
-                assetmovementsfile_path = os.path.join(
-                    self.user_directory,
-                    ASSETMOVEMENTS_HISTORYFILE,
-                )
-                asset_movements_contents = get_jsonfile_contents_or_empty_dict(
-                    assetmovementsfile_path,
-                )
-                asset_movements_history_is_okay = data_up_todate(
-                    asset_movements_contents,
-                    start_ts,
-                    end_at_least_ts,
-                )
+        else:
+            margin_trades = do_read_manual_margin_positions(
+                self.user_directory,
+            )
 
-                eth_tx_log_path = os.path.join(self.user_directory, ETHEREUM_TX_LOGFILE)
-                eth_tx_log_contents = get_jsonfile_contents_or_empty_dict(eth_tx_log_path)
-                eth_tx_log_history_history_is_okay = data_up_todate(
-                    eth_tx_log_contents,
-                    start_ts,
-                    end_at_least_ts,
-                )
+        assetmovementsfile_path = os.path.join(
+            self.user_directory,
+            ASSETMOVEMENTS_HISTORYFILE,
+        )
+        asset_movements_contents = get_jsonfile_contents_or_empty_dict(
+            assetmovementsfile_path,
+        )
+        asset_movements_history_is_okay = data_up_todate(
+            asset_movements_contents,
+            start_ts,
+            end_at_least_ts,
+        )
+        if not asset_movements_history_is_okay:
+            raise HistoryCacheInvalid('Asset Movements cache is invalid')
 
-                if (
-                        all_history_okay and
-                        poloniex_history_okay and
-                        kraken_history_okay and
-                        bittrex_history_okay and
-                        bitmex_history_okay and
-                        binance_history_okay and
-                        margin_history_is_okay and
-                        loan_history_is_okay and
-                        asset_movements_history_is_okay and
-                        eth_tx_log_history_history_is_okay):
+        try:
+            asset_movements = asset_movements_from_dictlist(
+                asset_movements_contents['data'],
+                start_ts,
+                end_ts,
+            )
+        except KeyError:
+            raise HistoryCacheInvalid('Asset Movements cache is invalid')
 
-                    log.info(
-                        'Using cached history',
-                        start_ts=start_ts,
-                        end_ts=end_ts,
-                        end_at_least_ts=end_at_least_ts,
-                    )
+        eth_tx_log_path = os.path.join(self.user_directory, ETHEREUM_TX_LOGFILE)
+        eth_tx_log_contents = get_jsonfile_contents_or_empty_dict(eth_tx_log_path)
+        eth_tx_log_history_is_okay = data_up_todate(
+            eth_tx_log_contents,
+            start_ts,
+            end_at_least_ts,
+        )
+        if not eth_tx_log_history_is_okay:
+            raise HistoryCacheInvalid('Ethereum transactions cache is invalid')
 
-                    history_trades = trades_from_dictlist(
-                        history_json_data['data'],
-                        start_ts,
-                        end_ts,
-                    )
-                    if not self.read_manual_margin_positions:
-                        margin_trades = trades_from_dictlist(
-                            margin_file_contents['data'],
-                            start_ts,
-                            end_ts,
-                        )
-                    else:
-                        margin_trades = margin_file_contents
+        try:
+            eth_transactions = transactions_from_dictlist(
+                eth_tx_log_contents['data'],
+                start_ts,
+                end_ts,
+            )
+        except KeyError:
+            raise HistoryCacheInvalid('Ethereum transactions cache is invalid')
 
-                    eth_transactions = transactions_from_dictlist(
-                        eth_tx_log_contents['data'],
-                        start_ts,
-                        end_ts,
-                    )
-                    asset_movements = asset_movements_from_dictlist(
-                        asset_movements_contents['data'],
-                        start_ts,
-                        end_ts,
-                    )
-
-                    history_trades = include_external_trades(
-                        self.db,
-                        start_ts,
-                        end_ts,
-                        history_trades,
-                    )
-
-                    # make sure that this is the same as what is returned
-                    # from create_history
-                    return (
-                        '',
-                        history_trades,
-                        margin_trades,
-                        loan_file_contents['data'],
-                        asset_movements,
-                        eth_transactions,
-                    )
-
-        return self.create_history(start_ts, end_ts, end_at_least_ts)
+        # make sure that this is the same as what is returned
+        # from create_history
+        return (
+            '',
+            history_trades,
+            margin_trades,
+            loan_data,
+            asset_movements,
+            eth_transactions,
+        )

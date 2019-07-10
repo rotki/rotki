@@ -191,6 +191,9 @@ def trades_from_dictlist(
 ) -> List[Trade]:
     """ Gets a list of dict trades, most probably read from the json files and
     a time period. Returns it as a list of the Trade tuples that are inside the time period
+
+    Can raise:
+      - KeyError if a trade dict does not have a key as we expect it
     """
     returned_trades = list()
     for given_trade in given_trades:
@@ -210,6 +213,9 @@ def asset_movements_from_dictlist(
 ) -> List[AssetMovement]:
     """ Gets a list of dict asset movements, most probably read from the json files and
     a time period. Returns it as a list of the AssetMovement tuples that are inside the time period
+
+    May raise:
+        - KeyError: If the given_data dict contains data in an unexpected format
     """
     returned_movements = list()
     for movement in given_data:

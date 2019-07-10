@@ -66,3 +66,7 @@ class UnsupportedAsset(Exception):
     def __init__(self, asset_name: str):
         self.asset_name = asset_name
         super().__init__(f'Found asset {asset_name} which is not supported.')
+
+
+class HistoryCacheInvalid(Exception):
+    pass
