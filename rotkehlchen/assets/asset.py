@@ -178,6 +178,9 @@ class Asset():
         return hash(self.identifier)
 
     def __eq__(self, other: Any) -> bool:
+        if other is None:
+            return False
+
         if isinstance(other, Asset):
             return self.identifier == other.identifier
         elif isinstance(other, str):

@@ -432,6 +432,7 @@ class Accountant():
                 f'Ignoring the trade.',
             )
             return True, prev_time, count
+
         if asset1 in self.ignored_assets or asset2 in self.ignored_assets:
             log.debug(
                 'Ignoring action with ignored asset',

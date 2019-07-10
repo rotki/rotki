@@ -3,6 +3,7 @@ import pytest
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import MarginPosition
 from rotkehlchen.tests.utils.accounting import accounting_history_process
+from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.tests.utils.history import prices
 
 DUMMY_ADDRESS = '0x0'
@@ -308,7 +309,12 @@ def test_buy_event_creation(accountant):
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('accounting_include_gas_costs', [False])
+@pytest.mark.parametrize('accounting_ignored_assets', [[A_DASH]])
 def test_not_include_gas_costs(accountant):
+    """
+    Added ignored assets here only to have a test for
+    https://github.com/rotkehlchenio/rotkehlchen/issues/399
+    """
     history = [{
         'timestamp': 1476979735,
         'pair': 'BTC_EUR',
@@ -350,7 +356,7 @@ def test_not_include_gas_costs(accountant):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-@pytest.mark.parametrize('accounting_ignored_assets', [['DASH']])
+@pytest.mark.parametrize('accounting_ignored_assets', [[A_DASH]])
 def test_ignored_assets(accountant):
     history = history1 + [{
         'timestamp': 1476979735,
