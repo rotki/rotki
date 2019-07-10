@@ -117,6 +117,9 @@ def transactions_from_dictlist(
 ) -> List[EthereumTransaction]:
     """ Gets a list of transaction, most probably read from the json files and
     a time period. Returns it as a list of the transaction tuples that are inside the time period
+
+    May raise:
+        - KeyError: If the given_transactions contain data in an unexpected format
     """
     returned_transactions = list()
     for given_tx in given_transactions:
