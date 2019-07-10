@@ -804,9 +804,8 @@ class TradesHistorian():
             raise HistoryCacheInvalid('Ethereum transactions cache is invalid')
 
         # make sure that this is the same as what is returned
-        # from create_history
+        # from create_history, except for the first argument
         return (
-            '',
             history_trades,
             margin_trades,
             loan_data,
