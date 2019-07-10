@@ -156,12 +156,14 @@ def trade_get_assets(trade: Trade) -> Tuple[Asset, Asset]:
     return pair_get_assets(trade.pair)
 
 
-def deserialize_trade(data: Dict) -> Trade:
-    """Takes a dict trade representation and serializes it into the Trade object"""
+def deserialize_trade(data: Dict[str, Any]) -> Trade:
+    """
+    Takes a dict trade representation of our common trade format and serializes
+    it into the Trade object"""
     pair = data['pair']
     rate = FVal(data['rate'])
     amount = FVal(data['amount'])
-    trade_type = trade_type_from_string(data['type'])
+    trade_type = trade_type_from_string(data['trade_type'])
 
     trade_link = ''
     if 'link' in data:

@@ -11,6 +11,7 @@ from rotkehlchen.order_formatting import (
     trades_from_dictlist,
 )
 from rotkehlchen.typing import Timestamp, TradePair, TradeType
+from rotkehlchen.utils.serialization import rlk_jsondumps
 
 
 def test_trade_type_from_string():
@@ -56,7 +57,7 @@ raw_trade1 = {
     'timestamp': 1516985746,
     'location': 'external',
     'pair': 'ETH_EUR',
-    'type': 'buy',
+    'trade_type': 'buy',
     'amount': '20.51',
     'rate': '134.1',
     'fee': '0.01',
@@ -67,7 +68,7 @@ raw_trade2 = {
     'timestamp': 1537985746,
     'location': 'kraken',
     'pair': 'ETH_BTC',
-    'type': 'sell',
+    'trade_type': 'sell',
     'amount': '2.80',
     'rate': '0.1234',
     'fee': '0.01',
@@ -80,7 +81,7 @@ raw_trade3 = {
     'timestamp': 1557985746,
     'location': 'kraken',
     'pair': 'ETH_BTC',
-    'type': 'sell',
+    'trade_type': 'sell',
     'amount': '2.80',
     'rate': '0.1234',
     'fee': '0.01',
@@ -123,3 +124,22 @@ def test_trades_from_dictlist():
     trades = trades_from_dictlist(raw_trades, 1516985747, 1557985736)
     assert len(trades) == 1
     assert isinstance(trades[0], Trade)
+
+
+def test_serialize_deserialize_trade():
+    trade = Trade(
+        timestamp=Timestamp(1537985746),
+        location='kraken',
+        pair=TradePair('ETH_BTC'),
+        trade_type=TradeType.SELL,
+        amount=FVal('2.80'),
+        rate=FVal('0.1234'),
+        fee=FVal('0.01'),
+        fee_currency=A_ETH,
+        link='a link can be here',
+        notes='notes can be here',
+    )
+    serialized_trade = rlk_jsondumps(trade._asdict())
+    assert serialized_trade == rlk_jsondumps(raw_trade2)
+    deserialized_trade = deserialize_trade(raw_trade2)
+    assert deserialized_trade == trade
