@@ -102,6 +102,7 @@ def test_deserialize_trade():
     assert trade1.rate == FVal('134.1')
     assert trade1.fee == FVal('0.01')
     assert trade1.fee_currency == A_ETH
+    assert isinstance(trade1.fee_currency, Asset)
     assert trade1.link == ''
     assert trade1.notes == ''
 
@@ -115,6 +116,7 @@ def test_deserialize_trade():
     assert trade2.rate == FVal('0.1234')
     assert trade2.fee == FVal('0.01')
     assert trade2.fee_currency == A_ETH
+    assert isinstance(trade2.fee_currency, Asset)
     assert trade2.link == 'a link can be here'
     assert trade2.notes == 'notes can be here'
 
