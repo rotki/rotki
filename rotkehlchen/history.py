@@ -225,11 +225,11 @@ class PriceHistorian():
         So how much `to_asset` does 1 unit of `from_asset` cost.
 
         Args:
-            from_asset (str): The ticker symbol of the asset for which we want to know
-                              the price.
-            to_asset (str): The ticker symbol of the asset against which we want to
-                            know the price.
-            timestamp (int): The timestamp at which to query the price
+            from_asset: The ticker symbol of the asset for which we want to know
+                        the price.
+            to_asset: The ticker symbol of the asset against which we want to
+                      know the price.
+            timestamp: The timestamp at which to query the price
         """
         log.debug(
             'Querying historical price',

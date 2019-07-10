@@ -180,7 +180,7 @@ def deserialize_trade(data: Dict[str, Any]) -> Trade:
         amount=amount,
         rate=rate,
         fee=FVal(data['fee']),
-        fee_currency=data['fee_currency'],
+        fee_currency=Asset(data['fee_currency']),
         link=trade_link,
         notes=trade_notes,
     )
