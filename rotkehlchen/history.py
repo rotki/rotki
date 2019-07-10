@@ -1,7 +1,7 @@
 import logging
 import os
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Dict, List
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.binance import trade_from_binance
@@ -104,17 +104,23 @@ def maybe_add_external_trades_to_history(
         db: DBHandler,
         start_ts: Timestamp,
         end_ts: Timestamp,
-        history: List[Dict[str, Any]],
+        history: List[Trade],
         msg_aggregator: MessagesAggregator,
-) -> Dict[str, Any]:
+) -> List[Trade]:
     """
     Queries the DB to get any external trades, adds them to the provided history and returns it.
 
     If there is an unexpected error at the external trade deserialization an error is logged.
     """
-    external_trades = db.get_trades()
+    serialized_external_trades = db.get_trades()
     try:
-        external_trades = trades_from_dictlist(external_trades, start_ts, end_ts)
+        external_trades = trades_from_dictlist(
+            given_trades=serialized_external_trades,
+            start_ts=start_ts,
+            end_ts=end_ts,
+            location='external trades',
+            msg_aggregator=msg_aggregator,
+        )
     except KeyError:
         msg_aggregator.add_error('External trades in the DB are in an unrecognized format')
         return history
@@ -667,9 +673,11 @@ class TradesHistorian():
             raise HistoryCacheInvalid('Historical trades cache invalid')
         try:
             history_trades = trades_from_dictlist(
-                history_json_data['data'],
-                start_ts,
-                end_ts,
+                given_trades=history_json_data['data'],
+                start_ts=start_ts,
+                end_ts=end_ts,
+                location='historical trades',
+                msg_aggregator=self.msg_aggregator,
             )
         except KeyError:
             raise HistoryCacheInvalid('Historical trades cache invalid')
@@ -748,9 +756,11 @@ class TradesHistorian():
 
             try:
                 margin_trades = trades_from_dictlist(
-                    margin_file_contents['data'],
-                    start_ts,
-                    end_ts,
+                    given_trades=margin_file_contents['data'],
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    location='Margin position trades',
+                    msg_aggregator=self.msg_aggregator,
                 )
             except KeyError:
                 raise HistoryCacheInvalid('Margin Positions cache is invalid')

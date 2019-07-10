@@ -17,7 +17,13 @@ def accounting_history_process(
 ) -> Dict[str, Any]:
     # For filtering the taxable actions list we start with 0 ts so that we have the
     # full history available
-    trade_history = trades_from_dictlist(history_list, 0, end_ts)
+    trade_history = trades_from_dictlist(
+        given_trades=history_list,
+        start_ts=0,
+        end_ts=end_ts,
+        location='accounting_history_process for tests',
+        msg_aggregator=accountant.msg_aggregator,
+    )
     margin_history = [] if not margin_list else margin_list
     loan_history = [] if not loans_list else loans_list
     asset_movements = list()

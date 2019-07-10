@@ -2,6 +2,7 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import (
     Trade,
@@ -120,10 +121,21 @@ def test_deserialize_trade():
     assert trade2.link == 'a link can be here'
     assert trade2.notes == 'notes can be here'
 
+    another_raw_trade = raw_trade2.copy()
+    another_raw_trade['fee_currency'] = 'UNKNOWN'
+    with pytest.raises(UnknownAsset):
+        deserialize_trade(another_raw_trade)
 
-def test_trades_from_dictlist():
+
+def test_trades_from_dictlist(function_scope_messages_aggregator):
     raw_trades = [raw_trade1, raw_trade2, raw_trade3]
-    trades = trades_from_dictlist(raw_trades, 1516985747, 1557985736)
+    trades = trades_from_dictlist(
+        given_trades=raw_trades,
+        start_ts=1516985747,
+        end_ts=1557985736,
+        location='test',
+        msg_aggregator=function_scope_messages_aggregator,
+    )
     assert len(trades) == 1
     assert isinstance(trades[0], Trade)
 
