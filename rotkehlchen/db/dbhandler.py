@@ -954,7 +954,7 @@ class DBHandler():
                 'timestamp': result[1],
                 'location': result[2],
                 'pair': result[3],
-                'type': result[4],
+                'trade_type': result[4],
                 'amount': result[5],
                 'rate': result[6],
                 'fee': result[7],

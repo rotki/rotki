@@ -221,7 +221,7 @@ def from_otc_trade(trade: Dict[str, Any]) -> Dict[str, Any]:
         'timestamp': ts,
         'location': 'external',
         'pair': trade['otc_pair'],
-        'type': trade['otc_type'],
+        'trade_type': trade['otc_type'],
         'amount': str(trade['otc_amount']),
         'rate': str(trade['otc_rate']),
         'fee': str(trade['otc_fee']),

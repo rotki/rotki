@@ -10,54 +10,54 @@ DUMMY_HASH = '0x0'
 
 history1 = [
     {
-        "timestamp": 1446979735,
-        "pair": "BTC_EUR",
-        "type": "buy",
-        "rate": 268.678317859,
-        "fee": 0,
-        "fee_currency": "BTC",
-        "amount": 82,
-        "location": "external",
+        'timestamp': 1446979735,
+        'pair': 'BTC_EUR',
+        'trade_type': 'buy',
+        'rate': 268.678317859,
+        'fee': 0,
+        'fee_currency': 'BTC',
+        'amount': 82,
+        'location': 'external',
     }, {
-        "timestamp": 1446979735,
-        "pair": "ETH_EUR",
-        "type": "buy",
-        "rate": 0.2315893,
-        "fee": 0,
-        "fee_currency": "ETH",
-        "amount": 1450,
-        "location": "external",
+        'timestamp': 1446979735,
+        'pair': 'ETH_EUR',
+        'trade_type': 'buy',
+        'rate': 0.2315893,
+        'fee': 0,
+        'fee_currency': 'ETH',
+        'amount': 1450,
+        'location': 'external',
     }, {
-        "timestamp": 1473505138,  # cryptocompare hourly BTC/EUR price: 556.435
-        "pair": "ETH_BTC",  # cryptocompare hourly ETH/EUR price: 10.365
-        "type": "buy",  # Buy ETH with BTC
-        "rate": 0.01858275,
-        "fee": 0.06999999999999999,
-        "fee_currency": "ETH",
-        "amount": 50.0,
-        "location": "poloniex",
+        'timestamp': 1473505138,  # cryptocompare hourly BTC/EUR price: 556.435
+        'pair': 'ETH_BTC',  # cryptocompare hourly ETH/EUR price: 10.365
+        'trade_type': 'buy',  # Buy ETH with BTC
+        'rate': 0.01858275,
+        'fee': 0.06999999999999999,
+        'fee_currency': 'ETH',
+        'amount': 50.0,
+        'location': 'poloniex',
     }, {
-        "timestamp": 1475042230,  # cryptocompare hourly BTC/EUR price: 537.805
-        "pair": "ETH_BTC",  # cryptocompare hourly ETH/EUR price: 11.925
-        "type": "sell",  # Sell ETH for BTC
-        "rate": 0.02209898,
-        "fee": 0.00082871175,
-        "fee_currency": "BTC",
-        "amount": 25.0,
-        "location": "poloniex",
+        'timestamp': 1475042230,  # cryptocompare hourly BTC/EUR price: 537.805
+        'pair': 'ETH_BTC',  # cryptocompare hourly ETH/EUR price: 11.925
+        'trade_type': 'sell',  # Sell ETH for BTC
+        'rate': 0.02209898,
+        'fee': 0.00082871175,
+        'fee_currency': 'BTC',
+        'amount': 25.0,
+        'location': 'poloniex',
     },
 ]
 
 history_unknown_assets = [
     {
-        "timestamp": 1446979735,
-        "pair": "UNKNOWNASSET_ETH",
-        "type": "buy",
-        "rate": 268.678317859,
-        "fee": 0,
-        "fee_currency": "UNKNOWNASSET",
-        "amount": 82,
-        "location": "kraken",
+        'timestamp': 1446979735,
+        'pair': 'UNKNOWNASSET_ETH',
+        'trade_type': 'buy',
+        'rate': 268.678317859,
+        'fee': 0,
+        'fee_currency': 'UNKNOWNASSET',
+        'amount': 82,
+        'location': 'kraken',
     },
 ]
 
@@ -89,18 +89,18 @@ def test_simple_accounting_with_unknown_and_unsupported_assets(accountant):
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_selling_crypto_bought_with_crypto(accountant):
     history = [{
-        "timestamp": 1446979735,
-        "pair": "BTC_EUR",
-        "type": "buy",
-        "rate": 268.678317859,
-        "fee": 0,
-        "fee_currency": "BTC",
-        "amount": 82,
-        "location": "external",
+        'timestamp': 1446979735,
+        'pair': 'BTC_EUR',
+        'trade_type': 'buy',
+        'rate': 268.678317859,
+        'fee': 0,
+        'fee_currency': 'BTC',
+        'amount': 82,
+        'location': 'external',
     }, {
         'timestamp': 1449809536,  # cryptocompare hourly BTC/EUR price: 386.175
         'pair': 'XMR_BTC',  # cryptocompare hourly XMR/EUR price: 0.396987900
-        'type': 'buy',  # Buy XMR with BTC
+        'trade_type': 'buy',  # Buy XMR with BTC
         'rate': 0.0010275,
         'fee': 0.9375,
         'fee_currency': 'XMR',
@@ -109,7 +109,7 @@ def test_selling_crypto_bought_with_crypto(accountant):
     }, {
         'timestamp': 1458070370,  # cryptocompare hourly rate XMR/EUR price: 1.0443027675
         'pair': 'XMR_EUR',
-        'type': 'sell',  # Sell XMR for EUR
+        'trade_type': 'sell',  # Sell XMR for EUR
         'rate': 1.0443027675,
         'fee': 0.117484061344,
         'fee_currency': 'EUR',
@@ -134,18 +134,18 @@ def test_selling_crypto_bought_with_crypto(accountant):
 def test_buying_selling_eth_before_daofork(accountant):
     history3 = [
         {
-            "timestamp": 1446979735,  # 11/08/2015
-            "pair": "ETH_EUR",
-            "type": "buy",
-            "rate": 0.2315893,
-            "fee": 0,
-            "fee_currency": "ETH",
-            "amount": 1450,
-            "location": "external",
+            'timestamp': 1446979735,  # 11/08/2015
+            'pair': 'ETH_EUR',
+            'trade_type': 'buy',
+            'rate': 0.2315893,
+            'fee': 0,
+            'fee_currency': 'ETH',
+            'amount': 1450,
+            'location': 'external',
         }, {  # selling ETH prefork should also reduce our ETC amount
             'timestamp': 1461021812,  # 18/04/2016 (taxable)
             'pair': 'ETH_EUR',  # cryptocompare hourly ETC/EUR price: 7.88
-            'type': 'sell',
+            'trade_type': 'sell',
             'rate': 7.88,
             'fee': 0.5215,
             'fee_currency': 'EUR',
@@ -154,7 +154,7 @@ def test_buying_selling_eth_before_daofork(accountant):
         }, {  # sell ETC after the fork
             'timestamp': 1481979135,  # 17/12/2016
             'pair': 'ETC_EUR',  # cryptocompare hourly ETC/EUR price: 1.78
-            'type': 'sell',  # not-taxable -- considered bought with ETH so after year
+            'trade_type': 'sell',  # not-taxable -- considered bought with ETH so after year
             'rate': 1.78,
             'fee': 0.9375,
             'fee_currency': 'EUR',
@@ -163,7 +163,7 @@ def test_buying_selling_eth_before_daofork(accountant):
         }, {  # selling ETH after fork should not affect ETC amount
             'timestamp': 1482138141,  # 19/12/2016
             'pair': 'ETH_EUR',  # cryptocompare hourly ETC/EUR price: 7.45
-            'type': 'sell',  # not taxable after 1 year
+            'trade_type': 'sell',  # not taxable after 1 year
             'rate': 7.45,
             'fee': 0.12,
             'fee_currency': 'EUR',
@@ -182,27 +182,27 @@ def test_buying_selling_eth_before_daofork(accountant):
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_buying_selling_btc_before_bchfork(accountant):
     history = [{
-        "timestamp": 1491593374,  # 04/07/2017
-        "pair": "BTC_EUR",
-        "type": "buy",
-        "rate": 1128.905,
-        "fee": 0.55,
-        "fee_currency": "EUR",
-        "amount": 6.5,
-        "location": "external",
+        'timestamp': 1491593374,  # 04/07/2017
+        'pair': 'BTC_EUR',
+        'trade_type': 'buy',
+        'rate': 1128.905,
+        'fee': 0.55,
+        'fee_currency': 'EUR',
+        'amount': 6.5,
+        'location': 'external',
     }, {  # selling BTC prefork should also reduce the BCH equivalent -- taxable
-        "timestamp": 1500595200,  # 21/07/2017
-        "pair": "BTC_EUR",
-        "type": "sell",
-        "rate": 2380.835,
-        "fee": 0.15,
-        "fee_currency": "EUR",
-        "amount": 0.5,
-        "location": "external",
+        'timestamp': 1500595200,  # 21/07/2017
+        'pair': 'BTC_EUR',
+        'trade_type': 'sell',
+        'rate': 2380.835,
+        'fee': 0.15,
+        'fee_currency': 'EUR',
+        'amount': 0.5,
+        'location': 'external',
     }, {  # selling BCH after the fork -- taxable
         'timestamp': 1512693374,  # 08/12/2017
         'pair': 'BCH_EUR',  # cryptocompare hourly BCH/EUR price: 995.935
-        'type': 'sell',
+        'trade_type': 'sell',
         'rate': 995.935,
         'fee': 0.26,
         'fee_currency': 'EUR',
@@ -211,7 +211,7 @@ def test_buying_selling_btc_before_bchfork(accountant):
     }, {
         'timestamp': 1514937600,  # 03/01/2018
         'pair': 'BTC_EUR',  # cryptocompare hourly BCH/EUR price: 995.935
-        'type': 'sell',
+        'trade_type': 'sell',
         'rate': 12404.88,
         'fee': 0.52,
         'fee_currency': 'EUR',
@@ -236,14 +236,14 @@ def test_buying_selling_btc_before_bchfork(accountant):
 
 
 history5 = history1 + [{
-    "timestamp": 1512693374,  # cryptocompare hourly BTC/EUR price: 537.805
-    "pair": "BTC_EUR",  # cryptocompare hourly ETH/EUR price: 11.925
-    "type": "sell",
-    "rate": 13503.35,
-    "fee": 0,
-    "fee_currency": "BTC",
-    "amount": 20.0,
-    "location": "kraken",
+    'timestamp': 1512693374,  # cryptocompare hourly BTC/EUR price: 537.805
+    'pair': 'BTC_EUR',  # cryptocompare hourly ETH/EUR price: 11.925
+    'trade_type': 'sell',
+    'rate': 13503.35,
+    'fee': 0,
+    'fee_currency': 'BTC',
+    'amount': 20.0,
+    'location': 'kraken',
 }]
 
 
@@ -274,23 +274,23 @@ def test_big_taxfree_period(accountant):
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_buy_event_creation(accountant):
     history = [{
-        "timestamp": 1476979735,
-        "pair": "BTC_EUR",
-        "type": "buy",
-        "rate": 578.505,
-        "fee": 0.0012,
-        "fee_currency": "BTC",
-        "amount": 5,
-        "location": "kraken",
+        'timestamp': 1476979735,
+        'pair': 'BTC_EUR',
+        'trade_type': 'buy',
+        'rate': 578.505,
+        'fee': 0.0012,
+        'fee_currency': 'BTC',
+        'amount': 5,
+        'location': 'kraken',
     }, {
-        "timestamp": 1476979735,
-        "pair": "BTC_EUR",
-        "type": "buy",
-        "rate": 578.505,
-        "fee": 0.0012,
-        "fee_currency": "EUR",
-        "amount": 5,
-        "location": "kraken",
+        'timestamp': 1476979735,
+        'pair': 'BTC_EUR',
+        'trade_type': 'buy',
+        'rate': 578.505,
+        'fee': 0.0012,
+        'fee_currency': 'EUR',
+        'amount': 5,
+        'location': 'kraken',
     }]
     accounting_history_process(accountant, 1436979735, 1519693374, history)
     buys = accountant.events.events['BTC'].buys
@@ -310,23 +310,23 @@ def test_buy_event_creation(accountant):
 @pytest.mark.parametrize('accounting_include_gas_costs', [False])
 def test_not_include_gas_costs(accountant):
     history = [{
-        "timestamp": 1476979735,
-        "pair": "BTC_EUR",
-        "type": "buy",
-        "rate": 578.505,
-        "fee": 0.0012,
-        "fee_currency": "BTC",
-        "amount": 5,
-        "location": "kraken",
+        'timestamp': 1476979735,
+        'pair': 'BTC_EUR',
+        'trade_type': 'buy',
+        'rate': 578.505,
+        'fee': 0.0012,
+        'fee_currency': 'BTC',
+        'amount': 5,
+        'location': 'kraken',
     }, {
-        "timestamp": 1496979735,
-        "pair": "BTC_EUR",
-        "type": "sell",
-        "rate": 2519.62,
-        "fee": 0.02,
-        "fee_currency": "EUR",
-        "amount": 1,
-        "location": "kraken",
+        'timestamp': 1496979735,
+        'pair': 'BTC_EUR',
+        'trade_type': 'sell',
+        'rate': 2519.62,
+        'fee': 0.02,
+        'fee_currency': 'EUR',
+        'amount': 1,
+        'location': 'kraken',
     }]
     eth_tx_list = [{
         'timestamp': 1491062063,  # 01/04/2017
@@ -353,23 +353,23 @@ def test_not_include_gas_costs(accountant):
 @pytest.mark.parametrize('accounting_ignored_assets', [['DASH']])
 def test_ignored_assets(accountant):
     history = history1 + [{
-        "timestamp": 1476979735,
-        "pair": "DASH_EUR",
-        "type": "buy",
-        "rate": 9.76775956284,
-        "fee": 0.0011,
-        "fee_currency": "DASH",
-        "amount": 10,
-        "location": "kraken",
+        'timestamp': 1476979735,
+        'pair': 'DASH_EUR',
+        'trade_type': 'buy',
+        'rate': 9.76775956284,
+        'fee': 0.0011,
+        'fee_currency': 'DASH',
+        'amount': 10,
+        'location': 'kraken',
     }, {
-        "timestamp": 1496979735,
-        "pair": "DASH_EUR",
-        "type": "sell",
-        "rate": 128.09,
-        "fee": 0.015,
-        "fee_currency": "EUR",
-        "amount": 5,
-        "location": "kraken",
+        'timestamp': 1496979735,
+        'pair': 'DASH_EUR',
+        'trade_type': 'sell',
+        'rate': 128.09,
+        'fee': 0.015,
+        'fee_currency': 'EUR',
+        'amount': 5,
+        'location': 'kraken',
     }]
     result = accounting_history_process(accountant, 1436979735, 1519693374, history)
     assert FVal(result['overview']['total_taxable_profit_loss']).is_close("557.528104903")
@@ -378,32 +378,32 @@ def test_ignored_assets(accountant):
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_settlement_buy(accountant):
     history = [{
-        "timestamp": 1476979735,
-        "pair": "BTC_EUR",
-        "type": "buy",
-        "rate": 578.505,
-        "fee": 0.0012,
-        "fee_currency": "BTC",
-        "amount": 5,
-        "location": "kraken",
+        'timestamp': 1476979735,
+        'pair': 'BTC_EUR',
+        'trade_type': 'buy',
+        'rate': 578.505,
+        'fee': 0.0012,
+        'fee_currency': 'BTC',
+        'amount': 5,
+        'location': 'kraken',
     }, {  # 0.0079275 * 810.49 + 0.15 * 12.4625608386372145 = 8.29454360079
         'timestamp': 1484629704,  # 17/01/2017
         'pair': 'DASH_BTC',  # DASH/EUR price: 12.4625608386372145
-        'type': 'settlement_buy',  # Buy DASH with BTC to settle. Essentially BTC loss
+        'trade_type': 'settlement_buy',  # Buy DASH with BTC to settle. Essentially BTC loss
         'rate': 0.015855,  # BTC/EUR price: 810.49
         'fee': 0.15,
         'fee_currency': 'DASH',
         'amount': 0.5,
         'location': 'poloniex',
     }, {
-        "timestamp": 1496979735,
-        "pair": "BTC_EUR",
-        "type": "sell",
-        "rate": 2519.62,
-        "fee": 0.02,
-        "fee_currency": "EUR",
-        "amount": 1,
-        "location": "kraken",
+        'timestamp': 1496979735,
+        'pair': 'BTC_EUR',
+        'trade_type': 'sell',
+        'rate': 2519.62,
+        'fee': 0.02,
+        'fee_currency': 'EUR',
+        'amount': 1,
+        'location': 'kraken',
     }]
 
     result = accounting_history_process(
@@ -420,23 +420,23 @@ def test_settlement_buy(accountant):
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_margin_events_affect_gained_lost_amount(accountant):
     history = [{
-        "timestamp": 1476979735,
-        "pair": "BTC_EUR",
-        "type": "buy",
-        "rate": 578.505,
-        "fee": 0.0012,
-        "fee_currency": "BTC",
-        "amount": 5,
-        "location": "kraken",
+        'timestamp': 1476979735,
+        'pair': 'BTC_EUR',
+        'trade_type': 'buy',
+        'rate': 578.505,
+        'fee': 0.0012,
+        'fee_currency': 'BTC',
+        'amount': 5,
+        'location': 'kraken',
     }, {  # 2519.62-0.02-((0.0012*578.505)/5 + 578.505)
-        "timestamp": 1496979735,
-        "pair": "BTC_EUR",
-        "type": "sell",
-        "rate": 2519.62,
-        "fee": 0.02,
-        "fee_currency": "EUR",
-        "amount": 1,
-        "location": "kraken",
+        'timestamp': 1496979735,
+        'pair': 'BTC_EUR',
+        'trade_type': 'sell',
+        'rate': 2519.62,
+        'fee': 0.02,
+        'fee_currency': 'EUR',
+        'amount': 1,
+        'location': 'kraken',
     }]
     margin_history = [MarginPosition(
         exchange='poloniex',  # BTC/EUR: 810.49
@@ -470,14 +470,14 @@ def test_margin_events_affect_gained_lost_amount(accountant):
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_no_corresponding_buy_for_sell(accountant):
     history = [{
-        "timestamp": 1496979735,
-        "pair": "BTC_EUR",
-        "type": "sell",
-        "rate": 2519.62,
-        "fee": 0.02,
-        "fee_currency": "EUR",
-        "amount": 1,
-        "location": "kraken",
+        'timestamp': 1496979735,
+        'pair': 'BTC_EUR',
+        'trade_type': 'sell',
+        'rate': 2519.62,
+        'fee': 0.02,
+        'fee_currency': 'EUR',
+        'amount': 1,
+        'location': 'kraken',
     }]
 
     result = accounting_history_process(
