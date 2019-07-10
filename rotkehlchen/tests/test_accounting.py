@@ -84,7 +84,7 @@ def test_simple_accounting_with_unknown_and_unsupported_assets(accountant):
     assert accountant.taxable_trade_pl.is_close("557.528104903")
     warnings = accountant.msg_aggregator.consume_warnings()
     assert len(warnings) == 1
-    assert 'At history processing found trade with unknown asset UNKNOWNASSET' in warnings[0]
+    assert 'found a trade containing unknown asset UNKNOWNASSET. Ignoring it.' in warnings[0]
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])

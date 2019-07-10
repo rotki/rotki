@@ -4,9 +4,10 @@ from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 from dataclasses import dataclass
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.errors import UnprocessableTradePair
+from rotkehlchen.errors import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Timestamp, TradePair, TradeType
+from rotkehlchen.user_messages import MessagesAggregator
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -159,7 +160,11 @@ def trade_get_assets(trade: Trade) -> Tuple[Asset, Asset]:
 def deserialize_trade(data: Dict[str, Any]) -> Trade:
     """
     Takes a dict trade representation of our common trade format and serializes
-    it into the Trade object"""
+    it into the Trade object
+
+    May raise:
+        - UnknownAsset: If the fee_currency string is not a known asset
+"""
     pair = data['pair']
     rate = FVal(data['rate'])
     amount = FVal(data['amount'])
@@ -190,12 +195,14 @@ def trades_from_dictlist(
         given_trades: List[Dict[str, Any]],
         start_ts: Timestamp,
         end_ts: Timestamp,
+        location: str,
+        msg_aggregator: MessagesAggregator,
 ) -> List[Trade]:
     """ Gets a list of dict trades, most probably read from the json files and
     a time period. Returns it as a list of the Trade tuples that are inside the time period
 
     Can raise:
-      - KeyError if a trade dict does not have a key as we expect it
+      - KeyError: If a trade dict does not have a key as we expect it
     """
     returned_trades = list()
     for given_trade in given_trades:
@@ -204,7 +211,14 @@ def trades_from_dictlist(
         if given_trade['timestamp'] > end_ts:
             break
 
-        returned_trades.append(deserialize_trade(given_trade))
+        try:
+            returned_trades.append(deserialize_trade(given_trade))
+        except UnknownAsset as e:
+            msg_aggregator.add_warning(
+                f'When processing {location} trades found a trade containing unknown '
+                f'asset {e.asset_name}. Ignoring it.')
+            continue
+
     return returned_trades
 
 
