@@ -168,7 +168,7 @@ class Cryptocompare():
         cc_from_asset_symbol = from_asset.to_cryptocompare()
         cc_to_asset_symbol = to_asset.to_cryptocompare()
         query_path = (
-            f'pricehistorical?fsym={cc_from_asset_symbol}&tsym={cc_to_asset_symbol}'
+            f'pricehistorical?fsym={cc_from_asset_symbol}&tsyms={cc_to_asset_symbol}'
             f'&ts={timestamp}'
         )
         if to_asset == 'BTC':
