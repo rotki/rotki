@@ -58,8 +58,8 @@ def _dict_history_to_entries(data: List[Dict[str, Any]]) -> List[PriceHistoryEnt
     return [
         PriceHistoryEntry(
             time=Timestamp(entry['time']),
-            low=Price(entry['low']),
-            high=Price(entry['high']),
+            low=Price(FVal(entry['low'])),
+            high=Price(FVal(entry['high'])),
         ) for entry in data
     ]
 
