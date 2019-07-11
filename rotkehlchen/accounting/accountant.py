@@ -184,9 +184,9 @@ class Accountant():
 
     def get_fee_in_profit_currency(self, trade: Trade) -> Fee:
         fee_rate = self.query_historical_price(
-            trade.fee_currency,
-            self.profit_currency,
-            trade.timestamp,
+            from_asset=trade.fee_currency,
+            to_asset=self.profit_currency,
+            timestamp=trade.timestamp,
         )
         return fee_rate * trade.fee
 

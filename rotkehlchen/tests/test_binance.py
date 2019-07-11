@@ -16,6 +16,7 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import RemoteError, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade, TradeType
+from rotkehlchen.tests.utils.constants import A_BNB, A_RDN, A_USDT
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.user_messages import MessagesAggregator
@@ -83,7 +84,7 @@ def test_trade_from_binance(function_scope_binance):
             amount=FVal(5.0),
             rate=FVal(0.0063213),
             fee=FVal(0.005),
-            fee_currency='RDN',
+            fee_currency=A_RDN,
         ),
         Trade(
             timestamp=1531117990,
@@ -93,7 +94,7 @@ def test_trade_from_binance(function_scope_binance):
             amount=FVal(0.505),
             rate=FVal(481.0),
             fee=FVal(0.242905),
-            fee_currency='USDT',
+            fee_currency=A_USDT,
         ),
         Trade(
             timestamp=1531728338,
@@ -103,7 +104,7 @@ def test_trade_from_binance(function_scope_binance):
             amount=FVal(0.051942),
             rate=FVal(6376.39),
             fee=FVal(0.00005194),
-            fee_currency='BTC',
+            fee_currency=A_BTC,
         ),
         Trade(
             timestamp=1531871806,
@@ -113,13 +114,14 @@ def test_trade_from_binance(function_scope_binance):
             amount=FVal(285.2),
             rate=FVal(0.17442),
             fee=FVal(0.00180015),
-            fee_currency='BNB',
+            fee_currency=A_BNB,
         ),
     ]
 
     for idx, binance_trade in enumerate(binance_trades_list):
         our_trade = trade_from_binance(binance_trade, binance.symbols_to_pair)
         assert our_trade == our_expected_list[idx]
+        assert isinstance(our_trade.fee_currency, Asset)
 
 
 exchange_info_mock_text = '''{

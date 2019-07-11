@@ -72,7 +72,7 @@ def trade_from_binance(
     else:
         order_type = TradeType.SELL
 
-    fee_currency = binance_trade['commissionAsset']
+    fee_currency = asset_from_binance(binance_trade['commissionAsset'])
     fee = FVal(binance_trade['commission'])
 
     log.debug(
