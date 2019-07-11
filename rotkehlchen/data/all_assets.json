@@ -2745,6 +2745,14 @@
         "symbol": "DUBI",
         "type": "ethereum token"
     },
+    "DUSK": {
+        "ethereum_address": "0x940a2dB1B7008B6C776d4faaCa729d6d4A4AA551",
+        "ethereum_token_decimals": 18,
+        "name": "Dusk Network",
+        "started": 1544486400,
+        "symbol": "DUSK",
+        "type": "ethereum token"
+    },
     "DXT": {
         "ethereum_address": "0x8dB54ca569D3019A2ba126D03C37c44b5eF81EF6",
         "ethereum_token_decimals": 8,
