@@ -23,6 +23,7 @@ from rotkehlchen.order_formatting import (
 from rotkehlchen.transactions import EthereumTransaction
 from rotkehlchen.typing import Fee, FilePath, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -320,6 +321,8 @@ class Accountant():
         self.asset_movement_fees = FVal(0)
         self.csvexporter.reset_csv_lists()
         self.currently_processed_timestamp = start_ts
+        # Used only in the "avoid zerorpc remote lost after 10ms problem"
+        self.last_sleep_ts = 0
 
         actions: List[TaxableAction] = list(trade_history)
         # If we got loans, we need to interleave them with the full history and re-sort
@@ -395,13 +398,14 @@ class Accountant():
         looping through the rest of the actions or not"""
 
         # Hack to periodically yield back to the gevent IO loop to avoid getting
-        # the losing remote after hearbeat error for the zerorpc client.
+        # the losing remote after hearbeat error for the zerorpc client. (after 10s)
         # https://github.com/0rpc/zerorpc-python/issues/37
         # TODO: Find better way to do this. Perhaps enforce this only if method
         # is a synced call, and if async don't do this yielding. In any case
-        # this calculation should definitely by async
-        count += 1
-        if count % 500 == 0:
+        # this calculation should definitely be async
+        now = ts_now()
+        if now - self.last_sleep_ts >= 7:  # choose 7 seconds to be safe
+            self.last_sleep_ts = now
             gevent.sleep(0.01)  # context switch
 
         # Assert we are sorted in ascending time order.
