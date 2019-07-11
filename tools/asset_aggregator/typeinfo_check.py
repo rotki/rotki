@@ -20,6 +20,7 @@ MANUALLY_CHECKED_TYPES = {
     'DIP': 'ethereum token',
     'DPP': 'ethereum token',
     'DTX-2': 'ethereum token',
+    'DUSK': 'ethereum token',
     'EMT': 'ethereum token',
     'ENTRP': 'ethereum token',
     'EOSDAC': 'ethereum token',
