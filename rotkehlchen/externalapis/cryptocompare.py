@@ -118,21 +118,28 @@ class Cryptocompare():
             cache_key = PairCacheKey(match.group(1))
             self.price_history_file[cache_key] = file_
 
-    def _api_query(self, path: str, only_data: bool = True) -> Dict[str, Any]:
+    def _api_query(self, path: str) -> Dict[str, Any]:
         querystr = f'{self.prefix}{path}'
         log.debug('Querying cryptocompare', url=querystr)
         resp = request_get_dict(querystr)
-        if 'Response' not in resp or resp['Response'] != 'Success':
-            error_message = 'Failed to query cryptocompare for: "{}"'.format(querystr)
-            if 'Message' in resp:
-                error_message += ". Error: {}".format(resp['Message'])
+        # These endpoints are wrapped in a response object
+        wrapped_response = 'all/coinlist' in path or 'histohour' in path
+        log.debug(f'Wrapped response: {wrapped_response}')
+        if wrapped_response:
+            if 'Response' not in resp or resp['Response'] != 'Success':
+                error_message = 'Failed to query cryptocompare for: "{}"'.format(querystr)
+                if 'Message' in resp:
+                    error_message += ". Error: {}".format(resp['Message'])
 
-            log.error('Cryptocompare query failure', url=querystr, error=error_message)
-            raise ValueError(error_message)
+                log.error('Cryptocompare query failure', url=querystr, error=error_message)
+                raise ValueError(error_message)
 
-        if only_data:
-            return resp['Data']
+            # for histohour we want all the data, including the wrapper to get TimeFrom
+            # and TimeTo
+            if 'histohour' not in path:
+                return resp['Data']
 
+        # else not a wrapped response
         return resp
 
     def query_endpoint_histohour(
@@ -142,6 +149,7 @@ class Cryptocompare():
             limit: int,
             to_timestamp: Timestamp,
     ) -> Dict[str, Any]:
+        """Returns the full histohour response including TimeFrom and TimeTo"""
         # These two can raise but them raising here is a bug
         cc_from_asset_symbol = from_asset.to_cryptocompare()
         cc_to_asset_symbol = to_asset.to_cryptocompare()
@@ -149,7 +157,7 @@ class Cryptocompare():
             f'histohour?fsym={cc_from_asset_symbol}&tsym={cc_to_asset_symbol}'
             f'&limit={limit}&toTs={to_timestamp}'
         )
-        result = self._api_query(path=query_path, only_data=False)
+        result = self._api_query(path=query_path)
         return result
 
     def query_endpoint_pricehistorical(
@@ -216,7 +224,7 @@ class Cryptocompare():
             timestamp=timestamp,
         )
 
-        cache_key = PairCacheKey(str(from_asset) + '_' + str(to_asset))
+        cache_key = PairCacheKey(from_asset.identifier + '_' + to_asset.identifier)
         got_cached_value = self.got_cached_price(cache_key, timestamp)
         if got_cached_value:
             return self.price_history[cache_key].data
