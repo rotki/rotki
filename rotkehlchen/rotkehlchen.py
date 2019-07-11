@@ -15,7 +15,7 @@ from rotkehlchen.bitmex import Bitmex
 from rotkehlchen.bittrex import Bittrex
 from rotkehlchen.blockchain import Blockchain
 from rotkehlchen.constants import SUPPORTED_EXCHANGES
-from rotkehlchen.constants.assets import A_USD, S_EUR
+from rotkehlchen.constants.assets import A_USD, S_EUR, S_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.errors import (
     AuthenticationError,
@@ -37,6 +37,7 @@ from rotkehlchen.poloniex import Poloniex
 from rotkehlchen.premium import premium_create_and_verify
 from rotkehlchen.serializer import process_result
 from rotkehlchen.typing import (
+    ApiCredentials,
     ApiKey,
     ApiSecret,
     BlockchainAddress,
@@ -127,53 +128,53 @@ class Rotkehlchen():
         self.lock.release()
         self.shutdown_event = gevent.event.Event()
 
-    def initialize_exchanges(self, secret_data):
+    def initialize_exchanges(self, exchange_credentials: Dict[str, ApiCredentials]) -> None:
         # initialize exchanges for which we have keys and are not already initialized
-        if self.kraken is None and 'kraken' in secret_data:
+        if self.kraken is None and 'kraken' in exchange_credentials:
             self.kraken = Kraken(
-                api_key=str.encode(secret_data['kraken']['api_key']),
-                secret=str.encode(secret_data['kraken']['api_secret']),
+                api_key=exchange_credentials['kraken'].api_key,
+                secret=exchange_credentials['kraken'].api_secret,
                 user_directory=self.user_directory,
                 msg_aggregator=self.msg_aggregator,
-                usd_eur_price=Inquirer().query_fiat_pair(S_EUR, A_USD),
+                usd_eur_price=Inquirer().query_fiat_pair(S_EUR, S_USD),
             )
             self.connected_exchanges.append('kraken')
             self.trades_historian.set_exchange('kraken', self.kraken)
 
-        if self.poloniex is None and 'poloniex' in secret_data:
+        if self.poloniex is None and 'poloniex' in exchange_credentials:
             self.poloniex = Poloniex(
-                api_key=str.encode(secret_data['poloniex']['api_key']),
-                secret=str.encode(secret_data['poloniex']['api_secret']),
+                api_key=exchange_credentials['poloniex'].api_key,
+                secret=exchange_credentials['poloniex'].api_secret,
                 user_directory=self.user_directory,
                 msg_aggregator=self.msg_aggregator,
             )
             self.connected_exchanges.append('poloniex')
             self.trades_historian.set_exchange('poloniex', self.poloniex)
 
-        if self.bittrex is None and 'bittrex' in secret_data:
+        if self.bittrex is None and 'bittrex' in exchange_credentials:
             self.bittrex = Bittrex(
-                api_key=str.encode(secret_data['bittrex']['api_key']),
-                secret=str.encode(secret_data['bittrex']['api_secret']),
+                api_key=exchange_credentials['bittrex'].api_key,
+                secret=exchange_credentials['bittrex'].api_secret,
                 user_directory=self.user_directory,
                 msg_aggregator=self.msg_aggregator,
             )
             self.connected_exchanges.append('bittrex')
             self.trades_historian.set_exchange('bittrex', self.bittrex)
 
-        if self.binance is None and 'binance' in secret_data:
+        if self.binance is None and 'binance' in exchange_credentials:
             self.binance = Binance(
-                api_key=str.encode(secret_data['binance']['api_key']),
-                secret=str.encode(secret_data['binance']['api_secret']),
+                api_key=exchange_credentials['binance'].api_key,
+                secret=exchange_credentials['binance'].api_secret,
                 data_dir=self.user_directory,
                 msg_aggregator=self.msg_aggregator,
             )
             self.connected_exchanges.append('binance')
             self.trades_historian.set_exchange('binance', self.binance)
 
-        if self.bitmex is None and 'bitmex' in secret_data:
+        if self.bitmex is None and 'bitmex' in exchange_credentials:
             self.bitmex = Bitmex(
-                api_key=str.encode(secret_data['bitmex']['api_key']),
-                secret=str.encode(secret_data['bitmex']['api_secret']),
+                api_key=exchange_credentials['bitmex'].api_key,
+                secret=exchange_credentials['bitmex'].api_secret,
                 user_directory=self.user_directory,
             )
             self.connected_exchanges.append('bitmex')
@@ -289,7 +290,7 @@ class Rotkehlchen():
             sync_approval=sync_approval,
         )
 
-        secret_data = self.data.db.get_exchange_secrets()
+        exchange_credentials = self.data.db.get_exchange_credentials()
         settings = self.data.db.get_settings()
         historical_data_start = settings['historical_data_start']
         eth_rpc_endpoint = settings['eth_rpc_endpoint']
@@ -319,7 +320,7 @@ class Rotkehlchen():
 
         # Initialize the rotkehlchen logger
         LoggingSettings(anonymized_logs=db_settings['anonymized_logs'])
-        self.initialize_exchanges(secret_data)
+        self.initialize_exchanges(exchange_credentials)
 
         ethchain = Ethchain(eth_rpc_endpoint)
         self.blockchain = Blockchain(
@@ -639,6 +640,7 @@ class Rotkehlchen():
         result_dict = merge_dicts(combined, stats)
 
         allowed_to_save = requested_save_data or self.data.should_save_balances()
+        allowed_to_save = False
         if problem_free and allowed_to_save:
             if not timestamp:
                 timestamp = Timestamp(int(time.time()))
@@ -678,8 +680,8 @@ class Rotkehlchen():
     def set_main_currency(self, currency):
         with self.lock:
             self.data.set_main_currency(currency, self.accountant)
-            if currency != 'USD':
-                self.usd_to_main_currency_rate = Inquirer().query_fiat_pair('USD', currency)
+            if currency != S_USD:
+                self.usd_to_main_currency_rate = Inquirer().query_fiat_pair(S_USD, currency)
 
     def set_settings(self, settings):
         log.info('Add new settings')
@@ -709,7 +711,7 @@ class Rotkehlchen():
 
                 if main_currency != A_USD:
                     self.usd_to_main_currency_rate = Inquirer().query_fiat_pair(
-                        'USD',
+                        S_USD,
                         main_currency.identifier,
                     )
 
@@ -728,8 +730,8 @@ class Rotkehlchen():
     def setup_exchange(
             self,
             name: str,
-            api_key: ApiKey,
-            api_secret: ApiSecret,
+            api_key: str,
+            api_secret: str,
     ) -> Tuple[bool, str]:
         """
         Setup a new exchange with an api key and an api secret
@@ -743,12 +745,10 @@ class Rotkehlchen():
         if getattr(self, name) is not None:
             return False, 'Exchange {} is already registered'.format(name)
 
-        secret_data = {}
-        secret_data[name] = {
-            'api_key': api_key,
-            'api_secret': api_secret,
-        }
-        self.initialize_exchanges(secret_data)
+        credentials_dict = {}
+        api_credentials = ApiCredentials.serialize(api_key=api_key, api_secret=api_secret)
+        credentials_dict[name] = api_credentials
+        self.initialize_exchanges(credentials_dict)
 
         exchange = getattr(self, name)
         result, message = exchange.validate_api_key()

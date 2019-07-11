@@ -20,6 +20,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import Trade
 from rotkehlchen.typing import (
+    ApiCredentials,
     ApiKey,
     ApiSecret,
     BlockchainAddress,
@@ -798,8 +799,8 @@ class DBHandler():
     def add_exchange(
             self,
             name: str,
-            api_key: ApiKey,
-            api_secret: ApiSecret,
+            api_key: str,
+            api_secret: str,
     ) -> None:
         if name not in SUPPORTED_EXCHANGES:
             raise InputError('Unsupported exchange {}'.format(name))
@@ -820,23 +821,23 @@ class DBHandler():
         self.conn.commit()
         self.update_last_write()
 
-    def get_exchange_secrets(self) -> Dict[str, Dict[str, str]]:
+    def get_exchange_credentials(self) -> Dict[str, ApiCredentials]:
         cursor = self.conn.cursor()
         result = cursor.execute(
             'SELECT name, api_key, api_secret FROM user_credentials;',
         )
         result = result.fetchall()
-        secret_data = {}
+        credentials = {}
         for entry in result:
             if entry == 'rotkehlchen':
                 continue
             name = entry[0]
-            secret_data[name] = {
-                'api_key': str(entry[1]),
-                'api_secret': str(entry[2]),
-            }
+            credentials[name] = ApiCredentials.serialize(
+                api_key=str(entry[1]),
+                api_secret=str(entry[2]),
+            )
 
-        return secret_data
+        return credentials
 
     def add_external_trade(self, trade: Trade) -> None:
         cursor = self.conn.cursor()

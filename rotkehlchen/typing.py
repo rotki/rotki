@@ -16,6 +16,20 @@ ApiKey = NewType('ApiKey', T_ApiKey)
 T_ApiSecret = bytes
 ApiSecret = NewType('ApiSecret', T_ApiSecret)
 
+
+class ApiCredentials(NamedTuple):
+    """Represents Credentials for various APIs. Exchanges, Premium e.t.c."""
+    api_key: ApiKey
+    api_secret: ApiSecret
+
+    @staticmethod
+    def serialize(api_key: str, api_secret: str) -> 'ApiCredentials':
+        return ApiCredentials(
+            api_key=ApiKey(str.encode(api_key)),
+            api_secret=ApiSecret(str.encode(api_secret)),
+        )
+
+
 T_FilePath = str
 FilePath = NewType('FilePath', T_FilePath)
 
