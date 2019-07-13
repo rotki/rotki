@@ -99,7 +99,7 @@ def _query_currency_converterapi(base: FiatAsset, quote: FiatAsset) -> Optional[
 
 
 class Inquirer():
-    __instance = None
+    __instance: Optional['Inquirer'] = None
     _cached_forex_data: Dict
     _data_directory: FilePath
 

@@ -5,7 +5,7 @@ import logging
 import os
 import signal
 import traceback
-from typing import Dict
+from typing import Any, Dict, Union
 
 import gevent
 import zerorpc
@@ -383,7 +383,15 @@ class RotkehlchenServer():
         result, message = self.rotkehlchen.data.remove_ignored_asset(asset)
         return {'result': result, 'message': message}
 
-    def unlock_user(self, user, password, create_new, sync_approval, api_key, api_secret):
+    def unlock_user(
+            self,
+            user: str,
+            password: str,
+            create_new: Union[bool, str],
+            sync_approval: str,
+            api_key: str,
+            api_secret: str,
+    ) -> Dict[str, Any]:
         """Either unlock an existing user or create a new one"""
         res = {'result': True, 'message': ''}
 
@@ -403,8 +411,7 @@ class RotkehlchenServer():
                 raise ValueError(f'Invalid string value for create_new {create_new}')
 
         valid_actions = ['unknown', 'yes', 'no']
-        valid_approve = isinstance(sync_approval, str) and sync_approval in valid_actions
-        if not valid_approve:
+        if sync_approval not in valid_actions:
             raise ValueError('Provided invalid value for sync_approval')
 
         if api_key != '' and create_new is False:

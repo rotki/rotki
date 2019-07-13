@@ -355,9 +355,9 @@ class Binance(Exchange):
         returned_history = list()
         for order in all_trades_history:
             order_timestamp = int(order['time'] / 1000)
-            if start_ts is not None and order_timestamp < start_ts:
+            if order_timestamp < start_ts:
                 continue
-            if end_ts is not None and order_timestamp > end_ts:
+            if order_timestamp > end_ts:
                 break
             order['time'] = order_timestamp
 

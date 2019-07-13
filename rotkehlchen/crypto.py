@@ -49,7 +49,7 @@ def sha3(data: bytes) -> bytes:
 
 
 def ishash(data: bytes) -> bool:
-    return isinstance(data, bytes) and len(data) == 32
+    return len(data) == 32
 
 
 def privatekey_to_publickey(private_key_bin: bytes) -> bytes:

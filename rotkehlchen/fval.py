@@ -30,7 +30,7 @@ class FVal():
             elif isinstance(data, FVal):
                 self.num = data.num
             else:
-                self.num = None
+                raise ValueError(f'Invalid type {type(data)} of data given to FVal constructor')
 
         except InvalidOperation:
             raise ValueError(
