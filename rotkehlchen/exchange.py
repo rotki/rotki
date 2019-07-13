@@ -21,11 +21,11 @@ def data_up_todate(json_data: Dict[str, Any], start_ts: Timestamp, end_ts: Times
         return False
 
     start_ts_ok = (
-        (start_ts is not None and json_data['start_time'] is not None) and
+        (json_data['start_time'] is not None) and
         start_ts >= json_data['start_time']
     )
     end_ts_ok = (
-        end_ts is not None and json_data['end_time'] is not None and
+        json_data['end_time'] is not None and
         end_ts <= json_data['end_time']
     )
     return start_ts_ok and end_ts_ok

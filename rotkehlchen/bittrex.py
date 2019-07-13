@@ -277,9 +277,9 @@ class Bittrex(Exchange):
         returned_history = list()
         for order in order_history:
             order_timestamp = createTimeStamp(order['TimeStamp'], formatstr="%Y-%m-%dT%H:%M:%S.%f")
-            if start_ts is not None and order_timestamp < start_ts:
+            if order_timestamp < start_ts:
                 continue
-            if end_ts is not None and order_timestamp > end_ts:
+            if order_timestamp > end_ts:
                 break
             order['TimeStamp'] = order_timestamp
             returned_history.append(order)

@@ -126,29 +126,27 @@ class Accountant():
         return self.events.taxable_trade_profit_loss
 
     def customize(self, settings: Dict[str, Any]) -> Tuple[bool, str]:
-        include_c2c = self.events.include_crypto2crypto
-        taxfree_after_period = self.events.taxfree_after_period
-
         if 'include_crypto2crypto' in settings:
-            include_c2c = settings['include_crypto2crypto']
-            if not isinstance(include_c2c, bool):
+            given_include_c2c = settings['include_crypto2crypto']
+            if not isinstance(given_include_c2c, bool):
                 return False, 'Value for include_crypto2crypto must be boolean'
 
+            self.events.include_crypto2crypto = given_include_c2c
+
         if 'taxfree_after_period' in settings:
-            taxfree_after_period = settings['taxfree_after_period']
-            if taxfree_after_period is not None:
-                if not isinstance(taxfree_after_period, int):
+            given_taxfree_after_period = settings['taxfree_after_period']
+            if given_taxfree_after_period is not None:
+                if not isinstance(given_taxfree_after_period, int):
                     return False, 'Value for taxfree_after_period must be an integer'
 
-                if taxfree_after_period == 0:
+                if given_taxfree_after_period == 0:
                     return False, 'Value for taxfree_after_period can not be 0 days'
 
                 # turn to seconds
-                taxfree_after_period = taxfree_after_period * 86400
-                settings['taxfree_after_period'] = taxfree_after_period
+                given_taxfree_after_period = given_taxfree_after_period * 86400
+                settings['taxfree_after_period'] = given_taxfree_after_period
 
-        self.events.include_crypto2crypto = include_c2c
-        self.events.taxfree_after_period = taxfree_after_period
+            self.events.taxfree_after_period = given_taxfree_after_period
 
         return True, ''
 

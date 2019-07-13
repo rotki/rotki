@@ -804,7 +804,7 @@ def find_cmc_coin_data(
     if asset_symbol in KNOWN_TO_MISS_FROM_CMC:
         return None
 
-    found_coin_data = None
+    found_coin_data: Optional[Dict[str, Any]] = None
     for coin in cmc_list:
         if coin['symbol'] == asset_symbol:
             if found_coin_data:

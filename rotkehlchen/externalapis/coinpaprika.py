@@ -405,7 +405,7 @@ def find_paprika_coin_id(
         paprika_coins_list: List[Dict[str, Any]],
 ) -> Optional[str]:
     """Given an asset's symbol find the paprika coin id from the paprika coins list"""
-    found_coin_id = None
+    found_coin_id: Optional[str] = None
     if asset_symbol in WORLD_TO_PAPRIKA_ID:
         return WORLD_TO_PAPRIKA_ID[asset_symbol]
 
@@ -421,6 +421,7 @@ def find_paprika_coin_id(
                 )
                 sys.exit(1)
 
+            assert isinstance(coin['id'], str)
             found_coin_id = coin['id']
 
     if not found_coin_id:

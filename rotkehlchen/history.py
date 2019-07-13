@@ -1,7 +1,7 @@
 import logging
 import os
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.binance import trade_from_binance
@@ -177,8 +177,8 @@ def limit_trade_list_to_period(
     """Accepts a SORTED by timestamp trades_list and returns a shortened version
     of that list limited to a specific time period"""
 
-    start_idx = None
-    end_idx = None
+    start_idx: Optional[int] = None
+    end_idx: Optional[int] = None
     for idx, trade in enumerate(trades_list):
         if start_idx is None and trade.timestamp >= start_ts:
             start_idx = idx
@@ -197,7 +197,7 @@ def pairwise(iterable):
 
 
 class PriceHistorian():
-    __instance = None
+    __instance: Optional['PriceHistorian'] = None
     _historical_data_start: Timestamp
     _cryptocompare: 'Cryptocompare'
 

@@ -48,11 +48,11 @@ class TaxableEvents():
         self._include_crypto2crypto = value
 
     @property
-    def taxfree_after_period(self) -> int:
+    def taxfree_after_period(self) -> Optional[int]:
         return self._taxfree_after_period
 
     @taxfree_after_period.setter
-    def taxfree_after_period(self, value: int) -> None:
+    def taxfree_after_period(self, value: Optional[int]) -> None:
         is_valid = isinstance(value, int) or value is None
         assert is_valid, 'set taxfree_after_period should only get int or None'
         self._taxfree_after_period = value
