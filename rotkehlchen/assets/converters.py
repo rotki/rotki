@@ -370,6 +370,9 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # URAC. As of 12/07/2019 no data found outside of bittrex for Uranus
     # https://twitter.com/BittrexIntl/status/1149370485735591936
     'URAC',
+    # BRZ. As for 16/06/2019 no data found outside of Bittrex for this token
+    # https://twitter.com/BittrexIntl/status/1150870819758907393
+    'BRZ',
 )
 
 
