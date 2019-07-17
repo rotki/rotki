@@ -6,7 +6,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.typing import EthTokenInfo
 
 
-def _process_entry(entry: Any) -> Union[str, List, Dict]:
+def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
     if isinstance(entry, FVal):
         return str(entry)
     elif isinstance(entry, list):
@@ -42,7 +42,7 @@ def _process_entry(entry: Any) -> Union[str, List, Dict]:
         return entry
 
 
-def process_result(result: Dict) -> Dict:
+def process_result(result: Dict[str, Any]) -> Dict[str, Any]:
     """Before sending out a result a dictionary via the server we are turning:
 
         - all Decimals to strings so that the serialization to float/big number
@@ -55,7 +55,7 @@ def process_result(result: Dict) -> Dict:
     return processed_result
 
 
-def process_result_list(result: List) -> List:
+def process_result_list(result: List[Any]) -> List[Any]:
     """Just lke process_result but for lists"""
     processed_result = _process_entry(result)
     assert isinstance(processed_result, List)
