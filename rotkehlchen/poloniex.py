@@ -13,6 +13,7 @@ from urllib.parse import urlencode
 
 from typing_extensions import Literal
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.errors import PoloniexError, RemoteError, UnknownAsset, UnsupportedAsset
@@ -274,7 +275,8 @@ class Poloniex(Exchange):
         ...
 
     # TODO: As soon as a pyflakes release is made including
-    # https://github.com/PyCQA/pyflakes/pull/435 then remove the noqa from here ande above
+    # https://github.com/PyCQA/pyflakes/pull/435 then remove the noqa from here,
+    # above and from other place in codebase where overload is used likethis
     def returnTradeHistory(  # noqa: F811
             self,
             currencyPair: Union[TradePair, str],
@@ -322,7 +324,7 @@ class Poloniex(Exchange):
 
     # ---- General exchanges interface ----
     @cache_response_timewise(CACHE_RESPONSE_FOR_SECS)
-    def query_balances(self) -> Tuple[Optional[dict], str]:
+    def query_balances(self) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
         try:
             resp = self.api_query_dict('returnCompleteBalances', {"account": "all"})
         except (RemoteError, PoloniexError) as e:

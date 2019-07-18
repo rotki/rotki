@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Union
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.fval import FVal
@@ -45,7 +45,7 @@ def rlk_jsonloads(data: str) -> Union[Dict, List]:
     return json.loads(data, cls=RKLDecoder)
 
 
-def rlk_jsonloads_dict(data: str) -> Dict:
+def rlk_jsonloads_dict(data: str) -> Dict[str, Any]:
     value = rlk_jsonloads(data)
     assert isinstance(value, dict)
     return value
