@@ -67,6 +67,7 @@ MANUALLY_CHECKED_TYPES = {
     'TAN': 'ethereum token',
     'TBT': 'ethereum token',
     'TCH-2': 'ethereum token',
+    'TEMCO': 'ethereum token',
     'TOMO': 'ethereum token',
     'URB': 'ethereum token',
     'VENUS': 'ethereum token',
