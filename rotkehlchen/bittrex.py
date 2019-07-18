@@ -3,9 +3,12 @@ import hmac
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, overload
 from urllib.parse import urlencode
 
+from typing_extensions import Literal
+
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bittrex
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
@@ -15,13 +18,12 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import (
     Trade,
-    TradeType,
     get_pair_position_asset,
     get_pair_position_str,
     pair_get_assets,
     trade_pair_from_assets,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, createTimeStamp
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
@@ -136,7 +138,7 @@ class Bittrex(Exchange):
         self.uri = 'https://bittrex.com/api/{}/'.format(self.apiversion)
         self.msg_aggregator = msg_aggregator
 
-    def first_connection(self):
+    def first_connection(self) -> None:
         self.first_connection_made = True
 
     def validate_api_key(self) -> Tuple[bool, str]:
@@ -152,11 +154,35 @@ class Bittrex(Exchange):
                 raise
         return True, ''
 
-    def api_query(
+    @overload
+    def api_query(  # pylint: disable=unused-argument, no-self-use
+            self,
+            method: Literal['getcurrencies', 'getorderhistory', 'getbalances'],
+            options: Optional[Dict[str, Any]] = None,
+    ) -> List[Dict[str, Any]]:
+        ...
+
+    @overload  # noqa: F811
+    def api_query(  # pylint: disable=unused-argument, no-self-use
+            self,
+            method: Literal['getbalance'],
+            options: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        ...
+
+    @overload  # noqa: F811
+    def api_query(  # pylint: disable=unused-argument, no-self-use
             self,
             method: str,
-            options: Optional[Dict] = None,
-    ) -> Union[List, Dict]:
+            options: Optional[Dict[str, Any]] = None,
+    ) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
+        ...
+
+    def api_query(  # noqa: F811
+            self,
+            method: str,
+            options: Optional[Dict[str, Any]] = None,
+    ) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
         """
         Queries Bittrex with given method and options
         """
@@ -198,17 +224,18 @@ class Bittrex(Exchange):
 
         if json_ret['success'] is not True:
             raise RemoteError(json_ret['message'])
-        return json_ret['result']
+
+        result = json_ret['result']
+        assert isinstance(result, dict) or isinstance(result, list)
+        return result
 
     def get_currencies(self) -> List[Dict[str, Any]]:
         """Gets a list of all currencies supported by Bittrex"""
         result = self.api_query('getcurrencies')
-        # We know this API call returns a list
-        assert isinstance(result, List)
         return result
 
     @cache_response_timewise(CACHE_RESPONSE_FOR_SECS)
-    def query_balances(self) -> Tuple[Optional[dict], str]:
+    def query_balances(self) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
         try:
             resp = self.api_query('getbalances')
         except RemoteError as e:
@@ -260,7 +287,7 @@ class Bittrex(Exchange):
             end_at_least_ts: Timestamp,
             market: Optional[TradePair] = None,
             count: Optional[int] = None,
-    ) -> List:
+    ) -> List[Dict[str, Any]]:
 
         options: Dict[str, Union[str, int]] = dict()
         cache = self.check_trades_cache_list(start_ts, end_at_least_ts)

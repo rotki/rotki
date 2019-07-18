@@ -44,7 +44,7 @@ def tsToDate(ts: Timestamp, formatstr: str = '%d/%m/%Y %H:%M:%S') -> str:
     return datetime.datetime.utcfromtimestamp(ts).strftime(formatstr)
 
 
-def cache_response_timewise(seconds: int = 600):
+def cache_response_timewise(seconds: int = 600) -> Callable:
     """ This is a decorator for caching results of functions of objects.
     The objects must adhere to the interface of having:
         - A results_cache dictionary attribute
@@ -52,7 +52,7 @@ def cache_response_timewise(seconds: int = 600):
 
     Objects adhering to this interface are all the exchanges and the rotkehlchen object.
     """
-    def _cache_response_timewise(f):
+    def _cache_response_timewise(f: Callable):
         @wraps(f)
         def wrapper(wrappingobj, *args):
             with wrappingobj.lock:
