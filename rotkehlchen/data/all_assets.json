@@ -8169,6 +8169,14 @@
         "symbol": "TEL",
         "type": "ethereum token"
     },
+    "TEMCO": {
+        "ethereum_address": "0x2Fc246aA66F0da5bB1368F688548ecBBE9bdee5d",
+        "ethereum_token_decimals": 18,
+        "name": "TEMCO",
+        "started": 1549311846,
+        "symbol": "TEMCO",
+        "type": "ethereum token"
+    },
     "TEN": {
         "ethereum_address": "0xDD16eC0F66E54d453e6756713E533355989040E4",
         "ethereum_token_decimals": 18,

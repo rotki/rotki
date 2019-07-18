@@ -589,6 +589,9 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # TercetNetwork (https://etherscan.io/address/0x28d7F432d24ba6020d1cbD4f28BEDc5a82F24320)
     # is not in cryptocompare but is in paprika
     'TCNX',
+    # Temco (https://coinmarketcap.com/currencies/temco/)
+    # is not in cryptocompare but is in paprika
+    'TEMCO',
     # ThingsChain (https://coinmarketcap.com/currencies/thingschain/)
     # is not in cryptocompare but is in paprika
     'TIC',
