@@ -1,23 +1,51 @@
-from typing import List, Tuple
+from typing import TYPE_CHECKING, Any, Callable, List, Tuple
 
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.typing import SupportedBlockchain
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+
 
 class DBUpgradeManager():
     """Separate class to manage DB upgrades/migrations"""
 
-    def __init__(self, db):
+    def __init__(self, db: 'DBHandler'):
         self.db = db
 
     def run_upgrades(self) -> None:
-        self._upgrade_1_to_2()
-        self._upgrade_2_to_3()
-        self._upgrade_3_to_4()
-        self._upgrade_4_to_5()
+        self._perform_single_upgrade(1, 2, self._checksum_eth_accounts)
+        self._perform_single_upgrade(
+            from_version=2,
+            to_version=3,
+            upgrade_action=self._rename_assets_in_db,
+            rename_pairs=[('BCHSV', 'BSV')],
+        )
+        self._perform_single_upgrade(3, 4, self._eth_rpc_port_to_eth_rpc_endpoint)
+        self._perform_single_upgrade(
+            from_version=4,
+            to_version=5,
+            upgrade_action=self._rename_assets_in_db,
+            rename_pairs=[('BCC', 'BCH')],
+        )
 
-    def rename_assets_in_db(self, rename_pairs: List[Tuple[str, str]]) -> None:
+    def _perform_single_upgrade(
+            self,
+            from_version: int,
+            to_version: int,
+            upgrade_action: Callable,
+            **kwargs: Any,
+    ) -> None:
+        current_version = self.db.get_version()
+        if current_version != from_version:
+            return
+
+        upgrade_action(**kwargs)
+
+        self.db.set_version(to_version)
+
+    def _rename_assets_in_db(self, rename_pairs: List[Tuple[str, str]]) -> None:
         """
         Renames assets in all the relevant tables in the Database.
 
@@ -73,12 +101,8 @@ class DBUpgradeManager():
             updated_trades,
         )
 
-    def _upgrade_1_to_2(self) -> None:
-        current_version = self.db.get_version()
-        if current_version != 1:
-            return
-
-        # apply the 1 -> 2 updates
+    def _checksum_eth_accounts(self) -> None:
+        """Make sure all eth accounts are checksummed when saved in the DB"""
         accounts = self.db.get_blockchain_accounts()
         cursor = self.db.conn.cursor()
         cursor.execute(
@@ -91,20 +115,8 @@ class DBUpgradeManager():
                 account=to_checksum_address(account),
             )
 
-    def _upgrade_2_to_3(self) -> None:
-        """Update BCHSV to BSV"""
-        current_version = self.db.get_version()
-        if current_version != 2:
-            return
-
-        self.rename_assets_in_db(rename_pairs=[('BCHSV', 'BSV')])
-
-    def _upgrade_3_to_4(self) -> None:
+    def _eth_rpc_port_to_eth_rpc_endpoint(self) -> None:
         """Upgrade the eth_rpc_port setting to eth_rpc_endpoint"""
-        current_version = self.db.get_version()
-        if current_version != 3:
-            return
-
         cursor = self.db.conn.cursor()
         query = cursor.execute('SELECT value FROM settings where name="eth_rpc_port";')
         query = query.fetchall()
@@ -119,11 +131,3 @@ class DBUpgradeManager():
             ('eth_rpc_endpoint', f'http://localhost:{port}'),
         )
         self.db.conn.commit()
-
-    def _upgrade_4_to_5(self) -> None:
-        """Update BCC to BCH"""
-        current_version = self.db.get_version()
-        if current_version != 4:
-            return
-
-        self.rename_assets_in_db(rename_pairs=[('BCC', 'BCH')])

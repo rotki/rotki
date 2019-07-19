@@ -102,7 +102,7 @@ def detect_sqlcipher_version() -> int:
     return sqlcipher_version
 
 
-ROTKEHLCHEN_DB_VERSION = 4
+ROTKEHLCHEN_DB_VERSION = 5
 DBINFO_FILENAME = 'dbinfo.json'
 
 
@@ -235,6 +235,14 @@ class DBHandler():
             return ROTKEHLCHEN_DB_VERSION
 
         return int(query[0][0])
+
+    def set_version(self, version: int) -> None:
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            ('version', str(version)),
+        )
+        self.conn.commit()
 
     def connect(self, password: str) -> None:
         self.conn = sqlcipher.connect(  # pylint: disable=no-member
