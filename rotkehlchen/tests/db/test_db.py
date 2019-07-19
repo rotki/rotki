@@ -32,7 +32,7 @@ from rotkehlchen.db.dbhandler import (
 )
 from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_BSV, A_DAO, A_DOGE, A_GNO, A_RDN, A_XMR
+from rotkehlchen.tests.utils.constants import A_DAO, A_DOGE, A_GNO, A_RDN, A_XMR
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
 from rotkehlchen.typing import SupportedBlockchain, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -323,203 +323,6 @@ def test_writting_fetching_external_trades(data_dir, username):
     assert result[0] == from_otc_trade(trade2)
 
 
-def test_upgrade_db_1_to_2(data_dir, username):
-    """Test upgrading the DB from version 1 to version 2, which means that
-    ethereum accounts are now checksummed"""
-    # Creating a new data dir should work
-    msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=True)
-    # Manually set to version 1 and input a non checksummed account
-    cursor = data.db.conn.cursor()
-    cursor.execute(
-        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-        ('version', str(1)),
-    )
-    data.db.conn.commit()
-    data.db.add_blockchain_account(
-        SupportedBlockchain.ETHEREUM,
-        '0xe3580c38b0106899f45845e361ea7f8a0062ef12',
-    )
-
-    # now relogin and check that the account has been re-saved as checksummed
-    del data
-    data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=False)
-    accounts = data.db.get_blockchain_accounts()
-    assert accounts.eth[0] == '0xe3580C38B0106899F45845E361EA7F8a0062Ef12'
-    assert data.db.get_version() == ROTKEHLCHEN_DB_VERSION
-
-
-def test_upgrade_db_2_to_3(data_dir, username):
-    """Test upgrading the DB from version 2 to version 3, upgrade symbols of
-    assets that are known to have changed"""
-    # Creating a new data dir should work
-    msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=True)
-    # Manually set to version 2
-    cursor = data.db.conn.cursor()
-    cursor.execute(
-        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-        ('version', str(2)),
-    )
-    data.db.conn.commit()
-    # Manually input data to the affected tables.
-    # timed_balances, multisettings and (external) trades
-    cursor.execute(
-        'INSERT INTO timed_balances('
-        '   time, currency, amount, usd_value) '
-        ' VALUES(?, ?, ?, ?)',
-        ('1557499129', 'BCHSV', '10.1', '150'),
-    )
-    cursor.execute(
-        'INSERT INTO timed_balances('
-        '   time, currency, amount, usd_value) '
-        ' VALUES(?, ?, ?, ?)',
-        ('1556392121', 'ETH', '5.5', '245'),
-    )
-    cursor.execute(
-        'INSERT INTO multisettings(name, value) VALUES(?, ?)',
-        ('ignored_asset', 'BCHSV'),
-    )
-    cursor.execute(
-        'INSERT INTO multisettings(name, value) VALUES(?, ?)',
-        ('ignored_asset', 'RDN'),
-    )
-    cursor.execute(
-        'INSERT INTO trades('
-        '  time,'
-        '  location,'
-        '  pair,'
-        '  type,'
-        '  amount,'
-        '  rate,'
-        '  fee,'
-        '  fee_currency,'
-        '  link,'
-        '  notes)'
-        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        (
-            1543298883,
-            'external',
-            'ETH_EUR',
-            'buy',
-            '100',
-            '0.5',
-            '0.1',
-            'EUR',
-            '',
-            '',
-        ),
-    )
-    cursor.execute(
-        'INSERT INTO trades('
-        '  time,'
-        '  location,'
-        '  pair,'
-        '  type,'
-        '  amount,'
-        '  rate,'
-        '  fee,'
-        '  fee_currency,'
-        '  link,'
-        '  notes)'
-        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        (
-            1563298883,
-            'kraken',
-            'BCHSV_EUR',
-            'buy',
-            '100',
-            '0.5',
-            '0.1',
-            'BCHSV',
-            '',
-            '',
-        ),
-    )
-    cursor.execute(
-        'INSERT INTO trades('
-        '  time,'
-        '  location,'
-        '  pair,'
-        '  type,'
-        '  amount,'
-        '  rate,'
-        '  fee,'
-        '  fee_currency,'
-        '  link,'
-        '  notes)'
-        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        (
-            1564218181,
-            'binance',
-            'BCHSV_EUR',
-            'buy',
-            '100',
-            '0.5',
-            '0.1',
-            'BNB',
-            '',
-            '',
-        ),
-    )
-    data.db.conn.commit()
-
-    # now relogin and check that all tables have appropriate data
-    del data
-    data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=False)
-    ignored_assets = data.db.get_ignored_assets()
-    assert A_RDN in ignored_assets
-    assert A_BSV in ignored_assets
-    owned_assets = data.db.query_owned_assets()
-    assert A_ETH in owned_assets
-    assert A_BSV in owned_assets
-    trades = data.db.get_trades(only_external=False)
-    assert len(trades) == 3
-    assert trades[0]['fee_currency'] == 'EUR'
-    assert trades[0]['pair'] == 'ETH_EUR'
-    assert trades[1]['fee_currency'] == 'BSV'
-    assert trades[1]['pair'] == 'BSV_EUR'
-    assert trades[2]['pair'] == 'BSV_EUR'
-    assert data.db.get_version() == ROTKEHLCHEN_DB_VERSION
-
-
-def test_upgrade_db_3_to_4(data_dir, username):
-    """Test upgrading the DB from version 3 to version 4, which means that
-    the eth_rpc_port setting is changed to eth_rpc_endpoint"""
-    # Creating a new data dir should work
-    msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=True)
-    # Manually set to version 3 and input the old rpcport setting
-    cursor = data.db.conn.cursor()
-    cursor.execute(
-        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-        ('version', str(3)),
-    )
-    cursor.execute(
-        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-        ('eth_rpc_port', '8585'),
-    )
-    data.db.conn.commit()
-
-    # now relogin and check that the setting has been changed and the version bumped
-    del data
-    data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=False)
-    cursor = data.db.conn.cursor()
-    query = cursor.execute('SELECT value FROM settings where name="eth_rpc_endpoint";')
-    query = query.fetchall()
-    assert query[0][0] == 'http://localhost:8585'
-    query = cursor.execute('SELECT value FROM settings where name="eth_rpc_port";')
-    query = query.fetchall()
-    assert len(query) == 0
-    assert data.db.get_version() == ROTKEHLCHEN_DB_VERSION
-
-
 def test_settings_entry_types(data_dir, username):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
@@ -605,7 +408,7 @@ def test_upgrade_sqlcipher_v3_to_v4_without_dbinfo(data_dir):
     # get the v3 database file and copy it into the user's data directory
     dir_path = os.path.dirname(os.path.realpath(__file__))
     copyfile(
-        os.path.join(dir_path, 'data', 'sqlcipher_v3_rotkehlchen.db'),
+        os.path.join(os.path.dirname(dir_path), 'data', 'sqlcipher_v3_rotkehlchen.db'),
         os.path.join(userdata_dir, 'rotkehlchen.db'),
     )
 
@@ -627,7 +430,7 @@ def test_upgrade_sqlcipher_v3_to_v4_with_dbinfo(data_dir):
     # get the v3 database file and copy it into the user's data directory
     dir_path = os.path.dirname(os.path.realpath(__file__))
     copyfile(
-        os.path.join(dir_path, 'data', 'sqlcipher_v3_rotkehlchen.db'),
+        os.path.join(os.path.dirname(dir_path), 'data', 'sqlcipher_v3_rotkehlchen.db'),
         os.path.join(userdata_dir, 'rotkehlchen.db'),
     )
     dbinfo = {'sqlcipher_version': 3, 'md5_hash': '20c910c28ca42370e4a5f24d6d4a73d2'}
