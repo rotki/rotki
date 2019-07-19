@@ -8,13 +8,14 @@ from enum import Enum
 from json.decoder import JSONDecodeError
 from typing import Dict, List, NamedTuple, Optional, Tuple, Union, cast
 
-from eth_utils.address import to_checksum_address
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants import SUPPORTED_EXCHANGES, YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH, S_USD
 from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
+from rotkehlchen.db.upgrade_manager import DBUpgradeManager
+from rotkehlchen.db.utils import DB_SCRIPT_CREATE_TABLES, DB_SCRIPT_REIMPORT_DATA
 from rotkehlchen.errors import AuthenticationError, InputError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -34,8 +35,6 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
-
-from .utils import DB_SCRIPT_CREATE_TABLES, DB_SCRIPT_REIMPORT_DATA
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -154,7 +153,9 @@ class DBHandler():
                     f'SQLCipher version: {self.sqlcipher_version} - {errstr}',
                 )
 
-        self._run_updates()
+        # Run upgrades if needed
+        DBUpgradeManager(self).run_upgrades()
+        # Then make sure to always have latest version in the DB
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -234,106 +235,6 @@ class DBHandler():
             return ROTKEHLCHEN_DB_VERSION
 
         return int(query[0][0])
-
-    def _run_updates(self) -> None:
-        self._update_1_to_2()
-        self._update_2_to_3()
-        self._update_3_to_4()
-
-    def _update_1_to_2(self) -> None:
-        current_version = self.get_version()
-        if current_version != 1:
-            return
-
-        # apply the 1 -> 2 updates
-        accounts = self.get_blockchain_accounts()
-        cursor = self.conn.cursor()
-        cursor.execute(
-            'DELETE FROM blockchain_accounts WHERE blockchain=?;', (S_ETH,),
-        )
-        self.conn.commit()
-        for account in accounts.eth:
-            self.add_blockchain_account(
-                blockchain=SupportedBlockchain.ETHEREUM,
-                account=to_checksum_address(account),
-            )
-
-    def _update_2_to_3(self) -> None:
-        """Update BCHSV to BSV (and other asset symbols known to need changing)"""
-        current_version = self.get_version()
-        if current_version != 2:
-            return
-
-        cursor = self.conn.cursor()
-        cursor.execute(
-            'SELECT value FROM multisettings WHERE name="ignored_asset";',
-        )
-        ignored_assets = []
-        for q in cursor:
-            if q[0] == 'BCHSV':
-                ignored_assets.append(('ignored_asset', 'BSV'))
-            else:
-                ignored_assets.append(('ignored_asset', q[0]))
-        cursor.execute(
-            'DELETE FROM multisettings WHERE name="ignored_asset"',
-        )
-        cursor.executemany(
-            'INSERT INTO multisettings(name, value) VALUES(?, ?)',
-            ignored_assets,
-        )
-
-        changed_symbols = [('BSV', 'BCHSV')]
-        cursor.executemany(
-            'UPDATE timed_balances SET currency=? WHERE currency=?',
-            changed_symbols,
-        )
-
-        replaced_symbols = ['BCHSV']
-        replaced_symbols_q = ['pair LIKE "%' + s + '%"' for s in replaced_symbols]
-        query_str = (
-            f'SELECT id, pair, fee_currency FROM trades WHERE fee_currency IN '
-            f'({",".join("?"*len(replaced_symbols))}) OR ('
-            f'{" OR ".join(replaced_symbols_q)})'
-        )
-        cursor.execute(query_str, replaced_symbols)
-        updated_trades = []
-        for q in cursor:
-            new_pair = q[1]
-            if 'BCHSV' in q[1]:
-                new_pair = q[1].replace('BCHSV', 'BSV')
-
-            new_fee_currency = q[2]
-            if 'BCHSV' == q[2]:
-                new_fee_currency = 'BSV'
-
-            updated_trades.append((new_pair, new_fee_currency, q[0]))
-
-        cursor.executemany(
-            'UPDATE trades SET pair=?, fee_currency=? WHERE id=?',
-            updated_trades,
-        )
-
-    def _update_3_to_4(self) -> None:
-        """Upgrade the eth_rpc_port setting to eth_rpc_endpoint"""
-        current_version = self.get_version()
-        if current_version != 3:
-            return
-
-        # apply the 3 -> 4 updates
-        cursor = self.conn.cursor()
-        query = cursor.execute('SELECT value FROM settings where name="eth_rpc_port";')
-        query = query.fetchall()
-        if len(query) == 0:
-            port = '8545'
-        else:
-            port = query[0][0]
-
-        cursor.execute('DELETE FROM settings where name="eth_rpc_port";')
-        cursor.execute(
-            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?);',
-            ('eth_rpc_endpoint', f'http://localhost:{port}'),
-        )
-        self.conn.commit()
 
     def connect(self, password: str) -> None:
         self.conn = sqlcipher.connect(  # pylint: disable=no-member
