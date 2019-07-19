@@ -166,7 +166,10 @@ def test_upgrade_db_1_to_2(data_dir, username):
     data.unlock(username, '123', create_new=False)
     accounts = data.db.get_blockchain_accounts()
     assert accounts.eth[0] == '0xe3580C38B0106899F45845E361EA7F8a0062Ef12'
-    assert data.db.get_version() == ROTKEHLCHEN_DB_VERSION
+    version = data.db.get_version()
+    assert version == ROTKEHLCHEN_DB_VERSION
+    # Also make sure that we have updated the latest DB version constant
+    assert version > 1
 
 
 def test_upgrade_db_2_to_3(data_dir, username):
@@ -191,6 +194,9 @@ def test_upgrade_db_2_to_3(data_dir, username):
         to_rename_asset='BCHSV',
         renamed_asset=A_BSV,
     )
+    version = data.db.get_version()
+    # Also make sure that we have updated the latest DB version constant
+    assert version > 2
 
 
 def test_upgrade_db_3_to_4(data_dir, username):
@@ -223,7 +229,10 @@ def test_upgrade_db_3_to_4(data_dir, username):
     query = cursor.execute('SELECT value FROM settings where name="eth_rpc_port";')
     query = query.fetchall()
     assert len(query) == 0
-    assert data.db.get_version() == ROTKEHLCHEN_DB_VERSION
+    version = data.db.get_version()
+    assert version == ROTKEHLCHEN_DB_VERSION
+    # Also make sure that we have updated the latest DB version constant
+    assert version > 3
 
 
 def test_upgrade_db_4_to_5(data_dir, username):
@@ -248,3 +257,5 @@ def test_upgrade_db_4_to_5(data_dir, username):
         to_rename_asset='BCC',
         renamed_asset=A_BCH,
     )
+    # Also make sure that we have updated the latest DB version constant
+    assert data.db.get_version() > 4
