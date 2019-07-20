@@ -419,7 +419,7 @@ class DataHandler():
         log.info('Decompress and decrypt DB')
 
         # First make a backup of the DB we are about to replace
-        date = tsToDate(ts=ts_now(), formatstr='%d_%m_%Y_%H_%M_%S')
+        date = tsToDate(ts=ts_now(), formatstr='%Y_%m_%d_%H_%M_%S')
         shutil.copyfile(
             os.path.join(self.data_directory, self.username, 'rotkehlchen.db'),
             os.path.join(self.data_directory, self.username, f'rotkehlchen_db_{date}.backup'),

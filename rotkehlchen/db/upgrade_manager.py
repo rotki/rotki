@@ -1,11 +1,19 @@
+import logging
+import os
+import shutil
+from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Any, Callable, List, Tuple
 
 from eth_utils.address import to_checksum_address
 
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class DBUpgradeManager():
@@ -37,12 +45,45 @@ class DBUpgradeManager():
             upgrade_action: Callable,
             **kwargs: Any,
     ) -> None:
+        """
+        This is the wrapper function that performs each DB upgrade
+
+        The logic is:
+            1. Check version, if not at from_version get out.
+            2. If at from_version make a DB backup before performing the upgrade
+            3. Perform the upgrade action
+            4. If something went wrong during upgrade restore backup and quit
+            5. If all went well set version and delete the backup
+
+        """
         current_version = self.db.get_version()
         if current_version != from_version:
             return
 
-        upgrade_action(**kwargs)
+        # First make a backup of the DB
+        with TemporaryDirectory() as tmpdirname:
+            tmp_db_filename = os.path.join(tmpdirname, f'rotkehlchen_db.backup')
+            shutil.copyfile(
+                os.path.join(self.data_directory, self.username, 'rotkehlchen.db'),
+                tmp_db_filename,
+            )
 
+            try:
+                upgrade_action(**kwargs)
+            except BaseException as e:
+                # Problem .. restore DB backup and bail out
+                log.error(
+                    f'Failed at database upgrade from version {from_version} to '
+                    f'{to_version}: {str(e)}'
+                )
+                shutil.copyfile(
+                    tmp_db_filename,
+                    os.path.join(self.data_directory, self.username, 'rotkehlchen.db'),
+                )
+                # TODO: Test how this looks like
+                raise
+
+        # Upgrade success all is good
         self.db.set_version(to_version)
 
     def _rename_assets_in_db(self, rename_pairs: List[Tuple[str, str]]) -> None:
@@ -52,7 +93,7 @@ class DBUpgradeManager():
         Takes a list of tuples in the form:
         [(from_name_1, to_name_1), (from_name_2, to_name_2), ...]
 
-        Good for DB version 1 until Now.
+        Good from DB version 1 until now.
         """
         cursor = self.db.conn.cursor()
         # [(to_name_1, from_name_1), (to_name_2, from_name_2), ...]
