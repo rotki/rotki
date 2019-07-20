@@ -23,11 +23,15 @@ from rotkehlchen.db.dbhandler import (
     DEFAULT_MAIN_CURRENCY,
     DEFAULT_START_DATE,
     DEFAULT_UI_FLOATING_PRECISION,
-    ROTKEHLCHEN_DB_VERSION,
     DBHandler,
     detect_sqlcipher_version,
 )
-from rotkehlchen.db.utils import AssetBalance, BlockchainAccounts, LocationData
+from rotkehlchen.db.utils import (
+    ROTKEHLCHEN_DB_VERSION,
+    AssetBalance,
+    BlockchainAccounts,
+    LocationData,
+)
 from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_DAO, A_DOGE, A_GNO, A_RDN, A_XMR
