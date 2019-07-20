@@ -4,9 +4,8 @@ import os
 import re
 import shutil
 import tempfile
-from enum import Enum
 from json.decoder import JSONDecodeError
-from typing import Dict, List, NamedTuple, Optional, Tuple, Union, cast
+from typing import Dict, List, Optional, Tuple, Union, cast
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -15,7 +14,15 @@ from rotkehlchen.constants import SUPPORTED_EXCHANGES, YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH, S_USD
 from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
-from rotkehlchen.db.utils import DB_SCRIPT_CREATE_TABLES, DB_SCRIPT_REIMPORT_DATA
+from rotkehlchen.db.utils import (
+    DB_SCRIPT_CREATE_TABLES,
+    DB_SCRIPT_REIMPORT_DATA,
+    AssetBalance,
+    BlockchainAccounts,
+    DBStartupAction,
+    LocationData,
+    SingleAssetBalance,
+)
 from rotkehlchen.errors import AuthenticationError, InputError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -25,8 +32,6 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     BlockchainAddress,
-    BTCAddress,
-    EthAddress,
     FiatAsset,
     FilePath,
     SupportedBlockchain,
@@ -38,36 +43,6 @@ from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-class BlockchainAccounts(NamedTuple):
-    eth: List[EthAddress]
-    btc: List[BTCAddress]
-
-
-class AssetBalance(NamedTuple):
-    time: Timestamp
-    asset: Asset
-    amount: str
-    usd_value: str
-
-
-class SingleAssetBalance(NamedTuple):
-    time: Timestamp
-    amount: str
-    usd_value: str
-
-
-class LocationData(NamedTuple):
-    time: Timestamp
-    location: str
-    usd_value: str
-
-
-class DBStartupAction(Enum):
-    NOTHING = 1
-    UPGRADE_3_4 = 2
-    STUCK_4_3 = 3
 
 
 DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS

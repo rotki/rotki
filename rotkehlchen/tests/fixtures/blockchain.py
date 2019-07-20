@@ -8,7 +8,7 @@ from eth_utils.address import to_checksum_address
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.blockchain import Blockchain
 from rotkehlchen.crypto import address_encoder, privatekey_to_address, sha3
-from rotkehlchen.db.dbhandler import BlockchainAccounts
+from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.tests.utils.blockchain import geth_create_blockchain
 from rotkehlchen.tests.utils.tests import cleanup_tasks

@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Union
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.db.dbhandler import AssetBalance, LocationData, SingleAssetBalance
+from rotkehlchen.db.utils import AssetBalance, LocationData, SingleAssetBalance
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import EthTokenInfo
 

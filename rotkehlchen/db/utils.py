@@ -1,3 +1,40 @@
+from enum import Enum
+from typing import List, NamedTuple
+
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.typing import BTCAddress, EthAddress, Timestamp
+
+
+class BlockchainAccounts(NamedTuple):
+    eth: List[EthAddress]
+    btc: List[BTCAddress]
+
+
+class AssetBalance(NamedTuple):
+    time: Timestamp
+    asset: Asset
+    amount: str
+    usd_value: str
+
+
+class SingleAssetBalance(NamedTuple):
+    time: Timestamp
+    amount: str
+    usd_value: str
+
+
+class LocationData(NamedTuple):
+    time: Timestamp
+    location: str
+    usd_value: str
+
+
+class DBStartupAction(Enum):
+    NOTHING = 1
+    UPGRADE_3_4 = 2
+    STUCK_4_3 = 3
+
+
 DB_CREATE_TIMED_BALANCES = """
 CREATE TABLE IF NOT EXISTS timed_balances (
     time INTEGER,
