@@ -1,4 +1,4 @@
-import sqlite3
+from sqlite3 import Cursor
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH
@@ -10,7 +10,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 
 
 def populate_db_and_check_for_asset_renaming(
-        cursor: 'sqlite3.Cursor',
+        cursor: Cursor,
         data: DataHandler,
         data_dir: FilePath,
         msg_aggregator: MessagesAggregator,

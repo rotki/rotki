@@ -10,7 +10,7 @@ from web3.exceptions import BadFunctionCallOutput
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.constants.assets import A_BTC, A_ETH
-from rotkehlchen.db.dbhandler import BlockchainAccounts
+from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.errors import EthSyncError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer

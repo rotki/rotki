@@ -1,7 +1,7 @@
 from typing import List
 
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
-from rotkehlchen.db.dbhandler import AssetBalance, LocationData
+from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.typing import Timestamp
 
