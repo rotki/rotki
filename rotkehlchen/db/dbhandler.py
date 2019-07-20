@@ -17,6 +17,7 @@ from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
     DB_SCRIPT_CREATE_TABLES,
     DB_SCRIPT_REIMPORT_DATA,
+    ROTKEHLCHEN_DB_VERSION,
     AssetBalance,
     BlockchainAccounts,
     DBStartupAction,
@@ -56,6 +57,7 @@ DEFAULT_BALANCE_SAVE_FREQUENCY = 24
 DEFAULT_MAIN_CURRENCY = S_USD
 DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z'
 KDF_ITER = 64000
+DBINFO_FILENAME = 'dbinfo.json'
 
 
 def str_to_bool(s):
@@ -75,10 +77,6 @@ def detect_sqlcipher_version() -> int:
     sqlcipher_version = int(match.group(1))
     conn.close()
     return sqlcipher_version
-
-
-ROTKEHLCHEN_DB_VERSION = 5
-DBINFO_FILENAME = 'dbinfo.json'
 
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non

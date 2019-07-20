@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, Any, Callable
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.db.asset_rename import rename_assets_in_db
+from rotkehlchen.db.utils import ROTKEHLCHEN_DB_VERSION
+from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import SupportedBlockchain
 
@@ -24,6 +26,14 @@ class DBUpgradeManager():
         self.db = db
 
     def run_upgrades(self) -> None:
+        our_version = self.db.get_version()
+        if our_version > ROTKEHLCHEN_DB_VERSION:
+            raise DBUpgradeError(
+                'Your database version is newer than the version expected by the '
+                'executable. Did you perhaps try to revert to an older rotkehlchen version?'
+                'Please only use the latest version of the software.',
+            )
+
         self._perform_single_upgrade(1, 2, self._checksum_eth_accounts)
         self._perform_single_upgrade(
             from_version=2,
@@ -75,16 +85,16 @@ class DBUpgradeManager():
                 upgrade_action(**kwargs)
             except BaseException as e:
                 # Problem .. restore DB backup and bail out
-                log.error(
+                error_message = (
                     f'Failed at database upgrade from version {from_version} to '
                     f'{to_version}: {str(e)}',
                 )
+                log.error(error_message)
                 shutil.copyfile(
                     tmp_db_filename,
                     os.path.join(self.db.user_data_dir, 'rotkehlchen.db'),
                 )
-                # TODO: Test how this looks like
-                raise
+                raise DBUpgradeError(error_message)
 
         # Upgrade success all is good
         self.db.set_version(to_version)

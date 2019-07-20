@@ -70,3 +70,7 @@ class UnsupportedAsset(Exception):
 
 class HistoryCacheInvalid(Exception):
     pass
+
+
+class DBUpgradeError(Exception):
+    pass
