@@ -20,18 +20,37 @@ def populate_db_and_check_for_asset_renaming(
 ):
     # Manually input data to the affected tables.
     # timed_balances, multisettings and (external) trades
+
+    # At this time point we only have occurence of the to_rename_asset
     cursor.execute(
         'INSERT INTO timed_balances('
         '   time, currency, amount, usd_value) '
         ' VALUES(?, ?, ?, ?)',
         ('1557499129', to_rename_asset, '10.1', '150'),
     )
+    # But add a time point where we got both to_rename_asset and
+    # renamed_asset. This is to test merging if renaming falls in time where
+    # both new and old asset had entries
+    cursor.execute(
+        'INSERT INTO timed_balances('
+        '   time, currency, amount, usd_value) '
+        ' VALUES(?, ?, ?, ?)',
+        ('1558499129', to_rename_asset, '1.1', '15'),
+    )
+    cursor.execute(
+        'INSERT INTO timed_balances('
+        '   time, currency, amount, usd_value) '
+        ' VALUES(?, ?, ?, ?)',
+        ('1558499129', renamed_asset.identifier, '2.2', '25'),
+    )
+    # Add one different asset for control test
     cursor.execute(
         'INSERT INTO timed_balances('
         '   time, currency, amount, usd_value) '
         ' VALUES(?, ?, ?, ?)',
         ('1556392121', 'ETH', '5.5', '245'),
     )
+    # Also populate an ignored assets entry
     cursor.execute(
         'INSERT INTO multisettings(name, value) VALUES(?, ?)',
         ('ignored_asset', to_rename_asset),
@@ -40,6 +59,7 @@ def populate_db_and_check_for_asset_renaming(
         'INSERT INTO multisettings(name, value) VALUES(?, ?)',
         ('ignored_asset', 'RDN'),
     )
+    # Finally include it in some trades
     cursor.execute(
         'INSERT INTO trades('
         '  time,'
@@ -124,12 +144,25 @@ def populate_db_and_check_for_asset_renaming(
     del data
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=False)
+    # Check that owned and ignored assets reflect the new state
     ignored_assets = data.db.get_ignored_assets()
     assert A_RDN in ignored_assets
     assert renamed_asset in ignored_assets
     owned_assets = data.db.query_owned_assets()
     assert A_ETH in owned_assets
     assert renamed_asset in owned_assets
+
+    # Make sure that the merging of both new and old name entry in same timestamp works
+    timed_balances = data.db.query_timed_balances(from_ts=0, to_ts=2556392121, asset=renamed_asset)
+    assert len(timed_balances) == 2
+    assert timed_balances[0].time == 1557499129
+    assert timed_balances[0].amount == '10.1'
+    assert timed_balances[0].usd_value == '150'
+    assert timed_balances[1].time == 1558499129
+    assert timed_balances[1].amount == '3.3'
+    assert timed_balances[1].usd_value == '40'
+
+    # Assert that trades got renamed properly
     trades = data.db.get_trades(only_external=False)
     assert len(trades) == 3
     assert trades[0]['fee_currency'] == 'EUR'
