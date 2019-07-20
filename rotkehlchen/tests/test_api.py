@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.data_handler import VALID_SETTINGS
-from rotkehlchen.db.dbhandler import ROTKEHLCHEN_DB_VERSION
+from rotkehlchen.db.utils import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.mock import MockWeb3
