@@ -1,9 +1,12 @@
 from sqlite3 import Cursor
 
+import pytest
+
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.data_handler import DataHandler
-from rotkehlchen.db.dbhandler import ROTKEHLCHEN_DB_VERSION
+from rotkehlchen.db.utils import ROTKEHLCHEN_DB_VERSION
+from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.tests.utils.constants import A_BCH, A_BSV, A_RDN
 from rotkehlchen.typing import FilePath, SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
@@ -177,7 +180,6 @@ def populate_db_and_check_for_asset_renaming(
 def test_upgrade_db_1_to_2(data_dir, username):
     """Test upgrading the DB from version 1 to version 2, which means that
     ethereum accounts are now checksummed"""
-    # Creating a new data dir should work
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
@@ -207,7 +209,6 @@ def test_upgrade_db_1_to_2(data_dir, username):
 
 def test_upgrade_db_2_to_3(data_dir, username):
     """Test upgrading the DB from version 2 to version 3, rename BCHSV to BSV"""
-    # Creating a new data dir should work
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
@@ -235,7 +236,6 @@ def test_upgrade_db_2_to_3(data_dir, username):
 def test_upgrade_db_3_to_4(data_dir, username):
     """Test upgrading the DB from version 3 to version 4, which means that
     the eth_rpc_port setting is changed to eth_rpc_endpoint"""
-    # Creating a new data dir should work
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
@@ -270,7 +270,6 @@ def test_upgrade_db_3_to_4(data_dir, username):
 
 def test_upgrade_db_4_to_5(data_dir, username):
     """Test upgrading the DB from version 4 to version 5, rename BCC to BCH"""
-    # Creating a new data dir should work
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
@@ -292,3 +291,26 @@ def test_upgrade_db_4_to_5(data_dir, username):
     )
     # Also make sure that we have updated the latest DB version constant
     assert data.db.get_version() > 4
+
+
+def test_db_newer_than_software_raises_error(data_dir, username):
+    """
+    If the DB version is greater than the current known version in the
+    software warn the user to use the latest version of the software
+    """
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
+    data.unlock(username, '123', create_new=True)
+    # Manually set a bigger version than the current known one
+    cursor = data.db.conn.cursor()
+    cursor.execute(
+        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+        ('version', str(ROTKEHLCHEN_DB_VERSION + 1)),
+    )
+    data.db.conn.commit()
+
+    # now relogin and check that an error is thrown
+    del data
+    data = DataHandler(data_dir, msg_aggregator)
+    with pytest.raises(DBUpgradeError):
+        data.unlock(username, '123', create_new=False)
