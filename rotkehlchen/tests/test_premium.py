@@ -52,6 +52,8 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
         session=rotkehlchen_instance.premium.session,
         metadata_last_modify_ts=0,
         metadata_data_hash=remote_hash,
+        # Smaller Remote DB size
+        metadata_data_size=2,
         saved_data='foo',
     )
 
@@ -82,6 +84,7 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance, db_password):
     # Write anything in the DB to set a non-zero last_write_ts
     rotkehlchen_instance.data.db.set_main_currency('EUR')
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
+    remote_hash = our_hash
 
     patched_put = patch.object(
         rotkehlchen_instance.premium.session,
@@ -91,7 +94,40 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance, db_password):
     patched_get = create_patched_premium_session_get(
         session=rotkehlchen_instance.premium.session,
         metadata_last_modify_ts=0,
-        metadata_data_hash=our_hash,
+        metadata_data_hash=remote_hash,
+        # Smaller Remote DB size
+        metadata_data_size=2,
+        saved_data='foo',
+    )
+
+    with patched_get, patched_put as put_mock:
+        rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
+        # The upload mock should not have been called since the hash is the same
+        assert not put_mock.called
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_password):
+    """Test that if the server has bigger DB size no upload happens"""
+    last_ts = rotkehlchen_instance.data.db.get_last_data_upload_ts()
+    assert last_ts == 0
+
+    # Write anything in the DB to set a non-zero last_write_ts
+    rotkehlchen_instance.data.db.set_main_currency('EUR')
+    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
+    remote_hash = 'a' + our_hash[1:]
+
+    patched_put = patch.object(
+        rotkehlchen_instance.premium.session,
+        'put',
+        return_value=None,
+    )
+    patched_get = create_patched_premium_session_get(
+        session=rotkehlchen_instance.premium.session,
+        metadata_last_modify_ts=0,
+        metadata_data_hash=remote_hash,
+        # larger DB than ours
+        metadata_data_size=9999999999,
         saved_data='foo',
     )
 

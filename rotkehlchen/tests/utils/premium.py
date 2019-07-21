@@ -14,7 +14,7 @@ from rotkehlchen.typing import ApiKey, ApiSecret
 REMOTE_DATA = b'qLQdzIvX6c8jJyucladYh2wZvpPbna/hmokjLu8NX64blb+lM/HxIGtCq5YH9TNUV51VHGMqMBhUeHqdtdOh1/VLg5q2NuzNmiCUroV0u97YMYM5dsGrKpy+J9d1Hbq33dlx8YcQxBsJEM2lSmLXiW8DQ/AfNJfT7twe6u+w1i9soFF7hbkafnrg2s7QGukB8D4CY1sIcZd2VRlMy7ATwtOF9ur8KDrKfVpZSQlTsWfyfiWyJmcVTmvPjqPAmZ0PEDlwqmNETe6yeRnkKgU0T2xTrTAJkawoGn41g0LnYi+ghTBPTboiLVTqASk/C71ofdEjN0gacy/9wNIBrq3cvfZBsrTpjzt88W2pnPHbLdfxrycToeGKNBASexs42uzBWOqa6BFPEiy7mSzKClLp4q+hiZtasyhnwMzUYvsIb25BvXBAPJQnjcBW+hzuiwQp+C3hynxTSPY1v2S80i3fqDK7BKY8VpPpjV+tC5B0pn6PsBETKZjB1pPKQ//m/I8HI0bWb+0fpVs4NbK9nFpRN6Capd8wJTzWtSp7vGbHOoaDAwtNtp61QI7eDsiMZGYXFy5jn8CmE+uWC4zDhLmoAUwAehuUSjv0v5RJGX/IAgWxoRMhAEra54bRwZ0vY1YRBS/Xf/AXp17BRzqE8NwSAUstgizOk7ryT3BQaTqybrt4y4omyw1VVpeisJROVK0fcFJFFH1zYUbbUB+0CBRq20y54faSSNNjc05pYHv456BBBIwpUwMS4M7yZz+HwP8b/OIq0LMr7d5SJdDjG9Ut1siZbaGRdyqv86WNTiSrlMmTASHi7+z+Z8CX9GnmEgVJna5mvvOhBC/zIpZiRLzwbYjdvrtw3N9X+NHzIaDGrAo1LtWh+eGmRHPKlb+CICOMj4TGvtGKlL/IfzBcrBfeTwkNSge2l4mOFG9l82ci4RZ7I4Yr6WUQJ+NU6DYQYKb5wMz+xTJmenHHaQxy0fsTulO5/RKfY8u1O9xT5kDtNc/R00CDheqcTS773NLDL4dqHEE/+lVxoVdFT/VvxzHrBKnI6M1UyJgDHu1BFIto2/z2wS0GjVXkBVFvMfQTYMZmb88RP/04F00kt3wqg/lrhAqr60BaC/FzIKG9lepDXXBAhHZyy+a1HYCkJlA43QoX3duu3fauViP+2RN306/tFw6HJvkRiCU7E3T9tLOHU508PLhcN8a5ON7aVyBtzdGO5i57j6Xm96di79IsfwStowS31kDix+B1mYeD8R1nvthWOKgL2KiAl/UpbXDPOuVBYubZ+V4/D8jxRCivM2ukME+SCIGzraR3EBqAdvjp3dLC1tomnawaEzAQYTUHbHndYatmIYnzEsTzFd8OWoX/gy0KGaZJ/mUGDTFBbkWIDE8='  # noqa: E501
 
 
-def mock_query_last_metadata(last_modify_ts, data_hash):
+def mock_query_last_metadata(last_modify_ts, data_hash, data_size):
     def do_mock_query_last_metadata(url, data, timeout):  # pylint: disable=unused-argument
         assert len(data) == 1
         assert 'nonce' in data
@@ -23,7 +23,7 @@ def mock_query_last_metadata(last_modify_ts, data_hash):
             f'{{"upload_ts": 1337, '
             f'"last_modify_ts": {last_modify_ts}, '
             f'"data_hash": "{data_hash}",'
-            f'"data_size": {len(base64.b64decode(REMOTE_DATA))}}}'
+            f'"data_size": {data_size}}}'
         )
         return MockResponse(200, payload)
 
@@ -45,6 +45,7 @@ def create_patched_premium_session_get(
         session,
         metadata_last_modify_ts,
         metadata_data_hash,
+        metadata_data_size,
         saved_data,
 ):
     def mocked_get(url, data, timeout):
@@ -52,6 +53,7 @@ def create_patched_premium_session_get(
             implementation = mock_query_last_metadata(
                 last_modify_ts=metadata_last_modify_ts,
                 data_hash=metadata_data_hash,
+                data_size=metadata_data_size,
             )
         elif 'get_saved_data' in url:
             implementation = mock_get_saved_data(saved_data=saved_data)
@@ -73,6 +75,7 @@ def create_patched_premium(
         patch_get: bool,
         metadata_last_modify_ts=None,
         metadata_data_hash=None,
+        metadata_data_size=None,
         saved_data=None,
 ):
     premium = Premium(
@@ -85,6 +88,7 @@ def create_patched_premium(
             session=premium.session,
             metadata_last_modify_ts=metadata_last_modify_ts,
             metadata_data_hash=metadata_data_hash,
+            metadata_data_size=metadata_data_size,
             saved_data=saved_data,
         )
     patched_premium = patch(
@@ -141,6 +145,7 @@ def setup_starting_environment(
         patch_get=True,
         metadata_last_modify_ts=metadata_last_modify_ts,
         metadata_data_hash=remote_hash,
+        metadata_data_size=len(base64.b64decode(REMOTE_DATA)),
         saved_data=remote_data,
     )
 
