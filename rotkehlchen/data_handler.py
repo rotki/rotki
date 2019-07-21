@@ -23,6 +23,8 @@ from rotkehlchen.order_formatting import Trade, get_pair_position_asset, trade_t
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
+    B64EncodedBytes,
+    B64EncodedString,
     BlockchainAddress,
     EthAddress,
     FiatAsset,
@@ -392,7 +394,7 @@ class DataHandler():
     def delete_external_trade(self, trade_id: int) -> Tuple[bool, str]:
         return self.db.delete_external_trade(trade_id)
 
-    def compress_and_encrypt_db(self, password: str) -> Tuple[bytes, str]:
+    def compress_and_encrypt_db(self, password: str) -> Tuple[B64EncodedBytes, str]:
         """Decrypt the DB, dump in temporary plaintextdb, compress it,
         and then re-encrypt it
 
@@ -410,9 +412,9 @@ class DataHandler():
         compressed_data = zlib.compress(data_blob, level=9)
         encrypted_data = encrypt(password.encode(), compressed_data)
 
-        return encrypted_data.encode(), original_data_hash
+        return B64EncodedBytes(encrypted_data.encode()), original_data_hash
 
-    def decompress_and_decrypt_db(self, password: str, encrypted_data: str) -> None:
+    def decompress_and_decrypt_db(self, password: str, encrypted_data: B64EncodedString) -> None:
         """Decrypt and decompress the encrypted data we receive from the server
 
         If successful then replace our local Database"""
