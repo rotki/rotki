@@ -94,6 +94,7 @@ def test_export_import_db(data_dir, username):
     data.set_fiat_balance('EUR', '10')
 
     encoded_data, _ = data.compress_and_encrypt_db('123')
+
     # The server would return them decoded
     encoded_data = encoded_data.decode()
     data.decompress_and_decrypt_db('123', encoded_data)

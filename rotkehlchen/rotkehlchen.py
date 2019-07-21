@@ -1,12 +1,15 @@
 #!/usr/bin/env python
+import base64
 import logging
 import os
 import shutil
 import time
-from typing import Any, Dict, List, Tuple, Union
+from enum import Enum
+from typing import Any, Dict, List, NamedTuple, Tuple, Union
 
 import gevent
 from gevent.lock import Semaphore
+from typing_extensions import Literal
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.assets.asset import Asset, EthereumToken
@@ -52,12 +55,26 @@ from rotkehlchen.utils.misc import (
     merge_dicts,
     simple_result,
     ts_now,
+    tsToDate,
 )
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 MAIN_LOOP_SECS_DELAY = 60
+
+
+class CanSync(Enum):
+    YES = 0
+    NO = 1
+    ASK_USER = 2
+
+
+class SyncCheckResult(NamedTuple):
+    # The result of the sync check
+    can_sync: CanSync
+    # If result is ASK_USER, what should the message be?
+    message: str
 
 
 def accounts_result(per_account, totals) -> Dict:
@@ -198,7 +215,7 @@ class Rotkehlchen():
             api_secret: ApiSecret,
             username: str,
             create_new: bool,
-            sync_approval: bool,
+            sync_approval: Literal['yes', 'no', 'unknown'],
     ) -> None:
         """Check if new user provided api pair or we already got one in the DB"""
 
@@ -244,17 +261,14 @@ class Rotkehlchen():
         if not self.premium:
             return
 
-        # If this is a new account with premium keys unconditionally try to pull
-        if create_new or self.can_sync_data_from_server():
-            if sync_approval == 'unknown' and not create_new:
+        result = self.can_sync_data_from_server(new_account=create_new)
+        if result.can_sync == CanSync.ASK_USER:
+            if sync_approval == 'unknown':
                 log.info('DB data at server newer than local')
-                raise RotkehlchenPermissionError(
-                    'Rotkehlchen Server has newer version of your DB data. '
-                    'Should we replace local data with the server\'s?',
-                )
-            elif sync_approval == 'yes' or sync_approval == 'unknown' and create_new:
+                raise RotkehlchenPermissionError(result.message)
+            elif sync_approval == 'yes':
                 log.info('User approved data sync from server')
-                if self.sync_data_from_server():
+                if self.sync_data_from_server_and_replace_local():
                     if create_new:
                         # if we successfully synced data from the server and this is
                         # a new account, make sure the api keys are properly stored
@@ -262,6 +276,16 @@ class Rotkehlchen():
                         self.data.db.set_rotkehlchen_premium(api_key, api_secret)
             else:
                 log.debug('Could sync data from server but user refused')
+        elif result.can_sync == CanSync.YES:
+            log.info('User approved data sync from server')
+            if self.sync_data_from_server_and_replace_local():
+                if create_new:
+                    # if we successfully synced data from the server and this is
+                    # a new account, make sure the api keys are properly stored
+                    # in the DB
+                    self.data.db.set_rotkehlchen_premium(api_key, api_secret)
+
+        # else result.can_sync was no, so we do nothing
 
     def unlock_user(
             self,
@@ -389,7 +413,7 @@ class Rotkehlchen():
         log.debug('upload to server -- start')
         data, our_hash = self.data.compress_and_encrypt_db(self.password)
         try:
-            result = self.premium.query_last_data_metadata()
+            metadata = self.premium.query_last_data_metadata()
         except RemoteError as e:
             log.debug(
                 'upload to server -- query last metadata failed',
@@ -400,15 +424,15 @@ class Rotkehlchen():
         log.debug(
             'CAN_PUSH',
             ours=our_hash,
-            theirs=result['data_hash'],
+            theirs=metadata.data_hash,
         )
-        if our_hash == result['data_hash']:
+        if our_hash == metadata.data_hash:
             log.debug('upload to server -- same hash')
             # same hash -- no need to upload anything
             return
 
         our_last_write_ts = self.data.db.get_last_write_ts()
-        if our_last_write_ts <= result['last_modify_ts']:
+        if our_last_write_ts <= metadata.last_modify_ts:
             # Server's DB was modified after our local DB
             log.debug("CAN_PUSH -> 3")
             log.debug('upload to server -- remote db more recent than local')
@@ -430,17 +454,28 @@ class Rotkehlchen():
         self.data.db.update_last_data_upload_ts(self.last_data_upload_ts)
         log.debug('upload to server -- success')
 
-    def can_sync_data_from_server(self) -> bool:
+    def can_sync_data_from_server(self, new_account: bool) -> SyncCheckResult:
+        """
+        Checks if the remote data can be pulled from the server.
+
+        Returns a SyncCheckResult denoting whether we can pull for sure,
+        whether we can't pull or whether the user should be asked. If the user
+        should be asked a message is also returned
+        """
         log.debug('can sync data from server -- start')
-        _, our_hash = self.data.compress_and_encrypt_db(self.password)
+        b64_encoded_data, our_hash = self.data.compress_and_encrypt_db(self.password)
         try:
             metadata = self.premium.query_last_data_metadata()
         except RemoteError as e:
             log.debug('can sync data from server failed', error=str(e))
-            return False
+            return SyncCheckResult(can_sync=CanSync.NO, message='')
+
+        if new_account:
+            return SyncCheckResult(can_sync=CanSync.YES, message='')
 
         if not self.data.db.get_premium_sync():
-            return False
+            # If it's not a new account and the db setting for premium syncin is off stop
+            return SyncCheckResult(can_sync=CanSync.NO, message='')
 
         log.debug(
             'CAN_PULL',
@@ -450,17 +485,41 @@ class Rotkehlchen():
         if our_hash == metadata.data_hash:
             log.debug('sync from server -- same hash')
             # same hash -- no need to get anything
-            return False
+            return SyncCheckResult(can_sync=CanSync.NO, message='')
 
         our_last_write_ts = self.data.db.get_last_write_ts()
         if our_last_write_ts >= metadata.last_modify_ts:
             # Local DB is newer than Server DB
             log.debug('sync from server -- local DB more recent than remote')
-            return False
+            return SyncCheckResult(can_sync=CanSync.NO, message='')
 
-        return True
+        data_bytes_size = len(base64.b64decode(b64_encoded_data))
+        if data_bytes_size > metadata.data_size:
+            message_prefix = (
+                'Detected newer remote database BUT with smaller size than the local one. '
+            )
 
-    def sync_data_from_server(self) -> bool:
+        else:
+            message_prefix = 'Detected newer remote database. '
+
+        message = (
+            f'{message_prefix}'
+            f'Local size: {data_bytes_size} Remote size: {metadata.data_size} '
+            f'Local last modified time: {tsToDate(our_last_write_ts)} '
+            f'Remote last modified time: {tsToDate(metadata.last_modify_ts)} '
+            f'Would you like to replace the local DB with the remote one?'
+        )
+        return SyncCheckResult(
+            can_sync=CanSync.ASK_USER,
+            message=message,
+        )
+
+    def sync_data_from_server_and_replace_local(self) -> bool:
+        """
+        Performs syncing of data from server and replaces local db
+
+        Returns true for success and False for error/failure
+        """
         try:
             result = self.premium.pull_data()
         except RemoteError as e:
