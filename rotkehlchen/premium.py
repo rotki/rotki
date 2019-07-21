@@ -6,14 +6,14 @@ import time
 from binascii import Error as binascii_error
 from enum import Enum
 from http import HTTPStatus
-from typing import Dict, Tuple
+from typing import Dict, NamedTuple, Tuple
 from urllib.parse import urlencode
 
 import requests
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.errors import AuthenticationError, IncorrectApiKeyFormat, RemoteError
-from rotkehlchen.typing import ApiKey, ApiSecret
+from rotkehlchen.typing import ApiKey, ApiSecret, Timestamp
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
@@ -24,6 +24,17 @@ HANDLABLE_STATUS_CODES = [
     HTTPStatus.UNAUTHORIZED,
     HTTPStatus.BAD_REQUEST,
 ]
+
+
+class RemoteMetadata(NamedTuple):
+    # This is the last upload timestamp of the remote DB data
+    upload_ts: Timestamp
+    # This is the last modify timestamp of the remote DB data
+    last_modify_ts: Timestamp
+    # This is the hash of the remote DB data
+    data_hash: str
+    # This is the size in bytes of the remote DB data
+    data_size: int
 
 
 def premium_create_and_verify(api_key: ApiKey, api_secret: ApiSecret):
@@ -191,8 +202,9 @@ class Premium():
 
         return _process_dict_response(response)
 
-    def query_last_data_metadata(self) -> Dict:
-        """Queries last metadata from the server and returns the response dict
+    def query_last_data_metadata(self) -> RemoteMetadata:
+        """Queries last metadata from the server and returns the response
+        as a RemoteMetadata object.
 
         Raises RemoteError if there are problems reaching the server or if
         there is an error returned by the server
@@ -211,7 +223,14 @@ class Premium():
         except requests.ConnectionError:
             raise RemoteError('Could not connect to rotkehlchen server')
 
-        return _process_dict_response(response)
+        result = _process_dict_response(response)
+        metadata = RemoteMetadata(
+            upload_ts=Timestamp(result['upload_ts']),
+            last_modify_ts=Timestamp(result['last_modify_ts']),
+            data_hash=result['data_hash'],
+            data_size=result['data_size'],
+        )
+        return metadata
 
     def query_statistics_renderer(self) -> str:
         """Queries for the source of the statistics_renderer from the server
