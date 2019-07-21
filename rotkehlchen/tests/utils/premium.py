@@ -4,10 +4,9 @@ from unittest.mock import patch
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.premium import Premium
+from rotkehlchen.premium.premium import Premium
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.constants import A_GBP
-from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import ApiKey, ApiSecret
 
@@ -68,7 +67,7 @@ def create_patched_premium_session_get(
     )
 
 
-def patched_create_premium(
+def create_patched_premium(
         api_key: ApiKey,
         api_secret: ApiSecret,
         patch_get: bool,
@@ -89,31 +88,12 @@ def patched_create_premium(
             saved_data=saved_data,
         )
     patched_premium = patch(
-        # note the patch location is in rotkehlchen.py
-        'rotkehlchen.rotkehlchen.premium_create_and_verify',
+        # note the patch location is in premium/sync.py
+        'rotkehlchen.premium.sync.premium_create_and_verify',
         return_value=premium,
     )
 
     return patched_premium, patched_get
-
-
-def create_patched_premium_with_keypair(
-        patch_get: bool,
-        metadata_last_modify_ts=None,
-        metadata_data_hash=None,
-        saved_data=None,
-):
-    api_key = ApiKey(base64.b64encode(make_random_b64bytes(128)))
-    api_secret = ApiSecret(base64.b64encode(make_random_b64bytes(128)))
-    patches = patched_create_premium(
-        api_key,
-        api_secret,
-        patch_get,
-        metadata_last_modify_ts,
-        metadata_data_hash,
-        saved_data,
-    )
-    return api_key, api_secret, patches[0], patches[1]
 
 
 def setup_starting_environment(
@@ -124,18 +104,19 @@ def setup_starting_environment(
         same_hash_with_remote: bool,
         newer_remote_db: bool,
         db_can_sync_setting: bool,
+        api_key: ApiKey,
+        api_secret: ApiSecret,
 ):
     """
     Sets up the starting environment for premium testing when the user
     starts up his node either for the first time or logs in an already
     existing account
     """
-
     if not first_time:
-        # Emulate already having api keys in the DB
+        # Emulate already having the api keys in the DB
         rotkehlchen_instance.data.db.set_rotkehlchen_premium(
-            api_key=base64.b64encode(make_random_b64bytes(128)),
-            api_secret=base64.b64encode(make_random_b64bytes(128)),
+            api_key=api_key,
+            api_secret=api_secret,
         )
 
     rotkehlchen_instance.data.db.update_premium_sync(db_can_sync_setting)
@@ -154,7 +135,9 @@ def setup_starting_environment(
     else:
         metadata_last_modify_ts = our_last_write_ts - 10
 
-    api_key, api_secret, patched_premium, patched_get = create_patched_premium_with_keypair(
+    patched_premium, patched_get = create_patched_premium(
+        api_key=api_key,
+        api_secret=api_secret,
         patch_get=True,
         metadata_last_modify_ts=metadata_last_modify_ts,
         metadata_data_hash=remote_hash,
@@ -171,7 +154,7 @@ def setup_starting_environment(
         create_new = False
 
     with patched_premium, patched_get:
-        rotkehlchen_instance.try_premium_at_start(
+        rotkehlchen_instance.premium_sync_manager.try_premium_at_start(
             api_key=api_key,
             api_secret=api_secret,
             username=username,
