@@ -1,16 +1,35 @@
 import argparse
+import base64
 from collections import namedtuple
 from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.premium.premium import Premium
+from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.server import RotkehlchenServer
+from rotkehlchen.tests.utils.factories import make_random_b64bytes
 
 
 @pytest.fixture
 def start_with_logged_in_user():
     return True
+
+
+@pytest.fixture
+def start_with_valid_premium():
+    return False
+
+
+@pytest.fixture
+def rotkehlchen_api_key():
+    return base64.b64encode(make_random_b64bytes(128))
+
+
+@pytest.fixture
+def rotkehlchen_api_secret():
+    return base64.b64encode(make_random_b64bytes(128))
 
 
 @pytest.fixture()
@@ -37,11 +56,14 @@ def cli_args(data_dir):
 def initialize_mock_rotkehlchen_instance(
         rotki,
         start_with_logged_in_user,
+        start_with_valid_premium,
         msg_aggregator,
         username,
         accountant,
         blockchain,
         db_password,
+        rotkehlchen_api_key,
+        rotkehlchen_api_secret,
 ):
     if start_with_logged_in_user:
         # Rotkehlchen initializes its own messages aggregator normally but here we
@@ -60,6 +82,19 @@ def initialize_mock_rotkehlchen_instance(
         rotki.blockchain = blockchain
         rotki.trades_historian = object()
         rotki.user_is_logged_in = True
+        if start_with_valid_premium:
+            rotki.premium = Premium(
+                api_key=rotkehlchen_api_key,
+                api_secret=rotkehlchen_api_secret,
+            )
+            rotki.premium_sync_manager = PremiumSyncManager(
+                data=rotki.data,
+                password=db_password,
+            )
+            rotki.premium_sync_manager.premium = rotki.premium
+        else:
+            rotki.premium = None
+            rotki.premium_sync_manager = None
 
 
 @pytest.fixture()
@@ -69,8 +104,11 @@ def rotkehlchen_server(
         blockchain,
         accountant,
         start_with_logged_in_user,
+        start_with_valid_premium,
         function_scope_messages_aggregator,
         db_password,
+        rotkehlchen_api_key,
+        rotkehlchen_api_secret,
 ):
     """A partially mocked rotkehlchen server instance"""
     with patch.object(argparse.ArgumentParser, 'parse_args', return_value=cli_args):
@@ -79,11 +117,14 @@ def rotkehlchen_server(
     initialize_mock_rotkehlchen_instance(
         rotki=server.rotkehlchen,
         start_with_logged_in_user=start_with_logged_in_user,
+        start_with_valid_premium=start_with_valid_premium,
         msg_aggregator=function_scope_messages_aggregator,
         username=username,
         accountant=accountant,
         blockchain=blockchain,
         db_password=db_password,
+        rotkehlchen_api_key=rotkehlchen_api_key,
+        rotkehlchen_api_secret=rotkehlchen_api_secret,
     )
     return server
 
@@ -95,8 +136,11 @@ def rotkehlchen_instance(
         blockchain,
         accountant,
         start_with_logged_in_user,
+        start_with_valid_premium,
         function_scope_messages_aggregator,
         db_password,
+        rotkehlchen_api_key,
+        rotkehlchen_api_secret,
 ):
     """A partially mocked rotkehlchen instance"""
     rotkehlchen = Rotkehlchen(cli_args)
@@ -104,11 +148,14 @@ def rotkehlchen_instance(
     initialize_mock_rotkehlchen_instance(
         rotki=rotkehlchen,
         start_with_logged_in_user=start_with_logged_in_user,
+        start_with_valid_premium=start_with_valid_premium,
         msg_aggregator=function_scope_messages_aggregator,
         username=username,
         accountant=accountant,
         blockchain=blockchain,
         db_password=db_password,
+        rotkehlchen_api_key=rotkehlchen_api_key,
+        rotkehlchen_api_secret=rotkehlchen_api_secret,
     )
     return rotkehlchen
 

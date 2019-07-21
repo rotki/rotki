@@ -83,7 +83,8 @@ class Premium():
         self.status = SubscriptionStatus.UNKNOWN
         self.session = requests.session()
         self.apiversion = '1'
-        self.uri = 'http://localhost:5002/api/{}/'.format(self.apiversion)
+        self.uri = 'http://localhost/api/{}/'.format(self.apiversion)
+        # self.uri = 'https://rotkehlchen.io/api/{}/'.format(self.apiversion)
         self.reset_credentials(api_key, api_secret)
 
     def reset_credentials(self, api_key: ApiKey, api_secret: ApiSecret) -> None:

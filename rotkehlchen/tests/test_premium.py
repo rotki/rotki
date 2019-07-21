@@ -1,10 +1,9 @@
-import base64
 from unittest.mock import patch
+
+import pytest
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.premium import Premium
-from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.premium import (
     assert_db_got_replaced,
@@ -14,12 +13,9 @@ from rotkehlchen.tests.utils.premium import (
 from rotkehlchen.utils.misc import ts_now
 
 
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
     """Test our side of uploading data to the server"""
-    rotkehlchen_instance.premium = Premium(
-        api_key=base64.b64encode(make_random_b64bytes(128)),
-        api_secret=base64.b64encode(make_random_b64bytes(128)),
-    )
     last_ts = rotkehlchen_instance.data.db.get_last_data_upload_ts()
     assert last_ts == 0
 
@@ -60,29 +56,26 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
     )
 
     with patched_get, patched_put:
-        rotkehlchen_instance.upload_data_to_server()
+        rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
 
     now = ts_now()
     last_ts = rotkehlchen_instance.data.db.get_last_data_upload_ts()
     msg = 'The last data upload timestamp should have been saved in the db as now'
     assert last_ts >= now and last_ts - now < 50, msg
-    last_ts = rotkehlchen_instance.last_data_upload_ts
+    last_ts = rotkehlchen_instance.premium_sync_manager.last_data_upload_ts
     msg = 'The last data upload timestamp should also be in memory'
     assert last_ts >= now and last_ts - now < 50, msg
 
     # and now logout and login again and make sure that the last_data_upload_ts is correct
     rotkehlchen_instance.logout()
     rotkehlchen_instance.data.unlock(username, db_password, create_new=False)
-    assert last_ts == rotkehlchen_instance.last_data_upload_ts
+    assert last_ts == rotkehlchen_instance.premium_sync_manager.last_data_upload_ts
     assert last_ts == rotkehlchen_instance.data.db.get_last_data_upload_ts()
 
 
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_upload_data_to_server_same_hash(rotkehlchen_instance, db_password):
     """Test that if the server has same data hash as we no upload happens"""
-    rotkehlchen_instance.premium = Premium(
-        api_key=base64.b64encode(make_random_b64bytes(128)),
-        api_secret=base64.b64encode(make_random_b64bytes(128)),
-    )
     last_ts = rotkehlchen_instance.data.db.get_last_data_upload_ts()
     assert last_ts == 0
 
@@ -103,21 +96,26 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance, db_password):
     )
 
     with patched_get, patched_put as put_mock:
-        rotkehlchen_instance.upload_data_to_server()
+        rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
         # The upload mock should not have been called since the hash is the same
         assert not put_mock.called
 
 
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_try_premium_at_start_new_account_can_pull_data(
         rotkehlchen_instance,
         username,
         db_password,
+        rotkehlchen_api_key,
+        rotkehlchen_api_secret,
 ):
     # Test that even with can_sync False, at start of new account we attempt data pull
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
         db_password=db_password,
+        api_key=rotkehlchen_api_key,
+        api_secret=rotkehlchen_api_secret,
         first_time=True,
         same_hash_with_remote=False,
         newer_remote_db=True,
@@ -126,15 +124,20 @@ def test_try_premium_at_start_new_account_can_pull_data(
     assert_db_got_replaced(rotkehlchen_instance=rotkehlchen_instance, username=username)
 
 
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_try_premium_at_start_old_account_can_pull_data(
         rotkehlchen_instance,
         username,
         db_password,
+        rotkehlchen_api_key,
+        rotkehlchen_api_secret,
 ):
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
         db_password=db_password,
+        api_key=rotkehlchen_api_key,
+        api_secret=rotkehlchen_api_secret,
         first_time=False,
         same_hash_with_remote=False,
         newer_remote_db=True,
@@ -143,15 +146,20 @@ def test_try_premium_at_start_old_account_can_pull_data(
     assert_db_got_replaced(rotkehlchen_instance=rotkehlchen_instance, username=username)
 
 
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_try_premium_at_start_old_account_doesnt_pull_data_with_no_premium_sync(
         rotkehlchen_instance,
         username,
         db_password,
+        rotkehlchen_api_key,
+        rotkehlchen_api_secret,
 ):
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
         db_password=db_password,
+        api_key=rotkehlchen_api_key,
+        api_secret=rotkehlchen_api_secret,
         first_time=False,
         same_hash_with_remote=False,
         newer_remote_db=True,
@@ -161,15 +169,20 @@ def test_try_premium_at_start_old_account_doesnt_pull_data_with_no_premium_sync(
     assert rotkehlchen_instance.data.db.get_main_currency() == A_USD
 
 
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_try_premium_at_start_old_account_same_hash(
         rotkehlchen_instance,
         username,
         db_password,
+        rotkehlchen_api_key,
+        rotkehlchen_api_secret,
 ):
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
         db_password=db_password,
+        api_key=rotkehlchen_api_key,
+        api_secret=rotkehlchen_api_secret,
         first_time=False,
         same_hash_with_remote=True,
         newer_remote_db=True,
@@ -179,15 +192,20 @@ def test_try_premium_at_start_old_account_same_hash(
     assert rotkehlchen_instance.data.db.get_main_currency() == A_USD
 
 
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_try_premium_at_start_old_account_older_remote_ts(
         rotkehlchen_instance,
         username,
         db_password,
+        rotkehlchen_api_key,
+        rotkehlchen_api_secret,
 ):
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
         db_password=db_password,
+        api_key=rotkehlchen_api_key,
+        api_secret=rotkehlchen_api_secret,
         first_time=False,
         same_hash_with_remote=False,
         newer_remote_db=False,
