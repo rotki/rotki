@@ -110,6 +110,9 @@ class PremiumSyncManager():
         Performs syncing of data from server and replaces local db
 
         Returns true for success and False for error/failure
+
+        Can raise UnableToDecryptRemoteData due to decompress_and_decrypt_db.
+        We let it bubble up so that it can be handled by the uper layer.
         """
         try:
             result = self.premium.pull_data()

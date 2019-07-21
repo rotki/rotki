@@ -417,7 +417,10 @@ class DataHandler():
     def decompress_and_decrypt_db(self, password: str, encrypted_data: B64EncodedString) -> None:
         """Decrypt and decompress the encrypted data we receive from the server
 
-        If successful then replace our local Database"""
+        If successful then replace our local Database
+
+        Can raise UnableToDecryptRemoteData due to decrypt().
+        """
         log.info('Decompress and decrypt DB')
 
         # First make a backup of the DB we are about to replace
