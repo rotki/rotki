@@ -430,12 +430,12 @@ class Rotkehlchen():
         log.debug('upload to server -- success')
 
     def can_sync_data_from_server(self) -> bool:
-        log.debug('sync data from server -- start')
+        log.debug('can sync data from server -- start')
         _, our_hash = self.data.compress_and_encrypt_db(self.password)
         try:
-            result = self.premium.query_last_data_metadata()
+            metadata = self.premium.query_last_data_metadata()
         except RemoteError as e:
-            log.debug('sync data from server failed', error=str(e))
+            log.debug('can sync data from server failed', error=str(e))
             return False
 
         if not self.data.db.get_premium_sync():
@@ -444,15 +444,15 @@ class Rotkehlchen():
         log.debug(
             'CAN_PULL',
             ours=our_hash,
-            theirs=result['data_hash'],
+            theirs=metadata.data_hash,
         )
-        if our_hash == result['data_hash']:
+        if our_hash == metadata.data_hash:
             log.debug('sync from server -- same hash')
             # same hash -- no need to get anything
             return False
 
         our_last_write_ts = self.data.db.get_last_write_ts()
-        if our_last_write_ts >= result['last_modify_ts']:
+        if our_last_write_ts >= metadata.last_modify_ts:
             # Local DB is newer than Server DB
             log.debug('sync from server -- local DB more recent than remote')
             return False
