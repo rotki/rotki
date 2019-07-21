@@ -4,6 +4,7 @@ import pytest
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.errors import UnableToDecryptRemoteData
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.premium import (
     assert_db_got_replaced,
@@ -249,3 +250,31 @@ def test_try_premium_at_start_old_account_older_remote_ts(
     )
     # DB should not have changed
     assert rotkehlchen_instance.data.db.get_main_currency() == A_USD
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('db_password', ['different_password_than_remote_db_was_encoded_with'])
+def test_try_premium_at_start_new_account_different_password_than_remote_db(
+        rotkehlchen_instance,
+        username,
+        db_password,
+        rotkehlchen_api_key,
+        rotkehlchen_api_secret,
+):
+    """
+    If we make a new account with api keys and provide a password different than
+    the one the remote DB is encrypted with then make sure that UnableToDecryptRemoteData
+    is thrown and that it is shown to the user.
+    """
+    with pytest.raises(UnableToDecryptRemoteData):
+        setup_starting_environment(
+            rotkehlchen_instance=rotkehlchen_instance,
+            username=username,
+            db_password=db_password,
+            api_key=rotkehlchen_api_key,
+            api_secret=rotkehlchen_api_secret,
+            first_time=True,
+            same_hash_with_remote=False,
+            newer_remote_db=False,
+            db_can_sync_setting=True,
+        )

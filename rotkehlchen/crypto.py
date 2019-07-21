@@ -6,6 +6,7 @@ from Crypto import Random
 from Crypto.Cipher import AES
 from Crypto.Hash import SHA3_256, SHA256  # type: ignore
 
+from rotkehlchen.errors import UnableToDecryptRemoteData
 from rotkehlchen.typing import BinaryEthAddress, EthAddress
 
 
@@ -23,6 +24,12 @@ def encrypt(key: bytes, source: bytes) -> str:
 
 
 def decrypt(key: bytes, given_source: str) -> bytes:
+    """
+    Decrypts the given source data we with the given key.
+
+    Returns the decrypted data.
+    If data can't be decrypted then raises UnableToDecryptRemoteData
+    """
     assert isinstance(key, bytes), 'key should be given in bytes'
     assert isinstance(given_source, str), 'source should be given in string'
     source = base64.b64decode(given_source.encode("latin-1"))
@@ -32,7 +39,11 @@ def decrypt(key: bytes, given_source: str) -> bytes:
     data = decryptor.decrypt(source[AES.block_size:])  # decrypt
     padding = data[-1]  # pick the padding value from the end; Python 2.x: ord(data[-1])
     if data[-padding:] != bytes([padding]) * padding:  # Python 2.x: chr(padding) * padding
-        raise ValueError("Invalid padding...")
+        raise UnableToDecryptRemoteData(
+            'Invalid padding when decrypting the DB data we received from the server. '
+            'Are you using a new user and if yes have you used the same password as before? '
+            'If you have then please open a bug report.',
+        )
     return data[:-padding]  # remove the padding
 
 

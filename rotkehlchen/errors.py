@@ -34,6 +34,10 @@ class IncorrectApiKeyFormat(Exception):
     pass
 
 
+class UnableToDecryptRemoteData(Exception):
+    pass
+
+
 class RotkehlchenPermissionError(Exception):
     pass
 
