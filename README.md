@@ -42,5 +42,5 @@ The best way to contribute financially and all the while help with the developme
 
 For people who don't want to purchase a subscription but would still like to support the development of Rotkehlchen we also accept donations in BTC and ETH or tokens.
 
-**BTC donations**: 1PfvkW8MC7Ns2y8zn6CE2P2t5f19KF8XiW
-**ETH donations**: 0x9531c059098e3d194ff87febb587ab07b30b1306
+ - Send **BTC donations** to: 1PfvkW8MC7Ns2y8zn6CE2P2t5f19KF8XiW
+ - Send **ETH donations** to: 0x9531c059098e3d194ff87febb587ab07b30b1306
