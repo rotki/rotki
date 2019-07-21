@@ -54,6 +54,7 @@ class PremiumSyncManager():
         """
         log.debug('can sync data from server -- start')
         b64_encoded_data, our_hash = self.data.compress_and_encrypt_db(self.password)
+
         try:
             metadata = self.premium.query_last_data_metadata()
         except RemoteError as e:
@@ -73,14 +74,14 @@ class PremiumSyncManager():
             theirs=metadata.data_hash,
         )
         if our_hash == metadata.data_hash:
-            log.debug('sync from server -- same hash')
+            log.debug('sync from server stopped -- same hash')
             # same hash -- no need to get anything
             return SyncCheckResult(can_sync=CanSync.NO, message='')
 
         our_last_write_ts = self.data.db.get_last_write_ts()
         if our_last_write_ts >= metadata.last_modify_ts:
             # Local DB is newer than Server DB
-            log.debug('sync from server -- local DB more recent than remote')
+            log.debug('sync from server stopped -- local DB more recent than remote')
             return SyncCheckResult(can_sync=CanSync.NO, message='')
 
         data_bytes_size = len(base64.b64decode(b64_encoded_data))
@@ -120,7 +121,6 @@ class PremiumSyncManager():
         return True
 
     def maybe_upload_data_to_server(self) -> None:
-        log.debug('maybe upload to server -- start')
         # if user has no premium do nothing
         if not self.premium:
             return
@@ -130,12 +130,12 @@ class PremiumSyncManager():
         if diff < 3600:
             return
 
-        data, our_hash = self.data.compress_and_encrypt_db(self.password)
+        b64_encoded_data, our_hash = self.data.compress_and_encrypt_db(self.password)
         try:
             metadata = self.premium.query_last_data_metadata()
         except RemoteError as e:
             log.debug(
-                'upload to server -- query last metadata failed',
+                'upload to server stopped -- query last metadata failed',
                 error=str(e),
             )
             return
@@ -146,20 +146,26 @@ class PremiumSyncManager():
             theirs=metadata.data_hash,
         )
         if our_hash == metadata.data_hash:
-            log.debug('upload to server -- same hash')
+            log.debug('upload to server stopped -- same hash')
             # same hash -- no need to upload anything
             return
 
         our_last_write_ts = self.data.db.get_last_write_ts()
         if our_last_write_ts <= metadata.last_modify_ts:
             # Server's DB was modified after our local DB
-            log.debug("CAN_PUSH -> 3")
-            log.debug('upload to server -- remote db more recent than local')
+            log.debug('upload to server stopped -- remote db more recent than local')
+            return
+
+        data_bytes_size = len(base64.b64decode(b64_encoded_data))
+        if data_bytes_size < metadata.data_size:
+            # Let's be conservative.
+            # TODO: Here perhaps prompt user in the future
+            log.debug('upload to server stopped -- remote db bigger than local')
             return
 
         try:
             self.premium.upload_data(
-                data_blob=data,
+                data_blob=b64_encoded_data,
                 our_hash=our_hash,
                 last_modify_ts=our_last_write_ts,
                 compression_type='zlib',
