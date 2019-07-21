@@ -16,6 +16,12 @@ ApiKey = NewType('ApiKey', T_ApiKey)
 T_ApiSecret = bytes
 ApiSecret = NewType('ApiSecret', T_ApiSecret)
 
+T_B64EncodedBytes = bytes
+B64EncodedBytes = NewType('B64EncodedBytes', T_B64EncodedBytes)
+
+T_B64EncodedString = str
+B64EncodedString = NewType('B64EncodedString', T_B64EncodedString)
+
 
 class ApiCredentials(NamedTuple):
     """Represents Credentials for various APIs. Exchanges, Premium e.t.c."""
