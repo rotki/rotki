@@ -1,12 +1,12 @@
-from collections import namedtuple
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 from dataclasses import dataclass
+from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Timestamp, TradePair, TradeType
+from rotkehlchen.typing import Fee, Timestamp, TradePair, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -33,17 +33,13 @@ class Events(NamedTuple):
     sells: List[SellEvent]
 
 
-AssetMovement = namedtuple(
-    'AssetMovement',
-    (
-        'exchange',
-        'category',
-        'timestamp',
-        'asset',
-        'amount',
-        'fee',
-    ),
-)
+class AssetMovement(NamedTuple):
+    exchange: Literal['kraken', 'poloniex', 'bittrex', 'binance', 'bitmex']
+    category: Literal['deposit', 'withdrawal']
+    timestamp: Timestamp
+    asset: Asset
+    amount: FVal
+    fee: Fee
 
 
 def trade_type_from_string(symbol: str) -> TradeType:
@@ -244,8 +240,8 @@ def asset_movements_from_dictlist(
             exchange=movement['exchange'],
             category=movement['category'],
             timestamp=movement['timestamp'],
-            asset=movement['asset'],
+            asset=Asset(movement['asset']),
             amount=FVal(movement['amount']),
-            fee=FVal(movement['fee']),
+            fee=Fee(FVal(movement['fee'])),
         ))
     return returned_movements

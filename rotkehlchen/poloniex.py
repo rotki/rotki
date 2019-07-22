@@ -16,6 +16,7 @@ from typing_extensions import Literal
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import PoloniexError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
@@ -30,7 +31,7 @@ from rotkehlchen.order_formatting import (
     trade_pair_from_assets,
     trade_type_from_string,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Fee, FilePath, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, createTimeStamp, retry_calls
 from rotkehlchen.utils.serialization import rlk_jsonloads, rlk_jsonloads_dict, rlk_jsonloads_list
@@ -542,7 +543,7 @@ class Poloniex(Exchange):
                     timestamp=withdrawal['timestamp'],
                     asset=asset_from_poloniex(withdrawal['currency']),
                     amount=FVal(withdrawal['amount']),
-                    fee=FVal(withdrawal['fee']),
+                    fee=Fee(FVal(withdrawal['fee'])),
                 ))
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
@@ -563,7 +564,7 @@ class Poloniex(Exchange):
                     timestamp=deposit['timestamp'],
                     asset=asset_from_poloniex(deposit['currency']),
                     amount=FVal(deposit['amount']),
-                    fee=0,
+                    fee=Fee(ZERO),
                 ))
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(

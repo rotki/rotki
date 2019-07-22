@@ -34,7 +34,7 @@ from rotkehlchen.order_formatting import (
     trade_pair_from_assets,
     trade_type_from_string,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Fee, FilePath, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, convert_to_int, retry_calls
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
@@ -589,10 +589,10 @@ class Kraken(Exchange):
                     exchange='kraken',
                     category=movement['type'],
                     # Kraken timestamps have floating point
-                    timestamp=convert_to_int(movement['time'], accept_only_exact=False),
+                    timestamp=Timestamp(convert_to_int(movement['time'], accept_only_exact=False)),
                     asset=asset_from_kraken(movement['asset']),
                     amount=FVal(movement['amount']),
-                    fee=FVal(movement['fee']),
+                    fee=Fee(FVal(movement['fee'])),
                 ))
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(

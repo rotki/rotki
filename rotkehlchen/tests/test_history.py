@@ -2,6 +2,7 @@ import os
 
 import pytest
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import (
@@ -11,7 +12,7 @@ from rotkehlchen.history import (
     TRADES_HISTORYFILE,
     limit_trade_list_to_period,
 )
-from rotkehlchen.order_formatting import Trade
+from rotkehlchen.order_formatting import AssetMovement, Trade
 from rotkehlchen.tests.utils.history import TEST_END_TS, mock_history_processing_and_exchanges
 from rotkehlchen.typing import TradeType
 
@@ -204,3 +205,44 @@ def test_limit_trade_list_to_period():
     assert limit_trade_list_to_period(full_list, 1459427707, 1459427707) == [trade1]
     assert limit_trade_list_to_period(full_list, 1469427707, 1469427707) == [trade2]
     assert limit_trade_list_to_period(full_list, 1479427707, 1479427707) == [trade3]
+
+
+def test_assets_movements_from_cache(accounting_data_dir, trades_historian):
+    """
+    Test that when reading asset movements from a file and we get a dictlist it
+    is properly turned into an AssetMovement
+    """
+    data_str = (
+        f'[{{"exchange": "kraken", "category": "deposit", "timestamp": 1520938730, '
+        f'"asset": "KFEE", "amount": "100.0", "fee": "0.0"}}, {{"exchange": "poloniex",'
+        f'"category": "withdrawal", "timestamp": 1510938730, "asset": "BTC", '
+        f'"amount": "2.5", "fee": "0.00001"}}]'
+    )
+    with open(os.path.join(accounting_data_dir, ASSETMOVEMENTS_HISTORYFILE), 'w') as f:
+        f.write(
+            f'{{"start_time":0, "end_time": {TEST_END_TS}, "data": {data_str}}}',
+        )
+
+    asset_movements = trades_historian._get_cached_asset_movements(
+        start_ts=0,
+        end_ts=TEST_END_TS,
+        end_at_least_ts=TEST_END_TS,
+    )
+    assert len(asset_movements) == 2
+    assert isinstance(asset_movements[0], AssetMovement)
+    assert asset_movements[0].exchange == 'kraken'
+    assert asset_movements[0].category == 'deposit'
+    assert asset_movements[0].timestamp == 1520938730
+    assert isinstance(asset_movements[0].asset, Asset)
+    assert asset_movements[0].asset == Asset('KFEE')
+    assert asset_movements[0].amount == FVal('100')
+    assert asset_movements[0].fee == FVal('0')
+
+    assert isinstance(asset_movements[1], AssetMovement)
+    assert asset_movements[1].exchange == 'poloniex'
+    assert asset_movements[1].category == 'withdrawal'
+    assert asset_movements[1].timestamp == 1510938730
+    assert isinstance(asset_movements[1].asset, Asset)
+    assert asset_movements[1].asset == Asset('BTC')
+    assert asset_movements[1].amount == FVal('2.5')
+    assert asset_movements[1].fee == FVal('0.00001')
