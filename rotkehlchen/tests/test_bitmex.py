@@ -1,6 +1,8 @@
 import pytest
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.bitmex import Bitmex, trade_from_bitmex
+from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import AssetMovement, MarginPosition
 from rotkehlchen.utils.misc import ts_now
@@ -275,7 +277,7 @@ def test_trade_from_bitmex():
             open_time=None,
             close_time=1536580800,
             profit_loss=FVal('0.00000003'),
-            pl_currency='BTC',
+            pl_currency=A_BTC,
             notes='XBTZ18',
         ),
         MarginPosition(
@@ -283,7 +285,7 @@ def test_trade_from_bitmex():
             open_time=None,
             close_time=1536580800,
             profit_loss=FVal('0.0000004'),
-            pl_currency='BTC',
+            pl_currency=A_BTC,
             notes='XBTUSD',
         ),
         MarginPosition(
@@ -291,7 +293,7 @@ def test_trade_from_bitmex():
             open_time=None,
             close_time=1536580800,
             profit_loss=FVal('0.00000183'),
-            pl_currency='BTC',
+            pl_currency=A_BTC,
             notes='XBTJPY',
         ),
         MarginPosition(
@@ -299,7 +301,7 @@ def test_trade_from_bitmex():
             open_time=None,
             close_time=1536580800,
             profit_loss=FVal('0.00000683'),
-            pl_currency='BTC',
+            pl_currency=A_BTC,
             notes='ETHUSD',
         ),
         MarginPosition(
@@ -307,7 +309,7 @@ def test_trade_from_bitmex():
             open_time=None,
             close_time=1536494400,
             profit_loss=FVal('0.00000002'),
-            pl_currency='BTC',
+            pl_currency=A_BTC,
             notes='XRPU18',
         ),
         MarginPosition(
@@ -315,7 +317,7 @@ def test_trade_from_bitmex():
             open_time=None,
             close_time=1536494400,
             profit_loss=FVal('0.00000003'),
-            pl_currency='BTC',
+            pl_currency=A_BTC,
             notes='XBTUSD',
         ),
         MarginPosition(
@@ -323,7 +325,7 @@ def test_trade_from_bitmex():
             open_time=None,
             close_time=1536494400,
             profit_loss=FVal('0.00000003'),
-            pl_currency='BTC',
+            pl_currency=A_BTC,
             notes='XBTJPY',
         ),
         MarginPosition(
@@ -331,7 +333,7 @@ def test_trade_from_bitmex():
             open_time=None,
             close_time=1536494400,
             profit_loss=FVal('0.00000005'),
-            pl_currency='BTC',
+            pl_currency=A_BTC,
             notes='ETHUSD',
         ),
         MarginPosition(
@@ -339,7 +341,7 @@ def test_trade_from_bitmex():
             open_time=None,
             close_time=1536494400,
             profit_loss=FVal('-0.00007992'),
-            pl_currency='BTC',
+            pl_currency=A_BTC,
             notes='ETHU18',
         ),
 
@@ -349,3 +351,4 @@ def test_trade_from_bitmex():
     for idx, trade in enumerate(BITMEX_FIRST_9_TRADES):
         position = trade_from_bitmex(trade)
         assert position == margin_positions[idx]
+        assert isinstance(position.pl_currency, Asset)

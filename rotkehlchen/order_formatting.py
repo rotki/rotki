@@ -94,7 +94,8 @@ class Trade(NamedTuple):
 
 
 class MarginPosition(NamedTuple):
-    exchange: str
+    # We only support marging positions on poloniex and bitmex at the moment
+    exchange: Literal['poloniex', 'bitmex']
     open_time: Optional[Timestamp]
     close_time: Timestamp
     profit_loss: FVal
