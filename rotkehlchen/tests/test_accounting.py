@@ -1,5 +1,6 @@
 import pytest
 
+from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import MarginPosition
 from rotkehlchen.tests.utils.accounting import accounting_history_process
@@ -449,14 +450,14 @@ def test_margin_events_affect_gained_lost_amount(accountant):
         open_time=1484438400,  # 15/01/2017
         close_time=1484629704,  # 17/01/2017
         profit_loss=FVal('-0.5'),
-        pl_currency='BTC',
+        pl_currency=A_BTC,
         notes='margin1',
     ), MarginPosition(
         exchange='poloniex',  # BTC/EUR: 979.39
         open_time=1487116800,  # 15/02/2017
         close_time=1487289600,  # 17/02/2017
         profit_loss=FVal('0.25'),
-        pl_currency='BTC',
+        pl_currency=A_BTC,
         notes='margin2',
     )]
 
