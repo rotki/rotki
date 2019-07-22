@@ -27,7 +27,7 @@ OSX
 
 Go to the `releases <https://github.com/rotkehlchenio/rotkehlchen/releases>`_ page and download the darwin-x64 package from the `latest release <https://github.com/rotkehlchenio/rotkehlchen/releases/latest>`_.
 
-Unzip it in a directory of your choice. In the root directory of the unzipped archive there is a `rotkehlchen` executable. Run it **from a terminal window** to start rotkehlchen. Clicking on it **will not work**.
+Unzip it in a directory of your choice. In the root directory of the unzipped archive there is a ``rotkehlchen`` executable. Run it **from a terminal window** to start rotkehlchen. Clicking on it **will not work**.
 
 Build from Source
 =================
@@ -50,7 +50,7 @@ Install electron and any other npm dependencies by::
     npm install
     npm rebuild zeromq --runtime=electron --target=3.0.0
 
-Create a new `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ to install all the python dependencies. If you don't have ``mkvirtualenv`` then check how to get it depending on your distribution. `Here <http://exponential.io/blog/2015/02/10/install-virtualenv-and-virtualenvwrapper-on-ubuntu/>`_ is a guide for Ubuntu and `here <https://wiki.archlinux.org/index.php/Python/Virtual_environment>`_ is one for ArchLinux::
+Create a new `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ to install all the python dependencies. If you don't have ``mkvirtualenv`` then check how to get it depending on your distribution. `Here <http://exponential.io/blog/2015/02/10/install-virtualenv-and-virtualenvwrapper-on-ubuntu/>`_ is a guide for Ubuntu and `here <https://wiki.archlinux.org/index.php/Python/Virtual_environment>`__ is one for ArchLinux::
 
     mkvirtualenv rotkehlchen
 
@@ -71,7 +71,7 @@ modules like this:::
     ./node_modules/.bin/electron-rebuild
 
 OSX
-***
+****
 
 The tl;dr version is:
 - install sqlcipher
@@ -140,3 +140,103 @@ Almost there, we can now install all the NodeJS dependencies. Using a recent Nod
 You can now start Rotkehlchen:::
 
     $ npm start
+
+Windows
+*********
+
+This is the guide on how to manually build rotkehlchen binaries in Windows from source.
+
+Dependencies
+-------------
+
+Python and git
+^^^^^^^^^^^^^^^^^^^^
+
+Get `python 3.7 <https://www.python.org/downloads/release/python-374/>`_.
+
+Make sure it's 64 bit if you are in 64-bit windows!!!!!
+
+If it's not in the Path `add both directories to the path <https://docs.alfresco.com/4.2/tasks/fot-addpath.html>`_:
+
+``C:\Users\lefteris\AppData\Local\Programs\Python\Python37;C:\Users\lefteris\AppData\Local\Programs\Python\Python37\Scripts``
+
+Get `latest git <https://gitforwindows.org/>`_.
+
+Setup a python virtualenvironment. If you don't know how to do it in windows `here <http://timmyreilly.azurewebsites.net/python-pip-virtualenv-installation-on-windows/>`__ is a good guide.
+
+Make sure you have `pip installed <https://pip.pypa.io/en/stable/installing/#do-i-need-to-install-pip>`_.
+
+Also make sure you have the Microsoft visual studio build tools. Check the troubleshooting guide's relevant section :ref:`microsoft_visual_studio_build_tools_required`.
+
+
+Sqlcipher and pysqlcipher3
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+`Here <https://github.com/sqlitebrowser/sqlitebrowser/wiki/Win64-setup-%E2%80%94-Compiling-SQLCipher>`_ is a good guide on how to compile SQLCipher for windows.
+
+The guide also requires you to get ``OpenSSL``. You can do that from `here <https://slproweb.com/products/Win32OpenSSL.html>`__.
+Make sure it's for the same architecture as the rest. 32/64 bit. At the installer change the location to the bin directory as the tutorial says. Make sure that ``-IC:\dev\OpenSSL-Win64\include`` and all other relevant options point to the actual location where openssl was installed. Also pay attention to the rest of the stuff in the tutorial warns to change in ``Makefile.msc``.
+
+
+Then you can go to ``pysqlcipher3`` and edit the ``setup.py`` file to include the location of the headers and the libraries you just compiled. Add the following to the extension that is being built.::
+
+
+    library_dirs=[r'C:\Users\yourusername\w\sqlcipher'],
+    include_dirs=[r'C:\Users\yourusername\w'],
+
+Obviously replace ``yourusername`` with whatever you are using. And then do ``python setup.py build`` and ``python setup.py install``.
+
+
+Nodejs
+^^^^^^^^
+
+Get node.js from `here <https://nodejs.org/en/download/>`__.
+
+Installation
+------------
+
+Inside rotkehlchen install normally like you would in linux  ... but you got to either copy ``slqcipher.dll`` in the rotkehlchen directory or put it in the directory where windows searches for DLLs.
+
+Troubleshooting
+---------------
+
+anyapi-ms-win-crt-runtime missing
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you get ``anyapi-ms-win-crt-runtime-l1-1-0.dll is missing`` error when running python follow `this <https://www.ghacks.net/2017/06/06/the-program-cant-start-because-api-ms-win-crt-runtime-l1-1-0-dll-is-missing/>`__ guide to resolve it.
+
+.. _microsoft_visual_studio_build_tools_required:
+
+Microsoft Visual C++ 14.0 is required
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you get::
+
+    building 'gevent.libev.corecext' extension                                                                                                                                                                                                                            
+    error: Microsoft Visual C++ 14.0 is required. Get it with "Microsoft Visual C++ Build Tools": https://visualstudio.microsoft.com/downloads/                 
+
+
+Then go `here <https://visualstudio.microsoft.com/downloads/>`__ and get the microsoft visual studio build tools and install them. The specific parts of the tools that need to be installed can be seen in `this SO answer <https://stackoverflow.com/questions/29846087/microsoft-visual-c-14-0-is-required-unable-to-find-vcvarsall-bat/49986365#49986365>`__.
+
+You also need to add them to the path. The tools were probably installed here: ``C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\Common7\Tools``
+Environment variable should be: ``VS140COMNTOOLS``
+
+
+Alternative dependencies with sqlciper amalgamation
+-------------------------------------------------------------
+
+This is a not so well tested way but some work has been done by cryptomental in `this <https://github.com/rotkehlchenio/rotkehlchen/issues/28>`__ issue for it. With the amalgamation you can obtain all sqlcipher dependencies precompiled and amalgamated in one big blog. But ... it's tricky, hense not so well tested.
+
+Read the issue for a lot of details and also the ``appveyor.yml`` for what needs to be done to build sqlcipher and keep the following in mind:
+
+1. Replace ``robocopy`` with ``copy -r`` and make sure to copy into python system include and not the venv one.
+2. If while building the amalgamation you get: ``"Fatal error: OpenSSL could not be detected!"`` try `this SO answer <https://stackoverflow.com/a/38969408>`__. and make sure to add ``OPENSSL_CONF`` to the environment variables pointing to the location of ``openssl.conf``.
+3. In addition copy the amalgamation dir's ssl include folder to the python include folder::
+
+       $ cp -r sqlcipher-amalgamation-3020001/openssl-include/openssl/ /c/Users/lefteris/AppData/Local/Programs/Python/Python37-32/include/openssl
+
+4. Copy the amalgamation dir's ssl libraries to the python lib folder::
+
+       $ cp sqlcipher-amalgamation-3020001/OpenSSL-Win32/* /c/Users/lefteris/AppData/Local/Programs/Python/Python37-32/libs/
+
+   Note it has to be the OpenSSL-Win32 part.
