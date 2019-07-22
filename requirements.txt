@@ -12,3 +12,4 @@ typing-extensions==3.7.4
 
 #constraints
 setuptools==40.4.2
+eth-account==0.3.0
