@@ -22,6 +22,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.kraken import trade_from_kraken
 from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
 from rotkehlchen.order_formatting import (
+    AssetMovement,
     MarginPosition,
     Trade,
     asset_movements_from_dictlist,
@@ -647,6 +648,43 @@ class TradesHistorian():
             delete_all_history_cache(self.user_directory)
             return self.create_history(start_ts, end_ts, end_at_least_ts)
 
+    def _get_cached_asset_movements(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            end_at_least_ts: Timestamp,
+    ) -> List[AssetMovement]:
+        """
+        Attetmps to read the cache of asset movements and returns a list of them.
+
+        If there is a problem can raise HistoryCacheInvalid
+        """
+        assetmovementsfile_path = os.path.join(
+            self.user_directory,
+            ASSETMOVEMENTS_HISTORYFILE,
+        )
+        asset_movements_contents = get_jsonfile_contents_or_empty_dict(
+            FilePath(assetmovementsfile_path),
+        )
+        asset_movements_history_is_okay = data_up_todate(
+            asset_movements_contents,
+            start_ts,
+            end_at_least_ts,
+        )
+        if not asset_movements_history_is_okay:
+            raise HistoryCacheInvalid('Asset Movements cache is invalid')
+
+        try:
+            asset_movements = asset_movements_from_dictlist(
+                asset_movements_contents['data'],
+                start_ts,
+                end_ts,
+            )
+        except KeyError:
+            raise HistoryCacheInvalid('Asset Movements cache is invalid')
+
+        return asset_movements
+
     def get_cached_history(self, start_ts, end_ts, end_at_least_ts=None):
         """Gets all the cached history data instead of querying all external sources
         to create the history through create_history()
@@ -770,29 +808,11 @@ class TradesHistorian():
                 self.user_directory,
             )
 
-        assetmovementsfile_path = os.path.join(
-            self.user_directory,
-            ASSETMOVEMENTS_HISTORYFILE,
+        asset_movements = self._get_cached_asset_movements(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            end_at_least_ts=end_at_least_ts,
         )
-        asset_movements_contents = get_jsonfile_contents_or_empty_dict(
-            assetmovementsfile_path,
-        )
-        asset_movements_history_is_okay = data_up_todate(
-            asset_movements_contents,
-            start_ts,
-            end_at_least_ts,
-        )
-        if not asset_movements_history_is_okay:
-            raise HistoryCacheInvalid('Asset Movements cache is invalid')
-
-        try:
-            asset_movements = asset_movements_from_dictlist(
-                asset_movements_contents['data'],
-                start_ts,
-                end_ts,
-            )
-        except KeyError:
-            raise HistoryCacheInvalid('Asset Movements cache is invalid')
 
         eth_tx_log_path = os.path.join(self.user_directory, ETHEREUM_TX_LOGFILE)
         eth_tx_log_contents = get_jsonfile_contents_or_empty_dict(eth_tx_log_path)

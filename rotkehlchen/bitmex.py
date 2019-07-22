@@ -9,12 +9,14 @@ from urllib.parse import urlencode
 from rotkehlchen import typing
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.constants.assets import A_BTC
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import AssetMovement, MarginPosition
+from rotkehlchen.typing import Fee
 from rotkehlchen.utils.misc import cache_response_timewise, iso8601ts_to_timestamp, satoshis_to_btc
 from rotkehlchen.utils.serialization import rlk_jsonloads
 
@@ -289,7 +291,7 @@ class Bitmex(Exchange):
 
             asset = bitmex_to_world(movement['currency'])
             amount = FVal(movement['amount'])
-            fee = FVal(0)
+            fee = ZERO
             if movement['fee'] is not None:
                 fee = FVal(movement['fee'])
             # bitmex has negative numbers for withdrawals
@@ -307,7 +309,7 @@ class Bitmex(Exchange):
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,
-                fee=fee,
+                fee=Fee(fee),
             ))
 
         return movements
