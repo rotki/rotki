@@ -86,7 +86,7 @@ npm run build
 				      --ignore="tslint.json" \
 				      --ignore=".bumpversion.cfg" \
 				      --ignore=".mypy_cache/" \
-				      --ignore=".coveragere" \
+				      --ignore=".coveragerc" \
 				      --ignore=".env" \
 				      --ignore="README.md" \
 				      --ignore="rotkehlchen.log" \
