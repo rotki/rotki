@@ -105,7 +105,8 @@ class Accountant():
         self.asset_movement_fees = FVal(0)
         self.last_gas_price = FVal(0)
 
-        self.currently_processed_timestamp = -1
+        self.started_processing_timestamp = -1
+        self.currently_processing_timestamp = -1
 
         # Customizable Options
         self.ignored_assets = ignored_assets
@@ -306,6 +307,10 @@ class Accountant():
         """Processes the entire history of cryptoworld actions in order to determine
         the price and time at which every asset was obtained and also
         the general and taxable profit/loss.
+
+        start_ts here is the timestamp at which to start taking trades and other
+        taxable events into account. Not where processing starts from. Processing
+        always starts from the very first event we find in the history.
         """
         log.info(
             'Start of history processing',
@@ -318,7 +323,6 @@ class Accountant():
         self.eth_transactions_gas_costs = FVal(0)
         self.asset_movement_fees = FVal(0)
         self.csvexporter.reset_csv_lists()
-        self.currently_processed_timestamp = start_ts
         # Used only in the "avoid zerorpc remote lost after 10ms problem"
         self.last_sleep_ts = 0
 
@@ -339,6 +343,10 @@ class Accountant():
         actions.sort(
             key=lambda action: action_get_timestamp(action),
         )
+        # The first timestamp is the timestamp of the first action we have in history
+        first_ts = action_get_timestamp(actions[0])
+        self.currently_processing_timestamp = first_ts
+        self.started_processing_timestamp = first_ts
 
         prev_time = Timestamp(0)
         count = 0
@@ -416,7 +424,7 @@ class Accountant():
         if timestamp > end_ts:
             return False, prev_time, count
 
-        self.currently_processed_timestamp = timestamp
+        self.currently_processing_timestamp = timestamp
 
         action_type = action_get_type(action)
 
