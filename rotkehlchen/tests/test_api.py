@@ -104,12 +104,13 @@ def test_periodic_query(rotkehlchen_server):
     """Test that periodic query returns expected dict values"""
     result = rotkehlchen_server.query_periodic_data()
 
-    assert len(result) == 3
+    assert len(result) == 4
     assert result['last_balance_save'] == 0
     assert (
         isinstance(result['eth_node_connection'], bool) and
         result['eth_node_connection'] is False
     )
+    assert result['history_process_start_ts'] == -1
     assert result['history_process_current_ts'] == -1
 
 

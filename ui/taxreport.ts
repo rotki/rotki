@@ -7,7 +7,6 @@ import {TradeHistoryOverview, TradeHistoryResult} from './model/trade-history-re
 import {EventEntry} from './model/event-entry';
 import {service} from './rotkehlchen_service';
 
-let REPORT_START_TS = -1;
 let REPORT_END_TS = -1;
 
 export function create_taxreport_ui() {
@@ -59,7 +58,6 @@ function generate_report_callback(event: JQuery.Event) {
 
     const start_ts = date_text_to_utc_ts(start_ts_text);
     const end_ts = date_text_to_utc_ts(end_ts_text);
-    REPORT_START_TS = start_ts;
     REPORT_END_TS = end_ts;
     const now_ts = utc_now();
     if (end_ts <= start_ts) {
@@ -97,11 +95,11 @@ function generate_report_callback(event: JQuery.Event) {
     });
 }
 
-export function update_tax_report_progress(current_ts: number) {
+export function update_tax_report_progress(start_ts: number, current_ts: number) {
     if (!($('#tax_report_loading').length)) {
         return;
     }
-    const percentage = (current_ts - REPORT_START_TS) * (1 / (REPORT_END_TS - REPORT_START_TS));
+    const percentage = (current_ts - start_ts) * (1 / (REPORT_END_TS - start_ts));
     const percentage_str = (percentage * 100).toFixed(2);
     $('#tax_report_loading_extra_text').text(percentage_str + '%');
 }

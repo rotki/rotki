@@ -296,6 +296,12 @@ def test_end_to_end_tax_report(accountant):
         margin_list=margin_history,
     )
     result = result['overview']
+    # Make sure that the "started_processing_timestamp" is the ts of the first
+    # action in history
+    assert accountant.started_processing_timestamp == 1446979735
+    # Make sure that the "currently_processing_timestamp" is the ts of the last
+    # action seen in history before end_ts
+    assert accountant.currently_processing_timestamp == 1511626623
     general_trade_pl = FVal(result['general_trade_profit_loss'])
     assert general_trade_pl.is_close('5032.30394444')
     taxable_trade_pl = FVal(result['taxable_trade_profit_loss'])
@@ -344,6 +350,12 @@ def test_end_to_end_tax_report_in_period(accountant):
         eth_transaction_list=eth_tx_list,
         margin_list=margin_history,
     )
+    # Make sure that the "started_processing_timestamp" is the ts of the first
+    # action in history
+    assert accountant.started_processing_timestamp == 1446979735
+    # Make sure that the "currently_processing_timestamp" is the ts of the last
+    # action seen in history before end_ts
+    assert accountant.currently_processing_timestamp == 1511626623
     result = result['overview']
     general_trade_pl = FVal(result['general_trade_profit_loss'])
     assert general_trade_pl.is_close('1506.96912912')

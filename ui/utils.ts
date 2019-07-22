@@ -58,7 +58,7 @@ function periodic_client_query() {
 
         settings.last_balance_save = result['last_balance_save'];
         update_eth_node_connection_status_ui(result['eth_node_connection']);
-        update_tax_report_progress(result['history_process_current_ts']);
+        update_tax_report_progress(result['history_process_start_ts'], result['history_process_current_ts']);
     }).catch(reason => {
         const error_string = 'Error at periodic client query: ' + reason;
         showError('Periodic Client Query Error', error_string);
