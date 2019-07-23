@@ -1,0 +1,76 @@
+Rem Install the rotkehlchen package and pyinstaller. Needed by the pyinstaller
+pip install -e .
+pip install pyinstaller
+if %errorlevel% neq 0 (
+   echo "ERROR - Pip install step failed"
+   exit /b %errorlevel%
+)
+
+Rem Use pyinstaller to package the python app
+Rem IF EXIST build rmdir build /s /Q
+Rem IF EXIST rotkehlchen_py_dist rmdir rotkehlchen_py_dist /s /Q
+Rem pyinstaller --noconfirm --clean --distpath rotkehlchen_py_dist rotkehlchen.spec
+if %errorlevel% neq 0 (
+   echo "ERROR - pyinstaller step failed"
+   exit /b %errorlevel%
+)
+
+Rem echo "EXIT AFTER PYINSTALLER"
+Rem exit /b 0
+
+Rem npm stuff
+IF EXIST node_modules rmdir node_modules /s /Q
+call npm config set python python2.7
+call npm install
+call npm rebuild zeromq --runtime=electron --target=3.0.0
+if %errorlevel% neq 0 (
+   echo "ERROR - npm install step failed"
+   exit /b %errorlevel%
+)
+
+call node_modules/.bin/electron-rebuild
+if %errorlevel% neq 0 (
+   echo "ERROR - electron rebuild step failed"
+   exit /b %errorlevel%
+)
+
+call npm run build
+if %errorlevel% neq 0 (
+   echo "ERROR - npm build step failed"
+   exit /b %errorlevel%
+)
+
+call node_modules/.bin/electron-packager . --overwrite ^
+				      --ignore="rotkehlchen$" ^
+				      --ignore="rotkehlchen.egg-info" ^
+				      --ignore="tools$" ^
+				      --ignore="docs$" ^
+				      --ignore="appveyor*" ^
+				      --ignore=".eggs" ^
+				      --ignore=".github" ^
+				      --ignore=".gitignore" ^
+				      --ignore=".nvmrc" ^
+				      --ignore=".package-lock.json" ^
+				      --ignore="requirements*" ^
+				      --ignore="rotkehlchen.spec" ^
+				      --ignore="setup.cfg" ^
+				      --ignore="stubs" ^
+				      --ignore=".travis*" ^
+				      --ignore="tsconfig*" ^
+				      --ignore="tsfmt.json" ^
+				      --ignore="tslint.json" ^
+				      --ignore=".bumpversion.cfg" ^
+				      --ignore=".mypy_cache/" ^
+				      --ignore=".coveragerc" ^
+				      --ignore=".env" ^
+				      --ignore="README.md" ^
+				      --ignore="rotkehlchen.log" ^
+				      --ignore=".*\.sh" ^
+				      --ignore=".*\.py"
+
+if %errorlevel% neq 0 (
+   echo "ERROR - electron-packager step failed"
+   exit /b %errorlevel%
+)
+
+echo "SUCCESS - rotkehlchen is now packaged for windows!"
