@@ -6,6 +6,9 @@ const BrowserWindow = electron.BrowserWindow;
 const path = require('path');
 const fs = require('fs');
 
+let executable_name = null;
+let to_kill_pids = null;
+
 /*************************************************************
  * window management
  *************************************************************/
@@ -53,6 +56,22 @@ function setupInspectMenu() {
     }
 }
 
+function windows_detect_pids() {
+    // This needs to be called a bit later so that both executables
+    // are up and we so that we can get both pids to kill
+    console.log('Detecting Windows pids');
+    tasklist().then(function(tasks){
+	console.log('In tasklist result for executable_name: ' + executable_name);
+	to_kill_pids = [];
+	for (var i = 0; i < tasks.length; i++) {
+	    if (tasks[i]['imageName'] === executable_name) {
+		to_kill_pids.push(tasks[i]['pid']);
+		console.log('adding pid ' + tasks[i]['pid']);
+	    }
+	}
+    });
+}
+
 const createWindow = () => {
     mainWindow = new BrowserWindow({width: 800, height: 600});
     disableAnimationsForTest();
@@ -92,6 +111,10 @@ const createWindow = () => {
     });
 
     setupInspectMenu();
+    if (process.platform === 'win32') {
+	// For windows, wait 3 seconds so that both binaries are up to get their pids
+	setTimeout(windows_detect_pids, 3000);
+    }
 };
 
 app.on('ready', createWindow);
@@ -148,15 +171,16 @@ const createPyProc = () => {
         let dist_dir = path.join(__dirname, PY_DIST_FOLDER);
         let files = fs.readdirSync(dist_dir);
         if (files.length === 0) {
-            log_and_quit('No files found in the dist directory');
+	    log_and_quit('No files found in the dist directory');
         } else if (files.length !== 1) {
-            log_and_quit('Found more than one file in the dist directory');
+	    log_and_quit('Found more than one file in the dist directory');
         }
         let executable = files[0];
         if (!executable.startsWith('rotkehlchen-')) {
-            log_and_quit('Unexpected executable name "' + executable + '" in the dist directory');
+	    log_and_quit('Unexpected executable name "' + executable + '" in the dist directory');
         }
-        executable = path.join(dist_dir, executable);
+	executable_name = executable;
+	executable = path.join(dist_dir, executable);
         pyProc = require('child_process').execFile(executable, ["--zerorpc-port", port]);
     } else {
         let args = ["-m", "rotkehlchen", "--zerorpc-port", port];
@@ -188,12 +212,43 @@ const createPyProc = () => {
     if (pyProc != null) {
         console.log('child process success on port ' + port);
     }
+
     console.log("CREATED PYPROCESS");
 };
-
-const exitPyProc = () => {
+const tasklist = require('tasklist');
+const exitPyProc = (event) => {
     console.log("KILLING PYPROCESS");
-    pyProc.kill();
+    if (process.platform === 'win32') {
+	console.log('Calling taskkill for Windows pids');
+	// For win32 we got two problems:
+	// 1. pyProc.kill() does not work due to SIGTERM not really being a signal
+	//    in Windows
+	// 2. the onefile pyinstaller packaging creates two executables.
+	// https://github.com/pyinstaller/pyinstaller/issues/2483
+	// We need to make sure they both die at the end
+	var spawn = require('child_process').spawn;
+	args = ['/f', '/t']
+	for (var i = 0; i < to_kill_pids.length; i++) {
+	    args.push('/PID')
+	    args.push(to_kill_pids[i]);
+	}
+	console.log('command is: taskkill and args: ' + JSON.stringify(args, null, 4));
+	killProc = spawn('taskkill', args);
+	killProc.on('exit', function (code, signal) {
+            console.log("Kill proc on exit");
+	    app.exit();
+	});
+	killProc.on('error', (err) => {
+            console.error("Kill proc on error:" + err);
+	    app.exit();
+	});
+	pyProc.kill();
+	// Do not allow the app to quit. Instead wait for killProc to occur
+	// which will quit the app itself.
+	event.preventDefault();
+    } else {
+	pyProc.kill();
+    }
     pyProc = null;
     pyPort = null;
 };
