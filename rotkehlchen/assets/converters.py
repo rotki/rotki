@@ -378,9 +378,10 @@ UNSUPPORTED_BITTREX_ASSETS = (
 
 UNSUPPORTED_BINANCE_ASSETS = (
     'ETF',  # ETF is a dead coin given to all ETH holders. Just ignore
-    # BTCB and USDSB is not yet supported anywhere else
+    # BTCB, USDSB, BGBP are not yet supported anywhere else
     'BTCB',  # https://www.binance.com/en/support/articles/360029288972
     'USDSB',  # https://www.binance.com/en/support/articles/360029522132
+    'BGBP',  # https://www.binance.com/en/support/articles/360030827252
 )
 
 CRYPTOCOMPARE_TO_WORLD = {v: k for k, v in WORLD_TO_CRYPTOCOMPARE.items()}
