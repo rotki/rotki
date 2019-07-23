@@ -7,16 +7,13 @@ if %errorlevel% neq 0 (
 )
 
 Rem Use pyinstaller to package the python app
-Rem IF EXIST build rmdir build /s /Q
-Rem IF EXIST rotkehlchen_py_dist rmdir rotkehlchen_py_dist /s /Q
-Rem pyinstaller --noconfirm --clean --distpath rotkehlchen_py_dist rotkehlchen.spec
+IF EXIST build rmdir build /s /Q
+IF EXIST rotkehlchen_py_dist rmdir rotkehlchen_py_dist /s /Q
+ pyinstaller --noconfirm --clean --distpath rotkehlchen_py_dist rotkehlchen.spec
 if %errorlevel% neq 0 (
    echo "ERROR - pyinstaller step failed"
    exit /b %errorlevel%
 )
-
-Rem echo "EXIT AFTER PYINSTALLER"
-Rem exit /b 0
 
 Rem npm stuff
 IF EXIST node_modules rmdir node_modules /s /Q
@@ -41,7 +38,7 @@ if %errorlevel% neq 0 (
 )
 
 call node_modules/.bin/electron-packager . --overwrite ^
-				      --ignore="rotkehlchen$" ^
+                                      --ignore="rotkehlchen$" ^
 				      --ignore="rotkehlchen.egg-info" ^
 				      --ignore="tools$" ^
 				      --ignore="docs$" ^
