@@ -56,22 +56,6 @@ function setupInspectMenu() {
     }
 }
 
-function windows_detect_pids() {
-    // This needs to be called a bit later so that both executables
-    // are up and we so that we can get both pids to kill
-    console.log('Detecting Windows pids');
-    tasklist().then(function(tasks){
-	console.log('In tasklist result for executable_name: ' + executable_name);
-	to_kill_pids = [];
-	for (var i = 0; i < tasks.length; i++) {
-	    if (tasks[i]['imageName'] === executable_name) {
-		to_kill_pids.push(tasks[i]['pid']);
-		console.log('adding pid ' + tasks[i]['pid']);
-	    }
-	}
-    });
-}
-
 const createWindow = () => {
     mainWindow = new BrowserWindow({width: 800, height: 600});
     disableAnimationsForTest();
@@ -111,10 +95,6 @@ const createWindow = () => {
     });
 
     setupInspectMenu();
-    if (process.platform === 'win32') {
-	// For windows, wait 3 seconds so that both binaries are up to get their pids
-	setTimeout(windows_detect_pids, 3000);
-    }
 };
 
 app.on('ready', createWindow);
@@ -215,33 +195,50 @@ const createPyProc = () => {
 
     console.log("CREATED PYPROCESS");
 };
-const tasklist = require('tasklist');
+
 const exitPyProc = (event) => {
     console.log("KILLING PYPROCESS");
     if (process.platform === 'win32') {
-	console.log('Calling taskkill for Windows pids');
 	// For win32 we got two problems:
 	// 1. pyProc.kill() does not work due to SIGTERM not really being a signal
 	//    in Windows
 	// 2. the onefile pyinstaller packaging creates two executables.
 	// https://github.com/pyinstaller/pyinstaller/issues/2483
-	// We need to make sure they both die at the end
-	var spawn = require('child_process').spawn;
-	args = ['/f', '/t']
-	for (var i = 0; i < to_kill_pids.length; i++) {
-	    args.push('/PID')
-	    args.push(to_kill_pids[i]);
-	}
-	console.log('command is: taskkill and args: ' + JSON.stringify(args, null, 4));
-	killProc = spawn('taskkill', args);
-	killProc.on('exit', function (code, signal) {
-            console.log("Kill proc on exit");
-	    app.exit();
+	// 
+	// So the solution is to not let the application close, get all
+	// pids and kill them before we close the app
+	const tasklist = require('tasklist');
+	console.log('Detecting Windows pids');
+	tasklist().then(function(tasks){
+	    console.log('In tasklist result for executable_name: ' + executable_name);
+	    to_kill_pids = [];
+	    for (var i = 0; i < tasks.length; i++) {
+		if (tasks[i]['imageName'] === executable_name) {
+		    to_kill_pids.push(tasks[i]['pid']);
+		    console.log('adding pid ' + tasks[i]['pid']);
+		}
+	    }
+
+	    // now that we have all the pids gathered, call taskkill on them
+	    console.log('Calling taskkill for Windows pids');
+	    var spawn = require('child_process').spawn;
+	    args = ['/f', '/t']
+	    for (var i = 0; i < to_kill_pids.length; i++) {
+		args.push('/PID')
+		args.push(to_kill_pids[i]);
+	    }
+	    console.log('command is: taskkill and args: ' + JSON.stringify(args, null, 4));
+	    killProc = spawn('taskkill', args);
+	    killProc.on('exit', function (code, signal) {
+		console.log("Kill proc on exit");
+		app.exit();
+	    });
+	    killProc.on('error', (err) => {
+		console.error("Kill proc on error:" + err);
+		app.exit();
+	    });
 	});
-	killProc.on('error', (err) => {
-            console.error("Kill proc on error:" + err);
-	    app.exit();
-	});
+
 	pyProc.kill();
 	// Do not allow the app to quit. Instead wait for killProc to occur
 	// which will quit the app itself.
