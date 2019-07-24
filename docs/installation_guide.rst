@@ -5,7 +5,7 @@ System Requirements and Installation Guide
 
 
 Introduction
-============
+*************
 
 The easiest way to start Rotkehlchen is to download the packaged binary for your Operating system. For now only Linux and OSX is supported. To see how to do this go to the :ref:`next section <packaged_binaries>`.
 
@@ -13,27 +13,55 @@ The easiest way to start Rotkehlchen is to download the packaged binary for your
 .. _packaged_binaries:
 
 Packaged Binaries
-=================
+******************
 
 Linux
-*****
+==========
 
 Go to the `releases <https://github.com/rotkehlchenio/rotkehlchen/releases>`_ page and download the linux-x64 package from the `latest release <https://github.com/rotkehlchenio/rotkehlchen/releases/latest>`_.
 
 Unzip it in a directory of your choice. In the root directory of the unzipped archive there is a ``rotkehlchen`` executable. Run it via the terminal to start rotkehlchen.
 
 OSX
-***
+========
 
 Go to the `releases <https://github.com/rotkehlchenio/rotkehlchen/releases>`_ page and download the darwin-x64 package from the `latest release <https://github.com/rotkehlchenio/rotkehlchen/releases/latest>`_.
 
-Unzip it in a directory of your choice. In the root directory of the unzipped archive there is a ``rotkehlchen`` executable. Run it **from a terminal window** to start rotkehlchen. Clicking on it **will not work**.
+Unzip it in a directory of your choice. In the root directory of the unzipped archive there is are two ``rotkehlchen`` files. Click (or run from the terminal) the one that does not have the electron logon on its icon.
+
+Troubleshooting
+----------------
+
+If you get "The python backend crushed" error then you probably did not click on the correct executable.
+
+To make it easier to understand which one is the executable you have to click in OSX look at the following screenshot.
+
+.. image:: _static/images/osx_which_executable.png
+  :width: 640
+  :alt: This is the executable you should click when running OSX.
+
+
+If you did click on that and you still get an error, then please open an issue with the contents of the console window that was also opened. This will help us debug the problem.
+
+
+Windows
+==========
+
+Go to the `releases <https://github.com/rotkehlchenio/rotkehlchen/releases>`_ page and download the win32-x64 package from the `latest release <https://github.com/rotkehlchenio/rotkehlchen/releases/latest>`_.
+
+Unzip it in a folder of your choice. In the root directory of the unzipped archive there is a ``rotkehlchen`` executable. Double click it to start rotkehlchen.
+
+Troubleshooting
+---------------
+
+If you get "The python backend crushed" or any other error please run the executable via the Command Prompt. Then provide us with the output that is visible in the prompt and this will help us debug your issue.
+
 
 Build from Source
-=================
+******************
 
 Linux
-*****
+=========
 
 Make sure you have `node.js <https://nodejs.org/en/>`_ and `npm <https://www.npmjs.com/>`_. If you don't, use your linux distro's package manager to get them.
 
@@ -71,7 +99,7 @@ modules like this:::
     ./node_modules/.bin/electron-rebuild
 
 OSX
-****
+=====
 
 The tl;dr version is:
 - install sqlcipher
@@ -142,7 +170,7 @@ You can now start Rotkehlchen:::
     $ npm start
 
 Windows
-*********
+==========
 
 This is the guide on how to manually build rotkehlchen binaries in Windows from source.
 
