@@ -20,7 +20,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'Rotkehlchen'
-copyright = '2018, Lefteris Karapetsas'
+copyright = '2018-2019, Lefteris Karapetsas'
 author = 'Lefteris Karapetsas'
 
 # The short X.Y version

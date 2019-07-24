@@ -6,7 +6,10 @@ bump2version==0.5.8
 pytest-cov==2.7.1
 
 # Documentation
-sphinx
-sphinx-autobuild
-sphinx_rtd_theme
-releases
+
+# This is the last release supported by releases. When
+# releases supports higher sphinx versions switch to them
+sphinx==1.7.8
+sphinx-autobuild==0.7.1
+sphinx_rtd_theme==0.4.3
+releases==1.6.1
