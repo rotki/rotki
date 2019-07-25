@@ -143,7 +143,7 @@ class Ethchain():
         log.debug('ETH highest block result', block=block_number)
         return block_number
 
-    def get_eth_balance(self, account: typing.EthAddress) -> FVal:
+    def get_eth_balance(self, account: typing.ChecksumEthAddress) -> FVal:
         if not self.connected:
             log.debug(
                 'Querying etherscan for account balance',
@@ -177,7 +177,7 @@ class Ethchain():
 
     def get_multieth_balance(
             self,
-            accounts: List[typing.EthAddress],
+            accounts: List[typing.ChecksumEthAddress],
     ) -> Dict[typing.EthAddress, FVal]:
         """Returns a dict with keys being accounts and balances in ETH"""
         balances = {}

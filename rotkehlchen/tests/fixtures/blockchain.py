@@ -12,7 +12,7 @@ from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.tests.utils.blockchain import geth_create_blockchain
 from rotkehlchen.tests.utils.tests import cleanup_tasks
-from rotkehlchen.typing import EthAddress, EthTokenInfo
+from rotkehlchen.typing import ChecksumEthAddress, EthTokenInfo
 
 
 @pytest.fixture(scope='session')
@@ -50,7 +50,7 @@ def private_keys(number_of_accounts, privatekey_seed):
 
 
 @pytest.fixture
-def ethereum_accounts(private_keys) -> List[EthAddress]:
+def ethereum_accounts(private_keys) -> List[ChecksumEthAddress]:
     return [
         to_checksum_address(address_encoder(privatekey_to_address(key)))
         for key in sorted(set(private_keys))
@@ -58,7 +58,7 @@ def ethereum_accounts(private_keys) -> List[EthAddress]:
 
 
 @pytest.fixture
-def blockchain_accounts(ethereum_accounts: List[EthAddress]) -> BlockchainAccounts:
+def blockchain_accounts(ethereum_accounts: List[ChecksumEthAddress]) -> BlockchainAccounts:
     return BlockchainAccounts(eth=ethereum_accounts, btc=[])
 
 
