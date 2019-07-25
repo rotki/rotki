@@ -1,9 +1,13 @@
 from typing import Any, Dict, List, Union
 
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.utils import AssetBalance, LocationData, SingleAssetBalance
-from rotkehlchen.fval import FVal
+from rotkehlchen.fval import FVal, AcceptableFValInitInput
 from rotkehlchen.typing import EthTokenInfo
+from rotkehlchen.typing import Fee, Optional, Timestamp
+from rotkehlchen.errors import DeserializationError
+from rotkehlchen.typing import AssetAmount
 
 
 def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
@@ -60,3 +64,48 @@ def process_result_list(result: List[Any]) -> List[Any]:
     processed_result = _process_entry(result)
     assert isinstance(processed_result, List)
     return processed_result
+
+
+def deserialize_fee(fee: Optional[str]) -> Fee:
+    """Deserializes a fee from a json entry. Fee in the JSON entry can also be null
+    in which case a ZERO fee is returned.
+
+    Can throw DeserializationError if the fee is not as expected
+    """
+    if not fee:
+        return Fee(ZERO)
+
+    try:
+        result = Fee(FVal(fee))
+    except ValueError as e:
+        raise DeserializationError(f'Failed to deserialize a fee entry due to: {str(e)}')
+
+    return result
+
+
+def deserialize_timestamp(timestamp: Union[int, str]) -> Timestamp:
+    """Deserializes a timestamp from a json entry. Given entry can either be a
+    string or an int.
+
+    Can throw DeserializationError if the data is not as expected
+    """
+    if not timestamp:
+        raise DeserializationError('Failed to deserialize a timestamp entry from a null entry')
+
+    if isinstance(timestamp, int):
+        return Timestamp(timestamp)
+    elif isinstance(timestamp, str):
+        return Timestamp(int(timestamp))
+    else:
+        raise DeserializationError(
+            f'Failed to deserialize a timestamp entry. Unexpected type {type(timestamp)} given',
+        )
+
+
+def deserialize_asset_amount(amount: AcceptableFValInitInput) -> AssetAmount:
+    try:
+        result = AssetAmount(FVal(amount))
+    except ValueError as e:
+        raise DeserializationError(f'Failed to deserialize an amount entry: {str(e)}')
+
+    return result
