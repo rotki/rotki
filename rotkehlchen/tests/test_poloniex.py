@@ -1,6 +1,7 @@
 import os
 from unittest.mock import patch
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_POLONIEX_ASSETS, asset_from_poloniex
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import UnsupportedAsset
@@ -10,6 +11,7 @@ from rotkehlchen.poloniex import Poloniex, trade_from_poloniex
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.user_messages import MessagesAggregator
+import pytest
 
 
 def test_trade_from_poloniex():
@@ -105,6 +107,7 @@ def test_poloniex_assets_are_known(poloniex):
             assert poloniex_asset in UNSUPPORTED_POLONIEX_ASSETS
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_poloniex_query_balances_unknown_asset(function_scope_poloniex):
     """Test that if a poloniex balance query returns unknown asset no exception
     is raised and a warning is generated. Same for unsupported assets"""
@@ -136,6 +139,7 @@ def test_poloniex_query_balances_unknown_asset(function_scope_poloniex):
     assert 'unsupported poloniex asset CNOTE' in warnings[1]
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_poloniex_deposits_withdrawal_unknown_asset(function_scope_poloniex):
     """Test that if a poloniex asset movement query returns unknown asset no exception
     is raised and a warning is generated. Same for unsupported assets"""
@@ -183,3 +187,37 @@ def test_poloniex_deposits_withdrawal_unknown_asset(function_scope_poloniex):
     assert 'Found withdrawal of unsupported poloniex asset DIS' in warnings[1]
     assert 'Found deposit of unknown poloniex asset IDONTEXIST' in warnings[2]
     assert 'Found deposit of unsupported poloniex asset EBT' in warnings[3]
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_poloniex_deposits_withdrawal_null_fee(function_scope_poloniex):
+    """
+    Test that if a poloniex asset movement query returns null for fee we don't crash.
+    Regression test for issue #76
+    """
+    poloniex = function_scope_poloniex
+
+    def mock_api_return(url, req):  # pylint: disable=unused-argument
+        response = MockResponse(
+            200,
+            '{"withdrawals": [{"currency": "FAC", "timestamp": 1478994442, '
+            '"amount": "100.5", "fee": null}], "deposits": []}',
+        )
+        return response
+
+    with patch.object(poloniex.session, 'post', side_effect=mock_api_return):
+        asset_movements = poloniex.query_deposits_withdrawals(
+            start_ts=0,
+            end_ts=1488994442,
+            end_at_least_ts=1488994442,
+        )
+
+    assert len(asset_movements) == 1
+    assert asset_movements[0].category == 'withdrawal'
+    assert asset_movements[0].timestamp == 1478994442
+    assert asset_movements[0].asset == Asset('FAIR')
+    assert asset_movements[0].amount == FVal('100.5')
+    assert asset_movements[0].fee == FVal('0')
+
+    warnings = poloniex.msg_aggregator.consume_warnings()
+    assert len(warnings) == 0
