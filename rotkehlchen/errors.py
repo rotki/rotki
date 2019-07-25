@@ -78,3 +78,8 @@ class HistoryCacheInvalid(Exception):
 
 class DBUpgradeError(Exception):
     pass
+
+
+class DeserializationError(Exception):
+    """Raised when deserializing data from the outside and something unexpected is found"""
+    pass

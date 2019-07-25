@@ -19,6 +19,7 @@ from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import PoloniexError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchange import Exchange
+from rotkehlchen.serializer import deserialize_fee, deserialize_timestamp, deserialize_asset_amount
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -35,6 +36,7 @@ from rotkehlchen.typing import ApiKey, ApiSecret, Fee, FilePath, Timestamp, Trad
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, createTimeStamp, retry_calls
 from rotkehlchen.utils.serialization import rlk_jsonloads, rlk_jsonloads_dict, rlk_jsonloads_list
+from rotkehlchen.errors import DeserializationError
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -540,10 +542,10 @@ class Poloniex(Exchange):
                 movements.append(AssetMovement(
                     exchange='poloniex',
                     category='withdrawal',
-                    timestamp=withdrawal['timestamp'],
+                    timestamp=deserialize_timestamp(withdrawal['timestamp']),
                     asset=asset_from_poloniex(withdrawal['currency']),
-                    amount=FVal(withdrawal['amount']),
-                    fee=Fee(FVal(withdrawal['fee'])),
+                    amount=deserialize_asset_amount(withdrawal['amount']),
+                    fee=deserialize_fee(withdrawal['fee']),
                 ))
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
@@ -555,15 +557,24 @@ class Poloniex(Exchange):
                     f'Found withdrawal of unknown poloniex asset {e.asset_name}. Ignoring it.',
                 )
                 continue
+            except DeserializationError as e:
+                log.error(
+                    f'Unexpected data encountered during deserialization of poloniex '
+                    f'withdrawal: {withdrawal}. Error was: {str(e)}',
+                )
+                self.msg_aggregator.add_warning(
+                    f'Unexpected data encountered during deserialization of a poloniex '
+                    f'withdrawal. Check logs for details and open a bug report.',
+                )
 
         for deposit in result['deposits']:
             try:
                 movements.append(AssetMovement(
                     exchange='poloniex',
                     category='deposit',
-                    timestamp=deposit['timestamp'],
+                    timestamp=deserialize_timestamp(deposit['timestamp']),
                     asset=asset_from_poloniex(deposit['currency']),
-                    amount=FVal(deposit['amount']),
+                    amount=deserialize_asset_amount(FVal(deposit['amount'])),
                     fee=Fee(ZERO),
                 ))
             except UnsupportedAsset as e:
@@ -576,5 +587,14 @@ class Poloniex(Exchange):
                     f'Found deposit of unknown poloniex asset {e.asset_name}. Ignoring it.',
                 )
                 continue
+            except DeserializationError as e:
+                log.error(
+                    f'Unexpected data encountered during deserialization of poloniex '
+                    f'deposit: {deposit}. Error was: {str(e)}',
+                )
+                self.msg_aggregator.add_warning(
+                    f'Unexpected data encountered during deserialization of a poloniex '
+                    f'deposit. Check logs for details and open a bug report.',
+                )
 
         return movements
