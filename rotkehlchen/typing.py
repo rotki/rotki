@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Dict, NamedTuple, NewType, Optional, Union
 
 from rotkehlchen.fval import FVal
+from eth_utils.typing import ChecksumAddress
 
 T_BinaryEthAddress = bytes
 BinaryEthAddress = NewType('BinaryEthAddress', T_BinaryEthAddress)
@@ -48,8 +49,7 @@ FiatAsset = NewType('FiatAsset', T_FiatAsset)
 T_EthAddres = str
 EthAddress = NewType('EthAddress', T_EthAddres)
 
-T_ChecksumEthAddress = str
-ChecksumEthAddress = NewType('ChecksumEthAddress', T_ChecksumEthAddress)
+ChecksumEthAddress = ChecksumAddress
 
 T_BTCAddress = str
 BTCAddress = NewType('BTCAddress', T_BTCAddress)

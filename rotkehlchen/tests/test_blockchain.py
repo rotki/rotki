@@ -6,6 +6,8 @@ import pytest
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.tests.utils.blockchain import DEFAULT_BALANCE
 from rotkehlchen.utils.misc import from_wei
+from rotkehlchen.typing import SupportedBlockchain
+from eth_utils.address import to_checksum_address
 
 
 @pytest.mark.skipif(
@@ -49,3 +51,22 @@ def test_query_btc_balances(blockchain):
     blockchain.query_btc_balances()
     assert 'usd_value' in blockchain.totals[A_BTC]
     assert 'amount' in blockchain.totals[A_BTC]
+
+
+def test_add_remove_ethereum_account_saved_as_checksummed(blockchain):
+    """Provide a non-checksummed ethereum account and make sure it's saved as checksummed
+    And then try to remove it as non checksummed and make sure removal also works
+    """
+    blockchain.add_blockchain_account(
+        SupportedBlockchain.ETHEREUM,
+        '0xe188c6bebb81b96a65aa20ddb9e2aef62627fa4c',
+    )
+    checksummed_addr = to_checksum_address('0xe188c6bebb81b96a65aa20ddb9e2aef62627fa4c')
+    assert checksummed_addr in blockchain.accounts.eth
+
+    blockchain.remove_blockchain_account(
+        SupportedBlockchain.ETHEREUM,
+        '0xe188c6bebb81b96a65aa20ddb9e2aef62627fa4c',
+    )
+
+    assert checksummed_addr not in blockchain.accounts.eth

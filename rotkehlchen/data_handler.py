@@ -22,11 +22,11 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import Trade, get_pair_position_asset, trade_type_from_string
 from rotkehlchen.typing import (
     ApiKey,
+    ChecksumEthAddress,
     ApiSecret,
     B64EncodedBytes,
     B64EncodedString,
     BlockchainAddress,
-    EthAddress,
     FiatAsset,
     FilePath,
     SupportedBlockchain,
@@ -328,7 +328,7 @@ class DataHandler():
         now = Timestamp(int(time.time()))
         return now - last_save > period
 
-    def get_eth_accounts(self) -> List[EthAddress]:
+    def get_eth_accounts(self) -> List[ChecksumEthAddress]:
         blockchain_accounts = self.db.get_blockchain_accounts()
         return blockchain_accounts.eth
 

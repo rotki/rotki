@@ -208,7 +208,7 @@ class Blockchain():
 
     def modify_eth_account(
             self,
-            account: EthAddress,
+            given_account: EthAddress,
             append_or_remove: str,
             add_or_sub: Callable[[FVal, FVal], FVal],
     ) -> None:
@@ -218,14 +218,17 @@ class Blockchain():
         Call with 'remove', operator.sub to remove the account
         """
         # Make sure account goes into web3.py as a properly checksummed address
-        account = to_checksum_address(account)
-        getattr(self.accounts.eth, append_or_remove)(account)
+        account = to_checksum_address(given_account)
         eth_usd_price = Inquirer().find_usd_price(A_ETH)
         balance = self.ethchain.get_eth_balance(account)
         usd_balance = balance * eth_usd_price
         if append_or_remove == 'append':
+            self.accounts.eth.append(account)
             self.balances[A_ETH][account] = {A_ETH: balance, 'usd_value': usd_balance}
         elif append_or_remove == 'remove':
+            if account not in self.accounts.eth:
+                raise InputError('Tried to remove a non existing ETH account')
+            self.accounts.eth.remove(account)
             del self.balances[A_ETH][account]
         else:
             raise ValueError('Programmer error: Should be append or remove')
@@ -309,8 +312,6 @@ class Blockchain():
             )
 
         elif blockchain == SupportedBlockchain.ETHEREUM:
-            if append_or_remove == 'remove' and account not in self.accounts.eth:
-                raise InputError('Tried to remove a non existing ETH account')
             try:
                 # above we check that account is an ETH account
                 self.modify_eth_account(EthAddress(account), append_or_remove, add_or_sub)
