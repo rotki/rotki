@@ -6,7 +6,7 @@ This is the documentation for the |version| version of `Rotkehlchen <http://rotk
 What is Rotkehlchen?
 --------------------
 
-Rotkehlchen is an asset management and accounting application specializing in Crypto assets and aims to also help with tax reporting. It has integration for multiple exchanges with more coming soon.
+Rotkehlchen is an asset management and accounting application specializing in Crypto assets and aims to also help with tax reporting. It has integration for multiple exchanges with more coming soon. For more info check out our :doc:`FAQ<faq>`.
 
 Disclaimer
 ----------
@@ -31,4 +31,5 @@ Contents
    installation_guide
    usage_guide
    contribute
+   faq
    changelog
