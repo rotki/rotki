@@ -1,38 +1,42 @@
 import os
 from unittest.mock import patch
 
+import pytest
+
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_POLONIEX_ASSETS, asset_from_poloniex
 from rotkehlchen.constants.assets import A_BTC, A_ETH
-from rotkehlchen.errors import UnsupportedAsset
+from rotkehlchen.errors import DeserializationError, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade, TradeType
 from rotkehlchen.poloniex import Poloniex, trade_from_poloniex
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.user_messages import MessagesAggregator
-import pytest
+
+TEST_RATE_STR = '0.00022999'
+TEST_AMOUNT_STR = '613.79427133'
+TEST_PERC_FEE_STR = '0.0015'
+TEST_POLO_TRADE = {
+    'globalTradeID': 192167,
+    'tradeID': 3727,
+    'date': '2017-07-22 21:18:37',
+    'rate': TEST_RATE_STR,
+    'amount': TEST_AMOUNT_STR,
+    'total': '0.14116654',
+    'fee': TEST_PERC_FEE_STR,
+    'orderNumber': '2315432',
+    'type': 'sell',
+    'category': 'exchange',
+}
 
 
 def test_trade_from_poloniex():
-    amount = FVal(613.79427133)
-    rate = FVal(0.00022999)
-    perc_fee = FVal(0.0015)
+    amount = FVal(TEST_AMOUNT_STR)
+    rate = FVal(TEST_RATE_STR)
+    perc_fee = FVal(TEST_PERC_FEE_STR)
     cost = amount * rate
-    poloniex_trade = {
-        'globalTradeID': 192167,
-        'tradeID': FVal(3727.0),
-        'date': '2017-07-22 21:18:37',
-        'rate': rate,
-        'amount': amount,
-        'total': FVal(0.14116654),
-        'fee': perc_fee,
-        'orderNumber': FVal(2315432.0),
-        'type': 'sell',
-        'category': 'exchange',
-    }
-
-    trade = trade_from_poloniex(poloniex_trade, 'BTC_ETH')
+    trade = trade_from_poloniex(TEST_POLO_TRADE, 'BTC_ETH')
 
     assert isinstance(trade, Trade)
     assert isinstance(trade.timestamp, int)
@@ -44,6 +48,38 @@ def test_trade_from_poloniex():
     assert trade.fee == cost * perc_fee
     assert trade.fee_currency == 'BTC'
     assert trade.location == 'poloniex'
+
+
+def test_poloniex_trade_deserialization_errors():
+    test_trade = TEST_POLO_TRADE.copy()
+    test_trade['date'] = '2017/07/22 1:18:37'
+    with pytest.raises(DeserializationError):
+        trade_from_poloniex(test_trade, 'BTC_ETH')
+
+    test_trade = TEST_POLO_TRADE.copy()
+    test_trade['type'] = 'lololol'
+    with pytest.raises(DeserializationError):
+        trade_from_poloniex(test_trade, 'BTC_ETH')
+
+    test_trade = TEST_POLO_TRADE.copy()
+    test_trade['amount'] = None
+    with pytest.raises(DeserializationError):
+        trade_from_poloniex(test_trade, 'BTC_ETH')
+
+    test_trade = TEST_POLO_TRADE.copy()
+    test_trade['rate'] = None
+    with pytest.raises(DeserializationError):
+        trade_from_poloniex(test_trade, 'BTC_ETH')
+
+    test_trade = TEST_POLO_TRADE.copy()
+    test_trade['fee'] = ['a']
+    with pytest.raises(DeserializationError):
+        trade_from_poloniex(test_trade, 'BTC_ETH')
+
+    test_trade = TEST_POLO_TRADE.copy()
+    del test_trade['rate']
+    with pytest.raises(DeserializationError):
+        trade_from_poloniex(test_trade, 'BTC_ETH')
 
 
 def test_poloniex_trade_with_asset_needing_conversion():
