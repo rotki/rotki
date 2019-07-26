@@ -19,14 +19,15 @@ from rotkehlchen.errors import AuthenticationError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import FIAT_CURRENCIES
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import Trade, get_pair_position_asset, trade_type_from_string
+from rotkehlchen.order_formatting import Trade, get_pair_position_asset
+from rotkehlchen.serializer import deserialize_trade_type
 from rotkehlchen.typing import (
     ApiKey,
-    ChecksumEthAddress,
     ApiSecret,
     B64EncodedBytes,
     B64EncodedString,
     BlockchainAddress,
+    ChecksumEthAddress,
     FiatAsset,
     FilePath,
     SupportedBlockchain,
@@ -110,7 +111,7 @@ def verify_otctrade_data(
     except UnknownAsset as e:
         return None, f'Provided asset {e.asset_name} is not known to Rotkehlchen'
 
-    trade_type = trade_type_from_string(str(data['otc_type']))
+    trade_type = deserialize_trade_type(str(data['otc_type']))
     amount = FVal(data['otc_amount'])
     rate = FVal(data['otc_rate'])
     fee = FVal(data['otc_fee'])

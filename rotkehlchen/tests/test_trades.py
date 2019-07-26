@@ -8,23 +8,10 @@ from rotkehlchen.order_formatting import (
     Trade,
     deserialize_trade,
     trade_get_assets,
-    trade_type_from_string,
     trades_from_dictlist,
 )
 from rotkehlchen.typing import Timestamp, TradePair, TradeType
 from rotkehlchen.utils.serialization import rlk_jsondumps
-
-
-def test_trade_type_from_string():
-    assert trade_type_from_string('buy') == TradeType.BUY
-    assert trade_type_from_string('sell') == TradeType.SELL
-    assert trade_type_from_string('settlement_buy') == TradeType.SETTLEMENT_BUY
-    assert trade_type_from_string('settlement_sell') == TradeType.SETTLEMENT_SELL
-
-    assert len(list(TradeType)) == 4
-
-    with pytest.raises(ValueError):
-        trade_type_from_string('dsad')
 
 
 def test_trade_type_to_string():

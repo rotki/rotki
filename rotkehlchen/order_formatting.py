@@ -6,6 +6,7 @@ from typing_extensions import Literal
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.fval import FVal
+from rotkehlchen.serializer import deserialize_trade_type
 from rotkehlchen.typing import Fee, Timestamp, TradePair, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -40,20 +41,6 @@ class AssetMovement(NamedTuple):
     asset: Asset
     amount: FVal
     fee: Fee
-
-
-def trade_type_from_string(symbol: str) -> TradeType:
-    """Take a string and attempts to turn it into a TradeType"""
-    if symbol == 'buy':
-        return TradeType.BUY
-    elif symbol == 'sell':
-        return TradeType.SELL
-    elif symbol == 'settlement_buy':
-        return TradeType.SETTLEMENT_BUY
-    elif symbol == 'settlement_sell':
-        return TradeType.SETTLEMENT_SELL
-    else:
-        raise ValueError(f'Unknown symbol {symbol} for trade type')
 
 
 class Trade(NamedTuple):
@@ -161,11 +148,12 @@ def deserialize_trade(data: Dict[str, Any]) -> Trade:
 
     May raise:
         - UnknownAsset: If the fee_currency string is not a known asset
+        - DeserializationError: If any of the trade dict entries is not as expected
 """
     pair = data['pair']
     rate = FVal(data['rate'])
     amount = FVal(data['amount'])
-    trade_type = trade_type_from_string(data['trade_type'])
+    trade_type = deserialize_trade_type(data['trade_type'])
 
     trade_link = ''
     if 'link' in data:

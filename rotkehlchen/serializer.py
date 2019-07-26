@@ -1,13 +1,20 @@
 from typing import Any, Dict, List, Union
 
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.utils import AssetBalance, LocationData, SingleAssetBalance
-from rotkehlchen.fval import FVal, AcceptableFValInitInput
-from rotkehlchen.typing import EthTokenInfo
-from rotkehlchen.typing import Fee, Optional, Timestamp
 from rotkehlchen.errors import DeserializationError
-from rotkehlchen.typing import AssetAmount
+from rotkehlchen.fval import AcceptableFValInitInput, FVal
+from rotkehlchen.typing import (
+    AssetAmount,
+    EthTokenInfo,
+    Fee,
+    Optional,
+    Price,
+    Timestamp,
+    TradeType,
+)
+from rotkehlchen.utils.misc import createTimeStamp
 
 
 def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
@@ -102,6 +109,27 @@ def deserialize_timestamp(timestamp: Union[int, str]) -> Timestamp:
         )
 
 
+def deserialize_timestamp_from_poloniex_date(date: str) -> Timestamp:
+    """Deserializes a timestamp from a poloniex api query result date entry
+
+    Can throw DeserializationError if the data is not as expected
+    """
+    if not date:
+        raise DeserializationError(
+            'Failed to deserialize a timestamp entry from a null entry in poloniex',
+        )
+
+    if not isinstance(date, str):
+        raise DeserializationError(
+            f'Failed to deserialize a timestamp entry from a {type(date)} entry in poloniex',
+        )
+
+    try:
+        return Timestamp(createTimeStamp(datestr=date, formatstr="%Y-%m-%d %H:%M:%S"))
+    except ValueError:
+        raise DeserializationError(f'Failed to deserialize {date} poloniex timestamp entry')
+
+
 def deserialize_asset_amount(amount: AcceptableFValInitInput) -> AssetAmount:
     try:
         result = AssetAmount(FVal(amount))
@@ -109,3 +137,36 @@ def deserialize_asset_amount(amount: AcceptableFValInitInput) -> AssetAmount:
         raise DeserializationError(f'Failed to deserialize an amount entry: {str(e)}')
 
     return result
+
+
+def deserialize_price(amount: AcceptableFValInitInput) -> Price:
+    try:
+        result = Price(FVal(amount))
+    except ValueError as e:
+        raise DeserializationError(f'Failed to deserialize a price/rate entry: {str(e)}')
+
+    return result
+
+
+def deserialize_trade_type(symbol: str) -> TradeType:
+    """Take a string and attempts to turn it into a TradeType
+
+    Can throw DeserializationError if the symbol is not as expected
+    """
+    if not isinstance(symbol, str):
+        raise DeserializationError(
+            f'Failed to deserialize trade type symbol from {type(symbol)} entry',
+        )
+
+    if symbol == 'buy':
+        return TradeType.BUY
+    elif symbol == 'sell':
+        return TradeType.SELL
+    elif symbol == 'settlement_buy':
+        return TradeType.SETTLEMENT_BUY
+    elif symbol == 'settlement_sell':
+        return TradeType.SETTLEMENT_SELL
+    else:
+        raise DeserializationError(
+            f'Failed to deserialize trade type symbol. Unknown symbol {symbol} for trade type',
+        )

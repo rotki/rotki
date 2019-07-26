@@ -32,8 +32,8 @@ from rotkehlchen.order_formatting import (
     get_pair_position_asset,
     pair_get_assets,
     trade_pair_from_assets,
-    trade_type_from_string,
 )
+from rotkehlchen.serializer import deserialize_trade_type
 from rotkehlchen.typing import ApiKey, ApiSecret, Fee, FilePath, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, convert_to_int, retry_calls
@@ -153,6 +153,7 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
 
     - Can raise UnknownAsset due to kraken_to_world_pair
     - Can raise UnprocessableTradePair due to kraken_to_world_pair
+    - Can raise DeserializationError due to dict entries not being as expected
     """
     currency_pair = kraken_to_world_pair(kraken_trade['pair'])
     quote_currency = get_pair_position_asset(currency_pair, 'second')
@@ -161,7 +162,7 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
     amount = FVal(kraken_trade['vol'])
     cost = FVal(kraken_trade['cost'])
     fee = FVal(kraken_trade['fee'])
-    order_type = trade_type_from_string(kraken_trade['type'])
+    order_type = deserialize_trade_type(kraken_trade['type'])
     rate = FVal(kraken_trade['price'])
 
     if cost != amount * rate:

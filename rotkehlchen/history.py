@@ -10,6 +10,7 @@ from rotkehlchen.bittrex import trade_from_bittrex
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
+    DeserializationError,
     HistoryCacheInvalid,
     RemoteError,
     UnknownAsset,
@@ -389,6 +390,16 @@ class TradesHistorian():
                         f' {e.asset_name}. Ignoring it.',
                     )
                     continue
+                except DeserializationError as e:
+                    self.msg_aggregator.add_error(
+                        'Error deserializing a poloniex trade. Check the logs '
+                        'and open a bug report.',
+                    )
+                    log.error(
+                        'Error deserializing poloniex trade',
+                        trade=trade,
+                        error=str(e),
+                    )
         if self.read_manual_margin_positions:
             # Just read the manual positions log and make virtual trades that
             # correspond to the profits

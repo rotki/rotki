@@ -17,9 +17,14 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import PoloniexError, RemoteError, UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors import (
+    DeserializationError,
+    PoloniexError,
+    RemoteError,
+    UnknownAsset,
+    UnsupportedAsset,
+)
 from rotkehlchen.exchange import Exchange
-from rotkehlchen.serializer import deserialize_fee, deserialize_timestamp, deserialize_asset_amount
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -30,13 +35,19 @@ from rotkehlchen.order_formatting import (
     get_pair_position_str,
     invert_pair,
     trade_pair_from_assets,
-    trade_type_from_string,
+)
+from rotkehlchen.serializer import (
+    deserialize_asset_amount,
+    deserialize_fee,
+    deserialize_price,
+    deserialize_timestamp,
+    deserialize_timestamp_from_poloniex_date,
+    deserialize_trade_type,
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, Fee, FilePath, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, createTimeStamp, retry_calls
 from rotkehlchen.utils.serialization import rlk_jsonloads, rlk_jsonloads_dict, rlk_jsonloads_list
-from rotkehlchen.errors import DeserializationError
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -52,15 +63,22 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
 
     Throws:
         - UnsupportedAsset due to asset_from_poloniex()
+        - DeserializationError due to the data being in unexpected format
     """
 
-    trade_type = trade_type_from_string(poloniex_trade['type'])
-    amount = FVal(poloniex_trade['amount'])
-    rate = FVal(poloniex_trade['rate'])
-    perc_fee = FVal(poloniex_trade['fee'])
-    base_currency = asset_from_poloniex(get_pair_position_str(pair, 'first'))
-    quote_currency = asset_from_poloniex(get_pair_position_str(pair, 'second'))
-    timestamp = createTimeStamp(poloniex_trade['date'], formatstr="%Y-%m-%d %H:%M:%S")
+    try:
+        trade_type = deserialize_trade_type(poloniex_trade['type'])
+        amount = deserialize_asset_amount(poloniex_trade['amount'])
+        rate = deserialize_price(poloniex_trade['rate'])
+        perc_fee = deserialize_fee(poloniex_trade['fee'])
+        base_currency = asset_from_poloniex(get_pair_position_str(pair, 'first'))
+        quote_currency = asset_from_poloniex(get_pair_position_str(pair, 'second'))
+        timestamp = deserialize_timestamp_from_poloniex_date(poloniex_trade['date'])
+    except KeyError as e:
+        raise DeserializationError(
+            f'Poloniex trade deserialization error. Data not found in trade dict: {str(e)}',
+        )
+
     cost = rate * amount
     if trade_type == TradeType.BUY:
         fee = amount * perc_fee
