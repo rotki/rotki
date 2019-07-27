@@ -8,10 +8,12 @@ from rotkehlchen.assets.converters import UNSUPPORTED_POLONIEX_ASSETS, asset_fro
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import DeserializationError, UnsupportedAsset
 from rotkehlchen.fval import FVal
-from rotkehlchen.order_formatting import Trade, TradeType
-from rotkehlchen.poloniex import Poloniex, trade_from_poloniex
+from rotkehlchen.order_formatting import Loan, Trade, TradeType
+from rotkehlchen.poloniex import Poloniex, process_polo_loans, trade_from_poloniex
+from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.typing import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 TEST_RATE_STR = '0.00022999'
@@ -28,6 +30,30 @@ TEST_POLO_TRADE = {
     'orderNumber': '2315432',
     'type': 'sell',
     'category': 'exchange',
+}
+TEST_POLO_LOAN_1 = {
+    'id': 3,  # we don't read that in Rotkehlchen
+    'rate': '0.001',  # we don't read that in Rotkehlchen
+    'duration': '0.001',  # we don't read that in Rotkehlchen
+    'interest': '0.00000005',  # we don't read that in Rotkehlchen
+    'open': '2017-01-24 06:05:04',
+    'close': '2017-01-24 10:05:04',
+    'currency': 'DASH',  # cryptocompare hourly DASH/EUR: 13.22106438
+    'fee': '0.00015',
+    'earned': '0.003',
+    'amount': '2',
+}
+TEST_POLO_LOAN_2 = {
+    'id': 4,  # we don't read that in Rotkehlchen
+    'rate': '0.001',  # we don't read that in Rotkehlchen
+    'duration': '0.001',  # we don't read that in Rotkehlchen
+    'interest': '0.00000005',  # we don't read that in Rotkehlchen
+    'open': '2017-02-13 19:07:01',
+    'close': '2017-02-13 23:05:04',
+    'currency': 'DASH',  # cryptocompare hourly DASH/EUR: 15.73995672
+    'fee': '0.00011',
+    'earned': '0.0035',
+    'amount': '2',
 }
 
 
@@ -80,6 +106,87 @@ def test_poloniex_trade_deserialization_errors():
     del test_trade['rate']
     with pytest.raises(DeserializationError):
         trade_from_poloniex(test_trade, 'BTC_ETH')
+
+
+def test_process_polo_loans():
+    raw_data = [TEST_POLO_LOAN_1, TEST_POLO_LOAN_2]
+    msg_aggregator = MessagesAggregator()
+    loans = process_polo_loans(msg_aggregator, raw_data, 0, 1564262858)
+
+    assert len(loans) == 2
+    assert isinstance(loans[0], Loan)
+    assert loans[0].open_time == Timestamp(1485237904)
+    assert loans[0].close_time == Timestamp(1485252304)
+    assert isinstance(loans[0].currency, Asset)
+    assert loans[0].currency == A_DASH
+    assert loans[0].fee == FVal('0.00015')
+    assert loans[0].earned == FVal('0.003')
+    assert loans[0].amount_lent == FVal('2')
+
+    assert isinstance(loans[1], Loan)
+    assert loans[1].open_time == Timestamp(1487012821)
+    assert loans[1].close_time == Timestamp(1487027104)
+    assert isinstance(loans[1].currency, Asset)
+    assert loans[1].currency == A_DASH
+    assert loans[1].fee == FVal('0.00011')
+    assert loans[1].earned == FVal('0.0035')
+    assert loans[1].amount_lent == FVal('2')
+
+    # Test different start/end timestamps
+    loans = process_polo_loans(msg_aggregator, raw_data, 1485252305, 1564262858)
+    assert len(loans) == 1
+    assert loans[0].close_time == Timestamp(1487027104)
+
+    loans = process_polo_loans(msg_aggregator, raw_data, 0, 1487012820)
+    assert len(loans) == 1
+    assert loans[0].close_time == Timestamp(1485252304)
+
+
+def test_process_polo_loans_unexpected_data():
+    """Test that with unexpected data the offending loan is skipped and an error generated"""
+    msg_aggregator = MessagesAggregator()
+    broken_loan = TEST_POLO_LOAN_1.copy()
+    broken_loan['close'] = 'xx2017-xxs07-22 21:18:37'
+    loans = process_polo_loans(msg_aggregator, [broken_loan, TEST_POLO_LOAN_2], 0, 1564262858)
+    assert len(loans) == 1
+    assert loans[0].close_time == Timestamp(1487027104)
+    assert len(msg_aggregator.consume_errors()) == 1
+
+    broken_loan = TEST_POLO_LOAN_1.copy()
+    broken_loan['open'] = 'xx2017-xxs07-22 21:18:37'
+    loans = process_polo_loans(msg_aggregator, [broken_loan, TEST_POLO_LOAN_2], 0, 1564262858)
+    assert len(loans) == 1
+    assert loans[0].close_time == Timestamp(1487027104)
+    assert len(msg_aggregator.consume_errors()) == 1
+
+    broken_loan = TEST_POLO_LOAN_1.copy()
+    broken_loan['fee'] = 'sdad'
+    loans = process_polo_loans(msg_aggregator, [broken_loan, TEST_POLO_LOAN_2], 0, 1564262858)
+    assert len(loans) == 1
+    assert loans[0].close_time == Timestamp(1487027104)
+    assert len(msg_aggregator.consume_errors()) == 1
+
+    broken_loan = TEST_POLO_LOAN_1.copy()
+    broken_loan['earned'] = None
+    loans = process_polo_loans(msg_aggregator, [broken_loan, TEST_POLO_LOAN_2], 0, 1564262858)
+    assert len(loans) == 1
+    assert loans[0].close_time == Timestamp(1487027104)
+    assert len(msg_aggregator.consume_errors()) == 1
+
+    broken_loan = TEST_POLO_LOAN_1.copy()
+    broken_loan['amount'] = ['something']
+    loans = process_polo_loans(msg_aggregator, [broken_loan, TEST_POLO_LOAN_2], 0, 1564262858)
+    assert len(loans) == 1
+    assert loans[0].close_time == Timestamp(1487027104)
+    assert len(msg_aggregator.consume_errors()) == 1
+
+    # And finally test that missing an expected entry is also handled
+    broken_loan = TEST_POLO_LOAN_1.copy()
+    del broken_loan['amount']
+    loans = process_polo_loans(msg_aggregator, [broken_loan, TEST_POLO_LOAN_2], 0, 1564262858)
+    assert len(loans) == 1
+    assert loans[0].close_time == Timestamp(1487027104)
+    assert len(msg_aggregator.consume_errors()) == 1
 
 
 def test_poloniex_trade_with_asset_needing_conversion():
