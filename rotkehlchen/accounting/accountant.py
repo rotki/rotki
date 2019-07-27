@@ -15,6 +15,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import (
     AssetMovement,
+    Loan,
     MarginPosition,
     Trade,
     TradeType,
@@ -28,26 +29,21 @@ from rotkehlchen.utils.misc import ts_now
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-TaxableAction = Union[Trade, AssetMovement, EthereumTransaction, MarginPosition, Dict]
+TaxableAction = Union[Trade, AssetMovement, EthereumTransaction, MarginPosition, Loan]
 
 
 def action_get_timestamp(action: TaxableAction) -> Timestamp:
-    has_timestamp = (
-        isinstance(action, Trade) or
-        isinstance(action, AssetMovement) or
-        isinstance(action, EthereumTransaction)
-    )
-    if has_timestamp:
-        return action.timestamp  # type: ignore # There is an isinstance check above
+    """
+    Returns the timestamp of the particular action depending on its type
 
-    if isinstance(action, MarginPosition):
+    Can Raise assertion error if the action is not of any expected type
+    """
+    if isinstance(action, (Trade, AssetMovement, EthereumTransaction)):
+        return action.timestamp  # type: ignore # There is an isinstance check above
+    elif isinstance(action, (MarginPosition, Loan)):
         return action.close_time
 
-    # For loans
-    assert isinstance(action, Dict) and 'close_time' in action, (
-        'Unexpected action in get_timestamp'
-    )
-    return action['close_time']
+    raise AssertionError(f'TaxableAction of unknown type {type(action)} encountered')
 
 
 def action_get_type(action: TaxableAction) -> str:
@@ -59,10 +55,10 @@ def action_get_type(action: TaxableAction) -> str:
         return 'ethereum_transaction'
     elif isinstance(action, MarginPosition):
         return 'margin_position'
-    elif isinstance(action, dict):
+    elif isinstance(action, Loan):
         return 'loan'
 
-    raise ValueError('Unexpected action type found.')
+    raise AssertionError(f'TaxableAction of unknown type {type(action)} encountered')
 
 
 def action_get_assets(
@@ -76,12 +72,10 @@ def action_get_assets(
         return A_ETH, None
     elif isinstance(action, MarginPosition):
         return action.pl_currency, None
-    elif isinstance(action, dict):
-        # else a loan
-        return action['currency'], None
+    elif isinstance(action, Loan):
+        return action.currency, None
 
-    else:
-        raise ValueError('Unexpected action type found.')
+    raise AssertionError(f'TaxableAction of unknown type {type(action)} encountered')
 
 
 class Accountant():
@@ -300,7 +294,7 @@ class Accountant():
             end_ts: Timestamp,
             trade_history: List[Trade],
             margin_history: List[Trade],
-            loan_history: Dict,
+            loan_history: List[Loan],
             asset_movements: List[AssetMovement],
             eth_transactions: List[EthereumTransaction],
     ) -> Dict[str, Any]:
@@ -454,13 +448,13 @@ class Accountant():
             return True, prev_time, count
 
         if action_type == 'loan':
-            action = cast(Dict, action)
+            action = cast(Loan, action)
             self.events.add_loan_gain(
-                gained_asset=action['currency'],
-                lent_amount=action['amount_lent'],
-                gained_amount=action['earned'],
-                fee_in_asset=action['fee'],
-                open_time=action['open_time'],
+                gained_asset=action.currency,
+                lent_amount=action.amount_lent,
+                gained_amount=action.earned,
+                fee_in_asset=action.fee,
+                open_time=action.open_time,
                 close_time=timestamp,
             )
             return True, prev_time, count

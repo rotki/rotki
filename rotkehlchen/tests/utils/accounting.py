@@ -1,6 +1,7 @@
 from typing import Any, Dict, List
 
 from rotkehlchen.order_formatting import asset_movements_from_dictlist, trades_from_dictlist
+from rotkehlchen.poloniex import process_polo_loans
 from rotkehlchen.transactions import transactions_from_dictlist
 from rotkehlchen.typing import Timestamp
 
@@ -25,7 +26,6 @@ def accounting_history_process(
         msg_aggregator=accountant.msg_aggregator,
     )
     margin_history = [] if not margin_list else margin_list
-    loan_history = [] if not loans_list else loans_list
     asset_movements = list()
     if asset_movements_list:
         asset_movements = asset_movements_from_dictlist(
@@ -33,6 +33,16 @@ def accounting_history_process(
             start_ts=0,
             end_ts=end_ts,
         )
+
+    loan_history = list()
+    if loans_list:
+        loan_history = process_polo_loans(
+            msg_aggregator=accountant.msg_aggregator,
+            data=loans_list,
+            start_ts=0,
+            end_ts=end_ts,
+        )
+
     eth_transactions = list()
     if eth_transaction_list:
         eth_transactions = transactions_from_dictlist(

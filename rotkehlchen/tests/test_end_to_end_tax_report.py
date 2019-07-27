@@ -124,40 +124,60 @@ trades_history = [
 
 loans_list = [
     {  # before query period -- (0.0002 - 0.000001) * 10.785 = 2.146215e-3
-        'open_time': 1463505138,
-        'close_time': 1463508234,  # 17/05/2016
+        'id': 1,  # we don't read that in Rotkehlchen
+        'rate': '0.001',  # we don't read that in Rotkehlchen
+        'duration': '0.001',  # we don't read that in Rotkehlchen
+        'interest': '0.00000005',  # we don't read that in Rotkehlchen
+        'open': '2016-05-17 10:36:32',
+        'close': '2016-05-17 18:03:54',
         'currency': 'ETH',  # cryptocompare hourly ETH/EUR: 10.785
-        'fee': FVal(0.000001),
-        'earned': FVal(0.0002),
-        'amount_lent': FVal(2),
+        'fee': '0.000001',
+        'earned': '0.0002',
+        'amount': '2',
     }, {  # (0.002-0.0001) * 10.9698996 = 0.02084280924
-        'open_time': 1483350000,
-        'close_time': 1483351504,  # 02/01/2017
+        'id': 2,  # we don't read that in Rotkehlchen
+        'rate': '0.001',  # we don't read that in Rotkehlchen
+        'duration': '0.001',  # we don't read that in Rotkehlchen
+        'interest': '0.00000005',  # we don't read that in Rotkehlchen
+        'open': '2017-01-02 01:36:32',
+        'close': '2017-01-02 10:05:04',
         'currency': 'DASH',  # cryptocompare hourly DASH/EUR: 10.9698996
-        'fee': FVal(0.0001),
-        'earned': FVal(0.002),
-        'amount_lent': FVal(2),
+        'fee': '0.0001',
+        'earned': '0.002',
+        'amount': '2',
     }, {  # (0.003-0.00015)*13.22106438 = 0.037680033483
-        'open_time': 1485250000,
-        'close_time': 1485252304,  # 24/01/2017
+        'id': 3,  # we don't read that in Rotkehlchen
+        'rate': '0.001',  # we don't read that in Rotkehlchen
+        'duration': '0.001',  # we don't read that in Rotkehlchen
+        'interest': '0.00000005',  # we don't read that in Rotkehlchen
+        'open': '2017-01-24 06:05:04',
+        'close': '2017-01-24 10:05:04',
         'currency': 'DASH',  # cryptocompare hourly DASH/EUR: 13.22106438
-        'fee': FVal(0.00015),
-        'earned': FVal(0.003),
-        'amount_lent': FVal(2),
+        'fee': '0.00015',
+        'earned': '0.003',
+        'amount': '2',
     }, {  # (0.0035-0.00011)*15.73995672 = 0.0533584532808
-        'open_time': 1487021001,
-        'close_time': 1487027104,  # 13/02/2017
+        'id': 4,  # we don't read that in Rotkehlchen
+        'rate': '0.001',  # we don't read that in Rotkehlchen
+        'duration': '0.001',  # we don't read that in Rotkehlchen
+        'interest': '0.00000005',  # we don't read that in Rotkehlchen
+        'open': '2017-02-13 19:07:01',
+        'close': '2017-02-13 23:05:04',
         'currency': 'DASH',  # cryptocompare hourly DASH/EUR: 15.73995672
-        'fee': FVal(0.00011),
-        'earned': FVal(0.0035),
-        'amount_lent': FVal(2),
+        'fee': '0.00011',
+        'earned': '0.0035',
+        'amount': '2',
     }, {  # outside query period -- should not matter
-        'open_time': 1520113204,
-        'close_time': 1520118304,  # 03/03/2018
+        'id': 5,  # we don't read that in Rotkehlchen
+        'rate': '0.001',  # we don't read that in Rotkehlchen
+        'duration': '0.001',  # we don't read that in Rotkehlchen
+        'interest': '0.00000005',  # we don't read that in Rotkehlchen
+        'open': '2018-03-03 19:05:04',
+        'close': '2018-03-03 23:05:04',
         'currency': 'DASH',  # cryptocompare hourly DASH/EUR: 475.565
-        'fee': FVal(0.0001),
-        'earned': FVal(0.0025),
-        'amount_lent': FVal(2),
+        'fee': '0.0001',
+        'earned': '0.0025',
+        'amount': '2',
     },
 ]
 

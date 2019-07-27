@@ -7,7 +7,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.fval import FVal
 from rotkehlchen.serializer import deserialize_trade_type
-from rotkehlchen.typing import Fee, Timestamp, TradePair, TradeType
+from rotkehlchen.typing import AssetAmount, Fee, Timestamp, TradePair, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -81,13 +81,23 @@ class Trade(NamedTuple):
 
 
 class MarginPosition(NamedTuple):
-    # We only support marging positions on poloniex and bitmex at the moment
+    """We only support marging positions on poloniex and bitmex at the moment"""
     exchange: Literal['poloniex', 'bitmex']
     open_time: Optional[Timestamp]
     close_time: Timestamp
     profit_loss: FVal
     pl_currency: Asset
     notes: str
+
+
+class Loan(NamedTuple):
+    """We only support loans in poloniex at the moment"""
+    open_time: Timestamp
+    close_time: Timestamp
+    currency: Asset
+    fee: Fee
+    earned: AssetAmount
+    amount_lent: AssetAmount
 
 
 def _split_pair(pair: TradePair) -> Tuple[str, str]:
