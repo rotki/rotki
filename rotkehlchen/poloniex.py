@@ -77,7 +77,7 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
         timestamp = deserialize_timestamp_from_poloniex_date(poloniex_trade['date'])
     except KeyError as e:
         raise DeserializationError(
-            f'Poloniex trade deserialization error. Data not found in trade dict: {str(e)}',
+            f'Poloniex trade deserialization error. Missing key entry for {str(e)} in trade dict',
         )
 
     cost = rate * amount
@@ -168,7 +168,10 @@ def process_polo_loans(
                 f' {e.asset_name}. Ignoring it.',
             )
             continue
-        except DeserializationError as e:
+        except (DeserializationError, KeyError) as e:
+            msg = str(e)
+            if isinstance(e, KeyError):
+                msg = f'Missing key entry for {msg}'
             msg_aggregator.add_error(
                 'Deserialization error while reading a poloniex loan. Check '
                 'logs for more details',
@@ -176,8 +179,9 @@ def process_polo_loans(
             log.error(
                 'Deserialization error while reading a poloniex loan',
                 loan=loan,
-                error=str(e),
+                error=msg,
             )
+            continue
 
         new_data.append(our_loan)
 
