@@ -27,9 +27,10 @@ from rotkehlchen.errors import (
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
 from rotkehlchen.order_formatting import (
     AssetMovement,
+    Loan,
     Trade,
     TradeType,
     get_pair_position_str,
@@ -124,6 +125,64 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
         fee=fee,
         fee_currency=fee_currency,
     )
+
+
+def process_polo_loans(
+        msg_aggregator: MessagesAggregator,
+        data: List[Dict],
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+) -> List[Loan]:
+    """Takes in the list of loans from poloniex as returned by the returnLendingHistory
+    api call, processes it and returns it into our loan format
+    """
+    new_data = list()
+
+    for loan in reversed(data):
+        log.debug('processing poloniex loan', **make_sensitive(loan))
+        try:
+            close_time = deserialize_timestamp_from_poloniex_date(loan['close'])
+            open_time = deserialize_timestamp_from_poloniex_date(loan['open'])
+            if open_time < start_ts:
+                continue
+            if close_time > end_ts:
+                continue
+
+            our_loan = Loan(
+                open_time=open_time,
+                close_time=close_time,
+                currency=asset_from_poloniex(loan['currency']),
+                fee=deserialize_fee(loan['fee']),
+                earned=deserialize_asset_amount(loan['earned']),
+                amount_lent=deserialize_asset_amount(loan['amount']),
+            )
+        except UnsupportedAsset as e:
+            msg_aggregator.add_warning(
+                f'Found poloniex loan with unsupported asset'
+                f' {e.asset_name}. Ignoring it.',
+            )
+            continue
+        except UnknownAsset as e:
+            msg_aggregator.add_warning(
+                f'Found poloniex loan with unknown asset'
+                f' {e.asset_name}. Ignoring it.',
+            )
+            continue
+        except DeserializationError as e:
+            msg_aggregator.add_error(
+                'Deserialization error while reading a poloniex loan. Check '
+                'logs for more details',
+            )
+            log.error(
+                'Deserialization error while reading a poloniex loan',
+                loan=loan,
+                error=str(e),
+            )
+
+        new_data.append(our_loan)
+
+    new_data.sort(key=lambda loan: loan.open_time)
+    return new_data
 
 
 def _post_process(before: Dict) -> Dict:
@@ -463,7 +522,7 @@ class Poloniex(Exchange):
             from_csv: Optional[bool] = False,
     ) -> List:
         """
-        WARNING: Querying from returnLendingHistory endpoing instead of reading from
+        WARNING: Querying from returnLendingHistory endpoint instead of reading from
         the CSV file can potentially  return unexpected/wrong results.
 
         That is because the `returnLendingHistory` endpoint has a hidden limit
@@ -507,7 +566,7 @@ class Poloniex(Exchange):
             # Find earliest timestamp to re-query the next batch
             min_ts = end_ts
             for loan in result:
-                ts = createTimeStamp(loan['close'], formatstr="%Y-%m-%d %H:%M:%S")
+                ts = deserialize_timestamp_from_poloniex_date(loan['close'])
                 min_ts = min(min_ts, ts)
                 id_set.add(loan['id'])
 

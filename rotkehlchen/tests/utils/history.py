@@ -8,7 +8,7 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.transactions import EthereumTransaction
-from rotkehlchen.typing import Timestamp, TradeType
+from rotkehlchen.typing import AssetAmount, Timestamp, TradeType
 
 TEST_END_TS = 1559427707
 
@@ -135,10 +135,10 @@ def check_result_of_history_creation(
     assert trade_history[8].trade_type == TradeType.BUY
 
     assert len(loan_history) == 2
-    assert loan_history[0]['currency'] == A_ETH
-    assert loan_history[0]['earned'] == FVal('0.00000001')
-    assert loan_history[1]['currency'] == A_BTC
-    assert loan_history[1]['earned'] == FVal('0.00000005')
+    assert loan_history[0].currency == A_ETH
+    assert loan_history[0].earned == AssetAmount(FVal('0.00000001'))
+    assert loan_history[1].currency == A_BTC
+    assert loan_history[1].earned == AssetAmount(FVal('0.00000005'))
 
     assert len(asset_movements) == 8
     assert asset_movements[0].exchange == 'kraken'

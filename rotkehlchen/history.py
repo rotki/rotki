@@ -1,12 +1,12 @@
 import logging
 import os
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.binance import trade_from_binance
-from rotkehlchen.bitmex import trade_from_bitmex
-from rotkehlchen.bittrex import trade_from_bittrex
+from rotkehlchen.binance import Binance, trade_from_binance
+from rotkehlchen.bitmex import Bitmex, trade_from_bitmex
+from rotkehlchen.bittrex import Bittrex, trade_from_bittrex
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
@@ -20,16 +20,17 @@ from rotkehlchen.errors import (
 from rotkehlchen.exchange import data_up_todate
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.kraken import trade_from_kraken
-from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
+from rotkehlchen.kraken import Kraken, trade_from_kraken
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import (
     AssetMovement,
+    Loan,
     MarginPosition,
     Trade,
     asset_movements_from_dictlist,
     trades_from_dictlist,
 )
-from rotkehlchen.poloniex import asset_from_poloniex, trade_from_poloniex
+from rotkehlchen.poloniex import Poloniex, process_polo_loans, trade_from_poloniex
 from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
 from rotkehlchen.typing import EthAddress, FiatAsset, FilePath, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -133,7 +134,7 @@ def maybe_add_external_trades_to_history(
     return history
 
 
-def do_read_manual_margin_positions(user_directory):
+def do_read_manual_margin_positions(user_directory: FilePath) -> List[MarginPosition]:
     manual_margin_path = os.path.join(user_directory, MANUAL_MARGINS_LOGFILE)
     if os.path.isfile(manual_margin_path):
         with open(manual_margin_path, 'r') as f:
@@ -279,11 +280,11 @@ class TradesHistorian():
             msg_aggregator: MessagesAggregator,
     ):
 
-        self.poloniex = None
-        self.kraken = None
-        self.bittrex = None
-        self.bitmex = None
-        self.binance = None
+        self.poloniex: Optional[Poloniex] = None
+        self.kraken: Optional[Kraken] = None
+        self.bittrex: Optional[Bittrex] = None
+        self.bitmex: Optional[Bitmex] = None
+        self.binance: Optional[Binance] = None
         self.msg_aggregator = msg_aggregator
         self.user_directory = user_directory
         self.db = db
@@ -300,55 +301,28 @@ class TradesHistorian():
                 'already set'.format(name),
             )
 
-    def process_polo_loans(
+    def query_poloniex_history(
             self,
-            data: List[Dict],
+            history: List[Trade],
+            asset_movements: List[AssetMovement],
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Dict]:
-        """Takes in the list of loans from poloniex as returned by the returnLendingHistory
-        api call, processes it and returns it into our loan format
-        """
-        new_data = list()
-        for loan in reversed(data):
-            close_time = createTimeStamp(loan['close'], formatstr="%Y-%m-%d %H:%M:%S")
-            open_time = createTimeStamp(loan['open'], formatstr="%Y-%m-%d %H:%M:%S")
-            if open_time < start_ts:
-                continue
-            if close_time > end_ts:
-                break
-
-            try:
-                loan_data = {
-                    'open_time': open_time,
-                    'close_time': close_time,
-                    'currency': asset_from_poloniex(loan['currency']),
-                    'fee': FVal(loan['fee']),
-                    'earned': FVal(loan['earned']),
-                    'amount_lent': FVal(loan['amount']),
-                }
-            except UnsupportedAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found poloniex loan with unsupported asset'
-                    f' {e.asset_name}. Ignoring it.',
-                )
-                continue
-            except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found poloniex loan with unknown asset'
-                    f' {e.asset_name}. Ignoring it.',
-                )
-                continue
-
-            log.debug('processing poloniex loan', **make_sensitive(loan_data))
-            new_data.append(loan_data)
-
-        new_data.sort(key=lambda loan: loan['open_time'])
-        return new_data
-
-    def query_poloniex_history(self, history, asset_movements, start_ts, end_ts, end_at_least_ts):
+            end_at_least_ts: Timestamp,
+    ) -> Tuple[
+        List[Trade],
+        List[AssetMovement],
+        Union[List[MarginPosition], List[Trade]],
+        List[Loan],
+    ]:
+        # The poloniex margin trades list can either be normal trades list or
+        # if we read manual margin positions a List or MarginPosition
+        # TODO: This is pretty ugly. Simply remove the manual MarginPosition trades
+        # possibility from poloniex. Will make it easier to maintain
+        poloniex_margin_trades: List[Trade] = []
+        poloniex_manual_margin_positions: List[MarginPosition] = []
+        polo_loans: List[Loan] = list()
         if not self.poloniex:
-            return history, asset_movements, [], []
+            return history, asset_movements, poloniex_margin_trades, polo_loans
 
         log.info(
             'Starting poloniex history query',
@@ -356,8 +330,7 @@ class TradesHistorian():
             end_ts=end_ts,
             end_at_least_ts=end_at_least_ts,
         )
-        poloniex_margin_trades = list()
-        polo_loans = list()
+
         polo_history = self.poloniex.query_trade_history(
             start_ts=start_ts,
             end_ts=end_ts,
@@ -400,15 +373,14 @@ class TradesHistorian():
                         trade=trade,
                         error=str(e),
                     )
+        margin_return_list: Union[List[MarginPosition], List[Trade]]
         if self.read_manual_margin_positions:
             # Just read the manual positions log and make virtual trades that
             # correspond to the profits
-            assert poloniex_margin_trades == list(), (
-                'poloniex margin trades list should be empty here'
-            )
-            poloniex_margin_trades = do_read_manual_margin_positions(
+            poloniex_manual_margin_positions = do_read_manual_margin_positions(
                 self.user_directory,
             )
+            margin_return_list = poloniex_manual_margin_positions
         else:
             poloniex_margin_trades.sort(key=lambda trade: trade.timestamp)
             poloniex_margin_trades = limit_trade_list_to_period(
@@ -416,14 +388,15 @@ class TradesHistorian():
                 start_ts,
                 end_ts,
             )
+            margin_return_list = poloniex_margin_trades
 
-        polo_loans = self.poloniex.query_loan_history(
+        polo_loans_data = self.poloniex.query_loan_history(
             start_ts=start_ts,
             end_ts=end_ts,
             end_at_least_ts=end_at_least_ts,
             from_csv=True,
         )
-        polo_loans = self.process_polo_loans(polo_loans, start_ts, end_ts)
+        polo_loans = process_polo_loans(self.msg_aggregator, polo_loans_data, start_ts, end_ts)
         polo_asset_movements = self.poloniex.query_deposits_withdrawals(
             start_ts=start_ts,
             end_ts=end_ts,
@@ -431,7 +404,7 @@ class TradesHistorian():
         )
         asset_movements.extend(polo_asset_movements)
 
-        return history, asset_movements, poloniex_margin_trades, polo_loans
+        return history, asset_movements, margin_return_list, polo_loans
 
     def create_history(self, start_ts, end_ts, end_at_least_ts):
         """Creates trades and loans history from start_ts to end_ts or if
