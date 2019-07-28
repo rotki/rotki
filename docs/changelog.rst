@@ -2,6 +2,13 @@
 Changelog
 =========
 
+* :feature:`-` Added support for the following tokens
+
+  - `Luna Coin <https://coinmarketcap.com/currencies/luna-coin/>`__
+  - `Luna Terra <https://coinmarketcap.com/currencies/terra/>`__
+  - `Spin Protocol <https://coinmarketcap.com/currencies/spin-protocol/>`__
+
+
 * :release:`1.0.0 <2019-01-22>`
 * :bug:`420` There are no more negative percentages at tax report generation progress
 * :bug:`392` Revisiting usersettings properly updates per account tables if an account has been deleted before.
