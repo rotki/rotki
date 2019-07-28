@@ -10,7 +10,13 @@ from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bittrex
-from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors import (
+    DeserializationError,
+    RemoteError,
+    UnknownAsset,
+    UnprocessableTradePair,
+    UnsupportedAsset,
+)
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -22,9 +28,16 @@ from rotkehlchen.order_formatting import (
     pair_get_assets,
     trade_pair_from_assets,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair, TradeType
+from rotkehlchen.serializer import (
+    deserialize_asset_amount,
+    deserialize_fee,
+    deserialize_price,
+    deserialize_timestamp_from_bittrex_date,
+    deserialize_trade_type,
+)
+from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import cache_response_timewise, createTimeStamp
+from rotkehlchen.utils.misc import cache_response_timewise
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
@@ -56,6 +69,11 @@ def bittrex_pair_to_world(given_pair: str) -> TradePair:
         - UnsupportedAsset due to asset_from_bittrex()
         - UnprocessableTradePair if the pair can't be split into its parts
     """
+    if not isinstance(given_pair, str):
+        raise DeserializationError(
+            f'Could not deserialize bittrex trade pair. Expected a string '
+            f'but found {type(given_pair)}',
+        )
     pair = TradePair(given_pair.replace('-', '_'))
     base_currency = asset_from_bittrex(get_pair_position_str(pair, 'first'))
     quote_currency = asset_from_bittrex(get_pair_position_str(pair, 'second'))
@@ -84,21 +102,20 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
 
     Throws:
         - UnsupportedAsset due to bittrex_pair_to_world()
-"""
-    amount = FVal(bittrex_trade['Quantity']) - FVal(bittrex_trade['QuantityRemaining'])
-    rate = FVal(bittrex_trade['PricePerUnit'])
-    order_type = bittrex_trade['OrderType']
-    bittrex_price = FVal(bittrex_trade['Price'])
-    bittrex_commission = FVal(bittrex_trade['Commission'])
+        - DeserializationError due to unexpected format of dict entries
+        - KeyError due to dict entries missing an expected entry
+    """
+    amount = (
+        deserialize_asset_amount(bittrex_trade['Quantity']) -
+        deserialize_asset_amount(bittrex_trade['QuantityRemaining'])
+    )
+    timestamp = deserialize_timestamp_from_bittrex_date(bittrex_trade['TimeStamp'])
+    rate = deserialize_price(bittrex_trade['PricePerUnit'])
+    order_type = deserialize_trade_type(bittrex_trade['OrderType'])
+    bittrex_price = deserialize_price(bittrex_trade['Price'])
+    fee = deserialize_fee(bittrex_trade['Commission'])
     pair = bittrex_pair_to_world(bittrex_trade['Exchange'])
     quote_currency = get_pair_position_asset(pair, 'second')
-    fee = bittrex_commission
-    if order_type == 'LIMIT_BUY':
-        order_type = TradeType.BUY
-    elif order_type == 'LIMIT_SELL':
-        order_type = TradeType.SELL
-    else:
-        raise ValueError('Got unexpected order type "{}" for bittrex trade'.format(order_type))
 
     log.debug(
         'Processing bittrex Trade',
@@ -107,13 +124,13 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
         rate=rate,
         order_type=order_type,
         price=bittrex_price,
-        fee=bittrex_commission,
+        fee=fee,
         bittrex_pair=bittrex_trade['Exchange'],
         pair=pair,
     )
 
     return Trade(
-        timestamp=bittrex_trade['TimeStamp'],
+        timestamp=timestamp,
         location='bittrex',
         pair=pair,
         trade_type=order_type,
@@ -286,29 +303,62 @@ class Bittrex(Exchange):
             end_at_least_ts: Timestamp,
             market: Optional[TradePair] = None,
             count: Optional[int] = None,
-    ) -> List[Dict[str, Any]]:
+    ) -> List[Trade]:
 
         options: Dict[str, Union[str, int]] = dict()
         cache = self.check_trades_cache_list(start_ts, end_at_least_ts)
         if market is not None:
             options['market'] = world_pair_to_bittrex(market)
-        elif cache is not None:
-            return cache
-
         if count is not None:
             options['count'] = count
-        order_history = self.api_query('getorderhistory', options)
-        log.debug('binance order history result', results_num=len(order_history))
 
-        returned_history = list()
-        for order in order_history:
-            order_timestamp = createTimeStamp(order['TimeStamp'], formatstr="%Y-%m-%dT%H:%M:%S.%f")
-            if order_timestamp < start_ts:
+        if cache is not None:
+            raw_data = cache
+        else:
+            raw_data = self.api_query('getorderhistory', options)
+            log.debug('binance order history result', results_num=len(raw_data))
+            self.update_trades_cache(raw_data, start_ts, end_ts)
+
+        trades = []
+        for raw_trade in raw_data:
+            try:
+                trade = trade_from_bittrex(raw_trade)
+            except UnknownAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found bittrex trade with unknown asset '
+                    f'{e.asset_name}. Ignoring it.',
+                )
                 continue
-            if order_timestamp > end_ts:
-                break
-            order['TimeStamp'] = order_timestamp
-            returned_history.append(order)
+            except UnsupportedAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found bittrex trade with unsupported asset '
+                    f'{e.asset_name}. Ignoring it.',
+                )
+                continue
+            except UnprocessableTradePair as e:
+                self.msg_aggregator.add_error(
+                    f'Found bittrex trade with unprocessable pair '
+                    f'{e.pair}. Ignoring it.',
+                )
+                continue
+            except (DeserializationError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}.'
+                self.msg_aggregator.add_error(
+                    'Error processing a bittrex trade. Check logs '
+                    'for details. Ignoring it.',
+                )
+                log.error(
+                    'Error processing a bittrex trade',
+                    trade=raw_trade,
+                    error=msg,
+                )
+                continue
 
-        self.update_trades_cache(returned_history, start_ts, end_ts)
-        return returned_history
+            if trade.timestamp < start_ts or trade.timestamp > end_ts:
+                continue
+
+            trades.append(trade)
+
+        return trades

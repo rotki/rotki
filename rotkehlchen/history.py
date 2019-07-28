@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.binance import Binance, trade_from_binance
 from rotkehlchen.bitmex import Bitmex, trade_from_bitmex
-from rotkehlchen.bittrex import Bittrex, trade_from_bittrex
+from rotkehlchen.bittrex import Bittrex
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
@@ -14,7 +14,6 @@ from rotkehlchen.errors import (
     HistoryCacheInvalid,
     RemoteError,
     UnknownAsset,
-    UnprocessableTradePair,
     UnsupportedAsset,
 )
 from rotkehlchen.exchange import data_up_todate
@@ -469,28 +468,7 @@ class TradesHistorian():
                     end_ts=end_ts,
                     end_at_least_ts=end_at_least_ts,
                 )
-                for trade in bittrex_history:
-                    try:
-                        history.append(
-                            trade_from_bittrex(trade),
-                        )
-                    except UnknownAsset as e:
-                        self.msg_aggregator.add_warning(
-                            f'Found bittrex trade with unknown asset '
-                            f'{e.asset_name}. Ignoring it.',
-                        )
-                        continue
-                    except UnsupportedAsset as e:
-                        self.msg_aggregator.add_warning(
-                            f'Found bittrex trade with unsupported asset '
-                            f'{e.asset_name}. Ignoring it.',
-                        )
-                        continue
-                    except UnprocessableTradePair as e:
-                        self.msg_aggregator.add_warning(
-                            f'Found bittrex trade with unprocessable pair '
-                            f'{e.pair}. Ignoring it.',
-                        )
+                history.extend(bittrex_history)
 
             except RemoteError as e:
                 empty_or_error += '\n' + str(e)
