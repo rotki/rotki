@@ -130,9 +130,11 @@ def deserialize_timestamp_from_poloniex_date(date: str) -> Timestamp:
         raise DeserializationError(f'Failed to deserialize {date} poloniex timestamp entry')
 
 
-def deserialize_timestamp_from_kraken(time: str) -> Timestamp:
+def deserialize_timestamp_from_kraken(time: Union[str, FVal]) -> Timestamp:
     """Deserializes a timestamp from a kraken api query result entry
     Kraken has timestamps in floating point strings. Example: '1561161486.3056'.
+
+    If the dictionary has passed through rlk_jsonloads the entry can also be an Fval
 
     Can throw DeserializationError if the data is not as expected
     """
@@ -141,15 +143,23 @@ def deserialize_timestamp_from_kraken(time: str) -> Timestamp:
             'Failed to deserialize a timestamp entry from a null entry in kraken',
         )
 
-    if not isinstance(time, str):
+    if isinstance(time, str):
+        try:
+            return Timestamp(convert_to_int(time, accept_only_exact=False))
+        except ValueError:
+            raise DeserializationError(f'Failed to deserialize {time} kraken timestamp entry')
+    elif isinstance(time, FVal):
+        try:
+            return Timestamp(time.to_int(exact=True))
+        except ValueError:
+            raise DeserializationError(
+                f'Failed to deserialize {time} kraken timestamp entry from an FVal',
+            )
+
+    else:
         raise DeserializationError(
             f'Failed to deserialize a timestamp entry from a {type(time)} entry in kraken',
         )
-
-    try:
-        return Timestamp(convert_to_int(time, accept_only_exact=False))
-    except ValueError:
-        raise DeserializationError(f'Failed to deserialize {time} kraken timestamp entry')
 
 
 def deserialize_asset_amount(amount: AcceptableFValInitInput) -> AssetAmount:

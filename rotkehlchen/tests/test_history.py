@@ -51,24 +51,27 @@ def test_history_creation(
     # And now make sure that warnings have also been generated for the query of
     # the unsupported/unknown assets
     warnings = rotki.msg_aggregator.consume_warnings()
-    assert len(warnings) == 16
-    assert 'kraken trade with unprocessable pair IDONTEXISTZEUR' in warnings[0]
-    assert 'kraken trade with unknown asset IDONTEXISTTOO' in warnings[1]
-    assert 'kraken trade with unprocessable pair %$#%$#%$#%$#%$#%' in warnings[2]
-    assert 'unknown kraken asset IDONTEXIST. Ignoring its deposit/withdrawals query' in warnings[3]
+    assert len(warnings) == 14
+    assert 'kraken trade with unknown asset IDONTEXISTTOO' in warnings[0]
+    assert 'unknown kraken asset IDONTEXIST. Ignoring its deposit/withdrawals query' in warnings[1]
     msg = 'unknown kraken asset IDONTEXISTEITHER. Ignoring its deposit/withdrawals query'
-    assert msg in warnings[4]
-    assert 'poloniex trade with unknown asset NOEXISTINGASSET' in warnings[5]
-    assert 'poloniex trade with unsupported asset BALLS' in warnings[6]
-    assert 'poloniex loan with unsupported asset BDC' in warnings[7]
-    assert 'poloniex loan with unknown asset NOTEXISTINGASSET' in warnings[8]
-    assert 'withdrawal of unknown poloniex asset IDONTEXIST' in warnings[9]
-    assert 'withdrawal of unsupported poloniex asset DIS' in warnings[10]
-    assert 'deposit of unknown poloniex asset IDONTEXIST' in warnings[11]
-    assert 'deposit of unsupported poloniex asset EBT' in warnings[12]
-    assert 'bittrex trade with unsupported asset PTON' in warnings[13]
-    assert 'bittrex trade with unknown asset IDONTEXIST' in warnings[14]
-    assert 'bittrex trade with unprocessable pair %$#%$#%#$%' in warnings[15]
+    assert msg in warnings[2]
+    assert 'poloniex trade with unknown asset NOEXISTINGASSET' in warnings[3]
+    assert 'poloniex trade with unsupported asset BALLS' in warnings[4]
+    assert 'poloniex loan with unsupported asset BDC' in warnings[5]
+    assert 'poloniex loan with unknown asset NOTEXISTINGASSET' in warnings[6]
+    assert 'withdrawal of unknown poloniex asset IDONTEXIST' in warnings[7]
+    assert 'withdrawal of unsupported poloniex asset DIS' in warnings[8]
+    assert 'deposit of unknown poloniex asset IDONTEXIST' in warnings[9]
+    assert 'deposit of unsupported poloniex asset EBT' in warnings[10]
+    assert 'bittrex trade with unsupported asset PTON' in warnings[11]
+    assert 'bittrex trade with unknown asset IDONTEXIST' in warnings[12]
+    assert 'bittrex trade with unprocessable pair %$#%$#%#$%' in warnings[13]
+
+    errors = rotki.msg_aggregator.consume_errors()
+    assert len(errors) == 2
+    assert 'kraken trade with unprocessable pair IDONTEXISTZEUR' in errors[0]
+    assert 'kraken trade with unprocessable pair %$#%$#%$#%$#%$#%' in errors[1]
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -151,9 +154,9 @@ def test_history_creation_corrupt_trades_cache(
 
     # And now make sure that warnings/errors number did not change
     warnings = rotki.msg_aggregator.consume_warnings()
-    assert len(warnings) == 16
+    assert len(warnings) == 14
     errors = rotki.msg_aggregator.consume_errors()
-    assert len(errors) == 0
+    assert len(errors) == 2
 
 
 def test_limit_trade_list_to_period():
