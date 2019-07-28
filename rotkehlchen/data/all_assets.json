@@ -5108,6 +5108,19 @@
         "symbol": "LUN",
         "type": "ethereum token"
     },
+    "LUNA": {
+        "name": "Luna Coin",
+        "started": 1484092800,
+        "symbol": "LUNA",
+        "type": "own chain"
+    },
+    "LUNA-2": {
+        "active": true,
+        "name": "Luna Terra",
+        "started": 1564103351,
+        "symbol": "LUNA",
+        "type": "own chain"
+    },
     "LYM": {
         "ethereum_address": "0xc690F7C7FcfFA6a82b79faB7508c466FEfdfc8c5",
         "ethereum_token_decimals": 18,

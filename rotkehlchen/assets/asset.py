@@ -19,6 +19,8 @@ WORLD_TO_BITTREX = {
     'PAI-2': 'PI',
     # In Rotkehlchen PLA-2 is Playchip but in Bittrex is PLA
     'PLA-2': 'PLA',
+    # In Rotkehlchen LUNA-2 is Terra Luna but in Bittrex it's LUNA
+    'LUNA-2': 'LUNA',
 }
 
 WORLD_TO_POLONIEX = {
