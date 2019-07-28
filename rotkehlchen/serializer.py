@@ -14,7 +14,7 @@ from rotkehlchen.typing import (
     Timestamp,
     TradeType,
 )
-from rotkehlchen.utils.misc import createTimeStamp
+from rotkehlchen.utils.misc import convert_to_int, createTimeStamp
 
 
 def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
@@ -128,6 +128,28 @@ def deserialize_timestamp_from_poloniex_date(date: str) -> Timestamp:
         return Timestamp(createTimeStamp(datestr=date, formatstr="%Y-%m-%d %H:%M:%S"))
     except ValueError:
         raise DeserializationError(f'Failed to deserialize {date} poloniex timestamp entry')
+
+
+def deserialize_timestamp_from_kraken(time: str) -> Timestamp:
+    """Deserializes a timestamp from a kraken api query result entry
+    Kraken has timestamps in floating point strings. Example: '1561161486.3056'.
+
+    Can throw DeserializationError if the data is not as expected
+    """
+    if not time:
+        raise DeserializationError(
+            'Failed to deserialize a timestamp entry from a null entry in kraken',
+        )
+
+    if not isinstance(time, str):
+        raise DeserializationError(
+            f'Failed to deserialize a timestamp entry from a {type(time)} entry in kraken',
+        )
+
+    try:
+        return Timestamp(convert_to_int(time, accept_only_exact=False))
+    except ValueError:
+        raise DeserializationError(f'Failed to deserialize {time} kraken timestamp entry')
 
 
 def deserialize_asset_amount(amount: AcceptableFValInitInput) -> AssetAmount:
