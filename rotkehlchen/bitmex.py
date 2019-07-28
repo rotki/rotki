@@ -7,7 +7,6 @@ from typing import Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
 
 from rotkehlchen import typing
-from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError
@@ -187,7 +186,7 @@ class Bitmex(Exchange):
         assert isinstance(result, List)
         return result
 
-    @cache_response_timewise(CACHE_RESPONSE_FOR_SECS)
+    @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[dict], str]:
         try:
             resp = self._api_query_dict('get', 'user/wallet', {'currency': 'XBt'})

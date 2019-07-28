@@ -46,22 +46,28 @@ def tsToDate(ts: Timestamp, formatstr: str = '%d/%m/%Y %H:%M:%S') -> str:
     return datetime.datetime.utcfromtimestamp(ts).strftime(formatstr)
 
 
-def cache_response_timewise(seconds: int = 600) -> Callable:
+def cache_response_timewise() -> Callable:
     """ This is a decorator for caching results of functions of objects.
     The objects must adhere to the interface of having:
         - A results_cache dictionary attribute
         - A semaphore attribute named lock
+        - A cache_ttl_secs attribute denoting how long the cache should live.
+          Can also be 0 which means cache is disabled.
 
-    Objects adhering to this interface are all the exchanges and the rotkehlchen object.
+    Objects adhering to this interface are:
+        - all the exchanges
+        - the Rotkehlchen object
+        - the Blockchain object
     """
     def _cache_response_timewise(f: Callable):
         @wraps(f)
         def wrapper(wrappingobj, *args):
             with wrappingobj.lock:
                 now = ts_now()
+                cache_life_secs = now - wrappingobj.results_cache[f.__name__].timestamp
                 cache_miss = (
                     f.__name__ not in wrappingobj.results_cache or
-                    now - wrappingobj.results_cache[f.__name__].timestamp > seconds
+                    cache_life_secs > wrappingobj.cache_ttl_secs
                 )
             if cache_miss:
                 result = f(wrappingobj, *args)

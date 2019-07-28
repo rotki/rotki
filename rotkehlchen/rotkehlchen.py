@@ -13,7 +13,7 @@ from rotkehlchen.binance import Binance
 from rotkehlchen.bitmex import Bitmex
 from rotkehlchen.bittrex import Bittrex
 from rotkehlchen.blockchain import Blockchain
-from rotkehlchen.constants import SUPPORTED_EXCHANGES
+from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS, SUPPORTED_EXCHANGES
 from rotkehlchen.constants.assets import A_USD, S_EUR, S_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.errors import AuthenticationError, EthSyncError, InputError, UnknownAsset
@@ -64,9 +64,13 @@ def accounts_result(per_account, totals) -> Dict:
 
 class Rotkehlchen():
     def __init__(self, args):
+        # --cache related variable start
         self.lock = Semaphore()
         self.lock.acquire()
         self.results_cache: ResultCache = dict()
+        self.cache_ttl_secs = CACHE_RESPONSE_FOR_SECS
+        # --cache related variable end
+
         self.premium = None
         self.connected_exchanges = []
         self.user_is_logged_in = False

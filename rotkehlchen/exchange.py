@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import requests
 from gevent.lock import Semaphore
 
+from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import AssetMovement
 from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, T_ApiKey, T_ApiSecret, Timestamp
@@ -52,9 +53,14 @@ class Exchange():
         self.secret = secret
         self.first_connection_made = False
         self.session = requests.session()
+        self.session.headers.update({'User-Agent': 'rotkehlchen'})
+
+        # -- Cache related variales
         self.lock = Semaphore()
         self.results_cache: Dict[str, Any] = {}
-        self.session.headers.update({'User-Agent': 'rotkehlchen'})
+        # The amount of seconds cache of cache_response_timewise is supposed to last
+        # IF 0 is given then cache is disabled. A zero value also disabled the trades cache
+        self.cache_ttl_secs = CACHE_RESPONSE_FOR_SECS
         log.info(f'Initialized {name} exchange')
 
     def _get_cachefile_name(self, special_name: Optional[str] = None) -> str:
@@ -69,6 +75,9 @@ class Exchange():
             end_ts: Timestamp,
             special_name: Optional[str] = None,
     ) -> Optional[Union[List[Dict[str, Any]], Dict[str, Any]]]:
+        if self.cache_ttl_secs == 0:
+            return None
+
         trades_file = self._get_cachefile_name(special_name)
         trades: Dict[str, Dict[str, Any]] = dict()
         if os.path.isfile(trades_file):
