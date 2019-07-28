@@ -9,12 +9,18 @@ import gevent
 
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import BINANCE_BASE_URL
-from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import Trade, TradeType, trade_pair_from_assets
+from rotkehlchen.serializer import (
+    deserialize_asset_amount,
+    deserialize_fee,
+    deserialize_price,
+    deserialize_timestamp_from_binance,
+)
 from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise
@@ -56,12 +62,21 @@ def trade_from_binance(
     base asset refers to the asset that is the quantity of a symbol.
     quote asset refers to the asset that is the price of a symbol.
 
-    Can throw UnsupportedAsset due to asset_from_binance
+    Throws:
+        - UnsupportedAsset due to asset_from_binance
+        - DeserializationError due to unexpected format of dict entries
+        - KeyError due to dict entries missing an expected entry
     """
-    amount = FVal(binance_trade['qty'])
-    rate = FVal(binance_trade['price'])
+    amount = deserialize_asset_amount(binance_trade['qty'])
+    rate = deserialize_price(binance_trade['price'])
+    if binance_trade['symbol'] not in binance_symbols_to_pair:
+        raise DeserializationError(
+            f'Error reading a binance trade. Could not find '
+            f'{binance_trade["symbol"]} in binance_symbols_to_pair',
+        )
+
     binance_pair = binance_symbols_to_pair[binance_trade['symbol']]
-    timestamp = binance_trade['time']
+    timestamp = deserialize_timestamp_from_binance(binance_trade['time'])
 
     base_asset = asset_from_binance(binance_pair.binance_base_asset)
     quote_asset = asset_from_binance(binance_pair.binance_quote_asset)
@@ -73,7 +88,7 @@ def trade_from_binance(
         order_type = TradeType.SELL
 
     fee_currency = asset_from_binance(binance_trade['commissionAsset'])
-    fee = FVal(binance_trade['commission'])
+    fee = deserialize_fee(binance_trade['commission'])
 
     log.debug(
         'Processing binance Trade',
@@ -311,57 +326,85 @@ class Binance(Exchange):
             end_ts: Timestamp,
             end_at_least_ts: Timestamp,
             markets: Optional[List[str]] = None,
-    ) -> List:
+    ) -> List[Trade]:
         cache = self.check_trades_cache_list(start_ts, end_at_least_ts)
         if cache is not None:
-            return cache
-
-        self.first_connection()
-
-        if not markets:
-            iter_markets = self._symbols_to_pair.keys()
+            raw_data = cache
         else:
-            iter_markets = markets
+            self.first_connection()
 
-        all_trades_history = list()
-        # Limit of results to return. 1000 is max limit according to docs
-        limit = 1000
-        for symbol in iter_markets:
-            last_trade_id = 0
-            len_result = limit
-            while len_result == limit:
-                # We know that myTrades returns a list from the api docs
-                result = self.api_query_list(
-                    'myTrades',
-                    options={
-                        'symbol': symbol,
-                        'fromId': last_trade_id,
-                        'limit': limit,
-                        # Not specifying them since binance does not seem to
-                        # respect them and always return all trades
-                        # 'startTime': start_ts * 1000,
-                        # 'endTime': end_ts * 1000,
-                    })
-                if result:
-                    last_trade_id = result[-1]['id'] + 1
-                len_result = len(result)
-                log.debug('binance myTrades query result', results_num=len_result)
-                for r in result:
-                    r['symbol'] = symbol
-                all_trades_history.extend(result)
+            if not markets:
+                iter_markets = self._symbols_to_pair.keys()
+            else:
+                iter_markets = markets
 
-        all_trades_history.sort(key=lambda x: x['time'])
+            raw_data = list()
+            # Limit of results to return. 1000 is max limit according to docs
+            limit = 1000
+            for symbol in iter_markets:
+                last_trade_id = 0
+                len_result = limit
+                while len_result == limit:
+                    # We know that myTrades returns a list from the api docs
+                    result = self.api_query_list(
+                        'myTrades',
+                        options={
+                            'symbol': symbol,
+                            'fromId': last_trade_id,
+                            'limit': limit,
+                            # Not specifying them since binance does not seem to
+                            # respect them and always return all trades
+                            # 'startTime': start_ts * 1000,
+                            # 'endTime': end_ts * 1000,
+                        })
+                    if result:
+                        last_trade_id = result[-1]['id'] + 1
+                    len_result = len(result)
+                    log.debug('binance myTrades query result', results_num=len_result)
+                    for r in result:
+                        r['symbol'] = symbol
+                    raw_data.extend(result)
 
-        returned_history = list()
-        for order in all_trades_history:
-            order_timestamp = int(order['time'] / 1000)
-            if order_timestamp < start_ts:
+            raw_data.sort(key=lambda x: x['time'])
+            self.update_trades_cache(raw_data, start_ts, end_ts)
+
+        trades = list()
+        for raw_trade in raw_data:
+            try:
+                trade = trade_from_binance(raw_trade, self.symbols_to_pair)
+            except UnknownAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found binance trade with unknown asset '
+                    f'{e.asset_name}. Ignoring it.',
+                )
                 continue
-            if order_timestamp > end_ts:
+            except UnsupportedAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found binance trade with unsupported asset '
+                    f'{e.asset_name}. Ignoring it.',
+                )
+                continue
+            except (DeserializationError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}.'
+                self.msg_aggregator.add_error(
+                    'Error processing a binance trade. Check logs '
+                    'for details. Ignoring it.',
+                )
+                log.error(
+                    'Error processing a binance trade',
+                    trade=raw_trade,
+                    error=msg,
+                )
+                continue
+
+            if trade.timestamp < start_ts:
+                continue
+
+            if trade.timestamp > end_ts:
                 break
-            order['time'] = order_timestamp
 
-            returned_history.append(order)
+            trades.append(trade)
 
-        self.update_trades_cache(returned_history, start_ts, end_ts)
-        return returned_history
+        return trades

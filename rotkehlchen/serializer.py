@@ -178,6 +178,21 @@ def deserialize_timestamp_from_kraken(time: Union[str, FVal]) -> Timestamp:
         )
 
 
+def deserialize_timestamp_from_binance(time: int) -> Timestamp:
+    """Deserializes a timestamp from a binance api query result entry
+    Kraken has timestamps in integer but also including milliseconds
+
+
+    Can throw DeserializationError if the data is not as expected
+    """
+    if not isinstance(time, int):
+        raise DeserializationError(
+            f'Failed to deserialize a timestamp entry from a {type(time)} entry in binance',
+        )
+
+    return Timestamp(int(time / 1000))
+
+
 def deserialize_asset_amount(amount: AcceptableFValInitInput) -> AssetAmount:
     try:
         result = AssetAmount(FVal(amount))

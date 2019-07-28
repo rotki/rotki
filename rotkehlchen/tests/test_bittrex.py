@@ -149,7 +149,6 @@ def test_bittrex_query_trade_history(bittrex):
         return response
 
     with patch.object(bittrex.session, 'get', side_effect=mock_order_history):
-        # Test that after querying the assets only ETH and BTC are there
         trades = bittrex.query_trade_history(0, 1564301134, 1564301134)
 
     expected_trade = Trade(
