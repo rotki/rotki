@@ -6,8 +6,13 @@ from typing_extensions import Literal
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.fval import FVal
-from rotkehlchen.serializer import deserialize_trade_type
-from rotkehlchen.typing import AssetAmount, Fee, Timestamp, TradePair, TradeType
+from rotkehlchen.serializer import (
+    deserialize_asset_amount,
+    deserialize_fee,
+    deserialize_price,
+    deserialize_trade_type,
+)
+from rotkehlchen.typing import AssetAmount, Fee, Price, Timestamp, TradePair, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -62,9 +67,9 @@ class Trade(NamedTuple):
     trade_type: TradeType
     # The amount represents the amount bought if it's a buy or or the amount
     # sold if it's a sell
-    amount: FVal
-    rate: FVal
-    fee: FVal
+    amount: AssetAmount
+    rate: Price
+    fee: Fee
     fee_currency: Asset
     link: str = ''
     notes: str = ''
@@ -161,8 +166,8 @@ def deserialize_trade(data: Dict[str, Any]) -> Trade:
         - DeserializationError: If any of the trade dict entries is not as expected
 """
     pair = data['pair']
-    rate = FVal(data['rate'])
-    amount = FVal(data['amount'])
+    rate = deserialize_price(data['rate'])
+    amount = deserialize_asset_amount(data['amount'])
     trade_type = deserialize_trade_type(data['trade_type'])
 
     trade_link = ''
@@ -179,7 +184,7 @@ def deserialize_trade(data: Dict[str, Any]) -> Trade:
         trade_type=trade_type,
         amount=amount,
         rate=rate,
-        fee=FVal(data['fee']),
+        fee=deserialize_fee(data['fee']),
         fee_currency=Asset(data['fee_currency']),
         link=trade_link,
         notes=trade_notes,

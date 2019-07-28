@@ -15,12 +15,17 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors import AuthenticationError, UnknownAsset
+from rotkehlchen.errors import AuthenticationError, DeserializationError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import FIAT_CURRENCIES
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import Trade, get_pair_position_asset
-from rotkehlchen.serializer import deserialize_trade_type
+from rotkehlchen.serializer import (
+    deserialize_asset_amount,
+    deserialize_fee,
+    deserialize_price,
+    deserialize_trade_type,
+)
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -102,6 +107,7 @@ def verify_otctrade_data(
     # Satisfy mypy typing
     assert isinstance(data['otc_pair'], str)
     assert isinstance(data['otc_fee_currency'], str)
+    assert isinstance(data['otc_fee'], str)
 
     pair = TradePair(data['otc_pair'])
     try:
@@ -111,10 +117,13 @@ def verify_otctrade_data(
     except UnknownAsset as e:
         return None, f'Provided asset {e.asset_name} is not known to Rotkehlchen'
 
-    trade_type = deserialize_trade_type(str(data['otc_type']))
-    amount = FVal(data['otc_amount'])
-    rate = FVal(data['otc_rate'])
-    fee = FVal(data['otc_fee'])
+    try:
+        trade_type = deserialize_trade_type(str(data['otc_type']))
+        amount = deserialize_asset_amount(data['otc_amount'])
+        rate = deserialize_price(data['otc_rate'])
+        fee = deserialize_fee(data['otc_fee'])
+    except DeserializationError as e:
+        return None, f'Deserialization Error: {str(e)}'
     try:
         assert isinstance(data['otc_timestamp'], str)
         timestamp = createTimeStamp(data['otc_timestamp'], formatstr='%d/%m/%Y %H:%M')
