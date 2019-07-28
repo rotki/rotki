@@ -235,6 +235,11 @@ MANUALLY_CHECKED = {
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'SMS': True,
+    # On 28/07/2019 Spin protocol is active and trading in multiple exchanges
+    # https://coinmarketcap.com/currencies/spin-protocol/#markets
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'SPIN': True,
     # On 11/04/2019 TALAO is still active and trading in 1 exchange
     # https://coinmarketcap.com/currencies/talao/
     # For some reason coin paprika thinks it's not so specify here we

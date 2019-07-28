@@ -7799,6 +7799,15 @@
         "symbol": "SPICE",
         "type": "ethereum token"
     },
+    "SPIN": {
+        "active": true,
+        "ethereum_address": "0x4F22310C27eF39FEAA4A756027896DC382F0b5E2",
+        "ethereum_token_decimals": 18,
+        "name": "SPIN Protocol",
+        "started": 1550620800,
+        "symbol": "SPIN",
+        "type": "ethereum token"
+    },
     "SPN": {
         "ethereum_address": "0x20F7A3DdF244dc9299975b4Da1C39F8D5D75f05A",
         "ethereum_token_decimals": 6,
