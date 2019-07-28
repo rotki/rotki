@@ -109,25 +109,41 @@ def deserialize_timestamp(timestamp: Union[int, str]) -> Timestamp:
         )
 
 
-def deserialize_timestamp_from_poloniex_date(date: str) -> Timestamp:
-    """Deserializes a timestamp from a poloniex api query result date entry
+def deserialize_timestamp_from_date(date: str, formatstr: str, location: str) -> Timestamp:
+    """Deserializes a timestamp from a date entry depending on the format str
 
     Can throw DeserializationError if the data is not as expected
     """
     if not date:
         raise DeserializationError(
-            'Failed to deserialize a timestamp entry from a null entry in poloniex',
+            f'Failed to deserialize a timestamp from a null entry in {location}',
         )
 
     if not isinstance(date, str):
         raise DeserializationError(
-            f'Failed to deserialize a timestamp entry from a {type(date)} entry in poloniex',
+            f'Failed to deserialize a timestamp from a {type(date)} entry in {location}',
         )
 
     try:
-        return Timestamp(createTimeStamp(datestr=date, formatstr="%Y-%m-%d %H:%M:%S"))
+        return Timestamp(createTimeStamp(datestr=date, formatstr=formatstr))
     except ValueError:
-        raise DeserializationError(f'Failed to deserialize {date} poloniex timestamp entry')
+        raise DeserializationError(f'Failed to deserialize {date} {location} timestamp entry')
+
+
+def deserialize_timestamp_from_poloniex_date(date: str) -> Timestamp:
+    """Deserializes a timestamp from a poloniex api query result date entry
+
+    Can throw DeserializationError if the data is not as expected
+    """
+    return deserialize_timestamp_from_date(date, '%Y-%m-%d %H:%M:%S', 'poloniex')
+
+
+def deserialize_timestamp_from_bittrex_date(date: str) -> Timestamp:
+    """Deserializes a timestamp from a bittrex api query result date entry
+
+    Can throw DeserializationError if the data is not as expected
+    """
+    return deserialize_timestamp_from_date(date, '%Y-%m-%dT%H:%M:%S.%f', 'bittrex')
 
 
 def deserialize_timestamp_from_kraken(time: Union[str, FVal]) -> Timestamp:
@@ -190,9 +206,9 @@ def deserialize_trade_type(symbol: str) -> TradeType:
             f'Failed to deserialize trade type symbol from {type(symbol)} entry',
         )
 
-    if symbol == 'buy':
+    if symbol in ('buy', 'LIMIT_BUY'):
         return TradeType.BUY
-    elif symbol == 'sell':
+    elif symbol in ('sell', 'LIMIT_SELL'):
         return TradeType.SELL
     elif symbol == 'settlement_buy':
         return TradeType.SETTLEMENT_BUY

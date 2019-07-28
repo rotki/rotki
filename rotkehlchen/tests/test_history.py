@@ -51,7 +51,7 @@ def test_history_creation(
     # And now make sure that warnings have also been generated for the query of
     # the unsupported/unknown assets
     warnings = rotki.msg_aggregator.consume_warnings()
-    assert len(warnings) == 14
+    assert len(warnings) == 13
     assert 'kraken trade with unknown asset IDONTEXISTTOO' in warnings[0]
     assert 'unknown kraken asset IDONTEXIST. Ignoring its deposit/withdrawals query' in warnings[1]
     msg = 'unknown kraken asset IDONTEXISTEITHER. Ignoring its deposit/withdrawals query'
@@ -66,12 +66,12 @@ def test_history_creation(
     assert 'deposit of unsupported poloniex asset EBT' in warnings[10]
     assert 'bittrex trade with unsupported asset PTON' in warnings[11]
     assert 'bittrex trade with unknown asset IDONTEXIST' in warnings[12]
-    assert 'bittrex trade with unprocessable pair %$#%$#%#$%' in warnings[13]
 
     errors = rotki.msg_aggregator.consume_errors()
-    assert len(errors) == 2
+    assert len(errors) == 3
     assert 'kraken trade with unprocessable pair IDONTEXISTZEUR' in errors[0]
     assert 'kraken trade with unprocessable pair %$#%$#%$#%$#%$#%' in errors[1]
+    assert 'bittrex trade with unprocessable pair %$#%$#%#$%' in errors[2]
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -154,9 +154,9 @@ def test_history_creation_corrupt_trades_cache(
 
     # And now make sure that warnings/errors number did not change
     warnings = rotki.msg_aggregator.consume_warnings()
-    assert len(warnings) == 14
+    assert len(warnings) == 13
     errors = rotki.msg_aggregator.consume_errors()
-    assert len(errors) == 2
+    assert len(errors) == 3
 
 
 def test_limit_trade_list_to_period():

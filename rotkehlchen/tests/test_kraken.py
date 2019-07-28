@@ -182,7 +182,7 @@ def test_trade_from_kraken_unexpected_data(function_scope_kraken):
         else:
             assert len(trades) == 0
         errors = kraken.msg_aggregator.consume_errors()
-        warnings = kraken.msg_aggregator.consume_errors()
+        warnings = kraken.msg_aggregator.consume_warnings()
         assert len(errors) == expected_errors_num
         assert len(warnings) == expected_warnings_num
 
