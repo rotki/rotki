@@ -14,7 +14,7 @@ from requests import Response
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_kraken
-from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS, KRAKEN_API_VERSION, KRAKEN_BASE_URL
+from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_BSV
 from rotkehlchen.errors import (
     RecoverableRequestError,
@@ -395,7 +395,7 @@ class Kraken(Exchange):
             self.eurprice[our_asset] = btc_price * self.eurprice['BTC']
         return self.usdprice[our_asset]
 
-    @cache_response_timewise(CACHE_RESPONSE_FOR_SECS)
+    @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[dict], str]:
         try:
             self.first_connection()

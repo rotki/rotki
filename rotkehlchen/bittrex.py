@@ -10,7 +10,6 @@ from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bittrex
-from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
@@ -234,7 +233,7 @@ class Bittrex(Exchange):
         result = self.api_query('getcurrencies')
         return result
 
-    @cache_response_timewise(CACHE_RESPONSE_FOR_SECS)
+    @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
         try:
             resp = self.api_query('getbalances')

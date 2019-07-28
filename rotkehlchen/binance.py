@@ -8,7 +8,7 @@ from urllib.parse import urlencode
 import gevent
 
 from rotkehlchen.assets.converters import asset_from_binance
-from rotkehlchen.constants import BINANCE_BASE_URL, CACHE_RESPONSE_FOR_SECS
+from rotkehlchen.constants import BINANCE_BASE_URL
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchange import Exchange
 from rotkehlchen.fval import FVal
@@ -254,7 +254,7 @@ class Binance(Exchange):
         assert isinstance(result, List)
         return result
 
-    @cache_response_timewise(CACHE_RESPONSE_FOR_SECS)
+    @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[dict], str]:
         self.first_connection()
 

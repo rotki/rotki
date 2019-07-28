@@ -50,8 +50,6 @@ class Blockchain():
             ethchain: 'Ethchain',
             msg_aggregator: MessagesAggregator,
     ):
-        self.lock = Semaphore()
-        self.results_cache: Dict[str, ResultCache] = {}
         self.ethchain = ethchain
         self.msg_aggregator = msg_aggregator
         self.owned_eth_tokens = owned_eth_tokens
@@ -67,6 +65,11 @@ class Blockchain():
         # Per asset total balances
         self.totals: Totals = defaultdict(dict)
 
+        # -- Cache related variables
+        self.lock = Semaphore()
+        self.results_cache: Dict[str, ResultCache] = {}
+        self.cache_ttl_secs = CACHE_RESPONSE_FOR_SECS
+
     def __del__(self):
         del self.ethchain
 
@@ -77,7 +80,7 @@ class Blockchain():
     def eth_tokens(self) -> List[EthereumToken]:
         return self.owned_eth_tokens
 
-    @cache_response_timewise(CACHE_RESPONSE_FOR_SECS)
+    @cache_response_timewise()
     def query_balances(self) -> Tuple[Dict[str, Dict], str]:
         try:
             self.query_ethereum_balances()
