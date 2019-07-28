@@ -20,7 +20,7 @@ from rotkehlchen.errors import (
 from rotkehlchen.exchange import data_up_todate
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.kraken import Kraken, trade_from_kraken
+from rotkehlchen.kraken import Kraken
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import (
     AssetMovement,
@@ -430,20 +430,7 @@ class TradesHistorian():
                     end_ts=end_ts,
                     end_at_least_ts=end_at_least_ts,
                 )
-                for trade in kraken_history:
-                    try:
-                        history.append(trade_from_kraken(trade))
-                    except UnknownAsset as e:
-                        self.msg_aggregator.add_warning(
-                            f'Found kraken trade with unknown asset '
-                            f'{e.asset_name}. Ignoring it.',
-                        )
-                        continue
-                    except UnprocessableTradePair as e:
-                        self.msg_aggregator.add_warning(
-                            f'Found kraken trade with unprocessable pair '
-                            f'{e.pair}. Ignoring it.',
-                        )
+                history.extend(kraken_history)
 
                 kraken_asset_movements = self.kraken.query_deposits_withdrawals(
                     start_ts=start_ts,

@@ -201,6 +201,9 @@ def convert_to_int(
     if isinstance(val, FVal):
         return val.to_int(accept_only_exact)
     elif isinstance(val, (bytes, str)):
+        # Since float string are not converted to int we have to first convert
+        # to float and try to convert to int afterwards
+        val = float(val)
         return int(val)
     elif isinstance(val, int):
         return val

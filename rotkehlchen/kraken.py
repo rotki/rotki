@@ -17,6 +17,7 @@ from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_BSV
 from rotkehlchen.errors import (
+    DeserializationError,
     RecoverableRequestError,
     RemoteError,
     UnknownAsset,
@@ -33,10 +34,16 @@ from rotkehlchen.order_formatting import (
     pair_get_assets,
     trade_pair_from_assets,
 )
-from rotkehlchen.serializer import deserialize_trade_type
+from rotkehlchen.serializer import (
+    deserialize_asset_amount,
+    deserialize_fee,
+    deserialize_price,
+    deserialize_timestamp_from_kraken,
+    deserialize_trade_type,
+)
 from rotkehlchen.typing import ApiKey, ApiSecret, Fee, FilePath, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import cache_response_timewise, convert_to_int, retry_calls
+from rotkehlchen.utils.misc import cache_response_timewise, retry_calls
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
@@ -154,16 +161,16 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
     - Can raise UnknownAsset due to kraken_to_world_pair
     - Can raise UnprocessableTradePair due to kraken_to_world_pair
     - Can raise DeserializationError due to dict entries not being as expected
+    - Can raise KeyError due to dict entries missing an expected entry
     """
     currency_pair = kraken_to_world_pair(kraken_trade['pair'])
     quote_currency = get_pair_position_asset(currency_pair, 'second')
-    # Kraken timestamps have floating point
-    timestamp = Timestamp(convert_to_int(kraken_trade['time'], accept_only_exact=False))
-    amount = FVal(kraken_trade['vol'])
-    cost = FVal(kraken_trade['cost'])
-    fee = FVal(kraken_trade['fee'])
+    timestamp = deserialize_timestamp_from_kraken(kraken_trade['time'])
+    amount = deserialize_asset_amount(kraken_trade['vol'])
+    cost = deserialize_price(kraken_trade['cost'])
+    fee = deserialize_fee(kraken_trade['fee'])
     order_type = deserialize_trade_type(kraken_trade['type'])
-    rate = FVal(kraken_trade['price'])
+    rate = deserialize_price(kraken_trade['price'])
 
     if cost != amount * rate:
         log.warning('cost ({cost}) != amount ({amount}) * rate ({rate}) for kraken trade')
@@ -510,18 +517,51 @@ class Kraken(Exchange):
             start_ts: Timestamp,
             end_ts: Timestamp,
             end_at_least_ts: Timestamp,
-    ) -> List:
+    ) -> List[Trade]:
         with self.lock:
             cache = self.check_trades_cache_list(start_ts, end_at_least_ts)
 
         if cache is not None:
-            return cache
-        result = self.query_until_finished('TradesHistory', 'trades', start_ts, end_ts)
+            result = cache
+        else:
+            result = self.query_until_finished('TradesHistory', 'trades', start_ts, end_ts)
+            with self.lock:
+                # save it in the disk for future reference
+                self.update_trades_cache(result, start_ts, end_ts)
 
-        with self.lock:
-            # before returning save it in the disk for future reference
-            self.update_trades_cache(result, start_ts, end_ts)
-        return result
+        # And now turn it from kraken trade to our own trade format
+        trades = []
+        for raw_data in result:
+            try:
+                trades.append(trade_from_kraken(raw_data))
+            except UnknownAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found kraken trade with unknown asset '
+                    f'{e.asset_name}. Ignoring it.',
+                )
+                continue
+            except UnprocessableTradePair as e:
+                self.msg_aggregator.add_error(
+                    f'Found kraken trade with unprocessable pair '
+                    f'{e.pair}. Ignoring it.',
+                )
+                continue
+            except (DeserializationError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}.'
+                self.msg_aggregator.add_error(
+                    'Error processing a kraken trade. Check logs '
+                    'for details. Ignoring it.',
+                )
+                log.error(
+                    'Error processing a kraken trade',
+                    trade=raw_data,
+                    error=msg,
+                )
+                continue
+
+        return trades
 
     def _query_endpoint_for_period(
             self,
@@ -589,8 +629,7 @@ class Kraken(Exchange):
                 movements.append(AssetMovement(
                     exchange='kraken',
                     category=movement['type'],
-                    # Kraken timestamps have floating point
-                    timestamp=Timestamp(convert_to_int(movement['time'], accept_only_exact=False)),
+                    timestamp=deserialize_timestamp_from_kraken(movement['time']),
                     asset=asset_from_kraken(movement['asset']),
                     amount=FVal(movement['amount']),
                     fee=Fee(FVal(movement['fee'])),

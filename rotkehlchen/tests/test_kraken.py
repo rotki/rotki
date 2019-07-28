@@ -1,3 +1,6 @@
+from copy import deepcopy
+from unittest.mock import patch
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -7,6 +10,7 @@ from rotkehlchen.errors import UnprocessableTradePair
 from rotkehlchen.fval import FVal
 from rotkehlchen.kraken import KRAKEN_ASSETS, kraken_to_world_pair, trade_from_kraken
 from rotkehlchen.order_formatting import Trade
+from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -134,3 +138,89 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(function_scope_kraken):
     assert len(warnings) == 2
     assert 'unknown kraken asset IDONTEXIST' in warnings[0]
     assert 'unknown kraken asset IDONTEXISTEITHER' in warnings[1]
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_trade_from_kraken_unexpected_data(function_scope_kraken):
+    """Test that getting unexpected data from kraken leads to skipping the trade
+    and does not lead to a crash"""
+    kraken = function_scope_kraken
+    kraken.random_trade_data = False
+    kraken.random_ledgers_data = False
+    kraken.cache_ttl_secs = 0
+
+    TEST_TRADES = {
+        "trades": {
+            "1": {
+                "ordertxid": "1",
+                "postxid": 1,
+                "pair": "XXBTZEUR",
+                "time": '1458994442.0000',
+                "type": "buy",
+                "ordertype": "market",
+                "price": "100",
+                "vol": "1",
+                "fee": "0.1",
+                "cost": "100",
+                "margin": "0.0",
+                "misc": "",
+            },
+        },
+        "count": 1,
+    }
+
+    def query_kraken_and_test(input_trades, expected_warnings_num, expected_errors_num):
+        with patch(target, new=input_trades):
+            trades = kraken.query_trade_history(
+                start_ts=0,
+                end_ts=TEST_END_TS,
+                end_at_least_ts=TEST_END_TS,
+            )
+
+        if expected_warnings_num == 0 and expected_errors_num == 0:
+            assert len(trades) == 1
+            assert trades[0].pair == 'BTC_EUR'
+        else:
+            assert len(trades) == 0
+        errors = kraken.msg_aggregator.consume_errors()
+        warnings = kraken.msg_aggregator.consume_errors()
+        assert len(errors) == expected_errors_num
+        assert len(warnings) == expected_warnings_num
+
+    # First a normal trade should have no problems
+    target = 'rotkehlchen.tests.fixtures.exchanges.kraken.KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE'
+    query_kraken_and_test(TEST_TRADES, expected_warnings_num=0, expected_errors_num=0)
+
+    # From here and on let's check trades with unexpected data
+    input_trades = deepcopy(TEST_TRADES)
+    input_trades['trades']['1']['pair'] = 'aadda'
+    query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
+
+    input_trades = deepcopy(TEST_TRADES)
+    input_trades['trades']['1']['time'] = 'dsdsad'
+    query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
+
+    input_trades = deepcopy(TEST_TRADES)
+    input_trades['trades']['1']['vol'] = 'dsdsad'
+    query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
+
+    input_trades = deepcopy(TEST_TRADES)
+    input_trades['trades']['1']['cost'] = None
+    query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
+
+    input_trades = deepcopy(TEST_TRADES)
+    input_trades['trades']['1']['fee'] = 'dsdsad'
+    query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
+
+    input_trades = deepcopy(TEST_TRADES)
+    input_trades['trades']['1']['type'] = 'not existing type'
+    query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
+
+    input_trades = deepcopy(TEST_TRADES)
+    input_trades['trades']['1']['price'] = 'dsadsda'
+    query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
+
+    # Also test key error
+    input_trades = deepcopy(TEST_TRADES)
+    del input_trades['trades']['1']['vol']
+    query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)

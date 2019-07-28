@@ -170,10 +170,10 @@ def process_polo_loans(
         except (DeserializationError, KeyError) as e:
             msg = str(e)
             if isinstance(e, KeyError):
-                msg = f'Missing key entry for {msg}'
+                msg = f'Missing key entry for {msg}.'
             msg_aggregator.add_error(
                 'Deserialization error while reading a poloniex loan. Check '
-                'logs for more details',
+                'logs for more details. Ignoring it.',
             )
             log.error(
                 'Deserialization error while reading a poloniex loan',
