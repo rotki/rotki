@@ -583,6 +583,9 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # CryptoSoul (https://coinmarketcap.com/currencies/cryptosoul/)
     # is not in cryptocompare but is in paprika
     'SOUL-2',
+    # Spin Protocol (https://coinmarketcap.com/currencies/spin-protocol/)
+    # is not in cryptocompare but is in paprika
+    'SPIN',
     # Staker (https://coinmarketcap.com/currencies/staker/)
     # is not in cryptocompare but is in paprika
     'STR',
