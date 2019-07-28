@@ -4,7 +4,7 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.binance import Binance, trade_from_binance
+from rotkehlchen.binance import Binance
 from rotkehlchen.bitmex import Bitmex, trade_from_bitmex
 from rotkehlchen.bittrex import Bittrex
 from rotkehlchen.constants.assets import A_BTC
@@ -500,17 +500,7 @@ class TradesHistorian():
                     end_ts=end_ts,
                     end_at_least_ts=end_at_least_ts,
                 )
-                for trade in binance_history:
-                    try:
-                        history.append(
-                            trade_from_binance(trade, self.binance.symbols_to_pair),
-                        )
-                    except UnsupportedAsset as e:
-                        self.msg_aggregator.add_warning(
-                            f'Found binance trade with unsupported asset '
-                            f'{e.asset_name}. Ignoring it.',
-                        )
-                        continue
+                history.extend(binance_history)
             except RemoteError as e:
                 empty_or_error += '\n' + str(e)
 

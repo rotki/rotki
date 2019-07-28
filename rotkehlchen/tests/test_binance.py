@@ -33,7 +33,7 @@ def test_trade_from_binance(function_scope_binance):
             'qty': FVal(5.0),
             'commission': FVal(0.005),
             'commissionAsset': 'RDN',
-            'time': 1512561941,
+            'time': 1512561941000,
             'isBuyer': True,
             'isMaker': False,
             'isBestMatch': True,
@@ -45,7 +45,7 @@ def test_trade_from_binance(function_scope_binance):
             'qty': FVal(0.505),
             'commission': FVal(0.242905),
             'commissionAsset': 'USDT',
-            'time': 1531117990,
+            'time': 1531117990000,
             'isBuyer': False,
             'isMaker': True,
             'isBestMatch': True,
@@ -57,7 +57,7 @@ def test_trade_from_binance(function_scope_binance):
             'qty': FVal(0.051942),
             'commission': FVal(0.00005194),
             'commissionAsset': 'BTC',
-            'time': 1531728338,
+            'time': 1531728338000,
             'isBuyer': True,
             'isMaker': False,
             'isBestMatch': True,
@@ -69,7 +69,7 @@ def test_trade_from_binance(function_scope_binance):
             'qty': FVal(285.2),
             'commission': FVal(0.00180015),
             'commissionAsset': 'BNB',
-            'time': 1531871806,
+            'time': 1531871806000,
             'isBuyer': False,
             'isMaker': True,
             'isBestMatch': True,
@@ -266,3 +266,155 @@ def test_binance_query_balances_unknown_asset(function_scope_binance):
     assert len(warnings) == 2
     assert 'unknown binance asset IDONTEXIST' in warnings[0]
     assert 'unsupported binance asset ETF' in warnings[1]
+
+
+BINANCE_MYTRADES_RESPONSE = """
+[
+    {
+    "symbol": "BNBBTC",
+    "id": 28457,
+    "orderId": 100234,
+    "price": "4.00000100",
+    "qty": "12.00000000",
+    "quoteQty": "48.000012",
+    "commission": "10.10000000",
+    "commissionAsset": "BNB",
+    "time": 1499865549590,
+    "isBuyer": true,
+    "isMaker": false,
+    "isBestMatch": true
+    }]"""
+
+
+def test_binance_query_trade_history(function_scope_binance):
+    """Test that turning a binance trade as returned by the server to our format works"""
+    binance = function_scope_binance
+    binance.cache_ttl_secs = 0
+
+    def mock_my_trades(url):  # pylint: disable=unused-argument
+        if 'symbol=BNBBTC' in url:
+            text = BINANCE_MYTRADES_RESPONSE
+        else:
+            text = '[]'
+
+        return MockResponse(200, text)
+
+    with patch.object(binance.session, 'get', side_effect=mock_my_trades):
+        trades = binance.query_trade_history(0, 1564301134, 1564301134)
+
+    expected_trade = Trade(
+        timestamp=1499865549,
+        location='binance',
+        pair='BNB_BTC',
+        trade_type=TradeType.BUY,
+        amount=FVal('12'),
+        rate=FVal('4.00000100'),
+        fee=FVal('10.10000000'),
+        fee_currency=A_BNB,
+    )
+
+    assert len(trades) == 1
+    assert trades[0] == expected_trade
+
+
+def test_binance_query_trade_history_unexpected_data(function_scope_binance):
+    """Test that turning a binance trade that contains unexpected data is handled gracefully"""
+    binance = function_scope_binance
+    binance.cache_ttl_secs = 0
+
+    def mock_my_trades(url):  # pylint: disable=unused-argument
+        if 'symbol=BNBBTC' in url or 'symbol=BTCBBTC' in url:
+            text = BINANCE_MYTRADES_RESPONSE
+        else:
+            text = '[]'
+
+        return MockResponse(200, text)
+
+    def query_binance_and_test(
+            input_trade_str,
+            expected_warnings_num,
+            expected_errors_num,
+            warning_str_test=None,
+            error_str_test=None,
+            query_specific_markets=None,
+    ):
+        patch_get = patch.object(binance.session, 'get', side_effect=mock_my_trades)
+        patch_response = patch(
+            'rotkehlchen.tests.test_binance.BINANCE_MYTRADES_RESPONSE',
+            new=input_trade_str,
+        )
+        with patch_get, patch_response:
+            trades = binance.query_trade_history(0, 1564301134, 1564301134, query_specific_markets)
+
+        assert len(trades) == 0
+        errors = binance.msg_aggregator.consume_errors()
+        warnings = binance.msg_aggregator.consume_warnings()
+        assert len(errors) == expected_errors_num
+        assert len(warnings) == expected_warnings_num
+        if warning_str_test:
+            assert warning_str_test in warnings[0]
+        if error_str_test:
+            assert error_str_test in errors[0]
+
+    input_str = BINANCE_MYTRADES_RESPONSE.replace(
+        '"qty": "12.00000000"',
+        '"qty": "dsadsad"',
+    )
+    query_binance_and_test(input_str, expected_warnings_num=0, expected_errors_num=1)
+
+    input_str = BINANCE_MYTRADES_RESPONSE.replace(
+        '"price": "4.00000100"',
+        '"price": null',
+    )
+    query_binance_and_test(input_str, expected_warnings_num=0, expected_errors_num=1)
+
+    input_str = BINANCE_MYTRADES_RESPONSE.replace(
+        '"symbol": "BNBBTC"',
+        '"symbol": "nonexistingmarket"',
+    )
+    query_binance_and_test(
+        input_str,
+        expected_warnings_num=0,
+        expected_errors_num=1,
+        query_specific_markets=['BTCBBTC'],
+    )
+
+    input_str = BINANCE_MYTRADES_RESPONSE.replace(
+        '"time": 1499865549590',
+        '"time": "sadsad"',
+    )
+    query_binance_and_test(input_str, expected_warnings_num=0, expected_errors_num=1)
+
+    # Delete an entry
+    input_str = BINANCE_MYTRADES_RESPONSE.replace('"isBuyer": true,', '')
+    query_binance_and_test(input_str, expected_warnings_num=0, expected_errors_num=1)
+
+    input_str = BINANCE_MYTRADES_RESPONSE.replace(
+        '"commission": "10.10000000"',
+        '"commission": "fdfdfdsf"',
+    )
+    query_binance_and_test(input_str, expected_warnings_num=0, expected_errors_num=1)
+
+    # unsupported fee currency
+    input_str = BINANCE_MYTRADES_RESPONSE.replace(
+        '"commissionAsset": "BNB"',
+        '"commissionAsset": "BTCB"',
+    )
+    query_binance_and_test(
+        input_str,
+        expected_warnings_num=1,
+        expected_errors_num=0,
+        warning_str_test='Found binance trade with unsupported asset BTCB',
+    )
+
+    # unknown fee currency
+    input_str = BINANCE_MYTRADES_RESPONSE.replace(
+        '"commissionAsset": "BNB"',
+        '"commissionAsset": "DSDSDS"',
+    )
+    query_binance_and_test(
+        input_str,
+        expected_warnings_num=1,
+        expected_errors_num=0,
+        warning_str_test='Found binance trade with unknown asset DSDSDS',
+    )
