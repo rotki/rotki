@@ -8,7 +8,7 @@ from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import UnprocessableTradePair
 from rotkehlchen.fval import FVal
-from rotkehlchen.kraken import KRAKEN_ASSETS, kraken_to_world_pair, trade_from_kraken
+from rotkehlchen.kraken import KRAKEN_ASSETS, kraken_to_world_pair
 from rotkehlchen.order_formatting import Trade
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.utils.misc import ts_now
@@ -48,8 +48,7 @@ def test_querying_trade_history(kraken):
     assert len(result) != 0
 
     for kraken_trade in result:
-        trade = trade_from_kraken(kraken_trade)
-        assert isinstance(trade, Trade)
+        assert isinstance(kraken_trade, Trade)
 
 
 def test_querying_deposits_withdrawals(kraken):
