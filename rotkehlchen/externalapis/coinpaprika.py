@@ -156,6 +156,10 @@ WORLD_TO_PAPRIKA_ID = {
     'KNC': 'knc-kyber-network',
     # For Rotkehlchen KNC-2 is Kingn coin
     'KNC-2': 'knc-kingn-coin',
+    # For Rotkehlchen Luna Coin is LUNA
+    # and Terra Luna is LUNA-2
+    'LUNA': 'luna-luna-coin',
+    'LUNA-2': 'luna-terra',
     # For Rotkehlchen MIN is Minerals coin but in paprika it's known
     # as Mindol 'min-mindol', so mark it as unknown mapping
     'MIN': None,

@@ -504,6 +504,9 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # Locus Chain (https://etherscan.io/address/0xC64500DD7B0f1794807e67802F8Abbf5F8Ffb054)
     # is not in cryptocompare but is in paprika
     'LOCUS',
+    # LUNA Terra (https://coinmarketcap.com/currencies/terra/)
+    # is not in cryptocompare but is in paprika
+    'LUNA-2',
     # Midas Protocol (https://coinmarketcap.com/currencies/midasprotocol/)
     # is not in cryptocompare but is in paprika
     'MAS',

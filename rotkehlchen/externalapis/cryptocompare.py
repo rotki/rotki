@@ -514,6 +514,8 @@ class Cryptocompare():
         data['HMC*'] = object()
         # This is IoTChain (https://coinmarketcap.com/currencies/iot-chain/)
         data['ITC'] = object()
+        # This is Luna Coin (https://coinmarketcap.com/currencies/luna-coin/)
+        data['LUNA'] = object
         # This is MFTU (https://coinmarketcap.com/currencies/mainstream-for-the-underground/)
         data['MFTU'] = object()
         # This is Nexxus (https://coinmarketcap.com/currencies/nexxus/)

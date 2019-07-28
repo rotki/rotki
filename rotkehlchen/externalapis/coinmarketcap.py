@@ -758,6 +758,9 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen KNT is Kora Network Token and KNT-2 is Knekted
     'KNT': 3086,
     'KNT-2': 3383,
+    # For Rotkehlchen LUNA is Luna Coin and LUNA-2 is Terra Luna
+    'LUNA': 1496,
+    'LUNA-2': 4172,
     # For Rotkehlchen MTC is doc.com Token and MTC-2 is Mesh Network
     'MTC': 2711,
     'MTC-2': 2936,
