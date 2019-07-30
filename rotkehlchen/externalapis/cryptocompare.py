@@ -10,7 +10,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_USD
 from rotkehlchen.constants.cryptocompare import KNOWN_TO_MISS_FROM_CRYPTOCOMPARE
-from rotkehlchen.errors import PriceQueryUnknownFromAsset
+from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnknownFromAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -42,15 +42,6 @@ class PriceHistoryData(NamedTuple):
     data: List[PriceHistoryEntry]
     start_time: Timestamp
     end_time: Timestamp
-
-
-class NoPriceForGivenTimestamp(Exception):
-    def __init__(self, from_asset, to_asset, timestamp):
-        super(NoPriceForGivenTimestamp, self).__init__(
-            'Unable to query a historical price for "{}" to "{}" at {}'.format(
-                from_asset, to_asset, timestamp,
-            ),
-        )
 
 
 def _dict_history_to_entries(data: List[Dict[str, Any]]) -> List[PriceHistoryEntry]:

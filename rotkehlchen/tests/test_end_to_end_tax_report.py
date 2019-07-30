@@ -533,3 +533,51 @@ def test_end_to_end_tax_report_in_period(accountant):
 # 1480683904 - 4th buy: 0.00146445
 # 1484629704 - 4th sell: 0.0079275
 # 1486299904 - 5th buy: 0.00244725
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_price_queries', [False])
+def test_cryptocompare_asset_and_price_not_found_in_history_sprocessing(accountant):
+    """
+    Make sure that in history processing if no price is found for a trade it's skipped
+    and an error is logged. Same for price query of an unknown asset.
+
+    Regression for https://github.com/rotkehlchenio/rotkehlchen/issues/432
+    Superset test for test_cryptocompare::test_cryptocompare_histohour_query_old_ts_xcp
+    When we add multiple price data sources and this test does not use cryptocompare
+    the other test should be unskipped.
+    """
+    bad_trades = [{
+        'timestamp': 1392685761,  # Issue 432, XCP trade at 1392685761 has no known price
+        'pair': 'XCP_BTC',
+        'trade_type': 'buy',
+        'rate': '0.100',
+        'fee': '0.15',
+        'fee_currency': 'XCP',
+        'amount': 2.5,
+        'location': 'kraken',
+    }, {
+        'timestamp': 1492685761,
+        'pair': 'EXC_BTC',
+        'trade_type': 'buy',
+        'rate': '0.100',
+        'fee': '0.15',
+        'fee_currency': 'EXC',
+        'amount': 2.5,
+        'location': 'kraken',
+    }]
+    result = accounting_history_process(
+        accountant=accountant,
+        start_ts=0,
+        end_ts=1514764799,  # 31/12/2017
+        history_list=bad_trades,
+        loans_list=[],
+        asset_movements_list=[],
+        eth_transaction_list=[],
+        margin_list=[],
+    )
+    result = result['overview']
+    errors = accountant.msg_aggregator.consume_errors()
+    assert len(errors) == 2
+    assert 'due to inability to find a price at that point in time' in errors[0]
+    assert 'due to an asset unknown to cryptocompare being involved' in errors[1]
+    assert FVal(result['total_profit_loss']) == FVal('0')

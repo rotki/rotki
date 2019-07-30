@@ -4,8 +4,7 @@ from typing import Dict, Optional, Tuple
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETC, A_ETH
-from rotkehlchen.errors import PriceQueryUnknownFromAsset
-from rotkehlchen.externalapis.cryptocompare import NoPriceForGivenTimestamp
+from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnknownFromAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter

@@ -56,13 +56,27 @@ def test_cryptocompare_historical_data_use_cached_price(accounting_data_dir):
     assert result[1].high == FVal(20)
 
 
+@pytest.mark.skip(
+    'Same test as test_end_to_end_tax_report::'
+    'test_unknown_cryptocompare_asset_and_price_not_found_in_history',
+)
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
-def test_cryptocompare_histohour_query_old_ts_xcp(accounting_data_dir, price_historian):
+def test_cryptocompare_histohour_query_old_ts_xcp(
+        accounting_data_dir,
+        price_historian,  # pylint: disable=unused-argument
+):
     """Test that as a result of this query a crash does not happen.
 
     Regression for: https://github.com/rotkehlchenio/rotkehlchen/issues/432
     Unfortunately still no price is found so we have to expect a NoPriceForGivenTimestamp
+
+    This test is now skipped since it's a subset of:
+    test_end_to_end_tax_report::test_unknown_cryptocompare_asset_and_price_not_found_in_history
+
+    When more price data sources are introduced then this should probably be unskipped
+    to focus on the cryptocompare case. But at the moment both tests follow the same
+    path and are probably slow due to the price querying.
     """
     with pytest.raises(NoPriceForGivenTimestamp):
         cc = Cryptocompare(data_directory=accounting_data_dir)
