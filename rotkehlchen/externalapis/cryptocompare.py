@@ -260,16 +260,31 @@ class Cryptocompare():
                 # If we get more than we needed, since we are close to the now_ts
                 # then skip all the already included entries
                 diff = pr_end_date - resp['TimeFrom']
-                if resp['Data'][diff // 3600]['time'] != pr_end_date:
-                    raise ValueError(
-                        'Expected to find the previous date timestamp during '
-                        'historical data fetching',
-                    )
-                # just add only the part from the previous timestamp and on
-                resp['Data'] = resp['Data'][diff // 3600:]
+                # If the start date has less than 3600 secs difference from previous
+                # end date then do nothing. If it has more skip all already included entries
+                if diff >= 3600:
+                    if resp['Data'][diff // 3600]['time'] != pr_end_date:
+                        raise ValueError(
+                            'Expected to find the previous date timestamp during '
+                            'cryptocompare historical data fetching',
+                        )
+                    # just add only the part from the previous timestamp and on
+                    resp['Data'] = resp['Data'][diff // 3600:]
 
-            if end_date < now_ts and resp['TimeTo'] != end_date:
-                raise ValueError('End dates no match')
+            # The end dates of a cryptocompare query do not match. The end date
+            # can have up to 3600 secs different to the requested one since this is
+            # hourly historical data but no more.
+            end_dates_dont_match = (
+                end_date < now_ts and
+                resp['TimeTo'] != end_date
+            )
+            if end_dates_dont_match:
+                if resp['TimeTo'] - end_date >= 3600:
+                    raise ValueError('End dates do not match in a cryptocompare query')
+                else:
+                    # but if it's just a drift within an hour just update the end_date so that
+                    # it can be picked up by the next iterations in the loop
+                    end_date = resp['TimeTo']
 
             # If last time slot and first new are the same, skip the first new slot
             last_entry_equal_to_first = (

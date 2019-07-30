@@ -3,7 +3,9 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.constants.assets import A_BTC
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.assets import A_BTC, A_USD
+from rotkehlchen.errors import NoPriceForGivenTimestamp
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_SNGLS
@@ -52,3 +54,21 @@ def test_cryptocompare_historical_data_use_cached_price(accounting_data_dir):
     assert result[1].low == FVal(20)
     assert isinstance(result[1].high, FVal)
     assert result[1].high == FVal(20)
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_price_queries', [False])
+def test_cryptocompare_histohour_query_old_ts_xcp(accounting_data_dir, price_historian):
+    """Test that as a result of this query a crash does not happen.
+
+    Regression for: https://github.com/rotkehlchenio/rotkehlchen/issues/432
+    Unfortunately still no price is found so we have to expect a NoPriceForGivenTimestamp
+    """
+    with pytest.raises(NoPriceForGivenTimestamp):
+        cc = Cryptocompare(data_directory=accounting_data_dir)
+        cc.query_historical_price(
+            from_asset=Asset('XCP'),
+            to_asset=A_USD,
+            timestamp=1392685761,
+            historical_data_start=1438387200,
+        )
