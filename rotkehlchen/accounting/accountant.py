@@ -8,7 +8,12 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.csv_exporter import CSVExporter
-from rotkehlchen.errors import PriceQueryUnknownFromAsset, UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors import (
+    NoPriceForGivenTimestamp,
+    PriceQueryUnknownFromAsset,
+    UnknownAsset,
+    UnsupportedAsset,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
@@ -24,7 +29,7 @@ from rotkehlchen.order_formatting import (
 from rotkehlchen.transactions import EthereumTransaction
 from rotkehlchen.typing import Fee, FilePath, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import ts_now, tsToDate
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -352,7 +357,28 @@ class Accountant():
                     count,
                 ) = self.process_action(action, end_ts, prev_time, count)
             except PriceQueryUnknownFromAsset as e:
-                log.error(f'Skipping trade during history processing: {str(e)}')
+                self.msg_aggregator.add_error(
+                    f'Skipping action at '
+                    f' {tsToDate(action_get_timestamp(action), formatstr="%d/%m/%Y, %H:%M:%S")} '
+                    f'during history processing due to an asset unknown to '
+                    f'cryptocompare being involved. Check logs for details',
+                )
+                log.error(
+                    f'Skipping action {str(action)} during history processing due to '
+                    f'cryptocompare not supporting an involved asset: {str(e)}',
+                )
+                continue
+            except NoPriceForGivenTimestamp as e:
+                self.msg_aggregator.add_error(
+                    f'Skipping action at '
+                    f' {tsToDate(action_get_timestamp(action), formatstr="%d/%m/%Y, %H:%M:%S")} '
+                    f'during history processing due to inability to find a price '
+                    f'at that point in time: {str(e)}. Check the logs for more details',
+                )
+                log.error(
+                    f'Skipping action {str(action)} during history processing due to '
+                    f'inability to query a price at that time: {str(e)}',
+                )
                 continue
 
             if not should_continue:

@@ -83,3 +83,12 @@ class DBUpgradeError(Exception):
 class DeserializationError(Exception):
     """Raised when deserializing data from the outside and something unexpected is found"""
     pass
+
+
+class NoPriceForGivenTimestamp(Exception):
+    def __init__(self, from_asset, to_asset, timestamp):
+        super(NoPriceForGivenTimestamp, self).__init__(
+            'Unable to query a historical price for "{}" to "{}" at {}'.format(
+                from_asset, to_asset, timestamp,
+            ),
+        )
