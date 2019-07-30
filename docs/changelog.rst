@@ -7,6 +7,8 @@ Changelog
   - `Luna Coin <https://coinmarketcap.com/currencies/luna-coin/>`__
   - `Luna Terra <https://coinmarketcap.com/currencies/terra/>`__
   - `Spin Protocol <https://coinmarketcap.com/currencies/spin-protocol/>`__
+* :feature:`428` Better handle unexpected data from external sources.
+* :bug:`76` Handle poloniex queries returning null for the fee field.
 
 
 * :release:`1.0.0 <2019-01-22>`
