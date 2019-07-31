@@ -277,6 +277,9 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # BOXX (https://coinmarketcap.com/currencies/blockparty-boxx-token/)
     # is not in cryptocompare but is in paprika
     'BOXX',
+    # Block.Money is not in cryptocompare but it's in coin paprika
+    # https://coinmarketcap.com/currencies/bloc-money/
+    'BLOC-2',
     # BTCTalkCoin is not in cryptocompare but it's in coin paprika
     # https://api.coinpaprika.com/v1/coins/talk-btctalkcoin and in coinmarketcap
     # https://coinmarketcap.com/currencies/btctalkcoin/#charts
