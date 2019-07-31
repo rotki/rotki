@@ -101,7 +101,11 @@ class Blockchain():
     @staticmethod
     def query_btc_account_balance(account: BTCAddress) -> FVal:
         btc_resp = request_get_direct(
-            'https://blockchain.info/q/addressbalance/%s' % account,
+            url='https://blockchain.info/q/addressbalance/%s' % account,
+            handle_429=True,
+            # If we get a 429 then their docs suggest 10 seconds
+            # https://blockchain.info/q
+            backoff_in_seconds=10,
         )
         return FVal(btc_resp) * FVal('0.00000001')  # result is in satoshis
 

@@ -8,9 +8,12 @@ import os
 import sys
 import time
 from functools import wraps
+from http import HTTPStatus
 from typing import Any, Callable, Dict, List, Union
 
+import gevent
 import requests
+from requests import Response
 from rlp.sedes import big_endian_int
 
 from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, ZERO
@@ -134,15 +137,36 @@ def merge_dicts(*dict_args: Dict) -> Dict:
 def retry_calls(
         times: int,
         location: str,
-        method: str,
+        handle_429: bool,
+        backoff_in_seconds: Union[int, float],
+        method_name: str,
         function: Callable[..., Any],
-        *args: Any,
+        **kwargs: Any,
 ) -> Any:
+    """Calls a function that deals with external apis for a given number of times
+    untils it fails or until it succeeds.
+
+    If it fails with an acceptable error then we wait for a bit until the next try.
+
+    Can also handle 429 errors with a specific backoff in seconds if required.
+    """
     tries = times
     while True:
         try:
-            result = function(*args)
+            result = function(**kwargs)
+
+            if handle_429:
+                if not isinstance(result, Response):
+                    raise AssertionError(
+                        'At retry calls with handle_429 got a non Response object '
+                        'as a result. Should never happen',
+                    )
+
+                if result.status_code == HTTPStatus.TOO_MANY_REQUESTS and tries != 0:
+                    gevent.sleep(backoff_in_seconds)
+                    continue
             return result
+
         except (requests.exceptions.ConnectionError, RecoverableRequestError) as e:
             if isinstance(e, RecoverableRequestError):
                 time.sleep(5)
@@ -152,43 +176,61 @@ def retry_calls(
                 raise RemoteError(
                     "{} query for {} failed after {} tries. Reason: {}".format(
                         location,
-                        method,
+                        method_name,
                         times,
                         e,
                     ))
 
 
-def request_get(uri: str, timeout: int = ALL_REMOTES_TIMEOUT) -> Union[Dict, List]:
+def request_get(
+        url: str,
+        timeout: int = ALL_REMOTES_TIMEOUT,
+        handle_429: bool = False,
+        backoff_in_seconds: Union[int, float] = 0,
+) -> Union[Dict, List]:
     # TODO make this a bit more smart. Perhaps conditional on the type of request.
     # Not all requests would need repeated attempts
     response = retry_calls(
-        5,
-        '',
-        uri,
-        requests.get,
-        uri,
-        str(timeout),
+        times=5,
+        location='',
+        handle_429=handle_429,
+        backoff_in_seconds=backoff_in_seconds,
+        method_name=url,
+        function=requests.get,
+        # function's arguments
+        url=url,
+        timeout=timeout,
     )
 
     if response.status_code != 200:
-        raise RemoteError('Get {} returned status code {}'.format(uri, response.status_code))
+        raise RemoteError('Get {} returned status code {}'.format(url, response.status_code))
 
     try:
         result = rlk_jsonloads(response.text)
     except json.decoder.JSONDecodeError:
-        raise ValueError('{} returned malformed json'.format(uri))
+        raise ValueError('{} returned malformed json'.format(url))
 
     return result
 
 
-def request_get_direct(uri: str, timeout: int = ALL_REMOTES_TIMEOUT) -> str:
+def request_get_direct(
+        url: str,
+        timeout: int = ALL_REMOTES_TIMEOUT,
+        handle_429: bool = False,
+        backoff_in_seconds: Union[int, float] = 0,
+) -> str:
     """Like request_get, but the endpoint only returns a direct value"""
-    return str(request_get(uri, timeout))
+    return str(request_get(url, timeout, handle_429, backoff_in_seconds))
 
 
-def request_get_dict(uri: str, timeout: int = ALL_REMOTES_TIMEOUT) -> Dict:
+def request_get_dict(
+        url: str,
+        timeout: int = ALL_REMOTES_TIMEOUT,
+        handle_429: bool = False,
+        backoff_in_seconds: Union[int, float] = 0,
+) -> Dict:
     """Like request_get, but the endpoint only returns a dict"""
-    response = request_get(uri, timeout)
+    response = request_get(url, timeout, handle_429, backoff_in_seconds)
     assert isinstance(response, Dict)
     return response
 

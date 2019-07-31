@@ -243,7 +243,17 @@ class Poloniex(Exchange):
         return True, ''
 
     def api_query(self, command: str, req: Optional[Dict] = None) -> Union[Dict, List]:
-        result = retry_calls(5, 'poloniex', command, self._api_query, command, req)
+        result = retry_calls(
+            times=5,
+            location='poloniex',
+            handle_429=False,
+            backoff_in_seconds=0,
+            method_name=command,
+            function=self._api_query,
+            # function's arguments
+            command=command,
+            req=req,
+        )
         if 'error' in result:
             raise PoloniexError(
                 'Poloniex query for "{}" returned error: {}'.format(

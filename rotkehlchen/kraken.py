@@ -290,10 +290,28 @@ class Kraken(Exchange):
         return _check_and_get_response(response, method)
 
     def query_public(self, method: str, req: Optional[dict] = None) -> dict:
-        return retry_calls(5, 'kraken', method, self._query_public, method, req)
+        return retry_calls(
+            times=5, location='kraken',
+            handle_429=False,
+            backoff_in_seconds=0,
+            method_name=method,
+            function=self._query_public,
+            # function's arguments
+            method=method,
+            req=req,
+        )
 
     def query_private(self, method: str, req: Optional[dict] = None) -> dict:
-        return retry_calls(5, 'kraken', method, self._query_private, method, req)
+        return retry_calls(
+            times=5, location='kraken',
+            handle_429=False,
+            backoff_in_seconds=0,
+            method_name=method,
+            function=self._query_private,
+            # function's arguments
+            method=method,
+            req=req,
+        )
 
     def _query_private(self, method: str, req: Optional[dict] = None) -> dict:
         """API queries that require a valid key/secret pair.
