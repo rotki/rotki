@@ -7,6 +7,10 @@ Changelog
   - `Luna Coin <https://coinmarketcap.com/currencies/luna-coin/>`__
   - `Luna Terra <https://coinmarketcap.com/currencies/terra/>`__
   - `Spin Protocol <https://coinmarketcap.com/currencies/spin-protocol/>`__
+  - `Blockcloud <https://coinmarketcap.com/currencies/blockcloud/>`__
+  - `Bloc.Money <https://coinmarketcap.com/currencies/bloc-money/>`__
+  - `Chromia  <https://coinmarketcap.com/currencies/chromia/>`__
+
 * :feature:`428` Better handle unexpected data from external sources.
 * :bug:`76` Handle poloniex queries returning null for the fee field.
 * :bug:`432` If historical price for a trade is not found gracefully skip the trade. Also handle cryptocompare query edge case.
