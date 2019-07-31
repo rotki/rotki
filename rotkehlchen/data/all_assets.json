@@ -1769,6 +1769,14 @@
         "symbol": "CHP",
         "type": "ethereum token"
     },
+    "CHR": {
+        "ethereum_address": "0x915044526758533dfB918ecEb6e44bc21632060D",
+        "ethereum_token_decimals": 6,
+        "name": "Chromia",
+        "started": 1558915200,
+        "symbol": "CHR",
+        "type": "ethereum token"
+    },
     "CHSB": {
         "ethereum_address": "0xba9d4199faB4f26eFE3551D490E3821486f135Ba",
         "ethereum_token_decimals": 8,
