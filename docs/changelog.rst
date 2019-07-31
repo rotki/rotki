@@ -9,6 +9,7 @@ Changelog
   - `Spin Protocol <https://coinmarketcap.com/currencies/spin-protocol/>`__
 * :feature:`428` Better handle unexpected data from external sources.
 * :bug:`76` Handle poloniex queries returning null for the fee field.
+* :bug:`432` If historical price for a trade is not found gracefully skip the trade. Also handle cryptocompare query edge case.
 
 
 * :release:`1.0.0 <2019-01-22>`
