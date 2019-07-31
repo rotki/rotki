@@ -1016,6 +1016,20 @@
         "symbol": "BLN",
         "type": "ethereum token"
     },
+    "BLOC": {
+        "ethereum_address": "0x6F919D67967a97EA36195A2346d9244E60FE0dDB",
+        "ethereum_token_decimals": 18,
+        "name": "Blockcloud",
+        "started": 1540598400,
+        "symbol": "BLOC",
+        "type": "ethereum token"
+    },
+    "BLOC-2": {
+        "name": "BLOC.MONEY",
+        "started": 1539736469,
+        "symbol": "BLOC",
+        "type": "own chain"
+    },
     "BLOCK": {
         "name": "Blocknet",
         "started": 1413763200,

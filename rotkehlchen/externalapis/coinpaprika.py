@@ -259,6 +259,9 @@ WORLD_TO_PAPRIKA_ID = {
     'BHPC': 'bhpc-bhpcash',
     # For Rotkehlcen BITPARK is BITPARK but in Paprika it's BPC
     'BITPARK': 'bpc-bitpark-coin',
+    # For Rotkehlchen BLOC is BlockCloud and BLOC-2 is Bloc.Money
+    'BLOC': 'bloc-blockcloud',
+    'BLOC-2': 'bloc-blocmoney',
     # For Rotkehlchen BOX is BoxToken and BOX-2 is ContentBox
     'BOX': 'box-box-token',
     'BOX-2': 'box-contentbox',

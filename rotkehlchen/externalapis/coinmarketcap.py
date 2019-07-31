@@ -725,6 +725,9 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen BET is Dao.Casino and BET-2 is BetaCoin
     'BET': 1771,
     'BET-2': 70,
+    # For Rotkehlchen BLOC is BlockCloud and BLOC-2 is Bloc.Money
+    'BLOC': 3860,
+    'BLOC-2': 3451,
     # For Rotkehlchen BOX is BoxToken and BOX-2 is ContentBox
     'BOX': 3475,
     'BOX-2': 2945,
