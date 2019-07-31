@@ -14,6 +14,7 @@ Changelog
 * :feature:`428` Better handle unexpected data from external sources.
 * :bug:`76` Handle poloniex queries returning null for the fee field.
 * :bug:`432` If historical price for a trade is not found gracefully skip the trade. Also handle cryptocompare query edge case.
+* :bug:`429` Properly handle 429 http response from blockchain.info by backing off by the suggested number of seconds and then trying again.
 
 
 * :release:`1.0.0 <2019-07-22>`
