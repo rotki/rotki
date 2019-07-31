@@ -29,12 +29,12 @@ def test_switching_to_backup_api(inquirer):
     count = 0
     original_get = requests.get
 
-    def mock_exchanges_rateapi_fail(uri, timeout):  # pylint: disable=unused-argument
+    def mock_exchanges_rateapi_fail(url, timeout):  # pylint: disable=unused-argument
         nonlocal count
         count += 1
-        if 'exchangeratesapi' in uri:
+        if 'exchangeratesapi' in url:
             return MockResponse(501, '{"msg": "some error")')
-        return original_get(uri)
+        return original_get(url)
 
     with patch('requests.get', side_effect=mock_exchanges_rateapi_fail):
         result = inquirer.query_fiat_pair('USD', 'EUR')
@@ -44,7 +44,7 @@ def test_switching_to_backup_api(inquirer):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_caching(inquirer):
-    def mock_currency_converter_api(uri, timeout):  # pylint: disable=unused-argument
+    def mock_currency_converter_api(url, timeout):  # pylint: disable=unused-argument
         return MockResponse(200, '{"results": {"USD_EUR": {"val": 1.1543, "id": "USD_EUR"}}}')
 
     with patch('requests.get', side_effect=mock_currency_converter_api):
@@ -57,7 +57,7 @@ def test_caching(inquirer):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_fallback_to_cached_values_within_a_month(inquirer):  # pylint: disable=unused-argument
-    def mock_api_remote_fail(uri, timeout):  # pylint: disable=unused-argument
+    def mock_api_remote_fail(url, timeout):  # pylint: disable=unused-argument
         return MockResponse(500, '{"msg": "shit hit the fan"')
 
     # Get a date 15 days ago and insert a cached entry for EUR JPY then

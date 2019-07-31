@@ -87,22 +87,28 @@ def query_etherscan_for_transactions(accounts: List[EthAddress]) -> List[Ethereu
     for account in accounts:
         transactions.extend(
             retry_calls(
-                5,
-                'etherscan',
-                'query_ethereum_txlist',
-                query_ethereum_txlist,
-                account,
-                False,
+                times=5,
+                location='etherscan',
+                handle_429=False,
+                backoff_in_seconds=0,
+                method_name='query_ethereum_txlist',
+                function=query_ethereum_txlist,
+                # function's arguments
+                address=account,
+                internal=False,
             ),
         )
         transactions.extend(
             retry_calls(
-                5,
-                'etherscan',
-                'query_ethereum_txlist_internal',
-                query_ethereum_txlist,
-                account,
-                True,
+                times=5,
+                location='etherscan',
+                handle_429=False,
+                backoff_in_seconds=0,
+                method_name='query_ethereum_txlist_internal',
+                function=query_ethereum_txlist,
+                # function's arguments
+                address=account,
+                internal=True,
             ),
         )
 

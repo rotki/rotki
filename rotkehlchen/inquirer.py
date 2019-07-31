@@ -25,12 +25,17 @@ def query_cryptocompare_for_fiat_price(asset: Asset) -> Price:
     log.debug('Get usd price from cryptocompare', asset=asset)
     cc_asset_str = asset.to_cryptocompare()
     resp = retry_calls(
-        5,
-        'find_usd_price',
-        'requests.get',
-        requests.get,
-        u'https://min-api.cryptocompare.com/data/price?'
-        'fsym={}&tsyms=USD'.format(cc_asset_str),
+        times=5,
+        location='find_usd_price',
+        handle_429=False,
+        backoff_in_seconds=0,
+        method_name='requests.get',
+        function=requests.get,
+        # function's arguments
+        url=(
+            u'https://min-api.cryptocompare.com/data/price?'
+            'fsym={}&tsyms=USD'.format(cc_asset_str)
+        ),
     )
 
     if resp.status_code != 200:
@@ -162,11 +167,14 @@ class Inquirer():
             f'base={from_fiat_currency}'
         )
         resp = retry_calls(
-            5,
-            'query_exchangeratesapi',
-            'requests.get',
-            requests.get,
-            query_str,
+            times=5,
+            location='query_exchangeratesapi',
+            handle_429=False,
+            backoff_in_seconds=0,
+            method_name='requests.get',
+            function=requests.get,
+            # function's arguments
+            url=query_str,
         )
 
         if resp.status_code != 200:
