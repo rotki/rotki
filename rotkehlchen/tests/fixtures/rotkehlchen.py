@@ -35,9 +35,7 @@ def rotkehlchen_api_secret():
 @pytest.fixture()
 def cli_args(data_dir):
     args = namedtuple('args', [
-        'output',
         'sleep_secs',
-        'notify',
         'data_dir',
         'zerorpc_port',
         'ethrpc_endpoint',
