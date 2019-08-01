@@ -166,7 +166,9 @@ const createPyProc = () => {
                 args.push('--loglevel', jsondata['loglevel']);
             }
             if (jsondata.hasOwnProperty('logfromothermodules')) {
-                args.push('--logfromothermodules');
+                if (jsondata['logfromothermodules'] == true) {
+                    args.push('--logfromothermodules');
+                }
             }
             if (jsondata.hasOwnProperty('logfile')) {
                 args.push('--logfile', jsondata['logfile']);
