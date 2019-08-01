@@ -120,3 +120,27 @@ Following that you can see a graph of quantity of an asset superimposed on its U
 Furthermore you can see a piechart of the distribution of your netvalue across different locations. So you can determine how exposed you are to having a big part of your net value in exchanges, in banks e.t.c.
 
 Finally you can see a piechart of the distribution of your netvalue across all of the assets you own. This is an important analytics tool as it can help you determine your exposure on each asset and if some rebalancing of your portfolio is in order.
+
+
+Set the backend's arguments
+=============================
+
+Rotkehlchen runs a python daemon on the backend. Most times you won't need to customize its arguments but if you need to do so, especially for debugging purposes this is how you can.
+
+Create or edit if it exists a file with the name ``rotki_config.json`` in the same directory as the rotkehlchen executable. Add to the json object any arguments that are also arguments of rotkehlchen. Then when rotkehlchen starts these will be passed as arguments to the backend. An example ``rotki_config.json`` follows::
+
+  {
+      "loglevel": "debug",
+      "logfromothermodules": false,
+      "logile": "filenameforthelogs",
+      "data-dir": "/path/to/dir"
+      "sleep-secs": 20
+  }
+
+The above arguments are:
+
+- **loglevel**: Set the loglevel for the application. Valid values are: ``'debug', 'info', 'warn', 'error', 'critical'``.
+- **logfromothermodules**: If this argument appears then logging will also include log entries from other dependent libraries and not only rotkehlchen. Default is ``false``.
+- **logfile**: The name for the logfile. Default is: ``rotkehlchen.log``.
+- **data-fir**: The path to the directory where all rotkehlchen data will be save. Default is ``/home/$USER/.rotkehlchen``.
+- **sleep-secs**: This is the amount of seconds that the main loop of rotkehlchen sleeps for. Default is 20.
