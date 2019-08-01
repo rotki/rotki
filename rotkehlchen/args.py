@@ -23,25 +23,10 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
     )
 
     p.add_argument(
-        '--output',
-        help=(
-            'A path to a file for logging all output. If nothing is given'
-            'stdout is used'
-        ),
-    )
-    p.add_argument(
         '--sleep-secs',
         type=int,
         default=20,
         help="Seconds to sleep during the main loop",
-    )
-    p.add_argument(
-        '--notify',
-        action='store_true',
-        help=(
-            'If given then the tool will send notifications via '
-            'notify-send.'
-        ),
     )
     p.add_argument(
         '--data-dir',
