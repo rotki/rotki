@@ -66,6 +66,14 @@ const createWindow = () => {
         slashes: true
     }));
 
+    // open external links with default browser and not inside our electron app
+    //https://stackoverflow.com/a/32427579/110395
+    // Note for this to work anchor must have target="_blank"
+    mainWindow.webContents.on('new-window', function(e, url) {
+        e.preventDefault();
+        require('electron').shell.openExternal(url);
+    });
+
     // uncomment for the final app to have dev tools opened
     // mainWindow.webContents.openDevTools();
 
