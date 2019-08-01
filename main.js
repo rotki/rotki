@@ -42,7 +42,7 @@ function setupInspectMenu() {
         const menuItem = new electron.MenuItem({
             label: 'Inspect Element',
             click: () => {
-                mainWindow.inspectElement(rightClickPosition.x, rightClickPosition.y)
+                mainWindow.inspectElement(rightClickPosition.x, rightClickPosition.y);
             }
         });
 
@@ -51,7 +51,7 @@ function setupInspectMenu() {
         mainWindow.webContents.on('context-menu', (e, params) => {
             e.preventDefault();
             rightClickPosition = {x: params.x, y: params.y};
-            menu.popup(mainWindow)
+            menu.popup(mainWindow);
         }, false);
     }
 }
@@ -67,11 +67,11 @@ const createWindow = () => {
     }));
 
     // open external links with default browser and not inside our electron app
-    //https://stackoverflow.com/a/32427579/110395
+    // https://stackoverflow.com/a/32427579/110395
     // Note for this to work anchor must have target="_blank"
     mainWindow.webContents.on('new-window', function(e, url) {
         e.preventDefault();
-        require('electron').shell.openExternal(url);
+        electron.shell.openExternal(url);
     });
 
     // uncomment for the final app to have dev tools opened
@@ -155,6 +155,37 @@ function log_and_quit(msg) {
 const createPyProc = () => {
     let port = '' + selectPort();
 
+    let args = [];
+    // try to see if there is a configfile
+    if (fs.existsSync('rotki_config.json')) {
+        let raw_data = fs.readFileSync('rotki_config.json');
+        let no_errors = true;
+        try {
+            let jsondata = JSON.parse(raw_data);
+            if (jsondata.hasOwnProperty('loglevel')) {
+                args.push('--loglevel', jsondata['loglevel']);
+            }
+            if (jsondata.hasOwnProperty('logfromothermodules')) {
+                args.push('--logfromothermodules');
+            }
+            if (jsondata.hasOwnProperty('logfile')) {
+                args.push('--logfile', jsondata['logfile']);
+            }
+            if (jsondata.hasOwnProperty('data-dir')) {
+                args.push('--data-dir', jsondata['data-dir']);
+            }
+            if (jsondata.hasOwnProperty('sleep-secs')) {
+                args.push('--sleep-secs', jsondata['sleep-secs']);
+            }
+        } catch(e) {
+            // do nothing, act as if there is no config given
+            // TODO: Perhaps in the future warn the user inside
+            // the app that there is a config file with invalid json
+            console.log(`Could not read the rotki_config.json file due to: "${e}". Proceeding normally without a config file ....`);
+        }
+
+    }
+
     if (guessPackaged()) {
         let dist_dir = path.join(__dirname, PY_DIST_FOLDER);
         let files = fs.readdirSync(dist_dir);
@@ -169,17 +200,21 @@ const createPyProc = () => {
         }
 	executable_name = executable;
 	executable = path.join(dist_dir, executable);
-        pyProc = require('child_process').execFile(executable, ["--zerorpc-port", port]);
+        args.push("--zerorpc-port", port);
+        console.log('Calling python backend with: ' + executable + ' ' + args.join(' '));
+        pyProc = require('child_process').execFile(executable, args);
     } else {
-        let args = ["-m", "rotkehlchen", "--zerorpc-port", port];
+        args.unshift("-m", "rotkehlchen");
+        args.push("--zerorpc-port", port);
 
         if (process.env.ROTKEHLCHEN_ENVIRONMENT === 'test') {
             let tempPath = path.join(app.getPath('temp'), 'rotkehlchen');
             if (!fs.existsSync(tempPath)) {
-                fs.mkdirSync(tempPath)
+                fs.mkdirSync(tempPath);
             }
-            args.push('--data-dir', tempPath)
+            args.push('--data-dir', tempPath);
         }
+        console.log('Calling python backend with: python ' + args.join(' '));
         pyProc = require('child_process').spawn('python', args);
     }
 
@@ -230,9 +265,9 @@ const exitPyProc = (event) => {
 	    // now that we have all the pids gathered, call taskkill on them
 	    console.log('Calling taskkill for Windows pids');
 	    var spawn = require('child_process').spawn;
-	    args = ['/f', '/t']
+	    args = ['/f', '/t'];
 	    for (var i = 0; i < to_kill_pids.length; i++) {
-		args.push('/PID')
+		args.push('/PID');
 		args.push(to_kill_pids[i]);
 	    }
 	    console.log('command is: taskkill and args: ' + JSON.stringify(args, null, 4));
