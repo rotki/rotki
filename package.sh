@@ -77,7 +77,6 @@ npm run build
 				      --ignore="^/.gitignore" \
 				      --ignore="^/.ignore" \
 				      --ignore=".nvmrc" \
-				      --ignore="^/package.json" \
 				      --ignore="^/package-lock.json" \
 				      --ignore="requirements*" \
 				      --ignore="^/rotki_config.json" \

@@ -50,7 +50,6 @@ call node_modules/.bin/electron-packager . --overwrite ^
 				      --ignore="^/.gitignore" ^
 				      --ignore="^/.ignore" ^
 				      --ignore=".nvmrc" ^
-				      --ignore="^/package.json" ^
 				      --ignore="^/package-lock.json" ^
 				      --ignore="requirements*" ^
 				      --ignore="^/rotki_config.json" ^
