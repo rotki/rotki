@@ -68,30 +68,39 @@ npm run build
 ./node_modules/.bin/electron-packager . --overwrite \
 				      --ignore="rotkehlchen$" \
 				      --ignore="rotkehlchen.egg-info" \
-				      --ignore="tools$" \
-				      --ignore="docs$" \
+				      --ignore="^/tools$" \
+				      --ignore="^/docs$" \
+				      --ignore="^/build$" \
 				      --ignore="appveyor*" \
-				      --ignore=".eggs" \
-				      --ignore=".github" \
-				      --ignore=".gitignore" \
+				      --ignore="^/.eggs" \
+				      --ignore="^/.github" \
+				      --ignore="^/.gitignore" \
+				      --ignore="^/.ignore" \
 				      --ignore=".nvmrc" \
-				      --ignore=".package-lock.json" \
+				      --ignore="^/package.json" \
+				      --ignore="^/package-lock.json" \
 				      --ignore="requirements*" \
-				      --ignore="rotkehlchen.spec" \
+				      --ignore="^/rotki_config.json" \
+				      --ignore="^/rotkehlchen.spec" \
 				      --ignore="setup.cfg" \
-				      --ignore="stubs" \
+				      --ignore="^/stubs" \
+				      --ignore="^/.mypy_cache" \
 				      --ignore=".travis*" \
 				      --ignore="tsconfig*" \
 				      --ignore="tsfmt.json" \
 				      --ignore="tslint.json" \
-				      --ignore=".bumpversion.cfg" \
-				      --ignore=".mypy_cache/" \
-				      --ignore=".coveragerc" \
-				      --ignore=".env" \
-				      --ignore="README.md" \
+				      --ignore="^/.bumpversion.cfg" \
+				      --ignore="^/.mypy_cache/" \
+				      --ignore="^/.coveragerc" \
+				      --ignore="^/.coverage" \
+				      --ignore="^/.env" \
+				      --ignore="^/README.md" \
 				      --ignore="rotkehlchen.log" \
 				      --ignore=".*\.sh" \
-				      --ignore=".*\.py"
+				      --ignore=".*\.py" \
+				      --ignore=".*\.bat" \
+				      --ignore="^/CONTRIBUTING.md" \
+				      --ignore="^/Makefile" 
 
 if [[ $? -ne 0 ]]; then
     echo "package.sh - ERROR: electron-packager step failed"
