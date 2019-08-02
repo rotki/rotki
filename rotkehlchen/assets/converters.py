@@ -376,6 +376,9 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # HINT. As of 28/07/2019 no data found outside of Bittrex for this token
     # https://twitter.com/BittrexIntl/status/1154445165257474051
     'HINT',
+    # TUDA. As of 02/08/2019 no data found outside of Bittrex for this token
+    # https://mobile.twitter.com/BittrexIntl/status/1156974900986490880
+    'TUDA',
 )
 
 
