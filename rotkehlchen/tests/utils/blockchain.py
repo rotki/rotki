@@ -119,7 +119,7 @@ def geth_to_cmd(port, rpcport, datadir, verbosity):
     return cmd
 
 
-def geth_wait_and_check(ethchain_client, rpc_endpoint, privatekeys, random_marker):
+def geth_wait_and_check(ethchain_client, rpc_endpoint, random_marker):
     """ Wait until the geth cluster is ready. """
     jsonrpc_running = False
 
@@ -199,7 +199,7 @@ def geth_create_blockchain(
     )
 
     try:
-        geth_wait_and_check(ethchain_client, gethrpcendpoint, private_keys, random_marker)
+        geth_wait_and_check(ethchain_client, gethrpcendpoint, random_marker)
     except (ValueError, RuntimeError, KeyError) as e:
         # if something goes wrong in the above function make sure to kill the geth
         # process before quitting the tests
