@@ -17,6 +17,11 @@ MANUALLY_CHECKED = {
     # For some reason coin paprika thinks it's not so specify here we
     # manually checked.
     'BTM': True,
+    # On 04/08/2019 Contentos is still active and trading in one exchange
+    # https://coinmarketcap.com/currencies/contentos/
+    # For some reason coin paprika thinks it's not so specify here we
+    # manually checked.
+    'COS': True,
     # On 17/03/2019 DreamCoin is still active and trading in 2 exchanges
     # https://coinmarketcap.com/currencies/dreamcoin/
     # For some reason coin paprika thinks it's not so specify here we

@@ -2,6 +2,10 @@
 Changelog
 =========
 
+* :feature:`-` Added support for the following tokens
+
+  - `Contentos <https://coinmarketcap.com/currencies/contentos/>`__
+
 * :release:`1.0.1 <2019-08-02>`
 * :feature:`425` Users can now provide arguments to the backend via a config file. For more information check the `docs <https://rotkehlchen.readthedocs.io/en/latest/usage_guide.html#set-the-backend-s-arguments`__. 
 * :feature:`-` Added support for the following tokens

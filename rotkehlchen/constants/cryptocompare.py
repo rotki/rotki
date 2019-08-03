@@ -140,6 +140,8 @@ WORLD_TO_CRYPTOCOMPARE = {
     # For Rotkehlchen CET is CoinEX and CET-2 is DiceMoney but in cryptocompare
     # CoinEX is CET and DiceMoney is DICEM
     'CET-2': 'DICEM',
+    # For Rotkehlchen COS is Contentos but in cryptocompare it's CONT
+    'COS': 'CONT',
     # For Rotkehlchen CPC is CPChain and CPC-2 is CapriCoin but in cryptocompare
     # CPChain is CPCH and CapriCoin is CPC
     'CPC': 'CPCH',

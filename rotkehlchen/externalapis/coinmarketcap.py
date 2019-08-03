@@ -737,6 +737,8 @@ WORLD_TO_CMC_ID = {
     # For Rotkehlchen CAT is Bitclave and CAT-2 is BlockCAT
     'CAT': 2334,
     'CAT-2': 1882,
+    # For Rotkehlchen COS is Contentos. If ever want to add the other COS it's 1989
+    'COS': 4036,
     # For Rotkehlchen CPC is CPChain and CPC-2 is CapriCoin
     'CPC': 2482,
     'CPC-2': 1008,

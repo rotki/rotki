@@ -139,6 +139,8 @@ def typeinfo_check(
                 our_data[asset_symbol]['type'] = 'ontology token'
             elif paprika_data['parent']['id'] == 'vet-vechain':
                 our_data[asset_symbol]['type'] = 'vechain token'
+            elif paprika_data['parent']['id'] == 'bnb-binance-coin':
+                our_data[asset_symbol]['type'] = 'binance token'
             else:
                 print(
                     f'Paprika data for asset {asset_symbol} has unknown '

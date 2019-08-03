@@ -1950,6 +1950,13 @@
         "symbol": "COMM",
         "type": "own chain"
     },
+    "COS": {
+        "active": true,
+        "name": "Contentos",
+        "started": 1561074552,
+        "symbol": "COS",
+        "type": "binance token"
+    },
     "COSM": {
         "ethereum_address": "0xC4Bcd64CB216D49fD3C643A32762F34626b45a1a",
         "ethereum_token_decimals": 18,

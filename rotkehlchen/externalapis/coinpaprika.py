@@ -188,6 +188,8 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen CBC is Cashbet Coin and CBC-2 is Cashbery coin
     'CBC': 'cbc-cashbet-coin',
     'CBC-2': 'cbc-cashbery-coin',
+    # For rotkehlchen COS is Contentos
+    'COS': 'cos-contentos',
     # For Rotkehlchen CMCT is Crown machine token and CMCT-2 is Cyber movie chain token
     'CMCT': 'cmct-crowd-machine',
     'CMCT-2': 'cmct-cyber-movie-chain',
