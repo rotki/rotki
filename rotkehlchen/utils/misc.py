@@ -31,14 +31,14 @@ def ts_now() -> Timestamp:
     return Timestamp(int(time.time()))
 
 
-def createTimeStamp(datestr: str, formatstr: str = '%Y-%m-%d %H:%M:%S') -> Timestamp:
+def create_timestamp(datestr: str, formatstr: str = '%Y-%m-%d %H:%M:%S') -> Timestamp:
     """Can throw ValueError due to strptime"""
     return Timestamp(calendar.timegm(time.strptime(datestr, formatstr)))
 
 
 def iso8601ts_to_timestamp(datestr: str) -> Timestamp:
-    """Can throw ValueError due to createTimeStamp"""
-    return createTimeStamp(datestr, formatstr='%Y-%m-%dT%H:%M:%S.%fZ')
+    """Can throw ValueError due to create_timestamp"""
+    return create_timestamp(datestr, formatstr='%Y-%m-%dT%H:%M:%S.%fZ')
 
 
 def satoshis_to_btc(satoshis: FVal) -> FVal:

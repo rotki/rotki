@@ -6,10 +6,10 @@ from asset_aggregator.utils import choose_multiple
 from rotkehlchen.constants.assets import FIAT_CURRENCIES
 from rotkehlchen.typing import EthAddress, Timestamp
 from rotkehlchen.utils.misc import (
-    createTimeStamp,
+    create_timestamp,
     iso8601ts_to_timestamp,
     request_get_dict,
-    tsToDate,
+    timestamp_to_date,
 )
 
 # For these assets we will definitely always use our data as they are more accurate
@@ -118,7 +118,7 @@ def timerange_check(
 
     paprika_started_ts = None
     if paprika_started:
-        paprika_started_ts = createTimeStamp(paprika_started, formatstr='%Y-%m-%dT%H:%M:%SZ')
+        paprika_started_ts = create_timestamp(paprika_started, formatstr='%Y-%m-%dT%H:%M:%SZ')
     cmc_started_ts = None
     if cmc_data:
         cmc_started_ts = iso8601ts_to_timestamp(cmc_started)
@@ -147,16 +147,16 @@ def timerange_check(
         choices = (1, 2, 3)
         msg = (
             f'For asset {asset_symbol} the started times are: \n'
-            f'(1) Our data: {our_started} -- {tsToDate(our_started) if our_started else ""}\n'
+            f'(1) Our data: {our_started} -- {timestamp_to_date(our_started) if our_started else ""}\n'
             f'(2) Coinpaprika: {paprika_started_ts} -- '
-            f'{tsToDate(paprika_started_ts) if paprika_started_ts else ""}\n'
+            f'{timestamp_to_date(paprika_started_ts) if paprika_started_ts else ""}\n'
             f'(3) Coinmarketcap: {cmc_started_ts} -- '
-            f'{tsToDate(cmc_started_ts) if cmc_started_ts else ""} \n'
+            f'{timestamp_to_date(cmc_started_ts) if cmc_started_ts else ""} \n'
         )
         if token_address:
             msg += (
                 f'(4) Contract creation: {contract_creation_ts} -- '
-                f'{tsToDate(contract_creation_ts) if contract_creation_ts else ""}\n'
+                f'{timestamp_to_date(contract_creation_ts) if contract_creation_ts else ""}\n'
             )
             choices = (1, 2, 3, 4)
 

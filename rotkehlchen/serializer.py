@@ -14,7 +14,7 @@ from rotkehlchen.typing import (
     Timestamp,
     TradeType,
 )
-from rotkehlchen.utils.misc import convert_to_int, createTimeStamp
+from rotkehlchen.utils.misc import convert_to_int, create_timestamp
 
 
 def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
@@ -125,7 +125,7 @@ def deserialize_timestamp_from_date(date: str, formatstr: str, location: str) ->
         )
 
     try:
-        return Timestamp(createTimeStamp(datestr=date, formatstr=formatstr))
+        return Timestamp(create_timestamp(datestr=date, formatstr=formatstr))
     except ValueError:
         raise DeserializationError(f'Failed to deserialize {date} {location} timestamp entry')
 
