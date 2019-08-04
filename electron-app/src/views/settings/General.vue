@@ -8,7 +8,7 @@
     <v-layout>
       <v-flex>
         <v-card>
-          <v-toolbar card>General Settings</v-toolbar>
+          <v-card-title>General Settings</v-card-title>
           <v-card-text>
             <v-text-field
               id="floating_precision"
@@ -27,14 +27,13 @@
               v-model="historicDateMenu"
               :close-on-content-click="false"
               :nudge-right="40"
-              lazy
               transition="scale-transition"
               offset-y
               full-width
               max-width="290px"
               min-width="290px"
             >
-              <template v-slot:activator="{ on }">
+              <template #activator="{ on }">
                 <v-text-field
                   id="historical_data_start"
                   v-model="historicDataStart"

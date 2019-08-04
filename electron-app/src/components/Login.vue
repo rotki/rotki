@@ -1,9 +1,7 @@
 <template>
   <v-dialog v-model="displayed" persistent max-width="450">
     <v-card>
-      <v-toolbar card>
-        <v-toolbar-title>Sign In</v-toolbar-title>
-      </v-toolbar>
+      <v-card-title>Sign In</v-card-title>
       <v-card-text>
         <v-form ref="form" v-model="valid">
           <v-text-field

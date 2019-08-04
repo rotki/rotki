@@ -3,14 +3,14 @@
     ref="menu"
     v-model="menu"
     :close-on-content-click="false"
-    lazy
     transition="scale-transition"
     offset-y
     full-width
     max-width="580px"
+    class="date-time-picker"
     :nudge-right="20"
   >
-    <template v-slot:activator="{ on }">
+    <template #activator="{ on }">
       <v-text-field
         :value="value"
         :label="label"
@@ -86,11 +86,14 @@ export default class DateTimePicker extends Vue {
   z-index: 999;
   display: flex;
   flex-direction: row;
-  /deep/ .v-picker .v-picker__title {
+
+  //noinspection CssInvalidPseudoSelector
+  ::v-deep .v-picker .v-picker__title {
     height: 102px;
   }
 
-  /deep/ .v-card {
+  //noinspection CssInvalidPseudoSelector
+  ::v-deep .v-card {
     box-shadow: none;
   }
 }

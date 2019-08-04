@@ -39,19 +39,19 @@
           :items="blockchainTotals"
           :search="search"
         >
-          <template v-slot:items="props">
+          <template #items="props">
             <td>{{ props.item.asset }}</td>
-            <td class="text-xs-right">
+            <td class="text-right">
               {{ props.item.amount | precision(floatingPrecision) }}
             </td>
-            <td class="text-xs-right">
+            <td class="text-right">
               {{ props.item.usd_value | precision(floatingPrecision) }}
             </td>
-            <td class="text-xs-right">
+            <td class="text-right">
               {{ props.item.usd_value | percentage(total, floatingPrecision) }}
             </td>
           </template>
-          <template v-slot:no-results>
+          <template #no-results>
             <v-alert :value="true" color="error" icon="warning">
               Your search for "{{ search }}" found no results.
             </v-alert>
@@ -71,7 +71,6 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { create_or_reload_dashboard } from '@/legacy/dashboard';
 import InformationBox from '@/components/InformationBox.vue';
 import { mapGetters, mapState } from 'vuex';
 import { Balances, ExchangeInfo } from '@/typing/types';
@@ -104,10 +103,6 @@ export default class Dashboard extends Vue {
     { text: 'Value', value: 'value' },
     { text: '% of net Value', value: 'percentage' }
   ];
-
-  mounted() {
-    create_or_reload_dashboard();
-  }
 }
 </script>
 

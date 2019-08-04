@@ -20,7 +20,7 @@
             :expand="expand"
             item-key="timestamp"
           >
-            <template v-slot:items="props">
+            <template #items="props">
               <tr
                 @click="props.expanded = !props.expanded"
                 @contextmenu="show($event, props.item)"
@@ -34,7 +34,7 @@
                 </td>
               </tr>
             </template>
-            <template v-slot:expand="props">
+            <template #expand="props">
               <v-card flat>
                 <v-card-title class="font-weight-bold">Details</v-card-title>
                 <v-card-text>
@@ -62,16 +62,16 @@
             offset-y
           >
             <v-list>
-              <v-list-tile @click="editItem()">
-                <v-list-tile-title>
+              <v-list-item @click="editItem()">
+                <v-list-item-title>
                   Edit
-                </v-list-tile-title>
-              </v-list-tile>
-              <v-list-tile @click="deleteItem()">
-                <v-list-tile-title>
+                </v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="deleteItem()">
+                <v-list-item-title>
                   Delete
-                </v-list-tile-title>
-              </v-list-tile>
+                </v-list-item-title>
+              </v-list-item>
             </v-list>
           </v-menu>
         </v-card>
@@ -94,7 +94,6 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { create_or_reload_page } from '@/legacy/navigation';
 import { OtcPayload, OtcTrade } from '@/model/otc-trade';
 import OtcForm from '@/components/OtcForm.vue';
 import { mapGetters } from 'vuex';

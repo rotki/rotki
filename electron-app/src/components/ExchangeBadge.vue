@@ -1,12 +1,12 @@
 <template>
-  <div :id="name + '_badge'" class="exchange-badge">
+  <div :id="`${name}_badge`" class="exchange-badge">
     <img
       :title="name"
-      class="exchange-icon"
+      class="exchange-badge__icon"
       :src="require(`../assets/images/${name}.png`)"
       alt="Exchange icon"
     />
-    <div class="badge-name">{{ name }}</div>
+    <div class="exchange-badge__name">{{ name }}</div>
   </div>
 </template>
 
@@ -29,7 +29,13 @@ export default class ExchangeBadge extends Vue {
   max-width: 95px;
   padding: 8px;
 }
-.badge-name {
+
+.exchange-badge__icon {
+  width: 60px;
+}
+
+.exchange-badge__name {
+  margin-top: 16px;
   font-size: 28px;
 }
 </style>

@@ -117,6 +117,9 @@ let store: StoreOptions<RotkehlchenState> = {
     dateDisplayFormat: (state: RotkehlchenState) => {
       return state.settings.dateDisplayFormat;
     },
+    exchangeRate: (state: RotkehlchenState) => (currency: string) => {
+      return state.usdToFiatExchangeRates[currency];
+    },
     exchanges: (state: RotkehlchenState) => {
       const balances = state.exchangeBalances;
       return Object.keys(balances).map(value => ({
