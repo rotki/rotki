@@ -19,7 +19,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
 from rotkehlchen.typing import EmptyStr, EventType, Fee, FilePath, Timestamp
-from rotkehlchen.utils.misc import taxable_gain_for_sell, tsToDate
+from rotkehlchen.utils.misc import taxable_gain_for_sell, timestamp_to_date
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -116,7 +116,7 @@ class CSVExporter():
         self.all_events.append(entry)
         new_entry = entry.copy()
         new_entry['net_profit_or_loss'] = net_profit_or_loss_csv
-        new_entry['time'] = tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
+        new_entry['time'] = timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
         new_entry['paid_in_{}'.format(self.profit_currency)] = paid_in_profit_currency
         key = f'taxable_received_in_{self.profit_currency}'
         new_entry[key] = taxable_received_in_profit_currency
@@ -155,7 +155,7 @@ class CSVExporter():
             'taxable_bought_cost_in_{}'.format(self.profit_currency): 'not applicable',
             'taxable_gain_in_{}'.format(self.profit_currency): FVal(0),
             'taxable_profit_loss_in_{}'.format(self.profit_currency): FVal(0),
-            'time': tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+            'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
             'is_virtual': is_virtual,
         })
         self.add_to_allevents(
@@ -210,7 +210,7 @@ class CSVExporter():
             'taxable_bought_cost_in_{}'.format(self.profit_currency): taxable_bought_cost,
             'taxable_gain_in_{}'.format(self.profit_currency): taxable_profit_received,
             'taxable_profit_loss_in_{}'.format(self.profit_currency): taxable_profit_formula,
-            'time': tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+            'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
             'is_virtual': is_virtual,
         })
         paid_in_profit_currency = ZERO
@@ -247,7 +247,7 @@ class CSVExporter():
             'price_in_{}'.format(self.profit_currency): rate_in_profit_currency,
             'fee_in_{}'.format(self.profit_currency): total_fee_in_profit_currency,
             'loss_in_{}'.format(self.profit_currency): loss_formula,
-            'time': tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+            'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
         })
         paid_in_profit_currency = amount * rate_in_profit_currency + total_fee_in_profit_currency
         self.add_to_allevents(
@@ -274,8 +274,8 @@ class CSVExporter():
             return
 
         self.loan_profits_csv.append({
-            'open_time': tsToDate(open_time, formatstr='%d/%m/%Y %H:%M:%S'),
-            'close_time': tsToDate(close_time, formatstr='%d/%m/%Y %H:%M:%S'),
+            'open_time': timestamp_to_date(open_time, formatstr='%d/%m/%Y %H:%M:%S'),
+            'close_time': timestamp_to_date(close_time, formatstr='%d/%m/%Y %H:%M:%S'),
             'gained_asset': gained_asset,
             'gained_amount': gained_amount,
             'lent_amount': lent_amount,
@@ -305,7 +305,7 @@ class CSVExporter():
 
         self.margin_positions_csv.append({
             'name': margin_notes,
-            'time': tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+            'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
             'gain_loss_asset': gain_loss_asset,
             'gain_loss_amount': net_gain_loss_amount,
             'profit_loss_in_{}'.format(self.profit_currency): gain_loss_in_profit_currency,
@@ -334,7 +334,7 @@ class CSVExporter():
             return
 
         self.asset_movements_csv.append({
-            'time': tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+            'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
             'exchange': exchange,
             'type': category,
             'moving_asset': asset,
@@ -363,7 +363,7 @@ class CSVExporter():
             return
 
         self.tx_gas_costs_csv.append({
-            'time': tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+            'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
             'transaction_hash': transaction_hash,
             'eth_burned_as_gas': eth_burned_as_gas,
             'cost_in_{}'.format(self.profit_currency): eth_burned_as_gas * rate,

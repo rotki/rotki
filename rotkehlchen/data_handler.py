@@ -40,7 +40,7 @@ from rotkehlchen.typing import (
     TradePair,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import createTimeStamp, is_number, ts_now, tsToDate
+from rotkehlchen.utils.misc import createTimeStamp, is_number, timestamp_to_date, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -434,7 +434,7 @@ class DataHandler():
         log.info('Decompress and decrypt DB')
 
         # First make a backup of the DB we are about to replace
-        date = tsToDate(ts=ts_now(), formatstr='%Y_%m_%d_%H_%M_%S')
+        date = timestamp_to_date(ts=ts_now(), formatstr='%Y_%m_%d_%H_%M_%S')
         shutil.copyfile(
             os.path.join(self.data_directory, self.username, 'rotkehlchen.db'),
             os.path.join(self.data_directory, self.username, f'rotkehlchen_db_{date}.backup'),

@@ -29,7 +29,7 @@ from rotkehlchen.order_formatting import (
 from rotkehlchen.transactions import EthereumTransaction
 from rotkehlchen.typing import Fee, FilePath, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_now, tsToDate
+from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -357,9 +357,10 @@ class Accountant():
                     count,
                 ) = self.process_action(action, end_ts, prev_time, count)
             except PriceQueryUnknownFromAsset as e:
+                ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
                     f'Skipping action at '
-                    f' {tsToDate(action_get_timestamp(action), formatstr="%d/%m/%Y, %H:%M:%S")} '
+                    f' {timestamp_to_date(ts, formatstr="%d/%m/%Y, %H:%M:%S")} '
                     f'during history processing due to an asset unknown to '
                     f'cryptocompare being involved. Check logs for details',
                 )
@@ -369,9 +370,10 @@ class Accountant():
                 )
                 continue
             except NoPriceForGivenTimestamp as e:
+                ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
                     f'Skipping action at '
-                    f' {tsToDate(action_get_timestamp(action), formatstr="%d/%m/%Y, %H:%M:%S")} '
+                    f' {timestamp_to_date(ts, formatstr="%d/%m/%Y, %H:%M:%S")} '
                     f'during history processing due to inability to find a price '
                     f'at that point in time: {str(e)}. Check the logs for more details',
                 )

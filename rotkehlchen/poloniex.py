@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def tsToDate(s):
+def timestamp_to_date(s):
     return datetime.datetime.fromtimestamp(s).strftime('%Y-%m-%d %H:%M:%S')
 
 
