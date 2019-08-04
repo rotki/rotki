@@ -3,7 +3,7 @@ import hashlib
 import hmac
 import logging
 import time
-from binascii import Error as binascii_error
+from binascii import Error as BinasciiError
 from enum import Enum
 from http import HTTPStatus
 from typing import Dict, NamedTuple, Tuple
@@ -47,7 +47,7 @@ def premium_create_and_verify(api_key: ApiKey, api_secret: ApiSecret):
     """
     try:
         premium = Premium(api_key, api_secret)
-    except binascii_error:
+    except BinasciiError:
         raise IncorrectApiKeyFormat('Rotkehlchen api key is not in the correct format')
     if premium.is_active():
         return premium
@@ -108,7 +108,7 @@ class Premium():
         # If what's given is not even valid b64 encoding then stop here
         try:
             self.reset_credentials(api_key, api_secret)
-        except binascii_error as e:
+        except BinasciiError as e:
             raise IncorrectApiKeyFormat(f'Secret Key formatting error: {str(e)}')
 
         active = self.is_active()
