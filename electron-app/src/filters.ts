@@ -1,6 +1,8 @@
 import Vue from 'vue';
 import { displayDateFormatter } from '@/data/date_formatter';
 import BigNumber from 'bignumber.js';
+import { bigNumberify, Zero } from '@/utils/bignumbers';
+import { AccountBalance } from '@/model/blockchain-balances';
 
 function percentage(value: string, total: string, precision: number): string {
   const percentage = parseFloat(value) / parseFloat(total);
@@ -16,10 +18,31 @@ function formatDate(value: number, format: string): string {
 }
 
 function formatPrice(value: BigNumber, precision: number) {
-  return value.toPrecision(precision);
+  return value.toFormat(precision);
+}
+
+function calculatePrice(value: BigNumber, exchangeRate: number): BigNumber {
+  return value.multipliedBy(bigNumberify(exchangeRate));
+}
+
+function balanceSum(value: AccountBalance[], amount: boolean): BigNumber {
+  return value
+    .map(balance => {
+      if (amount) {
+        return balance.amount;
+      } else {
+        return balance.usdValue;
+      }
+    })
+    .reduce(
+      (previousValue, currentValue) => previousValue.plus(currentValue),
+      Zero
+    );
 }
 
 Vue.filter('percentage', percentage);
 Vue.filter('precision', precision);
 Vue.filter('formatDate', formatDate);
 Vue.filter('formatPrice', formatPrice);
+Vue.filter('calculatePrice', calculatePrice);
+Vue.filter('balanceSum', balanceSum);

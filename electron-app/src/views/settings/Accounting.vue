@@ -8,7 +8,7 @@
     <v-layout>
       <v-flex>
         <v-card>
-          <v-toolbar card>Trade Settings</v-toolbar>
+          <v-card-title>Trade Settings</v-card-title>
           <v-card-text>
             <v-switch
               id="crypto2crypto"
@@ -55,7 +55,7 @@
     <v-layout>
       <v-flex>
         <v-card>
-          <v-toolbar card>Asset Settings</v-toolbar>
+          <v-card-title>Asset Settings</v-card-title>
           <v-card-text>
             <v-layout>
               <v-flex xs10>
@@ -67,7 +67,7 @@
               </v-flex>
               <v-flex xs2>
                 <v-btn
-                  flat
+                  text
                   color="primary"
                   :disabled="assetToIgnore === ''"
                   @click="addAsset()"
@@ -86,7 +86,7 @@
                 >
                   <div slot="append-outer">
                     <v-badge>
-                      <template v-slot:badge>
+                      <template #badge>
                         <span>{{ ignoredAssets.length }}</span>
                       </template>
                     </v-badge>
@@ -95,7 +95,7 @@
               </v-flex>
               <v-flex xs2>
                 <v-btn
-                  flat
+                  text
                   color="primary"
                   :disabled="assetToRemove === ''"
                   @click="removeAsset()"

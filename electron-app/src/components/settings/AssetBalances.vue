@@ -1,22 +1,33 @@
-<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
-  <div class="balance-table">
-    <v-layout row>
+<template>
+  <div class="asset-balances">
+    <v-layout>
       <v-flex>
-        <h3 class="text-xs-center">{{ title }}</h3>
+        <h3 class="text-center">{{ title }}</h3>
       </v-flex>
     </v-layout>
     <v-data-table :headers="headers" :items="balances">
-      <template v-slot:items="props">
-        <td>
-          <crypto-icon :symbol="props.item.asset"></crypto-icon>
-          {{ props.item.asset }}
-        </td>
-        <td>
-          {{ props.item.amount | formatPrice(floatingPrecision) }}
-        </td>
-        <td>
-          {{ props.item.usdValue | formatPrice(floatingPrecision) }}
-        </td>
+      <template #header.usdValue>
+        {{ currency.ticker_symbol }} value
+      </template>
+      <template #item.asset="{ item }">
+        <span class="asset-balances__balance__asset">
+          <crypto-icon
+            width="26px"
+            class="asset-balances__balance__asset__icon"
+            :symbol="item.asset"
+          ></crypto-icon>
+          {{ item.asset }}
+        </span>
+      </template>
+      <template #item.amount="{ item }">
+        {{ item.amount | formatPrice(floatingPrecision) }}
+      </template>
+      <template #item.usdValue="{ item }">
+        {{
+          item.usdValue
+            | calculatePrice(exchangeRate(currency.ticker_symbol))
+            | formatPrice(floatingPrecision)
+        }}
       </template>
     </v-data-table>
   </div>
@@ -25,10 +36,16 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { AssetBalance } from '@/model/blockchain-balances';
-import { mapState } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
+import CryptoIcon from '@/components/CryptoIcon.vue';
+import { Currency } from '@/model/currency';
 
 @Component({
-  computed: mapState(['floatingPrecision'])
+  components: { CryptoIcon },
+  computed: {
+    ...mapState(['currency']),
+    ...mapGetters(['exchangeRate', 'floatingPrecision'])
+  }
 })
 export default class AssetBalances extends Vue {
   @Prop({ required: true })
@@ -36,7 +53,9 @@ export default class AssetBalances extends Vue {
   @Prop({ required: true })
   title!: string;
 
+  currency!: Currency;
   floatingPrecision!: number;
+  exchangeRate!: (currency: string) => number;
 
   headers = [
     { text: 'Asset', value: 'asset' },
@@ -47,8 +66,18 @@ export default class AssetBalances extends Vue {
 </script>
 
 <style scoped lang="scss">
-.balance-table {
+.asset-balances {
   margin-top: 16px;
   margin-bottom: 16px;
+}
+
+.asset-balances__balance__asset {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.asset-balances__balance__asset__icon {
+  margin-right: 8px;
 }
 </style>

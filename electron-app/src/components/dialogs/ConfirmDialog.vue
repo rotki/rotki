@@ -17,10 +17,10 @@
 
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="primary" flat @click="cancel()">
+        <v-btn color="primary" text @click="cancel()">
           Cancel
         </v-btn>
-        <v-btn color="primary" flat @click="confirm()">
+        <v-btn color="primary" text @click="confirm()">
           Confirm
         </v-btn>
       </v-card-actions>

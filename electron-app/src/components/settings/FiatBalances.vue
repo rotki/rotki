@@ -1,8 +1,8 @@
-<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
+<template>
   <v-layout>
     <v-flex>
       <v-card>
-        <v-toolbar card>Fiat Balances</v-toolbar>
+        <v-card-title>Fiat Balances</v-card-title>
         <v-card-text>
           <v-select
             v-model="selectedCurrency"
@@ -28,16 +28,21 @@
           </v-btn>
           <v-flex xs12>
             <v-data-table :headers="headers" :items="fiatBalances">
-              <template v-slot:items="props">
-                <td>
-                  {{ props.item.currency }}
-                </td>
-                <td>
-                  {{ props.item.amount | precision(floatingPrecision) }}
-                </td>
-                <td>
-                  {{ props.item.usdValue | precision(floatingPrecision) }}
-                </td>
+              <template #header.usdValue>
+                {{ currency.ticker_symbol }} value
+              </template>
+              <template #item.currency="{ item }">
+                {{ item.currency }}
+              </template>
+              <template #item.amount="{ item }">
+                {{ item.amount | formatPrice(floatingPrecision) }}
+              </template>
+              <template #item.usdValue="{ item }">
+                {{
+                  item.usdValue
+                    | calculatePrice(exchangeRate(currency.ticker_symbol))
+                    | formatPrice(floatingPrecision)
+                }}
               </template>
             </v-data-table>
           </v-flex>
@@ -51,21 +56,28 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { Currency } from '@/model/currency';
 import { currencies } from '@/data/currencies';
-import { mapGetters } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
+import { bigNumberify, Zero } from '@/utils/bignumbers';
+import { FiatBalance } from '@/model/blockchain-balances';
 
 @Component({
-  computed: mapGetters(['floatingPrecision'])
+  computed: {
+    ...mapGetters(['floatingPrecision', 'exchangeRate']),
+    ...mapState(['currency'])
+  }
 })
 export default class FiatBalances extends Vue {
   balance: string = '';
   selectedCurrency: string = '';
+  currency!: Currency;
 
   floatingPrecision!: number;
+  exchangeRate!: (currency: string) => number;
 
   errorTitle: string = '';
   errorMessage: string = '';
 
-  fiatBalances: { currency: string; amount: number; usdValue: number }[] = [];
+  fiatBalances: FiatBalance[] = [];
 
   get add(): boolean {
     return (
@@ -77,7 +89,7 @@ export default class FiatBalances extends Vue {
 
   onChange() {
     const currency = this.selectedCurrency;
-    let balance = 0;
+    let balance = Zero;
     if (currency) {
       const fiatBalance = this.fiatBalances.find(
         value => value.currency === currency
@@ -90,9 +102,9 @@ export default class FiatBalances extends Vue {
   }
 
   headers = [
-    { text: 'Currency', value: 'asset' },
+    { text: 'Currency', value: 'currency' },
     { text: 'Amount', value: 'amount' },
-    { text: 'USD Value', value: 'value' }
+    { text: 'value', value: 'usdValue' }
   ];
 
   get availableCurrencies(): Currency[] {
@@ -125,8 +137,8 @@ export default class FiatBalances extends Vue {
       .then(value => {
         this.fiatBalances = Object.keys(value).map(currency => ({
           currency: currency,
-          amount: parseFloat(value[currency].amount as string),
-          usdValue: parseFloat(value[currency].usd_value as string)
+          amount: bigNumberify(value[currency].amount as string),
+          usdValue: bigNumberify(value[currency].usd_value as string)
         }));
       })
       .catch(reason => {

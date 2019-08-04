@@ -1,5 +1,5 @@
-<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
-  <v-layout row align-center justify-center class="wrapper">
+<template>
+  <v-layout align-center justify-center class="token-track">
     <v-flex xs12>
       <v-autocomplete
         v-model="ownedTokens"
@@ -16,33 +16,36 @@
         multiple
         @input="add($event)"
       >
-        <template v-slot:selection="data">
+        <template #selection="data">
           <v-chip
-            :selected="data.selected"
+            :input-value="data.selected"
             close
-            class="chip--select-multi"
-            @input="remove(data.item)"
+            class="chip--select-multi token-track__chip"
+            @click:close="remove(data.item)"
+            @click="data.select"
           >
             <v-avatar>
               <crypto-icon :symbol="data.item.symbol"></crypto-icon>
             </v-avatar>
-            {{ data.item.symbol }}
+            <span class="token-track__chip__text">
+              {{ data.item.symbol }}
+            </span>
           </v-chip>
         </template>
-        <template v-slot:item="data">
+        <template #item="data">
           <template v-if="typeof data.item !== 'object'">
-            <v-list-tile-content v-text="data.item"></v-list-tile-content>
+            <v-list-item-content v-text="data.item"></v-list-item-content>
           </template>
           <template v-else>
-            <v-list-tile-avatar>
+            <v-list-item-avatar>
               <crypto-icon :symbol="data.item.symbol"></crypto-icon>
-            </v-list-tile-avatar>
-            <v-list-tile-content>
-              <v-list-tile-title v-html="data.item.symbol"></v-list-tile-title>
-              <v-list-tile-sub-title
+            </v-list-item-avatar>
+            <v-list-item-content>
+              <v-list-item-title v-html="data.item.symbol"></v-list-item-title>
+              <v-list-item-subtitle
                 v-html="data.item.name"
-              ></v-list-tile-sub-title>
-            </v-list-tile-content>
+              ></v-list-item-subtitle>
+            </v-list-item-content>
           </template>
         </template>
       </v-autocomplete>
@@ -155,13 +158,12 @@ export default class TokenTrack extends Vue {
 </script>
 
 <style scoped lang="scss">
-.wrapper {
+.token-track {
   margin-top: 16px;
   margin-bottom: 16px;
 }
-.token-list {
-  width: 200px;
-  height: 300px;
-  overflow-y: scroll;
+
+.token-track__chip__text {
+  margin-left: 8px;
 }
 </style>

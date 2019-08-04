@@ -2,9 +2,9 @@
   <v-layout>
     <v-flex>
       <v-card>
-        <v-toolbar card>Exchange Settings</v-toolbar>
+        <v-card-title>Exchange Settings</v-card-title>
         <v-card-text>
-          <v-layout row class="connected-exchanges">
+          <v-layout class="connected-exchanges">
             <exchange-badge
               v-for="exchange in connectedExchanges"
               :name="exchange"

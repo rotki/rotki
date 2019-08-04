@@ -1,11 +1,11 @@
 <template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
   <v-menu id="notification-indicator" transition="slide-y-transition" bottom>
-    <template v-slot:activator="{ on }">
+    <template #activator="{ on }">
       <v-badge color="primary" right overlap>
-        <template v-slot:badge>
+        <template #badge>
           <span>{{ count }}</span>
         </template>
-        <v-btn color="primary" dark icon flat v-on="on">
+        <v-btn color="primary" dark icon text v-on="on">
           <v-icon>
             fa fa-bell fa-fw
           </v-icon>

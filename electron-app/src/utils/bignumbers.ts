@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-export function bigNumberify(value: string) {
+export function bigNumberify(value: string | number) {
   return new BigNumber(value);
 }
 

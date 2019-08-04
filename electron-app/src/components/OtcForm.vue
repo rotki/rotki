@@ -8,7 +8,7 @@
     <v-layout>
       <v-flex>
         <v-card>
-          <v-toolbar card>Register New Trade</v-toolbar>
+          <v-card-title>Register New Trade</v-card-title>
           <v-card-text>
             <date-time-picker
               v-model="datetime"

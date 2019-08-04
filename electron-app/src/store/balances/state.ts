@@ -1,10 +1,4 @@
-import {
-  ApiBalances,
-  Balances,
-  EthBalances
-} from '@/model/blockchain-balances';
-import BigNumber from 'bignumber.js';
-import { Zero } from '@/utils/bignumbers';
+import { Balances, EthBalances } from '@/model/blockchain-balances';
 
 export const state: BalanceState = {
   eth: {},

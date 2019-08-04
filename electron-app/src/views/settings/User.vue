@@ -1,8 +1,8 @@
 <template>
-  <v-container>
+  <v-container class="user-settings">
     <v-layout>
       <v-flex>
-        <h1 class="page-header">User Settings</h1>
+        <h1>User Settings</h1>
       </v-flex>
     </v-layout>
     <premium-settings></premium-settings>
@@ -30,4 +30,8 @@ import BlockchainBalances from '@/components/settings/BlockchainBalances.vue';
 export default class User extends Vue {}
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+.user-settings > * {
+  margin-bottom: 20px;
+}
+</style>
