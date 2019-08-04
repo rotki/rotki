@@ -67,7 +67,7 @@ if sys.platform == 'darwin':
         """
         name = request.node.name
         name = re.sub(r'[\W]', '_', name)
-        MAXVAL = 1
-        if len(name) > MAXVAL:
-            name = name[:MAXVAL]
+        max_val = 1
+        if len(name) > max_val:
+            name = name[:max_val]
         return tmpdir_factory.mktemp(name, numbered=True)
