@@ -5,6 +5,8 @@ Changelog
 * :feature:`-` Added support for the following tokens
 
   - `Contentos <https://coinmarketcap.com/currencies/contentos/>`__
+* :feature:`442` If a user provides a Kraken API key with insufficient permissions we no longer accept it and also provide them with a proper error message.
+* :bug:`443` Fix bug in deserialization of non-exact floating point kraken timestamp values which could lead to a crash during tax report generation.
 
 * :release:`1.0.1 <2019-08-02>`
 * :feature:`425` Users can now provide arguments to the backend via a config file. For more information check the `docs <https://rotkehlchen.readthedocs.io/en/latest/usage_guide.html#set-the-backend-s-arguments`__. 
