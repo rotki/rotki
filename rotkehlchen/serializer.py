@@ -166,7 +166,7 @@ def deserialize_timestamp_from_kraken(time: Union[str, FVal]) -> Timestamp:
             raise DeserializationError(f'Failed to deserialize {time} kraken timestamp entry')
     elif isinstance(time, FVal):
         try:
-            return Timestamp(time.to_int(exact=True))
+            return Timestamp(time.to_int(exact=False))
         except ValueError:
             raise DeserializationError(
                 f'Failed to deserialize {time} kraken timestamp entry from an FVal',
