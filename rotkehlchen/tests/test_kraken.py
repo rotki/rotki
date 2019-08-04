@@ -1,4 +1,3 @@
-from copy import deepcopy
 from unittest.mock import patch
 
 import pytest
@@ -197,7 +196,7 @@ def test_trade_from_kraken_unexpected_data(function_scope_kraken):
     query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
 
     input_trades = TEST_TRADES
-    input_trades = input_trades.replace('"time": "1458994442.0000"', '"time": "dsdsad"')
+    input_trades = input_trades.replace('"time": "1458994442.2353"', '"time": "dsdsad"')
     query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
 
     input_trades = TEST_TRADES
