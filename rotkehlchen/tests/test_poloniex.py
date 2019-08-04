@@ -217,10 +217,10 @@ def test_query_trade_history_not_shared_cache(data_dir):
     We are using poloniex as an example here. Essentially tests all exchange caches.
     """
 
-    def first_trades(currencyPair, start, end):  # pylint: disable=unused-argument
+    def first_trades(currency_pair, start, end):  # pylint: disable=unused-argument
         return {'BTC': [{'data': 1}]}
 
-    def second_trades(currencyPair, start, end):  # pylint: disable=unused-argument
+    def second_trades(currency_pair, start, end):  # pylint: disable=unused-argument
         return {'BTC': [{'data': 2}]}
 
     messages_aggregator = MessagesAggregator()
@@ -230,11 +230,11 @@ def test_query_trade_history_not_shared_cache(data_dir):
     second_user_dir = os.path.join(data_dir, 'second')
     os.mkdir(second_user_dir)
     a = Poloniex(b'', b'', first_user_dir, messages_aggregator)
-    with patch.object(a, 'returnTradeHistory', side_effect=first_trades):
+    with patch.object(a, 'return_trade_history', side_effect=first_trades):
         result1 = a.query_trade_history(0, end_ts, end_ts)
 
     b = Poloniex(b'', b'', second_user_dir, messages_aggregator)
-    with patch.object(b, 'returnTradeHistory', side_effect=second_trades):
+    with patch.object(b, 'return_trade_history', side_effect=second_trades):
         result2 = b.query_trade_history(0, end_ts, end_ts)
 
     assert result1['BTC'][0]['data'] == 1
@@ -242,7 +242,7 @@ def test_query_trade_history_not_shared_cache(data_dir):
 
 
 def test_poloniex_assets_are_known(poloniex):
-    currencies = poloniex.returnCurrencies()
+    currencies = poloniex.return_currencies()
     for poloniex_asset in currencies.keys():
         try:
             _ = asset_from_poloniex(poloniex_asset)
