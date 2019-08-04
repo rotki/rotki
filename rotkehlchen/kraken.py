@@ -165,6 +165,7 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
     """
     currency_pair = kraken_to_world_pair(kraken_trade['pair'])
     quote_currency = get_pair_position_asset(currency_pair, 'second')
+
     timestamp = deserialize_timestamp_from_kraken(kraken_trade['time'])
     amount = deserialize_asset_amount(kraken_trade['vol'])
     cost = deserialize_price(kraken_trade['cost'])

@@ -148,13 +148,14 @@ def test_trade_from_kraken_unexpected_data(function_scope_kraken):
     kraken.random_ledgers_data = False
     kraken.cache_ttl_secs = 0
 
-    TEST_TRADES = {
+    # Important: Testing with a time floating point that has other than zero after decimal
+    TEST_TRADES = """{
         "trades": {
             "1": {
                 "ordertxid": "1",
                 "postxid": 1,
                 "pair": "XXBTZEUR",
-                "time": '1458994442.0000',
+                "time": "1458994442.2353",
                 "type": "buy",
                 "ordertype": "market",
                 "price": "100",
@@ -162,11 +163,11 @@ def test_trade_from_kraken_unexpected_data(function_scope_kraken):
                 "fee": "0.1",
                 "cost": "100",
                 "margin": "0.0",
-                "misc": "",
-            },
+                "misc": ""
+            }
         },
-        "count": 1,
-    }
+        "count": 1
+    }"""
 
     def query_kraken_and_test(input_trades, expected_warnings_num, expected_errors_num):
         with patch(target, new=input_trades):
@@ -191,35 +192,35 @@ def test_trade_from_kraken_unexpected_data(function_scope_kraken):
     query_kraken_and_test(TEST_TRADES, expected_warnings_num=0, expected_errors_num=0)
 
     # From here and on let's check trades with unexpected data
-    input_trades = deepcopy(TEST_TRADES)
-    input_trades['trades']['1']['pair'] = 'aadda'
+    input_trades = TEST_TRADES
+    input_trades = input_trades.replace('"pair": "XXBTZEUR"', '"pair": "aadda"')
     query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
 
-    input_trades = deepcopy(TEST_TRADES)
-    input_trades['trades']['1']['time'] = 'dsdsad'
+    input_trades = TEST_TRADES
+    input_trades = input_trades.replace('"time": "1458994442.0000"', '"time": "dsdsad"')
     query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
 
-    input_trades = deepcopy(TEST_TRADES)
-    input_trades['trades']['1']['vol'] = 'dsdsad'
+    input_trades = TEST_TRADES
+    input_trades = input_trades.replace('"vol": "1"', '"vol": "dsdsad"')
     query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
 
-    input_trades = deepcopy(TEST_TRADES)
-    input_trades['trades']['1']['cost'] = None
+    input_trades = TEST_TRADES
+    input_trades = input_trades.replace('"cost": "100"', '"cost": null')
     query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
 
-    input_trades = deepcopy(TEST_TRADES)
-    input_trades['trades']['1']['fee'] = 'dsdsad'
+    input_trades = TEST_TRADES
+    input_trades = input_trades.replace('"fee": "0.1"', '"fee": "dsdsad"')
     query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
 
-    input_trades = deepcopy(TEST_TRADES)
-    input_trades['trades']['1']['type'] = 'not existing type'
+    input_trades = TEST_TRADES
+    input_trades = input_trades.replace('"type": "buy"', '"type": "not existing type"')
     query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
 
-    input_trades = deepcopy(TEST_TRADES)
-    input_trades['trades']['1']['price'] = 'dsadsda'
+    input_trades = TEST_TRADES
+    input_trades = input_trades.replace('"price": "100"', '"price": "dsadsda"')
     query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
 
     # Also test key error
-    input_trades = deepcopy(TEST_TRADES)
-    del input_trades['trades']['1']['vol']
+    input_trades = TEST_TRADES
+    input_trades = input_trades.replace('"vol": "1",', '')
     query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
