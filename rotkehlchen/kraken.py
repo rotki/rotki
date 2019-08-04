@@ -273,7 +273,12 @@ class Kraken(Exchange):
             elif 'EAPI:Invalid key' in error:
                 return False, 'Provided API Key is invalid'
             else:
-                raise
+                log.error('Kraken API key validation error: {str(e)}')
+                msg = (
+                    'Unknown error at Kraken API key validation. Perhaps API '
+                    'Key/Secret combination invalid?'
+                )
+                return False, msg
         return True, ''
 
     def _query_public(self, method: str, req: Optional[dict] = None) -> dict:
