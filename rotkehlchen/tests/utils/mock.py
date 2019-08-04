@@ -15,7 +15,7 @@ class MockEth():
     def __init__(self, block_number):
         self.blockNumber = block_number
 
-    def getBlock(self, number):
+    def getBlock(self, number):  # noqa: N802
         """Always return genesis block since this is what we care about in the tests"""
         genesis = (
             b'\xd4\xe5g@\xf8v\xae\xf8\xc0\x10\xb8j@\xd5\xf5gE\xa1\x18\xd0\x90j4'
@@ -29,5 +29,5 @@ class MockWeb3():
     def __init__(self, providers=None, middlewares=None):
         self.eth = MockEth(0)
 
-    def isConnected(self):
+    def isConnected(self):  # noqa: N802
         return True
