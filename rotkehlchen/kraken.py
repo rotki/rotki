@@ -264,16 +264,52 @@ class Kraken(Exchange):
             self.first_connection_made = True
 
     def validate_api_key(self) -> Tuple[bool, str]:
+        """Validates that the Kraken API Key is good for usage in Rotkehlchen
+
+        Makes sure that the following permission are given to the key:
+        - Ability to query funds
+        - Ability to query open/closed trades
+        - Ability to query ledgers
+        """
+        valid, msg = self._validate_single_api_key_action('Balance')
+        if not valid:
+            return False, msg
+        valid, msg = self._validate_single_api_key_action(
+            method_str='TradesHistory',
+            req={'start': 0, 'end': 0},
+        )
+        if not valid:
+            return False, msg
+        valid, msg = self._validate_single_api_key_action(
+            method_str='Ledgers',
+            req={'start': 0, 'end': 0, 'type': 'deposit'},
+        )
+        if not valid:
+            return False, msg
+        return True, ''
+
+    def _validate_single_api_key_action(
+            self,
+            method_str: str,
+            req: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[bool, str]:
         try:
-            self.query_private('Balance', req={})
+            self.query_private(method_str, req)
         except (RemoteError, ValueError) as e:
             error = str(e)
             if 'Error: Incorrect padding' in error:
                 return False, 'Provided API Key or secret is in invalid Format'
             elif 'EAPI:Invalid key' in error:
                 return False, 'Provided API Key is invalid'
+            elif 'EGeneral:Permission denied' in error:
+                msg = (
+                    'Provided API Key does not have appropriate permissions. Make '
+                    'sure that the "Query Funds", "Query Open/Closed Order and Trades"'
+                    'and "Query Ledger Entries" actions are allowed for your Kraken API Key.'
+                )
+                return False, msg
             else:
-                log.error('Kraken API key validation error: {str(e)}')
+                log.error(f'Kraken API key validation error: {str(e)}')
                 msg = (
                     'Unknown error at Kraken API key validation. Perhaps API '
                     'Key/Secret combination invalid?'
