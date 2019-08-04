@@ -296,7 +296,7 @@ class MockKraken(Kraken):
                     tradeable_pairs=list(self.tradeable_pairs.keys()),
                 )
             # else
-            return KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE
+            return rlk_jsonloads(KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE)
         elif method == 'Ledgers':
             if self.random_ledgers_data:
                 return generate_random_kraken_ledger_data(

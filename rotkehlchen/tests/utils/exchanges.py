@@ -12,13 +12,13 @@ POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE = """{
 }"""
 
 
-KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE = {
+KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE = """{
     "trades": {
         "1": {
             "ordertxid": "1",
             "postxid": 1,
             "pair": "XXBTZEUR",
-            "time": '1458994442.0000',
+            "time": "1458994442.0000",
             "type": "buy",
             "ordertype": "market",
             "price": "100",
@@ -31,7 +31,7 @@ KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE = {
             "ordertxid": "2",
             "postxid": 2,
             "pair": "XETHZEUR",
-            "time": '1456994442.0000',
+            "time": "1456994442.0000",
             "type": "buy",
             "ordertype": "market",
             "price": "100",
@@ -44,7 +44,7 @@ KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE = {
             "ordertxid": "3",
             "postxid": 3,
             "pair": "IDONTEXISTZEUR",
-            "time": '1458994442.0000',
+            "time": "1458994442.0000",
             "type": "buy",
             "ordertype": "market",
             "price": "100",
@@ -52,13 +52,13 @@ KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE = {
             "fee": "0.1",
             "cost": "100",
             "margin": "0.0",
-            "misc": "",
+            "misc": ""
         },
         "4": {
             "ordertxid": "4",
             "postxid": 4,
             "pair": "XETHIDONTEXISTTOO",
-            "time": '1458994442.0000',
+            "time": "1458994442.0000",
             "type": "buy",
             "ordertype": "market",
             "price": "100",
@@ -66,13 +66,13 @@ KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE = {
             "fee": "0.1",
             "cost": "100",
             "margin": "0.0",
-            "misc": "",
+            "misc": ""
         },
         "5": {
             "ordertxid": "5",
             "postxid": 5,
             "pair": "%$#%$#%$#%$#%$#%",
-            "time": '1458994442.0000',
+            "time": "1458994442.0000",
             "type": "buy",
             "ordertype": "market",
             "price": "100",
@@ -80,7 +80,7 @@ KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE = {
             "fee": "0.1",
             "cost": "100",
             "margin": "0.0",
-            "misc": "",
+            "misc": ""
         }},
-    "count": 5,
-}
+    "count": 5
+}"""
