@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.0.2 <2019-08-04>`
 * :feature:`-` Added support for the following tokens
 
   - `Contentos <https://coinmarketcap.com/currencies/contentos/>`__
