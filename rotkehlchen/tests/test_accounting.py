@@ -222,16 +222,16 @@ def test_buying_selling_btc_before_bchfork(accountant):
     }]
     accounting_history_process(accountant, 1436979735, 1519693374, history)
 
-    amount_BCH = FVal(3.9)
-    amount_BTC = FVal(4.8)
+    amount_bch = FVal(3.9)
+    amount_btc = FVal(4.8)
     buys = accountant.events.events['BCH'].buys
     assert len(buys) == 1
-    assert buys[0].amount == amount_BCH
+    assert buys[0].amount == amount_bch
     assert buys[0].timestamp == 1491593374
     assert buys[0].rate == FVal('1128.905')
     assert buys[0].fee_rate.is_close(FVal('0.0846153846154'))
-    assert accountant.get_calculated_asset_amount('BCH') == amount_BCH
-    assert accountant.get_calculated_asset_amount('BTC') == amount_BTC
+    assert accountant.get_calculated_asset_amount('BCH') == amount_bch
+    assert accountant.get_calculated_asset_amount('BTC') == amount_btc
 
     assert accountant.general_trade_pl.is_close("13876.6464615")
     assert accountant.taxable_trade_pl.is_close("13876.6464615")
