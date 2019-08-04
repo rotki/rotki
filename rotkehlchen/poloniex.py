@@ -132,7 +132,7 @@ def process_polo_loans(
         start_ts: Timestamp,
         end_ts: Timestamp,
 ) -> List[Loan]:
-    """Takes in the list of loans from poloniex as returned by the returnLendingHistory
+    """Takes in the list of loans from poloniex as returned by the return_lending_history
     api call, processes it and returns it into our loan format
     """
     new_data = list()
@@ -233,7 +233,7 @@ class Poloniex(Exchange):
 
     def validate_api_key(self) -> Tuple[bool, str]:
         try:
-            self.returnFeeInfo()
+            self.return_fee_info()
         except ValueError as e:
             error = str(e)
             if 'Invalid API key/secret pair' in error:
@@ -314,19 +314,19 @@ class Poloniex(Exchange):
         except JSONDecodeError:
             raise RemoteError(f'Poloniex returned invalid JSON response: {ret.text}')
 
-    def returnCurrencies(self) -> Dict:
+    def return_currencies(self) -> Dict:
         response = self.api_query_dict('returnCurrencies')
         return response
 
-    def returnTicker(self) -> Dict:
+    def return_ticker(self) -> Dict:
         response = self.api_query_dict('returnTicker')
         return response
 
-    def returnFeeInfo(self) -> Dict:
+    def return_fee_info(self) -> Dict:
         response = self.api_query_dict('returnFeeInfo')
         return response
 
-    def returnLendingHistory(
+    def return_lending_history(
             self,
             start_ts: Optional[Timestamp] = None,
             end_ts: Optional[Timestamp] = None,
@@ -350,18 +350,18 @@ class Poloniex(Exchange):
         return response
 
     @overload
-    def returnTradeHistory(  # pylint: disable=unused-argument, no-self-use
+    def return_trade_history(  # pylint: disable=unused-argument, no-self-use
             self,
-            currencyPair: Literal['all'],
+            currency_pair: Literal['all'],
             start: Timestamp,
             end: Timestamp,
     ) -> Dict:
         ...
 
     @overload  # noqa: F811
-    def returnTradeHistory(  # pylint: disable=unused-argument, no-self-use
+    def return_trade_history(  # pylint: disable=unused-argument, no-self-use
             self,
-            currencyPair: Union[TradePair, str],
+            currency_pair: Union[TradePair, str],
             start: Timestamp,
             end: Timestamp,
     ) -> Union[Dict, List]:
@@ -370,23 +370,23 @@ class Poloniex(Exchange):
     # TODO: As soon as a pyflakes release is made including
     # https://github.com/PyCQA/pyflakes/pull/435 then remove the noqa from here,
     # above and from other place in codebase where overload is used likethis
-    def returnTradeHistory(  # noqa: F811
+    def return_trade_history(  # noqa: F811
             self,
-            currencyPair: Union[TradePair, str],
+            currency_pair: Union[TradePair, str],
             start: Timestamp,
             end: Timestamp,
     ) -> Union[Dict, List]:
-        """If `currencyPair` is all, then it returns a dictionary with each key
-        being a pair and each value a list of trades. If `currencyPair` is a specific
+        """If `currency_pair` is all, then it returns a dictionary with each key
+        being a pair and each value a list of trades. If `currency_pair` is a specific
         pair then a list is returned"""
         return self.api_query('returnTradeHistory', {
-            "currencyPair": currencyPair,
+            'currencyPair': currency_pair,
             'start': start,
             'end': end,
             'limit': 10000,
         })
 
-    def returnDepositsWithdrawals(
+    def return_deposits_withdrawals(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
@@ -398,7 +398,7 @@ class Poloniex(Exchange):
         return response
 
     def market_watcher(self):
-        self.ticker = self.returnTicker()
+        self.ticker = self.return_ticker()
 
     def main_logic(self):
         if not self.first_connection_made:
@@ -476,7 +476,7 @@ class Poloniex(Exchange):
         if cache is not None:
             return cache
 
-        result = self.returnTradeHistory(
+        result = self.return_trade_history(
             currencyPair='all',
             start=start_ts,
             end=end_ts,
@@ -498,7 +498,7 @@ class Poloniex(Exchange):
             self.update_trades_cache(result, start_ts, end_ts)
         return result
 
-    def parseLoanCSV(self) -> List:
+    def parse_loan_csv(self) -> List:
         """Parses (if existing) the lendingHistory.csv and returns the history in a list
 
         It can throw OSError, IOError if the file does not exist and csv.Error if
@@ -536,7 +536,7 @@ class Poloniex(Exchange):
     ) -> List:
         """
         WARNING: Querying from returnLendingHistory endpoint instead of reading from
-        the CSV file can potentially  return unexpected/wrong results.
+        the CSV file can potentially return unexpected/wrong results.
 
         That is because the `returnLendingHistory` endpoint has a hidden limit
         of 12660 results. In our code we use the limit of 12000 but poloniex may change
@@ -546,7 +546,7 @@ class Poloniex(Exchange):
         """
         try:
             if from_csv:
-                return self.parseLoanCSV()
+                return self.parse_loan_csv()
         except (OSError, IOError, csv.Error):
             pass
 
@@ -561,7 +561,7 @@ class Poloniex(Exchange):
             return cache
 
         loans_query_return_limit = 12000
-        result = self.returnLendingHistory(
+        result = self.return_lending_history(
             start_ts=start_ts,
             end_ts=end_ts,
             limit=loans_query_return_limit,
@@ -583,7 +583,7 @@ class Poloniex(Exchange):
                 min_ts = min(min_ts, ts)
                 id_set.add(loan['id'])
 
-            result = self.returnLendingHistory(
+            result = self.return_lending_history(
                 start_ts=start_ts,
                 end_ts=min_ts,
                 limit=loans_query_return_limit,
@@ -610,7 +610,7 @@ class Poloniex(Exchange):
                 special_name='deposits_withdrawals',
             )
         if cache is None:
-            result = self.returnDepositsWithdrawals(start_ts, end_ts)
+            result = self.return_deposits_withdrawals(start_ts, end_ts)
             with self.lock:
                 self.update_trades_cache(
                     result,
