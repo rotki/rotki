@@ -1,21 +1,42 @@
-<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
+<template>
   <div class="balance-table">
-    <v-layout row>
+    <v-layout>
       <v-flex>
-        <h3 class="text-xs-center">{{ title }}</h3>
+        <h3 class="text-center">{{ title }}</h3>
       </v-flex>
     </v-layout>
     <v-data-table :headers="headers" :items="balances">
-      <template v-slot:items="props">
-        <td>
-          {{ props.item.account }}
-        </td>
-        <td>
-          {{ props.item.amount | formatPrice(floatingPrecision) }}
-        </td>
-        <td>
-          {{ props.item.usdValue | formatPrice(floatingPrecision) }}
-        </td>
+      <template #header.usdValue>
+        {{ currency.ticker_symbol }} value
+      </template>
+      <template #item.account="{ item }">
+        {{ item.account }}
+      </template>
+      <template #item.amount="{ item }">
+        {{ item.amount | formatPrice(floatingPrecision) }}
+      </template>
+      <template #item.usdValue="{ item }">
+        {{
+          item.usdValue
+            | calculatePrice(exchangeRate(currency.ticker_symbol))
+            | formatPrice(floatingPrecision)
+        }}
+      </template>
+      <template #body.append="{items}">
+        <tr class="balance-table__totals">
+          <td>Totals</td>
+          <td>
+            {{ items | balanceSum(true) | formatPrice(floatingPrecision) }}
+          </td>
+          <td>
+            {{
+              items
+                | balanceSum
+                | calculatePrice(exchangeRate(currency.ticker_symbol))
+                | formatPrice(floatingPrecision)
+            }}
+          </td>
+        </tr>
       </template>
     </v-data-table>
   </div>
@@ -24,10 +45,14 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { AccountBalance } from '@/model/blockchain-balances';
-import { mapState } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
+import { Currency } from '@/model/currency';
 
 @Component({
-  computed: mapState(['floatingPrecision'])
+  computed: {
+    ...mapState(['currency']),
+    ...mapGetters(['exchangeRate', 'floatingPrecision'])
+  }
 })
 export default class AccountBalances extends Vue {
   @Prop({ required: true })
@@ -37,7 +62,9 @@ export default class AccountBalances extends Vue {
   @Prop({ required: true })
   title!: string;
 
+  currency!: Currency;
   floatingPrecision!: number;
+  exchangeRate!: (currency: string) => number;
 
   headers = [
     { text: 'Account', value: 'account' },
@@ -51,5 +78,9 @@ export default class AccountBalances extends Vue {
 .balance-table {
   margin-top: 16px;
   margin-bottom: 16px;
+}
+
+.balance-table__totals {
+  font-weight: 500;
 }
 </style>

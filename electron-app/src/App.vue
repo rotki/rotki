@@ -13,14 +13,14 @@
           :src="require('./assets/images/rotkehlchen_no_text.png')"
           class="logo"
           alt=""
-          @click="shell.openExternal('http://rotkehlchen.io')"
+          @click="openSite()"
         />
       </div>
       <div id="welcome_text" class="text-center"></div>
       <navigation-menu></navigation-menu>
     </v-navigation-drawer>
-    <v-toolbar app fixed clipped-left>
-      <v-toolbar-side-icon @click="drawer = !drawer"></v-toolbar-side-icon>
+    <v-app-bar app fixed clipped-left>
+      <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
       <v-toolbar-title class="font-weight-light">Rotkehlchen</v-toolbar-title>
       <node-status-indicator></node-status-indicator>
       <balance-saved-indicator></balance-saved-indicator>
@@ -29,7 +29,7 @@
       <progress-indicator></progress-indicator>
       <user-dropdown></user-dropdown>
       <currency-drop-down></currency-drop-down>
-    </v-toolbar>
+    </v-app-bar>
     <v-content v-if="userLogged">
       <router-view></router-view>
     </v-content>
@@ -45,6 +45,12 @@
       title="Login Failed"
       :message="error"
       @dismiss="ok()"
+    ></message-dialog>
+    <message-dialog
+      v-if="startupError"
+      title="Startup Error"
+      :message="startupError"
+      @dismiss="terminate()"
     ></message-dialog>
     <login
       :displayed="!userLogged && !error"
@@ -70,11 +76,8 @@ import UserDropdown from '@/components/UserDropdown.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
 import { mapState } from 'vuex';
-import { reset_pages, settings } from '@/legacy/settings';
-import { reset_total_balances } from '@/legacy/balances_table';
+import { settings } from '@/legacy/settings';
 import { reset_tasks } from '@/legacy/monitor';
-import { reset_exchange_tables } from '@/legacy/exchange';
-import { create_or_reload_dashboard } from '@/legacy/dashboard';
 import Login from '@/components/Login.vue';
 import { AccountData, Credentials } from '@/typing/types';
 import { handleUnlockResult } from '@/legacy/userunlock';
@@ -89,6 +92,7 @@ import NotificationIndicator from '@/components/status/NotificationIndicator.vue
 import ProgressIndicator from '@/components/status/ProgressIndicator.vue';
 import './services/task_manager';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import { ipcRenderer, remote, shell } from 'electron';
 @Component({
   components: {
     ProgressIndicator,
@@ -115,6 +119,7 @@ export default class App extends Vue {
 
   permissionNeeded: string = '';
   error: string = '';
+  startupError: string = '';
 
   private accountData?: AccountData;
 
@@ -122,8 +127,23 @@ export default class App extends Vue {
     return this.logout;
   }
 
+  openSite() {
+    shell.openExternal('http://rotkehlchen.io');
+  }
+
+  terminate() {
+    remote.getCurrentWindow().close();
+  }
+
   created() {
     this.$rpc.connect();
+    ipcRenderer.on('failed', () => {
+      // get notified if the python subprocess dies
+      this.startupError =
+        'The Python backend crushed. Check rotkehlchen.log or open an issue in Github.';
+      // send ack to main.
+      ipcRenderer.send('ack', 1);
+    });
   }
 
   ok() {
@@ -224,15 +244,8 @@ export default class App extends Vue {
     this.$rpc
       .logout()
       .then(() => {
-        $('#welcome_text').html('');
         settings.reset();
-        reset_total_balances();
-        reset_pages();
         reset_tasks();
-        reset_exchange_tables();
-
-        $('#page-wrapper').html('');
-        create_or_reload_dashboard();
         monitor.stop();
         this.$store.commit('logout', false);
         this.$store.commit('logged', false);

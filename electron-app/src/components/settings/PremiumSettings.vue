@@ -1,8 +1,8 @@
 <template>
-  <v-layout>
+  <v-layout class="premium-settings">
     <v-flex>
       <v-card>
-        <v-toolbar card>Premium Settings</v-toolbar>
+        <v-card-title>Premium Settings</v-card-title>
         <v-card-text>
           <v-text-field
             id="premium_api_key_entry"
@@ -44,6 +44,7 @@
           <v-switch
             v-if="premium && !edit"
             v-model="sync"
+            class="premium-settings__sync"
             label="Allow data sync with Rotkehlchen Server"
             @change="onSyncChange()"
           ></v-switch>
@@ -149,4 +150,8 @@ export default class PremiumSettings extends Vue {
 }
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+.premium-settings__sync {
+  margin-left: 20px;
+}
+</style>

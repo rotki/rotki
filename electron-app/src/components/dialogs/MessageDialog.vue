@@ -23,7 +23,7 @@
 
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn :color="success ? 'green' : 'red'" flat @click="dismiss()">
+        <v-btn :color="success ? 'green' : 'red'" text @click="dismiss()">
           Ok
         </v-btn>
       </v-card-actions>

@@ -2,7 +2,7 @@
   <v-layout>
     <v-flex>
       <v-card>
-        <v-toolbar card>Blockchain Balance</v-toolbar>
+        <v-card-title>Blockchain Balance</v-card-title>
         <v-card-text>
           <v-select
             v-model="selected"
@@ -20,7 +20,7 @@
           >
             Add
           </v-btn>
-          <v-divider></v-divider>
+
           <token-track></token-track>
           <v-divider></v-divider>
           <asset-balances
@@ -57,7 +57,7 @@ import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import TokenTrack from '@/components/settings/TokenTrack.vue';
 import { AccountBalance, EthBalances } from '@/model/blockchain-balances';
 import { createNamespacedHelpers } from 'vuex';
-import { convertEthBalances } from '@/utils/conversion';
+import { convertBalances, convertEthBalances } from '@/utils/conversion';
 import AccountBalances from '@/components/settings/AccountBalances.vue';
 import { create_task } from '@/legacy/monitor';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
@@ -105,16 +105,15 @@ export default class BlockchainBalances extends Vue {
     this.$rpc
       .add_blockchain_account(blockchain, account)
       .then(result => {
+        const { per_account, totals } = result;
         if (blockchain === 'ETH') {
-          const balances: EthBalances = convertEthBalances(
-            result.per_account['ETH']
-          );
-          this.$store.commit('addPerAccountEth', balances);
+          const { ETH } = per_account;
+          this.$store.commit('balances/updateEth', convertEthBalances(ETH));
         } else if (blockchain === 'BTC') {
-          this.$store.commit('addPerAccountBtc', result.per_account['BTC']);
+          const { BTC } = per_account;
+          this.$store.commit('balances/updateBtc', convertBalances(BTC));
         }
-
-        console.log(result['totals']);
+        this.$store.commit('balances/updateTotals', convertBalances(totals));
       })
       .catch((reason: Error) => {
         this.errorTitle = 'Account Error';

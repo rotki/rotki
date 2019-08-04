@@ -1,5 +1,6 @@
 import { Balances } from '@/typing/types';
 import { BigNumber } from 'bignumber.js';
+import { Currency } from '@/model/currency';
 
 export interface BlockchainBalances {
   readonly per_account: {
@@ -59,6 +60,12 @@ export interface AccountTokens {
 
 export interface AssetBalance {
   readonly asset: string;
+  readonly amount: BigNumber;
+  readonly usdValue: BigNumber;
+}
+
+export interface FiatBalance {
+  readonly currency: string;
   readonly amount: BigNumber;
   readonly usdValue: BigNumber;
 }

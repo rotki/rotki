@@ -1,11 +1,10 @@
 'use strict';
-import { app, protocol, BrowserWindow } from 'electron';
+import { app, protocol, BrowserWindow, Menu } from 'electron';
 import {
   createProtocol,
   installVueDevtools
 } from 'vue-cli-plugin-electron-builder/lib';
 import PyHandler from './py-handler';
-import Menu = Electron.Menu;
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 

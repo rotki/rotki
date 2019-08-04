@@ -1,5 +1,5 @@
 <template>
-  <v-img :src="img(symbol)"></v-img>
+  <v-img :src="img(symbol)" :max-width="width" contain></v-img>
 </template>
 
 <script lang="ts">
@@ -9,6 +9,8 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 export default class CryptoIcon extends Vue {
   @Prop({ required: true })
   symbol!: string;
+  @Prop()
+  width?: string | number;
 
   img(symbol: string): string {
     let url: string;
