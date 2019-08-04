@@ -17,7 +17,7 @@ from rotkehlchen.errors import (
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, premium_create_and_verify
 from rotkehlchen.typing import ApiKey, ApiSecret
-from rotkehlchen.utils.misc import ts_now, tsToDate
+from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -99,8 +99,8 @@ class PremiumSyncManager():
         message = (
             f'{message_prefix}'
             f'Local size: {data_bytes_size} Remote size: {metadata.data_size} '
-            f'Local last modified time: {tsToDate(our_last_write_ts)} '
-            f'Remote last modified time: {tsToDate(metadata.last_modify_ts)} '
+            f'Local last modified time: {timestamp_to_date(our_last_write_ts)} '
+            f'Remote last modified time: {timestamp_to_date(metadata.last_modify_ts)} '
             f'Would you like to replace the local DB with the remote one?'
         )
         return SyncCheckResult(

@@ -45,7 +45,7 @@ def satoshis_to_btc(satoshis: FVal) -> FVal:
     return satoshis * FVal('0.00000001')
 
 
-def tsToDate(ts: Timestamp, formatstr: str = '%d/%m/%Y %H:%M:%S') -> str:
+def timestamp_to_date(ts: Timestamp, formatstr: str = '%d/%m/%Y %H:%M:%S') -> str:
     return datetime.datetime.utcfromtimestamp(ts).strftime(formatstr)
 
 

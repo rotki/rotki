@@ -10,7 +10,7 @@ from rotkehlchen.history import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.order_formatting import BuyEvent, Events, SellEvent
 from rotkehlchen.typing import Fee, Timestamp
-from rotkehlchen.utils.misc import taxable_gain_for_sell, ts_now, tsToDate
+from rotkehlchen.utils.misc import taxable_gain_for_sell, timestamp_to_date, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -167,7 +167,7 @@ class TaxableEvents():
             if not self.reduce_asset_amount(asset=A_ETC, amount=sold_amount):
                 log.critical(
                     'No documented buy found for ETC (ETH equivalent) before {}'.format(
-                        tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+                        timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
                     ),
                 )
 
@@ -175,7 +175,7 @@ class TaxableEvents():
             if not self.reduce_asset_amount(asset=A_BCH, amount=sold_amount):
                 log.critical(
                     'No documented buy found for BCH (BTC equivalent) before {}'.format(
-                        tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+                        timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
                     ),
                 )
 
@@ -626,7 +626,7 @@ class TaxableEvents():
             log.critical(
                 'No documented buy found for "{}" before {}'.format(
                     selling_asset,
-                    tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+                    timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
                 ),
             )
             # That means we had no documented buy for that asset. This is not good
@@ -647,7 +647,7 @@ class TaxableEvents():
                 'Not enough documented buys found for "{}" before {}.'
                 'Only found buys for {} {}'.format(
                     selling_asset,
-                    tsToDate(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
+                    timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
                     taxable_amount + taxfree_amount,
                     selling_asset,
                 ),
@@ -740,7 +740,7 @@ class TaxableEvents():
             if not result:
                 log.critical(
                     f'No documented buy found for {gain_loss_asset} before '
-                    f'{tsToDate(timestamp, formatstr="%d/%m/%Y %H:%M:%S")}',
+                    f'{timestamp_to_date(timestamp, formatstr="%d/%m/%Y %H:%M:%S")}',
                 )
 
         # count profit/loss if we are inside the query period

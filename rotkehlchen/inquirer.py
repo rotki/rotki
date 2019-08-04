@@ -14,7 +14,7 @@ from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import FiatAsset, FilePath, Price, Timestamp
-from rotkehlchen.utils.misc import request_get_dict, retry_calls, ts_now, tsToDate
+from rotkehlchen.utils.misc import request_get_dict, retry_calls, timestamp_to_date, ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
@@ -149,7 +149,7 @@ class Inquirer():
             to_fiat_currency: FiatAsset,
             timestamp: Timestamp,
     ) -> Optional[Price]:
-        date = tsToDate(timestamp, formatstr='%Y-%m-%d')
+        date = timestamp_to_date(timestamp, formatstr='%Y-%m-%d')
         instance = Inquirer()
         rate = instance._get_cached_forex_data(date, from_fiat_currency, to_fiat_currency)
         if rate:
@@ -254,7 +254,7 @@ class Inquirer():
 
         instance = Inquirer()
         now = ts_now()
-        date = tsToDate(ts_now(), formatstr='%Y-%m-%d')
+        date = timestamp_to_date(ts_now(), formatstr='%Y-%m-%d')
         price = instance._get_cached_forex_data(date, base, quote)
         if price:
             return price
@@ -267,7 +267,7 @@ class Inquirer():
             # Search the cache for any price in the last month
             for i in range(1, 31):
                 now = Timestamp(now - Timestamp(86401))
-                date = tsToDate(now, formatstr='%Y-%m-%d')
+                date = timestamp_to_date(now, formatstr='%Y-%m-%d')
                 price = instance._get_cached_forex_data(date, base, quote)
                 if price:
                     log.debug(

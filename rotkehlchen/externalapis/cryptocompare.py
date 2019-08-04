@@ -18,8 +18,8 @@ from rotkehlchen.typing import FilePath, Price, Timestamp
 from rotkehlchen.utils.misc import (
     convert_to_int,
     request_get_dict,
+    timestamp_to_date,
     ts_now,
-    tsToDate,
     write_history_data_in_file,
 )
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
@@ -397,7 +397,7 @@ class Cryptocompare():
             raise NoPriceForGivenTimestamp(
                 from_asset,
                 to_asset,
-                tsToDate(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'),
+                timestamp_to_date(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'),
             )
 
         log.debug(

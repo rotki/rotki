@@ -7,7 +7,7 @@ import requests
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import _query_currency_converterapi, _query_exchanges_rateapi
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.utils.misc import ts_now, tsToDate
+from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 
 @pytest.mark.skipif(
@@ -63,10 +63,10 @@ def test_fallback_to_cached_values_within_a_month(inquirer):  # pylint: disable=
     # Get a date 15 days ago and insert a cached entry for EUR JPY then
     now = ts_now()
     eurjpy_val = FVal('124.123')
-    date = tsToDate(now - 86400 * 15, formatstr='%Y-%m-%d')
+    date = timestamp_to_date(now - 86400 * 15, formatstr='%Y-%m-%d')
     inquirer._save_forex_rate(date, 'EUR', 'JPY', eurjpy_val)
     # Get a date 31 days ago and insert a cache entry for EUR CNY then
-    date = tsToDate(now - 86400 * 31, formatstr='%Y-%m-%d')
+    date = timestamp_to_date(now - 86400 * 31, formatstr='%Y-%m-%d')
     inquirer._save_forex_rate(date, 'EUR', 'CNY', FVal('7.719'))
 
     with patch('requests.get', side_effect=mock_api_remote_fail):
