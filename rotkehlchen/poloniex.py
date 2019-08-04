@@ -46,7 +46,7 @@ from rotkehlchen.serializer import (
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, Fee, FilePath, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import cache_response_timewise, createTimeStamp, retry_calls
+from rotkehlchen.utils.misc import cache_response_timewise, create_timestamp, retry_calls
 from rotkehlchen.utils.serialization import rlk_jsonloads, rlk_jsonloads_dict, rlk_jsonloads_list
 
 logger = logging.getLogger(__name__)
@@ -198,7 +198,7 @@ def _post_process(before: Dict) -> Dict:
                     if('datetime' in after['return'][x] and
                        'timestamp' not in after['return'][x]):
                         after['return'][x]['timestamp'] = float(
-                            createTimeStamp(after['return'][x]['datetime']),
+                            create_timestamp(after['return'][x]['datetime']),
                         )
 
     return after
@@ -477,7 +477,7 @@ class Poloniex(Exchange):
             return cache
 
         result = self.return_trade_history(
-            currencyPair='all',
+            currency_pair='all',
             start=start_ts,
             end=end_ts,
         )

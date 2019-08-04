@@ -34,7 +34,7 @@ from rotkehlchen.transactions import query_etherscan_for_transactions, transacti
 from rotkehlchen.typing import EthAddress, FiatAsset, FilePath, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
-    createTimeStamp,
+    create_timestamp,
     get_jsonfile_contents_or_empty_dict,
     write_history_data_in_file,
 )
@@ -218,7 +218,7 @@ class PriceHistorian():
         PriceHistorian.__instance = object.__new__(cls)
 
         # get the start date for historical data
-        PriceHistorian._historical_data_start = createTimeStamp(
+        PriceHistorian._historical_data_start = create_timestamp(
             datestr=history_date_start,
             formatstr="%d/%m/%Y",
         )

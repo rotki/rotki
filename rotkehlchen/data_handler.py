@@ -40,7 +40,7 @@ from rotkehlchen.typing import (
     TradePair,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import createTimeStamp, is_number, timestamp_to_date, ts_now
+from rotkehlchen.utils.misc import create_timestamp, is_number, timestamp_to_date, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -126,7 +126,7 @@ def verify_otctrade_data(
         return None, f'Deserialization Error: {str(e)}'
     try:
         assert isinstance(data['otc_timestamp'], str)
-        timestamp = createTimeStamp(data['otc_timestamp'], formatstr='%d/%m/%Y %H:%M')
+        timestamp = create_timestamp(data['otc_timestamp'], formatstr='%d/%m/%Y %H:%M')
     except ValueError as e:
         return None, f'Could not process the given datetime: {e}'
 

@@ -38,7 +38,7 @@ from rotkehlchen.tests.utils.constants import A_DAO, A_DOGE, A_GNO, A_RDN, A_XMR
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
 from rotkehlchen.typing import SupportedBlockchain, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import createTimeStamp, ts_now
+from rotkehlchen.utils.misc import create_timestamp, ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 TABLES_AT_INIT = [
@@ -219,7 +219,7 @@ def test_writting_fetching_data(data_dir, username):
 
 
 def from_otc_trade(trade: Dict[str, Any]) -> Dict[str, Any]:
-    ts = createTimeStamp(trade['otc_timestamp'], formatstr='%d/%m/%Y %H:%M')
+    ts = create_timestamp(trade['otc_timestamp'], formatstr='%d/%m/%Y %H:%M')
     new_trade = {
         'timestamp': ts,
         'location': 'external',
