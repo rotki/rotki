@@ -8,9 +8,11 @@ from rotkehlchen.data_handler import VALID_SETTINGS
 from rotkehlchen.db.utils import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.tests.utils.mock import MockWeb3
+from rotkehlchen.tests.utils.exchanges import BINANCE_BALANCES_RESPONSE
+from rotkehlchen.tests.utils.mock import MockResponse, MockWeb3
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
 from rotkehlchen.typing import Timestamp
+from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 
@@ -202,6 +204,49 @@ def test_query_timed_balances_data(rotkehlchen_server):
     response = rotkehlchen_server.query_timed_balances_data('DSXXADA', 0, 99999999999)
     assert not response['result']
     assert response['message'] == 'Unknown asset DSXXADA provided.'
+
+
+def test_query_balances(rotkehlchen_server, function_scope_binance):
+    """Test that the query_balances call works properly.
+
+    That means that the balances are all returned in the expected format and
+    that they are saved in the DB.
+
+    The test is for a user with fiat balances and with some binance balances.
+    """
+
+    # First set the fiat balances
+    ok, _ = rotkehlchen_server.set_fiat_balance('USD', '100.50')
+    assert ok
+    ok, _ = rotkehlchen_server.set_fiat_balance('EUR', '75.50')
+    assert ok
+    rotkehlchen_server.rotkehlchen.binance = function_scope_binance
+
+    def mock_binance_balances(url):  # pylint: disable=unused-argument
+        return MockResponse(200, BINANCE_BALANCES_RESPONSE)
+
+    mock_binance = patch.object(
+        rotkehlchen_server.rotkehlchen.binance.session,
+        'get',
+        side_effect=mock_binance_balances,
+    )
+
+    now = ts_now()
+    with mock_binance:
+        result = rotkehlchen_server.query_balances(save_data=True)
+
+
+
+    # make sure that balances also got saved in the DB
+    db = rotkehlchen_server.rotkehlchen.data.db
+    save_ts = db.get_last_balance_save_time()
+    assert save_ts >= now
+    assert save_ts - now < 5, 'Saving balances took too long'
+
+    location_data = db.get_latest_location_value_distribution()
+    assert len(location_data) == 2
+    assert location_data[0].location == 'banks'
+    assert location_data[1].location == 'binance'
 
 
 def test_query_netvalue_data(rotkehlchen_server):
