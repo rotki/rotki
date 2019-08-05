@@ -367,7 +367,7 @@ class DataHandler():
 
         return True, ''
 
-    def get_fiat_balances(self) -> Dict[FiatAsset, str]:
+    def get_fiat_balances(self) -> Dict[Asset, str]:
         return self.db.get_fiat_balances()
 
     def get_external_trades(

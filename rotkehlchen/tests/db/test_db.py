@@ -11,7 +11,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants import YEAR_IN_SECONDS
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD, FIAT_CURRENCIES, S_CNY, S_EUR
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD, FIAT_CURRENCIES, S_CNY, S_EUR
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import (
     DBINFO_FILENAME,
@@ -34,7 +34,7 @@ from rotkehlchen.db.utils import (
 )
 from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_DAO, A_DOGE, A_GNO, A_RDN, A_XMR
+from rotkehlchen.tests.utils.constants import A_CNY, A_DAO, A_DOGE, A_GNO, A_RDN, A_XMR
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
 from rotkehlchen.typing import SupportedBlockchain, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -100,7 +100,7 @@ def test_export_import_db(data_dir, username):
     data.decompress_and_decrypt_db('123', encoded_data)
     fiat_balances = data.get_fiat_balances()
     assert len(fiat_balances) == 1
-    assert int(fiat_balances['EUR']) == 10
+    assert int(fiat_balances[A_EUR]) == 10
 
 
 def test_writting_fetching_data(data_dir, username):
@@ -497,13 +497,13 @@ def test_data_set_fiat_balance(data_dir, username):
     assert success
     balances = data.get_fiat_balances()
     assert len(balances) == 2
-    assert balances[S_EUR] == amount_eur
-    assert balances[S_CNY] == amount_cny
+    assert balances[A_EUR] == amount_eur
+    assert balances[A_CNY] == amount_cny
 
     success, _ = data.set_fiat_balance(S_EUR, '')
     balances = data.get_fiat_balances()
     assert len(balances) == 1
-    assert balances[S_CNY] == amount_cny
+    assert balances[A_CNY] == amount_cny
 
     # also check that all the fiat assets in the fiat table are in
     # all_assets.json
