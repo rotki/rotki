@@ -397,7 +397,7 @@ class Rotkehlchen():
         balances = self.data.get_fiat_balances()
         for currency, amount in balances.items():
             amount = FVal(amount)
-            usd_rate = Inquirer().query_fiat_pair(currency, 'USD')
+            usd_rate = Inquirer().query_fiat_pair(currency, S_USD)
             result[currency] = {
                 'amount': amount,
                 'usd_value': amount * usd_rate,
