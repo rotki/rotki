@@ -600,7 +600,7 @@ class DBHandler():
         self.conn.commit()
         self.update_last_write()
 
-    def get_fiat_balances(self) -> Dict[FiatAsset, str]:
+    def get_fiat_balances(self) -> Dict[Asset, str]:
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT asset, amount FROM current_balances;',
@@ -608,7 +608,13 @@ class DBHandler():
 
         result = {}
         for entry in query:
-            result[entry[0]] = entry[1]
+            try:
+                result[Asset(entry[0])] = entry[1]
+            except UnknownAsset:
+                self.msg_aggregator.add_error(
+                    f'Unknown FIAT asset {entry[0]} found in the DB. Skipping it ...',
+                )
+
         return result
 
     def get_blockchain_accounts(self) -> BlockchainAccounts:

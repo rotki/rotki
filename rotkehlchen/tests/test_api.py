@@ -4,6 +4,8 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.data_handler import VALID_SETTINGS
 from rotkehlchen.db.utils import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.fval import FVal
@@ -11,7 +13,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.exchanges import BINANCE_BALANCES_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse, MockWeb3
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.typing import Price, Timestamp
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
@@ -216,11 +218,12 @@ def test_query_balances(rotkehlchen_server, function_scope_binance):
     """
 
     # First set the fiat balances
-    ok, _ = rotkehlchen_server.set_fiat_balance('USD', '100.50')
+    ok, _ = rotkehlchen_server.set_fiat_balance('USD', '100.5')
     assert ok
-    ok, _ = rotkehlchen_server.set_fiat_balance('EUR', '75.50')
+    ok, _ = rotkehlchen_server.set_fiat_balance('EUR', '75.5')
     assert ok
     rotkehlchen_server.rotkehlchen.binance = function_scope_binance
+    rotkehlchen_server.rotkehlchen.connected_exchanges.append('binance')
 
     def mock_binance_balances(url):  # pylint: disable=unused-argument
         return MockResponse(200, BINANCE_BALANCES_RESPONSE)
@@ -231,11 +234,48 @@ def test_query_balances(rotkehlchen_server, function_scope_binance):
         side_effect=mock_binance_balances,
     )
 
+    eur_usd_rate = Inquirer().query_fiat_pair('EUR', 'USD')
+
+    eth_usd_rate = FVal('100.5')
+    btc_usd_rate = FVal('120.1')
+
+    def mock_query_cryptocompare_for_fiat_price(asset: Asset) -> Price:
+        if asset == A_ETH:
+            return Price(eth_usd_rate)
+        elif asset == A_BTC:
+            return Price(btc_usd_rate)
+
+        # else
+        raise AssertionError(f'Unexpected asset {asset} at mock cryptocompare query')
+
+    mock_find_usd_price = patch(
+        'rotkehlchen.inquirer.query_cryptocompare_for_fiat_price',
+        side_effect=mock_query_cryptocompare_for_fiat_price,
+    )
+
     now = ts_now()
-    with mock_binance:
+    with mock_binance, mock_find_usd_price:
         result = rotkehlchen_server.query_balances(save_data=True)
 
-
+    assert result['USD']['amount'] == '100.5'
+    assert result['USD']['usd_value'] == '100.5'
+    eur_amount = FVal('75.5')
+    assert result['EUR']['amount'] == str(eur_amount)
+    eur_usd_value = eur_amount * eur_usd_rate
+    assert result['EUR']['usd_value'] == str(eur_usd_value)
+    eth_amount = FVal('4763368.68006011')
+    assert result['ETH']['amount'] == str(eth_amount)
+    eth_usd_value = eth_amount * eth_usd_rate
+    assert result['ETH']['usd_value'] == str(eth_usd_value)
+    btc_amount = FVal('4723846.89208129')
+    assert result['BTC']['amount'] == str(btc_amount)
+    btc_usd_value = btc_amount * btc_usd_rate
+    assert result['BTC']['usd_value'] == str(btc_usd_value)
+    binance_usd_value = btc_usd_value + eth_usd_value
+    assert result['location']['binance']['usd_value'] == str(binance_usd_value)
+    banks_usd_value = eur_usd_value + FVal('100.5')
+    assert result['location']['banks']['usd_value'] == str(banks_usd_value)
+    assert result['net_usd'] == str(banks_usd_value + binance_usd_value)
 
     # make sure that balances also got saved in the DB
     db = rotkehlchen_server.rotkehlchen.data.db
@@ -244,9 +284,15 @@ def test_query_balances(rotkehlchen_server, function_scope_binance):
     assert save_ts - now < 5, 'Saving balances took too long'
 
     location_data = db.get_latest_location_value_distribution()
-    assert len(location_data) == 2
+    assert len(location_data) == 4
+
     assert location_data[0].location == 'banks'
+    assert location_data[0].usd_value == str(banks_usd_value)
     assert location_data[1].location == 'binance'
+    assert location_data[1].usd_value == str(binance_usd_value)
+    assert location_data[2].location == 'blockchain'
+    assert location_data[3].location == 'total'
+    assert location_data[3].usd_value == str(banks_usd_value + binance_usd_value)
 
 
 def test_query_netvalue_data(rotkehlchen_server):

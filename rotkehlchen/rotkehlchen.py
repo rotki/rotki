@@ -392,8 +392,7 @@ class Rotkehlchen():
         )
         return result, error_or_empty
 
-    def query_fiat_balances(self):
-        log.info('query_fiat_balances called')
+    def query_fiat_balances(self) -> Dict[Asset, Dict[str, FVal]]:
         result = {}
         balances = self.data.get_fiat_balances()
         for currency, amount in balances.items():
