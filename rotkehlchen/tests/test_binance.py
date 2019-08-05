@@ -17,6 +17,7 @@ from rotkehlchen.errors import RemoteError, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade, TradeType
 from rotkehlchen.tests.utils.constants import A_BNB, A_RDN, A_USDT
+from rotkehlchen.tests.utils.exchanges import BINANCE_BALANCES_RESPONSE
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.user_messages import MessagesAggregator
@@ -221,37 +222,7 @@ def test_binance_query_balances_unknown_asset(function_scope_binance):
     binance = function_scope_binance
 
     def mock_unknown_asset_return(url):  # pylint: disable=unused-argument
-        response = MockResponse(
-            200,
-            """
-            {
-  "makerCommission": 15,
-  "takerCommission": 15,
-  "buyerCommission": 0,
-  "sellerCommission": 0,
-  "canTrade": true,
-  "canWithdraw": true,
-  "canDeposit": true,
-  "updateTime": 123456789,
-  "balances": [
-    {
-      "asset": "BTC",
-      "free": "4723846.89208129",
-      "locked": "0.00000000"
-    }, {
-      "asset": "ETH",
-      "free": "4763368.68006011",
-      "locked": "0.00000000"
-    }, {
-      "asset": "IDONTEXIST",
-      "free": "5.0",
-      "locked": "0.0"
-    }, {
-      "asset": "ETF",
-      "free": "5.0",
-      "locked": "0.0"
-    }]}""")
-        return response
+        return MockResponse(200, BINANCE_BALANCES_RESPONSE)
 
     with patch.object(binance.session, 'get', side_effect=mock_unknown_asset_return):
         # Test that after querying the assets only ETH and BTC are there

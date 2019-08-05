@@ -84,3 +84,33 @@ KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE = """{
         }},
     "count": 5
 }"""
+
+
+BINANCE_BALANCES_RESPONSE = """
+{
+  "makerCommission": 15,
+  "takerCommission": 15,
+  "buyerCommission": 0,
+  "sellerCommission": 0,
+  "canTrade": true,
+  "canWithdraw": true,
+  "canDeposit": true,
+  "updateTime": 123456789,
+  "balances": [
+    {
+      "asset": "BTC",
+      "free": "4723846.89208129",
+      "locked": "0.00000000"
+    }, {
+      "asset": "ETH",
+      "free": "4763368.68006011",
+      "locked": "0.00000000"
+    }, {
+      "asset": "IDONTEXIST",
+      "free": "5.0",
+      "locked": "0.0"
+    }, {
+      "asset": "ETF",
+      "free": "5.0",
+      "locked": "0.0"
+}]}"""
