@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
 from rotkehlchen.data_handler import VALID_SETTINGS
 from rotkehlchen.db.utils import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.fval import FVal
@@ -208,6 +208,23 @@ def test_query_timed_balances_data(rotkehlchen_server):
     assert response['message'] == 'Unknown asset DSXXADA provided.'
 
 
+def test_query_fiat_balances(rotkehlchen_server):
+    """Test that query fiat balances works properly"""
+
+    # Add them in the DB
+    ok, _ = rotkehlchen_server.set_fiat_balance('USD', '100.5')
+    assert ok
+    ok, _ = rotkehlchen_server.set_fiat_balance('CNY', '55.5')
+    assert ok
+
+    # and now query fiat balances
+    result = rotkehlchen_server.query_fiat_balances()
+    # and make sure it works fine
+    # (skipping usd value since I don't want to test conversion in this test)
+    assert result['USD']['amount'] == '100.5'
+    assert result['CNY']['amount'] == '55.5'
+
+
 def test_query_balances(rotkehlchen_server, function_scope_binance):
     """Test that the query_balances call works properly.
 
@@ -234,7 +251,7 @@ def test_query_balances(rotkehlchen_server, function_scope_binance):
         side_effect=mock_binance_balances,
     )
 
-    eur_usd_rate = Inquirer().query_fiat_pair('EUR', 'USD')
+    eur_usd_rate = Inquirer().query_fiat_pair(A_EUR, A_USD)
 
     eth_usd_rate = FVal('100.5')
     btc_usd_rate = FVal('120.1')
