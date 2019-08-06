@@ -1,16 +1,24 @@
 import json
 import logging
+import traceback
 from http import HTTPStatus
+from typing import Any, Dict
 
 import gevent
-from flask import Flask, make_response, request, send_from_directory, url_for
+from flask import Flask, make_response, request, response_class, send_from_directory, url_for
 from flask_restful import Api, abort
 from gevent.event import Event
 from gevent.lock import Semaphore
 from gevent.pywsgi import WSGIServer
 
-from rotkehlchen.api.v1.resources import LogoutResource, create_blueprint
+from rotkehlchen.api.v1.resources import (
+    LogoutResource,
+    SetMainCurrencyResource,
+    SettingsResource,
+    create_blueprint,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serializer import process_result, process_result_list
 
 ERROR_STATUS_CODES = [
     HTTPStatus.CONFLICT,
@@ -23,6 +31,8 @@ ERROR_STATUS_CODES = [
 
 URLS_V1 = [
     ('/logout', LogoutResource),
+    ('/set_main_currency', SetMainCurrencyResource),
+    ('/settings', SettingsResource),
 ]
 
 logger = logging.getLogger(__name__)
@@ -46,7 +56,24 @@ def restapi_setup_urls(flask_api_context, rest_api, urls):
         )
 
 
-def api_error(error, status_code):
+def api_response(
+        result: Dict[str, Any],
+        status_code: HTTPStatus = HTTPStatus.OK,
+) -> response_class:
+    if status_code == HTTPStatus.NO_CONTENT:
+        assert not result, "Provided 204 response with non-zero length response"
+        data = ""
+    else:
+        data = json.dumps(result)
+
+    log.debug("Request successful", response=result, status_code=status_code)
+    response = make_response(
+        (data, status_code, {"mimetype": "application/json", "Content-Type": "application/json"}),
+    )
+    return response
+
+
+def api_error(error: str, status_code: HTTPStatus) -> response_class:
     assert status_code in ERROR_STATUS_CODES, 'Programming error, unexpected error status code'
     response = make_response((
         json.dumps(dict(error=error)),
@@ -66,7 +93,7 @@ class RestAPI(object):
         self.rotkehlchen = rotkehlchen
         self.stop_event = Event()
         mainloop_greenlet = self.rotkehlchen.start()
-        mainloop_greenlet.link_exception(self.handle_killed_greenlets)
+        mainloop_greenlet.link_exception(self._handle_killed_greenlets)
         # Greenlets that will be waited for when we shutdown
         self.waited_greenlets = [mainloop_greenlet]
         # Greenlets that can be killed instead of waited for when we shutdown
@@ -86,6 +113,45 @@ class RestAPI(object):
         with self.task_lock:
             self.task_results[task_id] = result
 
+    def _handle_killed_greenlets(self, greenlet):
+        if not greenlet.exception:
+            log.warning('handle_killed_greenlets without an exception')
+            return
+
+        log.error(
+            'Greenlet for task {} dies with exception: {}.\n'
+            'Exception Name: {}\nException Info: {}\nTraceback:\n {}'
+            .format(
+                greenlet.task_id,
+                greenlet.exception,
+                greenlet.exc_info[0],
+                greenlet.exc_info[1],
+                ''.join(traceback.format_tb(greenlet.exc_info[2])),
+            ))
+        # also write an error for the task result
+        result = {
+            'error': str(greenlet.exception),
+        }
+        self._write_task_result(greenlet.task_id, result)
+
+    def _do_query_async(self, command: str, task_id: int, **kwargs) -> None:
+        result = getattr(self, command)(**kwargs)
+        self._write_task_result(task_id, result)
+
+    def _query_async(self, command: str, **kwargs) -> int:
+        task_id = self._new_task_id()
+        log.debug("NEW TASK {} (kwargs:{}) with ID: {}".format(command, kwargs, task_id))
+        greenlet = gevent.spawn(
+            self._do_query_async,
+            command,
+            task_id,
+            **kwargs,
+        )
+        greenlet.task_id = task_id
+        greenlet.link_exception(self._handle_killed_greenlets)
+        self.killable_greenlets.append(greenlet)
+        return task_id
+
     # - Public functions not exposed via the rest api
     def shutdown(self):
         log.debug('Shutdown initiated')
@@ -101,7 +167,7 @@ class RestAPI(object):
 
     # - Public functions exposed via the rest api
 
-    def logout(self):
+    def logout(self) -> response_class:
         # Kill all queries apart from the main loop -- perhaps a bit heavy handed
         # but the other options would be:
         # 1. to wait for all of them. That could take a lot of time, for no reason.
@@ -112,6 +178,20 @@ class RestAPI(object):
         with self.task_lock:
             self.task_results = {}
         self.rotkehlchen.logout()
+        return api_response(result={}, status_code=HTTPStatus.NO_CONTENT)
+
+    def set_main_currency(self, currency_text: str) -> response_class:
+        self.rotkehlchen.set_main_currency(currency_text)
+        return api_response(result={}, status_code=HTTPStatus.NO_CONTENT)
+
+    def set_settings(self, settings: Dict[str, Any]) -> response_class:
+        result, message = self.rotkehlchen.set_settings(settings)
+        result_dict = {'result': result, 'message': message}
+        return api_response(result=result_dict, status_code=HTTPStatus.OK)
+
+    def get_settings(self) -> response_class:
+        result_dict = process_result(self.rotkehlchen.data.db.get_settings())
+        return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
 
 class APIServer(object):
