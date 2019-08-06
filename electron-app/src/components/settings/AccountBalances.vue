@@ -26,11 +26,15 @@
         <tr class="balance-table__totals">
           <td>Totals</td>
           <td>
-            {{ items | balanceSum(true) | formatPrice(floatingPrecision) }}
+            {{
+              items.map(val => val.amount)
+                | balanceSum
+                | formatPrice(floatingPrecision)
+            }}
           </td>
           <td>
             {{
-              items
+              items.map(val => val.usdValue)
                 | balanceSum
                 | calculatePrice(exchangeRate(currency.ticker_symbol))
                 | formatPrice(floatingPrecision)
