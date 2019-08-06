@@ -9,7 +9,7 @@ import requests
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, ZERO
-from rotkehlchen.constants.assets import FIAT_CURRENCIES, S_USD
+from rotkehlchen.constants.assets import A_USD, FIAT_CURRENCIES, S_USD
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -140,7 +140,7 @@ class Inquirer():
         if not currencies:
             currencies = FIAT_CURRENCIES[1:]
         for currency in currencies:
-            rates[currency] = Inquirer().query_fiat_pair(S_USD, currency)
+            rates[currency] = Inquirer().query_fiat_pair(A_USD, Asset(currency))
         return rates
 
     @staticmethod
@@ -248,38 +248,40 @@ class Inquirer():
             outfile.write(rlk_jsondumps(instance._cached_forex_data))
 
     @staticmethod
-    def query_fiat_pair(base: FiatAsset, quote: FiatAsset) -> Price:
+    def query_fiat_pair(base: Asset, quote: Asset) -> Price:
         if base == quote:
             return Price(FVal('1'))
 
+        base_str = FiatAsset(base.identifier)
+        quote_str = FiatAsset(quote.identifier)
         instance = Inquirer()
         now = ts_now()
         date = timestamp_to_date(ts_now(), formatstr='%Y-%m-%d')
-        price = instance._get_cached_forex_data(date, base, quote)
+        price = instance._get_cached_forex_data(date, base_str, quote_str)
         if price:
             return price
 
-        price = _query_exchanges_rateapi(base, quote)
+        price = _query_exchanges_rateapi(base_str, quote_str)
         if not price:
-            price = _query_currency_converterapi(base, quote)
+            price = _query_currency_converterapi(base_str, quote_str)
 
         if not price:
             # Search the cache for any price in the last month
             for i in range(1, 31):
                 now = Timestamp(now - Timestamp(86401))
                 date = timestamp_to_date(now, formatstr='%Y-%m-%d')
-                price = instance._get_cached_forex_data(date, base, quote)
+                price = instance._get_cached_forex_data(date, base_str, quote_str)
                 if price:
                     log.debug(
                         f'Could not query online apis for a fiat price. '
                         f'Used cached value from {i} days ago.',
-                        base_currency=base,
-                        quote_currency=quote,
+                        base_currency=base_str,
+                        quote_currency=quote_str,
                         price=price,
                     )
                     return price
 
-            raise ValueError('Could not find a "{}" price for "{}"'.format(base, quote))
+            raise ValueError('Could not find a "{}" price for "{}"'.format(base_str, quote_str))
 
-        instance._save_forex_rate(date, base, quote, price)
+        instance._save_forex_rate(date, base_str, quote_str, price)
         return price

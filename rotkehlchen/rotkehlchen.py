@@ -14,7 +14,7 @@ from rotkehlchen.bitmex import Bitmex
 from rotkehlchen.bittrex import Bittrex
 from rotkehlchen.blockchain import Blockchain
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS, SUPPORTED_EXCHANGES
-from rotkehlchen.constants.assets import A_USD, S_EUR, S_USD
+from rotkehlchen.constants.assets import A_EUR, A_USD, S_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.errors import AuthenticationError, EthSyncError, InputError, UnknownAsset
 from rotkehlchen.ethchain import Ethchain
@@ -132,7 +132,7 @@ class Rotkehlchen():
                 secret=exchange_credentials['kraken'].api_secret,
                 user_directory=self.user_directory,
                 msg_aggregator=self.msg_aggregator,
-                usd_eur_price=Inquirer().query_fiat_pair(S_EUR, S_USD),
+                usd_eur_price=Inquirer().query_fiat_pair(A_EUR, A_USD),
             )
             self.connected_exchanges.append('kraken')
             self.trades_historian.set_exchange('kraken', self.kraken)
@@ -397,7 +397,7 @@ class Rotkehlchen():
         balances = self.data.get_fiat_balances()
         for currency, amount in balances.items():
             amount = FVal(amount)
-            usd_rate = Inquirer().query_fiat_pair(currency, S_USD)
+            usd_rate = Inquirer().query_fiat_pair(currency, A_USD)
             result[currency] = {
                 'amount': amount,
                 'usd_value': amount * usd_rate,
@@ -512,11 +512,11 @@ class Rotkehlchen():
 
         return result_dict
 
-    def set_main_currency(self, currency):
+    def set_main_currency(self, currency: str):
         with self.lock:
             self.data.set_main_currency(currency, self.accountant)
             if currency != S_USD:
-                self.usd_to_main_currency_rate = Inquirer().query_fiat_pair(S_USD, currency)
+                self.usd_to_main_currency_rate = Inquirer().query_fiat_pair(A_USD, Asset(currency))
 
     def set_settings(self, settings):
         log.info('Add new settings')
@@ -546,8 +546,8 @@ class Rotkehlchen():
 
                 if main_currency != A_USD:
                     self.usd_to_main_currency_rate = Inquirer().query_fiat_pair(
-                        S_USD,
-                        main_currency.identifier,
+                        A_USD,
+                        main_currency,
                     )
 
             res, msg = self.accountant.customize(settings)
