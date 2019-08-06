@@ -1,4 +1,6 @@
-from flask import Blueprint
+from typing import Any, Dict
+
+from flask import Blueprint, response_class
 from flask_restful import Resource
 from webargs.flaskparser import use_kwargs
 
@@ -19,5 +21,19 @@ class BaseResource(Resource):
 
 
 class LogoutResource(BaseResource):
-    def get(self):
+    def get(self) -> response_class:
         return self.rest_api.logout()
+
+
+class SetMainCurrencyResource(BaseResource):
+    def put(self, currency: str) -> response_class:
+        return self.rest_api.set_main_currency(currency)
+
+
+class SettingsResource(BaseResource):
+
+    def put(self, settings: Dict[str, Any]) -> response_class:
+        return self.rest_api.set_settings(settings)
+
+    def get(self) -> response_class:
+        return self.rest_api.get_settings()
