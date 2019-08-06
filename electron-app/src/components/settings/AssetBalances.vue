@@ -29,6 +29,20 @@
             | formatPrice(floatingPrecision)
         }}
       </template>
+      <template #body.append="{ items }">
+        <tr class="asset-balances__totals">
+          <td>Totals</td>
+          <td></td>
+          <td>
+            {{
+              items.map(val => val.usdValue)
+                | balanceSum
+                | calculatePrice(exchangeRate(currency.ticker_symbol))
+                | formatPrice(floatingPrecision)
+            }}
+          </td>
+        </tr>
+      </template>
     </v-data-table>
   </div>
 </template>
@@ -79,5 +93,9 @@ export default class AssetBalances extends Vue {
 
 .asset-balances__balance__asset__icon {
   margin-right: 8px;
+}
+
+.asset-balances__totals {
+  font-weight: 500;
 }
 </style>
