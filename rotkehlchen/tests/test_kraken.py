@@ -7,20 +7,23 @@ from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import UnprocessableTradePair
 from rotkehlchen.fval import FVal
-from rotkehlchen.kraken import KRAKEN_ASSETS, kraken_to_world_pair
+from rotkehlchen.kraken import KRAKEN_ASSETS, KRAKEN_DELISTED, kraken_to_world_pair
 from rotkehlchen.order_formatting import Trade
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.utils.misc import ts_now
 
 
 def test_coverage_of_kraken_balances(kraken):
-    all_assets = set(kraken.query_public('Assets').keys())
-    diff = set(KRAKEN_ASSETS).symmetric_difference(all_assets)
+    # Since 05/08/2019 Kraken removed all delisted assets from their public API
+    # query except for BSV. No idea why or why this incosistency.
+    got_assets = set(kraken.query_public('Assets').keys())
+    expected_assets = (set(KRAKEN_ASSETS) - set(KRAKEN_DELISTED)).union(set(['BSV']))
+    diff = expected_assets.symmetric_difference(got_assets)
     assert len(diff) == 0, (
         f"Our known assets don't match kraken's assets. Difference: {diff}"
     )
     # Make sure all assets are covered by our from and to functions
-    for kraken_asset in all_assets:
+    for kraken_asset in got_assets:
         asset = asset_from_kraken(kraken_asset)
         assert asset.to_kraken() == kraken_asset
 
