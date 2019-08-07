@@ -10,7 +10,7 @@ import gevent
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import BINANCE_BASE_URL
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
-from rotkehlchen.exchange import Exchange
+from rotkehlchen.exchanges.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter

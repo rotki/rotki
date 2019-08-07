@@ -9,22 +9,18 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.binance import Binance
-from rotkehlchen.bitmex import Bitmex
-from rotkehlchen.bittrex import Bittrex
 from rotkehlchen.blockchain import Blockchain
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS, SUPPORTED_EXCHANGES
 from rotkehlchen.constants.assets import A_EUR, A_USD, S_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.errors import AuthenticationError, EthSyncError, InputError, UnknownAsset
 from rotkehlchen.ethchain import Ethchain
+from rotkehlchen.exchanges import Binance, Bitmex, Bittrex, Kraken, Poloniex
 from rotkehlchen.externalapis import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian, TradesHistorian
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.kraken import Kraken
 from rotkehlchen.logging import DEFAULT_ANONYMIZED_LOGS, LoggingSettings, RotkehlchenLogsAdapter
-from rotkehlchen.poloniex import Poloniex
 from rotkehlchen.premium.premium import premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.serializer import process_result

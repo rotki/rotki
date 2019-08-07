@@ -17,7 +17,7 @@ from rotkehlchen.errors import (
     UnprocessableTradePair,
     UnsupportedAsset,
 )
-from rotkehlchen.exchange import Exchange
+from rotkehlchen.exchanges.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
