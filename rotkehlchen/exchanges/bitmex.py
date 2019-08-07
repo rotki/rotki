@@ -10,7 +10,7 @@ from rotkehlchen import typing
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError
-from rotkehlchen.exchange import Exchange
+from rotkehlchen.exchanges.exchange import Exchange
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -261,7 +261,7 @@ class Bitmex(Exchange):
             self,
             start_ts: typing.Timestamp,
             end_ts: typing.Timestamp,
-            end_at_least_ts: typing.Timestamp,
+            end_at_least_ts: typing.Timestamp,  # pylint: disable=unused-argument
     ) -> List:
         # TODO: Implement cache like in other exchange calls
         try:

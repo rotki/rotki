@@ -2,7 +2,7 @@ import base64
 
 import pytest
 
-from rotkehlchen.poloniex import Poloniex
+from rotkehlchen.exchanges.poloniex import Poloniex
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 
 

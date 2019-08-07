@@ -6,8 +6,8 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import UnprocessableTradePair
+from rotkehlchen.exchanges.kraken import KRAKEN_ASSETS, KRAKEN_DELISTED, kraken_to_world_pair
 from rotkehlchen.fval import FVal
-from rotkehlchen.kraken import KRAKEN_ASSETS, KRAKEN_DELISTED, kraken_to_world_pair
 from rotkehlchen.order_formatting import Trade
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.utils.misc import ts_now

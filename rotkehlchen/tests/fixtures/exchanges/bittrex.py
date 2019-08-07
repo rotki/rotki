@@ -2,7 +2,7 @@ import base64
 
 import pytest
 
-from rotkehlchen.bittrex import Bittrex
+from rotkehlchen.exchanges.bittrex import Bittrex
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 
 

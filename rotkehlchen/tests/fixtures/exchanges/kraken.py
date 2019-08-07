@@ -7,8 +7,13 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_EUR, A_USD
+from rotkehlchen.exchanges.kraken import (
+    KRAKEN_ASSETS,
+    KRAKEN_DELISTED,
+    Kraken,
+    world_to_kraken_pair,
+)
 from rotkehlchen.fval import FVal
-from rotkehlchen.kraken import KRAKEN_ASSETS, KRAKEN_DELISTED, Kraken, world_to_kraken_pair
 from rotkehlchen.order_formatting import TradeType
 from rotkehlchen.tests.utils.exchanges import KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE
 from rotkehlchen.tests.utils.factories import (

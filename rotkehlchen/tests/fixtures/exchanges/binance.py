@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from rotkehlchen.binance import Binance, create_binance_symbols_to_pair
+from rotkehlchen.exchanges.binance import Binance, create_binance_symbols_to_pair
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 
 

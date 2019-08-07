@@ -1,8 +1,8 @@
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.bitmex import Bitmex, trade_from_bitmex
 from rotkehlchen.constants.assets import A_BTC
+from rotkehlchen.exchanges.bitmex import Bitmex, trade_from_bitmex
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import AssetMovement, MarginPosition
 from rotkehlchen.utils.misc import ts_now

@@ -11,9 +11,9 @@ from rotkehlchen.assets.converters import (
     asset_from_binance,
 )
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.binance import Binance, trade_from_binance
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import RemoteError, UnsupportedAsset
+from rotkehlchen.exchanges.binance import Binance, trade_from_binance
 from rotkehlchen.fval import FVal
 from rotkehlchen.order_formatting import Trade, TradeType
 from rotkehlchen.tests.utils.constants import A_BNB, A_RDN, A_USDT
