@@ -17,7 +17,7 @@ from rotkehlchen.errors import (
     UnprocessableTradePair,
     UnsupportedAsset,
 )
-from rotkehlchen.exchanges.exchange import Exchange
+from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -141,7 +141,7 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
     )
 
 
-class Bittrex(Exchange):
+class Bittrex(ExchangeInterface):
     def __init__(
             self,
             api_key: ApiKey,

@@ -1,6 +1,6 @@
+from dataclasses import dataclass
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
-from dataclasses import dataclass
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
@@ -14,6 +14,8 @@ from rotkehlchen.serializer import (
 )
 from rotkehlchen.typing import AssetAmount, Fee, Price, Timestamp, TradePair, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
+
+ExchangeName = Literal['kraken', 'poloniex', 'bittrex', 'binance', 'bitmex']
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -40,7 +42,7 @@ class Events(NamedTuple):
 
 
 class AssetMovement(NamedTuple):
-    exchange: Literal['kraken', 'poloniex', 'bittrex', 'binance', 'bitmex']
+    exchange: ExchangeName
     category: Literal['deposit', 'withdrawal']
     timestamp: Timestamp
     asset: Asset

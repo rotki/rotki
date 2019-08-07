@@ -10,7 +10,7 @@ from rotkehlchen import typing
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError
-from rotkehlchen.exchanges.exchange import Exchange
+from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -64,7 +64,7 @@ def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
     )
 
 
-class Bitmex(Exchange):
+class Bitmex(ExchangeInterface):
     def __init__(
             self,
             api_key: typing.ApiKey,

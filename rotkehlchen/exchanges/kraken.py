@@ -23,7 +23,7 @@ from rotkehlchen.errors import (
     UnknownAsset,
     UnprocessableTradePair,
 )
-from rotkehlchen.exchanges.exchange import Exchange
+from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import query_cryptocompare_for_fiat_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -231,7 +231,7 @@ def _check_and_get_response(response: Response, method: str) -> dict:
     return result['result']
 
 
-class Kraken(Exchange):
+class Kraken(ExchangeInterface):
     def __init__(
             self,
             api_key: ApiKey,
