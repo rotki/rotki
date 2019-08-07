@@ -16,19 +16,22 @@
         :label="label"
         :hint="hint"
         :persistent-hint="persistentHint"
+        :rules="rules"
+        :max="max"
         v-on="on"
       ></v-text-field>
     </template>
 
     <div class="menu-body">
-      <v-date-picker v-model="dateModel"></v-date-picker>
-      <v-time-picker v-model="timeModel"></v-time-picker>
+      <v-date-picker v-model="dateModel" :max="maxDate"></v-date-picker>
+      <v-time-picker v-model="timeModel" :max="maxTime"></v-time-picker>
     </div>
   </v-menu>
 </template>
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import { VuetifyRuleValidations } from 'vuetify/src/mixins/validatable/index';
 
 @Component({})
 export default class DateTimePicker extends Vue {
@@ -40,25 +43,51 @@ export default class DateTimePicker extends Vue {
   persistentHint!: boolean;
   @Prop({ required: true })
   value!: string;
+  @Prop({ default: () => [] })
+  rules!: VuetifyRuleValidations;
+  @Prop({ required: false, default: false, type: Boolean })
+  limitNow!: boolean;
 
   timeModel: string = '00:00';
   dateModel: string = '';
 
+  maxDate: string | undefined;
+  maxTime: string | undefined;
+
   menu: boolean = false;
+
+  private setMaxTime() {
+    if (this.limitNow) {
+      this.maxTime = new Date().toISOString().split('T')[1];
+    }
+  }
+
+  private setMaxDate() {
+    if (this.limitNow) {
+      this.maxDate = new Date().toISOString().split('T')[0];
+    }
+  }
 
   private updateActualDate() {
     const value = `${this.formatDate(this.dateModel)} ${this.timeModel}`;
     this.input(value);
   }
 
+  created() {
+    this.setMaxDate();
+    this.setMaxTime();
+  }
+
   @Watch('timeModel')
   onTimeChange() {
     this.updateActualDate();
+    this.setMaxTime();
   }
 
   @Watch('dateModel')
   onDateChange() {
     this.updateActualDate();
+    this.setMaxDate();
   }
 
   @Watch('value')

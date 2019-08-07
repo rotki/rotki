@@ -49,3 +49,17 @@ export function convertBalances(apiBalances: ApiBalances): Balances {
   }
   return balances;
 }
+
+export function convertToTimestamp(date: string): number {
+  const fields = date.match(/\d+/g);
+  if (!fields) {
+    return -1;
+  }
+
+  const day = parseInt(fields[0], 10);
+  const month = parseInt(fields[1], 10) - 1;
+  const year = parseInt(fields[2], 10);
+  const hours = parseInt(fields[3], 10);
+  const seconds = parseInt(fields[4], 10);
+  return new Date(Date.UTC(year, month, day, hours, seconds)).getTime() / 1000;
+}

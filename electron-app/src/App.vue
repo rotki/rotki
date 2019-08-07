@@ -76,7 +76,6 @@ import UserDropdown from '@/components/UserDropdown.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
 import { mapState } from 'vuex';
-import { settings } from '@/legacy/settings';
 import { reset_tasks } from '@/legacy/monitor';
 import Login from '@/components/Login.vue';
 import { AccountData, Credentials } from '@/typing/types';
@@ -244,7 +243,6 @@ export default class App extends Vue {
     this.$rpc
       .logout()
       .then(() => {
-        settings.reset();
         reset_tasks();
         monitor.stop();
         this.$store.commit('logout', false);
