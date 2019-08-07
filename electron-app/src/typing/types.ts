@@ -60,3 +60,8 @@ export interface NotificationData {
   readonly message: string;
   readonly severity: Severity;
 }
+
+export interface TaxReportEvent {
+  readonly start: number;
+  readonly end: number;
+}
