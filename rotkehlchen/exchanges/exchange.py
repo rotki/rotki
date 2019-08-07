@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import logging
 import os
+from enum import Enum
 from json.decoder import JSONDecodeError
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -15,6 +16,15 @@ from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+class Exchange(Enum):
+    """Supported Exchanges"""
+    KRAKEN = 0
+    POLONIEX = 1
+    BITTREX = 2
+    BINANCE = 3
+    BITMEX = 4
 
 
 def data_up_todate(json_data: Dict[str, Any], start_ts: Timestamp, end_ts: Timestamp) -> bool:
@@ -32,7 +42,7 @@ def data_up_todate(json_data: Dict[str, Any], start_ts: Timestamp, end_ts: Times
     return start_ts_ok and end_ts_ok
 
 
-class Exchange():
+class ExchangeInterface():
 
     def __init__(
             self,

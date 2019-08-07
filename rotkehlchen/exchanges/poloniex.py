@@ -23,7 +23,7 @@ from rotkehlchen.errors import (
     UnknownAsset,
     UnsupportedAsset,
 )
-from rotkehlchen.exchanges.exchange import Exchange
+from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
@@ -204,7 +204,7 @@ def _post_process(before: Dict) -> Dict:
     return after
 
 
-class Poloniex(Exchange):
+class Poloniex(ExchangeInterface):
 
     def __init__(
             self,
