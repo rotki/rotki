@@ -29,7 +29,7 @@
             | formatPrice(floatingPrecision)
         }}
       </template>
-      <template #body.append="{ items }">
+      <template v-if="items && items.length > 0" #body.append="{ items }">
         <tr class="asset-balances__totals">
           <td>Totals</td>
           <td></td>
