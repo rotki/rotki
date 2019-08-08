@@ -16,10 +16,10 @@ from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import AuthenticationError, DeserializationError, UnknownAsset
+from rotkehlchen.exchanges.data_structures import Trade, get_pair_position_asset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import FIAT_CURRENCIES
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import Trade, get_pair_position_asset
 from rotkehlchen.serializer import (
     deserialize_asset_amount,
     deserialize_fee,

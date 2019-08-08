@@ -23,11 +23,7 @@ from rotkehlchen.errors import (
     UnknownAsset,
     UnsupportedAsset,
 )
-from rotkehlchen.exchanges.exchange import ExchangeInterface
-from rotkehlchen.fval import FVal
-from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
-from rotkehlchen.order_formatting import (
+from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     Loan,
     Trade,
@@ -36,6 +32,10 @@ from rotkehlchen.order_formatting import (
     invert_pair,
     trade_pair_from_assets,
 )
+from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
 from rotkehlchen.serializer import (
     deserialize_asset_amount,
     deserialize_fee,

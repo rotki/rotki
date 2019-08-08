@@ -10,8 +10,13 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.binance import create_binance_symbols_to_pair
 from rotkehlchen.errors import UnsupportedAsset
+from rotkehlchen.exchanges.data_structures import (
+    Trade,
+    TradeType,
+    pair_get_assets,
+    trade_pair_from_assets,
+)
 from rotkehlchen.fval import FVal
-from rotkehlchen.order_formatting import Trade, TradeType, pair_get_assets, trade_pair_from_assets
 from rotkehlchen.serializer import process_result, process_result_list
 from rotkehlchen.typing import Timestamp, TradePair
 

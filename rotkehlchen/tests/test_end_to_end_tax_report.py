@@ -1,8 +1,8 @@
 import pytest
 
 from rotkehlchen.constants.assets import A_BTC
+from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.fval import FVal
-from rotkehlchen.order_formatting import MarginPosition
 from rotkehlchen.tests.utils.accounting import accounting_history_process
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.typing import Timestamp

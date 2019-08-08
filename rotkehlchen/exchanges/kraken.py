@@ -23,17 +23,17 @@ from rotkehlchen.errors import (
     UnknownAsset,
     UnprocessableTradePair,
 )
-from rotkehlchen.exchanges.exchange import ExchangeInterface
-from rotkehlchen.fval import FVal
-from rotkehlchen.inquirer import query_cryptocompare_for_fiat_price
-from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import (
+from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     Trade,
     get_pair_position_asset,
     pair_get_assets,
     trade_pair_from_assets,
 )
+from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import query_cryptocompare_for_fiat_price
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serializer import (
     deserialize_asset_amount,
     deserialize_fee,

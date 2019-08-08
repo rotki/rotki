@@ -1,5 +1,5 @@
+from rotkehlchen.exchanges.data_structures import BuyEvent, Events
 from rotkehlchen.fval import FVal
-from rotkehlchen.order_formatting import BuyEvent, Events
 
 
 def test_search_buys_calculate_profit_after_year(accountant):

@@ -14,8 +14,8 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import RemoteError, UnsupportedAsset
 from rotkehlchen.exchanges.binance import Binance, trade_from_binance
+from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.fval import FVal
-from rotkehlchen.order_formatting import Trade, TradeType
 from rotkehlchen.tests.utils.constants import A_BNB, A_RDN, A_USDT
 from rotkehlchen.tests.utils.exchanges import BINANCE_BALANCES_RESPONSE
 from rotkehlchen.tests.utils.factories import make_random_b64bytes

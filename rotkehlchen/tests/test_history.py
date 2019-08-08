@@ -4,6 +4,7 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import (
     ASSETMOVEMENTS_HISTORYFILE,
@@ -12,7 +13,6 @@ from rotkehlchen.history import (
     TRADES_HISTORYFILE,
     limit_trade_list_to_period,
 )
-from rotkehlchen.order_formatting import AssetMovement, Trade
 from rotkehlchen.tests.utils.history import TEST_END_TS, mock_history_processing_and_exchanges
 from rotkehlchen.typing import TradeType
 

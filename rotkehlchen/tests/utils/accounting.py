@@ -1,7 +1,10 @@
 from typing import Any, Dict, List
 
+from rotkehlchen.exchanges.data_structures import (
+    asset_movements_from_dictlist,
+    trades_from_dictlist,
+)
 from rotkehlchen.exchanges.poloniex import process_polo_loans
-from rotkehlchen.order_formatting import asset_movements_from_dictlist, trades_from_dictlist
 from rotkehlchen.transactions import transactions_from_dictlist
 from rotkehlchen.typing import Timestamp
 

@@ -6,8 +6,8 @@ from rotkehlchen.assets.converters import UNSUPPORTED_BITTREX_ASSETS, asset_from
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import UnsupportedAsset
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
-from rotkehlchen.order_formatting import Trade
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import TradeType
 

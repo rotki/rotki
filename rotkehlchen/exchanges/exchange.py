@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import logging
 import os
-from enum import Enum
 from json.decoder import JSONDecodeError
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -9,22 +8,13 @@ import requests
 from gevent.lock import Semaphore
 
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
+from rotkehlchen.exchanges.data_structures import AssetMovement
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import AssetMovement
 from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, T_ApiKey, T_ApiSecret, Timestamp
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-class Exchange(Enum):
-    """Supported Exchanges"""
-    KRAKEN = 0
-    POLONIEX = 1
-    BITTREX = 2
-    BINANCE = 3
-    BITMEX = 4
 
 
 def data_up_todate(json_data: Dict[str, Any], start_ts: Timestamp, end_ts: Timestamp) -> bool:

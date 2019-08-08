@@ -10,11 +10,11 @@ import gevent
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import BINANCE_BASE_URL
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
+from rotkehlchen.exchanges.data_structures import Trade, TradeType, trade_pair_from_assets
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import Trade, TradeType, trade_pair_from_assets
 from rotkehlchen.serializer import (
     deserialize_asset_amount,
     deserialize_fee,

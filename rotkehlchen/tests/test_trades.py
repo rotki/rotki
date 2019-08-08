@@ -3,13 +3,13 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import UnknownAsset
-from rotkehlchen.fval import FVal
-from rotkehlchen.order_formatting import (
+from rotkehlchen.exchanges.data_structures import (
     Trade,
     deserialize_trade,
     trade_get_assets,
     trades_from_dictlist,
 )
+from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Timestamp, TradePair, TradeType
 from rotkehlchen.utils.serialization import rlk_jsondumps
 

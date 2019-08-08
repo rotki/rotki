@@ -2,8 +2,8 @@ from typing import Any, Dict, List
 from unittest.mock import patch
 
 from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
-from rotkehlchen.order_formatting import AssetMovement, Trade
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse
