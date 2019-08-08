@@ -14,6 +14,7 @@ import { defaultAccountingSettings, defaultSettings } from '@/data/factories';
 import { assetSum } from '@/utils/calculation';
 import { notifications } from '@/store/notifications';
 import { balances } from '@/store/balances';
+import { tasks } from '@/store/tasks';
 
 Vue.use(Vuex);
 
@@ -131,7 +132,8 @@ let store: StoreOptions<RotkehlchenState> = {
   },
   modules: {
     notifications,
-    balances
+    balances,
+    tasks
   }
 };
 export default new Vuex.Store(store);
