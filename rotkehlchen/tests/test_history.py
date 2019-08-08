@@ -14,7 +14,7 @@ from rotkehlchen.history import (
     limit_trade_list_to_period,
 )
 from rotkehlchen.tests.utils.history import TEST_END_TS, mock_history_processing_and_exchanges
-from rotkehlchen.typing import TradeType
+from rotkehlchen.typing import Exchange, TradeType
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -233,7 +233,7 @@ def test_assets_movements_from_cache(accounting_data_dir, trades_historian):
     )
     assert len(asset_movements) == 2
     assert isinstance(asset_movements[0], AssetMovement)
-    assert asset_movements[0].exchange == 'kraken'
+    assert asset_movements[0].exchange == Exchange.KRAKEN
     assert asset_movements[0].category == 'deposit'
     assert asset_movements[0].timestamp == 1520938730
     assert isinstance(asset_movements[0].asset, Asset)
@@ -242,7 +242,7 @@ def test_assets_movements_from_cache(accounting_data_dir, trades_historian):
     assert asset_movements[0].fee == FVal('0')
 
     assert isinstance(asset_movements[1], AssetMovement)
-    assert asset_movements[1].exchange == 'poloniex'
+    assert asset_movements[1].exchange == Exchange.POLONIEX
     assert asset_movements[1].category == 'withdrawal'
     assert asset_movements[1].timestamp == 1510938730
     assert isinstance(asset_movements[1].asset, Asset)

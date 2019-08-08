@@ -8,6 +8,7 @@ from rotkehlchen.fval import AcceptableFValInitInput, FVal
 from rotkehlchen.typing import (
     AssetAmount,
     EthTokenInfo,
+    Exchange,
     Fee,
     Optional,
     Price,
@@ -212,7 +213,7 @@ def deserialize_price(amount: AcceptableFValInitInput) -> Price:
 
 
 def deserialize_trade_type(symbol: str) -> TradeType:
-    """Take a string and attempts to turn it into a TradeType
+    """Takes a string and attempts to turn it into a TradeType
 
     Can throw DeserializationError if the symbol is not as expected
     """
@@ -232,4 +233,31 @@ def deserialize_trade_type(symbol: str) -> TradeType:
     else:
         raise DeserializationError(
             f'Failed to deserialize trade type symbol. Unknown symbol {symbol} for trade type',
+        )
+
+
+def deserialize_exchange_name(symbol: str) -> Exchange:
+    """Takes a string and attempts to turn it into an Exchange enum class
+
+    Can throw DeserializationError if the symbols is not as expected
+    """
+
+    if not isinstance(symbol, str):
+        raise DeserializationError(
+            f'Failed to deserialize exchange symbol from {type(symbol)} entry',
+        )
+
+    if symbol == 'kraken':
+        return Exchange.KRAKEN
+    elif symbol == 'poloniex':
+        return Exchange.POLONIEX
+    elif symbol == 'bittrex':
+        return Exchange.BITTREX
+    elif symbol == 'binance':
+        return Exchange.BINANCE
+    elif symbol == 'bitmex':
+        return Exchange.BITMEX
+    else:
+        raise DeserializationError(
+            f'Failed to deserialize exchange symbol. Unknown symbol {symbol} for exchange',
         )

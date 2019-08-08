@@ -8,7 +8,7 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.transactions import EthereumTransaction
-from rotkehlchen.typing import AssetAmount, Timestamp, TradeType
+from rotkehlchen.typing import AssetAmount, Exchange, Timestamp, TradeType
 
 TEST_END_TS = 1559427707
 
@@ -141,28 +141,28 @@ def check_result_of_history_creation(
     assert loan_history[1].earned == AssetAmount(FVal('0.00000005'))
 
     assert len(asset_movements) == 8
-    assert asset_movements[0].exchange == 'kraken'
+    assert asset_movements[0].exchange == Exchange.KRAKEN
     assert asset_movements[0].category == 'deposit'
     assert asset_movements[0].asset == A_BTC
-    assert asset_movements[1].exchange == 'kraken'
+    assert asset_movements[1].exchange == Exchange.KRAKEN
     assert asset_movements[1].category == 'deposit'
     assert asset_movements[1].asset == A_ETH
-    assert asset_movements[2].exchange == 'kraken'
+    assert asset_movements[2].exchange == Exchange.KRAKEN
     assert asset_movements[2].category == 'withdrawal'
     assert asset_movements[2].asset == A_BTC
-    assert asset_movements[3].exchange == 'kraken'
+    assert asset_movements[3].exchange == Exchange.KRAKEN
     assert asset_movements[3].category == 'withdrawal'
     assert asset_movements[3].asset == A_ETH
-    assert asset_movements[4].exchange == 'poloniex'
+    assert asset_movements[4].exchange == Exchange.POLONIEX
     assert asset_movements[4].category == 'withdrawal'
     assert asset_movements[4].asset == A_BTC
-    assert asset_movements[5].exchange == 'poloniex'
+    assert asset_movements[5].exchange == Exchange.POLONIEX
     assert asset_movements[5].category == 'withdrawal'
     assert asset_movements[5].asset == A_ETH
-    assert asset_movements[6].exchange == 'poloniex'
+    assert asset_movements[6].exchange == Exchange.POLONIEX
     assert asset_movements[6].category == 'deposit'
     assert asset_movements[6].asset == A_BTC
-    assert asset_movements[7].exchange == 'poloniex'
+    assert asset_movements[7].exchange == Exchange.POLONIEX
     assert asset_movements[7].category == 'deposit'
     assert asset_movements[7].asset == A_ETH
 

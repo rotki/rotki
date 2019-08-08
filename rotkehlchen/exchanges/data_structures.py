@@ -1,7 +1,6 @@
-from dataclasses import dataclass
-from enum import Enum
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
+from dataclasses import dataclass
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
@@ -9,23 +8,15 @@ from rotkehlchen.errors import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.fval import FVal
 from rotkehlchen.serializer import (
     deserialize_asset_amount,
+    deserialize_exchange_name,
     deserialize_fee,
     deserialize_price,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import AssetAmount, Fee, Price, Timestamp, TradePair, TradeType
+from rotkehlchen.typing import AssetAmount, Exchange, Fee, Price, Timestamp, TradePair, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
 
 ExchangeName = Literal['kraken', 'poloniex', 'bittrex', 'binance', 'bitmex']
-
-
-class Exchange(Enum):
-    """Supported Exchanges"""
-    KRAKEN = 0
-    POLONIEX = 1
-    BITTREX = 2
-    BINANCE = 3
-    BITMEX = 4
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -52,8 +43,7 @@ class Events(NamedTuple):
 
 
 class AssetMovement(NamedTuple):
-    # exchange: ExchangeName
-    exchange: str
+    exchange: Exchange
     category: Literal['deposit', 'withdrawal']
     timestamp: Timestamp
     asset: Asset
@@ -244,6 +234,7 @@ def asset_movements_from_dictlist(
     a time period. Returns it as a list of the AssetMovement tuples that are inside the time period
 
     May raise:
+        - DeserializationError: If the given_data dict contains data in an unexpected format
         - KeyError: If the given_data dict contains data in an unexpected format
     """
     returned_movements = list()
@@ -254,7 +245,7 @@ def asset_movements_from_dictlist(
             break
 
         returned_movements.append(AssetMovement(
-            exchange=movement['exchange'],
+            exchange=deserialize_exchange_name(movement['exchange']),
             category=movement['category'],
             timestamp=movement['timestamp'],
             asset=Asset(movement['asset']),
