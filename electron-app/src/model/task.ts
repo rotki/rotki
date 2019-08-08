@@ -1,10 +1,21 @@
-export default class Task {
-  constructor(
-    readonly id: number,
-    readonly type: string,
-    readonly should_expect_callback: boolean
-  ) {}
+export interface Task {
+  readonly id: number;
+  readonly type: TaskType;
+  readonly description: string;
+  readonly asyncResult: boolean;
 }
+
+export const createTask: (
+  id: number,
+  type: TaskType,
+  description: string,
+  asyncResult: boolean
+) => Task = (id, type, description, asyncResult) => ({
+  id,
+  type,
+  description,
+  asyncResult
+});
 
 export enum TaskType {
   TRADE_HISTORY = 'process_trade_history',
