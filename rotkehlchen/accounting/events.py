@@ -5,10 +5,10 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETC, A_ETH
 from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnknownFromAsset
+from rotkehlchen.exchanges.data_structures import BuyEvent, Events, SellEvent
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import BuyEvent, Events, SellEvent
 from rotkehlchen.typing import Fee, Timestamp
 from rotkehlchen.utils.misc import taxable_gain_for_sell, timestamp_to_date, ts_now
 

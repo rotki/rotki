@@ -6,9 +6,9 @@ from typing import Callable, Optional
 from data_faker.utils import assets_exist_at_time
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.exchanges.data_structures import Trade, pair_get_assets, trade_pair_from_assets
 from rotkehlchen.fval import FVal
 from rotkehlchen.kraken import kraken_to_world_pair
-from rotkehlchen.order_formatting import Trade, pair_get_assets, trade_pair_from_assets
 from rotkehlchen.serializer import process_result
 from rotkehlchen.tests.fixtures.exchanges.kraken import create_kraken_trade
 from rotkehlchen.typing import Timestamp, TradePair

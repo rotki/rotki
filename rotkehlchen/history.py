@@ -15,12 +15,7 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.exchanges import Binance, Bitmex, Bittrex, Kraken, Poloniex
 from rotkehlchen.exchanges.bitmex import trade_from_bitmex
-from rotkehlchen.exchanges.exchange import data_up_todate
-from rotkehlchen.exchanges.poloniex import process_polo_loans, trade_from_poloniex
-from rotkehlchen.fval import FVal
-from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import (
+from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     Loan,
     MarginPosition,
@@ -28,6 +23,11 @@ from rotkehlchen.order_formatting import (
     asset_movements_from_dictlist,
     trades_from_dictlist,
 )
+from rotkehlchen.exchanges.exchange import data_up_todate
+from rotkehlchen.exchanges.poloniex import process_polo_loans, trade_from_poloniex
+from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
 from rotkehlchen.typing import EthAddress, FiatAsset, FilePath, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator

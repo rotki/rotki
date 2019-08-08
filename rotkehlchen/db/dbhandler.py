@@ -25,9 +25,9 @@ from rotkehlchen.db.utils import (
     SingleAssetBalance,
 )
 from rotkehlchen.errors import AuthenticationError, InputError, UnknownAsset
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import Trade
 from rotkehlchen.typing import (
     ApiCredentials,
     ApiKey,

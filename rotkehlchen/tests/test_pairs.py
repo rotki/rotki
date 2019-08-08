@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.errors import UnknownAsset, UnprocessableTradePair
-from rotkehlchen.order_formatting import (
+from rotkehlchen.exchanges.data_structures import (
     get_pair_position_asset,
     get_pair_position_str,
     invert_pair,

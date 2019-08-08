@@ -10,11 +10,11 @@ from rotkehlchen import typing
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import AssetMovement, MarginPosition
 from rotkehlchen.typing import Fee
 from rotkehlchen.utils.misc import cache_response_timewise, iso8601ts_to_timestamp, satoshis_to_btc
 from rotkehlchen.utils.serialization import rlk_jsonloads

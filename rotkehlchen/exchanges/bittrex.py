@@ -17,17 +17,17 @@ from rotkehlchen.errors import (
     UnprocessableTradePair,
     UnsupportedAsset,
 )
-from rotkehlchen.exchanges.exchange import ExchangeInterface
-from rotkehlchen.fval import FVal
-from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import (
+from rotkehlchen.exchanges.data_structures import (
     Trade,
     get_pair_position_asset,
     get_pair_position_str,
     pair_get_assets,
     trade_pair_from_assets,
 )
+from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serializer import (
     deserialize_asset_amount,
     deserialize_fee,

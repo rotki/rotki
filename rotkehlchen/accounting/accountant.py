@@ -14,11 +14,7 @@ from rotkehlchen.errors import (
     UnknownAsset,
     UnsupportedAsset,
 )
-from rotkehlchen.fval import FVal
-from rotkehlchen.history import PriceHistorian
-from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.order_formatting import (
+from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     Loan,
     MarginPosition,
@@ -26,6 +22,10 @@ from rotkehlchen.order_formatting import (
     TradeType,
     trade_get_assets,
 )
+from rotkehlchen.fval import FVal
+from rotkehlchen.history import PriceHistorian
+from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.transactions import EthereumTransaction
 from rotkehlchen.typing import Fee, FilePath, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
