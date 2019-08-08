@@ -561,6 +561,10 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # is not in cryptocompare but is in paprika. Cryptocompare has
     # Pink Taxi Token as PTT.
     'PTT',
+    # Pixel (https://coinmarketcap.com/currencies/pixel/)
+    # is not in cryptocompare but is in paprika. Cryptocompare hasattr
+    # Phalanx as PXL
+    'PXL',
     # Rublix (https://coinmarketcap.com/currencies/rublix/)
     # is not in cryptocompare but is in paprika
     'RBLX',

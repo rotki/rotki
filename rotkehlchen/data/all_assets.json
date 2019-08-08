@@ -6797,6 +6797,14 @@
         "symbol": "PXG",
         "type": "ethereum token"
     },
+    "PXL": {
+        "ethereum_address": "0xF88951D7B676798705fd3a362ba5B1DBca2B233b",
+        "ethereum_token_decimals": 18,
+        "name": "PIXEL",
+        "started": 1545177600,
+        "symbol": "PXL",
+        "type": "ethereum token"
+    },
     "PYLNT": {
         "ethereum_address": "0x7703C35CfFdC5CDa8D27aa3df2F9ba6964544b6e",
         "ethereum_token_decimals": 18,
