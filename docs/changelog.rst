@@ -4,6 +4,10 @@ Changelog
 
 * :bug:`451` An assertion will no longer stop balances from being saved for some FIAT assets.
 
+* :feature:`-` Added support for the following tokens
+
+  - `Pixel <https://coinmarketcap.com/currencies/pixel/>`__
+
 * :release:`1.0.2 <2019-08-04>`
 * :feature:`-` Added support for the following tokens
 
