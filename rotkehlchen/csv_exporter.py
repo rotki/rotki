@@ -18,7 +18,7 @@ from rotkehlchen.constants import (
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter, make_sensitive
-from rotkehlchen.typing import EmptyStr, EventType, Fee, FilePath, Timestamp
+from rotkehlchen.typing import EmptyStr, EventType, Exchange, Fee, FilePath, Timestamp
 from rotkehlchen.utils.misc import taxable_gain_for_sell, timestamp_to_date
 
 logger = logging.getLogger(__name__)
@@ -323,7 +323,7 @@ class CSVExporter():
 
     def add_asset_movement(
             self,
-            exchange: str,
+            exchange: Exchange,
             category: str,
             asset: Asset,
             fee: Fee,
@@ -335,7 +335,7 @@ class CSVExporter():
 
         self.asset_movements_csv.append({
             'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
-            'exchange': exchange,
+            'exchange': str(exchange),
             'type': category,
             'moving_asset': asset,
             'fee_in_asset': fee,

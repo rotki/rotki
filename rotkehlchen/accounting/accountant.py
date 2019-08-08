@@ -27,7 +27,7 @@ from rotkehlchen.history import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.transactions import EthereumTransaction
-from rotkehlchen.typing import Fee, FilePath, Timestamp
+from rotkehlchen.typing import Exchange, Fee, FilePath, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
@@ -193,7 +193,7 @@ class Accountant():
             category: str,
             asset: Asset,
             timestamp: Timestamp,
-            exchange: str,
+            exchange: Exchange,
             fee: Fee,
     ) -> None:
         if timestamp < self.start_ts:
@@ -211,8 +211,6 @@ class Accountant():
             timestamp=timestamp,
             exchange_name=exchange,
         )
-        if category == 'withdrawal':
-            assert fee != 0, 'So far all exchanges charge you for withdrawing'
 
         self.csvexporter.add_asset_movement(
             exchange=exchange,

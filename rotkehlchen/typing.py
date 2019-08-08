@@ -1,8 +1,9 @@
 from enum import Enum
 from typing import Dict, NamedTuple, NewType, Optional, Union
 
-from rotkehlchen.fval import FVal
 from eth_utils.typing import ChecksumAddress
+
+from rotkehlchen.fval import FVal
 
 T_BinaryEthAddress = bytes
 BinaryEthAddress = NewType('BinaryEthAddress', T_BinaryEthAddress)
@@ -163,4 +164,27 @@ class TradeType(Enum):
         elif self == TradeType.SETTLEMENT_SELL:
             return 'settlement_sell'
 
-        raise RuntimeError('Corrupt value for TradeType -- Should never happen')
+        raise RuntimeError(f'Corrupt value {self} for TradeType -- Should never happen')
+
+
+class Exchange(Enum):
+    """Supported Exchanges"""
+    KRAKEN = 0
+    POLONIEX = 1
+    BITTREX = 2
+    BINANCE = 3
+    BITMEX = 4
+
+    def __str__(self) -> str:
+        if self == Exchange.KRAKEN:
+            return 'kraken'
+        elif self == Exchange.POLONIEX:
+            return 'poloniex'
+        elif self == Exchange.BITTREX:
+            return 'bittrex'
+        elif self == Exchange.BINANCE:
+            return 'binance'
+        elif self == Exchange.BITMEX:
+            return 'bitmex'
+
+        raise RuntimeError(f'Corrupt value {self} for Exchange -- Should never happen')

@@ -25,6 +25,7 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
+    Exchange,
     Loan,
     Trade,
     TradeType,
@@ -630,7 +631,7 @@ class Poloniex(ExchangeInterface):
         for withdrawal in result['withdrawals']:
             try:
                 movements.append(AssetMovement(
-                    exchange='poloniex',
+                    exchange=Exchange.POLONIEX,
                     category='withdrawal',
                     timestamp=deserialize_timestamp(withdrawal['timestamp']),
                     asset=asset_from_poloniex(withdrawal['currency']),
@@ -660,7 +661,7 @@ class Poloniex(ExchangeInterface):
         for deposit in result['deposits']:
             try:
                 movements.append(AssetMovement(
-                    exchange='poloniex',
+                    exchange=Exchange.POLONIEX,
                     category='deposit',
                     timestamp=deserialize_timestamp(deposit['timestamp']),
                     asset=asset_from_poloniex(deposit['currency']),

@@ -10,7 +10,7 @@ from rotkehlchen import typing
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition
+from rotkehlchen.exchanges.data_structures import AssetMovement, Exchange, MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -303,7 +303,7 @@ class Bitmex(ExchangeInterface):
                 fee = satoshis_to_btc(fee)
 
             movements.append(AssetMovement(
-                exchange='bitmex',
+                exchange=Exchange.BITMEX,
                 category=transaction_type,
                 timestamp=timestamp,
                 asset=asset,

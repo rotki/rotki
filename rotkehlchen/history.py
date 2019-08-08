@@ -617,8 +617,8 @@ class TradesHistorian():
                 start_ts,
                 end_ts,
             )
-        except KeyError:
-            raise HistoryCacheInvalid('Asset Movements cache is invalid')
+        except (KeyError, DeserializationError) as e:
+            raise HistoryCacheInvalid(f'Asset Movements cache is invalid because of {str(e)}')
 
         return asset_movements
 
