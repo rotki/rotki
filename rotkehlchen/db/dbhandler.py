@@ -24,7 +24,7 @@ from rotkehlchen.db.utils import (
     LocationData,
     SingleAssetBalance,
 )
-from rotkehlchen.errors import AuthenticationError, InputError, UnknownAsset
+from rotkehlchen.errors import AuthenticationError, DeserializationError, InputError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -542,6 +542,11 @@ class DBHandler():
                     f'If you believe this should be supported open an issue in github',
                 )
                 continue
+            except DeserializationError:
+                self.msg_aggregator.add_error(
+                    f'Non-string type asset: {type(q[0])} found in the database. Ignoring it.',
+                )
+                continue
 
         return result
 
@@ -614,6 +619,13 @@ class DBHandler():
                 self.msg_aggregator.add_error(
                     f'Unknown FIAT asset {entry[0]} found in the DB. Skipping it ...',
                 )
+                continue
+            except DeserializationError:
+                self.msg_aggregator.add_error(
+                    f'FIAT asset with non-string type {type(entry[0])} '
+                    f'found in the DB. Skipping it ...',
+                )
+                continue
 
         return result
 
@@ -947,6 +959,12 @@ class DBHandler():
                 self.msg_aggregator.add_warning(
                     f'Unknown/unsupported asset {result[0]} found in the database. '
                     f'If you believe this should be supported open an issue in github',
+                )
+                continue
+            except DeserializationError:
+                self.msg_aggregator.add_error(
+                    f'Asset with non-string type {type(result[0])} found in the '
+                    f'database. Skipping it.',
                 )
                 continue
 

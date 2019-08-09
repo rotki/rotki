@@ -5,7 +5,7 @@ import logging
 import os
 import signal
 import traceback
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union, cast
 
 import gevent
 import zerorpc
@@ -16,6 +16,7 @@ from rotkehlchen.args import app_args
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import (
     AuthenticationError,
+    DeserializationError,
     IncorrectApiKeyFormat,
     RemoteError,
     RotkehlchenPermissionError,
@@ -24,8 +25,8 @@ from rotkehlchen.errors import (
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.serializer import process_result, process_result_list
-from rotkehlchen.typing import SupportedBlockchain, Timestamp
+from rotkehlchen.serializer import deserialize_timestamp, process_result, process_result_list
+from rotkehlchen.typing import FiatAsset, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import simple_result
 from rotkehlchen.utils.serialization import pretty_json_dumps
 
@@ -153,8 +154,9 @@ class RotkehlchenServer():
         return ret
 
     @staticmethod
-    def get_fiat_exchange_rates(currencies):
-        rates = Inquirer().get_fiat_usd_exchange_rates(currencies)
+    def get_fiat_exchange_rates(currencies: List[str]):
+        fiat_currencies = cast(List[FiatAsset], currencies)
+        rates = Inquirer().get_fiat_usd_exchange_rates(fiat_currencies)
         res = {'exchange_rates': rates}
         return process_result(res)
 
@@ -232,11 +234,11 @@ class RotkehlchenServer():
         return process_result(result)
 
     def query_timed_balances_data(self, given_asset: str, start_ts: int, end_ts: int) -> Dict:
-        start_ts = Timestamp(start_ts)
-        end_ts = Timestamp(end_ts)
         try:
+            start_ts = deserialize_timestamp(start_ts)
+            end_ts = deserialize_timestamp(end_ts)
             asset = Asset(given_asset)
-        except UnknownAsset as e:
+        except (UnknownAsset, DeserializationError) as e:
             return {'result': False, 'message': str(e)}
 
         res = self.rotkehlchen.data.db.query_timed_balances(

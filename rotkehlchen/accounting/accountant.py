@@ -9,6 +9,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.errors import (
+    DeserializationError,
     NoPriceForGivenTimestamp,
     PriceQueryUnknownFromAsset,
     UnknownAsset,
@@ -459,6 +460,12 @@ class Accountant():
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
                 f'At history processing found trade with unsupported asset {e.asset_name}. '
+                f'Ignoring the trade.',
+            )
+            return True, prev_time, count
+        except DeserializationError:
+            self.msg_aggregator.add_error(
+                f'At history processing found trade with non string asset type. '
                 f'Ignoring the trade.',
             )
             return True, prev_time, count

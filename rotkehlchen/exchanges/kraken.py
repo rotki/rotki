@@ -490,6 +490,12 @@ class Kraken(ExchangeInterface):
                     f' Ignoring its balance query.',
                 )
                 continue
+            except DeserializationError:
+                self.msg_aggregator.add_error(
+                    f'Found kraken asset with non-string type {type(k)}. '
+                    f' Ignoring its balance query.',
+                )
+                continue
 
             entry = {}
             entry['amount'] = v
@@ -698,6 +704,12 @@ class Kraken(ExchangeInterface):
                 self.msg_aggregator.add_warning(
                     f'Found unknown kraken asset {e.asset_name}. '
                     f'Ignoring its deposit/withdrawals query.',
+                )
+                continue
+            except DeserializationError as e:
+                self.msg_aggregator.add_warning(
+                    f'Failed to deserialize a kraken deposit/withdrawal: {str(e)}. '
+                    f'Ignoring the deposit/withdrawal entry.',
                 )
                 continue
 

@@ -303,6 +303,12 @@ class Binance(ExchangeInterface):
                     f' Ignoring its balance query.',
                 )
                 continue
+            except DeserializationError:
+                self.msg_aggregator.add_error(
+                    f'Found binance asset with non-string type {type(entry["asset"])}. '
+                    f' Ignoring its balance query.',
+                )
+                continue
 
             usd_price = Inquirer().find_usd_price(asset)
             balance = dict()

@@ -1,11 +1,10 @@
+from dataclasses import dataclass, field
 from functools import total_ordering
 from typing import Any, Optional
 
-from dataclasses import dataclass, field
-
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.cryptocompare import WORLD_TO_CRYPTOCOMPARE
-from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.typing import AssetType, ChecksumEthAddress, Timestamp
 
 WORLD_TO_BITTREX = {
@@ -126,6 +125,17 @@ class Asset():
     swapped_for: Optional[str] = field(init=False)
 
     def __post_init__(self):
+        """
+        Asset post initialization
+
+        The only thing that is given to initialize an asset is a string.
+
+        If a non string is given then it's probably a deserialization error or
+        invalid data were given to us by the server if an API was queried.
+        """
+        if not isinstance(self.identifier, str):
+            raise DeserializationError('Non-string identifier ended up in asset initialization')
+
         if not AssetResolver().is_identifier_canonical(self.identifier):
             raise UnknownAsset(self.identifier)
         data = AssetResolver().get_asset_data(self.identifier)

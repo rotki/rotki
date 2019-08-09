@@ -121,7 +121,7 @@ def maybe_add_external_trades_to_history(
             location='external trades',
             msg_aggregator=msg_aggregator,
         )
-    except KeyError:
+    except (KeyError, DeserializationError):
         msg_aggregator.add_error('External trades in the DB are in an unrecognized format')
         return history
 
@@ -654,8 +654,9 @@ class TradesHistorian():
                 location='historical trades',
                 msg_aggregator=self.msg_aggregator,
             )
-        except KeyError:
+        except (KeyError, DeserializationError):
             raise HistoryCacheInvalid('Historical trades cache invalid')
+
         history_trades = maybe_add_external_trades_to_history(
             db=self.db,
             start_ts=start_ts,
@@ -737,7 +738,7 @@ class TradesHistorian():
                     location='Margin position trades',
                     msg_aggregator=self.msg_aggregator,
                 )
-            except KeyError:
+            except (KeyError, DeserializationError):
                 raise HistoryCacheInvalid('Margin Positions cache is invalid')
 
         else:

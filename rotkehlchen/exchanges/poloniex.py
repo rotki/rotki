@@ -448,6 +448,15 @@ class Poloniex(ExchangeInterface):
                         f' Ignoring its balance query.',
                     )
                     continue
+                except DeserializationError:
+                    log.error(
+                        f'Unexpected poloniex asset type. Expected string '
+                        f' but got {type(poloniex_asset)}',
+                    )
+                    self.msg_aggregator.add_error(
+                        'Found poloniex asset entry with non-string type. '
+                        ' Ignoring its balance query.',
+                    )
 
                 entry = {}
                 entry['amount'] = available + on_orders
