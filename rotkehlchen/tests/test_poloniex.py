@@ -364,3 +364,72 @@ def test_poloniex_deposits_withdrawal_null_fee(function_scope_poloniex):
 
     warnings = poloniex.msg_aggregator.consume_warnings()
     assert len(warnings) == 0
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_poloniex_deposits_withdrawal_unexpected_data(function_scope_poloniex):
+    """
+    Test that if a poloniex asset movement query returns unexpected data we handle it gracefully
+    """
+    poloniex = function_scope_poloniex
+    poloniex.cache_ttl_secs = 0
+
+    def mock_poloniex_and_query(given_movements, expected_warnings_num, expected_errors_num):
+
+        def mock_api_return(url, req):  # pylint: disable=unused-argument
+            return MockResponse(200, given_movements)
+
+        with patch.object(poloniex.session, 'post', side_effect=mock_api_return):
+            asset_movements = poloniex.query_deposits_withdrawals(
+                start_ts=0,
+                end_ts=1488994442,
+                end_at_least_ts=1488994442,
+            )
+
+        if expected_errors_num == 0 and expected_warnings_num == 0:
+            assert len(asset_movements) == 1
+        else:
+            assert len(asset_movements) == 0
+            warnings = poloniex.msg_aggregator.consume_warnings()
+            assert len(warnings) == expected_warnings_num
+            errors = poloniex.msg_aggregator.consume_errors()
+            assert len(errors) == expected_errors_num
+
+    def check_permutations_of_input_invalid_data(given_input):
+        # First make sure it works with normal data
+        mock_poloniex_and_query(given_input, expected_warnings_num=0, expected_errors_num=0)
+
+        # From here and on test unexpected data
+        # invalid timestamp
+        movements = given_input.replace('1478994442', '"dasdsd"')
+        mock_poloniex_and_query(movements, expected_warnings_num=0, expected_errors_num=1)
+
+        # invalid amount
+        movements = given_input.replace('"100.5"', 'null')
+        mock_poloniex_and_query(movements, expected_warnings_num=0, expected_errors_num=1)
+
+        # invalid fee
+        if 'fee' in given_input:
+            movements = given_input.replace('"0.1"', '"dasdsdsad"')
+            mock_poloniex_and_query(movements, expected_warnings_num=0, expected_errors_num=1)
+
+        # invalid currency type
+        movements = given_input.replace('"FAC"', '[]')
+        mock_poloniex_and_query(movements, expected_warnings_num=0, expected_errors_num=1)
+
+        # unknown currency
+        movements = given_input.replace('"FAC"', '"DSDSDSD"')
+        mock_poloniex_and_query(movements, expected_warnings_num=1, expected_errors_num=0)
+
+        # missing key error
+        movements = given_input.replace('"timestamp": 1478994442,', '')
+        mock_poloniex_and_query(movements, expected_warnings_num=0, expected_errors_num=1)
+
+    input_withdrawals = """
+    {"withdrawals": [{"currency": "FAC", "timestamp": 1478994442,
+    "amount": "100.5", "fee": "0.1"}], "deposits": []}"""
+    check_permutations_of_input_invalid_data(input_withdrawals)
+    input_deposits = """
+    {"deposits": [{"currency": "FAC", "timestamp": 1478994442,
+    "amount": "100.5"}], "withdrawals": []}"""
+    check_permutations_of_input_invalid_data(input_deposits)

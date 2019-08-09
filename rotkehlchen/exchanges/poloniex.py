@@ -607,6 +607,53 @@ class Poloniex(ExchangeInterface):
             self.update_trades_cache(data, start_ts, end_ts, special_name='loan_history')
         return data
 
+    def _serialize_asset_movement(
+            self,
+            movement_type: Literal['withdrawal', 'deposit'],
+            movement_data: Dict[str, Any],
+    ) -> Optional[AssetMovement]:
+        """Processes a single deposit/withdrawal from polo and serializes it
+
+        Can log error/warning and return None if something went wrong at deserialization
+        """
+        try:
+            if movement_type == 'deposit':
+                fee = Fee(ZERO)
+            else:
+                fee = deserialize_fee(movement_data['fee'])
+            return AssetMovement(
+                exchange=Exchange.POLONIEX,
+                category=movement_type,
+                timestamp=deserialize_timestamp(movement_data['timestamp']),
+                asset=asset_from_poloniex(movement_data['currency']),
+                amount=deserialize_asset_amount(movement_data['amount']),
+                fee=fee,
+            )
+        except UnsupportedAsset as e:
+            self.msg_aggregator.add_warning(
+                f'Found {movement_type} of unsupported poloniex asset '
+                f'{e.asset_name}. Ignoring it.',
+            )
+        except UnknownAsset as e:
+            self.msg_aggregator.add_warning(
+                f'Found {movement_type} of unknown poloniex asset '
+                f'{e.asset_name}. Ignoring it.',
+            )
+        except (DeserializationError, KeyError) as e:
+            msg = str(e)
+            if isinstance(e, KeyError):
+                msg = f'Missing key entry for {msg}.'
+            self.msg_aggregator.add_error(
+                f'Unexpected data encountered during deserialization of a poloniex '
+                f'asset movement. Check logs for details and open a bug report.',
+            )
+            log.error(
+                f'Unexpected data encountered during deserialization of poloniex '
+                f'{movement_type}: {movement_data}. Error was: {str(e)}',
+            )
+
+        return None
+
     def query_deposits_withdrawals(
             self,
             start_ts: Timestamp,
@@ -638,63 +685,19 @@ class Poloniex(ExchangeInterface):
 
         movements = list()
         for withdrawal in result['withdrawals']:
-            try:
-                movements.append(AssetMovement(
-                    exchange=Exchange.POLONIEX,
-                    category='withdrawal',
-                    timestamp=deserialize_timestamp(withdrawal['timestamp']),
-                    asset=asset_from_poloniex(withdrawal['currency']),
-                    amount=deserialize_asset_amount(withdrawal['amount']),
-                    fee=deserialize_fee(withdrawal['fee']),
-                ))
-            except UnsupportedAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found withdrawal of unsupported poloniex asset {e.asset_name}. Ignoring it.',
-                )
-                continue
-            except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found withdrawal of unknown poloniex asset {e.asset_name}. Ignoring it.',
-                )
-                continue
-            except DeserializationError as e:
-                log.error(
-                    f'Unexpected data encountered during deserialization of poloniex '
-                    f'withdrawal: {withdrawal}. Error was: {str(e)}',
-                )
-                self.msg_aggregator.add_warning(
-                    f'Unexpected data encountered during deserialization of a poloniex '
-                    f'withdrawal. Check logs for details and open a bug report.',
-                )
+            asset_movement = self._serialize_asset_movement(
+                movement_type='withdrawal',
+                movement_data=withdrawal,
+            )
+            if asset_movement:
+                movements.append(asset_movement)
 
         for deposit in result['deposits']:
-            try:
-                movements.append(AssetMovement(
-                    exchange=Exchange.POLONIEX,
-                    category='deposit',
-                    timestamp=deserialize_timestamp(deposit['timestamp']),
-                    asset=asset_from_poloniex(deposit['currency']),
-                    amount=deserialize_asset_amount(FVal(deposit['amount'])),
-                    fee=Fee(ZERO),
-                ))
-            except UnsupportedAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found deposit of unsupported poloniex asset {e.asset_name}. Ignoring it.',
-                )
-                continue
-            except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found deposit of unknown poloniex asset {e.asset_name}. Ignoring it.',
-                )
-                continue
-            except DeserializationError as e:
-                log.error(
-                    f'Unexpected data encountered during deserialization of poloniex '
-                    f'deposit: {deposit}. Error was: {str(e)}',
-                )
-                self.msg_aggregator.add_warning(
-                    f'Unexpected data encountered during deserialization of a poloniex '
-                    f'deposit. Check logs for details and open a bug report.',
-                )
+            asset_movement = self._serialize_asset_movement(
+                movement_type='deposit',
+                movement_data=deposit,
+            )
+            if asset_movement:
+                movements.append(asset_movement)
 
         return movements
