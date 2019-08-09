@@ -13,7 +13,13 @@ from rotkehlchen.blockchain import Blockchain
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS, SUPPORTED_EXCHANGES
 from rotkehlchen.constants.assets import A_EUR, A_USD, S_USD
 from rotkehlchen.data_handler import DataHandler
-from rotkehlchen.errors import AuthenticationError, EthSyncError, InputError, UnknownAsset
+from rotkehlchen.errors import (
+    AuthenticationError,
+    DeserializationError,
+    EthSyncError,
+    InputError,
+    UnknownAsset,
+)
 from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.exchanges import Binance, Bitmex, Bittrex, Kraken, Poloniex
 from rotkehlchen.externalapis import Cryptocompare
@@ -532,6 +538,8 @@ class Rotkehlchen():
                     main_currency = Asset(given_symbol)
                 except UnknownAsset:
                     return False, f'Unknown fiat currency {given_symbol} provided'
+                except DeserializationError:
+                    return False, 'Non string type given for fiat currency'
 
                 if not main_currency.is_fiat():
                     msg = (

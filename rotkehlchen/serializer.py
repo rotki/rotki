@@ -1,4 +1,6 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, cast
+
+from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
@@ -103,11 +105,18 @@ def deserialize_timestamp(timestamp: Union[int, str]) -> Timestamp:
     if isinstance(timestamp, int):
         return Timestamp(timestamp)
     elif isinstance(timestamp, str):
-        return Timestamp(int(timestamp))
-    else:
-        raise DeserializationError(
-            f'Failed to deserialize a timestamp entry. Unexpected type {type(timestamp)} given',
-        )
+        try:
+            return Timestamp(int(timestamp))
+        except ValueError:
+            # String could not be turned to an int
+            raise DeserializationError(
+                f'Failed to deserialize a timestamp entry from string {timestamp}',
+            )
+
+    # else
+    raise DeserializationError(
+        f'Failed to deserialize a timestamp entry. Unexpected type {type(timestamp)} given',
+    )
 
 
 def deserialize_timestamp_from_date(date: str, formatstr: str, location: str) -> Timestamp:
@@ -261,3 +270,22 @@ def deserialize_exchange_name(symbol: str) -> Exchange:
         raise DeserializationError(
             f'Failed to deserialize exchange symbol. Unknown symbol {symbol} for exchange',
         )
+
+
+def deserialize_asset_movement_category(symbol: str) -> Literal['deposit', 'withdrawal']:
+    """Takes a string and determines whether to accept it as an asset mvoemen category
+
+    Can throw DeserializationError if symbol is not as expected
+    """
+    if not isinstance(symbol, str):
+        raise DeserializationError(
+            f'Failed to deserialize asset movement category symbol from {type(symbol)} entry',
+        )
+
+    if symbol in('deposit', 'withdrawal'):
+        return cast(Literal['deposit', 'withdrawal'], symbol)
+
+    # else
+    raise DeserializationError(
+        f'Failed to deserialize asset movement category symbol. Unknown symbol {symbol}',
+    )

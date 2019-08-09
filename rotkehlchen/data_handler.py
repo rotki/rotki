@@ -116,6 +116,8 @@ def verify_otctrade_data(
         fee_currency = Asset(data['otc_fee_currency'])
     except UnknownAsset as e:
         return None, f'Provided asset {e.asset_name} is not known to Rotkehlchen'
+    # Not catching DeserializationError here since we have asserts for the data
+    # being strings right above
 
     try:
         trade_type = deserialize_trade_type(str(data['otc_type']))
@@ -253,6 +255,8 @@ class DataHandler():
             asset = Asset(given_asset)
         except UnknownAsset:
             return False, f'Given asset {given_asset} for ignoring is not known/supported'
+        except DeserializationError:
+            return False, f'Given asset for ignoring is not a string'
 
         ignored_assets = self.db.get_ignored_assets()
         if asset in ignored_assets:
@@ -265,6 +269,8 @@ class DataHandler():
             asset = Asset(given_asset)
         except UnknownAsset:
             return False, f'Given asset {given_asset} for ignoring is not known/supported'
+        except DeserializationError:
+            return False, f'Given asset for ignoring is not a string'
 
         ignored_assets = self.db.get_ignored_assets()
         if asset not in ignored_assets:

@@ -8,9 +8,11 @@ from rotkehlchen.errors import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.fval import FVal
 from rotkehlchen.serializer import (
     deserialize_asset_amount,
+    deserialize_asset_movement_category,
     deserialize_exchange_name,
     deserialize_fee,
     deserialize_price,
+    deserialize_timestamp,
     deserialize_trade_type,
 )
 from rotkehlchen.typing import AssetAmount, Exchange, Fee, Price, Timestamp, TradePair, TradeType
@@ -206,12 +208,14 @@ def trades_from_dictlist(
 
     Can raise:
       - KeyError: If a trade dict does not have a key as we expect it
+      - DeserializationError: If a trade dict entry is of an unexpected format
     """
     returned_trades = list()
     for given_trade in given_trades:
-        if given_trade['timestamp'] < start_ts:
+        timestamp = deserialize_timestamp(given_trade['timestamp'])
+        if timestamp < start_ts:
             continue
-        if given_trade['timestamp'] > end_ts:
+        if timestamp > end_ts:
             break
 
         try:
@@ -239,17 +243,22 @@ def asset_movements_from_dictlist(
     """
     returned_movements = list()
     for movement in given_data:
-        if movement['timestamp'] < start_ts:
+        timestamp = deserialize_timestamp(movement['timestamp'])
+
+        if timestamp < start_ts:
             continue
-        if movement['timestamp'] > end_ts:
+        if timestamp > end_ts:
             break
 
+        category = deserialize_asset_movement_category(movement['category'])
+        amount = deserialize_asset_amount(movement['amount'])
+        fee = deserialize_fee(movement['fee'])
         returned_movements.append(AssetMovement(
             exchange=deserialize_exchange_name(movement['exchange']),
-            category=movement['category'],
-            timestamp=movement['timestamp'],
+            category=category,
+            timestamp=timestamp,
             asset=Asset(movement['asset']),
-            amount=FVal(movement['amount']),
-            fee=Fee(FVal(movement['fee'])),
+            amount=amount,
+            fee=fee,
         ))
     return returned_movements
