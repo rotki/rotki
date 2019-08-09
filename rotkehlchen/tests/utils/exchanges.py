@@ -85,6 +85,80 @@ KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE = """{
     "count": 5
 }"""
 
+KRAKEN_SPECIFIC_DEPOSITS_RESPONSE = """
+      {
+            "ledger": {
+                "1": {
+                    "refid": "1",
+                    "time": "1458994442",
+                    "type": "deposit",
+                    "aclass": "currency",
+                    "asset": "BTC",
+                    "amount": "5.0",
+                    "balance": "10.0",
+                    "fee": "0.1"
+                },
+                "2": {
+                    "refid": "2",
+                    "time": "1448994442",
+                    "type": "deposit",
+                    "aclass": "currency",
+                    "asset": "ETH",
+                    "amount": "10.0",
+                    "balance": "100.0",
+                    "fee": "0.11"
+                },
+                "3": {
+                    "refid": "3",
+                    "time": "1438994442",
+                    "type": "deposit",
+                    "aclass": "currency",
+                    "asset": "IDONTEXIST",
+                    "amount": "10.0",
+                    "balance": "100.0",
+                    "fee": "0.11"
+                }
+            },
+            "count": 3
+}"""
+
+KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE = """
+{
+            "ledger": {
+                "1": {
+                    "refid": "1",
+                    "time": "1428994442",
+                    "type": "withdrawal",
+                    "aclass": "currency",
+                    "asset": "BTC",
+                    "amount": "5.0",
+                    "balance": "10.0",
+                    "fee": "0.1"
+                },
+                "2": {
+                    "refid": "2",
+                    "time": "1418994442",
+                    "type": "withdrawal",
+                    "aclass": "currency",
+                    "asset": "ETH",
+                    "amount": "10.0",
+                    "balance": "100.0",
+                    "fee": "0.11"
+                },
+                "3": {
+                    "refid": "3",
+                    "time": "1408994442",
+                    "type": "withdrawal",
+                    "aclass": "currency",
+                    "asset": "IDONTEXISTEITHER",
+                    "amount": "10.0",
+                    "balance": "100.0",
+                    "fee": "0.11"
+                }
+            },
+            "count": 3
+}"""
+
 
 BINANCE_BALANCES_RESPONSE = """
 {
