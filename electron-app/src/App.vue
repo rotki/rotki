@@ -70,13 +70,11 @@
 </template>
 
 <script lang="ts">
-import './legacy/renderer';
 import { Component, Vue } from 'vue-property-decorator';
 import UserDropdown from '@/components/UserDropdown.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
 import { mapState } from 'vuex';
-import { reset_tasks } from '@/legacy/monitor';
 import Login from '@/components/Login.vue';
 import { AccountData, Credentials } from '@/typing/types';
 import { handleUnlockResult } from '@/legacy/userunlock';
@@ -243,8 +241,8 @@ export default class App extends Vue {
     this.$rpc
       .logout()
       .then(() => {
-        reset_tasks();
         monitor.stop();
+        this.$store.commit('tasks/reset');
         this.$store.commit('logout', false);
         this.$store.commit('logged', false);
       })

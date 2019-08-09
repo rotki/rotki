@@ -1,3 +1,5 @@
+import { TaskType } from "@/model/task"; import { TaskType } from
+"@/model/task";
 <template>
   <v-container>
     <v-layout column class="tax-report">
@@ -20,14 +22,31 @@
 import { Component, Vue } from 'vue-property-decorator';
 import Generate from '@/components/taxreport/Generate.vue';
 import { TaxReportEvent } from '@/typing/types';
-import { create_task } from '@/legacy/monitor';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
+import { createTask, TaskType } from '@/model/task';
+import { createNamespacedHelpers } from 'vuex';
+import remote = Electron.remote;
+
+const { mapGetters } = createNamespacedHelpers('task');
 
 @Component({
-  components: { MessageDialog, Generate }
+  components: { MessageDialog, Generate },
+  computed: {
+    ...mapGetters(['isTaskRunning'])
+  }
 })
 export default class TaxReport extends Vue {
   errorMessage: string = '';
+
+  isTaskRunning!: (type: TaskType) => boolean;
+
+  messageTitle: string = '';
+  messageDescription: string = '';
+  messageSuccess: boolean = false;
+
+  get isRunning(): boolean {
+    return this.isTaskRunning(TaskType.TRADE_HISTORY);
+  }
 
   mounted() {}
 
@@ -35,17 +54,44 @@ export default class TaxReport extends Vue {
     this.$rpc
       .process_trade_history_async(event.start, event.end)
       .then(result => {
-        create_task(
+        const task = createTask(
           result.task_id,
-          'process_trade_history',
+          TaskType.TRADE_HISTORY,
           'Create tax report',
-          false,
           true
         );
       })
       .catch((reason: Error) => {
         this.errorMessage = reason.message;
       });
+  }
+
+  promptDirectorySelection() {}
+
+  exportCSV() {
+    remote.dialog.showOpenDialog(
+      {
+        title: 'Select a directory',
+        properties: ['openDirectory']
+      },
+      filePaths => {
+        if (!filePaths) {
+          return;
+        }
+        this.$rpc
+          .export_processed_history_csv(filePaths[0])
+          .then(() => {
+            this.messageTitle = 'Success';
+            this.messageDescription = 'History exported to CVS successfully';
+            this.messageSuccess = true;
+          })
+          .catch((reason: Error) => {
+            this.messageTitle = 'Exporting History to CSV error';
+            this.messageDescription = reason.message;
+            this.messageSuccess = false;
+          });
+      }
+    );
   }
 }
 </script>

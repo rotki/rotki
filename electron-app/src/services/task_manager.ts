@@ -7,6 +7,7 @@ import { Task, TaskType } from '@/model/task';
 import { notify } from '@/store/notifications/utils';
 import { service } from '@/services/rotkehlchen_service';
 import { TaskMap } from '@/store/tasks/state';
+import { TradeHistoryResult } from '@/model/trade-history-result';
 
 export class TaskManager {
   private onUserSettingsQueryBlockchainBalances(
@@ -75,6 +76,26 @@ export class TaskManager {
     store.commit('balances/updateTotals', convertBalances(totals));
   }
 
+  onTradeHistory(result: ActionResult<TradeHistoryResult>) {
+    if (result.error) {
+      notify(
+        `Querying trade history died because of: ${result.error}. Check the logs for more details`,
+        'Trade History Query Error'
+      );
+      return;
+    }
+
+    if (result.message !== '') {
+      notify(
+        `During trade history query we got:${result.message}. History report is probably not complete.`,
+        'Trade History Query Warning'
+      );
+    }
+
+    console.log(result.result.overview);
+    console.log(result.result.all_events);
+  }
+
   monitor() {
     const tasks: TaskMap = store.getters.state.tasks;
     for (const id in tasks) {
@@ -117,6 +138,9 @@ export class TaskManager {
     [TaskType.USER_SETTINGS_QUERY_BLOCKCHAIN_BALANCES]: this
       .onUserSettingsQueryBlockchainBalances,
     [TaskType.QUERY_EXCHANGE_BALANCES]: this.onQueryExchangeBalances,
-    [TaskType.QUERY_BLOCKCHAIN_BALANCES]: this.onQueryBlockchainBalances
+    [TaskType.QUERY_BLOCKCHAIN_BALANCES]: this.onQueryBlockchainBalances,
+    [TaskType.TRADE_HISTORY]: this.onTradeHistory
   };
 }
+
+export const taskManager = new TaskManager();

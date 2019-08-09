@@ -1,8 +1,10 @@
 import { service } from '@/services/rotkehlchen_service';
 import store from '@/store';
+import { taskManager } from '@/services/task_manager';
 
 class Monitoring {
   private monitoring?: NodeJS.Timer;
+  private taskMonitoring?: NodeJS.Timer;
 
   private fetch() {
     store.dispatch('notifications/consume');
@@ -35,13 +37,22 @@ class Monitoring {
       this.fetch();
       this.monitoring = setInterval(this.fetch, 5000);
     }
+
+    if (!this.taskMonitoring) {
+      taskManager.monitor();
+      this.taskMonitoring = setInterval(() => taskManager.monitor(), 2000);
+    }
   }
 
   stop() {
-    if (!this.monitoring) {
-      return;
+    if (this.monitoring) {
+      clearInterval(this.monitoring);
+      this.monitoring = undefined;
     }
-    clearInterval(this.monitoring);
+    if (this.taskMonitoring) {
+      clearInterval(this.taskMonitoring);
+      this.taskMonitoring = undefined;
+    }
   }
 }
 

@@ -2,6 +2,7 @@ import Vue from 'vue';
 import { displayDateFormatter } from '@/data/date_formatter';
 import BigNumber from 'bignumber.js';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
+import { AccountBalance } from '@/model/blockchain-balances';
 
 function percentage(value: string, total: string, precision: number): string {
   const percentage = parseFloat(value) / parseFloat(total);
@@ -24,7 +25,7 @@ function calculatePrice(value: BigNumber, exchangeRate: number): BigNumber {
   return value.multipliedBy(bigNumberify(exchangeRate));
 }
 
-function balanceSum(value: BigNumber[]): BigNumber {
+function balanceSum(value: BigNumber[], amount: boolean): BigNumber {
   return value.reduce(
     (previousValue, currentValue) => previousValue.plus(currentValue),
     Zero
