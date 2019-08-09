@@ -15,7 +15,11 @@ from rotkehlchen.exchanges.kraken import (
     world_to_kraken_pair,
 )
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.exchanges import KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE
+from rotkehlchen.tests.utils.exchanges import (
+    KRAKEN_SPECIFIC_DEPOSITS_RESPONSE,
+    KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE,
+    KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE,
+)
 from rotkehlchen.tests.utils.factories import (
     make_random_b64bytes,
     make_random_positive_fval,
@@ -169,86 +173,6 @@ def generate_random_kraken_trades_data(
     return rlk_jsonloads(response_str)
 
 
-def specific_ledger_data_generation(
-        start: Timestamp,
-        end: Timestamp,
-        ledger_type: str,
-) -> Dict:
-    """A premade callback for specific test data generation for kraken ledgers"""
-    if ledger_type == 'deposit':
-        return {
-            'ledger': {
-                '1': {
-                    'refid': '1',
-                    'time': '1458994442',
-                    'type': 'deposit',
-                    'aclass': 'currency',
-                    'asset': 'BTC',
-                    'amount': '5.0',
-                    'balance': '10.0',
-                    'fee': '0.1',
-                },
-                '2': {
-                    'refid': '2',
-                    'time': '1448994442',
-                    'type': 'deposit',
-                    'aclass': 'currency',
-                    'asset': 'ETH',
-                    'amount': '10.0',
-                    'balance': '100.0',
-                    'fee': '0.11',
-                },
-                '3': {
-                    'refid': '3',
-                    'time': '1438994442',
-                    'type': 'deposit',
-                    'aclass': 'currency',
-                    'asset': 'IDONTEXIST',
-                    'amount': '10.0',
-                    'balance': '100.0',
-                    'fee': '0.11',
-                },
-            },
-            'count': 3,
-        }
-    else:
-        return {
-            'ledger': {
-                '1': {
-                    'refid': '1',
-                    'time': '1428994442',
-                    'type': 'withdrawal',
-                    'aclass': 'currency',
-                    'asset': 'BTC',
-                    'amount': '5.0',
-                    'balance': '10.0',
-                    'fee': '0.1',
-                },
-                '2': {
-                    'refid': '2',
-                    'time': '1418994442',
-                    'type': 'withdrawal',
-                    'aclass': 'currency',
-                    'asset': 'ETH',
-                    'amount': '10.0',
-                    'balance': '100.0',
-                    'fee': '0.11',
-                },
-                '3': {
-                    'refid': '3',
-                    'time': '1408994442',
-                    'type': 'withdrawal',
-                    'aclass': 'currency',
-                    'asset': 'IDONTEXISTEITHER',
-                    'amount': '10.0',
-                    'balance': '100.0',
-                    'fee': '0.11',
-                },
-            },
-            'count': 3,
-        }
-
-
 class MockKraken(Kraken):
 
     def __init__(
@@ -272,7 +196,6 @@ class MockKraken(Kraken):
         self.random_ledgers_data = True
 
         self.balance_data_return = {'XXBT': '5.0', 'XETH': '10.0', 'NOTAREALASSET': '15.0'}
-        self.ledger_data_generate_cb = specific_ledger_data_generation
 
     def first_connection(self):
         if self.first_connection_made:
@@ -303,18 +226,23 @@ class MockKraken(Kraken):
             # else
             return rlk_jsonloads(KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE)
         elif method == 'Ledgers':
+            ledger_type = req['type']
             if self.random_ledgers_data:
                 return generate_random_kraken_ledger_data(
                     start=req['start'],
                     end=req['end'],
-                    ledger_type=req['type'],
+                    ledger_type=ledger_type,
                 )
-            # else
-            return self.ledger_data_generate_cb(
-                start=req['start'],
-                end=req['end'],
-                ledger_type=req['type'],
-            )
+
+            # else use specific data
+            if ledger_type == 'deposit':
+                response = KRAKEN_SPECIFIC_DEPOSITS_RESPONSE
+            elif ledger_type == 'withdrawal':
+                response = KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE
+            else:
+                raise AssertionError('Unknown ledger type at kraken ledgers mock query')
+
+            return rlk_jsonloads(response)
 
         return super().query_private(method, req)
 
