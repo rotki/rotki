@@ -99,7 +99,7 @@ def deserialize_timestamp(timestamp: Union[int, str]) -> Timestamp:
 
     Can throw DeserializationError if the data is not as expected
     """
-    if not timestamp:
+    if timestamp is None:
         raise DeserializationError('Failed to deserialize a timestamp entry from a null entry')
 
     if isinstance(timestamp, int):

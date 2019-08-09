@@ -1,6 +1,7 @@
-from dataclasses import dataclass, field
 from functools import total_ordering
 from typing import Any, Optional
+
+from dataclasses import dataclass, field
 
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.cryptocompare import WORLD_TO_CRYPTOCOMPARE

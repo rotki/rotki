@@ -32,9 +32,8 @@ def test_querying_balances(kraken):
     result, error_or_empty = kraken.query_balances()
     assert error_or_empty == ''
     assert isinstance(result, dict)
-    for name, entry in result.items():
-        # Make sure this does not fail
-        Asset(name)
+    for asset, entry in result.items():
+        assert isinstance(asset, Asset)
         assert 'usd_value' in entry
         assert 'amount' in entry
 
