@@ -4,6 +4,7 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.errors import HistoryCacheInvalid
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import (
@@ -249,3 +250,144 @@ def test_assets_movements_from_cache(accounting_data_dir, trades_historian):
     assert asset_movements[1].asset == Asset('BTC')
     assert asset_movements[1].amount == FVal('2.5')
     assert asset_movements[1].fee == FVal('0.00001')
+
+
+def test_assets_movements_from_invalid_cache(accounting_data_dir, trades_historian):
+    """
+    Test that when reading asset movements from a file with invalid entries it is
+    handled properly by raising a HistoryCacheInvalid error
+    """
+    data_str = (
+        '[{"exchange": "kraken", "category": "deposit", "timestamp": 1520938730, '
+        '"asset": "KFEE", "amount": "100.0", "fee": "0.0"}]'
+    )
+    with open(os.path.join(accounting_data_dir, ASSETMOVEMENTS_HISTORYFILE), 'w') as f:
+        f.write(
+            f'{{"start_time":0, "end_time": {TEST_END_TS}, "data": {data_str}}}',
+        )
+
+    # first of all see that it all works fine with valid entries
+    asset_movements = trades_historian._get_cached_asset_movements(
+        start_ts=0,
+        end_ts=TEST_END_TS,
+        end_at_least_ts=TEST_END_TS,
+    )
+    # The specifics of proper deserialization are checked in test_assets_movements_from_cache
+    assert len(asset_movements) == 1
+
+    # test for unknown exchange name
+    test_str = data_str.replace('kraken', 'unknownexchange')
+    with open(os.path.join(accounting_data_dir, ASSETMOVEMENTS_HISTORYFILE), 'w') as f:
+        f.write(
+            f'{{"start_time":0, "end_time": {TEST_END_TS}, "data": {test_str}}}',
+        )
+    with pytest.raises(HistoryCacheInvalid):
+        asset_movements = trades_historian._get_cached_asset_movements(
+            start_ts=0,
+            end_ts=TEST_END_TS,
+            end_at_least_ts=TEST_END_TS,
+        )
+
+    # test for invalid category
+    test_str = data_str.replace('deposit', 'brodown')
+    with open(os.path.join(accounting_data_dir, ASSETMOVEMENTS_HISTORYFILE), 'w') as f:
+        f.write(
+            f'{{"start_time":0, "end_time": {TEST_END_TS}, "data": {test_str}}}',
+        )
+    with pytest.raises(HistoryCacheInvalid):
+        asset_movements = trades_historian._get_cached_asset_movements(
+            start_ts=0,
+            end_ts=TEST_END_TS,
+            end_at_least_ts=TEST_END_TS,
+        )
+
+    # test for invalid category
+    test_str = data_str.replace('deposit', 'brodown')
+    with open(os.path.join(accounting_data_dir, ASSETMOVEMENTS_HISTORYFILE), 'w') as f:
+        f.write(
+            f'{{"start_time":0, "end_time": {TEST_END_TS}, "data": {test_str}}}',
+        )
+    with pytest.raises(HistoryCacheInvalid):
+        asset_movements = trades_historian._get_cached_asset_movements(
+            start_ts=0,
+            end_ts=TEST_END_TS,
+            end_at_least_ts=TEST_END_TS,
+        )
+
+    # test for invalid timestamp
+    test_str = data_str.replace('1520938730', '"timestampshouldnotbestring"')
+    with open(os.path.join(accounting_data_dir, ASSETMOVEMENTS_HISTORYFILE), 'w') as f:
+        f.write(
+            f'{{"start_time":0, "end_time": {TEST_END_TS}, "data": {test_str}}}',
+        )
+    with pytest.raises(HistoryCacheInvalid):
+        asset_movements = trades_historian._get_cached_asset_movements(
+            start_ts=0,
+            end_ts=TEST_END_TS,
+            end_at_least_ts=TEST_END_TS,
+        )
+
+    # test for invalid asset entry
+    test_str = data_str.replace('"KFEE"', '[]')
+    with open(os.path.join(accounting_data_dir, ASSETMOVEMENTS_HISTORYFILE), 'w') as f:
+        f.write(
+            f'{{"start_time":0, "end_time": {TEST_END_TS}, "data": {test_str}}}',
+        )
+    with pytest.raises(HistoryCacheInvalid):
+        asset_movements = trades_historian._get_cached_asset_movements(
+            start_ts=0,
+            end_ts=TEST_END_TS,
+            end_at_least_ts=TEST_END_TS,
+        )
+
+    # test for unknown asset entry
+    test_str = data_str.replace('"KFEE"', '"DSADSAD"')
+    with open(os.path.join(accounting_data_dir, ASSETMOVEMENTS_HISTORYFILE), 'w') as f:
+        f.write(
+            f'{{"start_time":0, "end_time": {TEST_END_TS}, "data": {test_str}}}',
+        )
+    with pytest.raises(HistoryCacheInvalid):
+        asset_movements = trades_historian._get_cached_asset_movements(
+            start_ts=0,
+            end_ts=TEST_END_TS,
+            end_at_least_ts=TEST_END_TS,
+        )
+
+    # test for invalid fee
+    test_str = data_str.replace('"0.0"', '"dasdsadsad"')
+    with open(os.path.join(accounting_data_dir, ASSETMOVEMENTS_HISTORYFILE), 'w') as f:
+        f.write(
+            f'{{"start_time":0, "end_time": {TEST_END_TS}, "data": {test_str}}}',
+        )
+    with pytest.raises(HistoryCacheInvalid):
+        asset_movements = trades_historian._get_cached_asset_movements(
+            start_ts=0,
+            end_ts=TEST_END_TS,
+            end_at_least_ts=TEST_END_TS,
+        )
+
+    # test for invalid amount
+    test_str = data_str.replace('"100.0"', 'null')
+    with open(os.path.join(accounting_data_dir, ASSETMOVEMENTS_HISTORYFILE), 'w') as f:
+        f.write(
+            f'{{"start_time":0, "end_time": {TEST_END_TS}, "data": {test_str}}}',
+        )
+    with pytest.raises(HistoryCacheInvalid):
+        asset_movements = trades_historian._get_cached_asset_movements(
+            start_ts=0,
+            end_ts=TEST_END_TS,
+            end_at_least_ts=TEST_END_TS,
+        )
+
+    # test for missing key
+    test_str = data_str.replace('"category": "deposit",', '')
+    with open(os.path.join(accounting_data_dir, ASSETMOVEMENTS_HISTORYFILE), 'w') as f:
+        f.write(
+            f'{{"start_time":0, "end_time": {TEST_END_TS}, "data": {test_str}}}',
+        )
+    with pytest.raises(HistoryCacheInvalid):
+        asset_movements = trades_historian._get_cached_asset_movements(
+            start_ts=0,
+            end_ts=TEST_END_TS,
+            end_at_least_ts=TEST_END_TS,
+        )
