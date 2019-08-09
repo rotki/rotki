@@ -428,6 +428,9 @@ def asset_from_cryptocompare(cc_name: str) -> Asset:
 
 
 def asset_from_poloniex(poloniex_name: str) -> Asset:
+    if not isinstance(poloniex_name, str):
+        raise DeserializationError(f'Got non-string type {type(poloniex_name)} for poloniex asset')
+
     if poloniex_name in UNSUPPORTED_POLONIEX_ASSETS:
         raise UnsupportedAsset(poloniex_name)
 
@@ -436,6 +439,9 @@ def asset_from_poloniex(poloniex_name: str) -> Asset:
 
 
 def asset_from_bittrex(bittrex_name: str) -> Asset:
+    if not isinstance(bittrex_name, str):
+        raise DeserializationError(f'Got non-string type {type(bittrex_name)} for bittrex asset')
+
     if bittrex_name in UNSUPPORTED_BITTREX_ASSETS:
         raise UnsupportedAsset(bittrex_name)
 
@@ -444,6 +450,9 @@ def asset_from_bittrex(bittrex_name: str) -> Asset:
 
 
 def asset_from_binance(binance_name: str) -> Asset:
+    if not isinstance(binance_name, str):
+        raise DeserializationError(f'Got non-string type {type(binance_name)} for binance asset')
+
     if binance_name in UNSUPPORTED_BINANCE_ASSETS:
         raise UnsupportedAsset(binance_name)
 
