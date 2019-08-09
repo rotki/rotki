@@ -36,12 +36,13 @@ from rotkehlchen.inquirer import query_cryptocompare_for_fiat_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serializer import (
     deserialize_asset_amount,
+    deserialize_asset_movement_category,
     deserialize_fee,
     deserialize_price,
     deserialize_timestamp_from_kraken,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Exchange, Fee, FilePath, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Exchange, FilePath, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, retry_calls
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
@@ -694,11 +695,11 @@ class Kraken(ExchangeInterface):
             try:
                 movements.append(AssetMovement(
                     exchange=Exchange.KRAKEN,
-                    category=movement['type'],
+                    category=deserialize_asset_movement_category(movement['type']),
                     timestamp=deserialize_timestamp_from_kraken(movement['time']),
                     asset=asset_from_kraken(movement['asset']),
-                    amount=FVal(movement['amount']),
-                    fee=Fee(FVal(movement['fee'])),
+                    amount=deserialize_asset_amount(movement['amount']),
+                    fee=deserialize_fee(movement['fee']),
                 ))
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
@@ -706,10 +707,18 @@ class Kraken(ExchangeInterface):
                     f'Ignoring its deposit/withdrawals query.',
                 )
                 continue
-            except DeserializationError as e:
-                self.msg_aggregator.add_warning(
-                    f'Failed to deserialize a kraken deposit/withdrawal: {str(e)}. '
-                    f'Ignoring the deposit/withdrawal entry.',
+            except (DeserializationError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}.'
+                self.msg_aggregator.add_error(
+                    'Failed to deserialize a kraken deposit/withdrawals. '
+                    'Check logs for details. Ignoring it.',
+                )
+                log.error(
+                    'Error processing a kraken deposit/withdrawal.',
+                    raw_asset_movement=movement,
+                    error=msg,
                 )
                 continue
 
