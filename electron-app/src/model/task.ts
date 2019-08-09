@@ -9,8 +9,8 @@ export const createTask: (
   id: number,
   type: TaskType,
   description: string,
-  asyncResult: boolean
-) => Task = (id, type, description, asyncResult) => ({
+  asyncResult?: boolean
+) => Task = (id, type, description, asyncResult = false) => ({
   id,
   type,
   description,

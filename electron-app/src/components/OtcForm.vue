@@ -93,7 +93,6 @@
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { OtcPayload, OtcTrade } from '@/model/otc-trade';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
-import { timestamp_to_date } from '@/legacy/utils';
 
 @Component({
   components: { DateTimePicker }
@@ -124,9 +123,24 @@ export default class OtcForm extends Vue {
     }
   }
 
+  private static convertTimestamp(timestamp: number): string {
+    const date = new Date(timestamp * 1000);
+    return (
+      ('0' + date.getUTCDate()).slice(-2) +
+      '/' +
+      ('0' + (date.getUTCMonth() + 1)).slice(-2) +
+      '/' +
+      date.getUTCFullYear() +
+      ' ' +
+      ('0' + date.getUTCHours()).slice(-2) +
+      ':' +
+      ('0' + date.getUTCMinutes()).slice(-2)
+    );
+  }
+
   private updateFields(trade: OtcTrade) {
     this.pair = trade.pair;
-    this.datetime = timestamp_to_date(trade.timestamp, false);
+    this.datetime = OtcForm.convertTimestamp(trade.timestamp);
     this.amount = trade.amount;
     this.rate = trade.rate;
     this.fee = trade.fee;
