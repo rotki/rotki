@@ -1,6 +1,48 @@
 import { ActionTree } from 'vuex';
-import { NotificationState } from '@/store/notifications/state';
 import { RotkehlchenState } from '@/store';
 import { TaskState } from '@/store/tasks/state';
+import { BalanceStatus } from '@/enums/BalanceStatus';
+import { service } from '@/services/rotkehlchen_service';
+import { createTask, TaskType } from '@/model/task';
 
-export const actions: ActionTree<TaskState, RotkehlchenState> = {};
+export const actions: ActionTree<TaskState, RotkehlchenState> = {
+  removeTask({ state, commit }, taskId: number) {
+    const balanceTasks = [...state.balanceTasks];
+
+    for (let i = 0; i < balanceTasks.length; i++) {
+      const taskId = balanceTasks[i];
+
+      if (taskId === taskId) {
+        if (state.queryStatus !== BalanceStatus.requested) {
+          console.error({
+            error: `BalanceStatus should only be requested at this point. But value is ${state.queryStatus}`
+          });
+          return;
+        }
+
+        balanceTasks.splice(i, 1);
+
+        if (balanceTasks.length === 0) {
+          commit('status', BalanceStatus.complete);
+
+          service
+            .query_balances_async()
+            .then(result => {
+              const task = createTask(
+                result.task_id,
+                TaskType.QUERY_BALANCES,
+                'Query All Balances'
+              );
+              commit('add', task);
+            })
+            .catch((reason: Error) => {
+              console.error(
+                `Error at querying all balances asynchronously: ${reason.message}`
+              );
+            });
+        }
+      }
+    }
+    commit('remove', taskId);
+  }
+};

@@ -1,3 +1,4 @@
+import { TaskType } from "@/model/task";
 <template>
   <v-layout>
     <v-flex>
@@ -55,12 +56,12 @@
 import { Component, Vue } from 'vue-property-decorator';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import TokenTrack from '@/components/settings/TokenTrack.vue';
-import { AccountBalance, EthBalances } from '@/model/blockchain-balances';
+import { AccountBalance } from '@/model/blockchain-balances';
 import { createNamespacedHelpers } from 'vuex';
 import { convertBalances, convertEthBalances } from '@/utils/conversion';
 import AccountBalances from '@/components/settings/AccountBalances.vue';
-import { create_task } from '@/legacy/monitor';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
+import { createTask, TaskType } from '@/model/task';
 
 const { mapGetters } = createNamespacedHelpers('balances');
 
@@ -84,13 +85,13 @@ export default class BlockchainBalances extends Vue {
     this.$rpc
       .query_blockchain_balances_async()
       .then(value => {
-        create_task(
+        const task = createTask(
           value.task_id,
-          'user_settings_query_blockchain_balances',
+          TaskType.USER_SETTINGS_QUERY_BLOCKCHAIN_BALANCES,
           'Query blockchain balances',
-          false,
           true
         );
+        this.$store.commit('tasks/addBalanceTask', task);
       })
       .catch((reason: Error) => {
         console.log(
