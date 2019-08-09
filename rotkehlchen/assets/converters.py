@@ -1,6 +1,6 @@
 from rotkehlchen.assets.asset import WORLD_TO_BINANCE, WORLD_TO_BITTREX, WORLD_TO_POLONIEX, Asset
 from rotkehlchen.constants.cryptocompare import WORLD_TO_CRYPTOCOMPARE
-from rotkehlchen.errors import UnsupportedAsset
+from rotkehlchen.errors import DeserializationError, UnsupportedAsset
 
 KRAKEN_TO_WORLD = {
     'ATOM': 'ATOM',
@@ -417,6 +417,8 @@ ETH_TOKENS_MOVED_TO_OWN_CHAIN = {
 
 
 def asset_from_kraken(kraken_name: str) -> Asset:
+    if not isinstance(kraken_name, str):
+        raise DeserializationError(f'Got non-string type {type(kraken_name)} for kraken asset')
     name = KRAKEN_TO_WORLD.get(kraken_name, kraken_name)
     return Asset(name)
 

@@ -82,7 +82,7 @@ def deserialize_fee(fee: Optional[str]) -> Fee:
 
     Can throw DeserializationError if the fee is not as expected
     """
-    if not fee:
+    if fee is None:
         return Fee(ZERO)
 
     try:

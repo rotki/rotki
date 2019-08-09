@@ -110,7 +110,8 @@ def test_kraken_query_balances_unknown_asset(function_scope_kraken):
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_kraken_query_deposit_withdrawals_unknown_asset(function_scope_kraken):
     """Test that if a kraken deposits_withdrawals query returns unknown asset
-    no exception is raised and a warning is generated"""
+    no exception is raised and a warning is generated and the deposits/withdrawals
+    with valid assets are still returned"""
     kraken = function_scope_kraken
     kraken.random_ledgers_data = False
 
@@ -138,6 +139,92 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(function_scope_kraken):
     assert len(warnings) == 2
     assert 'unknown kraken asset IDONTEXIST' in warnings[0]
     assert 'unknown kraken asset IDONTEXISTEITHER' in warnings[1]
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_kraken_query_deposit_withdrawals_unexpected_data(function_scope_kraken):
+    """Test if a kraken deposits_withdrawals query returns invalid data we handle it gracefully"""
+    kraken = function_scope_kraken
+    kraken.random_ledgers_data = False
+    kraken.cache_ttl_secs = 0
+
+    test_deposits = """{
+    "ledger": {
+    "1": {
+    "refid": "1",
+    "time": "1458994442",
+    "type": "deposit",
+    "aclass": "currency",
+    "asset": "BTC",
+    "amount": "5.0",
+    "balance": "10.0",
+    "fee": "0.1"
+    }
+    },
+    "count": 1
+    }"""
+
+    withdraws = 'rotkehlchen.tests.fixtures.exchanges.kraken.KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE'
+    zero_withdraws = patch(withdraws, new='{"count": 0, "ledger":{}}')
+
+    def query_kraken_and_test(input_ledger, expected_warnings_num, expected_errors_num):
+        with patch(target, new=input_ledger), zero_withdraws:
+            deposits = kraken.query_deposits_withdrawals(
+                start_ts=0,
+                end_ts=TEST_END_TS,
+                end_at_least_ts=TEST_END_TS,
+            )
+
+        if expected_warnings_num == 0 and expected_errors_num == 0:
+            assert len(deposits) == 1
+            assert deposits[0].category == 'deposit'
+            assert deposits[0].asset == A_BTC
+        else:
+            assert len(deposits) == 0
+        errors = kraken.msg_aggregator.consume_errors()
+        warnings = kraken.msg_aggregator.consume_warnings()
+        assert len(errors) == expected_errors_num
+        assert len(warnings) == expected_warnings_num
+
+    # first normal deposit should have no problem
+    target = 'rotkehlchen.tests.fixtures.exchanges.kraken.KRAKEN_SPECIFIC_DEPOSITS_RESPONSE'
+    query_kraken_and_test(test_deposits, expected_warnings_num=0, expected_errors_num=0)
+
+    # From here and on let's make sure we react correctly to unexpected data
+    # Invalid timestamp
+    input_ledger = test_deposits
+    input_ledger = input_ledger.replace('1458994442', 'dsadsadad')
+    query_kraken_and_test(input_ledger, expected_warnings_num=0, expected_errors_num=1)
+
+    # Invalid category type
+    input_ledger = test_deposits
+    input_ledger = input_ledger.replace('deposit', 'drinking')
+    query_kraken_and_test(input_ledger, expected_warnings_num=0, expected_errors_num=1)
+
+    # Invalid asset type
+    input_ledger = test_deposits
+    input_ledger = input_ledger.replace('"BTC"', '[]')
+    query_kraken_and_test(input_ledger, expected_warnings_num=0, expected_errors_num=1)
+
+    # Unknown asset
+    input_ledger = test_deposits
+    input_ledger = input_ledger.replace('"BTC"', '"DSADSD"')
+    query_kraken_and_test(input_ledger, expected_warnings_num=1, expected_errors_num=0)
+
+    # Invalid amount
+    input_ledger = test_deposits
+    input_ledger = input_ledger.replace('"5.0"', 'null')
+    query_kraken_and_test(input_ledger, expected_warnings_num=0, expected_errors_num=1)
+
+    # Invalid fee
+    input_ledger = test_deposits
+    input_ledger = input_ledger.replace('"0.1"', '{}')
+    query_kraken_and_test(input_ledger, expected_warnings_num=0, expected_errors_num=1)
+
+    # Missing key entry
+    input_ledger = test_deposits
+    input_ledger = input_ledger.replace('"asset": "BTC",', '')
+    query_kraken_and_test(input_ledger, expected_warnings_num=0, expected_errors_num=1)
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
