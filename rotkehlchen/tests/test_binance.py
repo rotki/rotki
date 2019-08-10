@@ -12,13 +12,15 @@ from rotkehlchen.assets.converters import (
 )
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError, UnsupportedAsset
 from rotkehlchen.exchanges.binance import Binance, trade_from_binance
-from rotkehlchen.exchanges.data_structures import Trade, TradeType
+from rotkehlchen.exchanges.data_structures import Exchange, Trade, TradeType
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_BNB, A_RDN, A_USDT
+from rotkehlchen.tests.utils.constants import A_BNB, A_RDN, A_USDT, A_XMR
 from rotkehlchen.tests.utils.exchanges import BINANCE_BALANCES_RESPONSE
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
+from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -389,3 +391,108 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
         expected_errors_num=0,
         warning_str_test='Found binance trade with unknown asset DSDSDS',
     )
+
+
+BINANCE_DEPOSITS_HISTORY_RESPONSE = """{
+    "depositList": [
+        {
+            "insertTime": 1508198532000,
+            "amount": 0.04670582,
+            "asset": "ETH",
+            "address": "0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b",
+            "txId": "0xdf33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1",
+            "status": 1
+        },
+        {
+            "insertTime": 1508398632000,
+            "amount": 1000,
+            "asset": "XMR",
+            "address": "463tWEBn5XZJSxLU34r6g7h8jtxuNcDbjLSjkn3XAXHCbLrTTErJrBWYgHJQyrCwkNgYvV38",
+            "addressTag": "342341222",
+            "txId": "b3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509",
+            "status": 1
+        }
+    ],
+    "success": true
+}"""
+
+BINANCE_WITHDRAWALS_HISTORY_RESPONSE = """{
+    "withdrawList": [
+        {
+            "id":"7213fea8e94b4a5593d507237e5a555b",
+            "amount": 1,
+            "address": "0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b",
+            "asset": "ETH",
+            "txId": "0xdf33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1",
+            "applyTime": 1518192542000,
+            "status": 4
+        },
+        {
+            "id":"7213fea8e94b4a5534ggsd237e5a555b",
+            "amount": 850.1,
+            "address": "463tWEBn5XZJSxLU34r6g7h8jtxuNcDbjLSjkn3XAXHCbLrTTErJrBWYgHJQyrCwkNgYvyVz8",
+            "addressTag": "342341222",
+            "txId": "b3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509",
+            "asset": "XMR",
+            "applyTime": 1529198732000,
+            "status": 4
+        }
+    ],
+    "success": true
+}"""
+
+
+def test_binance_query_deposits_withdrawals(function_scope_binance):
+    """Test the happy case of binance deposit withdrawal query"""
+    binance = function_scope_binance
+    binance.cache_ttl_secs = 0
+
+    def mock_get_deposit_withdrawal(url):  # pylint: disable=unused-argument
+        if 'deposit' in url:
+            response_str = BINANCE_DEPOSITS_HISTORY_RESPONSE
+        else:
+            response_str = BINANCE_WITHDRAWALS_HISTORY_RESPONSE
+
+        return MockResponse(200, response_str)
+
+    with patch.object(binance.session, 'get', side_effect=mock_get_deposit_withdrawal):
+        movements = binance.query_deposits_withdrawals(0, TEST_END_TS, TEST_END_TS)
+
+    errors = binance.msg_aggregator.consume_errors()
+    warnings = binance.msg_aggregator.consume_warnings()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+
+    assert len(movements) == 4
+
+    assert movements[0].exchange == Exchange.BINANCE
+    assert movements[0].category == 'deposit'
+    assert movements[0].timestamp == 1508198532
+    assert isinstance(movements[0].asset, Asset)
+    assert movements[0].asset == A_ETH
+    assert movements[0].amount == FVal('0.04670582')
+    assert movements[0].fee == ZERO
+
+    assert movements[1].exchange == Exchange.BINANCE
+    assert movements[1].category == 'deposit'
+    assert movements[1].timestamp == 1508398632
+    assert isinstance(movements[1].asset, Asset)
+    assert movements[1].asset == A_XMR
+    assert movements[1].amount == FVal('1000')
+    assert movements[1].fee == ZERO
+
+    assert movements[2].exchange == Exchange.BINANCE
+    assert movements[2].category == 'withdrawal'
+    assert movements[2].timestamp == 1518192542
+    assert isinstance(movements[2].asset, Asset)
+    assert movements[2].asset == A_ETH
+    assert movements[2].amount == FVal('1')
+    assert movements[2].fee == ZERO
+
+    assert movements[3].exchange == Exchange.BINANCE
+    assert movements[3].category == 'withdrawal'
+    assert movements[3].timestamp == 1529198732
+    assert isinstance(movements[3].asset, Asset)
+    assert movements[3].asset == A_XMR
+    assert movements[3].amount == FVal('850.1')
+    assert movements[3].fee == ZERO

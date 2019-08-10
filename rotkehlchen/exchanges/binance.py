@@ -2,15 +2,22 @@ import hashlib
 import hmac
 import logging
 import time
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 from urllib.parse import urlencode
 
 import gevent
+from typing_extensions import Literal
 
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import BINANCE_BASE_URL
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
-from rotkehlchen.exchanges.data_structures import Trade, TradeType, trade_pair_from_assets
+from rotkehlchen.exchanges.data_structures import (
+    AssetMovement,
+    Trade,
+    TradeType,
+    trade_pair_from_assets,
+)
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -21,7 +28,7 @@ from rotkehlchen.serializer import (
     deserialize_price,
     deserialize_timestamp_from_binance,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp
+from rotkehlchen.typing import ApiKey, ApiSecret, Exchange, Fee, FilePath, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise
 from rotkehlchen.utils.serialization import rlk_jsonloads
@@ -37,6 +44,11 @@ V3_ENDPOINTS = (
 
 V1_ENDPOINTS = (
     'exchangeInfo'
+)
+
+WAPI_ENDPOINTS = (
+    'depositHistory.html',
+    'withdrawHistory.html',
 )
 
 
@@ -136,10 +148,10 @@ def create_binance_symbols_to_pair(exchange_data: Dict[str, Any]) -> Dict[str, B
 
 class Binance(ExchangeInterface):
     """Binance exchange api docs:
-    https://github.com/binance-exchange/binance-official-api-docs/blob/master/rest-api.md
+    https://github.com/binance-exchange/binance-official-api-docs/
 
     An unofficial python binance package:
-    https://github.com/sammchardy/python-binance
+    https://github.com/binance-exchange/python-binance/
     """
     def __init__(
             self,
@@ -203,7 +215,7 @@ class Binance(ExchangeInterface):
                 # Protect this region with a lock since binance will reject
                 # non-increasing nonces. So if two greenlets come in here at
                 # the same time one of them will fail
-                if method in V3_ENDPOINTS:
+                if method in V3_ENDPOINTS or method in WAPI_ENDPOINTS:
                     api_version = 3
                     # Recommended recvWindows is 5000 but we get timeouts with it
                     options['recvWindow'] = 10000
@@ -219,7 +231,8 @@ class Binance(ExchangeInterface):
                 else:
                     raise ValueError('Unexpected binance api method {}'.format(method))
 
-                request_url = self.uri + 'v' + str(api_version) + '/' + method + '?'
+                apistr = 'wapi/' if method in WAPI_ENDPOINTS else 'api/'
+                request_url = f'{self.uri}{apistr}v{str(api_version)}/{method}?'
                 request_url += urlencode(options)
 
                 log.debug('Binance API request', request_url=request_url)
@@ -414,3 +427,99 @@ class Binance(ExchangeInterface):
             trades.append(trade)
 
         return trades
+
+    def _deserialize_asset_movement(self, raw_data: Dict[str, Any]) -> Optional[AssetMovement]:
+        """Processes a single deposit/withdrawal from binance and deserializes it
+
+        Can log error/warning and return None if something went wrong at deserialization
+        """
+        try:
+            if 'insertTime' in raw_data:
+                category = 'deposit'
+                time_key = 'insertTime'
+            else:
+                category = 'withdrawal'
+                time_key = 'applyTime'
+
+            timestamp = deserialize_timestamp_from_binance(raw_data[time_key])
+            asset = asset_from_binance(raw_data['asset'])
+            amount = deserialize_asset_amount(raw_data['amount'])
+            return AssetMovement(
+                exchange=Exchange.BINANCE,
+                category=cast(Literal['deposit', 'withdrawal'], category),
+                timestamp=timestamp,
+                asset=asset,
+                amount=amount,
+                # Binance does not include withdrawal fees neither in the API nor in their UI
+                fee=Fee(ZERO),
+            )
+
+        except UnknownAsset as e:
+            self.msg_aggregator.add_warning(
+                f'Found binance deposit/withdrawal with unknown asset '
+                f'{e.asset_name}. Ignoring it.',
+            )
+        except UnsupportedAsset as e:
+            self.msg_aggregator.add_warning(
+                f'Found binance deposit/withdrawal with unsupported asset '
+                f'{e.asset_name}. Ignoring it.',
+            )
+        except (DeserializationError, KeyError) as e:
+            msg = str(e)
+            if isinstance(e, KeyError):
+                msg = f'Missing key entry for {msg}.'
+            self.msg_aggregator.add_error(
+                'Error processing a binance deposit/withdrawal. Check logs '
+                'for details. Ignoring it.',
+            )
+            log.error(
+                'Error processing a binance deposit_withdrawal',
+                asset_movement=raw_data,
+                error=msg,
+            )
+
+        return None
+
+    def query_deposits_withdrawals(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            end_at_least_ts: Timestamp,
+    ) -> List[AssetMovement]:
+        cache = self.check_trades_cache_list(
+            start_ts,
+            end_at_least_ts,
+            special_name='deposits_withdrawals',
+        )
+        if cache is not None:
+            raw_data = cache
+        else:
+            # This does not check for any limits. Can there be any limits like with trades
+            # in the deposit/withdrawal binance api? Can't see anything in the docs:
+            # https://github.com/binance-exchange/binance-official-api-docs/blob/master/wapi-api.md#deposit-history-user_data
+            result = self.api_query_dict(
+                'depositHistory.html',
+                options={'timestamp': 0},
+            )
+            raw_data = result['depositList']
+            result = self.api_query_dict(
+                'withdrawHistory.html',
+                options={'timestamp': 0},
+            )
+            raw_data.extend(result['withdrawList'])
+            log.debug('binance deposit/withdrawal history result', results_num=len(raw_data))
+            self.update_trades_cache(
+                raw_data,
+                start_ts,
+                end_ts,
+                special_name='deposits_withdrawals',
+            )
+
+
+        movements = []
+        for raw_movement in raw_data:
+            movement = self._deserialize_asset_movement(raw_movement)
+            if movement:
+                movements.append(movement)
+
+        return movements
