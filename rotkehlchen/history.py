@@ -506,6 +506,14 @@ class TradesHistorian():
                     end_at_least_ts=end_at_least_ts,
                 )
                 history.extend(binance_history)
+
+                binance_asset_movements = self.binance.query_deposits_withdrawals(
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    end_at_least_ts=end_at_least_ts,
+                )
+                asset_movements.extend(binance_asset_movements)
+
             except RemoteError as e:
                 empty_or_error += '\n' + str(e)
 
