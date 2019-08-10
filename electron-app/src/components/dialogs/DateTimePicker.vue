@@ -17,7 +17,6 @@
         :hint="hint"
         :persistent-hint="persistentHint"
         :rules="rules"
-        :max="max"
         v-on="on"
       ></v-text-field>
     </template>
@@ -51,8 +50,8 @@ export default class DateTimePicker extends Vue {
   timeModel: string = '00:00';
   dateModel: string = '';
 
-  maxDate: string | undefined;
-  maxTime: string | undefined;
+  maxDate: string = '';
+  maxTime: string = '';
 
   menu: boolean = false;
 

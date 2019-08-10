@@ -21,6 +21,7 @@ export const actions: ActionTree<TaskState, RotkehlchenState> = {
         }
 
         balanceTasks.splice(i, 1);
+        commit('removeBalanceTask', taskId);
 
         if (balanceTasks.length === 0) {
           commit('status', BalanceStatus.complete);

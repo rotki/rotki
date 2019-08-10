@@ -81,10 +81,11 @@ export default class BlockchainBalances extends Vue {
   btcAccounts!: AccountBalance[];
   totals!: AccountBalance[];
 
-  created() {
+  mounted() {
     this.$rpc
       .query_blockchain_balances_async()
       .then(value => {
+        console.log(value);
         const task = createTask(
           value.task_id,
           TaskType.USER_SETTINGS_QUERY_BLOCKCHAIN_BALANCES,
