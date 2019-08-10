@@ -14,16 +14,16 @@
           :amount="exchange.total"
         ></exchange-box>
         <information-box
-          v-if="blockchainTotal > 0"
+          v-if="false"
           id="blockchain_box"
           icon="fa-hdd-o"
-          :amount="blockchainTotal"
+          :amount="0"
         ></information-box>
         <information-box
-          v-if="fiatTotal > 0"
+          v-if="false"
           id="banks_box"
           icon="fa-university"
-          :amount="fiatTotal"
+          :amount="0"
         ></information-box>
       </v-flex>
     </v-layout>
@@ -80,21 +80,15 @@ import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
 @Component({
   components: { ExchangeBox, InformationBox },
   computed: {
-    ...mapGetters(['blockchainTotals', 'floatingPrecision', 'exchanges']),
-    ...mapState(['fiatTotal', 'blockchainTotal'])
+    ...mapGetters(['floatingPrecision', 'exchanges'])
   }
 })
 export default class Dashboard extends Vue {
   fiatTotal!: number;
-  blockchainTotal!: number;
   floatingPrecision!: number;
   exchanges!: ExchangeInfo;
 
-  get total(): number {
-    return this.fiatTotal + this.blockchainTotal;
-  }
-
-  blockchainTotals!: AssetBalance[];
+  blockchainTotals: AssetBalance[] = [];
   search: string = '';
 
   headers = [

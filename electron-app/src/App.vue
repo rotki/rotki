@@ -242,7 +242,7 @@ export default class App extends Vue {
       .logout()
       .then(() => {
         monitor.stop();
-        this.$store.commit('tasks/reset');
+        this.$store.commit('tasks/clear');
         this.$store.commit('logout', false);
         this.$store.commit('logged', false);
       })
@@ -255,6 +255,12 @@ export default class App extends Vue {
   cancelLogout() {
     this.$store.commit('logout', false);
   }
+
+  //   showInfo(
+  //   'Welcome to Rotkehlchen!',
+  //   'It appears this is your first time using the program. ' +
+  //   'Follow the suggestions to integrate with some exchanges or manually input data.'
+  // );
 }
 </script>
 
