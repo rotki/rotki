@@ -68,8 +68,6 @@
     "sass": "^1.22.9",
     "sass-loader": "7.1.0",
     "spectron": "5.0.0",
-    "stylus": "0.54.5",
-    "stylus-loader": "3.0.2",
     "ts-jest": "24.0.2",
     "ts-node": "8.3.0",
     "typescript": "3.4.5",

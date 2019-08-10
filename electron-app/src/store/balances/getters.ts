@@ -5,9 +5,14 @@ import {
   AccountBalance,
   AssetBalance,
   Balance,
-  EthBalance
+  EthBalance,
+  FiatBalance
 } from '@/model/blockchain-balances';
 import map from 'lodash/map';
+import BigNumber from 'bignumber.js';
+import reduce from 'lodash/reduce';
+import { Zero } from '@/utils/bignumbers';
+import { assetSum } from '@/utils/calculation';
 
 export const getters: GetterTree<BalanceState, RotkehlchenState> = {
   ethAccounts(state: BalanceState): AccountBalance[] {
@@ -37,5 +42,26 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
       };
       return assetBalance;
     });
+  },
+  exchangeRate: (state: BalanceState) => (currency: string) => {
+    return state.usdToFiatExchangeRates[currency];
+  },
+
+  fiatTotals: (state: BalanceState): BigNumber => {
+    return reduce(
+      state.fiatBalances,
+      (result: BigNumber, value: FiatBalance) => {
+        return result.plus(value.usdValue);
+      },
+      Zero
+    );
+  },
+  exchanges: (state: BalanceState) => {
+    const balances = state.exchangeBalances;
+    return Object.keys(balances).map(value => ({
+      name: value,
+      balances: balances[value],
+      totals: assetSum(balances[value])
+    }));
   }
 };
