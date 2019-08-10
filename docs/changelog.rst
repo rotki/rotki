@@ -2,6 +2,8 @@
 Changelog
 =========
 
+
+* :feature:`457` Bittrex users now also have their deposit/withdrawal history taken into account during profit/loss calculation.
 * :bug:`451` An assertion will no longer stop balances from being saved for some FIAT assets.
 
 * :feature:`-` Added support for the following tokens
