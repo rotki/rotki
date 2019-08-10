@@ -468,6 +468,13 @@ class TradesHistorian():
                 )
                 history.extend(bittrex_history)
 
+                bittrex_asset_movements = self.bittrex.query_deposits_withdrawals(
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    end_at_least_ts=end_at_least_ts,
+                )
+                asset_movements.extend(bittrex_asset_movements)
+
             except RemoteError as e:
                 empty_or_error += '\n' + str(e)
 

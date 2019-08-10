@@ -405,6 +405,9 @@ def mock_exchange_responses(rotki: Rotkehlchen):
 }]
 }
 """
+        elif 'getdeposithistory' in url or 'getwithdrawalhistory' in url:
+            # For now no deposits or withdrawals for bittrex in the big history test
+            payload = '{"success": true, "message": "''", "result": []}'
         else:
             raise RuntimeError(f'Bittrex test mock got unexpected/unmocked url {url}')
 

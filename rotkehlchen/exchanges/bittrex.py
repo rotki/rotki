@@ -3,13 +3,14 @@ import hmac
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Tuple, Union, overload
+from typing import Any, Dict, List, Optional, Tuple, Union, cast, overload
 from urllib.parse import urlencode
 
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bittrex
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
@@ -18,6 +19,7 @@ from rotkehlchen.errors import (
     UnsupportedAsset,
 )
 from rotkehlchen.exchanges.data_structures import (
+    AssetMovement,
     Trade,
     get_pair_position_asset,
     get_pair_position_str,
@@ -35,7 +37,7 @@ from rotkehlchen.serializer import (
     deserialize_timestamp_from_bittrex_date,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Exchange, Fee, FilePath, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
@@ -58,7 +60,17 @@ BITTREX_ACCOUNT_METHODS = {
     'getdepositaddress',
     'withdraw',
     'getorderhistory',
+    'getdeposithistory',
+    'getwithdrawalhistory',
 }
+
+BittrexListReturnMethod = Literal[
+    'getcurrencies',
+    'getorderhistory',
+    'getbalances',
+    'getdeposithistory',
+    'getwithdrawalhistory',
+]
 
 
 def bittrex_pair_to_world(given_pair: str) -> TradePair:
@@ -173,7 +185,7 @@ class Bittrex(ExchangeInterface):
     @overload
     def api_query(  # pylint: disable=unused-argument, no-self-use
             self,
-            method: Literal['getcurrencies', 'getorderhistory', 'getbalances'],
+            method: BittrexListReturnMethod,
             options: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         ...
@@ -368,3 +380,85 @@ class Bittrex(ExchangeInterface):
             trades.append(trade)
 
         return trades
+
+    def _deserialize_asset_movement(self, raw_data: Dict[str, Any]) -> Optional[AssetMovement]:
+        """Processes a single deposit/withdrawal from bittrex and deserializes it
+
+        Can log error/warning and return None if something went wrong at deserialization
+        """
+        try:
+            if 'TxCost' in raw_data:
+                category = 'withdrawal'
+                date_key = 'Opened'
+                fee = deserialize_fee(raw_data['TxCost'])
+            else:
+                category = 'deposit'
+                date_key = 'LastUpdated'
+                fee = Fee(ZERO)
+
+            timestamp = deserialize_timestamp_from_bittrex_date(raw_data[date_key])
+            asset = asset_from_bittrex(raw_data['Currency'])
+            return AssetMovement(
+                exchange=Exchange.BITTREX,
+                category=cast(Literal['deposit', 'withdrawal'], category),
+                timestamp=timestamp,
+                asset=asset,
+                amount=deserialize_asset_amount(raw_data['Amount']),
+                fee=fee,
+            )
+        except UnknownAsset as e:
+            self.msg_aggregator.add_warning(
+                f'Found bittrex deposit/withdrawal with unknown asset '
+                f'{e.asset_name}. Ignoring it.',
+            )
+        except UnsupportedAsset as e:
+            self.msg_aggregator.add_warning(
+                f'Found bittrex deposit/withdrawal with unsupported asset '
+                f'{e.asset_name}. Ignoring it.',
+            )
+        except (DeserializationError, KeyError) as e:
+            msg = str(e)
+            if isinstance(e, KeyError):
+                msg = f'Missing key entry for {msg}.'
+            self.msg_aggregator.add_error(
+                f'Unexpected data encountered during deserialization of a bittrex '
+                f'asset movement. Check logs for details and open a bug report.',
+            )
+            log.error(
+                f'Unexpected data encountered during deserialization of bittrex '
+                f'asset_movement {raw_data}. Error was: {str(e)}',
+            )
+
+        return None
+
+    def query_deposits_withdrawals(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            end_at_least_ts: Timestamp,
+    ) -> List[AssetMovement]:
+        cache = self.check_trades_cache_list(
+            start_ts,
+            end_at_least_ts,
+            special_name='deposits_withdrawals',
+        )
+        if cache is not None:
+            raw_data = cache
+        else:
+            raw_data = self.api_query('getdeposithistory')
+            raw_data.extend(self.api_query('getwithdrawalhistory'))
+            log.debug('bittrex deposit/withdrawal history result', results_num=len(raw_data))
+            self.update_trades_cache(
+                raw_data,
+                start_ts,
+                end_ts,
+                special_name='deposits_withdrawals',
+            )
+
+        movements = []
+        for raw_movement in raw_data:
+            movement = self._deserialize_asset_movement(raw_movement)
+            if movement:
+                movements.append(movement)
+
+        return movements

@@ -607,12 +607,12 @@ class Poloniex(ExchangeInterface):
             self.update_trades_cache(data, start_ts, end_ts, special_name='loan_history')
         return data
 
-    def _serialize_asset_movement(
+    def _deserialize_asset_movement(
             self,
             movement_type: Literal['withdrawal', 'deposit'],
             movement_data: Dict[str, Any],
     ) -> Optional[AssetMovement]:
-        """Processes a single deposit/withdrawal from polo and serializes it
+        """Processes a single deposit/withdrawal from polo and deserializes it
 
         Can log error/warning and return None if something went wrong at deserialization
         """
@@ -685,7 +685,7 @@ class Poloniex(ExchangeInterface):
 
         movements = list()
         for withdrawal in result['withdrawals']:
-            asset_movement = self._serialize_asset_movement(
+            asset_movement = self._deserialize_asset_movement(
                 movement_type='withdrawal',
                 movement_data=withdrawal,
             )
@@ -693,7 +693,7 @@ class Poloniex(ExchangeInterface):
                 movements.append(asset_movement)
 
         for deposit in result['deposits']:
-            asset_movement = self._serialize_asset_movement(
+            asset_movement = self._deserialize_asset_movement(
                 movement_type='deposit',
                 movement_data=deposit,
             )
