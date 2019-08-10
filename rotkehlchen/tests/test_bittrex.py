@@ -5,11 +5,13 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BITTREX_ASSETS, asset_from_bittrex
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import TradeType
+from rotkehlchen.typing import Exchange, TradeType
 
 
 def analyze_bittrex_assets(currencies: List[Dict[str, Any]]):
@@ -266,4 +268,296 @@ def test_bittrex_query_trade_history_unexpected_data(bittrex):
         expected_warnings_num=0,
         expected_errors_num=1,
         error_str_test='Found bittrex trade with unprocessable pair SSSS',
+    )
+
+
+BITTREX_DEPOSIT_HISTORY_RESPONSE = """
+{
+  "success": true,
+  "message": "''",
+  "result": [
+    {
+      "Id": 1,
+      "Amount": 2.12345678,
+      "Currency": "BTC",
+      "Confirmations": 2,
+      "LastUpdated": "2014-02-13T07:38:53.883",
+      "TxId": "e26d3b33fcfc2cb0c74d0938034956ea590339170bf4102f080eab4b85da9bde",
+      "CryptoAddress": "15VyEAT4uf7ycrNWZVb1eGMzrs21BH95Va"
+    }, {
+      "Id": 2,
+      "Amount": 50.81,
+      "Currency": "ETH",
+      "Confirmations": 5,
+      "LastUpdated": "2014-06-15T07:38:53.883",
+      "TxId": "e26d3b33fcfc2cb0cd4d0938034956ea590339170bf4102f080eab4s85da9bde",
+      "CryptoAddress": "0x717E2De923A6377Fbd7e3c937491f71ad370e9A8"
+    }
+  ]
+}
+"""
+
+BITTREX_WITHDRAWAL_HISTORY_RESPONSE = """
+{
+  "success": true,
+  "message": "''",
+  "result": [
+    {
+      "PaymentUuid": "b52c7a5c-90c6-4c6e-835c-e16df12708b1",
+      "Currency": "BTC",
+      "Amount": 17,
+      "Address": "1DeaaFBdbB5nrHj87x3NHS4onvw1GPNyAu",
+      "Opened": "2014-07-09T04:24:47.217",
+      "Authorized": "boolean",
+      "PendingPayment": "boolean",
+      "TxCost": 0.0002,
+      "TxId": "b4a575c2a71c7e56d02ab8e26bb1ef0a2f6cf2094f6ca2116476a569c1e84f6e",
+      "Canceled": "boolean",
+      "InvalidAddress": "boolean"
+    }, {
+      "PaymentUuid": "b52c7a5c-90c6-4c6e-835c-e16df12708b1",
+      "Currency": "ETH",
+      "Amount": 55,
+      "Address": "0x717E2De923A6377Fbd7e3c937491f71ad370e9A8",
+      "Opened": "2015-08-19T04:24:47.217",
+      "Authorized": "boolean",
+      "PendingPayment": "boolean",
+      "TxCost": 0.0015,
+      "TxId": "0xc65d3391739c96a04b868b205b34069f0bbd7ab7f62d1f59be02f29e77b59247",
+      "Canceled": "boolean",
+      "InvalidAddress": "boolean"
+    }
+  ]
+}
+"""
+
+
+def test_bittrex_query_deposits_withdrawals(bittrex):
+    """Test the happy case of bittrex deposit withdrawal query"""
+    # turn caching off
+    bittrex.cache_ttl_secs = 0
+
+    def mock_get_deposit_withdrawal(url):  # pylint: disable=unused-argument
+        if 'deposit' in url:
+            response_str = BITTREX_DEPOSIT_HISTORY_RESPONSE
+        else:
+            response_str = BITTREX_WITHDRAWAL_HISTORY_RESPONSE
+
+        return MockResponse(200, response_str)
+
+    with patch.object(bittrex.session, 'get', side_effect=mock_get_deposit_withdrawal):
+        movements = bittrex.query_deposits_withdrawals(0, TEST_END_TS, TEST_END_TS)
+
+    errors = bittrex.msg_aggregator.consume_errors()
+    warnings = bittrex.msg_aggregator.consume_warnings()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+
+    assert len(movements) == 4
+
+    assert movements[0].exchange == Exchange.BITTREX
+    assert movements[0].category == 'deposit'
+    assert movements[0].timestamp == 1392277133
+    assert isinstance(movements[0].asset, Asset)
+    assert movements[0].asset == A_BTC
+    assert movements[0].amount == FVal('2.12345678')
+    assert movements[0].fee == ZERO
+
+    assert movements[1].exchange == Exchange.BITTREX
+    assert movements[1].category == 'deposit'
+    assert movements[1].timestamp == 1402817933
+    assert isinstance(movements[1].asset, Asset)
+    assert movements[1].asset == A_ETH
+    assert movements[1].amount == FVal('50.81')
+    assert movements[1].fee == ZERO
+
+    assert movements[2].exchange == Exchange.BITTREX
+    assert movements[2].category == 'withdrawal'
+    assert movements[2].timestamp == 1404879887
+    assert isinstance(movements[2].asset, Asset)
+    assert movements[2].asset == A_BTC
+    assert movements[2].amount == FVal('17')
+    assert movements[2].fee == FVal('0.0002')
+
+    assert movements[3].exchange == Exchange.BITTREX
+    assert movements[3].category == 'withdrawal'
+    assert movements[3].timestamp == 1439958287
+    assert isinstance(movements[3].asset, Asset)
+    assert movements[3].asset == A_ETH
+    assert movements[3].amount == FVal('55')
+    assert movements[3].fee == FVal('0.0015')
+
+
+def test_bittrex_query_deposits_withdrawals_unexpected_data(bittrex):
+    """Test that we handle unexpected bittrex deposit withdrawal data gracefully"""
+    # turn caching off
+    bittrex.cache_ttl_secs = 0
+
+    def mock_bittrex_and_query(deposits, withdrawals, expected_warnings_num, expected_errors_num):
+
+        def mock_get_deposit_withdrawal(url):  # pylint: disable=unused-argument
+            if 'deposit' in url:
+                response_str = deposits
+            else:
+                response_str = withdrawals
+
+            return MockResponse(200, response_str)
+
+        with patch.object(bittrex.session, 'get', side_effect=mock_get_deposit_withdrawal):
+            movements = bittrex.query_deposits_withdrawals(0, TEST_END_TS, TEST_END_TS)
+
+        if expected_errors_num == 0 and expected_warnings_num == 0:
+            assert len(movements) == 1
+        else:
+            assert len(movements) == 0
+            warnings = bittrex.msg_aggregator.consume_warnings()
+            assert len(warnings) == expected_warnings_num
+            errors = bittrex.msg_aggregator.consume_errors()
+            assert len(errors) == expected_errors_num
+
+    def check_permutations_of_input_invalid_data(deposits, withdrawals):
+        # First make sure it works with normal data
+        mock_bittrex_and_query(
+            deposits,
+            withdrawals,
+            expected_warnings_num=0,
+            expected_errors_num=0,
+        )
+
+        # From here and on test unexpected data
+        # invalid timestamp
+        if "Currency" in deposits:
+            new_deposits = deposits.replace('"2014-07-09T04:24:47.217"', '"dsadasd"')
+            new_withdrawals = withdrawals
+        else:
+            new_deposits = deposits
+            new_withdrawals = withdrawals.replace('"2014-07-09T04:24:47.217"', '"dsadasd"')
+        mock_bittrex_and_query(
+            new_deposits,
+            new_withdrawals,
+            expected_warnings_num=0,
+            expected_errors_num=1,
+        )
+
+        # invalid currency
+        if "Currency" in deposits:
+            new_deposits = deposits.replace('"BTC"', '[]')
+            new_withdrawals = withdrawals
+        else:
+            new_deposits = deposits
+            new_withdrawals = withdrawals.replace('"BTC"', '[]')
+        mock_bittrex_and_query(
+            new_deposits,
+            new_withdrawals,
+            expected_warnings_num=0,
+            expected_errors_num=1,
+        )
+
+        # Unknown asset
+        if "Currency" in deposits:
+            new_deposits = deposits.replace('"BTC"', '"dasdsDSDSAD"')
+            new_withdrawals = withdrawals
+        else:
+            new_deposits = deposits
+            new_withdrawals = withdrawals.replace('"BTC"', '"dasdsDSDSAD"')
+        mock_bittrex_and_query(
+            new_deposits,
+            new_withdrawals,
+            expected_warnings_num=1,
+            expected_errors_num=0,
+        )
+
+        # Unsupported Asset
+        if "Currency" in deposits:
+            new_deposits = deposits.replace('"BTC"', '"OGO"')
+            new_withdrawals = withdrawals
+        else:
+            new_deposits = deposits
+            new_withdrawals = withdrawals.replace('"BTC"', '"OGO"')
+        mock_bittrex_and_query(
+            new_deposits,
+            new_withdrawals,
+            expected_warnings_num=1,
+            expected_errors_num=0,
+        )
+
+        # Invalid amount
+        if "Currency" in deposits:
+            new_deposits = deposits.replace('17', 'null')
+            new_withdrawals = withdrawals
+        else:
+            new_deposits = deposits
+            new_withdrawals = withdrawals.replace('17', 'null')
+        mock_bittrex_and_query(
+            new_deposits,
+            new_withdrawals,
+            expected_warnings_num=0,
+            expected_errors_num=1,
+        )
+
+        # Invalid fee, only for withdrawals
+        if "Currency" in withdrawals:
+            new_withdrawals = withdrawals.replace('0.0002', '"dsadsda"')
+            mock_bittrex_and_query(
+                new_deposits,
+                new_withdrawals,
+                expected_warnings_num=0,
+                expected_errors_num=1,
+            )
+
+        # Missing Key Error
+        if "Currency" in deposits:
+            new_deposits = deposits.replace('"Currency": "BTC",', '')
+            new_withdrawals = withdrawals
+        else:
+            new_deposits = deposits
+            new_withdrawals = withdrawals.replace('"Currency": "BTC",', '')
+        mock_bittrex_and_query(
+            new_deposits,
+            new_withdrawals,
+            expected_warnings_num=0,
+            expected_errors_num=1,
+        )
+
+    # To make the test easy to write the values for deposit/withdrawal attributes
+    # are the same in the two examples below
+    empty_response = '{"success": true, "message": "''", "result": []}'
+    input_withdrawals = """{
+    "success": true,
+    "message": "''",
+    "result": [
+    {
+      "PaymentUuid": "b52c7a5c-90c6-4c6e-835c-e16df12708b1",
+      "Currency": "BTC",
+      "Amount": 17,
+      "Address": "1DeaaFBdbB5nrHj87x3NHS4onvw1GPNyAu",
+      "Opened": "2014-07-09T04:24:47.217",
+      "Authorized": "boolean",
+      "PendingPayment": "boolean",
+      "TxCost": 0.0002,
+      "TxId": "b4a575c2a71c7e56d02ab8e26bb1ef0a2f6cf2094f6ca2116476a569c1e84f6e",
+      "Canceled": "boolean",
+      "InvalidAddress": "boolean"
+    }]}"""
+    check_permutations_of_input_invalid_data(
+        deposits=empty_response,
+        withdrawals=input_withdrawals,
+    )
+
+    input_deposits = """{
+    "success": true,
+    "message": "''",
+    "result": [
+    {
+      "Id": 1,
+      "Amount": 17,
+      "Currency": "BTC",
+      "Confirmations": 2,
+      "LastUpdated": "2014-07-09T04:24:47.217",
+      "TxId": "e26d3b33fcfc2cb0c74d0938034956ea590339170bf4102f080eab4b85da9bde",
+      "CryptoAddressAddress": "1DeaaFBdbB5nrHj87x3NHS4onvw1GPNyAu"
+    }]}"""
+    check_permutations_of_input_invalid_data(
+        deposits=input_deposits,
+        withdrawals=empty_response,
     )
