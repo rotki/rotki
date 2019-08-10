@@ -38,7 +38,7 @@
       message="Are you sure you want to log out of your current rotkehlchen session?"
       :display="logout"
       @confirm="logoutUser()"
-      @cancel="cancelLogout()"
+      @cancel="logout = false"
     ></confirm-dialog>
     <message-dialog
       v-if="error"
@@ -77,7 +77,6 @@ import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
 import { mapState } from 'vuex';
 import Login from '@/components/Login.vue';
 import { AccountData, Credentials } from '@/typing/types';
-import { handleUnlockResult } from '@/legacy/userunlock';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import CreateAccount from '@/components/CreateAccount.vue';
 import { UnlockResult } from '@/model/action-result';
@@ -90,6 +89,9 @@ import ProgressIndicator from '@/components/status/ProgressIndicator.vue';
 import './services/task_manager';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { ipcRenderer, remote, shell } from 'electron';
+import store from '@/store';
+import { UnlockPayload } from '@/store/session/actions';
+
 @Component({
   components: {
     ProgressIndicator,
@@ -105,10 +107,10 @@ import { ipcRenderer, remote, shell } from 'electron';
     NavigationMenu,
     UserDropdown
   },
-  computed: mapState(['logout', 'userLogged'])
+  computed: mapState(['userLogged'])
 })
 export default class App extends Vue {
-  logout!: boolean;
+  logout: boolean = false;
   userLogged!: boolean;
 
   newAccount: boolean = false;
@@ -119,10 +121,6 @@ export default class App extends Vue {
   startupError: string = '';
 
   private accountData?: AccountData;
-
-  get visibleModal(): boolean {
-    return this.logout;
-  }
 
   openSite() {
     shell.openExternal('http://rotkehlchen.io');
@@ -148,50 +146,36 @@ export default class App extends Vue {
     this.permissionNeeded = '';
   }
 
-  confirmSync() {
+  async confirmSync() {
     const accountData = this.accountData;
     if (!accountData) {
       throw new Error('no stored account');
     }
-    this.$rpc
-      .unlock_user(
-        accountData.username,
-        accountData.password,
-        true,
-        'yes',
-        accountData.apiKey,
-        accountData.apiSecret
-      )
-      .then(unlockResult => {
-        this.$store.commit('newUser', true);
-        handleUnlockResult(unlockResult);
-      })
-      .catch((reason: Error) => {
-        this.error = reason.message;
-      });
+
+    await this.$store.dispatch('session/unlock', {
+      username: accountData.username,
+      password: accountData.password,
+      create: true,
+      syncApproval: 'yes',
+      apiKey: accountData.apiKey,
+      apiSecret: accountData.apiSecret
+    } as UnlockPayload);
   }
 
-  cancelSync() {
+  async cancelSync() {
     const accountData = this.accountData;
     if (!accountData) {
       throw new Error('no stored account');
     }
-    this.$rpc
-      .unlock_user(
-        accountData.username,
-        accountData.password,
-        true,
-        'no',
-        accountData.apiKey,
-        accountData.apiSecret
-      )
-      .then(unlockResult => {
-        this.$store.commit('newUser', true);
-        handleUnlockResult(unlockResult);
-      })
-      .catch((reason: Error) => {
-        this.error = reason.message;
-      });
+
+    await this.$store.dispatch('session/unlock', {
+      username: accountData.username,
+      password: accountData.password,
+      create: true,
+      syncApproval: 'no',
+      apiKey: accountData.apiKey,
+      apiSecret: accountData.apiSecret
+    } as UnlockPayload);
   }
 
   async login(credentials: Credentials) {
@@ -215,7 +199,24 @@ export default class App extends Vue {
       return;
     }
 
-    handleUnlockResult(unlockResult);
+    (async function(response: UnlockResult, newUser: boolean = false) {
+      const db_settings = response.settings;
+      if (!db_settings) {
+        throw new Error('Unlock Failed');
+      }
+
+      await store.dispatch('session/start', {
+        premium: response.premium,
+        settings: db_settings
+      });
+
+      monitor.start();
+      await store.dispatch('balances/fetch', {
+        newUser,
+        exchanges: response.exchanges
+      });
+      store.commit('logged', true);
+    })(unlockResult);
   }
 
   async createAccount(accountData: AccountData) {
@@ -243,17 +244,12 @@ export default class App extends Vue {
       .then(() => {
         monitor.stop();
         this.$store.commit('tasks/clear');
-        this.$store.commit('logout', false);
-        this.$store.commit('logged', false);
+        this.$store.commit('logout');
       })
       .catch((reason: Error) => {
         console.log(`Error at logout`);
         console.error(reason);
       });
-  }
-
-  cancelLogout() {
-    this.$store.commit('logout', false);
   }
 
   //   showInfo(

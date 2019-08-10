@@ -80,7 +80,7 @@ import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
 @Component({
   components: { ExchangeBox, InformationBox },
   computed: {
-    ...mapGetters(['floatingPrecision', 'exchanges'])
+    ...mapGetters(['floatingPrecision', 'balances/exchanges'])
   }
 })
 export default class Dashboard extends Vue {
