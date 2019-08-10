@@ -23,22 +23,24 @@ import { Component, Vue } from 'vue-property-decorator';
 import Generate from '@/components/taxreport/Generate.vue';
 import { TaxReportEvent } from '@/typing/types';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
-import { createTask, TaskType } from '@/model/task';
+import { createTask, Task, TaskType } from '@/model/task';
 import { createNamespacedHelpers } from 'vuex';
-import remote = Electron.remote;
+import { remote } from 'electron';
 
-const { mapGetters } = createNamespacedHelpers('task');
+const { mapGetters, mapMutations } = createNamespacedHelpers('tasks');
 
 @Component({
   components: { MessageDialog, Generate },
   computed: {
-    ...mapGetters(['isTaskRunning'])
+    ...mapGetters(['isTaskRunning']),
+    ...mapMutations(['add'])
   }
 })
 export default class TaxReport extends Vue {
   errorMessage: string = '';
 
   isTaskRunning!: (type: TaskType) => boolean;
+  add!: (task: Task) => void;
 
   messageTitle: string = '';
   messageDescription: string = '';
@@ -60,6 +62,7 @@ export default class TaxReport extends Vue {
           'Create tax report',
           true
         );
+        this.add(task);
       })
       .catch((reason: Error) => {
         this.errorMessage = reason.message;

@@ -29,13 +29,13 @@
             | formatPrice(floatingPrecision)
         }}
       </template>
-      <template v-if="items && items.length > 0" #body.append="{ items }">
+      <template v-if="balances.length > 0" #body.append>
         <tr class="asset-balances__totals">
           <td>Totals</td>
           <td></td>
           <td>
             {{
-              items.map(val => val.usdValue)
+              balances.map(val => val.usdValue)
                 | balanceSum
                 | calculatePrice(exchangeRate(currency.ticker_symbol))
                 | formatPrice(floatingPrecision)

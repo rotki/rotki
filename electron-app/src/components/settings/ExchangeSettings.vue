@@ -64,10 +64,10 @@
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import { exchanges } from '@/data/defaults';
 import { mapState } from 'vuex';
-import { query_exchange_balances_async } from '@/legacy/exchange';
 import ExchangeBadge from '@/components/ExchangeBadge.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import { createExchangePayload } from '@/store/balances/actions';
 
 @Component({
   components: { ConfirmDialog, MessageDialog, ExchangeBadge },
@@ -132,7 +132,10 @@ export default class ExchangeSettings extends Vue {
       .then(() => {
         this.resetFields(true);
         this.$store.commit('addExchange', exchangeName);
-        query_exchange_balances_async(exchangeName, false);
+        this.$store.dispatch(
+          'balances/fetchExchangeBalances',
+          createExchangePayload(exchangeName)
+        );
       })
       .catch((reason: Error) => {
         this.errorTitle = 'Exchange Setup Error';

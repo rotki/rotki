@@ -81,7 +81,7 @@ export default class Generate extends Vue {
   generate() {
     const start = convertToTimestamp(this.start);
     const end = convertToTimestamp(this.end);
-    this.$emit('generates', {
+    this.$emit('generate', {
       start,
       end
     });
