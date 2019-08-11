@@ -423,10 +423,11 @@ def test_bittrex_query_deposits_withdrawals_unexpected_data(bittrex):
             expected_warnings_num=0,
             expected_errors_num=0,
         )
+        testing_deposits = 'Currency' in deposits
 
         # From here and on test unexpected data
         # invalid timestamp
-        if "Currency" in deposits:
+        if testing_deposits:
             new_deposits = deposits.replace('"2014-07-09T04:24:47.217"', '"dsadasd"')
             new_withdrawals = withdrawals
         else:
@@ -440,7 +441,7 @@ def test_bittrex_query_deposits_withdrawals_unexpected_data(bittrex):
         )
 
         # invalid currency
-        if "Currency" in deposits:
+        if testing_deposits:
             new_deposits = deposits.replace('"BTC"', '[]')
             new_withdrawals = withdrawals
         else:
@@ -454,7 +455,7 @@ def test_bittrex_query_deposits_withdrawals_unexpected_data(bittrex):
         )
 
         # Unknown asset
-        if "Currency" in deposits:
+        if testing_deposits:
             new_deposits = deposits.replace('"BTC"', '"dasdsDSDSAD"')
             new_withdrawals = withdrawals
         else:
@@ -468,7 +469,7 @@ def test_bittrex_query_deposits_withdrawals_unexpected_data(bittrex):
         )
 
         # Unsupported Asset
-        if "Currency" in deposits:
+        if testing_deposits:
             new_deposits = deposits.replace('"BTC"', '"OGO"')
             new_withdrawals = withdrawals
         else:
@@ -482,7 +483,7 @@ def test_bittrex_query_deposits_withdrawals_unexpected_data(bittrex):
         )
 
         # Invalid amount
-        if "Currency" in deposits:
+        if testing_deposits:
             new_deposits = deposits.replace('17', 'null')
             new_withdrawals = withdrawals
         else:
@@ -496,7 +497,7 @@ def test_bittrex_query_deposits_withdrawals_unexpected_data(bittrex):
         )
 
         # Invalid fee, only for withdrawals
-        if "Currency" in withdrawals:
+        if testing_deposits:
             new_withdrawals = withdrawals.replace('0.0002', '"dsadsda"')
             mock_bittrex_and_query(
                 new_deposits,
@@ -506,7 +507,7 @@ def test_bittrex_query_deposits_withdrawals_unexpected_data(bittrex):
             )
 
         # Missing Key Error
-        if "Currency" in deposits:
+        if testing_deposits:
             new_deposits = deposits.replace('"Currency": "BTC",', '')
             new_withdrawals = withdrawals
         else:

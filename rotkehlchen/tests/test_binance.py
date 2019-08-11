@@ -496,3 +496,163 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
     assert movements[3].asset == A_XMR
     assert movements[3].amount == FVal('850.1')
     assert movements[3].fee == ZERO
+
+
+def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binance):
+    """Test that we handle unexpected deposit withdrawal query data gracefully"""
+    binance = function_scope_binance
+    binance.cache_ttl_secs = 0
+
+    def mock_binance_and_query(deposits, withdrawals, expected_warnings_num, expected_errors_num):
+
+        def mock_get_deposit_withdrawal(url):  # pylint: disable=unused-argument
+            if 'deposit' in url:
+                response_str = deposits
+            else:
+                response_str = withdrawals
+
+            return MockResponse(200, response_str)
+
+        with patch.object(binance.session, 'get', side_effect=mock_get_deposit_withdrawal):
+            movements = binance.query_deposits_withdrawals(0, TEST_END_TS, TEST_END_TS)
+
+        if expected_errors_num == 0 and expected_warnings_num == 0:
+            assert len(movements) == 1
+        else:
+            assert len(movements) == 0
+            warnings = binance.msg_aggregator.consume_warnings()
+            assert len(warnings) == expected_warnings_num
+            errors = binance.msg_aggregator.consume_errors()
+            assert len(errors) == expected_errors_num
+
+    def check_permutations_of_input_invalid_data(deposits, withdrawals):
+        # First make sure it works with normal data
+        mock_binance_and_query(
+            deposits,
+            withdrawals,
+            expected_warnings_num=0,
+            expected_errors_num=0,
+        )
+        testing_deposits = "amount" in deposits
+
+        # From here and on test unexpected data
+        # invalid timestamp
+        if testing_deposits:
+            new_deposits = deposits.replace('1508198532000', '"dasdd"')
+            new_withdrawals = withdrawals
+        else:
+            new_deposits = deposits
+            new_withdrawals = withdrawals.replace('1508198532000', '"dasdd"')
+        mock_binance_and_query(
+            new_deposits,
+            new_withdrawals,
+            expected_warnings_num=0,
+            expected_errors_num=1,
+        )
+
+        # invalid asset
+        if testing_deposits:
+            new_deposits = deposits.replace('"ETH"', '[]')
+            new_withdrawals = withdrawals
+        else:
+            new_deposits = deposits
+            new_withdrawals = withdrawals.replace('"ETH"', '[]')
+        mock_binance_and_query(
+            new_deposits,
+            new_withdrawals,
+            expected_warnings_num=0,
+            expected_errors_num=1,
+        )
+
+        # Unknown asset
+        if testing_deposits:
+            new_deposits = deposits.replace('"ETH"', '"dasdsDSDSAD"')
+            new_withdrawals = withdrawals
+        else:
+            new_deposits = deposits
+            new_withdrawals = withdrawals.replace('"ETH"', '"dasdsDSDSAD"')
+        mock_binance_and_query(
+            new_deposits,
+            new_withdrawals,
+            expected_warnings_num=1,
+            expected_errors_num=0,
+        )
+
+        # Unsupported Asset
+        if testing_deposits:
+            new_deposits = deposits.replace('"ETH"', '"BTCB"')
+            new_withdrawals = withdrawals
+        else:
+            new_deposits = deposits
+            new_withdrawals = withdrawals.replace('"ETH"', '"BTCB"')
+        mock_binance_and_query(
+            new_deposits,
+            new_withdrawals,
+            expected_warnings_num=1,
+            expected_errors_num=0,
+        )
+
+        # Invalid amount
+        if testing_deposits:
+            new_deposits = deposits.replace('0.04670582', 'null')
+            new_withdrawals = withdrawals
+        else:
+            new_deposits = deposits
+            new_withdrawals = withdrawals.replace('0.04670582', 'null')
+        mock_binance_and_query(
+            new_deposits,
+            new_withdrawals,
+            expected_warnings_num=0,
+            expected_errors_num=1,
+        )
+
+        # Missing Key Error
+        if testing_deposits:
+            new_deposits = deposits.replace('"amount": 0.04670582,', '')
+            new_withdrawals = withdrawals
+        else:
+            new_deposits = deposits
+            new_withdrawals = withdrawals.replace('"amount": 0.04670582,', '')
+        mock_binance_and_query(
+            new_deposits,
+            new_withdrawals,
+            expected_warnings_num=0,
+            expected_errors_num=1,
+        )
+
+    # To make the test easy to write the values for deposit/withdrawal attributes
+    # are the same in the two examples below
+    empty_deposits = '{"success": true, "depositList": []}'
+    empty_withdrawals = '{"success": true, "withdrawList": []}'
+    input_withdrawals = """{
+    "success": true,
+    "withdrawList": [
+        {
+            "id":"7213fea8e94b4a5593d507237e5a555b",
+            "amount": 0.04670582,
+            "address": "0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b",
+            "asset": "ETH",
+            "txId": "0xdf33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1",
+            "applyTime": 1508198532000,
+            "status": 4
+        }]}"""
+    check_permutations_of_input_invalid_data(
+        deposits=empty_deposits,
+        withdrawals=input_withdrawals,
+    )
+
+    input_deposits = """{
+    "success": true,
+    "depositList": [
+        {
+            "insertTime": 1508198532000,
+            "amount": 0.04670582,
+            "asset": "ETH",
+            "address": "0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b",
+            "txId": "0xdf33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1",
+            "status": 1
+        }]}"""
+    check_permutations_of_input_invalid_data(
+        deposits=input_deposits,
+        withdrawals=empty_withdrawals,
+    )

@@ -515,7 +515,6 @@ class Binance(ExchangeInterface):
                 special_name='deposits_withdrawals',
             )
 
-
         movements = []
         for raw_movement in raw_data:
             movement = self._deserialize_asset_movement(raw_movement)

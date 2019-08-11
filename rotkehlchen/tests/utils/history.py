@@ -207,6 +207,10 @@ def mock_exchange_responses(rotki: Rotkehlchen):
                 "isMaker": false,
                 "isBestMatch": true
                 }]"""
+        elif 'depositHistory.html' in url:
+            payload = '{"success": true, "depositList": []}'
+        elif 'withdrawHistory.html' in url:
+            payload = '{"success": true, "withdrawList": []}'
         else:
             raise RuntimeError(f'Binance test mock got unexpected/unmocked url {url}')
 
