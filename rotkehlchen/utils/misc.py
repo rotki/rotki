@@ -17,10 +17,10 @@ from requests import Response
 from rlp.sedes import big_endian_int
 
 from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, ZERO
-from rotkehlchen.errors import RecoverableRequestError, RemoteError
+from rotkehlchen.errors import DeserializationError, RecoverableRequestError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Fee, FilePath, ResultCache, Timestamp
+from rotkehlchen.typing import Fee, FilePath, Numerical, ResultCache, Timestamp
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads, rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
@@ -37,11 +37,13 @@ def create_timestamp(datestr: str, formatstr: str = '%Y-%m-%d %H:%M:%S') -> Time
 
 
 def iso8601ts_to_timestamp(datestr: str) -> Timestamp:
-    """Can throw ValueError due to create_timestamp"""
-    return create_timestamp(datestr, formatstr='%Y-%m-%dT%H:%M:%S.%fZ')
+    try:
+        return create_timestamp(datestr, formatstr='%Y-%m-%dT%H:%M:%S.%fZ')
+    except ValueError:
+        raise DeserializationError(f'Couldnt read {datestr} as iso8601ts timestamp')
 
 
-def satoshis_to_btc(satoshis: FVal) -> FVal:
+def satoshis_to_btc(satoshis: Numerical) -> Numerical:
     return satoshis * FVal('0.00000001')
 
 

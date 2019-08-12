@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, NamedTuple, NewType, Optional, Union
+from typing import Dict, NamedTuple, NewType, Optional, TypeVar, Union
 
 from eth_utils.typing import ChecksumAddress
 
@@ -76,6 +76,10 @@ Price = NewType('Price', T_Price)
 
 T_AssetAmount = FVal
 AssetAmount = NewType('AssetAmount', T_AssetAmount)
+
+# Types that can go in functions that have
+# things that can be calculated such as amount, fees, price e.t.c.
+Numerical = TypeVar('Numerical', FVal, AssetAmount, Fee, Price)
 
 
 class ResultCache(NamedTuple):

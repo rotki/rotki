@@ -7,15 +7,16 @@ from typing import Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
 
 from rotkehlchen import typing
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC
-from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, Exchange, MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Fee
+from rotkehlchen.serializer import deserialize_asset_amount, deserialize_fee
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, iso8601ts_to_timestamp, satoshis_to_btc
 from rotkehlchen.utils.serialization import rlk_jsonloads
 
@@ -29,10 +30,10 @@ BITMEX_PRIVATE_ENDPOINTS = (
 )
 
 
-def bitmex_to_world(asset):
-    if asset == 'XBt':
-        return 'BTC'
-    return asset
+def bitmex_to_world(symbol: str) -> Asset:
+    if symbol == 'XBt':
+        return A_BTC
+    return Asset(symbol)
 
 
 def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
@@ -70,10 +71,12 @@ class Bitmex(ExchangeInterface):
             api_key: typing.ApiKey,
             secret: typing.ApiSecret,
             user_directory: typing.FilePath,
+            msg_aggregator: MessagesAggregator,
     ):
         super(Bitmex, self).__init__('bitmex', api_key, secret, user_directory)
         self.uri = 'https://bitmex.com'
         self.session.headers.update({'api-key': api_key})  # type: ignore
+        self.msg_aggregator = msg_aggregator
 
     def first_connection(self):
         self.first_connection_made = True
@@ -278,37 +281,54 @@ class Bitmex(ExchangeInterface):
 
         movements = list()
         for movement in resp:
-            transaction_type = movement['transactType']
-            if transaction_type not in ('Deposit', 'Withdrawal'):
+            try:
+                transaction_type = movement['transactType']
+                if transaction_type not in ('Deposit', 'Withdrawal'):
+                    continue
+
+                timestamp = iso8601ts_to_timestamp(movement['timestamp'])
+                if timestamp < start_ts:
+                    continue
+                if timestamp > end_ts:
+                    continue
+
+                asset = bitmex_to_world(movement['currency'])
+                amount = deserialize_asset_amount(movement['amount'])
+                fee = deserialize_fee(movement['fee'])
+                # bitmex has negative numbers for withdrawals
+                if amount < 0:
+                    amount *= -1
+
+                if asset == A_BTC:
+                    # bitmex stores amounts in satoshis
+                    amount = satoshis_to_btc(amount)
+                    fee = satoshis_to_btc(fee)
+
+                movements.append(AssetMovement(
+                    exchange=Exchange.BITMEX,
+                    category=transaction_type,
+                    timestamp=timestamp,
+                    asset=asset,
+                    amount=amount,
+                    fee=fee,
+                ))
+            except UnknownAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found bitmex deposit/withdrawal with unknown asset '
+                    f'{e.asset_name}. Ignoring it.',
+                )
                 continue
-
-            timestamp = iso8601ts_to_timestamp(movement['timestamp'])
-            if timestamp < start_ts:
+            except (DeserializationError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}.'
+                self.msg_aggregator.add_error(
+                    f'Unexpected data encountered during deserialization of a bitmex '
+                    f'asset movement. Check logs for details and open a bug report.',
+                )
+                log.error(
+                    f'Unexpected data encountered during deserialization of bitmex '
+                    f'asset_movement {movement}. Error was: {str(e)}',
+                )
                 continue
-            if timestamp > end_ts:
-                continue
-
-            asset = bitmex_to_world(movement['currency'])
-            amount = FVal(movement['amount'])
-            fee = ZERO
-            if movement['fee'] is not None:
-                fee = FVal(movement['fee'])
-            # bitmex has negative numbers for withdrawals
-            if amount < 0:
-                amount *= -1
-
-            if asset == 'BTC':
-                # bitmex stores amounts in satoshis
-                amount = satoshis_to_btc(amount)
-                fee = satoshis_to_btc(fee)
-
-            movements.append(AssetMovement(
-                exchange=Exchange.BITMEX,
-                category=transaction_type,
-                timestamp=timestamp,
-                asset=asset,
-                amount=amount,
-                fee=Fee(fee),
-            ))
-
         return movements

@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -5,6 +7,8 @@ from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.exchanges.bitmex import Bitmex, trade_from_bitmex
 from rotkehlchen.exchanges.data_structures import AssetMovement, Exchange, MarginPosition
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 
 TEST_BITMEX_API_KEY = b'XY98JYVL15Zn-iU9f7OsJeVf'
@@ -18,6 +22,7 @@ def mock_bitmex(accounting_data_dir, inquirer):  # pylint: disable=unused-argume
         api_key=b'LAqUlngMIQkIUjXMUreyu3qn',
         secret=b'chNOOS4KvNXR_Xq4k4c9qsfoKWvnDecLATCRlcBwyKDYnWgO',
         user_directory=accounting_data_dir,
+        msg_aggregator=MessagesAggregator(),
     )
 
     bitmex.first_connection_made = True
@@ -31,6 +36,7 @@ def test_bitmex(accounting_data_dir, inquirer):  # pylint: disable=unused-argume
         api_key=TEST_BITMEX_API_KEY,
         secret=TEST_BITMEX_API_SECRET,
         user_directory=accounting_data_dir,
+        msg_aggregator=MessagesAggregator(),
     )
     bitmex.uri = 'https://testnet.bitmex.com'
     return bitmex
@@ -63,6 +69,7 @@ def test_bitmex_api_signature(mock_bitmex):
 
 
 def test_bitmex_api_withdrawals_deposit(test_bitmex):
+    """Test the happy case of bitmex withdrawals deposit query"""
     result = test_bitmex.query_deposits_withdrawals(
         start_ts=1536492800,
         end_ts=1536492976,
@@ -112,6 +119,77 @@ def test_bitmex_api_withdrawals_deposit(test_bitmex):
 
     ]
     assert result == expected_result
+    # also make sure that asset movements contain Asset and not strings
+    for movement in result:
+        assert isinstance(movement.asset, Asset)
+
+
+def test_bitmex_api_withdrawals_deposit_unexpected_data(test_bitmex):
+    """Test getting unexpected data in bitmex withdrawals deposit query is handled gracefully"""
+    test_bitmex.cache_ttl_secs = 0
+
+    original_input = """[{
+"transactID": "b6c6fd2c-4d0c-b101-a41c-fa5aa1ce7ef1", "account": 126541, "currency": "XBt",
+ "transactType": "Withdrawal", "amount": 16960386, "fee": 800, "transactStatus": "Completed",
+ "address": "", "tx": "", "text": "", "transactTime": "2018-09-15T12:30:56.475Z",
+ "walletBalance": 103394923, "marginBalance": null,
+ "timestamp": "2018-09-15T12:30:56.475Z"}]"""
+    now = ts_now()
+
+    def query_bitmex_and_test(input_str, expected_warnings_num, expected_errors_num):
+        def mock_get_deposit_withdrawal(url, data):  # pylint: disable=unused-argument
+            return MockResponse(200, input_str)
+        with patch.object(test_bitmex.session, 'get', side_effect=mock_get_deposit_withdrawal):
+            movements = test_bitmex.query_deposits_withdrawals(
+                start_ts=0,
+                end_ts=now,
+                end_at_least_ts=now,
+            )
+
+        if expected_warnings_num == 0 and expected_errors_num == 0:
+            assert len(movements) == 1
+        else:
+            assert len(movements) == 0
+            errors = test_bitmex.msg_aggregator.consume_errors()
+            warnings = test_bitmex.msg_aggregator.consume_warnings()
+            assert len(errors) == expected_errors_num
+            assert len(warnings) == expected_warnings_num
+
+    # First try with correct data to make sure everything works
+    query_bitmex_and_test(original_input, expected_warnings_num=0, expected_errors_num=0)
+
+    # From here and on present unexpected data
+    # invalid timestamp
+    given_input = original_input.replace('"2018-09-15T12:30:56.475Z"', '"dasd"')
+    query_bitmex_and_test(given_input, expected_warnings_num=0, expected_errors_num=1)
+
+    # invalid asset
+    given_input = original_input.replace('"XBt"', '[]')
+    query_bitmex_and_test(given_input, expected_warnings_num=0, expected_errors_num=1)
+
+    # unknown asset
+    given_input = original_input.replace('"XBt"', '"dadsdsa"')
+    query_bitmex_and_test(given_input, expected_warnings_num=1, expected_errors_num=0)
+
+    # invalid amount
+    given_input = original_input.replace('16960386', 'null')
+    query_bitmex_and_test(given_input, expected_warnings_num=0, expected_errors_num=1)
+
+    # make sure that fee null/none works
+    given_input = original_input.replace('800', 'null')
+    query_bitmex_and_test(given_input, expected_warnings_num=0, expected_errors_num=0)
+
+    # invalid fee
+    given_input = original_input.replace('800', '"dadsdsa"')
+    query_bitmex_and_test(given_input, expected_warnings_num=0, expected_errors_num=1)
+
+    # missing key error
+    given_input = original_input.replace('"amount": 16960386,', '')
+    query_bitmex_and_test(given_input, expected_warnings_num=0, expected_errors_num=1)
+
+    # check that if 'transactType` key is missing things still work
+    given_input = original_input.replace('"transactType": "Withdrawal",', '')
+    query_bitmex_and_test(given_input, expected_warnings_num=0, expected_errors_num=1)
 
 
 BITMEX_FIRST_9_TRADES = [
