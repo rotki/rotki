@@ -174,6 +174,7 @@ class Rotkehlchen():
                 api_key=exchange_credentials['bitmex'].api_key,
                 secret=exchange_credentials['bitmex'].api_secret,
                 user_directory=self.user_directory,
+                msg_aggregator=self.msg_aggregator,
             )
             self.connected_exchanges.append('bitmex')
             self.trades_historian.set_exchange('bitmex', self.bitmex)
