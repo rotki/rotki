@@ -1,5 +1,5 @@
 import { ActionTree } from 'vuex';
-import { RotkehlchenState } from '@/store';
+import { RotkehlchenState } from '@/store/store';
 import { TaskState } from '@/store/tasks/state';
 import { BalanceStatus } from '@/enums/BalanceStatus';
 import { service } from '@/services/rotkehlchen_service';
