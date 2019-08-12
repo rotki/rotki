@@ -14,7 +14,6 @@ from rotkehlchen.errors import (
     UnsupportedAsset,
 )
 from rotkehlchen.exchanges import Binance, Bitmex, Bittrex, Kraken, Poloniex
-from rotkehlchen.exchanges.bitmex import trade_from_bitmex
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     Loan,
@@ -485,9 +484,7 @@ class TradesHistorian():
                     end_ts=end_ts,
                     end_at_least_ts=end_at_least_ts,
                 )
-                for trade in bitmex_history:
-                    history.append(trade_from_bitmex(trade))
-
+                history.extend(bitmex_history)
                 bitmex_asset_movements = self.bitmex.query_deposits_withdrawals(
                     start_ts=start_ts,
                     end_ts=end_ts,
