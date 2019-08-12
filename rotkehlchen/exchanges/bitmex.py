@@ -229,7 +229,7 @@ class Bitmex(ExchangeInterface):
             end_at_least_ts: typing.Timestamp,  # pylint: disable=unused-argument
             market: Optional[str] = None,  # pylint: disable=unused-argument
             count: Optional[int] = None,  # pylint: disable=unused-argument
-    ) -> List:
+    ) -> List[MarginPosition]:
 
         try:
             # We know user/walletHistory returns a list
@@ -244,7 +244,7 @@ class Bitmex(ExchangeInterface):
 
         log.debug('Bitmex trade history query', results_num=len(resp))
 
-        realised_pnls = []
+        margin_trades = []
         for tx in resp:
             if tx['timestamp'] is None:
                 timestamp = None
@@ -256,9 +256,9 @@ class Bitmex(ExchangeInterface):
                 continue
             if timestamp and timestamp > end_ts:
                 continue
-            realised_pnls.append(tx)
+            margin_trades.append(trade_from_bitmex(tx))
 
-        return realised_pnls
+        return margin_trades
 
     def query_deposits_withdrawals(
             self,

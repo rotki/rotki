@@ -297,7 +297,7 @@ class Accountant():
             start_ts: Timestamp,
             end_ts: Timestamp,
             trade_history: List[Trade],
-            margin_history: List[Trade],
+            margin_history: List[MarginPosition],
             loan_history: List[Loan],
             asset_movements: List[AssetMovement],
             eth_transactions: List[EthereumTransaction],
