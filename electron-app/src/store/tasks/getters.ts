@@ -1,5 +1,5 @@
 import { GetterTree } from 'vuex';
-import { RotkehlchenState } from '@/store';
+import { RotkehlchenState } from '@/store/store';
 import { TaskState } from '@/store/tasks/state';
 import { TaskType } from '@/model/task';
 import find from 'lodash/find';

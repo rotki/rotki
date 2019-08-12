@@ -1,5 +1,5 @@
 import { service } from '@/services/rotkehlchen_service';
-import store from '@/store';
+import store from '@/store/store';
 import { taskManager } from '@/services/task_manager';
 
 class Monitoring {
@@ -8,24 +8,7 @@ class Monitoring {
 
   private fetch() {
     store.dispatch('notifications/consume');
-    service
-      .query_periodic_data()
-      .then(result => {
-        if (Object.keys(result).length === 0) {
-          // an empty object means user is not logged in yet
-          return;
-        }
-
-        store.commit('updateAccountingSetting', {
-          lastBalanceSave: result['last_balance_save']
-        });
-
-        store.commit('nodeConnection', result['eth_node_connection']);
-        store.commit('historyProcess', result['history_process_current_ts']);
-      })
-      .catch(reason => {
-        const error_string = 'Error at periodic client query: ' + reason;
-      });
+    store.dispatch('session/periodicCheck');
   }
 
   /**

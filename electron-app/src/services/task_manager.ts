@@ -1,6 +1,6 @@
 import { ActionResult } from '@/model/action-result';
 import { BlockchainBalances } from '@/model/blockchain-balances';
-import store from '@/store';
+import store from '@/store/store';
 import { convertBalances, convertEthBalances } from '@/utils/conversion';
 import { ExchangeBalanceResult } from '@/model/exchange-balance-result';
 import { Task, TaskType } from '@/model/task';
@@ -105,7 +105,10 @@ export class TaskManager {
       }
       const task = tasks[id];
       if (task.id == null) {
-        /// console.log('NULL TASK ID: ' + JSON.stringify(task, null, 4));
+        console.info({
+          title: 'Task with null id',
+          task: JSON.stringify(task, null, 4)
+        });
         continue;
       }
 

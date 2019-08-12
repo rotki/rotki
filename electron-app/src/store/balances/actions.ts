@@ -1,5 +1,5 @@
 import { ActionTree } from 'vuex';
-import store, { RotkehlchenState } from '@/store';
+import store, { RotkehlchenState } from '@/store/store';
 import { BalanceState } from '@/store/balances/state';
 import { service } from '@/services/rotkehlchen_service';
 import { createTask, TaskType } from '@/model/task';
@@ -23,9 +23,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         );
 
         if (balanceTask) {
-          commit('tasks/addBalanceTask', task);
+          commit('tasks/addBalanceTask', task, { root: true });
         } else {
-          commit('task/add', task);
+          commit('task/add', task, { root: true });
         }
       })
       .catch(reason => {
@@ -60,7 +60,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         'Query Blockchain Balances',
         true
       );
-      commit('tasks/addBalanceTask', task);
+      commit('tasks/addBalanceTask', task, { root: true });
     } catch (e) {
       notify(
         `Error at querying blockchain balances: ${e}`,
@@ -83,12 +83,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
   async addExchanges({ commit, dispatch }, exchanges: string[]): Promise<void> {
-    commit('balances/connectedExchanges', exchanges);
+    commit('connectedExchanges', exchanges);
     for (const exchange of exchanges) {
-      await dispatch(
-        'balances/fetchExchangeBalances',
-        createExchangePayload(exchange)
-      );
+      await dispatch('fetchExchangeBalances', createExchangePayload(exchange));
     }
   },
   async fetch(
@@ -97,15 +94,15 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   ): Promise<void> {
     const { exchanges, newUser } = payload;
 
-    await dispatch('balances/fetchExchangeRates');
+    await dispatch('fetchExchangeRates');
 
     if (exchanges) {
-      await dispatch('balances/addExchanges');
+      await dispatch('addExchanges', exchanges);
     }
 
     if (!newUser) {
-      await dispatch('balances/fetchBlockchainBalances');
-      await dispatch('balances/fetchFiatBalances');
+      await dispatch('fetchBlockchainBalances');
+      await dispatch('fetchFiatBalances');
     }
   }
 };

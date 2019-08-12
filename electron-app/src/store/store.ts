@@ -20,14 +20,8 @@ import { session } from '@/store/session';
 Vue.use(Vuex);
 
 let store: StoreOptions<RotkehlchenState> = {
-  state: {
-    historyProcess: 0
-  },
-  mutations: {
-    historyProcess(state: RotkehlchenState, historyProcess: number) {
-      state.historyProcess = historyProcess;
-    }
-  },
+  state: {},
+  mutations: {},
   actions: {},
   getters: {},
   modules: {
@@ -39,6 +33,4 @@ let store: StoreOptions<RotkehlchenState> = {
 };
 export default new Vuex.Store(store);
 
-export interface RotkehlchenState {
-  historyProcess: number;
-}
+export interface RotkehlchenState {}

@@ -29,13 +29,6 @@ export interface Credentials {
   readonly password: string;
 }
 
-export interface AccountData {
-  readonly username: string;
-  readonly password: string;
-  readonly apiKey: string;
-  readonly apiSecret: string;
-}
-
 export type UsdToFiatExchangeRates = { [key: string]: number };
 
 export type Balances = { [asset: string]: AssetBalance };
