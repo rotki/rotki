@@ -32,15 +32,13 @@ const { mapGetters, mapMutations } = createNamespacedHelpers('tasks');
 @Component({
   components: { MessageDialog, Generate },
   computed: {
-    ...mapGetters(['isTaskRunning']),
-    ...mapMutations(['add'])
+    ...mapGetters(['isTaskRunning'])
   }
 })
 export default class TaxReport extends Vue {
   errorMessage: string = '';
 
   isTaskRunning!: (type: TaskType) => boolean;
-  add!: (task: Task) => void;
 
   messageTitle: string = '';
   messageDescription: string = '';
@@ -62,7 +60,7 @@ export default class TaxReport extends Vue {
           'Create tax report',
           true
         );
-        this.add(task);
+        this.$store.commit('tasks/add', task);
       })
       .catch((reason: Error) => {
         this.errorMessage = reason.message;

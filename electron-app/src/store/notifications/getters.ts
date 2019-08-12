@@ -1,6 +1,6 @@
 import { GetterTree } from 'vuex';
 import { NotificationState } from '@/store/notifications/state';
-import { RotkehlchenState } from '@/store';
+import { RotkehlchenState } from '@/store/store';
 
 export const getters: GetterTree<NotificationState, RotkehlchenState> = {
   count(state: NotificationState): number {

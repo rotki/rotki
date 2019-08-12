@@ -31,23 +31,6 @@
             required
           >
           </v-text-field>
-          <v-text-field
-            id="api_key_entry"
-            v-model="apiKey"
-            prepend-icon="fa-key"
-            label="API KEY"
-            persistent-hint
-            hint="Optional: Only for premium users"
-          >
-          </v-text-field>
-          <v-text-field
-            id="api_secret_entry"
-            v-model="apiSecret"
-            persistent-hint
-            prepend-icon="fa-user-secret"
-            hint="Optional: Only for premium users"
-            label="API SECRET"
-          ></v-text-field>
         </v-form>
       </v-card-text>
       <v-card-actions>
@@ -64,7 +47,7 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import { AccountData } from '@/typing/types';
+import { Credentials } from '@/typing/types';
 
 @Component({})
 export default class CreateAccount extends Vue {
@@ -74,8 +57,6 @@ export default class CreateAccount extends Vue {
   username: string = '';
   password: string = '';
   passwordConfirm: string = '';
-  apiKey: string = '';
-  apiSecret: string = '';
 
   valid: boolean = false;
 
@@ -96,20 +77,16 @@ export default class CreateAccount extends Vue {
     this.username = '';
     this.password = '';
     this.passwordConfirm = '';
-    this.apiKey = '';
-    this.apiSecret = '';
 
     (this.$refs.form as any).reset();
   }
 
   confirm() {
-    const account: AccountData = {
+    const credentials: Credentials = {
       username: this.username,
-      password: this.password,
-      apiKey: this.apiKey,
-      apiSecret: this.apiSecret
+      password: this.password
     };
-    this.$emit('confirm', account);
+    this.$emit('confirm', credentials);
   }
 
   @Emit()

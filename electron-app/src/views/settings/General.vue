@@ -108,7 +108,7 @@
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import { currencies } from '@/data/currencies';
-import { RotkehlchenState } from '@/store';
+import { RotkehlchenState } from '@/store/store';
 import { GeneralSettings } from '@/typing/types';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 

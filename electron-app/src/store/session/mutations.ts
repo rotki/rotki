@@ -6,13 +6,15 @@ import {
   AccountingSettingsUpdate,
   GeneralSettings
 } from '@/typing/types';
+import { RotkehlchenState } from '@/store/store';
+import set = Reflect.set;
 
 export const mutations: MutationTree<SessionState> = {
   defaultCurrency(state: SessionState, currency: Currency) {
     state.currency = currency;
   },
   logged(state: SessionState, logged: boolean) {
-    state.userLogged = logged;
+    state.logged = logged;
   },
   logout(state: SessionState) {
     state = { ...createSessionState() };
@@ -36,16 +38,15 @@ export const mutations: MutationTree<SessionState> = {
     state: SessionState,
     setting: AccountingSettingsUpdate
   ) {
-    state.accountingSettings = Object.assign(
-      {},
-      state.accountingSettings,
-      setting
-    );
+    state.accountingSettings = { ...state.accountingSettings, ...setting };
   },
   newUser(state: SessionState, newUser: boolean) {
     state.newUser = newUser;
   },
   nodeConnection(state: SessionState, nodeConnection: boolean) {
     state.nodeConnection = nodeConnection;
+  },
+  historyProcess(state: SessionState, historyProcess: number) {
+    state.historyProcess = historyProcess;
   }
 };

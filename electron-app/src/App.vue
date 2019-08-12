@@ -30,7 +30,7 @@
       <user-dropdown></user-dropdown>
       <currency-drop-down></currency-drop-down>
     </v-app-bar>
-    <v-content v-if="userLogged">
+    <v-content v-if="logged">
       <router-view></router-view>
     </v-content>
     <confirm-dialog
@@ -53,7 +53,7 @@
       @dismiss="terminate()"
     ></message-dialog>
     <login
-      :displayed="!userLogged && !error"
+      :displayed="!logged && !error && !newAccount"
       @login="login($event)"
       @new-account="newAccount = true"
     ></login>
@@ -62,10 +62,6 @@
       @cancel="newAccount = false"
       @confirm="createAccount($event)"
     ></create-account>
-    <sync-permission
-      :displayed="permissionNeeded !== ''"
-      :message="permissionNeeded"
-    ></sync-permission>
   </v-app>
 </template>
 
@@ -74,13 +70,11 @@ import { Component, Vue } from 'vue-property-decorator';
 import UserDropdown from '@/components/UserDropdown.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
-import { mapState } from 'vuex';
+import { createNamespacedHelpers } from 'vuex';
 import Login from '@/components/Login.vue';
-import { AccountData, Credentials } from '@/typing/types';
+import { Credentials } from '@/typing/types';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import CreateAccount from '@/components/CreateAccount.vue';
-import { UnlockResult } from '@/model/action-result';
-import SyncPermission from '@/components/dialogs/SyncPermission.vue';
 import { monitor } from '@/services/monitoring';
 import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
 import BalanceSavedIndicator from '@/components/status/BalanceSavedIndicator.vue';
@@ -89,8 +83,9 @@ import ProgressIndicator from '@/components/status/ProgressIndicator.vue';
 import './services/task_manager';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { ipcRenderer, remote, shell } from 'electron';
-import store from '@/store';
 import { UnlockPayload } from '@/store/session/actions';
+
+const { mapState } = createNamespacedHelpers('session');
 
 @Component({
   components: {
@@ -98,7 +93,6 @@ import { UnlockPayload } from '@/store/session/actions';
     NotificationIndicator,
     BalanceSavedIndicator,
     NodeStatusIndicator,
-    SyncPermission,
     CreateAccount,
     MessageDialog,
     Login,
@@ -107,11 +101,11 @@ import { UnlockPayload } from '@/store/session/actions';
     NavigationMenu,
     UserDropdown
   },
-  computed: mapState(['userLogged'])
+  computed: mapState(['logged'])
 })
 export default class App extends Vue {
   logout: boolean = false;
-  userLogged!: boolean;
+  logged!: boolean;
 
   newAccount: boolean = false;
   drawer = true;
@@ -119,8 +113,6 @@ export default class App extends Vue {
   permissionNeeded: string = '';
   error: string = '';
   startupError: string = '';
-
-  private accountData?: AccountData;
 
   openSite() {
     shell.openExternal('http://rotkehlchen.io');
@@ -143,99 +135,24 @@ export default class App extends Vue {
 
   ok() {
     this.error = '';
-    this.permissionNeeded = '';
-  }
-
-  async confirmSync() {
-    const accountData = this.accountData;
-    if (!accountData) {
-      throw new Error('no stored account');
-    }
-
-    await this.$store.dispatch('session/unlock', {
-      username: accountData.username,
-      password: accountData.password,
-      create: true,
-      syncApproval: 'yes',
-      apiKey: accountData.apiKey,
-      apiSecret: accountData.apiSecret
-    } as UnlockPayload);
-  }
-
-  async cancelSync() {
-    const accountData = this.accountData;
-    if (!accountData) {
-      throw new Error('no stored account');
-    }
-
-    await this.$store.dispatch('session/unlock', {
-      username: accountData.username,
-      password: accountData.password,
-      create: true,
-      syncApproval: 'no',
-      apiKey: accountData.apiKey,
-      apiSecret: accountData.apiSecret
-    } as UnlockPayload);
   }
 
   async login(credentials: Credentials) {
-    this.$rpc
-      .unlock_user(credentials.username, credentials.password)
-      .then(unlockResult => this.completeLogin(unlockResult))
-      .catch((reason: Error) => {
-        this.error = reason.message;
-      });
+    const { username, password } = credentials;
+    await this.$store.dispatch('session/unlock', {
+      username: username,
+      password: password
+    } as UnlockPayload);
   }
 
-  private completeLogin(unlockResult: UnlockResult, accountData?: AccountData) {
-    this.newAccount = false;
-    if (!unlockResult.result) {
-      if (unlockResult.permission_needed) {
-        this.permissionNeeded = unlockResult.message;
-        this.accountData = accountData;
-      } else {
-        this.error = unlockResult.message;
-      }
-      return;
-    }
-
-    (async function(response: UnlockResult, newUser: boolean = false) {
-      const db_settings = response.settings;
-      if (!db_settings) {
-        throw new Error('Unlock Failed');
-      }
-
-      await store.dispatch('session/start', {
-        premium: response.premium,
-        settings: db_settings
-      });
-
-      monitor.start();
-      await store.dispatch('balances/fetch', {
-        newUser,
-        exchanges: response.exchanges
-      });
-      store.commit('logged', true);
-    })(unlockResult);
-  }
-
-  async createAccount(accountData: AccountData) {
-    this.$rpc
-      .unlock_user(
-        accountData.username,
-        accountData.password,
-        true,
-        'unknown',
-        accountData.apiKey,
-        accountData.apiSecret
-      )
-      .then(unlockResult => {
-        this.$store.commit('newUser', true);
-        this.completeLogin(unlockResult, accountData);
-      })
-      .catch((reason: Error) => {
-        this.error = reason.message;
-      });
+  async createAccount(credentials: Credentials) {
+    const { username, password } = credentials;
+    await this.$store.dispatch('session/unlock', {
+      username: username,
+      password: password,
+      create: true,
+      syncApproval: 'unknown'
+    } as UnlockPayload);
   }
 
   logoutUser() {
@@ -244,7 +161,7 @@ export default class App extends Vue {
       .then(() => {
         monitor.stop();
         this.$store.commit('tasks/clear');
-        this.$store.commit('logout');
+        this.$store.commit('session/logout');
       })
       .catch((reason: Error) => {
         console.log(`Error at logout`);

@@ -3,7 +3,7 @@ import { getters } from './getters';
 import { actions } from './actions';
 import { state, BalanceState } from './state';
 import { Module } from 'vuex';
-import { RotkehlchenState } from '@/store';
+import { RotkehlchenState } from '@/store/store';
 
 const namespaced: boolean = true;
 
