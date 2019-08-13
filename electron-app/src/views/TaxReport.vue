@@ -1,5 +1,3 @@
-import { TaskType } from "@/model/task"; import { TaskType } from
-"@/model/task";
 <template>
   <v-container>
     <v-layout column class="tax-report">
@@ -10,11 +8,12 @@ import { TaskType } from "@/model/task"; import { TaskType } from
       </v-layout>
     </v-layout>
     <generate @generate="generate($event)"></generate>
-    <message-dialog
-      title="Trade History Processing Error"
-      :message="errorMessage"
-      @dismiss="errorMessage = ''"
-    ></message-dialog>
+    <tax-report-overview v-if="loaded"></tax-report-overview>
+    <v-overlay :value="isRunning">
+      <h2>Generating Report</h2>
+      <v-progress-circular size="60"></v-progress-circular>
+      <p>Please wait...</p>
+    </v-overlay>
   </v-container>
 </template>
 
@@ -23,26 +22,24 @@ import { Component, Vue } from 'vue-property-decorator';
 import Generate from '@/components/taxreport/Generate.vue';
 import { TaxReportEvent } from '@/typing/types';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
-import { createTask, Task, TaskType } from '@/model/task';
+import { TaskType } from '@/model/task';
 import { createNamespacedHelpers } from 'vuex';
 import { remote } from 'electron';
+import TaxReportOverview from '@/components/taxreport/TaxReportOverview.vue';
 
-const { mapGetters, mapMutations } = createNamespacedHelpers('tasks');
+const { mapGetters } = createNamespacedHelpers('tasks');
+const { mapState } = createNamespacedHelpers('reports');
 
 @Component({
-  components: { MessageDialog, Generate },
+  components: { TaxReportOverview, MessageDialog, Generate },
   computed: {
-    ...mapGetters(['isTaskRunning'])
+    ...mapGetters(['isTaskRunning']),
+    ...mapState(['loaded'])
   }
 })
 export default class TaxReport extends Vue {
-  errorMessage: string = '';
-
   isTaskRunning!: (type: TaskType) => boolean;
-
-  messageTitle: string = '';
-  messageDescription: string = '';
-  messageSuccess: boolean = false;
+  loaded!: boolean;
 
   get isRunning(): boolean {
     return this.isTaskRunning(TaskType.TRADE_HISTORY);
@@ -51,20 +48,7 @@ export default class TaxReport extends Vue {
   mounted() {}
 
   generate(event: TaxReportEvent) {
-    this.$rpc
-      .process_trade_history_async(event.start, event.end)
-      .then(result => {
-        const task = createTask(
-          result.task_id,
-          TaskType.TRADE_HISTORY,
-          'Create tax report',
-          true
-        );
-        this.$store.commit('tasks/add', task);
-      })
-      .catch((reason: Error) => {
-        this.errorMessage = reason.message;
-      });
+    this.$store.dispatch('reports/generate', event);
   }
 
   promptDirectorySelection() {}
@@ -82,14 +66,14 @@ export default class TaxReport extends Vue {
         this.$rpc
           .export_processed_history_csv(filePaths[0])
           .then(() => {
-            this.messageTitle = 'Success';
-            this.messageDescription = 'History exported to CVS successfully';
-            this.messageSuccess = true;
+            // this.messageTitle = 'Success';
+            // this.messageDescription = 'History exported to CVS successfully';
+            // this.messageSuccess = true;
           })
           .catch((reason: Error) => {
-            this.messageTitle = 'Exporting History to CSV error';
-            this.messageDescription = reason.message;
-            this.messageSuccess = false;
+            // this.messageTitle = 'Exporting History to CSV error';
+            // this.messageDescription = reason.message;
+            // this.messageSuccess = false;
           });
       }
     );

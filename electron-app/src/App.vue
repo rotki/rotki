@@ -41,10 +41,10 @@
       @cancel="logout = false"
     ></confirm-dialog>
     <message-dialog
-      v-if="error"
-      title="Login Failed"
-      :message="error"
-      @dismiss="ok()"
+      v-if="message.title"
+      :title="message.title"
+      :message="message.description"
+      @dismiss="dismiss()"
     ></message-dialog>
     <message-dialog
       v-if="startupError"
@@ -53,12 +53,12 @@
       @dismiss="terminate()"
     ></message-dialog>
     <login
-      :displayed="!logged && !error && !newAccount"
+      :displayed="!logged && !message.title && !newAccount"
       @login="login($event)"
       @new-account="newAccount = true"
     ></login>
     <create-account
-      :displayed="newAccount"
+      :displayed="newAccount && !message.title"
       @cancel="newAccount = false"
       @confirm="createAccount($event)"
     ></create-account>
@@ -70,7 +70,7 @@ import { Component, Vue } from 'vue-property-decorator';
 import UserDropdown from '@/components/UserDropdown.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
-import { createNamespacedHelpers } from 'vuex';
+import { createNamespacedHelpers, mapState } from 'vuex';
 import Login from '@/components/Login.vue';
 import { Credentials } from '@/typing/types';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
@@ -84,8 +84,9 @@ import './services/task_manager';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { ipcRenderer, remote, shell } from 'electron';
 import { UnlockPayload } from '@/store/session/actions';
+import { Message } from '@/store/store';
 
-const { mapState } = createNamespacedHelpers('session');
+const mapSessionState = createNamespacedHelpers('session').mapState;
 
 @Component({
   components: {
@@ -101,17 +102,19 @@ const { mapState } = createNamespacedHelpers('session');
     NavigationMenu,
     UserDropdown
   },
-  computed: mapState(['logged'])
+  computed: {
+    ...mapState(['message']),
+    ...mapSessionState(['logged'])
+  }
 })
 export default class App extends Vue {
   logout: boolean = false;
   logged!: boolean;
+  message!: Message;
 
   newAccount: boolean = false;
   drawer = true;
 
-  permissionNeeded: string = '';
-  error: string = '';
   startupError: string = '';
 
   openSite() {
@@ -120,6 +123,10 @@ export default class App extends Vue {
 
   terminate() {
     remote.getCurrentWindow().close();
+  }
+
+  dismiss() {
+    this.$store.commit('resetMessage');
   }
 
   created() {

@@ -1,5 +1,5 @@
 import { ActionTree } from 'vuex';
-import store, { RotkehlchenState } from '@/store/store';
+import { RotkehlchenState } from '@/store/store';
 import { SessionState } from '@/store/session/state';
 import {
   convertToAccountingSettings,
@@ -56,6 +56,15 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
 
       commit('logged', true);
     } catch (e) {
+      commit(
+        'setMessage',
+        {
+          title: 'Login failed',
+          description: e.message,
+          success: false
+        },
+        { root: true }
+      );
       console.error(e);
     }
   },
