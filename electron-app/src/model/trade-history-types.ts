@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { bigNumberify } from '@/utils/bignumbers';
 
 export interface ApiEventEntry {
   readonly type: string;
@@ -56,6 +57,37 @@ export interface EventEntry {
   readonly receivedInProfitCurrency: BigNumber;
   readonly receivedInAsset: BigNumber;
   readonly netProfitOrLoss: BigNumber;
-  readonly time: BigNumber;
+  readonly time: number;
   readonly isVirtual: boolean;
 }
+
+export const convertTradeHistoryOverview = (
+  overview: ApiTradeHistoryOverview
+): TradeHistoryOverview => ({
+  loanProfit: bigNumberify(overview.loan_profit),
+  marginPositionsProfit: bigNumberify(overview.margin_positions_profit),
+  settlementLosses: bigNumberify(overview.settlement_losses),
+  ethereumTransactionGasCosts: bigNumberify(
+    overview.ethereum_transaction_gas_costs
+  ),
+  assetMovementFees: bigNumberify(overview.asset_movement_fees),
+  generalTradeProfitLoss: bigNumberify(overview.general_trade_profit_loss),
+  taxableTradeProfitLoss: bigNumberify(overview.taxable_trade_profit_loss),
+  totalTaxableProfitLoss: bigNumberify(overview.total_taxable_profit_loss),
+  totalProfitLoss: bigNumberify(overview.total_profit_loss)
+});
+
+export const convertEventEntry = (event: ApiEventEntry): EventEntry => ({
+  type: event.type,
+  paidInProfitCurrency: bigNumberify(event.paid_in_profit_currency),
+  paidAsset: event.paid_asset,
+  paidInAsset: bigNumberify(event.paid_in_asset),
+  taxableAmount: bigNumberify(event.taxable_amount),
+  taxableBoughtCost: bigNumberify(event.taxable_bought_cost),
+  receivedAsset: event.received_asset,
+  receivedInProfitCurrency: bigNumberify(event.received_in_profit_currency),
+  receivedInAsset: bigNumberify(event.received_asset),
+  netProfitOrLoss: bigNumberify(event.net_profit_or_loss),
+  time: event.time,
+  isVirtual: event.is_virtual
+});
