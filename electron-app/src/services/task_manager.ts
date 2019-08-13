@@ -3,11 +3,17 @@ import { BlockchainBalances } from '@/model/blockchain-balances';
 import store from '@/store/store';
 import { convertBalances, convertEthBalances } from '@/utils/conversion';
 import { ExchangeBalanceResult } from '@/model/exchange-balance-result';
-import { Task, TaskType } from '@/model/task';
+import { TaskType } from '@/model/task';
 import { notify } from '@/store/notifications/utils';
 import { service } from '@/services/rotkehlchen_service';
 import { TaskMap } from '@/store/tasks/state';
-import { TradeHistoryResult } from '@/model/trade-history-result';
+import {
+  ApiEventEntry,
+  convertEventEntry,
+  convertTradeHistoryOverview,
+  TradeHistoryResult
+} from '@/model/trade-history-types';
+import map from 'lodash/map';
 
 export class TaskManager {
   private onUserSettingsQueryBlockchainBalances(
@@ -76,24 +82,35 @@ export class TaskManager {
     store.commit('balances/updateTotals', convertBalances(totals));
   }
 
-  onTradeHistory(result: ActionResult<TradeHistoryResult>) {
-    if (result.error) {
+  onTradeHistory(tradeHistoryResult: ActionResult<TradeHistoryResult>) {
+    const { error, message, result } = tradeHistoryResult;
+
+    if (error) {
       notify(
-        `Querying trade history died because of: ${result.error}. Check the logs for more details`,
+        `Querying trade history died because of: ${error}. Check the logs for more details`,
         'Trade History Query Error'
       );
       return;
     }
 
-    if (result.message !== '') {
+    if (message !== '') {
       notify(
-        `During trade history query we got:${result.message}. History report is probably not complete.`,
+        `During trade history query we got:${message}. History report is probably not complete.`,
         'Trade History Query Warning'
       );
     }
 
-    console.log(result.result.overview);
-    console.log(result.result.all_events);
+    const { overview, all_events } = result;
+
+    console.log(overview);
+
+    const payload = {
+      overview: convertTradeHistoryOverview(overview),
+      events: map(all_events, (event: ApiEventEntry) =>
+        convertEventEntry(event)
+      )
+    };
+    store.commit('reports/set', payload);
   }
 
   monitor() {
@@ -122,7 +139,6 @@ export class TaskManager {
           return;
         }
 
-        let handled = 0;
         const handler = this.handler[task.type];
 
         if (!handler) {

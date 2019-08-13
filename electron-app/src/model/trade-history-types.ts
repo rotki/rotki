@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { bigNumberify } from '@/utils/bignumbers';
+import { bigNumberify, Zero } from '@/utils/bignumbers';
 
 export interface ApiEventEntry {
   readonly type: string;
@@ -18,7 +18,7 @@ export interface ApiEventEntry {
 
 export interface ApiTradeHistoryOverview {
   readonly loan_profit: string;
-  readonly margin_positions_profit: string;
+  readonly margin_positions_profit_loss: string;
   readonly settlement_losses: string;
   readonly ethereum_transaction_gas_costs: string;
   readonly asset_movement_fees: string;
@@ -36,7 +36,7 @@ export interface TradeHistoryResult {
 
 export interface TradeHistoryOverview {
   readonly loanProfit: BigNumber;
-  readonly marginPositionsProfit: BigNumber;
+  readonly marginPositionsProfitLoss: BigNumber;
   readonly settlementLosses: BigNumber;
   readonly ethereumTransactionGasCosts: BigNumber;
   readonly assetMovementFees: BigNumber;
@@ -61,11 +61,25 @@ export interface EventEntry {
   readonly isVirtual: boolean;
 }
 
+export const tradeHistoryPlaceholder = (): TradeHistoryOverview => ({
+  loanProfit: Zero,
+  marginPositionsProfitLoss: Zero,
+  settlementLosses: Zero,
+  ethereumTransactionGasCosts: Zero,
+  assetMovementFees: Zero,
+  generalTradeProfitLoss: Zero,
+  taxableTradeProfitLoss: Zero,
+  totalTaxableProfitLoss: Zero,
+  totalProfitLoss: Zero
+});
+
 export const convertTradeHistoryOverview = (
   overview: ApiTradeHistoryOverview
 ): TradeHistoryOverview => ({
   loanProfit: bigNumberify(overview.loan_profit),
-  marginPositionsProfit: bigNumberify(overview.margin_positions_profit),
+  marginPositionsProfitLoss: bigNumberify(
+    overview.margin_positions_profit_loss
+  ),
   settlementLosses: bigNumberify(overview.settlement_losses),
   ethereumTransactionGasCosts: bigNumberify(
     overview.ethereum_transaction_gas_costs

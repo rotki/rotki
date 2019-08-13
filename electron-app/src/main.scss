@@ -346,3 +346,7 @@ a:hover {
   margin-left: 0;
   margin-bottom: -16px;
 }
+
+.fa-cad:before, .fa-aud:before, .fa-nzd:before, .fa-hkd:before, .fa-ars:before, .fa-mxn:before {
+  content: "\f155";
+}
