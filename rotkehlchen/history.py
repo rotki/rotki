@@ -327,48 +327,13 @@ class TradesHistorian():
             end_at_least_ts=end_at_least_ts,
         )
 
-        polo_history = self.poloniex.query_trade_history(
+        polo_trades = self.poloniex.query_trade_history(
             start_ts=start_ts,
             end_ts=end_ts,
             end_at_least_ts=end_at_least_ts,
         )
+        history.extend(polo_trades)
 
-        for pair, trades in polo_history.items():
-            for trade in trades:
-                category = trade['category']
-
-                try:
-                    if category == 'exchange' or category == 'settlement':
-                        history.append(trade_from_poloniex(trade, pair))
-                    elif category == 'marginTrade':
-                        if not self.read_manual_margin_positions:
-                            poloniex_margin_trades.append(trade_from_poloniex(trade, pair))
-                    else:
-                        raise ValueError(
-                            f'Unexpected poloniex trade category: {category}',
-                        )
-                except UnsupportedAsset as e:
-                    self.msg_aggregator.add_warning(
-                        f'Found poloniex trade with unsupported asset'
-                        f' {e.asset_name}. Ignoring it.',
-                    )
-                    continue
-                except UnknownAsset as e:
-                    self.msg_aggregator.add_warning(
-                        f'Found poloniex trade with unknown asset'
-                        f' {e.asset_name}. Ignoring it.',
-                    )
-                    continue
-                except DeserializationError as e:
-                    self.msg_aggregator.add_error(
-                        'Error deserializing a poloniex trade. Check the logs '
-                        'and open a bug report.',
-                    )
-                    log.error(
-                        'Error deserializing poloniex trade',
-                        trade=trade,
-                        error=str(e),
-                    )
         margin_return_list: Union[List[MarginPosition], List[Trade]]
         if self.read_manual_margin_positions:
             # Just read the manual positions log and make virtual trades that

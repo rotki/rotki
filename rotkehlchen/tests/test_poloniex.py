@@ -10,7 +10,7 @@ from rotkehlchen.errors import DeserializationError, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import Loan, Trade, TradeType
 from rotkehlchen.exchanges.poloniex import Poloniex, process_polo_loans, trade_from_poloniex
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_DASH
+from rotkehlchen.tests.utils.constants import A_BCH, A_DASH
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import Timestamp
@@ -210,6 +210,148 @@ def test_poloniex_trade_with_asset_needing_conversion():
     assert trade.location == 'poloniex'
 
 
+def test_query_trade_history(function_scope_poloniex):
+    """Happy path test for poloniex trade history querying"""
+    poloniex = function_scope_poloniex
+    poloniex.cache_ttl_secs = 0
+
+    def mock_api_return(url, req):  # pylint: disable=unused-argument
+        contents = """{ "BTC_BCH":
+        [ { "globalTradeID": 394131412,
+        "tradeID": "5455033",
+        "date": "2018-10-16 18:05:17",
+        "rate": "0.06935244",
+        "amount": "1.40308443",
+        "total": "0.09730732",
+        "fee": "0.00100000",
+        "orderNumber": "104768235081",
+        "type": "sell",
+        "category": "exchange" }],
+        "BTC_ETH":
+        [{ "globalTradeID": 394127361,
+        "tradeID": "13536350",
+        "date": "2018-10-16 17:03:43",
+        "rate": "0.00003432",
+        "amount": "3600.53748129",
+        "total": "0.12357044",
+        "fee": "0.00200000",
+        "orderNumber": "96238912841",
+        "type": "buy",
+        "category": "exchange"}]}"""
+        return MockResponse(200, contents)
+
+    with patch.object(poloniex.session, 'post', side_effect=mock_api_return):
+        trades = poloniex.query_trade_history(
+            start_ts=0,
+            end_ts=1565732120,
+            end_at_least_ts=1565732120,
+        )
+
+    assert len(trades) == 2
+    assert trades[0].timestamp == 1539713117
+    assert trades[0].location == 'poloniex'
+    assert trades[0].pair == 'BCH_BTC'
+    assert trades[0].trade_type == TradeType.SELL
+    assert trades[0].amount == FVal('1.40308443')
+    assert trades[0].rate == FVal('0.06935244')
+    assert trades[0].fee.is_close(FVal('0.00009730732'))
+    assert isinstance(trades[0].fee_currency, Asset)
+    assert trades[0].fee_currency == A_BTC
+
+    assert trades[1].timestamp == 1539709423
+    assert trades[1].location == 'poloniex'
+    assert trades[1].pair == 'ETH_BTC'
+    assert trades[1].trade_type == TradeType.BUY
+    assert trades[1].amount == FVal('3600.53748129')
+    assert trades[1].rate == FVal('0.00003432')
+    assert trades[1].fee.is_close(FVal('7.20107496258'))
+    assert isinstance(trades[1].fee_currency, Asset)
+    assert trades[1].fee_currency == A_ETH
+
+
+def test_query_trade_history_unexpected_data(function_scope_poloniex):
+    """Test that poloniex trade history querying returning unexpected data is handled gracefully"""
+    poloniex = function_scope_poloniex
+    poloniex.cache_ttl_secs = 0
+
+    def mock_poloniex_and_query(given_trades, expected_warnings_num, expected_errors_num):
+
+        def mock_api_return(url, req):  # pylint: disable=unused-argument
+            return MockResponse(200, given_trades)
+
+        with patch.object(poloniex.session, 'post', side_effect=mock_api_return):
+            trades = poloniex.query_trade_history(
+                start_ts=0,
+                end_ts=1565732120,
+                end_at_least_ts=1565732120,
+            )
+
+        if expected_errors_num == 0 and expected_warnings_num == 0:
+            assert len(trades) == 1
+        else:
+            assert len(trades) == 0
+            warnings = poloniex.msg_aggregator.consume_warnings()
+            assert len(warnings) == expected_warnings_num
+            errors = poloniex.msg_aggregator.consume_errors()
+            assert len(errors) == expected_errors_num
+
+    input_trades = """{"BTC_ETH":
+        [{ "globalTradeID": 394127361,
+        "tradeID": "13536350",
+        "date": "2018-10-16 17:03:43",
+        "rate": "0.00003432",
+        "amount": "3600.53748129",
+        "total": "0.12357044",
+        "fee": "0.00200000",
+        "orderNumber": "96238912841",
+        "type": "buy",
+        "category": "exchange"}]}"""
+
+    # First make sure it works with normal data
+    mock_poloniex_and_query(input_trades, expected_warnings_num=0, expected_errors_num=0)
+
+    # from here and on invalid data
+    # invalid timestamp
+    given_input = input_trades.replace('"2018-10-16 17:03:43"', '"435345"')
+    mock_poloniex_and_query(given_input, expected_warnings_num=0, expected_errors_num=1)
+
+    # invalid pair
+    given_input = input_trades.replace('"BTC_ETH"', '"0"')
+    mock_poloniex_and_query(given_input, expected_warnings_num=0, expected_errors_num=1)
+
+    # pair with unknown asset
+    given_input = input_trades.replace('"BTC_ETH"', '"BTC_SDSDSD"')
+    mock_poloniex_and_query(given_input, expected_warnings_num=1, expected_errors_num=0)
+
+    # pair with unsupported asset
+    given_input = input_trades.replace('"BTC_ETH"', '"BTC_BALLS"')
+    mock_poloniex_and_query(given_input, expected_warnings_num=1, expected_errors_num=0)
+
+    # pair with unsupported asset
+    given_input = input_trades.replace('"BTC_ETH"', '"BTC_BALLS"')
+    mock_poloniex_and_query(given_input, expected_warnings_num=1, expected_errors_num=0)
+
+    # invalid rate
+    given_input = input_trades.replace('"0.00003432"', 'null')
+    mock_poloniex_and_query(given_input, expected_warnings_num=0, expected_errors_num=1)
+
+    # invalid amount
+    given_input = input_trades.replace('"3600.53748129"', '"dsadsd"')
+    mock_poloniex_and_query(given_input, expected_warnings_num=0, expected_errors_num=1)
+
+    # invalid fee
+    given_input = input_trades.replace('"0.00200000"', '"dasdsad"')
+    mock_poloniex_and_query(given_input, expected_warnings_num=0, expected_errors_num=1)
+
+    # invalid trade type
+    given_input = input_trades.replace('"buy"', '"dasdsdad"')
+    mock_poloniex_and_query(given_input, expected_warnings_num=0, expected_errors_num=1)
+
+    # invalid category
+    given_input = input_trades.replace('"exchange"', '"dsadsdsadd"')
+    mock_poloniex_and_query(given_input, expected_warnings_num=0, expected_errors_num=1)
+
+
 def test_query_trade_history_not_shared_cache(data_dir):
     """Test that having 2 different poloniex instances does not use same cache
 
@@ -218,10 +360,24 @@ def test_query_trade_history_not_shared_cache(data_dir):
     """
 
     def first_trades(currency_pair, start, end):  # pylint: disable=unused-argument
-        return {'BTC': [{'data': 1}]}
+        return {'BTC_ETH': [
+            {'date': '2018-10-16 18:05:17',
+             'rate': '0.06935244',
+             'amount': '1.40308443',
+             'total': '0.09730732',
+             'fee': '0.00100000',
+             'type': 'sell',
+             'category': 'exchange'}]}
 
     def second_trades(currency_pair, start, end):  # pylint: disable=unused-argument
-        return {'BTC': [{'data': 2}]}
+        return {'BTC_ETH': [
+            {'date': '2018-10-16 18:05:17',
+             'rate': '0.06935244',
+             'amount': '2.5',
+             'total': '0.09730732',
+             'fee': '0.00100000',
+             'type': 'sell',
+             'category': 'exchange'}]}
 
     messages_aggregator = MessagesAggregator()
     end_ts = 99999999999
@@ -237,8 +393,8 @@ def test_query_trade_history_not_shared_cache(data_dir):
     with patch.object(b, 'return_trade_history', side_effect=second_trades):
         result2 = b.query_trade_history(0, end_ts, end_ts)
 
-    assert result1['BTC'][0]['data'] == 1
-    assert result2['BTC'][0]['data'] == 2
+    assert result1[0].amount == FVal('1.40308443')
+    assert result2[0].amount == FVal('2.5')
 
 
 def test_poloniex_assets_are_known(poloniex):
