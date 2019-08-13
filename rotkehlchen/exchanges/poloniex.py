@@ -21,6 +21,7 @@ from rotkehlchen.errors import (
     PoloniexError,
     RemoteError,
     UnknownAsset,
+    UnprocessableTradePair,
     UnsupportedAsset,
 )
 from rotkehlchen.exchanges.data_structures import (
@@ -65,6 +66,7 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
     Throws:
         - UnsupportedAsset due to asset_from_poloniex()
         - DeserializationError due to the data being in unexpected format
+        - UnprocessableTradePair due to the pair data being in an unexpected format
     """
 
     try:
@@ -88,7 +90,7 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
         fee = cost * perc_fee
         fee_currency = base_currency
     else:
-        raise ValueError('Got unexpected trade type "{}" for poloniex trade'.format(trade_type))
+        raise DeserializationError(f'Got unexpected trade type "{trade_type}" for poloniex trade')
 
     if poloniex_trade['category'] == 'settlement':
         if trade_type == TradeType.BUY:
@@ -480,33 +482,73 @@ class Poloniex(ExchangeInterface):
             start_ts: Timestamp,
             end_ts: Timestamp,
             end_at_least_ts: Timestamp,
-    ) -> Dict:
+    ) -> List[Trade]:
         with self.lock:
-            cache = self.check_trades_cache_dict(start_ts, end_at_least_ts)
-        if cache is not None:
-            return cache
-
-        result = self.return_trade_history(
-            currency_pair='all',
-            start=start_ts,
-            end=end_ts,
-        )
-
-        results_length = 0
-        for _, v in result.items():
-            results_length += len(v)
-
-        log.debug('Poloniex trade history query', results_num=results_length)
-
-        if results_length >= 10000:
-            raise ValueError(
-                'Poloniex api has a 10k limit to trade history. Have not implemented'
-                ' a solution for more than 10k trades at the moment',
+            raw_data = self.check_trades_cache_dict(start_ts, end_at_least_ts)
+        if raw_data is None:
+            raw_data = self.return_trade_history(
+                currency_pair='all',
+                start=start_ts,
+                end=end_ts,
             )
 
-        with self.lock:
-            self.update_trades_cache(result, start_ts, end_ts)
-        return result
+            results_length = 0
+            for _, v in raw_data.items():
+                results_length += len(v)
+
+            log.debug('Poloniex trade history query', results_num=results_length)
+
+            if results_length >= 10000:
+                raise ValueError(
+                    'Poloniex api has a 10k limit to trade history. Have not implemented'
+                    ' a solution for more than 10k trades at the moment',
+                )
+
+            with self.lock:
+                self.update_trades_cache(raw_data, start_ts, end_ts)
+
+        our_trades = []
+        for pair, trades in raw_data.items():
+            for trade in trades:
+                category = trade['category']
+
+                try:
+                    if category == 'exchange' or category == 'settlement':
+                        our_trades.append(trade_from_poloniex(trade, pair))
+                    elif category == 'marginTrade':
+                        # We don't take poloniex margin trades into account at the moment
+                        continue
+                    else:
+                        self.msg_aggregator.add_error(
+                            f'Error deserializing a poloniex trade. Unknown trade '
+                            f'category {category} found.',
+                        )
+                        continue
+                except UnsupportedAsset as e:
+                    self.msg_aggregator.add_warning(
+                        f'Found poloniex trade with unsupported asset'
+                        f' {e.asset_name}. Ignoring it.',
+                    )
+                    continue
+                except UnknownAsset as e:
+                    self.msg_aggregator.add_warning(
+                        f'Found poloniex trade with unknown asset'
+                        f' {e.asset_name}. Ignoring it.',
+                    )
+                    continue
+                except (UnprocessableTradePair, DeserializationError) as e:
+                    self.msg_aggregator.add_error(
+                        'Error deserializing a poloniex trade. Check the logs '
+                        'and open a bug report.',
+                    )
+                    log.error(
+                        'Error deserializing poloniex trade',
+                        trade=trade,
+                        error=str(e),
+                    )
+                    continue
+
+        return our_trades
 
     def parse_loan_csv(self) -> List:
         """Parses (if existing) the lendingHistory.csv and returns the history in a list
