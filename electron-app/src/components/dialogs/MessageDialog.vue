@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="message.length > 0" persistent max-width="400">
+  <v-dialog v-model="message.length > 0" persistent max-width="500">
     <v-card>
       <v-card-title
         :class="{ 'green--text': success, 'red--text': !success }"
@@ -17,7 +17,9 @@
           </v-icon>
         </v-flex>
         <v-flex xs10>
-          <v-card-text> {{ message }} </v-card-text>
+          <v-card-text class="message-dialog__message">
+            {{ message }}
+          </v-card-text>
         </v-flex>
       </v-layout>
 
@@ -56,5 +58,12 @@ export default class MessageDialog extends Vue {
 <style scoped>
 .dialog-icon {
   margin-left: 25px;
+}
+
+.message-dialog__message {
+  width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
 }
 </style>

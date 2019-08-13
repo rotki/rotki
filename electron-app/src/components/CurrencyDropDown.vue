@@ -35,7 +35,9 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { Currency } from '@/model/currency';
 import { currencies } from '@/data/currencies';
-import { mapState } from 'vuex';
+import { createNamespacedHelpers } from 'vuex';
+
+const { mapState } = createNamespacedHelpers('session');
 
 @Component({
   computed: mapState(['currency'])
@@ -58,7 +60,7 @@ export default class CurrencyDropDown extends Vue {
         this.$store.commit('defaultCurrency', value);
       })
       .catch((reason: Error) => {
-        showError('Error', `Error at setting main currency: ${reason.message}`);
+        //showError('Error', `Error at setting main currency: ${reason.message}`);
       });
   }
 }
