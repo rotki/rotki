@@ -9,6 +9,7 @@
     </v-layout>
     <generate @generate="generate($event)"></generate>
     <tax-report-overview v-if="loaded"></tax-report-overview>
+    <tax-report-events v-if="loaded"></tax-report-events>
     <v-overlay :value="isRunning">
       <h2>Generating Report</h2>
       <v-progress-circular size="60"></v-progress-circular>
@@ -26,12 +27,13 @@ import { TaskType } from '@/model/task';
 import { createNamespacedHelpers } from 'vuex';
 import { remote } from 'electron';
 import TaxReportOverview from '@/components/taxreport/TaxReportOverview.vue';
+import TaxReportEvents from '@/components/taxreport/TaxReportEvents.vue';
 
 const { mapGetters } = createNamespacedHelpers('tasks');
 const { mapState } = createNamespacedHelpers('reports');
 
 @Component({
-  components: { TaxReportOverview, MessageDialog, Generate },
+  components: { TaxReportEvents, TaxReportOverview, MessageDialog, Generate },
   computed: {
     ...mapGetters(['isTaskRunning']),
     ...mapState(['loaded'])
