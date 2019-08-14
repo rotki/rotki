@@ -1,6 +1,7 @@
 from typing import Any, Dict, List
 
 from rotkehlchen.exchanges.data_structures import (
+    MarginPosition,
     asset_movements_from_dictlist,
     trades_from_dictlist,
 )
@@ -14,7 +15,7 @@ def accounting_history_process(
         start_ts: Timestamp,
         end_ts: Timestamp,
         history_list: List[Dict],
-        margin_list: List[Dict] = None,
+        margin_list: List[MarginPosition] = None,
         loans_list: List[Dict] = None,
         asset_movements_list: List[Dict] = None,
         eth_transaction_list: List[Dict] = None,
@@ -28,7 +29,10 @@ def accounting_history_process(
         location='accounting_history_process for tests',
         msg_aggregator=accountant.msg_aggregator,
     )
-    margin_history = [] if not margin_list else margin_list
+    # if present, append margin positions to trade history
+    if margin_list:
+        trade_history.extend(margin_list)
+
     asset_movements = list()
     if asset_movements_list:
         asset_movements = asset_movements_from_dictlist(
@@ -57,7 +61,6 @@ def accounting_history_process(
         start_ts=start_ts,
         end_ts=end_ts,
         trade_history=trade_history,
-        margin_history=margin_history,
         loan_history=loan_history,
         asset_movements=asset_movements,
         eth_transactions=eth_transactions,

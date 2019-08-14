@@ -21,7 +21,7 @@ from rotkehlchen.errors import (
     UnknownAsset,
 )
 from rotkehlchen.ethchain import Ethchain
-from rotkehlchen.exchanges import Binance, Bitmex, Bittrex, Kraken, Poloniex
+from rotkehlchen.exchanges import Binance, Bitmex, Bittrex, ExchangeInterface, Kraken, Poloniex
 from rotkehlchen.externalapis import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian, TradesHistorian
@@ -74,7 +74,7 @@ class Rotkehlchen():
         # --cache related variable end
 
         self.premium = None
-        self.connected_exchanges = []
+        self.connected_exchanges: List[ExchangeInterface] = []
         self.user_is_logged_in = False
 
         logfilename = None
@@ -126,6 +126,11 @@ class Rotkehlchen():
         self.lock.release()
         self.shutdown_event = gevent.event.Event()
 
+    def _add_exchange(self, exchange_obj: ExchangeInterface) -> None:
+        """Adds a new exchange to the currently known exchanges"""
+        self.connected_exchanges.append(exchange_obj)
+        self.trades_historian.connected_exchanges = self.connected_exchanges
+
     def initialize_exchanges(self, exchange_credentials: Dict[str, ApiCredentials]) -> None:
         # initialize exchanges for which we have keys and are not already initialized
         if self.kraken is None and 'kraken' in exchange_credentials:
@@ -136,8 +141,7 @@ class Rotkehlchen():
                 msg_aggregator=self.msg_aggregator,
                 usd_eur_price=Inquirer().query_fiat_pair(A_EUR, A_USD),
             )
-            self.connected_exchanges.append('kraken')
-            self.trades_historian.set_exchange('kraken', self.kraken)
+            self._add_exchange(self.kraken)
 
         if self.poloniex is None and 'poloniex' in exchange_credentials:
             self.poloniex = Poloniex(
@@ -146,8 +150,7 @@ class Rotkehlchen():
                 user_directory=self.user_directory,
                 msg_aggregator=self.msg_aggregator,
             )
-            self.connected_exchanges.append('poloniex')
-            self.trades_historian.set_exchange('poloniex', self.poloniex)
+            self._add_exchange(self.poloniex)
 
         if self.bittrex is None and 'bittrex' in exchange_credentials:
             self.bittrex = Bittrex(
@@ -156,8 +159,7 @@ class Rotkehlchen():
                 user_directory=self.user_directory,
                 msg_aggregator=self.msg_aggregator,
             )
-            self.connected_exchanges.append('bittrex')
-            self.trades_historian.set_exchange('bittrex', self.bittrex)
+            self._add_exchange(self.bittrex)
 
         if self.binance is None and 'binance' in exchange_credentials:
             self.binance = Binance(
@@ -166,8 +168,7 @@ class Rotkehlchen():
                 data_dir=self.user_directory,
                 msg_aggregator=self.msg_aggregator,
             )
-            self.connected_exchanges.append('binance')
-            self.trades_historian.set_exchange('binance', self.binance)
+            self._add_exchange(self.binance)
 
         if self.bitmex is None and 'bitmex' in exchange_credentials:
             self.bitmex = Bitmex(
@@ -176,8 +177,7 @@ class Rotkehlchen():
                 user_directory=self.user_directory,
                 msg_aggregator=self.msg_aggregator,
             )
-            self.connected_exchanges.append('bitmex')
-            self.trades_historian.set_exchange('bitmex', self.bitmex)
+            self._add_exchange(self.bitmex)
 
     def remove_all_exchanges(self):
         if self.kraken is not None:
@@ -375,7 +375,6 @@ class Rotkehlchen():
         (
             error_or_empty,
             history,
-            margin_history,
             loan_history,
             asset_movements,
             eth_transactions,
@@ -388,7 +387,6 @@ class Rotkehlchen():
             start_ts,
             end_ts,
             history,
-            margin_history,
             loan_history,
             asset_movements,
             eth_transactions,
@@ -427,12 +425,12 @@ class Rotkehlchen():
         balances = {}
         problem_free = True
         for exchange in self.connected_exchanges:
-            exchange_balances, _ = getattr(self, exchange).query_balances()
+            exchange_balances, _ = exchange.query_balances()
             # If we got an error, disregard that exchange but make sure we don't save data
             if not isinstance(exchange_balances, dict):
                 problem_free = False
             else:
-                balances[exchange] = exchange_balances
+                balances[exchange.name] = exchange_balances
 
         result, error_or_empty = self.blockchain.query_balances()
         if error_or_empty == '':
@@ -605,8 +603,23 @@ class Rotkehlchen():
         self.data.db.add_exchange(name, api_key, api_secret)
         return True, ''
 
-    def delete_exchange_data(self, name):
-        self.connected_exchanges.remove(name)
+    def delete_exchange_data(self, name: str) -> None:
+        """Deletes the exchange data of "name" exchange if found in currently connected exchanges.
+
+        If not it's an assertion error.
+        """
+        found_idx = -1
+        for idx, exchange in enumerate(self.connected_exchanges):
+            if exchange.name == name:
+                found_idx = idx
+                break
+
+        if found_idx == -1:
+            raise AssertionError(
+                f'Could not find exchange {name} in the currently connected exchanges',
+            )
+        self.connected_exchanges.pop(found_idx)
+
         self.trades_historian.set_exchange(name, None)
         delattr(self, name)
         setattr(self, name, None)
