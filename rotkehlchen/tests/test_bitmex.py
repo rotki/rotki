@@ -4,7 +4,7 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC
-from rotkehlchen.exchanges.bitmex import Bitmex, trade_from_bitmex
+from rotkehlchen.exchanges.bitmex import Bitmex
 from rotkehlchen.exchanges.data_structures import AssetMovement, Exchange, MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse

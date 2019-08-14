@@ -1,29 +1,20 @@
 import logging
 import os
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors import (
-    DeserializationError,
-    HistoryCacheInvalid,
-    RemoteError,
-    UnknownAsset,
-    UnsupportedAsset,
-)
-from rotkehlchen.exchanges import Binance, Bitmex, Bittrex, Kraken, Poloniex
+from rotkehlchen.errors import DeserializationError, HistoryCacheInvalid, RemoteError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
-    Loan,
     MarginPosition,
     Trade,
     asset_movements_from_dictlist,
     trades_from_dictlist,
 )
-from rotkehlchen.exchanges.exchange import data_up_todate
-from rotkehlchen.exchanges.poloniex import process_polo_loans, trade_from_poloniex
+from rotkehlchen.exchanges.exchange import ExchangeInterface, data_up_todate
+from rotkehlchen.exchanges.poloniex import process_polo_loans
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -238,17 +229,11 @@ class TradesHistorian():
             msg_aggregator: MessagesAggregator,
     ):
 
-        self.poloniex: Optional[Poloniex] = None
-        self.kraken: Optional[Kraken] = None
-        self.bittrex: Optional[Bittrex] = None
-        self.bitmex: Optional[Bitmex] = None
-        self.binance: Optional[Binance] = None
         self.msg_aggregator = msg_aggregator
         self.user_directory = user_directory
         self.db = db
         self.eth_accounts = eth_accounts
-        # If this flag is true we attempt to read from the manually logged margin positions file
-        self.read_manual_margin_positions = True
+        self.connected_exchanges: List[ExchangeInterface] = []
 
     def set_exchange(self, name, exchange_obj):
         if getattr(self, name) is None or exchange_obj is None:
@@ -258,76 +243,6 @@ class TradesHistorian():
                 'Attempted to set {} exchange in TradesHistorian while it was '
                 'already set'.format(name),
             )
-
-    def query_poloniex_history(
-            self,
-            history: List[Trade],
-            asset_movements: List[AssetMovement],
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-            end_at_least_ts: Timestamp,
-    ) -> Tuple[
-        List[Trade],
-        List[AssetMovement],
-        Union[List[MarginPosition], List[Trade]],
-        List[Loan],
-    ]:
-        # The poloniex margin trades list can either be normal trades list or
-        # if we read manual margin positions a List or MarginPosition
-        # TODO: This is pretty ugly. Simply remove the manual MarginPosition trades
-        # possibility from poloniex. Will make it easier to maintain
-        poloniex_margin_trades: List[Trade] = []
-        poloniex_manual_margin_positions: List[MarginPosition] = []
-        polo_loans: List[Loan] = list()
-        if not self.poloniex:
-            return history, asset_movements, poloniex_margin_trades, polo_loans
-
-        log.info(
-            'Starting poloniex history query',
-            start_ts=start_ts,
-            end_ts=end_ts,
-            end_at_least_ts=end_at_least_ts,
-        )
-
-        polo_trades = self.poloniex.query_trade_history(
-            start_ts=start_ts,
-            end_ts=end_ts,
-            end_at_least_ts=end_at_least_ts,
-        )
-        history.extend(polo_trades)
-
-        margin_return_list: Union[List[MarginPosition], List[Trade]]
-        if self.read_manual_margin_positions:
-            # Just read the manual positions log and make virtual trades that
-            # correspond to the profits
-            poloniex_manual_margin_positions = do_read_manual_margin_positions(
-                self.user_directory,
-            )
-            margin_return_list = poloniex_manual_margin_positions
-        else:
-            poloniex_margin_trades.sort(key=lambda trade: trade.timestamp)
-            poloniex_margin_trades = limit_trade_list_to_period(
-                poloniex_margin_trades,
-                start_ts,
-                end_ts,
-            )
-            margin_return_list = poloniex_margin_trades
-
-        polo_loans_data = self.poloniex.query_loan_history(
-            start_ts=start_ts,
-            end_ts=end_ts,
-            end_at_least_ts=end_at_least_ts,
-            from_csv=True,
-        )
-        polo_loans = process_polo_loans(self.msg_aggregator, polo_loans_data, start_ts, end_ts)
-        polo_asset_movements = self.poloniex.query_deposits_withdrawals(
-            start_ts=start_ts,
-            end_ts=end_ts,
-            end_at_least_ts=end_at_least_ts,
-        )
-        asset_movements.extend(polo_asset_movements)
-
-        return history, asset_movements, margin_return_list, polo_loans
 
     def create_history(self, start_ts, end_ts, end_at_least_ts):
         """Creates trades and loans history from start_ts to end_ts or if
@@ -344,102 +259,43 @@ class TradesHistorian():
         # start creating the all trades history list
         history = list()
         asset_movements = list()
+        polo_loans = list()
         empty_or_error = ''
 
-        if self.kraken is not None:
-            try:
-                kraken_history = self.kraken.query_trade_history(
+        def populate_history_cb(
+                result_history: Union[List[Trade], List[MarginPosition]],
+                result_asset_movements: List[AssetMovement],
+                exchange_specific_data: Any,
+        ) -> None:
+            """This callback will run for succesfull exchange history query"""
+            history.extend(result_history)
+            asset_movements.extend(result_asset_movements)
+
+            if exchange_specific_data:
+                # This can only be poloniex at the moment
+                polo_loans_data = exchange_specific_data
+                polo_loans = process_polo_loans(
+                    msg_aggregator=self.msg_aggregator,
+                    data=polo_loans_data,
                     start_ts=start_ts,
                     end_ts=end_ts,
-                    end_at_least_ts=end_at_least_ts,
                 )
-                history.extend(kraken_history)
+                loansfile_path = os.path.join(self.user_directory, LOANS_HISTORYFILE)
+                write_history_data_in_file(polo_loans, loansfile_path, start_ts, end_ts)
 
-                kraken_asset_movements = self.kraken.query_deposits_withdrawals(
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                    end_at_least_ts=end_at_least_ts,
-                )
-                asset_movements.extend(kraken_asset_movements)
+        def fail_history_cb(error_msg: str) -> None:
+            """This callback will run for failure in exchange history query"""
+            nonlocal empty_or_error
+            empty_or_error += '\n' + error_msg
 
-            except RemoteError as e:
-                empty_or_error += '\n' + str(e)
-
-        poloniex_query_error = False
-        poloniex_margin_trades = []
-        polo_loans = []
-        try:
-            (
-                history,
-                asset_movements,
-                poloniex_margin_trades,
-                polo_loans,
-            ) = self.query_poloniex_history(
-                history,
-                asset_movements,
-                start_ts,
-                end_ts,
-                end_at_least_ts,
+        for exchange in self.connected_exchanges:
+            exchange.query_history_with_callbacks(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                end_at_least_ts=end_at_least_ts,
+                success_callback=populate_history_cb,
+                fail_callback=fail_history_cb,
             )
-        except RemoteError as e:
-            empty_or_error += '\n' + str(e)
-            poloniex_query_error = True
-
-        if self.bittrex is not None:
-            try:
-                bittrex_history = self.bittrex.query_trade_history(
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                    end_at_least_ts=end_at_least_ts,
-                )
-                history.extend(bittrex_history)
-
-                bittrex_asset_movements = self.bittrex.query_deposits_withdrawals(
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                    end_at_least_ts=end_at_least_ts,
-                )
-                asset_movements.extend(bittrex_asset_movements)
-
-            except RemoteError as e:
-                empty_or_error += '\n' + str(e)
-
-        if self.bitmex is not None:
-            try:
-                bitmex_history = self.bitmex.query_trade_history(
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                    end_at_least_ts=end_at_least_ts,
-                )
-                history.extend(bitmex_history)
-                bitmex_asset_movements = self.bitmex.query_deposits_withdrawals(
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                    end_at_least_ts=end_at_least_ts,
-                )
-                asset_movements.extend(bitmex_asset_movements)
-
-            except RemoteError as e:
-                empty_or_error += '\n' + str(e)
-
-        if self.binance is not None:
-            try:
-                binance_history = self.binance.query_trade_history(
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                    end_at_least_ts=end_at_least_ts,
-                )
-                history.extend(binance_history)
-
-                binance_asset_movements = self.binance.query_deposits_withdrawals(
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                    end_at_least_ts=end_at_least_ts,
-                )
-                asset_movements.extend(binance_asset_movements)
-
-            except RemoteError as e:
-                empty_or_error += '\n' + str(e)
 
         try:
             eth_transactions = query_etherscan_for_transactions(self.eth_accounts)
@@ -455,19 +311,7 @@ class TradesHistorian():
         # Write to files
         historyfile_path = os.path.join(self.user_directory, TRADES_HISTORYFILE)
         write_tupledata_history_in_file(history, historyfile_path, start_ts, end_ts)
-        if self.poloniex is not None:
-            if not self.read_manual_margin_positions and not poloniex_query_error:
-                marginfile_path = os.path.join(self.user_directory, MARGIN_HISTORYFILE)
-                write_tupledata_history_in_file(
-                    poloniex_margin_trades,
-                    marginfile_path,
-                    start_ts,
-                    end_ts,
-                )
 
-        if not poloniex_query_error:
-            loansfile_path = os.path.join(self.user_directory, LOANS_HISTORYFILE)
-            write_history_data_in_file(polo_loans, loansfile_path, start_ts, end_ts)
         assetmovementsfile_path = os.path.join(self.user_directory, ASSETMOVEMENTS_HISTORYFILE)
         write_tupledata_history_in_file(asset_movements, assetmovementsfile_path, start_ts, end_ts)
         eth_tx_log_path = os.path.join(self.user_directory, ETHEREUM_TX_LOGFILE)
@@ -601,48 +445,17 @@ class TradesHistorian():
             msg_aggregator=self.msg_aggregator,
         )
 
-        kraken_okay = (
-            self.kraken is None or
-            self.kraken.check_trades_cache(
-                start_ts, end_at_least_ts,
-            ) is not None
-        )
-        if not kraken_okay:
-            raise HistoryCacheInvalid('Kraken cache is invalid')
-
-        bittrex_okay = (
-            self.bittrex is None or
-            self.bittrex.check_trades_cache(
-                start_ts, end_at_least_ts,
-            ) is not None
-        )
-        if not bittrex_okay:
-            raise HistoryCacheInvalid('Bittrex cache is invalid')
-
-        binance_okay = (
-            self.binance is None or
-            self.binance.check_trades_cache(
-                start_ts, end_at_least_ts,
-            ) is not None
-        )
-        if not binance_okay:
-            raise HistoryCacheInvalid('Binance cache is invalid')
-
-        bitmex_okay = (
-            self.bitmex is None or
-            self.bitmex.check_trades_cache(
-                start_ts, end_at_least_ts,
-            ) is not None
-        )
-        if not bitmex_okay:
-            raise HistoryCacheInvalid('Bitmex cache is invalid')
+        # Check the cache of each exchange
+        poloniex = None
+        for exchange in self.connected_exchanges:
+            if exchange.name == 'poloniex':
+                poloniex = exchange
+            if not exchange.check_trades_cache(start_ts, end_at_least_ts):
+                raise HistoryCacheInvalid(f'{exchange.name} cache is invalid')
 
         # Poloniex specific
         loan_data = []
-        if self.poloniex:
-            if not self.poloniex.check_trades_cache(start_ts, end_at_least_ts):
-                raise HistoryCacheInvalid('Poloniex cache is invalid')
-
+        if poloniex:
             loansfile_path = os.path.join(self.user_directory, LOANS_HISTORYFILE)
             loan_file_contents = get_jsonfile_contents_or_empty_dict(loansfile_path)
             loan_history_is_okay = data_up_todate(

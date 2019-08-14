@@ -514,7 +514,7 @@ class Poloniex(ExchangeInterface):
 
                 try:
                     if category == 'exchange' or category == 'settlement':
-                        our_trades.append(trade_from_poloniex(trade, pair))
+                        our_trades.append(trade_from_poloniex(trade, TradePair(pair)))
                     elif category == 'marginTrade':
                         # We don't take poloniex margin trades into account at the moment
                         continue
@@ -648,6 +648,20 @@ class Poloniex(ExchangeInterface):
         with self.lock:
             self.update_trades_cache(data, start_ts, end_ts, special_name='loan_history')
         return data
+
+    def query_exchange_specific_history(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            end_at_least_ts: Timestamp,
+    ) -> Optional[Any]:
+        """The exchange specific history for poloniex is its loans"""
+        return self.query_loan_history(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            end_at_least_ts=end_at_least_ts,
+            from_csv=True,  # TODO: Change this and make them queriable
+        )
 
     def _deserialize_asset_movement(
             self,

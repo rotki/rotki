@@ -2,19 +2,28 @@
 import logging
 import os
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import requests
 from gevent.lock import Semaphore
 
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
-from rotkehlchen.exchanges.data_structures import AssetMovement
+from rotkehlchen.errors import RemoteError
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, T_ApiKey, T_ApiSecret, Timestamp
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+ExchangeHistorySuccessCallback = Callable[
+    [Union[List[Trade], List[MarginPosition]], List[AssetMovement], Any],
+    None,
+]
+
+ExchangeHistoryFailCallback = Callable[[str], None]
 
 
 def data_up_todate(json_data: Dict[str, Any], start_ts: Timestamp, end_ts: Timestamp) -> bool:
@@ -132,7 +141,7 @@ class ExchangeInterface():
             trades['data'] = data
             f.write(rlk_jsondumps(trades))
 
-    def query_balances(self) -> None:
+    def query_balances(self) -> Tuple[Optional[dict], str]:
         """Returns the balances held in the exchange in the following format:
         {
             'name' : {'amount': 1337, 'usd_value': 42},
@@ -153,6 +162,19 @@ class ExchangeInterface():
             'query_deposits_withdrawals should only be implemented by subclasses',
         )
 
+    def query_exchange_specific_history(  # pylint: disable=no-self-use
+            self,
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+            end_at_least_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> Optional[Any]:
+        """Has to be implemented by exchanges if they have anything exchange specific
+
+
+        For example poloniex loans
+        """
+        return None
+
     def first_connection(self) -> None:
         """Performs actions that should be done in the first time coming online
         and attempting to query data from an exchange.
@@ -163,3 +185,46 @@ class ExchangeInterface():
         """Tries to make the simplest private api query to the exchange in order to
         verify the api key's validity"""
         raise NotImplementedError('validate_api_key() should only be implemented by subclasses')
+
+    def query_trade_history(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            end_at_least_ts: Timestamp,
+    ) -> Union[List[Trade], List[MarginPosition]]:
+        """Queries the exchange for the trade history of the user"""
+        raise NotImplementedError('query_trade_history() should only be implemented by subclasses')
+
+    def query_history_with_callbacks(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            end_at_least_ts: Timestamp,
+            success_callback: ExchangeHistorySuccessCallback,
+            fail_callback: ExchangeHistoryFailCallback,
+    ) -> None:
+        """Queries the historical event endpoints for this exchange and performs actions.
+
+        In case of success passes the result to successcallback.
+        In case of failure passes the error to failure_callback
+        """
+        try:
+            history = self.query_trade_history(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                end_at_least_ts=end_at_least_ts,
+            )
+            asset_movements = self.query_deposits_withdrawals(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                end_at_least_ts=end_at_least_ts,
+            )
+            exchange_specific_data = self.query_exchange_specific_history(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                end_at_least_ts=end_at_least_ts,
+            )
+            success_callback(history, asset_movements, exchange_specific_data)
+
+        except RemoteError as e:
+            fail_callback(str(e))

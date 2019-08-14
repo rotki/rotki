@@ -227,8 +227,6 @@ class Bitmex(ExchangeInterface):
             start_ts: typing.Timestamp,
             end_ts: typing.Timestamp,
             end_at_least_ts: typing.Timestamp,  # pylint: disable=unused-argument
-            market: Optional[str] = None,  # pylint: disable=unused-argument
-            count: Optional[int] = None,  # pylint: disable=unused-argument
     ) -> List[MarginPosition]:
 
         try:
