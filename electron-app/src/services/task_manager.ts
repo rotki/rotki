@@ -102,7 +102,7 @@ export class TaskManager {
 
     const { overview, all_events } = result;
 
-    console.log(overview);
+    console.log(all_events);
 
     const payload = {
       overview: convertTradeHistoryOverview(overview),

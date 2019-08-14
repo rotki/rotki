@@ -2,18 +2,18 @@ import BigNumber from 'bignumber.js';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 
 export interface ApiEventEntry {
-  readonly type: string;
-  readonly paid_in_profit_currency: string;
+  readonly is_virtual: boolean;
+  readonly net_profit_or_loss: string;
   readonly paid_asset: string;
   readonly paid_in_asset: string;
-  readonly taxable_amount: string;
-  readonly taxable_bought_cost: string;
+  readonly paid_in_profit_currency: string;
   readonly received_asset: string;
-  readonly received_in_profit_currency: string;
   readonly received_in_asset: string;
-  readonly net_profit_or_loss: string;
+  readonly taxable_amount: string;
+  readonly taxable_bought_cost_in_profit_currency: string;
+  readonly taxable_received_in_profit_currency: string;
   readonly time: number;
-  readonly is_virtual: boolean;
+  readonly type: string;
 }
 
 export interface ApiTradeHistoryOverview {
@@ -52,9 +52,9 @@ export interface EventEntry {
   readonly paidAsset: string;
   readonly paidInAsset: BigNumber;
   readonly taxableAmount: BigNumber;
-  readonly taxableBoughtCost: BigNumber;
+  readonly taxableBoughtCostInProfitCurrency: BigNumber;
   readonly receivedAsset: string;
-  readonly receivedInProfitCurrency: BigNumber;
+  readonly taxableReceivedInProfitCurrency: BigNumber;
   readonly receivedInAsset: BigNumber;
   readonly netProfitOrLoss: BigNumber;
   readonly time: number;
@@ -97,9 +97,13 @@ export const convertEventEntry = (event: ApiEventEntry): EventEntry => ({
   paidAsset: event.paid_asset,
   paidInAsset: bigNumberify(event.paid_in_asset),
   taxableAmount: bigNumberify(event.taxable_amount),
-  taxableBoughtCost: bigNumberify(event.taxable_bought_cost),
+  taxableBoughtCostInProfitCurrency: bigNumberify(
+    event.taxable_bought_cost_in_profit_currency
+  ),
   receivedAsset: event.received_asset,
-  receivedInProfitCurrency: bigNumberify(event.received_in_profit_currency),
+  taxableReceivedInProfitCurrency: bigNumberify(
+    event.taxable_received_in_profit_currency
+  ),
   receivedInAsset: bigNumberify(event.received_asset),
   netProfitOrLoss: bigNumberify(event.net_profit_or_loss),
   time: event.time,
