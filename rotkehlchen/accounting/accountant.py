@@ -297,7 +297,6 @@ class Accountant():
             start_ts: Timestamp,
             end_ts: Timestamp,
             trade_history: List[Trade],
-            margin_history: List[MarginPosition],
             loan_history: List[Loan],
             asset_movements: List[AssetMovement],
             eth_transactions: List[EthereumTransaction],
@@ -331,9 +330,6 @@ class Accountant():
 
         if len(asset_movements) != 0:
             actions.extend(asset_movements)
-
-        if len(margin_history) != 0:
-            actions.extend(margin_history)
 
         if len(eth_transactions) != 0:
             actions.extend(eth_transactions)

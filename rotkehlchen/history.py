@@ -46,7 +46,6 @@ log = RotkehlchenLogsAdapter(logger)
 
 TRADES_HISTORYFILE = 'trades_history.json'
 MARGIN_HISTORYFILE = 'margin_trades_history.json'
-MANUAL_MARGINS_LOGFILE = 'manual_margin_positions_log.json'
 LOANS_HISTORYFILE = 'loans_history.json'
 ETHEREUM_TX_LOGFILE = 'ethereum_tx_log.json'
 ASSETMOVEMENTS_HISTORYFILE = 'asset_movements_history.json'
@@ -83,10 +82,6 @@ def delete_all_history_cache(directory: FilePath) -> None:
         pass
     try:
         os.remove(os.path.join(directory, MARGIN_HISTORYFILE))
-    except OSError:
-        pass
-    try:
-        os.remove(os.path.join(directory, MANUAL_MARGINS_LOGFILE))
     except OSError:
         pass
     try:
@@ -128,39 +123,6 @@ def maybe_add_external_trades_to_history(
     history.sort(key=lambda trade: trade.timestamp)
 
     return history
-
-
-def do_read_manual_margin_positions(user_directory: FilePath) -> List[MarginPosition]:
-    manual_margin_path = os.path.join(user_directory, MANUAL_MARGINS_LOGFILE)
-    if os.path.isfile(manual_margin_path):
-        with open(manual_margin_path, 'r') as f:
-            margin_data = rlk_jsonloads(f.read())
-    else:
-        margin_data = []
-        logger.info(
-            'Could not find manual margins log file at {}'.format(manual_margin_path),
-        )
-
-    # Now turn the manual margin data to our MarginPosition format
-    # The poloniex manual data format is:
-    # { "open_time": unix_timestamp, "close_time": unix_timestamp,
-    #   "btc_profit_loss": floating_point_number for profit or loss,
-    #   "notes": "optional string with notes on the margin position"
-    # }
-    margin_positions = list()
-    for position in margin_data:
-        margin_positions.append(
-            MarginPosition(
-                exchange='poloniex',
-                open_time=position['open_time'],
-                close_time=position['close_time'],
-                profit_loss=FVal(position['btc_profit_loss']),
-                pl_currency=A_BTC,
-                notes=position['notes'],
-            ),
-        )
-
-    return margin_positions
 
 
 def write_tupledata_history_in_file(history, filepath, start_ts, end_ts):
@@ -523,7 +485,6 @@ class TradesHistorian():
         return (
             empty_or_error,
             history,
-            poloniex_margin_trades,
             polo_loans,
             asset_movements,
             eth_transactions,
@@ -543,7 +504,6 @@ class TradesHistorian():
         try:
             (
                 history_trades,
-                poloniex_margin_trades,
                 polo_loans,
                 asset_movements,
                 eth_transactions,
@@ -551,7 +511,6 @@ class TradesHistorian():
             return (
                 '',
                 history_trades,
-                poloniex_margin_trades,
                 polo_loans,
                 asset_movements,
                 eth_transactions,
@@ -695,34 +654,6 @@ class TradesHistorian():
                 raise HistoryCacheInvalid('Poloniex loan cache is invalid')
             loan_data = loan_file_contents['data']
 
-        # margin positions that have been manually input
-        if not self.read_manual_margin_positions:
-            marginfile_path = os.path.join(self.user_directory, MARGIN_HISTORYFILE)
-            margin_file_contents = get_jsonfile_contents_or_empty_dict(marginfile_path)
-            margin_history_is_okay = data_up_todate(
-                margin_file_contents,
-                start_ts,
-                end_at_least_ts,
-            )
-            if not margin_history_is_okay:
-                raise HistoryCacheInvalid('Margin Positions cache is invalid')
-
-            try:
-                margin_trades = trades_from_dictlist(
-                    given_trades=margin_file_contents['data'],
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                    location='Margin position trades',
-                    msg_aggregator=self.msg_aggregator,
-                )
-            except (KeyError, DeserializationError):
-                raise HistoryCacheInvalid('Margin Positions cache is invalid')
-
-        else:
-            margin_trades = do_read_manual_margin_positions(
-                self.user_directory,
-            )
-
         asset_movements = self._get_cached_asset_movements(
             start_ts=start_ts,
             end_ts=end_ts,
@@ -752,7 +683,6 @@ class TradesHistorian():
         # from create_history, except for the first argument
         return (
             history_trades,
-            margin_trades,
             loan_data,
             asset_movements,
             eth_transactions,
