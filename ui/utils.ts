@@ -202,7 +202,7 @@ export function date_text_to_utc_ts(txt: string) {
     const year = parseInt(m[2], 10);
     const hours = parseInt(m[3], 10);
     const seconds = parseInt(m[4], 10);
-    return (new Date(Date.UTC(year, month, day, hours, seconds))).getTime() / 1000;
+    return (new Date(year, month, day, hours, seconds)).getTime() / 1000;
 }
 
 interface MenuItem {
