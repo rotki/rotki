@@ -1,5 +1,4 @@
 import { GetterTree } from 'vuex';
-import { BalanceState } from '@/store/balances/state';
 import { RotkehlchenState } from '@/store/store';
 import { SessionState } from '@/store/session/state';
 
