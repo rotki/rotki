@@ -64,14 +64,29 @@ def rlk_jsondumps(data: Union[Dict, List]) -> str:
 def rkl_decode_value(
         val: Union[Dict, List, float, bytes, str],
 ) -> Union[Dict, FVal, List, bytes, str]:
+    """Decodes a value seen externally, most likely an API call
+
+    This is mostly used to make sure that all string floats end up as FVal when
+    coming into the app. There is one problem with this as can be seen below.
+    There are some exceptions where strings get mistakenly turned into FVals.
+
+    TODO: With all the other deserialization functions think if this is still needed
+    or if it can go away and most of its functionality integrated there.
+    """
     if isinstance(val, dict):
         new_val = dict()
         for k, v in val.items():
             value = rkl_decode_value(v)
-            if k == 'symbol' and isinstance(value, FVal):
-                # In coin paprika's symbols and all the token's symbols
-                # there are some symbols like 1337 which are all numeric and
-                # are interpreted as numeric. Adjust for it here.
+            # In some places such as coind paprika's symbols
+            # binance pairs e.t.c.
+            # there are some symbols like 1337 which are all numeric and
+            # are interpreted as FVAL. Adjust for it here.
+            should_not_be_fval = (
+                (k == 'symbol' and isinstance(value, FVal)) or
+                (k == 'baseAsset' and isinstance(value, FVal)) or
+                (k == 'quoteAsset' and isinstance(value, FVal))
+            )
+            if should_not_be_fval:
                 value = str(v)
             new_val[k] = value
         return new_val
