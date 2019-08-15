@@ -389,6 +389,8 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'USDSB',  # https://www.binance.com/en/support/articles/360029522132
     'BGBP',  # https://www.binance.com/en/support/articles/360030827252
     'TUSDB',  # https://www.binance.com/en/support/articles/360032154071
+    '123',  # https://twitter.com/rotkehlchenio/status/1161977327078838272
+    '456',  # https://twitter.com/rotkehlchenio/status/1161977327078838272
 )
 
 CRYPTOCOMPARE_TO_WORLD = {v: k for k, v in WORLD_TO_CRYPTOCOMPARE.items()}
