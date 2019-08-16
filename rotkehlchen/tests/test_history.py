@@ -76,6 +76,42 @@ def test_history_creation(
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_history_creation_remote_errors(
+        rotkehlchen_server_with_exchanges,
+        accountant,
+        trades_historian_with_exchanges,
+):
+    """Test that during history creation, remote errors are detected and errors are returned"""
+    server = rotkehlchen_server_with_exchanges
+    rotki = server.rotkehlchen
+    rotki.accountant = accountant
+    rotki.trades_historian = trades_historian_with_exchanges
+    rotki.kraken.random_trade_data = False
+    rotki.kraken.random_ledgers_data = False
+    rotki.kraken.remote_errors = True
+    (
+        accountant_patch,
+        polo_patch,
+        binance_patch,
+        bittrex_patch,
+        bitmex_patch,
+    ) = mock_history_processing_and_exchanges(rotki, remote_errors=True)
+    with accountant_patch, polo_patch, binance_patch, bittrex_patch, bitmex_patch:
+        response = server.process_trade_history(start_ts='0', end_ts=str(TEST_END_TS))
+    # The history processing is completely mocked away and omitted in this test.
+    # because it is only for the history creation not its processing.
+    # For history processing tests look at test_accounting.py and
+    # test_accounting_events.py
+    assert 'invalid JSON' in response['message']
+    assert 'Binance' in response['message']
+    assert 'Bittrex' in response['message']
+    assert 'Bitmex' in response['message']
+    assert 'Kraken' in response['message']
+    assert 'Poloniex' in response['message']
+    assert response['result'] == {}
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_history_creation_corrupt_trades_cache(
         rotkehlchen_server_with_exchanges,
         accountant,
