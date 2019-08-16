@@ -256,7 +256,11 @@ class Bitmex(ExchangeInterface):
         for movement in resp:
             try:
                 transaction_type = movement['transactType']
-                if transaction_type not in ('Deposit', 'Withdrawal'):
+                if transaction_type == 'Deposit':
+                    transaction_type = 'deposit'
+                elif transaction_type == 'Withdrawal':
+                    transaction_type = 'withdrawal'
+                else:
                     continue
 
                 timestamp = iso8601ts_to_timestamp(movement['timestamp'])

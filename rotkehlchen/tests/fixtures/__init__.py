@@ -5,6 +5,7 @@ from rotkehlchen.tests.fixtures.accounting import *  # type: ignore
 from rotkehlchen.tests.fixtures.blockchain import *  # type: ignore
 from rotkehlchen.tests.fixtures.db import *  # type: ignore
 from rotkehlchen.tests.fixtures.exchanges.binance import *  # type: ignore
+from rotkehlchen.tests.fixtures.exchanges.bitmex import *  # type: ignore
 from rotkehlchen.tests.fixtures.exchanges.bittrex import *  # type: ignore
 from rotkehlchen.tests.fixtures.exchanges.kraken import *  # type: ignore
 from rotkehlchen.tests.fixtures.exchanges.poloniex import *  # type: ignore

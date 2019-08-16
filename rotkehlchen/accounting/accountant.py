@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 import gevent
 
@@ -21,7 +21,6 @@ from rotkehlchen.exchanges.data_structures import (
     MarginPosition,
     Trade,
     TradeType,
-    trade_get_assets,
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
@@ -30,58 +29,16 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.transactions import EthereumTransaction
 from rotkehlchen.typing import Exchange, Fee, FilePath, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.accounting import (
+    TaxableAction,
+    action_get_assets,
+    action_get_timestamp,
+    action_get_type,
+)
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-TaxableAction = Union[Trade, AssetMovement, EthereumTransaction, MarginPosition, Loan]
-
-
-def action_get_timestamp(action: TaxableAction) -> Timestamp:
-    """
-    Returns the timestamp of the particular action depending on its type
-
-    Can Raise assertion error if the action is not of any expected type
-    """
-    if isinstance(action, (Trade, AssetMovement, EthereumTransaction)):
-        return action.timestamp  # type: ignore # There is an isinstance check above
-    elif isinstance(action, (MarginPosition, Loan)):
-        return action.close_time
-
-    raise AssertionError(f'TaxableAction of unknown type {type(action)} encountered')
-
-
-def action_get_type(action: TaxableAction) -> str:
-    if isinstance(action, Trade):
-        return 'trade'
-    elif isinstance(action, AssetMovement):
-        return 'asset_movement'
-    elif isinstance(action, EthereumTransaction):
-        return 'ethereum_transaction'
-    elif isinstance(action, MarginPosition):
-        return 'margin_position'
-    elif isinstance(action, Loan):
-        return 'loan'
-
-    raise AssertionError(f'TaxableAction of unknown type {type(action)} encountered')
-
-
-def action_get_assets(
-        action: TaxableAction,
-) -> Tuple[Asset, Optional[Asset]]:
-    if isinstance(action, Trade):
-        return trade_get_assets(action)
-    elif isinstance(action, AssetMovement):
-        return action.asset, None
-    elif isinstance(action, EthereumTransaction):
-        return A_ETH, None
-    elif isinstance(action, MarginPosition):
-        return action.pl_currency, None
-    elif isinstance(action, Loan):
-        return action.currency, None
-
-    raise AssertionError(f'TaxableAction of unknown type {type(action)} encountered')
 
 
 class Accountant():
