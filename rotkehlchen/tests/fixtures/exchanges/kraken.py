@@ -7,6 +7,7 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_EUR, A_USD
+from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import TradeType
 from rotkehlchen.exchanges.kraken import (
     KRAKEN_ASSETS,
@@ -194,6 +195,7 @@ class MockKraken(Kraken):
         self.random_trade_data = True
         self.random_balance_data = True
         self.random_ledgers_data = True
+        self.remote_errors = False
 
         self.balance_data_return = {'XXBT': '5.0', 'XETH': '10.0', 'NOTAREALASSET': '15.0'}
 
@@ -210,6 +212,10 @@ class MockKraken(Kraken):
         pass
 
     def query_private(self, method: str, req: Optional[dict] = None) -> dict:
+        # Pretty ugly ... mock a kraken remote eror
+        if self.remote_errors:
+            raise RemoteError('Kraken remote error')
+
         self.first_connection()
         if method == 'Balance':
             if self.random_balance_data:

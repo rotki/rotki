@@ -91,7 +91,6 @@ def check_result_of_history_creation(
         start_ts: Timestamp,
         end_ts: Timestamp,
         trade_history: List[Trade],
-        margin_history: List[Trade],
         loan_history: Dict,
         asset_movements: List[AssetMovement],
         eth_transactions: List[EthereumTransaction],
@@ -167,15 +166,33 @@ def check_result_of_history_creation(
     assert asset_movements[7].asset == A_ETH
 
     # The history creation for these is not yet tested
-    assert len(margin_history) == 0
     assert len(eth_transactions) == 0
 
     return {}
 
 
-def mock_exchange_responses(rotki: Rotkehlchen):
+def check_result_of_history_creation_for_remote_errors(
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+        trade_history: List[Trade],
+        loan_history: Dict,
+        asset_movements: List[AssetMovement],
+        eth_transactions: List[EthereumTransaction],
+) -> Dict[str, Any]:
+    assert len(trade_history) == 0
+    assert len(loan_history) == 0
+    assert len(asset_movements) == 0
+    assert len(eth_transactions) == 0
+    return {}
+
+
+def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
+    invalid_payload = "[{"
+
     def mock_binance_api_queries(url):
-        if 'myTrades' in url:
+        if remote_errors:
+            payload = invalid_payload
+        elif 'myTrades' in url:
             # Can't mock unknown assets in binance trade query since
             # only all known pairs are queried
             payload = '[]'
@@ -218,7 +235,9 @@ def mock_exchange_responses(rotki: Rotkehlchen):
 
     def mock_poloniex_api_queries(url, req):  # pylint: disable=unused-argument
         payload = ''
-        if 'returnTradeHistory' == req['command']:
+        if remote_errors:
+            payload = invalid_payload
+        elif 'returnTradeHistory' == req['command']:
             payload = """{
                 "BTC_ETH": [{
                     "globalTradeID": 394131412,
@@ -336,7 +355,9 @@ def mock_exchange_responses(rotki: Rotkehlchen):
         return MockResponse(200, payload)
 
     def mock_bittrex_api_queries(url):
-        if 'getorderhistory' in url:
+        if remote_errors:
+            payload = invalid_payload
+        elif 'getorderhistory' in url:
             payload = """
 {
   "success": true,

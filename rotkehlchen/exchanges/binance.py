@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import logging
 import time
+from json.decoder import JSONDecodeError
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 from urllib.parse import urlencode
 
@@ -241,12 +242,16 @@ class Binance(ExchangeInterface):
 
             limit_ban = response.status_code == 429 and backoff > self.backoff_limit
             if limit_ban or response.status_code not in (200, 429):
-                result = rlk_jsonloads(response.text)
                 code = 'no code found'
                 msg = 'no message found'
-                if isinstance(result, dict):
-                    code = result.get('code', code)
-                    msg = result.get('msg', msg)
+                try:
+                    result = rlk_jsonloads(response.text)
+                    if isinstance(result, dict):
+                        code = result.get('code', code)
+                        msg = result.get('msg', msg)
+                except JSONDecodeError:
+                    pass
+
                 raise RemoteError(
                     'Binance API request {} for {} failed with HTTP status '
                     'code: {}, error code: {} and error message: {}'.format(
@@ -269,7 +274,10 @@ class Binance(ExchangeInterface):
                 # success
                 break
 
-        json_ret = rlk_jsonloads(response.text)
+        try:
+            json_ret = rlk_jsonloads(response.text)
+        except JSONDecodeError:
+            raise RemoteError(f'Binance returned invalid JSON response: {response.text}')
         return json_ret
 
     def api_query_dict(self, method: str, options: Optional[Dict] = None) -> Dict:

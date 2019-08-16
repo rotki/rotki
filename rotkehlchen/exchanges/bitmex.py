@@ -191,16 +191,8 @@ class Bitmex(ExchangeInterface):
 
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[dict], str]:
-        try:
-            resp = self._api_query_dict('get', 'user/wallet', {'currency': 'XBt'})
-        except RemoteError as e:
-            msg = (
-                'Bitmex API request failed. Could not reach bitmex due '
-                'to {}'.format(e)
-            )
-            log.error(msg)
-            return None, msg
 
+        resp = self._api_query_dict('get', 'user/wallet', {'currency': 'XBt'})
         # Bitmex shows only BTC balance
         returned_balances = dict()
         usd_price = Inquirer().find_usd_price(A_BTC)
@@ -229,17 +221,8 @@ class Bitmex(ExchangeInterface):
             end_at_least_ts: typing.Timestamp,  # pylint: disable=unused-argument
     ) -> List[MarginPosition]:
 
-        try:
-            # We know user/walletHistory returns a list
-            resp = self._api_query_list('get', 'user/walletHistory')
-        except RemoteError as e:
-            msg = (
-                'Bitmex API request failed. Could not reach bitmex due '
-                'to {}'.format(e)
-            )
-            log.error(msg)
-            return list()
-
+        # We know user/walletHistory returns a list
+        resp = self._api_query_list('get', 'user/walletHistory')
         log.debug('Bitmex trade history query', results_num=len(resp))
 
         margin_trades = []
@@ -265,15 +248,7 @@ class Bitmex(ExchangeInterface):
             end_at_least_ts: typing.Timestamp,  # pylint: disable=unused-argument
     ) -> List:
         # TODO: Implement cache like in other exchange calls
-        try:
-            resp = self._api_query_list('get', 'user/walletHistory')
-        except RemoteError as e:
-            msg = (
-                'Bitmex API request failed. Could not reach bitmex due '
-                'to {}'.format(e)
-            )
-            log.error(msg)
-            return list()
+        resp = self._api_query_list('get', 'user/walletHistory')
 
         log.debug('Bitmex deposit/withdrawals query', results_num=len(resp))
 
