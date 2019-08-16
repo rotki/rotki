@@ -53,10 +53,14 @@ def trades_historian_with_exchanges(
         function_scope_poloniex,
         function_scope_bittrex,
         function_scope_binance,
+        mock_bitmex,
 ):
     """Adds mock exchange objects to the trades historian fixture"""
-    trades_historian.kraken = function_scope_kraken
-    trades_historian.poloniex = function_scope_poloniex
-    trades_historian.bittrex = function_scope_bittrex
-    trades_historian.binance = function_scope_binance
+    trades_historian.connected_exchanges = [
+        function_scope_kraken,
+        function_scope_poloniex,
+        function_scope_bittrex,
+        function_scope_binance,
+        mock_bitmex,
+    ]
     return trades_historian

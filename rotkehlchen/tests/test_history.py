@@ -39,8 +39,9 @@ def test_history_creation(
         polo_patch,
         binance_patch,
         bittrex_patch,
+        bitmex_patch,
     ) = mock_history_processing_and_exchanges(rotki)
-    with accountant_patch, polo_patch, binance_patch, bittrex_patch:
+    with accountant_patch, polo_patch, binance_patch, bittrex_patch, bitmex_patch:
         response = server.process_trade_history(start_ts='0', end_ts=str(TEST_END_TS))
     # The history processing is completely mocked away and omitted in this test.
     # because it is only for the history creation not its processing.
@@ -59,12 +60,12 @@ def test_history_creation(
     assert msg in warnings[2]
     assert 'poloniex trade with unknown asset NOEXISTINGASSET' in warnings[3]
     assert 'poloniex trade with unsupported asset BALLS' in warnings[4]
-    assert 'poloniex loan with unsupported asset BDC' in warnings[5]
-    assert 'poloniex loan with unknown asset NOTEXISTINGASSET' in warnings[6]
-    assert 'withdrawal of unknown poloniex asset IDONTEXIST' in warnings[7]
-    assert 'withdrawal of unsupported poloniex asset DIS' in warnings[8]
-    assert 'deposit of unknown poloniex asset IDONTEXIST' in warnings[9]
-    assert 'deposit of unsupported poloniex asset EBT' in warnings[10]
+    assert 'withdrawal of unknown poloniex asset IDONTEXIST' in warnings[5]
+    assert 'withdrawal of unsupported poloniex asset DIS' in warnings[6]
+    assert 'deposit of unknown poloniex asset IDONTEXIST' in warnings[7]
+    assert 'deposit of unsupported poloniex asset EBT' in warnings[8]
+    assert 'poloniex loan with unsupported asset BDC' in warnings[9]
+    assert 'poloniex loan with unknown asset NOTEXISTINGASSET' in warnings[10]
     assert 'bittrex trade with unsupported asset PTON' in warnings[11]
     assert 'bittrex trade with unknown asset IDONTEXIST' in warnings[12]
 
@@ -179,8 +180,9 @@ def test_history_creation_corrupt_trades_cache(
         polo_patch,
         binance_patch,
         bittrex_patch,
+        bitmex_patch,
     ) = mock_history_processing_and_exchanges(rotki)
-    with accountant_patch, polo_patch, binance_patch, bittrex_patch:
+    with accountant_patch, polo_patch, binance_patch, bittrex_patch, bitmex_patch:
         response = server.process_trade_history(start_ts='0', end_ts=str(TEST_END_TS))
     # The history processing is completely mocked away and omitted in this test.
     # because it is only for the history creation not its processing.

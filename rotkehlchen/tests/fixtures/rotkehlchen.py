@@ -165,10 +165,19 @@ def rotkehlchen_server_with_exchanges(
         function_scope_poloniex,
         function_scope_bittrex,
         function_scope_binance,
+        mock_bitmex,
 ):
     """Adds mock exchange objects to the rotkehlchen_server fixture"""
     rotkehlchen_server.rotkehlchen.kraken = function_scope_kraken
     rotkehlchen_server.rotkehlchen.poloniex = function_scope_poloniex
     rotkehlchen_server.rotkehlchen.bittrex = function_scope_bittrex
     rotkehlchen_server.rotkehlchen.binance = function_scope_binance
+    rotkehlchen_server.rotkehlchen.bitmex = mock_bitmex
+    rotkehlchen_server.rotkehlchen.connected_exchanges = [
+        function_scope_kraken,
+        function_scope_poloniex,
+        function_scope_bittrex,
+        function_scope_binance,
+        mock_bitmex,
+    ]
     return rotkehlchen_server

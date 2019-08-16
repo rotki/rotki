@@ -21,6 +21,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
 from rotkehlchen.typing import EthAddress, FiatAsset, FilePath, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.accounting import action_get_timestamp
 from rotkehlchen.utils.misc import (
     create_timestamp,
     get_jsonfile_contents_or_empty_dict,
@@ -89,9 +90,9 @@ def maybe_add_external_trades_to_history(
         db: DBHandler,
         start_ts: Timestamp,
         end_ts: Timestamp,
-        history: List[Trade],
+        history: List[Union[Trade, MarginPosition]],
         msg_aggregator: MessagesAggregator,
-) -> List[Trade]:
+) -> List[Union[Trade, MarginPosition]]:
     """
     Queries the DB to get any external trades, adds them to the provided history and returns it.
 
@@ -111,7 +112,9 @@ def maybe_add_external_trades_to_history(
         return history
 
     history.extend(external_trades)
-    history.sort(key=lambda trade: trade.timestamp)
+    # TODO: We also sort in one other place in this file and also in accountant.py
+    #       Get rid of the unneeded cases?
+    history.sort(key=lambda trade: action_get_timestamp(trade))
 
     return history
 
@@ -122,20 +125,21 @@ def write_tupledata_history_in_file(history, filepath, start_ts, end_ts):
 
 
 def limit_trade_list_to_period(
-        trades_list: List[Trade],
+        trades_list: List[Union[Trade, MarginPosition]],
         start_ts: Timestamp,
         end_ts: Timestamp,
-) -> List[Trade]:
+) -> List[Union[Trade, MarginPosition]]:
     """Accepts a SORTED by timestamp trades_list and returns a shortened version
     of that list limited to a specific time period"""
 
     start_idx: Optional[int] = None
     end_idx: Optional[int] = None
     for idx, trade in enumerate(trades_list):
-        if start_idx is None and trade.timestamp >= start_ts:
+        timestamp = action_get_timestamp(trade)
+        if start_idx is None and timestamp >= start_ts:
             start_idx = idx
 
-        if end_idx is None and trade.timestamp > end_ts:
+        if end_idx is None and timestamp > end_ts:
             end_idx = idx if idx >= 1 else 0
             break
 
@@ -244,7 +248,7 @@ class TradesHistorian():
                 'already set'.format(name),
             )
 
-    def create_history(self, start_ts, end_ts, end_at_least_ts):
+    def create_history(self, start_ts: Timestamp, end_ts: Timestamp, end_at_least_ts: Timestamp):
         """Creates trades and loans history from start_ts to end_ts or if
         `end_at_least` is given and we have a cache history for that particular source
         which satisfies it we return the cache
@@ -257,7 +261,7 @@ class TradesHistorian():
         )
 
         # start creating the all trades history list
-        history = list()
+        history: List[Union[Trade, MarginPosition]] = list()
         asset_movements = list()
         polo_loans = list()
         empty_or_error = ''
@@ -274,12 +278,12 @@ class TradesHistorian():
             if exchange_specific_data:
                 # This can only be poloniex at the moment
                 polo_loans_data = exchange_specific_data
-                polo_loans = process_polo_loans(
+                polo_loans.extend(process_polo_loans(
                     msg_aggregator=self.msg_aggregator,
                     data=polo_loans_data,
                     start_ts=start_ts,
                     end_ts=end_ts,
-                )
+                ))
                 loansfile_path = os.path.join(self.user_directory, LOANS_HISTORYFILE)
                 write_history_data_in_file(polo_loans, loansfile_path, start_ts, end_ts)
 
@@ -305,7 +309,7 @@ class TradesHistorian():
         # We sort it here ... but when accounting runs through the entire actions list,
         # it resorts, so unless the fact that we sort is used somewhere else too, perhaps
         # we can skip it?
-        history.sort(key=lambda trade: trade.timestamp)
+        history.sort(key=lambda trade: action_get_timestamp(trade))
         history = limit_trade_list_to_period(history, start_ts, end_ts)
 
         # Write to files

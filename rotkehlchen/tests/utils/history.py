@@ -1,8 +1,8 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 from unittest.mock import patch
 
 from rotkehlchen.constants.assets import A_BTC, A_ETH
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
@@ -90,7 +90,7 @@ prices = {
 def check_result_of_history_creation(
         start_ts: Timestamp,
         end_ts: Timestamp,
-        trade_history: List[Trade],
+        trade_history: List[Union[Trade, MarginPosition]],
         loan_history: Dict,
         asset_movements: List[AssetMovement],
         eth_transactions: List[EthereumTransaction],
@@ -104,7 +104,7 @@ def check_result_of_history_creation(
     # TODO: Add more assertions/check for each action
     # OR instead do it in tests for conversion of actions(trades, loans, deposits e.t.c.)
     # from exchange to our format for each exchange
-    assert len(trade_history) == 9
+    assert len(trade_history) == 10
     assert trade_history[0].location == 'kraken'
     assert trade_history[0].pair == 'ETH_EUR'
     assert trade_history[0].trade_type == TradeType.BUY
@@ -117,21 +117,23 @@ def check_result_of_history_creation(
     assert trade_history[3].location == 'bittrex'
     assert trade_history[3].pair == 'LTC_ETH'
     assert trade_history[3].trade_type == TradeType.SELL
-    assert trade_history[4].location == 'binance'
-    assert trade_history[4].pair == 'ETH_BTC'
-    assert trade_history[4].trade_type == TradeType.BUY
+    assert isinstance(trade_history[4], MarginPosition)
+    assert trade_history[4].profit_loss == FVal('0.05')
     assert trade_history[5].location == 'binance'
-    assert trade_history[5].pair == 'RDN_ETH'
-    assert trade_history[5].trade_type == TradeType.SELL
-    assert trade_history[6].location == 'poloniex'
-    assert trade_history[6].pair == 'ETH_BTC'
+    assert trade_history[5].pair == 'ETH_BTC'
+    assert trade_history[5].trade_type == TradeType.BUY
+    assert trade_history[6].location == 'binance'
+    assert trade_history[6].pair == 'RDN_ETH'
     assert trade_history[6].trade_type == TradeType.SELL
     assert trade_history[7].location == 'poloniex'
     assert trade_history[7].pair == 'ETH_BTC'
-    assert trade_history[7].trade_type == TradeType.BUY
+    assert trade_history[7].trade_type == TradeType.SELL
     assert trade_history[8].location == 'poloniex'
-    assert trade_history[8].pair == 'XMR_ETH'
+    assert trade_history[8].pair == 'ETH_BTC'
     assert trade_history[8].trade_type == TradeType.BUY
+    assert trade_history[9].location == 'poloniex'
+    assert trade_history[9].pair == 'XMR_ETH'
+    assert trade_history[9].trade_type == TradeType.BUY
 
     assert len(loan_history) == 2
     assert loan_history[0].currency == A_ETH
@@ -139,7 +141,7 @@ def check_result_of_history_creation(
     assert loan_history[1].currency == A_BTC
     assert loan_history[1].earned == AssetAmount(FVal('0.00000005'))
 
-    assert len(asset_movements) == 8
+    assert len(asset_movements) == 10
     assert asset_movements[0].exchange == Exchange.KRAKEN
     assert asset_movements[0].category == 'deposit'
     assert asset_movements[0].asset == A_BTC
@@ -164,6 +166,12 @@ def check_result_of_history_creation(
     assert asset_movements[7].exchange == Exchange.POLONIEX
     assert asset_movements[7].category == 'deposit'
     assert asset_movements[7].asset == A_ETH
+    assert asset_movements[8].exchange == Exchange.BITMEX
+    assert asset_movements[8].category == 'deposit'
+    assert asset_movements[8].asset == A_BTC
+    assert asset_movements[9].exchange == Exchange.BITMEX
+    assert asset_movements[9].category == 'withdrawal'
+    assert asset_movements[9].asset == A_BTC
 
     # The history creation for these is not yet tested
     assert len(eth_transactions) == 0
@@ -438,6 +446,81 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
 
         return MockResponse(200, payload)
 
+    def mock_bitmex_api_queries(url, data):
+        if remote_errors:
+            payload = invalid_payload
+        elif 'user/walletHistory' in url:
+            payload = """[{
+            "transactID": "foo",
+            "account": 0,
+            "currency": "XBt",
+            "transactType": "Deposit",
+            "amount": 15000000,
+            "fee": 0,
+            "transactStatus": "foo",
+            "address": "foo",
+            "tx": "foo",
+            "text": "foo",
+            "transactTime": "2017-04-03T15:00:00.929Z",
+            "timestamp": "2017-04-03T15:00:00.929Z"
+            },{
+            "transactID": "foo",
+            "account": 0,
+            "currency": "XBt",
+            "transactType": "RealisedPNL",
+            "amount": 5000000,
+            "fee": 0.01,
+            "transactStatus": "foo",
+            "address": "foo",
+            "tx": "foo",
+            "text": "foo",
+            "transactTime": "2017-05-02T15:00:00.929Z",
+            "timestamp": "2017-05-02T15:00:00.929Z"
+            },{
+            "transactID": "foo",
+            "account": 0,
+            "currency": "XBt",
+            "transactType": "Withdrawal",
+            "amount": 1000000,
+            "fee": 0.001,
+            "transactStatus": "foo",
+            "address": "foo",
+            "tx": "foo",
+            "text": "foo",
+            "transactTime": "2017-05-23T15:00:00.00.929Z",
+            "timestamp": "2017-05-23T15:00:00.929Z"
+            },{
+            "transactID": "foo",
+            "account": 0,
+            "currency": "XBt",
+            "transactType": "Withdrawal",
+            "amount": 0.5,
+            "fee": 0.001,
+            "transactStatus": "foo",
+            "address": "foo",
+            "tx": "foo",
+            "text": "foo",
+            "transactTime": "2019-08-23T15:00:00.00.929Z",
+            "timestamp": "2019-08-23T15:00:00.929Z"
+            },{
+            "transactID": "foo",
+            "account": 0,
+            "currency": "XBt",
+            "transactType": "RealisedPNL",
+            "amount": 0.5,
+            "fee": 0.001,
+            "transactStatus": "foo",
+            "address": "foo",
+            "tx": "foo",
+            "text": "foo",
+            "transactTime": "2019-08-23T15:00:00.929Z",
+            "timestamp": "2019-08-23T15:00:00.929Z"
+            }]"""
+        else:
+            raise RuntimeError(f'Bitmex test mock got unexpected/unmocked url {url}')
+
+        return MockResponse(200, payload)
+
     polo_patch = patch.object(
         rotki.poloniex.session,
         'post',
@@ -453,26 +536,38 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
         'get',
         side_effect=mock_bittrex_api_queries,
     )
+    bitmex_patch = patch.object(
+        rotki.bitmex.session,
+        'get',
+        side_effect=mock_bitmex_api_queries,
+    )
 
-    return polo_patch, binance_patch, bittrex_patch
+    return polo_patch, binance_patch, bittrex_patch, bitmex_patch
 
 
-def mock_history_processing(rotki: Rotkehlchen):
+def mock_history_processing(rotki: Rotkehlchen, remote_errors=False):
     """ Patch away the processing of history """
+    mock_function = check_result_of_history_creation
+    if remote_errors:
+        mock_function = check_result_of_history_creation_for_remote_errors
     accountant_patch = patch.object(
         rotki.accountant,
         'process_history',
-        side_effect=check_result_of_history_creation,
+        side_effect=mock_function,
     )
     return accountant_patch
 
 
-def mock_history_processing_and_exchanges(rotki: Rotkehlchen):
-    accountant_patch = mock_history_processing(rotki)
-    polo_patch, binance_patch, bittrex_patch = mock_exchange_responses(rotki)
+def mock_history_processing_and_exchanges(rotki: Rotkehlchen, remote_errors=False):
+    accountant_patch = mock_history_processing(rotki, remote_errors=remote_errors)
+    polo_patch, binance_patch, bittrex_patch, bitmex_patch = mock_exchange_responses(
+        rotki,
+        remote_errors,
+    )
     return (
         accountant_patch,
         polo_patch,
         binance_patch,
         bittrex_patch,
+        bitmex_patch,
     )
