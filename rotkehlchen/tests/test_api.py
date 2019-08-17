@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.blockchain import Blockchain
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
 from rotkehlchen.data_handler import VALID_SETTINGS
 from rotkehlchen.db.utils import ROTKEHLCHEN_DB_VERSION
@@ -14,6 +15,7 @@ from rotkehlchen.tests.utils.exchanges import BINANCE_BALANCES_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse, MockWeb3
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
 from rotkehlchen.typing import Price, Timestamp
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
@@ -85,7 +87,7 @@ def test_add_remove_blockchain_account(rotkehlchen_server):
 
 @pytest.mark.parametrize('number_of_accounts', [0])
 def test_add_remove_eth_tokens(rotkehlchen_server):
-    """Test for issue 83 https://github.com/rotkehlchenio/rotkehlchen/issues/83"""
+    """Regression test for https://github.com/rotkehlchenio/rotkehlchen/issues/83"""
     # Addition of tokens into the DB fires up balance checks for each account
     # we got. For that reason we give 0 accounts for this test
 
@@ -102,6 +104,37 @@ def test_add_remove_eth_tokens(rotkehlchen_server):
     response = rotkehlchen_server.get_eth_tokens()
     assert 'all_eth_tokens' in response
     assert len(response['owned_eth_tokens']) == 1 and response['owned_eth_tokens'][0] == 'RDN'
+
+
+@pytest.mark.parametrize('number_of_accounts', [0])
+def test_remove_eth_token_before_any_queries(rotkehlchen_server, ethchain_client):
+    """Regrestion test for 467"""
+    tokens_to_add = ['PRL']
+    response = rotkehlchen_server.add_owned_eth_tokens(tokens_to_add)
+    assert response['result'] is True
+    # At least for now the PRL token is not in cryptocompare. A token without a
+    # price is not counted in the total
+    assert 'PRL' not in response['totals']
+
+    response = rotkehlchen_server.get_eth_tokens()
+    assert set(tokens_to_add) == set(response['owned_eth_tokens'])
+    assert 'all_eth_tokens' in response
+
+    # Now use a clean blockchain instance to emulate restart where blockchain.totals
+    # has not been populated.
+    rotki = rotkehlchen_server.rotkehlchen
+    rotki.blockchain = Blockchain(
+        blockchain_accounts=rotki.data.db.get_blockchain_accounts(),
+        owned_eth_tokens=rotki.data.db.get_owned_tokens(),
+        ethchain=ethchain_client,
+        msg_aggregator=MessagesAggregator(),
+    )
+
+    response = rotkehlchen_server.remove_owned_eth_tokens(['PRL'])
+    assert response['result'] is True
+    response = rotkehlchen_server.get_eth_tokens()
+    assert 'all_eth_tokens' in response
+    assert len(response['owned_eth_tokens']) == 0
 
 
 def test_periodic_query(rotkehlchen_server):
