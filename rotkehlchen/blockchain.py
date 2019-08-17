@@ -171,8 +171,11 @@ class Blockchain():
                     self.balances[A_ETH][account]['usd_value'] -
                     deleting_usd_value
                 )
-
-            del self.totals[token]
+            # Remove the token from the totals iff existing. May not exist
+            #  if the token price is 0 but is still tracked.
+            # See https://github.com/rotkehlchenio/rotkehlchen/issues/467
+            # for more details
+            self.totals.pop(token, None)
             self.owned_eth_tokens.remove(token)
 
         return {'per_account': self.balances, 'totals': self.totals}
