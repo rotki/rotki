@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`467` Removing ETH tokens for which a cryptocompare query failed to find a price now work properly.
 * :feature:`458` Binance users now also have their deposit/withdrawal history taken into account during profit/loss calculation.
 * :feature:`457` Bittrex users now also have their deposit/withdrawal history taken into account during profit/loss calculation.
 * :bug:`451` An assertion will no longer stop balances from being saved for some FIAT assets.
