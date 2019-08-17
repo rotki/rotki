@@ -52,7 +52,7 @@ def test_bitmex_api_withdrawals_deposit(test_bitmex):
     expected_result = [
         AssetMovement(
             exchange=Exchange.BITMEX,
-            category='Deposit',
+            category='deposit',
             timestamp=1537014656,
             asset='BTC',
             amount=FVal(0.16960386),
@@ -60,7 +60,7 @@ def test_bitmex_api_withdrawals_deposit(test_bitmex):
         ),
         AssetMovement(
             exchange=Exchange.BITMEX,
-            category='Deposit',
+            category='deposit',
             timestamp=1536563759,
             asset='BTC',
             amount=FVal('0.38474377'),
@@ -68,7 +68,7 @@ def test_bitmex_api_withdrawals_deposit(test_bitmex):
         ),
         AssetMovement(
             exchange=Exchange.BITMEX,
-            category='Withdrawal',
+            category='withdrawal',
             timestamp=1536536706,
             asset='BTC',
             amount=FVal('0.00700000'),
@@ -76,7 +76,7 @@ def test_bitmex_api_withdrawals_deposit(test_bitmex):
         ),
         AssetMovement(
             exchange=Exchange.BITMEX,
-            category='Deposit',
+            category='deposit',
             timestamp=1536486277,
             asset='BTC',
             amount=FVal('0.46966992'),
