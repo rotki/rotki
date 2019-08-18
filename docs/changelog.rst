@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`465` Update the cryptocurrency icons package to 0.16.0. This gives us a lot more icons, including but not limited to an icon for DAI.
 * :bug:`467` Removing ETH tokens for which a cryptocompare query failed to find a price now work properly.
 * :feature:`458` Binance users now also have their deposit/withdrawal history taken into account during profit/loss calculation.
 * :feature:`457` Bittrex users now also have their deposit/withdrawal history taken into account during profit/loss calculation.
