@@ -204,7 +204,12 @@ class RotkehlchenServer():
 
     def query_exchange_balances(self, name):
         res = {'name': name}
-        balances, msg = getattr(self.rotkehlchen, name).query_balances()
+        exchange_obj = self.rotkehlchen.exchange_manager.connected_exchanges.get(name, None)
+        if not exchange_obj:
+            res['error'] = f'Could not query balances for {name} since it is not registered'
+            return process_result(res)
+
+        balances, msg = exchange_obj.query_balances()
         if balances is None:
             res['error'] = msg
         else:
