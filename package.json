@@ -4,7 +4,7 @@
     "license": "BSD-3-Clause",
     "main": "main.js",
     "dependencies": {
-        "cryptocurrency-icons": "0.9.3",
+        "cryptocurrency-icons": "0.16.0",
         "datatables.net": "1.10.19",
         "datatables.net-dt": "1.10.19",
         "zerorpc-rotkehlchen": "0.1.0",
