@@ -202,9 +202,8 @@ class MockKraken(Kraken):
     def first_connection(self):
         if self.first_connection_made:
             return
-        # Perhaps mock this too?
+        # Not required in the real Kraken instance but we use it in the tests
         self.tradeable_pairs = self.query_public('AssetPairs')
-        self.get_fiat_prices_from_ticker()
         self.first_connection_made = True
         return
 

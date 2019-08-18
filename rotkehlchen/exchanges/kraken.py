@@ -32,7 +32,7 @@ from rotkehlchen.exchanges.data_structures import (
 )
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.fval import FVal
-from rotkehlchen.inquirer import query_cryptocompare_for_fiat_price
+from rotkehlchen.inquirer import Inquirer, query_cryptocompare_for_fiat_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serializer import (
     deserialize_asset_amount,
@@ -239,30 +239,12 @@ class Kraken(ExchangeInterface):
             secret: ApiSecret,
             user_directory: FilePath,
             msg_aggregator: MessagesAggregator,
-            usd_eur_price: FVal,
     ):
         super(Kraken, self).__init__('kraken', api_key, secret, user_directory)
         self.msg_aggregator = msg_aggregator
-        # typing TODO: Without a union of str and Asset we get lots of warning
-        # How can this be avoided without too much pain?
-        self.usdprice: Dict[Union[Asset, str], FVal] = {}
-        self.eurprice: Dict[Union[Asset, str], FVal] = {}
-
-        self.usdprice['EUR'] = usd_eur_price
         self.session.headers.update({  # type: ignore
             'API-Key': self.api_key,
         })
-
-    def first_connection(self):
-        if self.first_connection_made:
-            return
-
-        with self.lock:
-            self.tradeable_pairs = self.query_public('AssetPairs')
-            # also make sure to get fiat prices from ticker before considering
-            # kraken ready for external queries
-            self.get_fiat_prices_from_ticker()
-            self.first_connection_made = True
 
     def validate_api_key(self) -> Tuple[bool, str]:
         """Validates that the Kraken API Key is good for usage in Rotkehlchen
@@ -392,77 +374,7 @@ class Kraken(ExchangeInterface):
 
         return _check_and_get_response(response, method)
 
-    def get_fiat_prices_from_ticker(self):
-        self.ticker = self.query_public(
-            'Ticker',
-            req={'pair': ','.join(self.tradeable_pairs.keys())},
-        )
-        self.eurprice['BTC'] = FVal(self.ticker['XXBTZEUR']['c'][0])
-        self.usdprice['BTC'] = FVal(self.ticker['XXBTZUSD']['c'][0])
-        self.eurprice['ETH'] = FVal(self.ticker['XETHZEUR']['c'][0])
-        self.usdprice['ETH'] = FVal(self.ticker['XETHZUSD']['c'][0])
-        self.eurprice['REP'] = FVal(self.ticker['XREPZEUR']['c'][0])
-        self.eurprice['XMR'] = FVal(self.ticker['XXMRZEUR']['c'][0])
-        self.usdprice['XMR'] = FVal(self.ticker['XXMRZUSD']['c'][0])
-        self.eurprice['ETC'] = FVal(self.ticker['XETCZEUR']['c'][0])
-        self.usdprice['ETC'] = FVal(self.ticker['XETCZUSD']['c'][0])
-
     # ---- General exchanges interface ----
-    def main_logic(self):
-        if not self.first_connection_made:
-            return
-        self.get_fiat_prices_from_ticker()
-
-    def find_fiat_price(self, kraken_asset: str) -> FVal:
-        """Find USD/EUR price of asset. The asset should be in the kraken style.
-        e.g.: XICN. Save both prices in the kraken object and then return the
-        USD price.
-        """
-        if kraken_asset == 'KFEE':
-            # Kraken fees have no value
-            return FVal(0)
-
-        if kraken_asset == 'XXBT':
-            return self.usdprice['BTC']
-
-        if kraken_asset == 'USDT':
-            price = FVal(self.ticker['USDTZUSD']['c'][0])
-            self.usdprice['USDT'] = price
-            return price
-
-        if kraken_asset == 'BSV':
-            # BSV has been delisted by kraken at 29/04/19
-            # https://blog.kraken.com/post/2274/kraken-is-delisting-bsv/
-            # Until May 31st there can be BSV in Kraken (even with 0 balance)
-            # so keep this until then to get the price
-            return query_cryptocompare_for_fiat_price(A_BSV)
-
-        # TODO: This is pretty ugly. Find a better way to check out kraken pairs
-        # without this ugliness.
-        pair = kraken_asset + 'XXBT'
-        pair2 = kraken_asset + 'XBT'
-        pair3 = 'XXBT' + kraken_asset
-        inverse = False
-        if pair2 in self.tradeable_pairs:
-            pair = pair2
-        elif pair3 in self.tradeable_pairs:
-            pair = pair3
-            # here XXBT is the base asset so inverse
-            inverse = True
-
-        if pair not in self.tradeable_pairs:
-            raise ValueError(
-                'Could not find a BTC tradeable pair in kraken for "{}"'.format(kraken_asset),
-            )
-        btc_price = FVal(self.ticker[pair]['c'][0])
-        if inverse:
-            btc_price = FVal('1.0') / btc_price
-        our_asset = asset_from_kraken(kraken_asset)
-        with self.lock:
-            self.usdprice[our_asset] = btc_price * self.usdprice['BTC']
-            self.eurprice[our_asset] = btc_price * self.eurprice['BTC']
-        return self.usdprice[our_asset]
-
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[dict], str]:
         try:
@@ -500,10 +412,8 @@ class Kraken(ExchangeInterface):
 
             entry = {}
             entry['amount'] = v
-            if our_asset in self.usdprice:
-                entry['usd_value'] = v * self.usdprice[our_asset]
-            else:
-                entry['usd_value'] = v * self.find_fiat_price(k)
+            usd_price = Inquirer().find_usd_price(our_asset)
+            entry['usd_value'] = FVal(v * usd_price)
 
             balances[our_asset] = entry
             log.debug(
