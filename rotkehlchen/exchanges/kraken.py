@@ -12,10 +12,8 @@ from urllib.parse import urlencode
 
 from requests import Response
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
-from rotkehlchen.constants.assets import A_BSV
 from rotkehlchen.errors import (
     DeserializationError,
     RecoverableRequestError,
@@ -32,7 +30,7 @@ from rotkehlchen.exchanges.data_structures import (
 )
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.fval import FVal
-from rotkehlchen.inquirer import Inquirer, query_cryptocompare_for_fiat_price
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serializer import (
     deserialize_asset_amount,

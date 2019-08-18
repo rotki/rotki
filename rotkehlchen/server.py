@@ -431,7 +431,7 @@ class RotkehlchenServer():
                 api_key,
                 api_secret,
             )
-            res['exchanges'] = [e.name for e in self.rotkehlchen.connected_exchanges]
+            res['exchanges'] = self.rotkehlchen.exchange_manager.get_connected_exchange_names()
             res['premium'] = self.rotkehlchen.premium is not None
             res['settings'] = self.rotkehlchen.data.db.get_settings()
         except AuthenticationError as e:

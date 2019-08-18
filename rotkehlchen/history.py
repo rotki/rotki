@@ -13,7 +13,8 @@ from rotkehlchen.exchanges.data_structures import (
     asset_movements_from_dictlist,
     trades_from_dictlist,
 )
-from rotkehlchen.exchanges.exchange import ExchangeInterface, data_up_todate
+from rotkehlchen.exchanges.exchange import data_up_todate
+from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.exchanges.poloniex import process_polo_loans
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -231,22 +232,14 @@ class TradesHistorian():
             db: DBHandler,
             eth_accounts: List[EthAddress],
             msg_aggregator: MessagesAggregator,
+            exchange_manager: ExchangeManager,
     ):
 
         self.msg_aggregator = msg_aggregator
         self.user_directory = user_directory
         self.db = db
         self.eth_accounts = eth_accounts
-        self.connected_exchanges: List[ExchangeInterface] = []
-
-    def set_exchange(self, name, exchange_obj):
-        if getattr(self, name) is None or exchange_obj is None:
-            setattr(self, name, exchange_obj)
-        elif exchange_obj:
-            raise ValueError(
-                'Attempted to set {} exchange in TradesHistorian while it was '
-                'already set'.format(name),
-            )
+        self.exchange_manager = exchange_manager
 
     def create_history(self, start_ts: Timestamp, end_ts: Timestamp, end_at_least_ts: Timestamp):
         """Creates trades and loans history from start_ts to end_ts or if
@@ -292,7 +285,7 @@ class TradesHistorian():
             nonlocal empty_or_error
             empty_or_error += '\n' + error_msg
 
-        for exchange in self.connected_exchanges:
+        for _, exchange in self.exchange_manager.connected_exchanges.items():
             exchange.query_history_with_callbacks(
                 start_ts=start_ts,
                 end_ts=end_ts,
@@ -451,7 +444,7 @@ class TradesHistorian():
 
         # Check the cache of each exchange
         poloniex = None
-        for exchange in self.connected_exchanges:
+        for _, exchange in self.exchange_manager.connected_exchanges.items():
             if exchange.name == 'poloniex':
                 poloniex = exchange
             if not exchange.check_trades_cache(start_ts, end_at_least_ts):

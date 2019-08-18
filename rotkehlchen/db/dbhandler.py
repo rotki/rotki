@@ -10,8 +10,8 @@ from typing import Dict, List, Optional, Tuple, Union, cast
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.constants import SUPPORTED_EXCHANGES, YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH, S_USD
+from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
@@ -26,6 +26,7 @@ from rotkehlchen.db.utils import (
 )
 from rotkehlchen.errors import AuthenticationError, DeserializationError, InputError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (

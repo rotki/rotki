@@ -272,14 +272,14 @@ def test_query_balances(rotkehlchen_server, function_scope_binance):
     assert ok
     ok, _ = rotkehlchen_server.set_fiat_balance('EUR', '75.5')
     assert ok
-    rotkehlchen_server.rotkehlchen.binance = function_scope_binance
-    rotkehlchen_server.rotkehlchen.connected_exchanges.append(function_scope_binance)
+    exchanges = rotkehlchen_server.rotkehlchen.exchange_manager.connected_exchanges
+    exchanges['binance'] = function_scope_binance
 
     def mock_binance_balances(url):  # pylint: disable=unused-argument
         return MockResponse(200, BINANCE_BALANCES_RESPONSE)
 
     mock_binance = patch.object(
-        rotkehlchen_server.rotkehlchen.binance.session,
+        exchanges['binance'].session,
         'get',
         side_effect=mock_binance_balances,
     )

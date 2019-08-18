@@ -510,8 +510,7 @@ class Poloniex(ExchangeInterface):
         our_trades = []
         for pair, trades in raw_data.items():
             for trade in trades:
-                category = trade['category']
-
+                category = trade.get('category', None)
                 try:
                     if category == 'exchange' or category == 'settlement':
                         our_trades.append(trade_from_poloniex(trade, TradePair(pair)))

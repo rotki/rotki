@@ -1,9 +1,6 @@
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import EmptyStr, EventType
 
-SUPPORTED_EXCHANGES = ['kraken', 'poloniex', 'bittrex', 'bitmex', 'binance']
-
-
 S_EMPTYSTR = EmptyStr('')
 
 

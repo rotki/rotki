@@ -1,6 +1,7 @@
 import pytest
 
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian, TradesHistorian
@@ -37,30 +38,12 @@ def price_historian(
 @pytest.fixture
 def trades_historian(accounting_data_dir, function_scope_messages_aggregator):
     database = DBHandler(accounting_data_dir, '123', function_scope_messages_aggregator)
+    exchange_manager = ExchangeManager(msg_aggregator=function_scope_messages_aggregator)
     historian = TradesHistorian(
         user_directory=accounting_data_dir,
         db=database,
         eth_accounts=[],
         msg_aggregator=function_scope_messages_aggregator,
+        exchange_manager=exchange_manager,
     )
     return historian
-
-
-@pytest.fixture
-def trades_historian_with_exchanges(
-        trades_historian,
-        function_scope_kraken,
-        function_scope_poloniex,
-        function_scope_bittrex,
-        function_scope_binance,
-        mock_bitmex,
-):
-    """Adds mock exchange objects to the trades historian fixture"""
-    trades_historian.connected_exchanges = [
-        function_scope_kraken,
-        function_scope_poloniex,
-        function_scope_bittrex,
-        function_scope_binance,
-        mock_bitmex,
-    ]
-    return trades_historian

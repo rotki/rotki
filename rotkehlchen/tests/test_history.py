@@ -22,7 +22,6 @@ from rotkehlchen.typing import Exchange, TradeType
 def test_history_creation(
         rotkehlchen_server_with_exchanges,
         accountant,
-        trades_historian_with_exchanges,
 ):
     """This is a big test that contacts all exchange mocks and returns mocked
     trades and other data from exchanges in order to create the accounting history
@@ -31,9 +30,10 @@ def test_history_creation(
     server = rotkehlchen_server_with_exchanges
     rotki = server.rotkehlchen
     rotki.accountant = accountant
-    rotki.trades_historian = trades_historian_with_exchanges
-    rotki.kraken.random_trade_data = False
-    rotki.kraken.random_ledgers_data = False
+
+    kraken = rotki.exchange_manager.connected_exchanges['kraken']
+    kraken.random_trade_data = False
+    kraken.random_ledgers_data = False
     (
         accountant_patch,
         polo_patch,
@@ -80,16 +80,15 @@ def test_history_creation(
 def test_history_creation_remote_errors(
         rotkehlchen_server_with_exchanges,
         accountant,
-        trades_historian_with_exchanges,
 ):
     """Test that during history creation, remote errors are detected and errors are returned"""
     server = rotkehlchen_server_with_exchanges
     rotki = server.rotkehlchen
     rotki.accountant = accountant
-    rotki.trades_historian = trades_historian_with_exchanges
-    rotki.kraken.random_trade_data = False
-    rotki.kraken.random_ledgers_data = False
-    rotki.kraken.remote_errors = True
+    kraken = rotki.exchange_manager.connected_exchanges['kraken']
+    kraken.random_trade_data = False
+    kraken.random_ledgers_data = False
+    kraken.remote_errors = True
     (
         accountant_patch,
         polo_patch,
@@ -116,7 +115,6 @@ def test_history_creation_remote_errors(
 def test_history_creation_corrupt_trades_cache(
         rotkehlchen_server_with_exchanges,
         accountant,
-        trades_historian_with_exchanges,
         accounting_data_dir,
 ):
     """
@@ -172,9 +170,9 @@ def test_history_creation_corrupt_trades_cache(
     server = rotkehlchen_server_with_exchanges
     rotki = server.rotkehlchen
     rotki.accountant = accountant
-    rotki.trades_historian = trades_historian_with_exchanges
-    rotki.kraken.random_trade_data = False
-    rotki.kraken.random_ledgers_data = False
+    kraken = rotki.exchange_manager.connected_exchanges['kraken']
+    kraken.random_trade_data = False
+    kraken.random_ledgers_data = False
     (
         accountant_patch,
         polo_patch,

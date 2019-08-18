@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.history import TradesHistorian
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -62,6 +63,7 @@ def initialize_mock_rotkehlchen_instance(
         db_password,
         rotkehlchen_api_key,
         rotkehlchen_api_secret,
+        data_dir,
 ):
     if start_with_logged_in_user:
         # Rotkehlchen initializes its own messages aggregator normally but here we
@@ -78,7 +80,13 @@ def initialize_mock_rotkehlchen_instance(
         # different to the usual user one
         rotki.accountant = accountant
         rotki.blockchain = blockchain
-        rotki.trades_historian = object()
+        rotki.trades_historian = TradesHistorian(
+            user_directory=data_dir,
+            db=rotki.data.db,
+            eth_accounts=rotki.data.get_eth_accounts(),
+            msg_aggregator=rotki.msg_aggregator,
+            exchange_manager=rotki.exchange_manager,
+        )
         rotki.user_is_logged_in = True
         if start_with_valid_premium:
             rotki.premium = Premium(
@@ -107,6 +115,7 @@ def rotkehlchen_server(
         db_password,
         rotkehlchen_api_key,
         rotkehlchen_api_secret,
+        accounting_data_dir,
 ):
     """A partially mocked rotkehlchen server instance"""
     with patch.object(argparse.ArgumentParser, 'parse_args', return_value=cli_args):
@@ -123,6 +132,7 @@ def rotkehlchen_server(
         db_password=db_password,
         rotkehlchen_api_key=rotkehlchen_api_key,
         rotkehlchen_api_secret=rotkehlchen_api_secret,
+        data_dir=accounting_data_dir,
     )
     return server
 
@@ -139,6 +149,7 @@ def rotkehlchen_instance(
         db_password,
         rotkehlchen_api_key,
         rotkehlchen_api_secret,
+        accounting_data_dir,
 ):
     """A partially mocked rotkehlchen instance"""
     rotkehlchen = Rotkehlchen(cli_args)
@@ -154,6 +165,7 @@ def rotkehlchen_instance(
         db_password=db_password,
         rotkehlchen_api_key=rotkehlchen_api_key,
         rotkehlchen_api_secret=rotkehlchen_api_secret,
+        data_dir=accounting_data_dir,
     )
     return rotkehlchen
 
@@ -168,16 +180,10 @@ def rotkehlchen_server_with_exchanges(
         mock_bitmex,
 ):
     """Adds mock exchange objects to the rotkehlchen_server fixture"""
-    rotkehlchen_server.rotkehlchen.kraken = function_scope_kraken
-    rotkehlchen_server.rotkehlchen.poloniex = function_scope_poloniex
-    rotkehlchen_server.rotkehlchen.bittrex = function_scope_bittrex
-    rotkehlchen_server.rotkehlchen.binance = function_scope_binance
-    rotkehlchen_server.rotkehlchen.bitmex = mock_bitmex
-    rotkehlchen_server.rotkehlchen.connected_exchanges = [
-        function_scope_kraken,
-        function_scope_poloniex,
-        function_scope_bittrex,
-        function_scope_binance,
-        mock_bitmex,
-    ]
+    exchanges = rotkehlchen_server.rotkehlchen.exchange_manager.connected_exchanges
+    exchanges['kraken'] = function_scope_kraken
+    exchanges['poloniex'] = function_scope_poloniex
+    exchanges['bittrex'] = function_scope_bittrex
+    exchanges['binance'] = function_scope_binance
+    exchanges['bitmex'] = mock_bitmex
     return rotkehlchen_server
