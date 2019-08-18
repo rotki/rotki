@@ -195,14 +195,8 @@ class MockKraken(Kraken):
         self.remote_errors = False
 
         self.balance_data_return = {'XXBT': '5.0', 'XETH': '10.0', 'NOTAREALASSET': '15.0'}
-
-    def first_connection(self):
-        if self.first_connection_made:
-            return
         # Not required in the real Kraken instance but we use it in the tests
         self.tradeable_pairs = self.query_public('AssetPairs')
-        self.first_connection_made = True
-        return
 
     def main_logic(self):
         pass
@@ -212,7 +206,6 @@ class MockKraken(Kraken):
         if self.remote_errors:
             raise RemoteError('Kraken remote error')
 
-        self.first_connection()
         if method == 'Balance':
             if self.random_balance_data:
                 return generate_random_kraken_balance_response()

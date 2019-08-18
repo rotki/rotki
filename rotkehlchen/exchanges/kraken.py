@@ -376,7 +376,6 @@ class Kraken(ExchangeInterface):
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[dict], str]:
         try:
-            self.first_connection()
             old_balances = self.query_private('Balance', req={})
 
         except RemoteError as e:
