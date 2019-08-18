@@ -517,3 +517,31 @@ def test_ignored_assets(rotkehlchen_server):
     response = rotkehlchen_server.remove_ignored_asset('BTC')
     assert response['result'] is False
     assert response['message'] == 'BTC is not in ignored assets'
+
+
+def test_query_exchange_balances(rotkehlchen_server, function_scope_binance):
+    """Just test that querying an exchange's balance via the server works
+
+    Here we only have binance registered
+    """
+    exchanges = rotkehlchen_server.rotkehlchen.exchange_manager.connected_exchanges
+    exchanges['binance'] = function_scope_binance
+
+    def mock_binance_balances(url):  # pylint: disable=unused-argument
+        return MockResponse(200, BINANCE_BALANCES_RESPONSE)
+
+    mock_binance = patch.object(
+        exchanges['binance'].session,
+        'get',
+        side_effect=mock_binance_balances,
+    )
+    with mock_binance:
+        result = rotkehlchen_server.query_exchange_balances('binance')
+
+    # no need to check the exact results, just want to make sure the query works
+    assert 'BTC' in result['balances']
+    assert 'ETH' in result['balances']
+
+    # also check that querying a non-registered exchange returns an error
+    result = rotkehlchen_server.query_exchange_balances('poloniex')
+    assert result['error'] == 'Could not query balances for poloniex since it is not registered'
