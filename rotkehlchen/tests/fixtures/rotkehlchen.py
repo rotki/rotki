@@ -104,6 +104,12 @@ def initialize_mock_rotkehlchen_instance(
 
 
 @pytest.fixture()
+def uninitialized_rotkehlchen(cli_args):
+    """A rotkehlchen instance that has only had __init__ run but is not unlocked"""
+    return Rotkehlchen(cli_args)
+
+
+@pytest.fixture()
 def rotkehlchen_server(
         cli_args,
         username,
@@ -139,7 +145,7 @@ def rotkehlchen_server(
 
 @pytest.fixture()
 def rotkehlchen_instance(
-        cli_args,
+        uninitialized_rotkehlchen,
         username,
         blockchain,
         accountant,
@@ -152,10 +158,9 @@ def rotkehlchen_instance(
         accounting_data_dir,
 ):
     """A partially mocked rotkehlchen instance"""
-    rotkehlchen = Rotkehlchen(cli_args)
 
     initialize_mock_rotkehlchen_instance(
-        rotki=rotkehlchen,
+        rotki=uninitialized_rotkehlchen,
         start_with_logged_in_user=start_with_logged_in_user,
         start_with_valid_premium=start_with_valid_premium,
         msg_aggregator=function_scope_messages_aggregator,
@@ -167,7 +172,7 @@ def rotkehlchen_instance(
         rotkehlchen_api_secret=rotkehlchen_api_secret,
         data_dir=accounting_data_dir,
     )
-    return rotkehlchen
+    return uninitialized_rotkehlchen
 
 
 @pytest.fixture()

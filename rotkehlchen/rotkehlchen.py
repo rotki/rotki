@@ -152,7 +152,6 @@ class Rotkehlchen():
             # or some other error happened
             pass
 
-        exchange_credentials = self.data.db.get_exchange_credentials()
         settings = self.data.db.get_settings()
         historical_data_start = settings['historical_data_start']
         eth_rpc_endpoint = settings['eth_rpc_endpoint']
@@ -183,6 +182,7 @@ class Rotkehlchen():
 
         # Initialize the rotkehlchen logger
         LoggingSettings(anonymized_logs=db_settings['anonymized_logs'])
+        exchange_credentials = self.data.db.get_exchange_credentials()
         self.exchange_manager.initialize_exchanges(
             exchange_credentials=exchange_credentials,
             user_directory=self.user_directory,

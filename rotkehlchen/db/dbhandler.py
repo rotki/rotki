@@ -729,8 +729,9 @@ class DBHandler():
         )
         result = result.fetchall()
         credentials = {}
+
         for entry in result:
-            if entry == 'rotkehlchen':
+            if entry[0] == 'rotkehlchen':
                 continue
             name = entry[0]
             credentials[name] = ApiCredentials.serialize(

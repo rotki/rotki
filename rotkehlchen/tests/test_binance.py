@@ -1,4 +1,3 @@
-import base64
 from unittest.mock import patch
 
 import pytest
@@ -19,7 +18,7 @@ from rotkehlchen.exchanges.data_structures import Exchange, Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_BNB, A_RDN, A_USDT, A_XMR
 from rotkehlchen.tests.utils.exchanges import BINANCE_BALANCES_RESPONSE
-from rotkehlchen.tests.utils.factories import make_random_b64bytes
+from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.user_messages import MessagesAggregator
@@ -198,8 +197,8 @@ def test_binance_assets_are_known(
 ):
     # use a real binance instance so that we always get the latest data
     binance = Binance(
-        api_key=base64.b64encode(make_random_b64bytes(128)),
-        secret=base64.b64encode(make_random_b64bytes(128)),
+        api_key=make_api_key(),
+        secret=make_api_secret(),
         user_directory=accounting_data_dir,
         msg_aggregator=MessagesAggregator(),
     )

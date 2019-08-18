@@ -1,4 +1,3 @@
-import base64
 import json
 import os
 from pathlib import Path
@@ -6,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from rotkehlchen.exchanges.binance import Binance, create_binance_symbols_to_pair
-from rotkehlchen.tests.utils.factories import make_random_b64bytes
+from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 
 
 @pytest.fixture
@@ -16,8 +15,8 @@ def function_scope_binance(
         function_scope_messages_aggregator,
 ):
     binance = Binance(
-        api_key=base64.b64encode(make_random_b64bytes(128)),
-        secret=base64.b64encode(make_random_b64bytes(128)),
+        api_key=make_api_key(),
+        secret=make_api_secret(),
         user_directory=accounting_data_dir,
         msg_aggregator=function_scope_messages_aggregator,
     )
