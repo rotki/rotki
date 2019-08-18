@@ -75,21 +75,6 @@ def test_kraken_to_world_pair():
         kraken_to_world_pair('GABOOBABOO')
 
 
-def test_find_fiat_price(kraken):
-    """
-    Testing that find_fiat_price works correctly
-
-    Also regression test for https://github.com/rotkehlchenio/rotkehlchen/issues/323
-    """
-    kraken.first_connection()
-    # A single YEN should cost less than 1 bitcoin
-    jpy_price = kraken.find_fiat_price('ZJPY')
-    assert jpy_price < FVal('1')
-
-    # Kraken fees have no value
-    assert kraken.find_fiat_price('KFEE') == FVal('0')
-
-
 def test_kraken_query_balances_unknown_asset(function_scope_kraken):
     """Test that if a kraken balance query returns unknown asset no exception
     is raised and a warning is generated"""
