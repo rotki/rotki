@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.serializer import deserialize_trade_type
+from rotkehlchen.serialization.deserialize import deserialize_trade_type
 from rotkehlchen.typing import TradeType
 from rotkehlchen.utils.serialization import (
     pretty_json_dumps,

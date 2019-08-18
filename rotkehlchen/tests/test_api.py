@@ -12,6 +12,7 @@ from rotkehlchen.db.utils import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.exchanges import BINANCE_BALANCES_RESPONSE
+from rotkehlchen.tests.utils.history import TEST_END_TS, mock_history_processing_and_exchanges
 from rotkehlchen.tests.utils.mock import MockResponse, MockWeb3
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
 from rotkehlchen.typing import Price, Timestamp
@@ -545,3 +546,57 @@ def test_query_exchange_balances(rotkehlchen_server, function_scope_binance):
     # also check that querying a non-registered exchange returns an error
     result = rotkehlchen_server.query_exchange_balances('poloniex')
     assert result['error'] == 'Could not query balances for poloniex since it is not registered'
+
+
+def test_query_trade_history(rotkehlchen_server, function_scope_bittrex, function_scope_poloniex):
+    """Just test that querying an exchange's trade history via the server api works
+
+    Here we only have bittrex and poloniex registered
+    """
+    rotki = rotkehlchen_server.rotkehlchen
+    exchanges = rotki.exchange_manager.connected_exchanges
+    exchanges['bittrex'] = function_scope_bittrex
+    exchanges['poloniex'] = function_scope_poloniex
+    exchanges['poloniex'].cache_ttl_secs = 0
+    exchanges['bittrex'].cache_ttl_secs = 0
+
+    _, polo_patch, _, bittrex_patch, _ = mock_history_processing_and_exchanges(rotki)
+
+    # only poloniex
+    with polo_patch:
+        result = rotkehlchen_server.query_trade_history('poloniex', start_ts=0, end_ts=TEST_END_TS)
+
+    assert len(result['result']) == 3
+    # And also test serialization of one trade
+    trade = result['result'][0]
+    assert trade['timestamp'] == 1539713117
+    assert trade['location'] == 'poloniex'
+    assert trade['pair'] == 'ETH_BTC'
+    assert trade['trade_type'] == 'sell'
+    assert trade['amount'] == '1.40308443'
+    assert trade['rate'] == '0.06935244'
+    assert trade['fee'] == '0.0000973073287465092'
+    assert trade['fee_currency'] == 'BTC'
+    assert trade['link'] == ''
+    assert trade['notes'] == ''
+
+    # only bittrex
+    with bittrex_patch:
+        result = rotkehlchen_server.query_trade_history('bittrex', start_ts=0, end_ts=TEST_END_TS)
+
+    assert len(result['result']) == 2
+
+    # all exchanges (both poloniex and bittrex)
+    with polo_patch, bittrex_patch:
+        result = rotkehlchen_server.query_trade_history('all', start_ts=0, end_ts=TEST_END_TS)
+
+    assert len(result['result']) == 5
+
+    # also check that querying a non-registered exchange returns an error
+    result = rotkehlchen_server.query_trade_history('binance', start_ts=0, end_ts=TEST_END_TS)
+    msg = 'Exchange binance provided in query_trade_history is not registered yet for this user'
+    assert result['message'] == msg
+
+    # also check that querying an invalid exchange returns an error
+    result = rotkehlchen_server.query_trade_history('dasdsd', start_ts=0, end_ts=TEST_END_TS)
+    assert result['message'] == 'Unknown exchange dasdsd provided in query_trade_history'
