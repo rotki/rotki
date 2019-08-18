@@ -200,7 +200,7 @@ def test_binance_assets_are_known(
     binance = Binance(
         api_key=base64.b64encode(make_random_b64bytes(128)),
         secret=base64.b64encode(make_random_b64bytes(128)),
-        data_dir=accounting_data_dir,
+        user_directory=accounting_data_dir,
         msg_aggregator=MessagesAggregator(),
     )
 

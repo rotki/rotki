@@ -10,8 +10,8 @@ from gevent.lock import Semaphore
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.blockchain import Blockchain
-from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS, SUPPORTED_EXCHANGES
-from rotkehlchen.constants.assets import A_EUR, A_USD, S_USD
+from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
+from rotkehlchen.constants.assets import A_USD, S_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.errors import (
     AuthenticationError,
@@ -21,7 +21,7 @@ from rotkehlchen.errors import (
     UnknownAsset,
 )
 from rotkehlchen.ethchain import Ethchain
-from rotkehlchen.exchanges import Binance, Bitmex, Bittrex, ExchangeInterface, Kraken, Poloniex
+from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian, TradesHistorian
@@ -31,7 +31,6 @@ from rotkehlchen.premium.premium import premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.serializer import process_result
 from rotkehlchen.typing import (
-    ApiCredentials,
     ApiKey,
     ApiSecret,
     BlockchainAddress,
@@ -74,7 +73,6 @@ class Rotkehlchen():
         # --cache related variable end
 
         self.premium = None
-        self.connected_exchanges: List[ExchangeInterface] = []
         self.user_is_logged_in = False
 
         logfilename = None
@@ -111,85 +109,14 @@ class Rotkehlchen():
         self.sleep_secs = args.sleep_secs
         self.data_dir = args.data_dir
         self.args = args
-
-        self.poloniex = None
-        self.kraken = None
-        self.bittrex = None
-        self.bitmex = None
-        self.binance = None
-
         self.msg_aggregator = MessagesAggregator()
+        self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
         self.data = DataHandler(self.data_dir, self.msg_aggregator)
         # Initialize the Inquirer singleton
         Inquirer(data_dir=self.data_dir)
 
         self.lock.release()
         self.shutdown_event = gevent.event.Event()
-
-    def _add_exchange(self, exchange_obj: ExchangeInterface) -> None:
-        """Adds a new exchange to the currently known exchanges"""
-        self.connected_exchanges.append(exchange_obj)
-        self.trades_historian.connected_exchanges = self.connected_exchanges
-
-    def initialize_exchanges(self, exchange_credentials: Dict[str, ApiCredentials]) -> None:
-        # initialize exchanges for which we have keys and are not already initialized
-        if self.kraken is None and 'kraken' in exchange_credentials:
-            self.kraken = Kraken(
-                api_key=exchange_credentials['kraken'].api_key,
-                secret=exchange_credentials['kraken'].api_secret,
-                user_directory=self.user_directory,
-                msg_aggregator=self.msg_aggregator,
-                usd_eur_price=Inquirer().query_fiat_pair(A_EUR, A_USD),
-            )
-            self._add_exchange(self.kraken)
-
-        if self.poloniex is None and 'poloniex' in exchange_credentials:
-            self.poloniex = Poloniex(
-                api_key=exchange_credentials['poloniex'].api_key,
-                secret=exchange_credentials['poloniex'].api_secret,
-                user_directory=self.user_directory,
-                msg_aggregator=self.msg_aggregator,
-            )
-            self._add_exchange(self.poloniex)
-
-        if self.bittrex is None and 'bittrex' in exchange_credentials:
-            self.bittrex = Bittrex(
-                api_key=exchange_credentials['bittrex'].api_key,
-                secret=exchange_credentials['bittrex'].api_secret,
-                user_directory=self.user_directory,
-                msg_aggregator=self.msg_aggregator,
-            )
-            self._add_exchange(self.bittrex)
-
-        if self.binance is None and 'binance' in exchange_credentials:
-            self.binance = Binance(
-                api_key=exchange_credentials['binance'].api_key,
-                secret=exchange_credentials['binance'].api_secret,
-                data_dir=self.user_directory,
-                msg_aggregator=self.msg_aggregator,
-            )
-            self._add_exchange(self.binance)
-
-        if self.bitmex is None and 'bitmex' in exchange_credentials:
-            self.bitmex = Bitmex(
-                api_key=exchange_credentials['bitmex'].api_key,
-                secret=exchange_credentials['bitmex'].api_secret,
-                user_directory=self.user_directory,
-                msg_aggregator=self.msg_aggregator,
-            )
-            self._add_exchange(self.bitmex)
-
-    def remove_all_exchanges(self):
-        if self.kraken is not None:
-            self.delete_exchange_data('kraken')
-        if self.poloniex is not None:
-            self.delete_exchange_data('poloniex')
-        if self.bittrex is not None:
-            self.delete_exchange_data('bittrex')
-        if self.binance is not None:
-            self.delete_exchange_data('binance')
-        if self.bitmex is not None:
-            self.delete_exchange_data('bitmex')
 
     def unlock_user(
             self,
@@ -234,6 +161,7 @@ class Rotkehlchen():
             db=self.data.db,
             eth_accounts=self.data.get_eth_accounts(),
             msg_aggregator=self.msg_aggregator,
+            exchange_manager=self.exchange_manager,
         )
         # Initialize the price historian singleton
         PriceHistorian(
@@ -255,7 +183,10 @@ class Rotkehlchen():
 
         # Initialize the rotkehlchen logger
         LoggingSettings(anonymized_logs=db_settings['anonymized_logs'])
-        self.initialize_exchanges(exchange_credentials)
+        self.exchange_manager.initialize_exchanges(
+            exchange_credentials=exchange_credentials,
+            user_directory=self.user_directory,
+        )
 
         ethchain = Ethchain(eth_rpc_endpoint)
         self.blockchain = Blockchain(
@@ -276,7 +207,7 @@ class Rotkehlchen():
             user=user,
         )
         del self.blockchain
-        self.remove_all_exchanges()
+        self.exchange_manager.delete_all_exchanges()
 
         # Reset rotkehlchen logger to default
         LoggingSettings(anonymized_logs=DEFAULT_ANONYMIZED_LOGS)
@@ -315,10 +246,9 @@ class Rotkehlchen():
     def main_loop(self):
         while self.shutdown_event.wait(MAIN_LOOP_SECS_DELAY) is not True:
             log.debug('Main loop start')
-            if self.poloniex is not None:
-                self.poloniex.main_logic()
-            if self.kraken is not None:
-                self.kraken.main_logic()
+            poloniex = self.exchange_manager.connected_exchanges.get('poloniex', None)
+            if poloniex:
+                poloniex.main_logic()
 
             self.premium_sync_manager.maybe_upload_data_to_server()
 
@@ -424,7 +354,7 @@ class Rotkehlchen():
 
         balances = {}
         problem_free = True
-        for exchange in self.connected_exchanges:
+        for _, exchange in self.exchange_manager.connected_exchanges.items():
             exchange_balances, _ = exchange.query_balances()
             # If we got an error, disregard that exchange but make sure we don't save data
             if not isinstance(exchange_balances, dict):
@@ -576,59 +506,23 @@ class Rotkehlchen():
 
         By default the api keys are always validated unless validate is False.
         """
-        log.info('setup_exchange', name=name)
-        if name not in SUPPORTED_EXCHANGES:
-            return False, 'Attempted to register unsupported exchange {}'.format(name)
+        is_success, msg = self.exchange_manager.setup_exchange(
+            name=name,
+            api_key=api_key,
+            api_secret=api_secret,
+            user_directory=self.user_directory,
+        )
 
-        if getattr(self, name) is not None:
-            return False, 'Exchange {} is already registered'.format(name)
+        if is_success:
+            # Success, save the result in the DB
+            self.data.db.add_exchange(name, api_key, api_secret)
+        return is_success, msg
 
-        credentials_dict = {}
-        api_credentials = ApiCredentials.serialize(api_key=api_key, api_secret=api_secret)
-        credentials_dict[name] = api_credentials
-        self.initialize_exchanges(credentials_dict)
-
-        exchange = getattr(self, name)
-        result, message = exchange.validate_api_key()
-        if not result:
-            log.error(
-                'Failed to validate API key for exchange',
-                name=name,
-                error=message,
-            )
-            self.delete_exchange_data(name)
-            return False, message
-
-        # Success, save the result in the DB
-        self.data.db.add_exchange(name, api_key, api_secret)
-        return True, ''
-
-    def delete_exchange_data(self, name: str) -> None:
-        """Deletes the exchange data of "name" exchange if found in currently connected exchanges.
-
-        If not it's an assertion error.
-        """
-        found_idx = -1
-        for idx, exchange in enumerate(self.connected_exchanges):
-            if exchange.name == name:
-                found_idx = idx
-                break
-
-        if found_idx == -1:
-            raise AssertionError(
-                f'Could not find exchange {name} in the currently connected exchanges',
-            )
-        self.connected_exchanges.pop(found_idx)
-
-        self.trades_historian.set_exchange(name, None)
-        delattr(self, name)
-        setattr(self, name, None)
-
-    def remove_exchange(self, name):
-        if getattr(self, name) is None:
+    def remove_exchange(self, name: str) -> Tuple[bool, str]:
+        if not self.exchange_manager.has_exchange(name):
             return False, 'Exchange {} is not registered'.format(name)
 
-        self.delete_exchange_data(name)
+        self.exchange_manager.delete_exchange(name)
         # Success, remove it also from the DB
         self.data.db.remove_exchange(name)
         return True, ''

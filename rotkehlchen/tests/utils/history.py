@@ -522,22 +522,22 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
         return MockResponse(200, payload)
 
     polo_patch = patch.object(
-        rotki.poloniex.session,
+        rotki.exchange_manager.connected_exchanges['poloniex'].session,
         'post',
         side_effect=mock_poloniex_api_queries,
     )
     binance_patch = patch.object(
-        rotki.binance.session,
+        rotki.exchange_manager.connected_exchanges['binance'].session,
         'get',
         side_effect=mock_binance_api_queries,
     )
     bittrex_patch = patch.object(
-        rotki.bittrex.session,
+        rotki.exchange_manager.connected_exchanges['bittrex'].session,
         'get',
         side_effect=mock_bittrex_api_queries,
     )
     bitmex_patch = patch.object(
-        rotki.bitmex.session,
+        rotki.exchange_manager.connected_exchanges['bitmex'].session,
         'get',
         side_effect=mock_bitmex_api_queries,
     )

@@ -18,7 +18,7 @@ def function_scope_binance(
     binance = Binance(
         api_key=base64.b64encode(make_random_b64bytes(128)),
         secret=base64.b64encode(make_random_b64bytes(128)),
-        data_dir=accounting_data_dir,
+        user_directory=accounting_data_dir,
         msg_aggregator=function_scope_messages_aggregator,
     )
     this_dir = os.path.dirname(os.path.abspath(__file__))

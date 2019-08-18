@@ -158,12 +158,12 @@ class Binance(ExchangeInterface):
             self,
             api_key: ApiKey,
             secret: ApiSecret,
-            data_dir: FilePath,
+            user_directory: FilePath,
             msg_aggregator: MessagesAggregator,
             initial_backoff: int = 4,
             backoff_limit: int = 180,
     ):
-        super(Binance, self).__init__('binance', api_key, secret, data_dir)
+        super(Binance, self).__init__('binance', api_key, secret, user_directory)
         self.uri = BINANCE_BASE_URL
         self.session.headers.update({  # type: ignore
             'Accept': 'application/json',
