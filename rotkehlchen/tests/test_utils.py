@@ -5,7 +5,7 @@ import pytest
 from rotkehlchen.errors import UnprocessableTradePair
 from rotkehlchen.exchanges.data_structures import invert_pair
 from rotkehlchen.fval import FVal
-from rotkehlchen.serializer import process_result
+from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.utils.misc import combine_dicts, combine_stat_dicts, iso8601ts_to_timestamp
 
 

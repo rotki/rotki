@@ -521,26 +521,42 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
 
         return MockResponse(200, payload)
 
-    polo_patch = patch.object(
-        rotki.exchange_manager.connected_exchanges['poloniex'].session,
-        'post',
-        side_effect=mock_poloniex_api_queries,
-    )
-    binance_patch = patch.object(
-        rotki.exchange_manager.connected_exchanges['binance'].session,
-        'get',
-        side_effect=mock_binance_api_queries,
-    )
-    bittrex_patch = patch.object(
-        rotki.exchange_manager.connected_exchanges['bittrex'].session,
-        'get',
-        side_effect=mock_bittrex_api_queries,
-    )
-    bitmex_patch = patch.object(
-        rotki.exchange_manager.connected_exchanges['bitmex'].session,
-        'get',
-        side_effect=mock_bitmex_api_queries,
-    )
+    # TODO: Turn this into a loop of all exchanges and return a list of patches
+    poloniex = rotki.exchange_manager.connected_exchanges.get('poloniex', None)
+    polo_patch = None
+    if poloniex:
+        polo_patch = patch.object(
+            poloniex.session,
+            'post',
+            side_effect=mock_poloniex_api_queries,
+        )
+
+    binance = rotki.exchange_manager.connected_exchanges.get('binance', None)
+    binance_patch = None
+    if binance:
+        binance_patch = patch.object(
+            binance.session,
+            'get',
+            side_effect=mock_binance_api_queries,
+        )
+
+    bittrex = rotki.exchange_manager.connected_exchanges.get('bittrex', None)
+    bittrex_patch = None
+    if bittrex:
+        bittrex_patch = patch.object(
+            bittrex.session,
+            'get',
+            side_effect=mock_bittrex_api_queries,
+        )
+
+    bitmex = rotki.exchange_manager.connected_exchanges.get('bitmex', None)
+    bitmex_patch = None
+    if bitmex:
+        bitmex_patch = patch.object(
+            bitmex.session,
+            'get',
+            side_effect=mock_bitmex_api_queries,
+        )
 
     return polo_patch, binance_patch, bittrex_patch, bitmex_patch
 

@@ -20,7 +20,7 @@ from rotkehlchen.exchanges.data_structures import Trade, get_pair_position_asset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import FIAT_CURRENCIES
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serializer import (
+from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
     deserialize_price,

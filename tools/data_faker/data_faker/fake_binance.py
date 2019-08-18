@@ -17,7 +17,7 @@ from rotkehlchen.exchanges.data_structures import (
     trade_pair_from_assets,
 )
 from rotkehlchen.fval import FVal
-from rotkehlchen.serializer import process_result, process_result_list
+from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.typing import Timestamp, TradePair
 
 # Disallow some assets for simplicity

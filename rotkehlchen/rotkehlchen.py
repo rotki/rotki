@@ -29,7 +29,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import DEFAULT_ANONYMIZED_LOGS, LoggingSettings, RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
-from rotkehlchen.serializer import process_result
+from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,

@@ -22,10 +22,12 @@ from rotkehlchen.errors import (
     RotkehlchenPermissionError,
     UnknownAsset,
 )
+from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.serializer import deserialize_timestamp, process_result, process_result_list
+from rotkehlchen.serialization.deserialize import deserialize_timestamp
+from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.typing import FiatAsset, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import simple_result
 from rotkehlchen.utils.serialization import pretty_json_dumps
@@ -299,17 +301,42 @@ class RotkehlchenServer():
         return {'result': result, 'message': message}
 
     def query_trade_history(self, location: str, start_ts: int, end_ts: int):
+        """Queries the trades/margin position history of a single or all exchanges
+
+        Note: This will only query trades/margin position history. Nothing else.
+        Not loans, deposit/withdrawals e.t.c.
+        """
         start_ts = Timestamp(start_ts)
         end_ts = Timestamp(end_ts)
         if location == 'all':
-            return self.rotkehlchen.trades_historian.get_history(start_ts, end_ts)
+            (
+                empty_or_error,
+                history,
+                _,
+                _,
+                _,
+            ) = self.rotkehlchen.trades_historian.get_history(start_ts, end_ts)
+            if empty_or_error != '':
+                return process_result({'result': '', 'message': empty_or_error})
+            # Ignore everything except for trades
+            return process_result({'result': history, 'message': ''})
 
-        try:
-            exchange = getattr(self.rotkehlchen, location)
-        except AttributeError:
-            raise ValueError(f'Unknown location {location} given')
+        if location not in SUPPORTED_EXCHANGES:
+            return {
+                'result': '',
+                'message': f'Unknown exchange {location} provided in query_trade_history',
+            }
 
-        return process_result_list(exchange.query_trade_history(start_ts, end_ts, end_ts))
+        exchange = self.rotkehlchen.exchange_manager.connected_exchanges.get(location, None)
+        if not exchange:
+            msg = (
+                f'Exchange {location} provided in query_trade_history is not '
+                f'registered yet for this user'
+            )
+            return {'result': '', 'message': msg}
+
+        result = exchange.query_trade_history(start_ts, end_ts, end_ts)
+        return process_result({'result': result, 'message': ''})
 
     def process_trade_history(self, start_ts, end_ts):
         start_ts = int(start_ts)
