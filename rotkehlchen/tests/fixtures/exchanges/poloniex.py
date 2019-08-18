@@ -1,9 +1,7 @@
-import base64
-
 import pytest
 
 from rotkehlchen.exchanges.poloniex import Poloniex
-from rotkehlchen.tests.utils.factories import make_random_b64bytes
+from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 
 
 class MockPoloniex(Poloniex):
@@ -13,8 +11,8 @@ class MockPoloniex(Poloniex):
 @pytest.fixture(scope='session')
 def poloniex(session_data_dir, session_inquirer, messages_aggregator):
     mock = MockPoloniex(
-        api_key=base64.b64encode(make_random_b64bytes(128)),
-        secret=base64.b64encode(make_random_b64bytes(128)),
+        api_key=make_api_key(),
+        secret=make_api_secret(),
         user_directory=session_data_dir,
         msg_aggregator=messages_aggregator,
     )
@@ -24,8 +22,8 @@ def poloniex(session_data_dir, session_inquirer, messages_aggregator):
 @pytest.fixture(scope='function')
 def function_scope_poloniex(accounting_data_dir, inquirer, function_scope_messages_aggregator):
     mock = MockPoloniex(
-        api_key=base64.b64encode(make_random_b64bytes(128)),
-        secret=base64.b64encode(make_random_b64bytes(128)),
+        api_key=make_api_key(),
+        secret=make_api_secret(),
         user_directory=accounting_data_dir,
         msg_aggregator=function_scope_messages_aggregator,
     )

@@ -1,4 +1,3 @@
-import base64
 import json
 import random
 from typing import Dict, List, Optional
@@ -21,7 +20,8 @@ from rotkehlchen.tests.utils.exchanges import (
     KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE,
 )
 from rotkehlchen.tests.utils.factories import (
-    make_random_b64bytes,
+    make_api_key,
+    make_api_secret,
     make_random_positive_fval,
     make_random_timestamp,
     make_random_uppercasenumeric_string,
@@ -252,8 +252,8 @@ class MockKraken(Kraken):
 @pytest.fixture(scope='session')
 def kraken(session_data_dir, session_inquirer, messages_aggregator):
     mock = MockKraken(
-        api_key=base64.b64encode(make_random_b64bytes(128)),
-        secret=base64.b64encode(make_random_b64bytes(128)),
+        api_key=make_api_key(),
+        secret=make_api_secret(),
         user_directory=session_data_dir,
         msg_aggregator=messages_aggregator,
     )
@@ -263,8 +263,8 @@ def kraken(session_data_dir, session_inquirer, messages_aggregator):
 @pytest.fixture(scope='function')
 def function_scope_kraken(accounting_data_dir, inquirer, function_scope_messages_aggregator):
     mock = MockKraken(
-        api_key=base64.b64encode(make_random_b64bytes(128)),
-        secret=base64.b64encode(make_random_b64bytes(128)),
+        api_key=make_api_key(),
+        secret=make_api_secret(),
         user_directory=accounting_data_dir,
         msg_aggregator=function_scope_messages_aggregator,
     )
