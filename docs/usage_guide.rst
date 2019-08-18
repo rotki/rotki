@@ -89,6 +89,8 @@ You can provide additional notes or even links to blockchain explorers for each 
 
 At the bottom of this page you can see a table of all your OTC trades.
 
+By right clicking on a trade you get a context menu allowing you to either edit or delete the trade entry.
+
 Creating a Tax Report
 ======================
 
