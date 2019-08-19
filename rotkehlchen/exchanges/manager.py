@@ -10,7 +10,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-SUPPORTED_EXCHANGES = ['kraken', 'poloniex', 'bittrex', 'bitmex', 'binance']
+SUPPORTED_EXCHANGES = ['kraken', 'poloniex', 'bittrex', 'bitmex', 'binance', 'coinbase']
 
 
 class ExchangeManager():

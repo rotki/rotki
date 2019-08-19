@@ -18,7 +18,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import AssetAmount, Exchange, Fee, Price, Timestamp, TradePair, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
 
-ExchangeName = Literal['kraken', 'poloniex', 'bittrex', 'binance', 'bitmex']
+ExchangeName = Literal['kraken', 'poloniex', 'bittrex', 'binance', 'bitmex', 'coinbase']
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)

@@ -27,7 +27,7 @@ export class Settings {
     taxfree_after_period = 0;
     anonymized_logs = false;
     date_display_format = Settings.DEFAULT_DISPLAY_FORMAT;
-    private exchanges = ['kraken', 'poloniex', 'bittrex', 'bitmex', 'binance'];
+    private exchanges = ['kraken', 'poloniex', 'bittrex', 'bitmex', 'binance', 'coinbase'];
     private currencies = [
         new Currency('United States Dollar', 'fa-usd', 'USD', '$'),
         new Currency('Euro', 'fa-eur', 'EUR', '€'),
