@@ -73,8 +73,9 @@ def cache_response_timewise() -> Callable:
                     cache_life_secs = now - wrappingobj.results_cache[f.__name__].timestamp
                 cache_miss = (
                     f.__name__ not in wrappingobj.results_cache or
-                    cache_life_secs > wrappingobj.cache_ttl_secs
+                    cache_life_secs >= wrappingobj.cache_ttl_secs
                 )
+
             if cache_miss:
                 result = f(wrappingobj, *args)
                 with wrappingobj.lock:
