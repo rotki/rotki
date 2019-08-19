@@ -300,6 +300,9 @@ class Kraken(ExchangeInterface):
                 return False, msg
         return True, ''
 
+    def first_connection(self) -> None:
+        self.first_connection_made = True
+
     def _query_public(self, method: str, req: Optional[dict] = None) -> dict:
         """API queries that do not require a valid key/secret pair.
 
