@@ -46,12 +46,15 @@ class Coinbase(ExchangeInterface):
             self,
             method_str: str,
             req: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[bool, str]:
+            ignore_pagination: bool = False,
+    ) -> Tuple[Optional[List[Any]], str]:
         try:
-            self._api_query(method_str)
+            result = self._api_query(method_str, ignore_pagination=ignore_pagination)
         except CoinbasePermissionError as e:
             error = str(e)
-            if method_str == 'accounts':
+            if 'transactions' in method_str:
+                permission = 'wallet:transactions:read'
+            elif method_str == 'accounts':
                 permission = 'wallet:accounts:read'
             else:
                 raise AssertionError(
@@ -60,21 +63,21 @@ class Coinbase(ExchangeInterface):
             msg = (
                 f'Provided API key needs to have {permission} permission activated. '
                 f'Please log into your coinbase account and set all required permissions: '
-                f'wallet:accounts:read'
+                f'wallet:accounts:read, wallet:transactions:read'
             )
 
-            return False, msg
+            return None, msg
         except RemoteError as e:
             error = str(e)
             if 'invalid signature' in error:
-                return False, 'Failed to authenticate with the Provided API key/secret'
+                return None, 'Failed to authenticate with the Provided API key/secret'
             elif 'invalid api key' in error:
-                return False, 'Provided API key is invalid'
+                return None, 'Provided API key is invalid'
             else:
                 # any other remote error
-                return False, error
+                return None, error
 
-        return True, ''
+        return result, ''
 
     def validate_api_key(self) -> Tuple[bool, str]:
         """Validates that the Coinbase API key is good for usage in Rotkehlchen
@@ -82,23 +85,60 @@ class Coinbase(ExchangeInterface):
         Makes sure that the following permissions are given to the key:
         - wallet:accounts:read
         """
-        valid, msg = self._validate_single_api_key_action('accounts')
-        if not valid:
+        result, msg = self._validate_single_api_key_action('accounts')
+        if not result:
             return False, msg
+
+        # now get the account ids
+        account_ids = self._get_account_ids(result)
+        if len(account_ids) != 0:
+            # and now try to get all transactions of an account to see if that's possible
+            method = f'accounts/{account_ids[0]}/transactions'
+            result, msg = self._validate_single_api_key_action(method)
+            if not result:
+                return False, msg
 
         return True, ''
 
+    def _get_account_ids(self, accounts: List[Dict[str, Any]]) -> List[str]:
+        """Gets the account ids out of the accounts response"""
+        account_ids = []
+        for account_data in accounts:
+            if 'id' not in account_data:
+                self.msg_aggregator.add_error(
+                    'Found coinbase account entry without an id key. Skipping it. ',
+                )
+                continue
+
+            if not isinstance(account_data['id'], str):
+                self.msg_aggregator.add_error(
+                    f'Found coinbase account entry with a non string id: '
+                    f'{account_data["id"]}. Skipping it. ',
+                )
+                continue
+
+            account_ids.append(account_data['id'])
+
+        return account_ids
+
     def _api_query(
             self,
-            method: str,
+            endpoint: str,
             options: Optional[Dict[str, Any]] = None,
             pagination_next_uri: str = None,
+            ignore_pagination: bool = False,
     ) -> List[Any]:
+        """Performs a coinbase API Query for endpoint
+
+        You can optionally provide extra arguments to the endpoint via the options argument.
+        If this is an ongoing paginating call then provide pagination_next_uri.
+        If you want just the first results then set ignore_pagination to True.
+        """
         request_verb = "GET"
         if pagination_next_uri:
             request_url = pagination_next_uri
         else:
-            request_url = f'/{self.apiversion}/{method}'
+            request_url = f'/{self.apiversion}/{endpoint}'
             if options:
                 request_url += urlencode(options)
 
@@ -121,7 +161,7 @@ class Coinbase(ExchangeInterface):
         response = self.session.get(full_url)
 
         if response.status_code == 403:
-            raise CoinbasePermissionError(f'API key does not have permission for {method}')
+            raise CoinbasePermissionError(f'API key does not have permission for {endpoint}')
 
         if response.status_code != 200:
             raise RemoteError(
@@ -140,7 +180,7 @@ class Coinbase(ExchangeInterface):
         final_data = json_ret['data']
 
         # If we got pagination and this is the first query, gather all the subsequent queries
-        if 'pagination' in json_ret and not pagination_next_uri:
+        if 'pagination' in json_ret and not pagination_next_uri and not ignore_pagination:
             while True:
                 if 'next_uri' not in json_ret['pagination']:
                     raise RemoteError(f'Coinbase json response contained no "next_uri" key')
@@ -152,7 +192,7 @@ class Coinbase(ExchangeInterface):
                     break
 
                 json_ret = self._api_query(
-                    method=method,
+                    endpoint=endpoint,
                     options=options,
                     pagination_next_uri=next_uri,
                 )
