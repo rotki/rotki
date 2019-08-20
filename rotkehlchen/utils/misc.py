@@ -37,8 +37,20 @@ def create_timestamp(datestr: str, formatstr: str = '%Y-%m-%d %H:%M:%S') -> Time
 
 
 def iso8601ts_to_timestamp(datestr: str) -> Timestamp:
+    """Requires python 3.7 due to fromisoformat()
+
+    But this is still a rather not good function and requires a few tricks to make
+    it work. So TODO: perhaps switch to python-dateutil package?
+
+    Dateutils package info:
+    https://stackoverflow.com/questions/127803/how-do-i-parse-an-iso-8601-formatted-date
+    Required tricks for fromisoformat:
+    https://stackoverflow.com/questions/127803/how-do-i-parse-an-iso-8601-formatted-date/49784038#49784038
+    """
+    # Required due to prolems with fomrisoformat recognizing the ZULU mark
+    datestr = datestr.replace("Z", "+00:00")
     try:
-        return create_timestamp(datestr, formatstr='%Y-%m-%dT%H:%M:%S.%fZ')
+        return Timestamp(int(datetime.datetime.fromisoformat(datestr).timestamp()))
     except ValueError:
         raise DeserializationError(f'Couldnt read {datestr} as iso8601ts timestamp')
 

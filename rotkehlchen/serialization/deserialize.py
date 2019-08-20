@@ -6,7 +6,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
 from rotkehlchen.typing import AssetAmount, Exchange, Fee, Optional, Price, Timestamp, TradeType
-from rotkehlchen.utils.misc import convert_to_int, create_timestamp
+from rotkehlchen.utils.misc import convert_to_int, create_timestamp, iso8601ts_to_timestamp
 
 
 def deserialize_fee(fee: Optional[str]) -> Fee:
@@ -55,6 +55,9 @@ def deserialize_timestamp(timestamp: Union[int, str]) -> Timestamp:
 def deserialize_timestamp_from_date(date: str, formatstr: str, location: str) -> Timestamp:
     """Deserializes a timestamp from a date entry depending on the format str
 
+    formatstr can also have a special value of 'iso8601' in which case the iso8601
+    function will be used.
+
     Can throw DeserializationError if the data is not as expected
     """
     if not date:
@@ -67,6 +70,9 @@ def deserialize_timestamp_from_date(date: str, formatstr: str, location: str) ->
             f'Failed to deserialize a timestamp from a {type(date)} entry in {location}',
         )
 
+    if formatstr == 'iso8601':
+        return iso8601ts_to_timestamp(date)
+
     try:
         return Timestamp(create_timestamp(datestr=date, formatstr=formatstr))
     except ValueError:
@@ -76,6 +82,10 @@ def deserialize_timestamp_from_date(date: str, formatstr: str, location: str) ->
 def deserialize_timestamp_from_poloniex_date(date: str) -> Timestamp:
     """Deserializes a timestamp from a poloniex api query result date entry
 
+    The poloniex dates follow the %Y-%m-%d %H:%M:%S format but are in UTC time
+    and not local time so can't use iso8601ts_to_timestamp() directly since that
+    would interpet them as local time.
+
     Can throw DeserializationError if the data is not as expected
     """
     return deserialize_timestamp_from_date(date, '%Y-%m-%d %H:%M:%S', 'poloniex')
@@ -84,9 +94,23 @@ def deserialize_timestamp_from_poloniex_date(date: str) -> Timestamp:
 def deserialize_timestamp_from_bittrex_date(date: str) -> Timestamp:
     """Deserializes a timestamp from a bittrex api query result date entry
 
+    Bittrex trades follow the given format and unfortunately
+    fromisoformat does not recognize all permutations of trailing numbers
+    after the.
+
     Can throw DeserializationError if the data is not as expected
     """
     return deserialize_timestamp_from_date(date, '%Y-%m-%dT%H:%M:%S.%f', 'bittrex')
+
+
+def deserialize_timestamp_from_coinbase_date(date: str) -> Timestamp:
+    """Deserializes a timestamp from a coinbase api query result date entry
+
+    Coinbase dates can be in iso8601 format.
+
+    Can throw DeserializationError if the data is not as expected
+    """
+    return deserialize_timestamp_from_date(date, 'iso8601', 'coinbase')
 
 
 def deserialize_timestamp_from_kraken(time: Union[str, FVal]) -> Timestamp:
