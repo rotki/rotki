@@ -36,7 +36,7 @@ function edit_otc_trade(row: DataTables.RowMethods) {
     const ts = timestamp_to_date(data.timestamp, false);
     $('#otc_timestamp').val(ts);
     $('#otc_pair').val(data.pair);
-    $('#otc_type').val(data.type);
+    $('#otc_type').val(data.trade_type);
     $('#otc_amount').val(data.amount);
     $('#otc_rate').val(data.rate);
     $('#otc_fee').val(data.fee);
@@ -114,7 +114,7 @@ function create_otctrades_table() {
                     'width': '15px'
                 },
                 {'data': 'pair'},
-                {'data': 'type'},
+                {'data': 'trade_type'},
                 {'data': 'amount'},
                 {'data': 'rate'},
                 {
