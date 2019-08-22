@@ -1,8 +1,12 @@
 from unittest.mock import patch
 
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.typing import TradeType
 
 
 def test_coinbase_query_balances(function_scope_coinbase):
@@ -174,3 +178,114 @@ def test_coinbase_query_balances_unexpected_data(function_scope_coinbase):
     # account entry with invalid asset
     input_data = data.replace('"BTC"', 'null')
     query_coinbase_and_test(input_data, expected_warnings_num=0, expected_errors_num=1)
+
+
+def test_coinbase_query_trade_history(function_scope_coinbase):
+    """Test that coinbase trade history query works fine for the happy path"""
+    coinbase = function_scope_coinbase
+    transactions_response = """{
+    "pagination": {
+        "ending_before": null,
+        "starting_after": null,
+        "limit": 25,
+        "order": "desc",
+        "previous_uri": null,
+        "next_uri": null
+    },
+    "data": [{
+      "id": "8250fe29",
+      "type": "sell",
+      "status": "pending",
+      "amount": {
+        "amount": "100.45",
+        "currency": "ETH"
+      },
+      "native_amount": {
+        "amount": "8940.12",
+        "currency": "USD"
+      },
+      "description": null,
+      "created_at": "2015-03-26T13:42:00-07:00",
+      "updated_at": "2015-03-26T15:55:45-07:00",
+      "resource": "transaction",
+      "resource_path": "/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/transactions/8250fe29",
+      "buy": {
+        "id": "5c8216e7-318a-50a5-91aa-2f2cfddfdaab",
+        "resource": "buy",
+        "resource_path": "/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/buys/5c8216e7"
+      },
+      "instant_exchange": false,
+      "details": {
+        "title": "Bought bitcoin",
+        "subtitle": "using Capital One Bank"
+      }
+    }, {
+      "id": "4117f7d6-5694-5b36-bc8f-847509850ea4",
+      "type": "buy",
+      "status": "pending",
+      "amount": {
+        "amount": "486.34313725",
+        "currency": "BTC"
+      },
+      "native_amount": {
+        "amount": "4863.43",
+        "currency": "USD"
+      },
+      "description": null,
+      "created_at": "2017-07-23T23:44:08Z",
+      "updated_at": "2017-07-23T23:44:08Z",
+      "resource": "transaction",
+      "resource_path": "/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/transactions/4117f7d6",
+      "buy": {
+        "id": "9e14d574-30fa-5d85-b02c-6be0d851d61d",
+        "resource": "buy",
+        "resource_path": "/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/buys/9e14d574d"
+      },
+      "details": {
+        "title": "Bought bitcoin",
+        "subtitle": "using Capital One Bank"
+      }
+    }
+
+    ]}"""
+
+    def mock_coinbase_query(url):  # pylint: disable=unused-argument
+        if 'transactions' in url:
+            return MockResponse(200, transactions_response)
+        elif 'accounts' in url:
+            # keep it simple just return a single ID and ignore the rest of the fields
+            return MockResponse(200, '{"data": [{"id": "5fs23"}]}')
+        else:
+            raise AssertionError(f'Unexpected url {url} for test')
+    with patch.object(coinbase.session, 'get', side_effect=mock_coinbase_query):
+        trades = coinbase.query_trade_history(
+            start_ts=0,
+            end_ts=TEST_END_TS,
+            end_at_least_ts=TEST_END_TS,
+        )
+
+    warnings = coinbase.msg_aggregator.consume_warnings()
+    errors = coinbase.msg_aggregator.consume_errors()
+    assert len(warnings) == 0
+    assert len(errors) == 0
+    assert len(trades) == 2
+    expected_trades = [Trade(
+        timestamp=1427402520,
+        location='coinbase',
+        pair='ETH_USD',
+        trade_type=TradeType.SELL,
+        amount=FVal("100.45"),
+        rate=FVal("0.01123586708008393623351811833"),
+        fee=ZERO,
+        fee_currency=A_USD,
+    ), Trade(
+        timestamp=1500853448,
+        location='coinbase',
+        pair='BTC_USD',
+        trade_type=TradeType.BUY,
+        amount=FVal("486.34313725"),
+        rate=FVal("0.1000000282208235751311317321"),
+        fee=ZERO,
+        fee_currency=A_USD,
+    )]
+    assert trades == expected_trades

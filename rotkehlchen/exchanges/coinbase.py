@@ -7,18 +7,67 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlencode
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_asset_amount
-from rotkehlchen.typing import ApiKey, ApiSecret, FilePath
+from rotkehlchen.serialization.deserialize import (
+    deserialize_asset_amount,
+    deserialize_timestamp_from_date,
+    deserialize_trade_type,
+)
+from rotkehlchen.typing import ApiKey, ApiSecret, Fee, FilePath, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Optional[Trade]:
+    """Turns a coinbase transaction into a rotkehlchen Trade.
+
+    If the coinbase transaction is not a trade related transaction returns None
+
+    Throws:
+        - UnknownAsset due to Asset instantiation
+        - DeserializationError due to unexpected format of dict entries
+        - KeyError due to dict entires missing an expected entry
+    """
+
+    timestamp = deserialize_timestamp_from_date(raw_trade['created_at'], 'iso8601', 'coinbase')
+    coinbase_tx_type = raw_trade['type']
+    # The types of a coinbase trade can be seen here:
+    # https://developers.coinbase.com/api/v2?python#transaction-resource
+    # we only allow trade related transactions to pass through here
+    # and ignore everything else
+    if coinbase_tx_type not in ('buy', 'sell'):
+        return None
+    trade_type = deserialize_trade_type(coinbase_tx_type)
+    tx_amount = deserialize_asset_amount(raw_trade['amount']['amount'])
+    tx_asset = Asset(raw_trade['amount']['currency'])
+    native_amount = deserialize_asset_amount(raw_trade['native_amount']['amount'])
+    native_asset = Asset(raw_trade['native_amount']['currency'])
+    # in coinbase you are buying/selling tx_asset for native_asset
+    pair = TradePair(f'{tx_asset.identifier}_{native_asset.identifier}')
+    amount = tx_amount
+    # The rate is how much you get/give in quotecurrency if you buy/sell 1 unit of base currency
+    rate = tx_amount / native_amount
+
+    return Trade(
+        timestamp=timestamp,
+        location='coinbase',
+        pair=pair,
+        trade_type=trade_type,
+        amount=amount,
+        rate=rate,
+        fee=Fee(ZERO),
+        # Can't find fees in coinbase transactions so can have whatever for fee currency
+        fee_currency=native_asset,
+    )
 
 
 class CoinbasePermissionError(Exception):
@@ -45,7 +94,6 @@ class Coinbase(ExchangeInterface):
     def _validate_single_api_key_action(
             self,
             method_str: str,
-            req: Optional[Dict[str, Any]] = None,
             ignore_pagination: bool = False,
     ) -> Tuple[Optional[List[Any]], str]:
         try:
@@ -191,18 +239,12 @@ class Coinbase(ExchangeInterface):
                     # once we get an empty next_uri we are done
                     break
 
-                json_ret = self._api_query(
+                additional_data = self._api_query(
                     endpoint=endpoint,
                     options=options,
                     pagination_next_uri=next_uri,
                 )
-
-                # extend the returned data with this query's data
-                if 'data' not in json_ret:
-                    raise RemoteError(
-                        f'Coinbase json response does not contain data: {response.text}',
-                    )
-                final_data.extend(json_ret['data'])
+                final_data.extend(additional_data)
 
         return final_data
 
@@ -218,7 +260,7 @@ class Coinbase(ExchangeInterface):
             log.error(msg)
             return None, msg
 
-        returned_balances = dict()
+        returned_balances: Dict[Asset, Dict[str, Any]] = dict()
         for account in resp:
             try:
                 if not account['balance']:
@@ -265,3 +307,58 @@ class Coinbase(ExchangeInterface):
                 continue
 
         return returned_balances, ''
+
+    def query_trade_history(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            end_at_least_ts: Timestamp,
+    ) -> List[Trade]:
+        cache = self.check_trades_cache_list(start_ts, end_at_least_ts)
+        if cache is not None:
+            raw_data = cache
+        else:
+            account_data = self._api_query('accounts')
+            # now get the account ids and for each one query transactions
+            account_ids = self._get_account_ids(account_data)
+
+            raw_data = []
+            for account_id in account_ids:
+                raw_data.extend(self._api_query(f'accounts/{account_id}/transactions'))
+            log.debug('coinbase transactions history result', results_num=len(raw_data))
+
+        trades = []
+        for raw_trade in raw_data:
+            try:
+                trade = trade_from_coinbase(raw_trade)
+            except UnknownAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found coinbase transaction with unknown asset '
+                    f'{e.asset_name}. Ignoring it.',
+                )
+                continue
+            except UnsupportedAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found coinbase trade with unsupported asset '
+                    f'{e.asset_name}. Ignoring it.',
+                )
+                continue
+            except (DeserializationError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}.'
+                self.msg_aggregator.add_error(
+                    'Error processing a coinase transaction. Check logs '
+                    'for details. Ignoring it.',
+                )
+                log.error(
+                    'Error processing a coinbase trade',
+                    trade=raw_trade,
+                    error=msg,
+                )
+                continue
+
+            if trade:
+                trades.append(trade)
+
+        return trades

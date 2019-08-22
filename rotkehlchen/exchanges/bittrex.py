@@ -113,7 +113,7 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
     history format
 
     Throws:
-        - UnsupportedAsset due to bittrex_pair_to_world()
+        - UnknownAsset/UnsupportedAsset due to bittrex_pair_to_world()
         - DeserializationError due to unexpected format of dict entries
         - KeyError due to dict entries missing an expected entry
     """
