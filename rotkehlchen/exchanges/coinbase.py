@@ -8,17 +8,18 @@ from urllib.parse import urlencode
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
-from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
+    deserialize_asset_movement_category,
     deserialize_fee,
     deserialize_timestamp_from_date,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Exchange, FilePath, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
@@ -27,9 +28,10 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Trade:
+def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Optional[Trade]:
     """Turns a coinbase transaction into a rotkehlchen Trade.
 
+    https://developers.coinbase.com/api/v2?python#buys
     If the coinbase transaction is not a trade related transaction returns None
 
     Throws:
@@ -37,6 +39,10 @@ def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Trade:
         - DeserializationError due to unexpected format of dict entries
         - KeyError due to dict entires missing an expected entry
     """
+
+    if raw_trade['status'] != 'completed':
+        # We only want to deal with completed trades
+        return None
 
     if raw_trade['instant']:
         raw_time = raw_trade['created_at']
@@ -106,6 +112,10 @@ class Coinbase(ExchangeInterface):
                 permission = 'wallet:buys:read'
             elif 'sells' in method_str:
                 permission = 'wallet:buys:read'
+            elif 'deposits' in method_str:
+                permission = 'wallet:deposits:read'
+            elif 'withdrawals' in method_str:
+                permission = 'wallet:withdrawals:read'
             else:
                 raise AssertionError(
                     f'Unexpected coinbase method {method_str} at API key validation',
@@ -157,6 +167,18 @@ class Coinbase(ExchangeInterface):
 
             # and now try to get all sells of an account to see if that's possible
             method = f'accounts/{account_ids[0]}/sells'
+            result, msg = self._validate_single_api_key_action(method)
+            if not result:
+                return False, msg
+
+            # and now try to get all deposits of an account to see if that's possible
+            method = f'accounts/{account_ids[0]}/deposits'
+            result, msg = self._validate_single_api_key_action(method)
+            if not result:
+                return False, msg
+
+            # and now try to get all withdrawals of an account to see if that's possible
+            method = f'accounts/{account_ids[0]}/withdrawals'
             result, msg = self._validate_single_api_key_action(method)
             if not result:
                 return False, msg
@@ -381,3 +403,92 @@ class Coinbase(ExchangeInterface):
                 trades.append(trade)
 
         return trades
+
+    def _deserialize_asset_movement(self, raw_data: Dict[str, Any]) -> Optional[AssetMovement]:
+        """Processes a single deposit/withdrawal from coinbase and deserializes it
+
+        Can log error/warning and return None if something went wrong at deserialization
+        """
+        try:
+            if raw_data['status'] != 'completed':
+                return None
+
+            movement_category = deserialize_asset_movement_category(raw_data['resource'])
+            payout_date = raw_data['payout_at']
+            if payout_date:
+                timestamp = deserialize_timestamp_from_date(payout_date, 'iso8601', 'coinbase')
+            else:
+                timestamp = deserialize_timestamp_from_date(
+                    raw_data['created_at'],
+                    'iso8601',
+                    'coinbase',
+                )
+
+            return AssetMovement(
+                exchange=Exchange.COINBASE,
+                category=movement_category,
+                timestamp=timestamp,
+                asset=Asset(raw_data['amount']['currency']),
+                amount=deserialize_asset_amount(raw_data['amount']['amount']),
+                fee=deserialize_fee(raw_data['fee']['amount']),
+            )
+        except UnknownAsset as e:
+            self.msg_aggregator.add_warning(
+                f'Found coinbase deposit/withdrawal with unknown asset '
+                f'{e.asset_name}. Ignoring it.',
+            )
+        except UnsupportedAsset as e:
+            self.msg_aggregator.add_warning(
+                f'Found coinbase deposit/withdrawal with unsupported asset '
+                f'{e.asset_name}. Ignoring it.',
+            )
+        except (DeserializationError, KeyError) as e:
+            msg = str(e)
+            if isinstance(e, KeyError):
+                msg = f'Missing key entry for {msg}.'
+            self.msg_aggregator.add_error(
+                f'Unexpected data encountered during deserialization of a coinbase '
+                f'asset movement. Check logs for details and open a bug report.',
+            )
+            log.error(
+                f'Unexpected data encountered during deserialization of coinbase '
+                f'asset_movement {raw_data}. Error was: {str(e)}',
+            )
+
+        return None
+
+    def query_deposits_withdrawals(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            end_at_least_ts: Timestamp,
+    ) -> List[AssetMovement]:
+        cache = self.check_trades_cache_list(
+            start_ts,
+            end_at_least_ts,
+            special_name='deposits_withdrawals',
+        )
+        if cache is not None:
+            raw_data = cache
+        else:
+            account_data = self._api_query('accounts')
+            account_ids = self._get_account_ids(account_data)
+            raw_data = []
+            for account_id in account_ids:
+                raw_data.extend(self._api_query(f'accounts/{account_id}/deposits'))
+                raw_data.extend(self._api_query(f'accounts/{account_id}/withdrawals'))
+            log.debug('coinbase deposits/withdrawals history result', results_num=len(raw_data))
+            self.update_trades_cache(
+                raw_data,
+                start_ts,
+                end_ts,
+                special_name='deposits_withdrawals',
+            )
+
+        movements = []
+        for raw_movement in raw_data:
+            movement = self._deserialize_asset_movement(raw_movement)
+            if movement:
+                movements.append(movement)
+
+        return movements
