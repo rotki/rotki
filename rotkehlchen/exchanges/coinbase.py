@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlencode
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
@@ -15,10 +14,11 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
+    deserialize_fee,
     deserialize_timestamp_from_date,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Fee, FilePath, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Optional[Trade]:
+def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Trade:
     """Turns a coinbase transaction into a rotkehlchen Trade.
 
     If the coinbase transaction is not a trade related transaction returns None
@@ -38,24 +38,23 @@ def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Optional[Trade]:
         - KeyError due to dict entires missing an expected entry
     """
 
-    timestamp = deserialize_timestamp_from_date(raw_trade['created_at'], 'iso8601', 'coinbase')
-    coinbase_tx_type = raw_trade['type']
-    # The types of a coinbase trade can be seen here:
-    # https://developers.coinbase.com/api/v2?python#transaction-resource
-    # we only allow trade related transactions to pass through here
-    # and ignore everything else
-    if coinbase_tx_type not in ('buy', 'sell'):
-        return None
-    trade_type = deserialize_trade_type(coinbase_tx_type)
+    if raw_trade['instant']:
+        raw_time = raw_trade['created_at']
+    else:
+        raw_time = raw_trade['payout_at']
+    timestamp = deserialize_timestamp_from_date(raw_time, 'iso8601', 'coinbase')
+    trade_type = deserialize_trade_type(raw_trade['resource'])
     tx_amount = deserialize_asset_amount(raw_trade['amount']['amount'])
     tx_asset = Asset(raw_trade['amount']['currency'])
-    native_amount = deserialize_asset_amount(raw_trade['native_amount']['amount'])
-    native_asset = Asset(raw_trade['native_amount']['currency'])
+    native_amount = deserialize_asset_amount(raw_trade['total']['amount'])
+    native_asset = Asset(raw_trade['total']['currency'])
     # in coinbase you are buying/selling tx_asset for native_asset
     pair = TradePair(f'{tx_asset.identifier}_{native_asset.identifier}')
     amount = tx_amount
     # The rate is how much you get/give in quotecurrency if you buy/sell 1 unit of base currency
     rate = tx_amount / native_amount
+    fee_amount = deserialize_fee(raw_trade['fee']['amount'])
+    fee_asset = Asset(raw_trade['fee']['currency'])
 
     return Trade(
         timestamp=timestamp,
@@ -64,9 +63,8 @@ def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Optional[Trade]:
         trade_type=trade_type,
         amount=amount,
         rate=rate,
-        fee=Fee(ZERO),
-        # Can't find fees in coinbase transactions so can have whatever for fee currency
-        fee_currency=native_asset,
+        fee=fee_amount,
+        fee_currency=fee_asset,
     )
 
 
@@ -102,8 +100,12 @@ class Coinbase(ExchangeInterface):
             error = str(e)
             if 'transactions' in method_str:
                 permission = 'wallet:transactions:read'
-            elif method_str == 'accounts':
+            elif 'accounts' in method_str:
                 permission = 'wallet:accounts:read'
+            elif 'buys' in method_str:
+                permission = 'wallet:buys:read'
+            elif 'sells' in method_str:
+                permission = 'wallet:buys:read'
             else:
                 raise AssertionError(
                     f'Unexpected coinbase method {method_str} at API key validation',
@@ -111,7 +113,8 @@ class Coinbase(ExchangeInterface):
             msg = (
                 f'Provided API key needs to have {permission} permission activated. '
                 f'Please log into your coinbase account and set all required permissions: '
-                f'wallet:accounts:read, wallet:transactions:read'
+                f'wallet:accounts:read, wallet:transactions:read, '
+                f'wallet:buys:read, wallet:sells:read'
             )
 
             return None, msg
@@ -142,6 +145,18 @@ class Coinbase(ExchangeInterface):
         if len(account_ids) != 0:
             # and now try to get all transactions of an account to see if that's possible
             method = f'accounts/{account_ids[0]}/transactions'
+            result, msg = self._validate_single_api_key_action(method)
+            if not result:
+                return False, msg
+
+            # and now try to get all buys of an account to see if that's possible
+            method = f'accounts/{account_ids[0]}/buys'
+            result, msg = self._validate_single_api_key_action(method)
+            if not result:
+                return False, msg
+
+            # and now try to get all sells of an account to see if that's possible
+            method = f'accounts/{account_ids[0]}/sells'
             result, msg = self._validate_single_api_key_action(method)
             if not result:
                 return False, msg
@@ -319,13 +334,17 @@ class Coinbase(ExchangeInterface):
             raw_data = cache
         else:
             account_data = self._api_query('accounts')
-            # now get the account ids and for each one query transactions
+            # now get the account ids and for each one query buys/sells
+            # Looking at coinbase's API no other type of transaction
+            # https://developers.coinbase.com/api/v2?python#list-transactions
+            # consitutes something that Rotkehlchen would need to return in query_trade_history
             account_ids = self._get_account_ids(account_data)
 
             raw_data = []
             for account_id in account_ids:
-                raw_data.extend(self._api_query(f'accounts/{account_id}/transactions'))
-            log.debug('coinbase transactions history result', results_num=len(raw_data))
+                raw_data.extend(self._api_query(f'accounts/{account_id}/buys'))
+                raw_data.extend(self._api_query(f'accounts/{account_id}/sells'))
+            log.debug('coinbase buys/sells history result', results_num=len(raw_data))
 
         trades = []
         for raw_trade in raw_data:
@@ -348,7 +367,7 @@ class Coinbase(ExchangeInterface):
                 if isinstance(e, KeyError):
                     msg = f'Missing key entry for {msg}.'
                 self.msg_aggregator.add_error(
-                    'Error processing a coinase transaction. Check logs '
+                    'Error processing a coinbase trade. Check logs '
                     'for details. Ignoring it.',
                 )
                 log.error(
