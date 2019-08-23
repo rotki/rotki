@@ -19,12 +19,17 @@ class FVal():
     __slots__ = ('num',)
 
     def __init__(self, data: AcceptableFValInitInput):
+
         try:
             if isinstance(data, float):
                 self.num = Decimal(str(data))
             elif isinstance(data, bytes):
                 # assume it's an ascii string and try to decode the bytes to one
                 self.num = Decimal(data.decode())
+            elif isinstance(data, bool):
+                # This elif has to come before the isinstance(int) check due to
+                # https://stackoverflow.com/questions/37888620/comparing-boolean-and-int-using-isinstance
+                raise ValueError(f'Invalid type bool for data given to FVal constructor')
             elif isinstance(data, (Decimal, int, str)):
                 self.num = Decimal(data)
             elif isinstance(data, FVal):
