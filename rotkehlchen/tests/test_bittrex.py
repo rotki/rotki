@@ -1,3 +1,4 @@
+import warnings as test_warnings
 from typing import Any, Dict, List
 from unittest.mock import patch
 
@@ -6,7 +7,7 @@ from rotkehlchen.assets.converters import UNSUPPORTED_BITTREX_ASSETS, asset_from
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import UnsupportedAsset
+from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.history import TEST_END_TS
@@ -49,6 +50,10 @@ def test_bittrex_assets_are_known(bittrex):
             _ = asset_from_bittrex(symbol)
         except UnsupportedAsset:
             assert symbol in UNSUPPORTED_BITTREX_ASSETS
+        except UnknownAsset as e:
+            test_warnings.warn(UserWarning(
+                f'Found unknown asset {e.asset_name} in Bittrex. Support for it has to be added'
+            ))
 
 
 def test_bittrex_query_balances_unknown_asset(bittrex):

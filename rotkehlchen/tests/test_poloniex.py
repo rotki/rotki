@@ -1,4 +1,5 @@
 import os
+import warnings as test_warnings
 from unittest.mock import patch
 
 import pytest
@@ -6,7 +7,7 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_POLONIEX_ASSETS, asset_from_poloniex
 from rotkehlchen.constants.assets import A_BTC, A_ETH
-from rotkehlchen.errors import DeserializationError, UnsupportedAsset
+from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import Loan, Trade, TradeType
 from rotkehlchen.exchanges.poloniex import Poloniex, process_polo_loans, trade_from_poloniex
 from rotkehlchen.fval import FVal
@@ -404,6 +405,10 @@ def test_poloniex_assets_are_known(poloniex):
             _ = asset_from_poloniex(poloniex_asset)
         except UnsupportedAsset:
             assert poloniex_asset in UNSUPPORTED_POLONIEX_ASSETS
+        except UnknownAsset as e:
+            test_warnings.warn(UserWarning(
+                f'Found unknown asset {e.asset_name} in Poloniex. Support for it has to be added'
+            ))
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
