@@ -354,6 +354,9 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # PolyAI (https://coinmarketcap.com/currencies/poly-ai/)
     # is not in cryptocompare but is in paprika
     'AI',
+    # Akropolis (https://coinmarketcap.com/currencies/akropolis/)
+    # is not in cryptocompare but is in paprika
+    'AKRO',
     # AiLink token (https://coinmarketcap.com/currencies/ailink-token/)
     # is not in cryptocompare but is in paprika
     'ALI',

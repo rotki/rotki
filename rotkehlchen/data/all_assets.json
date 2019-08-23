@@ -286,6 +286,14 @@
         "symbol": "AIX",
         "type": "ethereum token"
     },
+    "AKRO": {
+        "ethereum_address": "0x8Ab7404063Ec4DBcfd4598215992DC3F8EC853d7",
+        "ethereum_token_decimals": 18,
+        "name": "Akropolis",
+        "started": 1562371200,
+        "symbol": "AKRO",
+        "type": "ethereum token"
+    },
     "ALGO": {
         "name": "Algorand",
         "started": 1560902400,
