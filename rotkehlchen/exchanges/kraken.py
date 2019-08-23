@@ -51,6 +51,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 KRAKEN_ASSETS = (
     'ATOM',
+    'BAT',
     'XDAO',
     'XETC',
     'XETH',
@@ -82,6 +83,7 @@ KRAKEN_ASSETS = (
     'XXVN',
     'XXDG',
     'XTZ',
+    'WAVES',
 )
 
 KRAKEN_DELISTED = ('XDAO', 'XXVN', 'ZKRW', 'XNMC', 'BSV', 'XICN')

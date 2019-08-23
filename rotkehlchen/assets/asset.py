@@ -1,7 +1,6 @@
+from dataclasses import dataclass, field
 from functools import total_ordering
 from typing import Any, Optional
-
-from dataclasses import dataclass, field
 
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.cryptocompare import WORLD_TO_CRYPTOCOMPARE
@@ -66,6 +65,8 @@ WORLD_TO_POLONIEX = {
 
 WORLD_TO_KRAKEN = {
     'ATOM': 'ATOM',
+    'BAT': 'BAT',
+    'BSV': 'BSV',
     'ETC': 'XETC',
     'ETH': 'XETH',
     'LTC': 'XLTC',
@@ -96,7 +97,7 @@ WORLD_TO_KRAKEN = {
     'VEN': 'XXVN',
     'DOGE': 'XXDG',
     'XTZ': 'XTZ',
-    'BSV': 'BSV',
+    'WAVES': 'WAVES',
 }
 
 WORLD_TO_BINANCE = {
