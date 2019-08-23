@@ -263,6 +263,8 @@ WORLD_TO_CRYPTOCOMPARE = {
 KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # This is just kraken's internal fee token
     'KFEE',
+    # This is just bittrex's internal credit token
+    'BTXCRD',
     # For us ACH is the Altcoin Herald token. For cryptocompare it's
     # Achievecoin
     # https://www.cryptocompare.com/coins/ach/overview
