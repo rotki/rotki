@@ -4,6 +4,7 @@ from rotkehlchen.errors import DeserializationError, UnsupportedAsset
 
 KRAKEN_TO_WORLD = {
     'ATOM': 'ATOM',
+    'BAT': 'BAT',
     'XDAO': 'DAO',
     'XETC': 'ETC',
     'XETH': 'ETH',
@@ -43,6 +44,7 @@ KRAKEN_TO_WORLD = {
     'XXDG': 'DOGE',
     'XTZ': 'XTZ',
     'BSV': 'BSV',
+    'WAVES': 'WAVES',
 }
 
 
