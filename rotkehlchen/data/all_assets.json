@@ -1926,6 +1926,14 @@
         "symbol": "COB",
         "type": "ethereum token"
     },
+    "COCOS": {
+        "ethereum_address": "0x0C6f5F7D555E7518f6841a79436BD2b1Eef03381",
+        "ethereum_token_decimals": 18,
+        "name": "Cocos-BCX",
+        "started": 1565777340,
+        "symbol": "COCOS",
+        "type": "ethereum token"
+    },
     "COFI": {
         "ethereum_address": "0x3136eF851592aCf49CA4C825131E364170FA32b3",
         "ethereum_token_decimals": 18,
