@@ -379,6 +379,9 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # TUDA. As of 02/08/2019 no data found outside of Bittrex for this token
     # https://mobile.twitter.com/BittrexIntl/status/1156974900986490880
     'TUDA',
+    # TwelveShips. As of 23/08/2019 no data found outside of Bittrex for this token
+    # https://twitter.com/BittrexIntl/status/1164689364997353472
+    'TSHP',
 )
 
 
