@@ -13,6 +13,9 @@ Changelog
 * :feature:`-` Added support for the following tokens
 
   - `Pixel <https://coinmarketcap.com/currencies/pixel/>`__
+  - `Bittrex Credit Tokens <https://bittrex.zendesk.com/hc/en-us/articles/360032214811/>`__
+  - `Cocos-BCX <https://coinmarketcap.com/currencies/cocos-bcx/>`__
+  - `Akropolis <https://coinmarketcap.com/currencies/akropolis/>`__
 
 * :release:`1.0.2 <2019-08-04>`
 * :feature:`-` Added support for the following tokens
