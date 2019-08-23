@@ -1442,6 +1442,11 @@
         "symbol": "BTU",
         "type": "ethereum token"
     },
+    "BTXCRD": {
+        "name": "Bittrex Credits",
+        "symbol": "BTXCRD",
+        "type": "exchange specific"
+    },
     "BURST": {
         "name": "Burst",
         "started": 1402531200,

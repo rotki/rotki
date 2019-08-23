@@ -24,6 +24,7 @@ KNOWN_TO_MISS_FROM_CMC = (
     '1CR',
     'DAO',
     'KFEE',
+    'BTXCRD',
     'AC',
     'ACH',
     'ADN',
