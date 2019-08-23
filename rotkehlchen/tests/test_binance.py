@@ -1,3 +1,4 @@
+import warnings as test_warnings
 from unittest.mock import patch
 
 import pytest
@@ -12,7 +13,7 @@ from rotkehlchen.assets.converters import (
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import RemoteError, UnsupportedAsset
+from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.binance import Binance, trade_from_binance
 from rotkehlchen.exchanges.data_structures import Exchange, Trade, TradeType
 from rotkehlchen.fval import FVal
@@ -215,6 +216,10 @@ def test_binance_assets_are_known(
             _ = asset_from_binance(binance_asset)
         except UnsupportedAsset:
             assert binance_asset in UNSUPPORTED_BINANCE_ASSETS
+        except UnknownAsset as e:
+            test_warnings.warn(UserWarning(
+                f'Found unknown asset {e.asset_name} in Binance. Support for it has to be added'
+            ))
 
 
 def test_binance_query_balances_unknown_asset(function_scope_binance):

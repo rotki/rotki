@@ -1,3 +1,4 @@
+import warnings as test_warnings
 from unittest.mock import patch
 
 import pytest
@@ -19,13 +20,15 @@ def test_coverage_of_kraken_balances(kraken):
     got_assets = set(kraken.query_public('Assets').keys())
     expected_assets = (set(KRAKEN_ASSETS) - set(KRAKEN_DELISTED)).union(set(['BSV']))
     diff = expected_assets.symmetric_difference(got_assets)
-    assert len(diff) == 0, (
-        f"Our known assets don't match kraken's assets. Difference: {diff}"
-    )
-    # Make sure all assets are covered by our from and to functions
-    for kraken_asset in got_assets:
-        asset = asset_from_kraken(kraken_asset)
-        assert asset.to_kraken() == kraken_asset
+    if len(diff) != 0:
+        test_warnings.warn(UserWarning(
+            f"Our known assets don't match kraken's assets. Difference: {diff}"
+        ))
+    else:
+        # Make sure all assets are covered by our from and to functions
+        for kraken_asset in got_assets:
+            asset = asset_from_kraken(kraken_asset)
+            assert asset.to_kraken() == kraken_asset
 
 
 def test_querying_balances(kraken):
