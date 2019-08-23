@@ -7953,6 +7953,14 @@
         "symbol": "STK",
         "type": "ethereum token"
     },
+    "STL": {
+        "ethereum_address": "0xC1Ad68c43508dD5AdDb8d0ac0927dbE752d149D6",
+        "ethereum_token_decimals": 18,
+        "name": "Stablecoinswap",
+        "started": 1566529009,
+        "symbol": "STL",
+        "type": "ethereum token"
+    },
     "STORJ": {
         "ethereum_address": "0xB64ef51C888972c908CFacf59B47C1AfBC0Ab8aC",
         "ethereum_token_decimals": 8,
