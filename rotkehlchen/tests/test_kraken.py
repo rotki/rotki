@@ -22,7 +22,7 @@ def test_coverage_of_kraken_balances(kraken):
     diff = expected_assets.symmetric_difference(got_assets)
     if len(diff) != 0:
         test_warnings.warn(UserWarning(
-            f"Our known assets don't match kraken's assets. Difference: {diff}"
+            f"Our known assets don't match kraken's assets. Difference: {diff}",
         ))
     else:
         # Make sure all assets are covered by our from and to functions
