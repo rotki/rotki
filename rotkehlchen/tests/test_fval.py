@@ -165,3 +165,19 @@ def test_to_percentage():
     assert '23.45%' == FVal('0.2345').to_percentage(2)
     assert '23%' == FVal('0.2345').to_percentage(0)
     assert '153.2100%' == FVal('1.5321').to_percentage()
+
+
+def test_initialize_with_bool_fails():
+    """
+    Test that initializing with a bool fails
+
+    Essentially due to the following:
+    https://stackoverflow.com/questions/37888620/comparing-boolean-and-int-using-isinstance
+
+    I realized isinstance(True, int) == True which lead to fval being also initializable
+    with booleans. This test is here to make sure this does not happen anymore
+    """
+
+    with pytest.raises(ValueError):
+        FVal(True)
+        FVal(False)
