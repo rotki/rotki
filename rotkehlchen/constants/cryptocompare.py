@@ -394,6 +394,9 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # Cloudbrid (https://www.cloudbric.io/)
     # is not in cryptocompare but is in paprika
     'CLB',
+    # COCOS-BCX (https://coinmarketcap.com/currencies/cocos-bcx/)
+    # is not in cryptocompare but is in paprika
+    'COCOS',
     # CruiseBit (https://coinmarketcap.com/currencies/cruisebit/)
     # is not in cryptocompare but is in paprika
     'CRBT',
