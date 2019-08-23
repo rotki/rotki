@@ -1,11 +1,11 @@
 from unittest.mock import patch
 
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD
-from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import TradeType
+from rotkehlchen.typing import Exchange, TradeType
 
 
 def test_coinbase_query_balances(function_scope_coinbase):
@@ -275,22 +275,27 @@ SELLS_RESPONSE = """{
 }]}"""
 
 
+def mock_normal_coinbase_query(url):  # pylint: disable=unused-argument
+    if 'buys' in url:
+        return MockResponse(200, BUYS_RESPONSE)
+    elif 'sells' in url:
+        return MockResponse(200, SELLS_RESPONSE)
+    elif 'deposits' in url:
+        return MockResponse(200, DEPOSITS_RESPONSE)
+    elif 'withdrawals' in url:
+        return MockResponse(200, WITHDRAWALS_RESPONSE)
+    elif 'accounts' in url:
+        # keep it simple just return a single ID and ignore the rest of the fields
+        return MockResponse(200, '{"data": [{"id": "5fs23"}]}')
+    else:
+        raise AssertionError(f'Unexpected url {url} for test')
+
+
 def test_coinbase_query_trade_history(function_scope_coinbase):
     """Test that coinbase trade history query works fine for the happy path"""
     coinbase = function_scope_coinbase
 
-    def mock_coinbase_query(url):  # pylint: disable=unused-argument
-        if 'buys' in url:
-            return MockResponse(200, BUYS_RESPONSE)
-        elif 'sells' in url:
-            return MockResponse(200, SELLS_RESPONSE)
-        elif 'accounts' in url:
-            # keep it simple just return a single ID and ignore the rest of the fields
-            return MockResponse(200, '{"data": [{"id": "5fs23"}]}')
-        else:
-            raise AssertionError(f'Unexpected url {url} for test')
-
-    with patch.object(coinbase.session, 'get', side_effect=mock_coinbase_query):
+    with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
         trades = coinbase.query_trade_history(
             start_ts=0,
             end_ts=TEST_END_TS,
@@ -448,3 +453,124 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
         expected_warnings_num=0,
         expected_errors_num=1,
     )
+
+
+DEPOSITS_RESPONSE = """{
+"pagination": {
+    "ending_before": null,
+    "starting_after": null,
+    "limit": 25,
+    "order": "desc",
+    "previous_uri": null,
+    "next_uri": null
+},
+"data": [{
+      "id": "67e0eaec-07d7-54c4-a72c-2e92826897df",
+      "status": "completed",
+      "payment_method": {
+        "id": "83562370-3e5c-51db-87da-752af5ab9559",
+        "resource": "payment_method",
+        "resource_path": "/v2/payment-methods/83562370-3e5c-51db-87da-752af5ab9559"
+      },
+      "transaction": {
+        "id": "441b9494-b3f0-5b98-b9b0-4d82c21c252a",
+        "resource": "transaction",
+        "resource_path": "/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/transactions/441b9494"
+      },
+      "amount": {
+        "amount": "55.00",
+        "currency": "USD"
+      },
+      "subtotal": {
+        "amount": "54.95",
+        "currency": "USD"
+      },
+      "created_at": "2015-01-31T20:49:02Z",
+      "updated_at": "2015-02-11T16:54:02-08:00",
+      "resource": "deposit",
+      "resource_path": "/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/deposits/67e0eaec",
+      "committed": true,
+      "fee": {
+        "amount": "0.05",
+        "currency": "USD"
+      },
+      "payout_at": "2018-02-18T16:54:00-08:00"
+}]}"""
+
+
+WITHDRAWALS_RESPONSE = """{
+"pagination": {
+    "ending_before": null,
+    "starting_after": null,
+    "limit": 25,
+    "order": "desc",
+    "previous_uri": null,
+    "next_uri": null
+},
+"data": [{
+      "id": "67e0eaec-07d7-54c4-a72c-2e92826897df",
+      "status": "completed",
+      "payment_method": {
+        "id": "83562370-3e5c-51db-87da-752af5ab9559",
+        "resource": "payment_method",
+        "resource_path": "/v2/payment-methods/83562370-3e5c-51db-87da-752af5ab9559"
+      },
+      "transaction": {
+        "id": "441b9494-b3f0-5b98-b9b0-4d82c21c252a",
+        "resource": "transaction",
+        "resource_path": "/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/transactions/441b9494"
+      },
+      "amount": {
+        "amount": "10.00",
+        "currency": "USD"
+      },
+      "subtotal": {
+        "amount": "9.99",
+        "currency": "USD"
+      },
+      "created_at": "2017-01-31T20:49:02Z",
+      "updated_at": "2017-01-31T20:49:02Z",
+      "resource": "withdrawal",
+      "resource_path": "/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/withdrawals/67e0eaec",
+      "committed": true,
+      "fee": {
+        "amount": "0.01",
+        "currency": "USD"
+      },
+      "payout_at": null
+}]}"""
+
+
+def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
+    """Test that coinbase deposit/withdrawals history query works fine for the happy path"""
+    coinbase = function_scope_coinbase
+    coinbase.cache_ttl_secs = 0
+
+    with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
+        movements = coinbase.query_deposits_withdrawals(
+            start_ts=0,
+            end_ts=TEST_END_TS,
+            end_at_least_ts=TEST_END_TS,
+        )
+
+    warnings = coinbase.msg_aggregator.consume_warnings()
+    errors = coinbase.msg_aggregator.consume_errors()
+    assert len(warnings) == 0
+    assert len(errors) == 0
+    assert len(movements) == 2
+    expected_movements = [AssetMovement(
+        exchange=Exchange.COINBASE,
+        category='deposit',
+        timestamp=1519001640,
+        asset=A_USD,
+        amount=FVal('55'),
+        fee=FVal('0.05'),
+    ), AssetMovement(
+        exchange=Exchange.COINBASE,
+        category='withdrawal',
+        timestamp=1485895742,
+        asset=A_USD,
+        amount=FVal('10'),
+        fee=FVal('0.01'),
+    )]
+    assert expected_movements == movements

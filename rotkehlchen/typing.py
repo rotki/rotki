@@ -178,6 +178,7 @@ class Exchange(Enum):
     BITTREX = 2
     BINANCE = 3
     BITMEX = 4
+    COINBASE = 5
 
     def __str__(self) -> str:
         if self == Exchange.KRAKEN:
@@ -190,5 +191,7 @@ class Exchange(Enum):
             return 'binance'
         elif self == Exchange.BITMEX:
             return 'bitmex'
+        elif self == Exchange.COINBASE:
+            return 'coinbase'
 
         raise RuntimeError(f'Corrupt value {self} for Exchange -- Should never happen')
