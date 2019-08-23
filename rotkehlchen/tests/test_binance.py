@@ -218,7 +218,7 @@ def test_binance_assets_are_known(
             assert binance_asset in UNSUPPORTED_BINANCE_ASSETS
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
-                f'Found unknown asset {e.asset_name} in Binance. Support for it has to be added'
+                f'Found unknown asset {e.asset_name} in Binance. Support for it has to be added',
             ))
 
 
