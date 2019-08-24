@@ -190,7 +190,7 @@ BUYS_RESPONSE = """{
 },
 "data": [{
   "id": "9e14d574-30fa-5d85-b02c-6be0d851d61d",
-  "status": "created",
+  "status": "completed",
   "payment_method": {
     "id": "83562370-3e5c-51db-87da-752af5ab9559",
     "resource": "payment_method",
@@ -238,7 +238,7 @@ SELLS_RESPONSE = """{
 },
 "data": [{
   "id": "9e14d574-30fa-5d85-b02c-6be0d851d61d",
-  "status": "created",
+  "status": "completed",
   "payment_method": {
     "id": "83562370-3e5c-51db-87da-752af5ab9559",
     "resource": "payment_method",
@@ -273,187 +273,6 @@ SELLS_RESPONSE = """{
   },
   "payout_at": "2015-04-01T23:43:59-07:00"
 }]}"""
-
-
-def mock_normal_coinbase_query(url):  # pylint: disable=unused-argument
-    if 'buys' in url:
-        return MockResponse(200, BUYS_RESPONSE)
-    elif 'sells' in url:
-        return MockResponse(200, SELLS_RESPONSE)
-    elif 'deposits' in url:
-        return MockResponse(200, DEPOSITS_RESPONSE)
-    elif 'withdrawals' in url:
-        return MockResponse(200, WITHDRAWALS_RESPONSE)
-    elif 'accounts' in url:
-        # keep it simple just return a single ID and ignore the rest of the fields
-        return MockResponse(200, '{"data": [{"id": "5fs23"}]}')
-    else:
-        raise AssertionError(f'Unexpected url {url} for test')
-
-
-def test_coinbase_query_trade_history(function_scope_coinbase):
-    """Test that coinbase trade history query works fine for the happy path"""
-    coinbase = function_scope_coinbase
-
-    with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
-        trades = coinbase.query_trade_history(
-            start_ts=0,
-            end_ts=TEST_END_TS,
-            end_at_least_ts=TEST_END_TS,
-        )
-
-    warnings = coinbase.msg_aggregator.consume_warnings()
-    errors = coinbase.msg_aggregator.consume_errors()
-    assert len(warnings) == 0
-    assert len(errors) == 0
-    assert len(trades) == 2
-    expected_trades = [Trade(
-        timestamp=1500853448,
-        location='coinbase',
-        pair='BTC_USD',
-        trade_type=TradeType.BUY,
-        amount=FVal("486.34313725"),
-        rate=FVal("0.1000000282208235751311317321"),
-        fee=FVal("1.01"),
-        fee_currency=A_USD,
-    ), Trade(
-        timestamp=1427402520,
-        location='coinbase',
-        pair='ETH_USD',
-        trade_type=TradeType.SELL,
-        amount=FVal("100.45"),
-        rate=FVal("0.01123586708008393623351811833"),
-        fee=FVal("10.1"),
-        fee_currency=A_USD,
-    )]
-    assert trades == expected_trades
-
-
-def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
-    """Test that coinbase trade history query handles unexpected data properly"""
-    coinbase = function_scope_coinbase
-    coinbase.cache_ttl_secs = 0
-
-    def query_coinbase_and_test(
-            buys_response=BUYS_RESPONSE,
-            sells_response=SELLS_RESPONSE,
-            expected_warnings_num=0,
-            expected_errors_num=0,
-            # Since this test only mocks as breaking only either buys or sells by default
-            expected_trades_num=1,
-    ):
-        def mock_coinbase_query(url):  # pylint: disable=unused-argument
-            if 'buys' in url:
-                return MockResponse(200, buys_response)
-            elif 'sells' in url:
-                return MockResponse(200, sells_response)
-            elif 'accounts' in url:
-                # keep it simple just return a single ID and ignore the rest of the fields
-                return MockResponse(200, '{"data": [{"id": "5fs23"}]}')
-            else:
-                raise AssertionError(f'Unexpected url {url} for test')
-
-        with patch.object(coinbase.session, 'get', side_effect=mock_coinbase_query):
-            trades = coinbase.query_trade_history(
-                start_ts=0,
-                end_ts=TEST_END_TS,
-                end_at_least_ts=TEST_END_TS,
-            )
-
-        errors = coinbase.msg_aggregator.consume_errors()
-        warnings = coinbase.msg_aggregator.consume_warnings()
-        if expected_errors_num == 0 and expected_warnings_num == 0:
-            assert len(trades) == 2
-            assert len(errors) == 0
-            assert len(warnings) == 0
-        else:
-            assert len(trades) == expected_trades_num
-            assert len(errors) == expected_errors_num
-            assert len(warnings) == expected_warnings_num
-
-    # first query with proper data and expect no errors
-    query_coinbase_and_test(expected_warnings_num=0, expected_errors_num=0)
-
-    # invalid payout_at timestamp
-    broken_response = BUYS_RESPONSE.replace('"2017-07-23T23:44:08Z"', 'true')
-    query_coinbase_and_test(
-        buys_response=broken_response,
-        expected_warnings_num=0,
-        expected_errors_num=1,
-    )
-
-    # invalid created_at timestamp
-    broken_response = SELLS_RESPONSE.replace('"2015-03-26T13:42:00-07:00"', '"dadssd"')
-    query_coinbase_and_test(
-        sells_response=broken_response,
-        expected_warnings_num=0,
-        expected_errors_num=1,
-    )
-
-    # unknown asset
-    broken_response = BUYS_RESPONSE.replace('"BTC"', '"dsadsad"')
-    query_coinbase_and_test(
-        buys_response=broken_response,
-        expected_warnings_num=1,
-        expected_errors_num=0,
-    )
-
-    # invalid asset format
-    broken_response = BUYS_RESPONSE.replace('"BTC"', '123')
-    query_coinbase_and_test(
-        buys_response=broken_response,
-        expected_warnings_num=0,
-        expected_errors_num=1,
-    )
-
-    # invalid trade type
-    broken_response = BUYS_RESPONSE.replace('"buy"', 'null')
-    query_coinbase_and_test(
-        buys_response=broken_response,
-        expected_warnings_num=0,
-        expected_errors_num=1,
-    )
-
-    # invalid amount
-    broken_response = BUYS_RESPONSE.replace('"486.34313725"', '"gfgfg"')
-    query_coinbase_and_test(
-        buys_response=broken_response,
-        expected_warnings_num=0,
-        expected_errors_num=1,
-    )
-
-    # invalid total amount
-    broken_response = BUYS_RESPONSE.replace('"4863.43"', 'false')
-    query_coinbase_and_test(
-        buys_response=broken_response,
-        expected_warnings_num=0,
-        expected_errors_num=1,
-    )
-
-    # invalid fee amount
-    broken_response = BUYS_RESPONSE.replace('"1.01"', '"aas"')
-    query_coinbase_and_test(
-        buys_response=broken_response,
-        expected_warnings_num=0,
-        expected_errors_num=1,
-    )
-
-    # unknown fee asset
-    broken_response = BUYS_RESPONSE.replace('"USD"', '"DSADSA"')
-    query_coinbase_and_test(
-        buys_response=broken_response,
-        expected_warnings_num=1,
-        expected_errors_num=0,
-    )
-
-    # invalid fee asset
-    broken_response = BUYS_RESPONSE.replace('"USD"', '[]')
-    query_coinbase_and_test(
-        buys_response=broken_response,
-        expected_warnings_num=0,
-        expected_errors_num=1,
-    )
-
 
 DEPOSITS_RESPONSE = """{
 "pagination": {
@@ -541,6 +360,231 @@ WITHDRAWALS_RESPONSE = """{
 }]}"""
 
 
+def mock_normal_coinbase_query(url):  # pylint: disable=unused-argument
+    if 'buys' in url:
+        return MockResponse(200, BUYS_RESPONSE)
+    elif 'sells' in url:
+        return MockResponse(200, SELLS_RESPONSE)
+    elif 'deposits' in url:
+        return MockResponse(200, DEPOSITS_RESPONSE)
+    elif 'withdrawals' in url:
+        return MockResponse(200, WITHDRAWALS_RESPONSE)
+    elif 'accounts' in url:
+        # keep it simple just return a single ID and ignore the rest of the fields
+        return MockResponse(200, '{"data": [{"id": "5fs23"}]}')
+    else:
+        raise AssertionError(f'Unexpected url {url} for test')
+
+
+def test_coinbase_query_trade_history(function_scope_coinbase):
+    """Test that coinbase trade history query works fine for the happy path"""
+    coinbase = function_scope_coinbase
+
+    with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
+        trades = coinbase.query_trade_history(
+            start_ts=0,
+            end_ts=TEST_END_TS,
+            end_at_least_ts=TEST_END_TS,
+        )
+
+    warnings = coinbase.msg_aggregator.consume_warnings()
+    errors = coinbase.msg_aggregator.consume_errors()
+    assert len(warnings) == 0
+    assert len(errors) == 0
+    assert len(trades) == 2
+    expected_trades = [Trade(
+        timestamp=1500853448,
+        location='coinbase',
+        pair='BTC_USD',
+        trade_type=TradeType.BUY,
+        amount=FVal("486.34313725"),
+        rate=FVal("0.1000000282208235751311317321"),
+        fee=FVal("1.01"),
+        fee_currency=A_USD,
+    ), Trade(
+        timestamp=1427402520,
+        location='coinbase',
+        pair='ETH_USD',
+        trade_type=TradeType.SELL,
+        amount=FVal("100.45"),
+        rate=FVal("0.01123586708008393623351811833"),
+        fee=FVal("10.1"),
+        fee_currency=A_USD,
+    )]
+    assert trades == expected_trades
+
+
+def query_coinbase_and_test(
+        coinbase,
+        query_fn_name,
+        buys_response=BUYS_RESPONSE,
+        sells_response=SELLS_RESPONSE,
+        deposits_response=DEPOSITS_RESPONSE,
+        withdrawals_response=WITHDRAWALS_RESPONSE,
+        expected_warnings_num=0,
+        expected_errors_num=0,
+        # Since this test only mocks as breaking only one of the two actions by default
+        expected_actions_num=1,
+):
+    def mock_coinbase_query(url):  # pylint: disable=unused-argument
+        if 'buys' in url:
+            return MockResponse(200, buys_response)
+        elif 'sells' in url:
+            return MockResponse(200, sells_response)
+        elif 'deposits' in url:
+            return MockResponse(200, deposits_response)
+        elif 'withdrawals' in url:
+            return MockResponse(200, withdrawals_response)
+        elif 'accounts' in url:
+            # keep it simple just return a single ID and ignore the rest of the fields
+            return MockResponse(200, '{"data": [{"id": "5fs23"}]}')
+        else:
+            raise AssertionError(f'Unexpected url {url} for test')
+
+    query_fn = getattr(coinbase, query_fn_name)
+    with patch.object(coinbase.session, 'get', side_effect=mock_coinbase_query):
+        actions = query_fn(
+            start_ts=0,
+            end_ts=TEST_END_TS,
+            end_at_least_ts=TEST_END_TS,
+        )
+
+    errors = coinbase.msg_aggregator.consume_errors()
+    warnings = coinbase.msg_aggregator.consume_warnings()
+    if expected_errors_num == 0 and expected_warnings_num == 0:
+        assert len(actions) == 2
+        assert len(errors) == 0
+        assert len(warnings) == 0
+    else:
+        assert len(actions) == expected_actions_num
+        assert len(errors) == expected_errors_num
+        assert len(warnings) == expected_warnings_num
+
+
+def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
+    """Test that coinbase trade history query handles unexpected data properly"""
+    coinbase = function_scope_coinbase
+    coinbase.cache_ttl_secs = 0
+
+    # first query with proper data and expect no errors
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_trade_history',
+        expected_warnings_num=0,
+        expected_errors_num=0,
+    )
+
+    # invalid payout_at timestamp
+    broken_response = BUYS_RESPONSE.replace('"2017-07-23T23:44:08Z"', 'true')
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_trade_history',
+        buys_response=broken_response,
+        expected_warnings_num=0,
+        expected_errors_num=1,
+    )
+
+    # invalid created_at timestamp
+    broken_response = SELLS_RESPONSE.replace('"2015-03-26T13:42:00-07:00"', '"dadssd"')
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_trade_history',
+        sells_response=broken_response,
+        expected_warnings_num=0,
+        expected_errors_num=1,
+    )
+
+    # unknown asset
+    broken_response = BUYS_RESPONSE.replace('"BTC"', '"dsadsad"')
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_trade_history',
+        buys_response=broken_response,
+        expected_warnings_num=1,
+        expected_errors_num=0,
+    )
+
+    # invalid asset format
+    broken_response = BUYS_RESPONSE.replace('"BTC"', '123')
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_trade_history',
+        buys_response=broken_response,
+        expected_warnings_num=0,
+        expected_errors_num=1,
+    )
+
+    # invalid trade type
+    broken_response = BUYS_RESPONSE.replace('"buy"', 'null')
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_trade_history',
+        buys_response=broken_response,
+        expected_warnings_num=0,
+        expected_errors_num=1,
+    )
+
+    # invalid amount
+    broken_response = BUYS_RESPONSE.replace('"486.34313725"', '"gfgfg"')
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_trade_history',
+        buys_response=broken_response,
+        expected_warnings_num=0,
+        expected_errors_num=1,
+    )
+
+    # invalid total amount
+    broken_response = BUYS_RESPONSE.replace('"4863.43"', 'false')
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_trade_history',
+        buys_response=broken_response,
+        expected_warnings_num=0,
+        expected_errors_num=1,
+    )
+
+    # invalid fee amount
+    broken_response = BUYS_RESPONSE.replace('"1.01"', '"aas"')
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_trade_history',
+        buys_response=broken_response,
+        expected_warnings_num=0,
+        expected_errors_num=1,
+    )
+
+    # unknown fee asset
+    broken_response = BUYS_RESPONSE.replace('"USD"', '"DSADSA"')
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_trade_history',
+        buys_response=broken_response,
+        expected_warnings_num=1,
+        expected_errors_num=0,
+    )
+
+    # invalid fee asset
+    broken_response = BUYS_RESPONSE.replace('"USD"', '[]')
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_trade_history',
+        buys_response=broken_response,
+        expected_warnings_num=0,
+        expected_errors_num=1,
+    )
+
+    # missing key error
+    broken_response = SELLS_RESPONSE.replace('  "status": "completed",', '')
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_trade_history',
+        buys_response=broken_response,
+        expected_warnings_num=0,
+        expected_errors_num=1,
+    )
+
+
 def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
     """Test that coinbase deposit/withdrawals history query works fine for the happy path"""
     coinbase = function_scope_coinbase
@@ -574,3 +618,97 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
         fee=FVal('0.01'),
     )]
     assert expected_movements == movements
+
+
+def test_coinbase_query_deposit_withdrawals_unexpected_data(function_scope_coinbase):
+    """Test that coinbase deposit/withdrawals query handles unexpected data properly"""
+    coinbase = function_scope_coinbase
+    coinbase.cache_ttl_secs = 0
+
+    # first query with proper data and expect no errors
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_deposits_withdrawals',
+        expected_warnings_num=0,
+        expected_errors_num=0,
+    )
+
+    # invalid payout_at timestamp
+    broken_response = DEPOSITS_RESPONSE.replace('"2018-02-18T16:54:00-08:00"', '"dadas"')
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_deposits_withdrawals',
+        deposits_response=broken_response,
+        expected_warnings_num=0,
+        expected_errors_num=1,
+    )
+
+    # invalid created_at timestamp
+    broken_response = WITHDRAWALS_RESPONSE.replace('"2017-01-31T20:49:02Z"', '"dadssd"')
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_deposits_withdrawals',
+        withdrawals_response=broken_response,
+        expected_warnings_num=0,
+        expected_errors_num=1,
+    )
+
+    # invalid asset movement type
+    broken_response = WITHDRAWALS_RESPONSE.replace('"withdrawal"', 'null')
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_deposits_withdrawals',
+        withdrawals_response=broken_response,
+        expected_warnings_num=0,
+        expected_errors_num=1,
+    )
+
+    # unknown asset
+    broken_response = WITHDRAWALS_RESPONSE.replace('"USD"', '"dasdad"')
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_deposits_withdrawals',
+        withdrawals_response=broken_response,
+        expected_warnings_num=1,
+        expected_errors_num=0,
+    )
+
+    # invalid asset
+    broken_response = WITHDRAWALS_RESPONSE.replace('"USD"', '{}')
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_deposits_withdrawals',
+        withdrawals_response=broken_response,
+        expected_warnings_num=0,
+        expected_errors_num=1,
+    )
+
+    # invalid amount
+    broken_response = WITHDRAWALS_RESPONSE.replace('"10.00"', 'true')
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_deposits_withdrawals',
+        withdrawals_response=broken_response,
+        expected_warnings_num=0,
+        expected_errors_num=1,
+    )
+
+    # invalid fee
+    broken_response = WITHDRAWALS_RESPONSE.replace('"0.01"', '"dasd"')
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_deposits_withdrawals',
+        withdrawals_response=broken_response,
+        expected_warnings_num=0,
+        expected_errors_num=1,
+    )
+
+    # missing key error
+    broken_response = DEPOSITS_RESPONSE.replace('      "resource": "deposit",', '')
+    query_coinbase_and_test(
+        coinbase=coinbase,
+        query_fn_name='query_deposits_withdrawals',
+        deposits_response=broken_response,
+        expected_warnings_num=0,
+        expected_errors_num=1,
+    )
