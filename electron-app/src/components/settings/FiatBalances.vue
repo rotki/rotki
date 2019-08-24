@@ -56,13 +56,17 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { Currency } from '@/model/currency';
 import { currencies } from '@/data/currencies';
-import { mapGetters, mapState } from 'vuex';
+import { createNamespacedHelpers } from 'vuex';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 import { FiatBalance } from '@/model/blockchain-balances';
 
+const { mapGetters, mapState } = createNamespacedHelpers('session');
+const mapBalanceGetters = createNamespacedHelpers('balances').mapGetters;
+
 @Component({
   computed: {
-    ...mapGetters(['floatingPrecision', 'exchangeRate']),
+    ...mapGetters(['floatingPrecision']),
+    ...mapBalanceGetters(['exchangeRate']),
     ...mapState(['currency'])
   }
 })
