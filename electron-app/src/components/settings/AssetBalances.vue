@@ -50,15 +50,19 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { AssetBalance } from '@/model/blockchain-balances';
-import { mapGetters, mapState } from 'vuex';
+import { createNamespacedHelpers } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import { Currency } from '@/model/currency';
+
+const { mapState, mapGetters } = createNamespacedHelpers('session');
+const mapBalancesGetters = createNamespacedHelpers('balances').mapGetters;
 
 @Component({
   components: { CryptoIcon },
   computed: {
     ...mapState(['currency']),
-    ...mapGetters(['exchangeRate', 'floatingPrecision'])
+    ...mapGetters(['floatingPrecision']),
+    ...mapBalancesGetters(['exchangeRate'])
   }
 })
 export default class AssetBalances extends Vue {

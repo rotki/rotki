@@ -49,13 +49,17 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { AccountBalance } from '@/model/blockchain-balances';
-import { mapGetters, mapState } from 'vuex';
+import { createNamespacedHelpers } from 'vuex';
 import { Currency } from '@/model/currency';
+
+const { mapGetters, mapState } = createNamespacedHelpers('session');
+const mapBalancesGetters = createNamespacedHelpers('balances').mapGetters;
 
 @Component({
   computed: {
     ...mapState(['currency']),
-    ...mapGetters(['exchangeRate', 'floatingPrecision'])
+    ...mapGetters(['floatingPrecision']),
+    ...mapBalancesGetters(['exchangeRate'])
   }
 })
 export default class AccountBalances extends Vue {
