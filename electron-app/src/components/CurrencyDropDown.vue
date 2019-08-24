@@ -50,14 +50,14 @@ export default class CurrencyDropDown extends Vue {
   }
 
   onSelected(currency: Currency) {
-    if (currency.ticker_symbol === this.$store.state.currency.ticker_symbol) {
+    if (currency.ticker_symbol === this.currency.ticker_symbol) {
       return;
     }
 
     this.$rpc
       .set_main_currency(currency)
       .then(value => {
-        this.$store.commit('defaultCurrency', value);
+        this.$store.commit('session/defaultCurrency', value);
       })
       .catch((reason: Error) => {
         //showError('Error', `Error at setting main currency: ${reason.message}`);
