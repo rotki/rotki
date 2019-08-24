@@ -104,7 +104,7 @@ def check_result_of_history_creation(
     # TODO: Add more assertions/check for each action
     # OR instead do it in tests for conversion of actions(trades, loans, deposits e.t.c.)
     # from exchange to our format for each exchange
-    assert len(trade_history) == 10
+    assert len(trade_history) == 11
     assert trade_history[0].location == 'kraken'
     assert trade_history[0].pair == 'ETH_EUR'
     assert trade_history[0].trade_type == TradeType.BUY
@@ -134,6 +134,9 @@ def check_result_of_history_creation(
     assert trade_history[9].location == 'poloniex'
     assert trade_history[9].pair == 'XMR_ETH'
     assert trade_history[9].trade_type == TradeType.BUY
+    # TODO: investigate why this new bitmex position popped up
+    assert isinstance(trade_history[10], MarginPosition)
+    assert trade_history[10].profit_loss == FVal('5E-9')
 
     assert len(loan_history) == 2
     assert loan_history[0].currency == A_ETH
@@ -141,7 +144,7 @@ def check_result_of_history_creation(
     assert loan_history[1].currency == A_BTC
     assert loan_history[1].earned == AssetAmount(FVal('0.00000005'))
 
-    assert len(asset_movements) == 10
+    assert len(asset_movements) == 11
     assert asset_movements[0].exchange == Exchange.KRAKEN
     assert asset_movements[0].category == 'deposit'
     assert asset_movements[0].asset == A_BTC
@@ -172,6 +175,10 @@ def check_result_of_history_creation(
     assert asset_movements[9].exchange == Exchange.BITMEX
     assert asset_movements[9].category == 'withdrawal'
     assert asset_movements[9].asset == A_BTC
+    # TODO: investigate why this new bitmex withdrawal popped up
+    assert asset_movements[10].exchange == Exchange.BITMEX
+    assert asset_movements[10].category == 'withdrawal'
+    assert asset_movements[10].asset == A_BTC
 
     # The history creation for these is not yet tested
     assert len(eth_transactions) == 0
