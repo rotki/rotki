@@ -294,8 +294,8 @@ class Accountant():
         actions.sort(
             key=lambda action: action_get_timestamp(action),
         )
-        # The first timestamp is the timestamp of the first action we have in history
-        first_ts = action_get_timestamp(actions[0])
+        # The first ts is the ts of the first action we have in history or 0 for empty history
+        first_ts = 0 if len(actions) == 0 else action_get_timestamp(actions[0])
         self.currently_processing_timestamp = first_ts
         self.started_processing_timestamp = first_ts
 

@@ -495,3 +495,17 @@ def test_no_corresponding_buy_for_sell(accountant):
     )
     assert FVal(result['overview']['general_trade_profit_loss']).is_close('2519.6')
     assert FVal(result['overview']['total_taxable_profit_loss']).is_close('2519.6')
+
+
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_accounting_works_for_empty_history(accountant):
+    history = []
+
+    result = accounting_history_process(
+        accountant,
+        1436979735,
+        1519693374,
+        history,
+    )
+    assert FVal(result['overview']['general_trade_profit_loss']).is_close('0')
+    assert FVal(result['overview']['total_taxable_profit_loss']).is_close('0')
