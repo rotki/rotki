@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlencode
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
@@ -313,6 +314,12 @@ class Coinbase(ExchangeInterface):
                     continue
 
                 amount = deserialize_asset_amount(account['balance']['amount'])
+
+                # ignore empty balances. Coinbase returns zero balances for everything
+                # a user does not own
+                if amount == ZERO:
+                    continue
+
                 asset = Asset(account['balance']['currency'])
 
                 usd_price = Inquirer().find_usd_price(asset=asset)
