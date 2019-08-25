@@ -7,6 +7,7 @@
           <v-layout class="connected-exchanges">
             <exchange-badge
               v-for="exchange in connectedExchanges"
+              :key="exchange"
               :name="exchange"
             ></exchange-badge>
           </v-layout>
@@ -51,9 +52,9 @@
       @dismiss="dismiss()"
     ></message-dialog>
     <confirm-dialog
+      :display="confirmation"
       :title="confirmTitle"
       :message="confirmMessage"
-      :display="confirmation"
       @cancel="confirmation = false"
       @confirm="remove()"
     ></confirm-dialog>
@@ -63,11 +64,13 @@
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import { exchanges } from '@/data/defaults';
-import { mapState } from 'vuex';
+import { createNamespacedHelpers } from 'vuex';
 import ExchangeBadge from '@/components/ExchangeBadge.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { createExchangePayload } from '@/store/balances/actions';
+
+const { mapState } = createNamespacedHelpers('balances');
 
 @Component({
   components: { ConfirmDialog, MessageDialog, ExchangeBadge },

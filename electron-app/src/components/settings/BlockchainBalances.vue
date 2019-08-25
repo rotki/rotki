@@ -1,4 +1,3 @@
-import { TaskType } from "@/model/task";
 <template>
   <v-layout>
     <v-flex>
@@ -9,14 +8,24 @@ import { TaskType } from "@/model/task";
             v-model="selected"
             :items="items"
             label="Choose blockchain"
+            :disabled="loading"
           ></v-select>
-          <v-text-field v-model="accountAddress" label="Account"></v-text-field>
+          <v-text-field
+            v-model="accountAddress"
+            label="Account"
+            :disabled="loading"
+          ></v-text-field>
+
+          <div class="blockchain-balances--progress">
+            <v-progress-linear v-if="loading" indeterminate></v-progress-linear>
+          </div>
+
           <v-btn
             id="add-blockchain-account"
             depressed
             color="primary"
             type="submit"
-            :disabled="!accountAddress"
+            :disabled="!accountAddress || loading"
             @click="addAccount()"
           >
             Add
@@ -32,23 +41,18 @@ import { TaskType } from "@/model/task";
           <v-divider></v-divider>
           <account-balances
             title="ETH per account balances"
-            name="ETH"
+            blockchain="ETH"
             :balances="ethAccounts"
           ></account-balances>
           <v-divider></v-divider>
           <account-balances
             title="BTC per account balances"
-            name="BTC"
+            blockchain="BTC"
             :balances="btcAccounts"
           ></account-balances>
         </v-card-text>
       </v-card>
     </v-flex>
-    <message-dialog
-      :title="errorTitle"
-      :message="errorMessage"
-      @dismiss="dismiss()"
-    ></message-dialog>
   </v-layout>
 </template>
 
@@ -58,7 +62,6 @@ import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import TokenTrack from '@/components/settings/TokenTrack.vue';
 import { AccountBalance } from '@/model/blockchain-balances';
 import { createNamespacedHelpers } from 'vuex';
-import { convertBalances, convertEthBalances } from '@/utils/conversion';
 import AccountBalances from '@/components/settings/AccountBalances.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
 import { createTask, TaskType } from '@/model/task';
@@ -74,12 +77,11 @@ export default class BlockchainBalances extends Vue {
   readonly items: string[] = ['ETH', 'BTC'];
   accountAddress: string = '';
 
-  errorTitle: string = '';
-  errorMessage: string = '';
-
   ethAccounts!: AccountBalance[];
   btcAccounts!: AccountBalance[];
   totals!: AccountBalance[];
+
+  loading: boolean = false;
 
   mounted() {
     this.$rpc
@@ -101,33 +103,26 @@ export default class BlockchainBalances extends Vue {
       });
   }
 
-  addAccount() {
-    const account = this.accountAddress;
+  async addAccount() {
+    const address = this.accountAddress;
     const blockchain = this.selected;
-    this.$rpc
-      .add_blockchain_account(blockchain, account)
-      .then(result => {
-        const { per_account, totals } = result;
-        if (blockchain === 'ETH') {
-          const { ETH } = per_account;
-          this.$store.commit('balances/updateEth', convertEthBalances(ETH));
-        } else if (blockchain === 'BTC') {
-          const { BTC } = per_account;
-          this.$store.commit('balances/updateBtc', convertBalances(BTC));
-        }
-        this.$store.commit('balances/updateTotals', convertBalances(totals));
-      })
-      .catch((reason: Error) => {
-        this.errorTitle = 'Account Error';
-        this.errorMessage = `Error at adding new ${blockchain} account: ${reason.message}`;
+    this.loading = true;
+    try {
+      await this.$store.dispatch('balances/addAccount', {
+        blockchain,
+        address
       });
-  }
-
-  dismiss() {
-    this.errorTitle = '';
-    this.errorMessage = '';
+      this.accountAddress = '';
+    } catch (e) {
+      console.error(e);
+    }
+    this.loading = false;
   }
 }
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+.blockchain-balances--progress {
+  height: 15px;
+}
+</style>

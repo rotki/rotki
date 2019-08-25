@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="message.length > 0" persistent max-width="500">
+  <v-dialog v-model="visible" persistent max-width="500">
     <v-card>
       <v-card-title
         :class="{ 'green--text': success, 'red--text': !success }"
@@ -34,7 +34,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 
 @Component({})
 export default class MessageDialog extends Vue {
@@ -42,12 +42,14 @@ export default class MessageDialog extends Vue {
   title!: string;
   @Prop({ required: true })
   message!: string;
-
   @Prop({ default: false, type: Boolean })
   success!: boolean;
 
-  visible(): boolean {
-    return !!this.message;
+  visible: boolean = false;
+
+  @Watch('message')
+  onMessage() {
+    this.visible = this.message.length > 0;
   }
 
   @Emit()
@@ -61,7 +63,6 @@ export default class MessageDialog extends Vue {
 }
 
 .message-dialog__message {
-  width: 100%;
   overflow-wrap: break-word;
   word-wrap: break-word;
   hyphens: auto;

@@ -1,4 +1,4 @@
-<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
+<template>
   <v-container id="settings-general">
     <v-layout>
       <v-flex>
@@ -84,7 +84,13 @@
           </v-card-text>
 
           <v-card-actions>
-            <v-btn id="settingssubmit" depressed type="submit" @click="save()">
+            <v-btn
+              id="settingssubmit"
+              depressed
+              color="primary"
+              type="submit"
+              @click="save()"
+            >
               Save
             </v-btn>
           </v-card-actions>
@@ -108,14 +114,23 @@
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import { currencies } from '@/data/currencies';
-import { RotkehlchenState } from '@/store/store';
 import { GeneralSettings } from '@/typing/types';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
+import { createNamespacedHelpers } from 'vuex';
+import { Currency } from '@/model/currency';
+
+const { mapState } = createNamespacedHelpers('session');
 
 @Component({
-  components: { MessageDialog }
+  components: { MessageDialog },
+  computed: {
+    ...mapState(['settings', 'currency'])
+  }
 })
 export default class General extends Vue {
+  settings!: GeneralSettings;
+  currency!: Currency;
+
   floatingPrecision: number = 0;
   anonymizedLogs: boolean = false;
   historicDataStart: string = '';
@@ -131,7 +146,7 @@ export default class General extends Vue {
   success: string = '';
 
   @Watch('date')
-  dateWatch(val: string) {
+  dateWatch() {
     this.historicDataStart = this.formatDate(this.date);
   }
 
@@ -158,9 +173,8 @@ export default class General extends Vue {
   }
 
   mounted() {
-    const state = this.$store.state as RotkehlchenState;
-    this.selectedCurrency = state.currency.ticker_symbol;
-    const settings = state.settings;
+    this.selectedCurrency = this.currency.ticker_symbol;
+    const settings = this.settings;
     this.floatingPrecision = settings.floatingPrecision;
     this.anonymizedLogs = settings.anonymizedLogs;
     this.historicDataStart = settings.historicDataStart;
@@ -195,7 +209,7 @@ export default class General extends Vue {
       .set_settings(payload)
       .then(result => {
         this.success = result.message || '';
-        this.$store.commit('settings', generalSettings);
+        this.$store.commit('session/settings', generalSettings);
       })
       .catch((error: Error) => {
         this.error = `Error at modifying settings: ${error.message}`;

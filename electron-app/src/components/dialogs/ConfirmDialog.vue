@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="display" persistent max-width="400">
+  <v-dialog :value="display" persistent max-width="500">
     <v-card>
       <v-card-title class="headline">
         {{ title }}
@@ -37,7 +37,7 @@ export default class ConfirmDialog extends Vue {
   title!: string;
   @Prop({ required: true })
   message!: string;
-  @Prop({ required: true })
+  @Prop({ type: Boolean, required: true })
   display!: boolean;
 
   @Emit()
