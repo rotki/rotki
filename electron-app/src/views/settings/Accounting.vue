@@ -1,4 +1,4 @@
-<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
+<template>
   <v-container id="settings-account">
     <v-layout>
       <v-flex>
@@ -125,9 +125,11 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { mapState } from 'vuex';
+import { createNamespacedHelpers } from 'vuex';
 import { AccountingSettings } from '@/typing/types';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
+
+const { mapState } = createNamespacedHelpers('session');
 
 @Component({
   components: {
@@ -193,7 +195,7 @@ export default class Accounting extends Vue {
       .then(() => {
         this.successMessage = 'Successfully set trade settings';
         this.$store.commit(
-          'accountingSettings',
+          'session/accountingSettings',
           Object.assign({}, this.accountingSettings, {
             taxFreeAfterPeriod: period
           })
@@ -225,7 +227,7 @@ export default class Accounting extends Vue {
         this.successMessage =
           'Successfully set crypto to crypto consideration value';
         this.$store.commit(
-          'accountingSettings',
+          'session/accountingSettings',
           Object.assign({}, this.accountingSettings, {
             includeCrypto2Crypto: enabled
           })
@@ -243,7 +245,7 @@ export default class Accounting extends Vue {
       .then(() => {
         this.successMessage = 'Successfully set Ethereum gas costs value';
         this.$store.commit(
-          'accountingSettings',
+          'session/accountingSettings',
           Object.assign({}, this.accountingSettings, {
             includeGasCosts: enabled
           })

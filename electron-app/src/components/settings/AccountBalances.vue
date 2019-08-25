@@ -5,7 +5,7 @@
         <h3 class="text-center">{{ title }}</h3>
       </v-flex>
     </v-layout>
-    <v-data-table :headers="headers" :items="balances">
+    <v-data-table :headers="headers" :items="balances" :loading="deleting">
       <template #header.usdValue>
         {{ currency.ticker_symbol }} value
       </template>
@@ -21,6 +21,15 @@
             | calculatePrice(exchangeRate(currency.ticker_symbol))
             | formatPrice(floatingPrecision)
         }}
+      </template>
+      <template #item.actions="{ item }">
+        <v-icon
+          small
+          :disabled="deleting"
+          @click="toDeleteAccount = item.account"
+        >
+          fa-trash
+        </v-icon>
       </template>
       <template v-if="balances.length > 0" #body.append>
         <tr class="balance-table__totals">
@@ -43,6 +52,13 @@
         </tr>
       </template>
     </v-data-table>
+    <confirm-dialog
+      :display="toDeleteAccount !== ''"
+      title="Account delete"
+      :message="`Are you sure you want to delete ${toDeleteAccount}`"
+      @cancel="toDeleteAccount = ''"
+      @confirm="deleteAccount()"
+    ></confirm-dialog>
   </div>
 </template>
 
@@ -51,11 +67,15 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import { AccountBalance } from '@/model/blockchain-balances';
 import { createNamespacedHelpers } from 'vuex';
 import { Currency } from '@/model/currency';
+import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 
 const { mapGetters, mapState } = createNamespacedHelpers('session');
 const mapBalancesGetters = createNamespacedHelpers('balances').mapGetters;
 
 @Component({
+  components: {
+    ConfirmDialog
+  },
   computed: {
     ...mapState(['currency']),
     ...mapGetters(['floatingPrecision']),
@@ -66,7 +86,7 @@ export default class AccountBalances extends Vue {
   @Prop({ required: true })
   balances!: AccountBalance[];
   @Prop({ required: true })
-  name!: string;
+  blockchain!: string;
   @Prop({ required: true })
   title!: string;
 
@@ -74,11 +94,28 @@ export default class AccountBalances extends Vue {
   floatingPrecision!: number;
   exchangeRate!: (currency: string) => number;
 
+  toDeleteAccount: string = '';
+  deleting = false;
+
   headers = [
     { text: 'Account', value: 'account' },
-    { text: this.name, value: 'amount' },
-    { text: 'USD Value', value: 'usdValue' }
+    { text: this.blockchain, value: 'amount' },
+    { text: 'USD Value', value: 'usdValue' },
+    { text: 'Actions', value: 'actions', sortable: false }
   ];
+
+  async deleteAccount() {
+    const address = this.toDeleteAccount;
+    const blockchain = this.blockchain;
+    this.toDeleteAccount = '';
+    this.deleting = true;
+
+    await this.$store.dispatch('balances/removeAccount', {
+      address,
+      blockchain
+    });
+    this.deleting = false;
+  }
 }
 </script>
 

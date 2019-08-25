@@ -1,5 +1,5 @@
 import { ActionTree } from 'vuex';
-import store, { RotkehlchenState } from '@/store/store';
+import { RotkehlchenState } from '@/store/store';
 import { BalanceState } from '@/store/balances/state';
 import { service } from '@/services/rotkehlchen_service';
 import { createTask, TaskType } from '@/model/task';
@@ -7,6 +7,7 @@ import { UsdToFiatExchangeRates } from '@/typing/types';
 import { notify } from '@/store/notifications/utils';
 import { FiatBalance } from '@/model/blockchain-balances';
 import { bigNumberify } from '@/utils/bignumbers';
+import { convertBalances, convertEthBalances } from '@/utils/conversion';
 
 export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   fetchExchangeBalances({ commit }, payload: ExchangeBalancePayload): void {
@@ -104,8 +105,43 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       await dispatch('fetchBlockchainBalances');
       await dispatch('fetchFiatBalances');
     }
+  },
+
+  async removeAccount({ commit }, payload: BlockchainAccountPayload) {
+    const { address, blockchain } = payload;
+    const { per_account, totals } = await service.remove_blockchain_account(
+      blockchain,
+      address
+    );
+    const { ETH, BTC } = per_account;
+    if (ETH) {
+      commit('updateEth', convertEthBalances(ETH));
+    } else if (BTC) {
+      commit('updateBtc', convertBalances(BTC));
+    }
+    commit('updateTotals', convertBalances(totals));
+  },
+
+  async addAccount({ commit }, payload: BlockchainAccountPayload) {
+    const { address, blockchain } = payload;
+    const { per_account, totals } = await service.add_blockchain_account(
+      blockchain,
+      address
+    );
+    const { ETH, BTC } = per_account;
+    if (ETH) {
+      commit('updateEth', convertEthBalances(ETH));
+    } else if (BTC) {
+      commit('updateBtc', convertBalances(BTC));
+    }
+    commit('updateTotals', convertBalances(totals));
   }
 };
+
+export interface BlockchainAccountPayload {
+  readonly address: string;
+  readonly blockchain: 'ETH' | 'BTC';
+}
 
 export interface ExchangeBalancePayload {
   readonly name: string;
