@@ -359,6 +359,50 @@ WITHDRAWALS_RESPONSE = """{
       "payout_at": null
 }]}"""
 
+TRANSACTIONS_RESPONSE = """{
+"pagination": {
+    "ending_before": null,
+    "starting_after": null,
+    "limit": 25,
+    "order": "desc",
+    "previous_uri": null,
+    "next_uri": null
+},
+"data": [{
+  "id": "foo",
+  "type": "send",
+  "status": "completed",
+  "amount": {
+    "amount": "-0.05770427",
+    "currency": "ETH"
+  },
+  "native_amount": {
+    "amount": "-9.83",
+    "currency": "EUR"
+  },
+  "description": null,
+  "created_at": "2019-08-25T09:42:06Z",
+  "updated_at": "2019-08-25T09:43:42Z",
+  "resource": "transaction",
+  "resource_path": "/v2/accounts/foo/transactions/boo",
+  "instant_exchange": false,
+  "network": {
+    "status": "confirmed",
+    "hash": "bbb",
+    "transaction_url": "https://etherscan.io/tx/bbb",
+    "transaction_fee": {"amount": "0.00021", "currency": "ETH"},
+    "transaction_amount": {"amount": "0.05749427", "currency": "ETH"},
+    "confirmations": 86},
+    "to": {
+      "resource": "ethereum_address",
+      "address": "0xboo",
+      "currency": "ETH",
+      "address_info": {"address": "0xboo"}
+    },
+    "idem": "zzzz",
+    "details": {"title": "Sent Ethereum", "subtitle": "To Ethereum address"}
+}]}"""
+
 
 def mock_normal_coinbase_query(url):  # pylint: disable=unused-argument
     if 'buys' in url:
@@ -369,6 +413,8 @@ def mock_normal_coinbase_query(url):  # pylint: disable=unused-argument
         return MockResponse(200, DEPOSITS_RESPONSE)
     elif 'withdrawals' in url:
         return MockResponse(200, WITHDRAWALS_RESPONSE)
+    elif 'transactions' in url:
+        return MockResponse(200, TRANSACTIONS_RESPONSE)
     elif 'accounts' in url:
         # keep it simple just return a single ID and ignore the rest of the fields
         return MockResponse(200, '{"data": [{"id": "5fs23"}]}')
@@ -601,7 +647,7 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
     errors = coinbase.msg_aggregator.consume_errors()
     assert len(warnings) == 0
     assert len(errors) == 0
-    assert len(movements) == 2
+    assert len(movements) == 3
     expected_movements = [AssetMovement(
         exchange=Exchange.COINBASE,
         category='deposit',
@@ -614,8 +660,15 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
         category='withdrawal',
         timestamp=1485895742,
         asset=A_USD,
-        amount=FVal('10'),
+        amount=FVal('10.0'),
         fee=FVal('0.01'),
+    ), AssetMovement(
+        exchange=Exchange.COINBASE,
+        category='withdrawal',
+        timestamp=1566726126,
+        asset=A_ETH,
+        amount=FVal('0.05770427'),
+        fee=FVal('0.00021'),
     )]
     assert expected_movements == movements
 

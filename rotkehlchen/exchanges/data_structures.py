@@ -49,7 +49,9 @@ class AssetMovement(NamedTuple):
     category: Literal['deposit', 'withdrawal']
     timestamp: Timestamp
     asset: Asset
+    # Amount is the original amount removed from the account
     amount: FVal
+    # Fee is the amount that is kept as the fee
     fee: Fee
 
 

@@ -3,14 +3,17 @@ import hmac
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
+
+from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -20,7 +23,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_date,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Exchange, FilePath, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Exchange, Fee, FilePath, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
@@ -429,8 +432,45 @@ class Coinbase(ExchangeInterface):
             if raw_data['status'] != 'completed':
                 return None
 
-            movement_category = deserialize_asset_movement_category(raw_data['resource'])
-            payout_date = raw_data['payout_at']
+            movement_category: Union[Literal['deposit'], Literal['withdrawal']]
+            if 'type' in raw_data:
+                # Then this should be a "send" which is the way Coinbase uses to send
+                # crypto outside of the exchange
+                # https://developers.coinbase.com/api/v2?python#transaction-resource
+                msg = 'Non "send" type found in coinbase deposit/withdrawal processing'
+                assert raw_data['type'] == 'send', msg
+                movement_category = 'withdrawal'
+                # Can't see the fee being charged from the "send" resource
+
+                amount = deserialize_asset_amount(raw_data['amount']['amount'])
+                # For sends the amount is always returned negative so we have to fix this here
+                amount *= FVal('-1')
+                asset = Asset(raw_data['amount']['currency'])
+                # Fees dont appear in the docs but from an experiment of sending ETH
+                # to an address from coinbase there is the network fee in the response
+                fee = Fee(ZERO)
+                raw_network = raw_data.get('network', None)
+                if raw_network:
+                    raw_fee = raw_network.get('transaction_fee', None)
+
+                if raw_fee:
+                    # Since this is a withdrawal the fee should be the same as the moved asset
+                    if asset != Asset(raw_fee['currency']):
+                        # If not we set ZERO fee and ignore
+                        log.error(
+                            f'In a coinbase withdrawal of {asset.identifier} the fee'
+                            f'is denoted in {raw_fee["currency"]}',
+                        )
+                    else:
+                        fee = deserialize_fee(raw_fee['amount'])
+
+            else:
+                movement_category = deserialize_asset_movement_category(raw_data['resource'])
+                amount = deserialize_asset_amount(raw_data['amount']['amount'])
+                fee = deserialize_fee(raw_data['fee']['amount'])
+                asset = Asset(raw_data['amount']['currency'])
+
+            payout_date = raw_data.get('payout_at', None)
             if payout_date:
                 timestamp = deserialize_timestamp_from_date(payout_date, 'iso8601', 'coinbase')
             else:
@@ -444,9 +484,9 @@ class Coinbase(ExchangeInterface):
                 exchange=Exchange.COINBASE,
                 category=movement_category,
                 timestamp=timestamp,
-                asset=Asset(raw_data['amount']['currency']),
-                amount=deserialize_asset_amount(raw_data['amount']['amount']),
-                fee=deserialize_fee(raw_data['fee']['amount']),
+                asset=asset,
+                amount=amount,
+                fee=fee,
             )
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
@@ -493,6 +533,15 @@ class Coinbase(ExchangeInterface):
             for account_id in account_ids:
                 raw_data.extend(self._api_query(f'accounts/{account_id}/deposits'))
                 raw_data.extend(self._api_query(f'accounts/{account_id}/withdrawals'))
+                # also get transactions to get the "sends", which in Coinbase is the
+                # way to send Crypto out of the exchange
+                txs = self._api_query(f'accounts/{account_id}/transactions')
+                for tx in txs:
+                    if 'type' not in tx:
+                        continue
+                    if tx['type'] == 'send':
+                        raw_data.append(tx)
+
             log.debug('coinbase deposits/withdrawals history result', results_num=len(raw_data))
             self.update_trades_cache(
                 raw_data,
