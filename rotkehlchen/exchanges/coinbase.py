@@ -247,6 +247,9 @@ class Coinbase(ExchangeInterface):
             'CB-ACCESS-SIGN': signature,
             'CB-ACCESS-TIMESTAMP': timestamp,
             'CB-ACCESS-KEY': self.api_key.decode(),
+            # This is needed to guarantee the up to the given date
+            # API version response.
+            'CB-VERSION': '2019-08-25',
         })
         full_url = self.base_uri + request_url
         response = self.session.get(full_url)
