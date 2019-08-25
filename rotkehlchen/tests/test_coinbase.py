@@ -398,7 +398,7 @@ def test_coinbase_query_trade_history(function_scope_coinbase):
         pair='BTC_USD',
         trade_type=TradeType.BUY,
         amount=FVal("486.34313725"),
-        rate=FVal("0.1000000282208235751311317321"),
+        rate=FVal("9.997920454875299055122012005"),
         fee=FVal("1.01"),
         fee_currency=A_USD,
     ), Trade(
@@ -407,7 +407,7 @@ def test_coinbase_query_trade_history(function_scope_coinbase):
         pair='ETH_USD',
         trade_type=TradeType.SELL,
         amount=FVal("100.45"),
-        rate=FVal("0.01123586708008393623351811833"),
+        rate=FVal("88.90014932802389248382279741"),
         fee=FVal("10.1"),
         fee_currency=A_USD,
     )]
@@ -534,8 +534,8 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
         expected_errors_num=1,
     )
 
-    # invalid total amount
-    broken_response = BUYS_RESPONSE.replace('"4863.43"', 'false')
+    # invalid subtotal amount
+    broken_response = BUYS_RESPONSE.replace('"4862.42"', 'false')
     query_coinbase_and_test(
         coinbase=coinbase,
         query_fn_name='query_trade_history',
