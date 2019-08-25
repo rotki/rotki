@@ -52,13 +52,13 @@ def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Optional[Trade]:
     trade_type = deserialize_trade_type(raw_trade['resource'])
     tx_amount = deserialize_asset_amount(raw_trade['amount']['amount'])
     tx_asset = Asset(raw_trade['amount']['currency'])
-    native_amount = deserialize_asset_amount(raw_trade['total']['amount'])
-    native_asset = Asset(raw_trade['total']['currency'])
+    native_amount = deserialize_asset_amount(raw_trade['subtotal']['amount'])
+    native_asset = Asset(raw_trade['subtotal']['currency'])
     # in coinbase you are buying/selling tx_asset for native_asset
     pair = TradePair(f'{tx_asset.identifier}_{native_asset.identifier}')
     amount = tx_amount
     # The rate is how much you get/give in quotecurrency if you buy/sell 1 unit of base currency
-    rate = tx_amount / native_amount
+    rate = native_amount / tx_amount
     fee_amount = deserialize_fee(raw_trade['fee']['amount'])
     fee_asset = Asset(raw_trade['fee']['currency'])
 

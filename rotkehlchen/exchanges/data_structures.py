@@ -1,6 +1,6 @@
+from dataclasses import dataclass
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
-from dataclasses import dataclass
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
@@ -71,7 +71,7 @@ class Trade(NamedTuple):
     pair: TradePair
     trade_type: TradeType
     # The amount represents the amount bought if it's a buy or or the amount
-    # sold if it's a sell
+    # sold if it's a sell. Should NOT include fees
     amount: AssetAmount
     rate: Price
     fee: Fee
