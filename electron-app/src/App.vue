@@ -1,4 +1,4 @@
-<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
+<template>
   <v-app id="rotkehlchen">
     <v-navigation-drawer
       v-model="drawer"
@@ -34,9 +34,9 @@
       <router-view></router-view>
     </v-content>
     <confirm-dialog
+      :display="logout"
       title="Confirmation Required"
       message="Are you sure you want to log out of your current rotkehlchen session?"
-      :display="logout"
       @confirm="logoutUser()"
       @cancel="logout = false"
     ></confirm-dialog>
@@ -140,9 +140,7 @@ export default class App extends Vue {
     });
   }
 
-  ok() {
-    this.error = '';
-  }
+  ok() {}
 
   async login(credentials: Credentials) {
     const { username, password } = credentials;

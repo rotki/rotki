@@ -1,4 +1,4 @@
-<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
+<template>
   <v-menu id="notification-indicator" transition="slide-y-transition" bottom>
     <template #activator="{ on }">
       <v-badge color="primary" right overlap>
@@ -36,6 +36,7 @@
         <div class="notification-area">
           <single-notification
             v-for="notification in notifications"
+            :key="notification.id"
             :notification="notification"
             @click="dismiss(notification)"
           ></single-notification>
