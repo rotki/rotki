@@ -130,7 +130,7 @@ BITTREX_ORDER_HISTORY_RESPONSE = """
     {
       "OrderUuid": "fd97d393-e9b9-4dd1-9dbf-f288fc72a185",
       "Exchange": "BTC-LTC",
-      "TimeStamp": "2014-02-13T00:00:00",
+      "TimeStamp": "2014-02-13T00:00:00.00",
       "OrderType": "LIMIT_BUY",
       "Limit": 1e-8,
       "Quantity": 667.03644955,
@@ -142,7 +142,7 @@ BITTREX_ORDER_HISTORY_RESPONSE = """
       "Condition": "",
       "ConditionTarget": 0,
       "ImmediateOrCancel": false,
-      "Closed": "2014-02-13T00:00:00"
+      "Closed": "2014-02-13T00:00:00.00"
     }]}"""
 
 
@@ -221,7 +221,7 @@ def test_bittrex_query_trade_history_unexpected_data(bittrex):
     query_bittrex_and_test(input_str, expected_warnings_num=0, expected_errors_num=1)
 
     input_str = BITTREX_ORDER_HISTORY_RESPONSE.replace(
-        '"TimeStamp": "2014-02-13T00:00:00"',
+        '"TimeStamp": "2014-02-13T00:00:00.00"',
         '"TimeStamp": null',
     )
     query_bittrex_and_test(input_str, expected_warnings_num=0, expected_errors_num=1)
