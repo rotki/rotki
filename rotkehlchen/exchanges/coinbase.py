@@ -102,12 +102,11 @@ class Coinbase(ExchangeInterface):
     ) -> Tuple[Optional[List[Any]], str]:
         try:
             result = self._api_query(method_str, ignore_pagination=ignore_pagination)
+
         except CoinbasePermissionError as e:
             error = str(e)
             if 'transactions' in method_str:
                 permission = 'wallet:transactions:read'
-            elif 'accounts' in method_str:
-                permission = 'wallet:accounts:read'
             elif 'buys' in method_str:
                 permission = 'wallet:buys:read'
             elif 'sells' in method_str:
@@ -116,6 +115,10 @@ class Coinbase(ExchangeInterface):
                 permission = 'wallet:deposits:read'
             elif 'withdrawals' in method_str:
                 permission = 'wallet:withdrawals:read'
+            # the accounts elif should be at the end since the word appears
+            # in other endpoints
+            elif 'accounts' in method_str:
+                permission = 'wallet:accounts:read'
             else:
                 raise AssertionError(
                     f'Unexpected coinbase method {method_str} at API key validation',
@@ -124,7 +127,8 @@ class Coinbase(ExchangeInterface):
                 f'Provided API key needs to have {permission} permission activated. '
                 f'Please log into your coinbase account and set all required permissions: '
                 f'wallet:accounts:read, wallet:transactions:read, '
-                f'wallet:buys:read, wallet:sells:read'
+                f'wallet:buys:read, wallet:sells:read, wallet:withdrawals:read, '
+                f'wallet:deposits:read'
             )
 
             return None, msg
@@ -144,10 +148,12 @@ class Coinbase(ExchangeInterface):
         """Validates that the Coinbase API key is good for usage in Rotkehlchen
 
         Makes sure that the following permissions are given to the key:
-        - wallet:accounts:read
+        wallet:accounts:read, wallet:transactions:read,
+        wallet:buys:read, wallet:sells:read, wallet:withdrawals:read,
+        wallet:deposits:read
         """
         result, msg = self._validate_single_api_key_action('accounts')
-        if not result:
+        if result is None:
             return False, msg
 
         # now get the account ids
@@ -156,31 +162,31 @@ class Coinbase(ExchangeInterface):
             # and now try to get all transactions of an account to see if that's possible
             method = f'accounts/{account_ids[0]}/transactions'
             result, msg = self._validate_single_api_key_action(method)
-            if not result:
+            if result is None:
                 return False, msg
 
             # and now try to get all buys of an account to see if that's possible
             method = f'accounts/{account_ids[0]}/buys'
             result, msg = self._validate_single_api_key_action(method)
-            if not result:
+            if result is None:
                 return False, msg
 
             # and now try to get all sells of an account to see if that's possible
             method = f'accounts/{account_ids[0]}/sells'
             result, msg = self._validate_single_api_key_action(method)
-            if not result:
+            if result is None:
                 return False, msg
 
             # and now try to get all deposits of an account to see if that's possible
             method = f'accounts/{account_ids[0]}/deposits'
             result, msg = self._validate_single_api_key_action(method)
-            if not result:
+            if result is None:
                 return False, msg
 
             # and now try to get all withdrawals of an account to see if that's possible
             method = f'accounts/{account_ids[0]}/withdrawals'
             result, msg = self._validate_single_api_key_action(method)
-            if not result:
+            if result is None:
                 return False, msg
 
         return True, ''
