@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`296` Add support for the Coinbase exchange.
 * :bug:`480` Calculating accounting with empty history no longer throws an exception.
 * :bug:`469` Fixes error with OTC trades.
 * :bug:`463` Converts tax report start and end time to local time.
