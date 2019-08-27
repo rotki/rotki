@@ -1,11 +1,10 @@
-<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
+<template>
   <v-menu id="node-status-dropdown" transition="slide-y-transition" bottom>
     <template #activator="{ on }">
       <v-btn color="primary" dark icon text v-on="on">
         <v-icon>
           fa fa-fw {{ nodeConnection ? 'fa-link' : 'fa-unlink' }}
         </v-icon>
-        <v-icon>fa fa-caret-down</v-icon>
       </v-btn>
     </template>
     <v-layout class="popup">

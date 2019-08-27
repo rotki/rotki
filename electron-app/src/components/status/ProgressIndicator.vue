@@ -1,4 +1,4 @@
-<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
+<template>
   <v-menu id="notification-indicator" transition="slide-y-transition" bottom>
     <template #activator="{ on }">
       <v-badge>
@@ -6,7 +6,6 @@
           <v-icon class="top-loading-icon">
             fa fa-circle-o-notch fa-spin fa-fw
           </v-icon>
-          <v-icon>fa fa-caret-down</v-icon>
         </v-btn>
       </v-badge>
     </template>
