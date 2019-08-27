@@ -5,7 +5,6 @@
         <v-icon id="current-main-currency" class="" :class="currency.icon">
           fa fa-fw {{ currency.icon }}
         </v-icon>
-        <v-icon>fa fa-caret-down</v-icon>
       </v-btn>
     </template>
     <v-list>

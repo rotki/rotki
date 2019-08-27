@@ -9,7 +9,6 @@
           <v-icon>
             fa fa-bell fa-fw
           </v-icon>
-          <v-icon>fa fa-caret-down</v-icon>
         </v-btn>
       </v-badge>
       <confirm-dialog
