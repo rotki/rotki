@@ -12,7 +12,6 @@ export interface SessionState {
   premium: boolean;
   premiumSync: boolean;
   nodeConnection: boolean;
-  historyProcess: number;
 }
 
 export const createSessionState: () => SessionState = () => ({
@@ -23,8 +22,7 @@ export const createSessionState: () => SessionState = () => ({
   accountingSettings: defaultAccountingSettings(),
   premium: false,
   premiumSync: false,
-  nodeConnection: false,
-  historyProcess: -1
+  nodeConnection: false
 });
 
 export const state: SessionState = createSessionState();

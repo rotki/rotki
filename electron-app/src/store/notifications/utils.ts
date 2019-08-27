@@ -18,8 +18,7 @@ export function notify(
   title: string = '',
   severity: Severity = Severity.ERROR
 ) {
-  const id = store.getters['notification/nextId']() as number;
-
+  const id = store.getters['notifications/nextId'] as number;
   const notification = toNotification(message, severity, id, title);
-  store.commit('notifications/update', notification);
+  store.commit('notifications/update', [notification]);
 }

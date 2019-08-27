@@ -8,7 +8,6 @@
     full-width
     max-width="580px"
     class="date-time-picker"
-    :nudge-right="20"
   >
     <template #activator="{ on }">
       <v-text-field
@@ -17,6 +16,8 @@
         :hint="hint"
         :persistent-hint="persistentHint"
         :rules="rules"
+        append-icon="fa-clock-o"
+        @click:append="setNow()"
         v-on="on"
       ></v-text-field>
     </template>
@@ -40,14 +41,14 @@ export default class DateTimePicker extends Vue {
   hint!: string;
   @Prop({ required: false, default: false, type: Boolean })
   persistentHint!: boolean;
-  @Prop({ required: true })
+  @Prop({ default: '' })
   value!: string;
   @Prop({ default: () => [] })
   rules!: VuetifyRuleValidations;
   @Prop({ required: false, default: false, type: Boolean })
   limitNow!: boolean;
 
-  timeModel: string = '00:00';
+  timeModel: string = DateTimePicker.timeNow();
   dateModel: string = '';
 
   maxDate: string = '';
@@ -57,13 +58,17 @@ export default class DateTimePicker extends Vue {
 
   private setMaxTime() {
     if (this.limitNow) {
-      this.maxTime = new Date().toISOString().split('T')[1];
+      this.maxTime = DateTimePicker.timeNow();
     }
+  }
+
+  private static isoDate() {
+    return new Date().toISOString();
   }
 
   private setMaxDate() {
     if (this.limitNow) {
-      this.maxDate = new Date().toISOString().split('T')[0];
+      this.maxDate = DateTimePicker.dateNow();
     }
   }
 
@@ -93,7 +98,7 @@ export default class DateTimePicker extends Vue {
   onValueChange() {
     if (!this.value) {
       this.dateModel = '';
-      this.timeModel = '00:00';
+      this.timeModel = DateTimePicker.timeNow();
     }
   }
 
@@ -105,6 +110,27 @@ export default class DateTimePicker extends Vue {
 
     const [year, month, day] = date.split('-');
     return `${day}/${month}/${year}`;
+  }
+
+  setNow() {
+    const isoString = DateTimePicker.isoDate();
+    const date = isoString.split('T');
+    this.dateModel = date[0];
+    this.timeModel = DateTimePicker.timeNow();
+  }
+
+  private static timeNow(): string {
+    const isoString = DateTimePicker.isoDate();
+    const date = isoString.split('T');
+    const time = date[1];
+    const lastIndex = time.lastIndexOf(':');
+    return time.slice(0, lastIndex);
+  }
+
+  private static dateNow(): string {
+    const isoString = DateTimePicker.isoDate();
+    const date = isoString.split('T');
+    return date[0];
   }
 }
 </script>

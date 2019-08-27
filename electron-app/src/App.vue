@@ -41,13 +41,11 @@
       @cancel="logout = false"
     ></confirm-dialog>
     <message-dialog
-      v-if="message.title"
       :title="message.title"
       :message="message.description"
       @dismiss="dismiss()"
     ></message-dialog>
     <message-dialog
-      v-if="startupError"
       title="Startup Error"
       :message="startupError"
       @dismiss="terminate()"
@@ -58,7 +56,7 @@
       @new-account="newAccount = true"
     ></login>
     <create-account
-      :displayed="newAccount && !message.title"
+      :displayed="!logged && newAccount && !message.title"
       @cancel="newAccount = false"
       @confirm="createAccount($event)"
     ></create-account>
