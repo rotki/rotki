@@ -481,7 +481,6 @@ class RotkehlchenServer():
             gevent.hub.signal(signal.SIGQUIT, self.shutdown)
         gevent.hub.signal(signal.SIGINT, self.shutdown)
         gevent.hub.signal(signal.SIGTERM, self.shutdown)
-        # self.zerorpc = zerorpc.Server(self, heartbeat=15)
         self.zerorpc = zerorpc.Server(self)
         addr = 'tcp://127.0.0.1:' + str(self.port())
         self.zerorpc.bind(addr)
