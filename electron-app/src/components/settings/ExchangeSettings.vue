@@ -134,7 +134,7 @@ export default class ExchangeSettings extends Vue {
       .setup_exchange(exchangeName, this.apiKey, this.apiSecret)
       .then(() => {
         this.resetFields(true);
-        this.$store.commit('addExchange', exchangeName);
+        this.$store.commit('balances/addExchange', exchangeName);
         this.$store.dispatch(
           'balances/fetchExchangeBalances',
           createExchangePayload(exchangeName)
@@ -160,7 +160,7 @@ export default class ExchangeSettings extends Vue {
           this.errorMessage = 'Error during exchange removal';
           this.errorMessage = `Exchange ${exchangeName} was not in connected_exchanges when trying to remove`;
         } else {
-          this.$store.commit('removeExchange', exchangeName);
+          this.$store.commit('balances/removeExchange', exchangeName);
         }
       })
       .catch((reason: Error) => {

@@ -6,8 +6,6 @@ import {
   AccountingSettingsUpdate,
   GeneralSettings
 } from '@/typing/types';
-import { RotkehlchenState } from '@/store/store';
-import set = Reflect.set;
 
 export const mutations: MutationTree<SessionState> = {
   defaultCurrency(state: SessionState, currency: Currency) {
@@ -45,8 +43,5 @@ export const mutations: MutationTree<SessionState> = {
   },
   nodeConnection(state: SessionState, nodeConnection: boolean) {
     state.nodeConnection = nodeConnection;
-  },
-  historyProcess(state: SessionState, historyProcess: number) {
-    state.historyProcess = historyProcess;
   }
 };

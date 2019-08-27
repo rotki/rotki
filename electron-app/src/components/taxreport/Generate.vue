@@ -4,14 +4,17 @@
       <v-card-title>Generate</v-card-title>
       <v-card-text>
         <v-layout>
-          <v-flex xs6>
+          <v-flex xs12>
             <date-time-picker
               v-model="start"
               label="Start Date"
+              limit-now
               :rules="startRules"
             ></date-time-picker>
           </v-flex>
-          <v-flex xs6>
+        </v-layout>
+        <v-layout>
+          <v-flex xs12>
             <date-time-picker
               v-model="end"
               label="End Date"
@@ -56,12 +59,18 @@ export default class Generate extends Vue {
   invalidRange: boolean = false;
   message: string = '';
 
+  date = /^([0-2]\d|[3][0-1])\/([0]\d|[1][0-2])\/([2][01]|[1][6-9])\d{2}(\s([0-1]\d|[2][0-3])(:[0-5]\d))?$/;
+
   startRules: VuetifyRuleValidations = [
-    (v: string) => !!v || 'Start date cannot be empty'
+    (v: string) => !!v || 'Start date cannot be empty',
+    (v: string) =>
+      (v && this.date.test(v)) || 'Date should be in DD/MM/YYYY HH:MM format'
   ];
 
   endRules: VuetifyRuleValidations = [
-    (v: string) => !!v || 'End date cannot be empty'
+    (v: string) => !!v || 'End date cannot be empty',
+    (v: string) =>
+      (v && this.date.test(v)) || 'Date should be in DD/MM/YYYY HH:MM format'
   ];
 
   @Watch('start')

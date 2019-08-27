@@ -86,7 +86,9 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         lastBalanceSave: last_balance_save
       });
       commit('nodeConnection', eth_node_connection);
-      commit('historyProcess', history_process_current_ts);
+      commit('reports/historyProcess', history_process_current_ts, {
+        root: true
+      });
     } catch (e) {
       notify(`Error at periodic client query: ${e}`, 'Periodic client query');
     }

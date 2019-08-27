@@ -49,7 +49,7 @@ export class TaskManager {
       return;
     }
     const balances = result.balances;
-    store.commit('addExchangeBalances', {
+    store.commit('balances/addExchangeBalances', {
       name: result.name,
       balances: result.balances || {}
     });
@@ -101,9 +101,6 @@ export class TaskManager {
     }
 
     const { overview, all_events } = result;
-
-    console.log(all_events);
-
     const payload = {
       overview: convertTradeHistoryOverview(overview),
       events: map(all_events, (event: ApiEventEntry) =>

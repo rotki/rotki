@@ -26,7 +26,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         if (balanceTask) {
           commit('tasks/addBalanceTask', task, { root: true });
         } else {
-          commit('task/add', task, { root: true });
+          commit('tasks/add', task, { root: true });
         }
       })
       .catch(reason => {

@@ -1,7 +1,7 @@
 import { ActionTree } from 'vuex';
 import { RotkehlchenState } from '@/store/store';
 import { TaxReportState } from '@/store/reports/state';
-import { TaxReportEvent } from '@/typing/types';
+import { Severity, TaxReportEvent } from '@/typing/types';
 import { service } from '@/services/rotkehlchen_service';
 import { notify } from '@/store/notifications/utils';
 import { createTask, TaskType } from '@/model/task';
@@ -21,5 +21,21 @@ export const actions: ActionTree<TaxReportState, RotkehlchenState> = {
     } catch (e) {
       notify(e.message, 'Trade History Report');
     }
+  },
+
+  async createCSV(_, path: string) {
+    service
+      .export_processed_history_csv(path)
+      .then(() => {
+        console.log('dd');
+        notify(
+          'History exported to CVS successfully',
+          'CSV Export',
+          Severity.INFO
+        );
+      })
+      .catch((reason: Error) => {
+        notify(reason.message, 'CSV Export', Severity.ERROR);
+      });
   }
 };
