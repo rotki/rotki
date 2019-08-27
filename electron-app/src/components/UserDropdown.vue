@@ -3,7 +3,6 @@
     <template #activator="{ on }">
       <v-btn color="primary" dark icon text v-on="on">
         <v-icon>fa fa-user fa-fw</v-icon>
-        <v-icon>fa fa-caret-down</v-icon>
       </v-btn>
     </template>
     <v-list>
