@@ -147,7 +147,7 @@ export default class OtcForm extends Vue {
     this.feeCurrency = trade.fee_currency;
     this.link = trade.link;
     this.notes = trade.notes;
-    this.type = trade.type;
+    this.type = trade.trade_type;
     this.id = trade.id;
   }
 

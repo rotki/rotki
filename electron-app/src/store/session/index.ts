@@ -8,7 +8,7 @@ import { RotkehlchenState } from '@/store/store';
 const namespaced: boolean = true;
 
 export const session: Module<SessionState, RotkehlchenState> = {
-  namespaced: true,
+  namespaced,
   mutations,
   actions,
   state,

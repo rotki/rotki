@@ -8,6 +8,39 @@
             <template #item.time="{ item }">
               {{ item.time | formatDate(dateDisplayFormat) }}
             </template>
+            <template #header.paidInProfitCurrency>
+              Paid in {{ currency }}
+            </template>
+            <template #header.taxableBoughtCostInProfitCurrency>
+              Taxable Bought Cost in {{ currency }}
+            </template>
+            <template #header.taxableReceivedInProfitCurrency>
+              Taxable Received in {{ currency }}
+            </template>
+            <template #item.paidInProfitCurrency="{ item }">
+              {{ item.paidInProfitCurrency | formatPrice(floatingPrecision) }}
+            </template>
+            <template #item.paidInAsset="{ item }">
+              {{ item.paidInAsset | formatPrice(floatingPrecision) }}
+            </template>
+            <template #item.taxableAmount="{ item }">
+              {{ item.taxableAmount | formatPrice(floatingPrecision) }}
+            </template>
+            <template #item.taxableBoughtCostInProfitCurrency="{ item }">
+              {{
+                item.taxableBoughtCostInProfitCurrency
+                  | formatPrice(floatingPrecision)
+              }}
+            </template>
+            <template #item.receivedInAsset="{ item }">
+              {{ item.receivedInAsset | formatPrice(floatingPrecision) }}
+            </template>
+            <template #item.taxableReceivedInProfitCurrency="{ item }">
+              {{
+                item.taxableReceivedInProfitCurrency
+                  | formatPrice(floatingPrecision)
+              }}
+            </template>
           </v-data-table>
         </v-card-text>
       </v-card>
@@ -19,23 +52,21 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import { EventEntry } from '@/model/trade-history-types';
-import { Currency } from '@/model/currency';
 
-const { mapState, mapGetters } = createNamespacedHelpers('session');
-const mapReportsState = createNamespacedHelpers('reports').mapState;
+const { mapGetters } = createNamespacedHelpers('session');
+const { mapState } = createNamespacedHelpers('reports');
 const mapBalanceGetters = createNamespacedHelpers('balances').mapGetters;
 
 @Component({
   computed: {
-    ...mapReportsState(['events']),
-    ...mapState(['currency']),
+    ...mapState(['currency', 'events']),
     ...mapGetters(['floatingPrecision', 'dateDisplayFormat']),
     ...mapBalanceGetters(['exchangeRate'])
   }
 })
 export default class TaxReportEvents extends Vue {
   events!: EventEntry[];
-  currency!: Currency;
+  currency!: string;
   floatingPrecision!: number;
   exchangeRate!: (currency: string) => number;
   dateDisplayFormat!: string;

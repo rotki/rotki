@@ -8,12 +8,37 @@
       </v-layout>
     </v-layout>
     <generate @generate="generate($event)"></generate>
-    <tax-report-overview v-if="loaded"></tax-report-overview>
-    <tax-report-events v-if="loaded"></tax-report-events>
+    <div v-if="loaded">
+      <v-btn
+        class="tax-report__export-csv"
+        depressed
+        color="primary"
+        @click="exportCSV()"
+      >
+        Export CSV
+      </v-btn>
+      <tax-report-overview class="tax-report__section"></tax-report-overview>
+      <tax-report-events class="tax-report__section"></tax-report-events>
+    </div>
     <v-overlay :value="isRunning">
-      <h2>Generating Report</h2>
-      <v-progress-circular size="60"></v-progress-circular>
-      <p>Please wait...</p>
+      <v-layout>
+        <v-flex>
+          <h2 class="text-center">Generating Report</h2>
+        </v-flex>
+      </v-layout>
+      <v-layout>
+        <v-flex>
+          <v-progress-circular
+            class="text-center"
+            size="80"
+          ></v-progress-circular>
+        </v-flex>
+      </v-layout>
+      <v-layout>
+        <v-flex>
+          <p class="text-center">Please wait...</p>
+        </v-flex>
+      </v-layout>
     </v-overlay>
   </v-container>
 </template>
@@ -28,32 +53,33 @@ import { createNamespacedHelpers } from 'vuex';
 import { remote } from 'electron';
 import TaxReportOverview from '@/components/taxreport/TaxReportOverview.vue';
 import TaxReportEvents from '@/components/taxreport/TaxReportEvents.vue';
+import { Currency } from '@/model/currency';
 
 const { mapGetters } = createNamespacedHelpers('tasks');
 const { mapState } = createNamespacedHelpers('reports');
+const mapSessionState = createNamespacedHelpers('session').mapState;
 
 @Component({
   components: { TaxReportEvents, TaxReportOverview, MessageDialog, Generate },
   computed: {
     ...mapGetters(['isTaskRunning']),
-    ...mapState(['loaded'])
+    ...mapState(['loaded']),
+    ...mapSessionState(['currency'])
   }
 })
 export default class TaxReport extends Vue {
   isTaskRunning!: (type: TaskType) => boolean;
   loaded!: boolean;
+  currency!: Currency;
 
   get isRunning(): boolean {
     return this.isTaskRunning(TaskType.TRADE_HISTORY);
   }
 
-  mounted() {}
-
   generate(event: TaxReportEvent) {
+    this.$store.commit('reports/currency', this.currency.ticker_symbol);
     this.$store.dispatch('reports/generate', event);
   }
-
-  promptDirectorySelection() {}
 
   exportCSV() {
     remote.dialog.showOpenDialog(
@@ -61,26 +87,23 @@ export default class TaxReport extends Vue {
         title: 'Select a directory',
         properties: ['openDirectory']
       },
-      filePaths => {
+      async filePaths => {
         if (!filePaths) {
           return;
         }
-        this.$rpc
-          .export_processed_history_csv(filePaths[0])
-          .then(() => {
-            // this.messageTitle = 'Success';
-            // this.messageDescription = 'History exported to CVS successfully';
-            // this.messageSuccess = true;
-          })
-          .catch((reason: Error) => {
-            // this.messageTitle = 'Exporting History to CSV error';
-            // this.messageDescription = reason.message;
-            // this.messageSuccess = false;
-          });
+        await this.$store.dispatch('reports/createCSV', filePaths[0]);
       }
     );
   }
 }
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+.tax-report__section {
+  margin-top: 20px;
+}
+
+.tax-report__export-csv {
+  margin-top: 20px;
+}
+</style>

@@ -1,4 +1,3 @@
-import { service } from '@/services/rotkehlchen_service';
 import store from '@/store/store';
 import { taskManager } from '@/services/task_manager';
 
