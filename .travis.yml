@@ -128,7 +128,7 @@ jobs:
         - provider: releases
           api_key:
             secure: HaRYa6DxLldQJALMBGjbFo1A/c5343mUHbYE+BS5/x/yNwLw7A2dwrGbyKEyLwm01YB3l0RTQwldF0bavhJzpzbJuqhO1IoHFwFgBHczi7dBTKgaRzOIZsEEuCf5+niYcUJl5NRKpYBX36NV3v7II5d986+hjthmq0jU1zXby+tisEBCPefaWXSRbGZCz6Ph0RYitq5ahaFkc3rY3TXl6/P2Ch8ApztayQFLtmA/3Ajar34/lWhcMmWUMD33A8P+UjLZxDbUs1UAq5TA6Zaw8iXcd+Tmu59cpRf/uRkI7i9OuwClnukJ+ztfzvAqgtLmFIvwgA2dkkU9Ao7Qsa8THUMgtFfe7F+5euGeoraNNG0abwVDwZomX3ZfZmKT0yU5G7z4vszSkZUx+VRWO2Br8ilnAmFd8dm/d+Nmwt96q2VpnTVL5a1SEWeyGzOyL4tBe+b7e3K6XqG2ae6fg2RkKPOusoeHDezkkrCXPY9JqikAfKAH0r4+FzW3dZLps/4onJNlaAm0gGDL7Msqw0zOZnOAoWepOGmpDfAG/Hhpq0YTOEtdVCfKAE5oDRLkPoDJt5eYevrgS4Bf4/UapTTzfjfYbnydQvsMH7CeRRgxcxFGFyber5Nm0b18KQjD5JhFH3Nf067GDMxRJe5EMPH/JxBV/1vqWttVZpfoMvgsGy4=
-          file: $ARCHIVE_NAME.zip
+          file: $ARCHIVE_NAME.dmg
           skip_cleanup: true
           on:
             tags: true
