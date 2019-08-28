@@ -148,13 +148,21 @@ ipcMain.on('ack', (event, arg) => {
 });
 
 function log_and_quit(msg) {
-    console.log(msg);
+    electron_log(msg);
     app.quit();
+}
+
+const app = require('electron').app;
+const logspath = app.getPath("logs");
+ELECTRON_LOG_PATH = logspath + "rotki_electron.log"
+fs.writeFileSync(ELECTRON_LOG_PATH, "Rotki Electron Log initialization\n")
+function electron_log(msg) {
+    console.log(msg);
+    fs.appendFileSync(ELECTRON_LOG_PATH, msg + "\n");
 }
 
 const createPyProc = () => {
     let port = '' + selectPort();
-
     let args = [];
     // try to see if there is a configfile
     if (fs.existsSync('rotki_config.json')) {
@@ -183,7 +191,7 @@ const createPyProc = () => {
             // do nothing, act as if there is no config given
             // TODO: Perhaps in the future warn the user inside
             // the app that there is a config file with invalid json
-            console.log(`Could not read the rotki_config.json file due to: "${e}". Proceeding normally without a config file ....`);
+            electron_log(`Could not read the rotki_config.json file due to: "${e}". Proceeding normally without a config file ....`);
         }
 
     }
@@ -192,18 +200,19 @@ const createPyProc = () => {
         let dist_dir = path.join(__dirname, PY_DIST_FOLDER);
         let files = fs.readdirSync(dist_dir);
         if (files.length === 0) {
-	    log_and_quit('No files found in the dist directory');
+            log_and_quit('No files found in the dist directory');
         } else if (files.length !== 1) {
-	    log_and_quit('Found more than one file in the dist directory');
+            log_and_quit('Found more than one file in the dist directory');
         }
         let executable = files[0];
         if (!executable.startsWith('rotkehlchen-')) {
-	    log_and_quit('Unexpected executable name "' + executable + '" in the dist directory');
+            log_and_quit('Unexpected executable name "' + executable + '" in the dist directory');
         }
-	executable_name = executable;
-	executable = path.join(dist_dir, executable);
+        executable_name = executable;
+        executable = path.join(dist_dir, executable);
         args.push("--zerorpc-port", port);
-        console.log('Calling python backend with: ' + executable + ' ' + args.join(' '));
+        args.push("--logfile", logspath + "/rotkehlchen.log");
+        electron_log('Calling python backend with: ' + executable + ' ' + args.join(' '));
         pyProc = require('child_process').execFile(executable, args);
     } else {
         args.unshift("-m", "rotkehlchen");
@@ -216,16 +225,17 @@ const createPyProc = () => {
             }
             args.push('--data-dir', tempPath);
         }
-        console.log('Calling python backend with: python ' + args.join(' '));
+        electron_log('Calling python backend with: python ' + args.join(' '));
         pyProc = require('child_process').spawn('python', args);
     }
 
     pyProc.on('error', (err) => {
+        electron_log(err);
+        electron_log("Failed to start python subprocess");
         console.error(err);
-        console.log('Failed to start python subprocess.');
     });
     pyProc.on('exit', function (code, signal) {
-        console.log("python subprocess killed with signal " + signal + " and code " + code);
+        electron_log("python subprocess killed with signal " + signal + " and code " + code);
         if (code !== 0) {
             // Notify main window every 2 seconds until it acks the notification
             pyproc_fail_notifier = setInterval(function () {
@@ -233,63 +243,68 @@ const createPyProc = () => {
             }, 2000);
         }
     });
+    // Only for debugging if there is serious problems with python packend at release mode.
+    // Writes any stdout given by the python backend to electron log
+    //pyProc.stdout.on('data', function (data) {
+    //    electron_log(data.toString());
+    //});
 
     if (pyProc != null) {
-        console.log('child process success on port ' + port);
+        electron_log('child process success on port ' + port);
     }
 
-    console.log("CREATED PYPROCESS");
+    electron_log("CREATED PYPROCESS");
 };
 
 const exitPyProc = (event) => {
-    console.log("KILLING PYPROCESS");
+    electron_log("KILLING PYPROCESS");
     if (process.platform === 'win32') {
-	// For win32 we got two problems:
-	// 1. pyProc.kill() does not work due to SIGTERM not really being a signal
-	//    in Windows
-	// 2. the onefile pyinstaller packaging creates two executables.
-	// https://github.com/pyinstaller/pyinstaller/issues/2483
-	// 
-	// So the solution is to not let the application close, get all
-	// pids and kill them before we close the app
-	const tasklist = require('tasklist');
-	console.log('Detecting Windows pids');
-	tasklist().then(function(tasks){
-	    console.log('In tasklist result for executable_name: ' + executable_name);
-	    to_kill_pids = [];
-	    for (var i = 0; i < tasks.length; i++) {
-		if (tasks[i]['imageName'] === executable_name) {
-		    to_kill_pids.push(tasks[i]['pid']);
-		    console.log('adding pid ' + tasks[i]['pid']);
-		}
-	    }
+        // For win32 we got two problems:
+        // 1. pyProc.kill() does not work due to SIGTERM not really being a signal
+        //    in Windows
+        // 2. the onefile pyinstaller packaging creates two executables.
+        // https://github.com/pyinstaller/pyinstaller/issues/2483
+        // 
+        // So the solution is to not let the application close, get all
+        // pids and kill them before we close the app
+        const tasklist = require('tasklist');
+        electron_log('Detecting Windows pids');
+        tasklist().then(function(tasks){
+            electron_log('In tasklist result for executable_name: ' + executable_name);
+            to_kill_pids = [];
+            for (var i = 0; i < tasks.length; i++) {
+                if (tasks[i]['imageName'] === executable_name) {
+                    to_kill_pids.push(tasks[i]['pid']);
+                    electron_log('adding pid ' + tasks[i]['pid']);
+                }
+            }
 
-	    // now that we have all the pids gathered, call taskkill on them
-	    console.log('Calling taskkill for Windows pids');
-	    var spawn = require('child_process').spawn;
-	    args = ['/f', '/t'];
-	    for (var i = 0; i < to_kill_pids.length; i++) {
-		args.push('/PID');
-		args.push(to_kill_pids[i]);
-	    }
-	    console.log('command is: taskkill and args: ' + JSON.stringify(args, null, 4));
-	    killProc = spawn('taskkill', args);
-	    killProc.on('exit', function (code, signal) {
-		console.log("Kill proc on exit");
-		app.exit();
-	    });
-	    killProc.on('error', (err) => {
-		console.error("Kill proc on error:" + err);
-		app.exit();
-	    });
-	});
+            // now that we have all the pids gathered, call taskkill on them
+            electron_log('Calling taskkill for Windows pids');
+            var spawn = require('child_process').spawn;
+            args = ['/f', '/t'];
+            for (var i = 0; i < to_kill_pids.length; i++) {
+                args.push('/PID');
+                args.push(to_kill_pids[i]);
+            }
+            electron_log('command is: taskkill and args: ' + JSON.stringify(args, null, 4));
+            killProc = spawn('taskkill', args);
+            killProc.on('exit', function (code, signal) {
+                electron_log("Kill proc on exit");
+                app.exit();
+            });
+            killProc.on('error', (err) => {
+                electron_log("Kill proc on error:" + err);
+                app.exit();
+            });
+        });
 
-	pyProc.kill();
-	// Do not allow the app to quit. Instead wait for killProc to occur
-	// which will quit the app itself.
-	event.preventDefault();
+        pyProc.kill();
+        // Do not allow the app to quit. Instead wait for killProc to occur
+        // which will quit the app itself.
+        event.preventDefault();
     } else {
-	pyProc.kill();
+        pyProc.kill();
     }
     pyProc = null;
     pyPort = null;
