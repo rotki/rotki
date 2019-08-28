@@ -130,12 +130,20 @@ fi
 
 cp tools/scripts/wrapper_script.sh $GENERATED_ARCHIVE_NAME/$EXEC_NAME
 
-# Now try to zip the created bundle
-mv $GENERATED_ARCHIVE_NAME $ARCHIVE_NAME
-zip -r $ARCHIVE_NAME.zip "$ARCHIVE_NAME/"
-if [[ $? -ne 0 ]]; then
-    echo "package.sh - ERROR: zipping of final bundle failed"
-    exit 1
-fi
 
-rm -rf $ARCHIVE_NAME
+if [[ $PLATFORM == "darwin" ]]; then
+    # For OSX create a dmg
+    ./node_modules/.bin/electron-installer-dmg $GENERATED_ARCHIVE_NAME/rotkehlchen.app $EXEC_NAME --icon=ui/images/rotki.icns --title=Rotkehlchen
+
+    rm -rf $GENERATED_ARCHIVE_NAME
+else
+    # Now try to zip the created bundle
+    mv $GENERATED_ARCHIVE_NAME $ARCHIVE_NAME
+    zip -r $ARCHIVE_NAME.zip "$ARCHIVE_NAME/"
+    if [[ $? -ne 0 ]]; then
+	echo "package.sh - ERROR: zipping of final bundle failed"
+	exit 1
+    fi
+
+    rm -rf $ARCHIVE_NAME
+fi
