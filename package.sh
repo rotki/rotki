@@ -65,6 +65,10 @@ fi
 
 npm run build
 
+ELECTRON_PACKAGER_EXTRA_ARGS=
+if [[ $PLATFORM == "darwin" ]]; then
+    ELECTRON_PACKAGER_EXTRA_ARGS="--icon=ui/images/rotki.icns"
+fi
 ./node_modules/.bin/electron-packager . --overwrite \
 				      --ignore="rotkehlchen$" \
 				      --ignore="rotkehlchen.egg-info" \
@@ -99,7 +103,7 @@ npm run build
 				      --ignore=".*\.py" \
 				      --ignore=".*\.bat" \
 				      --ignore="^/CONTRIBUTING.md" \
-				      --ignore="^/Makefile" 
+				      --ignore="^/Makefile" $ELECTRON_PACKAGER_EXTRA_ARGS
 
 if [[ $? -ne 0 ]]; then
     echo "package.sh - ERROR: electron-packager step failed"
