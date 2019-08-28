@@ -108,9 +108,7 @@ const createWindow = () => {
 app.on('ready', createWindow);
 
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
+    app.quit();
 });
 
 app.on('activate', () => {
@@ -152,7 +150,6 @@ function log_and_quit(msg) {
     app.quit();
 }
 
-const app = require('electron').app;
 const logspath = app.getPath("logs");
 ELECTRON_LOG_PATH = logspath + "rotki_electron.log"
 fs.writeFileSync(ELECTRON_LOG_PATH, "Rotki Electron Log initialization\n")
