@@ -22,26 +22,22 @@ Go to the `releases <https://github.com/rotkehlchenio/rotkehlchen/releases>`_ pa
 
 Unzip it in a directory of your choice. In the root directory of the unzipped archive there is a ``rotkehlchen`` executable. Run it via the terminal to start rotkehlchen.
 
+Troubleshooting
+------------------
+
+If you get a problem when starting the application or during its usage please open an issue in Github and include all logs that can be found in `~/.config/rotkehlchen/`.
+
 OSX
 ========
 
 Go to the `releases <https://github.com/rotkehlchenio/rotkehlchen/releases>`_ page and download the darwin-x64 package from the `latest release <https://github.com/rotkehlchenio/rotkehlchen/releases/latest>`_.
 
-Unzip it in a directory of your choice. In the root directory of the unzipped archive there is are two ``rotkehlchen`` files. Click (or run from the terminal) the one that does not have the electron logon on its icon.
+Click on the dmg installer and when prompted drag the Rotki logo to your Applications. This will install the application and once finished you can select Rotki from your applications folder and launch it.
 
 Troubleshooting
 ----------------
 
-If you get "The python backend crushed" error then you probably did not click on the correct executable.
-
-To make it easier to understand which one is the executable you have to click in OSX look at the following screenshot.
-
-.. image:: _static/images/osx_which_executable.png
-  :width: 640
-  :alt: This is the executable you should click when running OSX.
-
-
-If you did click on that and you still get an error, then please open an issue with the contents of the console window that was also opened. This will help us debug the problem.
+If you get a problem when starting the application or during its usage please open an issue in Github and include all logs that can be found in `~/Library/Logs/rotkehlchen`.
 
 
 Windows
@@ -55,6 +51,8 @@ Troubleshooting
 ---------------
 
 If you get "The python backend crushed" or any other error please run the executable via the Command Prompt. Then provide us with the output that is visible in the prompt and this will help us debug your issue.
+
+You should also include all logs that can be found in `%APPDATA%/rotkehlchen/`.
 
 
 Build from Source
