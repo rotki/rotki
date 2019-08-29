@@ -68,6 +68,8 @@ npm run build
 ELECTRON_PACKAGER_EXTRA_ARGS=
 if [[ $PLATFORM == "darwin" ]]; then
     ELECTRON_PACKAGER_EXTRA_ARGS="--icon=ui/images/rotki.icns"
+elif [[ $PLATFORM == "linux" ||  $PLATFORM == "freebsd" ]]; then
+    ELECTRON_PACKAGER_EXTRA_ARGS="--icon=ui/images/rotki_1024x1024.png"
 fi
 ./node_modules/.bin/electron-packager . --overwrite \
 				      --ignore="rotkehlchen$" \
