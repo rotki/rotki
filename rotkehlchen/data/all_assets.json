@@ -8745,10 +8745,12 @@
         "type": "stellar token"
     },
     "USDT": {
+        "ethereum_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "ethereum_token_decimals": 6,
         "name": "Tether",
         "started": 1402358400,
         "symbol": "USDT",
-        "type": "omni token"
+        "type": "ethereum token and more"
     },
     "USNBT": {
         "name": "NuBits",
