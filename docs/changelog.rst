@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`487` USDT can now also be monitored as an ethereum token.
 * :feature:`26` Rotki is now available as a .dmg installer for OSX.
 * :bug:`426` Opening the Rotki electron app in OSX now works properly the first time.
 * :feature:`296` Add support for the Coinbase exchange.
