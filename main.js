@@ -150,9 +150,15 @@ function log_and_quit(msg) {
     app.quit();
 }
 
-const logspath = app.getPath("logs");
-ELECTRON_LOG_PATH = logspath + "rotki_electron.log"
-fs.writeFileSync(ELECTRON_LOG_PATH, "Rotki Electron Log initialization\n")
+let logspath;
+console.log(process.platform);
+if (process.platform === 'linux') {
+    logspath = app.getPath("appData");
+} else {
+    logspath = app.getPath("logs");
+}
+ELECTRON_LOG_PATH = logspath + "rotki_electron.log";
+fs.writeFileSync(ELECTRON_LOG_PATH, "Rotki Electron Log initialization\n");
 function electron_log(msg) {
     console.log(msg);
     fs.appendFileSync(ELECTRON_LOG_PATH, msg + "\n");
