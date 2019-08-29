@@ -6,11 +6,18 @@ from rotkehlchen.config import default_data_directory
 from rotkehlchen.utils.misc import get_system_spec
 
 
-class VersionAction(argparse.Action):
+class CommandAction(argparse.Action):
+    """Interprets the positional argument as a command if that command exists"""
     def __init__(self, option_strings, dest, **kwargs):  # pylint: disable=unused-argument
         super().__init__(option_strings, dest)
 
     def __call__(self, parser, namespace, values, option_string=None):
+        # Only command we have at the moment is version
+        if values != 'version':
+            parser.print_usage()
+            print(f'Unrecognized command: {values}.')
+            sys.exit(0)
+
         print(get_system_spec()['rotkehlchen'])
         sys.exit(0)
 
@@ -71,7 +78,7 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
     p.add_argument(
         'version',
         help='Shows the rotkehlchen version',
-        action=VersionAction,
+        action=CommandAction,
     )
 
     return p
