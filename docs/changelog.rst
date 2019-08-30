@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`453` If a newer version exists the user is notified at the start of the application and is given a link to download it.
 * :feature:`487` USDT can now also be monitored as an ethereum token.
 * :feature:`26` Rotki is now available as a .dmg installer for OSX.
 * :bug:`426` Opening the Rotki electron app in OSX now works properly the first time.
