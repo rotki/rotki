@@ -31,6 +31,7 @@ from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.typing import FiatAsset, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import simple_result
 from rotkehlchen.utils.serialization import pretty_json_dumps
+from rotkehlchen.utils.version_check import check_if_version_up_to_date
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -416,6 +417,10 @@ class RotkehlchenServer():
     def remove_ignored_asset(self, asset: str):
         result, message = self.rotkehlchen.data.remove_ignored_asset(asset)
         return {'result': result, 'message': message}
+
+    def version_check(self):
+        message = check_if_version_up_to_date()
+        return {'result': True, 'message': message}
 
     def unlock_user(
             self,

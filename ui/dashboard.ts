@@ -2,7 +2,7 @@ import {change_location} from './navigation';
 import {set_ui_main_currency} from './topmenu';
 import {get_total_assets_value, iterate_saved_balances, total_table_add_balances, total_table_recreate} from './balances_table';
 import {assert_exchange_exists, format_currency_value, pages, settings} from './settings';
-import {showError} from './utils';
+import {showError, showInfo} from './utils';
 import {create_or_reload_exchange} from './exchange';
 import {monitor_add_callback} from './monitor';
 import {prompt_sign_in} from './userunlock';
@@ -169,6 +169,11 @@ export function create_or_reload_dashboard() {
         body.addClass('loading');
         console.log('At create/reload, for the first time');
         body.removeClass('loading');
+        service.version_check().then(result => {
+            if (result['message']) {
+                showInfo('New Version Available', result['message']);
+            }
+        });
         prompt_sign_in();
     } else {
         console.log('At create/reload, revisiting');
