@@ -120,6 +120,27 @@ export function showWarning(title: string, content: string) {
     });
 }
 
+// Show an Info message with TITLE and CONTENT and an ACTION button with a callback
+export function showAction(title: string, content: string, actiontext: string, callback: () => void) {
+    $.confirm({
+        title: title,
+        content: content,
+        type: 'green',
+        typeAnimated: true,
+        buttons: {
+            action: {
+                text: actiontext,
+                keys: ['enter'],
+                action: callback
+            },
+            close: {
+                text: 'Close',
+                keys: ['Q'],
+            }
+        }
+    });
+}
+
 export function setup_client_auditor() {
     if (!client_auditor) {
         // TODO: When doing queries for which we need progress like tax report

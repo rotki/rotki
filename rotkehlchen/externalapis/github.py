@@ -1,5 +1,5 @@
 from json.decoder import JSONDecodeError
-from typing import Dict
+from typing import Dict, Tuple
 
 import requests
 
@@ -9,7 +9,7 @@ from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 class Github():
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.prefix = 'https://api.github.com/'
 
     def _query(self, path: str) -> Dict:
@@ -28,7 +28,7 @@ class Github():
             raise RemoteError(f'Github returned invalid JSON response: {response.text}')
         return json_ret
 
-    def get_latest_release(self) -> [str, str]:
+    def get_latest_release(self) -> Tuple[str, str]:
         """Returns the latest rotkehlchen release version
 
         In success returns a tuple (version_tag, version_download_url)
@@ -37,10 +37,10 @@ class Github():
         response = self._query('repos/rotkehlchenio/rotkehlchen/releases/latest')
         if 'tag_name' not in response:
             raise RemoteError(
-                'Github latest release did not contain a "tag_name" entry in the response'
+                'Github latest release did not contain a "tag_name" entry in the response',
             )
         if 'html_url' not in response:
             raise RemoteError(
-                'Github latest release did not contain a "html_url" entry in the response'
+                'Github latest release did not contain a "html_url" entry in the response',
             )
         return response['tag_name'], response['html_url']

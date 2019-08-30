@@ -8,12 +8,7 @@ from rotkehlchen.exchanges.data_structures import invert_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.utils.misc import (
-    combine_dicts,
-    combine_stat_dicts,
-    get_system_spec,
-    iso8601ts_to_timestamp,
-)
+from rotkehlchen.utils.misc import combine_dicts, combine_stat_dicts, iso8601ts_to_timestamp
 from rotkehlchen.utils.version_check import check_if_version_up_to_date
 
 
@@ -91,36 +86,38 @@ def test_combine_stat_dicts():
 def test_check_if_version_up_to_date():
     assert check_if_version_up_to_date() is None, 'Current version should always be up to date'
 
-    def mock_github_return(url):
+    def mock_github_return(url):  # pylint: disable=unused-argument
         contents = '{"tag_name": "v99.99.99", "html_url": "https://foo"}'
         return MockResponse(200, contents)
 
     with patch('requests.get', side_effect=mock_github_return):
-        msg = check_if_version_up_to_date()
-    assert 'is outdated' in msg
-    assert 'The latest version is v99.99.99 and you can download it from https://foo' in msg
+        result = check_if_version_up_to_date()
+    assert result
+    assert result[0]
+    assert result[1] == 'v99.99.99'
+    assert result[2] == 'https://foo'
 
     # Also test that bad responses are handled gracefully
-    def mock_non_200_github_return(url):
+    def mock_non_200_github_return(url):  # pylint: disable=unused-argument
         contents = '{"tag_name": "v99.99.99", "html_url": "https://foo"}'
         return MockResponse(501, contents)
 
     with patch('requests.get', side_effect=mock_non_200_github_return):
-        msg = check_if_version_up_to_date()
-        assert not msg
+        result = check_if_version_up_to_date()
+        assert not result
 
-    def mock_missing_fields_github_return(url):
+    def mock_missing_fields_github_return(url):  # pylint: disable=unused-argument
         contents = '{"html_url": "https://foo"}'
         return MockResponse(200, contents)
 
     with patch('requests.get', side_effect=mock_missing_fields_github_return):
-        msg = check_if_version_up_to_date()
-        assert not msg
+        result = check_if_version_up_to_date()
+        assert not result
 
-    def mock_invalid_json_github_return(url):
+    def mock_invalid_json_github_return(url):  # pylint: disable=unused-argument
         contents = '{html_url: "https://foo"}'
         return MockResponse(200, contents)
 
     with patch('requests.get', side_effect=mock_invalid_json_github_return):
-        msg = check_if_version_up_to_date()
-        assert not msg
+        result = check_if_version_up_to_date()
+        assert not result
