@@ -18,10 +18,10 @@ if %errorlevel% neq 0 (
 Rem npm stuff
 IF EXIST node_modules rmdir node_modules /s /Q
 call npm config set python python2.7
-call npm install
+call npm ci
 call npm rebuild zeromq --runtime=electron --target=3.0.0
 if %errorlevel% neq 0 (
-   echo "ERROR - npm install step failed"
+   echo "ERROR - npm ci step failed"
    exit /b %errorlevel%
 )
 
