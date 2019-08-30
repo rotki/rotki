@@ -46,9 +46,9 @@ npm config set python python2.7
 if [[ $PLATFORM == "darwin" ]]; then
   # If we add the specific electron runtime compile in OSX fails with an error
   # that looks like this: https://www.npmjs.com/package/nan#compiling-against-nodejs-012-on-osx
-    npm install
+    npm ci
 else
-    npm install
+    npm ci
     npm rebuild zeromq --runtime=electron --target=3.0.0
 fi
 
