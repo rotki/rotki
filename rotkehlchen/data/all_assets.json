@@ -4190,6 +4190,14 @@
         "symbol": "HDG",
         "type": "ethereum token"
     },
+    "HEDG": {
+        "ethereum_address": "0xF1290473E210b2108A85237fbCd7b6eb42Cc654F",
+        "ethereum_token_decimals": 18,
+        "name": "HedgeTrade",
+        "started": 1546537778,
+        "symbol": "HEDG",
+        "type": "ethereum token"
+    },
     "HER": {
         "ethereum_address": "0x491C9A23DB85623EEd455a8EfDd6AbA9b911C5dF",
         "ethereum_token_decimals": 18,
