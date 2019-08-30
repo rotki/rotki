@@ -84,7 +84,20 @@ def test_combine_stat_dicts():
 
 
 def test_check_if_version_up_to_date():
-    assert check_if_version_up_to_date() is None, 'Current version should always be up to date'
+    def mock_github_return_current(url):  # pylint: disable=unused-argument
+        contents = '{"tag_name": "v1.4.0", "html_url": "https://foo"}'
+        return MockResponse(200, contents)
+    patch_github = patch('requests.get', side_effect=mock_github_return_current)
+
+    def mock_system_spec():
+        return {'rotkehlchen': 'v1.4.0'}
+    patch_our_version = patch(
+        'rotkehlchen.utils.version_check.get_system_spec',
+        side_effect=mock_system_spec,
+    )
+
+    with patch_our_version, patch_github:
+        assert check_if_version_up_to_date() is None, 'Same version should return none'
 
     def mock_github_return(url):  # pylint: disable=unused-argument
         contents = '{"tag_name": "v99.99.99", "html_url": "https://foo"}'
