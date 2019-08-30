@@ -150,6 +150,18 @@ export class RotkehlchenService {
         });
     }
 
+    version_check(): Promise<ActionResult<boolean>> {
+        return new Promise<ActionResult<boolean>>((resolve, reject) => {
+            client.invoke('version_check', (error: Error, result: ActionResult<boolean>) => {
+                if (error || result == null) {
+                    reject(error || new NoResponseError());
+                } else {
+                    resolve(result);
+                }
+            });
+        });
+    }
+
     set_settings(settings: { [key: string]: any }): Promise<ActionResult<boolean>> {
         return new Promise<ActionResult<boolean>>((resolve, reject) => {
             client.invoke('set_settings', settings, (error: Error, result: ActionResult<boolean>) => {
