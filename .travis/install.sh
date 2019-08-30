@@ -16,6 +16,8 @@ fi
 $PIP_CMD install ${INSTALL_OPT} --upgrade "pip<19.0.0" wheel
 $PIP_CMD install ${INSTALL_OPT} pytest-travis-fold codecov pytest-cov
 $PIP_CMD install ${INSTALL_OPT} -r requirements_dev.txt
+# pip install -e . is needed in order to use pkg_resources in tests
+$PIP_CMD install ${INSTALL_OPT} -e .
 
 $PIP_CMD list --outdated
 
