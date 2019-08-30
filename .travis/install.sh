@@ -2,6 +2,9 @@
 
 set -ex
 
+# Make sure that the tags are also pulled in Travis so that
+# the version check in the tests works properly
+git fetch origin --tags
 
 INSTALL_OPT=""
 PIP_CMD="pip"
