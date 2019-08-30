@@ -135,7 +135,7 @@ cp tools/scripts/wrapper_script.sh $GENERATED_ARCHIVE_NAME/$EXEC_NAME
 
 if [[ $PLATFORM == "darwin" ]]; then
     # For OSX create a dmg
-    ./node_modules/.bin/electron-installer-dmg $GENERATED_ARCHIVE_NAME/rotkehlchen.app $ARCHIVE_NAME --icon=ui/images/rotki.icns --title=Rotki
+    ./node_modules/.bin/electron-installer-dmg $GENERATED_ARCHIVE_NAME/rotki.app $ARCHIVE_NAME --icon=ui/images/rotki.icns --title=Rotki
 
     rm -rf $GENERATED_ARCHIVE_NAME
 else
