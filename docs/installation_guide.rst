@@ -73,7 +73,7 @@ Also get `sqlcipher <https://www.zetetic.net/sqlcipher/>`_:
 
 Install electron and any other npm dependencies by::
 
-    npm install
+    npm ci
     npm rebuild zeromq --runtime=electron --target=3.0.0
 
 Create a new `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ to install all the python dependencies. If you don't have ``mkvirtualenv`` then check how to get it depending on your distribution. `Here <http://exponential.io/blog/2015/02/10/install-virtualenv-and-virtualenvwrapper-on-ubuntu/>`_ is a guide for Ubuntu and `here <https://wiki.archlinux.org/index.php/Python/Virtual_environment>`__ is one for ArchLinux::
@@ -160,7 +160,7 @@ Rotki uses electron, we need to install it. To do so you need ``node.js`` and ``
 Almost there, we can now install all the NodeJS dependencies. Using a recent NodeJS version such as 8.9.x, it should be smooth. Also since npm uses gyp and gyp requires python 2.7 make sure to set it up appropriately before invoking npm::
 
     $ npm config set python python2.7
-    $ npm install
+    $ npm ci
     $ PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild
 
 You can now start Rotki:::

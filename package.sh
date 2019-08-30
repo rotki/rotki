@@ -53,7 +53,7 @@ else
 fi
 
 if [[ $? -ne 0 ]]; then
-    echo "package.sh - ERROR: npm install step failed"
+    echo "package.sh - ERROR: npm ci step failed"
     exit 1
 fi
 
