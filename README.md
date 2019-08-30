@@ -1,8 +1,8 @@
-# Rotkehlchen
+# Rotki
 
 <img src="https://raw.githubusercontent.com/rotkehlchenio/rotkehlchen/master/ui/images/rotkehlchen_no_text.png" width="250">
 
-Rotkehlchen is an asset management and accounting application specializing in Crypto assets and aims to also help with tax reporting. It has integration for multiple exchanges with more coming soon.
+Rotki (long form: Rotkehlchen) is an asset management and accounting application specializing in Crypto assets and aims to also help with tax reporting. It has integration for multiple exchanges with more coming soon.
 
 ## Documentation
 
@@ -25,7 +25,7 @@ Click [here](https://rotkehlchen.readthedocs.io/en/latest/changelog.html) for th
 
 ## Contribute
 
-Rotkehlchen is an opensource project and as such any and all help is really appreciated.
+Rotki is an opensource project and as such any and all help is really appreciated.
 
 ### Issues or code
 
@@ -40,7 +40,7 @@ The best way to contribute financially and all the while help with the developme
 
 #### Donations
 
-For people who don't want to purchase a subscription but would still like to support the development of Rotkehlchen we also accept donations in BTC and ETH or tokens.
+For people who don't want to purchase a subscription but would still like to support the development of Rotki we also accept donations in BTC and ETH or tokens.
 
  - Send **BTC donations** to: 1PfvkW8MC7Ns2y8zn6CE2P2t5f19KF8XiW
  - Send **ETH donations** to: 0x9531c059098e3d194ff87febb587ab07b30b1306

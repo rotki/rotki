@@ -296,7 +296,7 @@ function load_dashboard_after_unlock(exchanges: string[], is_new_user: boolean) 
 
             showAction(
                 'Upgrade to Premium',
-                `Rotkehlchen is opensource software and needs your support! Please
+                `Rotki is opensource software and needs your support! Please
 
                  consider upgrading to premium by purchasing a premium subscription.
                 This way you can help us further develop the software and you can
@@ -309,7 +309,7 @@ function load_dashboard_after_unlock(exchanges: string[], is_new_user: boolean) 
         get_banks_total();
     } else {
         showInfo(
-            'Welcome to Rotkehlchen!',
+            'Welcome to Rotki!',
             'It appears this is your first time using the program. ' +
             'Follow the suggestions to integrate with some exchanges or manually input data.'
         );

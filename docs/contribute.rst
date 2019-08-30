@@ -1,7 +1,7 @@
-Rotkehlchen Contribution Guide
+Rotki Contribution Guide
 ##############################
 
-Rotkehlchen is an opensource project so help is really appreciated.
+Rotki is an opensource project so help is really appreciated.
 
 Bug Reporting
 =============

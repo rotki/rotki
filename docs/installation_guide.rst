@@ -7,7 +7,7 @@ System Requirements and Installation Guide
 Introduction
 *************
 
-The easiest way to start Rotkehlchen is to download the packaged binary for your Operating system. For now only Linux and OSX is supported. To see how to do this go to the :ref:`next section <packaged_binaries>`.
+The easiest way to start Rotki is to download the packaged binary for your Operating system. For now only Linux and OSX is supported. To see how to do this go to the :ref:`next section <packaged_binaries>`.
 
 
 .. _packaged_binaries:
@@ -107,7 +107,7 @@ The tl;dr version is:
 
 The following recipe has been tested using `Anaconda <https://conda.io>`_. `VirtualEnv <https://virtualenv.pypa.io>`_ works as well, refer to the documentations of those projects to install and use them.
 
-Rotkehlchen uses an encrypted database called `SQLCipher <https://www.zetetic.net/sqlcipher/>`_. Before we can proceed, we need to install it. Homebrew makes it simple:::
+Rotki uses an encrypted database called `SQLCipher <https://www.zetetic.net/sqlcipher/>`_. Before we can proceed, we need to install it. Homebrew makes it simple:::
 
     $ brew update && brew install sqlcipher
 
@@ -153,7 +153,7 @@ then do:::
    Make sure that pysqlcipher3 is properly installed. If ``$ pip freeze | grep pysqlcipher3`` returns nothing for you then it was not installed. Try to manually install only that dependency with the verbose option to see where it fails. ``$ pip install pysqlcipher3 -v``. If it fails at the stage of finding the library for ``-lsqlcipher`` then ``brew install sqlciper`` did not place the installed lib directory to the ``LIBRARY_PATH`` and you will have to do it manually. For example if ``sqlcipher`` was installed at ``/usr/local/Cellar/sqlcipher/3.4.2/`` then use pip install this way::
      $ LIBRARY_PATH=/usr/local/Cellar/sqlcipher/3.4.2/lib pip install pysqlcipher3.
 
-Rotkehlchen uses electron, we need to install it. To do so you need ``node.js`` and ``npm``. If you don't have it use homebrew to install it::
+Rotki uses electron, we need to install it. To do so you need ``node.js`` and ``npm``. If you don't have it use homebrew to install it::
 
     $ brew install node
 
@@ -163,7 +163,7 @@ Almost there, we can now install all the NodeJS dependencies. Using a recent Nod
     $ npm install
     $ PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild
 
-You can now start Rotkehlchen:::
+You can now start Rotki:::
 
     $ npm start
 

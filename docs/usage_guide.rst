@@ -1,4 +1,4 @@
-Rotkehlchen Usage Guide
+Rotki Usage Guide
 ##################################################
 .. toctree::
   :maxdepth: 2
@@ -7,12 +7,12 @@ Rotkehlchen Usage Guide
 Introduction
 ============ 
 
-In this section we are going to see how to use various parts of the Rotkehlchen application.
+In this section we are going to see how to use various parts of the Rotki application.
 
 Sign-in/Signup
 ===============
 
-When you start Rotkehlchen you are greeted with a sign-in/signup prompt.
+When you start Rotki you are greeted with a sign-in/signup prompt.
 
 If you have never created an account before press "Create New Account". Provide a username and a password. Don't forget this password. It will be used to encrypt all your local files. If you have purchased a premium subscription you can also add the API Key and secret here.
 
@@ -23,21 +23,21 @@ All accounts are created in the rotkehlchen directory which is located in: ``$HO
 Changing the Profit Currency
 =============================
 
-Rotkehlchen calculates everything, including your profit/loss for your tax report into a given FIAT currency. This is what we call the ``profit_currency``. By default this is the US Dollar. You can easily change this setting by clicking on the currency icon the top right menu and changing it to the currency you are using.
+Rotki calculates everything, including your profit/loss for your tax report into a given FIAT currency. This is what we call the ``profit_currency``. By default this is the US Dollar. You can easily change this setting by clicking on the currency icon the top right menu and changing it to the currency you are using.
 
 Connecting to an Ethereum Client
 ==================================
 
-When Rotkehlchen begins it tries to connect to a local ethereum node running with an rpc port set at the default port ``8545``. If no client is running then all blockchain queries will use etherscan and this will be rather slower.
+When Rotki begins it tries to connect to a local ethereum node running with an rpc port set at the default port ``8545``. If no client is running then all blockchain queries will use etherscan and this will be rather slower.
 
 If you want to connect to an ethereum client running in a non-default port you can set that through the settings. Click the person icon on the top right menu and select "Settings" from the drop down menu. This will take you to the settings page. Write the desired url/port port in ETH RPC endpoing textbox.
 
 Adding an Exchange
 =====================
 
-You can integrate many different exchanges with Rotkehlchen. Currently supported exchanges are: Kraken, Poloniex, Bittrex, Bitmex and Binance.
+You can integrate many different exchanges with Rotki. Currently supported exchanges are: Kraken, Poloniex, Bittrex, Bitmex and Binance.
 
-To do so you have to go to your exchange and create an API key. If the exchange allows it make sure that the API Key only has reading/querying permissions to your account and nothing else since that is all the permissions needed by Rotkehlchen.
+To do so you have to go to your exchange and create an API key. If the exchange allows it make sure that the API Key only has reading/querying permissions to your account and nothing else since that is all the permissions needed by Rotki.
 
 Click the Person Icon on the top right menu and then choose "User Settings". This will take you to your user settings page. Under the exchange settings sections, select your exchange from the dropdown menu. Then copy and paste the ``API Key`` and the ``API Secret`` in the respective text fields and press submit.
 
@@ -46,14 +46,14 @@ If all went well, then you will get a confirmation that the connection was succe
 Adding Fiat Balances
 =====================
 
-Rotkehlchen is an asset analytics application. Thus you can track all your assets in one place including the FIAT balances you have.
+Rotki is an asset analytics application. Thus you can track all your assets in one place including the FIAT balances you have.
 
 To add or modify the amount of an owned FIAT currency, go to the user settings page, scroll down to the "Fiat Balances" section and choose the currency from the dropdown menu. Input the modified balance in the text box and press the Modify button.
 
 Adding and Removing Blockchain Accounts
 ============================================
 
-Rotkehlchen allows to track balances of blockchain accounts.
+Rotki allows to track balances of blockchain accounts.
 
 To track an account go to the user settings page, scroll down to the "Blockchain Balances" section and choose the blockchain from the dropdown menu. For now only Bitcoin and Ethereum chains are supported. Then type or paste the address in the "Account" textbox and press the "Add" Button.
 
@@ -62,7 +62,7 @@ To stop tracking a particular account scroll down to the accounts tables and sim
 Adding and Removing Ethereum Tokens
 =========================================
 
-Rotkehlchen will check all of your ethereum accounts for balances of a given list of tokens. This list can be provided and modified by you.
+Rotki will check all of your ethereum accounts for balances of a given list of tokens. This list can be provided and modified by you.
 
 To do so go to the user settings page, scroll down to the "Blockchain Balances" section and look at the "Select Eth Tokens to Track" multiselection widget.
 
@@ -75,7 +75,7 @@ All account balances will be updated at this point.
 Manually Adding Trades Or Taxable Events
 ============================================
 
-Rotkehlchen will pull all your trade history from the exchanges whenever it needs it. But most of us have probably also done some OTC trades or taxable events at some point. Such events could even just be mining tokens, depending on your jurisdiction, participating in an ICO or getting paid in crypto.
+Rotki will pull all your trade history from the exchanges whenever it needs it. But most of us have probably also done some OTC trades or taxable events at some point. Such events could even just be mining tokens, depending on your jurisdiction, participating in an ICO or getting paid in crypto.
 
 On the left menu click on the trades button and select "OTC Trades" from the dropdown menu. This will take you to the OTC Trades page.
 
@@ -94,7 +94,7 @@ By right clicking on a trade you get a context menu allowing you to either edit 
 Creating a Tax Report
 ======================
 
-Rotkehlchen creates a tax report for you based on your trades and some settings which you can configure at the user settings page. This is essentially a calculation of profit or loss for all your trades based on the given dates.
+Rotki creates a tax report for you based on your trades and some settings which you can configure at the user settings page. This is essentially a calculation of profit or loss for all your trades based on the given dates.
 
 The default settings are at the moment set for the German tax jurisdiction. For example all profit/loss calculation is done for trades on a first-in/first-out basis and profits from selling crypto assets after 1 year are non taxable. These settings can be adjusted.
 
@@ -115,7 +115,7 @@ If you have a premium subscription you can get analytics on your all your assets
 
 Click on the analytics page on the left sidebar to go to your analytics page.
 
-Since Rotkehlchen is tracking all your assets over time the first thing you can see is a value/time graph of your entire net value.
+Since Rotki is tracking all your assets over time the first thing you can see is a value/time graph of your entire net value.
 
 Following that you can see a graph of quantity of an asset superimposed on its USD value over time.
 
@@ -127,7 +127,7 @@ Finally you can see a piechart of the distribution of your netvalue across all o
 Set the backend's arguments
 =============================
 
-Rotkehlchen runs a python daemon on the backend. Most times you won't need to customize its arguments but if you need to do so, especially for debugging purposes this is how you can.
+Rotki runs a python daemon on the backend. Most times you won't need to customize its arguments but if you need to do so, especially for debugging purposes this is how you can.
 
 Create or edit if it exists a file with the name ``rotki_config.json`` in the same directory as the rotkehlchen executable. Add to the json object any arguments that are also arguments of rotkehlchen. Then when rotkehlchen starts these will be passed as arguments to the backend. An example ``rotki_config.json`` follows::
 
@@ -144,5 +144,5 @@ The above arguments are:
 - **loglevel**: Set the loglevel for the application. Valid values are: ``'debug', 'info', 'warn', 'error', 'critical'``.
 - **logfromothermodules**: If this argument appears then logging will also include log entries from other dependent libraries and not only rotkehlchen. Default is ``false``.
 - **logfile**: The name for the logfile. Default is: ``rotkehlchen.log``.
-- **data-fir**: The path to the directory where all rotkehlchen data will be save. Default is ``/home/$USER/.rotkehlchen``.
+- **data-dir**: The path to the directory where all rotkehlchen data will be saved. Default is ``/home/$USER/.rotkehlchen``.
 - **sleep-secs**: This is the amount of seconds that the main loop of rotkehlchen sleeps for. Default is 20.

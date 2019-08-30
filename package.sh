@@ -117,14 +117,14 @@ if [[ $ROTKEHLCHEN_VERSION == *".dev"* ]]; then
     # It's not a tagged release. Returned version
     # looks similar to 0.6.1.dev12+ga5ed53d
     DATE=$(date +%Y-%m-%dT%H-%M-%S)
-    export ARCHIVE_NAME="rotkehlchen-${PLATFORM}-${ARCH}-v${ROTKEHLCHEN_VERSION}"
-    EXEC_NAME="rotkehlchen-${DATE}-v${ROTKEHLCHEN_VERSION}"
+    export ARCHIVE_NAME="rotki-${PLATFORM}-${ARCH}-v${ROTKEHLCHEN_VERSION}"
+    EXEC_NAME="rotki-${DATE}-v${ROTKEHLCHEN_VERSION}"
 else
-    export ARCHIVE_NAME="rotkehlchen-${PLATFORM}-${ARCH}-v${ROTKEHLCHEN_VERSION}"
-    EXEC_NAME="rotkehlchen-v${ROTKEHLCHEN_VERSION}"
+    export ARCHIVE_NAME="rotki-${PLATFORM}-${ARCH}-v${ROTKEHLCHEN_VERSION}"
+    EXEC_NAME="rotki-v${ROTKEHLCHEN_VERSION}"
 fi
 
-GENERATED_ARCHIVE_NAME="rotkehlchen-${PLATFORM}-${ARCH}"
+GENERATED_ARCHIVE_NAME="rotki-${PLATFORM}-${ARCH}"
 
 if [[ $PLATFORM == "linux" ]]; then
     mv $GENERATED_ARCHIVE_NAME/rotkehlchen $GENERATED_ARCHIVE_NAME/unwrapped_executable
@@ -135,7 +135,7 @@ cp tools/scripts/wrapper_script.sh $GENERATED_ARCHIVE_NAME/$EXEC_NAME
 
 if [[ $PLATFORM == "darwin" ]]; then
     # For OSX create a dmg
-    ./node_modules/.bin/electron-installer-dmg $GENERATED_ARCHIVE_NAME/rotkehlchen.app $ARCHIVE_NAME --icon=ui/images/rotki.icns --title=Rotkehlchen
+    ./node_modules/.bin/electron-installer-dmg $GENERATED_ARCHIVE_NAME/rotkehlchen.app $ARCHIVE_NAME --icon=ui/images/rotki.icns --title=Rotki
 
     rm -rf $GENERATED_ARCHIVE_NAME
 else

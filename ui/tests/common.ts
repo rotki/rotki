@@ -41,7 +41,7 @@ export async function createAccount(app: Application, username: string, password
     await app.client.click('.jconfirm-buttons>button');
 
     await app.client.waitUntilTextExists('div', `Welcome ${username}!`, METHOD_TIMEOUT);
-    await app.client.waitUntilTextExists('div', `Welcome to Rotkehlchen!`, METHOD_TIMEOUT);
+    await app.client.waitUntilTextExists('div', `Welcome to Rotki!`, METHOD_TIMEOUT);
 
     await app.client.execute(() => {
         // noinspection JSJQueryEfficiency

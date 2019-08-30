@@ -1,5 +1,5 @@
 {
-    "name": "rotkehlchen",
+    "name": "rotki",
     "version": "1.0.2",
     "license": "BSD-3-Clause",
     "main": "main.js",

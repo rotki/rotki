@@ -171,7 +171,7 @@ export function create_or_reload_dashboard() {
         body.removeClass('loading');
         service.version_check().then(result => {
             if (result.url) {
-                const message = `Your Rotkehlchen version ${result.our_version} is outdated.
+                const message = `Your Rotki version ${result.our_version} is outdated.
 The latest version is ${result.latest_version} and you can download it from:
  ${result.url} `;
                 showAction(

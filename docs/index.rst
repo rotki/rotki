@@ -1,12 +1,12 @@
-Welcome to Rotkehlchen's documentation!
+Welcome to Rotki's documentation!
 =======================================
 
-This is the documentation for the |version| version of `Rotkehlchen <http://rotkehlchen.io/>`_. The sourcecode along with the issue tracker is in the `Github Repository <https://github.com/rotkehlchenio/rotkehlchen>`_.
+This is the documentation for the |version| version of `Rotki <http://rotkehlchen.io/>`_. The sourcecode along with the issue tracker is in the `Github Repository <https://github.com/rotkehlchenio/rotkehlchen>`_.
 
-What is Rotkehlchen?
+What is Rotki?
 --------------------
 
-Rotkehlchen is an asset management and accounting application specializing in Crypto assets and aims to also help with tax reporting. It has integration for multiple exchanges with more coming soon. For more info check out our :doc:`FAQ<faq>`.
+Rotki is an asset management and accounting application specializing in Crypto assets and aims to also help with tax reporting. It has integration for multiple exchanges with more coming soon. For more info check out our :doc:`FAQ<faq>`.
 
 Disclaimer
 ----------
@@ -20,7 +20,7 @@ THE SERVICE IS NOT INTENDED FOR CONTINUOUS MONITORING OF TRANSACTION DATA OR FOR
 Where to start?
 ---------------
 
-If this is the first time looking at Rotkehlchen you will probably want to visit the :doc:`Installation Guide<installation_guide>`. Once you have succesfully managed to install Rotkehlchen you can proceed to the :doc:`Usage Guide<usage_guide>`. If you wish to contribute to Rotkehlhen please check the :doc:`Contribution Guide<contribute>`.
+If this is the first time looking at Rotki you will probably want to visit the :doc:`Installation Guide<installation_guide>`. Once you have succesfully managed to install Rotki you can proceed to the :doc:`Usage Guide<usage_guide>`. If you wish to contribute to Rotkehlhen please check the :doc:`Contribution Guide<contribute>`.
 
 
 Contents
