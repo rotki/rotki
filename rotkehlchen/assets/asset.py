@@ -20,6 +20,8 @@ WORLD_TO_BITTREX = {
     'PLA-2': 'PLA',
     # In Rotkehlchen LUNA-2 is Terra Luna but in Bittrex it's LUNA
     'LUNA-2': 'LUNA',
+    # In Rotkehlchen WorldWideAssetExchange is WAX but in Bittrex it's WASP
+    'WAX': 'WAXP',
 }
 
 WORLD_TO_POLONIEX = {
