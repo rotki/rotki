@@ -2,6 +2,10 @@
 Changelog
 =========
 
+* :feature:`-` Added support for the following tokens
+
+  - `Perling <https://coinmarketcap.com/currencies/perlin/>`__
+
 * :release:`1.0.3 <2019-08-30>`
 * :feature:`453` If a newer version exists the user is notified at the start of the application and is given a link to download it.
 * :feature:`487` USDT can now also be monitored as an ethereum token.

@@ -6446,6 +6446,14 @@
         "symbol": "PCL",
         "type": "ethereum token"
     },
+    "PERL": {
+        "ethereum_address": "0xb5A73f5Fc8BbdbcE59bfD01CA8d35062e0dad801",
+        "ethereum_token_decimals": 9,
+        "name": "Perlin",
+        "started": 1566604800,
+        "symbol": "PERL",
+        "type": "ethereum token"
+    },
     "PFR": {
         "ethereum_address": "0x2FA32a39fc1c399E0Cc7B2935868f5165De7cE97",
         "ethereum_token_decimals": 8,
