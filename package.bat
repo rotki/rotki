@@ -72,7 +72,8 @@ call node_modules/.bin/electron-packager . --overwrite ^
 				      --ignore=".*\.py" ^
 				      --ignore=".*\.bat" ^
 				      --ignore="^/CONTRIBUTING.md" ^
-				      --ignore="^/Makefile"
+				      --ignore="^/Makefile" ^
+				      --icon="ui/images/rotki.ico"
 
 if %errorlevel% neq 0 (
    echo "ERROR - electron-packager step failed"
