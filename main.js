@@ -151,7 +151,6 @@ function log_and_quit(msg) {
 }
 
 let logspath;
-console.log(process.platform);
 if (process.platform === 'linux') {
     logspath = app.getPath("appData");
 } else {

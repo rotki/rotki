@@ -12,6 +12,7 @@ import {EthTokensResult} from './model/eth_tokens_result';
 import {PeriodicClientQueryResult} from './model/periodic_client_query_result';
 import {NetvalueDataResult} from './model/query-netvalue-data-result';
 import {Messages} from './model/messages';
+import {VersionCheck} from './model/version-check';
 
 const zerorpc = require('zerorpc-rotkehlchen');
 // max timeout is now 9999 seconds
@@ -150,9 +151,9 @@ export class RotkehlchenService {
         });
     }
 
-    version_check(): Promise<ActionResult<boolean>> {
-        return new Promise<ActionResult<boolean>>((resolve, reject) => {
-            client.invoke('version_check', (error: Error, result: ActionResult<boolean>) => {
+    version_check(): Promise<VersionCheck> {
+        return new Promise<VersionCheck>((resolve, reject) => {
+            client.invoke('version_check', (error: Error, result: VersionCheck) => {
                 if (error || result == null) {
                     reject(error || new NoResponseError());
                 } else {

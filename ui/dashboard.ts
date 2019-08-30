@@ -2,7 +2,7 @@ import {change_location} from './navigation';
 import {set_ui_main_currency} from './topmenu';
 import {get_total_assets_value, iterate_saved_balances, total_table_add_balances, total_table_recreate} from './balances_table';
 import {assert_exchange_exists, format_currency_value, pages, settings} from './settings';
-import {showError, showInfo} from './utils';
+import {showError, showAction} from './utils';
 import {create_or_reload_exchange} from './exchange';
 import {monitor_add_callback} from './monitor';
 import {prompt_sign_in} from './userunlock';
@@ -170,8 +170,17 @@ export function create_or_reload_dashboard() {
         console.log('At create/reload, for the first time');
         body.removeClass('loading');
         service.version_check().then(result => {
-            if (result['message']) {
-                showInfo('New Version Available', result['message']);
+            if (result.url) {
+                const message = `Your Rotkehlchen version ${result.our_version} is outdated.
+The latest version is ${result.latest_version} and you can download it from:
+ ${result.url} `;
+                showAction(
+                    'New Version Available',
+                    message,
+                    'Download',
+                    // @ts-ignore  we already know that url should exist here
+                    function() {shell.openExternal(result.url); }
+                );
             }
         });
         prompt_sign_in();

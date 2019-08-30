@@ -418,9 +418,18 @@ class RotkehlchenServer():
         result, message = self.rotkehlchen.data.remove_ignored_asset(asset)
         return {'result': result, 'message': message}
 
-    def version_check(self):
-        message = check_if_version_up_to_date()
-        return {'result': True, 'message': message}
+    @staticmethod
+    def version_check():
+        result = check_if_version_up_to_date()
+        if not result:
+            our_version = None
+            latest_version = None
+            url = None
+        else:
+            our_version = result[0]
+            latest_version = result[1]
+            url = result[2]
+        return {'our_version': our_version, 'latest_version': latest_version, 'url': url}
 
     def unlock_user(
             self,
