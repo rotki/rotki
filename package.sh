@@ -127,7 +127,7 @@ fi
 GENERATED_ARCHIVE_NAME="rotki-${PLATFORM}-${ARCH}"
 
 if [[ $PLATFORM == "linux" ]]; then
-    mv $GENERATED_ARCHIVE_NAME/rotkehlchen $GENERATED_ARCHIVE_NAME/unwrapped_executable
+    mv $GENERATED_ARCHIVE_NAME/rotki $GENERATED_ARCHIVE_NAME/unwrapped_executable
 fi
 
 cp tools/scripts/wrapper_script.sh $GENERATED_ARCHIVE_NAME/$EXEC_NAME
