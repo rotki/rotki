@@ -1,5 +1,5 @@
 import {form_entry} from './elements';
-import {setup_client_auditor, setupMessageRetrieval, showError, showInfo, suggest_element, unsuggest_element} from './utils';
+import {setup_client_auditor, setupMessageRetrieval, showError, showInfo, suggest_element, unsuggest_element, showAction} from './utils';
 import {set_ui_main_currency} from './topmenu';
 import {get_total_assets_value, total_table_add_balances} from './balances_table';
 import {create_box, create_or_reload_dashboard} from './dashboard';
@@ -8,6 +8,7 @@ import {query_exchange_balances_async} from './exchange';
 import {settings} from './settings';
 import {UnlockResult} from './model/action-result';
 import {service} from './rotkehlchen_service';
+import {shell} from 'electron';
 
 function verify_userpass(username: string, password: string) {
     if (!username) {
@@ -291,6 +292,19 @@ function load_dashboard_after_unlock(exchanges: string[], is_new_user: boolean) 
     }
 
     if (!is_new_user) {
+        if (!settings.has_premium) {
+
+            showAction(
+                'Upgrade to Premium',
+                `Rotkehlchen is opensource software and needs your support! Please
+
+                 consider upgrading to premium by purchasing a premium subscription.
+                This way you can help us further develop the software and you can
+                also enjoy additional premium-only features.`,
+                'Upgrade',
+                function() {shell.openExternal('https://rotkehlchen.io/products/'); }
+            );
+        }
         get_blockchain_total();
         get_banks_total();
     } else {
