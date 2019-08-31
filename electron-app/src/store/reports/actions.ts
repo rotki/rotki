@@ -11,6 +11,7 @@ export const actions: ActionTree<TaxReportState, RotkehlchenState> = {
     try {
       const { start, end } = payload;
       const result = await service.process_trade_history_async(start, end);
+      commit('reportPeriod', { start, end });
       const task = createTask(
         result.task_id,
         TaskType.TRADE_HISTORY,
