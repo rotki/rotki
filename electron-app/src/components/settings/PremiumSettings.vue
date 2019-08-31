@@ -1,6 +1,6 @@
 <template>
-  <v-layout class="premium-settings">
-    <v-flex>
+  <v-row class="premium-settings">
+    <v-col>
       <v-card>
         <v-card-title>Premium Settings</v-card-title>
         <v-card-text>
@@ -50,14 +50,14 @@
           ></v-switch>
         </v-card-actions>
       </v-card>
-    </v-flex>
+    </v-col>
     <message-dialog
       :title="dialogTitle"
       :message="dialogMessage"
       :success="success"
       @dismiss="dismiss()"
     ></message-dialog>
-  </v-layout>
+  </v-row>
 </template>
 
 <script lang="ts">

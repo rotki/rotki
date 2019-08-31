@@ -4,16 +4,16 @@
       <v-card-title class="headline">
         {{ title }}
       </v-card-title>
-      <v-layout align-center>
-        <v-flex xs2>
+      <v-row align="center">
+        <v-col cols="2">
           <v-icon class="dialog-icon" color="primary">
             fa fa-question-circle fa-3x
           </v-icon>
-        </v-flex>
-        <v-flex xs10>
+        </v-col>
+        <v-col cols="10">
           <v-card-text> {{ message }} </v-card-text>
-        </v-flex>
-      </v-layout>
+        </v-col>
+      </v-row>
 
       <v-card-actions>
         <v-spacer></v-spacer>

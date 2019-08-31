@@ -12,19 +12,36 @@
         </v-btn>
       </v-badge>
     </template>
-    <v-layout column class="progress-indicator__details">
-      <v-list v-if="tasks.length > 0" shaped>
-        <v-list-item v-for="task in tasks" :key="task.id">
-          <v-list-item-content>
-            <v-list-item-title v-text="task.description"></v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-      </v-list>
-      <div v-else class="progress-indicator__no_tasks">
+    <v-row class="progress-indicator__details">
+      <v-col v-if="tasks.length > 0">
+        <v-list two-line>
+          <template v-for="task in tasks">
+            <v-list-item :key="task.id" class="progress-indicator__task">
+              <v-list-item-content>
+                <v-list-item-title
+                  v-text="task.description"
+                ></v-list-item-title>
+                <v-progress-linear
+                  v-if="task.type !== 'process_trade_history'"
+                  indeterminate
+                  class="progress-indicator__task__progress"
+                ></v-progress-linear>
+                <v-progress-linear
+                  v-else
+                  :value="progress"
+                  class="progress-indicator__task__progress"
+                ></v-progress-linear>
+              </v-list-item-content>
+            </v-list-item>
+            <v-divider :key="task.id"></v-divider>
+          </template>
+        </v-list>
+      </v-col>
+      <v-col v-else class="progress-indicator__no_tasks align justify">
         <v-icon color="primary">fa fa-info-circle</v-icon>
         <div>No running tasks</div>
-      </div>
-    </v-layout>
+      </v-col>
+    </v-row>
   </v-menu>
 </template>
 
@@ -34,15 +51,18 @@ import { createNamespacedHelpers } from 'vuex';
 import { Task } from '@/model/task';
 
 const { mapGetters } = createNamespacedHelpers('tasks');
+const mapReportGetters = createNamespacedHelpers('reports').mapGetters;
 
 @Component({
   computed: {
-    ...mapGetters(['hasRunningTasks', 'tasks'])
+    ...mapGetters(['hasRunningTasks', 'tasks']),
+    ...mapReportGetters(['progress'])
   }
 })
 export default class ProgressIndicator extends Vue {
   hasRunningTasks!: boolean;
   tasks!: Task[];
+  progress!: number;
 }
 </script>
 
@@ -51,5 +71,20 @@ export default class ProgressIndicator extends Vue {
   width: 300px;
   height: 350px;
   background-color: white;
+}
+
+.progress-indicator__no_tasks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.progress-indicator__task {
+  min-height: 35px;
+}
+
+.progress-indicator__task__progress {
+  margin-top: 8px;
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
-  <v-layout>
-    <v-flex>
+  <v-row>
+    <v-col>
       <v-card>
         <v-card-title>Blockchain Balance</v-card-title>
         <v-card-text>
@@ -52,8 +52,8 @@
           ></account-balances>
         </v-card-text>
       </v-card>
-    </v-flex>
-  </v-layout>
+    </v-col>
+  </v-row>
 </template>
 
 <script lang="ts">

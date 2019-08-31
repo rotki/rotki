@@ -1,10 +1,10 @@
 <template>
   <v-container class="user-settings">
-    <v-layout>
-      <v-flex>
+    <v-row>
+      <v-col>
         <h1>User Settings</h1>
-      </v-flex>
-    </v-layout>
+      </v-col>
+    </v-row>
     <premium-settings></premium-settings>
     <exchange-settings></exchange-settings>
     <fiat-balances></fiat-balances>

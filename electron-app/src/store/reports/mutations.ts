@@ -26,6 +26,7 @@ export const mutations: MutationTree<TaxReportState> = {
   },
 
   reportPeriod(state: TaxReportState, payload: { start: number; end: number }) {
+    state.historyProcess = payload.start;
     state.historyStart = payload.start;
     state.historyEnd = payload.end;
   }

@@ -1,6 +1,6 @@
 <template>
-  <v-layout align-center justify-center class="token-track">
-    <v-flex xs12>
+  <v-row align="center" justify="center" class="token-track">
+    <v-col cols="12">
       <v-autocomplete
         v-model="ownedTokens"
         :disabled="loading"
@@ -52,8 +52,8 @@
         :message="errorMessage"
         @dismiss="dismiss()"
       ></message-dialog>
-    </v-flex>
-  </v-layout>
+    </v-col>
+  </v-row>
 </template>
 
 <script lang="ts">
