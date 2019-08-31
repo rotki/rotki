@@ -7,22 +7,22 @@
         </v-icon>
       </v-btn>
     </template>
-    <v-layout class="popup">
-      <v-flex>
+    <v-row class="popup">
+      <v-col>
         <v-icon v-if="nodeConnection" color="primary">
           fa fa-fw fa-check-circle
         </v-icon>
         <v-icon v-else color="warning">fa fa-fw fa-exclamation-triangle</v-icon>
-      </v-flex>
-      <v-flex>
+      </v-col>
+      <v-col>
         <span v-if="nodeConnection">
           Connected to a local ethereum node
         </span>
         <span v-else>
           Not connected to a local ethereum node
         </span>
-      </v-flex>
-    </v-layout>
+      </v-col>
+    </v-row>
   </v-menu>
 </template>
 

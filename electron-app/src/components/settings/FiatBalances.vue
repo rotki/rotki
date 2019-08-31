@@ -1,6 +1,6 @@
 <template>
-  <v-layout>
-    <v-flex>
+  <v-row>
+    <v-col>
       <v-card>
         <v-card-title>Fiat Balances</v-card-title>
         <v-card-text>
@@ -26,7 +26,7 @@
           >
             {{ add ? 'Add Balance' : 'Modify Balance' }}
           </v-btn>
-          <v-flex xs12>
+          <v-col cols="12">
             <v-data-table :headers="headers" :items="fiatBalances">
               <template #header.usdValue>
                 {{ currency.ticker_symbol }} value
@@ -45,11 +45,11 @@
                 }}
               </template>
             </v-data-table>
-          </v-flex>
+          </v-col>
         </v-card-text>
       </v-card>
-    </v-flex>
-  </v-layout>
+    </v-col>
+  </v-row>
 </template>
 
 <script lang="ts">

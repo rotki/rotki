@@ -3,26 +3,26 @@
     <v-card>
       <v-card-title>Generate</v-card-title>
       <v-card-text>
-        <v-layout>
-          <v-flex xs12>
+        <v-row>
+          <v-col cols="12">
             <date-time-picker
               v-model="start"
               label="Start Date"
               limit-now
               :rules="startRules"
             ></date-time-picker>
-          </v-flex>
-        </v-layout>
-        <v-layout>
-          <v-flex xs12>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col cols="12">
             <date-time-picker
               v-model="end"
               label="End Date"
               limit-now
               :rules="endRules"
             ></date-time-picker>
-          </v-flex>
-        </v-layout>
+          </v-col>
+        </v-row>
         <v-alert v-model="invalidRange" type="error">
           {{ message }}
         </v-alert>

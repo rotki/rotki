@@ -1,12 +1,12 @@
 <template>
   <v-container id="settings-account">
-    <v-layout>
-      <v-flex>
+    <v-row>
+      <v-col>
         <h1 class="page-header">Accounting Settings</h1>
-      </v-flex>
-    </v-layout>
-    <v-layout>
-      <v-flex>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col>
         <v-card>
           <v-card-title>Trade Settings</v-card-title>
           <v-card-text>
@@ -50,22 +50,22 @@
             </v-btn>
           </v-card-actions>
         </v-card>
-      </v-flex>
-    </v-layout>
-    <v-layout>
-      <v-flex>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col>
         <v-card>
           <v-card-title>Asset Settings</v-card-title>
           <v-card-text>
-            <v-layout>
-              <v-flex xs10>
+            <v-row>
+              <v-col cols="10">
                 <v-text-field
                   v-model="assetToIgnore"
                   label="Asset To Ignore"
                   @keyup.enter="addAsset()"
                 ></v-text-field>
-              </v-flex>
-              <v-flex xs2>
+              </v-col>
+              <v-col cols="2">
                 <v-btn
                   text
                   color="primary"
@@ -74,10 +74,10 @@
                 >
                   Add
                 </v-btn>
-              </v-flex>
-            </v-layout>
-            <v-layout>
-              <v-flex xs10>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="10">
                 <v-select
                   v-model="assetToRemove"
                   :items="ignoredAssets"
@@ -92,8 +92,8 @@
                     </v-badge>
                   </div>
                 </v-select>
-              </v-flex>
-              <v-flex xs2>
+              </v-col>
+              <v-col cols="2">
                 <v-btn
                   text
                   color="primary"
@@ -102,12 +102,12 @@
                 >
                   Remove
                 </v-btn>
-              </v-flex>
-            </v-layout>
+              </v-col>
+            </v-row>
           </v-card-text>
         </v-card>
-      </v-flex>
-    </v-layout>
+      </v-col>
+    </v-row>
     <message-dialog
       :success="true"
       title="Success"

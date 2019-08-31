@@ -1,10 +1,10 @@
 <template>
   <div class="asset-balances">
-    <v-layout>
-      <v-flex>
+    <v-row>
+      <v-col>
         <h3 class="text-center">{{ title }}</h3>
-      </v-flex>
-    </v-layout>
+      </v-col>
+    </v-row>
     <v-data-table :headers="headers" :items="balances">
       <template #header.usdValue>
         {{ currency.ticker_symbol }} value

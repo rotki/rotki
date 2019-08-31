@@ -1,12 +1,12 @@
 <template>
   <div>
-    <v-layout>
-      <v-flex>
+    <v-row>
+      <v-col>
         <h1 class="page-header">OTC Trades Management</h1>
-      </v-flex>
-    </v-layout>
-    <v-layout>
-      <v-flex>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col>
         <v-card>
           <v-card-title>Register New Trade</v-card-title>
           <v-card-text>
@@ -84,8 +84,8 @@
             </v-btn>
           </v-card-actions>
         </v-card>
-      </v-flex>
-    </v-layout>
+      </v-col>
+    </v-row>
   </div>
 </template>
 

@@ -1,12 +1,10 @@
 <template>
   <v-container>
-    <v-layout column class="tax-report">
-      <v-layout>
-        <v-flex xs12>
-          <h1>Tax Report</h1>
-        </v-flex>
-      </v-layout>
-    </v-layout>
+    <v-col cols="12" class="tax-report">
+      <v-row>
+        <h1>Tax Report</h1>
+      </v-row>
+    </v-col>
     <generate @generate="generate($event)"></generate>
     <div v-if="loaded && !isRunning">
       <v-btn
@@ -20,27 +18,28 @@
       <tax-report-overview class="tax-report__section"></tax-report-overview>
       <tax-report-events class="tax-report__section"></tax-report-events>
     </div>
-    <div v-if="isRunning">
-      <v-layout>
-        <v-flex>
-          <h2 class="text-center">Generating Report</h2>
-        </v-flex>
-      </v-layout>
-      <v-layout>
-        <v-flex>
-          <v-progress-circular
-            class="text-center"
-            size="80"
-            :value="progress"
-          ></v-progress-circular>
-        </v-flex>
-      </v-layout>
-      <v-layout>
-        <v-flex>
-          <p class="text-center">Please wait...</p>
-        </v-flex>
-      </v-layout>
-    </div>
+    <v-col v-if="isRunning" cols="12" class="tax-report__progress">
+      <v-row align="center" justify="center">
+        <h2 class="text-center">Generating Report</h2>
+      </v-row>
+      <v-row
+        align="center"
+        justify="center"
+        class="tax-report__progress__progress"
+      >
+        <v-progress-circular
+          class="text-center"
+          size="80"
+          color="primary"
+          :value="progress"
+        >
+          {{ progress }} %
+        </v-progress-circular>
+      </v-row>
+      <v-row align="center" justify="center">
+        <p class="text-center">Please wait...</p>
+      </v-row>
+    </v-col>
   </v-container>
 </template>
 
@@ -76,7 +75,7 @@ export default class TaxReport extends Vue {
   progress!: number;
 
   get isRunning(): boolean {
-    return true; //this.isTaskRunning(TaskType.TRADE_HISTORY);
+    return this.isTaskRunning(TaskType.TRADE_HISTORY);
   }
 
   generate(event: TaxReportEvent) {
@@ -108,5 +107,15 @@ export default class TaxReport extends Vue {
 
 .tax-report__export-csv {
   margin-top: 20px;
+}
+
+.tax-report__progress {
+  margin-top: 20px;
+  height: 100%;
+  min-height: 300px;
+}
+
+.tax-report__progress__progress {
+  min-height: 150px;
 }
 </style>

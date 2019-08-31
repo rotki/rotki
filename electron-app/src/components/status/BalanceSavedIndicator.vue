@@ -7,14 +7,14 @@
         </v-icon>
       </v-btn>
     </template>
-    <v-layout column class="popup">
-      <v-layout>
+    <v-row column class="popup">
+      <v-row>
         Balances last saved
-      </v-layout>
-      <v-layout id="last_balance_save_field" class="text--secondary">
+      </v-row>
+      <v-row id="last_balance_save_field" class="text--secondary">
         Never
-      </v-layout>
-    </v-layout>
+      </v-row>
+    </v-row>
   </v-menu>
 </template>
 <script lang="ts">

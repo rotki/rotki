@@ -1,16 +1,16 @@
 <template>
-  <v-layout>
-    <v-flex>
+  <v-row>
+    <v-col>
       <v-card>
         <v-card-title>Exchange Settings</v-card-title>
         <v-card-text>
-          <v-layout class="connected-exchanges">
+          <v-row class="connected-exchanges">
             <exchange-badge
               v-for="exchange in connectedExchanges"
               :key="exchange"
               :name="exchange"
             ></exchange-badge>
-          </v-layout>
+          </v-row>
           <v-select
             v-model="selectedExchange"
             :items="availableExchanges"
@@ -45,7 +45,7 @@
           </v-btn>
         </v-card-actions>
       </v-card>
-    </v-flex>
+    </v-col>
     <message-dialog
       :title="errorTitle"
       :message="errorMessage"
@@ -58,7 +58,7 @@
       @cancel="confirmation = false"
       @confirm="remove()"
     ></confirm-dialog>
-  </v-layout>
+  </v-row>
 </template>
 
 <script lang="ts">
