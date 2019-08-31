@@ -44,7 +44,17 @@ def test_tuple_in_process_result():
 def test_iso8601ts_to_timestamp():
     assert iso8601ts_to_timestamp('2018-09-09T12:00:00.000Z') == 1536494400
     assert iso8601ts_to_timestamp('2011-01-01T04:13:22.220Z') == 1293855202
-    assert iso8601ts_to_timestamp('1986-11-04T16:23:57.921Z') == 531505437
+    assert iso8601ts_to_timestamp('1986-11-04T16:23:57.921Z') == 531505438
+    assert iso8601ts_to_timestamp('1997-07-16T22:30') == 869085000
+    assert iso8601ts_to_timestamp('1997-07-16T22:30+01:00') == 869088600
+    assert iso8601ts_to_timestamp('1997-07-16T22:30:45+01:00') == 869088645
+    assert iso8601ts_to_timestamp('1997-07-16T22:30:45.1+01:00') == 869088645
+    assert iso8601ts_to_timestamp('1997-07-16T22:30:45.01+01:00') == 869088645
+    assert iso8601ts_to_timestamp('1997-07-16T22:30:45.001+01:00') == 869088645
+    assert iso8601ts_to_timestamp('1997-07-16T22:30:45.9+01:00') == 869088646
+    assert iso8601ts_to_timestamp('1997-07-16T22:30:45.99+01:00') == 869088646
+    assert iso8601ts_to_timestamp('1997-07-16T22:30:45.999+01:00') == 869088646
+    assert iso8601ts_to_timestamp('1997-07-16T21:30:45+00:00') == 869088645
 
 
 def test_invert_pair():
