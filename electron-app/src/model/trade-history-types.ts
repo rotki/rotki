@@ -104,7 +104,7 @@ export const convertEventEntry = (event: ApiEventEntry): EventEntry => ({
   taxableReceivedInProfitCurrency: bigNumberify(
     event.taxable_received_in_profit_currency
   ),
-  receivedInAsset: bigNumberify(event.received_asset),
+  receivedInAsset: bigNumberify(event.received_in_asset),
   netProfitOrLoss: bigNumberify(event.net_profit_or_loss),
   time: event.time,
   isVirtual: event.is_virtual
