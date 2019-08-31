@@ -101,6 +101,7 @@ export class TaskManager {
     }
 
     const { overview, all_events } = result;
+    console.log(result);
     const payload = {
       overview: convertTradeHistoryOverview(overview),
       events: map(all_events, (event: ApiEventEntry) =>

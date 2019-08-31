@@ -8,7 +8,7 @@
       </v-layout>
     </v-layout>
     <generate @generate="generate($event)"></generate>
-    <div v-if="loaded">
+    <div v-if="loaded && !isRunning">
       <v-btn
         class="tax-report__export-csv"
         depressed
@@ -20,7 +20,7 @@
       <tax-report-overview class="tax-report__section"></tax-report-overview>
       <tax-report-events class="tax-report__section"></tax-report-events>
     </div>
-    <v-overlay :value="isRunning">
+    <div v-if="isRunning">
       <v-layout>
         <v-flex>
           <h2 class="text-center">Generating Report</h2>
@@ -31,6 +31,7 @@
           <v-progress-circular
             class="text-center"
             size="80"
+            :value="progress"
           ></v-progress-circular>
         </v-flex>
       </v-layout>
@@ -39,7 +40,7 @@
           <p class="text-center">Please wait...</p>
         </v-flex>
       </v-layout>
-    </v-overlay>
+    </div>
   </v-container>
 </template>
 
@@ -55,14 +56,15 @@ import TaxReportOverview from '@/components/taxreport/TaxReportOverview.vue';
 import TaxReportEvents from '@/components/taxreport/TaxReportEvents.vue';
 import { Currency } from '@/model/currency';
 
-const { mapGetters } = createNamespacedHelpers('tasks');
-const { mapState } = createNamespacedHelpers('reports');
+const mapTaskGetters = createNamespacedHelpers('tasks').mapGetters;
+const { mapState, mapGetters } = createNamespacedHelpers('reports');
 const mapSessionState = createNamespacedHelpers('session').mapState;
 
 @Component({
   components: { TaxReportEvents, TaxReportOverview, MessageDialog, Generate },
   computed: {
-    ...mapGetters(['isTaskRunning']),
+    ...mapTaskGetters(['isTaskRunning']),
+    ...mapGetters(['progress']),
     ...mapState(['loaded']),
     ...mapSessionState(['currency'])
   }
@@ -71,9 +73,10 @@ export default class TaxReport extends Vue {
   isTaskRunning!: (type: TaskType) => boolean;
   loaded!: boolean;
   currency!: Currency;
+  progress!: number;
 
   get isRunning(): boolean {
-    return this.isTaskRunning(TaskType.TRADE_HISTORY);
+    return true; //this.isTaskRunning(TaskType.TRADE_HISTORY);
   }
 
   generate(event: TaxReportEvent) {

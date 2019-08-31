@@ -10,6 +10,8 @@ export interface TaxReportState {
   events: EventEntry[];
   currency: string;
   loaded: boolean;
+  historyStart: number;
+  historyEnd: number;
   historyProcess: number;
 }
 
@@ -18,6 +20,8 @@ export const createTaxReportState = (): TaxReportState => ({
   events: [],
   currency: currencies[0].ticker_symbol,
   loaded: false,
+  historyStart: -1,
+  historyEnd: -1,
   historyProcess: -1
 });
 
