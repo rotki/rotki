@@ -1,12 +1,12 @@
 <template>
   <v-container>
-    <v-layout>
-      <v-flex>
+    <v-row>
+      <v-col>
         <h1 class="page-header">Dashboard</h1>
-      </v-flex>
-    </v-layout>
-    <v-layout>
-      <v-flex xs12>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col cols="12">
         <exchange-box
           v-for="exchange in exchanges"
           :key="exchange.name"
@@ -25,15 +25,15 @@
           icon="fa-university"
           :amount="0"
         ></information-box>
-      </v-flex>
-    </v-layout>
-    <v-layout>
-      <v-flex xs12>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col cols="12">
         <h1 class="page-header">All Balances</h1>
-      </v-flex>
-    </v-layout>
-    <v-layout>
-      <v-flex xs12>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col cols="12">
         <v-data-table
           :headers="headers"
           :items="blockchainTotals"
@@ -57,23 +57,23 @@
             </v-alert>
           </template>
         </v-data-table>
-      </v-flex>
-    </v-layout>
-    <v-layout>
+      </v-col>
+    </v-row>
+    <v-row>
       <div id="dashboard-wrapper">
         <div class="row">
           <div id="dashboard-contents" class="col-lg-12"></div>
         </div>
       </div>
-    </v-layout>
+    </v-row>
   </v-container>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import InformationBox from '@/components/InformationBox.vue';
-import { mapGetters, mapState } from 'vuex';
-import { Balances, ExchangeInfo } from '@/typing/types';
+import { mapGetters } from 'vuex';
+import { ExchangeInfo } from '@/typing/types';
 import { AssetBalance } from '@/model/asset-balance';
 import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
 

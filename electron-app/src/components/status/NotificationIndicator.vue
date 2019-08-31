@@ -19,7 +19,7 @@
         @confirm="clear()"
       ></confirm-dialog>
     </template>
-    <v-layout id="notification-messages" column class="popup">
+    <v-row id="notification-messages" column class="popup">
       <div v-if="count === 0" class="no-notifications">
         <v-icon>fa fa-info-circle fa-fw</v-icon>
         <p>No messages!</p>
@@ -41,7 +41,7 @@
           ></single-notification>
         </div>
       </div>
-    </v-layout>
+    </v-row>
   </v-menu>
 </template>
 

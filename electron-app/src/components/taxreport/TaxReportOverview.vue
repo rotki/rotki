@@ -1,6 +1,6 @@
 <template>
-  <v-layout>
-    <v-flex>
+  <v-row>
+    <v-col>
       <v-card>
         <v-card-title>Overview</v-card-title>
         <v-card-text>
@@ -26,8 +26,8 @@
           </v-simple-table>
         </v-card-text>
       </v-card>
-    </v-flex>
-  </v-layout>
+    </v-col>
+  </v-row>
 </template>
 
 <script lang="ts">

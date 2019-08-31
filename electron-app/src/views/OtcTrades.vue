@@ -6,13 +6,13 @@
       @save="saveItem($event)"
       @cancel="cancelEdit()"
     ></otc-form>
-    <v-layout>
-      <v-flex>
+    <v-row>
+      <v-col>
         <h1>OTC Trades List</h1>
-      </v-flex>
-    </v-layout>
-    <v-layout>
-      <v-flex xs12>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col cols="12">
         <v-card>
           <v-data-table
             :headers="headers"
@@ -75,8 +75,8 @@
             </v-list>
           </v-menu>
         </v-card>
-      </v-flex>
-    </v-layout>
+      </v-col>
+    </v-row>
     <message-dialog
       title="Success"
       success
