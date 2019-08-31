@@ -5,6 +5,7 @@ import json
 import logging
 import operator
 import os
+import re
 import sys
 import time
 from functools import wraps
@@ -36,6 +37,9 @@ def create_timestamp(datestr: str, formatstr: str = '%Y-%m-%d %H:%M:%S') -> Time
     return Timestamp(calendar.timegm(time.strptime(datestr, formatstr)))
 
 
+FRACTION_SECS_RE = re.compile(r'.*\.(\d+).*')
+
+
 def iso8601ts_to_timestamp(datestr: str) -> Timestamp:
     """Requires python 3.7 due to fromisoformat()
 
@@ -49,10 +53,23 @@ def iso8601ts_to_timestamp(datestr: str) -> Timestamp:
     """
     # Required due to prolems with fomrisoformat recognizing the ZULU mark
     datestr = datestr.replace("Z", "+00:00")
+    # The following function does not always properly handle fractions of a second
+    # so let's just remove it and round to the nearest second since we only deal
+    # with seconds in the rotkehlchen timestamps
+    match = FRACTION_SECS_RE.search(datestr)
+    add_a_second = False
+    if match:
+        fraction_str = match.group(1)
+        datestr = datestr.replace('.' + fraction_str, '')
+        num = int(fraction_str) / int('1' + '0' * len(fraction_str))
+        if num > 0.5:
+            add_a_second = True
     try:
-        return Timestamp(int(datetime.datetime.fromisoformat(datestr).timestamp()))
+        ts = Timestamp(int(datetime.datetime.fromisoformat(datestr).timestamp()))
     except ValueError:
         raise DeserializationError(f'Couldnt read {datestr} as iso8601ts timestamp')
+
+    return Timestamp(ts + 1) if add_a_second else ts
 
 
 def satoshis_to_btc(satoshis: Numerical) -> Numerical:
