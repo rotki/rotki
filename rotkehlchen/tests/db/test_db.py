@@ -547,6 +547,29 @@ asset_balances = [
 ]
 
 
+def test_get_fiat_balances_unhappy_path(data_dir, username):
+    """Test that if somehow unsupported assets end up in the DB we don't crash"""
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
+    data.unlock(username, '123', create_new=True)
+
+    cursor = data.db.conn.cursor()
+    cursor.execute(
+        'INSERT INTO current_balances(asset, amount) '
+        ' VALUES(?, ?)',
+        ('DSADASDSAD', '10.1'),
+    )
+    data.db.conn.commit()
+
+    balances = data.get_fiat_balances()
+    warnings = msg_aggregator.consume_warnings()
+    errors = msg_aggregator.consume_errors()
+    assert len(balances) == 0
+    assert len(warnings) == 0
+    assert len(errors) == 1
+    assert 'Unknown FIAT asset' in errors[0]
+
+
 def test_query_timed_balances(data_dir, username):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
