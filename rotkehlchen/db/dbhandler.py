@@ -622,6 +622,7 @@ class DBHandler():
                 )
                 continue
             except DeserializationError:
+                # This can't really happen. DB always returns a string. Should I have this here?
                 self.msg_aggregator.add_error(
                     f'FIAT asset with non-string type {type(entry[0])} '
                     f'found in the DB. Skipping it ...',
