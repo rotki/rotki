@@ -498,16 +498,7 @@ class Kraken(ExchangeInterface):
             end_ts: Timestamp,
             end_at_least_ts: Timestamp,
     ) -> List[Trade]:
-        with self.lock:
-            cache = self.check_trades_cache_list(start_ts, end_at_least_ts)
-
-        if cache is not None:
-            result = cache
-        else:
-            result = self.query_until_finished('TradesHistory', 'trades', start_ts, end_ts)
-            with self.lock:
-                # save it in the disk for future reference
-                self.update_trades_cache(result, start_ts, end_ts)
+        result = self.query_until_finished('TradesHistory', 'trades', start_ts, end_ts)
 
         # And now turn it from kraken trade to our own trade format
         trades = []
@@ -567,39 +558,20 @@ class Kraken(ExchangeInterface):
             end_ts: Timestamp,
             end_at_least_ts: Timestamp,
     ) -> List[AssetMovement]:
-        with self.lock:
-            cache = self.check_trades_cache_list(
-                start_ts,
-                end_at_least_ts,
-                special_name='deposits_withdrawals',
-            )
-        result: List[Any]
-
-        if cache is not None:
-            result = cache
-        else:
-            result = self.query_until_finished(
-                endpoint='Ledgers',
-                keyname='ledger',
-                start_ts=start_ts,
-                end_ts=end_ts,
-                extra_dict=dict(type='deposit'),
-            )
-            result.extend(self.query_until_finished(
-                endpoint='Ledgers',
-                keyname='ledger',
-                start_ts=start_ts,
-                end_ts=end_ts,
-                extra_dict=dict(type='withdrawal'),
-            ))
-
-            with self.lock:
-                self.update_trades_cache(
-                    result,
-                    start_ts,
-                    end_ts,
-                    special_name='deposits_withdrawals',
-                )
+        result = self.query_until_finished(
+            endpoint='Ledgers',
+            keyname='ledger',
+            start_ts=start_ts,
+            end_ts=end_ts,
+            extra_dict=dict(type='deposit'),
+        )
+        result.extend(self.query_until_finished(
+            endpoint='Ledgers',
+            keyname='ledger',
+            start_ts=start_ts,
+            end_ts=end_ts,
+            extra_dict=dict(type='withdrawal'),
+        ))
 
         log.debug('Kraken deposit/withdrawals query result', num_results=len(result))
 

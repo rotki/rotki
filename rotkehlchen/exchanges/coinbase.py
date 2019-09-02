@@ -370,22 +370,18 @@ class Coinbase(ExchangeInterface):
             end_ts: Timestamp,
             end_at_least_ts: Timestamp,
     ) -> List[Trade]:
-        cache = self.check_trades_cache_list(start_ts, end_at_least_ts)
-        if cache is not None:
-            raw_data = cache
-        else:
-            account_data = self._api_query('accounts')
-            # now get the account ids and for each one query buys/sells
-            # Looking at coinbase's API no other type of transaction
-            # https://developers.coinbase.com/api/v2?python#list-transactions
-            # consitutes something that Rotkehlchen would need to return in query_trade_history
-            account_ids = self._get_account_ids(account_data)
+        account_data = self._api_query('accounts')
+        # now get the account ids and for each one query buys/sells
+        # Looking at coinbase's API no other type of transaction
+        # https://developers.coinbase.com/api/v2?python#list-transactions
+        # consitutes something that Rotkehlchen would need to return in query_trade_history
+        account_ids = self._get_account_ids(account_data)
 
-            raw_data = []
-            for account_id in account_ids:
-                raw_data.extend(self._api_query(f'accounts/{account_id}/buys'))
-                raw_data.extend(self._api_query(f'accounts/{account_id}/sells'))
-            log.debug('coinbase buys/sells history result', results_num=len(raw_data))
+        raw_data = []
+        for account_id in account_ids:
+            raw_data.extend(self._api_query(f'accounts/{account_id}/buys'))
+            raw_data.extend(self._api_query(f'accounts/{account_id}/sells'))
+        log.debug('coinbase buys/sells history result', results_num=len(raw_data))
 
         trades = []
         for raw_trade in raw_data:
@@ -519,36 +515,22 @@ class Coinbase(ExchangeInterface):
             end_ts: Timestamp,
             end_at_least_ts: Timestamp,
     ) -> List[AssetMovement]:
-        cache = self.check_trades_cache_list(
-            start_ts,
-            end_at_least_ts,
-            special_name='deposits_withdrawals',
-        )
-        if cache is not None:
-            raw_data = cache
-        else:
-            account_data = self._api_query('accounts')
-            account_ids = self._get_account_ids(account_data)
-            raw_data = []
-            for account_id in account_ids:
-                raw_data.extend(self._api_query(f'accounts/{account_id}/deposits'))
-                raw_data.extend(self._api_query(f'accounts/{account_id}/withdrawals'))
-                # also get transactions to get the "sends", which in Coinbase is the
-                # way to send Crypto out of the exchange
-                txs = self._api_query(f'accounts/{account_id}/transactions')
-                for tx in txs:
-                    if 'type' not in tx:
-                        continue
-                    if tx['type'] == 'send':
-                        raw_data.append(tx)
+        account_data = self._api_query('accounts')
+        account_ids = self._get_account_ids(account_data)
+        raw_data = []
+        for account_id in account_ids:
+            raw_data.extend(self._api_query(f'accounts/{account_id}/deposits'))
+            raw_data.extend(self._api_query(f'accounts/{account_id}/withdrawals'))
+            # also get transactions to get the "sends", which in Coinbase is the
+            # way to send Crypto out of the exchange
+            txs = self._api_query(f'accounts/{account_id}/transactions')
+            for tx in txs:
+                if 'type' not in tx:
+                    continue
+                if tx['type'] == 'send':
+                    raw_data.append(tx)
 
-            log.debug('coinbase deposits/withdrawals history result', results_num=len(raw_data))
-            self.update_trades_cache(
-                raw_data,
-                start_ts,
-                end_ts,
-                special_name='deposits_withdrawals',
-            )
+        log.debug('coinbase deposits/withdrawals history result', results_num=len(raw_data))
 
         movements = []
         for raw_movement in raw_data:

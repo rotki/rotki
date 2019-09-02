@@ -324,18 +324,13 @@ class Bittrex(ExchangeInterface):
     ) -> List[Trade]:
 
         options: Dict[str, Union[str, int]] = dict()
-        cache = self.check_trades_cache_list(start_ts, end_at_least_ts)
         if market is not None:
             options['market'] = world_pair_to_bittrex(market)
         if count is not None:
             options['count'] = count
 
-        if cache is not None:
-            raw_data = cache
-        else:
-            raw_data = self.api_query('getorderhistory', options)
-            log.debug('binance order history result', results_num=len(raw_data))
-            self.update_trades_cache(raw_data, start_ts, end_ts)
+        raw_data = self.api_query('getorderhistory', options)
+        log.debug('binance order history result', results_num=len(raw_data))
 
         trades = []
         for raw_trade in raw_data:
@@ -437,23 +432,9 @@ class Bittrex(ExchangeInterface):
             end_ts: Timestamp,
             end_at_least_ts: Timestamp,
     ) -> List[AssetMovement]:
-        cache = self.check_trades_cache_list(
-            start_ts,
-            end_at_least_ts,
-            special_name='deposits_withdrawals',
-        )
-        if cache is not None:
-            raw_data = cache
-        else:
-            raw_data = self.api_query('getdeposithistory')
-            raw_data.extend(self.api_query('getwithdrawalhistory'))
-            log.debug('bittrex deposit/withdrawal history result', results_num=len(raw_data))
-            self.update_trades_cache(
-                raw_data,
-                start_ts,
-                end_ts,
-                special_name='deposits_withdrawals',
-            )
+        raw_data = self.api_query('getdeposithistory')
+        raw_data.extend(self.api_query('getwithdrawalhistory'))
+        log.debug('bittrex deposit/withdrawal history result', results_num=len(raw_data))
 
         movements = []
         for raw_movement in raw_data:

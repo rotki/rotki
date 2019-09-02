@@ -247,7 +247,6 @@ class Bitmex(ExchangeInterface):
             end_ts: typing.Timestamp,
             end_at_least_ts: typing.Timestamp,  # pylint: disable=unused-argument
     ) -> List:
-        # TODO: Implement cache like in other exchange calls
         resp = self._api_query_list('get', 'user/walletHistory')
 
         log.debug('Bitmex deposit/withdrawals query', results_num=len(resp))
