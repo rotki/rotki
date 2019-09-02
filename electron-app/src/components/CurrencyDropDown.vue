@@ -3,7 +3,7 @@
     <template #activator="{ on }">
       <v-btn color="primary" dark icon text v-on="on">
         <v-icon id="current-main-currency" class="" :class="currency.icon">
-          fa fa-fw {{ currency.icon }}
+          fa {{ currency.icon }}
         </v-icon>
       </v-btn>
     </template>
@@ -15,7 +15,7 @@
         @click="onSelected(currency)"
       >
         <v-list-item-avatar>
-          <v-icon color="primary">fa {{ currency.icon }} fa-fw</v-icon>
+          <v-icon color="primary">fa {{ currency.icon }}</v-icon>
         </v-list-item-avatar>
         <v-list-item-content>
           <v-list-item-title>
@@ -35,6 +35,7 @@ import { Component, Vue } from 'vue-property-decorator';
 import { Currency } from '@/model/currency';
 import { currencies } from '@/data/currencies';
 import { createNamespacedHelpers } from 'vuex';
+import { Message } from '@/store/store';
 
 const { mapState } = createNamespacedHelpers('session');
 
@@ -59,10 +60,23 @@ export default class CurrencyDropDown extends Vue {
         this.$store.commit('session/defaultCurrency', value);
       })
       .catch((reason: Error) => {
-        //showError('Error', `Error at setting main currency: ${reason.message}`);
+        this.$store.commit('setMessage', {
+          title: 'Error',
+          description: `Setting the main currency was not successful: ${reason.message}`,
+          success: false
+        } as Message);
       });
   }
 }
 </script>
 
-<style scoped></style>
+<style scoped lang="scss">
+.fa-cad:before,
+.fa-aud:before,
+.fa-nzd:before,
+.fa-hkd:before,
+.fa-ars:before,
+.fa-mxn:before {
+  content: '\f155';
+}
+</style>
