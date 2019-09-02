@@ -12,7 +12,7 @@ from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, T_ApiKey, T_ApiSecret, Timestamp
-from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
+from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -101,45 +101,6 @@ class ExchangeInterface():
                     return trades['data']
 
         return None
-
-    def check_trades_cache_dict(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-            special_name: Optional[str] = None,
-    ) -> Optional[Dict[str, Any]]:
-        response = self.check_trades_cache(start_ts, end_ts, special_name)
-        if not response:
-            return None
-        assert isinstance(response, Dict)
-        return response
-
-    def check_trades_cache_list(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-            special_name: Optional[str] = None,
-    ) -> Optional[List[Any]]:
-        response = self.check_trades_cache(start_ts, end_ts, special_name)
-        if not response:
-            return None
-        assert isinstance(response, List)
-        return response
-
-    def update_trades_cache(
-            self,
-            data: Union[List[Any], Dict[str, Any]],
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-            special_name: Optional[str] = None,
-    ) -> None:
-        trades_file = self._get_cachefile_name(special_name)
-        trades: Dict[str, Union[Timestamp, List[Any], Dict[str, Any]]] = dict()
-        with open(trades_file, 'w') as f:
-            trades['start_time'] = start_ts
-            trades['end_time'] = end_ts
-            trades['data'] = data
-            f.write(rlk_jsondumps(trades))
 
     def query_balances(self) -> Tuple[Optional[dict], str]:
         """Returns the balances held in the exchange in the following format:

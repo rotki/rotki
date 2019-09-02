@@ -354,46 +354,41 @@ class Binance(ExchangeInterface):
             end_at_least_ts: Timestamp,
             markets: Optional[List[str]] = None,
     ) -> List[Trade]:
-        cache = self.check_trades_cache_list(start_ts, end_at_least_ts)
-        if cache is not None:
-            raw_data = cache
+        self.first_connection()
+
+        if not markets:
+            iter_markets = self._symbols_to_pair.keys()
         else:
-            self.first_connection()
+            iter_markets = markets
 
-            if not markets:
-                iter_markets = self._symbols_to_pair.keys()
-            else:
-                iter_markets = markets
-
-            raw_data = list()
-            # Limit of results to return. 1000 is max limit according to docs
-            limit = 1000
-            for symbol in iter_markets:
-                last_trade_id = 0
-                len_result = limit
-                while len_result == limit:
-                    # We know that myTrades returns a list from the api docs
-                    result = self.api_query_list(
-                        'myTrades',
-                        options={
-                            'symbol': symbol,
-                            'fromId': last_trade_id,
-                            'limit': limit,
-                            # Not specifying them since binance does not seem to
-                            # respect them and always return all trades
-                            # 'startTime': start_ts * 1000,
-                            # 'endTime': end_ts * 1000,
-                        })
-                    if result:
-                        last_trade_id = result[-1]['id'] + 1
-                    len_result = len(result)
-                    log.debug('binance myTrades query result', results_num=len_result)
-                    for r in result:
-                        r['symbol'] = symbol
-                    raw_data.extend(result)
+        raw_data = list()
+        # Limit of results to return. 1000 is max limit according to docs
+        limit = 1000
+        for symbol in iter_markets:
+            last_trade_id = 0
+            len_result = limit
+            while len_result == limit:
+                # We know that myTrades returns a list from the api docs
+                result = self.api_query_list(
+                    'myTrades',
+                    options={
+                        'symbol': symbol,
+                        'fromId': last_trade_id,
+                        'limit': limit,
+                        # Not specifying them since binance does not seem to
+                        # respect them and always return all trades
+                        # 'startTime': start_ts * 1000,
+                        # 'endTime': end_ts * 1000,
+                    })
+                if result:
+                    last_trade_id = result[-1]['id'] + 1
+                len_result = len(result)
+                log.debug('binance myTrades query result', results_num=len_result)
+                for r in result:
+                    r['symbol'] = symbol
+                raw_data.extend(result)
 
             raw_data.sort(key=lambda x: x['time'])
-            self.update_trades_cache(raw_data, start_ts, end_ts)
 
         trades = list()
         for raw_trade in raw_data:
@@ -494,34 +489,20 @@ class Binance(ExchangeInterface):
             end_ts: Timestamp,
             end_at_least_ts: Timestamp,
     ) -> List[AssetMovement]:
-        cache = self.check_trades_cache_list(
-            start_ts,
-            end_at_least_ts,
-            special_name='deposits_withdrawals',
+        # This does not check for any limits. Can there be any limits like with trades
+        # in the deposit/withdrawal binance api? Can't see anything in the docs:
+        # https://github.com/binance-exchange/binance-official-api-docs/blob/master/wapi-api.md#deposit-history-user_data
+        result = self.api_query_dict(
+            'depositHistory.html',
+            options={'timestamp': 0},
         )
-        if cache is not None:
-            raw_data = cache
-        else:
-            # This does not check for any limits. Can there be any limits like with trades
-            # in the deposit/withdrawal binance api? Can't see anything in the docs:
-            # https://github.com/binance-exchange/binance-official-api-docs/blob/master/wapi-api.md#deposit-history-user_data
-            result = self.api_query_dict(
-                'depositHistory.html',
-                options={'timestamp': 0},
-            )
-            raw_data = result['depositList']
-            result = self.api_query_dict(
-                'withdrawHistory.html',
-                options={'timestamp': 0},
-            )
-            raw_data.extend(result['withdrawList'])
-            log.debug('binance deposit/withdrawal history result', results_num=len(raw_data))
-            self.update_trades_cache(
-                raw_data,
-                start_ts,
-                end_ts,
-                special_name='deposits_withdrawals',
-            )
+        raw_data = result['depositList']
+        result = self.api_query_dict(
+            'withdrawHistory.html',
+            options={'timestamp': 0},
+        )
+        raw_data.extend(result['withdrawList'])
+        log.debug('binance deposit/withdrawal history result', results_num=len(raw_data))
 
         movements = []
         for raw_movement in raw_data:

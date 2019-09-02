@@ -483,29 +483,23 @@ class Poloniex(ExchangeInterface):
             end_ts: Timestamp,
             end_at_least_ts: Timestamp,
     ) -> List[Trade]:
-        with self.lock:
-            raw_data = self.check_trades_cache_dict(start_ts, end_at_least_ts)
-        if raw_data is None:
-            raw_data = self.return_trade_history(
-                currency_pair='all',
-                start=start_ts,
-                end=end_ts,
+        raw_data = self.return_trade_history(
+            currency_pair='all',
+            start=start_ts,
+            end=end_ts,
+        )
+
+        results_length = 0
+        for _, v in raw_data.items():
+            results_length += len(v)
+
+        log.debug('Poloniex trade history query', results_num=results_length)
+
+        if results_length >= 10000:
+            raise ValueError(
+                'Poloniex api has a 10k limit to trade history. Have not implemented'
+                ' a solution for more than 10k trades at the moment',
             )
-
-            results_length = 0
-            for _, v in raw_data.items():
-                results_length += len(v)
-
-            log.debug('Poloniex trade history query', results_num=results_length)
-
-            if results_length >= 10000:
-                raise ValueError(
-                    'Poloniex api has a 10k limit to trade history. Have not implemented'
-                    ' a solution for more than 10k trades at the moment',
-                )
-
-            with self.lock:
-                self.update_trades_cache(raw_data, start_ts, end_ts)
 
         our_trades = []
         for pair, trades in raw_data.items():
@@ -582,7 +576,6 @@ class Poloniex(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            end_at_least_ts: Timestamp,
             from_csv: Optional[bool] = False,
     ) -> List:
         """
@@ -600,16 +593,6 @@ class Poloniex(ExchangeInterface):
                 return self.parse_loan_csv()
         except (OSError, IOError, csv.Error):
             pass
-
-        with self.lock:
-            # We know Loan history cache is a list
-            cache = self.check_trades_cache_list(
-                start_ts=start_ts,
-                end_ts=end_at_least_ts,
-                special_name='loan_history',
-            )
-        if cache is not None:
-            return cache
 
         loans_query_return_limit = 12000
         result = self.return_lending_history(
@@ -644,21 +627,18 @@ class Poloniex(ExchangeInterface):
                 if loan['id'] not in id_set:
                     data.append(loan)
 
-        with self.lock:
-            self.update_trades_cache(data, start_ts, end_ts, special_name='loan_history')
         return data
 
     def query_exchange_specific_history(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            end_at_least_ts: Timestamp,
+            end_at_least_ts: Timestamp,  # pylint: disable=unused-argument
     ) -> Optional[Any]:
         """The exchange specific history for poloniex is its loans"""
         return self.query_loan_history(
             start_ts=start_ts,
             end_ts=end_ts,
-            end_at_least_ts=end_at_least_ts,
             from_csv=True,  # TODO: Change this and make them queriable
         )
 
@@ -715,24 +695,7 @@ class Poloniex(ExchangeInterface):
             end_ts: Timestamp,
             end_at_least_ts: Timestamp,
     ) -> List[AssetMovement]:
-        with self.lock:
-            cache = self.check_trades_cache_dict(
-                start_ts,
-                end_at_least_ts,
-                special_name='deposits_withdrawals',
-            )
-        if cache is None:
-            result = self.return_deposits_withdrawals(start_ts, end_ts)
-            with self.lock:
-                self.update_trades_cache(
-                    result,
-                    start_ts,
-                    end_ts,
-                    special_name='deposits_withdrawals',
-                )
-        else:
-            result = cache
-
+        result = self.return_deposits_withdrawals(start_ts, end_ts)
         log.debug(
             'Poloniex deposits/withdrawal query',
             results_num=len(result['withdrawals']) + len(result['deposits']),

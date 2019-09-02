@@ -72,10 +72,6 @@ class UnsupportedAsset(Exception):
         super().__init__(f'Found asset {asset_name} which is not supported.')
 
 
-class HistoryCacheInvalid(Exception):
-    pass
-
-
 class DBUpgradeError(Exception):
     pass
 

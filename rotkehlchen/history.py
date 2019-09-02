@@ -1,34 +1,26 @@
 import logging
 import os
-from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors import DeserializationError, HistoryCacheInvalid, RemoteError, UnknownAsset
+from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     MarginPosition,
     Trade,
-    asset_movements_from_dictlist,
     trades_from_dictlist,
 )
-from rotkehlchen.exchanges.exchange import data_up_todate
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.exchanges.poloniex import process_polo_loans
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.transactions import query_etherscan_for_transactions, transactions_from_dictlist
+from rotkehlchen.transactions import query_etherscan_for_transactions
 from rotkehlchen.typing import EthAddress, FiatAsset, FilePath, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.accounting import action_get_timestamp
-from rotkehlchen.utils.misc import (
-    create_timestamp,
-    get_jsonfile_contents_or_empty_dict,
-    write_history_data_in_file,
-)
-from rotkehlchen.utils.serialization import rlk_jsonloads
+from rotkehlchen.utils.misc import create_timestamp, write_history_data_in_file
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis import Cryptocompare
@@ -294,6 +286,9 @@ class TradesHistorian():
                 fail_callback=fail_history_cb,
             )
 
+        # TODO: Also save those in the DB (?). We used to have a cache but if anything
+        # makes sense is to save them in the DB. Also realized the old cache broke
+        # if more accounts were added.
         try:
             eth_transactions = query_etherscan_for_transactions(self.eth_accounts)
         except RemoteError as e:
@@ -342,158 +337,6 @@ class TradesHistorian():
             end_ts=end_ts,
             end_at_least_ts=end_at_least_ts,
         )
-        try:
-            (
-                history_trades,
-                polo_loans,
-                asset_movements,
-                eth_transactions,
-            ) = self.get_cached_history(start_ts, end_ts, end_at_least_ts)
-            return (
-                '',
-                history_trades,
-                polo_loans,
-                asset_movements,
-                eth_transactions,
-            )
-        except HistoryCacheInvalid:
-            # If for some reason cache history is invalidated then we should
-            # delete all history related cache files
-            delete_all_history_cache(self.user_directory)
-            return self.create_history(start_ts, end_ts, end_at_least_ts)
-
-    def _get_cached_asset_movements(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-            end_at_least_ts: Timestamp,
-    ) -> List[AssetMovement]:
-        """
-        Attetmps to read the cache of asset movements and returns a list of them.
-
-        If there is a problem can raise HistoryCacheInvalid
-        """
-        assetmovementsfile_path = os.path.join(
-            self.user_directory,
-            ASSETMOVEMENTS_HISTORYFILE,
-        )
-        asset_movements_contents = get_jsonfile_contents_or_empty_dict(
-            FilePath(assetmovementsfile_path),
-        )
-        asset_movements_history_is_okay = data_up_todate(
-            asset_movements_contents,
-            start_ts,
-            end_at_least_ts,
-        )
-        if not asset_movements_history_is_okay:
-            raise HistoryCacheInvalid('Asset Movements cache is invalid')
-
-        try:
-            asset_movements = asset_movements_from_dictlist(
-                asset_movements_contents['data'],
-                start_ts,
-                end_ts,
-            )
-        except (KeyError, DeserializationError, UnknownAsset) as e:
-            raise HistoryCacheInvalid(f'Asset Movements cache is invalid because of {str(e)}')
-
-        return asset_movements
-
-    def get_cached_history(self, start_ts, end_ts, end_at_least_ts=None):
-        """Gets all the cached history data instead of querying all external sources
-        to create the history through create_history()
-
-        Can raise:
-            - HistoryCacheInvalid:
-                If any of the cache files are corrupt in any way, missing or
-                do not cover the given time range
-        """
-        if end_at_least_ts is None:
-            end_at_least_ts = end_ts
-
-        historyfile_path = os.path.join(self.user_directory, TRADES_HISTORYFILE)
-        if not os.path.isfile(historyfile_path):
-            raise HistoryCacheInvalid()
-
-        with open(historyfile_path, 'r') as infile:
-            try:
-                history_json_data = rlk_jsonloads(infile.read())
-            except JSONDecodeError:
-                pass
-
-        if not data_up_todate(history_json_data, start_ts, end_at_least_ts):
-            raise HistoryCacheInvalid('Historical trades cache invalid')
-        try:
-            history_trades = trades_from_dictlist(
-                given_trades=history_json_data['data'],
-                start_ts=start_ts,
-                end_ts=end_ts,
-                location='historical trades',
-                msg_aggregator=self.msg_aggregator,
-            )
-        except (KeyError, DeserializationError):
-            raise HistoryCacheInvalid('Historical trades cache invalid')
-
-        history_trades = maybe_add_external_trades_to_history(
-            db=self.db,
-            start_ts=start_ts,
-            end_ts=end_ts,
-            history=history_trades,
-            msg_aggregator=self.msg_aggregator,
-        )
-
-        # Check the cache of each exchange
-        poloniex = None
-        for _, exchange in self.exchange_manager.connected_exchanges.items():
-            if exchange.name == 'poloniex':
-                poloniex = exchange
-            if not exchange.check_trades_cache(start_ts, end_at_least_ts):
-                raise HistoryCacheInvalid(f'{exchange.name} cache is invalid')
-
-        # Poloniex specific
-        loan_data = []
-        if poloniex:
-            loansfile_path = os.path.join(self.user_directory, LOANS_HISTORYFILE)
-            loan_file_contents = get_jsonfile_contents_or_empty_dict(loansfile_path)
-            loan_history_is_okay = data_up_todate(
-                loan_file_contents,
-                start_ts,
-                end_at_least_ts,
-            )
-            if not loan_history_is_okay:
-                raise HistoryCacheInvalid('Poloniex loan cache is invalid')
-            loan_data = loan_file_contents['data']
-
-        asset_movements = self._get_cached_asset_movements(
-            start_ts=start_ts,
-            end_ts=end_ts,
-            end_at_least_ts=end_at_least_ts,
-        )
-
-        eth_tx_log_path = os.path.join(self.user_directory, ETHEREUM_TX_LOGFILE)
-        eth_tx_log_contents = get_jsonfile_contents_or_empty_dict(eth_tx_log_path)
-        eth_tx_log_history_is_okay = data_up_todate(
-            eth_tx_log_contents,
-            start_ts,
-            end_at_least_ts,
-        )
-        if not eth_tx_log_history_is_okay:
-            raise HistoryCacheInvalid('Ethereum transactions cache is invalid')
-
-        try:
-            eth_transactions = transactions_from_dictlist(
-                eth_tx_log_contents['data'],
-                start_ts,
-                end_ts,
-            )
-        except KeyError:
-            raise HistoryCacheInvalid('Ethereum transactions cache is invalid')
-
-        # make sure that this is the same as what is returned
-        # from create_history, except for the first argument
-        return (
-            history_trades,
-            loan_data,
-            asset_movements,
-            eth_transactions,
-        )
+        # TODO: Perhaps get rid of the extra function call since the caches
+        # are no longer used here?
+        return self.create_history(start_ts, end_ts, end_at_least_ts)
