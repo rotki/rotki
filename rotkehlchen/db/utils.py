@@ -4,7 +4,7 @@ from typing import List, NamedTuple
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.typing import BTCAddress, ChecksumEthAddress, Timestamp
 
-ROTKEHLCHEN_DB_VERSION = 5
+ROTKEHLCHEN_DB_VERSION = 6
 
 
 class BlockchainAccounts(NamedTuple):

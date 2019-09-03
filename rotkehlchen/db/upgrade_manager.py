@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Any, Callable
 
@@ -50,6 +51,11 @@ class DBUpgradeManager():
             cursor=self.db.conn.cursor(),
             rename_pairs=[('BCC', 'BCH')],
         )
+        self._perform_single_upgrade(
+            from_version=5,
+            to_version=6,
+            upgrade_action=self._remove_cache_files,
+        )
 
     def _perform_single_upgrade(
             self,
@@ -98,6 +104,35 @@ class DBUpgradeManager():
 
         # Upgrade success all is good
         self.db.set_version(to_version)
+
+    def _remove_cache_files(self) -> None:
+        """At 5->6 version upgrade all cache files should be removed
+
+        That's since we moved all trades in the DB and as such it no longer makes
+        any sense to have the cache files.
+        """
+        for p in Path(self.db.user_data_dir).glob('*_trades.json'):
+            try:
+                p.unlink()
+            except OSError:
+                pass
+
+        for p in Path(self.db.user_data_dir).glob('*_history.json'):
+            try:
+                p.unlink()
+            except OSError:
+                pass
+
+        for p in Path(self.db.user_data_dir).glob('*_deposits_withdrawals.json'):
+            try:
+                p.unlink()
+            except OSError:
+                pass
+
+        try:
+            os.remove(os.path.join(self.db.user_data_dir, 'ethereum_tx_log.json'))
+        except OSError:
+            pass
 
     def _checksum_eth_accounts(self) -> None:
         """Make sure all eth accounts are checksummed when saved in the DB"""
