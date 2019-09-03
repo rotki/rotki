@@ -353,51 +353,6 @@ def test_query_trade_history_unexpected_data(function_scope_poloniex):
     mock_poloniex_and_query(given_input, expected_warnings_num=0, expected_errors_num=1)
 
 
-def test_query_trade_history_not_shared_cache(data_dir):
-    """Test that having 2 different poloniex instances does not use same cache
-
-    Regression test for https://github.com/rotkehlchenio/rotkehlchen/issues/232
-    We are using poloniex as an example here. Essentially tests all exchange caches.
-    """
-
-    def first_trades(currency_pair, start, end):  # pylint: disable=unused-argument
-        return {'BTC_ETH': [
-            {'date': '2018-10-16 18:05:17',
-             'rate': '0.06935244',
-             'amount': '1.40308443',
-             'total': '0.09730732',
-             'fee': '0.00100000',
-             'type': 'sell',
-             'category': 'exchange'}]}
-
-    def second_trades(currency_pair, start, end):  # pylint: disable=unused-argument
-        return {'BTC_ETH': [
-            {'date': '2018-10-16 18:05:17',
-             'rate': '0.06935244',
-             'amount': '2.5',
-             'total': '0.09730732',
-             'fee': '0.00100000',
-             'type': 'sell',
-             'category': 'exchange'}]}
-
-    messages_aggregator = MessagesAggregator()
-    end_ts = 99999999999
-    first_user_dir = os.path.join(data_dir, 'first')
-    os.mkdir(first_user_dir)
-    second_user_dir = os.path.join(data_dir, 'second')
-    os.mkdir(second_user_dir)
-    a = Poloniex(b'', b'', first_user_dir, messages_aggregator)
-    with patch.object(a, 'return_trade_history', side_effect=first_trades):
-        result1 = a.query_trade_history(0, end_ts, end_ts)
-
-    b = Poloniex(b'', b'', second_user_dir, messages_aggregator)
-    with patch.object(b, 'return_trade_history', side_effect=second_trades):
-        result2 = b.query_trade_history(0, end_ts, end_ts)
-
-    assert result1[0].amount == FVal('1.40308443')
-    assert result2[0].amount == FVal('2.5')
-
-
 def test_poloniex_assets_are_known(poloniex):
     currencies = poloniex.return_currencies()
     for poloniex_asset in currencies.keys():
