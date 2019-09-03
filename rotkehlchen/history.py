@@ -1,5 +1,4 @@
 import logging
-import os
 from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from rotkehlchen.assets.asset import Asset
@@ -27,56 +26,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-TRADES_HISTORYFILE = 'trades_history.json'
-MARGIN_HISTORYFILE = 'margin_trades_history.json'
-LOANS_HISTORYFILE = 'loans_history.json'
-ETHEREUM_TX_LOGFILE = 'ethereum_tx_log.json'
-ASSETMOVEMENTS_HISTORYFILE = 'asset_movements_history.json'
-
-
-def delete_all_history_cache(directory: FilePath) -> None:
-    try:
-        os.remove(os.path.join(directory, TRADES_HISTORYFILE))
-    except OSError:
-        pass
-    try:
-        os.remove(os.path.join(directory, 'kraken_trades.json'))
-    except OSError:
-        pass
-    try:
-        os.remove(os.path.join(directory, 'bittrex_trades.json'))
-    except OSError:
-        pass
-    try:
-        os.remove(os.path.join(directory, 'binance_trades.json'))
-    except OSError:
-        pass
-    try:
-        os.remove(os.path.join(directory, 'bitmex_trades.json'))
-    except OSError:
-        pass
-    try:
-        os.remove(os.path.join(directory, 'poloniex_trades.json'))
-    except OSError:
-        pass
-    try:
-        os.remove(os.path.join(directory, LOANS_HISTORYFILE))
-    except OSError:
-        pass
-    try:
-        os.remove(os.path.join(directory, MARGIN_HISTORYFILE))
-    except OSError:
-        pass
-    try:
-        os.remove(os.path.join(directory, ASSETMOVEMENTS_HISTORYFILE))
-    except OSError:
-        pass
-    try:
-        os.remove(os.path.join(directory, ETHEREUM_TX_LOGFILE))
-    except OSError:
-        pass
 
 
 def maybe_add_external_trades_to_history(
@@ -269,8 +218,6 @@ class TradesHistorian():
                     start_ts=start_ts,
                     end_ts=end_ts,
                 ))
-                loansfile_path = os.path.join(self.user_directory, LOANS_HISTORYFILE)
-                write_history_data_in_file(polo_loans, loansfile_path, start_ts, end_ts)
 
         def fail_history_cb(error_msg: str) -> None:
             """This callback will run for failure in exchange history query"""
@@ -300,16 +247,7 @@ class TradesHistorian():
         history.sort(key=lambda trade: action_get_timestamp(trade))
         history = limit_trade_list_to_period(history, start_ts, end_ts)
 
-        # Write to files
-        historyfile_path = os.path.join(self.user_directory, TRADES_HISTORYFILE)
-        write_tupledata_history_in_file(history, historyfile_path, start_ts, end_ts)
-
-        assetmovementsfile_path = os.path.join(self.user_directory, ASSETMOVEMENTS_HISTORYFILE)
-        write_tupledata_history_in_file(asset_movements, assetmovementsfile_path, start_ts, end_ts)
-        eth_tx_log_path = os.path.join(self.user_directory, ETHEREUM_TX_LOGFILE)
-        write_tupledata_history_in_file(eth_transactions, eth_tx_log_path, start_ts, end_ts)
-
-        # After writting everything to files include the external trades in the history
+        # Include the external trades in the history
         history = maybe_add_external_trades_to_history(
             db=self.db,
             start_ts=start_ts,
