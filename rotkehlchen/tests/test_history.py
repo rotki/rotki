@@ -1,17 +1,9 @@
-import os
-
 import pytest
 
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
-from rotkehlchen.history import (
-    ASSETMOVEMENTS_HISTORYFILE,
-    ETHEREUM_TX_LOGFILE,
-    LOANS_HISTORYFILE,
-    TRADES_HISTORYFILE,
-    limit_trade_list_to_period,
-)
+from rotkehlchen.history import limit_trade_list_to_period
 from rotkehlchen.tests.utils.history import TEST_END_TS, mock_history_processing_and_exchanges
 from rotkehlchen.typing import TradeType
 
@@ -107,91 +99,6 @@ def test_history_creation_remote_errors(
     assert 'Kraken' in response['message']
     assert 'Poloniex' in response['message']
     assert response['result'] == {}
-
-
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_history_creation_corrupt_trades_cache(
-        rotkehlchen_server_with_exchanges,
-        accountant,
-        accounting_data_dir,
-):
-    """
-    Tests for corrupt trade cache.
-
-    Test that if cache is used and data are corrupt we revert to omitting
-    cache and contacting the exchanges
-    """
-
-    # Create the "broken" trades cache. Must have broken cache for all registered exchanges too
-    historyfile_path = os.path.join(accounting_data_dir, TRADES_HISTORYFILE)
-    with open(historyfile_path, 'w') as f:
-        f.write(
-            f'{{"start_time":0, "end_time": {TEST_END_TS}, "data": '
-            f'[{{"unknown_trade_key": "random_trade_value"}}]}}',
-        )
-    with open(os.path.join(accounting_data_dir, 'poloniex_trades.json'), 'w') as f:
-        f.write(
-            f'{{"start_time":0, "end_time": {TEST_END_TS}, "data": '
-            f'{{"BTC_SJX": [{{"unknown_trade_key": "random_trade_value"}}]}}}}',
-        )
-    with open(os.path.join(accounting_data_dir, 'kraken_trades.json'), 'w') as f:
-        f.write(
-            f'{{"start_time":0, "end_time": {TEST_END_TS}, "data": '
-            f'[{{"unknown_trade_key": "random_trade_value"}}]}}',
-        )
-    with open(os.path.join(accounting_data_dir, 'binance_trades.json'), 'w') as f:
-        f.write(
-            f'{{"start_time":0, "end_time": {TEST_END_TS}, "data": '
-            f'[{{"unknown_trade_key": "random_trade_value"}}]}}',
-        )
-    with open(os.path.join(accounting_data_dir, 'bittrex_trades.json'), 'w') as f:
-        f.write(
-            f'{{"start_time":0, "end_time": {TEST_END_TS}, "data": '
-            f'[{{"unknown_trade_key": "random_trade_value"}}]}}',
-        )
-    with open(os.path.join(accounting_data_dir, LOANS_HISTORYFILE), 'w') as f:
-        f.write(
-            f'{{"start_time":0, "end_time": {TEST_END_TS}, "data": '
-            f'[{{"unknown_trade_key": "random_trade_value"}}]}}',
-        )
-    with open(os.path.join(accounting_data_dir, ASSETMOVEMENTS_HISTORYFILE), 'w') as f:
-        f.write(
-            f'{{"start_time":0, "end_time": {TEST_END_TS}, "data": '
-            f'[]}}',
-        )
-    with open(os.path.join(accounting_data_dir, ETHEREUM_TX_LOGFILE), 'w') as f:
-        f.write(
-            f'{{"start_time":0, "end_time": {TEST_END_TS}, "data": '
-            f'[]}}',
-        )
-
-    server = rotkehlchen_server_with_exchanges
-    rotki = server.rotkehlchen
-    rotki.accountant = accountant
-    kraken = rotki.exchange_manager.connected_exchanges['kraken']
-    kraken.random_trade_data = False
-    kraken.random_ledgers_data = False
-    (
-        accountant_patch,
-        polo_patch,
-        binance_patch,
-        bittrex_patch,
-        bitmex_patch,
-    ) = mock_history_processing_and_exchanges(rotki)
-    with accountant_patch, polo_patch, binance_patch, bittrex_patch, bitmex_patch:
-        response = server.process_trade_history(start_ts='0', end_ts=str(TEST_END_TS))
-    # The history processing is completely mocked away and omitted in this test.
-    # because it is only for the history creation not its processing.
-    # For history processing tests look at test_accounting.py and
-    # test_accounting_events.py
-    assert response['message'] == ''
-    assert response['result'] == {}
-
-    # And now make sure that warnings/errors number did not change
-    warnings = rotki.msg_aggregator.consume_warnings()
-    assert len(warnings) == 13
-    errors = rotki.msg_aggregator.consume_errors()
-    assert len(errors) == 3
 
 
 def test_limit_trade_list_to_period():
