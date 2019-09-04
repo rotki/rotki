@@ -3,7 +3,7 @@
     <template #activator="{ on }">
       <v-btn color="primary" dark icon text v-on="on">
         <v-icon>
-          fa fa-fw fa-save
+          fa fa-save
         </v-icon>
       </v-btn>
     </template>
