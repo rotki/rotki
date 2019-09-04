@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`500` Fix cryptocompare price queries for LBRY credits.
 * :feature:`-` Support WorldWideAssetExchange token for Bittrex after it got renamed to `WAXP <https://international.bittrex.com/Market/Index?MarketName=BTC-WAXP>`__ in that exchange.
 * :feature:`-` Added support for the following tokens
 
