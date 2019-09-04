@@ -2,7 +2,7 @@
   <v-menu id="user-dropdown" transition="slide-y-transition" bottom>
     <template #activator="{ on }">
       <v-btn color="primary" dark icon text v-on="on">
-        <v-icon>fa fa-user fa-fw</v-icon>
+        <v-icon>fa fa-user</v-icon>
       </v-btn>
     </template>
     <v-list>
@@ -12,7 +12,7 @@
         to="/settings/user"
       >
         <v-list-item-avatar>
-          <v-icon color="primary">fa fa-user fa-fw</v-icon>
+          <v-icon color="primary">fa fa-user</v-icon>
         </v-list-item-avatar>
         <v-list-item-title>User Settings</v-list-item-title>
       </v-list-item>
@@ -22,14 +22,14 @@
         to="/settings/accounting"
       >
         <v-list-item-avatar>
-          <v-icon color="primary">fa fa-book fa-fw</v-icon>
+          <v-icon color="primary">fa fa-book</v-icon>
         </v-list-item-avatar>
         <v-list-item-title>Accounting Settings</v-list-item-title>
       </v-list-item>
 
       <v-list-item id="settings_button" key="settings" to="/settings/general">
         <v-list-item-avatar>
-          <v-icon color="primary">fa fa-gear fa-fw</v-icon>
+          <v-icon color="primary">fa fa-gear</v-icon>
         </v-list-item-avatar>
         <v-list-item-title>Settings</v-list-item-title>
       </v-list-item>
@@ -37,7 +37,7 @@
 
       <v-list-item id="logout_button" key="logout" @click="logoutClicked()">
         <v-list-item-avatar>
-          <v-icon color="primary">fa fa-sign-out fa-fw</v-icon>
+          <v-icon color="primary">fa fa-sign-out</v-icon>
         </v-list-item-avatar>
         <v-list-item-title>Logout</v-list-item-title>
       </v-list-item>
