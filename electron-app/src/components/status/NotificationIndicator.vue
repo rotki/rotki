@@ -1,13 +1,13 @@
 <template>
-  <v-menu id="notification-indicator" transition="slide-y-transition" bottom>
+  <v-menu transition="slide-y-transition" bottom>
     <template #activator="{ on }">
-      <v-badge color="primary" right overlap>
+      <v-badge color="accent" right overlap>
         <template #badge>
           <span>{{ count }}</span>
         </template>
         <v-btn color="primary" dark icon text v-on="on">
           <v-icon>
-            fa fa-bell fa-fw
+            fa fa-bell
           </v-icon>
         </v-btn>
       </v-badge>
@@ -19,37 +19,74 @@
         @confirm="clear()"
       ></confirm-dialog>
     </template>
-    <v-row id="notification-messages" column class="popup">
-      <div v-if="count === 0" class="no-notifications">
-        <v-icon>fa fa-info-circle fa-fw</v-icon>
-        <p>No messages!</p>
-      </div>
-      <div v-else>
-        <div
-          class="notification-clear tooltip-right"
-          data-tooltip="Clears all notifications"
-          @click="confirmClear = true"
-        >
-          <v-icon id="notifications-clear-all">fa fa-trash fa-1x</v-icon>
-        </div>
-        <div class="notification-area">
-          <single-notification
-            v-for="notification in notifications"
-            :key="notification.id"
-            :notification="notification"
-            @click="dismiss(notification)"
-          ></single-notification>
-        </div>
-      </div>
+    <v-row class="notification-indicator__details">
+      <v-col v-if="false" class="notification-indicator__no-messages">
+        <v-icon color="primary">fa fa-info-circle</v-icon>
+        <p class="notification-indicator__no-messages__label">No messages!</p>
+      </v-col>
+      <v-col v-else class="notification-indicator__messages">
+        <v-list two-line>
+          <div class="notification-indicator__messages__clear">
+            <v-tooltip bottom>
+              <template #activator="{ on }">
+                <v-btn
+                  text
+                  icon
+                  color="primary"
+                  class="notification-indicator__clear"
+                  v-on="on"
+                  @click="confirmClear = true"
+                >
+                  <v-icon id="notifications-clear-all">
+                    fa fa-trash
+                  </v-icon>
+                </v-btn>
+              </template>
+              <span>
+                Clears all notifications
+              </span>
+            </v-tooltip>
+          </div>
+          <template v-for="notification in notifications">
+            <v-list-item :key="notification.id">
+              <v-list-item-content>
+                <v-list-item-title
+                  v-text="notification.title"
+                ></v-list-item-title>
+                <v-list-item-subtitle v-text="notification.message">
+                </v-list-item-subtitle>
+              </v-list-item-content>
+              <v-list-item-action>
+                <v-list-item-action-text>
+                  <v-tooltip bottom>
+                    <template #activator="{ on }">
+                      <v-btn text icon v-on="on" @click="dismiss(notification)">
+                        <v-icon>fa fa-close</v-icon>
+                      </v-btn>
+                    </template>
+                    <span>
+                      Dismisses Notification
+                    </span>
+                  </v-tooltip>
+                </v-list-item-action-text>
+                <v-icon :color="color(notification)">{{
+                  icon(notification)
+                }}</v-icon>
+              </v-list-item-action>
+            </v-list-item>
+
+            <v-divider :key="notification.id"></v-divider>
+          </template>
+        </v-list>
+      </v-col>
     </v-row>
   </v-menu>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { NotificationData } from '@/typing/types';
+import { NotificationData, Severity } from '@/typing/types';
 import { createNamespacedHelpers } from 'vuex';
-import SingleNotification from '@/components/status/SingleNotification.vue';
 import orderBy from 'lodash/orderBy';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 
@@ -64,7 +101,6 @@ const { mapState, mapGetters, mapMutations } = createNamespacedHelpers(
     ...mapMutations(['remove', 'clear'])
   },
   components: {
-    SingleNotification,
     ConfirmDialog
   }
 })
@@ -75,6 +111,28 @@ export default class NotificationIndicator extends Vue {
   clear!: () => void;
 
   confirmClear: boolean = false;
+
+  icon(notification: NotificationData) {
+    switch (notification.severity) {
+      case Severity.ERROR:
+        return 'fa-exclamation-circle';
+      case Severity.INFO:
+        return 'fa-info-circle';
+      case Severity.WARNING:
+        return 'fa-exclamation-triangle';
+    }
+  }
+
+  color(notification: NotificationData) {
+    switch (notification.severity) {
+      case Severity.ERROR:
+        return 'error';
+      case Severity.INFO:
+        return 'info';
+      case Severity.WARNING:
+        return 'warning';
+    }
+  }
 
   get notifications(): NotificationData[] {
     return orderBy(this.data, 'id', 'desc');
@@ -87,51 +145,46 @@ export default class NotificationIndicator extends Vue {
 </script>
 
 <style scoped lang="scss">
-.popup {
-  padding: 16px;
+.notification-indicator__details {
+  width: 300px;
+  height: 350px;
+  background-color: white;
+  overflow-y: scroll;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.87);
 }
-.no-notifications {
-  height: 80%;
-  width: 100%;
+
+.notification-indicator__no-messages {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
-  color: rgba(0, 0, 0, 0.57);
 }
 
-.no-notifications p {
-  margin-top: 8px;
+.notification-indicator__no-messages__label {
+  font-size: 22px;
+  margin-top: 22px;
+  font-weight: 300;
+  color: rgb(0, 0, 0, 0.6);
 }
 
-#notification-messages {
-  background-color: white;
+.notification-indicator__messages {
+  padding-right: 0 !important;
 }
 
-.notification-clear {
+.notification-indicator__messages__clear {
   display: flex;
   flex-direction: row-reverse;
-  background: var(--notification-background);
+  padding-right: 8px;
 }
 
-.notification-clear > * {
-  padding: 8px;
-  color: var(--elements-bg-color);
+::v-deep .v-badge__badge {
+  top: 0 !important;
+  right: 0 !important;
 }
 
-.notification-area {
-  width: 340px;
-  height: 300px;
-  background: var(--notification-background);
-  overflow-y: scroll;
-  overflow-x: hidden;
-  font-family: Roboto, sans-serif;
-  font-size: 1rem;
-  line-height: 1.75rem;
-  font-weight: 400;
-  letter-spacing: 0.009375em;
-  list-style-type: none;
-  color: rgba(0, 0, 0, 0.87);
+::v-deep .v-list-item__action-text {
+  margin-right: -8px;
+  margin-top: -8px;
 }
 </style>

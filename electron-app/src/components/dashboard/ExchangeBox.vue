@@ -13,7 +13,7 @@
         <div class="col-xs-9 text-right">
           <div class="huge">{{ amount }}</div>
           <div id="status_box_text">
-            <i id="currencyicon" class="fa fa-fw" :class="currency.icon"></i>
+            <i id="currencyicon" class="fa" :class="currency.icon"></i>
           </div>
         </div>
       </div>

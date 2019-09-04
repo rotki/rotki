@@ -37,9 +37,9 @@
           </template>
         </v-list>
       </v-col>
-      <v-col v-else class="progress-indicator__no_tasks align justify">
+      <v-col v-else class="progress-indicator__no-tasks align justify">
         <v-icon color="primary">fa fa-info-circle</v-icon>
-        <div>No running tasks</div>
+        <p class="progress-indicator__no-tasks__label">No running tasks</p>
       </v-col>
     </v-row>
   </v-menu>
@@ -73,7 +73,7 @@ export default class ProgressIndicator extends Vue {
   background-color: white;
 }
 
-.progress-indicator__no_tasks {
+.progress-indicator__no-tasks {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -86,5 +86,12 @@ export default class ProgressIndicator extends Vue {
 
 .progress-indicator__task__progress {
   margin-top: 8px;
+}
+
+.progress-indicator__no-tasks__label {
+  font-size: 22px;
+  margin-top: 22px;
+  font-weight: 300;
+  color: rgb(0, 0, 0, 0.6);
 }
 </style>
