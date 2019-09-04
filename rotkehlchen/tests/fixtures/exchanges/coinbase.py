@@ -9,11 +9,11 @@ class MockCoinbase(Coinbase):
 
 
 @pytest.fixture(scope='session')
-def coinbase(session_data_dir, session_inquirer, messages_aggregator):
+def coinbase(database, session_inquirer, messages_aggregator):
     mock = MockCoinbase(
         api_key=make_api_key(),
         secret=make_api_secret(),
-        user_directory=session_data_dir,
+        database=database,
         msg_aggregator=messages_aggregator,
     )
     return mock
@@ -21,14 +21,14 @@ def coinbase(session_data_dir, session_inquirer, messages_aggregator):
 
 @pytest.fixture(scope='function')
 def function_scope_coinbase(
-        accounting_data_dir,
+        database,
         inquirer,  # pylint: disable=unused-argument,
         function_scope_messages_aggregator,
 ):
     mock = MockCoinbase(
         api_key=make_api_key(),
         secret=make_api_secret(),
-        user_directory=accounting_data_dir,
+        database=database,
         msg_aggregator=function_scope_messages_aggregator,
     )
     return mock

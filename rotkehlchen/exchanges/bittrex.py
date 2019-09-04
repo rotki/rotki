@@ -11,6 +11,7 @@ from typing_extensions import Literal
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bittrex
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
@@ -37,7 +38,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_bittrex_date,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Exchange, Fee, FilePath, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Exchange, Fee, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
@@ -158,10 +159,10 @@ class Bittrex(ExchangeInterface):
             self,
             api_key: ApiKey,
             secret: ApiSecret,
-            user_directory: FilePath,
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
     ):
-        super(Bittrex, self).__init__('bittrex', api_key, secret, user_directory)
+        super(Bittrex, self).__init__('bittrex', api_key, secret, database)
         self.apiversion = 'v1.1'
         self.uri = 'https://bittrex.com/api/{}/'.format(self.apiversion)
         self.msg_aggregator = msg_aggregator

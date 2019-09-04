@@ -16,6 +16,7 @@ from typing_extensions import Literal
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
     DeserializationError,
     PoloniexError,
@@ -46,7 +47,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_poloniex_date,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Fee, FilePath, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, create_timestamp, retry_calls
 from rotkehlchen.utils.serialization import rlk_jsonloads, rlk_jsonloads_dict, rlk_jsonloads_list
@@ -213,10 +214,10 @@ class Poloniex(ExchangeInterface):
             self,
             api_key: ApiKey,
             secret: ApiSecret,
-            user_directory: FilePath,
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
     ):
-        super(Poloniex, self).__init__('poloniex', api_key, secret, user_directory)
+        super(Poloniex, self).__init__('poloniex', api_key, secret, database)
 
         self.uri = 'https://poloniex.com/'
         self.public_uri = self.uri + 'public?command='
@@ -549,7 +550,7 @@ class Poloniex(ExchangeInterface):
         It can throw OSError, IOError if the file does not exist and csv.Error if
         the file is not proper CSV"""
         # the default filename, and should be (if at all) inside the data directory
-        path = os.path.join(self.user_directory, "lendingHistory.csv")
+        path = os.path.join(self.db.user_data_dir, "lendingHistory.csv")
         lending_history = list()
         with open(path, 'r') as csvfile:
             history = csv.reader(csvfile, delimiter=',', quotechar='|')

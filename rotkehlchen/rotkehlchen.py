@@ -185,7 +185,7 @@ class Rotkehlchen():
         exchange_credentials = self.data.db.get_exchange_credentials()
         self.exchange_manager.initialize_exchanges(
             exchange_credentials=exchange_credentials,
-            user_directory=self.user_directory,
+            database=self.data.db,
         )
 
         ethchain = Ethchain(eth_rpc_endpoint)
@@ -510,7 +510,7 @@ class Rotkehlchen():
             name=name,
             api_key=api_key,
             api_secret=api_secret,
-            user_directory=self.user_directory,
+            database=self.data.db,
         )
 
         if is_success:

@@ -1,18 +1,16 @@
 #!/usr/bin/env python
 import logging
-import os
-from json.decoder import JSONDecodeError
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import requests
 from gevent.lock import Semaphore
 
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, T_ApiKey, T_ApiSecret, Timestamp
-from rotkehlchen.utils.serialization import rlk_jsonloads_dict
+from rotkehlchen.typing import ApiKey, ApiSecret, T_ApiKey, T_ApiSecret, Timestamp
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -48,7 +46,7 @@ class ExchangeInterface():
             name: str,
             api_key: ApiKey,
             secret: ApiSecret,
-            user_directory: FilePath,
+            database: DBHandler,
     ):
         assert isinstance(api_key, T_ApiKey), (
             'api key for {} should be a bytestring'.format(name)
@@ -57,7 +55,7 @@ class ExchangeInterface():
             'secret for {} should be a bytestring'.format(name)
         )
         self.name = name
-        self.user_directory = user_directory
+        self.db = database
         self.api_key = api_key
         self.secret = secret
         self.first_connection_made = False
@@ -71,36 +69,6 @@ class ExchangeInterface():
         # IF 0 is given then cache is disabled. A zero value also disabled the trades cache
         self.cache_ttl_secs = CACHE_RESPONSE_FOR_SECS
         log.info(f'Initialized {name} exchange')
-
-    def _get_cachefile_name(self, special_name: Optional[str] = None) -> str:
-        if special_name is None:
-            return os.path.join(self.user_directory, "%s_trades.json" % self.name)
-        else:
-            return os.path.join(self.user_directory, "%s_%s.json" % (self.name, special_name))
-
-    def check_trades_cache(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-            special_name: Optional[str] = None,
-    ) -> Optional[Union[List[Dict[str, Any]], Dict[str, Any]]]:
-        if self.cache_ttl_secs == 0:
-            return None
-
-        trades_file = self._get_cachefile_name(special_name)
-        trades: Dict[str, Dict[str, Any]] = dict()
-        if os.path.isfile(trades_file):
-            with open(trades_file, 'r') as f:
-                try:
-                    trades = rlk_jsonloads_dict(f.read())
-                except JSONDecodeError:
-                    pass
-
-                # no need to query again
-                if data_up_todate(trades, start_ts, end_ts):
-                    return trades['data']
-
-        return None
 
     def query_balances(self) -> Tuple[Optional[dict], str]:
         """Returns the balances held in the exchange in the following format:

@@ -193,14 +193,14 @@ def analyze_binance_assets(sorted_assets):
 
 
 def test_binance_assets_are_known(
-        accounting_data_dir,
+        database,
         inquirer,  # pylint: disable=unused-argument
 ):
     # use a real binance instance so that we always get the latest data
     binance = Binance(
         api_key=make_api_key(),
         secret=make_api_secret(),
-        user_directory=accounting_data_dir,
+        database=database,
         msg_aggregator=MessagesAggregator(),
     )
 

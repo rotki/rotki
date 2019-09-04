@@ -1,5 +1,8 @@
-import pytest
 import os
+
+import pytest
+
+from rotkehlchen.db.dbhandler import DBHandler
 
 
 @pytest.fixture
@@ -25,3 +28,8 @@ def user_data_dir(data_dir, username):
 @pytest.fixture(scope='session')
 def session_user_data_dir(data_dir, username):
     return os.path.join(data_dir, username)
+
+
+@pytest.fixture
+def database(user_data_dir, function_scope_messages_aggregator):
+    return DBHandler(user_data_dir, '123', function_scope_messages_aggregator)

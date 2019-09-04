@@ -12,6 +12,7 @@ from typing_extensions import Literal
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import BINANCE_BASE_URL
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
@@ -29,7 +30,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_price,
     deserialize_timestamp_from_binance,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Exchange, Fee, FilePath, Timestamp
+from rotkehlchen.typing import ApiKey, ApiSecret, Exchange, Fee, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise
 from rotkehlchen.utils.serialization import rlk_jsonloads
@@ -158,12 +159,12 @@ class Binance(ExchangeInterface):
             self,
             api_key: ApiKey,
             secret: ApiSecret,
-            user_directory: FilePath,
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
             initial_backoff: int = 4,
             backoff_limit: int = 180,
     ):
-        super(Binance, self).__init__('binance', api_key, secret, user_directory)
+        super(Binance, self).__init__('binance', api_key, secret, database)
         self.uri = BINANCE_BASE_URL
         self.session.headers.update({  # type: ignore
             'Accept': 'application/json',
