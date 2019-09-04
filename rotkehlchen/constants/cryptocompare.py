@@ -1,4 +1,5 @@
 WORLD_TO_CRYPTOCOMPARE = {
+    'LBRY': 'LBC',
     'DATAcoin': 'DATA',
     'IOTA': 'MIOTA',
     'XRB': 'NANO',
