@@ -9,6 +9,7 @@ from urllib.parse import urlencode
 from rotkehlchen import typing
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, Exchange, MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface
@@ -70,10 +71,10 @@ class Bitmex(ExchangeInterface):
             self,
             api_key: typing.ApiKey,
             secret: typing.ApiSecret,
-            user_directory: typing.FilePath,
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
     ):
-        super(Bitmex, self).__init__('bitmex', api_key, secret, user_directory)
+        super(Bitmex, self).__init__('bitmex', api_key, secret, database)
         self.uri = 'https://bitmex.com'
         self.session.headers.update({'api-key': api_key})  # type: ignore
         self.msg_aggregator = msg_aggregator

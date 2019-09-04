@@ -10,6 +10,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
@@ -23,7 +24,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_date,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Exchange, Fee, FilePath, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Exchange, Fee, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
@@ -88,10 +89,10 @@ class Coinbase(ExchangeInterface):
             self,
             api_key: ApiKey,
             secret: ApiSecret,
-            user_directory: FilePath,
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
     ):
-        super(Coinbase, self).__init__('coinbase', api_key, secret, user_directory)
+        super(Coinbase, self).__init__('coinbase', api_key, secret, database)
         self.apiversion = 'v2'
         self.base_uri = 'https://api.coinbase.com'
         self.msg_aggregator = msg_aggregator

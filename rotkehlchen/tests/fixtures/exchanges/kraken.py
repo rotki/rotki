@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import TradeType
 from rotkehlchen.exchanges.kraken import (
@@ -26,7 +27,7 @@ from rotkehlchen.tests.utils.factories import (
     make_random_timestamp,
     make_random_uppercasenumeric_string,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, FilePath, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.serialization import rlk_jsonloads
 
@@ -179,13 +180,13 @@ class MockKraken(Kraken):
             self,
             api_key: ApiKey,
             secret: ApiSecret,
-            user_directory: FilePath,
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
     ):
         super(MockKraken, self).__init__(
             api_key=api_key,
             secret=secret,
-            user_directory=user_directory,
+            database=database,
             msg_aggregator=msg_aggregator,
         )
 
@@ -243,22 +244,22 @@ class MockKraken(Kraken):
 
 
 @pytest.fixture(scope='session')
-def kraken(session_data_dir, session_inquirer, messages_aggregator):
+def kraken(session_inquirer, messages_aggregator, database):
     mock = MockKraken(
         api_key=make_api_key(),
         secret=make_api_secret(),
-        user_directory=session_data_dir,
+        database=database,
         msg_aggregator=messages_aggregator,
     )
     return mock
 
 
 @pytest.fixture(scope='function')
-def function_scope_kraken(accounting_data_dir, inquirer, function_scope_messages_aggregator):
+def function_scope_kraken(inquirer, function_scope_messages_aggregator, database):
     mock = MockKraken(
         api_key=make_api_key(),
         secret=make_api_secret(),
-        user_directory=accounting_data_dir,
+        database=database,
         msg_aggregator=function_scope_messages_aggregator,
     )
     return mock

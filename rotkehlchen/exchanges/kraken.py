@@ -14,6 +14,7 @@ from requests import Response
 
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
     DeserializationError,
     RecoverableRequestError,
@@ -40,7 +41,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_kraken,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Exchange, FilePath, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Exchange, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, retry_calls
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
@@ -238,10 +239,10 @@ class Kraken(ExchangeInterface):
             self,
             api_key: ApiKey,
             secret: ApiSecret,
-            user_directory: FilePath,
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
     ):
-        super(Kraken, self).__init__('kraken', api_key, secret, user_directory)
+        super(Kraken, self).__init__('kraken', api_key, secret, database)
         self.msg_aggregator = msg_aggregator
         self.session.headers.update({  # type: ignore
             'API-Key': self.api_key,

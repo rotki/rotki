@@ -9,22 +9,22 @@ class MockBittrex(Bittrex):
 
 
 @pytest.fixture(scope='session')
-def bittrex(session_data_dir, session_inquirer, messages_aggregator):
+def bittrex(database, session_inquirer, messages_aggregator):
     mock = MockBittrex(
         api_key=make_api_key(),
         secret=make_api_secret(),
-        user_directory=session_data_dir,
+        database=database,
         msg_aggregator=messages_aggregator,
     )
     return mock
 
 
 @pytest.fixture(scope='function')
-def function_scope_bittrex(accounting_data_dir, function_scope_messages_aggregator):
+def function_scope_bittrex(database, function_scope_messages_aggregator):
     mock = MockBittrex(
         api_key=make_api_key(),
         secret=make_api_secret(),
-        user_directory=accounting_data_dir,
+        database=database,
         msg_aggregator=function_scope_messages_aggregator,
     )
     return mock

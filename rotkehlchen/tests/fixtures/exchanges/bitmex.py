@@ -8,12 +8,12 @@ TEST_BITMEX_API_SECRET = b'671tM6f64bt6KhteDakj2uCCNBt7HhZVEE7H5x16Oy4zb1ag'
 
 
 @pytest.fixture
-def mock_bitmex(accounting_data_dir, inquirer):  # pylint: disable=unused-argument
+def mock_bitmex(database, inquirer):  # pylint: disable=unused-argument
     # API key/secret from tests cases here: https://www.bitmex.com/app/apiKeysUsage
     bitmex = Bitmex(
         api_key=b'LAqUlngMIQkIUjXMUreyu3qn',
         secret=b'chNOOS4KvNXR_Xq4k4c9qsfoKWvnDecLATCRlcBwyKDYnWgO',
-        user_directory=accounting_data_dir,
+        database=database,
         msg_aggregator=MessagesAggregator(),
     )
 
@@ -22,12 +22,12 @@ def mock_bitmex(accounting_data_dir, inquirer):  # pylint: disable=unused-argume
 
 
 @pytest.fixture
-def test_bitmex(accounting_data_dir, inquirer):  # pylint: disable=unused-argument
+def test_bitmex(database, inquirer):  # pylint: disable=unused-argument
     # API key/secret from tests cases here: https://www.bitmex.com/app/apiKeysUsage
     bitmex = Bitmex(
         api_key=TEST_BITMEX_API_KEY,
         secret=TEST_BITMEX_API_SECRET,
-        user_directory=accounting_data_dir,
+        database=database,
         msg_aggregator=MessagesAggregator(),
     )
     bitmex.uri = 'https://testnet.bitmex.com'

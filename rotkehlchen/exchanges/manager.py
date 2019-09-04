@@ -2,9 +2,10 @@ import logging
 from importlib import import_module
 from typing import Dict, List, Tuple
 
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ApiCredentials, FilePath
+from rotkehlchen.typing import ApiCredentials
 from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ class ExchangeManager():
             name: str,
             api_key: str,
             api_secret: str,
-            user_directory: FilePath,
+            database: DBHandler,
     ) -> Tuple[bool, str]:
         """
         Setup a new exchange with an api key and an api secret
@@ -52,7 +53,7 @@ class ExchangeManager():
         credentials_dict = {}
         api_credentials = ApiCredentials.serialize(api_key=api_key, api_secret=api_secret)
         credentials_dict[name] = api_credentials
-        self.initialize_exchanges(credentials_dict, user_directory)
+        self.initialize_exchanges(credentials_dict, database)
 
         exchange = self.connected_exchanges[name]
         result, message = exchange.validate_api_key()
@@ -70,7 +71,7 @@ class ExchangeManager():
     def initialize_exchanges(
             self,
             exchange_credentials: Dict[str, ApiCredentials],
-            user_directory: FilePath,
+            database: DBHandler,
     ) -> None:
         # initialize exchanges for which we have keys and are not already initialized
         for name, credentials in exchange_credentials.items():
@@ -87,7 +88,7 @@ class ExchangeManager():
                 exchange_obj = exchange_ctor(
                     api_key=credentials.api_key,
                     secret=credentials.api_secret,
-                    user_directory=user_directory,
+                    database=database,
                     msg_aggregator=self.msg_aggregator,
                 )
                 self.connected_exchanges[name] = exchange_obj

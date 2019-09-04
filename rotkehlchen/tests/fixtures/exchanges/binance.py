@@ -10,14 +10,14 @@ from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 
 @pytest.fixture
 def function_scope_binance(
-        accounting_data_dir,
+        database,
         inquirer,  # pylint: disable=unused-argument
         function_scope_messages_aggregator,
 ):
     binance = Binance(
         api_key=make_api_key(),
         secret=make_api_secret(),
-        user_directory=accounting_data_dir,
+        database=database,
         msg_aggregator=function_scope_messages_aggregator,
     )
     this_dir = os.path.dirname(os.path.abspath(__file__))
