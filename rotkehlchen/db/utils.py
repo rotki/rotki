@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS current_balances (
 
 DB_CREATE_TRADES = """
 CREATE TABLE IF NOT EXISTS trades (
-    id INTEGER PRIMARY KEY ASC,
+    id TEXT PRIMARY KEY,
     time INTEGER,
     location VARCHAR[24],
     pair VARCHAR[24],
@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS trades (
     amount TEXT,
     rate TEXT,
     fee TEXT,
-    fee_currency VARCHAR[6],
+    fee_currency VARCHAR[10],
     link TEXT,
     notes TEXT
 );

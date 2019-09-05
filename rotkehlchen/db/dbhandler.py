@@ -13,6 +13,7 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH, S_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
+from rotkehlchen.db.trades import formulate_trade_id
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
     DB_SCRIPT_CREATE_TABLES,
@@ -742,10 +743,12 @@ class DBHandler():
 
         return credentials
 
-    def add_external_trade(self, trade: Trade) -> None:
+    def add_trade(self, trade: Trade) -> None:
         cursor = self.conn.cursor()
+        trade_id = formulate_trade_id(trade)
         cursor.execute(
             'INSERT INTO trades('
+            '  id, '
             '  time,'
             '  location,'
             '  pair,'
@@ -756,8 +759,9 @@ class DBHandler():
             '  fee_currency,'
             '  link,'
             '  notes)'
-            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             (
+                trade_id,
                 trade.timestamp,
                 trade.location,
                 trade.pair,
@@ -772,9 +776,9 @@ class DBHandler():
         )
         self.conn.commit()
 
-    def edit_external_trade(
+    def edit_trade(
             self,
-            trade_id: int,
+            trade_id: str,
             trade: Trade,
     ) -> Tuple[bool, str]:
         cursor = self.conn.cursor()
@@ -806,7 +810,7 @@ class DBHandler():
             ),
         )
         if cursor.rowcount == 0:
-            return False, 'Tried to edit non existing external trade id'
+            return False, 'Tried to edit non existing trade id'
 
         self.conn.commit()
         return True, ''

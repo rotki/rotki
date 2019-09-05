@@ -266,9 +266,9 @@ def test_writting_fetching_external_trades(data_dir, username):
         'otc_link': 'a link 2',
         'otc_notes': 'a note 2',
     }
-    result, _, = data.add_external_trade(trade1)
+    result, _, = data.add_trade(trade1)
     assert result
-    result, _ = data.add_external_trade(trade2)
+    result, _ = data.add_trade(trade2)
     assert result
     result = data.get_external_trades()
     del result[0]['id']
@@ -295,7 +295,7 @@ def test_writting_fetching_external_trades(data_dir, username):
 
     # edit a trade and check the edit made it in the DB
     trade1['otc_rate'] = '120'
-    trade1['otc_id'] = 1
+    trade1['otc_id'] = '1'
     result, _ = data.edit_external_trade(trade1)
     assert result
     result = data.get_external_trades()
@@ -305,11 +305,11 @@ def test_writting_fetching_external_trades(data_dir, username):
 
     # try to edit a non-existing trade
     trade1['otc_rate'] = '160'
-    trade1['otc_id'] = 5
+    trade1['otc_id'] = '5'
     result, _ = data.edit_external_trade(trade1)
     assert not result
     trade1['otc_rate'] = '120'
-    trade1['otc_id'] = 1
+    trade1['otc_id'] = '1'
     result = data.get_external_trades()
     assert result[0] == from_otc_trade(trade1)
     del result[1]['id']

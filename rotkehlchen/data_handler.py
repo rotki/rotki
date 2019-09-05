@@ -391,7 +391,7 @@ class DataHandler():
         if not trade:
             return False, message
 
-        self.db.add_external_trade(trade)
+        self.db.add_trade(trade)
 
         return True, ''
 
@@ -400,8 +400,9 @@ class DataHandler():
         if not trade:
             return False, message
 
-        result, message = self.db.edit_external_trade(
-            trade_id=int(data['otc_id']),
+        assert isinstance(data['otc_id'], str)
+        result, message = self.db.edit_trade(
+            trade_id=data['otc_id'],
             trade=trade,
         )
 

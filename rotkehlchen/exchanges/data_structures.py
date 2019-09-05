@@ -78,6 +78,8 @@ class Trade(NamedTuple):
     rate: Price
     fee: Fee
     fee_currency: Asset
+    # For external trades this is optional and is a link to the trade in an explorer
+    # For exchange trades this should be the exchange unique trade identifer
     link: str = ''
     notes: str = ''
 
