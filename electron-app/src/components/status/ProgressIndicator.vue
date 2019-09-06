@@ -33,7 +33,7 @@
                 ></v-progress-linear>
               </v-list-item-content>
             </v-list-item>
-            <v-divider :key="task.id"></v-divider>
+            <v-divider :key="`task-${task.id}`"></v-divider>
           </template>
         </v-list>
       </v-col>

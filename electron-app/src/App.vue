@@ -21,7 +21,7 @@
     </v-navigation-drawer>
     <v-app-bar app fixed clipped-left>
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-toolbar-title class="font-weight-light">Rotkehlchen</v-toolbar-title>
+      <v-toolbar-title class="font-weight-light">Rotki</v-toolbar-title>
       <node-status-indicator></node-status-indicator>
       <balance-saved-indicator></balance-saved-indicator>
       <v-spacer></v-spacer>
@@ -127,7 +127,7 @@ export default class App extends Vue {
     this.$store.commit('resetMessage');
   }
 
-  created() {
+  async created() {
     this.$rpc.connect();
     ipcRenderer.on('failed', () => {
       // get notified if the python subprocess dies
@@ -136,6 +136,7 @@ export default class App extends Vue {
       // send ack to main.
       ipcRenderer.send('ack', 1);
     });
+    await this.$store.dispatch('version');
   }
 
   ok() {}
