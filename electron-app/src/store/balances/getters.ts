@@ -34,6 +34,7 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
       return accountBalance;
     });
   },
+
   totals(state: BalanceState): AssetBalance[] {
     return map(state.totals, (value: Balance, asset: string) => {
       const assetBalance: AssetBalance = {
@@ -47,15 +48,6 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     return state.usdToFiatExchangeRates[currency];
   },
 
-  fiatTotals: (state: BalanceState): BigNumber => {
-    return reduce(
-      state.fiatBalances,
-      (result: BigNumber, value: FiatBalance) => {
-        return result.plus(value.usdValue);
-      },
-      Zero
-    );
-  },
   exchanges: (state: BalanceState) => {
     const balances = state.exchangeBalances;
     return Object.keys(balances).map(value => ({
@@ -63,5 +55,18 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
       balances: balances[value],
       totals: assetSum(balances[value])
     }));
+  },
+
+  aggregatedBalances: (state: BalanceState, getters) => {
+    const currencyBalances = state.fiatBalances.map(
+      value =>
+        ({
+          asset: value.currency,
+          amount: value.amount,
+          usdValue: value.usdValue
+        } as AssetBalance)
+    );
+
+    return currencyBalances.concat(getters.totals);
   }
 };

@@ -36,20 +36,24 @@
       <v-col cols="12">
         <v-data-table
           :headers="headers"
-          :items="blockchainTotals"
+          :items="aggregatedBalances"
           :search="search"
         >
-          <template #items="props">
-            <td>{{ props.item.asset }}</td>
-            <td class="text-right">
-              {{ props.item.amount | precision(floatingPrecision) }}
-            </td>
-            <td class="text-right">
-              {{ props.item.usd_value | precision(floatingPrecision) }}
-            </td>
-            <td class="text-right">
-              {{ props.item.usd_value | percentage(total, floatingPrecision) }}
-            </td>
+          <template #item.asset="{ item }">
+            {{ item.asset }}
+          </template>
+          <template #item.amount="{ item }">
+            {{ item.amount | precision(floatingPrecision) }}
+          </template>
+          <template #item.usd_value="{ item }">
+            {{
+              item.usdValue
+                | calculatePrice(exchangeRate(currency.ticker_symbol))
+                | formatPrice(floatingPrecision)
+            }}
+          </template>
+          <template #item.percentage="{ item }">
+            {{ item.usdValue | percentage(total, floatingPrecision) }}
           </template>
           <template #no-results>
             <v-alert :value="true" color="error" icon="warning">
@@ -59,42 +63,43 @@
         </v-data-table>
       </v-col>
     </v-row>
-    <v-row>
-      <div id="dashboard-wrapper">
-        <div class="row">
-          <div id="dashboard-contents" class="col-lg-12"></div>
-        </div>
-      </div>
-    </v-row>
   </v-container>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import InformationBox from '@/components/InformationBox.vue';
-import { mapGetters } from 'vuex';
+import { createNamespacedHelpers } from 'vuex';
 import { ExchangeInfo } from '@/typing/types';
 import { AssetBalance } from '@/model/asset-balance';
 import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
+import { Currency } from '@/model/currency';
+
+const mapBalanceGetters = createNamespacedHelpers('balances').mapGetters;
+const { mapState, mapGetters } = createNamespacedHelpers('session');
 
 @Component({
   components: { ExchangeBox, InformationBox },
   computed: {
-    ...mapGetters(['floatingPrecision', 'balances/exchanges'])
+    ...mapState(['currency']),
+    ...mapGetters(['floatingPrecision']),
+    ...mapBalanceGetters(['exchangeRate']),
+    ...mapBalanceGetters(['exchanges', 'aggregatedBalances'])
   }
 })
 export default class Dashboard extends Vue {
-  fiatTotal!: number;
+  currency!: Currency;
   floatingPrecision!: number;
+  exchangeRate!: (currency: string) => number;
   exchanges!: ExchangeInfo;
 
-  blockchainTotals: AssetBalance[] = [];
+  aggregatedBalances!: AssetBalance[];
   search: string = '';
 
   headers = [
     { text: 'Asset', value: 'asset' },
     { text: 'Amount', value: 'amount' },
-    { text: 'Value', value: 'value' },
+    { text: 'Value', value: 'usdValue' },
     { text: '% of net Value', value: 'percentage' }
   ];
 }
