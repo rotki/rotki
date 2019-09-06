@@ -75,7 +75,7 @@
               </v-list-item-action>
             </v-list-item>
 
-            <v-divider :key="notification.id"></v-divider>
+            <v-divider :key="`notification-${notification.id}`"></v-divider>
           </template>
         </v-list>
       </v-col>
