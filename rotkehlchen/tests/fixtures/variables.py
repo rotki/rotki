@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from rotkehlchen.ports import get_free_port
+from rotkehlchen.tests.utils.ports import get_free_port
 
 
 @pytest.fixture
