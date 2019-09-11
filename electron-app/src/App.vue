@@ -21,7 +21,9 @@
     </v-navigation-drawer>
     <v-app-bar app fixed clipped-left>
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-toolbar-title class="font-weight-light">Rotki</v-toolbar-title>
+      <v-toolbar-title class="font-weight-light">
+        Rotki {{ version }}
+      </v-toolbar-title>
       <node-status-indicator></node-status-indicator>
       <balance-saved-indicator></balance-saved-indicator>
       <v-spacer></v-spacer>
@@ -68,7 +70,7 @@ import { Component, Vue } from 'vue-property-decorator';
 import UserDropdown from '@/components/UserDropdown.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
-import { createNamespacedHelpers, mapState } from 'vuex';
+import { createNamespacedHelpers, mapGetters, mapState } from 'vuex';
 import Login from '@/components/Login.vue';
 import { Credentials } from '@/typing/types';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
@@ -102,13 +104,15 @@ const mapSessionState = createNamespacedHelpers('session').mapState;
   },
   computed: {
     ...mapState(['message']),
-    ...mapSessionState(['logged'])
+    ...mapSessionState(['logged']),
+    ...mapGetters(['version'])
   }
 })
 export default class App extends Vue {
   logout: boolean = false;
   logged!: boolean;
   message!: Message;
+  version!: string;
 
   newAccount: boolean = false;
   drawer = true;

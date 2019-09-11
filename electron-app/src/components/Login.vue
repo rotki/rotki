@@ -20,6 +20,7 @@
             :rules="passwordRules"
             type="password"
             required
+            @keypress.enter="login()"
           ></v-text-field>
         </v-form>
       </v-card-text>

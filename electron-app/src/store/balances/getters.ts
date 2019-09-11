@@ -68,5 +68,17 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     );
 
     return currencyBalances.concat(getters.totals);
+  },
+
+  fiatTotal: (state: BalanceState) => {
+    return state.fiatBalances.reduce((sum, balance) => {
+      return sum.plus(balance.usdValue);
+    }, Zero);
+  },
+
+  blockchainTotal: (state: BalanceState, getters) => {
+    return getters.totals.reduce((sum: BigNumber, asset: AssetBalance) => {
+      return sum.plus(asset.usdValue);
+    }, Zero);
   }
 };
