@@ -9,11 +9,11 @@ class MockBittrex(Bittrex):
 
 
 @pytest.fixture(scope='session')
-def bittrex(database, session_inquirer, messages_aggregator):
+def bittrex(session_database, session_inquirer, messages_aggregator):
     mock = MockBittrex(
         api_key=make_api_key(),
         secret=make_api_secret(),
-        database=database,
+        database=session_database,
         msg_aggregator=messages_aggregator,
     )
     return mock

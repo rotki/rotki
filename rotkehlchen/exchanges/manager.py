@@ -1,12 +1,14 @@
 import logging
 from importlib import import_module
-from typing import Dict, List, Tuple
+from typing import TYPE_CHECKING, Dict, List, Tuple
 
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ApiCredentials
 from rotkehlchen.user_messages import MessagesAggregator
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -37,7 +39,7 @@ class ExchangeManager():
             name: str,
             api_key: str,
             api_secret: str,
-            database: DBHandler,
+            database: 'DBHandler',
     ) -> Tuple[bool, str]:
         """
         Setup a new exchange with an api key and an api secret
@@ -71,7 +73,7 @@ class ExchangeManager():
     def initialize_exchanges(
             self,
             exchange_credentials: Dict[str, ApiCredentials],
-            database: DBHandler,
+            database: 'DBHandler',
     ) -> None:
         # initialize exchanges for which we have keys and are not already initialized
         for name, credentials in exchange_credentials.items():

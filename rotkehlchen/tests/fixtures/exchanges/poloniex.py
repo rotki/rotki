@@ -9,11 +9,11 @@ class MockPoloniex(Poloniex):
 
 
 @pytest.fixture(scope='session')
-def poloniex(database, session_inquirer, messages_aggregator):
+def poloniex(session_database, session_inquirer, messages_aggregator):
     mock = MockPoloniex(
         api_key=make_api_key(),
         secret=make_api_secret(),
-        database=database,
+        database=session_database,
         msg_aggregator=messages_aggregator,
     )
     return mock

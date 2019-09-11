@@ -244,11 +244,11 @@ class MockKraken(Kraken):
 
 
 @pytest.fixture(scope='session')
-def kraken(session_inquirer, messages_aggregator, database):
+def kraken(session_inquirer, messages_aggregator, session_database):
     mock = MockKraken(
         api_key=make_api_key(),
         secret=make_api_secret(),
-        database=database,
+        database=session_database,
         msg_aggregator=messages_aggregator,
     )
     return mock

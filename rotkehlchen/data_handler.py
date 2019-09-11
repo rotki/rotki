@@ -408,7 +408,7 @@ class DataHandler():
 
         return result, message
 
-    def delete_external_trade(self, trade_id: int) -> Tuple[bool, str]:
+    def delete_external_trade(self, trade_id: str) -> Tuple[bool, str]:
         return self.db.delete_external_trade(trade_id)
 
     def compress_and_encrypt_db(self, password: str) -> Tuple[B64EncodedBytes, str]:
