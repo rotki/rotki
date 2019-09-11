@@ -5,14 +5,14 @@
         <v-icon> fa {{ nodeConnection ? 'fa-link' : 'fa-unlink' }} </v-icon>
       </v-btn>
     </template>
-    <v-row class="popup">
-      <v-col>
+    <v-row class="node-status-indicator__content">
+      <v-col cols="2">
         <v-icon v-if="nodeConnection" color="primary">
           fa fa-check-circle
         </v-icon>
         <v-icon v-else color="warning">fa fa-exclamation-triangle</v-icon>
       </v-col>
-      <v-col>
+      <v-col cols="10">
         <span v-if="nodeConnection">
           Connected to a local ethereum node
         </span>
@@ -37,8 +37,9 @@ export default class NodeStatusIndicator extends Vue {
 </script>
 
 <style scoped lang="scss">
-.popup {
+.node-status-indicator__content {
   background: white;
   padding: 16px;
+  width: 420px;
 }
 </style>
