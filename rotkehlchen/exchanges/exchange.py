@@ -1,16 +1,18 @@
 #!/usr/bin/env python
 import logging
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 import requests
 from gevent.lock import Semaphore
 
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ApiKey, ApiSecret, T_ApiKey, T_ApiSecret, Timestamp
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -46,7 +48,7 @@ class ExchangeInterface():
             name: str,
             api_key: ApiKey,
             secret: ApiSecret,
-            database: DBHandler,
+            database: 'DBHandler',
     ):
         assert isinstance(api_key, T_ApiKey), (
             'api key for {} should be a bytestring'.format(name)

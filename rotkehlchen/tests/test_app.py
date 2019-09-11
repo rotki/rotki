@@ -2,16 +2,17 @@ from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 
 
-def test_initializing_exchanges(uninitialized_rotkehlchen, accounting_data_dir):
+def test_initializing_exchanges(uninitialized_rotkehlchen):
     """Test that initializing exchanges for which credentials exist in the DB works
 
     This also tests db.get_exchange_credentials() since we also pretend to have
     a premium subscription credentials and that function should not return it.
     """
     rotki = uninitialized_rotkehlchen
-    username = 'foo'
+    username = 'someusername'
     db_password = '123'
     rotki.data.unlock(username, db_password, create_new=True)
+    database = rotki.data.db
     # Mock having user_credentials for all exchanges and for premium
     cmd = 'INSERT OR REPLACE INTO user_credentials(name, api_key, api_secret) VALUES (?, ?, ?)'
 
@@ -27,7 +28,7 @@ def test_initializing_exchanges(uninitialized_rotkehlchen, accounting_data_dir):
     exchange_credentials = rotki.data.db.get_exchange_credentials()
     rotki.exchange_manager.initialize_exchanges(
         exchange_credentials=exchange_credentials,
-        user_directory=accounting_data_dir,
+        database=database,
     )
 
     assert all(name in rotki.exchange_manager.connected_exchanges for name in SUPPORTED_EXCHANGES)

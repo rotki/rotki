@@ -26,6 +26,7 @@ from rotkehlchen.db.dbhandler import (
     DBHandler,
     detect_sqlcipher_version,
 )
+from rotkehlchen.db.trades import hash_trade_id, hashable_string_for_external_trade
 from rotkehlchen.db.utils import (
     ROTKEHLCHEN_DB_VERSION,
     AssetBalance,
@@ -266,13 +267,17 @@ def test_writting_fetching_external_trades(data_dir, username):
         'otc_link': 'a link 2',
         'otc_notes': 'a note 2',
     }
-    result, _, = data.add_trade(trade1)
+    result, _, = data.add_external_trade(trade1)
     assert result
-    result, _ = data.add_trade(trade2)
+    result, _ = data.add_external_trade(trade2)
     assert result
     result = data.get_external_trades()
+    # make sure id is there but do not compare it
+    assert 'id' in result[0]
     del result[0]['id']
     assert result[0] == from_otc_trade(trade1)
+    # make sure id is there but do not compare it
+    assert 'id' in result[1]
     del result[1]['id']
     assert result[1] == from_otc_trade(trade2)
 
@@ -282,6 +287,8 @@ def test_writting_fetching_external_trades(data_dir, username):
         to_ts=1520726400,  # 11/03/2018
     )
     assert len(result) == 1
+    # make sure id is there but do not compare it
+    assert 'id' in result[0]
     del result[0]['id']
     assert result[0] == from_otc_trade(trade1)
 
@@ -290,16 +297,25 @@ def test_writting_fetching_external_trades(data_dir, username):
         to_ts=1520726400,  # 11/03/2018
     )
     assert len(result) == 1
+    # make sure id is there but do not compare it
+    assert 'id' in result[0]
     del result[0]['id']
     assert result[0] == from_otc_trade(trade1)
 
     # edit a trade and check the edit made it in the DB
     trade1['otc_rate'] = '120'
-    trade1['otc_id'] = '1'
+    hashable_string = hashable_string_for_external_trade(
+        timestamp=create_timestamp(trade1['otc_timestamp'], formatstr='%d/%m/%Y %H:%M'),
+        trade_type=trade1['otc_type'],
+        pair=trade1['otc_pair'],
+    )
+    trade1_id = hash_trade_id(hashable_string)
+    trade1['otc_id'] = trade1_id
     result, _ = data.edit_external_trade(trade1)
     assert result
     result = data.get_external_trades()
     assert result[0] == from_otc_trade(trade1)
+    assert 'id' in result[1]
     del result[1]['id']
     assert result[1] == from_otc_trade(trade2)
 
@@ -309,19 +325,21 @@ def test_writting_fetching_external_trades(data_dir, username):
     result, _ = data.edit_external_trade(trade1)
     assert not result
     trade1['otc_rate'] = '120'
-    trade1['otc_id'] = '1'
+    trade1['otc_id'] = trade1_id
     result = data.get_external_trades()
     assert result[0] == from_otc_trade(trade1)
+    assert 'id' in result[1]
     del result[1]['id']
     assert result[1] == from_otc_trade(trade2)
 
     # try to delete non-existing trade
-    result, _ = data.delete_external_trade(6)
+    result, _ = data.delete_external_trade('dasdasd')
     assert not result
 
     # delete an external trade
-    result, _ = data.delete_external_trade(1)
+    result, _ = data.delete_external_trade(trade1_id)
     result = data.get_external_trades()
+    assert 'id' in result[0]
     del result[0]['id']
     assert result[0] == from_otc_trade(trade2)
 
