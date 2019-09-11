@@ -1,15 +1,22 @@
 from sqlite3 import Cursor
+from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.data_handler import DataHandler
+from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.utils import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.tests.utils.constants import A_BCH, A_BSV, A_RDN
 from rotkehlchen.typing import FilePath, SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
+
+creation_patch = patch(
+    'rotkehlchen.db.dbhandler.DB_SCRIPT_CREATE_TABLES',
+    new=OLD_DB_SCRIPT_CREATE_TABLES,
+)
 
 
 def populate_db_and_check_for_asset_renaming(
@@ -182,7 +189,8 @@ def test_upgrade_db_1_to_2(data_dir, username):
     ethereum accounts are now checksummed"""
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=True)
+    with creation_patch:
+        data.unlock(username, '123', create_new=True)
     # Manually set version and input a non checksummed account
     cursor = data.db.conn.cursor()
     cursor.execute(
@@ -211,7 +219,8 @@ def test_upgrade_db_2_to_3(data_dir, username):
     """Test upgrading the DB from version 2 to version 3, rename BCHSV to BSV"""
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=True)
+    with creation_patch:
+        data.unlock(username, '123', create_new=True)
     # Manually set version
     cursor = data.db.conn.cursor()
     cursor.execute(
@@ -238,7 +247,8 @@ def test_upgrade_db_3_to_4(data_dir, username):
     the eth_rpc_port setting is changed to eth_rpc_endpoint"""
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=True)
+    with creation_patch:
+        data.unlock(username, '123', create_new=True)
     # Manually set version and input the old rpcport setting
     cursor = data.db.conn.cursor()
     cursor.execute(
@@ -272,7 +282,8 @@ def test_upgrade_db_4_to_5(data_dir, username):
     """Test upgrading the DB from version 4 to version 5, rename BCC to BCH"""
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=True)
+    with creation_patch:
+        data.unlock(username, '123', create_new=True)
     # Manually set version
     cursor = data.db.conn.cursor()
     cursor.execute(
