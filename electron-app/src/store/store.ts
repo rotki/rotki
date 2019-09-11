@@ -57,6 +57,9 @@ const store: StoreOptions<RotkehlchenState> = {
     updateNeeded: (state: RotkehlchenState) => {
       const { version, url } = state.version;
       return version.indexOf('dev') >= 0 ? false : !!url;
+    },
+    version: (state: RotkehlchenState) => {
+      return state.version.version;
     }
   },
   modules: {

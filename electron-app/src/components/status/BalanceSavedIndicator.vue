@@ -7,26 +7,46 @@
         </v-icon>
       </v-btn>
     </template>
-    <v-row column class="popup">
+    <div class="balance-saved-indicator__content">
       <v-row>
         Balances last saved
       </v-row>
-      <v-row id="last_balance_save_field" class="text--secondary">
-        Never
+      <v-row class="text--secondary">
+        <span v-if="lastBalanceSave">
+          {{ lastBalanceSave | formatDate(dateDisplayFormat) }}
+        </span>
+        <span v-else>
+          Never
+        </span>
       </v-row>
-    </v-row>
+    </div>
   </v-menu>
 </template>
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import { createNamespacedHelpers } from 'vuex';
 
-@Component({})
-export default class BalanceSavedIndicator extends Vue {}
+const { mapGetters } = createNamespacedHelpers('session');
+
+@Component({
+  computed: {
+    ...mapGetters(['lastBalanceSave', 'dateDisplayFormat'])
+  }
+})
+export default class BalanceSavedIndicator extends Vue {
+  lastBalanceSave!: number;
+  dateDisplayFormat!: string;
+}
 </script>
 
 <style lang="scss" scoped>
-.popup {
+.balance-saved-indicator__content {
   background: white;
+  width: 280px;
   padding: 16px;
+}
+
+.balance-saved-indicator__content > * {
+  padding: 4px 16px;
 }
 </style>
