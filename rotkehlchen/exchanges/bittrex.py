@@ -430,7 +430,6 @@ class Bittrex(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            end_at_least_ts: Timestamp,
     ) -> List[AssetMovement]:
         raw_data = self.api_query('getdeposithistory')
         raw_data.extend(self.api_query('getwithdrawalhistory'))

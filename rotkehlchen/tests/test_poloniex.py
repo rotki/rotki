@@ -413,7 +413,6 @@ def test_poloniex_deposits_withdrawal_unknown_asset(function_scope_poloniex):
         asset_movements = poloniex.query_deposits_withdrawals(
             start_ts=0,
             end_ts=1488994442,
-            end_at_least_ts=1488994442,
         )
 
     assert len(asset_movements) == 4
@@ -465,7 +464,6 @@ def test_poloniex_deposits_withdrawal_null_fee(function_scope_poloniex):
         asset_movements = poloniex.query_deposits_withdrawals(
             start_ts=0,
             end_ts=1488994442,
-            end_at_least_ts=1488994442,
         )
 
     assert len(asset_movements) == 1
@@ -496,7 +494,6 @@ def test_poloniex_deposits_withdrawal_unexpected_data(function_scope_poloniex):
             asset_movements = poloniex.query_deposits_withdrawals(
                 start_ts=0,
                 end_ts=1488994442,
-                end_at_least_ts=1488994442,
             )
 
         if expected_errors_num == 0 and expected_warnings_num == 0:

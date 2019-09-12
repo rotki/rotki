@@ -556,7 +556,6 @@ class Kraken(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            end_at_least_ts: Timestamp,
     ) -> List[AssetMovement]:
         result = self.query_until_finished(
             endpoint='Ledgers',

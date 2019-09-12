@@ -491,7 +491,6 @@ def query_coinbase_and_test(
         actions = query_fn(
             start_ts=0,
             end_ts=TEST_END_TS,
-            end_at_least_ts=TEST_END_TS,
         )
 
     errors = coinbase.msg_aggregator.consume_errors()
@@ -639,7 +638,6 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
         movements = coinbase.query_deposits_withdrawals(
             start_ts=0,
             end_ts=TEST_END_TS,
-            end_at_least_ts=TEST_END_TS,
         )
 
     warnings = coinbase.msg_aggregator.consume_warnings()

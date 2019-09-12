@@ -87,7 +87,6 @@ class ExchangeInterface():
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            end_at_least_ts: Timestamp,
     ) -> List[AssetMovement]:
         raise NotImplementedError(
             'query_deposits_withdrawals should only be implemented by subclasses',
@@ -146,7 +145,6 @@ class ExchangeInterface():
             asset_movements = self.query_deposits_withdrawals(
                 start_ts=start_ts,
                 end_ts=end_ts,
-                end_at_least_ts=end_at_least_ts,
             )
             exchange_specific_data = self.query_exchange_specific_history(
                 start_ts=start_ts,

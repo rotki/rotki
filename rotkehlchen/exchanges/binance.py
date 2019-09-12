@@ -487,7 +487,6 @@ class Binance(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            end_at_least_ts: Timestamp,
     ) -> List[AssetMovement]:
         # This does not check for any limits. Can there be any limits like with trades
         # in the deposit/withdrawal binance api? Can't see anything in the docs:
