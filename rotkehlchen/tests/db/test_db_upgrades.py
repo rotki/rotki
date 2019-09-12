@@ -173,7 +173,36 @@ def populate_db_and_check_for_asset_renaming(
     assert timed_balances[1].usd_value == '40'
 
     # Assert that trades got renamed properly
-    trades = data.db.get_trades(only_external=False)
+    cursor = data.db.conn.cursor()
+    query = (
+        'SELECT id,'
+        '  time,'
+        '  location,'
+        '  pair,'
+        '  type,'
+        '  amount,'
+        '  rate,'
+        '  fee,'
+        '  fee_currency,'
+        '  link,'
+        '  notes FROM trades ORDER BY time ASC;'
+    )
+    results = cursor.execute(query)
+    trades = []
+    for result in results:
+        trades.append({
+            'id': result[0],
+            'timestamp': result[1],
+            'location': result[2],
+            'pair': result[3],
+            'trade_type': result[4],
+            'amount': result[5],
+            'rate': result[6],
+            'fee': result[7],
+            'fee_currency': result[8],
+            'link': result[9],
+            'notes': result[10],
+        })
     assert len(trades) == 3
     assert trades[0]['fee_currency'] == 'EUR'
     assert trades[0]['pair'] == 'ETH_EUR'
