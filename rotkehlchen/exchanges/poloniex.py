@@ -693,7 +693,6 @@ class Poloniex(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            end_at_least_ts: Timestamp,
     ) -> List[AssetMovement]:
         result = self.return_deposits_withdrawals(start_ts, end_ts)
         log.debug(

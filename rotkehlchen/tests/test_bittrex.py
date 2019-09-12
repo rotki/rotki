@@ -351,7 +351,7 @@ def test_bittrex_query_deposits_withdrawals(bittrex):
         return MockResponse(200, response_str)
 
     with patch.object(bittrex.session, 'get', side_effect=mock_get_deposit_withdrawal):
-        movements = bittrex.query_deposits_withdrawals(0, TEST_END_TS, TEST_END_TS)
+        movements = bittrex.query_deposits_withdrawals(start_ts=0, end_ts=TEST_END_TS)
 
     errors = bittrex.msg_aggregator.consume_errors()
     warnings = bittrex.msg_aggregator.consume_warnings()
@@ -409,7 +409,7 @@ def test_bittrex_query_deposits_withdrawals_unexpected_data(bittrex):
             return MockResponse(200, response_str)
 
         with patch.object(bittrex.session, 'get', side_effect=mock_get_deposit_withdrawal):
-            movements = bittrex.query_deposits_withdrawals(0, TEST_END_TS, TEST_END_TS)
+            movements = bittrex.query_deposits_withdrawals(start_ts=0, end_ts=TEST_END_TS)
 
         if expected_errors_num == 0 and expected_warnings_num == 0:
             assert len(movements) == 1

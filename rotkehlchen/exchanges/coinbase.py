@@ -513,7 +513,6 @@ class Coinbase(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            end_at_least_ts: Timestamp,
     ) -> List[AssetMovement]:
         account_data = self._api_query('accounts')
         account_ids = self._get_account_ids(account_data)

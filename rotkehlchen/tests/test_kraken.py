@@ -104,7 +104,6 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(function_scope_kraken):
     movements = kraken.query_deposits_withdrawals(
         start_ts=1408994442,
         end_ts=1498994442,
-        end_at_least_ts=1498994442,
     )
 
     assert len(movements) == 4
@@ -158,7 +157,6 @@ def test_kraken_query_deposit_withdrawals_unexpected_data(function_scope_kraken)
             deposits = kraken.query_deposits_withdrawals(
                 start_ts=0,
                 end_ts=TEST_END_TS,
-                end_at_least_ts=TEST_END_TS,
             )
 
         if expected_warnings_num == 0 and expected_errors_num == 0:

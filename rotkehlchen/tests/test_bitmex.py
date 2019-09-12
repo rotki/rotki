@@ -39,7 +39,6 @@ def test_bitmex_api_withdrawals_deposit(test_bitmex):
     result = test_bitmex.query_deposits_withdrawals(
         start_ts=1536492800,
         end_ts=1536492976,
-        end_at_least_ts=1536492976,
     )
     assert len(result) == 0
 
@@ -47,7 +46,6 @@ def test_bitmex_api_withdrawals_deposit(test_bitmex):
     result = test_bitmex.query_deposits_withdrawals(
         start_ts=0,
         end_ts=now,
-        end_at_least_ts=now,
     )
     expected_result = [
         AssetMovement(
@@ -109,7 +107,6 @@ def test_bitmex_api_withdrawals_deposit_unexpected_data(test_bitmex):
             movements = test_bitmex.query_deposits_withdrawals(
                 start_ts=0,
                 end_ts=now,
-                end_at_least_ts=now,
             )
 
         if expected_warnings_num == 0 and expected_errors_num == 0:
@@ -162,7 +159,6 @@ def test_bitmex_trade_history(test_bitmex):
     result = test_bitmex.query_trade_history(
         start_ts=1536492800,
         end_ts=1536492976,
-        end_at_least_ts=1536492976,
     )
     assert len(result) == 0
 
@@ -170,7 +166,6 @@ def test_bitmex_trade_history(test_bitmex):
     result = test_bitmex.query_trade_history(
         start_ts=0,
         end_ts=until_9_results_ts,
-        end_at_least_ts=until_9_results_ts,
     )
     resulting_margin_positions = [
         MarginPosition(
