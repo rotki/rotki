@@ -277,7 +277,7 @@ def test_binance_query_trade_history(function_scope_binance):
         return MockResponse(200, text)
 
     with patch.object(binance.session, 'get', side_effect=mock_my_trades):
-        trades = binance.query_trade_history(0, 1564301134, 1564301134)
+        trades = binance.query_trade_history(start_ts=0, end_ts=1564301134)
 
     expected_trade = Trade(
         timestamp=1499865549,
@@ -321,7 +321,11 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
             new=input_trade_str,
         )
         with patch_get, patch_response:
-            trades = binance.query_trade_history(0, 1564301134, 1564301134, query_specific_markets)
+            trades = binance.query_trade_history(
+                start_ts=0,
+                end_ts=1564301134,
+                markets=query_specific_markets,
+            )
 
         assert len(trades) == 0
         errors = binance.msg_aggregator.consume_errors()

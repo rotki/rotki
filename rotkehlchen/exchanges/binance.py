@@ -352,7 +352,6 @@ class Binance(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            end_at_least_ts: Timestamp,
             markets: Optional[List[str]] = None,
     ) -> List[Trade]:
         self.first_connection()

@@ -46,7 +46,6 @@ def test_querying_trade_history(kraken):
     result = kraken.query_trade_history(
         start_ts=1451606400,
         end_ts=now,
-        end_at_least_ts=now,
     )
     assert isinstance(result, list)
     assert len(result) != 0
@@ -60,7 +59,6 @@ def test_querying_deposits_withdrawals(kraken):
     result = kraken.query_trade_history(
         start_ts=1451606400,
         end_ts=now,
-        end_at_least_ts=now,
     )
     assert isinstance(result, list)
     assert len(result) != 0
@@ -250,7 +248,6 @@ def test_trade_from_kraken_unexpected_data(function_scope_kraken):
             trades = kraken.query_trade_history(
                 start_ts=0,
                 end_ts=TEST_END_TS,
-                end_at_least_ts=TEST_END_TS,
             )
 
         if expected_warnings_num == 0 and expected_errors_num == 0:

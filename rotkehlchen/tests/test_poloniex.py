@@ -244,7 +244,6 @@ def test_query_trade_history(function_scope_poloniex):
         trades = poloniex.query_trade_history(
             start_ts=0,
             end_ts=1565732120,
-            end_at_least_ts=1565732120,
         )
 
     assert len(trades) == 2
@@ -283,7 +282,6 @@ def test_query_trade_history_unexpected_data(function_scope_poloniex):
             trades = poloniex.query_trade_history(
                 start_ts=0,
                 end_ts=1565732120,
-                end_at_least_ts=1565732120,
             )
 
         if expected_errors_num == 0 and expected_warnings_num == 0:

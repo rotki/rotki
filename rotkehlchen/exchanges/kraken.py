@@ -497,7 +497,6 @@ class Kraken(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            end_at_least_ts: Timestamp,
     ) -> List[Trade]:
         result = self.query_until_finished('TradesHistory', 'trades', start_ts, end_ts)
 

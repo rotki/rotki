@@ -319,7 +319,6 @@ class Bittrex(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            end_at_least_ts: Timestamp,
             market: Optional[TradePair] = None,
             count: Optional[int] = None,
     ) -> List[Trade]:

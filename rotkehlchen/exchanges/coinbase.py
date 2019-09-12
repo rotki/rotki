@@ -369,7 +369,6 @@ class Coinbase(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            end_at_least_ts: Timestamp,
     ) -> List[Trade]:
         account_data = self._api_query('accounts')
         # now get the account ids and for each one query buys/sells

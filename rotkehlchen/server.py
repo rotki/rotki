@@ -336,7 +336,7 @@ class RotkehlchenServer():
             )
             return {'result': '', 'message': msg}
 
-        result = exchange.query_trade_history(start_ts, end_ts, end_ts)
+        result = exchange.query_trade_history(start_ts=start_ts, end_ts=end_ts)
         return process_result({'result': result, 'message': ''})
 
     def process_trade_history(self, start_ts, end_ts):

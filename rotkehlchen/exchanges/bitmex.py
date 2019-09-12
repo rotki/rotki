@@ -219,7 +219,6 @@ class Bitmex(ExchangeInterface):
             self,
             start_ts: typing.Timestamp,
             end_ts: typing.Timestamp,
-            end_at_least_ts: typing.Timestamp,  # pylint: disable=unused-argument
     ) -> List[MarginPosition]:
 
         # We know user/walletHistory returns a list
