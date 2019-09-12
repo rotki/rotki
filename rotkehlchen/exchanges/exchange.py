@@ -96,7 +96,6 @@ class ExchangeInterface():
             self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
-            end_at_least_ts: Timestamp,  # pylint: disable=unused-argument
     ) -> Optional[Any]:
         """Has to be implemented by exchanges if they have anything exchange specific
 
@@ -128,7 +127,6 @@ class ExchangeInterface():
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            end_at_least_ts: Timestamp,
             success_callback: ExchangeHistorySuccessCallback,
             fail_callback: ExchangeHistoryFailCallback,
     ) -> None:
@@ -149,7 +147,6 @@ class ExchangeInterface():
             exchange_specific_data = self.query_exchange_specific_history(
                 start_ts=start_ts,
                 end_ts=end_ts,
-                end_at_least_ts=end_at_least_ts,
             )
             success_callback(history, asset_movements, exchange_specific_data)
 

@@ -633,7 +633,6 @@ class Poloniex(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            end_at_least_ts: Timestamp,  # pylint: disable=unused-argument
     ) -> Optional[Any]:
         """The exchange specific history for poloniex is its loans"""
         return self.query_loan_history(
