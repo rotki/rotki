@@ -12,7 +12,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH, S_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
-from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
+from rotkehlchen.datatyping import BalancesData, DBSettings
 from rotkehlchen.db.trades import formulate_trade_id
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
@@ -30,6 +30,13 @@ from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import (
+    deserialize_asset_amount,
+    deserialize_fee,
+    deserialize_price,
+    deserialize_timestamp,
+    deserialize_trade_type,
+)
 from rotkehlchen.typing import (
     ApiCredentials,
     ApiKey,
@@ -39,6 +46,7 @@ from rotkehlchen.typing import (
     FilePath,
     SupportedBlockchain,
     Timestamp,
+    TradeID,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
@@ -819,8 +827,8 @@ class DBHandler():
             self,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-            only_external: bool = True,
-    ) -> List[ExternalTrade]:
+            location: Optional[str] = None,
+    ) -> List[Trade]:
         cursor = self.conn.cursor()
         query = (
             'SELECT id,'
@@ -835,8 +843,8 @@ class DBHandler():
             '  link,'
             '  notes FROM trades '
         )
-        if only_external:
-            query += 'WHERE location="external" '
+        if location is not None:
+            query += f'WHERE location="{location}" '
         bindings: Union[
             Tuple,
             Tuple[Timestamp],
@@ -853,23 +861,34 @@ class DBHandler():
             bindings = (to_ts,)
         query += 'ORDER BY time ASC;'
         results = cursor.execute(query, bindings)
-        results = results.fetchall()
 
         trades = []
         for result in results:
-            trades.append({
-                'id': result[0],
-                'timestamp': result[1],
-                'location': result[2],
-                'pair': result[3],
-                'trade_type': result[4],
-                'amount': result[5],
-                'rate': result[6],
-                'fee': result[7],
-                'fee_currency': result[8],
-                'link': result[9],
-                'notes': result[10],
-            })
+            try:
+                trade = Trade(
+                    timestamp=deserialize_timestamp(result[1]),
+                    location=result[2],
+                    pair=result[3],
+                    trade_type=deserialize_trade_type(result[4]),
+                    amount=deserialize_asset_amount(result[5]),
+                    rate=deserialize_price(result[6]),
+                    fee=deserialize_fee(result[7]),
+                    fee_currency=Asset(result[8]),
+                    link=result[9],
+                    notes=result[10],
+                )
+            except DeserializationError as e:
+                self.msg_aggregator.add_error(
+                    f'Error deserializing trade from the DB. Skipping trade. Error was: {str(e)}',
+                )
+                continue
+            except UnknownAsset as e:
+                self.msg_aggregator.add_error(
+                    f'Error deserializing trade from the DB. Skipping trade. '
+                    f'Unknown asset {e.asset_name} found',
+                )
+                continue
+            trades.append(trade)
 
         return trades
 

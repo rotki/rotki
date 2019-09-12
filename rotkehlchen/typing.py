@@ -81,6 +81,9 @@ AssetAmount = NewType('AssetAmount', T_AssetAmount)
 # things that can be calculated such as amount, fees, price e.t.c.
 Numerical = TypeVar('Numerical', FVal, AssetAmount, Fee, Price)
 
+T_TradeID = str
+TradeID = NewType('TradeID', T_TradeID)
+
 
 class ResultCache(NamedTuple):
     """Represents a time-cached result of some API query"""
