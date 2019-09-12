@@ -121,7 +121,6 @@ class ExchangeInterface():
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            end_at_least_ts: Timestamp,
     ) -> Union[List[Trade], List[MarginPosition]]:
         """Queries the exchange for the trade history of the user"""
         raise NotImplementedError('query_trade_history() should only be implemented by subclasses')
@@ -143,7 +142,6 @@ class ExchangeInterface():
             history = self.query_trade_history(
                 start_ts=start_ts,
                 end_ts=end_ts,
-                end_at_least_ts=end_at_least_ts,
             )
             asset_movements = self.query_deposits_withdrawals(
                 start_ts=start_ts,
