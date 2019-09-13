@@ -3,13 +3,8 @@ from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors import DeserializationError, RemoteError
-from rotkehlchen.exchanges.data_structures import (
-    AssetMovement,
-    MarginPosition,
-    Trade,
-    trades_from_dictlist,
-)
+from rotkehlchen.errors import RemoteError
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.exchanges.poloniex import process_polo_loans
 from rotkehlchen.fval import FVal
@@ -26,39 +21,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-def maybe_add_external_trades_to_history(
-        db: DBHandler,
-        start_ts: Timestamp,
-        end_ts: Timestamp,
-        history: List[Union[Trade, MarginPosition]],
-        msg_aggregator: MessagesAggregator,
-) -> List[Union[Trade, MarginPosition]]:
-    """
-    Queries the DB to get any external trades, adds them to the provided history and returns it.
-
-    If there is an unexpected error at the external trade deserialization an error is logged.
-    """
-    serialized_external_trades = db.get_trades()
-    try:
-        external_trades = trades_from_dictlist(
-            given_trades=serialized_external_trades,
-            start_ts=start_ts,
-            end_ts=end_ts,
-            location='external trades',
-            msg_aggregator=msg_aggregator,
-        )
-    except (KeyError, DeserializationError):
-        msg_aggregator.add_error('External trades in the DB are in an unrecognized format')
-        return history
-
-    history.extend(external_trades)
-    # TODO: We also sort in one other place in this file and also in accountant.py
-    #       Get rid of the unneeded cases?
-    history.sort(key=lambda trade: action_get_timestamp(trade))
-
-    return history
 
 
 def write_tupledata_history_in_file(history, filepath, start_ts, end_ts):
@@ -228,7 +190,6 @@ class TradesHistorian():
             exchange.query_history_with_callbacks(
                 start_ts=start_ts,
                 end_ts=end_ts,
-                end_at_least_ts=end_at_least_ts,
                 success_callback=populate_history_cb,
                 fail_callback=fail_history_cb,
             )
@@ -248,13 +209,9 @@ class TradesHistorian():
         history = limit_trade_list_to_period(history, start_ts, end_ts)
 
         # Include the external trades in the history
-        history = maybe_add_external_trades_to_history(
-            db=self.db,
-            start_ts=start_ts,
-            end_ts=end_ts,
-            history=history,
-            msg_aggregator=self.msg_aggregator,
-        )
+        external_trades = self.db.get_trades(from_ts=start_ts, to_ts=end_ts, location='external')
+        history.extend(external_trades)
+        history.sort(key=lambda trade: action_get_timestamp(trade))
 
         return (
             empty_or_error,
