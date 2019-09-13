@@ -391,7 +391,7 @@ class DataHandler():
         if not trade:
             return False, message
 
-        self.db.add_trade(trade)
+        self.db.add_trades([trade])
 
         return True, ''
 

@@ -750,10 +750,25 @@ class DBHandler():
 
         return credentials
 
-    def add_trade(self, trade: Trade) -> None:
+    def add_trades(self, trades: List[Trade]) -> None:
         cursor = self.conn.cursor()
-        trade_id = formulate_trade_id(trade)
-        cursor.execute(
+        trade_tuples = []
+        for trade in trades:
+            trade_id = formulate_trade_id(trade)
+            trade_tuples.append((
+                trade_id,
+                trade.timestamp,
+                trade.location,
+                trade.pair,
+                str(trade.trade_type),
+                str(trade.amount),
+                str(trade.rate),
+                str(trade.fee),
+                trade.fee_currency.identifier,
+                trade.link,
+                trade.notes,
+            ))
+        cursor.executemany(
             'INSERT INTO trades('
             '  id, '
             '  time,'
@@ -767,21 +782,10 @@ class DBHandler():
             '  link,'
             '  notes)'
             'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            (
-                trade_id,
-                trade.timestamp,
-                trade.location,
-                trade.pair,
-                str(trade.trade_type),
-                str(trade.amount),
-                str(trade.rate),
-                str(trade.fee),
-                trade.fee_currency.identifier,
-                trade.link,
-                trade.notes,
-            ),
+            trade_tuples,
         )
         self.conn.commit()
+        self.update_last_write()
 
     def edit_trade(
             self,
@@ -828,6 +832,10 @@ class DBHandler():
             to_ts: Optional[Timestamp] = None,
             location: Optional[str] = None,
     ) -> List[Trade]:
+        """Returns a list of trades optionally filtered by time and location
+
+        The returned list is ordered from oldest to newest
+        """
         cursor = self.conn.cursor()
         query = (
             'SELECT id,'

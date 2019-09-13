@@ -348,7 +348,7 @@ class Binance(ExchangeInterface):
 
         return returned_balances, ''
 
-    def query_trade_history(
+    def query_online_trade_history(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
