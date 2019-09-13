@@ -46,7 +46,6 @@ from rotkehlchen.typing import (
     FilePath,
     SupportedBlockchain,
     Timestamp,
-    TradeID,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now

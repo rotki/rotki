@@ -2,7 +2,6 @@ import os
 import time
 from copy import deepcopy
 from shutil import copyfile
-from typing import Any, Dict
 from unittest.mock import patch
 
 import pytest
@@ -12,7 +11,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants import YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD, FIAT_CURRENCIES, S_CNY, S_EUR
-from rotkehlchen.data_handler import DataHandler
+from rotkehlchen.data_handler import DataHandler, verify_otctrade_data
 from rotkehlchen.db.dbhandler import (
     DBINFO_FILENAME,
     DEFAULT_ANONYMIZED_LOGS,
@@ -39,7 +38,7 @@ from rotkehlchen.tests.utils.constants import A_CNY, A_DAO, A_DOGE, A_GNO, A_RDN
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
 from rotkehlchen.typing import SupportedBlockchain, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import create_timestamp, ts_now
+from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 TABLES_AT_INIT = [
@@ -219,33 +218,13 @@ def test_writting_fetching_data(data_dir, username):
     assert 'nonexisting_setting' not in result
 
 
-def from_otc_trade(trade: Dict[str, Any]) -> Dict[str, Any]:
-    ts = create_timestamp(trade['otc_timestamp'], formatstr='%d/%m/%Y %H:%M')
-    new_trade = {
-        'timestamp': ts,
-        'location': 'external',
-        'pair': trade['otc_pair'],
-        'trade_type': trade['otc_type'],
-        'amount': str(trade['otc_amount']),
-        'rate': str(trade['otc_rate']),
-        'fee': str(trade['otc_fee']),
-        'fee_currency': trade['otc_fee_currency'],
-        'link': trade['otc_link'],
-        'notes': trade['otc_notes'],
-    }
-    if 'otc_id' in trade:
-        new_trade['id'] = trade['otc_id']
-
-    return new_trade
-
-
 def test_writting_fetching_external_trades(data_dir, username):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
 
     # add 2 trades and check they are in the DB
-    trade1 = {
+    otc_trade1 = {
         'otc_timestamp': '10/03/2018 23:30',
         'otc_pair': 'ETH_EUR',
         'otc_type': 'buy',
@@ -256,7 +235,7 @@ def test_writting_fetching_external_trades(data_dir, username):
         'otc_link': 'a link',
         'otc_notes': 'a note',
     }
-    trade2 = {
+    otc_trade2 = {
         'otc_timestamp': '15/03/2018 23:35',
         'otc_pair': 'ETH_EUR',
         'otc_type': 'buy',
@@ -267,19 +246,16 @@ def test_writting_fetching_external_trades(data_dir, username):
         'otc_link': 'a link 2',
         'otc_notes': 'a note 2',
     }
-    result, _, = data.add_external_trade(trade1)
+    trade1, _ = verify_otctrade_data(otc_trade1)
+    trade2, _ = verify_otctrade_data(otc_trade2)
+
+    result, _, = data.add_external_trade(otc_trade1)
     assert result
-    result, _ = data.add_external_trade(trade2)
+    result, _ = data.add_external_trade(otc_trade2)
     assert result
     result = data.get_external_trades()
-    # make sure id is there but do not compare it
-    assert 'id' in result[0]
-    del result[0]['id']
-    assert result[0] == from_otc_trade(trade1)
-    # make sure id is there but do not compare it
-    assert 'id' in result[1]
-    del result[1]['id']
-    assert result[1] == from_otc_trade(trade2)
+    assert result[0] == trade1
+    assert result[1] == trade2
 
     # query trades in period
     result = data.get_external_trades(
@@ -288,9 +264,7 @@ def test_writting_fetching_external_trades(data_dir, username):
     )
     assert len(result) == 1
     # make sure id is there but do not compare it
-    assert 'id' in result[0]
-    del result[0]['id']
-    assert result[0] == from_otc_trade(trade1)
+    assert result[0] == trade1
 
     # query trades only with to_ts
     result = data.get_external_trades(
@@ -298,50 +272,43 @@ def test_writting_fetching_external_trades(data_dir, username):
     )
     assert len(result) == 1
     # make sure id is there but do not compare it
-    assert 'id' in result[0]
-    del result[0]['id']
-    assert result[0] == from_otc_trade(trade1)
+    assert result[0] == trade1
 
     # edit a trade and check the edit made it in the DB
-    trade1['otc_rate'] = '120'
+    otc_trade1['otc_rate'] = '120'
     hashable_string = hashable_string_for_external_trade(
-        timestamp=create_timestamp(trade1['otc_timestamp'], formatstr='%d/%m/%Y %H:%M'),
-        trade_type=trade1['otc_type'],
-        pair=trade1['otc_pair'],
+        timestamp=trade1.timestamp,
+        trade_type=otc_trade1['otc_type'],
+        pair=otc_trade1['otc_pair'],
     )
     trade1_id = hash_trade_id(hashable_string)
-    trade1['otc_id'] = trade1_id
-    result, _ = data.edit_external_trade(trade1)
+    otc_trade1['otc_id'] = trade1_id
+    result, _ = data.edit_external_trade(otc_trade1)
     assert result
     result = data.get_external_trades()
-    assert result[0] == from_otc_trade(trade1)
-    assert 'id' in result[1]
-    del result[1]['id']
-    assert result[1] == from_otc_trade(trade2)
+    edited_trade1 = trade1._replace(rate=FVal(120))
+    assert result[0] == edited_trade1
+    assert result[1] == trade2
 
     # try to edit a non-existing trade
-    trade1['otc_rate'] = '160'
-    trade1['otc_id'] = '5'
-    result, _ = data.edit_external_trade(trade1)
+    otc_trade1['otc_rate'] = '160'
+    otc_trade1['otc_id'] = '5'
+    result, _ = data.edit_external_trade(otc_trade1)
     assert not result
-    trade1['otc_rate'] = '120'
-    trade1['otc_id'] = trade1_id
+    otc_trade1['otc_rate'] = '120'
+    otc_trade1['otc_id'] = trade1_id
     result = data.get_external_trades()
-    assert result[0] == from_otc_trade(trade1)
-    assert 'id' in result[1]
-    del result[1]['id']
-    assert result[1] == from_otc_trade(trade2)
+    assert result[0] == edited_trade1
+    assert result[1] == trade2
 
-    # try to delete non-existing trade
+    # # try to delete non-existing trade
     result, _ = data.delete_external_trade('dasdasd')
     assert not result
 
-    # delete an external trade
+    # # delete an external trade
     result, _ = data.delete_external_trade(trade1_id)
     result = data.get_external_trades()
-    assert 'id' in result[0]
-    del result[0]['id']
-    assert result[0] == from_otc_trade(trade2)
+    assert result[0] == trade2
 
 
 def test_settings_entry_types(data_dir, username):
