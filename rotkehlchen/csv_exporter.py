@@ -296,18 +296,21 @@ class CSVExporter():
             self,
             margin_notes: str,
             gain_loss_asset: Asset,
-            net_gain_loss_amount: FVal,
+            gain_loss_amount: FVal,
             gain_loss_in_profit_currency: FVal,
             timestamp: Timestamp,
     ) -> None:
         if not self.create_csv:
             return
 
+        # Note:  We are not getting the fee info in here but they are not needed
+        # in the final CSV export.
+
         self.margin_positions_csv.append({
             'name': margin_notes,
             'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
             'gain_loss_asset': gain_loss_asset,
-            'gain_loss_amount': net_gain_loss_amount,
+            'gain_loss_amount': gain_loss_amount,
             'profit_loss_in_{}'.format(self.profit_currency): gain_loss_in_profit_currency,
         })
         self.add_to_allevents(
@@ -316,7 +319,7 @@ class CSVExporter():
             paid_asset=S_EMPTYSTR,
             paid_in_asset=FVal(0),
             received_asset=gain_loss_asset,
-            received_in_asset=net_gain_loss_amount,
+            received_in_asset=gain_loss_amount,
             taxable_received_in_profit_currency=gain_loss_in_profit_currency,
             timestamp=timestamp,
         )

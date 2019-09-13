@@ -446,18 +446,22 @@ def test_margin_events_affect_gained_lost_amount(accountant):
         'location': 'kraken',
     }]
     margin_history = [MarginPosition(
-        exchange='poloniex',  # BTC/EUR: 810.49
+        location='poloniex',  # BTC/EUR: 810.49
         open_time=1484438400,  # 15/01/2017
         close_time=1484629704,  # 17/01/2017
         profit_loss=FVal('-0.5'),
         pl_currency=A_BTC,
+        fee=FVal('0.001'),
+        fee_currency=A_BTC,
         notes='margin1',
     ), MarginPosition(
-        exchange='poloniex',  # BTC/EUR: 979.39
+        location='poloniex',  # BTC/EUR: 979.39
         open_time=1487116800,  # 15/02/2017
         close_time=1487289600,  # 17/02/2017
         profit_loss=FVal('0.25'),
         pl_currency=A_BTC,
+        fee=FVal('0.001'),
+        fee_currency=A_BTC,
         notes='margin2',
     )]
 
@@ -468,10 +472,10 @@ def test_margin_events_affect_gained_lost_amount(accountant):
         history,
         margin_list=margin_history,
     )
-    assert accountant.get_calculated_asset_amount('BTC').is_close('3.75')
+    assert accountant.get_calculated_asset_amount('BTC').is_close('3.748')
     assert FVal(result['overview']['general_trade_profit_loss']).is_close('1940.9561588')
-    assert FVal(result['overview']['margin_positions_profit_loss']).is_close('-160.3975')
-    assert FVal(result['overview']['total_taxable_profit_loss']).is_close('1780.5586588')
+    assert FVal(result['overview']['margin_positions_profit_loss']).is_close('-162.18738')
+    assert FVal(result['overview']['total_taxable_profit_loss']).is_close('1778.7687788')
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])

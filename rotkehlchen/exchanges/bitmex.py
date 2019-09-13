@@ -44,8 +44,9 @@ def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
     close_time = iso8601ts_to_timestamp(bitmex_trade['transactTime'])
     profit_loss = satoshis_to_btc(FVal(bitmex_trade['amount']))
     currency = bitmex_to_world(bitmex_trade['currency'])
+    fee = deserialize_fee(bitmex_trade['fee'])
     notes = bitmex_trade['address']
-    assert currency == 'BTC', 'Bitmex trade should only deal in BTC'
+    assert currency == A_BTC, 'Bitmex trade should only deal in BTC'
 
     log.debug(
         'Processing Bitmex Trade',
@@ -53,15 +54,18 @@ def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
         timestamp=close_time,
         profit_loss=profit_loss,
         currency=currency,
+        fee=fee,
         notes=notes,
     )
 
     return MarginPosition(
-        exchange='bitmex',
+        location='bitmex',
         open_time=None,
         close_time=close_time,
         profit_loss=profit_loss,
-        pl_currency=A_BTC,
+        pl_currency=currency,
+        fee=fee,
+        fee_currency=A_BTC,
         notes=notes,
     )
 
