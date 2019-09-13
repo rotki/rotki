@@ -5,7 +5,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETC, A_ETH
 from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnknownFromAsset
-from rotkehlchen.exchanges.data_structures import BuyEvent, Events, SellEvent
+from rotkehlchen.exchanges.data_structures import BuyEvent, Events, MarginPosition, SellEvent
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -96,6 +96,10 @@ class TaxableEvents():
         Returns True if enough buy events to reduce the asset by amount were
         found and False otherwise.
         """
+        # No need to do anything if amount is to be reduced by zero
+        if amount == ZERO:
+            return True
+
         if asset not in self.events or len(self.events[asset].buys) == 0:
             return False
 
@@ -706,61 +710,65 @@ class TaxableEvents():
                 close_time=close_time,
             )
 
-    def add_margin_position(
-            self,
-            gain_loss_asset: Asset,
-            gain_loss_amount: FVal,
-            fee_in_asset: Fee,
-            margin_notes: str,
-            timestamp: Timestamp,
-    ) -> None:
+    def add_margin_position(self, margin: MarginPosition) -> None:
+        if margin.pl_currency not in self.events:
+            self.events[margin.pl_currency] = Events(list(), list())
+        if margin.fee_currency not in self.events:
+            self.events[margin.fee_currency] = Events(list(), list())
 
-        rate = self.get_rate_in_profit_currency(gain_loss_asset, timestamp)
+        pl_currency_rate = self.get_rate_in_profit_currency(margin.pl_currency, margin.close_time)
+        fee_currency_rate = self.get_rate_in_profit_currency(margin.pl_currency, margin.close_time)
+        net_gain_loss_in_profit_currency = (
+            margin.profit_loss * pl_currency_rate - margin.fee * fee_currency_rate
+        )
 
-        if gain_loss_asset not in self.events:
-            self.events[gain_loss_asset] = Events(list(), list())
-
-        net_gain_loss_amount = gain_loss_amount - fee_in_asset
-        gain_loss_in_profit_currency = net_gain_loss_amount * rate
-
-        if net_gain_loss_amount > 0:
-            self.events[gain_loss_asset].buys.append(
+        # Add or remove to the pl_currency asset
+        if margin.profit_loss > 0:
+            self.events[margin.pl_currency].buys.append(
                 BuyEvent(
-                    amount=net_gain_loss_amount,
-                    timestamp=timestamp,
-                    rate=rate,
+                    amount=margin.profit_loss,
+                    timestamp=margin.close_time,
+                    rate=pl_currency_rate,
                     fee_rate=ZERO,
                 ),
             )
-        elif net_gain_loss_amount < 0:
+        elif margin.profit_loss < 0:
             result = self.reduce_asset_amount(
-                asset=gain_loss_asset,
-                amount=-gain_loss_amount,
+                asset=margin.pl_currency,
+                amount=-margin.profit_loss,
             )
             if not result:
                 log.critical(
-                    f'No documented buy found for {gain_loss_asset} before '
-                    f'{timestamp_to_date(timestamp, formatstr="%d/%m/%Y %H:%M:%S")}',
+                    f'No documented buy found for {margin.pl_currency} before '
+                    f'{timestamp_to_date(margin.close_time, formatstr="%d/%m/%Y %H:%M:%S")}',
                 )
 
+        # Reduce the fee_currency asset
+        result = self.reduce_asset_amount(asset=margin.fee_currency, amount=margin.fee)
+        if not result:
+            log.critical(
+                f'No documented buy found for {margin.fee_currency} before '
+                f'{timestamp_to_date(margin.close_time, formatstr="%d/%m/%Y %H:%M:%S")}',
+            )
+
         # count profit/loss if we are inside the query period
-        if timestamp >= self.query_start_ts:
-            self.margin_positions_profit_loss += gain_loss_in_profit_currency
+        if margin.close_time >= self.query_start_ts:
+            self.margin_positions_profit_loss += net_gain_loss_in_profit_currency
 
             log.debug(
                 'Accounting for margin position',
                 sensitive_log=True,
-                notes=margin_notes,
-                gain_loss_asset=gain_loss_asset,
-                net_gain_loss_amount=net_gain_loss_amount,
-                gain_loss_in_profit_currency=gain_loss_in_profit_currency,
-                timestamp=timestamp,
+                notes=margin.notes,
+                gain_loss_asset=margin.pl_currency,
+                gain_loss_amount=margin.profit_loss,
+                net_gain_loss_in_profit_currency=net_gain_loss_in_profit_currency,
+                timestamp=margin.close_time,
             )
 
             self.csv_exporter.add_margin_position(
-                margin_notes=margin_notes,
-                gain_loss_asset=gain_loss_asset,
-                net_gain_loss_amount=net_gain_loss_amount,
-                gain_loss_in_profit_currency=gain_loss_in_profit_currency,
-                timestamp=timestamp,
+                margin_notes=margin.notes,
+                gain_loss_asset=margin.pl_currency,
+                gain_loss_amount=margin.profit_loss,
+                gain_loss_in_profit_currency=net_gain_loss_in_profit_currency,
+                timestamp=margin.close_time,
             )

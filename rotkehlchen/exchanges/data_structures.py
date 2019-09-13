@@ -95,12 +95,18 @@ class Trade(NamedTuple):
 
 
 class MarginPosition(NamedTuple):
-    """We only support marging positions on poloniex and bitmex at the moment"""
-    exchange: Literal['poloniex', 'bitmex']
+    """We only support margin positions on poloniex and bitmex at the moment"""
+    location: Literal['poloniex', 'bitmex']
     open_time: Optional[Timestamp]
     close_time: Timestamp
-    profit_loss: FVal
+    # Profit loss in pl_currency (does not include fees)
+    profit_loss: AssetAmount
+    # The asset gained or lost
     pl_currency: Asset
+    # Amount of fees paid
+    fee: Fee
+    # The asset in which fees were paid
+    fee_currency: Asset
     notes: str
 
 

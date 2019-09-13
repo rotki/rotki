@@ -1,6 +1,7 @@
 import pytest
 
 from rotkehlchen.constants.assets import A_BTC
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
@@ -273,32 +274,40 @@ eth_tx_list = [
 
 margin_history = [
     MarginPosition(  # before query period -- BTC/EUR: 422.90
-        exchange='poloniex',
+        location='poloniex',
         open_time=Timestamp(1463184190),  # 14/05/2016
         close_time=Timestamp(1464393600),  # 28/05/2016
         profit_loss=FVal(0.05),
         pl_currency=A_BTC,
+        fee=ZERO,
+        fee_currency=A_BTC,
         notes='margin1',
     ), MarginPosition(  # before query period -- BTC/EUR: 542.87
-        exchange='poloniex',
+        location='poloniex',
         open_time=Timestamp(1472428800),  # 29/08/2016
         close_time=Timestamp(1473897600),  # 15/09/2016
         profit_loss=FVal('-0.042'),
         pl_currency=A_BTC,
+        fee=FVal('0.0001'),
+        fee_currency=A_BTC,
         notes='margin2',
     ), MarginPosition(  # BTC/EUR: 1039.935
-        exchange='poloniex',
+        location='poloniex',
         open_time=Timestamp(1489276800),  # 12/03/2017
         close_time=Timestamp(1491177600),  # 03/04/2017
         profit_loss=FVal('-0.042'),
         pl_currency=A_BTC,
+        fee=FVal('0.0001'),
+        fee_currency=A_BTC,
         notes='margin3',
     ), MarginPosition(  # BTC/EUR: 2244.255
-        exchange='poloniex',
+        location='poloniex',
         open_time=Timestamp(1496534400),  # 04/06/2017
         close_time=Timestamp(1498694400),  # 29/06/2017
         profit_loss=FVal(0.124),
         pl_currency=A_BTC,
+        fee=ZERO,
+        fee_currency=A_BTC,
         notes='margin4',
     )]
 
@@ -323,9 +332,9 @@ def test_end_to_end_tax_report(accountant):
     # action seen in history before end_ts
     assert accountant.currently_processing_timestamp == 1511626623
     general_trade_pl = FVal(result['general_trade_profit_loss'])
-    assert general_trade_pl.is_close('5032.30394444')
+    assert general_trade_pl.is_close('5032.272105644')
     taxable_trade_pl = FVal(result['taxable_trade_profit_loss'])
-    assert taxable_trade_pl.is_close('3954.94067484')
+    assert taxable_trade_pl.is_close('3954.996589709')
     loan_profit = FVal(result['loan_profit'])
     assert loan_profit.is_close('0.114027511004')
     settlement_losses = FVal(result['settlement_losses'])
@@ -335,7 +344,8 @@ def test_end_to_end_tax_report(accountant):
     ethereum_transaction_gas_costs = FVal(result['ethereum_transaction_gas_costs'])
     assert ethereum_transaction_gas_costs.is_close('2.7210025')
     margin_pl = FVal(result['margin_positions_profit_loss'])
-    assert margin_pl.is_close('232.95481')
+    # assert margin_pl.is_close('232.95481')
+    assert margin_pl.is_close('232.7965295')
     expected_total_taxable_pl = (
         taxable_trade_pl +
         margin_pl +
@@ -378,9 +388,9 @@ def test_end_to_end_tax_report_in_period(accountant):
     assert accountant.currently_processing_timestamp == 1511626623
     result = result['overview']
     general_trade_pl = FVal(result['general_trade_profit_loss'])
-    assert general_trade_pl.is_close('1506.96912912')
+    assert general_trade_pl.is_close('1506.937290335')
     taxable_trade_pl = FVal(result['taxable_trade_profit_loss'])
-    assert taxable_trade_pl.is_close('642.652537097')
+    assert taxable_trade_pl.is_close('642.7084519791')
     loan_profit = FVal(result['loan_profit'])
     assert loan_profit.is_close('0.111881296004')
     settlement_losses = FVal(result['settlement_losses'])
@@ -390,7 +400,7 @@ def test_end_to_end_tax_report_in_period(accountant):
     ethereum_transaction_gas_costs = FVal(result['ethereum_transaction_gas_costs'])
     assert ethereum_transaction_gas_costs.is_close('2.2617525')
     margin_pl = FVal(result['margin_positions_profit_loss'])
-    assert margin_pl.is_close('234.61035')
+    assert margin_pl.is_close('234.5063565')
     expected_total_taxable_pl = (
         taxable_trade_pl +
         margin_pl +

@@ -456,13 +456,7 @@ class Accountant():
             return True, prev_time, count
         elif action_type == 'margin_position':
             action = cast(MarginPosition, action)
-            self.events.add_margin_position(
-                gain_loss_asset=action.pl_currency,
-                gain_loss_amount=action.profit_loss,
-                fee_in_asset=Fee(ZERO),
-                margin_notes=action.notes,
-                timestamp=action.close_time,
-            )
+            self.events.add_margin_position(margin=action)
             return True, prev_time, count
         elif action_type == 'ethereum_transaction':
             action = cast(EthereumTransaction, action)
