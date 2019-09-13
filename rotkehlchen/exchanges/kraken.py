@@ -493,7 +493,7 @@ class Kraken(ExchangeInterface):
 
         return result
 
-    def query_trade_history(
+    def query_online_trade_history(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,

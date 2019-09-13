@@ -115,13 +115,44 @@ class ExchangeInterface():
         verify the api key's validity"""
         raise NotImplementedError('validate_api_key() should only be implemented by subclasses')
 
+    def query_online_trade_history(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> Union[List[Trade], List[MarginPosition]]:
+        """Queries the exchange's API for the trade history of the user"""
+        raise NotImplementedError(
+            'query_online_trade_history() should only be implemented by subclasses',
+        )
+
     def query_trade_history(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> Union[List[Trade], List[MarginPosition]]:
-        """Queries the exchange for the trade history of the user"""
-        raise NotImplementedError('query_trade_history() should only be implemented by subclasses')
+        """Queries the local DB and the remote exchange for the trade history of the user
+
+        This is the superclass function that should be called by all implementations
+        of the exchange interface.
+        """
+        trades = self.db.get_trades(from_ts=start_ts, to_ts=end_ts, location=self.name)
+        last_db_ts = trades[-1].timestamp if len(trades) != 0 else 0
+        # If last DB trade is within the time frame, no need to ask the exchange
+        if last_db_ts >= end_ts:
+            return trades
+
+        # IF we have a time frame we have not asked the exchange for trades then
+        # go ahead and do that now
+        new_trades = self.query_online_trade_history(
+            start_ts=Timestamp(last_db_ts + 1),
+            end_ts=end_ts,
+        )
+
+        # make sure to add them to the DB
+        self.db.add_trades(new_trades)
+        # finally append them to the already returned DB trades and return the entire set
+        trades.extend(new_trades)
+        return trades
 
     def query_history_with_callbacks(
             self,
