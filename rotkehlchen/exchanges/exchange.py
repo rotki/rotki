@@ -119,10 +119,28 @@ class ExchangeInterface():
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Union[List[Trade], List[MarginPosition]]:
-        """Queries the exchange's API for the trade history of the user"""
+    ) -> List[Trade]:
+        """Queries the exchange's API for the trade history of the user
+
+        Should be implemented by subclasses if the exchange can return trade history in any form.
+        This is not implemented only for bitmex as it only returns margin positions
+        """
         raise NotImplementedError(
             'query_online_trade_history() should only be implemented by subclasses',
+        )
+
+    def query_online_margin_history(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> List[MarginPosition]:
+        """Queries the exchange's API for the margin positions history of the user
+
+        Should be implemented by subclasses if the exchange can return margin position history in
+        any form. This is only implemented for bitmex at the moment.
+        """
+        raise NotImplementedError(
+            'query_online_margin_history() should only be implemented by subclasses',
         )
 
     def query_trade_history(
@@ -136,23 +154,53 @@ class ExchangeInterface():
         of the exchange interface.
         """
         trades = self.db.get_trades(from_ts=start_ts, to_ts=end_ts, location=self.name)
-        last_db_ts = trades[-1].timestamp if len(trades) != 0 else 0
+        margin_positions = self.db.get_margin_positions(
+            from_ts=start_ts,
+            to_ts=end_ts,
+            location=self.name,
+        )
+
+        last_trade_db_ts = trades[-1].timestamp if len(trades) != 0 else 0
+        last_margin_db_ts = trades[-1].timestamp if len(margin_positions) != 0 else 0
         # If last DB trade is within the time frame, no need to ask the exchange
-        if last_db_ts >= end_ts:
+        if last_trade_db_ts >= end_ts and self.name != 'bitmex':
             return trades
 
         # IF we have a time frame we have not asked the exchange for trades then
         # go ahead and do that now
-        new_trades = self.query_online_trade_history(
-            start_ts=Timestamp(last_db_ts + 1),
-            end_ts=end_ts,
-        )
+        try:
+            new_trades = self.query_online_trade_history(
+                start_ts=Timestamp(last_trade_db_ts + 1),
+                end_ts=end_ts,
+            )
+        except NotImplementedError:
+            msg = 'query_online_trade_history should only not be implemented by bitmex'
+            assert self.name == 'bitmex', msg
+            new_trades = []
 
         # make sure to add them to the DB
-        self.db.add_trades(new_trades)
-        # finally append them to the already returned DB trades and return the entire set
+        if new_trades != []:
+            self.db.add_trades(new_trades)
+        # finally append them to the already returned DB trades
         trades.extend(new_trades)
-        return trades
+
+        # If we have a time frame we have not asked the exchange for margin positions
+        # then go ahead and do that now
+        try:
+            new_margins = self.query_online_margin_history(
+                start_ts=Timestamp(last_margin_db_ts + 1),
+                end_ts=end_ts,
+            )
+        except NotImplementedError:
+            new_margins = []
+
+        # make sure to add them to the DB
+        if new_margins != []:
+            self.db.add_margin_positions(new_margins)
+        # finally append them to the already returned DB margin positions
+        margin_positions.extend(new_margins)
+
+        return trades + margin_positions
 
     def query_history_with_callbacks(
             self,

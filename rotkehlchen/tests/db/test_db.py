@@ -25,7 +25,7 @@ from rotkehlchen.db.dbhandler import (
     DBHandler,
     detect_sqlcipher_version,
 )
-from rotkehlchen.db.trades import hash_trade_id, hashable_string_for_external_trade
+from rotkehlchen.db.trades import hash_id, hashable_string_for_external_trade
 from rotkehlchen.db.utils import (
     ROTKEHLCHEN_DB_VERSION,
     AssetBalance,
@@ -281,7 +281,7 @@ def test_writting_fetching_external_trades(data_dir, username):
         trade_type=otc_trade1['otc_type'],
         pair=otc_trade1['otc_pair'],
     )
-    trade1_id = hash_trade_id(hashable_string)
+    trade1_id = hash_id(hashable_string)
     otc_trade1['otc_id'] = trade1_id
     result, _ = data.edit_external_trade(otc_trade1)
     assert result

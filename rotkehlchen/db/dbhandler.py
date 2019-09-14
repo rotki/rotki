@@ -13,7 +13,7 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH, S_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.datatyping import BalancesData, DBSettings
-from rotkehlchen.db.trades import formulate_trade_id
+from rotkehlchen.db.trades import formulate_margin_id, formulate_trade_id
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
     DB_SCRIPT_CREATE_TABLES,
@@ -26,7 +26,7 @@ from rotkehlchen.db.utils import (
     SingleAssetBalance,
 )
 from rotkehlchen.errors import AuthenticationError, DeserializationError, InputError, UnknownAsset
-from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -749,6 +749,114 @@ class DBHandler():
             )
 
         return credentials
+
+    def add_margin_positions(self, margin_positions: List[MarginPosition]) -> None:
+        cursor = self.conn.cursor()
+        margin_tuples = []
+        for margin in margin_positions:
+            margin_id = formulate_margin_id(margin)
+            open_time = 0 if margin.open_time is None else margin.open_time
+            margin_tuples.append((
+                margin_id,
+                margin.location,
+                open_time,
+                margin.close_time,
+                str(margin.profit_loss),
+                margin.pl_currency.identifier,
+                str(margin.fee),
+                margin.fee_currency.identifier,
+                margin.notes,
+            ))
+        cursor.executemany(
+            'INSERT INTO margin_positions('
+            '  id, '
+            '  location,'
+            '  open_time,'
+            '  close_time,'
+            '  profit_loss,'
+            '  pl_currency,'
+            '  fee,'
+            '  fee_currency,'
+            '  notes)'
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            margin_tuples,
+        )
+        self.conn.commit()
+        self.update_last_write()
+
+    def get_margin_positions(
+            self,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+            location: Optional[str] = None,
+    ) -> List[MarginPosition]:
+        """Returns a list of margin positions optionally filtered by time and location
+
+        The returned list is ordered from oldest to newest
+        """
+        cursor = self.conn.cursor()
+        query = (
+            'SELECT id,'
+            '  location,'
+            '  open_time,'
+            '  close_time,'
+            '  profit_loss,'
+            '  pl_currency,'
+            '  fee,'
+            '  fee_currency,'
+            '  notes FROM margin_positions '
+        )
+        if location is not None:
+            query += f'WHERE location="{location}" '
+        bindings: Union[
+            Tuple,
+            Tuple[Timestamp],
+            Tuple[Timestamp, Timestamp],
+        ] = ()
+        if from_ts:
+            query += 'AND time >= ? '
+            bindings = (from_ts,)
+            if to_ts:
+                query += 'AND time <= ? '
+                bindings = (from_ts, to_ts)
+        elif to_ts:
+            query += 'AND time <= ? '
+            bindings = (to_ts,)
+        query += 'ORDER BY time ASC;'
+        results = cursor.execute(query, bindings)
+
+        margin_positions = []
+        for result in results:
+            try:
+                if result[2] == '0':
+                    open_time = None
+                else:
+                    open_time = deserialize_timestamp(result[2])
+                margin = MarginPosition(
+                    location=result[1],
+                    open_time=open_time,
+                    close_time=deserialize_timestamp(result[3]),
+                    profit_loss=deserialize_asset_amount(result[4]),
+                    pl_currency=Asset(result[5]),
+                    fee=deserialize_fee(result[6]),
+                    fee_currency=Asset(result[7]),
+                    notes=result[8],
+                )
+            except DeserializationError as e:
+                self.msg_aggregator.add_error(
+                    f'Error deserializing margin position from the DB. '
+                    f'Skipping it. Error was: {str(e)}',
+                )
+                continue
+            except UnknownAsset as e:
+                self.msg_aggregator.add_error(
+                    f'Error deserializing margin position from the DB. Skipping it. '
+                    f'Unknown asset {e.asset_name} found',
+                )
+                continue
+            margin_positions.append(margin)
+
+        return margin_positions
 
     def add_trades(self, trades: List[Trade]) -> None:
         cursor = self.conn.cursor()

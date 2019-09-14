@@ -5,7 +5,6 @@ import gevent
 
 from rotkehlchen.accounting.events import TaxableEvents
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.errors import (
