@@ -302,10 +302,10 @@ class RotkehlchenServer():
         return {'result': result, 'message': message}
 
     def query_trade_history(self, location: str, start_ts: int, end_ts: int):
-        """Queries the trades/margin position history of a single or all exchanges
+        """Queries the trades history of a single or all exchanges
 
-        Note: This will only query trades/margin position history. Nothing else.
-        Not loans, deposit/withdrawals e.t.c.
+        Note: This will only query trades history. Nothing else.
+        Not loans, margin positions, deposit/withdrawals e.t.c.
         """
         start_ts = Timestamp(start_ts)
         end_ts = Timestamp(end_ts)
