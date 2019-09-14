@@ -102,6 +102,20 @@ CREATE TABLE IF NOT EXISTS trades (
 );
 """
 
+DB_CREATE_MARGIN = """
+CREATE TABLE IF NOT EXISTS margin_positions (
+    id TEXT PRIMARY KEY,
+    location VARCHAR[24],
+    open_time INTEGER,
+    close_time INTEGER,
+    profit_loss TEXT,
+    pl_currency VARCHAR[10],
+    fee TEXT,
+    fee_currency VARCHAR[10],
+    notes TEXT
+);
+"""
+
 DB_CREATE_SETTINGS = """
 CREATE TABLE IF NOT EXISTS settings (
     name VARCHAR[24] NOT NULL PRIMARY KEY,
@@ -211,5 +225,6 @@ PRAGMA foreign_keys=on;
     DB_CREATE_MULTISETTINGS,
     DB_CREATE_CURRENT_BALANCES,
     DB_CREATE_TRADES,
+    DB_CREATE_MARGIN,
     DB_CREATE_SETTINGS,
 )
