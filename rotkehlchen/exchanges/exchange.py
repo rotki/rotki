@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 import requests
 from gevent.lock import Semaphore
@@ -19,7 +19,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 ExchangeHistorySuccessCallback = Callable[
-    [Union[List[Trade], List[MarginPosition]], List[AssetMovement], Any],
+    [List[Trade], List[MarginPosition], List[AssetMovement], Any],
     None,
 ]
 
@@ -147,21 +147,10 @@ class ExchangeInterface():
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Union[List[Trade], List[MarginPosition]]:
-        """Queries the local DB and the remote exchange for the trade history of the user
-
-        This is the superclass function that should be called by all implementations
-        of the exchange interface.
-        """
+    ) -> List[Trade]:
+        """Queries the local DB and the remote exchange for the trade history of the user"""
         trades = self.db.get_trades(from_ts=start_ts, to_ts=end_ts, location=self.name)
-        margin_positions = self.db.get_margin_positions(
-            from_ts=start_ts,
-            to_ts=end_ts,
-            location=self.name,
-        )
-
         last_trade_db_ts = trades[-1].timestamp if len(trades) != 0 else 0
-        last_margin_db_ts = trades[-1].timestamp if len(margin_positions) != 0 else 0
         # If last DB trade is within the time frame, no need to ask the exchange
         if last_trade_db_ts >= end_ts and self.name != 'bitmex':
             return trades
@@ -184,23 +173,43 @@ class ExchangeInterface():
         # finally append them to the already returned DB trades
         trades.extend(new_trades)
 
-        # If we have a time frame we have not asked the exchange for margin positions
-        # then go ahead and do that now
+        return trades
+
+    def query_margin_history(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> List[MarginPosition]:
+        """Queries the local DB and the remote exchange for the margin positions history of the user
+        """
+        margin_positions = self.db.get_margin_positions(
+            from_ts=start_ts,
+            to_ts=end_ts,
+            location=self.name,
+        )
+
+        last_margin_db_ts = margin_positions[-1].close_time if len(margin_positions) != 0 else 0
+        # If last margin is within the time frame, no need to ask the exchange
+        if last_margin_db_ts >= end_ts and self.name != 'bitmex':
+            return margin_positions
+
+        # IF we have a time frame we have not asked the exchange for trades then
+        # go ahead and do that now
         try:
-            new_margins = self.query_online_margin_history(
+            new_positions = self.query_online_margin_history(
                 start_ts=Timestamp(last_margin_db_ts + 1),
                 end_ts=end_ts,
             )
         except NotImplementedError:
-            new_margins = []
+            new_positions = []
 
         # make sure to add them to the DB
-        if new_margins != []:
-            self.db.add_margin_positions(new_margins)
+        if new_positions != []:
+            self.db.add_margin_positions(new_positions)
         # finally append them to the already returned DB margin positions
-        margin_positions.extend(new_margins)
+        margin_positions.extend(new_positions)
 
-        return trades + margin_positions
+        return margin_positions
 
     def query_history_with_callbacks(
             self,
@@ -215,7 +224,11 @@ class ExchangeInterface():
         In case of failure passes the error to failure_callback
         """
         try:
-            history = self.query_trade_history(
+            trades_history = self.query_trade_history(
+                start_ts=start_ts,
+                end_ts=end_ts,
+            )
+            margin_history = self.query_margin_history(
                 start_ts=start_ts,
                 end_ts=end_ts,
             )
@@ -227,7 +240,12 @@ class ExchangeInterface():
                 start_ts=start_ts,
                 end_ts=end_ts,
             )
-            success_callback(history, asset_movements, exchange_specific_data)
+            success_callback(
+                trades_history,
+                margin_history,
+                asset_movements,
+                exchange_specific_data,
+            )
 
         except RemoteError as e:
             fail_callback(str(e))

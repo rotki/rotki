@@ -6,7 +6,6 @@ from json.decoder import JSONDecodeError
 from typing import Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
 
-from rotkehlchen import typing
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.dbhandler import DBHandler
@@ -17,6 +16,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_fee
+from rotkehlchen.typing import ApiKey, ApiSecret, AssetAmount, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, iso8601ts_to_timestamp, satoshis_to_btc
 from rotkehlchen.utils.serialization import rlk_jsonloads
@@ -42,7 +42,7 @@ def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
     history format. This only returns margin positions as bitmex only deals in
     margin trading"""
     close_time = iso8601ts_to_timestamp(bitmex_trade['transactTime'])
-    profit_loss = satoshis_to_btc(FVal(bitmex_trade['amount']))
+    profit_loss = AssetAmount(satoshis_to_btc(FVal(bitmex_trade['amount'])))
     currency = bitmex_to_world(bitmex_trade['currency'])
     fee = deserialize_fee(bitmex_trade['fee'])
     notes = bitmex_trade['address']
@@ -73,8 +73,8 @@ def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
 class Bitmex(ExchangeInterface):
     def __init__(
             self,
-            api_key: typing.ApiKey,
-            secret: typing.ApiSecret,
+            api_key: ApiKey,
+            secret: ApiSecret,
             database: DBHandler,
             msg_aggregator: MessagesAggregator,
     ):
@@ -221,8 +221,8 @@ class Bitmex(ExchangeInterface):
 
     def query_online_margin_history(
             self,
-            start_ts: typing.Timestamp,
-            end_ts: typing.Timestamp,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
     ) -> List[MarginPosition]:
 
         # We know user/walletHistory returns a list
@@ -247,8 +247,8 @@ class Bitmex(ExchangeInterface):
 
     def query_deposits_withdrawals(
             self,
-            start_ts: typing.Timestamp,
-            end_ts: typing.Timestamp,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
     ) -> List:
         resp = self._api_query_list('get', 'user/walletHistory')
 

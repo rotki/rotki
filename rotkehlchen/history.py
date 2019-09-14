@@ -163,12 +163,14 @@ class TradesHistorian():
         empty_or_error = ''
 
         def populate_history_cb(
-                result_history: Union[List[Trade], List[MarginPosition]],
+                trades_history: List[Trade],
+                margin_history: List[MarginPosition],
                 result_asset_movements: List[AssetMovement],
                 exchange_specific_data: Any,
         ) -> None:
             """This callback will run for succesfull exchange history query"""
-            history.extend(result_history)
+            history.extend(trades_history)
+            history.extend(margin_history)
             asset_movements.extend(result_asset_movements)
 
             if exchange_specific_data:

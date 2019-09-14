@@ -156,15 +156,15 @@ def test_bitmex_api_withdrawals_deposit_unexpected_data(test_bitmex):
     query_bitmex_and_test(given_input, expected_warnings_num=0, expected_errors_num=1)
 
 
-def test_bitmex_trade_history(test_bitmex):
-    result = test_bitmex.query_trade_history(
+def test_bitmex_margin_history(test_bitmex):
+    result = test_bitmex.query_margin_history(
         start_ts=1536492800,
         end_ts=1536492976,
     )
     assert len(result) == 0
 
     until_9_results_ts = 1536615593
-    result = test_bitmex.query_trade_history(
+    result = test_bitmex.query_margin_history(
         start_ts=0,
         end_ts=until_9_results_ts,
     )
