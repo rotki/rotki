@@ -281,6 +281,7 @@ margin_history = [
         pl_currency=A_BTC,
         fee=Fee(ZERO),
         fee_currency=A_BTC,
+        link='1',
         notes='margin1',
     ), MarginPosition(  # before query period -- BTC/EUR: 542.87
         location='poloniex',
@@ -290,6 +291,7 @@ margin_history = [
         pl_currency=A_BTC,
         fee=Fee(FVal('0.0001')),
         fee_currency=A_BTC,
+        link='2',
         notes='margin2',
     ), MarginPosition(  # BTC/EUR: 1039.935
         location='poloniex',
@@ -299,6 +301,7 @@ margin_history = [
         pl_currency=A_BTC,
         fee=Fee(FVal('0.0001')),
         fee_currency=A_BTC,
+        link='3',
         notes='margin3',
     ), MarginPosition(  # BTC/EUR: 2244.255
         location='poloniex',
@@ -308,6 +311,7 @@ margin_history = [
         pl_currency=A_BTC,
         fee=Fee(ZERO),
         fee_currency=A_BTC,
+        link='4',
         notes='margin4',
     )]
 

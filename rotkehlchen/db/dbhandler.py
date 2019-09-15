@@ -765,24 +765,36 @@ class DBHandler():
                 margin.pl_currency.identifier,
                 str(margin.fee),
                 margin.fee_currency.identifier,
+                margin.link,
                 margin.notes,
             ))
-        cursor.executemany(
-            'INSERT INTO margin_positions('
-            '  id, '
-            '  location,'
-            '  open_time,'
-            '  close_time,'
-            '  profit_loss,'
-            '  pl_currency,'
-            '  fee,'
-            '  fee_currency,'
-            '  notes)'
-            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            margin_tuples,
-        )
+        try:
+            cursor.executemany(
+                'INSERT INTO margin_positions('
+                '  id, '
+                '  location,'
+                '  open_time,'
+                '  close_time,'
+                '  profit_loss,'
+                '  pl_currency,'
+                '  fee,'
+                '  fee_currency,'
+                '  link,'
+                '  notes)'
+                'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                margin_tuples,
+            )
+        except sqlcipher.IntegrityError:  # pylint: disable=no-member
+            # TODO: Handle this better. Skip only the one margin that is duplicated
+            # and not all margin positions that are being added
+            self.msg_aggregator.add_error(
+                f'Error adding margin position to the DB. One of the '
+                f'positions already exists there ',
+            )
+            return None
         self.conn.commit()
         self.update_last_write()
+        return None
 
     def get_margin_positions(
             self,
@@ -804,6 +816,7 @@ class DBHandler():
             '  pl_currency,'
             '  fee,'
             '  fee_currency,'
+            '  link,'
             '  notes FROM margin_positions '
         )
         if location is not None:
@@ -840,7 +853,8 @@ class DBHandler():
                     pl_currency=Asset(result[5]),
                     fee=deserialize_fee(result[6]),
                     fee_currency=Asset(result[7]),
-                    notes=result[8],
+                    link=result[8],
+                    notes=result[9],
                 )
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
@@ -876,24 +890,35 @@ class DBHandler():
                 trade.link,
                 trade.notes,
             ))
-        cursor.executemany(
-            'INSERT INTO trades('
-            '  id, '
-            '  time,'
-            '  location,'
-            '  pair,'
-            '  type,'
-            '  amount,'
-            '  rate,'
-            '  fee,'
-            '  fee_currency,'
-            '  link,'
-            '  notes)'
-            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            trade_tuples,
-        )
+        try:
+            cursor.executemany(
+                'INSERT INTO trades('
+                '  id, '
+                '  time,'
+                '  location,'
+                '  pair,'
+                '  type,'
+                '  amount,'
+                '  rate,'
+                '  fee,'
+                '  fee_currency,'
+                '  link,'
+                '  notes)'
+                'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                trade_tuples,
+            )
+        except sqlcipher.IntegrityError:  # pylint: disable=no-member
+            # TODO: Handle this better. Skip only the one trade that is duplicated
+            # and not all trades that are being added
+            self.msg_aggregator.add_error(
+                f'Error adding trades to the DB. One of the trades already '
+                f' exists there ',
+            )
+            return None
+
         self.conn.commit()
         self.update_last_write()
+        return None
 
     def edit_trade(
             self,

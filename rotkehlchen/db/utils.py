@@ -112,6 +112,7 @@ CREATE TABLE IF NOT EXISTS margin_positions (
     pl_currency VARCHAR[10],
     fee TEXT,
     fee_currency VARCHAR[10],
+    link TEXT,
     notes TEXT
 );
 """
