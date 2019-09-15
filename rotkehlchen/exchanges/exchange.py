@@ -150,12 +150,12 @@ class ExchangeInterface():
     ) -> List[Trade]:
         """Queries the local DB and the remote exchange for the trade history of the user"""
         trades = self.db.get_trades(from_ts=start_ts, to_ts=end_ts, location=self.name)
-        last_trade_db_ts = trades[-1].timestamp if len(trades) != 0 else 0
+        last_trade_db_ts = self.db.get_last_query_time(self.name + '_trades')
         # If last DB trade is within the time frame, no need to ask the exchange
-        if last_trade_db_ts >= end_ts and self.name != 'bitmex':
+        if last_trade_db_ts >= end_ts:
             return trades
 
-        # IF we have a time frame we have not asked the exchange for trades then
+        # If we have a time frame we have not asked the exchange for trades then
         # go ahead and do that now
         try:
             new_trades = self.query_online_trade_history(
@@ -170,6 +170,8 @@ class ExchangeInterface():
         # make sure to add them to the DB
         if new_trades != []:
             self.db.add_trades(new_trades)
+        # and also set the last queried timestamp for the exchange
+        self.db.update_last_query_time(name=self.name + '_trades', ts=end_ts)
         # finally append them to the already returned DB trades
         trades.extend(new_trades)
 
@@ -188,9 +190,9 @@ class ExchangeInterface():
             location=self.name,
         )
 
-        last_margin_db_ts = margin_positions[-1].close_time if len(margin_positions) != 0 else 0
+        last_margin_db_ts = self.db.get_last_query_time(self.name + '_margins')
         # If last margin is within the time frame, no need to ask the exchange
-        if last_margin_db_ts >= end_ts and self.name != 'bitmex':
+        if last_margin_db_ts >= end_ts:
             return margin_positions
 
         # IF we have a time frame we have not asked the exchange for trades then
@@ -206,6 +208,8 @@ class ExchangeInterface():
         # make sure to add them to the DB
         if new_positions != []:
             self.db.add_margin_positions(new_positions)
+        # and also set the last queried timestamp for the exchange
+        self.db.update_last_query_time(name=self.name + '_margins', ts=end_ts)
         # finally append them to the already returned DB margin positions
         margin_positions.extend(new_positions)
 
