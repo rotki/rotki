@@ -127,7 +127,7 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
         rate=rate,
         fee=fee,
         fee_currency=fee_currency,
-        link=poloniex_trade['globalTradeID'],
+        link=str(poloniex_trade['globalTradeID']),
     )
 
 

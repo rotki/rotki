@@ -56,7 +56,7 @@ def test_querying_trade_history(kraken):
 
 def test_querying_deposits_withdrawals(kraken):
     now = ts_now()
-    result = kraken.query_trade_history(
+    result = kraken.query_deposits_withdrawals(
         start_ts=1451606400,
         end_ts=now,
     )
@@ -243,7 +243,7 @@ def test_trade_from_kraken_unexpected_data(function_scope_kraken):
 
     def query_kraken_and_test(input_trades, expected_warnings_num, expected_errors_num):
         with patch(target, new=input_trades):
-            trades = kraken.query_trade_history(
+            trades = kraken.query_online_trade_history(
                 start_ts=0,
                 end_ts=TEST_END_TS,
             )

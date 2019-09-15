@@ -42,8 +42,8 @@ def test_trade_from_binance(function_scope_binance):
             'isBestMatch': True,
         }, {
             'symbol': 'ETHUSDT',
-            'id': 1,
-            'orderId': 1,
+            'id': 2,
+            'orderId': 2,
             'price': FVal(481.0),
             'qty': FVal(0.505),
             'commission': FVal(0.242905),
@@ -54,8 +54,8 @@ def test_trade_from_binance(function_scope_binance):
             'isBestMatch': True,
         }, {
             'symbol': 'BTCUSDT',
-            'id': 1,
-            'orderId': 1,
+            'id': 3,
+            'orderId': 3,
             'price': FVal(6376.39),
             'qty': FVal(0.051942),
             'commission': FVal(0.00005194),
@@ -66,8 +66,8 @@ def test_trade_from_binance(function_scope_binance):
             'isBestMatch': True,
         }, {
             'symbol': 'ADAUSDT',
-            'id': 1,
-            'orderId': 1,
+            'id': 4,
+            'orderId': 4,
             'price': FVal(0.17442),
             'qty': FVal(285.2),
             'commission': FVal(0.00180015),
@@ -88,6 +88,7 @@ def test_trade_from_binance(function_scope_binance):
             rate=FVal(0.0063213),
             fee=FVal(0.005),
             fee_currency=A_RDN,
+            link='1',
         ),
         Trade(
             timestamp=1531117990,
@@ -98,6 +99,7 @@ def test_trade_from_binance(function_scope_binance):
             rate=FVal(481.0),
             fee=FVal(0.242905),
             fee_currency=A_USDT,
+            link='2',
         ),
         Trade(
             timestamp=1531728338,
@@ -108,6 +110,7 @@ def test_trade_from_binance(function_scope_binance):
             rate=FVal(6376.39),
             fee=FVal(0.00005194),
             fee_currency=A_BTC,
+            link='3',
         ),
         Trade(
             timestamp=1531871806,
@@ -118,6 +121,7 @@ def test_trade_from_binance(function_scope_binance):
             rate=FVal(0.17442),
             fee=FVal(0.00180015),
             fee_currency=A_BNB,
+            link='4',
         ),
     ]
 
@@ -288,6 +292,7 @@ def test_binance_query_trade_history(function_scope_binance):
         rate=FVal('4.00000100'),
         fee=FVal('10.10000000'),
         fee_currency=A_BNB,
+        link='28457',
     )
 
     assert len(trades) == 1
@@ -321,7 +326,7 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
             new=input_trade_str,
         )
         with patch_get, patch_response:
-            trades = binance.query_trade_history(
+            trades = binance.query_online_trade_history(
                 start_ts=0,
                 end_ts=1564301134,
                 markets=query_specific_markets,

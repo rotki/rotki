@@ -577,7 +577,7 @@ def test_query_trade_history(rotkehlchen_server, function_scope_bittrex, functio
     assert trade['rate'] == '0.06935244'
     assert trade['fee'] == '0.0000973073287465092'
     assert trade['fee_currency'] == 'BTC'
-    assert trade['link'] == ''
+    assert trade['link'] == '394131412'
     assert trade['notes'] == ''
 
     # only bittrex

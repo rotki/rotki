@@ -76,7 +76,7 @@ def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Optional[Trade]:
         rate=rate,
         fee=fee_amount,
         fee_currency=fee_asset,
-        link=raw_trade['id'],
+        link=str(raw_trade['id']),
     )
 
 

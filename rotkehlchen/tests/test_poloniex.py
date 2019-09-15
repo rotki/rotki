@@ -279,7 +279,7 @@ def test_query_trade_history_unexpected_data(function_scope_poloniex):
             return MockResponse(200, given_trades)
 
         with patch.object(poloniex.session, 'post', side_effect=mock_api_return):
-            trades = poloniex.query_trade_history(
+            trades = poloniex.query_online_trade_history(
                 start_ts=0,
                 end_ts=1565732120,
             )

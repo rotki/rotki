@@ -151,7 +151,7 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
         rate=rate,
         fee=fee,
         fee_currency=quote_currency,
-        link=bittrex_trade['OrderUuid'],
+        link=str(bittrex_trade['OrderUuid']),
     )
 
 

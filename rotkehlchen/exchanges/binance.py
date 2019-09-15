@@ -127,7 +127,7 @@ def trade_from_binance(
         rate=rate,
         fee=fee,
         fee_currency=fee_currency,
-        link=binance_trade['id'],
+        link=str(binance_trade['id']),
     )
 
 

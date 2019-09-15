@@ -177,7 +177,7 @@ def test_bitmex_margin_history(test_bitmex):
             pl_currency=A_BTC,
             fee=ZERO,
             fee_currency=A_BTC,
-            link='1',
+            link='97402f76-828e-a8ea-5d26-920134924149',
             notes='XBTZ18',
         ),
         MarginPosition(
@@ -188,7 +188,7 @@ def test_bitmex_margin_history(test_bitmex):
             pl_currency=A_BTC,
             fee=ZERO,
             fee_currency=A_BTC,
-            link='2',
+            link='c74e6967-1411-0ad1-e3e3-6f97a04d7202',
             notes='XBTUSD',
         ),
         MarginPosition(
@@ -199,7 +199,7 @@ def test_bitmex_margin_history(test_bitmex):
             pl_currency=A_BTC,
             fee=ZERO,
             fee_currency=A_BTC,
-            link='3',
+            link='9c50e247-9bea-b10b-93c8-26845f202e9a',
             notes='XBTJPY',
         ),
         MarginPosition(
@@ -210,7 +210,7 @@ def test_bitmex_margin_history(test_bitmex):
             pl_currency=A_BTC,
             fee=ZERO,
             fee_currency=A_BTC,
-            link='4',
+            link='9ab9f275-9132-64aa-4aa6-8c6503418ac6',
             notes='ETHUSD',
         ),
         MarginPosition(
@@ -221,7 +221,7 @@ def test_bitmex_margin_history(test_bitmex):
             pl_currency=A_BTC,
             fee=ZERO,
             fee_currency=A_BTC,
-            link='5',
+            link='7366644c-15ba-baa4-b300-615b0c5db567',
             notes='XRPU18',
         ),
         MarginPosition(
@@ -232,7 +232,7 @@ def test_bitmex_margin_history(test_bitmex):
             pl_currency=A_BTC,
             fee=ZERO,
             fee_currency=A_BTC,
-            link='6',
+            link='0227cf99-09d4-b6f0-86c3-69711cf8da1b',
             notes='XBTUSD',
         ),
         MarginPosition(
@@ -243,7 +243,7 @@ def test_bitmex_margin_history(test_bitmex):
             pl_currency=A_BTC,
             fee=ZERO,
             fee_currency=A_BTC,
-            link='7',
+            link='fa0f5415-0867-6164-e366-d1c73c5558bd',
             notes='XBTJPY',
         ),
         MarginPosition(
@@ -254,7 +254,7 @@ def test_bitmex_margin_history(test_bitmex):
             pl_currency=A_BTC,
             fee=ZERO,
             fee_currency=A_BTC,
-            link='8',
+            link='05c8bbc0-9b03-ff55-60b9-4f22fd2eeab2',
             notes='ETHUSD',
         ),
         MarginPosition(
@@ -265,7 +265,7 @@ def test_bitmex_margin_history(test_bitmex):
             pl_currency=A_BTC,
             fee=ZERO,
             fee_currency=A_BTC,
-            link='9',
+            link='df46338a-da5e-e16c-9753-3e863d83d92c',
             notes='ETHU18',
         ),
     ]

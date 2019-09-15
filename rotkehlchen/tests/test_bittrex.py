@@ -167,6 +167,7 @@ def test_bittrex_query_trade_history(bittrex):
         rate=FVal('0.0000295'),
         fee=FVal('0.00004921'),
         fee_currency=A_BTC,
+        link='fd97d393-e9b9-4dd1-9dbf-f288fc72a185',
     )
 
     assert len(trades) == 1
@@ -196,7 +197,7 @@ def test_bittrex_query_trade_history_unexpected_data(bittrex):
         )
         with patch_get, patch_response:
             # Test that after querying the assets only ETH and BTC are there
-            trades = bittrex.query_trade_history(start_ts=0, end_ts=1564301134)
+            trades = bittrex.query_online_trade_history(start_ts=0, end_ts=1564301134)
 
         assert len(trades) == 0
         errors = bittrex.msg_aggregator.consume_errors()

@@ -453,6 +453,7 @@ def test_margin_events_affect_gained_lost_amount(accountant):
         pl_currency=A_BTC,
         fee=FVal('0.001'),
         fee_currency=A_BTC,
+        link='1',
         notes='margin1',
     ), MarginPosition(
         location='poloniex',  # BTC/EUR: 979.39
@@ -462,6 +463,7 @@ def test_margin_events_affect_gained_lost_amount(accountant):
         pl_currency=A_BTC,
         fee=FVal('0.001'),
         fee_currency=A_BTC,
+        link='2',
         notes='margin2',
     )]
 
