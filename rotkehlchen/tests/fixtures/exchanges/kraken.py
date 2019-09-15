@@ -34,7 +34,7 @@ from rotkehlchen.utils.serialization import rlk_jsonloads
 
 def get_random_kraken_asset() -> Asset:
     kraken_assets = set(KRAKEN_ASSETS) - set(KRAKEN_DELISTED)
-    return random.choice(kraken_assets)
+    return random.choice(list(kraken_assets))
 
 
 def generate_random_kraken_balance_response():

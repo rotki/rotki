@@ -237,15 +237,15 @@ SELLS_RESPONSE = """{
     "next_uri": null
 },
 "data": [{
-  "id": "9e14d574-30fa-5d85-b02c-6be0d851d61d",
+  "id": "1e14d574-30fa-5d85-b02c-6be0d851d61d",
   "status": "completed",
   "payment_method": {
-    "id": "83562370-3e5c-51db-87da-752af5ab9559",
+    "id": "23562370-3e5c-51db-87da-752af5ab9559",
     "resource": "payment_method",
     "resource_path": "/v2/payment-methods/83562370-3e5c-51db-87da-752af5ab9559"
   },
   "transaction": {
-    "id": "4117f7d6-5694-5b36-bc8f-847509850ea4",
+    "id": "3117f7d6-5694-5b36-bc8f-847509850ea4",
     "resource": "transaction",
     "resource_path": "/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/transactions/4117f7d6"
   },
@@ -284,7 +284,7 @@ DEPOSITS_RESPONSE = """{
     "next_uri": null
 },
 "data": [{
-      "id": "67e0eaec-07d7-54c4-a72c-2e92826897df",
+      "id": "1130eaec-07d7-54c4-a72c-2e92826897df",
       "status": "completed",
       "payment_method": {
         "id": "83562370-3e5c-51db-87da-752af5ab9559",
@@ -327,15 +327,15 @@ WITHDRAWALS_RESPONSE = """{
     "next_uri": null
 },
 "data": [{
-      "id": "67e0eaec-07d7-54c4-a72c-2e92826897df",
+      "id": "146eaec-07d7-54c4-a72c-2e92826897df",
       "status": "completed",
       "payment_method": {
-        "id": "83562370-3e5c-51db-87da-752af5ab9559",
+        "id": "85562970-3e5c-51db-87da-752af5ab9559",
         "resource": "payment_method",
         "resource_path": "/v2/payment-methods/83562370-3e5c-51db-87da-752af5ab9559"
       },
       "transaction": {
-        "id": "441b9494-b3f0-5b98-b9b0-4d82c21c252a",
+        "id": "441b9454-b3f0-5b98-b9b0-4d82c21c252a",
         "resource": "transaction",
         "resource_path": "/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/transactions/441b9494"
       },
@@ -369,7 +369,7 @@ TRANSACTIONS_RESPONSE = """{
     "next_uri": null
 },
 "data": [{
-  "id": "foo",
+  "id": "id1",
   "type": "send",
   "status": "completed",
   "amount": {
@@ -446,6 +446,7 @@ def test_coinbase_query_trade_history(function_scope_coinbase):
         rate=FVal("9.997920454875299055122012005"),
         fee=FVal("1.01"),
         fee_currency=A_USD,
+        link='9e14d574-30fa-5d85-b02c-6be0d851d61d',
     ), Trade(
         timestamp=1427402520,
         location='coinbase',
@@ -455,6 +456,7 @@ def test_coinbase_query_trade_history(function_scope_coinbase):
         rate=FVal("88.90014932802389248382279741"),
         fee=FVal("10.1"),
         fee_currency=A_USD,
+        link='1e14d574-30fa-5d85-b02c-6be0d851d61d',
     )]
     assert trades == expected_trades
 
@@ -513,7 +515,7 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
     # first query with proper data and expect no errors
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_trade_history',
+        query_fn_name='query_online_trade_history',
         expected_warnings_num=0,
         expected_errors_num=0,
     )
@@ -522,7 +524,7 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
     broken_response = BUYS_RESPONSE.replace('"2017-07-23T23:44:08Z"', 'true')
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_trade_history',
+        query_fn_name='query_online_trade_history',
         buys_response=broken_response,
         expected_warnings_num=0,
         expected_errors_num=1,
@@ -532,7 +534,7 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
     broken_response = SELLS_RESPONSE.replace('"2015-03-26T13:42:00-07:00"', '"dadssd"')
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_trade_history',
+        query_fn_name='query_online_trade_history',
         sells_response=broken_response,
         expected_warnings_num=0,
         expected_errors_num=1,
@@ -542,7 +544,7 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
     broken_response = BUYS_RESPONSE.replace('"BTC"', '"dsadsad"')
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_trade_history',
+        query_fn_name='query_online_trade_history',
         buys_response=broken_response,
         expected_warnings_num=1,
         expected_errors_num=0,
@@ -552,7 +554,7 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
     broken_response = BUYS_RESPONSE.replace('"BTC"', '123')
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_trade_history',
+        query_fn_name='query_online_trade_history',
         buys_response=broken_response,
         expected_warnings_num=0,
         expected_errors_num=1,
@@ -562,7 +564,7 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
     broken_response = BUYS_RESPONSE.replace('"buy"', 'null')
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_trade_history',
+        query_fn_name='query_online_trade_history',
         buys_response=broken_response,
         expected_warnings_num=0,
         expected_errors_num=1,
@@ -572,7 +574,7 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
     broken_response = BUYS_RESPONSE.replace('"486.34313725"', '"gfgfg"')
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_trade_history',
+        query_fn_name='query_online_trade_history',
         buys_response=broken_response,
         expected_warnings_num=0,
         expected_errors_num=1,
@@ -582,7 +584,7 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
     broken_response = BUYS_RESPONSE.replace('"4862.42"', 'false')
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_trade_history',
+        query_fn_name='query_online_trade_history',
         buys_response=broken_response,
         expected_warnings_num=0,
         expected_errors_num=1,
@@ -592,7 +594,7 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
     broken_response = BUYS_RESPONSE.replace('"1.01"', '"aas"')
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_trade_history',
+        query_fn_name='query_online_trade_history',
         buys_response=broken_response,
         expected_warnings_num=0,
         expected_errors_num=1,
@@ -602,7 +604,7 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
     broken_response = BUYS_RESPONSE.replace('"USD"', '"DSADSA"')
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_trade_history',
+        query_fn_name='query_online_trade_history',
         buys_response=broken_response,
         expected_warnings_num=1,
         expected_errors_num=0,
@@ -612,7 +614,7 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
     broken_response = BUYS_RESPONSE.replace('"USD"', '[]')
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_trade_history',
+        query_fn_name='query_online_trade_history',
         buys_response=broken_response,
         expected_warnings_num=0,
         expected_errors_num=1,
@@ -622,7 +624,7 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
     broken_response = SELLS_RESPONSE.replace('  "status": "completed",', '')
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_trade_history',
+        query_fn_name='query_online_trade_history',
         buys_response=broken_response,
         expected_warnings_num=0,
         expected_errors_num=1,

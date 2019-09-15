@@ -111,6 +111,7 @@ def test_limit_trade_list_to_period():
         rate=FVal(1),
         fee=FVal('0.1'),
         fee_currency=A_ETH,
+        link='id1',
     )
     trade2 = Trade(
         timestamp=1469427707,
@@ -121,6 +122,7 @@ def test_limit_trade_list_to_period():
         rate=FVal(1),
         fee=FVal('0.1'),
         fee_currency=A_ETH,
+        link='id2',
     )
     trade3 = Trade(
         timestamp=1479427707,
@@ -131,6 +133,7 @@ def test_limit_trade_list_to_period():
         rate=FVal(1),
         fee=FVal('0.1'),
         fee_currency=A_ETH,
+        link='id3',
     )
 
     full_list = [trade1, trade2, trade3]

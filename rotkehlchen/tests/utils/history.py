@@ -458,7 +458,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             payload = invalid_payload
         elif 'user/walletHistory' in url:
             payload = """[{
-            "transactID": "foo",
+            "transactID": "id1",
             "account": 0,
             "currency": "XBt",
             "transactType": "Deposit",
@@ -471,7 +471,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             "transactTime": "2017-04-03T15:00:00.929Z",
             "timestamp": "2017-04-03T15:00:00.929Z"
             },{
-            "transactID": "foo",
+            "transactID": "id2",
             "account": 0,
             "currency": "XBt",
             "transactType": "RealisedPNL",
@@ -484,7 +484,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             "transactTime": "2017-05-02T15:00:00.929Z",
             "timestamp": "2017-05-02T15:00:00.929Z"
             },{
-            "transactID": "foo",
+            "transactID": "id3",
             "account": 0,
             "currency": "XBt",
             "transactType": "Withdrawal",
@@ -497,7 +497,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             "transactTime": "2017-05-23T15:00:00.00.929Z",
             "timestamp": "2017-05-23T15:00:00.929Z"
             },{
-            "transactID": "foo",
+            "transactID": "id4",
             "account": 0,
             "currency": "XBt",
             "transactType": "Withdrawal",
@@ -510,7 +510,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             "transactTime": "2019-08-23T15:00:00.00.929Z",
             "timestamp": "2019-08-23T15:00:00.929Z"
             },{
-            "transactID": "foo",
+            "transactID": "id5",
             "account": 0,
             "currency": "XBt",
             "transactType": "RealisedPNL",
