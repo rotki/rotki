@@ -177,6 +177,7 @@ def test_bitmex_margin_history(test_bitmex):
             pl_currency=A_BTC,
             fee=ZERO,
             fee_currency=A_BTC,
+            link='1',
             notes='XBTZ18',
         ),
         MarginPosition(
@@ -187,6 +188,7 @@ def test_bitmex_margin_history(test_bitmex):
             pl_currency=A_BTC,
             fee=ZERO,
             fee_currency=A_BTC,
+            link='2',
             notes='XBTUSD',
         ),
         MarginPosition(
@@ -197,6 +199,7 @@ def test_bitmex_margin_history(test_bitmex):
             pl_currency=A_BTC,
             fee=ZERO,
             fee_currency=A_BTC,
+            link='3',
             notes='XBTJPY',
         ),
         MarginPosition(
@@ -207,6 +210,7 @@ def test_bitmex_margin_history(test_bitmex):
             pl_currency=A_BTC,
             fee=ZERO,
             fee_currency=A_BTC,
+            link='4',
             notes='ETHUSD',
         ),
         MarginPosition(
@@ -217,6 +221,7 @@ def test_bitmex_margin_history(test_bitmex):
             pl_currency=A_BTC,
             fee=ZERO,
             fee_currency=A_BTC,
+            link='5',
             notes='XRPU18',
         ),
         MarginPosition(
@@ -227,6 +232,7 @@ def test_bitmex_margin_history(test_bitmex):
             pl_currency=A_BTC,
             fee=ZERO,
             fee_currency=A_BTC,
+            link='6',
             notes='XBTUSD',
         ),
         MarginPosition(
@@ -237,6 +243,7 @@ def test_bitmex_margin_history(test_bitmex):
             pl_currency=A_BTC,
             fee=ZERO,
             fee_currency=A_BTC,
+            link='7',
             notes='XBTJPY',
         ),
         MarginPosition(
@@ -247,6 +254,7 @@ def test_bitmex_margin_history(test_bitmex):
             pl_currency=A_BTC,
             fee=ZERO,
             fee_currency=A_BTC,
+            link='8',
             notes='ETHUSD',
         ),
         MarginPosition(
@@ -257,6 +265,7 @@ def test_bitmex_margin_history(test_bitmex):
             pl_currency=A_BTC,
             fee=ZERO,
             fee_currency=A_BTC,
+            link='9',
             notes='ETHU18',
         ),
     ]

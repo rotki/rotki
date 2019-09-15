@@ -67,6 +67,7 @@ def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
         fee=fee,
         fee_currency=A_BTC,
         notes=notes,
+        link=bitmex_trade['transactID'],
     )
 
 

@@ -25,12 +25,11 @@ def formulate_trade_id(trade: Trade) -> TradeID:
             trade.pair,
         )
     else:
-        string = (trade.location + trade.link)
+        string = trade.location + trade.link
 
     return TradeID(hash_id(string))
 
 
 def formulate_margin_id(margin: MarginPosition) -> str:
-    open_time = '' if margin.open_time is None else str(margin.open_time)
-    string = margin.location + open_time + str(margin.close_time) + margin.pl_currency.identifier
+    string = margin.location + margin.link
     return hash_id(string)

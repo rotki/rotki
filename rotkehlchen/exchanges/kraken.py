@@ -202,6 +202,7 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
         rate=rate,
         fee=fee,
         fee_currency=quote_currency,
+        link=kraken_trade['ordertxid'],
     )
 
 

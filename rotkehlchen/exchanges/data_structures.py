@@ -80,7 +80,7 @@ class Trade(NamedTuple):
     fee_currency: Asset
     # For external trades this is optional and is a link to the trade in an explorer
     # For exchange trades this should be the exchange unique trade identifer
-    link: str = ''
+    link: str
     notes: str = ''
 
     @property
@@ -107,7 +107,9 @@ class MarginPosition(NamedTuple):
     fee: Fee
     # The asset in which fees were paid
     fee_currency: Asset
-    notes: str
+    # For exchange margins this should be the exchange unique identifer
+    link: str
+    notes: str = ''
 
 
 class Loan(NamedTuple):
