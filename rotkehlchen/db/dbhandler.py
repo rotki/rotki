@@ -496,6 +496,24 @@ class DBHandler():
         self.conn.commit()
         self.update_last_write()
 
+    def get_last_query_time(self, name: str) -> Timestamp:
+        cursor = self.conn.cursor()
+        query = cursor.execute(f'SELECT value from last_timestamps WHERE name="{name}";')
+        query = query.fetchall()
+        if len(query) == 0 or query[0][0] is None:
+            return Timestamp(0)
+
+        return Timestamp(int(query[0][0]))
+
+    def update_last_query_time(self, name: str, ts: Timestamp) -> None:
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'INSERT OR REPLACE INTO last_timestamps(name, value) VALUES (?, ?)',
+            (name, str(ts)),
+        )
+        self.conn.commit()
+        self.update_last_write()
+
     def get_last_balance_save_time(self) -> Timestamp:
         cursor = self.conn.cursor()
         query = cursor.execute(
@@ -827,15 +845,15 @@ class DBHandler():
             Tuple[Timestamp, Timestamp],
         ] = ()
         if from_ts:
-            query += 'AND time >= ? '
+            query += 'AND close_time >= ? '
             bindings = (from_ts,)
             if to_ts:
-                query += 'AND time <= ? '
+                query += 'AND close_time <= ? '
                 bindings = (from_ts, to_ts)
         elif to_ts:
-            query += 'AND time <= ? '
+            query += 'AND close_time <= ? '
             bindings = (to_ts,)
-        query += 'ORDER BY time ASC;'
+        query += 'ORDER BY close_time ASC;'
         results = cursor.execute(query, bindings)
 
         margin_positions = []
