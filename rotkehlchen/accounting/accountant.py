@@ -145,36 +145,30 @@ class Accountant():
         )
         return fee_rate * trade.fee
 
-    def add_asset_movement_to_events(
-            self,
-            category: str,
-            asset: Asset,
-            timestamp: Timestamp,
-            exchange: Exchange,
-            fee: Fee,
-    ) -> None:
+    def add_asset_movement_to_events(self, movement: AssetMovement) -> None:
+        timestamp = movement.timestamp
         if timestamp < self.start_ts:
             return
 
-        rate = self.get_rate_in_profit_currency(asset, timestamp)
-        cost = fee * rate
+        fee_rate = self.get_rate_in_profit_currency(movement.fee_asset, timestamp)
+        cost = movement.fee * fee_rate
         self.asset_movement_fees += cost
         log.debug(
             'Accounting for asset movement',
             sensitive_log=True,
-            category=category,
-            asset=asset,
+            category=movement.category,
+            asset=movement.asset,
             cost_in_profit_currency=cost,
             timestamp=timestamp,
-            exchange_name=exchange,
+            exchange_name=movement.exchange,
         )
 
         self.csvexporter.add_asset_movement(
-            exchange=exchange,
-            category=category,
-            asset=asset,
-            fee=fee,
-            rate=rate,
+            exchange=movement.exchange,
+            category=movement.category,
+            asset=movement.asset,
+            fee=movement.fee,
+            rate=fee_rate,
             timestamp=timestamp,
         )
 
@@ -445,13 +439,7 @@ class Accountant():
             return True, prev_time, count
         elif action_type == 'asset_movement':
             action = cast(AssetMovement, action)
-            self.add_asset_movement_to_events(
-                category=action.category,
-                asset=action.asset,
-                timestamp=action.timestamp,
-                exchange=action.exchange,
-                fee=action.fee,
-            )
+            self.add_asset_movement_to_events(action)
             return True, prev_time, count
         elif action_type == 'margin_position':
             action = cast(MarginPosition, action)

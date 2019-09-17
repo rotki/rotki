@@ -1,6 +1,6 @@
+from dataclasses import dataclass
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
-from dataclasses import dataclass
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
@@ -51,7 +51,9 @@ class AssetMovement(NamedTuple):
     asset: Asset
     # Amount is the original amount removed from the account
     amount: FVal
-    # Fee is the amount that is kept as the fee
+    # The asset that is kept as fee for the deposit/withdrawal
+    fee_asset: Asset
+    # Fee is the amount of fee_currency that is kept for the deposit/withdrawal. Can be zero
     fee: Fee
 
 
@@ -265,12 +267,14 @@ def asset_movements_from_dictlist(
         category = deserialize_asset_movement_category(movement['category'])
         amount = deserialize_asset_amount(movement['amount'])
         fee = deserialize_fee(movement['fee'])
+        asset = Asset(movement['asset'])
         returned_movements.append(AssetMovement(
             exchange=deserialize_exchange_name(movement['exchange']),
             category=category,
             timestamp=timestamp,
-            asset=Asset(movement['asset']),
+            asset=asset,
             amount=amount,
+            fee_asset=asset,
             fee=fee,
         ))
     return returned_movements

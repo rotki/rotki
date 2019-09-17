@@ -290,6 +290,7 @@ class Bitmex(ExchangeInterface):
                     timestamp=timestamp,
                     asset=asset,
                     amount=amount,
+                    fee_asset=asset,
                     fee=fee,
                 ))
             except UnknownAsset as e:
