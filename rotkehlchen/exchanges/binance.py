@@ -454,6 +454,7 @@ class Binance(ExchangeInterface):
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,
+                fee_asset=asset,
                 # Binance does not include withdrawal fees neither in the API nor in their UI
                 fee=Fee(ZERO),
             )

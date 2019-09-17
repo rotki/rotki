@@ -656,12 +656,14 @@ class Poloniex(ExchangeInterface):
                 fee = Fee(ZERO)
             else:
                 fee = deserialize_fee(movement_data['fee'])
+            asset = asset_from_poloniex(movement_data['currency'])
             return AssetMovement(
                 exchange=Exchange.POLONIEX,
                 category=movement_type,
                 timestamp=deserialize_timestamp(movement_data['timestamp']),
-                asset=asset_from_poloniex(movement_data['currency']),
+                asset=asset,
                 amount=deserialize_asset_amount(movement_data['amount']),
+                fee_asset=asset,
                 fee=fee,
             )
         except UnsupportedAsset as e:

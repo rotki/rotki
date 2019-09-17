@@ -578,12 +578,14 @@ class Kraken(ExchangeInterface):
         movements = list()
         for movement in result:
             try:
+                asset = asset_from_kraken(movement['asset'])
                 movements.append(AssetMovement(
                     exchange=Exchange.KRAKEN,
                     category=deserialize_asset_movement_category(movement['type']),
                     timestamp=deserialize_timestamp_from_kraken(movement['time']),
-                    asset=asset_from_kraken(movement['asset']),
+                    asset=asset,
                     amount=deserialize_asset_amount(movement['amount']),
+                    fee_asset=asset,
                     fee=deserialize_fee(movement['fee']),
                 ))
             except UnknownAsset as e:

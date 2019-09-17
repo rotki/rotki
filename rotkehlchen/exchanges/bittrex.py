@@ -400,6 +400,7 @@ class Bittrex(ExchangeInterface):
                 timestamp=timestamp,
                 asset=asset,
                 amount=deserialize_asset_amount(raw_data['Amount']),
+                fee_asset=asset,
                 fee=fee,
             )
         except UnknownAsset as e:

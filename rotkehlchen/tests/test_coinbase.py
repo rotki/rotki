@@ -653,6 +653,7 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
         timestamp=1519001640,
         asset=A_USD,
         amount=FVal('55'),
+        fee_asset=A_USD,
         fee=FVal('0.05'),
     ), AssetMovement(
         exchange=Exchange.COINBASE,
@@ -660,6 +661,7 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
         timestamp=1485895742,
         asset=A_USD,
         amount=FVal('10.0'),
+        fee_asset=A_USD,
         fee=FVal('0.01'),
     ), AssetMovement(
         exchange=Exchange.COINBASE,
@@ -667,6 +669,7 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
         timestamp=1566726126,
         asset=A_ETH,
         amount=FVal('0.05770427'),
+        fee_asset=A_ETH,
         fee=FVal('0.00021'),
     )]
     assert expected_movements == movements
