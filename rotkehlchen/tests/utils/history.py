@@ -145,38 +145,38 @@ def check_result_of_history_creation(
     assert loan_history[1].earned == AssetAmount(FVal('0.00000005'))
 
     assert len(asset_movements) == 11
-    assert asset_movements[0].exchange == Exchange.KRAKEN
+    assert asset_movements[0].location == Exchange.KRAKEN
     assert asset_movements[0].category == 'deposit'
     assert asset_movements[0].asset == A_BTC
-    assert asset_movements[1].exchange == Exchange.KRAKEN
+    assert asset_movements[1].location == Exchange.KRAKEN
     assert asset_movements[1].category == 'deposit'
     assert asset_movements[1].asset == A_ETH
-    assert asset_movements[2].exchange == Exchange.KRAKEN
+    assert asset_movements[2].location == Exchange.KRAKEN
     assert asset_movements[2].category == 'withdrawal'
     assert asset_movements[2].asset == A_BTC
-    assert asset_movements[3].exchange == Exchange.KRAKEN
+    assert asset_movements[3].location == Exchange.KRAKEN
     assert asset_movements[3].category == 'withdrawal'
     assert asset_movements[3].asset == A_ETH
-    assert asset_movements[4].exchange == Exchange.POLONIEX
+    assert asset_movements[4].location == Exchange.POLONIEX
     assert asset_movements[4].category == 'withdrawal'
     assert asset_movements[4].asset == A_BTC
-    assert asset_movements[5].exchange == Exchange.POLONIEX
+    assert asset_movements[5].location == Exchange.POLONIEX
     assert asset_movements[5].category == 'withdrawal'
     assert asset_movements[5].asset == A_ETH
-    assert asset_movements[6].exchange == Exchange.POLONIEX
+    assert asset_movements[6].location == Exchange.POLONIEX
     assert asset_movements[6].category == 'deposit'
     assert asset_movements[6].asset == A_BTC
-    assert asset_movements[7].exchange == Exchange.POLONIEX
+    assert asset_movements[7].location == Exchange.POLONIEX
     assert asset_movements[7].category == 'deposit'
     assert asset_movements[7].asset == A_ETH
-    assert asset_movements[8].exchange == Exchange.BITMEX
+    assert asset_movements[8].location == Exchange.BITMEX
     assert asset_movements[8].category == 'deposit'
     assert asset_movements[8].asset == A_BTC
-    assert asset_movements[9].exchange == Exchange.BITMEX
+    assert asset_movements[9].location == Exchange.BITMEX
     assert asset_movements[9].category == 'withdrawal'
     assert asset_movements[9].asset == A_BTC
     # TODO: investigate why this new bitmex withdrawal popped up
-    assert asset_movements[10].exchange == Exchange.BITMEX
+    assert asset_movements[10].location == Exchange.BITMEX
     assert asset_movements[10].category == 'withdrawal'
     assert asset_movements[10].asset == A_BTC
 

@@ -83,15 +83,6 @@ class ExchangeInterface():
         """
         raise NotImplementedError("query_balances should only be implemented by subclasses")
 
-    def query_deposits_withdrawals(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> List[AssetMovement]:
-        raise NotImplementedError(
-            'query_deposits_withdrawals should only be implemented by subclasses',
-        )
-
     def query_exchange_specific_history(  # pylint: disable=no-self-use
             self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
@@ -141,6 +132,19 @@ class ExchangeInterface():
         """
         raise NotImplementedError(
             'query_online_margin_history() should only be implemented by subclasses',
+        )
+
+    def query_online_deposits_withdrawals(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> List[AssetMovement]:
+        """Queries the exchange's API for the asset movements of the user
+
+        Should be implemented in subclasses.
+        """
+        raise NotImplementedError(
+            'query_online_deposits_withdrawals should only be implemented by subclasses',
         )
 
     def query_trade_history(
@@ -214,6 +218,31 @@ class ExchangeInterface():
         margin_positions.extend(new_positions)
 
         return margin_positions
+
+    def query_deposits_withdrawals(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> List[AssetMovement]:
+        """Queries the local DB and the exchange for the deposits/withdrawal history of the user"""
+        asset_movements = self.db.get_asset_movements(
+            from_ts=start_ts,
+            to_ts=end_ts,
+            location=self.name,
+        )
+        last_movement_db_ts = self.db.get_last_query_time(self.name + '_asset_movements')
+
+        if last_movement_db_ts >= end_ts:
+            return asset_movements
+
+        new_movements = self.query_online_deposits_withdrawals(start_ts=start_ts, end_ts=end_ts)
+
+        if new_movements:
+            self.db.add_asset_movements(new_movements)
+        self.db.update_last_query_time(name=self.name + '_asset_movements', ts=end_ts)
+        asset_movements.extend(new_movements)
+
+        return asset_movements
 
     def query_history_with_callbacks(
             self,

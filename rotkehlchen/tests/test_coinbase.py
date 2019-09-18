@@ -637,7 +637,7 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
     coinbase.cache_ttl_secs = 0
 
     with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
-        movements = coinbase.query_deposits_withdrawals(
+        movements = coinbase.query_online_deposits_withdrawals(
             start_ts=0,
             end_ts=TEST_END_TS,
         )
@@ -648,29 +648,32 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
     assert len(errors) == 0
     assert len(movements) == 3
     expected_movements = [AssetMovement(
-        exchange=Exchange.COINBASE,
+        location=Exchange.COINBASE,
         category='deposit',
         timestamp=1519001640,
         asset=A_USD,
         amount=FVal('55'),
         fee_asset=A_USD,
         fee=FVal('0.05'),
+        link='1130eaec-07d7-54c4-a72c-2e92826897df',
     ), AssetMovement(
-        exchange=Exchange.COINBASE,
+        location=Exchange.COINBASE,
         category='withdrawal',
         timestamp=1485895742,
         asset=A_USD,
         amount=FVal('10.0'),
         fee_asset=A_USD,
         fee=FVal('0.01'),
+        link='146eaec-07d7-54c4-a72c-2e92826897df',
     ), AssetMovement(
-        exchange=Exchange.COINBASE,
+        location=Exchange.COINBASE,
         category='withdrawal',
         timestamp=1566726126,
         asset=A_ETH,
         amount=FVal('0.05770427'),
         fee_asset=A_ETH,
         fee=FVal('0.00021'),
+        link='id1',
     )]
     assert expected_movements == movements
 
@@ -683,7 +686,7 @@ def test_coinbase_query_deposit_withdrawals_unexpected_data(function_scope_coinb
     # first query with proper data and expect no errors
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_deposits_withdrawals',
+        query_fn_name='query_online_deposits_withdrawals',
         expected_warnings_num=0,
         expected_errors_num=0,
     )
@@ -692,7 +695,7 @@ def test_coinbase_query_deposit_withdrawals_unexpected_data(function_scope_coinb
     broken_response = DEPOSITS_RESPONSE.replace('"2018-02-18T16:54:00-08:00"', '"dadas"')
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_deposits_withdrawals',
+        query_fn_name='query_online_deposits_withdrawals',
         deposits_response=broken_response,
         expected_warnings_num=0,
         expected_errors_num=1,
@@ -702,7 +705,7 @@ def test_coinbase_query_deposit_withdrawals_unexpected_data(function_scope_coinb
     broken_response = WITHDRAWALS_RESPONSE.replace('"2017-01-31T20:49:02Z"', '"dadssd"')
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_deposits_withdrawals',
+        query_fn_name='query_online_deposits_withdrawals',
         withdrawals_response=broken_response,
         expected_warnings_num=0,
         expected_errors_num=1,
@@ -712,7 +715,7 @@ def test_coinbase_query_deposit_withdrawals_unexpected_data(function_scope_coinb
     broken_response = WITHDRAWALS_RESPONSE.replace('"withdrawal"', 'null')
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_deposits_withdrawals',
+        query_fn_name='query_online_deposits_withdrawals',
         withdrawals_response=broken_response,
         expected_warnings_num=0,
         expected_errors_num=1,
@@ -722,7 +725,7 @@ def test_coinbase_query_deposit_withdrawals_unexpected_data(function_scope_coinb
     broken_response = WITHDRAWALS_RESPONSE.replace('"USD"', '"dasdad"')
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_deposits_withdrawals',
+        query_fn_name='query_online_deposits_withdrawals',
         withdrawals_response=broken_response,
         expected_warnings_num=1,
         expected_errors_num=0,
@@ -732,7 +735,7 @@ def test_coinbase_query_deposit_withdrawals_unexpected_data(function_scope_coinb
     broken_response = WITHDRAWALS_RESPONSE.replace('"USD"', '{}')
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_deposits_withdrawals',
+        query_fn_name='query_online_deposits_withdrawals',
         withdrawals_response=broken_response,
         expected_warnings_num=0,
         expected_errors_num=1,
@@ -742,7 +745,7 @@ def test_coinbase_query_deposit_withdrawals_unexpected_data(function_scope_coinb
     broken_response = WITHDRAWALS_RESPONSE.replace('"10.00"', 'true')
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_deposits_withdrawals',
+        query_fn_name='query_online_deposits_withdrawals',
         withdrawals_response=broken_response,
         expected_warnings_num=0,
         expected_errors_num=1,
@@ -752,7 +755,7 @@ def test_coinbase_query_deposit_withdrawals_unexpected_data(function_scope_coinb
     broken_response = WITHDRAWALS_RESPONSE.replace('"0.01"', '"dasd"')
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_deposits_withdrawals',
+        query_fn_name='query_online_deposits_withdrawals',
         withdrawals_response=broken_response,
         expected_warnings_num=0,
         expected_errors_num=1,
@@ -762,7 +765,7 @@ def test_coinbase_query_deposit_withdrawals_unexpected_data(function_scope_coinb
     broken_response = DEPOSITS_RESPONSE.replace('      "resource": "deposit",', '')
     query_coinbase_and_test(
         coinbase=coinbase,
-        query_fn_name='query_deposits_withdrawals',
+        query_fn_name='query_online_deposits_withdrawals',
         deposits_response=broken_response,
         expected_warnings_num=0,
         expected_errors_num=1,

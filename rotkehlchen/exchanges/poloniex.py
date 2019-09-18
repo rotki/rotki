@@ -654,17 +654,20 @@ class Poloniex(ExchangeInterface):
         try:
             if movement_type == 'deposit':
                 fee = Fee(ZERO)
+                uid_key = 'depositNumber'
             else:
                 fee = deserialize_fee(movement_data['fee'])
+                uid_key = 'withdrawalNumber'
             asset = asset_from_poloniex(movement_data['currency'])
             return AssetMovement(
-                exchange=Exchange.POLONIEX,
+                location=Exchange.POLONIEX,
                 category=movement_type,
                 timestamp=deserialize_timestamp(movement_data['timestamp']),
                 asset=asset,
                 amount=deserialize_asset_amount(movement_data['amount']),
                 fee_asset=asset,
                 fee=fee,
+                link=str(movement_data[uid_key]),
             )
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
@@ -691,7 +694,7 @@ class Poloniex(ExchangeInterface):
 
         return None
 
-    def query_deposits_withdrawals(
+    def query_online_deposits_withdrawals(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,

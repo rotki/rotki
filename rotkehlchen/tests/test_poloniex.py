@@ -410,7 +410,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(function_scope_poloniex):
 
     with patch.object(poloniex.session, 'post', side_effect=mock_api_return):
         # Test that after querying the api only ETH and BTC assets are there
-        asset_movements = poloniex.query_deposits_withdrawals(
+        asset_movements = poloniex.query_online_deposits_withdrawals(
             start_ts=0,
             end_ts=1488994442,
         )
@@ -456,12 +456,12 @@ def test_poloniex_deposits_withdrawal_null_fee(function_scope_poloniex):
         response = MockResponse(
             200,
             '{"withdrawals": [{"currency": "FAC", "timestamp": 1478994442, '
-            '"amount": "100.5", "fee": null}], "deposits": []}',
+            '"amount": "100.5", "fee": null, "withdrawalNumber": 1}], "deposits": []}',
         )
         return response
 
     with patch.object(poloniex.session, 'post', side_effect=mock_api_return):
-        asset_movements = poloniex.query_deposits_withdrawals(
+        asset_movements = poloniex.query_online_deposits_withdrawals(
             start_ts=0,
             end_ts=1488994442,
         )
@@ -491,7 +491,7 @@ def test_poloniex_deposits_withdrawal_unexpected_data(function_scope_poloniex):
             return MockResponse(200, given_movements)
 
         with patch.object(poloniex.session, 'post', side_effect=mock_api_return):
-            asset_movements = poloniex.query_deposits_withdrawals(
+            asset_movements = poloniex.query_online_deposits_withdrawals(
                 start_ts=0,
                 end_ts=1488994442,
             )
@@ -537,9 +537,9 @@ def test_poloniex_deposits_withdrawal_unexpected_data(function_scope_poloniex):
 
     input_withdrawals = """
     {"withdrawals": [{"currency": "FAC", "timestamp": 1478994442,
-    "amount": "100.5", "fee": "0.1"}], "deposits": []}"""
+    "amount": "100.5", "fee": "0.1", "withdrawalNumber": 1}], "deposits": []}"""
     check_permutations_of_input_invalid_data(input_withdrawals)
     input_deposits = """
     {"deposits": [{"currency": "FAC", "timestamp": 1478994442,
-    "amount": "100.5"}], "withdrawals": []}"""
+    "amount": "100.5", "depositNumber": 1}], "withdrawals": []}"""
     check_permutations_of_input_invalid_data(input_deposits)

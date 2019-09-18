@@ -50,40 +50,44 @@ def test_bitmex_api_withdrawals_deposit(test_bitmex):
     )
     expected_result = [
         AssetMovement(
-            exchange=Exchange.BITMEX,
+            location=Exchange.BITMEX,
             category='deposit',
             timestamp=1537014656,
             asset=A_BTC,
             amount=FVal(0.16960386),
             fee_asset=A_BTC,
             fee=FVal(0E-8),
+            link='b6c6fd2c-4d0c-b101-a41c-fa5aa1ce7ef1',
         ),
         AssetMovement(
-            exchange=Exchange.BITMEX,
+            location=Exchange.BITMEX,
             category='deposit',
             timestamp=1536563759,
             asset=A_BTC,
             amount=FVal('0.38474377'),
             fee_asset=A_BTC,
             fee=FVal(0),
+            link='72500751-d052-5bbb-18d7-08363edef812',
         ),
         AssetMovement(
-            exchange=Exchange.BITMEX,
+            location=Exchange.BITMEX,
             category='withdrawal',
             timestamp=1536536707,
             asset=A_BTC,
             amount=FVal('0.00700000'),
             fee_asset=A_BTC,
             fee=FVal('0.00300000'),
+            link='bf19ca4e-e084-11f9-12cd-6ae41e26f9db',
         ),
         AssetMovement(
-            exchange=Exchange.BITMEX,
+            location=Exchange.BITMEX,
             category='deposit',
             timestamp=1536486278,
             asset=A_BTC,
             amount=FVal('0.46966992'),
             fee_asset=A_BTC,
             fee=FVal(0),
+            link='166b9aac-70ac-cedc-69a0-dbd12c0661bf',
         ),
 
     ]
@@ -109,7 +113,7 @@ def test_bitmex_api_withdrawals_deposit_unexpected_data(test_bitmex):
         def mock_get_deposit_withdrawal(url, data):  # pylint: disable=unused-argument
             return MockResponse(200, input_str)
         with patch.object(test_bitmex.session, 'get', side_effect=mock_get_deposit_withdrawal):
-            movements = test_bitmex.query_deposits_withdrawals(
+            movements = test_bitmex.query_online_deposits_withdrawals(
                 start_ts=0,
                 end_ts=now,
             )

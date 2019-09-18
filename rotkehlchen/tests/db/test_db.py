@@ -52,6 +52,7 @@ TABLES_AT_INIT = [
     'settings',
     'last_timestamps',
     'margin_positions',
+    'asset_movements',
 ]
 
 

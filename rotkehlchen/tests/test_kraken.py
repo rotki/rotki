@@ -154,7 +154,7 @@ def test_kraken_query_deposit_withdrawals_unexpected_data(function_scope_kraken)
 
     def query_kraken_and_test(input_ledger, expected_warnings_num, expected_errors_num):
         with patch(target, new=input_ledger), zero_withdraws:
-            deposits = kraken.query_deposits_withdrawals(
+            deposits = kraken.query_online_deposits_withdrawals(
                 start_ts=0,
                 end_ts=TEST_END_TS,
             )

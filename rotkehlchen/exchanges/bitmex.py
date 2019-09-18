@@ -246,7 +246,7 @@ class Bitmex(ExchangeInterface):
 
         return margin_trades
 
-    def query_deposits_withdrawals(
+    def query_online_deposits_withdrawals(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
@@ -285,13 +285,14 @@ class Bitmex(ExchangeInterface):
                     fee = satoshis_to_btc(fee)
 
                 movements.append(AssetMovement(
-                    exchange=Exchange.BITMEX,
+                    location=Exchange.BITMEX,
                     category=transaction_type,
                     timestamp=timestamp,
                     asset=asset,
                     amount=amount,
                     fee_asset=asset,
                     fee=fee,
+                    link=str(movement['transactID']),
                 ))
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(

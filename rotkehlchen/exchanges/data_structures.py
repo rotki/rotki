@@ -1,6 +1,6 @@
-from dataclasses import dataclass
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
+from dataclasses import dataclass
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
@@ -8,8 +8,6 @@ from rotkehlchen.errors import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
-    deserialize_asset_movement_category,
-    deserialize_exchange_name,
     deserialize_fee,
     deserialize_price,
     deserialize_timestamp,
@@ -45,7 +43,7 @@ class Events(NamedTuple):
 
 
 class AssetMovement(NamedTuple):
-    exchange: Exchange
+    location: Exchange
     category: Literal['deposit', 'withdrawal']
     timestamp: Timestamp
     asset: Asset
@@ -55,6 +53,8 @@ class AssetMovement(NamedTuple):
     fee_asset: Asset
     # Fee is the amount of fee_currency that is kept for the deposit/withdrawal. Can be zero
     fee: Fee
+    # For exchange asset movements this should be the exchange unique identifier
+    link: str
 
 
 class Trade(NamedTuple):
@@ -241,40 +241,3 @@ def trades_from_dictlist(
             continue
 
     return returned_trades
-
-
-def asset_movements_from_dictlist(
-        given_data: List[Dict[str, Any]],
-        start_ts: Timestamp,
-        end_ts: Timestamp,
-) -> List[AssetMovement]:
-    """ Gets a list of dict asset movements, most probably read from the json files and
-    a time period. Returns it as a list of the AssetMovement tuples that are inside the time period
-
-    May raise:
-        - DeserializationError: If the given_data dict contains data in an unexpected format
-        - KeyError: If the given_data dict contains data in an unexpected format
-    """
-    returned_movements = list()
-    for movement in given_data:
-        timestamp = deserialize_timestamp(movement['timestamp'])
-
-        if timestamp < start_ts:
-            continue
-        if timestamp > end_ts:
-            break
-
-        category = deserialize_asset_movement_category(movement['category'])
-        amount = deserialize_asset_amount(movement['amount'])
-        fee = deserialize_fee(movement['fee'])
-        asset = Asset(movement['asset'])
-        returned_movements.append(AssetMovement(
-            exchange=deserialize_exchange_name(movement['exchange']),
-            category=category,
-            timestamp=timestamp,
-            asset=asset,
-            amount=amount,
-            fee_asset=asset,
-            fee=fee,
-        ))
-    return returned_movements
