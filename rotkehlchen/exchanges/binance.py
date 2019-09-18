@@ -449,7 +449,7 @@ class Binance(ExchangeInterface):
             asset = asset_from_binance(raw_data['asset'])
             amount = deserialize_asset_amount(raw_data['amount'])
             return AssetMovement(
-                exchange=Exchange.BINANCE,
+                location=Exchange.BINANCE,
                 category=cast(Literal['deposit', 'withdrawal'], category),
                 timestamp=timestamp,
                 asset=asset,
@@ -457,6 +457,7 @@ class Binance(ExchangeInterface):
                 fee_asset=asset,
                 # Binance does not include withdrawal fees neither in the API nor in their UI
                 fee=Fee(ZERO),
+                link=str(raw_data['txId']),
             )
 
         except UnknownAsset as e:
@@ -485,7 +486,7 @@ class Binance(ExchangeInterface):
 
         return None
 
-    def query_deposits_withdrawals(
+    def query_online_deposits_withdrawals(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,

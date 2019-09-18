@@ -117,6 +117,20 @@ CREATE TABLE IF NOT EXISTS margin_positions (
 );
 """
 
+DB_CREATE_ASSET_MOVEMENTS = """
+CREATE TABLE IF NOT EXISTS asset_movements (
+    id TEXT PRIMARY KEY,
+    location VARCHAR[24],
+    category VARCHAR[16],
+    time INTEGER,
+    asset VARCHAR[10],
+    amount TEXT,
+    fee_asset VARCHAR[10],
+    fee TEXT,
+    link TEXT
+);
+"""
+
 DB_CREATE_LAST_TIMESTAMPS = """
 CREATE TABLE IF NOT EXISTS last_timestamps (
     name VARCHAR[24] NOT NULL PRIMARY KEY,
@@ -222,7 +236,7 @@ PRAGMA foreign_keys=on;
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -234,6 +248,7 @@ PRAGMA foreign_keys=on;
     DB_CREATE_CURRENT_BALANCES,
     DB_CREATE_TRADES,
     DB_CREATE_MARGIN,
+    DB_CREATE_ASSET_MOVEMENTS,
     DB_CREATE_LAST_TIMESTAMPS,
     DB_CREATE_SETTINGS,
 )

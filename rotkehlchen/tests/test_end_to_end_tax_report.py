@@ -1,12 +1,13 @@
 import pytest
 
-from rotkehlchen.constants.assets import A_BTC
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.exchanges.data_structures import MarginPosition
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
+from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.tests.utils.history import prices
-from rotkehlchen.typing import AssetAmount, Fee, Timestamp
+from rotkehlchen.typing import AssetAmount, Exchange, Fee, Timestamp
 
 DUMMY_HASH = '0x0'
 DUMMY_ADDRESS = '0x0'
@@ -182,51 +183,62 @@ loans_list = [
     },
 ]
 
-asset_movements_list = [
-    {  # before query period -- 8.915 * 0.001 = 8.915e-3
-        'exchange': 'kraken',
-        'category': 'withdrawal',
-        'timestamp': 1479510304,  # 18/11/2016,
-        'asset': 'ETH',  # cryptocompare hourly ETH/EUR: 8.915
-        'amount': 95,
-        'fee': 0.001,
-    }, {  # 0.0087*52.885 = 0.4600995
-        'exchange': 'kraken',
-        'category': 'withdrawal',
-        'timestamp': 1493291104,  # 27/04/2017,
-        'asset': 'ETH',  # cryptocompare hourly ETH/EUR: 52.885
-        'amount': 125,
-        'fee': 0.0087,
-    }, {  # deposit have no effect
-        'exchange': 'kraken',
-        'category': 'deposit',
-        'timestamp': 1493636704,  # 01/05/2017,
-        'asset': 'EUR',
-        'amount': 750,
-        'fee': 0,
-    }, {  # 0.00029*1964.685 = 0.56975865
-        'exchange': 'poloniex',
-        'category': 'withdrawal',
-        'timestamp': 1495969504,  # 28/05/2017,
-        'asset': 'BTC',  # cryptocompare hourly BTC/EUR: 1964.685
-        'amount': 8.5,
-        'fee': 0.00029,
-    }, {  # 0.0078*173.77 = 1.355406
-        'exchange': 'poloniex',
-        'category': 'withdrawal',
-        'timestamp': 1502715904,  # 14/08/2017,
-        'asset': 'DASH',  # cryptocompare hourly DASH/EUR: 173.77
-        'amount': 20,
-        'fee': 0.0078,
-    }, {  # after query period -- should not matter
-        'exchange': 'bittrex',
-        'category': 'withdrawal',
-        'timestamp': 1517663104,  # 03/02/2018,
-        'asset': 'ETH',
-        'amount': 120,
-        'fee': 0.001,
-    },
-]
+asset_movements_list = [AssetMovement(
+    # before query period -- 8.915 * 0.001 = 8.915e-3
+    location=Exchange.KRAKEN,
+    category='withdrawal',
+    timestamp=Timestamp(1479510304),  # 18/11/2016,
+    asset=A_ETH,  # cryptocompare hourly ETH/EUR: 8.915
+    amount=FVal('95'),
+    fee_asset=A_ETH,
+    fee=Fee(FVal('0.001')),
+    link='krakenid1',
+), AssetMovement(  # 0.0087*52.885 = 0.4600995
+    location=Exchange.KRAKEN,
+    category='withdrawal',
+    timestamp=Timestamp(1493291104),  # 27/04/2017,
+    asset=A_ETH,  # cryptocompare hourly ETH/EUR: 52.885
+    amount=FVal('125'),
+    fee_asset=A_ETH,
+    fee=Fee(FVal('0.0087')),
+    link='krakenid2',
+), AssetMovement(  # deposits have no effect
+    location=Exchange.KRAKEN,
+    category='deposit',
+    timestamp=Timestamp(1493636704),  # 01/05/2017,
+    asset=A_EUR,
+    amount=FVal('750'),
+    fee_asset=A_EUR,
+    fee=Fee(ZERO),
+    link='krakenid3',
+), AssetMovement(  # 0.00029*1964.685 = 0.56975865
+    location=Exchange.POLONIEX,
+    category='withdrawal',
+    timestamp=Timestamp(1495969504),  # 28/05/2017,
+    asset=A_BTC,  # cryptocompare hourly BTC/EUR: 1964.685
+    amount=FVal('8.5'),
+    fee_asset=A_BTC,
+    fee=Fee(FVal('0.00029')),
+    link='poloniexid1',
+), AssetMovement(  # 0.0078*173.77 = 1.355406
+    location=Exchange.POLONIEX,
+    category='withdrawal',
+    timestamp=Timestamp(1502715904),  # 14/08/2017,
+    asset=A_DASH,  # cryptocompare hourly DASH/EUR: 173.77
+    amount=FVal('20'),
+    fee_asset=A_DASH,
+    fee=Fee(FVal('0.0078')),
+    link='poloniexid2',
+), AssetMovement(  # after query period -- should not matter
+    location=Exchange.BITTREX,
+    category='withdrawal',
+    timestamp=Timestamp(1517663104),  # 03/02/2018,
+    asset=A_ETH,
+    amount=FVal('120'),
+    fee_asset=A_ETH,
+    fee=Fee(FVal('0.001')),
+    link='bittrexid1',
+)]
 
 eth_tx_list = [
     {  # before query period: ((2000000000 * 25000000) / (10 ** 18)) * 9.185 = 0.45925

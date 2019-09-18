@@ -553,7 +553,7 @@ class Kraken(ExchangeInterface):
         result = self.query_private(endpoint, request)
         return result
 
-    def query_deposits_withdrawals(
+    def query_online_deposits_withdrawals(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
@@ -580,13 +580,14 @@ class Kraken(ExchangeInterface):
             try:
                 asset = asset_from_kraken(movement['asset'])
                 movements.append(AssetMovement(
-                    exchange=Exchange.KRAKEN,
+                    location=Exchange.KRAKEN,
                     category=deserialize_asset_movement_category(movement['type']),
                     timestamp=deserialize_timestamp_from_kraken(movement['time']),
                     asset=asset,
                     amount=deserialize_asset_amount(movement['amount']),
                     fee_asset=asset,
                     fee=deserialize_fee(movement['fee']),
+                    link=str(movement['refid']),
                 ))
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(

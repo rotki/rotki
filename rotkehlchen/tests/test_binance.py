@@ -413,7 +413,7 @@ BINANCE_DEPOSITS_HISTORY_RESPONSE = """{
             "amount": 0.04670582,
             "asset": "ETH",
             "address": "0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b",
-            "txId": "0xdf33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1",
+            "txId": "0xef33b22bdb2b28b1f75ccd201a4a4m6e7g83jy5fc5d5a9d1340961598cfcb0a1",
             "status": 1
         },
         {
@@ -422,7 +422,7 @@ BINANCE_DEPOSITS_HISTORY_RESPONSE = """{
             "asset": "XMR",
             "address": "463tWEBn5XZJSxLU34r6g7h8jtxuNcDbjLSjkn3XAXHCbLrTTErJrBWYgHJQyrCwkNgYvV38",
             "addressTag": "342341222",
-            "txId": "b3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509",
+            "txId": "c3c6219639c8ae3f9cf010cdc24fw7f7yt8j1e063f9b4bd1a05cb44c4b6e2509",
             "status": 1
         }
     ],
@@ -478,7 +478,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
 
     assert len(movements) == 4
 
-    assert movements[0].exchange == Exchange.BINANCE
+    assert movements[0].location == Exchange.BINANCE
     assert movements[0].category == 'deposit'
     assert movements[0].timestamp == 1508198532
     assert isinstance(movements[0].asset, Asset)
@@ -486,7 +486,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
     assert movements[0].amount == FVal('0.04670582')
     assert movements[0].fee == ZERO
 
-    assert movements[1].exchange == Exchange.BINANCE
+    assert movements[1].location == Exchange.BINANCE
     assert movements[1].category == 'deposit'
     assert movements[1].timestamp == 1508398632
     assert isinstance(movements[1].asset, Asset)
@@ -494,7 +494,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
     assert movements[1].amount == FVal('1000')
     assert movements[1].fee == ZERO
 
-    assert movements[2].exchange == Exchange.BINANCE
+    assert movements[2].location == Exchange.BINANCE
     assert movements[2].category == 'withdrawal'
     assert movements[2].timestamp == 1518192542
     assert isinstance(movements[2].asset, Asset)
@@ -502,7 +502,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
     assert movements[2].amount == FVal('1')
     assert movements[2].fee == ZERO
 
-    assert movements[3].exchange == Exchange.BINANCE
+    assert movements[3].location == Exchange.BINANCE
     assert movements[3].category == 'withdrawal'
     assert movements[3].timestamp == 1529198732
     assert isinstance(movements[3].asset, Asset)
@@ -527,7 +527,7 @@ def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binan
             return MockResponse(200, response_str)
 
         with patch.object(binance.session, 'get', side_effect=mock_get_deposit_withdrawal):
-            movements = binance.query_deposits_withdrawals(start_ts=0, end_ts=TEST_END_TS)
+            movements = binance.query_online_deposits_withdrawals(start_ts=0, end_ts=TEST_END_TS)
 
         if expected_errors_num == 0 and expected_warnings_num == 0:
             assert len(movements) == 1

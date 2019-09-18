@@ -13,7 +13,11 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH, S_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.datatyping import BalancesData, DBSettings
-from rotkehlchen.db.trades import formulate_margin_id, formulate_trade_id
+from rotkehlchen.db.trades import (
+    formulate_asset_movement_id,
+    formulate_margin_id,
+    formulate_trade_id,
+)
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
     DB_SCRIPT_CREATE_TABLES,
@@ -26,12 +30,14 @@ from rotkehlchen.db.utils import (
     SingleAssetBalance,
 )
 from rotkehlchen.errors import AuthenticationError, DeserializationError, InputError, UnknownAsset
-from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
+    deserialize_asset_movement_category,
+    deserialize_exchange_name,
     deserialize_fee,
     deserialize_price,
     deserialize_timestamp,
@@ -889,6 +895,119 @@ class DBHandler():
             margin_positions.append(margin)
 
         return margin_positions
+
+    def add_asset_movements(self, asset_movements: List[AssetMovement]) -> None:
+        cursor = self.conn.cursor()
+        movement_tuples = []
+        for movement in asset_movements:
+            movement_id = formulate_asset_movement_id(movement)
+            movement_tuples.append((
+                movement_id,
+                str(movement.location),
+                movement.category,
+                movement.timestamp,
+                movement.asset.identifier,
+                str(movement.amount),
+                movement.fee_asset.identifier,
+                str(movement.fee),
+                movement.link,
+            ))
+        try:
+            cursor.executemany(
+                'INSERT INTO asset_movements('
+                '  id, '
+                '  location,'
+                '  category,'
+                '  time,'
+                '  asset,'
+                '  amount,'
+                '  fee_asset,'
+                '  fee,'
+                '  link)'
+                'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                movement_tuples,
+            )
+        except sqlcipher.IntegrityError:  # pylint: disable=no-member
+            # TODO: Handle this better. Skip only the one movement that is duplicated
+            # and not all asset movements that are being added
+            self.msg_aggregator.add_error(
+                f'Error adding asset movement to the DB. One of the '
+                f'movements already exists there ',
+            )
+            return None
+        self.conn.commit()
+        self.update_last_write()
+        return None
+
+    def get_asset_movements(
+            self,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+            location: Optional[str] = None,
+    ) -> List[AssetMovement]:
+        """Returns a list of asset movements optionally filtered by time and location
+
+        The returned list is ordered from oldest to newest
+        """
+        cursor = self.conn.cursor()
+        query = (
+            'SELECT id,'
+            '  location,'
+            '  category,'
+            '  time,'
+            '  asset,'
+            '  amount,'
+            '  fee_asset,'
+            '  fee,'
+            '  link FROM asset_movements '
+        )
+        if location is not None:
+            query += f'WHERE location="{location}" '
+        bindings: Union[
+            Tuple,
+            Tuple[Timestamp],
+            Tuple[Timestamp, Timestamp],
+        ] = ()
+        if from_ts:
+            query += 'AND time >= ? '
+            bindings = (from_ts,)
+            if to_ts:
+                query += 'AND time <= ? '
+                bindings = (from_ts, to_ts)
+        elif to_ts:
+            query += 'AND time <= ? '
+            bindings = (to_ts,)
+        query += 'ORDER BY time ASC;'
+        results = cursor.execute(query, bindings)
+
+        asset_movements = []
+        for result in results:
+            try:
+                movement = AssetMovement(
+                    location=deserialize_exchange_name(result[1]),
+                    category=deserialize_asset_movement_category(result[2]),
+                    timestamp=result[3],
+                    asset=Asset(result[4]),
+                    amount=deserialize_asset_amount(result[5]),
+                    fee_asset=Asset(result[6]),
+                    fee=deserialize_fee(result[7]),
+                    link=result[8],
+                )
+            except DeserializationError as e:
+                self.msg_aggregator.add_error(
+                    f'Error deserializing asset movement from the DB. '
+                    f'Skipping it. Error was: {str(e)}',
+                )
+                continue
+            except UnknownAsset as e:
+                self.msg_aggregator.add_error(
+                    f'Error deserializing asset movement from the DB. Skipping it. '
+                    f'Unknown asset {e.asset_name} found',
+                )
+                continue
+            asset_movements.append(movement)
+
+        return asset_movements
 
     def add_trades(self, trades: List[Trade]) -> None:
         cursor = self.conn.cursor()

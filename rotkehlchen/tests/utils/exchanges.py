@@ -1,14 +1,52 @@
 POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE = """{
-"withdrawals": [
-{"currency": "BTC", "timestamp": 1458994442, "amount": "5.0", "fee": "0.5"},
-{"currency": "ETH", "timestamp": 1468994442, "amount": "10.0", "fee": "0.1"},
-{"currency": "IDONTEXIST", "timestamp": 1478994442, "amount": "10.0", "fee": "0.1"},
-{"currency": "DIS", "timestamp": 1478994442, "amount": "10.0", "fee": "0.1"}],
-"deposits": [
-{"currency": "BTC", "timestamp": 1448994442, "amount": "50.0"},
-{"currency": "ETH", "timestamp": 1438994442, "amount": "100.0"},
-{"currency": "IDONTEXIST", "timestamp": 1478994442, "amount": "10.0"},
-{"currency": "EBT", "timestamp": 1478994442, "amount": "10.0"}]
+  "withdrawals": [
+    {
+      "currency": "BTC",
+      "timestamp": 1458994442,
+      "amount": "5.0",
+      "fee": "0.5",
+      "withdrawalNumber": 1
+    }, {
+      "currency": "ETH",
+      "timestamp": 1468994442,
+      "amount": "10.0",
+      "fee": "0.1",
+      "withdrawalNumber": 2
+    }, {
+      "currency": "IDONTEXIST",
+      "timestamp": 1478994442,
+      "amount": "10.0",
+      "fee": "0.1",
+      "withdrawalNumber": 3
+    }, {
+      "currency": "DIS",
+      "timestamp": 1478994442,
+      "amount": "10.0",
+      "fee": "0.1",
+      "withdrawalNumber": 4
+  }],
+  "deposits": [
+    {
+      "currency": "BTC",
+      "timestamp": 1448994442,
+      "amount": "50.0",
+      "depositNumber": 1
+    }, {
+      "currency": "ETH",
+      "timestamp": 1438994442,
+      "amount": "100.0",
+      "depositNumber": 2
+    }, {
+      "currency": "IDONTEXIST",
+      "timestamp": 1478994442,
+      "amount": "10.0",
+      "depositNumber": 3
+    }, {
+      "currency": "EBT",
+      "timestamp": 1478994442,
+      "amount": "10.0",
+      "depositNumber": 4
+  }]
 }"""
 
 
@@ -125,8 +163,8 @@ KRAKEN_SPECIFIC_DEPOSITS_RESPONSE = """
 KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE = """
 {
             "ledger": {
-                "1": {
-                    "refid": "1",
+                "4": {
+                    "refid": "4",
                     "time": "1428994442",
                     "type": "withdrawal",
                     "aclass": "currency",
@@ -135,8 +173,8 @@ KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE = """
                     "balance": "10.0",
                     "fee": "0.1"
                 },
-                "2": {
-                    "refid": "2",
+                "5": {
+                    "refid": "5",
                     "time": "1418994442",
                     "type": "withdrawal",
                     "aclass": "currency",
@@ -145,8 +183,8 @@ KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE = """
                     "balance": "100.0",
                     "fee": "0.11"
                 },
-                "3": {
-                    "refid": "3",
+                "6": {
+                    "refid": "6",
                     "time": "1408994442",
                     "type": "withdrawal",
                     "aclass": "currency",

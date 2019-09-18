@@ -395,13 +395,14 @@ class Bittrex(ExchangeInterface):
             timestamp = deserialize_timestamp_from_bittrex_date(raw_data[date_key])
             asset = asset_from_bittrex(raw_data['Currency'])
             return AssetMovement(
-                exchange=Exchange.BITTREX,
+                location=Exchange.BITTREX,
                 category=cast(Literal['deposit', 'withdrawal'], category),
                 timestamp=timestamp,
                 asset=asset,
                 amount=deserialize_asset_amount(raw_data['Amount']),
                 fee_asset=asset,
                 fee=fee,
+                link=str(raw_data['TxId']),
             )
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
@@ -428,7 +429,7 @@ class Bittrex(ExchangeInterface):
 
         return None
 
-    def query_deposits_withdrawals(
+    def query_online_deposits_withdrawals(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,

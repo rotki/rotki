@@ -352,7 +352,7 @@ def test_bittrex_query_deposits_withdrawals(bittrex):
         return MockResponse(200, response_str)
 
     with patch.object(bittrex.session, 'get', side_effect=mock_get_deposit_withdrawal):
-        movements = bittrex.query_deposits_withdrawals(start_ts=0, end_ts=TEST_END_TS)
+        movements = bittrex.query_online_deposits_withdrawals(start_ts=0, end_ts=TEST_END_TS)
 
     errors = bittrex.msg_aggregator.consume_errors()
     warnings = bittrex.msg_aggregator.consume_warnings()
@@ -361,7 +361,7 @@ def test_bittrex_query_deposits_withdrawals(bittrex):
 
     assert len(movements) == 4
 
-    assert movements[0].exchange == Exchange.BITTREX
+    assert movements[0].location == Exchange.BITTREX
     assert movements[0].category == 'deposit'
     assert movements[0].timestamp == 1392277133
     assert isinstance(movements[0].asset, Asset)
@@ -369,7 +369,7 @@ def test_bittrex_query_deposits_withdrawals(bittrex):
     assert movements[0].amount == FVal('2.12345678')
     assert movements[0].fee == ZERO
 
-    assert movements[1].exchange == Exchange.BITTREX
+    assert movements[1].location == Exchange.BITTREX
     assert movements[1].category == 'deposit'
     assert movements[1].timestamp == 1402817933
     assert isinstance(movements[1].asset, Asset)
@@ -377,7 +377,7 @@ def test_bittrex_query_deposits_withdrawals(bittrex):
     assert movements[1].amount == FVal('50.81')
     assert movements[1].fee == ZERO
 
-    assert movements[2].exchange == Exchange.BITTREX
+    assert movements[2].location == Exchange.BITTREX
     assert movements[2].category == 'withdrawal'
     assert movements[2].timestamp == 1404879887
     assert isinstance(movements[2].asset, Asset)
@@ -385,7 +385,7 @@ def test_bittrex_query_deposits_withdrawals(bittrex):
     assert movements[2].amount == FVal('17')
     assert movements[2].fee == FVal('0.0002')
 
-    assert movements[3].exchange == Exchange.BITTREX
+    assert movements[3].location == Exchange.BITTREX
     assert movements[3].category == 'withdrawal'
     assert movements[3].timestamp == 1439958287
     assert isinstance(movements[3].asset, Asset)
@@ -410,7 +410,7 @@ def test_bittrex_query_deposits_withdrawals_unexpected_data(bittrex):
             return MockResponse(200, response_str)
 
         with patch.object(bittrex.session, 'get', side_effect=mock_get_deposit_withdrawal):
-            movements = bittrex.query_deposits_withdrawals(start_ts=0, end_ts=TEST_END_TS)
+            movements = bittrex.query_online_deposits_withdrawals(start_ts=0, end_ts=TEST_END_TS)
 
         if expected_errors_num == 0 and expected_warnings_num == 0:
             assert len(movements) == 1

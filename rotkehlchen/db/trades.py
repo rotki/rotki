@@ -1,5 +1,5 @@
 from rotkehlchen.crypto import sha3
-from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.typing import Timestamp, TradeID, TradeType
 
 
@@ -30,6 +30,11 @@ def formulate_trade_id(trade: Trade) -> TradeID:
     return TradeID(hash_id(string))
 
 
-def formulate_margin_id(margin: MarginPosition) -> str:
-    string = margin.location + margin.link
+def formulate_margin_id(action: MarginPosition) -> str:
+    string = str(action.location) + action.link
+    return hash_id(string)
+
+
+def formulate_asset_movement_id(action: AssetMovement) -> str:
+    string = str(action.location) + str(action.category) + action.link
     return hash_id(string)

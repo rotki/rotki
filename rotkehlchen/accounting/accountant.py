@@ -26,7 +26,7 @@ from rotkehlchen.history import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.transactions import EthereumTransaction
-from rotkehlchen.typing import Exchange, Fee, FilePath, Timestamp
+from rotkehlchen.typing import Fee, FilePath, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.accounting import (
     TaxableAction,
@@ -160,11 +160,11 @@ class Accountant():
             asset=movement.asset,
             cost_in_profit_currency=cost,
             timestamp=timestamp,
-            exchange_name=movement.exchange,
+            exchange_name=movement.location,
         )
 
         self.csvexporter.add_asset_movement(
-            exchange=movement.exchange,
+            exchange=movement.location,
             category=movement.category,
             asset=movement.asset,
             fee=movement.fee,

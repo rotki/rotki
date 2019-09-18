@@ -478,13 +478,14 @@ class Coinbase(ExchangeInterface):
                 )
 
             return AssetMovement(
-                exchange=Exchange.COINBASE,
+                location=Exchange.COINBASE,
                 category=movement_category,
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,
                 fee_asset=asset,
                 fee=fee,
+                link=str(raw_data['id']),
             )
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
@@ -511,7 +512,7 @@ class Coinbase(ExchangeInterface):
 
         return None
 
-    def query_deposits_withdrawals(
+    def query_online_deposits_withdrawals(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
