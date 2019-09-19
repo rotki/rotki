@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Callable
 
 from eth_utils.address import to_checksum_address
 
+from rotkehlchen.crypto import sha3
 from rotkehlchen.db.asset_rename import rename_assets_in_db
 from rotkehlchen.db.utils import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.errors import DBUpgradeError
@@ -54,7 +55,7 @@ class DBUpgradeManager():
         self._perform_single_upgrade(
             from_version=5,
             to_version=6,
-            upgrade_action=self._remove_cache_files,
+            upgrade_action=self._v5_to_v6,
         )
 
     def _perform_single_upgrade(
@@ -104,6 +105,76 @@ class DBUpgradeManager():
 
         # Upgrade success all is good
         self.db.set_version(to_version)
+
+    def _v5_to_v6(self) -> None:
+        self._remove_cache_files()
+        # And also upgrade the trades tables to use the new id scheme
+        cursor = self.db.conn.cursor()
+        # This is the data trades table had at v5
+        query = cursor.execute(
+            """SELECT time, location, pair, type, amount, rate, fee, fee_currency,
+            link, notes FROM trades;""",
+        )
+        trade_tuples = []
+        for result in query:
+            # This is the logic of trade addition in v6 of the DB
+            time = result[0]
+            pair = result[2]
+            trade_type = result[3]
+            trade_id = sha3(('external' + str(time) + str(trade_type) + pair).encode()).hex()
+            trade_tuples.append((
+                trade_id,
+                time,
+                result[1],
+                pair,
+                trade_type,
+                result[4],
+                result[5],
+                result[6],
+                result[7],
+                result[8],
+                result[9],
+            ))
+
+        # We got all the external trades data. Now delete the old table and create
+        # the new one
+        cursor.execute('DROP TABLE trades;')
+        self.db.conn.commit()
+        # This is the scheme of the trades table at v6 from db/utils.py
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS trades (
+        id TEXT PRIMARY KEY,
+        time INTEGER,
+        location VARCHAR[24],
+        pair VARCHAR[24],
+        type VARCHAR[12],
+        amount TEXT,
+        rate TEXT,
+        fee TEXT,
+        fee_currency VARCHAR[10],
+        link TEXT,
+        notes TEXT
+        );""")
+        self.db.conn.commit()
+
+        # and finally move the data to the new table
+        cursor.executemany(
+            'INSERT INTO trades('
+            '  id, '
+            '  time,'
+            '  location,'
+            '  pair,'
+            '  type,'
+            '  amount,'
+            '  rate,'
+            '  fee,'
+            '  fee_currency,'
+            '  link,'
+            '  notes)'
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            trade_tuples,
+        )
+        self.db.conn.commit()
 
     def _remove_cache_files(self) -> None:
         """At 5->6 version upgrade all cache files should be removed
