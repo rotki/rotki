@@ -54,6 +54,7 @@
     ></message-dialog>
     <login
       :displayed="!logged && !message.title && !newAccount"
+      :loading="loading"
       @login="login($event)"
       @new-account="newAccount = true"
     ></login>
@@ -118,6 +119,7 @@ export default class App extends Vue {
   drawer = true;
 
   startupError: string = '';
+  loading: boolean = false;
 
   openSite() {
     shell.openExternal('http://rotkehlchen.io');
@@ -147,10 +149,12 @@ export default class App extends Vue {
 
   async login(credentials: Credentials) {
     const { username, password } = credentials;
+    this.loading = true;
     await this.$store.dispatch('session/unlock', {
       username: username,
       password: password
     } as UnlockPayload);
+    this.loading = false;
   }
 
   async createAccount(credentials: Credentials) {

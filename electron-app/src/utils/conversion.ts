@@ -2,6 +2,7 @@ import {
   AccountTokens,
   ApiBalances,
   ApiEthBalances,
+  AssetBalances,
   Balances,
   EthBalances
 } from '@/model/blockchain-balances';
@@ -9,6 +10,7 @@ import {
 import { bigNumberify } from '@/utils/bignumbers';
 import omit from 'lodash/omit';
 import transform from 'lodash/transform';
+import { ApiAssetBalances } from '@/typing/types';
 
 export function convertEthBalances(apiBalances: ApiEthBalances): EthBalances {
   const balances: EthBalances = {};
@@ -48,6 +50,26 @@ export function convertBalances(apiBalances: ApiBalances): Balances {
     };
   }
   return balances;
+}
+
+export function convertAssetBalances(
+  assetBalances: ApiAssetBalances
+): AssetBalances {
+  const assets: AssetBalances = {};
+
+  for (const asset in assetBalances) {
+    if (!assetBalances.hasOwnProperty(asset)) {
+      continue;
+    }
+
+    const data = assetBalances[asset];
+
+    assets[asset] = {
+      amount: bigNumberify(data.amount),
+      usdValue: bigNumberify(data.usd_value)
+    };
+  }
+  return assets;
 }
 
 export function convertToTimestamp(date: string): number {

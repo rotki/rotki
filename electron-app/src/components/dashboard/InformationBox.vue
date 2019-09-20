@@ -6,11 +6,11 @@
       justify="space-between"
     >
       <v-col cols="2">
-        <v-icon size="45" color="white" class="information-box__icon"
-          >fa {{ icon }}</v-icon
-        >
+        <v-icon size="45" color="white" class="information-box__icon">
+          fa {{ icon }}
+        </v-icon>
       </v-col>
-      <v-col cols="4" class="information-box__amount text-right">
+      <v-col cols="10" class="information-box__amount text-right">
         <span class="information-box__amount__number">
           {{
             amount
