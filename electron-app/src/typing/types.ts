@@ -1,4 +1,5 @@
-import { AssetBalance } from '@/model/asset-balance';
+import { ApiAssetBalance } from '@/model/blockchain-balances';
+import BigNumber from 'bignumber.js';
 
 export interface GeneralSettings {
   readonly floatingPrecision: number;
@@ -31,15 +32,17 @@ export interface Credentials {
 
 export type UsdToFiatExchangeRates = { [key: string]: number };
 
-export type Balances = { [asset: string]: AssetBalance };
+export interface ApiAssetBalances {
+  [asset: string]: ApiAssetBalance;
+}
 
-export type ExchangeInfo = {
-  name: string;
-  balances: Balances;
-  totals?: number;
-};
+export interface ExchangeInfo {
+  readonly name: string;
+  readonly balances: ApiAssetBalances;
+  readonly total: BigNumber;
+}
 
-export type ExchangeData = { [exchange: string]: Balances };
+export type ExchangeData = { [exchange: string]: ApiAssetBalances };
 
 export enum Severity {
   WARNING = 'warning',

@@ -1,7 +1,11 @@
 import { ActionResult } from '@/model/action-result';
 import { BlockchainBalances } from '@/model/blockchain-balances';
 import store from '@/store/store';
-import { convertBalances, convertEthBalances } from '@/utils/conversion';
+import {
+  convertBalances,
+  convertEthBalances,
+  convertAssetBalances
+} from '@/utils/conversion';
 import { ExchangeBalanceResult } from '@/model/exchange-balance-result';
 import { TaskType } from '@/model/task';
 import { notify } from '@/store/notifications/utils';
@@ -14,6 +18,7 @@ import {
   TradeHistoryResult
 } from '@/model/trade-history-types';
 import map from 'lodash/map';
+import { ApiAssetBalances } from '@/typing/types';
 
 export class TaskManager {
   private onUserSettingsQueryBlockchainBalances(
@@ -48,11 +53,14 @@ export class TaskManager {
       );
       return;
     }
-    const balances = result.balances;
+
+    const { name, balances } = result;
+
     store.commit('balances/addExchangeBalances', {
-      name: result.name,
-      balances: result.balances || {}
+      name,
+      balances: convertAssetBalances(balances)
     });
+
     if (!balances) {
       notify(
         `Querying ${result.name} failed. Result contains no balances. Check the logs for more details.`,
@@ -60,7 +68,6 @@ export class TaskManager {
       );
       return;
     }
-    console.log(result);
   }
 
   onQueryBlockchainBalances(result: ActionResult<BlockchainBalances>) {
@@ -72,7 +79,6 @@ export class TaskManager {
       return;
     }
 
-    console.log(result);
     const { result: data } = result;
     const { per_account, totals } = data;
     const { ETH, BTC } = per_account;
@@ -101,7 +107,7 @@ export class TaskManager {
     }
 
     const { overview, all_events } = result;
-    console.log(result);
+
     const payload = {
       overview: convertTradeHistoryOverview(overview),
       events: map(all_events, (event: ApiEventEntry) =>

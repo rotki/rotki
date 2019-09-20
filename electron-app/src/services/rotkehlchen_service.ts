@@ -1,6 +1,5 @@
 import { VersionCheck } from '@/model/version-check';
 import { ActionResult, UnlockResult } from '@/model/action-result';
-import { AssetBalance } from '@/model/asset-balance';
 import { DBAssetBalance } from '@/model/db-asset-balance';
 import { SingleAssetBalance } from '@/model/single-asset-balance';
 import { BlockchainAccountResult } from '@/model/blockchain_account_result';
@@ -13,6 +12,7 @@ import { EthTokensResult } from '@/model/eth_tokens_result';
 import { PeriodicClientQueryResult } from '@/model/periodic_client_query_result';
 import { NetvalueDataResult } from '@/model/query-netvalue-data-result';
 import { Messages } from '@/model/messages';
+import { ApiAssetBalances } from '@/typing/types';
 
 const zerorpc = require('zerorpc-rotkehlchen');
 // max timeout is now 9999 seconds
@@ -272,11 +272,11 @@ export class RotkehlchenService {
     });
   }
 
-  query_fiat_balances(): Promise<{ [currency: string]: AssetBalance }> {
-    return new Promise<{ [p: string]: AssetBalance }>((resolve, reject) => {
+  query_fiat_balances(): Promise<ApiAssetBalances> {
+    return new Promise<ApiAssetBalances>((resolve, reject) => {
       client.invoke(
         'query_fiat_balances',
-        (error: Error, res: { [currency: string]: AssetBalance }) => {
+        (error: Error, res: ApiAssetBalances) => {
           if (error || res == null) {
             reject(error || new NoResponseError());
           } else {

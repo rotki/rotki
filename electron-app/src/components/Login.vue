@@ -10,6 +10,7 @@
             label="Username"
             prepend-icon="fa-user"
             :rules="usernameRules"
+            :disabled="loading"
             required
           ></v-text-field>
           <v-text-field
@@ -18,6 +19,7 @@
             label="Password"
             prepend-icon="fa-lock"
             :rules="passwordRules"
+            :disabled="loading"
             type="password"
             required
             @keypress.enter="login()"
@@ -25,10 +27,21 @@
         </v-form>
       </v-card-text>
       <v-card-actions>
-        <v-btn depressed color="primary" :disabled="!valid" @click="login()">
+        <v-btn
+          depressed
+          color="primary"
+          :disabled="!valid || loading"
+          :loading="loading"
+          @click="login()"
+        >
           Sign In
         </v-btn>
-        <v-btn depressed color="primary" @click="newAccount()">
+        <v-btn
+          depressed
+          color="primary"
+          :disabled="loading"
+          @click="newAccount()"
+        >
           Create New Account
         </v-btn>
       </v-card-actions>
@@ -43,6 +56,9 @@ import { Credentials } from '@/typing/types';
 export default class Login extends Vue {
   @Prop({ required: true })
   displayed!: boolean;
+
+  @Prop({ required: true, type: Boolean })
+  loading!: boolean;
 
   @Watch('displayed')
   onDisplayChange() {

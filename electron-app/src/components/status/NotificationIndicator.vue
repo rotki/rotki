@@ -53,8 +53,9 @@
                 <v-list-item-title
                   v-text="notification.title"
                 ></v-list-item-title>
-                <v-list-item-subtitle v-text="notification.message">
-                </v-list-item-subtitle>
+                <span class="notification-indicator__messages__message">
+                  {{ notification.message }}
+                </span>
               </v-list-item-content>
               <v-list-item-action>
                 <v-list-item-action-text>
@@ -146,7 +147,7 @@ export default class NotificationIndicator extends Vue {
 
 <style scoped lang="scss">
 .notification-indicator__details {
-  width: 300px;
+  width: 400px;
   height: 350px;
   background-color: white;
   overflow-y: scroll;
@@ -176,6 +177,11 @@ export default class NotificationIndicator extends Vue {
   display: flex;
   flex-direction: row-reverse;
   padding-right: 8px;
+}
+
+.notification-indicator__messages__message {
+  font-size: 13px;
+  color: rgb(0, 0, 0, 0.6);
 }
 
 ::v-deep .v-badge__badge {

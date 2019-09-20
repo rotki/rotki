@@ -36,6 +36,6 @@ export default class ExchangeBadge extends Vue {
 
 .exchange-badge__name {
   margin-top: 16px;
-  font-size: 28px;
+  font-size: 20px;
 }
 </style>
