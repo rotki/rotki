@@ -1,11 +1,8 @@
-import { AssetBalance } from '@/model/asset-balance';
+import { AssetBalance } from '@/model/blockchain-balances';
+import { Zero } from '@/utils/bignumbers';
 
 export function assetSum(balances: { [asset: string]: AssetBalance }) {
-  let value = 0;
-  for (const asset in balances) {
-    if (balances.hasOwnProperty(asset)) {
-      value += parseFloat(balances[asset].usd_value.toString());
-    }
-  }
-  return value;
+  return Object.values(balances).reduce((sum, balance) => {
+    return sum.plus(balance.usdValue);
+  }, Zero);
 }

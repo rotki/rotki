@@ -6,24 +6,26 @@
       </v-col>
     </v-row>
 
-    <exchange-box
-      v-for="exchange in exchanges"
-      :key="exchange.name"
-      :name="exchange.name"
-      :amount="exchange.total"
-    ></exchange-box>
-    <information-box
-      v-if="!blockchainTotal.isZero()"
-      id="blockchain_box"
-      icon="fa-hdd-o"
-      :amount="blockchainTotal"
-    ></information-box>
-    <information-box
-      v-if="!fiatTotal.isZero()"
-      id="banks_box"
-      icon="fa-university"
-      :amount="fiatTotal"
-    ></information-box>
+    <div class="dashboard__information-boxes">
+      <exchange-box
+        v-for="exchange in exchanges"
+        :key="exchange.name"
+        :name="exchange.name"
+        :amount="exchange.total"
+      ></exchange-box>
+      <information-box
+        v-if="!blockchainTotal.isZero()"
+        id="blockchain_box"
+        icon="fa-hdd-o"
+        :amount="blockchainTotal"
+      ></information-box>
+      <information-box
+        v-if="!fiatTotal.isZero()"
+        id="banks_box"
+        icon="fa-university"
+        :amount="fiatTotal"
+      ></information-box>
+    </div>
 
     <v-row>
       <v-col cols="12">
@@ -80,7 +82,7 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import InformationBox from '@/components/InformationBox.vue';
+import InformationBox from '@/components/dashboard/InformationBox.vue';
 import { createNamespacedHelpers } from 'vuex';
 import { ExchangeInfo } from '@/typing/types';
 import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
@@ -139,6 +141,10 @@ export default class Dashboard extends Vue {
   display: flex;
   flex-direction: row;
   align-items: center;
+}
+
+.dashboard__information-boxes > * {
+  margin-top: 8px;
 }
 
 .dashboard__aggregate__asset__icon {

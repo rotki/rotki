@@ -42,7 +42,7 @@ export const mutations: MutationTree<BalanceState> = {
   addExchangeBalances(state: BalanceState, data: ExchangeInfo) {
     const update: ExchangeData = {};
     update[data.name] = data.balances;
-    state.exchangeBalances = Object.assign({}, state.exchangeBalances, update);
+    state.exchangeBalances = { ...state.exchangeBalances, ...update };
   },
   fiatBalances(state: BalanceState, fiatBalances: FiatBalance[]) {
     state.fiatBalances = [...fiatBalances];

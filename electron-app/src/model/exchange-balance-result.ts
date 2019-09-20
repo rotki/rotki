@@ -1,7 +1,7 @@
-import { Balances } from '@/typing/types';
+import { ApiAssetBalances } from '@/typing/types';
 
 export interface ExchangeBalanceResult {
   readonly name: string;
   readonly error?: string;
-  readonly balances?: Balances;
+  readonly balances: ApiAssetBalances;
 }
