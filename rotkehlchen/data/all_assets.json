@@ -680,6 +680,14 @@
         "symbol": "BANCA",
         "type": "ethereum token"
     },
+    "BAND": {
+        "ethereum_address": "0xBA11D00c5f74255f56a5E366F4F77f5A186d7f55",
+        "ethereum_token_decimals": 18,
+        "name": "Band Protocol",
+        "started": 1567987200,
+        "symbol": "BAND",
+        "type": "ethereum token"
+    },
     "BAS": {
         "active": false,
         "ended": 1542412800,
