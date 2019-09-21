@@ -103,43 +103,56 @@ def typeinfo_check(
                 our_data[asset_symbol]['type'] = 'ethereum token'
                 return our_data
 
-            if 'parent' not in paprika_data:
-                print(f'Paprika data for asset {asset_symbol} should have a parent')
+            try:
+                parent_id = paprika_data['parent']['id']
+            except KeyError:
+                parent_id = None
+
+            if parent_id is None:
+                try:
+                    parent_id = paprika_data['platform']
+                except KeyError:
+                    parent_id = None
+
+            if parent_id is None:
+                print(
+                    f'Paprika data for asset {asset_symbol} should have a parent or platform entry'
+                )
                 sys.exit(1)
 
-            if paprika_data['parent']['id'] == 'omni-omni':
+            if parent_id == 'omni-omni':
                 our_data[asset_symbol]['type'] = 'omni token'
-            elif paprika_data['parent']['id'] == 'eth-ethereum':
+            elif parent_id == 'eth-ethereum':
                 our_data[asset_symbol]['type'] = 'ethereum token'
-            elif paprika_data['parent']['id'] == 'neo-neo':
+            elif parent_id == 'neo-neo':
                 our_data[asset_symbol]['type'] = 'neo token'
-            elif paprika_data['parent']['id'] == 'xcp-counterparty':
+            elif parent_id == 'xcp-counterparty':
                 our_data[asset_symbol]['type'] = 'counterparty token'
-            elif paprika_data['parent']['id'] == 'bts-bitshares':
+            elif parent_id == 'bts-bitshares':
                 our_data[asset_symbol]['type'] = 'bitshares token'
-            elif paprika_data['parent']['id'] == 'ardr-ardor':
+            elif parent_id == 'ardr-ardor':
                 our_data[asset_symbol]['type'] = 'ardor token'
-            elif paprika_data['parent']['id'] == 'nxt-nxt':
+            elif parent_id == 'nxt-nxt':
                 our_data[asset_symbol]['type'] = 'nxt token'
-            elif paprika_data['parent']['id'] == 'ubq-ubiq':
+            elif parent_id == 'ubq-ubiq':
                 our_data[asset_symbol]['type'] = 'Ubiq token'
-            elif paprika_data['parent']['id'] == 'usnbt-nubits':
+            elif parent_id == 'usnbt-nubits':
                 our_data[asset_symbol]['type'] = 'Nubits token'
-            elif paprika_data['parent']['id'] == 'burst-burst':
+            elif parent_id == 'burst-burst':
                 our_data[asset_symbol]['type'] = 'Burst token'
-            elif paprika_data['parent']['id'] == 'waves-waves':
+            elif parent_id == 'waves-waves':
                 our_data[asset_symbol]['type'] = 'waves token'
-            elif paprika_data['parent']['id'] == 'qtum-qtum':
+            elif parent_id == 'qtum-qtum':
                 our_data[asset_symbol]['type'] = 'qtum token'
-            elif paprika_data['parent']['id'] == 'xlm-stellar':
+            elif parent_id == 'xlm-stellar':
                 our_data[asset_symbol]['type'] = 'stellar token'
-            elif paprika_data['parent']['id'] == 'trx-tron':
+            elif parent_id == 'trx-tron':
                 our_data[asset_symbol]['type'] = 'tron token'
-            elif paprika_data['parent']['id'] == 'ont-ontology':
+            elif parent_id == 'ont-ontology':
                 our_data[asset_symbol]['type'] = 'ontology token'
-            elif paprika_data['parent']['id'] == 'vet-vechain':
+            elif parent_id == 'vet-vechain':
                 our_data[asset_symbol]['type'] = 'vechain token'
-            elif paprika_data['parent']['id'] == 'bnb-binance-coin':
+            elif parent_id == 'bnb-binance-coin':
                 our_data[asset_symbol]['type'] = 'binance token'
             else:
                 print(
