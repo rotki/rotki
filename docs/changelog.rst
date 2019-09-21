@@ -6,8 +6,13 @@ Changelog
 * :feature:`-` Support WorldWideAssetExchange token for Bittrex after it got renamed to `WAXP <https://international.bittrex.com/Market/Index?MarketName=BTC-WAXP>`__ in that exchange.
 * :feature:`-` Added support for the following tokens
 
-  - `Perling <https://coinmarketcap.com/currencies/perlin/>`__
-  - `HedgeTrade <https://coinmarketcap.com/currencies/hedgetrade/>`__
+  - `Perling (PERL) <https://coinmarketcap.com/currencies/perlin/>`__
+  - `HedgeTrade (HEDG) <https://coinmarketcap.com/currencies/hedgetrade/>`__
+  - `Hedera Hashgraph (HBAR) <https://coinmarketcap.com/currencies/hedera-hashgraph/>`__
+  - `Morpheus Network (MRPH) <https://coinmarketcap.com/currencies/morpheus-network/>`__
+  - `Chiliz (CHZ) <https://coinmarketcap.com/currencies/chiliz/>`__
+  - `Binance USD (BUSD) <https://coinmarketcap.com/currencies/binance-usd/>`__
+  - `Band Protcol (BAND) <https://coinmarketcap.com/currencies/band-protocol//>`__
 
 * :release:`1.0.3 <2019-08-30>`
 * :feature:`453` If a newer version exists the user is notified at the start of the application and is given a link to download it.
