@@ -1,3 +1,6 @@
+import os
+from contextlib import contextmanager
+from shutil import copyfile
 from sqlite3 import Cursor
 from unittest.mock import patch
 
@@ -6,6 +9,7 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.data_handler import DataHandler
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.utils import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.errors import DBUpgradeError
@@ -19,6 +23,20 @@ creation_patch = patch(
 )
 
 
+@contextmanager
+def target_patch(target_version: int):
+    a = patch(
+        'rotkehlchen.db.upgrade_manager.ROTKEHLCHEN_DB_VERSION',
+        new=target_version,
+    )
+    b = patch(
+        'rotkehlchen.db.dbhandler.ROTKEHLCHEN_DB_VERSION',
+        new=target_version,
+    )
+    with a, b:
+        yield (a, b)
+
+
 def populate_db_and_check_for_asset_renaming(
         cursor: Cursor,
         data: DataHandler,
@@ -27,6 +45,7 @@ def populate_db_and_check_for_asset_renaming(
         username: str,
         to_rename_asset: str,
         renamed_asset: Asset,
+        target_version: int,
 ):
     # Manually input data to the affected tables.
     # timed_balances, multisettings and (external) trades
@@ -153,7 +172,8 @@ def populate_db_and_check_for_asset_renaming(
     # now relogin and check that all tables have appropriate data
     del data
     data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=False)
+    with creation_patch, target_patch(target_version=target_version):
+        data.unlock(username, '123', create_new=False)
     # Check that owned and ignored assets reflect the new state
     ignored_assets = data.db.get_ignored_assets()
     assert A_RDN in ignored_assets
@@ -210,7 +230,7 @@ def populate_db_and_check_for_asset_renaming(
     assert trades[1]['pair'] == f'{renamed_asset.identifier}_EUR'
     assert trades[2]['pair'] == f'{renamed_asset.identifier}_EUR'
 
-    assert data.db.get_version() == ROTKEHLCHEN_DB_VERSION
+    assert data.db.get_version() == target_version
 
 
 def test_upgrade_db_1_to_2(data_dir, username):
@@ -218,14 +238,9 @@ def test_upgrade_db_1_to_2(data_dir, username):
     ethereum accounts are now checksummed"""
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
-    with creation_patch:
+    with creation_patch, target_patch(1):
         data.unlock(username, '123', create_new=True)
-    # Manually set version and input a non checksummed account
-    cursor = data.db.conn.cursor()
-    cursor.execute(
-        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-        ('version', str(1)),
-    )
+    # Manually input a non checksummed account
     data.db.conn.commit()
     data.db.add_blockchain_account(
         SupportedBlockchain.ETHEREUM,
@@ -235,13 +250,13 @@ def test_upgrade_db_1_to_2(data_dir, username):
     # now relogin and check that the account has been re-saved as checksummed
     del data
     data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=False)
+    with target_patch(target_version=2):
+        data.unlock(username, '123', create_new=False)
     accounts = data.db.get_blockchain_accounts()
     assert accounts.eth[0] == '0xe3580C38B0106899F45845E361EA7F8a0062Ef12'
     version = data.db.get_version()
-    assert version == ROTKEHLCHEN_DB_VERSION
-    # Also make sure that we have updated the latest DB version constant
-    assert version > 1
+    # Also make sure that we have updated to the target_version
+    assert version == 2
 
 
 def test_upgrade_db_2_to_3(data_dir, username):
@@ -250,7 +265,8 @@ def test_upgrade_db_2_to_3(data_dir, username):
     data = DataHandler(data_dir, msg_aggregator)
     with creation_patch:
         data.unlock(username, '123', create_new=True)
-    # Manually set version
+    # Manually set version (Both here and in 4 -> 5 it needs to be done like this and
+    # target patch can't be used for some reason. Still have not debugged what fails
     cursor = data.db.conn.cursor()
     cursor.execute(
         'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -265,10 +281,11 @@ def test_upgrade_db_2_to_3(data_dir, username):
         username=username,
         to_rename_asset='BCHSV',
         renamed_asset=A_BSV,
+        target_version=3,
     )
     version = data.db.get_version()
-    # Also make sure that we have updated the latest DB version constant
-    assert version > 2
+    # Also make sure that we have updated to the target_version
+    assert version == 3
 
 
 def test_upgrade_db_3_to_4(data_dir, username):
@@ -276,7 +293,7 @@ def test_upgrade_db_3_to_4(data_dir, username):
     the eth_rpc_port setting is changed to eth_rpc_endpoint"""
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
-    with creation_patch:
+    with creation_patch, target_patch(3):
         data.unlock(username, '123', create_new=True)
     # Manually set version and input the old rpcport setting
     cursor = data.db.conn.cursor()
@@ -293,7 +310,8 @@ def test_upgrade_db_3_to_4(data_dir, username):
     # now relogin and check that the setting has been changed and the version bumped
     del data
     data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=False)
+    with target_patch(target_version=4):
+        data.unlock(username, '123', create_new=False)
     cursor = data.db.conn.cursor()
     query = cursor.execute('SELECT value FROM settings where name="eth_rpc_endpoint";')
     query = query.fetchall()
@@ -302,9 +320,8 @@ def test_upgrade_db_3_to_4(data_dir, username):
     query = query.fetchall()
     assert len(query) == 0
     version = data.db.get_version()
-    assert version == ROTKEHLCHEN_DB_VERSION
-    # Also make sure that we have updated the latest DB version constant
-    assert version > 3
+    # Also make sure that we have updated to the target_version
+    assert version == 4
 
 
 def test_upgrade_db_4_to_5(data_dir, username):
@@ -313,7 +330,8 @@ def test_upgrade_db_4_to_5(data_dir, username):
     data = DataHandler(data_dir, msg_aggregator)
     with creation_patch:
         data.unlock(username, '123', create_new=True)
-    # Manually set version
+    # Manually set version (Both here and in 2 -> 3 it needs to be done like this and
+    # target patch can't be used for some reason. Still have not debugged what fails
     cursor = data.db.conn.cursor()
     cursor.execute(
         'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -328,9 +346,70 @@ def test_upgrade_db_4_to_5(data_dir, username):
         username=username,
         to_rename_asset='BCC',
         renamed_asset=A_BCH,
+        target_version=5,
     )
-    # Also make sure that we have updated the latest DB version constant
-    assert data.db.get_version() > 4
+    # Also make sure that we have updated to the target version
+    assert data.db.get_version() == 5
+
+
+def test_upgrade_db_5_to_6(data_dir, username):
+    """Test upgrading the DB from version 5 to version 6, upgrading the trades table"""
+    msg_aggregator = MessagesAggregator()
+    userdata_dir = os.path.join(data_dir, username)
+    os.mkdir(userdata_dir)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    copyfile(
+        os.path.join(os.path.dirname(dir_path), 'data', 'v5_rotkehlchen_otc_trades.db'),
+        os.path.join(userdata_dir, 'rotkehlchen.db'),
+    )
+
+    with target_patch(target_version=6):
+        db = DBHandler(user_data_dir=userdata_dir, password='123', msg_aggregator=msg_aggregator)
+
+    cursor = db.conn.cursor()
+    query = (
+        'SELECT id,'
+        '  time,'
+        '  location,'
+        '  pair,'
+        '  type,'
+        '  amount,'
+        '  rate,'
+        '  fee,'
+        '  fee_currency,'
+        '  link,'
+        '  notes FROM trades ORDER BY time ASC;'
+    )
+    results = cursor.execute(query)
+    expected_results = [(
+        '6cfa0a6db20c70910e06de83136448ef0ce90e524c80ba65bc8e9627cdfcbc00',
+        1568928120,  # time
+        'external',  # location
+        'ETH_EUR',  # pair
+        'sell',  # type
+        '10',  # amount
+        '196.6',  # rate
+        '0.001',  # fee
+        'ETH',  # fee currency
+        '',  # link
+        'Test Sell 1',  # notes
+    ), (
+        '3f5d2dee22ad7efa545683351a8cec562c11dd9c357bdfce713154696bdd56ea',
+        1569010800,  # time
+        'external',  # location
+        'BTC_EUR',  # pair
+        'buy',  # type
+        '0.5',  # amount
+        '9240.1',  # rate
+        '0.1',  # fee
+        'EUR',  # fee currency
+        '',  # link
+        'Test Buy 1',  # notes
+    )]
+    results = results.fetchall()
+    assert results == expected_results
+    # Also make sure that we have updated to the target version
+    assert db.get_version() == 6
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):
