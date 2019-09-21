@@ -3,7 +3,7 @@ import os
 import shutil
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Optional
 
 from eth_utils.address import to_checksum_address
 
@@ -21,6 +21,181 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+class UpgradeRecord(NamedTuple):
+    from_version: int
+    function: Callable
+    kwargs: Optional[Dict[str, Any]] = None
+
+
+def _checksum_eth_accounts(db: 'DBHandler') -> None:
+    """Make sure all eth accounts are checksummed when saved in the DB"""
+    accounts = db.get_blockchain_accounts()
+    cursor = db.conn.cursor()
+    cursor.execute(
+        'DELETE FROM blockchain_accounts WHERE blockchain=?;', ('ETH',),
+    )
+    db.conn.commit()
+    for account in accounts.eth:
+        db.add_blockchain_account(
+            blockchain=SupportedBlockchain.ETHEREUM,
+            account=to_checksum_address(account),
+        )
+
+
+def _eth_rpc_port_to_eth_rpc_endpoint(db: 'DBHandler') -> None:
+    """Upgrade the eth_rpc_port setting to eth_rpc_endpoint"""
+    cursor = db.conn.cursor()
+    query = cursor.execute('SELECT value FROM settings where name="eth_rpc_port";')
+    query = query.fetchall()
+    if len(query) == 0:
+        port = '8545'
+    else:
+        port = query[0][0]
+
+    cursor.execute('DELETE FROM settings where name="eth_rpc_port";')
+    cursor.execute(
+        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?);',
+        ('eth_rpc_endpoint', f'http://localhost:{port}'),
+    )
+    db.conn.commit()
+
+
+def _remove_cache_files(user_data_dir: str) -> None:
+    """At 5->6 version upgrade all cache files should be removed
+
+    That's since we moved all trades in the DB and as such it no longer makes
+    any sense to have the cache files.
+    """
+    for p in Path(user_data_dir).glob('*_trades.json'):
+        try:
+            p.unlink()
+        except OSError:
+            pass
+
+    for p in Path(user_data_dir).glob('*_history.json'):
+        try:
+            p.unlink()
+        except OSError:
+            pass
+
+    for p in Path(user_data_dir).glob('*_deposits_withdrawals.json'):
+        try:
+            p.unlink()
+        except OSError:
+            pass
+
+    try:
+        os.remove(os.path.join(user_data_dir, 'ethereum_tx_log.json'))
+    except OSError:
+        pass
+
+
+def _upgrade_v5_to_v6(db: 'DBHandler') -> None:
+    _remove_cache_files(db.user_data_dir)
+    # And also upgrade the trades tables to:
+    # - use the new id scheme
+    # - use an enum table for trade type
+    cursor = db.conn.cursor()
+    # This is the data trades table had at v5
+    query = cursor.execute(
+        """SELECT time, location, pair, type, amount, rate, fee, fee_currency,
+        link, notes FROM trades;""",
+    )
+    trade_tuples = []
+    for result in query:
+        # This is the logic of trade addition in v6 of the DB
+        time = result[0]
+        pair = result[2]
+        old_trade_type = result[3]
+        if old_trade_type == 'buy':
+            trade_type = 'A'
+        elif old_trade_type == 'sell':
+            trade_type = 'B'
+        else:
+            raise DBUpgradeError(
+                f'Unexpected trade_type "{trade_type}" found while upgrading '
+                f'from DB version 5 to 6',
+            )
+
+        trade_id = sha3(('external' + str(time) + str(old_trade_type) + pair).encode()).hex()
+        trade_tuples.append((
+            trade_id,
+            time,
+            result[1],
+            pair,
+            trade_type,
+            result[4],
+            result[5],
+            result[6],
+            result[7],
+            result[8],
+            result[9],
+        ))
+
+    # We got all the external trades data. Now delete the old table and create
+    # the new one
+    cursor.execute('DROP TABLE trades;')
+    db.conn.commit()
+    # This is the scheme of the trades table at v6 from db/utils.py
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS trades (
+    id TEXT PRIMARY KEY,
+    time INTEGER,
+    location VARCHAR[24],
+    pair VARCHAR[24],
+    type CHAR(1) NOT NULL DEFAULT ('B') REFERENCES trade_type(type),
+    amount TEXT,
+    rate TEXT,
+    fee TEXT,
+    fee_currency VARCHAR[10],
+    link TEXT,
+    notes TEXT
+    );""")
+    db.conn.commit()
+
+    # and finally move the data to the new table
+    cursor.executemany(
+        'INSERT INTO trades('
+        '  id, '
+        '  time,'
+        '  location,'
+        '  pair,'
+        '  type,'
+        '  amount,'
+        '  rate,'
+        '  fee,'
+        '  fee_currency,'
+        '  link,'
+        '  notes)'
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        trade_tuples,
+    )
+    db.conn.commit()
+
+
+UPGRADES_LIST = [
+    UpgradeRecord(from_version=1, function=_checksum_eth_accounts),
+    UpgradeRecord(
+        from_version=2,
+        function=rename_assets_in_db,
+        kwargs={'rename_pairs': [('BCHSV', 'BSV')]},
+    ),
+    UpgradeRecord(
+        from_version=3,
+        function=_eth_rpc_port_to_eth_rpc_endpoint,
+    ),
+    UpgradeRecord(
+        from_version=4,
+        function=rename_assets_in_db,
+        kwargs={'rename_pairs': [('BCC', 'BCH')]},
+    ),
+    UpgradeRecord(
+        from_version=5,
+        function=_upgrade_v5_to_v6,
+    ),
+]
+
+
 class DBUpgradeManager():
     """Separate class to manage DB upgrades/migrations"""
 
@@ -36,27 +211,8 @@ class DBUpgradeManager():
                 'Please only use the latest version of the software.',
             )
 
-        self._perform_single_upgrade(1, 2, self._checksum_eth_accounts)
-        self._perform_single_upgrade(
-            from_version=2,
-            to_version=3,
-            upgrade_action=rename_assets_in_db,
-            cursor=self.db.conn.cursor(),
-            rename_pairs=[('BCHSV', 'BSV')],
-        )
-        self._perform_single_upgrade(3, 4, self._eth_rpc_port_to_eth_rpc_endpoint)
-        self._perform_single_upgrade(
-            from_version=4,
-            to_version=5,
-            upgrade_action=rename_assets_in_db,
-            cursor=self.db.conn.cursor(),
-            rename_pairs=[('BCC', 'BCH')],
-        )
-        self._perform_single_upgrade(
-            from_version=5,
-            to_version=6,
-            upgrade_action=self._v5_to_v6,
-        )
+        for upgrade in UPGRADES_LIST:
+            self._perform_single_upgrade(upgrade)
 
         # Finally make sure to always have latest version in the DB
         cursor = self.db.conn.cursor()
@@ -66,13 +222,7 @@ class DBUpgradeManager():
         )
         self.db.conn.commit()
 
-    def _perform_single_upgrade(
-            self,
-            from_version: int,
-            to_version: int,
-            upgrade_action: Callable,
-            **kwargs: Any,
-    ) -> None:
+    def _perform_single_upgrade(self, upgrade: UpgradeRecord) -> None:
         """
         This is the wrapper function that performs each DB upgrade
 
@@ -85,8 +235,9 @@ class DBUpgradeManager():
 
         """
         current_version = self.db.get_version()
-        if current_version != from_version:
+        if current_version != upgrade.from_version:
             return
+        to_version = upgrade.from_version + 1
 
         # First make a backup of the DB
         with TemporaryDirectory() as tmpdirname:
@@ -97,12 +248,13 @@ class DBUpgradeManager():
             )
 
             try:
-                upgrade_action(**kwargs)
+                kwargs = upgrade.kwargs if upgrade.kwargs is not None else {}
+                upgrade.function(db=self.db, **kwargs)
             except BaseException as e:
                 # Problem .. restore DB backup and bail out
                 error_message = (
-                    f'Failed at database upgrade from version {from_version} to '
-                    f'{to_version}: {str(e)}',
+                    f'Failed at database upgrade from version {upgrade.from_version} to '
+                    f'{to_version}: {str(e)}'
                 )
                 log.error(error_message)
                 shutil.copyfile(
@@ -113,133 +265,3 @@ class DBUpgradeManager():
 
         # Upgrade success all is good
         self.db.set_version(to_version)
-
-    def _v5_to_v6(self) -> None:
-        self._remove_cache_files()
-        # And also upgrade the trades tables to use the new id scheme
-        cursor = self.db.conn.cursor()
-        # This is the data trades table had at v5
-        query = cursor.execute(
-            """SELECT time, location, pair, type, amount, rate, fee, fee_currency,
-            link, notes FROM trades;""",
-        )
-        trade_tuples = []
-        for result in query:
-            # This is the logic of trade addition in v6 of the DB
-            time = result[0]
-            pair = result[2]
-            trade_type = result[3]
-            trade_id = sha3(('external' + str(time) + str(trade_type) + pair).encode()).hex()
-            trade_tuples.append((
-                trade_id,
-                time,
-                result[1],
-                pair,
-                trade_type,
-                result[4],
-                result[5],
-                result[6],
-                result[7],
-                result[8],
-                result[9],
-            ))
-
-        # We got all the external trades data. Now delete the old table and create
-        # the new one
-        cursor.execute('DROP TABLE trades;')
-        self.db.conn.commit()
-        # This is the scheme of the trades table at v6 from db/utils.py
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS trades (
-        id TEXT PRIMARY KEY,
-        time INTEGER,
-        location VARCHAR[24],
-        pair VARCHAR[24],
-        type VARCHAR[12],
-        amount TEXT,
-        rate TEXT,
-        fee TEXT,
-        fee_currency VARCHAR[10],
-        link TEXT,
-        notes TEXT
-        );""")
-        self.db.conn.commit()
-
-        # and finally move the data to the new table
-        cursor.executemany(
-            'INSERT INTO trades('
-            '  id, '
-            '  time,'
-            '  location,'
-            '  pair,'
-            '  type,'
-            '  amount,'
-            '  rate,'
-            '  fee,'
-            '  fee_currency,'
-            '  link,'
-            '  notes)'
-            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            trade_tuples,
-        )
-        self.db.conn.commit()
-
-    def _remove_cache_files(self) -> None:
-        """At 5->6 version upgrade all cache files should be removed
-
-        That's since we moved all trades in the DB and as such it no longer makes
-        any sense to have the cache files.
-        """
-        for p in Path(self.db.user_data_dir).glob('*_trades.json'):
-            try:
-                p.unlink()
-            except OSError:
-                pass
-
-        for p in Path(self.db.user_data_dir).glob('*_history.json'):
-            try:
-                p.unlink()
-            except OSError:
-                pass
-
-        for p in Path(self.db.user_data_dir).glob('*_deposits_withdrawals.json'):
-            try:
-                p.unlink()
-            except OSError:
-                pass
-
-        try:
-            os.remove(os.path.join(self.db.user_data_dir, 'ethereum_tx_log.json'))
-        except OSError:
-            pass
-
-    def _checksum_eth_accounts(self) -> None:
-        """Make sure all eth accounts are checksummed when saved in the DB"""
-        accounts = self.db.get_blockchain_accounts()
-        cursor = self.db.conn.cursor()
-        cursor.execute(
-            'DELETE FROM blockchain_accounts WHERE blockchain=?;', ('ETH',),
-        )
-        self.db.conn.commit()
-        for account in accounts.eth:
-            self.db.add_blockchain_account(
-                blockchain=SupportedBlockchain.ETHEREUM,
-                account=to_checksum_address(account),
-            )
-
-    def _eth_rpc_port_to_eth_rpc_endpoint(self) -> None:
-        """Upgrade the eth_rpc_port setting to eth_rpc_endpoint"""
-        cursor = self.db.conn.cursor()
-        query = cursor.execute('SELECT value FROM settings where name="eth_rpc_port";')
-        query = query.fetchall()
-        if len(query) == 0:
-            port = '8545'
-        else:
-            port = query[0][0]
-
-        cursor.execute('DELETE FROM settings where name="eth_rpc_port";')
-        cursor.execute(
-            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?);',
-            ('eth_rpc_endpoint', f'http://localhost:{port}'),
-        )
-        self.db.conn.commit()
