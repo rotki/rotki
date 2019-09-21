@@ -49,6 +49,7 @@ TABLES_AT_INIT = [
     'multisettings',
     'current_balances',
     'trades',
+    'trade_type',
     'settings',
     'last_timestamps',
     'margin_positions',
