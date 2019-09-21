@@ -1822,6 +1822,14 @@
         "symbol": "CHX",
         "type": "ethereum token"
     },
+    "CHZ": {
+        "ethereum_address": "0x3506424F91fD33084466F402d5D97f05F8e3b4AF",
+        "ethereum_token_decimals": 18,
+        "name": "Chiliz",
+        "started": 1540512000,
+        "symbol": "CHZ",
+        "type": "ethereum token and more"
+    },
     "CINNI": {
         "active": false,
         "ended": 1446422400,
