@@ -11,6 +11,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
+from rotkehlchen.db.upgrade_manager import UPGRADES_LIST
 from rotkehlchen.db.utils import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.tests.utils.constants import A_BCH, A_BSV, A_RDN
@@ -25,6 +26,8 @@ creation_patch = patch(
 
 @contextmanager
 def target_patch(target_version: int):
+    """Patches the upgrades to stop at target_version and also sets
+    ROTKEHLCHEN_DB_VERSION to the target_version"""
     a = patch(
         'rotkehlchen.db.upgrade_manager.ROTKEHLCHEN_DB_VERSION',
         new=target_version,
@@ -33,8 +36,17 @@ def target_patch(target_version: int):
         'rotkehlchen.db.dbhandler.ROTKEHLCHEN_DB_VERSION',
         new=target_version,
     )
-    with a, b:
-        yield (a, b)
+    new_upgrades_list = [
+        upgrade for upgrade in UPGRADES_LIST if upgrade.from_version < target_version
+    ]
+
+    c = patch(
+        'rotkehlchen.db.upgrade_manager.UPGRADES_LIST',
+        new=new_upgrades_list,
+    )
+
+    with a, b, c:
+        yield (a, b, c)
 
 
 def populate_db_and_check_for_asset_renaming(
@@ -332,6 +344,7 @@ def test_upgrade_db_4_to_5(data_dir, username):
         data.unlock(username, '123', create_new=True)
     # Manually set version (Both here and in 2 -> 3 it needs to be done like this and
     # target patch can't be used for some reason. Still have not debugged what fails
+
     cursor = data.db.conn.cursor()
     cursor.execute(
         'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -386,7 +399,7 @@ def test_upgrade_db_5_to_6(data_dir, username):
         1568928120,  # time
         'external',  # location
         'ETH_EUR',  # pair
-        'sell',  # type
+        'B',  # type sell
         '10',  # amount
         '196.6',  # rate
         '0.001',  # fee
@@ -398,7 +411,7 @@ def test_upgrade_db_5_to_6(data_dir, username):
         1569010800,  # time
         'external',  # location
         'BTC_EUR',  # pair
-        'buy',  # type
+        'A',  # type buy
         '0.5',  # amount
         '9240.1',  # rate
         '0.1',  # fee
