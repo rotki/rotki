@@ -32,6 +32,6 @@ export default class User extends Vue {}
 
 <style scoped lang="scss">
 .user-settings > * {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 </style>

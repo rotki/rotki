@@ -1,5 +1,5 @@
 import { MutationTree } from 'vuex';
-import { BalanceState } from '@/store/balances/state';
+import { BalanceState, defaultState } from '@/store/balances/state';
 import {
   Balances,
   EthBalances,
@@ -46,5 +46,8 @@ export const mutations: MutationTree<BalanceState> = {
   },
   fiatBalances(state: BalanceState, fiatBalances: FiatBalance[]) {
     state.fiatBalances = [...fiatBalances];
+  },
+  reset(state: BalanceState) {
+    state = Object.assign(state, defaultState());
   }
 };

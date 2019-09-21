@@ -5,6 +5,7 @@
         <v-icon>fa fa-user</v-icon>
       </v-btn>
     </template>
+
     <v-list>
       <v-list-item
         id="user_settings_button"
@@ -16,6 +17,7 @@
         </v-list-item-avatar>
         <v-list-item-title>User Settings</v-list-item-title>
       </v-list-item>
+
       <v-list-item
         id="accounting_settings_button"
         key="accounting-settings"
@@ -33,9 +35,10 @@
         </v-list-item-avatar>
         <v-list-item-title>Settings</v-list-item-title>
       </v-list-item>
+
       <v-divider></v-divider>
 
-      <v-list-item id="logout_button" key="logout" @click="logoutClicked()">
+      <v-list-item id="logout_button" key="logout" @click="logout">
         <v-list-item-avatar>
           <v-icon color="primary">fa fa-sign-out</v-icon>
         </v-list-item-avatar>
@@ -49,9 +52,15 @@
 import { Component, Vue } from 'vue-property-decorator';
 
 @Component({})
-export default class Settings extends Vue {
-  logoutClicked() {
-    this.$store.commit('session/logout');
+export default class UserDropdown extends Vue {
+  logout() {
+    const { commit } = this.$store;
+    commit('session/reset');
+    commit('notifications/reset');
+    commit('reports/reset');
+    commit('balances/reset');
+    commit('tasks/reset');
+    this.$router.push({ name: 'dashboard' });
   }
 }
 </script>

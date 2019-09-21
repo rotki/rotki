@@ -1,5 +1,5 @@
 import { MutationTree } from 'vuex';
-import { TaxReportState } from '@/store/reports/state';
+import { defaultState, TaxReportState } from '@/store/reports/state';
 import { EventEntry, TradeHistoryOverview } from '@/model/trade-history-types';
 
 export const mutations: MutationTree<TaxReportState> = {
@@ -29,5 +29,9 @@ export const mutations: MutationTree<TaxReportState> = {
     state.historyProcess = payload.start;
     state.historyStart = payload.start;
     state.historyEnd = payload.end;
+  },
+
+  reset(state: TaxReportState) {
+    state = Object.assign(state, defaultState());
   }
 };

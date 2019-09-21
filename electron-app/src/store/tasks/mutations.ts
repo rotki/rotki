@@ -1,5 +1,5 @@
 import { MutationTree } from 'vuex';
-import { createState, TaskMap, TaskState } from '@/store/tasks/state';
+import { defaultState, TaskMap, TaskState } from '@/store/tasks/state';
 import { Task } from '@/model/task';
 import { BalanceStatus } from '@/enums/BalanceStatus';
 
@@ -29,8 +29,8 @@ export const mutations: MutationTree<TaskState> = {
     }
     state.balanceTasks = balanceTasks;
   },
-  clear: (state: TaskState) => {
-    state = { ...createState() };
+  reset: (state: TaskState) => {
+    state = Object.assign(state, defaultState());
   },
   status: (state: TaskState, status: BalanceStatus) => {
     state.queryStatus = status;
