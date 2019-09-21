@@ -45,6 +45,7 @@ KRAKEN_TO_WORLD = {
     'XTZ': 'XTZ',
     'BSV': 'BSV',
     'WAVES': 'WAVES',
+    'ICX': 'ICX',
 }
 
 

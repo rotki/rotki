@@ -100,6 +100,7 @@ WORLD_TO_KRAKEN = {
     'DOGE': 'XXDG',
     'XTZ': 'XTZ',
     'WAVES': 'WAVES',
+    'ICX': 'ICX',
 }
 
 WORLD_TO_BINANCE = {
