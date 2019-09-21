@@ -143,13 +143,6 @@ class DBHandler():
 
         # Run upgrades if needed
         DBUpgradeManager(self).run_upgrades()
-        # Then make sure to always have latest version in the DB
-        cursor = self.conn.cursor()
-        cursor.execute(
-            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-            ('version', str(ROTKEHLCHEN_DB_VERSION)),
-        )
-        self.conn.commit()
 
     def __del__(self):
         self.disconnect()

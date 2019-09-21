@@ -58,6 +58,14 @@ class DBUpgradeManager():
             upgrade_action=self._v5_to_v6,
         )
 
+        # Finally make sure to always have latest version in the DB
+        cursor = self.db.conn.cursor()
+        cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            ('version', str(ROTKEHLCHEN_DB_VERSION)),
+        )
+        self.db.conn.commit()
+
     def _perform_single_upgrade(
             self,
             from_version: int,
