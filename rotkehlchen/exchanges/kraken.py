@@ -83,6 +83,7 @@ KRAKEN_ASSETS = (
     'XXVN',
     'XXDG',
     'XTZ',
+    'ICX',
     'WAVES',
 )
 
