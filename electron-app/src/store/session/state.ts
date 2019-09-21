@@ -14,7 +14,7 @@ export interface SessionState {
   nodeConnection: boolean;
 }
 
-export const createSessionState: () => SessionState = () => ({
+export const defaultState: () => SessionState = () => ({
   newUser: false,
   currency: currencies[0],
   logged: false,
@@ -25,4 +25,4 @@ export const createSessionState: () => SessionState = () => ({
   nodeConnection: false
 });
 
-export const state: SessionState = createSessionState();
+export const state: SessionState = defaultState();

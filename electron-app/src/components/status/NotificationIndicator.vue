@@ -99,7 +99,7 @@ const { mapState, mapGetters, mapMutations } = createNamespacedHelpers(
   computed: {
     ...mapState(['data']),
     ...mapGetters(['count']),
-    ...mapMutations(['remove', 'clear'])
+    ...mapMutations(['remove', 'reset'])
   },
   components: {
     ConfirmDialog
@@ -109,7 +109,7 @@ export default class NotificationIndicator extends Vue {
   data!: NotificationData[];
   count!: number;
   remove!: (id: number) => void;
-  clear!: () => void;
+  reset!: () => void;
 
   confirmClear: boolean = false;
 

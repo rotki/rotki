@@ -1,17 +1,17 @@
 <template>
-  <v-dialog :value="display" persistent max-width="500">
+  <v-dialog :value="display" persistent max-width="500" class="confirm-dialog">
     <v-card>
       <v-card-title class="headline">
         {{ title }}
       </v-card-title>
-      <v-row align="center">
-        <v-col cols="2">
-          <v-icon class="dialog-icon" color="primary">
+      <v-row align="center" class="mx-0 confirm-dialog__body">
+        <v-col cols="1">
+          <v-icon color="primary">
             fa fa-question-circle fa-3x
           </v-icon>
         </v-col>
-        <v-col cols="10">
-          <v-card-text> {{ message }} </v-card-text>
+        <v-col cols="11">
+          {{ message }}
         </v-col>
       </v-row>
 
@@ -48,8 +48,8 @@ export default class ConfirmDialog extends Vue {
 }
 </script>
 
-<style scoped>
-.dialog-icon {
-  margin-left: 25px;
+<style scoped lang="scss">
+.confirm-dialog__body {
+  padding: 0 16px;
 }
 </style>
