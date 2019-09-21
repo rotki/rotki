@@ -1,8 +1,11 @@
 from sqlite3 import Cursor
-from typing import List, Tuple
+from typing import TYPE_CHECKING, List, Tuple
 
 from rotkehlchen.db.utils import SingleAssetBalance
 from rotkehlchen.fval import FVal
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 def rename_asset_in_timed_balances(
@@ -115,7 +118,7 @@ def rename_assets_in_timed_balances(
         )
 
 
-def rename_assets_in_db(cursor: Cursor, rename_pairs: List[Tuple[str, str]]) -> None:
+def rename_assets_in_db(db: 'DBHandler', rename_pairs: List[Tuple[str, str]]) -> None:
     """
     Renames assets in all the relevant tables in the Database.
 
@@ -124,6 +127,7 @@ def rename_assets_in_db(cursor: Cursor, rename_pairs: List[Tuple[str, str]]) -> 
 
     Good from DB version 1 until now.
     """
+    cursor = db.conn.cursor()
     # [(to_name_1, from_name_1), (to_name_2, from_name_2), ...]
     changed_symbols = [(e[1], e[0]) for e in rename_pairs]
 
