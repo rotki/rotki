@@ -1,5 +1,5 @@
 import { MutationTree } from 'vuex';
-import { createSessionState, SessionState } from '@/store/session/state';
+import { defaultState, SessionState } from '@/store/session/state';
 import { Currency } from '@/model/currency';
 import {
   AccountingSettings,
@@ -14,11 +14,8 @@ export const mutations: MutationTree<SessionState> = {
   logged(state: SessionState, logged: boolean) {
     state.logged = logged;
   },
-  logout(state: SessionState) {
-    state = { ...createSessionState() };
-  },
   settings(state: SessionState, settings: GeneralSettings) {
-    state.settings = Object.assign({}, settings);
+    state.settings = { ...settings };
   },
   premium(state: SessionState, premium: boolean) {
     state.premium = premium;
@@ -30,7 +27,7 @@ export const mutations: MutationTree<SessionState> = {
     state: SessionState,
     accountingSettings: AccountingSettings
   ) {
-    state.accountingSettings = Object.assign({}, accountingSettings);
+    state.accountingSettings = { ...accountingSettings };
   },
   updateAccountingSetting(
     state: SessionState,
@@ -43,5 +40,8 @@ export const mutations: MutationTree<SessionState> = {
   },
   nodeConnection(state: SessionState, nodeConnection: boolean) {
     state.nodeConnection = nodeConnection;
+  },
+  reset(state: SessionState) {
+    state = Object.assign(state, defaultState());
   }
 };

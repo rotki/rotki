@@ -15,7 +15,7 @@ export interface TaxReportState {
   historyProcess: number;
 }
 
-export const createTaxReportState = (): TaxReportState => ({
+export const defaultState = (): TaxReportState => ({
   overview: tradeHistoryPlaceholder(),
   events: [],
   currency: currencies[0].ticker_symbol,
@@ -25,4 +25,4 @@ export const createTaxReportState = (): TaxReportState => ({
   historyProcess: -1
 });
 
-export const state: TaxReportState = createTaxReportState();
+export const state: TaxReportState = defaultState();

@@ -41,6 +41,11 @@ export default new Router({
       path: '/settings/user',
       name: 'user-settings',
       component: () => import('./views/settings/User.vue')
+    },
+    {
+      path: '/exchange-balances/:exchange',
+      name: 'exchange-balances',
+      component: () => import('./views/ExchangeBalances.vue')
     }
   ]
 });

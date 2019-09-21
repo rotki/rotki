@@ -36,6 +36,7 @@
             v-if="edit"
             id="premium-edit-cancel-button"
             depressed
+            :disabled="!apiKey && !apiSecret"
             color="primary"
             @click="edit = false"
           >
@@ -51,20 +52,14 @@
         </v-card-actions>
       </v-card>
     </v-col>
-    <message-dialog
-      :title="dialogTitle"
-      :message="dialogMessage"
-      :success="success"
-      @dismiss="dismiss()"
-    ></message-dialog>
   </v-row>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { mapState } from 'vuex';
-import { NoResponseError } from '@/services/rotkehlchen_service';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
+import { Message } from '@/store/store';
 
 @Component({
   components: {
@@ -81,10 +76,6 @@ export default class PremiumSettings extends Vue {
   premium!: boolean;
   premiumSync!: boolean;
 
-  dialogTitle: string = '';
-  dialogMessage: string = '';
-  success: boolean = false;
-
   mounted() {
     this.sync = this.premiumSync;
   }
@@ -99,53 +90,50 @@ export default class PremiumSettings extends Vue {
       return;
     }
 
+    const { commit } = this.$store;
+
     this.$rpc
       .set_premium_credentials(apiKey, apiSecret)
       .then(() => {
-        this.$store.commit('premium', true);
-        this.success = true;
-        this.dialogTitle = 'Premium Credentials';
-        this.dialogMessage = 'Successfully set Premium Credentials';
+        commit('premium', true);
+        commit('setMessage', {
+          title: 'Premium Credentials',
+          description: 'Successfully set Premium Credentials',
+          success: true
+        } as Message);
         this.apiSecret = '';
         this.apiKey = '';
         this.edit = false;
       })
       .catch((reason: Error) => {
-        this.$store.commit('premium', hasPremium);
-        this.success = false;
-        this.dialogTitle = 'Premium Credentials Error';
-        if (reason instanceof NoResponseError) {
-          this.dialogMessage =
-            'Error at adding credentials for premium subscription';
-        } else {
-          this.dialogMessage = reason.message;
-        }
+        commit('premium', hasPremium);
+        commit('setMessage', {
+          title: 'Premium Credentials Error',
+          description:
+            reason.message ||
+            'Error at adding credentials for premium subscription',
+          success: false
+        } as Message);
       });
   }
 
   onSyncChange() {
+    const { commit } = this.$store;
     const shouldSync = this.sync;
     this.$rpc
       .set_premium_option_sync(shouldSync)
       .then(() => {
-        this.$store.commit('premiumSync', shouldSync);
+        commit('premiumSync', shouldSync);
       })
       .catch(() => {
-        this.$store.commit('premiumSync', !shouldSync);
-        this.dialogTitle = 'Premium Settings Error';
-        this.dialogMessage = 'Failed to change sync settings';
-        this.success = false;
-      })
-      .finally(() => {
-        if (this.sync != shouldSync) {
-          this.sync = shouldSync;
-        }
+        commit('premiumSync', !shouldSync);
+        commit('setMessage', {
+          title: 'Premium Settings Error',
+          description: 'Failed to change sync settings',
+          success: false
+        });
+        this.sync = !shouldSync;
       });
-  }
-
-  dismiss() {
-    this.dialogTitle = '';
-    this.dialogMessage = '';
   }
 }
 </script>

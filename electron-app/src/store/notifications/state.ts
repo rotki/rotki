@@ -1,9 +1,11 @@
 import { NotificationData } from '@/typing/types';
 
-export const state: NotificationState = {
-  data: []
-};
-
 export interface NotificationState {
   data: NotificationData[];
 }
+
+export const defaultState = (): NotificationState => ({
+  data: []
+});
+
+export const state: NotificationState = defaultState();

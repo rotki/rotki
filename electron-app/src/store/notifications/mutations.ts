@@ -1,13 +1,10 @@
 import { MutationTree } from 'vuex';
-import { NotificationState } from '@/store/notifications/state';
+import { defaultState, NotificationState } from '@/store/notifications/state';
 import { NotificationData } from '@/typing/types';
 
 export const mutations: MutationTree<NotificationState> = {
   update(state: NotificationState, payload: NotificationData[]) {
     state.data = [...state.data, ...payload];
-  },
-  clear(state: NotificationState) {
-    state.data = [];
   },
   remove(state: NotificationState, id: number) {
     const notifications = [...state.data];
@@ -18,5 +15,8 @@ export const mutations: MutationTree<NotificationState> = {
     }
 
     state.data = notifications;
+  },
+  reset(state: NotificationState) {
+    state = Object.assign(state, defaultState());
   }
 };

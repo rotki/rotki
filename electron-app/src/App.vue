@@ -19,7 +19,7 @@
       <div id="welcome_text" class="text-center"></div>
       <navigation-menu></navigation-menu>
     </v-navigation-drawer>
-    <v-app-bar app fixed clipped-left>
+    <v-app-bar app fixed clipped-left flat>
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
       <v-toolbar-title class="font-weight-light">
         Rotki {{ version }}
@@ -27,6 +27,7 @@
       <node-status-indicator></node-status-indicator>
       <balance-saved-indicator></balance-saved-indicator>
       <v-spacer></v-spacer>
+      <update-indicator></update-indicator>
       <notification-indicator></notification-indicator>
       <progress-indicator></progress-indicator>
       <user-dropdown></user-dropdown>
@@ -86,11 +87,13 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { ipcRenderer, remote, shell } from 'electron';
 import { UnlockPayload } from '@/store/session/actions';
 import { Message } from '@/store/store';
+import UpdateIndicator from './components/status/UpdateIndicator.vue';
 
 const mapSessionState = createNamespacedHelpers('session').mapState;
 
 @Component({
   components: {
+    UpdateIndicator,
     ProgressIndicator,
     NotificationIndicator,
     BalanceSavedIndicator,

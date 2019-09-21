@@ -1,5 +1,4 @@
-import { ApiAssetBalance } from '@/model/blockchain-balances';
-import BigNumber from 'bignumber.js';
+import { ApiAssetBalance, AssetBalances } from '@/model/blockchain-balances';
 
 export interface GeneralSettings {
   readonly floatingPrecision: number;
@@ -38,11 +37,10 @@ export interface ApiAssetBalances {
 
 export interface ExchangeInfo {
   readonly name: string;
-  readonly balances: ApiAssetBalances;
-  readonly total: BigNumber;
+  readonly balances: AssetBalances;
 }
 
-export type ExchangeData = { [exchange: string]: ApiAssetBalances };
+export type ExchangeData = { [exchange: string]: AssetBalances };
 
 export enum Severity {
   WARNING = 'warning',

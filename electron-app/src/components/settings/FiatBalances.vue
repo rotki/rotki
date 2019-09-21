@@ -57,17 +57,22 @@ import { Component, Vue } from 'vue-property-decorator';
 import { Currency } from '@/model/currency';
 import { currencies } from '@/data/currencies';
 import { createNamespacedHelpers } from 'vuex';
-import { bigNumberify, Zero } from '@/utils/bignumbers';
+import { Zero } from '@/utils/bignumbers';
 import { FiatBalance } from '@/model/blockchain-balances';
+import { Message } from '@/store/store';
 
 const { mapGetters, mapState } = createNamespacedHelpers('session');
-const mapBalanceGetters = createNamespacedHelpers('balances').mapGetters;
+const {
+  mapGetters: mapBalanceGetters,
+  mapState: mapBalanceState
+} = createNamespacedHelpers('balances');
 
 @Component({
   computed: {
     ...mapGetters(['floatingPrecision']),
     ...mapBalanceGetters(['exchangeRate']),
-    ...mapState(['currency'])
+    ...mapState(['currency']),
+    ...mapBalanceState(['fiatBalances'])
   }
 })
 export default class FiatBalances extends Vue {
@@ -78,10 +83,7 @@ export default class FiatBalances extends Vue {
   floatingPrecision!: number;
   exchangeRate!: (currency: string) => number;
 
-  errorTitle: string = '';
-  errorMessage: string = '';
-
-  fiatBalances: FiatBalance[] = [];
+  fiatBalances!: FiatBalance[];
 
   get add(): boolean {
     return (
@@ -121,32 +123,15 @@ export default class FiatBalances extends Vue {
     this.$rpc
       .set_fiat_balance(currency, balance.toString())
       .then(() => {
-        this.fetchFiatBalances();
+        this.$store.dispatch('balances/fetchFiatBalances');
         this.selectedCurrency = '';
         this.balance = '';
       })
       .catch((reason: Error) => {
-        this.errorMessage = `Error at modifying ${currency} balance: ${reason.message}`;
-        this.errorTitle = 'Balance Modification Error';
-      });
-  }
-
-  created() {
-    this.fetchFiatBalances();
-  }
-
-  private fetchFiatBalances() {
-    this.$rpc
-      .query_fiat_balances()
-      .then(value => {
-        this.fiatBalances = Object.keys(value).map(currency => ({
-          currency: currency,
-          amount: bigNumberify(value[currency].amount as string),
-          usdValue: bigNumberify(value[currency].usd_value as string)
-        }));
-      })
-      .catch(reason => {
-        console.log(`Error at querying fiat balances: ${reason}`);
+        this.$store.commit('setMessage', {
+          title: 'Balance Modification Error',
+          description: `Error at modifying ${currency} balance: ${reason.message}`
+        } as Message);
       });
   }
 }

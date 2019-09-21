@@ -1,6 +1,6 @@
 <template>
   <div class="asset-balances">
-    <v-row>
+    <v-row v-if="title">
       <v-col>
         <h3 class="text-center">{{ title }}</h3>
       </v-col>
@@ -68,7 +68,7 @@ const mapBalancesGetters = createNamespacedHelpers('balances').mapGetters;
 export default class AssetBalances extends Vue {
   @Prop({ required: true })
   balances!: AssetBalance[];
-  @Prop({ required: true })
+  @Prop({})
   title!: string;
 
   currency!: Currency;
