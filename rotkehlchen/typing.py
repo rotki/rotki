@@ -173,6 +173,18 @@ class TradeType(Enum):
 
         raise RuntimeError(f'Corrupt value {self} for TradeType -- Should never happen')
 
+    def serialize_for_db(self) -> str:
+        if self == TradeType.BUY:
+            return 'A'
+        elif self == TradeType.SELL:
+            return 'B'
+        elif self == TradeType.SETTLEMENT_BUY:
+            return 'C'
+        elif self == TradeType.SETTLEMENT_SELL:
+            return 'D'
+
+        raise RuntimeError(f'Corrupt value {self} for TradeType -- Should never happen')
+
 
 class Exchange(Enum):
     """Supported Exchanges"""

@@ -202,6 +202,30 @@ def deserialize_trade_type(symbol: str) -> TradeType:
         )
 
 
+def deserialize_trade_type_from_db(symbol: str) -> TradeType:
+    """Takes a string from the DB and attempts to turn it into a TradeType
+
+    Can throw DeserializationError if the symbol is not as expected
+    """
+    if not isinstance(symbol, str):
+        raise DeserializationError(
+            f'Failed to deserialize trade type symbol from {type(symbol)} entry',
+        )
+
+    if symbol == 'A':
+        return TradeType.BUY
+    elif symbol == 'B':
+        return TradeType.SELL
+    elif symbol == 'C':
+        return TradeType.SETTLEMENT_BUY
+    elif symbol == 'D':
+        return TradeType.SETTLEMENT_SELL
+    else:
+        raise DeserializationError(
+            f'Failed to deserialize trade type symbol. Unknown DB symbol {symbol} for trade type',
+        )
+
+
 def deserialize_exchange_name(symbol: str) -> Exchange:
     """Takes a string and attempts to turn it into an Exchange enum class
 

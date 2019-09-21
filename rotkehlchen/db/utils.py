@@ -37,6 +37,22 @@ class DBStartupAction(Enum):
     STUCK_4_3 = 3
 
 
+# Custom enum table for trade types
+DB_CREATE_TRADE_TYPE = """
+CREATE TABLE IF NOT EXISTS trade_type (
+  type    CHAR(1)       PRIMARY KEY NOT NULL,
+  seq     INTEGER UNIQUE
+);
+/* Buy Type*/
+INSERT OR IGNORE INTO trade_type(type, seq) VALUES ('A', 1);
+/* Sell Type*/
+INSERT OR IGNORE INTO trade_type(type, seq) VALUES ('B', 2);
+/* Settlement Buy Type*/
+INSERT OR IGNORE INTO trade_type(type, seq) VALUES ('C', 3);
+/* Settlement Sell Type*/
+INSERT OR IGNORE INTO trade_type(type, seq) VALUES ('D', 4);
+"""
+
 DB_CREATE_TIMED_BALANCES = """
 CREATE TABLE IF NOT EXISTS timed_balances (
     time INTEGER,
@@ -92,7 +108,7 @@ CREATE TABLE IF NOT EXISTS trades (
     time INTEGER,
     location VARCHAR[24],
     pair VARCHAR[24],
-    type VARCHAR[12],
+    type CHAR(1) NOT NULL DEFAULT ('B') REFERENCES trade_type(type),
     amount TEXT,
     rate TEXT,
     fee TEXT,
@@ -236,10 +252,11 @@ PRAGMA foreign_keys=on;
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
+    DB_CREATE_TRADE_TYPE,
     DB_CREATE_TIMED_BALANCES,
     DB_CREATE_TIMED_LOCATION_DATA,
     DB_CREATE_USER_CREDENTIALS,
