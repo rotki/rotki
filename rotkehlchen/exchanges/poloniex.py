@@ -27,7 +27,6 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
-    Exchange,
     Loan,
     Trade,
     TradeType,
@@ -47,7 +46,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_poloniex_date,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, create_timestamp, retry_calls
 from rotkehlchen.utils.serialization import rlk_jsonloads, rlk_jsonloads_dict, rlk_jsonloads_list
@@ -120,7 +119,7 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
     pair = invert_pair(pair)
     return Trade(
         timestamp=timestamp,
-        location='poloniex',
+        location=Location.POLONIEX,
         pair=pair,
         trade_type=trade_type,
         amount=amount,
@@ -660,7 +659,7 @@ class Poloniex(ExchangeInterface):
                 uid_key = 'withdrawalNumber'
             asset = asset_from_poloniex(movement_data['currency'])
             return AssetMovement(
-                location=Exchange.POLONIEX,
+                location=Location.POLONIEX,
                 category=movement_type,
                 timestamp=deserialize_timestamp(movement_data['timestamp']),
                 asset=asset,

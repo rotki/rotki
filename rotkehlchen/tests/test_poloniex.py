@@ -13,7 +13,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.typing import Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 TEST_RATE_STR = '0.00022999'
@@ -73,7 +73,7 @@ def test_trade_from_poloniex():
     assert trade.pair == 'ETH_BTC'
     assert trade.fee == cost * perc_fee
     assert trade.fee_currency == 'BTC'
-    assert trade.location == 'poloniex'
+    assert trade.location == Location.POLONIEX
 
 
 def test_poloniex_trade_deserialization_errors():
@@ -207,7 +207,7 @@ def test_poloniex_trade_with_asset_needing_conversion():
     }
     trade = trade_from_poloniex(poloniex_trade, 'AIR_BTC')
     assert trade.pair == 'BTC_AIR-2'
-    assert trade.location == 'poloniex'
+    assert trade.location == Location.POLONIEX
 
 
 def test_query_trade_history(function_scope_poloniex):
@@ -248,7 +248,7 @@ def test_query_trade_history(function_scope_poloniex):
 
     assert len(trades) == 2
     assert trades[0].timestamp == 1539713117
-    assert trades[0].location == 'poloniex'
+    assert trades[0].location == Location.POLONIEX
     assert trades[0].pair == 'BCH_BTC'
     assert trades[0].trade_type == TradeType.SELL
     assert trades[0].amount == FVal('1.40308443')
@@ -258,7 +258,7 @@ def test_query_trade_history(function_scope_poloniex):
     assert trades[0].fee_currency == A_BTC
 
     assert trades[1].timestamp == 1539709423
-    assert trades[1].location == 'poloniex'
+    assert trades[1].location == Location.POLONIEX
     assert trades[1].pair == 'ETH_BTC'
     assert trades[1].trade_type == TradeType.BUY
     assert trades[1].amount == FVal('3600.53748129')

@@ -5,7 +5,7 @@ from typing_extensions import Literal
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
-from rotkehlchen.typing import AssetAmount, Exchange, Fee, Optional, Price, Timestamp, TradeType
+from rotkehlchen.typing import AssetAmount, Fee, Location, Optional, Price, Timestamp, TradeType
 from rotkehlchen.utils.misc import convert_to_int, create_timestamp, iso8601ts_to_timestamp
 
 
@@ -226,30 +226,65 @@ def deserialize_trade_type_from_db(symbol: str) -> TradeType:
         )
 
 
-def deserialize_exchange_name(symbol: str) -> Exchange:
-    """Takes a string and attempts to turn it into an Exchange enum class
+def deserialize_location(symbol: str) -> Location:
+    """Takes a string and attempts to turn it into a Location enum class
 
-    Can throw DeserializationError if the symbols is not as expected
+    Can throw DeserializationError if the symbol is not as expected
     """
 
     if not isinstance(symbol, str):
         raise DeserializationError(
-            f'Failed to deserialize exchange symbol from {type(symbol)} entry',
+            f'Failed to deserialize location symbol from {type(symbol)} entry',
         )
 
-    if symbol == 'kraken':
-        return Exchange.KRAKEN
+    if symbol == 'external':
+        return Location.EXTERNAL
+    elif symbol == 'kraken':
+        return Location.KRAKEN
     elif symbol == 'poloniex':
-        return Exchange.POLONIEX
+        return Location.POLONIEX
     elif symbol == 'bittrex':
-        return Exchange.BITTREX
+        return Location.BITTREX
     elif symbol == 'binance':
-        return Exchange.BINANCE
+        return Location.BINANCE
     elif symbol == 'bitmex':
-        return Exchange.BITMEX
+        return Location.BITMEX
+    elif symbol == 'coinbase':
+        return Location.COINBASE
     else:
         raise DeserializationError(
-            f'Failed to deserialize exchange symbol. Unknown symbol {symbol} for exchange',
+            f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
+        )
+
+
+def deserialize_location_from_db(symbol: str) -> Location:
+    """Takes a DB enum string and attempts to turn it into a Location enum class
+
+    Can throw DeserializationError if the symbol is not as expected
+    """
+
+    if not isinstance(symbol, str):
+        raise DeserializationError(
+            f'Failed to deserialize location symbol from {type(symbol)} entry',
+        )
+
+    if symbol == 'A':
+        return Location.EXTERNAL
+    elif symbol == 'B':
+        return Location.KRAKEN
+    elif symbol == 'C':
+        return Location.POLONIEX
+    elif symbol == 'D':
+        return Location.BITTREX
+    elif symbol == 'E':
+        return Location.BINANCE
+    elif symbol == 'F':
+        return Location.BITMEX
+    elif symbol == 'G':
+        return Location.COINBASE
+    else:
+        raise DeserializationError(
+            f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
         )
 
 

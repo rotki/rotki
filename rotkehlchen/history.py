@@ -11,7 +11,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.transactions import query_etherscan_for_transactions
-from rotkehlchen.typing import EthAddress, FiatAsset, FilePath, Price, Timestamp
+from rotkehlchen.typing import EthAddress, FiatAsset, FilePath, Location, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.accounting import action_get_timestamp
 from rotkehlchen.utils.misc import create_timestamp, write_history_data_in_file
@@ -211,7 +211,11 @@ class TradesHistorian():
         history = limit_trade_list_to_period(history, start_ts, end_ts)
 
         # Include the external trades in the history
-        external_trades = self.db.get_trades(from_ts=start_ts, to_ts=end_ts, location='external')
+        external_trades = self.db.get_trades(
+            from_ts=start_ts,
+            to_ts=end_ts,
+            location=Location.EXTERNAL,
+        )
         history.extend(external_trades)
         history.sort(key=lambda trade: action_get_timestamp(trade))
 

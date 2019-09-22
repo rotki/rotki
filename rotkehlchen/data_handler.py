@@ -35,6 +35,7 @@ from rotkehlchen.typing import (
     ChecksumEthAddress,
     FiatAsset,
     FilePath,
+    Location,
     SupportedBlockchain,
     Timestamp,
     TradePair,
@@ -151,7 +152,7 @@ def verify_otctrade_data(
 
     trade = Trade(
         timestamp=timestamp,
-        location='external',
+        location=Location.EXTERNAL,
         pair=pair,
         trade_type=trade_type,
         amount=amount,
@@ -381,7 +382,7 @@ class DataHandler():
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
     ) -> List[Trade]:
-        return self.db.get_trades(from_ts=from_ts, to_ts=to_ts, location='external')
+        return self.db.get_trades(from_ts=from_ts, to_ts=to_ts, location=Location.EXTERNAL)
 
     def add_external_trade(
             self,

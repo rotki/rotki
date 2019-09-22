@@ -24,7 +24,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_date,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Exchange, Fee, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
@@ -69,7 +69,7 @@ def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Optional[Trade]:
 
     return Trade(
         timestamp=timestamp,
-        location='coinbase',
+        location=Location.COINBASE,
         pair=pair,
         trade_type=trade_type,
         amount=amount,
@@ -478,7 +478,7 @@ class Coinbase(ExchangeInterface):
                 )
 
             return AssetMovement(
-                location=Exchange.COINBASE,
+                location=Location.COINBASE,
                 category=movement_category,
                 timestamp=timestamp,
                 asset=asset,

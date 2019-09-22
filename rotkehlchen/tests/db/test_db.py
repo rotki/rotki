@@ -50,6 +50,7 @@ TABLES_AT_INIT = [
     'current_balances',
     'trades',
     'trade_type',
+    'location',
     'settings',
     'last_timestamps',
     'margin_positions',

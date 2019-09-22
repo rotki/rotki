@@ -43,14 +43,36 @@ CREATE TABLE IF NOT EXISTS trade_type (
   type    CHAR(1)       PRIMARY KEY NOT NULL,
   seq     INTEGER UNIQUE
 );
-/* Buy Type*/
+/* Buy Type */
 INSERT OR IGNORE INTO trade_type(type, seq) VALUES ('A', 1);
-/* Sell Type*/
+/* Sell Type */
 INSERT OR IGNORE INTO trade_type(type, seq) VALUES ('B', 2);
-/* Settlement Buy Type*/
+/* Settlement Buy Type */
 INSERT OR IGNORE INTO trade_type(type, seq) VALUES ('C', 3);
-/* Settlement Sell Type*/
+/* Settlement Sell Type */
 INSERT OR IGNORE INTO trade_type(type, seq) VALUES ('D', 4);
+"""
+
+# Custom enum table for locations
+DB_CREATE_LOCATION = """
+CREATE TABLE IF NOT EXISTS location (
+  location    CHAR(1)       PRIMARY KEY NOT NULL,
+  seq     INTEGER UNIQUE
+);
+/* External */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('A', 1);
+/* Kraken */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('B', 2);
+/* Poloniex */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('C', 3);
+/* Bittrex */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('D', 4);
+/* Binance */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('E', 5);
+/* Bitmex */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('F', 6);
+/* Coinbase */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('G', 7);
 """
 
 DB_CREATE_TIMED_BALANCES = """
@@ -106,9 +128,9 @@ DB_CREATE_TRADES = """
 CREATE TABLE IF NOT EXISTS trades (
     id TEXT PRIMARY KEY,
     time INTEGER,
-    location VARCHAR[24],
+    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
     pair VARCHAR[24],
-    type CHAR(1) NOT NULL DEFAULT ('B') REFERENCES trade_type(type),
+    type CHAR(1) NOT NULL DEFAULT ('A') REFERENCES trade_type(type),
     amount TEXT,
     rate TEXT,
     fee TEXT,
@@ -252,11 +274,12 @@ PRAGMA foreign_keys=on;
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
     DB_CREATE_TRADE_TYPE,
+    DB_CREATE_LOCATION,
     DB_CREATE_TIMED_BALANCES,
     DB_CREATE_TIMED_LOCATION_DATA,
     DB_CREATE_USER_CREDENTIALS,

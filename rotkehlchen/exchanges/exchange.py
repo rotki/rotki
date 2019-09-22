@@ -9,6 +9,7 @@ from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_location
 from rotkehlchen.typing import ApiKey, ApiSecret, T_ApiKey, T_ApiSecret, Timestamp
 
 if TYPE_CHECKING:
@@ -153,7 +154,11 @@ class ExchangeInterface():
             end_ts: Timestamp,
     ) -> List[Trade]:
         """Queries the local DB and the remote exchange for the trade history of the user"""
-        trades = self.db.get_trades(from_ts=start_ts, to_ts=end_ts, location=self.name)
+        trades = self.db.get_trades(
+            from_ts=start_ts,
+            to_ts=end_ts,
+            location=deserialize_location(self.name),
+        )
         last_trade_db_ts = self.db.get_last_query_time(self.name + '_trades')
         # If last DB trade is within the time frame, no need to ask the exchange
         if last_trade_db_ts >= end_ts:

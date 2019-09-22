@@ -397,7 +397,7 @@ def test_upgrade_db_5_to_6(data_dir, username):
     expected_results = [(
         '6cfa0a6db20c70910e06de83136448ef0ce90e524c80ba65bc8e9627cdfcbc00',
         1568928120,  # time
-        'external',  # location
+        'A',  # external symbol for location Enum
         'ETH_EUR',  # pair
         'B',  # type sell
         '10',  # amount
@@ -409,7 +409,7 @@ def test_upgrade_db_5_to_6(data_dir, username):
     ), (
         '3f5d2dee22ad7efa545683351a8cec562c11dd9c357bdfce713154696bdd56ea',
         1569010800,  # time
-        'external',  # location
+        'A',  # external symbol for location Enum
         'BTC_EUR',  # pair
         'A',  # type buy
         '0.5',  # amount

@@ -30,7 +30,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_price,
     deserialize_timestamp_from_binance,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Exchange, Fee, Timestamp
+from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise
 from rotkehlchen.utils.serialization import rlk_jsonloads
@@ -120,7 +120,7 @@ def trade_from_binance(
 
     return Trade(
         timestamp=timestamp,
-        location='binance',
+        location=Location.BINANCE,
         pair=trade_pair_from_assets(base_asset, quote_asset),
         trade_type=order_type,
         amount=amount,
@@ -449,7 +449,7 @@ class Binance(ExchangeInterface):
             asset = asset_from_binance(raw_data['asset'])
             amount = deserialize_asset_amount(raw_data['amount'])
             return AssetMovement(
-                location=Exchange.BINANCE,
+                location=Location.BINANCE,
                 category=cast(Literal['deposit', 'withdrawal'], category),
                 timestamp=timestamp,
                 asset=asset,

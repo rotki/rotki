@@ -1,6 +1,6 @@
+from dataclasses import dataclass
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
-from dataclasses import dataclass
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
@@ -9,11 +9,12 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
+    deserialize_location,
     deserialize_price,
     deserialize_timestamp,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import AssetAmount, Exchange, Fee, Price, Timestamp, TradePair, TradeType
+from rotkehlchen.typing import AssetAmount, Fee, Location, Price, Timestamp, TradePair, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
 
 ExchangeName = Literal['kraken', 'poloniex', 'bittrex', 'binance', 'bitmex', 'coinbase']
@@ -43,7 +44,7 @@ class Events(NamedTuple):
 
 
 class AssetMovement(NamedTuple):
-    location: Exchange
+    location: Location
     category: Literal['deposit', 'withdrawal']
     timestamp: Timestamp
     asset: Asset
@@ -71,7 +72,7 @@ class Trade(NamedTuple):
     trade, the pair needs to be swapped.
     """
     timestamp: Timestamp
-    location: str
+    location: Location
     pair: TradePair
     trade_type: TradeType
     # The amount represents the amount bought if it's a buy or or the amount
@@ -188,6 +189,7 @@ def deserialize_trade(data: Dict[str, Any]) -> Trade:
     rate = deserialize_price(data['rate'])
     amount = deserialize_asset_amount(data['amount'])
     trade_type = deserialize_trade_type(data['trade_type'])
+    location = deserialize_location(data['location'])
 
     trade_link = ''
     if 'link' in data:
@@ -198,7 +200,7 @@ def deserialize_trade(data: Dict[str, Any]) -> Trade:
 
     return Trade(
         timestamp=data['timestamp'],
-        location=data['location'],
+        location=location,
         pair=pair,
         trade_type=trade_type,
         amount=amount,
