@@ -39,6 +39,7 @@
     <message-dialog
       :title="message.title"
       :message="message.description"
+      :success="message.success"
       @dismiss="dismiss()"
     ></message-dialog>
     <message-dialog

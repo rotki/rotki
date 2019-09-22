@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="visible" persistent max-width="500">
+  <v-dialog v-model="visible" persistent max-width="500" class="message-dialog">
     <v-card>
       <v-card-title
         :class="{ 'green--text': success, 'red--text': !success }"
@@ -7,16 +7,17 @@
       >
         {{ title }}
       </v-card-title>
-      <v-row align="center">
-        <v-col cols="2">
+      <v-row align="center" class="mx-0 message-dialog__body">
+        <v-col cols="1">
           <v-icon
+            size="40"
             class="dialog-icon"
             :class="{ 'green--text': success, 'red--text': !success }"
           >
-            fa {{ success ? 'fa-check-circle' : 'fa-exclamation-circle' }} fa-3x
+            fa {{ success ? 'fa-check-circle' : 'fa-exclamation-circle' }}
           </v-icon>
         </v-col>
-        <v-col cols="10">
+        <v-col cols="11">
           <v-card-text class="message-dialog__message">
             {{ message }}
           </v-card-text>
@@ -58,13 +59,13 @@ export default class MessageDialog extends Vue {
 </script>
 
 <style scoped>
-.dialog-icon {
-  margin-left: 25px;
-}
-
 .message-dialog__message {
   overflow-wrap: break-word;
   word-wrap: break-word;
   hyphens: auto;
+}
+
+.message-dialog__body {
+  padding: 0 16px;
 }
 </style>
