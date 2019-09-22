@@ -38,28 +38,44 @@
 
       <v-divider></v-divider>
 
-      <v-list-item id="logout_button" key="logout" @click="logout">
+      <v-list-item
+        id="logout_button"
+        key="logout"
+        @click="confirmLogout = true"
+      >
         <v-list-item-avatar>
           <v-icon color="primary">fa fa-sign-out</v-icon>
         </v-list-item-avatar>
         <v-list-item-title>Logout</v-list-item-title>
       </v-list-item>
     </v-list>
+    <confirm-dialog
+      :display="confirmLogout"
+      title="Confirmation Required"
+      message="Are you sure you want to log out of your current rotkehlchen session?"
+      @confirm="logout()"
+      @cancel="confirmLogout = false"
+    ></confirm-dialog>
   </v-menu>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 
-@Component({})
+@Component({
+  components: {
+    ConfirmDialog
+  }
+})
 export default class UserDropdown extends Vue {
-  logout() {
-    const { commit } = this.$store;
-    commit('session/reset');
-    commit('notifications/reset');
-    commit('reports/reset');
-    commit('balances/reset');
-    commit('tasks/reset');
+  confirmLogout: boolean = false;
+
+  async logout() {
+    this.confirmLogout = false;
+    const { dispatch } = this.$store;
+
+    await dispatch('session/logout');
     this.$router.push({ name: 'dashboard' });
   }
 }

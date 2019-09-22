@@ -10,6 +10,7 @@
             label="Username"
             prepend-icon="fa-user"
             :rules="usernameRules"
+            :disabled="loading"
             required
           ></v-text-field>
           <v-text-field
@@ -18,6 +19,7 @@
             label="Password"
             prepend-icon="fa-lock"
             :rules="passwordRules"
+            :disabled="loading"
             type="password"
             required
           ></v-text-field>
@@ -26,6 +28,7 @@
             v-model="passwordConfirm"
             prepend-icon="fa-repeat"
             :rules="passwordConfirmRules"
+            :disabled="loading"
             label="Repeat Password"
             type="password"
             required
@@ -34,10 +37,16 @@
         </v-form>
       </v-card-text>
       <v-card-actions>
-        <v-btn depressed color="primary" :disabled="!valid" @click="confirm()">
+        <v-btn
+          depressed
+          color="primary"
+          :disabled="!valid || loading"
+          :loading="loading"
+          @click="confirm()"
+        >
           Create
         </v-btn>
-        <v-btn depressed color="primary" @click="cancel()">
+        <v-btn depressed color="primary" :disabled="loading" @click="cancel()">
           Cancel
         </v-btn>
       </v-card-actions>
@@ -53,6 +62,9 @@ import { Credentials } from '@/typing/types';
 export default class CreateAccount extends Vue {
   @Prop({ required: true })
   displayed!: boolean;
+
+  @Prop({ required: true, type: Boolean, default: false })
+  loading!: boolean;
 
   username: string = '';
   password: string = '';

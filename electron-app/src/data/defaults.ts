@@ -7,4 +7,11 @@ export class Defaults {
   static HISTORICAL_DATA_START = '01/08/2015';
 }
 
-export const exchanges = ['kraken', 'poloniex', 'bittrex', 'bitmex', 'binance'];
+export const exchanges = [
+  'kraken',
+  'poloniex',
+  'bittrex',
+  'bitmex',
+  'binance',
+  'coinbase'
+];
