@@ -43,6 +43,7 @@
             <v-btn
               id="modify_trade_settings"
               depressed
+              color="primary"
               type="submit"
               @click="modifyTradeSettings()"
             >
