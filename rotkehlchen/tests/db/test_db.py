@@ -36,7 +36,7 @@ from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_CNY, A_DAO, A_DOGE, A_GNO, A_RDN, A_XMR
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
-from rotkehlchen.typing import SupportedBlockchain, Timestamp
+from rotkehlchen.typing import Location, SupportedBlockchain, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
@@ -373,7 +373,7 @@ def test_balance_save_frequency_check(data_dir, username):
     now = int(time.time())
     data_save_ts = now - 24 * 60 * 60 + 20
     data.db.add_multiple_location_data([LocationData(
-        time=data_save_ts, location='kraken', usd_value='1500',
+        time=data_save_ts, location=Location.KRAKEN.serialize_for_db(), usd_value='1500',
     )])
 
     assert not data.should_save_balances()
@@ -638,16 +638,16 @@ def test_get_latest_location_value_distribution(data_dir, username):
     distribution = data.db.get_latest_location_value_distribution()
     assert len(distribution) == 5
     assert all(entry.time == Timestamp(1491607800) for entry in distribution)
-    assert distribution[0].location == 'banks'
-    assert distribution[0].usd_value == '10000'
-    assert distribution[1].location == 'blockchain'
-    assert distribution[1].usd_value == '200000'
-    assert distribution[2].location == 'kraken'
-    assert distribution[2].usd_value == '2000'
-    assert distribution[3].location == 'poloniex'
-    assert distribution[3].usd_value == '100'
-    assert distribution[4].location == 'total'
-    assert distribution[4].usd_value == '10700.5'
+    assert distribution[0].location == 'B'  # kraken location serialized for DB enum
+    assert distribution[0].usd_value == '2000'
+    assert distribution[1].location == 'C'  # poloniex location serialized for DB enum
+    assert distribution[1].usd_value == '100'
+    assert distribution[2].location == 'H'  # total location serialized for DB enum
+    assert distribution[2].usd_value == '10700.5'
+    assert distribution[3].location == 'I'  # banks location serialized for DB enum
+    assert distribution[3].usd_value == '10000'
+    assert distribution[4].location == 'J'  # blockchain location serialized for DB enum
+    assert distribution[4].usd_value == '200000'
 
 
 def test_get_latest_asset_value_distribution(data_dir, username):

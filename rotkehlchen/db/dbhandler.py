@@ -713,12 +713,13 @@ class DBHandler():
         for key2, val2 in data['location'].items():
             # Here we know val2 is just a Dict since the key to data is 'location'
             val2 = cast(Dict, val2)
+            location = deserialize_location(key2).serialize_for_db()
             locations.append(LocationData(
-                time=timestamp, location=key2, usd_value=str(val2['usd_value']),
+                time=timestamp, location=location, usd_value=str(val2['usd_value']),
             ))
         locations.append(LocationData(
             time=timestamp,
-            location='total',
+            location=Location.TOTAL.serialize_for_db(),
             usd_value=str(data['net_usd']),
         ))
 
@@ -1203,9 +1204,10 @@ class DBHandler():
     def get_netvalue_data(self) -> Tuple[List[str], List[str]]:
         """Get all entries of net value data from the DB"""
         cursor = self.conn.cursor()
+        # Get the total location ("H") entries in ascending time
         query = cursor.execute(
             'SELECT time, usd_value FROM timed_location_data '
-            'WHERE location="total" ORDER BY time ASC;',
+            'WHERE location="H" ORDER BY time ASC;',
         )
 
         data = []
@@ -1280,6 +1282,7 @@ class DBHandler():
             'time=(SELECT MAX(time) FROM timed_location_data);',
         )
         results = results.fetchall()
+
         locations = []
         for result in results:
             locations.append(
