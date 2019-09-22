@@ -41,7 +41,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_kraken,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Exchange, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Location, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, retry_calls
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
@@ -195,7 +195,7 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
 
     return Trade(
         timestamp=timestamp,
-        location='kraken',
+        location=Location.KRAKEN,
         pair=currency_pair,
         trade_type=order_type,
         amount=amount,
@@ -580,7 +580,7 @@ class Kraken(ExchangeInterface):
             try:
                 asset = asset_from_kraken(movement['asset'])
                 movements.append(AssetMovement(
-                    location=Exchange.KRAKEN,
+                    location=Location.KRAKEN,
                     category=deserialize_asset_movement_category(movement['type']),
                     timestamp=deserialize_timestamp_from_kraken(movement['time']),
                     asset=asset,

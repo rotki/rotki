@@ -4,7 +4,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.utils import AssetBalance, LocationData, SingleAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import EthTokenInfo
+from rotkehlchen.typing import EthTokenInfo, Location, TradeType
 
 
 def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
@@ -36,7 +36,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
     elif isinstance(entry, Trade):
         return {
             'timestamp': entry.timestamp,
-            'location': entry.location,
+            'location': str(entry.location),
             'pair': entry.pair,
             'trade_type': str(entry.trade_type),
             'amount': str(entry.amount),
@@ -52,6 +52,8 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
         raise ValueError('Query results should not contain tuples')
     elif isinstance(entry, Asset):
         return entry.identifier
+    elif isinstance(entry, (TradeType, Location)):
+        return str(entry)
     else:
         return entry
 

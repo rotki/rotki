@@ -7,6 +7,7 @@ from rotkehlchen.constants.assets import A_BTC, A_EUR, A_USD, FIAT_CURRENCIES
 from rotkehlchen.exchanges.data_structures import Trade, TradeType, pair_get_assets
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
+from rotkehlchen.serialization.deserialize import deserialize_location
 from rotkehlchen.typing import Timestamp, TradePair
 
 STARTING_TIMESTAMP = 1464739200  # 01/06/2016
@@ -188,7 +189,7 @@ class ActionWriter(object):
         # create the trade
         trade = Trade(
             timestamp=ts,
-            location=exchange_name,
+            location=deserialize_location(exchange_name),
             pair=pair,
             trade_type=action_type,
             amount=amount,

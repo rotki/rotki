@@ -5,7 +5,7 @@ from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import limit_trade_list_to_period
 from rotkehlchen.tests.utils.history import TEST_END_TS, mock_history_processing_and_exchanges
-from rotkehlchen.typing import TradeType
+from rotkehlchen.typing import Location, TradeType
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -104,7 +104,7 @@ def test_history_creation_remote_errors(
 def test_limit_trade_list_to_period():
     trade1 = Trade(
         timestamp=1459427707,
-        location='kraken',
+        location=Location.KRAKEN,
         pair='ETH_BTC',
         trade_type=TradeType.BUY,
         amount=FVal(1),
@@ -115,7 +115,7 @@ def test_limit_trade_list_to_period():
     )
     trade2 = Trade(
         timestamp=1469427707,
-        location='poloniex',
+        location=Location.POLONIEX,
         pair='ETH_BTC',
         trade_type=TradeType.BUY,
         amount=FVal(1),
@@ -126,7 +126,7 @@ def test_limit_trade_list_to_period():
     )
     trade3 = Trade(
         timestamp=1479427707,
-        location='poloniex',
+        location=Location.POLONIEX,
         pair='ETH_BTC',
         trade_type=TradeType.BUY,
         amount=FVal(1),

@@ -1,6 +1,6 @@
 from rotkehlchen.crypto import sha3
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
-from rotkehlchen.typing import Timestamp, TradeID, TradeType
+from rotkehlchen.typing import Location, Timestamp, TradeID, TradeType
 
 
 def hashable_string_for_external_trade(
@@ -18,14 +18,14 @@ def hash_id(hashable: str) -> TradeID:
 
 def formulate_trade_id(trade: Trade) -> TradeID:
     """Formulates a unique identifier for the trade to become the DB primary key"""
-    if trade.location == 'external':
+    if trade.location == Location.EXTERNAL:
         string = hashable_string_for_external_trade(
             trade.timestamp,
             trade.trade_type,
             trade.pair,
         )
     else:
-        string = trade.location + trade.link
+        string = str(trade.location) + trade.link
 
     return TradeID(hash_id(string))
 

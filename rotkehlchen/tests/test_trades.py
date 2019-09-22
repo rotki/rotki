@@ -10,7 +10,7 @@ from rotkehlchen.exchanges.data_structures import (
     trades_from_dictlist,
 )
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Timestamp, TradePair, TradeType
+from rotkehlchen.typing import Location, Timestamp, TradePair, TradeType
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 
@@ -24,7 +24,7 @@ def test_trade_type_to_string():
 def test_trade_get_assets():
     trade = Trade(
         timestamp=1546985746,
-        location='bittrex',
+        location=Location.BITTREX,
         pair=TradePair('BTC_ETH'),
         trade_type=TradeType.BUY,
         amount=FVal(10),
@@ -83,7 +83,7 @@ def test_deserialize_trade():
     trade1 = deserialize_trade(raw_trade1)
     assert isinstance(trade1, Trade)
     assert trade1.timestamp == Timestamp(1516985746)
-    assert trade1.location == 'external'
+    assert trade1.location == Location.EXTERNAL
     assert trade1.pair == TradePair('ETH_EUR')
     assert trade1.trade_type == TradeType.BUY
     assert trade1.amount == FVal('20.51')
@@ -97,7 +97,7 @@ def test_deserialize_trade():
     trade2 = deserialize_trade(raw_trade2)
     assert isinstance(trade2, Trade)
     assert trade2.timestamp == Timestamp(1537985746)
-    assert trade2.location == 'kraken'
+    assert trade2.location == Location.KRAKEN
     assert trade2.pair == TradePair('ETH_BTC')
     assert trade2.trade_type == TradeType.SELL
     assert trade2.amount == FVal('2.80')
@@ -130,7 +130,7 @@ def test_trades_from_dictlist(function_scope_messages_aggregator):
 def test_serialize_deserialize_trade():
     trade = Trade(
         timestamp=Timestamp(1537985746),
-        location='kraken',
+        location=Location.KRAKEN,
         pair=TradePair('ETH_BTC'),
         trade_type=TradeType.SELL,
         amount=FVal('2.80'),

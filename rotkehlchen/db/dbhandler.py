@@ -37,8 +37,9 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_movement_category,
-    deserialize_exchange_name,
     deserialize_fee,
+    deserialize_location,
+    deserialize_location_from_db,
     deserialize_price,
     deserialize_timestamp,
     deserialize_trade_type_from_db,
@@ -50,6 +51,7 @@ from rotkehlchen.typing import (
     BlockchainAddress,
     FiatAsset,
     FilePath,
+    Location,
     SupportedBlockchain,
     Timestamp,
 )
@@ -977,7 +979,7 @@ class DBHandler():
         for result in results:
             try:
                 movement = AssetMovement(
-                    location=deserialize_exchange_name(result[1]),
+                    location=deserialize_location(result[1]),
                     category=deserialize_asset_movement_category(result[2]),
                     timestamp=result[3],
                     asset=Asset(result[4]),
@@ -1010,7 +1012,7 @@ class DBHandler():
             trade_tuples.append((
                 trade_id,
                 trade.timestamp,
-                trade.location,
+                trade.location.serialize_for_db(),
                 trade.pair,
                 trade.trade_type.serialize_for_db(),
                 str(trade.amount),
@@ -1071,7 +1073,7 @@ class DBHandler():
             'WHERE id=?',
             (
                 trade.timestamp,
-                trade.location,
+                trade.location.serialize_for_db(),
                 trade.pair,
                 trade.trade_type.serialize_for_db(),
                 str(trade.amount),
@@ -1093,7 +1095,7 @@ class DBHandler():
             self,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-            location: Optional[str] = None,
+            location: Optional[Location] = None,
     ) -> List[Trade]:
         """Returns a list of trades optionally filtered by time and location
 
@@ -1114,7 +1116,7 @@ class DBHandler():
             '  notes FROM trades '
         )
         if location is not None:
-            query += f'WHERE location="{location}" '
+            query += f'WHERE location="{location.serialize_for_db()}" '
         bindings: Union[
             Tuple,
             Tuple[Timestamp],
@@ -1137,7 +1139,7 @@ class DBHandler():
             try:
                 trade = Trade(
                     timestamp=deserialize_timestamp(result[1]),
-                    location=result[2],
+                    location=deserialize_location_from_db(result[2]),
                     pair=result[3],
                     trade_type=deserialize_trade_type_from_db(result[4]),
                     amount=deserialize_asset_amount(result[5]),

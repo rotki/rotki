@@ -3,7 +3,7 @@ from unittest.mock import patch
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.exchanges.data_structures import AssetMovement, Exchange, MarginPosition
+from rotkehlchen.exchanges.data_structures import AssetMovement, Location, MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.utils.misc import ts_now
@@ -50,7 +50,7 @@ def test_bitmex_api_withdrawals_deposit(test_bitmex):
     )
     expected_result = [
         AssetMovement(
-            location=Exchange.BITMEX,
+            location=Location.BITMEX,
             category='deposit',
             timestamp=1537014656,
             asset=A_BTC,
@@ -60,7 +60,7 @@ def test_bitmex_api_withdrawals_deposit(test_bitmex):
             link='b6c6fd2c-4d0c-b101-a41c-fa5aa1ce7ef1',
         ),
         AssetMovement(
-            location=Exchange.BITMEX,
+            location=Location.BITMEX,
             category='deposit',
             timestamp=1536563759,
             asset=A_BTC,
@@ -70,7 +70,7 @@ def test_bitmex_api_withdrawals_deposit(test_bitmex):
             link='72500751-d052-5bbb-18d7-08363edef812',
         ),
         AssetMovement(
-            location=Exchange.BITMEX,
+            location=Location.BITMEX,
             category='withdrawal',
             timestamp=1536536707,
             asset=A_BTC,
@@ -80,7 +80,7 @@ def test_bitmex_api_withdrawals_deposit(test_bitmex):
             link='bf19ca4e-e084-11f9-12cd-6ae41e26f9db',
         ),
         AssetMovement(
-            location=Exchange.BITMEX,
+            location=Location.BITMEX,
             category='deposit',
             timestamp=1536486278,
             asset=A_BTC,

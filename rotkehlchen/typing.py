@@ -186,27 +186,48 @@ class TradeType(Enum):
         raise RuntimeError(f'Corrupt value {self} for TradeType -- Should never happen')
 
 
-class Exchange(Enum):
-    """Supported Exchanges"""
-    KRAKEN = 0
-    POLONIEX = 1
-    BITTREX = 2
-    BINANCE = 3
-    BITMEX = 4
-    COINBASE = 5
+class Location(Enum):
+    """Supported Locations"""
+    EXTERNAL = 1
+    KRAKEN = 2
+    POLONIEX = 3
+    BITTREX = 4
+    BINANCE = 5
+    BITMEX = 6
+    COINBASE = 7
 
     def __str__(self) -> str:
-        if self == Exchange.KRAKEN:
+        if self == Location.EXTERNAL:
+            return 'external'
+        elif self == Location.KRAKEN:
             return 'kraken'
-        elif self == Exchange.POLONIEX:
+        elif self == Location.POLONIEX:
             return 'poloniex'
-        elif self == Exchange.BITTREX:
+        elif self == Location.BITTREX:
             return 'bittrex'
-        elif self == Exchange.BINANCE:
+        elif self == Location.BINANCE:
             return 'binance'
-        elif self == Exchange.BITMEX:
+        elif self == Location.BITMEX:
             return 'bitmex'
-        elif self == Exchange.COINBASE:
+        elif self == Location.COINBASE:
             return 'coinbase'
 
-        raise RuntimeError(f'Corrupt value {self} for Exchange -- Should never happen')
+        raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
+
+    def serialize_for_db(self) -> str:
+        if self == Location.EXTERNAL:
+            return 'A'
+        elif self == Location.KRAKEN:
+            return 'B'
+        elif self == Location.POLONIEX:
+            return 'C'
+        elif self == Location.BITTREX:
+            return 'D'
+        elif self == Location.BINANCE:
+            return 'E'
+        elif self == Location.BITMEX:
+            return 'F'
+        elif self == Location.COINBASE:
+            return 'G'
+
+        raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')

@@ -5,7 +5,7 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import Exchange, TradeType
+from rotkehlchen.typing import Location, TradeType
 
 
 def test_coinbase_query_balances(function_scope_coinbase):
@@ -439,7 +439,7 @@ def test_coinbase_query_trade_history(function_scope_coinbase):
     assert len(trades) == 2
     expected_trades = [Trade(
         timestamp=1500853448,
-        location='coinbase',
+        location=Location.COINBASE,
         pair='BTC_USD',
         trade_type=TradeType.BUY,
         amount=FVal("486.34313725"),
@@ -449,7 +449,7 @@ def test_coinbase_query_trade_history(function_scope_coinbase):
         link='9e14d574-30fa-5d85-b02c-6be0d851d61d',
     ), Trade(
         timestamp=1427402520,
-        location='coinbase',
+        location=Location.COINBASE,
         pair='ETH_USD',
         trade_type=TradeType.SELL,
         amount=FVal("100.45"),
@@ -648,7 +648,7 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
     assert len(errors) == 0
     assert len(movements) == 3
     expected_movements = [AssetMovement(
-        location=Exchange.COINBASE,
+        location=Location.COINBASE,
         category='deposit',
         timestamp=1519001640,
         asset=A_USD,
@@ -657,7 +657,7 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
         fee=FVal('0.05'),
         link='1130eaec-07d7-54c4-a72c-2e92826897df',
     ), AssetMovement(
-        location=Exchange.COINBASE,
+        location=Location.COINBASE,
         category='withdrawal',
         timestamp=1485895742,
         asset=A_USD,
@@ -666,7 +666,7 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
         fee=FVal('0.01'),
         link='146eaec-07d7-54c4-a72c-2e92826897df',
     ), AssetMovement(
-        location=Exchange.COINBASE,
+        location=Location.COINBASE,
         category='withdrawal',
         timestamp=1566726126,
         asset=A_ETH,

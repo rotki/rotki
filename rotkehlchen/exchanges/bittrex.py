@@ -38,7 +38,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_bittrex_date,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Exchange, Fee, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
@@ -144,7 +144,7 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
 
     return Trade(
         timestamp=timestamp,
-        location='bittrex',
+        location=Location.BITTREX,
         pair=pair,
         trade_type=order_type,
         amount=amount,
@@ -395,7 +395,7 @@ class Bittrex(ExchangeInterface):
             timestamp = deserialize_timestamp_from_bittrex_date(raw_data[date_key])
             asset = asset_from_bittrex(raw_data['Currency'])
             return AssetMovement(
-                location=Exchange.BITTREX,
+                location=Location.BITTREX,
                 category=cast(Literal['deposit', 'withdrawal'], category),
                 timestamp=timestamp,
                 asset=asset,

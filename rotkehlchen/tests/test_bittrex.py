@@ -12,7 +12,7 @@ from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import Exchange, TradeType
+from rotkehlchen.typing import Location, TradeType
 
 
 def analyze_bittrex_assets(currencies: List[Dict[str, Any]]):
@@ -160,7 +160,7 @@ def test_bittrex_query_trade_history(bittrex):
 
     expected_trade = Trade(
         timestamp=1392249600,
-        location='bittrex',
+        location=Location.BITTREX,
         pair='LTC_BTC',
         trade_type=TradeType.BUY,
         amount=FVal('667.03644955'),
@@ -361,7 +361,7 @@ def test_bittrex_query_deposits_withdrawals(bittrex):
 
     assert len(movements) == 4
 
-    assert movements[0].location == Exchange.BITTREX
+    assert movements[0].location == Location.BITTREX
     assert movements[0].category == 'deposit'
     assert movements[0].timestamp == 1392277133
     assert isinstance(movements[0].asset, Asset)
@@ -369,7 +369,7 @@ def test_bittrex_query_deposits_withdrawals(bittrex):
     assert movements[0].amount == FVal('2.12345678')
     assert movements[0].fee == ZERO
 
-    assert movements[1].location == Exchange.BITTREX
+    assert movements[1].location == Location.BITTREX
     assert movements[1].category == 'deposit'
     assert movements[1].timestamp == 1402817933
     assert isinstance(movements[1].asset, Asset)
@@ -377,7 +377,7 @@ def test_bittrex_query_deposits_withdrawals(bittrex):
     assert movements[1].amount == FVal('50.81')
     assert movements[1].fee == ZERO
 
-    assert movements[2].location == Exchange.BITTREX
+    assert movements[2].location == Location.BITTREX
     assert movements[2].category == 'withdrawal'
     assert movements[2].timestamp == 1404879887
     assert isinstance(movements[2].asset, Asset)
@@ -385,7 +385,7 @@ def test_bittrex_query_deposits_withdrawals(bittrex):
     assert movements[2].amount == FVal('17')
     assert movements[2].fee == FVal('0.0002')
 
-    assert movements[3].location == Exchange.BITTREX
+    assert movements[3].location == Location.BITTREX
     assert movements[3].category == 'withdrawal'
     assert movements[3].timestamp == 1439958287
     assert isinstance(movements[3].asset, Asset)

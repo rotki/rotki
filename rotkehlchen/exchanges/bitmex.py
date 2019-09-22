@@ -10,7 +10,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
-from rotkehlchen.exchanges.data_structures import AssetMovement, Exchange, MarginPosition
+from rotkehlchen.exchanges.data_structures import AssetMovement, Location, MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -285,7 +285,7 @@ class Bitmex(ExchangeInterface):
                     fee = satoshis_to_btc(fee)
 
                 movements.append(AssetMovement(
-                    location=Exchange.BITMEX,
+                    location=Location.BITMEX,
                     category=transaction_type,
                     timestamp=timestamp,
                     asset=asset,

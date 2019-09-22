@@ -15,7 +15,7 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.binance import Binance, trade_from_binance
-from rotkehlchen.exchanges.data_structures import Exchange, Trade, TradeType
+from rotkehlchen.exchanges.data_structures import Location, Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_BNB, A_RDN, A_USDT, A_XMR
 from rotkehlchen.tests.utils.exchanges import BINANCE_BALANCES_RESPONSE
@@ -81,7 +81,7 @@ def test_trade_from_binance(function_scope_binance):
     our_expected_list = [
         Trade(
             timestamp=1512561941,
-            location='binance',
+            location=Location.BINANCE,
             pair='RDN_ETH',
             trade_type=TradeType.BUY,
             amount=FVal(5.0),
@@ -92,7 +92,7 @@ def test_trade_from_binance(function_scope_binance):
         ),
         Trade(
             timestamp=1531117990,
-            location='binance',
+            location=Location.BINANCE,
             pair='ETH_USDT',
             trade_type=TradeType.SELL,
             amount=FVal(0.505),
@@ -103,7 +103,7 @@ def test_trade_from_binance(function_scope_binance):
         ),
         Trade(
             timestamp=1531728338,
-            location='binance',
+            location=Location.BINANCE,
             pair='BTC_USDT',
             trade_type=TradeType.BUY,
             amount=FVal(0.051942),
@@ -114,7 +114,7 @@ def test_trade_from_binance(function_scope_binance):
         ),
         Trade(
             timestamp=1531871806,
-            location='binance',
+            location=Location.BINANCE,
             pair='ADA_USDT',
             trade_type=TradeType.SELL,
             amount=FVal(285.2),
@@ -285,7 +285,7 @@ def test_binance_query_trade_history(function_scope_binance):
 
     expected_trade = Trade(
         timestamp=1499865549,
-        location='binance',
+        location=Location.BINANCE,
         pair='BNB_BTC',
         trade_type=TradeType.BUY,
         amount=FVal('12'),
@@ -478,7 +478,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
 
     assert len(movements) == 4
 
-    assert movements[0].location == Exchange.BINANCE
+    assert movements[0].location == Location.BINANCE
     assert movements[0].category == 'deposit'
     assert movements[0].timestamp == 1508198532
     assert isinstance(movements[0].asset, Asset)
@@ -486,7 +486,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
     assert movements[0].amount == FVal('0.04670582')
     assert movements[0].fee == ZERO
 
-    assert movements[1].location == Exchange.BINANCE
+    assert movements[1].location == Location.BINANCE
     assert movements[1].category == 'deposit'
     assert movements[1].timestamp == 1508398632
     assert isinstance(movements[1].asset, Asset)
@@ -494,7 +494,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
     assert movements[1].amount == FVal('1000')
     assert movements[1].fee == ZERO
 
-    assert movements[2].location == Exchange.BINANCE
+    assert movements[2].location == Location.BINANCE
     assert movements[2].category == 'withdrawal'
     assert movements[2].timestamp == 1518192542
     assert isinstance(movements[2].asset, Asset)
@@ -502,7 +502,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
     assert movements[2].amount == FVal('1')
     assert movements[2].fee == ZERO
 
-    assert movements[3].location == Exchange.BINANCE
+    assert movements[3].location == Location.BINANCE
     assert movements[3].category == 'withdrawal'
     assert movements[3].timestamp == 1529198732
     assert isinstance(movements[3].asset, Asset)

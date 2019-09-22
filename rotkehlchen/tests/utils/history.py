@@ -8,7 +8,7 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.transactions import EthereumTransaction
-from rotkehlchen.typing import AssetAmount, Exchange, Timestamp, TradeType
+from rotkehlchen.typing import AssetAmount, Location, Timestamp, TradeType
 
 TEST_END_TS = 1559427707
 
@@ -105,33 +105,33 @@ def check_result_of_history_creation(
     # OR instead do it in tests for conversion of actions(trades, loans, deposits e.t.c.)
     # from exchange to our format for each exchange
     assert len(trade_history) == 11
-    assert trade_history[0].location == 'kraken'
+    assert trade_history[0].location == Location.KRAKEN
     assert trade_history[0].pair == 'ETH_EUR'
     assert trade_history[0].trade_type == TradeType.BUY
-    assert trade_history[1].location == 'kraken'
+    assert trade_history[1].location == Location.KRAKEN
     assert trade_history[1].pair == 'BTC_EUR'
     assert trade_history[1].trade_type == TradeType.BUY
-    assert trade_history[2].location == 'bittrex'
+    assert trade_history[2].location == Location.BITTREX
     assert trade_history[2].pair == 'LTC_BTC'
     assert trade_history[2].trade_type == TradeType.BUY
-    assert trade_history[3].location == 'bittrex'
+    assert trade_history[3].location == Location.BITTREX
     assert trade_history[3].pair == 'LTC_ETH'
     assert trade_history[3].trade_type == TradeType.SELL
     assert isinstance(trade_history[4], MarginPosition)
     assert trade_history[4].profit_loss == FVal('0.05')
-    assert trade_history[5].location == 'binance'
+    assert trade_history[5].location == Location.BINANCE
     assert trade_history[5].pair == 'ETH_BTC'
     assert trade_history[5].trade_type == TradeType.BUY
-    assert trade_history[6].location == 'binance'
+    assert trade_history[6].location == Location.BINANCE
     assert trade_history[6].pair == 'RDN_ETH'
     assert trade_history[6].trade_type == TradeType.SELL
-    assert trade_history[7].location == 'poloniex'
+    assert trade_history[7].location == Location.POLONIEX
     assert trade_history[7].pair == 'ETH_BTC'
     assert trade_history[7].trade_type == TradeType.SELL
-    assert trade_history[8].location == 'poloniex'
+    assert trade_history[8].location == Location.POLONIEX
     assert trade_history[8].pair == 'ETH_BTC'
     assert trade_history[8].trade_type == TradeType.BUY
-    assert trade_history[9].location == 'poloniex'
+    assert trade_history[9].location == Location.POLONIEX
     assert trade_history[9].pair == 'XMR_ETH'
     assert trade_history[9].trade_type == TradeType.BUY
     # TODO: investigate why this new bitmex position popped up
@@ -145,38 +145,38 @@ def check_result_of_history_creation(
     assert loan_history[1].earned == AssetAmount(FVal('0.00000005'))
 
     assert len(asset_movements) == 11
-    assert asset_movements[0].location == Exchange.KRAKEN
+    assert asset_movements[0].location == Location.KRAKEN
     assert asset_movements[0].category == 'deposit'
     assert asset_movements[0].asset == A_BTC
-    assert asset_movements[1].location == Exchange.KRAKEN
+    assert asset_movements[1].location == Location.KRAKEN
     assert asset_movements[1].category == 'deposit'
     assert asset_movements[1].asset == A_ETH
-    assert asset_movements[2].location == Exchange.KRAKEN
+    assert asset_movements[2].location == Location.KRAKEN
     assert asset_movements[2].category == 'withdrawal'
     assert asset_movements[2].asset == A_BTC
-    assert asset_movements[3].location == Exchange.KRAKEN
+    assert asset_movements[3].location == Location.KRAKEN
     assert asset_movements[3].category == 'withdrawal'
     assert asset_movements[3].asset == A_ETH
-    assert asset_movements[4].location == Exchange.POLONIEX
+    assert asset_movements[4].location == Location.POLONIEX
     assert asset_movements[4].category == 'withdrawal'
     assert asset_movements[4].asset == A_BTC
-    assert asset_movements[5].location == Exchange.POLONIEX
+    assert asset_movements[5].location == Location.POLONIEX
     assert asset_movements[5].category == 'withdrawal'
     assert asset_movements[5].asset == A_ETH
-    assert asset_movements[6].location == Exchange.POLONIEX
+    assert asset_movements[6].location == Location.POLONIEX
     assert asset_movements[6].category == 'deposit'
     assert asset_movements[6].asset == A_BTC
-    assert asset_movements[7].location == Exchange.POLONIEX
+    assert asset_movements[7].location == Location.POLONIEX
     assert asset_movements[7].category == 'deposit'
     assert asset_movements[7].asset == A_ETH
-    assert asset_movements[8].location == Exchange.BITMEX
+    assert asset_movements[8].location == Location.BITMEX
     assert asset_movements[8].category == 'deposit'
     assert asset_movements[8].asset == A_BTC
-    assert asset_movements[9].location == Exchange.BITMEX
+    assert asset_movements[9].location == Location.BITMEX
     assert asset_movements[9].category == 'withdrawal'
     assert asset_movements[9].asset == A_BTC
     # TODO: investigate why this new bitmex withdrawal popped up
-    assert asset_movements[10].location == Exchange.BITMEX
+    assert asset_movements[10].location == Location.BITMEX
     assert asset_movements[10].category == 'withdrawal'
     assert asset_movements[10].asset == A_BTC
 
