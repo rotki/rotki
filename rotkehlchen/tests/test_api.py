@@ -12,6 +12,7 @@ from rotkehlchen.db.utils import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.exchanges import BINANCE_BALANCES_RESPONSE
+from rotkehlchen.tests.utils.find import find_dict_in_list
 from rotkehlchen.tests.utils.history import TEST_END_TS, mock_history_processing_and_exchanges
 from rotkehlchen.tests.utils.mock import MockResponse, MockWeb3
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
@@ -334,16 +335,26 @@ def test_query_balances(rotkehlchen_server, function_scope_binance):
     assert save_ts >= now
     assert save_ts - now < 5, 'Saving balances took too long'
 
-    location_data = db.get_latest_location_value_distribution()
+    result = rotkehlchen_server.query_latest_location_value_distribution()
+    location_data = result['result']
     assert len(location_data) == 4
 
-    assert location_data[0].location == 'banks'
-    assert location_data[0].usd_value == str(banks_usd_value)
-    assert location_data[1].location == 'binance'
-    assert location_data[1].usd_value == str(binance_usd_value)
-    assert location_data[2].location == 'blockchain'
-    assert location_data[3].location == 'total'
-    assert location_data[3].usd_value == str(banks_usd_value + binance_usd_value)
+    assert find_dict_in_list(
+        location_data,
+        {'location': 'binance', 'usd_value': str(binance_usd_value)},
+    )
+    assert find_dict_in_list(
+        location_data,
+        {'location': 'banks', 'usd_value': str(banks_usd_value)},
+    )
+    assert find_dict_in_list(
+        location_data,
+        {'location': 'blockchain'},
+    )
+    assert find_dict_in_list(
+        location_data,
+        {'location': 'total', 'usd_value': str(banks_usd_value + binance_usd_value)},
+    )
 
 
 def test_query_netvalue_data(rotkehlchen_server):
@@ -371,16 +382,13 @@ def test_query_latest_location_value_distribution(rotkehlchen_server):
     assert response['message'] == ''
     distribution = response['result']
     assert all(entry['time'] == Timestamp(1491607800) for entry in distribution)
-    assert distribution[0]['location'] == 'banks'
-    assert distribution[0]['usd_value'] == '10000'
-    assert distribution[1]['location'] == 'blockchain'
-    assert distribution[1]['usd_value'] == '200000'
-    assert distribution[2]['location'] == 'kraken'
-    assert distribution[2]['usd_value'] == '2000'
-    assert distribution[3]['location'] == 'poloniex'
-    assert distribution[3]['usd_value'] == '100'
-    assert distribution[4]['location'] == 'total'
-    assert distribution[4]['usd_value'] == '10700.5'
+    assert len(distribution) == 5
+
+    assert find_dict_in_list(distribution, {'location': 'banks', 'usd_value': '10000'})
+    assert find_dict_in_list(distribution, {'location': 'blockchain', 'usd_value': '200000'})
+    assert find_dict_in_list(distribution, {'location': 'kraken', 'usd_value': '2000'})
+    assert find_dict_in_list(distribution, {'location': 'poloniex', 'usd_value': '100'})
+    assert find_dict_in_list(distribution, {'location': 'total', 'usd_value': '10700.5'})
 
 
 def test_query_latest_asset_value_distribution(rotkehlchen_server):

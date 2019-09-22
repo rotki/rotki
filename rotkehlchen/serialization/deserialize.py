@@ -251,6 +251,12 @@ def deserialize_location(symbol: str) -> Location:
         return Location.BITMEX
     elif symbol == 'coinbase':
         return Location.COINBASE
+    elif symbol == 'total':
+        return Location.TOTAL
+    elif symbol == 'banks':
+        return Location.BANKS
+    elif symbol == 'blockchain':
+        return Location.BLOCKCHAIN
     else:
         raise DeserializationError(
             f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
@@ -282,6 +288,12 @@ def deserialize_location_from_db(symbol: str) -> Location:
         return Location.BITMEX
     elif symbol == 'G':
         return Location.COINBASE
+    elif symbol == 'H':
+        return Location.TOTAL
+    elif symbol == 'I':
+        return Location.BANKS
+    elif symbol == 'J':
+        return Location.BLOCKCHAIN
     else:
         raise DeserializationError(
             f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',

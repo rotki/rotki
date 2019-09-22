@@ -27,7 +27,7 @@ class SingleAssetBalance(NamedTuple):
 
 class LocationData(NamedTuple):
     time: Timestamp
-    location: str
+    location: str  # Location serialized in a DB enum
     usd_value: str
 
 
@@ -73,6 +73,12 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('E', 5);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('F', 6);
 /* Coinbase */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('G', 7);
+/* Total */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('H', 8);
+/* Banks */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('I', 9);
+/* Blockchain */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('J', 10);
 """
 
 DB_CREATE_TIMED_BALANCES = """
@@ -88,7 +94,7 @@ CREATE TABLE IF NOT EXISTS timed_balances (
 DB_CREATE_TIMED_LOCATION_DATA = """
 CREATE TABLE IF NOT EXISTS timed_location_data (
     time INTEGER,
-    location VARCHAR[24],
+    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
     usd_value TEXT,
     PRIMARY KEY (time, location)
 );

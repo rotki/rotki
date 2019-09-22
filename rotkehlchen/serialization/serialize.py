@@ -4,6 +4,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.utils import AssetBalance, LocationData, SingleAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.serialization.deserialize import deserialize_location_from_db
 from rotkehlchen.typing import EthTokenInfo, Location, TradeType
 
 
@@ -23,7 +24,11 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             new_dict[k] = _process_entry(v)
         return new_dict
     elif isinstance(entry, LocationData):
-        return {'time': entry.time, 'location': entry.location, 'usd_value': entry.usd_value}
+        return {
+            'time': entry.time,
+            'location': str(deserialize_location_from_db(entry.location)),
+            'usd_value': entry.usd_value,
+        }
     elif isinstance(entry, SingleAssetBalance):
         return {'time': entry.time, 'amount': entry.amount, 'usd_value': entry.usd_value}
     elif isinstance(entry, AssetBalance):
