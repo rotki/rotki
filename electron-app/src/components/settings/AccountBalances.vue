@@ -70,7 +70,7 @@ import { Currency } from '@/model/currency';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 
 const { mapGetters, mapState } = createNamespacedHelpers('session');
-const mapBalancesGetters = createNamespacedHelpers('balances').mapGetters;
+const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 
 @Component({
   components: {

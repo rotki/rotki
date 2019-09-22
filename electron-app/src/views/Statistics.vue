@@ -13,11 +13,6 @@
         <a href="https://rotkehlchen.io/products" target="_blank">website</a>.
       </div>
     </div>
-    <message-dialog
-      title="Error at querying statistics renderer"
-      :message="errorMessage"
-      @dismiss="errorMessage = ''"
-    ></message-dialog>
   </v-container>
 </template>
 
@@ -25,6 +20,7 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
+import { Message } from '@/store/store';
 
 @Component({
   components: { MessageDialog },
@@ -32,8 +28,6 @@ import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 })
 export default class Statistics extends Vue {
   premium!: boolean;
-
-  errorMessage: string = '';
 
   mounted() {
     if (!this.premium) {
@@ -46,7 +40,11 @@ export default class Statistics extends Vue {
         eval(result);
       })
       .catch(reason => {
-        this.errorMessage = reason.message;
+        const { commit } = this.$store;
+        commit('setMessage', {
+          title: 'Error at querying statistics renderer',
+          description: reason.message
+        } as Message);
       });
   }
 }

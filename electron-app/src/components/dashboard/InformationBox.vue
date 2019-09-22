@@ -33,7 +33,7 @@ import { Currency } from '@/model/currency';
 import BigNumber from 'bignumber.js';
 
 const { mapState, mapGetters } = createNamespacedHelpers('session');
-const mapBalanceGetters = createNamespacedHelpers('balances').mapGetters;
+const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
 
 @Component({
   computed: {

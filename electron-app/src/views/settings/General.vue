@@ -97,17 +97,6 @@
         </v-card>
       </v-col>
     </v-row>
-    <message-dialog
-      title="Settings Error"
-      :message="error"
-      @dismiss="dismiss()"
-    ></message-dialog>
-    <message-dialog
-      :success="true"
-      title="Successfully modified settings."
-      :message="success"
-      @dismiss="dismiss()"
-    ></message-dialog>
   </v-container>
 </template>
 
@@ -118,6 +107,7 @@ import { GeneralSettings } from '@/typing/types';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import { createNamespacedHelpers } from 'vuex';
 import { Currency } from '@/model/currency';
+import { Message } from '@/store/store';
 
 const { mapState } = createNamespacedHelpers('session');
 
@@ -142,9 +132,6 @@ export default class General extends Vue {
   historicDateMenu: boolean = false;
   date: string = '';
 
-  error: string = '';
-  success: string = '';
-
   @Watch('date')
   dateWatch() {
     this.historicDataStart = this.formatDate(this.date);
@@ -165,11 +152,6 @@ export default class General extends Vue {
 
   get currencies(): string[] {
     return currencies.map(x => x.ticker_symbol);
-  }
-
-  dismiss() {
-    this.success = '';
-    this.error = '';
   }
 
   mounted() {
@@ -205,14 +187,23 @@ export default class General extends Vue {
       selectedCurrency: this.selectedCurrency
     };
 
+    const { commit } = this.$store;
+
     this.$rpc
       .set_settings(payload)
       .then(result => {
-        this.success = result.message || '';
-        this.$store.commit('session/settings', generalSettings);
+        commit('setMessage', {
+          title: 'Successfully modified settings.',
+          description: result.message || '',
+          success: true
+        } as Message);
+        commit('session/settings', generalSettings);
       })
       .catch((error: Error) => {
-        this.error = `Error at modifying settings: ${error.message}`;
+        commit('setMessage', {
+          title: 'Settings Error',
+          description: `Error at modifying settings: ${error.message}`
+        } as Message);
       });
   }
 }

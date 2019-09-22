@@ -55,7 +55,7 @@ import { EventEntry } from '@/model/trade-history-types';
 
 const { mapGetters } = createNamespacedHelpers('session');
 const { mapState } = createNamespacedHelpers('reports');
-const mapBalanceGetters = createNamespacedHelpers('balances').mapGetters;
+const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
 
 @Component({
   computed: {
