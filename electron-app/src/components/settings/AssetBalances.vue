@@ -55,7 +55,7 @@ import CryptoIcon from '@/components/CryptoIcon.vue';
 import { Currency } from '@/model/currency';
 
 const { mapState, mapGetters } = createNamespacedHelpers('session');
-const mapBalancesGetters = createNamespacedHelpers('balances').mapGetters;
+const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 
 @Component({
   components: { CryptoIcon },

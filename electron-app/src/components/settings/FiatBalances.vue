@@ -118,17 +118,19 @@ export default class FiatBalances extends Vue {
   }
 
   modify() {
+    const { commit, dispatch } = this.$store;
+
     const currency = this.selectedCurrency;
     const balance = this.balance;
     this.$rpc
       .set_fiat_balance(currency, balance.toString())
       .then(() => {
-        this.$store.dispatch('balances/fetchFiatBalances');
+        dispatch('balances/fetchFiatBalances');
         this.selectedCurrency = '';
         this.balance = '';
       })
       .catch((reason: Error) => {
-        this.$store.commit('setMessage', {
+        commit('setMessage', {
           title: 'Balance Modification Error',
           description: `Error at modifying ${currency} balance: ${reason.message}`
         } as Message);

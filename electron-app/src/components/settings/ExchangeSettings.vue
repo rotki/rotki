@@ -46,15 +46,10 @@
         </v-card-actions>
       </v-card>
     </v-col>
-    <message-dialog
-      :title="errorTitle"
-      :message="errorMessage"
-      @dismiss="dismiss()"
-    ></message-dialog>
     <confirm-dialog
       :display="confirmation"
-      :title="confirmTitle"
-      :message="confirmMessage"
+      title="Confirmation Required"
+      message="Are you sure you want to delete the API key and secret from rotkehlchen? This action is not undoable and you will need to obtain the key and secret again from the exchange."
       @cancel="confirmation = false"
       @confirm="remove()"
     ></confirm-dialog>
@@ -69,6 +64,7 @@ import ExchangeBadge from '@/components/ExchangeBadge.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { createExchangePayload } from '@/store/balances/actions';
+import { Message } from '@/store/store';
 
 const { mapState } = createNamespacedHelpers('balances');
 
@@ -81,9 +77,6 @@ export default class ExchangeSettings extends Vue {
   apiSecret: string = '';
   selectedExchange: string = exchanges[0];
   confirmation: boolean = false;
-
-  errorMessage: string = '';
-  errorTitle: string = '';
 
   connectedExchanges!: string[];
 
@@ -101,11 +94,6 @@ export default class ExchangeSettings extends Vue {
     }
   }
 
-  readonly confirmTitle = 'Confirmation Required';
-  readonly confirmMessage =
-    'Are you sure you want to delete the API key and secret from rotkehlchen? ' +
-    'This action is not undoable and you will need to obtain the key and secret again from the exchange.';
-
   get availableExchanges(): Array<string> {
     return exchanges;
   }
@@ -118,11 +106,6 @@ export default class ExchangeSettings extends Vue {
     );
   }
 
-  dismiss() {
-    this.errorTitle = '';
-    this.errorMessage = '';
-  }
-
   clicked() {
     if (this.isConnected) {
       this.confirmation = true;
@@ -130,25 +113,30 @@ export default class ExchangeSettings extends Vue {
     }
 
     const exchangeName = this.selectedExchange;
+    const { commit, dispatch } = this.$store;
     this.$rpc
       .setup_exchange(exchangeName, this.apiKey, this.apiSecret)
       .then(() => {
         this.resetFields(true);
-        this.$store.commit('balances/addExchange', exchangeName);
-        this.$store.dispatch(
+        commit('balances/addExchange', exchangeName);
+        dispatch(
           'balances/fetchExchangeBalances',
           createExchangePayload(exchangeName)
         );
       })
       .catch((reason: Error) => {
-        this.errorTitle = 'Exchange Setup Error';
-        this.errorMessage = `Error at setup of ${exchangeName}: ${reason.message}`;
+        commit('setMessage', {
+          title: 'Exchange Setup Error',
+          description: `Error at setup of ${exchangeName}: ${reason.message}`
+        } as Message);
       });
   }
 
   remove() {
+    const { commit } = this.$store;
     this.confirmation = false;
     const exchangeName = this.selectedExchange;
+
     this.$rpc
       .remove_exchange(exchangeName)
       .then(() => {
@@ -157,15 +145,19 @@ export default class ExchangeSettings extends Vue {
           value => value === exchangeName
         );
         if (exchangeIndex === -1) {
-          this.errorMessage = 'Error during exchange removal';
-          this.errorMessage = `Exchange ${exchangeName} was not in connected_exchanges when trying to remove`;
+          commit('setMessage', {
+            title: 'Error during exchange removal',
+            description: `Exchange ${exchangeName} was not in connected_exchanges when trying to remove`
+          } as Message);
         } else {
-          this.$store.commit('balances/removeExchange', exchangeName);
+          commit('balances/removeExchange', exchangeName);
         }
       })
       .catch((reason: Error) => {
-        this.errorTitle = 'Exchange Removal Error';
-        this.errorMessage = `Error at removing ${exchangeName} exchange: ${reason.message}`;
+        commit('setMessage', {
+          title: 'Exchange Removal Error',
+          description: `Error at removing ${exchangeName} exchange: ${reason.message}`
+        } as Message);
       });
   }
 }

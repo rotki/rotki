@@ -108,17 +108,6 @@
         </v-card>
       </v-col>
     </v-row>
-    <message-dialog
-      :success="true"
-      title="Success"
-      :message="successMessage"
-      @dismiss="dismiss()"
-    ></message-dialog>
-    <message-dialog
-      :title="errorTitle"
-      :message="errorMessage"
-      @dismiss="dismiss()"
-    ></message-dialog>
     <div id="settings-accounting"></div>
   </v-container>
 </template>
@@ -128,6 +117,7 @@ import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import { AccountingSettings } from '@/typing/types';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
+import { Message } from '@/store/store';
 
 const { mapState } = createNamespacedHelpers('session');
 
@@ -145,19 +135,9 @@ export default class Accounting extends Vue {
   taxFreeAfterPeriod: number | null = null;
   taxFreePeriod: boolean = false;
 
-  successMessage: string = '';
-  errorMessage: string = '';
-  errorTitle: string = '';
-
   ignoredAssets: string[] = [];
   assetToIgnore: string = '';
   assetToRemove: string = '';
-
-  dismiss() {
-    this.errorMessage = '';
-    this.successMessage = '';
-    this.errorTitle = '';
-  }
 
   created() {
     this.$rpc
@@ -166,8 +146,10 @@ export default class Accounting extends Vue {
         this.ignoredAssets = assets;
       })
       .catch(() => {
-        this.errorTitle = 'Error';
-        this.errorMessage = 'Failed to retrieve the ignored assets';
+        this.$store.commit('setMessage', {
+          title: 'Error',
+          description: 'Failed to retrieve the ignored assets'
+        } as Message);
       });
   }
 
@@ -190,20 +172,27 @@ export default class Accounting extends Vue {
       period *= 86400;
     }
 
+    const { commit } = this.$store;
+
     this.$rpc
       .set_settings({ taxfree_after_period: period })
       .then(() => {
-        this.successMessage = 'Successfully set trade settings';
-        this.$store.commit(
-          'session/accountingSettings',
-          Object.assign({}, this.accountingSettings, {
-            taxFreeAfterPeriod: period
-          })
-        );
+        commit('setMessage', {
+          title: 'Success',
+          description: 'Successfully set trade settings',
+          success: true
+        } as Message);
+
+        commit('session/accountingSettings', {
+          ...this.accountingSettings,
+          taxFreeAfterPeriod: period
+        });
       })
       .catch((reason: Error) => {
-        this.errorTitle = 'Error setting trade settings';
-        this.errorMessage = reason.message;
+        commit('setMessage', {
+          title: 'Error setting trade settings',
+          description: reason.message
+        } as Message);
       });
   }
 
@@ -221,43 +210,55 @@ export default class Accounting extends Vue {
   }
 
   onCrypto2CryptoChange(enabled: boolean) {
+    const { commit } = this.$store;
     this.$rpc
       .set_settings({ include_crypto2crypto: enabled })
       .then(() => {
-        this.successMessage =
-          'Successfully set crypto to crypto consideration value';
-        this.$store.commit(
-          'session/accountingSettings',
-          Object.assign({}, this.accountingSettings, {
-            includeCrypto2Crypto: enabled
-          })
-        );
+        commit('setMessage', {
+          title: 'Success',
+          description: 'Successfully set crypto to crypto consideration value',
+          success: true
+        } as Message);
+        commit('session/accountingSettings', {
+          ...this.accountingSettings,
+          includeCrypto2Crypto: enabled
+        });
       })
       .catch(reason => {
-        this.errorTitle = 'Error';
-        this.errorMessage = `Error setting crypto to crypto ${reason.message}`;
+        commit('setMessage', {
+          title: 'Error',
+          description: `Error setting crypto to crypto ${reason.message}`
+        } as Message);
       });
   }
 
   onGasCostChange(enabled: boolean) {
+    const { commit } = this.$store;
+
     this.$rpc
       .set_settings({ include_gas_costs: enabled })
       .then(() => {
-        this.successMessage = 'Successfully set Ethereum gas costs value';
-        this.$store.commit(
-          'session/accountingSettings',
-          Object.assign({}, this.accountingSettings, {
-            includeGasCosts: enabled
-          })
-        );
+        commit('setMessage', {
+          title: 'Success',
+          description: 'Successfully set Ethereum gas costs value',
+          success: true
+        } as Message);
+        commit('session/accountingSettings', {
+          ...this.accountingSettings,
+          includeGasCosts: enabled
+        });
       })
       .catch(reason => {
-        this.errorTitle = 'Error';
-        this.errorMessage = `Error setting Ethereum gas costs: ${reason.message}`;
+        commit('setMessage', {
+          title: 'Error',
+          description: `Error setting Ethereum gas costs: ${reason.message}`
+        } as Message);
       });
   }
 
   addAsset() {
+    const { commit } = this.$store;
+
     this.$rpc
       .modify_asset(true, this.assetToIgnore)
       .then(() => {
@@ -265,8 +266,10 @@ export default class Accounting extends Vue {
         this.assetToIgnore = '';
       })
       .catch((reason: Error) => {
-        this.errorTitle = 'Ignored Asset Modification Error';
-        this.errorMessage = `Error at modifying ignored asset ${this.assetToIgnore} (${reason.message})`;
+        commit('setMessage', {
+          title: 'Ignored Asset Modification Error',
+          description: `Error at modifying ignored asset ${this.assetToIgnore} (${reason.message})`
+        } as Message);
       });
   }
 
@@ -283,8 +286,12 @@ export default class Accounting extends Vue {
         this.assetToRemove = '';
       })
       .catch((reason: Error) => {
-        this.errorTitle = 'Ignored Asset Modification Error';
-        this.errorMessage = `Error at modifying ignored asset ${this.assetToIgnore} (${reason.message})`;
+        const { commit } = this.$store;
+
+        commit('setMessage', {
+          title: 'Ignored Asset Modification Error',
+          description: `Error at modifying ignored asset ${this.assetToIgnore} (${reason.message})`
+        } as Message);
       });
   }
 }

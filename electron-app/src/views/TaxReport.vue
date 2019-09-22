@@ -55,9 +55,9 @@ import TaxReportOverview from '@/components/taxreport/TaxReportOverview.vue';
 import TaxReportEvents from '@/components/taxreport/TaxReportEvents.vue';
 import { Currency } from '@/model/currency';
 
-const mapTaskGetters = createNamespacedHelpers('tasks').mapGetters;
+const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 const { mapState, mapGetters } = createNamespacedHelpers('reports');
-const mapSessionState = createNamespacedHelpers('session').mapState;
+const { mapState: mapSessionState } = createNamespacedHelpers('session');
 
 @Component({
   components: { TaxReportEvents, TaxReportOverview, MessageDialog, Generate },

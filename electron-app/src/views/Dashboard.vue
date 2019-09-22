@@ -92,7 +92,7 @@ import BigNumber from 'bignumber.js';
 import { Zero } from '@/utils/bignumbers';
 import { AssetBalance } from '@/model/blockchain-balances';
 
-const mapBalanceGetters = createNamespacedHelpers('balances').mapGetters;
+const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
 const { mapState, mapGetters } = createNamespacedHelpers('session');
 
 @Component({

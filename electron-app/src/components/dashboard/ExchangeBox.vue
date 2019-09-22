@@ -57,7 +57,7 @@ import { createNamespacedHelpers } from 'vuex';
 import { Currency } from '@/model/currency';
 
 const { mapState, mapGetters } = createNamespacedHelpers('session');
-const mapBalanceGetters = createNamespacedHelpers('balances').mapGetters;
+const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
 
 @Component({
   computed: {
