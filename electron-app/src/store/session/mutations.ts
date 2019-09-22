@@ -11,8 +11,11 @@ export const mutations: MutationTree<SessionState> = {
   defaultCurrency(state: SessionState, currency: Currency) {
     state.currency = currency;
   },
-  logged(state: SessionState, logged: boolean) {
-    state.logged = logged;
+  login(state: SessionState, payload: { username: string; newUser: boolean }) {
+    const { username, newUser } = payload;
+    state.logged = true;
+    state.newUser = newUser;
+    state.username = username;
   },
   settings(state: SessionState, settings: GeneralSettings) {
     state.settings = { ...settings };
@@ -34,9 +37,6 @@ export const mutations: MutationTree<SessionState> = {
     setting: AccountingSettingsUpdate
   ) {
     state.accountingSettings = { ...state.accountingSettings, ...setting };
-  },
-  newUser(state: SessionState, newUser: boolean) {
-    state.newUser = newUser;
   },
   nodeConnection(state: SessionState, nodeConnection: boolean) {
     state.nodeConnection = nodeConnection;

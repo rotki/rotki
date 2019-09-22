@@ -18,7 +18,6 @@ import {
   TradeHistoryResult
 } from '@/model/trade-history-types';
 import map from 'lodash/map';
-import { ApiAssetBalances } from '@/typing/types';
 
 export class TaskManager {
   private onUserSettingsQueryBlockchainBalances(

@@ -1,5 +1,5 @@
 import { ActionTree } from 'vuex';
-import { RotkehlchenState } from '@/store/store';
+import { Message, RotkehlchenState } from '@/store/store';
 import { SessionState } from '@/store/session/state';
 import {
   convertToAccountingSettings,
@@ -30,15 +30,23 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         syncApproval
       );
 
-      commit('newUser', create);
-      const db_settings = response.settings;
-      if (!db_settings) {
-        throw new Error('Unlock Failed');
+      const { settings, premium, exchanges } = response;
+
+      if (!settings) {
+        commit(
+          'setMessage',
+          {
+            title: 'Unlock failed',
+            description: response.message || response.error || ''
+          } as Message,
+          { root: true }
+        );
+        return;
       }
 
       await dispatch('start', {
-        premium: response.premium,
-        settings: db_settings
+        premium,
+        settings
       });
 
       monitor.start();
@@ -47,14 +55,14 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         'balances/fetch',
         {
           create,
-          exchanges: response.exchanges
+          exchanges
         },
         {
           root: true
         }
       );
 
-      commit('logged', true);
+      commit('login', { username, newUser: create });
     } catch (e) {
       commit(
         'setMessage',
@@ -65,7 +73,6 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         },
         { root: true }
       );
-      console.error(e);
     }
   },
   async periodicCheck({ commit }) {
@@ -91,6 +98,26 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       });
     } catch (e) {
       notify(`Error at periodic client query: ${e}`, 'Periodic client query');
+    }
+  },
+  async logout({ commit }) {
+    try {
+      await service.logout();
+      monitor.stop();
+      commit('session/reset', {}, { root: true });
+      commit('notifications/reset', {}, { root: true });
+      commit('reports/reset', {}, { root: true });
+      commit('balances/reset', {}, { root: true });
+      commit('tasks/reset', {}, { root: true });
+    } catch (e) {
+      commit(
+        'setMessage',
+        {
+          title: 'Logout failed',
+          description: e.message || ''
+        } as Message,
+        { root: true }
+      );
     }
   }
 };
