@@ -47,11 +47,6 @@
           </template>
         </template>
       </v-autocomplete>
-      <message-dialog
-        :title="errorTitle"
-        :message="errorMessage"
-        @dismiss="dismiss()"
-      ></message-dialog>
     </v-col>
   </v-row>
 </template>
@@ -63,6 +58,7 @@ import CryptoIcon from '@/components/CryptoIcon.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import { BlockchainAccountResult } from '@/model/blockchain_account_result';
 import { convertBalances, convertEthBalances } from '@/utils/conversion';
+import { Message } from '@/store/store';
 
 @Component({
   components: {
@@ -76,9 +72,6 @@ export default class TokenTrack extends Vue {
 
   loading = false;
 
-  errorTitle: string = '';
-  errorMessage: string = '';
-
   add(tokens: string[]) {
     const symbol = tokens[tokens.length - 1];
     this.loading = true;
@@ -89,8 +82,10 @@ export default class TokenTrack extends Vue {
       })
       .catch(reason => {
         this.removeToken(symbol);
-        this.errorTitle = 'Token Addition Error';
-        this.errorMessage = reason.message;
+        this.$store.commit('setMessage', {
+          title: 'Token Addition Error',
+          description: (reason as Error).message
+        } as Message);
       })
       .finally(() => (this.loading = false));
   }
@@ -105,8 +100,10 @@ export default class TokenTrack extends Vue {
         this.removeToken(symbol);
       })
       .catch(reason => {
-        this.errorTitle = 'Token Removal Error';
-        this.errorMessage = (reason as Error).message;
+        this.$store.commit('setMessage', {
+          title: 'Token Removal Error',
+          description: (reason as Error).message
+        } as Message);
       })
       .finally(() => (this.loading = false));
   }
@@ -142,15 +139,11 @@ export default class TokenTrack extends Vue {
   private update(result: BlockchainAccountResult) {
     const { per_account, totals } = result;
     const { ETH, BTC } = per_account;
+    const { commit } = this.$store;
 
-    this.$store.commit('balances/updateEth', convertEthBalances(ETH));
-    this.$store.commit('balances/updateBtc', convertBalances(BTC));
-    this.$store.commit('balances/updateTotals', convertBalances(totals));
-  }
-
-  dismiss() {
-    this.errorMessage = '';
-    this.errorTitle = '';
+    commit('balances/updateEth', convertEthBalances(ETH));
+    commit('balances/updateBtc', convertBalances(BTC));
+    commit('balances/updateTotals', convertBalances(totals));
   }
 }
 </script>

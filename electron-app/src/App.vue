@@ -201,6 +201,5 @@ export default class App extends Vue {
   display: block;
   margin: 10px auto;
   padding: 15px;
-  /* outline: 1px solid #e45325; */
 }
 </style>

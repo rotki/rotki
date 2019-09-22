@@ -51,7 +51,7 @@ import { createNamespacedHelpers } from 'vuex';
 import { Task } from '@/model/task';
 
 const { mapGetters } = createNamespacedHelpers('tasks');
-const mapReportGetters = createNamespacedHelpers('reports').mapGetters;
+const { mapGetters: mapReportGetters } = createNamespacedHelpers('reports');
 
 @Component({
   computed: {
