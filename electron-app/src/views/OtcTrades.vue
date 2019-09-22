@@ -94,7 +94,7 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { OtcPayload, OtcTrade } from '@/model/otc-trade';
+import { OtcPayload, OtcTrade, placeholderOtcTrade } from "@/model/otc-trade";
 import OtcForm from '@/components/OtcForm.vue';
 import { mapGetters } from 'vuex';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
@@ -114,7 +114,7 @@ export default class OtcTrades extends Vue {
   y: number = 0;
 
   selectedItem?: OtcTrade;
-  editableItem?: OtcTrade;
+  editableItem: OtcTrade = placeholderOtcTrade();
 
   otcTrades: OtcTrade[] = [];
 
@@ -150,13 +150,13 @@ export default class OtcTrades extends Vue {
       .finally(() => {
         this.editMode = false;
         this.selectedItem = undefined;
-        this.editableItem = undefined;
+        this.editableItem = placeholderOtcTrade();
       });
   }
 
   editItem() {
     this.editMode = true;
-    this.editableItem = this.selectedItem;
+    this.editableItem = this.selectedItem || placeholderOtcTrade();
   }
 
   deleteItem() {
@@ -178,7 +178,7 @@ export default class OtcTrades extends Vue {
   cancelEdit() {
     this.editMode = false;
     this.selectedItem = undefined;
-    this.editableItem = undefined;
+    this.editableItem = placeholderOtcTrade();
   }
 
   created() {
