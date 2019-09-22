@@ -144,7 +144,7 @@ export default class Dashboard extends Vue {
 }
 
 .dashboard__information-boxes > * {
-  margin-top: 8px;
+  margin-top: 16px;
 }
 
 .dashboard__aggregate__asset__icon {

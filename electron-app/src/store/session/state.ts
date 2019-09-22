@@ -5,8 +5,9 @@ import { AccountingSettings, GeneralSettings } from '@/typing/types';
 
 export interface SessionState {
   newUser: boolean;
-  currency: Currency;
   logged: boolean;
+  username: string;
+  currency: Currency;
   settings: GeneralSettings;
   accountingSettings: AccountingSettings;
   premium: boolean;
@@ -16,8 +17,9 @@ export interface SessionState {
 
 export const defaultState: () => SessionState = () => ({
   newUser: false,
-  currency: currencies[0],
   logged: false,
+  username: '',
+  currency: currencies[0],
   settings: defaultSettings(),
   accountingSettings: defaultAccountingSettings(),
   premium: false,

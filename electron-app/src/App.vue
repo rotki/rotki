@@ -1,5 +1,5 @@
 <template>
-  <v-app id="rotkehlchen">
+  <v-app id="rotki">
     <v-navigation-drawer
       v-model="drawer"
       fixed
@@ -11,17 +11,17 @@
         <img
           id="rotkehlchen_no_text"
           :src="require('./assets/images/rotkehlchen_no_text.png')"
-          class="logo"
+          class="rotki__logo"
           alt=""
           @click="openSite()"
         />
       </div>
-      <div id="welcome_text" class="text-center"></div>
+      <div id="welcome_text" class="text-center">Welcome {{ username }}</div>
       <navigation-menu></navigation-menu>
     </v-navigation-drawer>
-    <v-app-bar app fixed clipped-left flat>
+    <v-app-bar app fixed clipped-left flat class="grey lighten-4">
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-toolbar-title class="font-weight-light">
+      <v-toolbar-title class="font-weight-light rotki__version">
         Rotki {{ version }}
       </v-toolbar-title>
       <node-status-indicator></node-status-indicator>
@@ -36,13 +36,6 @@
     <v-content v-if="logged">
       <router-view></router-view>
     </v-content>
-    <confirm-dialog
-      :display="logout"
-      title="Confirmation Required"
-      message="Are you sure you want to log out of your current rotkehlchen session?"
-      @confirm="logoutUser()"
-      @cancel="logout = false"
-    ></confirm-dialog>
     <message-dialog
       :title="message.title"
       :message="message.description"
@@ -53,17 +46,7 @@
       :message="startupError"
       @dismiss="terminate()"
     ></message-dialog>
-    <login
-      :displayed="!logged && !message.title && !newAccount"
-      :loading="loading"
-      @login="login($event)"
-      @new-account="newAccount = true"
-    ></login>
-    <create-account
-      :displayed="!logged && newAccount && !message.title"
-      @cancel="newAccount = false"
-      @confirm="createAccount($event)"
-    ></create-account>
+    <account-management :logged="logged"></account-management>
   </v-app>
 </template>
 
@@ -73,11 +56,7 @@ import UserDropdown from '@/components/UserDropdown.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
 import { createNamespacedHelpers, mapGetters, mapState } from 'vuex';
-import Login from '@/components/Login.vue';
-import { Credentials } from '@/typing/types';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
-import CreateAccount from '@/components/CreateAccount.vue';
-import { monitor } from '@/services/monitoring';
 import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
 import BalanceSavedIndicator from '@/components/status/BalanceSavedIndicator.vue';
 import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
@@ -85,22 +64,21 @@ import ProgressIndicator from '@/components/status/ProgressIndicator.vue';
 import './services/task_manager';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { ipcRenderer, remote, shell } from 'electron';
-import { UnlockPayload } from '@/store/session/actions';
 import { Message } from '@/store/store';
 import UpdateIndicator from './components/status/UpdateIndicator.vue';
+import AccountManagement from './components/AccountManagement.vue';
 
-const mapSessionState = createNamespacedHelpers('session').mapState;
+const { mapState: mapSessionState } = createNamespacedHelpers('session');
 
 @Component({
   components: {
+    AccountManagement,
     UpdateIndicator,
     ProgressIndicator,
     NotificationIndicator,
     BalanceSavedIndicator,
     NodeStatusIndicator,
-    CreateAccount,
     MessageDialog,
-    Login,
     ConfirmDialog,
     CurrencyDropDown,
     NavigationMenu,
@@ -108,21 +86,18 @@ const mapSessionState = createNamespacedHelpers('session').mapState;
   },
   computed: {
     ...mapState(['message']),
-    ...mapSessionState(['logged']),
+    ...mapSessionState(['logged', 'username']),
     ...mapGetters(['version'])
   }
 })
 export default class App extends Vue {
-  logout: boolean = false;
   logged!: boolean;
   message!: Message;
   version!: string;
 
-  newAccount: boolean = false;
   drawer = true;
 
   startupError: string = '';
-  loading: boolean = false;
 
   openSite() {
     shell.openExternal('http://rotkehlchen.io');
@@ -148,42 +123,6 @@ export default class App extends Vue {
     await this.$store.dispatch('version');
   }
 
-  ok() {}
-
-  async login(credentials: Credentials) {
-    const { username, password } = credentials;
-    this.loading = true;
-    await this.$store.dispatch('session/unlock', {
-      username: username,
-      password: password
-    } as UnlockPayload);
-    this.loading = false;
-  }
-
-  async createAccount(credentials: Credentials) {
-    const { username, password } = credentials;
-    await this.$store.dispatch('session/unlock', {
-      username: username,
-      password: password,
-      create: true,
-      syncApproval: 'unknown'
-    } as UnlockPayload);
-  }
-
-  logoutUser() {
-    this.$rpc
-      .logout()
-      .then(() => {
-        monitor.stop();
-        this.$store.commit('tasks/clear');
-        this.$store.commit('session/logout');
-      })
-      .catch((reason: Error) => {
-        console.log(`Error at logout`);
-        console.error(reason);
-      });
-  }
-
   //   showInfo(
   //   'Welcome to Rotkehlchen!',
   //   'It appears this is your first time using the program. ' +
@@ -193,9 +132,14 @@ export default class App extends Vue {
 </script>
 
 <style scoped lang="scss">
-.logo {
+.rotki__logo {
   max-height: 150px;
 }
+
+.rotki__version {
+  margin-right: 16px;
+}
+
 #rotkehlchen_no_text {
   width: 150px;
   display: block;
