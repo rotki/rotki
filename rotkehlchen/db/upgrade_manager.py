@@ -91,10 +91,14 @@ def _remove_cache_files(user_data_dir: str) -> None:
 
 
 def _upgrade_v5_to_v6(db: 'DBHandler') -> None:
+    """Upgrades the DB from v5 to v6
+
+    It removes all cache files and also upgrades all trade tables to:
+    - use the new id scheme
+    - use an enum table for trade type
+    - use an enum table for location
+    """
     _remove_cache_files(db.user_data_dir)
-    # And also upgrade the trades tables to:
-    # - use the new id scheme
-    # - use an enum table for trade type
     cursor = db.conn.cursor()
     # This is the data trades table had at v5
     query = cursor.execute(
@@ -107,6 +111,8 @@ def _upgrade_v5_to_v6(db: 'DBHandler') -> None:
         time = result[0]
         pair = result[2]
         old_trade_type = result[3]
+        # hand deserialize trade type from DB enum since this code is going to stay
+        # here even if deserialize_trade_type_from_db() changes
         if old_trade_type == 'buy':
             trade_type = 'A'
         elif old_trade_type == 'sell':
@@ -121,7 +127,7 @@ def _upgrade_v5_to_v6(db: 'DBHandler') -> None:
         trade_tuples.append((
             trade_id,
             time,
-            result[1],
+            'A',  # Symbolizes external in the location enum
             pair,
             trade_type,
             result[4],

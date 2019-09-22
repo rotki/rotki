@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Union
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Exchange, TradeType
+from rotkehlchen.typing import Location, TradeType
 
 
 class RKLDecoder(json.JSONDecoder):
@@ -20,7 +20,7 @@ class RKLEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, FVal):
             return str(obj)
-        if isinstance(obj, (TradeType, Exchange)):
+        if isinstance(obj, (TradeType, Location)):
             return str(obj)
         if isinstance(obj, float):
             raise ValueError("Trying to json encode a float.")
