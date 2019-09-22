@@ -41,7 +41,7 @@ def _remove_cache_files(user_data_dir: str) -> None:
 
 def _upgrade_trades_table(db: 'DBHandler') -> None:
     cursor = db.conn.cursor()
-    # This is the data trades table had at v5
+    # This is the data trades table at v5
     query = cursor.execute(
         """SELECT time, location, pair, type, amount, rate, fee, fee_currency,
         link, notes FROM trades;""",
@@ -120,13 +120,76 @@ def _upgrade_trades_table(db: 'DBHandler') -> None:
     db.conn.commit()
 
 
+def _location_to_enum_location(location: str) -> str:
+    """Serialize location strings to DB location enums
+
+    The reason we have a specialized function here and not just using
+    deserialize_location(location).serialize_for_db() is that this code
+    should work in the future if either of the two functions change or dissapear.
+    """
+    if location == 'external':
+        return 'A'
+    elif location == 'kraken':
+        return 'B'
+    elif location == 'poloniex':
+        return 'C'
+    elif location == 'bittrex':
+        return 'D'
+    elif location == 'binance':
+        return 'E'
+    elif location == 'bitmex':
+        return 'F'
+    elif location == 'coinbase':
+        return 'G'
+    elif location == 'total':
+        return 'H'
+    elif location == 'banks':
+        return 'I'
+    elif location == 'blockchain':
+        return 'J'
+
+
+def _upgrade_timed_location_data(db: 'DBHandler') -> None:
+    cursor = db.conn.cursor()
+    # This is the timed location data table at v5
+    query = cursor.execute('SELECT time, location, usd_value FROM timed_location_data;')
+    tuples = []
+    for result in query:
+        tuples.append((result[0], _location_to_enum_location(result[1]), result[2]))
+
+    # We got all the old timed location data. Now delete the old table and create
+    # the new one
+    cursor.execute('DROP TABLE timed_location_data;')
+    db.conn.commit()
+    # This is the scheme of the timed_location_Data table at v6 from db/utils.py
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS timed_location_data (
+        time INTEGER,
+        location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+        usd_value TEXT,
+        PRIMARY KEY (time, location)
+    );
+    """)
+    db.conn.commit()
+
+    # and finally move the data to the new table
+    cursor.executemany(
+        'INSERT INTO timed_location_data(time, location, usd_value)'
+        'VALUES (?, ?, ?)',
+        tuples,
+    )
+    db.conn.commit()
+
+
 def upgrade_v5_to_v6(db: 'DBHandler') -> None:
     """Upgrades the DB from v5 to v6
 
-    It removes all cache files and also upgrades all trade tables to:
-    - use the new id scheme
-    - use an enum table for trade type
-    - use an enum table for location
+    - removes all cache files
+    - upgrades trades table to use the new id scheme
+    - upgrades trades table to use an enum table for trade type
+    - upgrades trades table to use an enum table for location
+    - upgrades timed_location_data table to use an enum table for location
     """
     _remove_cache_files(db.user_data_dir)
     _upgrade_trades_table(db)
+    _upgrade_timed_location_data(db)

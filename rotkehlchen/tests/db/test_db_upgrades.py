@@ -372,7 +372,7 @@ def test_upgrade_db_5_to_6(data_dir, username):
     os.mkdir(userdata_dir)
     dir_path = os.path.dirname(os.path.realpath(__file__))
     copyfile(
-        os.path.join(os.path.dirname(dir_path), 'data', 'v5_rotkehlchen_otc_trades.db'),
+        os.path.join(os.path.dirname(dir_path), 'data', 'v5_rotkehlchen.db'),
         os.path.join(userdata_dir, 'rotkehlchen.db'),
     )
 
@@ -421,6 +421,26 @@ def test_upgrade_db_5_to_6(data_dir, username):
     )]
     results = results.fetchall()
     assert results == expected_results
+
+    # Also test that the location got properly updated in the timed_location_data table
+    query = 'SELECT time, location, usd_value FROM timed_location_data ORDER BY time ASC;'
+    results = cursor.execute(query)
+    expected_results = [(
+        1569186628,  # time
+        'H',  # total symbol for DB location Enum
+        '6561.07369468235924484',  # usd_value
+    ), (
+        1569186628,  # time
+        'I',  # bank symbol for DB location Enum
+        '165.450',  # usd_value
+    ), (
+        1569186628,  # time
+        'J',  # blockchain symbol for DB location Enum
+        '6395.62369468235924484',  # usd_value
+    )]
+    results = results.fetchall()
+    assert results == expected_results
+
     # Also make sure that we have updated to the target version
     assert db.get_version() == 6
 
