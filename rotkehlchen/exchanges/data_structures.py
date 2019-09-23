@@ -138,7 +138,7 @@ class Trade(NamedTuple):
     @property
     def identifier(self) -> TradeID:
         """Formulates a unique identifier for the trade to become the DB primary key
-        We are not using self.link (unique trade identifier) as part of the ID
+        We are not using self.link (unique exchange identifier) as part of the ID
         for exchange trades since it may not be available at import of data from
         third party sources such as cointracking.inf
 
@@ -185,10 +185,21 @@ class MarginPosition(NamedTuple):
     def identifier(self) -> str:
         """Formulates a unique identifier for the margin position to become the DB primary key
 
-        TODO: Maybe facing the same problem as trades here and need to avoid using
-        the "self.link" which is the unique identifier for the action from the exchange?
+        We are not using self.link (unique exchange identifier) as part of the ID
+        for exchange margins since it may not be available at import of data from
+        third party sources such as cointracking.info
+
+        Unfortunately this makes the Trade identifier pseudo unique and means
+        we can't have same trades with all of the following attributes.
         """
-        string = str(self.location) + self.link
+        open_time = 'None' if self.open_time is None else str(self.open_time)
+        string = (
+            str(self.location) +
+            open_time +
+            str(self.close_time) +
+            self.pl_currency.identifier +
+            self.fee_currency.identifier
+        )
         return hash_id(string)
 
 
