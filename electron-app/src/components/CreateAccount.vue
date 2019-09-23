@@ -90,7 +90,10 @@ export default class CreateAccount extends Vue {
     this.password = '';
     this.passwordConfirm = '';
 
-    (this.$refs.form as any).reset();
+    const form = this.$refs.form as any;
+    if (form) {
+      form.reset();
+    }
   }
 
   confirm() {
