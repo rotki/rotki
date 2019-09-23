@@ -64,7 +64,11 @@ export default class Login extends Vue {
   onDisplayChange() {
     this.username = '';
     this.password = '';
-    (this.$refs.form as any).reset();
+    const form = this.$refs.form as any;
+
+    if (form) {
+      form.reset();
+    }
   }
 
   username: string = '';

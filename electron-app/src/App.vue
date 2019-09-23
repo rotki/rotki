@@ -123,12 +123,6 @@ export default class App extends Vue {
     });
     await this.$store.dispatch('version');
   }
-
-  //   showInfo(
-  //   'Welcome to Rotkehlchen!',
-  //   'It appears this is your first time using the program. ' +
-  //   'Follow the suggestions to integrate with some exchanges or manually input data.'
-  // );
 }
 </script>
 

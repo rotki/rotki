@@ -24,15 +24,15 @@ export interface OtcPayload {
   readonly otc_notes: string;
 }
 
-export const placeholderOtcTrade = (): OtcTrade =>({
-   id: -1,
-   timestamp: -1,
-   pair: '',
-   trade_type: 'buy',
-   amount: '',
-   rate: '',
-   fee: '',
-   fee_currency: '',
-   link: '',
-   notes: ''
+export const placeholderOtcTrade = (): OtcTrade => ({
+  id: -1,
+  timestamp: -1,
+  pair: '',
+  trade_type: 'buy',
+  amount: '',
+  rate: '',
+  fee: '',
+  fee_currency: '',
+  link: '',
+  notes: ''
 });

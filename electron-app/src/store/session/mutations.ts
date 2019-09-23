@@ -11,10 +11,13 @@ export const mutations: MutationTree<SessionState> = {
   defaultCurrency(state: SessionState, currency: Currency) {
     state.currency = currency;
   },
-  login(state: SessionState, payload: { username: string; newUser: boolean }) {
-    const { username, newUser } = payload;
+  login(
+    state: SessionState,
+    payload: { username: string; newAccount: boolean }
+  ) {
+    const { username, newAccount } = payload;
     state.logged = true;
-    state.newUser = newUser;
+    state.newAccount = newAccount;
     state.username = username;
   },
   settings(state: SessionState, settings: GeneralSettings) {

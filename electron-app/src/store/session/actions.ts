@@ -62,7 +62,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         }
       );
 
-      commit('login', { username, newUser: create });
+      commit('login', { username, newAccount: create });
     } catch (e) {
       commit(
         'setMessage',
