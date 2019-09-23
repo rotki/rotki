@@ -4,6 +4,7 @@ from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.crypto import sha3
 from rotkehlchen.errors import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import (
@@ -14,10 +15,24 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import AssetAmount, Fee, Location, Price, Timestamp, TradePair, TradeType
+from rotkehlchen.typing import (
+    AssetAmount,
+    Fee,
+    Location,
+    Price,
+    Timestamp,
+    TradeID,
+    TradePair,
+    TradeType,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 
 ExchangeName = Literal['kraken', 'poloniex', 'bittrex', 'binance', 'bitmex', 'coinbase']
+
+
+def hash_id(hashable: str) -> TradeID:
+    id_bytes = sha3(hashable.encode())
+    return TradeID(id_bytes.hex())
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -57,6 +72,12 @@ class AssetMovement(NamedTuple):
     # For exchange asset movements this should be the exchange unique identifier
     link: str
 
+    @property
+    def identifier(self) -> str:
+        """Formulates a unique identifier for the asset movements to become the DB primary key"""
+        string = str(self.location) + str(self.category) + self.link
+        return hash_id(string)
+
 
 class Trade(NamedTuple):
     """Represents a Trade
@@ -70,6 +91,11 @@ class Trade(NamedTuple):
     BTC. In Kraken XXBTZEUR translates to BTC_EUR. This means we buy BTC for EUR
     or we sell BTC for EUR. So for some exchanges like poloniex when importing a
     trade, the pair needs to be swapped.
+
+    All trades have a unique ID which is generated from some of the attributes.
+    For details check identifier() function
+    This unique ID is not stored in the NamedTuple since it depends on some of
+    its attributes.
     """
     timestamp: Timestamp
     location: Location
@@ -96,6 +122,30 @@ class Trade(NamedTuple):
         _, quote = pair_get_assets(self.pair)
         return quote
 
+    @property
+    def identifier(self) -> TradeID:
+        """Formulates a unique identifier for the trade to become the DB primary key"""
+        # We are not using self.link (unique trade identifier) as part of the ID
+        # for exchange trades since it may not be available at import of data from
+        # third party sources such as cointracking.info
+        string = str(self.location) + str(self.timestamp) + str(self.trade_type) + self.pair
+        return TradeID(hash_id(string))
+
+    def serialize(self) -> Dict[str, Any]:
+        """Serialize the trade into a dict"""
+        return {
+            'timestamp': self.timestamp,
+            'location': str(self.location),
+            'pair': self.pair,
+            'trade_type': str(self.trade_type),
+            'amount': str(self.amount),
+            'rate': str(self.rate),
+            'fee': str(self.fee),
+            'fee_currency': self.fee_currency.identifier,
+            'link': self.link,
+            'notes': self.notes,
+        }
+
 
 class MarginPosition(NamedTuple):
     """We only support margin positions on poloniex and bitmex at the moment"""
@@ -113,6 +163,12 @@ class MarginPosition(NamedTuple):
     # For exchange margins this should be the exchange unique identifer
     link: str
     notes: str = ''
+
+    @property
+    def identifier(self) -> str:
+        """Formulates a unique identifier for the margin position to become the DB primary key"""
+        string = str(self.location) + self.link
+        return hash_id(string)
 
 
 class Loan(NamedTuple):

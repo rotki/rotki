@@ -13,11 +13,6 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH, S_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.datatyping import BalancesData, DBSettings
-from rotkehlchen.db.trades import (
-    formulate_asset_movement_id,
-    formulate_margin_id,
-    formulate_trade_id,
-)
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
     DB_SCRIPT_CREATE_TABLES,
@@ -774,10 +769,9 @@ class DBHandler():
         cursor = self.conn.cursor()
         margin_tuples = []
         for margin in margin_positions:
-            margin_id = formulate_margin_id(margin)
             open_time = 0 if margin.open_time is None else margin.open_time
             margin_tuples.append((
-                margin_id,
+                margin.identifier,
                 margin.location,
                 open_time,
                 margin.close_time,
@@ -896,9 +890,8 @@ class DBHandler():
         cursor = self.conn.cursor()
         movement_tuples = []
         for movement in asset_movements:
-            movement_id = formulate_asset_movement_id(movement)
             movement_tuples.append((
-                movement_id,
+                movement.identifier,
                 str(movement.location),
                 movement.category,
                 movement.timestamp,
@@ -1009,9 +1002,8 @@ class DBHandler():
         cursor = self.conn.cursor()
         trade_tuples = []
         for trade in trades:
-            trade_id = formulate_trade_id(trade)
             trade_tuples.append((
-                trade_id,
+                trade.identifier,
                 trade.timestamp,
                 trade.location.serialize_for_db(),
                 trade.pair,
@@ -1055,12 +1047,13 @@ class DBHandler():
 
     def edit_trade(
             self,
-            trade_id: str,
+            old_trade_id: str,
             trade: Trade,
     ) -> Tuple[bool, str]:
         cursor = self.conn.cursor()
         cursor.execute(
             'UPDATE trades SET '
+            '  id=?, '
             '  time=?,'
             '  location=?,'
             '  pair=?,'
@@ -1073,6 +1066,7 @@ class DBHandler():
             '  notes=? '
             'WHERE id=?',
             (
+                trade.identifier,
                 trade.timestamp,
                 trade.location.serialize_for_db(),
                 trade.pair,
@@ -1083,7 +1077,7 @@ class DBHandler():
                 trade.fee_currency.identifier,
                 trade.link,
                 trade.notes,
-                trade_id,
+                old_trade_id,
             ),
         )
         if cursor.rowcount == 0:

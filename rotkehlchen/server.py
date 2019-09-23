@@ -176,7 +176,16 @@ class RotkehlchenServer():
 
     def query_otctrades(self):
         trades = self.rotkehlchen.data.get_external_trades()
-        result = {'result': trades, 'message': ''}
+        serialized_trades = []
+        for trade in trades:
+            serialized_trade = trade.serialize()
+            # Also since external trades need to know the id of the trade for editing
+            # add it to the serialized data
+            serialized_trade['id'] = trade.identifier
+
+            serialized_trades.append(serialized_trade)
+
+        result = {'result': serialized_trades, 'message': ''}
         return process_result(result)
 
     def add_otctrade(self, data):

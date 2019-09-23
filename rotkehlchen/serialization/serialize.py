@@ -39,18 +39,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             'usd_value': entry.usd_value,
         }
     elif isinstance(entry, Trade):
-        return {
-            'timestamp': entry.timestamp,
-            'location': str(entry.location),
-            'pair': entry.pair,
-            'trade_type': str(entry.trade_type),
-            'amount': str(entry.amount),
-            'rate': str(entry.rate),
-            'fee': str(entry.fee),
-            'fee_currency': entry.fee_currency.identifier,
-            'link': entry.link,
-            'notes': entry.notes,
-        }
+        return entry.serialize()
     elif isinstance(entry, EthTokenInfo):
         return entry._asdict()
     elif isinstance(entry, tuple):

@@ -403,7 +403,7 @@ class DataHandler():
 
         assert isinstance(data['otc_id'], str)
         result, message = self.db.edit_trade(
-            trade_id=data['otc_id'],
+            old_trade_id=data['otc_id'],
             trade=trade,
         )
 
