@@ -74,8 +74,21 @@ class AssetMovement(NamedTuple):
 
     @property
     def identifier(self) -> str:
-        """Formulates a unique identifier for the asset movements to become the DB primary key"""
-        string = str(self.location) + str(self.category) + self.link
+        """Formulates a unique identifier for the asset movements to become the DB primary key
+
+        We are not using the "self.link" unique exchange identifier as it may not
+        be available if importing from third party sources such as cointracking.info
+
+        Unfortunately this makes the AssetMovement identifier pseudo unique and means
+        we can't have same asset movements with all of the following attributes.
+        """
+        string = (
+            str(self.location) +
+            str(self.category) +
+            str(self.timestamp) +
+            self.asset.identifier +
+            self.fee_asset.identifier
+        )
         return hash_id(string)
 
 
@@ -124,10 +137,14 @@ class Trade(NamedTuple):
 
     @property
     def identifier(self) -> TradeID:
-        """Formulates a unique identifier for the trade to become the DB primary key"""
-        # We are not using self.link (unique trade identifier) as part of the ID
-        # for exchange trades since it may not be available at import of data from
-        # third party sources such as cointracking.info
+        """Formulates a unique identifier for the trade to become the DB primary key
+        We are not using self.link (unique trade identifier) as part of the ID
+        for exchange trades since it may not be available at import of data from
+        third party sources such as cointracking.inf
+
+        Unfortunately this makes the Trade identifier pseudo unique and means
+        we can't have same trades with all of the following attributes.
+        """
         string = str(self.location) + str(self.timestamp) + str(self.trade_type) + self.pair
         return TradeID(hash_id(string))
 
@@ -166,7 +183,11 @@ class MarginPosition(NamedTuple):
 
     @property
     def identifier(self) -> str:
-        """Formulates a unique identifier for the margin position to become the DB primary key"""
+        """Formulates a unique identifier for the margin position to become the DB primary key
+
+        TODO: Maybe facing the same problem as trades here and need to avoid using
+        the "self.link" which is the unique identifier for the action from the exchange?
+        """
         string = str(self.location) + self.link
         return hash_id(string)
 
