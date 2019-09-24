@@ -12,7 +12,7 @@ from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import Location, TradeType
+from rotkehlchen.typing import AssetMovementCategory, Location, TradeType
 
 
 def analyze_bittrex_assets(currencies: List[Dict[str, Any]]):
@@ -362,7 +362,7 @@ def test_bittrex_query_deposits_withdrawals(bittrex):
     assert len(movements) == 4
 
     assert movements[0].location == Location.BITTREX
-    assert movements[0].category == 'deposit'
+    assert movements[0].category == AssetMovementCategory.DEPOSIT
     assert movements[0].timestamp == 1392277133
     assert isinstance(movements[0].asset, Asset)
     assert movements[0].asset == A_BTC
@@ -370,7 +370,7 @@ def test_bittrex_query_deposits_withdrawals(bittrex):
     assert movements[0].fee == ZERO
 
     assert movements[1].location == Location.BITTREX
-    assert movements[1].category == 'deposit'
+    assert movements[1].category == AssetMovementCategory.DEPOSIT
     assert movements[1].timestamp == 1402817933
     assert isinstance(movements[1].asset, Asset)
     assert movements[1].asset == A_ETH
@@ -378,7 +378,7 @@ def test_bittrex_query_deposits_withdrawals(bittrex):
     assert movements[1].fee == ZERO
 
     assert movements[2].location == Location.BITTREX
-    assert movements[2].category == 'withdrawal'
+    assert movements[2].category == AssetMovementCategory.WITHDRAWAL
     assert movements[2].timestamp == 1404879887
     assert isinstance(movements[2].asset, Asset)
     assert movements[2].asset == A_BTC
@@ -386,7 +386,7 @@ def test_bittrex_query_deposits_withdrawals(bittrex):
     assert movements[2].fee == FVal('0.0002')
 
     assert movements[3].location == Location.BITTREX
-    assert movements[3].category == 'withdrawal'
+    assert movements[3].category == AssetMovementCategory.WITHDRAWAL
     assert movements[3].timestamp == 1439958287
     assert isinstance(movements[3].asset, Asset)
     assert movements[3].asset == A_ETH

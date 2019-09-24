@@ -246,3 +246,29 @@ class Location(Enum):
             return 'J'
 
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
+
+
+class AssetMovementCategory(Enum):
+    """Supported Asset Movement Types so far only deposit and withdrawals"""
+    DEPOSIT = 1
+    WITHDRAWAL = 2
+
+    def __str__(self) -> str:
+        if self == AssetMovementCategory.DEPOSIT:
+            return 'deposit'
+        elif self == AssetMovementCategory.WITHDRAWAL:
+            return 'withdrawal'
+
+        raise RuntimeError(
+            f'Corrupt value {self} for AssetMovementCategory -- Should never happen',
+        )
+
+    def serialize_for_db(self) -> str:
+        if self == AssetMovementCategory.DEPOSIT:
+            return 'A'
+        elif self == AssetMovementCategory.WITHDRAWAL:
+            return 'B'
+
+        raise RuntimeError(
+            f'Corrupt value {self} for AssetMovementCategory -- Should never happen',
+        )

@@ -43,6 +43,7 @@ from rotkehlchen.utils.serialization import rlk_jsondumps
 TABLES_AT_INIT = [
     'timed_balances',
     'timed_location_data',
+    'asset_movement_category',
     'user_credentials',
     'blockchain_accounts',
     'multisettings',
