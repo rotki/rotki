@@ -164,7 +164,7 @@ CREATE TABLE IF NOT EXISTS margin_positions (
 DB_CREATE_ASSET_MOVEMENTS = """
 CREATE TABLE IF NOT EXISTS asset_movements (
     id TEXT PRIMARY KEY,
-    location VARCHAR[24],
+    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
     category VARCHAR[16],
     time INTEGER,
     asset VARCHAR[10],

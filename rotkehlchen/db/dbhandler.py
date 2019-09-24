@@ -892,7 +892,7 @@ class DBHandler():
         for movement in asset_movements:
             movement_tuples.append((
                 movement.identifier,
-                str(movement.location),
+                movement.location.serialize_for_db(),
                 movement.category,
                 movement.timestamp,
                 movement.asset.identifier,
@@ -973,7 +973,7 @@ class DBHandler():
         for result in results:
             try:
                 movement = AssetMovement(
-                    location=deserialize_location(result[1]),
+                    location=deserialize_location_from_db(result[1]),
                     category=deserialize_asset_movement_category(result[2]),
                     timestamp=result[3],
                     asset=Asset(result[4]),
