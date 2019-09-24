@@ -149,7 +149,7 @@ CREATE TABLE IF NOT EXISTS trades (
 DB_CREATE_MARGIN = """
 CREATE TABLE IF NOT EXISTS margin_positions (
     id TEXT PRIMARY KEY,
-    location VARCHAR[24],
+    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
     open_time INTEGER,
     close_time INTEGER,
     profit_loss TEXT,

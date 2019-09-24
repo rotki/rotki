@@ -178,7 +178,7 @@ def test_bitmex_margin_history(test_bitmex):
     )
     resulting_margin_positions = [
         MarginPosition(
-            location='bitmex',
+            location=Location.BITMEX,
             open_time=None,
             close_time=1536580800,
             profit_loss=FVal('0.00000003'),
@@ -189,7 +189,7 @@ def test_bitmex_margin_history(test_bitmex):
             notes='XBTZ18',
         ),
         MarginPosition(
-            location='bitmex',
+            location=Location.BITMEX,
             open_time=None,
             close_time=1536580800,
             profit_loss=FVal('0.0000004'),
@@ -200,7 +200,7 @@ def test_bitmex_margin_history(test_bitmex):
             notes='XBTUSD',
         ),
         MarginPosition(
-            location='bitmex',
+            location=Location.BITMEX,
             open_time=None,
             close_time=1536580800,
             profit_loss=FVal('0.00000183'),
@@ -211,7 +211,7 @@ def test_bitmex_margin_history(test_bitmex):
             notes='XBTJPY',
         ),
         MarginPosition(
-            location='bitmex',
+            location=Location.BITMEX,
             open_time=None,
             close_time=1536580800,
             profit_loss=FVal('0.00000683'),
@@ -222,7 +222,7 @@ def test_bitmex_margin_history(test_bitmex):
             notes='ETHUSD',
         ),
         MarginPosition(
-            location='bitmex',
+            location=Location.BITMEX,
             open_time=None,
             close_time=1536494400,
             profit_loss=FVal('0.00000002'),
@@ -233,7 +233,7 @@ def test_bitmex_margin_history(test_bitmex):
             notes='XRPU18',
         ),
         MarginPosition(
-            location='bitmex',
+            location=Location.BITMEX,
             open_time=None,
             close_time=1536494400,
             profit_loss=FVal('0.00000003'),
@@ -244,7 +244,7 @@ def test_bitmex_margin_history(test_bitmex):
             notes='XBTUSD',
         ),
         MarginPosition(
-            location='bitmex',
+            location=Location.BITMEX,
             open_time=None,
             close_time=1536494400,
             profit_loss=FVal('0.00000003'),
@@ -255,7 +255,7 @@ def test_bitmex_margin_history(test_bitmex):
             notes='XBTJPY',
         ),
         MarginPosition(
-            location='bitmex',
+            location=Location.BITMEX,
             open_time=None,
             close_time=1536494400,
             profit_loss=FVal('0.00000005'),
@@ -266,7 +266,7 @@ def test_bitmex_margin_history(test_bitmex):
             notes='ETHUSD',
         ),
         MarginPosition(
-            location='bitmex',
+            location=Location.BITMEX,
             open_time=None,
             close_time=1536494400,
             profit_loss=FVal('-0.00007992'),

@@ -286,7 +286,7 @@ eth_tx_list = [
 
 margin_history = [
     MarginPosition(  # before query period -- BTC/EUR: 422.90
-        location='poloniex',
+        location=Location.POLONIEX,
         open_time=Timestamp(1463184190),  # 14/05/2016
         close_time=Timestamp(1464393600),  # 28/05/2016
         profit_loss=AssetAmount(FVal(0.05)),
@@ -296,7 +296,7 @@ margin_history = [
         link='1',
         notes='margin1',
     ), MarginPosition(  # before query period -- BTC/EUR: 542.87
-        location='poloniex',
+        location=Location.POLONIEX,
         open_time=Timestamp(1472428800),  # 29/08/2016
         close_time=Timestamp(1473897600),  # 15/09/2016
         profit_loss=AssetAmount(FVal('-0.042')),
@@ -306,7 +306,7 @@ margin_history = [
         link='2',
         notes='margin2',
     ), MarginPosition(  # BTC/EUR: 1039.935
-        location='poloniex',
+        location=Location.POLONIEX,
         open_time=Timestamp(1489276800),  # 12/03/2017
         close_time=Timestamp(1491177600),  # 03/04/2017
         profit_loss=AssetAmount(FVal('-0.042')),
@@ -316,7 +316,7 @@ margin_history = [
         link='3',
         notes='margin3',
     ), MarginPosition(  # BTC/EUR: 2244.255
-        location='poloniex',
+        location=Location.POLONIEX,
         open_time=Timestamp(1496534400),  # 04/06/2017
         close_time=Timestamp(1498694400),  # 29/06/2017
         profit_loss=AssetAmount(FVal(0.124)),
