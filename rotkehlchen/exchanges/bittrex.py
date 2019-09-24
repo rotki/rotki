@@ -3,7 +3,7 @@ import hmac
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Tuple, Union, cast, overload
+from typing import Any, Dict, List, Optional, Tuple, Union, overload
 from urllib.parse import urlencode
 
 from typing_extensions import Literal
@@ -38,7 +38,15 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_bittrex_date,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp, TradePair
+from rotkehlchen.typing import (
+    ApiKey,
+    ApiSecret,
+    AssetMovementCategory,
+    Fee,
+    Location,
+    Timestamp,
+    TradePair,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
@@ -384,11 +392,11 @@ class Bittrex(ExchangeInterface):
         """
         try:
             if 'TxCost' in raw_data:
-                category = 'withdrawal'
+                category = AssetMovementCategory.WITHDRAWAL
                 date_key = 'Opened'
                 fee = deserialize_fee(raw_data['TxCost'])
             else:
-                category = 'deposit'
+                category = AssetMovementCategory.DEPOSIT
                 date_key = 'LastUpdated'
                 fee = Fee(ZERO)
 
@@ -396,7 +404,7 @@ class Bittrex(ExchangeInterface):
             asset = asset_from_bittrex(raw_data['Currency'])
             return AssetMovement(
                 location=Location.BITTREX,
-                category=cast(Literal['deposit', 'withdrawal'], category),
+                category=category,
                 timestamp=timestamp,
                 asset=asset,
                 amount=deserialize_asset_amount(raw_data['Amount']),

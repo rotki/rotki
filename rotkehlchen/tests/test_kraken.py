@@ -11,6 +11,7 @@ from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import KRAKEN_ASSETS, KRAKEN_DELISTED, kraken_to_world_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.history import TEST_END_TS
+from rotkehlchen.typing import AssetMovementCategory
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -109,16 +110,16 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(function_scope_kraken):
     assert len(movements) == 4
     assert movements[0].asset == A_BTC
     assert movements[0].amount == FVal('5.0')
-    assert movements[0].category == 'deposit'
+    assert movements[0].category == AssetMovementCategory.DEPOSIT
     assert movements[1].asset == A_ETH
     assert movements[1].amount == FVal('10.0')
-    assert movements[1].category == 'deposit'
+    assert movements[1].category == AssetMovementCategory.DEPOSIT
     assert movements[2].asset == A_BTC
     assert movements[2].amount == FVal('5.0')
-    assert movements[2].category == 'withdrawal'
+    assert movements[2].category == AssetMovementCategory.WITHDRAWAL
     assert movements[3].asset == A_ETH
     assert movements[3].amount == FVal('10.0')
-    assert movements[3].category == 'withdrawal'
+    assert movements[3].category == AssetMovementCategory.WITHDRAWAL
 
     warnings = kraken.msg_aggregator.consume_warnings()
     assert len(warnings) == 2
@@ -161,7 +162,7 @@ def test_kraken_query_deposit_withdrawals_unexpected_data(function_scope_kraken)
 
         if expected_warnings_num == 0 and expected_errors_num == 0:
             assert len(deposits) == 1
-            assert deposits[0].category == 'deposit'
+            assert deposits[0].category == AssetMovementCategory.DEPOSIT
             assert deposits[0].asset == A_BTC
         else:
             assert len(deposits) == 0

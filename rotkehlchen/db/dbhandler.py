@@ -31,7 +31,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
-    deserialize_asset_movement_category,
+    deserialize_asset_movement_category_from_db,
     deserialize_fee,
     deserialize_location,
     deserialize_location_from_db,
@@ -889,11 +889,12 @@ class DBHandler():
     def add_asset_movements(self, asset_movements: List[AssetMovement]) -> None:
         cursor = self.conn.cursor()
         movement_tuples = []
+
         for movement in asset_movements:
             movement_tuples.append((
                 movement.identifier,
                 movement.location.serialize_for_db(),
-                movement.category,
+                movement.category.serialize_for_db(),
                 movement.timestamp,
                 movement.asset.identifier,
                 str(movement.amount),
@@ -901,6 +902,7 @@ class DBHandler():
                 str(movement.fee),
                 movement.link,
             ))
+
         try:
             cursor.executemany(
                 'INSERT INTO asset_movements('
@@ -974,7 +976,7 @@ class DBHandler():
             try:
                 movement = AssetMovement(
                     location=deserialize_location_from_db(result[1]),
-                    category=deserialize_asset_movement_category(result[2]),
+                    category=deserialize_asset_movement_category_from_db(result[2]),
                     timestamp=result[3],
                     asset=Asset(result[4]),
                     amount=deserialize_asset_amount(result[5]),

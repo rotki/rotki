@@ -22,6 +22,7 @@ from rotkehlchen.tests.utils.exchanges import BINANCE_BALANCES_RESPONSE
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.typing import AssetMovementCategory
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -469,7 +470,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
         return MockResponse(200, response_str)
 
     with patch.object(binance.session, 'get', side_effect=mock_get_deposit_withdrawal):
-        movements = binance.query_deposits_withdrawals(start_ts=0, end_ts=TEST_END_TS)
+        movements = binance.query_online_deposits_withdrawals(start_ts=0, end_ts=TEST_END_TS)
 
     errors = binance.msg_aggregator.consume_errors()
     warnings = binance.msg_aggregator.consume_warnings()
@@ -479,7 +480,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
     assert len(movements) == 4
 
     assert movements[0].location == Location.BINANCE
-    assert movements[0].category == 'deposit'
+    assert movements[0].category == AssetMovementCategory.DEPOSIT
     assert movements[0].timestamp == 1508198532
     assert isinstance(movements[0].asset, Asset)
     assert movements[0].asset == A_ETH
@@ -487,7 +488,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
     assert movements[0].fee == ZERO
 
     assert movements[1].location == Location.BINANCE
-    assert movements[1].category == 'deposit'
+    assert movements[1].category == AssetMovementCategory.DEPOSIT
     assert movements[1].timestamp == 1508398632
     assert isinstance(movements[1].asset, Asset)
     assert movements[1].asset == A_XMR
@@ -495,7 +496,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
     assert movements[1].fee == ZERO
 
     assert movements[2].location == Location.BINANCE
-    assert movements[2].category == 'withdrawal'
+    assert movements[2].category == AssetMovementCategory.WITHDRAWAL
     assert movements[2].timestamp == 1518192542
     assert isinstance(movements[2].asset, Asset)
     assert movements[2].asset == A_ETH
@@ -503,7 +504,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
     assert movements[2].fee == ZERO
 
     assert movements[3].location == Location.BINANCE
-    assert movements[3].category == 'withdrawal'
+    assert movements[3].category == AssetMovementCategory.WITHDRAWAL
     assert movements[3].timestamp == 1529198732
     assert isinstance(movements[3].asset, Asset)
     assert movements[3].asset == A_XMR

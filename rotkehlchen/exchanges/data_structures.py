@@ -1,6 +1,6 @@
-from dataclasses import dataclass
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
+from dataclasses import dataclass
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
@@ -17,6 +17,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.typing import (
     AssetAmount,
+    AssetMovementCategory,
     Fee,
     Location,
     Price,
@@ -60,7 +61,7 @@ class Events(NamedTuple):
 
 class AssetMovement(NamedTuple):
     location: Location
-    category: Literal['deposit', 'withdrawal']
+    category: AssetMovementCategory
     timestamp: Timestamp
     asset: Asset
     # Amount is the original amount removed from the account

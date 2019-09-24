@@ -46,7 +46,15 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_poloniex_date,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp, TradePair
+from rotkehlchen.typing import (
+    ApiKey,
+    ApiSecret,
+    AssetMovementCategory,
+    Fee,
+    Location,
+    Timestamp,
+    TradePair,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, create_timestamp, retry_calls
 from rotkehlchen.utils.serialization import rlk_jsonloads, rlk_jsonloads_dict, rlk_jsonloads_list
@@ -643,7 +651,7 @@ class Poloniex(ExchangeInterface):
 
     def _deserialize_asset_movement(
             self,
-            movement_type: Literal['withdrawal', 'deposit'],
+            movement_type: AssetMovementCategory,
             movement_data: Dict[str, Any],
     ) -> Optional[AssetMovement]:
         """Processes a single deposit/withdrawal from polo and deserializes it
@@ -651,7 +659,7 @@ class Poloniex(ExchangeInterface):
         Can log error/warning and return None if something went wrong at deserialization
         """
         try:
-            if movement_type == 'deposit':
+            if movement_type == AssetMovementCategory.DEPOSIT:
                 fee = Fee(ZERO)
                 uid_key = 'depositNumber'
             else:
@@ -670,12 +678,12 @@ class Poloniex(ExchangeInterface):
             )
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
-                f'Found {movement_type} of unsupported poloniex asset '
+                f'Found {str(movement_type)} of unsupported poloniex asset '
                 f'{e.asset_name}. Ignoring it.',
             )
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
-                f'Found {movement_type} of unknown poloniex asset '
+                f'Found {str(movement_type)} of unknown poloniex asset '
                 f'{e.asset_name}. Ignoring it.',
             )
         except (DeserializationError, KeyError) as e:
@@ -688,7 +696,7 @@ class Poloniex(ExchangeInterface):
             )
             log.error(
                 f'Unexpected data encountered during deserialization of poloniex '
-                f'{movement_type}: {movement_data}. Error was: {str(e)}',
+                f'{str(movement_type)}: {movement_data}. Error was: {str(e)}',
             )
 
         return None
@@ -707,7 +715,7 @@ class Poloniex(ExchangeInterface):
         movements = list()
         for withdrawal in result['withdrawals']:
             asset_movement = self._deserialize_asset_movement(
-                movement_type='withdrawal',
+                movement_type=AssetMovementCategory.WITHDRAWAL,
                 movement_data=withdrawal,
             )
             if asset_movement:
@@ -715,7 +723,7 @@ class Poloniex(ExchangeInterface):
 
         for deposit in result['deposits']:
             asset_movement = self._deserialize_asset_movement(
-                movement_type='deposit',
+                movement_type=AssetMovementCategory.DEPOSIT,
                 movement_data=deposit,
             )
             if asset_movement:

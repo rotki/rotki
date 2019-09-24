@@ -8,7 +8,7 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.transactions import EthereumTransaction
-from rotkehlchen.typing import AssetAmount, Location, Timestamp, TradeType
+from rotkehlchen.typing import AssetAmount, AssetMovementCategory, Location, Timestamp, TradeType
 
 TEST_END_TS = 1559427707
 
@@ -146,38 +146,38 @@ def check_result_of_history_creation(
 
     assert len(asset_movements) == 11
     assert asset_movements[0].location == Location.KRAKEN
-    assert asset_movements[0].category == 'deposit'
+    assert asset_movements[0].category == AssetMovementCategory.DEPOSIT
     assert asset_movements[0].asset == A_BTC
     assert asset_movements[1].location == Location.KRAKEN
-    assert asset_movements[1].category == 'deposit'
+    assert asset_movements[1].category == AssetMovementCategory.DEPOSIT
     assert asset_movements[1].asset == A_ETH
     assert asset_movements[2].location == Location.KRAKEN
-    assert asset_movements[2].category == 'withdrawal'
+    assert asset_movements[2].category == AssetMovementCategory.WITHDRAWAL
     assert asset_movements[2].asset == A_BTC
     assert asset_movements[3].location == Location.KRAKEN
-    assert asset_movements[3].category == 'withdrawal'
+    assert asset_movements[3].category == AssetMovementCategory.WITHDRAWAL
     assert asset_movements[3].asset == A_ETH
     assert asset_movements[4].location == Location.POLONIEX
-    assert asset_movements[4].category == 'withdrawal'
+    assert asset_movements[4].category == AssetMovementCategory.WITHDRAWAL
     assert asset_movements[4].asset == A_BTC
     assert asset_movements[5].location == Location.POLONIEX
-    assert asset_movements[5].category == 'withdrawal'
+    assert asset_movements[5].category == AssetMovementCategory.WITHDRAWAL
     assert asset_movements[5].asset == A_ETH
     assert asset_movements[6].location == Location.POLONIEX
-    assert asset_movements[6].category == 'deposit'
+    assert asset_movements[6].category == AssetMovementCategory.DEPOSIT
     assert asset_movements[6].asset == A_BTC
     assert asset_movements[7].location == Location.POLONIEX
-    assert asset_movements[7].category == 'deposit'
+    assert asset_movements[7].category == AssetMovementCategory.DEPOSIT
     assert asset_movements[7].asset == A_ETH
     assert asset_movements[8].location == Location.BITMEX
-    assert asset_movements[8].category == 'deposit'
+    assert asset_movements[8].category == AssetMovementCategory.DEPOSIT
     assert asset_movements[8].asset == A_BTC
     assert asset_movements[9].location == Location.BITMEX
-    assert asset_movements[9].category == 'withdrawal'
+    assert asset_movements[9].category == AssetMovementCategory.WITHDRAWAL
     assert asset_movements[9].asset == A_BTC
     # TODO: investigate why this new bitmex withdrawal popped up
     assert asset_movements[10].location == Location.BITMEX
-    assert asset_movements[10].category == 'withdrawal'
+    assert asset_movements[10].category == AssetMovementCategory.WITHDRAWAL
     assert asset_movements[10].asset == A_BTC
 
     # The history creation for these is not yet tested

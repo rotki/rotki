@@ -16,7 +16,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_fee
-from rotkehlchen.typing import ApiKey, ApiSecret, AssetAmount, Timestamp
+from rotkehlchen.typing import ApiKey, ApiSecret, AssetAmount, AssetMovementCategory, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, iso8601ts_to_timestamp, satoshis_to_btc
 from rotkehlchen.utils.serialization import rlk_jsonloads
@@ -260,9 +260,9 @@ class Bitmex(ExchangeInterface):
             try:
                 transaction_type = movement['transactType']
                 if transaction_type == 'Deposit':
-                    transaction_type = 'deposit'
+                    transaction_type = AssetMovementCategory.DEPOSIT
                 elif transaction_type == 'Withdrawal':
-                    transaction_type = 'withdrawal'
+                    transaction_type = AssetMovementCategory.WITHDRAWAL
                 else:
                     continue
 

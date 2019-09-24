@@ -13,7 +13,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import Location, Timestamp
+from rotkehlchen.typing import AssetMovementCategory, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 TEST_RATE_STR = '0.00022999'
@@ -416,22 +416,22 @@ def test_poloniex_deposits_withdrawal_unknown_asset(function_scope_poloniex):
         )
 
     assert len(asset_movements) == 4
-    assert asset_movements[0].category == 'withdrawal'
+    assert asset_movements[0].category == AssetMovementCategory.WITHDRAWAL
     assert asset_movements[0].timestamp == 1458994442
     assert asset_movements[0].asset == A_BTC
     assert asset_movements[0].amount == FVal('5.0')
     assert asset_movements[0].fee == FVal('0.5')
-    assert asset_movements[1].category == 'withdrawal'
+    assert asset_movements[1].category == AssetMovementCategory.WITHDRAWAL
     assert asset_movements[1].timestamp == 1468994442
     assert asset_movements[1].asset == A_ETH
     assert asset_movements[1].amount == FVal('10.0')
     assert asset_movements[1].fee == FVal('0.1')
 
-    assert asset_movements[2].category == 'deposit'
+    assert asset_movements[2].category == AssetMovementCategory.DEPOSIT
     assert asset_movements[2].timestamp == 1448994442
     assert asset_movements[2].asset == A_BTC
     assert asset_movements[2].amount == FVal('50.0')
-    assert asset_movements[3].category == 'deposit'
+    assert asset_movements[3].category == AssetMovementCategory.DEPOSIT
     assert asset_movements[3].timestamp == 1438994442
     assert asset_movements[3].asset == A_ETH
     assert asset_movements[3].amount == FVal('100.0')
@@ -467,7 +467,7 @@ def test_poloniex_deposits_withdrawal_null_fee(function_scope_poloniex):
         )
 
     assert len(asset_movements) == 1
-    assert asset_movements[0].category == 'withdrawal'
+    assert asset_movements[0].category == AssetMovementCategory.WITHDRAWAL
     assert asset_movements[0].timestamp == 1478994442
     assert asset_movements[0].asset == Asset('FAIR')
     assert asset_movements[0].amount == FVal('100.5')

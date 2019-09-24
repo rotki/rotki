@@ -1,11 +1,18 @@
-from typing import Union, cast
-
-from typing_extensions import Literal
+from typing import Union
 
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
-from rotkehlchen.typing import AssetAmount, Fee, Location, Optional, Price, Timestamp, TradeType
+from rotkehlchen.typing import (
+    AssetAmount,
+    AssetMovementCategory,
+    Fee,
+    Location,
+    Optional,
+    Price,
+    Timestamp,
+    TradeType,
+)
 from rotkehlchen.utils.misc import convert_to_int, create_timestamp, iso8601ts_to_timestamp
 
 
@@ -300,8 +307,8 @@ def deserialize_location_from_db(symbol: str) -> Location:
         )
 
 
-def deserialize_asset_movement_category(symbol: str) -> Literal['deposit', 'withdrawal']:
-    """Takes a string and determines whether to accept it as an asset mvoemen category
+def deserialize_asset_movement_category(symbol: str) -> AssetMovementCategory:
+    """Takes a string and determines whether to accept it as an asset movement category
 
     Can throw DeserializationError if symbol is not as expected
     """
@@ -310,10 +317,35 @@ def deserialize_asset_movement_category(symbol: str) -> Literal['deposit', 'with
             f'Failed to deserialize asset movement category symbol from {type(symbol)} entry',
         )
 
-    if symbol in('deposit', 'withdrawal'):
-        return cast(Literal['deposit', 'withdrawal'], symbol)
+    if symbol == 'deposit':
+        return AssetMovementCategory.DEPOSIT
+    elif symbol == 'withdrawal':
+        return AssetMovementCategory.WITHDRAWAL
 
     # else
     raise DeserializationError(
         f'Failed to deserialize asset movement category symbol. Unknown symbol {symbol}',
+    )
+
+
+def deserialize_asset_movement_category_from_db(symbol: str) -> AssetMovementCategory:
+    """Takes a DB enum string and turns it into an asset movement category
+
+    Can throw DeserializationError if symbol is not as expected
+    """
+    if not isinstance(symbol, str):
+        raise DeserializationError(
+            f'Failed to deserialize asset movement category symbol from '
+            f'{type(symbol)} DB enum entry',
+        )
+
+    if symbol == 'A':
+        return AssetMovementCategory.DEPOSIT
+    elif symbol == 'B':
+        return AssetMovementCategory.WITHDRAWAL
+
+    # else
+    raise DeserializationError(
+        f'Failed to deserialize asset movement category symbol from DB enum entry.'
+        f'Unknown symbol {symbol}',
     )

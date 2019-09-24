@@ -7,7 +7,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
 from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.tests.utils.history import prices
-from rotkehlchen.typing import AssetAmount, Fee, Location, Timestamp
+from rotkehlchen.typing import AssetAmount, AssetMovementCategory, Fee, Location, Timestamp
 
 DUMMY_HASH = '0x0'
 DUMMY_ADDRESS = '0x0'
@@ -186,7 +186,7 @@ loans_list = [
 asset_movements_list = [AssetMovement(
     # before query period -- 8.915 * 0.001 = 8.915e-3
     location=Location.KRAKEN,
-    category='withdrawal',
+    category=AssetMovementCategory.WITHDRAWAL,
     timestamp=Timestamp(1479510304),  # 18/11/2016,
     asset=A_ETH,  # cryptocompare hourly ETH/EUR: 8.915
     amount=FVal('95'),
@@ -195,7 +195,7 @@ asset_movements_list = [AssetMovement(
     link='krakenid1',
 ), AssetMovement(  # 0.0087*52.885 = 0.4600995
     location=Location.KRAKEN,
-    category='withdrawal',
+    category=AssetMovementCategory.WITHDRAWAL,
     timestamp=Timestamp(1493291104),  # 27/04/2017,
     asset=A_ETH,  # cryptocompare hourly ETH/EUR: 52.885
     amount=FVal('125'),
@@ -204,7 +204,7 @@ asset_movements_list = [AssetMovement(
     link='krakenid2',
 ), AssetMovement(  # deposits have no effect
     location=Location.KRAKEN,
-    category='deposit',
+    category=AssetMovementCategory.DEPOSIT,
     timestamp=Timestamp(1493636704),  # 01/05/2017,
     asset=A_EUR,
     amount=FVal('750'),
@@ -213,7 +213,7 @@ asset_movements_list = [AssetMovement(
     link='krakenid3',
 ), AssetMovement(  # 0.00029*1964.685 = 0.56975865
     location=Location.POLONIEX,
-    category='withdrawal',
+    category=AssetMovementCategory.WITHDRAWAL,
     timestamp=Timestamp(1495969504),  # 28/05/2017,
     asset=A_BTC,  # cryptocompare hourly BTC/EUR: 1964.685
     amount=FVal('8.5'),
@@ -222,7 +222,7 @@ asset_movements_list = [AssetMovement(
     link='poloniexid1',
 ), AssetMovement(  # 0.0078*173.77 = 1.355406
     location=Location.POLONIEX,
-    category='withdrawal',
+    category=AssetMovementCategory.WITHDRAWAL,
     timestamp=Timestamp(1502715904),  # 14/08/2017,
     asset=A_DASH,  # cryptocompare hourly DASH/EUR: 173.77
     amount=FVal('20'),
@@ -231,7 +231,7 @@ asset_movements_list = [AssetMovement(
     link='poloniexid2',
 ), AssetMovement(  # after query period -- should not matter
     location=Location.BITTREX,
-    category='withdrawal',
+    category=AssetMovementCategory.WITHDRAWAL,
     timestamp=Timestamp(1517663104),  # 03/02/2018,
     asset=A_ETH,
     amount=FVal('120'),

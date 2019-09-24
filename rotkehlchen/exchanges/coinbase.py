@@ -3,10 +3,8 @@ import hmac
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlencode
-
-from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
@@ -24,7 +22,15 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_date,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp, TradePair
+from rotkehlchen.typing import (
+    ApiKey,
+    ApiSecret,
+    AssetMovementCategory,
+    Fee,
+    Location,
+    Timestamp,
+    TradePair,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
@@ -429,14 +435,14 @@ class Coinbase(ExchangeInterface):
             if raw_data['status'] != 'completed':
                 return None
 
-            movement_category: Union[Literal['deposit'], Literal['withdrawal']]
+            # movement_category: Union[Literal['deposit'], Literal['withdrawal']]
             if 'type' in raw_data:
                 # Then this should be a "send" which is the way Coinbase uses to send
                 # crypto outside of the exchange
                 # https://developers.coinbase.com/api/v2?python#transaction-resource
                 msg = 'Non "send" type found in coinbase deposit/withdrawal processing'
                 assert raw_data['type'] == 'send', msg
-                movement_category = 'withdrawal'
+                movement_category = AssetMovementCategory.WITHDRAWAL
                 # Can't see the fee being charged from the "send" resource
 
                 amount = deserialize_asset_amount(raw_data['amount']['amount'])

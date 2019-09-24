@@ -5,7 +5,7 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import Location, TradeType
+from rotkehlchen.typing import AssetMovementCategory, Location, TradeType
 
 
 def test_coinbase_query_balances(function_scope_coinbase):
@@ -649,7 +649,7 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
     assert len(movements) == 3
     expected_movements = [AssetMovement(
         location=Location.COINBASE,
-        category='deposit',
+        category=AssetMovementCategory.DEPOSIT,
         timestamp=1519001640,
         asset=A_USD,
         amount=FVal('55'),
@@ -658,7 +658,7 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
         link='1130eaec-07d7-54c4-a72c-2e92826897df',
     ), AssetMovement(
         location=Location.COINBASE,
-        category='withdrawal',
+        category=AssetMovementCategory.WITHDRAWAL,
         timestamp=1485895742,
         asset=A_USD,
         amount=FVal('10.0'),
@@ -667,7 +667,7 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
         link='146eaec-07d7-54c4-a72c-2e92826897df',
     ), AssetMovement(
         location=Location.COINBASE,
-        category='withdrawal',
+        category=AssetMovementCategory.WITHDRAWAL,
         timestamp=1566726126,
         asset=A_ETH,
         amount=FVal('0.05770427'),

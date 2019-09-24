@@ -6,6 +6,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.exchanges.data_structures import AssetMovement, Location, MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.typing import AssetMovementCategory
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -51,7 +52,7 @@ def test_bitmex_api_withdrawals_deposit(test_bitmex):
     expected_result = [
         AssetMovement(
             location=Location.BITMEX,
-            category='deposit',
+            category=AssetMovementCategory.DEPOSIT,
             timestamp=1537014656,
             asset=A_BTC,
             amount=FVal(0.16960386),
@@ -61,7 +62,7 @@ def test_bitmex_api_withdrawals_deposit(test_bitmex):
         ),
         AssetMovement(
             location=Location.BITMEX,
-            category='deposit',
+            category=AssetMovementCategory.DEPOSIT,
             timestamp=1536563759,
             asset=A_BTC,
             amount=FVal('0.38474377'),
@@ -71,7 +72,7 @@ def test_bitmex_api_withdrawals_deposit(test_bitmex):
         ),
         AssetMovement(
             location=Location.BITMEX,
-            category='withdrawal',
+            category=AssetMovementCategory.WITHDRAWAL,
             timestamp=1536536707,
             asset=A_BTC,
             amount=FVal('0.00700000'),
@@ -81,7 +82,7 @@ def test_bitmex_api_withdrawals_deposit(test_bitmex):
         ),
         AssetMovement(
             location=Location.BITMEX,
-            category='deposit',
+            category=AssetMovementCategory.DEPOSIT,
             timestamp=1536486278,
             asset=A_BTC,
             amount=FVal('0.46966992'),

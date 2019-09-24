@@ -3,11 +3,10 @@ import hmac
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 from urllib.parse import urlencode
 
 import gevent
-from typing_extensions import Literal
 
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import BINANCE_BASE_URL
@@ -30,7 +29,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_price,
     deserialize_timestamp_from_binance,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp
+from rotkehlchen.typing import ApiKey, ApiSecret, AssetMovementCategory, Fee, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise
 from rotkehlchen.utils.serialization import rlk_jsonloads
@@ -439,10 +438,10 @@ class Binance(ExchangeInterface):
         """
         try:
             if 'insertTime' in raw_data:
-                category = 'deposit'
+                category = AssetMovementCategory.DEPOSIT
                 time_key = 'insertTime'
             else:
-                category = 'withdrawal'
+                category = AssetMovementCategory.WITHDRAWAL
                 time_key = 'applyTime'
 
             timestamp = deserialize_timestamp_from_binance(raw_data[time_key])
@@ -450,7 +449,7 @@ class Binance(ExchangeInterface):
             amount = deserialize_asset_amount(raw_data['amount'])
             return AssetMovement(
                 location=Location.BINANCE,
-                category=cast(Literal['deposit', 'withdrawal'], category),
+                category=category,
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,
