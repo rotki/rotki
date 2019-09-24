@@ -772,7 +772,7 @@ class DBHandler():
             open_time = 0 if margin.open_time is None else margin.open_time
             margin_tuples.append((
                 margin.identifier,
-                margin.location,
+                margin.location.serialize_for_db(),
                 open_time,
                 margin.close_time,
                 str(margin.profit_loss),
@@ -860,7 +860,7 @@ class DBHandler():
                 else:
                     open_time = deserialize_timestamp(result[2])
                 margin = MarginPosition(
-                    location=result[1],
+                    location=deserialize_location_from_db(result[1]),
                     open_time=open_time,
                     close_time=deserialize_timestamp(result[3]),
                     profit_loss=deserialize_asset_amount(result[4]),

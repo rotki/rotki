@@ -59,7 +59,7 @@ def trade_from_bitmex(bitmex_trade: Dict) -> MarginPosition:
     )
 
     return MarginPosition(
-        location='bitmex',
+        location=Location.BITMEX,
         open_time=None,
         close_time=close_time,
         profit_loss=profit_loss,

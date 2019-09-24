@@ -6,6 +6,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
 from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.tests.utils.history import prices
+from rotkehlchen.typing import Location
 
 DUMMY_ADDRESS = '0x0'
 DUMMY_HASH = '0x0'
@@ -446,7 +447,7 @@ def test_margin_events_affect_gained_lost_amount(accountant):
         'location': 'kraken',
     }]
     margin_history = [MarginPosition(
-        location='poloniex',  # BTC/EUR: 810.49
+        location=Location.POLONIEX,  # BTC/EUR: 810.49
         open_time=1484438400,  # 15/01/2017
         close_time=1484629704,  # 17/01/2017
         profit_loss=FVal('-0.5'),
@@ -456,7 +457,7 @@ def test_margin_events_affect_gained_lost_amount(accountant):
         link='1',
         notes='margin1',
     ), MarginPosition(
-        location='poloniex',  # BTC/EUR: 979.39
+        location=Location.POLONIEX,  # BTC/EUR: 979.39
         open_time=1487116800,  # 15/02/2017
         close_time=1487289600,  # 17/02/2017
         profit_loss=FVal('0.25'),
