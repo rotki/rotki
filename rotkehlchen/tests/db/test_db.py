@@ -32,10 +32,18 @@ from rotkehlchen.db.utils import (
     LocationData,
 )
 from rotkehlchen.errors import AuthenticationError, InputError
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_CNY, A_DAO, A_DOGE, A_GNO, A_RDN, A_XMR
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
-from rotkehlchen.typing import Location, SupportedBlockchain, Timestamp
+from rotkehlchen.typing import (
+    AssetMovementCategory,
+    Fee,
+    Location,
+    SupportedBlockchain,
+    Timestamp,
+    TradeType,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
@@ -725,3 +733,192 @@ def test_get_netvalue_data(data_dir, username):
     assert values[0] == '1500'
     assert values[1] == '4500'
     assert values[2] == '10700.5'
+
+
+def test_add_trades(data_dir, username):
+    """Test that adding and retrieving trades from the DB works fine.
+
+    Also duplicates should be ignored and an error returned
+    """
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
+    data.unlock(username, '123', create_new=True)
+
+    trade1 = Trade(
+        timestamp=1451606400,
+        location=Location.KRAKEN,
+        pair='ETH_EUR',
+        trade_type=TradeType.BUY,
+        amount=FVal('1.1'),
+        rate=FVal('10'),
+        fee=Fee(FVal('0.01')),
+        fee_currency=A_EUR,
+        link='',
+        notes='',
+    )
+    trade2 = Trade(
+        timestamp=1451607500,
+        location=Location.BINANCE,
+        pair='BTC_ETH',
+        trade_type=TradeType.BUY,
+        amount=FVal('0.00120'),
+        rate=FVal('10'),
+        fee=Fee(FVal('0.001')),
+        fee_currency=A_ETH,
+        link='',
+        notes='',
+    )
+    trade3 = Trade(
+        timestamp=1451608600,
+        location=Location.COINBASE,
+        pair='BTC_ETH',
+        trade_type=TradeType.SELL,
+        amount=FVal('0.00120'),
+        rate=FVal('1'),
+        fee=Fee(FVal('0.001')),
+        fee_currency=A_ETH,
+        link='',
+        notes='',
+    )
+
+    # Add and retrieve the first 2 trades. All should be fine.
+    data.db.add_trades([trade1, trade2])
+    errors = msg_aggregator.consume_errors()
+    warnings = msg_aggregator.consume_warnings()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+    returned_trades = data.db.get_trades()
+    assert returned_trades == [trade1, trade2]
+
+    # Add the last 2 trades. Since trade2 already exists in the DB it should be
+    # ignored and an error should be shown
+    data.db.add_trades([trade2, trade3])
+    errors = msg_aggregator.consume_errors()
+    warnings = msg_aggregator.consume_warnings()
+    assert len(errors) == 1
+    assert len(warnings) == 0
+    returned_trades = data.db.get_trades()
+    assert returned_trades == [trade1, trade2, trade3]
+
+
+def test_add_margin_positions(data_dir, username):
+    """Test that adding and retrieving margin positions from the DB works fine.
+
+    Also duplicates should be ignored and an error returned
+    """
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
+    data.unlock(username, '123', create_new=True)
+
+    margin1 = MarginPosition(
+        location=Location.BITMEX,
+        open_time=1451606400,
+        close_time=1451616500,
+        profit_loss=FVal('1.0'),
+        pl_currency=A_BTC,
+        fee=Fee(FVal('0.01')),
+        fee_currency=A_EUR,
+        link='',
+        notes='',
+    )
+    margin2 = MarginPosition(
+        location=Location.BITMEX,
+        open_time=1451626500,
+        close_time=1451636500,
+        profit_loss=FVal('0.5'),
+        pl_currency=A_BTC,
+        fee=Fee(FVal('0.01')),
+        fee_currency=A_EUR,
+        link='',
+        notes='',
+    )
+    margin3 = MarginPosition(
+        location=Location.POLONIEX,
+        open_time=1452636501,
+        close_time=1459836501,
+        profit_loss=FVal('2.5'),
+        pl_currency=A_BTC,
+        fee=Fee(FVal('0.01')),
+        fee_currency=A_EUR,
+        link='',
+        notes='',
+    )
+
+    # Add and retrieve the first 2 margins. All should be fine.
+    data.db.add_margin_positions([margin1, margin2])
+    errors = msg_aggregator.consume_errors()
+    warnings = msg_aggregator.consume_warnings()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+    returned_margins = data.db.get_margin_positions()
+    assert returned_margins == [margin1, margin2]
+
+    # Add the last 2 margins. Since margin2 already exists in the DB it should be
+    # ignored and an error should be shown
+    data.db.add_margin_positions([margin2, margin3])
+    errors = msg_aggregator.consume_errors()
+    warnings = msg_aggregator.consume_warnings()
+    assert len(errors) == 1
+    assert len(warnings) == 0
+    returned_margins = data.db.get_margin_positions()
+    assert returned_margins == [margin1, margin2, margin3]
+
+
+def test_add_asset_movements(data_dir, username):
+    """Test that adding and retrieving asset movements from the DB works fine.
+
+    Also duplicates should be ignored and an error returned
+    """
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
+    data.unlock(username, '123', create_new=True)
+
+    movement1 = AssetMovement(
+        location=Location.BITMEX,
+        category=AssetMovementCategory.DEPOSIT,
+        timestamp=1451606400,
+        asset=A_BTC,
+        amount=FVal('1.0'),
+        fee_asset=A_EUR,
+        fee=Fee(FVal('0')),
+        link='',
+    )
+    movement2 = AssetMovement(
+        location=Location.POLONIEX,
+        category=AssetMovementCategory.WITHDRAWAL,
+        timestamp=1451608501,
+        asset=A_ETH,
+        amount=FVal('1.0'),
+        fee_asset=A_EUR,
+        fee=Fee(FVal('0.01')),
+        link='',
+    )
+    movement3 = AssetMovement(
+        location=Location.BITTREX,
+        category=AssetMovementCategory.WITHDRAWAL,
+        timestamp=1461708501,
+        asset=A_ETH,
+        amount=FVal('1.0'),
+        fee_asset=A_EUR,
+        fee=Fee(FVal('0.01')),
+        link='',
+    )
+
+    # Add and retrieve the first 2 margins. All should be fine.
+    data.db.add_asset_movements([movement1, movement2])
+    errors = msg_aggregator.consume_errors()
+    warnings = msg_aggregator.consume_warnings()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+    returned_movements = data.db.get_asset_movements()
+    assert returned_movements == [movement1, movement2]
+
+    # Add the last 2 movements. Since movement2 already exists in the DB it should be
+    # ignored and an error should be shown
+    data.db.add_asset_movements([movement2, movement3])
+    errors = msg_aggregator.consume_errors()
+    warnings = msg_aggregator.consume_warnings()
+    assert len(errors) == 1
+    assert len(warnings) == 0
+    returned_movements = data.db.get_asset_movements()
+    assert returned_movements == [movement1, movement2, movement3]
