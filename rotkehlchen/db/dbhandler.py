@@ -5,9 +5,10 @@ import re
 import shutil
 import tempfile
 from json.decoder import JSONDecodeError
-from typing import Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from pysqlcipher3 import dbapi2 as sqlcipher
+from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH, S_USD
@@ -89,6 +90,37 @@ def detect_sqlcipher_version() -> int:
     sqlcipher_version = int(match.group(1))
     conn.close()
     return sqlcipher_version
+
+
+def db_tuple_to_str(
+        data: Tuple[Any, ...],
+        tuple_type: Literal['trade', 'asset_movement', 'margin_position'],
+) -> str:
+    """Turns a tuple DB entry for trade, or asset_movement into a user readable string
+
+    This is only intended for error messages.
+
+    TODO: Add some unit tests
+    """
+    if tuple_type == 'trade':
+        return (
+            f'{deserialize_trade_type_from_db(data[4])} trade with id {data[0]} '
+            f'in {deserialize_location_from_db(data[2])} and pair {data[3]} '
+            f'at timestamp {data[1]}'
+        )
+    elif tuple_type == 'asset_movement':
+        return (
+            f'{deserialize_asset_movement_category_from_db(data[2])} of '
+            f' {data[4]} with id {data[0]} '
+            f'in {deserialize_location_from_db(data[1])} at timestamp {data[3]}'
+        )
+    elif tuple_type == 'margin_position':
+        return (
+            f'Margin position with id {data[0]} in  {deserialize_location_from_db(data[1])} '
+            f'for {data[5]} closed at timestamp {data[3]}'
+        )
+
+    raise AssertionError('db_tuple_to_str() called with invalid tuple_type {tuple_type}')
 
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
@@ -765,9 +797,33 @@ class DBHandler():
 
         return credentials
 
-    def add_margin_positions(self, margin_positions: List[MarginPosition]) -> None:
+    def write_tuples(
+            self,
+            tuple_type: Literal['trade', 'asset_movement', 'margin_position'],
+            query: str,
+            tuples: List[Tuple[Any, ...]],
+    ) -> None:
         cursor = self.conn.cursor()
-        margin_tuples = []
+        try:
+            cursor.executemany(query, tuples)
+        except sqlcipher.IntegrityError:  # pylint: disable=no-member
+            # That means that one of the tuples hit a constraint, most probably
+            # already existing in the DB, in which case we resort to writting them
+            # one by one to only reject the duplicates
+            for entry in tuples:
+                try:
+                    cursor.execute(query, entry)
+                except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                    string_repr = db_tuple_to_str(entry, tuple_type)
+                    self.msg_aggregator.add_error(
+                        f'Error adding "{string_repr}" to the DB. It already exists.',
+                    )
+
+        self.conn.commit()
+        self.update_last_write()
+
+    def add_margin_positions(self, margin_positions: List[MarginPosition]) -> None:
+        margin_tuples: List[Tuple[Any, ...]] = []
         for margin in margin_positions:
             open_time = 0 if margin.open_time is None else margin.open_time
             margin_tuples.append((
@@ -782,33 +838,22 @@ class DBHandler():
                 margin.link,
                 margin.notes,
             ))
-        try:
-            cursor.executemany(
-                'INSERT INTO margin_positions('
-                '  id, '
-                '  location,'
-                '  open_time,'
-                '  close_time,'
-                '  profit_loss,'
-                '  pl_currency,'
-                '  fee,'
-                '  fee_currency,'
-                '  link,'
-                '  notes)'
-                'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                margin_tuples,
-            )
-        except sqlcipher.IntegrityError:  # pylint: disable=no-member
-            # TODO: Handle this better. Skip only the one margin that is duplicated
-            # and not all margin positions that are being added
-            self.msg_aggregator.add_error(
-                f'Error adding margin position to the DB. One of the '
-                f'positions already exists there ',
-            )
-            return None
-        self.conn.commit()
-        self.update_last_write()
-        return None
+
+        query = """
+            INSERT INTO margin_positions(
+              id,
+              location,
+              open_time,
+              close_time,
+              profit_loss,
+              pl_currency,
+              fee,
+              fee_currency,
+              link,
+              notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        self.write_tuples(tuple_type='margin_position', query=query, tuples=margin_tuples)
 
     def get_margin_positions(
             self,
@@ -887,9 +932,7 @@ class DBHandler():
         return margin_positions
 
     def add_asset_movements(self, asset_movements: List[AssetMovement]) -> None:
-        cursor = self.conn.cursor()
-        movement_tuples = []
-
+        movement_tuples: List[Tuple[Any, ...]] = []
         for movement in asset_movements:
             movement_tuples.append((
                 movement.identifier,
@@ -903,32 +946,20 @@ class DBHandler():
                 movement.link,
             ))
 
-        try:
-            cursor.executemany(
-                'INSERT INTO asset_movements('
-                '  id, '
-                '  location,'
-                '  category,'
-                '  time,'
-                '  asset,'
-                '  amount,'
-                '  fee_asset,'
-                '  fee,'
-                '  link)'
-                'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                movement_tuples,
-            )
-        except sqlcipher.IntegrityError:  # pylint: disable=no-member
-            # TODO: Handle this better. Skip only the one movement that is duplicated
-            # and not all asset movements that are being added
-            self.msg_aggregator.add_error(
-                f'Error adding asset movement to the DB. One of the '
-                f'movements already exists there ',
-            )
-            return None
-        self.conn.commit()
-        self.update_last_write()
-        return None
+        query = """
+            INSERT INTO asset_movements(
+              id,
+              location,
+              category,
+              time,
+              asset,
+              amount,
+              fee_asset,
+              fee,
+              link)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        self.write_tuples(tuple_type='asset_movement', query=query, tuples=movement_tuples)
 
     def get_asset_movements(
             self,
@@ -1001,8 +1032,7 @@ class DBHandler():
         return asset_movements
 
     def add_trades(self, trades: List[Trade]) -> None:
-        cursor = self.conn.cursor()
-        trade_tuples = []
+        trade_tuples: List[Tuple[Any, ...]] = []
         for trade in trades:
             trade_tuples.append((
                 trade.identifier,
@@ -1017,35 +1047,23 @@ class DBHandler():
                 trade.link,
                 trade.notes,
             ))
-        try:
-            cursor.executemany(
-                'INSERT INTO trades('
-                '  id, '
-                '  time,'
-                '  location,'
-                '  pair,'
-                '  type,'
-                '  amount,'
-                '  rate,'
-                '  fee,'
-                '  fee_currency,'
-                '  link,'
-                '  notes)'
-                'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                trade_tuples,
-            )
-        except sqlcipher.IntegrityError:  # pylint: disable=no-member
-            # TODO: Handle this better. Skip only the one trade that is duplicated
-            # and not all trades that are being added
-            self.msg_aggregator.add_error(
-                f'Error adding trades to the DB. One of the trades already '
-                f' exists there ',
-            )
-            return None
 
-        self.conn.commit()
-        self.update_last_write()
-        return None
+        query = """
+            INSERT INTO trades(
+              id,
+              time,
+              location,
+              pair,
+              type,
+              amount,
+              rate,
+              fee,
+              fee_currency,
+              link,
+              notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        self.write_tuples(tuple_type='trade', query=query, tuples=trade_tuples)
 
     def edit_trade(
             self,
