@@ -206,6 +206,7 @@ class MarginPosition(NamedTuple):
 
 class Loan(NamedTuple):
     """We only support loans in poloniex at the moment"""
+    location: Location
     open_time: Timestamp
     close_time: Timestamp
     currency: Asset
