@@ -200,7 +200,12 @@ class TradesHistorian():
         # makes sense is to save them in the DB. Also realized the old cache broke
         # if more accounts were added.
         try:
-            eth_transactions = query_etherscan_for_transactions(self.eth_accounts)
+            eth_transactions = query_etherscan_for_transactions(
+                accounts=self.eth_accounts,
+                db=self.db,
+                from_ts=start_ts,
+                to_ts=end_ts,
+            )
         except RemoteError as e:
             empty_or_error += '\n' + str(e)
 

@@ -97,9 +97,9 @@ EventType = NewType('EventType', T_EventType)
 
 class EthereumTransaction(NamedTuple):
     """Represent an Ethereum transaction"""
+    tx_hash: bytes
     timestamp: Timestamp
     block_number: int
-    tx_hash: bytes
     from_address: EthAddress
     to_address: EthAddress
     value: FVal

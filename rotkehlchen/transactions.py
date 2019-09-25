@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -10,6 +10,9 @@ from rotkehlchen.utils.misc import (
     request_get_dict,
     retry_calls,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -90,23 +93,38 @@ def query_ethereum_txlist(
     return result
 
 
-def query_etherscan_for_transactions(accounts: List[EthAddress]) -> List[EthereumTransaction]:
+def query_etherscan_for_transactions(
+        accounts: List[EthAddress],
+        db: 'DBHandler',
+        from_ts: Optional[Timestamp] = None,
+        to_ts: Optional[Timestamp] = None,
+) -> List[EthereumTransaction]:
     transactions: List[EthereumTransaction] = list()
-    for account in accounts:
-        transactions.extend(
-            retry_calls(
-                times=5,
-                location='etherscan',
-                handle_429=False,
-                backoff_in_seconds=0,
-                method_name='query_ethereum_txlist',
-                function=query_ethereum_txlist,
-                # function's arguments
-                address=account,
-                internal=False,
-            ),
+    for address in accounts:
+        # If we already have any transactions in the DB for this from_address
+        # from to_ts and on then that means the range has already been queried
+        if to_ts:
+            existing_txs = db.get_ethereum_transactions(from_ts=to_ts, address=address)
+            if len(existing_txs) > 0:
+                # So just query the DB only here
+                transactions.extend(
+                    db.get_ethereum_transactions(from_ts=from_ts, to_ts=to_ts, address=address),
+                )
+                continue
+
+        # else we have to query etherscan for this address
+        new_transactions = retry_calls(
+            times=5,
+            location='etherscan',
+            handle_429=False,
+            backoff_in_seconds=0,
+            method_name='query_ethereum_txlist',
+            function=query_ethereum_txlist,
+            # function's arguments
+            address=address,
+            internal=False,
         )
-        transactions.extend(
+        new_transactions.extend(
             retry_calls(
                 times=5,
                 location='etherscan',
@@ -115,10 +133,14 @@ def query_etherscan_for_transactions(accounts: List[EthAddress]) -> List[Ethereu
                 method_name='query_ethereum_txlist_internal',
                 function=query_ethereum_txlist,
                 # function's arguments
-                address=account,
+                address=address,
                 internal=True,
             ),
         )
+
+        # and finally also save the transactions in the DB
+        db.add_ethereum_transactions(ethereum_transactions=new_transactions)
+        transactions.extend(new_transactions)
 
     transactions.sort(key=lambda tx: tx.timestamp)
     return transactions
