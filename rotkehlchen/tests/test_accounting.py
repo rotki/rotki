@@ -6,10 +6,10 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
 from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.tests.utils.history import prices
-from rotkehlchen.typing import Location
+from rotkehlchen.typing import EthereumTransaction, Location
 
 DUMMY_ADDRESS = '0x0'
-DUMMY_HASH = '0x0'
+DUMMY_HASH = b''
 
 history1 = [
     {
@@ -336,17 +336,21 @@ def test_not_include_gas_costs(accountant):
         'amount': 1,
         'location': 'kraken',
     }]
-    eth_tx_list = [{
-        'timestamp': 1491062063,  # 01/04/2017
-        'block_number': 3458409,  # cryptocompare hourly ETH/EUR: 47.5
-        'hash': DUMMY_HASH,
-        'from_address': DUMMY_ADDRESS,
-        'to_address': DUMMY_ADDRESS,
-        'value': 12323,
-        'gas': 5000000,
-        'gas_price': 2000000000,
-        'gas_used': 1000000,
-    }]
+    eth_tx_list = [
+        EthereumTransaction(
+            timestamp=1491062063,  # 01/04/2017
+            block_number=3458409,
+            tx_hash=DUMMY_HASH,
+            from_address=DUMMY_ADDRESS,
+            to_address=DUMMY_ADDRESS,
+            value=FVal('12323'),
+            gas=FVal('5000000'),
+            gas_price=FVal('2000000000'),
+            gas_used=FVal('1000000'),
+            input_data=DUMMY_HASH,
+            nonce=0,
+        ),
+    ]
     result = accounting_history_process(
         accountant,
         1436979735,

@@ -6,7 +6,6 @@ from rotkehlchen.exchanges.data_structures import (
     trades_from_dictlist,
 )
 from rotkehlchen.exchanges.poloniex import process_polo_loans
-from rotkehlchen.transactions import transactions_from_dictlist
 from rotkehlchen.typing import Timestamp
 
 
@@ -48,11 +47,8 @@ def accounting_history_process(
 
     eth_transactions = list()
     if eth_transaction_list:
-        eth_transactions = transactions_from_dictlist(
-            given_transactions=eth_transaction_list,
-            start_ts=0,
-            end_ts=end_ts,
-        )
+        eth_transactions = eth_transaction_list
+
     result = accountant.process_history(
         start_ts=start_ts,
         end_ts=end_ts,

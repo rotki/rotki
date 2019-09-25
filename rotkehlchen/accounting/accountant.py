@@ -198,7 +198,7 @@ class Accountant():
         )
 
         self.csvexporter.add_tx_gas_cost(
-            transaction_hash=transaction.hash,
+            transaction_hash=transaction.tx_hash,
             eth_burned_as_gas=eth_burned_as_gas,
             rate=rate,
             timestamp=transaction.timestamp,

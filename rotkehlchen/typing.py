@@ -99,13 +99,15 @@ class EthereumTransaction(NamedTuple):
     """Represent an Ethereum transaction"""
     timestamp: Timestamp
     block_number: int
-    hash: bytes
+    tx_hash: bytes
     from_address: EthAddress
     to_address: EthAddress
     value: FVal
     gas: FVal
     gas_price: FVal
     gas_used: FVal
+    input_data: bytes
+    nonce: int
 
 
 class SupportedBlockchain(Enum):
