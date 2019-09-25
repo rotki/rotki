@@ -160,6 +160,7 @@ def process_polo_loans(
                 continue
 
             our_loan = Loan(
+                location=Location.POLONIEX,
                 open_time=open_time,
                 close_time=close_time,
                 currency=asset_from_poloniex(loan['currency']),
