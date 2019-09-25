@@ -57,6 +57,7 @@ TABLES_AT_INIT = [
     'multisettings',
     'current_balances',
     'trades',
+    'ethereum_transactions',
     'trade_type',
     'location',
     'settings',

@@ -34,6 +34,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_movement_category_from_db,
     deserialize_fee,
+    deserialize_fval,
     deserialize_location,
     deserialize_location_from_db,
     deserialize_price,
@@ -45,6 +46,8 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     BlockchainAddress,
+    EthAddress,
+    EthereumTransaction,
     FiatAsset,
     FilePath,
     Location,
@@ -72,6 +75,8 @@ DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z'
 KDF_ITER = 64000
 DBINFO_FILENAME = 'dbinfo.json'
 
+DBTupleType = Literal['trade', 'asset_movement', 'margin_position', 'ethereum_transaction']
+
 
 def str_to_bool(s):
     return True if s == 'True' else False
@@ -94,7 +99,7 @@ def detect_sqlcipher_version() -> int:
 
 def db_tuple_to_str(
         data: Tuple[Any, ...],
-        tuple_type: Literal['trade', 'asset_movement', 'margin_position'],
+        tuple_type: DBTupleType,
 ) -> str:
     """Turns a tuple DB entry for trade, or asset_movement into a user readable string
 
@@ -119,6 +124,8 @@ def db_tuple_to_str(
             f'Margin position with id {data[0]} in  {deserialize_location_from_db(data[1])} '
             f'for {data[5]} closed at timestamp {data[3]}'
         )
+    elif tuple_type == 'ethereum_transaction':
+        return f'Ethereum transaction with hash "{data[0].hex()}"'
 
     raise AssertionError('db_tuple_to_str() called with invalid tuple_type {tuple_type}')
 
@@ -799,7 +806,7 @@ class DBHandler():
 
     def write_tuples(
             self,
-            tuple_type: Literal['trade', 'asset_movement', 'margin_position'],
+            tuple_type: DBTupleType,
             query: str,
             tuples: List[Tuple[Any, ...]],
     ) -> None:
@@ -1030,6 +1037,110 @@ class DBHandler():
             asset_movements.append(movement)
 
         return asset_movements
+
+    def add_ethereum_transactions(self, ethereum_transactions: List[EthereumTransaction]) -> None:
+        tx_tuples: List[Tuple[Any, ...]] = []
+        for tx in ethereum_transactions:
+            tx_tuples.append((
+                tx.tx_hash,
+                tx.timestamp,
+                tx.block_number,
+                tx.from_address,
+                tx.to_address,
+                str(tx.value),
+                str(tx.gas),
+                str(tx.gas_price),
+                str(tx.gas_used),
+                tx.input_data,
+                tx.nonce,
+            ))
+
+        query = """
+            INSERT INTO ethereum_transactions(
+              tx_hash,
+              timestamp,
+              block_number,
+              from_address,
+              to_address,
+              value,
+              gas,
+              gas_price,
+              gas_used,
+              input_data,
+              nonce)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        self.write_tuples(tuple_type='ethereum_transaction', query=query, tuples=tx_tuples)
+
+    def get_ethereum_transactions(
+            self,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+            address: Optional[EthAddress] = None,
+    ) -> List[EthereumTransaction]:
+        """Returns a list of ethereum transactions optionally filtered by time and/or from address
+
+        The returned list is ordered from oldest to newest
+        """
+        cursor = self.conn.cursor()
+        query = """
+            SELECT tx_hash,
+              timestamp,
+              block_number,
+              from_address,
+              to_address,
+              value,
+              gas,
+              gas_price,
+              gas_used,
+              input_data,
+              nonce FROM ethereum_transactions;
+        """
+        bindings: Union[
+            Tuple,
+            Tuple[Timestamp],
+            Tuple[Timestamp, Timestamp],
+        ] = ()
+        if address is not None:
+            query += f'WHERE from_address="{address}" '
+        if from_ts:
+            query += 'AND timestamp >= ? '
+            bindings = (from_ts,)
+            if to_ts:
+                query += 'AND timestatmp <= ? '
+                bindings = (from_ts, to_ts)
+        elif to_ts:
+            query += 'AND timestamp <= ? '
+            bindings = (to_ts,)
+        query += 'ORDER BY timestamp ASC;'
+        results = cursor.execute(query, bindings)
+
+        ethereum_transactions = []
+        for result in results:
+            try:
+                tx = EthereumTransaction(
+                    tx_hash=result[0],
+                    timestamp=deserialize_timestamp(result[1]),
+                    block_number=result[2],
+                    from_address=result[3],
+                    to_address=result[4],
+                    value=deserialize_fval(result[5]),
+                    gas=deserialize_fval(result[6]),
+                    gas_price=deserialize_fval(result[7]),
+                    gas_used=deserialize_fval(result[8]),
+                    input_data=result[9],
+                    nonce=result[10],
+                )
+            except DeserializationError as e:
+                self.msg_aggregator.add_error(
+                    f'Error deserializing ethereum transaction from the DB. '
+                    f'Skipping it. Error was: {str(e)}',
+                )
+                continue
+
+            ethereum_transactions.append(tx)
+
+        return ethereum_transactions
 
     def add_trades(self, trades: List[Trade]) -> None:
         trade_tuples: List[Tuple[Any, ...]] = []

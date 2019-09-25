@@ -187,6 +187,22 @@ CREATE TABLE IF NOT EXISTS asset_movements (
 );
 """
 
+DB_CREATE_ETHEREUM_TRANSACTIONS = """
+CREATE TABLE IF NOT EXISTS ethereum_transactions (
+    tx_hash BLOB PRIMARY KEY,
+    timestamp INTEGER,
+    block_number INTEGER,
+    from_address TEXT,
+    to_address TEXT,
+    value TEXT,
+    gas TEXT,
+    gas_price TEXT,
+    gas_used TEXT,
+    input_data BLOB,
+    nonce INTEGER
+);
+"""
+
 DB_CREATE_LAST_TIMESTAMPS = """
 CREATE TABLE IF NOT EXISTS last_timestamps (
     name VARCHAR[24] NOT NULL PRIMARY KEY,
@@ -292,7 +308,7 @@ PRAGMA foreign_keys=on;
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -306,6 +322,7 @@ PRAGMA foreign_keys=on;
     DB_CREATE_MULTISETTINGS,
     DB_CREATE_CURRENT_BALANCES,
     DB_CREATE_TRADES,
+    DB_CREATE_ETHEREUM_TRANSACTIONS,
     DB_CREATE_MARGIN,
     DB_CREATE_ASSET_MOVEMENTS,
     DB_CREATE_LAST_TIMESTAMPS,
