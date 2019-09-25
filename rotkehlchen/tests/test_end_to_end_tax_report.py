@@ -7,7 +7,14 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
 from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.tests.utils.history import prices
-from rotkehlchen.typing import AssetAmount, AssetMovementCategory, Fee, Location, Timestamp
+from rotkehlchen.typing import (
+    AssetAmount,
+    AssetMovementCategory,
+    EthereumTransaction,
+    Fee,
+    Location,
+    Timestamp,
+)
 
 DUMMY_HASH = '0x0'
 DUMMY_ADDRESS = '0x0'
@@ -241,47 +248,56 @@ asset_movements_list = [AssetMovement(
 )]
 
 eth_tx_list = [
-    {  # before query period: ((2000000000 * 25000000) / (10 ** 18)) * 9.185 = 0.45925
-        'timestamp': 1463184190,  # 14/05/2016
-        'block_number': 1512689,  # cryptocompare hourtly ETH/EUR: 9.186
-        'hash': DUMMY_HASH,
-        'from_address': DUMMY_ADDRESS,
-        'to_address': DUMMY_ADDRESS,
-        'value': 12323,
-        'gas': 5000000,
-        'gas_price': 2000000000,
-        'gas_used': 25000000,
-    }, {  # ((2000000000 * 1000000) / (10 ** 18)) * 47.5 = 0.095
-        'timestamp': 1491062063,  # 01/04/2017
-        'block_number': 3458409,  # cryptocompare hourly ETH/EUR: 47.5
-        'hash': DUMMY_HASH,
-        'from_address': DUMMY_ADDRESS,
-        'to_address': DUMMY_ADDRESS,
-        'value': 12323,
-        'gas': 5000000,
-        'gas_price': 2000000000,
-        'gas_used': 1000000,
-    }, {  # ((2200000000 * 2500000) / (10 ** 18)) * 393.955 = 2.1667525
-        'timestamp': 1511626623,  # 25/11/2017
-        'block_number': 4620323,  # cryptocompare hourly ETH/EUR: 393.955
-        'hash': DUMMY_HASH,
-        'from_address': DUMMY_ADDRESS,
-        'to_address': DUMMY_ADDRESS,
-        'value': 12323,
-        'gas': 5000000,
-        'gas_price': 2200000000,
-        'gas_used': 2500000,
-    }, {  # after query period -- should not matter
-        'timestamp': 1523399409,  # 10/04/2018
-        'block_number': 5417790,
-        'hash': DUMMY_HASH,
-        'from_address': DUMMY_ADDRESS,
-        'to_address': DUMMY_ADDRESS,
-        'value': 12323,
-        'gas': 5000000,
-        'gas_price': 2100000000,
-        'gas_used': 1900000,
-    },
+    # before query period: ((2000000000 * 25000000) / (10 ** 18)) * 9.185 = 0.45925
+    EthereumTransaction(
+        timestamp=1463184190,  # 14/05/2016
+        block_number=1512689,  # cryptocompare hourtly ETH/EUR: 9.186
+        tx_hash=DUMMY_HASH,
+        from_address=DUMMY_ADDRESS,
+        to_address=DUMMY_ADDRESS,
+        value=12323,
+        gas=5000000,
+        gas_price=2000000000,
+        gas_used=25000000,
+        input_data=DUMMY_HASH,
+        nonce=0,
+    ), EthereumTransaction(  # ((2000000000 * 1000000) / (10 ** 18)) * 47.5 = 0.095
+        timestamp=1491062063,  # 01/04/2017
+        block_number=3458409,  # cryptocompare hourly ETH/EUR: 47.5
+        tx_hash=DUMMY_HASH,
+        from_address=DUMMY_ADDRESS,
+        to_address=DUMMY_ADDRESS,
+        value=12323,
+        gas=5000000,
+        gas_price=2000000000,
+        gas_used=1000000,
+        input_data=DUMMY_HASH,
+        nonce=1,
+    ), EthereumTransaction(  # ((2200000000 * 2500000) / (10 ** 18)) * 393.955 = 2.1667525
+        timestamp=1511626623,  # 25/11/2017
+        block_number=4620323,  # cryptocompare hourly ETH/EUR: 393.955
+        tx_hash=DUMMY_HASH,
+        from_address=DUMMY_ADDRESS,
+        to_address=DUMMY_ADDRESS,
+        value=12323,
+        gas=5000000,
+        gas_price=2200000000,
+        gas_used=2500000,
+        input_data=DUMMY_HASH,
+        nonce=2,
+    ), EthereumTransaction(  # after query period -- should not matter
+        timestamp=1523399409,  # 10/04/2018
+        block_number=5417790,
+        tx_hash=DUMMY_HASH,
+        from_address=DUMMY_ADDRESS,
+        to_address=DUMMY_ADDRESS,
+        value=12323,
+        gas=5000000,
+        gas_price=2100000000,
+        gas_used=1900000,
+        input_data=DUMMY_HASH,
+        nonce=3,
+    ),
 ]
 
 margin_history = [

@@ -375,7 +375,7 @@ class CSVExporter():
 
         self.tx_gas_costs_csv.append({
             'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
-            'transaction_hash': transaction_hash,
+            'transaction_hash': transaction_hash.hex(),
             'eth_burned_as_gas': eth_burned_as_gas,
             'cost_in_{}'.format(self.profit_currency): eth_burned_as_gas * rate,
         })

@@ -1,10 +1,15 @@
 import logging
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import EthAddress, EthereumTransaction, Timestamp
-from rotkehlchen.utils.misc import convert_to_int, request_get_dict, retry_calls
+from rotkehlchen.utils.misc import (
+    convert_to_int,
+    hexstring_to_bytes,
+    request_get_dict,
+    retry_calls,
+)
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -16,6 +21,7 @@ def query_ethereum_txlist(
         from_block: Optional[int] = None,
         to_block: Optional[int] = None,
 ) -> List[EthereumTransaction]:
+    """Query ethereum tx list"""
     log.debug(
         'Querying etherscan for tx list',
         sensitive_log=True,
@@ -70,13 +76,15 @@ def query_ethereum_txlist(
         result.append(EthereumTransaction(
             timestamp=Timestamp(convert_to_int(v['timeStamp'])),
             block_number=convert_to_int(v['blockNumber']),
-            hash=v['hash'],
+            tx_hash=hexstring_to_bytes(v['hash']),
             from_address=v['from'],
             to_address=v['to'],
             value=FVal(v['value']),
             gas=FVal(v['gas']),
             gas_price=gas_price,
             gas_used=FVal(v['gasUsed']),
+            input_data=hexstring_to_bytes(v['input']),
+            nonce=convert_to_int(v['nonce']),
         ))
 
     return result
@@ -114,57 +122,3 @@ def query_etherscan_for_transactions(accounts: List[EthAddress]) -> List[Ethereu
 
     transactions.sort(key=lambda tx: tx.timestamp)
     return transactions
-
-
-def transactions_from_dictlist(
-        given_transactions: List[Dict[str, Any]],
-        start_ts: Timestamp,
-        end_ts: Timestamp,
-) -> List[EthereumTransaction]:
-    """ Gets a list of transaction, most probably read from the json files and
-    a time period. Returns it as a list of the transaction tuples that are inside the time period
-
-    May raise:
-        - KeyError: If the given_transactions contain data in an unexpected format
-    """
-    returned_transactions = list()
-    for given_tx in given_transactions:
-        if given_tx['timestamp'] < start_ts:
-            continue
-        if given_tx['timestamp'] > end_ts:
-            break
-
-        timestamp = Timestamp(convert_to_int(given_tx['timestamp']))
-        tx_hash = given_tx['hash']
-        from_address = given_tx['from_address']
-        to_address = given_tx['to_address']
-        value = FVal(given_tx['value'])
-        gas = FVal(given_tx['gas'])
-        gas_price = FVal(given_tx['gas_price'])
-        gas_used = FVal(given_tx['gas_used'])
-        log.debug(
-            'Processing eth transaction',
-            sensitive_log=True,
-            timestamp=timestamp,
-            eth_tx_hash=tx_hash,
-            from_eth_address=from_address,
-            to_eth_address=to_address,
-            tx_value=value,
-            gas=gas,
-            gas_price=gas_price,
-            gas_used=gas_used,
-        )
-
-        returned_transactions.append(EthereumTransaction(
-            timestamp=timestamp,
-            block_number=convert_to_int(given_tx['block_number']),
-            hash=tx_hash,
-            from_address=from_address,
-            to_address=to_address,
-            value=value,
-            gas=gas,
-            gas_price=gas_price,
-            gas_used=gas_used,
-        ))
-
-    return returned_transactions

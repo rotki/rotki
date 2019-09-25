@@ -313,6 +313,10 @@ def int_to_big_endian(x: int) -> bytes:
     return big_endian_int.serialize(x)
 
 
+def hexstring_to_bytes(hexstr: str) -> bytes:
+    return bytes.fromhex(hexstr.replace("0x", ""))
+
+
 def get_system_spec() -> Dict[str, str]:
     """Collect information about the system and installation."""
     import pkg_resources
