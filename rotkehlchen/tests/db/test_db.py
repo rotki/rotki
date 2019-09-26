@@ -112,6 +112,40 @@ def test_data_init_and_password(data_dir, username):
         data.unlock(username, '1234', create_new=False)
 
 
+def test_add_remove_exchange(data_dir, username):
+    """Tests that adding and removing an exchange in the DB works.
+
+    Also unknown exchanges should fail
+    """
+    msg_aggregator = MessagesAggregator()
+    username = 'foo'
+    userdata_dir = os.path.join(data_dir, username)
+    os.mkdir(userdata_dir)
+    db = DBHandler(userdata_dir, '123', msg_aggregator)
+
+    # Test that an unknown exchange fails
+    with pytest.raises(InputError):
+        db.add_exchange('non_existing_exchange', 'api_key', 'api_secret')
+    credentials = db.get_exchange_credentials()
+    assert len(credentials) == 0
+
+    # add mock kraken and binance
+    db.add_exchange('kraken', 'kraken_api_key', 'kraken_api_secret')
+    db.add_exchange('binance', 'binance_api_key', 'binance_api_secret')
+    # and check the credentials can be retrieved
+    credentials = db.get_exchange_credentials()
+    assert len(credentials) == 2
+    assert credentials['kraken'].api_key == b'kraken_api_key'
+    assert credentials['kraken'].api_secret == b'kraken_api_secret'
+    assert credentials['binance'].api_key == b'binance_api_key'
+    assert credentials['binance'].api_secret == b'binance_api_secret'
+
+    # remove an exchange and see it works
+    db.remove_exchange('kraken')
+    credentials = db.get_exchange_credentials()
+    assert len(credentials) == 1
+
+
 def test_export_import_db(data_dir, username):
     """Create a DB, write some data and then after export/import confirm it's there"""
     msg_aggregator = MessagesAggregator()
