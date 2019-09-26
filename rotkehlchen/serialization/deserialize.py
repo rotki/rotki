@@ -44,6 +44,14 @@ def deserialize_timestamp(timestamp: Union[int, str]) -> Timestamp:
 
     if isinstance(timestamp, int):
         return Timestamp(timestamp)
+    elif isinstance(timestamp, FVal):
+        try:
+            return Timestamp(timestamp.to_int(exact=True))
+        except ValueError:
+            # An fval was not representing an exact int
+            raise DeserializationError(
+                f'Tried to deserialize a timestamp fron a non-exact int FVal entry',
+            )
     elif isinstance(timestamp, str):
         try:
             return Timestamp(int(timestamp))

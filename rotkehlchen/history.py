@@ -201,8 +201,8 @@ class TradesHistorian():
         # if more accounts were added.
         try:
             eth_transactions = query_etherscan_for_transactions(
-                accounts=self.eth_accounts,
                 db=self.db,
+                msg_aggregator=self.msg_aggregator,
                 from_ts=start_ts,
                 to_ts=end_ts,
             )

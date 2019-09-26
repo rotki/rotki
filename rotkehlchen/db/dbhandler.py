@@ -46,7 +46,7 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     BlockchainAddress,
-    EthAddress,
+    ChecksumAddress,
     EthereumTransaction,
     FiatAsset,
     FilePath,
@@ -1076,7 +1076,7 @@ class DBHandler():
             self,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-            address: Optional[EthAddress] = None,
+            address: Optional[ChecksumAddress] = None,
     ) -> List[EthereumTransaction]:
         """Returns a list of ethereum transactions optionally filtered by time and/or from address
 
