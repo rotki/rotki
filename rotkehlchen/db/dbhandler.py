@@ -1094,7 +1094,7 @@ class DBHandler():
               gas_price,
               gas_used,
               input_data,
-              nonce FROM ethereum_transactions;
+              nonce FROM ethereum_transactions
         """
         bindings: Union[
             Tuple,
