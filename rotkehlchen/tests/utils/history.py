@@ -5,10 +5,21 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
+from rotkehlchen.tests.utils.constants import (
+    ETH_ADDRESS1,
+    ETH_ADDRESS2,
+    ETH_ADDRESS3,
+    MOCK_INPUT_DATA,
+    MOCK_INPUT_DATA_HEX,
+    TX_HASH_STR1,
+    TX_HASH_STR2,
+    TX_HASH_STR3,
+)
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.transactions import EthereumTransaction
 from rotkehlchen.typing import AssetAmount, AssetMovementCategory, Location, Timestamp, TradeType
+from rotkehlchen.utils.misc import hexstring_to_bytes
 
 TEST_END_TS = 1559427707
 
@@ -95,7 +106,7 @@ def check_result_of_history_creation(
         asset_movements: List[AssetMovement],
         eth_transactions: List[EthereumTransaction],
 ) -> Dict[str, Any]:
-    """This function offers Some simple assertions on the result of the
+    """This function offers some simple assertions on the result of the
     created history. The entire processing part of the history is mocked
     away by this checking function"""
     assert start_ts == 0, 'should be same as given to process_history'
@@ -181,7 +192,25 @@ def check_result_of_history_creation(
     assert asset_movements[10].asset == A_BTC
 
     # The history creation for these is not yet tested
-    assert len(eth_transactions) == 0
+    assert len(eth_transactions) == 3
+    assert eth_transactions[0].block_number == 54092
+    assert eth_transactions[0].tx_hash == hexstring_to_bytes(TX_HASH_STR1)
+    assert eth_transactions[0].from_address == ETH_ADDRESS1
+    assert eth_transactions[0].to_address == ''
+    assert eth_transactions[0].value == FVal('11901464239480000000000000')
+    assert eth_transactions[0].input_data == MOCK_INPUT_DATA
+    assert eth_transactions[1].block_number == 54093
+    assert eth_transactions[1].tx_hash == hexstring_to_bytes(TX_HASH_STR2)
+    assert eth_transactions[1].from_address == ETH_ADDRESS2
+    assert eth_transactions[1].to_address == ETH_ADDRESS1
+    assert eth_transactions[1].value == FVal('40000300')
+    assert eth_transactions[1].input_data == MOCK_INPUT_DATA
+    assert eth_transactions[2].block_number == 54094
+    assert eth_transactions[2].tx_hash == hexstring_to_bytes(TX_HASH_STR3)
+    assert eth_transactions[2].from_address == ETH_ADDRESS3
+    assert eth_transactions[2].to_address == ETH_ADDRESS1
+    assert eth_transactions[2].value == FVal('500520300')
+    assert eth_transactions[2].input_data == MOCK_INPUT_DATA
 
     return {}
 
@@ -581,6 +610,44 @@ def mock_history_processing(rotki: Rotkehlchen, remote_errors=False):
     return accountant_patch
 
 
+def mock_etherscan_transaction_response():
+    def mocked_request_dict(url, timeout):
+        if 'etherscan' not in url:
+            raise AssertionError(
+                'Requested non-etherscan url for transaction response test',
+            )
+
+        addr1_tx = f"""{{"blockNumber":"54092","timeStamp":"1439048640","hash":"{TX_HASH_STR1}","nonce":"0","blockHash":"0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{ETH_ADDRESS1}","to":"","value":"11901464239480000000000000","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"{MOCK_INPUT_DATA_HEX}","contractAddress":"0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"8569454"}}
+        """
+        addr2_tx = f"""{{"blockNumber":"54093","timeStamp":"1439048643","hash":"{TX_HASH_STR2}","nonce":"0","blockHash":"0xf3cabad6adab0b52eb632c386ea194036805713682c62cb589b5abcd76df2159","transactionIndex":"0","from":"{ETH_ADDRESS2}","to":"{ETH_ADDRESS1}","value":"40000300","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"{MOCK_INPUT_DATA_HEX}","contractAddress":"0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"8569454"}}
+        """
+        addr3_tx = f"""{{"blockNumber":"54094","timeStamp":"1439048645","hash":"{TX_HASH_STR3}","nonce":"0","blockHash":"0xe3cabad6adab0b52eb632c3165a194036805713682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{ETH_ADDRESS3}","to":"{ETH_ADDRESS1}","value":"500520300","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"{MOCK_INPUT_DATA_HEX}","contractAddress":"0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"8569454"}}
+        """
+        if 'txlistinternal' in url:
+            # don't return any internal transactions
+            payload = '{"status":"1","message":"OK","result":[]}'
+        else:
+            # And depending on the given query return corresponding mock transactions for address
+            if ETH_ADDRESS1 in url:
+                tx_str = addr1_tx
+            elif ETH_ADDRESS2 in url:
+                tx_str = addr2_tx
+            elif ETH_ADDRESS3 in url:
+                tx_str = addr3_tx
+            else:
+                raise AssertionError(
+                    'Requested etherscan transactions for unknown address in tests',
+                )
+
+            payload = f'{{"status":"1","message":"OK","result":[{tx_str}]}}'
+        return MockResponse(200, payload)
+
+    return patch(
+        'rotkehlchen.utils.misc.requests.get',
+        side_effect=mocked_request_dict,
+    )
+
+
 def mock_history_processing_and_exchanges(rotki: Rotkehlchen, remote_errors=False):
     accountant_patch = mock_history_processing(rotki, remote_errors=remote_errors)
     polo_patch, binance_patch, bittrex_patch, bitmex_patch = mock_exchange_responses(
@@ -593,4 +660,5 @@ def mock_history_processing_and_exchanges(rotki: Rotkehlchen, remote_errors=Fals
         binance_patch,
         bittrex_patch,
         bitmex_patch,
+        mock_etherscan_transaction_response(),
     )

@@ -568,7 +568,7 @@ def test_query_trade_history(rotkehlchen_server, function_scope_bittrex, functio
     exchanges['poloniex'].cache_ttl_secs = 0
     exchanges['bittrex'].cache_ttl_secs = 0
 
-    _, polo_patch, _, bittrex_patch, _ = mock_history_processing_and_exchanges(rotki)
+    _, polo_patch, _, bittrex_patch, _, _ = mock_history_processing_and_exchanges(rotki)
 
     # only poloniex
     with polo_patch:
