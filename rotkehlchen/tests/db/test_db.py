@@ -34,10 +34,22 @@ from rotkehlchen.db.utils import (
 from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_CNY, A_DAO, A_DOGE, A_GNO, A_RDN, A_XMR
+from rotkehlchen.tests.utils.constants import (
+    A_CNY,
+    A_DAO,
+    A_DOGE,
+    A_GNO,
+    A_RDN,
+    A_XMR,
+    ETH_ADDRESS1,
+    ETH_ADDRESS2,
+    ETH_ADDRESS3,
+    MOCK_INPUT_DATA,
+)
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
 from rotkehlchen.typing import (
     AssetMovementCategory,
+    EthereumTransaction,
     Fee,
     Location,
     SupportedBlockchain,
@@ -923,3 +935,72 @@ def test_add_asset_movements(data_dir, username):
     assert len(warnings) == 0
     returned_movements = data.db.get_asset_movements()
     assert returned_movements == [movement1, movement2, movement3]
+
+
+def test_add_ethereum_transactions(data_dir, username):
+    """Test that adding and retrieving ethereum transactions from the DB works fine.
+
+    Also duplicates should be ignored and an error returned
+    """
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
+    data.unlock(username, '123', create_new=True)
+
+    tx1 = EthereumTransaction(
+        tx_hash=b'1',
+        timestamp=Timestamp(1451606400),
+        block_number=1,
+        from_address=ETH_ADDRESS1,
+        to_address=ETH_ADDRESS3,
+        value=FVal('2000000'),
+        gas=FVal('5000000'),
+        gas_price=FVal('2000000000'),
+        gas_used=FVal('25000000'),
+        input_data=MOCK_INPUT_DATA,
+        nonce=1,
+    )
+    tx2 = EthereumTransaction(
+        tx_hash=b'2',
+        timestamp=Timestamp(1451706400),
+        block_number=3,
+        from_address=ETH_ADDRESS2,
+        to_address=ETH_ADDRESS3,
+        value=FVal('4000000'),
+        gas=FVal('5000000'),
+        gas_price=FVal('2000000000'),
+        gas_used=FVal('25000000'),
+        input_data=MOCK_INPUT_DATA,
+        nonce=1,
+    )
+    tx3 = EthereumTransaction(
+        tx_hash=b'3',
+        timestamp=Timestamp(1452806400),
+        block_number=5,
+        from_address=ETH_ADDRESS3,
+        to_address=ETH_ADDRESS1,
+        value=FVal('1000000'),
+        gas=FVal('5000000'),
+        gas_price=FVal('2000000000'),
+        gas_used=FVal('25000000'),
+        input_data=MOCK_INPUT_DATA,
+        nonce=3,
+    )
+
+    # Add and retrieve the first 2 margins. All should be fine.
+    data.db.add_ethereum_transactions([tx1, tx2])
+    errors = msg_aggregator.consume_errors()
+    warnings = msg_aggregator.consume_warnings()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+    returned_transactions = data.db.get_ethereum_transactions()
+    assert returned_transactions == [tx1, tx2]
+
+    # Add the last 2 transactions. Since tx2 already exists in the DB it should be
+    # ignored and an error should be shown
+    data.db.add_ethereum_transactions([tx2, tx3])
+    errors = msg_aggregator.consume_errors()
+    warnings = msg_aggregator.consume_warnings()
+    assert len(errors) == 1
+    assert len(warnings) == 0
+    returned_transactions = data.db.get_ethereum_transactions()
+    assert returned_transactions == [tx1, tx2, tx3]

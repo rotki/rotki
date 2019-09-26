@@ -5,12 +5,11 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
-from rotkehlchen.tests.utils.constants import A_DASH
+from rotkehlchen.tests.utils.constants import A_DASH, ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.typing import (
     AssetAmount,
     AssetMovementCategory,
-    EthAddress,
     EthereumTransaction,
     Fee,
     Location,
@@ -18,9 +17,7 @@ from rotkehlchen.typing import (
 )
 
 DUMMY_HASH = b''
-DUMMY_ADDRESS1 = EthAddress('0x5153493bB1E1642A63A098A65dD3913daBB6AE24')
-DUMMY_ADDRESS2 = EthAddress('0x4FED1fC4144c223aE3C1553be203cDFcbD38C581')
-DUMMY_ADDRESS3 = EthAddress('0x267FdC6F9F1C1a783b36126c1A59a9fbEBf42f84')
+
 
 trades_history = [
     {
@@ -256,8 +253,8 @@ eth_tx_list = [
         timestamp=Timestamp(1463184190),  # 14/05/2016
         block_number=1512689,  # cryptocompare hourtly ETH/EUR: 9.186
         tx_hash=b'1',
-        from_address=DUMMY_ADDRESS1,
-        to_address=DUMMY_ADDRESS3,
+        from_address=ETH_ADDRESS1,
+        to_address=ETH_ADDRESS3,
         value=FVal('12323'),
         gas=FVal('5000000'),
         gas_price=FVal('2000000000'),
@@ -268,8 +265,8 @@ eth_tx_list = [
         timestamp=Timestamp(1491062063),  # 01/04/2017
         block_number=3458409,  # cryptocompare hourly ETH/EUR: 47.5
         tx_hash=b'2',
-        from_address=DUMMY_ADDRESS2,
-        to_address=DUMMY_ADDRESS3,
+        from_address=ETH_ADDRESS2,
+        to_address=ETH_ADDRESS3,
         value=FVal('12323'),
         gas=FVal('5000000'),
         gas_price=FVal('2000000000'),
@@ -280,8 +277,8 @@ eth_tx_list = [
         timestamp=Timestamp(1511626623),  # 25/11/2017
         block_number=4620323,  # cryptocompare hourly ETH/EUR: 393.955
         tx_hash=b'3',
-        from_address=DUMMY_ADDRESS3,
-        to_address=DUMMY_ADDRESS1,
+        from_address=ETH_ADDRESS3,
+        to_address=ETH_ADDRESS1,
         value=FVal('12323'),
         gas=FVal('5000000'),
         gas_price=FVal('2200000000'),
@@ -292,8 +289,8 @@ eth_tx_list = [
         timestamp=Timestamp(1523399409),  # 10/04/2018
         block_number=5417790,
         tx_hash=b'4',
-        from_address=DUMMY_ADDRESS2,
-        to_address=DUMMY_ADDRESS1,
+        from_address=ETH_ADDRESS2,
+        to_address=ETH_ADDRESS1,
         value=FVal('12323'),
         gas=FVal('5000000'),
         gas_price=FVal('2100000000'),
