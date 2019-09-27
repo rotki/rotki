@@ -1,6 +1,7 @@
-from dataclasses import dataclass, field
 from functools import total_ordering
 from typing import Any, Optional
+
+from dataclasses import dataclass, field
 
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.cryptocompare import WORLD_TO_CRYPTOCOMPARE
@@ -225,7 +226,7 @@ class HasEthereumToken(Asset):
 
     def __post_init__(self):
         super().__post_init__()
-        data = AssetResolver().get_asset_data(self.identifier)
+        data = AssetResolver().get_asset_data(self.identifier)  # pylint: disable=no-member
 
         if not data.ethereum_address:
             raise ValueError('Tried to initialize a non Ethereum asset as Ethereum Token')
