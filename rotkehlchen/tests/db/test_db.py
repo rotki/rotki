@@ -1021,7 +1021,7 @@ def test_add_ethereum_transactions(data_dir, username):
     )
 
     # Add and retrieve the first 2 margins. All should be fine.
-    data.db.add_ethereum_transactions([tx1, tx2])
+    data.db.add_ethereum_transactions([tx1, tx2], from_etherscan=True)
     errors = msg_aggregator.consume_errors()
     warnings = msg_aggregator.consume_warnings()
     assert len(errors) == 0
@@ -1031,7 +1031,7 @@ def test_add_ethereum_transactions(data_dir, username):
 
     # Add the last 2 transactions. Since tx2 already exists in the DB it should be
     # ignored and an error should be shown
-    data.db.add_ethereum_transactions([tx2, tx3])
+    data.db.add_ethereum_transactions([tx2, tx3], from_etherscan=True)
     errors = msg_aggregator.consume_errors()
     warnings = msg_aggregator.consume_warnings()
     assert len(errors) == 1

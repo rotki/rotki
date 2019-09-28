@@ -322,8 +322,12 @@ class Poloniex(ExchangeInterface):
             if command == 'returnLendingHistory':
                 return rlk_jsonloads_list(ret.text)
             else:
-                result = rlk_jsonloads_dict(ret.text)
-                return _post_process(result)
+                # For some reason poloniex can also return [] for an empty trades result
+                if ret.text == '[]':
+                    return {}
+                else:
+                    result = rlk_jsonloads_dict(ret.text)
+                    return _post_process(result)
         except JSONDecodeError:
             raise RemoteError(f'Poloniex returned invalid JSON response: {ret.text}')
 

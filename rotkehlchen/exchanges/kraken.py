@@ -179,7 +179,7 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
     rate = deserialize_price(kraken_trade['price'])
 
     if cost != amount * rate:
-        log.warning('cost ({cost}) != amount ({amount}) * rate ({rate}) for kraken trade')
+        log.warning(f'cost ({cost}) != amount ({amount}) * rate ({rate}) for kraken trade')
 
     log.debug(
         'Processing kraken Trade',
@@ -195,6 +195,23 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
         rate=rate,
     )
 
+    # Kraken trades can have the same ordertxid and postxid for different trades ..
+    # Also note postxid is optional and can be missing
+    # The only thing that could differentiate them is timestamps in the milliseconds range
+    # For example here are parts of two different kraken_trade:
+    # {'ordertxid': 'AM4ZOZ-GLEMD-ZICOGR', 'postxid': 'AKH2SE-M7IF5-CFI7AT',
+    # 'pair': 'XXBTZEUR', 'time': FVal(1561161486.2955)
+    # {'ordertxid': 'AM4ZOZ-GLEMD-ZICOGR', 'postxid': 'AKH2SE-M7IF5-CFI7AT',
+    # 'pair': 'XXBTZEUR', 'time': FVal(1561161486.3005)
+    #
+    # In order to counter this for the unique exchange trade link we are going
+    # to use a concatenation of the above
+    exchange_uuid = (
+        str(kraken_trade['ordertxid']) +
+        str(kraken_trade.get('postxid', '')) +  # postxid is optional
+        str(kraken_trade['time'])
+    )
+
     return Trade(
         timestamp=timestamp,
         location=Location.KRAKEN,
@@ -204,7 +221,7 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
         rate=rate,
         fee=fee,
         fee_currency=quote_currency,
-        link=str(kraken_trade['ordertxid']),
+        link=exchange_uuid,
     )
 
 

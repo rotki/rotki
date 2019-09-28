@@ -817,14 +817,51 @@ class DBHandler():
             # That means that one of the tuples hit a constraint, most probably
             # already existing in the DB, in which case we resort to writting them
             # one by one to only reject the duplicates
+
+            nonces_set = set()
+            if tuple_type == 'ethereum_transaction':
+                nonces_set = set(range(len([t for t in tuples if t[10] == -1])))
+
             for entry in tuples:
                 try:
                     cursor.execute(query, entry)
                 except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                    if tuple_type == 'ethereum_transaction':
+                        nonce = entry[10]
+                        # If it's not an internal transaction with the same hash
+                        # ignore it. That is since it's indeed a duplicate because
+                        # when we query etherscan we get all transactions where
+                        # the given address is either the from or the to.
+                        if nonce != -1:
+                            continue
+
+                        # If it's an internal transaction with the same hash then
+                        # still input it as there is no way to distinguish between
+                        # multiple etherscan internal transactions with the same
+                        # original transaction hash. Here we trust the data source.
+                        # To differentiate between them in Rotkehlchen we use a
+                        # more negative nonce
+                        entry_list = list(entry)
+                        # Make sure that the internal etherscan transaction nonce
+                        # is increasingly negative (> -1)
+                        # If a key error is thrown here due to popping from an empty
+                        # set then something is really wrong so not catching it
+                        entry_list[10] = -1 - nonces_set.pop() - 1
+                        entry = tuple(entry_list)
+                        try:
+                            cursor.execute(query, entry)
+                            # Success so just go to the next entry
+                            continue
+                        except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                            # the error is logged right below
+                            pass
+
                     string_repr = db_tuple_to_str(entry, tuple_type)
                     self.msg_aggregator.add_error(
                         f'Error adding "{string_repr}" to the DB. It already exists.',
                     )
+                except sqlcipher.InterfaceError:
+                    log.critical(f'Interface error with tuple: {entry}')
 
         self.conn.commit()
         self.update_last_write()
@@ -1038,7 +1075,18 @@ class DBHandler():
 
         return asset_movements
 
-    def add_ethereum_transactions(self, ethereum_transactions: List[EthereumTransaction]) -> None:
+    def add_ethereum_transactions(
+            self,
+            ethereum_transactions: List[EthereumTransaction],
+            from_etherscan: bool,
+    ) -> None:
+        """Adds ethereum transactions to the database
+
+        If from_etherscan is True then this means that the source of the transactions
+        is an etherscan query. This is used to determine how we should handle the
+        transactions with nonce "-1" as this is how we currently identify internal
+        ethereum transactions from etherscan.
+        """
         tx_tuples: List[Tuple[Any, ...]] = []
         for tx in ethereum_transactions:
             tx_tuples.append((
