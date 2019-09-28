@@ -189,7 +189,7 @@ CREATE TABLE IF NOT EXISTS asset_movements (
 
 DB_CREATE_ETHEREUM_TRANSACTIONS = """
 CREATE TABLE IF NOT EXISTS ethereum_transactions (
-    tx_hash BLOB PRIMARY KEY,
+    tx_hash BLOB,
     timestamp INTEGER,
     block_number INTEGER,
     from_address TEXT,
@@ -199,7 +199,10 @@ CREATE TABLE IF NOT EXISTS ethereum_transactions (
     gas_price TEXT,
     gas_used TEXT,
     input_data BLOB,
-    nonce INTEGER
+    nonce INTEGER,
+    /* we determine uniqueness for ethereum internal transactions by using an
+    increasingly negative number */
+    PRIMARY KEY (tx_hash, input_data, nonce)
 );
 """
 

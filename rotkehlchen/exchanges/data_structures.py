@@ -71,6 +71,9 @@ class AssetMovement(NamedTuple):
     # Fee is the amount of fee_currency that is kept for the deposit/withdrawal. Can be zero
     fee: Fee
     # For exchange asset movements this should be the exchange unique identifier
+    # For movements imported from third parties we should generate a unique id for this.
+    # If movements are both imported from third parties like cointracking.info and from
+    # the exchanges themselves then there is no way to avoid duplicates.
     link: str
 
     @property
@@ -88,7 +91,8 @@ class AssetMovement(NamedTuple):
             str(self.category) +
             str(self.timestamp) +
             self.asset.identifier +
-            self.fee_asset.identifier
+            self.fee_asset.identifier +
+            self.link
         )
         return hash_id(string)
 
@@ -123,6 +127,9 @@ class Trade(NamedTuple):
     fee_currency: Asset
     # For external trades this is optional and is a link to the trade in an explorer
     # For exchange trades this should be the exchange unique trade identifer
+    # For trades imported from third parties we should generate a unique id for this.
+    # If trades are both imported from third parties like cointracking.info and from
+    # the exchanges themselves then there is no way to avoid duplicates.
     link: str
     notes: str = ''
 
@@ -139,14 +146,16 @@ class Trade(NamedTuple):
     @property
     def identifier(self) -> TradeID:
         """Formulates a unique identifier for the trade to become the DB primary key
-        We are not using self.link (unique exchange identifier) as part of the ID
-        for exchange trades since it may not be available at import of data from
-        third party sources such as cointracking.inf
-
-        Unfortunately this makes the Trade identifier pseudo unique and means
-        we can't have same trades with all of the following attributes.
         """
-        string = str(self.location) + str(self.timestamp) + str(self.trade_type) + self.pair
+        string = (
+            str(self.location) +
+            str(self.timestamp) +
+            str(self.trade_type) +
+            self.pair +
+            str(self.amount) +
+            str(self.rate) +
+            self.link
+        )
         return TradeID(hash_id(string))
 
     def serialize(self) -> Dict[str, Any]:
@@ -179,6 +188,9 @@ class MarginPosition(NamedTuple):
     # The asset in which fees were paid
     fee_currency: Asset
     # For exchange margins this should be the exchange unique identifer
+    # For margins imported from third parties we should generate a unique id for this.
+    # If margins are both imported from third parties like cointracking.info and from
+    # the exchanges themselves then there is no way to avoid duplicates.
     link: str
     notes: str = ''
 
@@ -199,7 +211,8 @@ class MarginPosition(NamedTuple):
             open_time +
             str(self.close_time) +
             self.pl_currency.identifier +
-            self.fee_currency.identifier
+            self.fee_currency.identifier +
+            self.link
         )
         return hash_id(string)
 

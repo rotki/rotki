@@ -107,6 +107,9 @@ class EthereumTransaction(NamedTuple):
     gas_price: FVal
     gas_used: FVal
     input_data: bytes
+    # The ethereum transaction nonce. Even though for normal ethereum transactions
+    # this can't be negative it can be for us. IF it's negative it means that
+    # this is an internal transaction returned by etherscan
     nonce: int
 
 

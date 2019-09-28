@@ -166,9 +166,10 @@ class ExchangeInterface():
 
         # If we have a time frame we have not asked the exchange for trades then
         # go ahead and do that now
+        online_query_start_ts = Timestamp(max(start_ts, last_trade_db_ts + 1))
         try:
             new_trades = self.query_online_trade_history(
-                start_ts=Timestamp(last_trade_db_ts + 1),
+                start_ts=online_query_start_ts,
                 end_ts=end_ts,
             )
         except NotImplementedError:
@@ -206,9 +207,10 @@ class ExchangeInterface():
 
         # IF we have a time frame we have not asked the exchange for trades then
         # go ahead and do that now
+        online_query_start_ts = Timestamp(max(start_ts, last_margin_db_ts + 1))
         try:
             new_positions = self.query_online_margin_history(
-                start_ts=Timestamp(last_margin_db_ts + 1),
+                start_ts=online_query_start_ts,
                 end_ts=end_ts,
             )
         except NotImplementedError:
@@ -240,7 +242,11 @@ class ExchangeInterface():
         if last_movement_db_ts >= end_ts:
             return asset_movements
 
-        new_movements = self.query_online_deposits_withdrawals(start_ts=start_ts, end_ts=end_ts)
+        online_query_start_ts = Timestamp(max(start_ts, last_movement_db_ts + 1))
+        new_movements = self.query_online_deposits_withdrawals(
+            start_ts=online_query_start_ts,
+            end_ts=end_ts,
+        )
 
         if new_movements:
             self.db.add_asset_movements(new_movements)

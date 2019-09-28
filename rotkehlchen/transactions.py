@@ -57,7 +57,7 @@ def deserialize_transaction_from_etherscan(
         timestamp = deserialize_timestamp(data['timeStamp'])
 
         block_number = read_integer(data, 'blockNumber')
-        nonce = read_integer(data, 'nonce')
+        nonce = -1 if internal else read_integer(data, 'nonce')
 
         return EthereumTransaction(
             timestamp=timestamp,
@@ -194,7 +194,7 @@ def query_etherscan_for_transactions(
         )
 
         # and finally also save the transactions in the DB
-        db.add_ethereum_transactions(ethereum_transactions=new_transactions)
+        db.add_ethereum_transactions(ethereum_transactions=new_transactions, from_etherscan=True)
         transactions.extend(new_transactions)
 
     transactions.sort(key=lambda tx: tx.timestamp)
