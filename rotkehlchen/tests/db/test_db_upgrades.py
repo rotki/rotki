@@ -1,5 +1,6 @@
 import os
 from contextlib import contextmanager
+from pathlib import Path
 from shutil import copyfile
 from sqlite3 import Cursor
 from unittest.mock import patch
@@ -366,7 +367,11 @@ def test_upgrade_db_4_to_5(data_dir, username):
 
 
 def test_upgrade_db_5_to_6(data_dir, username):
-    """Test upgrading the DB from version 5 to version 6, upgrading the trades table"""
+    """Test upgrading the DB from version 5 to version 6.
+
+    Test that the trades table is upgraded.
+    Test that cache files are removed
+    """
     msg_aggregator = MessagesAggregator()
     userdata_dir = os.path.join(data_dir, username)
     os.mkdir(userdata_dir)
@@ -375,6 +380,14 @@ def test_upgrade_db_5_to_6(data_dir, username):
         os.path.join(os.path.dirname(dir_path), 'data', 'v5_rotkehlchen.db'),
         os.path.join(userdata_dir, 'rotkehlchen.db'),
     )
+    # Create fake cache files and make sure they are deleted.
+    fake_cache_files = [
+        os.path.join(userdata_dir, 'kraken_trades.json'),
+        os.path.join(userdata_dir, 'trades_history.json'),
+        os.path.join(userdata_dir, 'binance_deposits_withdrawals.json'),
+    ]
+    for filename in fake_cache_files:
+        Path(filename).touch()
 
     with target_patch(target_version=6):
         db = DBHandler(user_data_dir=userdata_dir, password='123', msg_aggregator=msg_aggregator)
@@ -441,7 +454,10 @@ def test_upgrade_db_5_to_6(data_dir, username):
     results = results.fetchall()
     assert results == expected_results
 
-    # Also make sure that we have updated to the target version
+    # Also make sure the cache files were deleted
+    for filename in fake_cache_files:
+        assert not os.path.exists(filename)
+    # Finally slso make sure that we have updated to the target version
     assert db.get_version() == 6
 
 
