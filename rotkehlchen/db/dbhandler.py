@@ -531,20 +531,23 @@ class DBHandler():
         self.conn.commit()
         self.update_last_write()
 
-    def get_last_query_time(self, name: str) -> Timestamp:
+    def get_used_query_range(self, name: str) -> Optional[Tuple[Timestamp, Timestamp]]:
+        """Get the last start/end timestamp range that has been queried for name"""
         cursor = self.conn.cursor()
-        query = cursor.execute(f'SELECT value from last_timestamps WHERE name="{name}";')
+        query = cursor.execute(
+            f'SELECT start_ts, end_ts from used_query_ranges WHERE name="{name}";',
+        )
         query = query.fetchall()
         if len(query) == 0 or query[0][0] is None:
-            return Timestamp(0)
+            return None
 
-        return Timestamp(int(query[0][0]))
+        return Timestamp(int(query[0][0])), Timestamp(int(query[0][1]))
 
-    def update_last_query_time(self, name: str, ts: Timestamp) -> None:
+    def update_used_query_range(self, name: str, start_ts: Timestamp, end_ts: Timestamp) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
-            'INSERT OR REPLACE INTO last_timestamps(name, value) VALUES (?, ?)',
-            (name, str(ts)),
+            'INSERT OR REPLACE INTO used_query_ranges(name, start_ts, end_ts) VALUES (?, ?, ?)',
+            (name, str(start_ts), str(end_ts)),
         )
         self.conn.commit()
         self.update_last_write()

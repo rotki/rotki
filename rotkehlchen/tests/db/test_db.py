@@ -73,7 +73,7 @@ TABLES_AT_INIT = [
     'trade_type',
     'location',
     'settings',
-    'last_timestamps',
+    'used_query_ranges',
     'margin_positions',
     'asset_movements',
 ]

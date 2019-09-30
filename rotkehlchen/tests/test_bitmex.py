@@ -36,20 +36,38 @@ def test_bitmex_api_signature(mock_bitmex):
     assert sig == '1749cd2ccae4aa49048ae09f0b95110cee706e0944e6a14ad0b3a8cb45bd336b'
 
 
-def test_bitmex_api_withdrawals_deposit(test_bitmex):
-    """Test the happy case of bitmex withdrawals deposit query"""
+def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(test_bitmex):
+    """Test the happy case of bitmex withdrawals deposit query
+
+    This test also tests an important case where a subquery for a an in-between
+    time range is done first and then an encompassing range is requested. And
+    we test that the full query, queries the remaining timestamp ranges.
+    """
+    # This is an initial subquery of a small range where no deposit happened.
     result = test_bitmex.query_deposits_withdrawals(
         start_ts=1536492800,
         end_ts=1536492976,
     )
     assert len(result) == 0
 
+    # Now after the subquery we test that the exchange engine logic properly
+    # queries the required start/end timestamp ranges
     now = ts_now()
     result = test_bitmex.query_deposits_withdrawals(
         start_ts=0,
         end_ts=now,
     )
     expected_result = [
+        AssetMovement(
+            location=Location.BITMEX,
+            category=AssetMovementCategory.DEPOSIT,
+            timestamp=1536486278,
+            asset=A_BTC,
+            amount=FVal('0.46966992'),
+            fee_asset=A_BTC,
+            fee=FVal(0),
+            link='166b9aac-70ac-cedc-69a0-dbd12c0661bf',
+        ),
         AssetMovement(
             location=Location.BITMEX,
             category=AssetMovementCategory.DEPOSIT,
@@ -80,17 +98,6 @@ def test_bitmex_api_withdrawals_deposit(test_bitmex):
             fee=FVal('0.00300000'),
             link='bf19ca4e-e084-11f9-12cd-6ae41e26f9db',
         ),
-        AssetMovement(
-            location=Location.BITMEX,
-            category=AssetMovementCategory.DEPOSIT,
-            timestamp=1536486278,
-            asset=A_BTC,
-            amount=FVal('0.46966992'),
-            fee_asset=A_BTC,
-            fee=FVal(0),
-            link='166b9aac-70ac-cedc-69a0-dbd12c0661bf',
-        ),
-
     ]
     assert result == expected_result
     # also make sure that asset movements contain Asset and not strings
