@@ -148,6 +148,47 @@ class ExchangeInterface():
             'query_online_deposits_withdrawals should only be implemented by subclasses',
         )
 
+    def get_online_query_ranges(
+            self,
+            location_suffix: str,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> List[Tuple[Timestamp, Timestamp]]:
+        """Takes in the start/end ts for a location query and after checking the
+        last query ranges of the DB provides a list of timestamp ranges that still
+        need to be queried."""
+        queried_range = self.db.get_used_query_range(self.name + location_suffix)
+        if not queried_range:
+            ranges_to_query = [(start_ts, end_ts)]
+        else:
+            ranges_to_query = []
+            if start_ts < queried_range[0]:
+                ranges_to_query.append((start_ts, Timestamp(queried_range[0] - 1)))
+
+            if end_ts > queried_range[1]:
+                ranges_to_query.append((Timestamp(queried_range[1] + 1), end_ts))
+
+        return ranges_to_query
+
+    def update_used_query_range(
+            self,
+            location_suffix: str,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            ranges_to_query: List[Tuple[Timestamp, Timestamp]],
+    ):
+        """Depending on the ranges to query and the given start and end ts update the DB"""
+        starts = [x[0] for x in ranges_to_query]
+        starts.append(start_ts)
+        ends = [x[1] for x in ranges_to_query]
+        ends.append(end_ts)
+
+        self.db.update_used_query_range(
+            name=self.name + location_suffix,
+            start_ts=min(starts),
+            end_ts=max(ends),
+        )
+
     def query_trade_history(
             self,
             start_ts: Timestamp,
@@ -159,29 +200,27 @@ class ExchangeInterface():
             to_ts=end_ts,
             location=deserialize_location(self.name),
         )
-        last_trade_db_ts = self.db.get_last_query_time(self.name + '_trades')
-        # If last DB trade is within the time frame, no need to ask the exchange
-        if last_trade_db_ts >= end_ts:
-            return trades
+        ranges_to_query = self.get_online_query_ranges('_trades', start_ts, end_ts)
 
-        # If we have a time frame we have not asked the exchange for trades then
-        # go ahead and do that now
-        online_query_start_ts = Timestamp(max(start_ts, last_trade_db_ts + 1))
-        try:
-            new_trades = self.query_online_trade_history(
-                start_ts=online_query_start_ts,
-                end_ts=end_ts,
-            )
-        except NotImplementedError:
-            msg = 'query_online_trade_history should only not be implemented by bitmex'
-            assert self.name == 'bitmex', msg
-            new_trades = []
+        new_trades = []
+        for query_start_ts, query_end_ts in ranges_to_query:
+            # If we have a time frame we have not asked the exchange for trades then
+            # go ahead and do that now
+            try:
+                new_trades.extend(self.query_online_trade_history(
+                    start_ts=query_start_ts,
+                    end_ts=query_end_ts,
+                ))
+            except NotImplementedError:
+                msg = 'query_online_trade_history should only not be implemented by bitmex'
+                assert self.name == 'bitmex', msg
+                pass
 
         # make sure to add them to the DB
         if new_trades != []:
             self.db.add_trades(new_trades)
-        # and also set the last queried timestamp for the exchange
-        self.db.update_last_query_time(name=self.name + '_trades', ts=end_ts)
+        # and also set the used queried timestamp range for the exchange
+        self.update_used_query_range('_trades', start_ts, end_ts, ranges_to_query)
         # finally append them to the already returned DB trades
         trades.extend(new_trades)
 
@@ -199,28 +238,23 @@ class ExchangeInterface():
             to_ts=end_ts,
             location=self.name,
         )
+        ranges_to_query = self.get_online_query_ranges('_margins', start_ts, end_ts)
 
-        last_margin_db_ts = self.db.get_last_query_time(self.name + '_margins')
-        # If last margin is within the time frame, no need to ask the exchange
-        if last_margin_db_ts >= end_ts:
-            return margin_positions
-
-        # IF we have a time frame we have not asked the exchange for trades then
-        # go ahead and do that now
-        online_query_start_ts = Timestamp(max(start_ts, last_margin_db_ts + 1))
-        try:
-            new_positions = self.query_online_margin_history(
-                start_ts=online_query_start_ts,
-                end_ts=end_ts,
-            )
-        except NotImplementedError:
-            new_positions = []
+        new_positions = []
+        for query_start_ts, query_end_ts in ranges_to_query:
+            try:
+                new_positions.extend(self.query_online_margin_history(
+                    start_ts=query_start_ts,
+                    end_ts=query_end_ts,
+                ))
+            except NotImplementedError:
+                pass
 
         # make sure to add them to the DB
         if new_positions != []:
             self.db.add_margin_positions(new_positions)
         # and also set the last queried timestamp for the exchange
-        self.db.update_last_query_time(name=self.name + '_margins', ts=end_ts)
+        self.update_used_query_range('_margins', start_ts, end_ts, ranges_to_query)
         # finally append them to the already returned DB margin positions
         margin_positions.extend(new_positions)
 
@@ -237,20 +271,18 @@ class ExchangeInterface():
             to_ts=end_ts,
             location=self.name,
         )
-        last_movement_db_ts = self.db.get_last_query_time(self.name + '_asset_movements')
+        ranges_to_query = self.get_online_query_ranges('_asset_movements', start_ts, end_ts)
 
-        if last_movement_db_ts >= end_ts:
-            return asset_movements
+        new_movements = []
+        for query_start_ts, query_end_ts in ranges_to_query:
+            new_movements.extend(self.query_online_deposits_withdrawals(
+                start_ts=query_start_ts,
+                end_ts=query_end_ts,
+            ))
 
-        online_query_start_ts = Timestamp(max(start_ts, last_movement_db_ts + 1))
-        new_movements = self.query_online_deposits_withdrawals(
-            start_ts=online_query_start_ts,
-            end_ts=end_ts,
-        )
-
-        if new_movements:
+        if new_movements != []:
             self.db.add_asset_movements(new_movements)
-        self.db.update_last_query_time(name=self.name + '_asset_movements', ts=end_ts)
+        self.update_used_query_range('_asset_movements', start_ts, end_ts, ranges_to_query)
         asset_movements.extend(new_movements)
 
         return asset_movements
