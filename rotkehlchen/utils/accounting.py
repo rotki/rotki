@@ -22,7 +22,7 @@ def action_get_timestamp(action: TaxableAction) -> Timestamp:
     Can Raise assertion error if the action is not of any expected type
     """
     if isinstance(action, (Trade, AssetMovement, EthereumTransaction)):
-        return action.timestamp  # type: ignore # There is an isinstance check above
+        return action.timestamp
     elif isinstance(action, (MarginPosition, Loan)):
         return action.close_time
 
