@@ -5,7 +5,7 @@ import re
 import shutil
 import tempfile
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
@@ -818,7 +818,7 @@ class DBHandler():
             # already existing in the DB, in which case we resort to writting them
             # one by one to only reject the duplicates
 
-            nonces_set = set()
+            nonces_set: Set[int] = set()
             if tuple_type == 'ethereum_transaction':
                 nonces_set = set(range(len([t for t in tuples if t[10] == -1])))
 

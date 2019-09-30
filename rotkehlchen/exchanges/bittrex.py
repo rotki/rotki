@@ -449,7 +449,12 @@ class Bittrex(ExchangeInterface):
         movements = []
         for raw_movement in raw_data:
             movement = self._deserialize_asset_movement(raw_movement)
-            if movement:
+            valid = (
+                movement is not None and
+                movement.timestamp >= start_ts and
+                movement.timestamp <= end_ts
+            )
+            if valid:
                 movements.append(movement)
 
         return movements

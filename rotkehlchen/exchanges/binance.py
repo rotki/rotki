@@ -31,7 +31,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, AssetMovementCategory, Fee, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import cache_response_timewise
+from rotkehlchen.utils.misc import cache_response_timewise, ts_now
 from rotkehlchen.utils.serialization import rlk_jsonloads
 
 logger = logging.getLogger(__name__)
@@ -493,15 +493,18 @@ class Binance(ExchangeInterface):
         # This does not check for any limits. Can there be any limits like with trades
         # in the deposit/withdrawal binance api? Can't see anything in the docs:
         # https://github.com/binance-exchange/binance-official-api-docs/blob/master/wapi-api.md#deposit-history-user_data
-        result = self.api_query_dict(
-            'depositHistory.html',
-            options={'timestamp': 0},
-        )
+        #
+        # Note that all timestamps should be in milliseconds so since rotki timestamps
+        # are in seconds we have to multiply by 1k
+        options = {
+            'timestamp': ts_now() * 1000,
+            'startTime': start_ts * 1000,
+            'endTime': end_ts * 1000,
+        }
+        result = self.api_query_dict('depositHistory.html', options=options)
         raw_data = result['depositList']
-        result = self.api_query_dict(
-            'withdrawHistory.html',
-            options={'timestamp': 0},
-        )
+        options['timestamp'] = ts_now() * 1000
+        result = self.api_query_dict('withdrawHistory.html', options=options)
         raw_data.extend(result['withdrawList'])
         log.debug('binance deposit/withdrawal history result', results_num=len(raw_data))
 
