@@ -295,7 +295,7 @@ BITTREX_DEPOSIT_HISTORY_RESPONSE = """
       "Amount": 50.81,
       "Currency": "ETH",
       "Confirmations": 5,
-      "LastUpdated": "2014-06-15T07:38:53.883",
+      "LastUpdated": "2015-06-15T07:38:53.883",
       "TxId": "e26d3b33fcfc2cb0cd4d0938034956ea590339170bf4102f080eab4s85da9bde",
       "CryptoAddress": "0x717E2De923A6377Fbd7e3c937491f71ad370e9A8"
     }
@@ -371,7 +371,7 @@ def test_bittrex_query_deposits_withdrawals(bittrex):
 
     assert movements[1].location == Location.BITTREX
     assert movements[1].category == AssetMovementCategory.DEPOSIT
-    assert movements[1].timestamp == 1402817933
+    assert movements[1].timestamp == 1434353933
     assert isinstance(movements[1].asset, Asset)
     assert movements[1].asset == A_ETH
     assert movements[1].amount == FVal('50.81')
@@ -392,6 +392,19 @@ def test_bittrex_query_deposits_withdrawals(bittrex):
     assert movements[3].asset == A_ETH
     assert movements[3].amount == FVal('55')
     assert movements[3].fee == FVal('0.0015')
+
+    # now test a particular time range and see that we only get 1 withdrawal and 1 deposit
+    with patch.object(bittrex.session, 'get', side_effect=mock_get_deposit_withdrawal):
+        movements = bittrex.query_online_deposits_withdrawals(start_ts=0, end_ts=1419984000)
+
+    assert len(movements) == 2
+    assert len(errors) == 0
+    assert len(warnings) == 0
+
+    assert movements[0].category == AssetMovementCategory.DEPOSIT
+    assert movements[0].timestamp == 1392277133
+    assert movements[1].category == AssetMovementCategory.WITHDRAWAL
+    assert movements[1].timestamp == 1404879887
 
 
 def test_bittrex_query_deposits_withdrawals_unexpected_data(bittrex):
