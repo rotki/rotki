@@ -13,7 +13,8 @@ Changelog
   - `Morpheus Network (MRPH) <https://coinmarketcap.com/currencies/morpheus-network/>`__
   - `Chiliz (CHZ) <https://coinmarketcap.com/currencies/chiliz/>`__
   - `Binance USD (BUSD) <https://coinmarketcap.com/currencies/binance-usd/>`__
-  - `Band Protcol (BAND) <https://coinmarketcap.com/currencies/band-protocol//>`__
+  - `Band Protcol (BAND) <https://coinmarketcap.com/currencies/band-protocol/>`__
+  - `Beam Token (BEAM) <https://coinmarketcap.com/currencies/beam/>`__
 
 * :release:`1.0.3 <2019-08-30>`
 * :feature:`453` If a newer version exists the user is notified at the start of the application and is given a link to download it.
