@@ -69,6 +69,7 @@ WORLD_TO_POLONIEX = {
 WORLD_TO_KRAKEN = {
     'ATOM': 'ATOM',
     'BAT': 'BAT',
+    'LINK': 'LINK',
     'BSV': 'BSV',
     'ETC': 'XETC',
     'ETH': 'XETH',
@@ -99,6 +100,7 @@ WORLD_TO_KRAKEN = {
     'NMC': 'XNMC',
     'VEN': 'XXVN',
     'DOGE': 'XXDG',
+    'DAI': 'DAI',
     'XTZ': 'XTZ',
     'WAVES': 'WAVES',
     'ICX': 'ICX',
