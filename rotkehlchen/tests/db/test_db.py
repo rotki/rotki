@@ -350,7 +350,8 @@ def test_writting_fetching_external_trades(data_dir, username):
     new_time_str = '10/03/2018 23:35'
     new_timestamp = 1520724900
     otc_trade1['otc_timestamp'] = new_time_str
-    otc_trade1['otc_id'] = trade1_id
+    otc_trade1['otc_id'] = edited_trade1.identifier
+
     result, _ = data.edit_external_trade(otc_trade1)
     assert result
     result = data.get_external_trades()
@@ -1030,11 +1031,11 @@ def test_add_ethereum_transactions(data_dir, username):
     assert returned_transactions == [tx1, tx2]
 
     # Add the last 2 transactions. Since tx2 already exists in the DB it should be
-    # ignored and an error should be shown
+    # ignored (no errors shown for attempting to add already existing transaction)
     data.db.add_ethereum_transactions([tx2, tx3], from_etherscan=True)
     errors = msg_aggregator.consume_errors()
     warnings = msg_aggregator.consume_warnings()
-    assert len(errors) == 1
+    assert len(errors) == 0
     assert len(warnings) == 0
     returned_transactions = data.db.get_ethereum_transactions()
     assert returned_transactions == [tx1, tx2, tx3]
