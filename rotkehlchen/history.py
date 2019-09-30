@@ -2,7 +2,6 @@ import logging
 from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.manager import ExchangeManager
@@ -18,6 +17,7 @@ from rotkehlchen.utils.misc import create_timestamp, write_history_data_in_file
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis import Cryptocompare
+    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -132,7 +132,7 @@ class TradesHistorian():
     def __init__(
             self,
             user_directory: FilePath,
-            db: DBHandler,
+            db: 'DBHandler',
             eth_accounts: List[EthAddress],
             msg_aggregator: MessagesAggregator,
             exchange_manager: ExchangeManager,
