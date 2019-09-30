@@ -460,6 +460,21 @@ def test_coinbase_query_trade_history(function_scope_coinbase):
     )]
     assert trades == expected_trades
 
+    # and now try only a smaller time range
+    with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
+        trades = coinbase.query_trade_history(
+            start_ts=0,
+            end_ts=1451606400,
+        )
+
+    warnings = coinbase.msg_aggregator.consume_warnings()
+    errors = coinbase.msg_aggregator.consume_errors()
+    assert len(warnings) == 0
+    assert len(errors) == 0
+    assert len(trades) == 1
+    assert trades[0].trade_type == TradeType.SELL
+    assert trades[0].timestamp == 1427402520
+
 
 def query_coinbase_and_test(
         coinbase,
@@ -639,7 +654,7 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
     with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
         movements = coinbase.query_online_deposits_withdrawals(
             start_ts=0,
-            end_ts=TEST_END_TS,
+            end_ts=1576726126,
         )
 
     warnings = coinbase.msg_aggregator.consume_warnings()
@@ -676,6 +691,23 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
         link='id1',
     )]
     assert expected_movements == movements
+
+    # and now try to query within a specific range
+    with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
+        movements = coinbase.query_online_deposits_withdrawals(
+            start_ts=0,
+            end_ts=1519001650,
+        )
+
+    warnings = coinbase.msg_aggregator.consume_warnings()
+    errors = coinbase.msg_aggregator.consume_errors()
+    assert len(warnings) == 0
+    assert len(errors) == 0
+    assert len(movements) == 2
+    assert movements[0].category == AssetMovementCategory.DEPOSIT
+    assert movements[0].timestamp == 1519001640
+    assert movements[1].category == AssetMovementCategory.WITHDRAWAL
+    assert movements[1].timestamp == 1485895742
 
 
 def test_coinbase_query_deposit_withdrawals_unexpected_data(function_scope_coinbase):

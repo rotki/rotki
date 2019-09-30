@@ -421,7 +421,9 @@ class Coinbase(ExchangeInterface):
                 )
                 continue
 
-            if trade:
+            # limit coinbase trades in the requested time range here since there
+            # is no argument in the API call
+            if trade and trade.timestamp >= start_ts and trade.timestamp <= end_ts:
                 trades.append(trade)
 
         return trades
@@ -543,7 +545,9 @@ class Coinbase(ExchangeInterface):
         movements = []
         for raw_movement in raw_data:
             movement = self._deserialize_asset_movement(raw_movement)
-            if movement:
+            # limit coinbase deposit/withdrawals in the requested time range
+            #  here since there is no argument in the API call
+            if movement and movement.timestamp >= start_ts and movement.timestamp <= end_ts:
                 movements.append(movement)
 
         return movements
