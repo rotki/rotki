@@ -264,8 +264,8 @@ class Kraken(ExchangeInterface):
     ):
         super(Kraken, self).__init__('kraken', api_key, secret, database)
         self.msg_aggregator = msg_aggregator
-        self.session.headers.update({  # type: ignore
-            'API-Key': self.api_key,
+        self.session.headers.update({
+            'API-Key': self.api_key,  # type: ignore
         })
 
     def validate_api_key(self) -> Tuple[bool, str]:
@@ -388,8 +388,8 @@ class Kraken(ExchangeInterface):
                 message,
                 hashlib.sha512,
             )
-            self.session.headers.update({  # type: ignore
-                'API-Sign': base64.b64encode(signature.digest()),
+            self.session.headers.update({
+                'API-Sign': base64.b64encode(signature.digest()),  # type: ignore
             })
             log.debug('Kraken Private API query', request_url=urlpath, data=post_data)
             response = self.session.post(
