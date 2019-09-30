@@ -809,6 +809,7 @@ class DBHandler():
             tuple_type: DBTupleType,
             query: str,
             tuples: List[Tuple[Any, ...]],
+            **kwargs,
     ) -> None:
         cursor = self.conn.cursor()
         try:
@@ -835,26 +836,38 @@ class DBHandler():
                         if nonce != -1:
                             continue
 
-                        # If it's an internal transaction with the same hash then
-                        # still input it as there is no way to distinguish between
-                        # multiple etherscan internal transactions with the same
-                        # original transaction hash. Here we trust the data source.
-                        # To differentiate between them in Rotkehlchen we use a
-                        # more negative nonce
-                        entry_list = list(entry)
-                        # Make sure that the internal etherscan transaction nonce
-                        # is increasingly negative (> -1)
-                        # If a key error is thrown here due to popping from an empty
-                        # set then something is really wrong so not catching it
-                        entry_list[10] = -1 - nonces_set.pop() - 1
-                        entry = tuple(entry_list)
-                        try:
-                            cursor.execute(query, entry)
-                            # Success so just go to the next entry
-                            continue
-                        except sqlcipher.IntegrityError:  # pylint: disable=no-member
-                            # the error is logged right below
-                            pass
+                        if 'from_etherscan' in kwargs and kwargs['from_etherscan'] is True:
+                            # If it's an internal transaction with the same hash then
+                            # still input it as there is no way to distinguish between
+                            # multiple etherscan internal transactions with the same
+                            # original transaction hash. Here we trust the data source.
+                            # To differentiate between them in Rotkehlchen we use a
+                            # more negative nonce
+                            entry_list = list(entry)
+                            # Make sure that the internal etherscan transaction nonce
+                            # is increasingly negative (> -1)
+                            # If a key error is thrown here due to popping from an empty
+                            # set then something is really wrong so not catching it
+                            entry_list[10] = -1 - nonces_set.pop() - 1
+                            entry = tuple(entry_list)
+                            try:
+                                cursor.execute(query, entry)
+                                # Success so just go to the next entry
+                                continue
+                            except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                                # the error is logged right below
+                                pass
+
+                        # if we reach here it means the transaction is already in the DB
+                        # But this can't be avoided with the way we query etherscan
+                        # right now since we don't query transactions in a specific
+                        # time range, so duplicate addition attempts can happen.
+                        string_repr = db_tuple_to_str(entry, tuple_type)
+                        logger.debug(
+                            f'Did not add "{string_repr}" to the DB since'
+                            f'it already exists.',
+                        )
+                        continue
 
                     string_repr = db_tuple_to_str(entry, tuple_type)
                     self.msg_aggregator.add_error(
@@ -1078,7 +1091,7 @@ class DBHandler():
     def add_ethereum_transactions(
             self,
             ethereum_transactions: List[EthereumTransaction],
-            from_etherscan: bool,  # pylint: disable=unused-argument
+            from_etherscan: bool,
     ) -> None:
         """Adds ethereum transactions to the database
 
@@ -1118,7 +1131,12 @@ class DBHandler():
               nonce)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
-        self.write_tuples(tuple_type='ethereum_transaction', query=query, tuples=tx_tuples)
+        self.write_tuples(
+            tuple_type='ethereum_transaction',
+            query=query,
+            tuples=tx_tuples,
+            from_etherscan=from_etherscan,
+        )
 
     def get_ethereum_transactions(
             self,
