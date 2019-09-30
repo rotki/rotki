@@ -867,6 +867,12 @@
         "symbol": "BDG",
         "type": "ethereum token"
     },
+    "BEAM": {
+        "name": "Beam",
+        "started": 1521072000,
+        "symbol": "BEAM",
+        "type": "own chain"
+    },
     "BEE": {
         "ethereum_address": "0x4D8fc1453a0F359e99c9675954e656D80d996FbF",
         "ethereum_token_decimals": 18,
