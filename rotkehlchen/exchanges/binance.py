@@ -502,10 +502,10 @@ class Binance(ExchangeInterface):
             'endTime': end_ts * 1000,
         }
         result = self.api_query_dict('depositHistory.html', options=options)
-        raw_data = result['depositList']
+        raw_data = result.get('depositList', [])
         options['timestamp'] = ts_now() * 1000
         result = self.api_query_dict('withdrawHistory.html', options=options)
-        raw_data.extend(result['withdrawList'])
+        raw_data.extend(result.get('withdrawList', []))
         log.debug('binance deposit/withdrawal history result', results_num=len(raw_data))
 
         movements = []
