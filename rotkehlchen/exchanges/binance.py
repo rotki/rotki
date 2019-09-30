@@ -166,9 +166,9 @@ class Binance(ExchangeInterface):
     ):
         super(Binance, self).__init__('binance', api_key, secret, database)
         self.uri = BINANCE_BASE_URL
-        self.session.headers.update({  # type: ignore
+        self.session.headers.update({
             'Accept': 'application/json',
-            'X-MBX-APIKEY': self.api_key,
+            'X-MBX-APIKEY': self.api_key,  # type: ignore
         })
         self.msg_aggregator = msg_aggregator
         self.initial_backoff = initial_backoff

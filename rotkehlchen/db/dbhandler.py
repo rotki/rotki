@@ -860,7 +860,7 @@ class DBHandler():
                     self.msg_aggregator.add_error(
                         f'Error adding "{string_repr}" to the DB. It already exists.',
                     )
-                except sqlcipher.InterfaceError:
+                except sqlcipher.InterfaceError:  # pylint: disable=no-member
                     log.critical(f'Interface error with tuple: {entry}')
 
         self.conn.commit()
@@ -1078,7 +1078,7 @@ class DBHandler():
     def add_ethereum_transactions(
             self,
             ethereum_transactions: List[EthereumTransaction],
-            from_etherscan: bool,
+            from_etherscan: bool,  # pylint: disable=unused-argument
     ) -> None:
         """Adds ethereum transactions to the database
 
