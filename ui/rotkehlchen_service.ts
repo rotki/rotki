@@ -422,6 +422,24 @@ export class RotkehlchenService {
         });
     }
 
+    import_data_from(source: string, filepath: string): Promise<boolean> {
+        return new Promise<boolean>((resolve, reject) => {
+            client.invoke(
+                'import_data_from',
+                source,
+                filepath,
+                (error: Error, result: ActionResult<boolean>) => {
+                    if (error || result == null) {
+                        reject(error || new NoResponseError());
+                    } else if (!result.result) {
+                        reject(new Error(result.message));
+                    } else {
+                        resolve(true);
+                    }
+                });
+        });
+    }
+
     remove_blockchain_account(blockchain: string, account: string): Promise<BlockchainAccountResult> {
         return new Promise<BlockchainAccountResult>((resolve, reject) => {
             client.invoke('remove_blockchain_account', blockchain, account, (error: Error, result: BlockchainAccountResult) => {

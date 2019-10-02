@@ -9,6 +9,7 @@ import {reset_tasks} from './monitor';
 import {reset_total_balances} from './balances_table';
 import {reset_exchange_tables} from './exchange';
 import {create_statistics_ui, add_statistics_listeners} from './statistics';
+import {create_dataimport_ui, add_dataimport_listeners} from './dataimport';
 
 export function determine_location(url: string) {
     const split = url.split('#');
@@ -84,6 +85,8 @@ export function init_navigation() {
             create_or_reload_page('taxreport', create_taxreport_ui, add_taxreport_listeners);
         } else if (target_location === 'statistics') {
             create_or_reload_page('statistics', create_statistics_ui, add_statistics_listeners);
+        } else if (target_location === 'dataimport') {
+            create_or_reload_page('dataimport', create_dataimport_ui, add_dataimport_listeners);
         }
 
         // else do nothing -- no link
