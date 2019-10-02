@@ -38,6 +38,10 @@ If you would like to contribute by testing the software please opene any issues 
 
 The best way to contribute financially and all the while help with the development of the project is to [purchase](https://rotkehlchen.io/products/) a premium subscription. We accept both crypto and fiat currencies!
 
+#### Github sponsor
+
+You can sponsor us through Github [here](https://github.com/users/LefterisJP/sponsorship) and Github will match all sponsorships you make within the first year!!
+
 #### Donations
 
 For people who don't want to purchase a subscription but would still like to support the development of Rotki we also accept donations in BTC and ETH or tokens.
