@@ -14,12 +14,21 @@ import {
 import Timer = NodeJS.Timer;
 
 // Prompt a directory selection dialog and pass selected directory to callback
+// target can be one of 'file', 'directory'
 // Callback should be a function which accepts a single argument which will be
 // a list of pathnames. The list should only contain 1 entry.
-export function prompt_directory_select_async(callback: (directories: string[]) => void) {
+export function prompt_filepath_select_async(target: string, callback: (directories: string[]) => void) {
+    let property: ('openFile' | 'openDirectory') ;
+    if (target === 'file') {
+        property = 'openFile';
+    } else if (target === 'directory') {
+        property = 'openDirectory';
+    } else {
+        throw new Error(`Invalid 'target' ${target} in prompt_filepath_select_async`);
+    }
     remote.dialog.showOpenDialog({
-        title: 'Select a directory',
-        properties: ['openDirectory']
+        title: `Select a ${target}`,
+        properties: [property]
     }, callback);
 }
 
