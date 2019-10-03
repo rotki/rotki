@@ -440,6 +440,20 @@ class RotkehlchenServer():
             url = result[2]
         return {'our_version': our_version, 'latest_version': latest_version, 'url': url}
 
+    def data_import(self, source: str, filepath: str):
+        """Imports data from external location `source` via file `filepath`"""
+        if not self.rotkehlchen.user_is_logged_in:
+            return {'result': False, 'message': 'Cant import data. No user is logged in'}
+
+        if not source == 'cointracking_info':
+            return {
+                'result': False,
+                'message': f'Cant import data from unknown location {source}',
+            }
+
+        self.rotkehlchen.data_importer.import_cointracking_csv(filepath)
+        return {'result': True, 'message': ''}
+
     def unlock_user(
             self,
             user: str,
