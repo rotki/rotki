@@ -12,6 +12,7 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.blockchain import Blockchain
 from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.constants.assets import A_USD, S_USD
+from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.errors import (
     AuthenticationError,
@@ -137,6 +138,7 @@ class Rotkehlchen():
         # unlock or create the DB
         self.password = password
         self.user_directory = self.data.unlock(user, password, create_new)
+        self.data_importer = DataImporter(db=self.data.db)
         self.last_data_upload_ts = self.data.db.get_last_data_upload_ts()
         self.premium_sync_manager = PremiumSyncManager(data=self.data, password=password)
         try:
