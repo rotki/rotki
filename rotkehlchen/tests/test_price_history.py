@@ -8,10 +8,9 @@ from rotkehlchen.tests.utils.constants import A_BSV, A_DASH, A_IOTA
 from rotkehlchen.tests.utils.history import prices
 
 
-@pytest.mark.skip("https://github.com/rotkehlchenio/rotkehlchen/issues/377")
 @pytest.mark.parametrize('should_mock_price_queries', [False])
-def test_incosistent_prices_double_checking(price_historian):
-    """ This is a regression test for the incosistent DASH/EUR and DASH/USD prices
+def test_inconsistent_prices_double_checking(price_historian):
+    """ This is a regression test for the inconsistent DASH/EUR and DASH/USD prices
     that were returned on 02/12/2018. Issue:
     https://github.com/rotkehlchenio/rotkehlchen/issues/221
     """
@@ -19,20 +18,14 @@ def test_incosistent_prices_double_checking(price_historian):
     # Note the prices are not the same as in the issue because rotkehlchen uses
     # hourly rates while in the issue we showcased query of daily average
     usd_price = price_historian.query_historical_price(A_DASH, A_USD, 1479200704)
-    assert usd_price.is_close(FVal('9.63'))
+    assert usd_price.is_close(FVal('9.6125'))
     eur_price = price_historian.query_historical_price(A_DASH, A_EUR, 1479200704)
-    # 13/01/19 Cryptocompare fixed the error so our incosistency adjustment code that would
-    # give the price of 8.945657222 is not hit.
-    # 16/01/2019 They just reintroduced the error. So 9.0 is no longer returned
-    assert eur_price.is_close(FVal('8.945657222'), max_diff=0.001)
+    assert eur_price.is_close(FVal('9.0015'), max_diff=0.001)
 
     inv_usd_price = price_historian.query_historical_price(A_USD, A_DASH, 1479200704)
-    assert inv_usd_price.is_close(FVal('0.103842'), max_diff=0.0001)
+    assert inv_usd_price.is_close(FVal('0.10385'), max_diff=0.0001)
     inv_eur_price = price_historian.query_historical_price(A_EUR, A_DASH, 1479200704)
-    # 13/01/19 Cryptocompare fixed the error so our incosistency adjustment code
-    # that would give the price of 0.11179 is not hit
-    # 16/01/2019 They just reintroduced the error. So 0.11115 is no longer returned
-    assert inv_eur_price.is_close(FVal('0.11179'), max_diff=0.0001)
+    assert inv_eur_price.is_close(FVal('0.1111'), max_diff=0.0001)
 
 
 def do_queries_for(from_asset, to_asset, price_historian):
@@ -48,8 +41,6 @@ def do_queries_for(from_asset, to_asset, price_historian):
         )
         assert price.is_close(pair_map[timestamp]), msg
 
-
-@pytest.mark.skip("https://github.com/rotkehlchenio/rotkehlchen/issues/377")
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_price_queries(price_historian):
     """Test some cryptocompare price queries making sure our querying mechanism works"""
