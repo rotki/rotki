@@ -2,6 +2,7 @@ import csv
 from typing import List
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import DeserializationError, UnknownAsset
@@ -40,6 +41,12 @@ def exchange_row_to_location(entry: str) -> Location:
             'export enough data for them. Simply enter your ethereum accounts and all '
             'your transactions will be auto imported directly from the chain',
         )
+    elif entry == 'BTC Transaction':
+        raise UnsupportedCointrackingEntry(
+            'Not importing BTC Transactions from Cointracking. Cointracking does not '
+            'export enough data for them. Simply enter your BTC accounts and all '
+            'your transactions will be auto imported directly from the chain',
+        )
 
     raise UnsupportedCointrackingEntry(
         f'Unknown Exchange "{entry}" encountered during a cointracking import. Ignoring it',
@@ -70,7 +77,13 @@ class DataImporter():
 
         if row_type == 'Gift/Tip' or row_type == 'Trade':
             base_asset = Asset(csv_row[3])
-            quote_asset = Asset(csv_row[5])
+            quote_asset = None if csv_row[5] == '' else Asset(csv_row[5])
+            if not quote_asset and row_type != 'Gift/Tip':
+                raise DeserializationError('Got a trade entry with an empty quote asset')
+
+            if quote_asset is None:
+                # Really makes no difference as this is just a gift and the amount is zero
+                quote_asset = A_USD
             pair = TradePair(f'{base_asset.identifier}_{quote_asset.identifier}')
             base_amount_bought = deserialize_asset_amount(csv_row[2])
             if csv_row[4] != '-':
@@ -120,7 +133,7 @@ class DataImporter():
 
     def import_cointracking_csv(self, filepath: str) -> None:
         with open(filepath, 'r') as csvfile:
-            data = csv.reader(csvfile, delimiter=',', quotechar='|')
+            data = csv.reader(csvfile, delimiter=',', quotechar='"')
             next(data)  # skip header row
             for row in data:
                 try:

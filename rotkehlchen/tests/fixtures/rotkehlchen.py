@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.history import TradesHistorian
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.premium.sync import PremiumSyncManager
@@ -75,6 +76,7 @@ def initialize_mock_rotkehlchen_instance(
         # Unlock must come after we have set the aggregator if we are to get the
         # messages caused by DB initialization
         rotki.data.unlock(username, db_password, create_new=True)
+        rotki.data_importer = DataImporter(db=rotki.data.db)
         rotki.password = db_password
         # Remember accountant fixture has a mocked accounting data dir
         # different to the usual user one
