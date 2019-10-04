@@ -216,6 +216,7 @@ class Rotkehlchen():
 
         del self.accountant
         del self.trades_historian
+        del self.data_importer
 
         if self.premium is not None:
             del self.premium
