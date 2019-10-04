@@ -58,7 +58,7 @@ def test_cryptocompare_historical_data_use_cached_price(accounting_data_dir):
 
 @pytest.mark.skip(
     'Same test as test_end_to_end_tax_report::'
-    'test_cryptocompare_asset_and_price_not_found_in_history_sprocessing',
+    'test_cryptocompare_asset_and_price_not_found_in_history_processing',
 )
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
@@ -72,7 +72,7 @@ def test_cryptocompare_histohour_query_old_ts_xcp(
     Unfortunately still no price is found so we have to expect a NoPriceForGivenTimestamp
 
     This test is now skipped since it's a subset of:
-    test_end_to_end_tax_report::test_cryptocompare_asset_and_price_not_found_in_history_sprocessing
+    test_end_to_end_tax_report::test_cryptocompare_asset_and_price_not_found_in_history_processing
 
     When more price data sources are introduced then this should probably be unskipped
     to focus on the cryptocompare case. But at the moment both tests follow the same

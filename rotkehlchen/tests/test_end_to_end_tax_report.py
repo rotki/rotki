@@ -364,20 +364,19 @@ def test_end_to_end_tax_report(accountant):
     # action seen in history before end_ts
     assert accountant.currently_processing_timestamp == 1511626623
     general_trade_pl = FVal(result['general_trade_profit_loss'])
-    assert general_trade_pl.is_close('5032.272105644')
+    assert general_trade_pl.is_close('5032.272455644')
     taxable_trade_pl = FVal(result['taxable_trade_profit_loss'])
-    assert taxable_trade_pl.is_close('3954.996589709')
+    assert taxable_trade_pl.is_close('3954.996939709')
     loan_profit = FVal(result['loan_profit'])
-    assert loan_profit.is_close('0.114027511004')
+    assert loan_profit.is_close('0.116193915')
     settlement_losses = FVal(result['settlement_losses'])
-    assert settlement_losses.is_close('11.8554392326')
+    assert settlement_losses.is_close('11.91758472725')
     asset_movement_fees = FVal(result['asset_movement_fees'])
-    assert asset_movement_fees.is_close('2.39417915')
+    assert asset_movement_fees.is_close('2.39096865')
     ethereum_transaction_gas_costs = FVal(result['ethereum_transaction_gas_costs'])
-    assert ethereum_transaction_gas_costs.is_close('2.7210025')
+    assert ethereum_transaction_gas_costs.is_close('2.736160')
     margin_pl = FVal(result['margin_positions_profit_loss'])
-    # assert margin_pl.is_close('232.95481')
-    assert margin_pl.is_close('232.7965295')
+    assert margin_pl.is_close('232.8225695')
     expected_total_taxable_pl = (
         taxable_trade_pl +
         margin_pl +
@@ -424,15 +423,15 @@ def test_end_to_end_tax_report_in_period(accountant):
     taxable_trade_pl = FVal(result['taxable_trade_profit_loss'])
     assert taxable_trade_pl.is_close('642.7084519791')
     loan_profit = FVal(result['loan_profit'])
-    assert loan_profit.is_close('0.111881296004')
+    assert loan_profit.is_close('0.1140477')
     settlement_losses = FVal(result['settlement_losses'])
-    assert settlement_losses.is_close('10.7553789375')
+    assert settlement_losses.is_close('10.81727783')
     asset_movement_fees = FVal(result['asset_movement_fees'])
-    assert asset_movement_fees.is_close('2.38526415')
+    assert asset_movement_fees.is_close('2.38205415')
     ethereum_transaction_gas_costs = FVal(result['ethereum_transaction_gas_costs'])
-    assert ethereum_transaction_gas_costs.is_close('2.2617525')
+    assert ethereum_transaction_gas_costs.is_close('2.276810')
     margin_pl = FVal(result['margin_positions_profit_loss'])
-    assert margin_pl.is_close('234.5063565')
+    assert margin_pl.is_close('234.5323965')
     expected_total_taxable_pl = (
         taxable_trade_pl +
         margin_pl +
@@ -578,7 +577,7 @@ def test_end_to_end_tax_report_in_period(accountant):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
-def test_cryptocompare_asset_and_price_not_found_in_history_sprocessing(accountant):
+def test_cryptocompare_asset_and_price_not_found_in_history_processing(accountant):
     """
     Make sure that in history processing if no price is found for a trade it's skipped
     and an error is logged. Same for price query of an unknown asset.
