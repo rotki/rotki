@@ -9,7 +9,7 @@ export function create_dataimport_ui() {
 <ul><li>Trades/deposits/withdrawals from Cointracking do not include fees.</li>
 <li>All timestamps are rounded up to the minute. That is extremely innacurate for fast paced trading.</li>
 <li>All trades imported from Cointracking will always be considered as buys due to the way the data are represented.</li>
-<li>ETH Transactions are treated as deposits/withdrawals so they are not imported in Rotkehlchen.
+<li>ETH/BTC Transactions are treated as deposits/withdrawals so they are not imported in Rotkehlchen.
 To import ETH transactions simply input your accounts in user settings and they
 will be imported automatically for you.</li>
 </ul>
