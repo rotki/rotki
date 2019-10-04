@@ -41,6 +41,7 @@ def do_queries_for(from_asset, to_asset, price_historian):
         )
         assert price.is_close(pair_map[timestamp]), msg
 
+
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_price_queries(price_historian):
     """Test some cryptocompare price queries making sure our querying mechanism works"""
