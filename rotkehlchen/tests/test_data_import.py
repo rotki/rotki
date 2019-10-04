@@ -13,12 +13,12 @@ def test_cointracking_data_import(rotkehlchen_server):
     filepath = os.path.join(dir_path, 'data', 'cointracking_trades_list.csv')
 
     # Check that for unknown source we get an error
-    response = rotkehlchen_server.data_import(source='other_source', filepath=filepath)
+    response = rotkehlchen_server.import_data_from(source='other_source', filepath=filepath)
     assert response['result'] is False
     assert 'unknown location' in response['message']
 
     # Check that the test cointracking data are imported succesfully
-    rotkehlchen_server.data_import(source='cointracking_info', filepath=filepath)
+    rotkehlchen_server.import_data_from(source='cointracking_info', filepath=filepath)
     trades = rotkehlchen_server.rotkehlchen.data.db.get_trades()
     asset_movements = rotkehlchen_server.rotkehlchen.data.db.get_asset_movements()
     warnings = rotkehlchen_server.rotkehlchen.msg_aggregator.consume_warnings()
