@@ -124,11 +124,7 @@ class Cryptocompare():
 
                 log.error('Cryptocompare query failure', url=querystr, error=error_message)
                 raise ValueError(error_message)
-
-            # for histohour we want all the data, including the wrapper to get TimeFrom
-            # and TimeTo
-            if 'histohour' not in path:
-                return resp['Data']
+            return resp['Data']
 
         # else not a wrapped response
         return resp
@@ -145,7 +141,7 @@ class Cryptocompare():
         cc_from_asset_symbol = from_asset.to_cryptocompare()
         cc_to_asset_symbol = to_asset.to_cryptocompare()
         query_path = (
-            f'histohour?fsym={cc_from_asset_symbol}&tsym={cc_to_asset_symbol}'
+            f'v2/histohour?fsym={cc_from_asset_symbol}&tsym={cc_to_asset_symbol}'
             f'&limit={limit}&toTs={to_timestamp}'
         )
         result = self._api_query(path=query_path)
