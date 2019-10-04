@@ -440,7 +440,7 @@ class RotkehlchenServer():
             url = result[2]
         return {'our_version': our_version, 'latest_version': latest_version, 'url': url}
 
-    def data_import(self, source: str, filepath: str):
+    def import_data_from(self, source: str, filepath: str):
         """Imports data from external location `source` via file `filepath`"""
         if not self.rotkehlchen.user_is_logged_in:
             return {'result': False, 'message': 'Cant import data. No user is logged in'}

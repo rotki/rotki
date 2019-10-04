@@ -33,7 +33,7 @@ function cointracking_info_import(event: JQuery.Event) {
         service.import_data_from('cointracking_info', file).then(() => {
             showInfo('Success', 'Data imported from cointracking.info export file succesfuly');
         }).catch((reason: Error) => {
-            showError('Failed to import data from cointracking.info export file', reason.message);
+            showError('Data Import Failure', reason.message);
         });
     });
 }
