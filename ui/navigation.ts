@@ -48,6 +48,8 @@ function save_current_location() {
         pages.page_taxreport = $('#page-wrapper').html();
     } else if (settings.current_location === 'statistics') {
         // do not save the html for the statistics
+    } else if (settings.current_location === 'dataimport') {
+        // do not save the html for dataimport
     } else {
         throw new Error('Invalid link location ' + settings.current_location);
     }
