@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.0.4 <2019-10-04>`
 * :feature:`498` Users can now import data from Cointracking into Rotki. Create a CSV export from Cointracking and import it from the Import Data menu.
 * :bug:`500` Fix cryptocompare price queries for LBRY credits.
 * :feature:`499` All actions (trades, deposits, withdrawals, ethereum transactions, margin positions) are now saved in the DB.
