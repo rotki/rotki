@@ -421,6 +421,7 @@ class Binance(ExchangeInterface):
                 )
                 continue
 
+            # Since binance does not respect the given timestamp range, limit the range here
             if trade.timestamp < start_ts:
                 continue
 
