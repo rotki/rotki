@@ -88,10 +88,10 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
 
     def process(self, msg: str, kwargs) -> Tuple[str, Dict]:
         """
-        This is the main post-processing function for Rotkehlchen logs
+        This is the main post-processing function for Rotki logs
 
         It checks if the magic keyword argument 'sensitive_log' is in the kwargs
-        and if it is marks the log entry as sensitive. If it is sensitive the values
+        and if it is marks the log entry as sensitive. If it is sensitive, the values
         of the kwargs are anonymized via the pre-specified rules
 
         This function also appends all kwargs to the final message.
