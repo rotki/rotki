@@ -1,6 +1,6 @@
+from dataclasses import dataclass
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
-from dataclasses import dataclass
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
@@ -287,7 +287,7 @@ def deserialize_trade(data: Dict[str, Any]) -> Trade:
     May raise:
         - UnknownAsset: If the fee_currency string is not a known asset
         - DeserializationError: If any of the trade dict entries is not as expected
-"""
+    """
     pair = data['pair']
     rate = deserialize_price(data['rate'])
     amount = deserialize_asset_amount(data['amount'])
