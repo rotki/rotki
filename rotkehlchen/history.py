@@ -1,19 +1,27 @@
 import logging
-from typing import TYPE_CHECKING, Any, List, Optional, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import RemoteError
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.exchanges.poloniex import process_polo_loans
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.transactions import query_etherscan_for_transactions
-from rotkehlchen.typing import EthAddress, FiatAsset, FilePath, Location, Price, Timestamp
+from rotkehlchen.typing import (
+    EthAddress,
+    EthereumTransaction,
+    FiatAsset,
+    FilePath,
+    Location,
+    Price,
+    Timestamp,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.accounting import action_get_timestamp
-from rotkehlchen.utils.misc import create_timestamp, write_history_data_in_file
+from rotkehlchen.utils.misc import create_timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis import Cryptocompare
@@ -23,9 +31,13 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def write_tupledata_history_in_file(history, filepath, start_ts, end_ts):
-    out_history = [tr._asdict() for tr in history]
-    write_history_data_in_file(out_history, filepath, start_ts, end_ts)
+HistoryResult = Tuple[
+    str,
+    List[Union[Trade, MarginPosition]],
+    List[Loan],
+    List[AssetMovement],
+    List[EthereumTransaction],
+]
 
 
 def limit_trade_list_to_period(
@@ -48,12 +60,6 @@ def limit_trade_list_to_period(
             break
 
     return trades_list[start_idx:end_idx] if start_idx is not None else list()
-
-
-def pairwise(iterable):
-    "s -> (s0, s1), (s2, s3), (s4, s5), ..."
-    a = iter(iterable)
-    return zip(a, a)
 
 
 class PriceHistorian():
@@ -136,7 +142,7 @@ class TradesHistorian():
             eth_accounts: List[EthAddress],
             msg_aggregator: MessagesAggregator,
             exchange_manager: ExchangeManager,
-    ):
+    ) -> None:
 
         self.msg_aggregator = msg_aggregator
         self.user_directory = user_directory
@@ -144,16 +150,12 @@ class TradesHistorian():
         self.eth_accounts = eth_accounts
         self.exchange_manager = exchange_manager
 
-    def create_history(self, start_ts: Timestamp, end_ts: Timestamp, end_at_least_ts: Timestamp):
-        """Creates trades and loans history from start_ts to end_ts or if
-        `end_at_least` is given and we have a cache history for that particular source
-        which satisfies it we return the cache
-        """
+    def create_history(self, start_ts: Timestamp, end_ts: Timestamp) -> HistoryResult:
+        """Creates trades and loans history from start_ts to end_ts"""
         log.info(
             'Starting trade history creation',
             start_ts=start_ts,
             end_ts=end_ts,
-            end_at_least_ts=end_at_least_ts,
         )
 
         # start creating the all trades history list
@@ -232,7 +234,7 @@ class TradesHistorian():
             eth_transactions,
         )
 
-    def get_history(self, start_ts, end_ts, end_at_least_ts=None):
+    def get_history(self, start_ts: Timestamp, end_ts: Timestamp) -> HistoryResult:
         """Gets or creates trades and loans history from start_ts to end_ts or if
         `end_at_least` is given and we have a cache history which satisfies it we
         return the cache
@@ -241,8 +243,7 @@ class TradesHistorian():
             'Get or create trade history',
             start_ts=start_ts,
             end_ts=end_ts,
-            end_at_least_ts=end_at_least_ts,
         )
         # TODO: Perhaps get rid of the extra function call since the caches
         # are no longer used here?
-        return self.create_history(start_ts, end_ts, end_at_least_ts)
+        return self.create_history(start_ts, end_ts)

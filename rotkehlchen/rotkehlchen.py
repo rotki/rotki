@@ -314,7 +314,6 @@ class Rotkehlchen():
         ) = self.trades_historian.get_history(
             start_ts=0,  # For entire history processing we need to have full history available
             end_ts=ts_now(),
-            end_at_least_ts=end_ts,
         )
         result = self.accountant.process_history(
             start_ts,
