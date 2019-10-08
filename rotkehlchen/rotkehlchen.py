@@ -273,7 +273,7 @@ class Rotkehlchen():
             self,
             blockchain: SupportedBlockchain,
             account: BlockchainAddress,
-    ):
+    ) -> Dict[str, Any]:
         try:
             new_data = self.blockchain.remove_blockchain_account(blockchain, account)
         except (InputError, EthSyncError) as e:
@@ -281,7 +281,7 @@ class Rotkehlchen():
         self.data.remove_blockchain_account(blockchain, account)
         return accounts_result(new_data['per_account'], new_data['totals'])
 
-    def add_owned_eth_tokens(self, tokens: List[str]):
+    def add_owned_eth_tokens(self, tokens: List[str]) -> Dict[str, Any]:
         ethereum_tokens = [
             EthereumToken(identifier=identifier) for identifier in tokens
         ]
@@ -293,7 +293,7 @@ class Rotkehlchen():
         self.data.write_owned_eth_tokens(self.blockchain.owned_eth_tokens)
         return accounts_result(new_data['per_account'], new_data['totals'])
 
-    def remove_owned_eth_tokens(self, tokens: List[str]):
+    def remove_owned_eth_tokens(self, tokens: List[str]) -> Dict[str, Any]:
         ethereum_tokens = [
             EthereumToken(identifier=identifier) for identifier in tokens
         ]
@@ -304,7 +304,11 @@ class Rotkehlchen():
         self.data.write_owned_eth_tokens(self.blockchain.owned_eth_tokens)
         return accounts_result(new_data['per_account'], new_data['totals'])
 
-    def process_history(self, start_ts, end_ts):
+    def process_history(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> Tuple[Dict[str, Any], str]:
         (
             error_or_empty,
             history,
