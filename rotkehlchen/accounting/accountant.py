@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import gevent
 
@@ -246,7 +246,7 @@ class Accountant():
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            trade_history: List[Trade],
+            trade_history: List[Union[Trade, MarginPosition]],
             loan_history: List[Loan],
             asset_movements: List[AssetMovement],
             eth_transactions: List[EthereumTransaction],

@@ -316,16 +316,17 @@ class Rotkehlchen():
             asset_movements,
             eth_transactions,
         ) = self.trades_historian.get_history(
-            start_ts=0,  # For entire history processing we need to have full history available
+            # For entire history processing we need to have full history available
+            start_ts=Timestamp(0),
             end_ts=ts_now(),
         )
         result = self.accountant.process_history(
-            start_ts,
-            end_ts,
-            history,
-            loan_history,
-            asset_movements,
-            eth_transactions,
+            start_ts=start_ts,
+            end_ts=end_ts,
+            trade_history=history,
+            loan_history=loan_history,
+            asset_movements=asset_movements,
+            eth_transactions=eth_transactions,
         )
         return result, error_or_empty
 
