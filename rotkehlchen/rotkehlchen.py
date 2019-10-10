@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import argparse
 import logging
 import time
 from typing import Any, Dict, List, Tuple, Union
@@ -10,7 +11,6 @@ from gevent.lock import Semaphore
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.blockchain import Blockchain
-from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.constants.assets import A_USD, S_USD
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
@@ -31,14 +31,7 @@ from rotkehlchen.logging import DEFAULT_ANONYMIZED_LOGS, LoggingSettings, Rotkeh
 from rotkehlchen.premium.premium import premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.serialization.serialize import process_result
-from rotkehlchen.typing import (
-    ApiKey,
-    ApiSecret,
-    BlockchainAddress,
-    ResultCache,
-    SupportedBlockchain,
-    Timestamp,
-)
+from rotkehlchen.typing import ApiKey, ApiSecret, BlockchainAddress, SupportedBlockchain, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
     combine_stat_dicts,
@@ -54,7 +47,7 @@ log = RotkehlchenLogsAdapter(logger)
 MAIN_LOOP_SECS_DELAY = 60
 
 
-def accounts_result(per_account, totals) -> Dict:
+def accounts_result(per_account: Dict[str, Any], totals: Dict[str, Any]) -> Dict:
     result = {
         'result': True,
         'message': '',
@@ -65,13 +58,9 @@ def accounts_result(per_account, totals) -> Dict:
 
 
 class Rotkehlchen():
-    def __init__(self, args):
-        # --cache related variable start
+    def __init__(self, args: argparse.Namespace) -> None:
         self.lock = Semaphore()
         self.lock.acquire()
-        self.results_cache: ResultCache = dict()
-        self.cache_ttl_secs = CACHE_RESPONSE_FOR_SECS
-        # --cache related variable end
 
         self.premium = None
         self.user_is_logged_in = False
@@ -243,10 +232,10 @@ class Rotkehlchen():
 
         self.data.set_premium_credentials(api_key, api_secret)
 
-    def start(self):
+    def start(self) -> None:
         return gevent.spawn(self.main_loop)
 
-    def main_loop(self):
+    def main_loop(self) -> None:
         while self.shutdown_event.wait(MAIN_LOOP_SECS_DELAY) is not True:
             log.debug('Main loop start')
             poloniex = self.exchange_manager.connected_exchanges.get('poloniex', None)
@@ -450,13 +439,13 @@ class Rotkehlchen():
 
         return result_dict
 
-    def set_main_currency(self, currency: str):
+    def set_main_currency(self, currency: str) -> None:
         with self.lock:
             self.data.set_main_currency(currency, self.accountant)
             if currency != S_USD:
                 self.usd_to_main_currency_rate = Inquirer().query_fiat_pair(A_USD, Asset(currency))
 
-    def set_settings(self, settings):
+    def set_settings(self, settings: Dict[str, Any]) -> Tuple[bool, str]:
         log.info('Add new settings')
 
         message = ''
@@ -545,6 +534,6 @@ class Rotkehlchen():
             result['history_process_current_ts'] = self.accountant.currently_processing_timestamp
         return result
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         self.logout()
         self.shutdown_event.set()
