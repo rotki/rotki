@@ -149,6 +149,8 @@ class Rotkehlchen():
         msg = 'setting historical_data_start should be a string'
         assert isinstance(historical_data_start, str), msg
         eth_rpc_endpoint = settings['eth_rpc_endpoint']
+        msg = 'setting eth_rpc_endpoint should be a string'
+        assert isinstance(eth_rpc_endpoint, str), msg
         self.trades_historian = TradesHistorian(
             user_directory=self.user_directory,
             db=self.data.db,
@@ -221,7 +223,8 @@ class Rotkehlchen():
         del self.data_importer
 
         if self.premium is not None:
-            del self.premium
+            # For some reason mypy does not see that self.premium is set
+            del self.premium  # type: ignore
         self.data.logout()
         self.password = ''
 
@@ -239,7 +242,8 @@ class Rotkehlchen():
         log.info('Setting new premium credentials')
 
         if self.premium is not None:
-            self.premium.set_credentials(api_key, api_secret)
+            # For some reason mypy does not see that self.premium is set
+            self.premium.set_credentials(api_key, api_secret)  # type: ignore
         else:
             self.premium = premium_create_and_verify(api_key, api_secret)
 
@@ -251,10 +255,6 @@ class Rotkehlchen():
     def main_loop(self) -> None:
         while self.shutdown_event.wait(MAIN_LOOP_SECS_DELAY) is not True:
             log.debug('Main loop start')
-            poloniex = self.exchange_manager.connected_exchanges.get('poloniex', None)
-            if poloniex:
-                poloniex.main_logic()
-
             self.premium_sync_manager.maybe_upload_data_to_server()
 
             log.debug('Main loop end')

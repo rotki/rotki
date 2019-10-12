@@ -199,9 +199,6 @@ class MockKraken(Kraken):
         # Not required in the real Kraken instance but we use it in the tests
         self.tradeable_pairs = self.query_public('AssetPairs')
 
-    def main_logic(self):
-        pass
-
     def query_private(self, method: str, req: Optional[dict] = None) -> dict:
         # Pretty ugly ... mock a kraken remote eror
         if self.remote_errors:

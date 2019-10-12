@@ -38,7 +38,7 @@ class SyncCheckResult(NamedTuple):
 
 class PremiumSyncManager():
 
-    def __init__(self, data: DataHandler, password: str):
+    def __init__(self, data: DataHandler, password: str) -> None:
         self.last_data_upload_ts = 0
         self.data = data
         self.password = password
