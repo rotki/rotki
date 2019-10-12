@@ -6,7 +6,6 @@ import hmac
 import logging
 import os
 import time
-import traceback
 from json.decoder import JSONDecodeError
 from typing import Any, Dict, List, Optional, Tuple, Union, overload
 from urllib.parse import urlencode
@@ -413,24 +412,6 @@ class Poloniex(ExchangeInterface):
             {'start': start_ts, 'end': end_ts},
         )
         return response
-
-    def market_watcher(self):
-        self.ticker = self.return_ticker()
-
-    def main_logic(self):
-        if not self.first_connection_made:
-            return
-
-        try:
-            self.market_watcher()
-
-        except PoloniexError as e:
-            log.error('Poloniex error at main loop', error=str(e))
-        except Exception as e:
-            log.error(
-                "\nException at main loop: {}\n{}\n".format(
-                    str(e), traceback.format_exc()),
-            )
 
     # ---- General exchanges interface ----
     @cache_response_timewise()
