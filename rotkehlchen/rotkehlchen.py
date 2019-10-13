@@ -47,7 +47,7 @@ log = RotkehlchenLogsAdapter(logger)
 MAIN_LOOP_SECS_DELAY = 60
 
 
-def accounts_result(per_account: Dict[str, Any], totals: Dict[str, Any]) -> Dict:
+def accounts_result(per_account: Dict[Asset, Any], totals: Dict[Asset, Any]) -> Dict:
     result = {
         'result': True,
         'message': '',
@@ -335,8 +335,8 @@ class Rotkehlchen():
     def query_fiat_balances(self) -> Dict[Asset, Dict[str, FVal]]:
         result = {}
         balances = self.data.get_fiat_balances()
-        for currency, amount in balances.items():
-            amount = FVal(amount)
+        for currency, str_amount in balances.items():
+            amount = FVal(str_amount)
             usd_rate = Inquirer().query_fiat_pair(currency, A_USD)
             result[currency] = {
                 'amount': amount,
@@ -431,7 +431,7 @@ class Rotkehlchen():
         # After adding it to the saved file we can overlay additional data that
         # is not required to be saved in the history file
         try:
-            details = self.data.accountant.details
+            details = self.accountant.details
             for asset, (tax_free_amount, average_buy_value) in details.items():
                 if asset not in result_dict:
                     continue
