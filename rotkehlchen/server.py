@@ -101,7 +101,8 @@ class RotkehlchenServer():
         self.rotkehlchen.logout()
 
     def set_main_currency(self, currency_text):
-        self.rotkehlchen.set_main_currency(currency_text)
+        result, message = self.rotkehlchen.set_main_currency(currency_text)
+        return {'result': result, 'message': message}
 
     def set_settings(self, settings):
         result, message = self.rotkehlchen.set_settings(settings)

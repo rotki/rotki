@@ -177,13 +177,15 @@ export class RotkehlchenService {
         });
     }
 
-    set_main_currency(currency: Currency): Promise<Currency> {
-        return new Promise<Currency>((resolve, reject) => {
-            client.invoke('set_main_currency', currency.ticker_symbol, (error: Error) => {
+    set_main_currency(currency: Currency): Promise<ActionResult<boolean>> {
+        return new Promise<ActionResult<boolean>>((resolve, reject) => {
+            client.invoke('set_main_currency', currency.ticker_symbol, (error: Error, result: ActionResult<boolean>) => {
                 if (error) {
                     reject(error);
+                } else if (!result.result) {
+                    reject(new Error(result.message));
                 } else {
-                    resolve(currency);
+                    resolve(result);
                 }
             });
         });

@@ -61,8 +61,8 @@ class Accountant():
         self.asset_movement_fees = FVal(0)
         self.last_gas_price = FVal(0)
 
-        self.started_processing_timestamp = -1
-        self.currently_processing_timestamp = -1
+        self.started_processing_timestamp = Timestamp(-1)
+        self.currently_processing_timestamp = Timestamp(-1)
 
         # Customizable Options
         self.ignored_assets = ignored_assets
@@ -288,7 +288,7 @@ class Accountant():
             key=lambda action: action_get_timestamp(action),
         )
         # The first ts is the ts of the first action we have in history or 0 for empty history
-        first_ts = 0 if len(actions) == 0 else action_get_timestamp(actions[0])
+        first_ts = Timestamp(0) if len(actions) == 0 else action_get_timestamp(actions[0])
         self.currently_processing_timestamp = first_ts
         self.started_processing_timestamp = first_ts
 

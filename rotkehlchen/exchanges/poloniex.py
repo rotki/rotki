@@ -240,8 +240,6 @@ class Poloniex(ExchangeInterface):
 
         with self.lock:
             self.first_connection_made = True
-        # Also need to do at least a single pass of the market watcher for the ticker
-        self.market_watcher()
 
     def validate_api_key(self) -> Tuple[bool, str]:
         try:
