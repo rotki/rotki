@@ -11,7 +11,7 @@ from gevent.lock import Semaphore
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.blockchain import Blockchain
-from rotkehlchen.constants.assets import A_USD, S_USD
+from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.errors import (
@@ -31,7 +31,14 @@ from rotkehlchen.logging import DEFAULT_ANONYMIZED_LOGS, LoggingSettings, Rotkeh
 from rotkehlchen.premium.premium import premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.serialization.serialize import process_result
-from rotkehlchen.typing import ApiKey, ApiSecret, BlockchainAddress, SupportedBlockchain, Timestamp
+from rotkehlchen.typing import (
+    ApiKey,
+    ApiSecret,
+    BlockchainAddress,
+    FiatAsset,
+    SupportedBlockchain,
+    Timestamp,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
     combine_stat_dicts,
@@ -431,7 +438,7 @@ class Rotkehlchen():
         # After adding it to the saved file we can overlay additional data that
         # is not required to be saved in the history file
         try:
-            details = self.accountant.details
+            details = self.accountant.events.details
             for asset, (tax_free_amount, average_buy_value) in details.items():
                 if asset not in result_dict:
                     continue
@@ -452,11 +459,30 @@ class Rotkehlchen():
 
         return result_dict
 
-    def set_main_currency(self, currency: str) -> None:
+    def set_main_currency(self, currency_string: str) -> Tuple[bool, str]:
+        """Takes a currency string from the API and sets it as the main currency for rotki
+
+        Returns True and empty string for success and False and error string for error
+        """
+        try:
+            currency = Asset(currency_string)
+        except UnknownAsset:
+            msg = f'An unknown asset {currency_string} was given for main currency'
+            log.critical(msg)
+            return False, msg
+
+        if not currency.is_fiat():
+            msg = f'A non-fiat asset {currency_string} was given for main currency'
+            log.critical(msg)
+            return False, msg
+
+        fiat_currency = FiatAsset(currency.identifier)
         with self.lock:
-            self.data.set_main_currency(currency, self.accountant)
-            if currency != S_USD:
-                self.usd_to_main_currency_rate = Inquirer().query_fiat_pair(A_USD, Asset(currency))
+            self.data.set_main_currency(fiat_currency, self.accountant)
+            if currency != A_USD:
+                self.usd_to_main_currency_rate = Inquirer().query_fiat_pair(A_USD, currency)
+
+        return True, ''
 
     def set_settings(self, settings: Dict[str, Any]) -> Tuple[bool, str]:
         log.info('Add new settings')
@@ -538,7 +564,7 @@ class Rotkehlchen():
 
     def query_periodic_data(self) -> Dict[str, Union[bool, Timestamp]]:
         """Query for frequently changing data"""
-        result = {}
+        result: Dict[str, Union[bool, Timestamp]] = {}
 
         if self.user_is_logged_in:
             result['last_balance_save'] = self.data.db.get_last_balance_save_time()

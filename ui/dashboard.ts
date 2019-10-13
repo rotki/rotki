@@ -154,8 +154,8 @@ export function add_currency_dropdown(currency: Currency) {
             return;
         }
 
-        service.set_main_currency(currency).then(value => {
-            set_ui_main_currency(value.ticker_symbol);
+        service.set_main_currency(currency).then(() => {
+            set_ui_main_currency(currency.ticker_symbol);
         }).catch((reason: Error) => {
             showError('Error', `Error at setting main currency: ${reason.message}`);
         });
