@@ -4,7 +4,7 @@ import os
 import re
 import shutil
 import tempfile
-from collections import namedtuple
+from collections import NamedTuple
 from json.decoder import JSONDecodeError
 from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
 
@@ -131,7 +131,7 @@ def db_tuple_to_str(
     raise AssertionError('db_tuple_to_str() called with invalid tuple_type {tuple_type}')
 
 
-class DBSettings(namedtuple):
+class DBSettings(NamedTuple):
     version: int
     last_write_ts: int
     premium_should_sync: bool
@@ -147,7 +147,6 @@ class DBSettings(namedtuple):
     main_currency: FiatAsset
     data_display_format: str
     last_balance_save: Timestamp
-    other: Optional
 
 
 
