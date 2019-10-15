@@ -13,8 +13,8 @@ from eth_utils.address import to_checksum_address
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.crypto import decrypt, encrypt
-from rotkehlchen.datatyping import BalancesData, DBSettings, ExternalTrade
-from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.datatyping import BalancesData, ExternalTrade
+from rotkehlchen.db.dbhandler import DBHandler, DBSettings
 from rotkehlchen.errors import AuthenticationError, DeserializationError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import Trade, get_pair_position_asset
 from rotkehlchen.fval import FVal
@@ -339,9 +339,9 @@ class DataHandler():
         settings = self.db.get_settings()
         # TODO: When https://github.com/rotkehlchenio/rotkehlchen/issues/388 is done
         # the assert should go away
-        assert isinstance(settings['balance_save_frequency'], int)
+        assert isinstance(settings.balance_save_frequency, int)
         # Setting is saved in hours, convert to seconds here
-        period = settings['balance_save_frequency'] * 60 * 60
+        period = settings.balance_save_frequency * 60 * 60
         now = Timestamp(int(time.time()))
         return now - last_save > period
 

@@ -138,14 +138,14 @@ class DBSettings(NamedTuple):
     anonymized_logs: bool = DEFAULT_ANONYMIZED_LOGS
     last_data_upload_ts: int = 0
     ui_floating_precision: int = DEFAULT_UI_FLOATING_PRECISION
-    taxfree_after_period: int = DEFAULT_TAXFREE_AFTER_PERIOD
+    taxfree_after_period: Optional[int] = DEFAULT_TAXFREE_AFTER_PERIOD
     balance_save_frequency: int = DEFAULT_BALANCE_SAVE_FREQUENCY
     include_gas_costs: bool = DEFAULT_INCLUDE_GAS_COSTS
     historical_data_start: str = DEFAULT_START_DATE
     eth_rpc_endpoint: str = 'http://localhost:8545'
     main_currency: FiatAsset = DEFAULT_MAIN_CURRENCY
     data_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
-    last_balance_save: Timestamp = 0
+    last_balance_save: Timestamp = Timestamp(1)
 
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
@@ -422,11 +422,11 @@ class DBHandler:
         )
         query = query.fetchall()
 
-        settings = None
+        settings = DBSettings()
 
         for q in query:
             if q[0] == 'version':
-                db_versions= int(q[1])
+                db_versions = int(q[1])
             elif q[0] == 'last_write_ts':
                 last_write_ts = int(q[1])
             elif q[0] == 'premium_should_sync':
@@ -448,13 +448,17 @@ class DBHandler:
             else:
                 raise AssertionError(f'Unknown setting {q[0]} found in the database')
 
-            settings = DBSettings(db_version=db_versions, last_write_ts=last_write_ts, premium_should_sync=premium_should_sync, include_crypto2crypto=include_crypto2crypto,
-                                  anonymized_logs=anonymized_logs, last_data_upload_ts=last_data_upload_ts, ui_floating_precision=ui_floating_precision,
-                                  taxfree_after_period=taxfree_after_period, balance_save_frequency=balance_save_frequency, include_gas_costs=include_gas_costs)
-
-        # populate values that are not saved in the setting but computed and returned
-        # as part of the get_settings call
-        settings.last_balance_save = self.get_last_balance_save_time()
+        settings = DBSettings(db_version=db_versions,
+                              last_write_ts=last_write_ts,
+                              premium_should_sync=premium_should_sync,
+                              include_crypto2crypto=include_crypto2crypto,
+                              anonymized_logs=anonymized_logs,
+                              last_data_upload_ts=last_data_upload_ts,
+                              ui_floating_precision=ui_floating_precision,
+                              taxfree_after_period=taxfree_after_period,
+                              balance_save_frequency=balance_save_frequency,
+                              include_gas_costs=include_gas_costs,
+                              last_balance_save=self.get_last_balance_save_time())
 
         return settings
 
