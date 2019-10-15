@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import tempfile
+from collections import namedtuple
 from json.decoder import JSONDecodeError
 from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
 
@@ -128,6 +129,26 @@ def db_tuple_to_str(
         return f'Ethereum transaction with hash "{data[0].hex()}"'
 
     raise AssertionError('db_tuple_to_str() called with invalid tuple_type {tuple_type}')
+
+
+class DBSettings(namedtuple):
+    version: int
+    last_write_ts: int
+    premium_should_sync: bool
+    include_crypto2crypto: bool
+    anonymized_logs: bool
+    last_data_upload_ts: int
+    ui_floating_precision: int
+    taxfree_after_period: int
+    balance_save_frequency: int
+    include_gas_costs: bool
+    historical_data_start: str
+    eth_rpc_endpoint: str
+    main_currency: FiatAsset
+    data_display_format: str
+    last_balance_save: Timestamp
+
+
 
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
@@ -406,6 +427,7 @@ class DBHandler():
         query = query.fetchall()
 
         settings: DBSettings = {}
+
         for q in query:
             if q[0] == 'version':
                 settings['db_version'] = int(q[1])
