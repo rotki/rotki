@@ -147,6 +147,7 @@ class DBSettings(namedtuple):
     main_currency: FiatAsset
     data_display_format: str
     last_balance_save: Timestamp
+    other: Optional
 
 
 
@@ -426,63 +427,63 @@ class DBHandler():
         )
         query = query.fetchall()
 
-        settings: DBSettings = {}
+        settings = DBSettings()
 
         for q in query:
             if q[0] == 'version':
-                settings['db_version'] = int(q[1])
+                settings.db_versions = int(q[1])
             elif q[0] == 'last_write_ts':
-                settings['last_write_ts'] = int(q[1])
+                settings.last_write_ts = int(q[1])
             elif q[0] == 'premium_should_sync':
-                settings['premium_should_sync'] = str_to_bool(q[1])
+                settings.premium_should_sync = str_to_bool(q[1])
             elif q[0] == 'include_crypto2crypto':
-                settings['include_crypto2crypto'] = str_to_bool(q[1])
+                settings.include_crypto2crypto = str_to_bool(q[1])
             elif q[0] == 'anonymized_logs':
-                settings['anonymized_logs'] = str_to_bool(q[1])
+                settings.anonymized_logs = str_to_bool(q[1])
             elif q[0] == 'last_data_upload_ts':
-                settings['last_data_upload_ts'] = int(q[1])
+                settings.last_data_upload_ts = int(q[1])
             elif q[0] == 'ui_floating_precision':
-                settings['ui_floating_precision'] = int(q[1])
+                settings.ui_floating_precision = int(q[1])
             elif q[0] == 'taxfree_after_period':
-                settings['taxfree_after_period'] = int(q[1]) if q[1] else None
+                settings.taxfree_after_period = int(q[1]) if q[1] else None
             elif q[0] == 'balance_save_frequency':
-                settings['balance_save_frequency'] = int(q[1])
+                settings.balance_save_frequency = int(q[1])
             elif q[0] == 'include_gas_costs':
-                settings['include_gas_costs'] = str_to_bool(q[1])
+                settings.include_gas_costs = str_to_bool(q[1])
             else:
-                settings[q[0]] = q[1]
+                settings.other = q[1]
 
         # populate defaults for values not in the DB yet
         if 'historical_data_start' not in settings:
-            settings['historical_data_start'] = DEFAULT_START_DATE
+            settings.historical_data_start = DEFAULT_START_DATE
         if 'eth_rpc_endpoint' not in settings:
-            settings['eth_rpc_endpoint'] = 'http://localhost:8545'
+            settings.eth_rpc_endpoint = 'http://localhost:8545'
         if 'ui_floating_precision' not in settings:
-            settings['ui_floating_precision'] = DEFAULT_UI_FLOATING_PRECISION
+            settings.ui_floating_precision = DEFAULT_UI_FLOATING_PRECISION
         if 'include_crypto2crypto' not in settings:
-            settings['include_crypto2crypto'] = DEFAULT_INCLUDE_CRYPTO2CRYPTO
+            settings.include_crypto2crypto = DEFAULT_INCLUDE_CRYPTO2CRYPTO
         if 'taxfree_after_period' not in settings:
-            settings['taxfree_after_period'] = DEFAULT_TAXFREE_AFTER_PERIOD
+            settings.taxfree_after_period = DEFAULT_TAXFREE_AFTER_PERIOD
         if 'balance_save_frequency' not in settings:
-            settings['balance_save_frequency'] = DEFAULT_BALANCE_SAVE_FREQUENCY
+            settings.balance_save_frequency = DEFAULT_BALANCE_SAVE_FREQUENCY
         if 'main_currency' not in settings:
-            settings['main_currency'] = DEFAULT_MAIN_CURRENCY
+            settings.main_currency = DEFAULT_MAIN_CURRENCY
         if 'anonymized_logs' not in settings:
-            settings['anonymized_logs'] = DEFAULT_ANONYMIZED_LOGS
+            settings.anonymized_logs = DEFAULT_ANONYMIZED_LOGS
         if 'include_gas_costs' not in settings:
-            settings['include_gas_costs'] = DEFAULT_INCLUDE_GAS_COSTS
+            settings.include_gas_costs = DEFAULT_INCLUDE_GAS_COSTS
         if 'date_display_format' not in settings:
-            settings['date_display_format'] = DEFAULT_DATE_DISPLAY_FORMAT
+            settings.date_display_format = DEFAULT_DATE_DISPLAY_FORMAT
         if 'premium_should_sync' not in settings:
-            settings['premium_should_sync'] = DEFAULT_PREMIUM_SHOULD_SYNC
+            settings.premium_should_sync = DEFAULT_PREMIUM_SHOULD_SYNC
         if 'last_write_ts' not in settings:
-            settings['last_write_ts'] = 0
+            settings.last_write_ts = 0
         if 'last_data_upload_ts' not in settings:
-            settings['last_data_upload_ts'] = 0
+            settings.last_data_upload_ts = 0
 
         # populate values that are not saved in the setting but computed and returned
         # as part of the get_settings call
-        settings['last_balance_save'] = self.get_last_balance_save_time()
+        settings.last_balance_save = self.get_last_balance_save_time()
 
         return settings
 
