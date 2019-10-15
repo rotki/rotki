@@ -173,13 +173,13 @@ class Rotkehlchen():
         )
         db_settings = self.data.db.get_settings()
         # TODO: Once settings returns a named tuple these should go away
-        crypto2crypto = db_settings['include_crypto2crypto']
+        crypto2crypto = db_settings.include_crypto2crypto
         msg = 'settings include_crypto2crypto should be a bool'
         assert isinstance(crypto2crypto, bool), msg
-        taxfree_after_period = db_settings['taxfree_after_period']
+        taxfree_after_period = db_settings.taxfree_after_period
         msg = 'settings taxfree_after_period should be an int'
         assert isinstance(taxfree_after_period, int), msg
-        include_gas_costs = db_settings['include_gas_costs']
+        include_gas_costs = db_settings.include_gas_costs
         msg = 'settings include_gas_costs should be a bool'
         assert isinstance(include_gas_costs, bool), msg
         self.accountant = Accountant(
@@ -194,7 +194,7 @@ class Rotkehlchen():
         )
 
         # Initialize the rotkehlchen logger
-        LoggingSettings(anonymized_logs=db_settings['anonymized_logs'])
+        LoggingSettings(anonymized_logs=db_settings.anonymized_logs)
         exchange_credentials = self.data.db.get_exchange_credentials()
         self.exchange_manager.initialize_exchanges(
             exchange_credentials=exchange_credentials,
