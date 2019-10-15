@@ -14,7 +14,7 @@ from typing_extensions import Literal
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH, S_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
-from rotkehlchen.datatyping import BalancesData, DBSettings
+from rotkehlchen.datatyping import BalancesData
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
     DB_SCRIPT_CREATE_TABLES,
@@ -149,12 +149,9 @@ class DBSettings(NamedTuple):
     last_balance_save: Timestamp
 
 
-
-
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
 # http://www.sql-join.com/sql-join-types
-class DBHandler():
-
+class DBHandler:
     def __init__(self, user_data_dir: FilePath, password: str, msg_aggregator: MessagesAggregator):
         self.msg_aggregator = msg_aggregator
         self.user_data_dir = user_data_dir
