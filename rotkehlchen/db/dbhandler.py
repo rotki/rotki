@@ -133,11 +133,11 @@ def db_tuple_to_str(
 
 class DBSettings(NamedTuple):
     version: int
-    last_write_ts: int
+    last_write_ts: Timestamp
     premium_should_sync: bool
     include_crypto2crypto: bool
     anonymized_logs: bool
-    last_data_upload_ts: int
+    last_data_upload_ts: Timestamp
     ui_floating_precision: int
     taxfree_after_period: int
     balance_save_frequency: int
@@ -450,7 +450,7 @@ class DBHandler():
             elif q[0] == 'include_gas_costs':
                 settings.include_gas_costs = str_to_bool(q[1])
             else:
-                settings.other = q[1]
+                raise AssertionError(f'Unknown setting {q[0]} found in the database')
 
         # populate defaults for values not in the DB yet
         if 'historical_data_start' not in settings:
