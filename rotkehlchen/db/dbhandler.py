@@ -4,9 +4,8 @@ import os
 import re
 import shutil
 import tempfile
-from collections import NamedTuple
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast, NamedTuple
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
@@ -132,21 +131,21 @@ def db_tuple_to_str(
 
 
 class DBSettings(NamedTuple):
-    version: int
-    last_write_ts: Timestamp
-    premium_should_sync: bool
-    include_crypto2crypto: bool
-    anonymized_logs: bool
-    last_data_upload_ts: Timestamp
-    ui_floating_precision: int
-    taxfree_after_period: int
-    balance_save_frequency: int
-    include_gas_costs: bool
-    historical_data_start: str
-    eth_rpc_endpoint: str
-    main_currency: FiatAsset
-    data_display_format: str
-    last_balance_save: Timestamp
+    db_version: int = 0
+    last_write_ts: int = 0
+    premium_should_sync: bool = DEFAULT_PREMIUM_SHOULD_SYNC
+    include_crypto2crypto: bool = DEFAULT_INCLUDE_CRYPTO2CRYPTO
+    anonymized_logs: bool = DEFAULT_ANONYMIZED_LOGS
+    last_data_upload_ts: int = 0
+    ui_floating_precision: int = DEFAULT_UI_FLOATING_PRECISION
+    taxfree_after_period: int = DEFAULT_TAXFREE_AFTER_PERIOD
+    balance_save_frequency: int = DEFAULT_BALANCE_SAVE_FREQUENCY
+    include_gas_costs: bool = DEFAULT_INCLUDE_GAS_COSTS
+    historical_data_start: str = DEFAULT_START_DATE
+    eth_rpc_endpoint: str = 'http://localhost:8545'
+    main_currency: FiatAsset = DEFAULT_MAIN_CURRENCY
+    data_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
+    last_balance_save: Timestamp = 0
 
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
@@ -423,59 +422,35 @@ class DBHandler:
         )
         query = query.fetchall()
 
-        settings = DBSettings()
+        settings = None
 
         for q in query:
             if q[0] == 'version':
-                settings.db_versions = int(q[1])
+                db_versions= int(q[1])
             elif q[0] == 'last_write_ts':
-                settings.last_write_ts = int(q[1])
+                last_write_ts = int(q[1])
             elif q[0] == 'premium_should_sync':
-                settings.premium_should_sync = str_to_bool(q[1])
+                premium_should_sync = str_to_bool(q[1])
             elif q[0] == 'include_crypto2crypto':
-                settings.include_crypto2crypto = str_to_bool(q[1])
+                include_crypto2crypto = str_to_bool(q[1])
             elif q[0] == 'anonymized_logs':
-                settings.anonymized_logs = str_to_bool(q[1])
+                anonymized_logs = str_to_bool(q[1])
             elif q[0] == 'last_data_upload_ts':
-                settings.last_data_upload_ts = int(q[1])
+                last_data_upload_ts = int(q[1])
             elif q[0] == 'ui_floating_precision':
-                settings.ui_floating_precision = int(q[1])
+                ui_floating_precision = int(q[1])
             elif q[0] == 'taxfree_after_period':
-                settings.taxfree_after_period = int(q[1]) if q[1] else None
+                taxfree_after_period = int(q[1]) if q[1] else None
             elif q[0] == 'balance_save_frequency':
-                settings.balance_save_frequency = int(q[1])
+                balance_save_frequency = int(q[1])
             elif q[0] == 'include_gas_costs':
-                settings.include_gas_costs = str_to_bool(q[1])
+                include_gas_costs = str_to_bool(q[1])
             else:
                 raise AssertionError(f'Unknown setting {q[0]} found in the database')
 
-        # populate defaults for values not in the DB yet
-        if 'historical_data_start' not in settings:
-            settings.historical_data_start = DEFAULT_START_DATE
-        if 'eth_rpc_endpoint' not in settings:
-            settings.eth_rpc_endpoint = 'http://localhost:8545'
-        if 'ui_floating_precision' not in settings:
-            settings.ui_floating_precision = DEFAULT_UI_FLOATING_PRECISION
-        if 'include_crypto2crypto' not in settings:
-            settings.include_crypto2crypto = DEFAULT_INCLUDE_CRYPTO2CRYPTO
-        if 'taxfree_after_period' not in settings:
-            settings.taxfree_after_period = DEFAULT_TAXFREE_AFTER_PERIOD
-        if 'balance_save_frequency' not in settings:
-            settings.balance_save_frequency = DEFAULT_BALANCE_SAVE_FREQUENCY
-        if 'main_currency' not in settings:
-            settings.main_currency = DEFAULT_MAIN_CURRENCY
-        if 'anonymized_logs' not in settings:
-            settings.anonymized_logs = DEFAULT_ANONYMIZED_LOGS
-        if 'include_gas_costs' not in settings:
-            settings.include_gas_costs = DEFAULT_INCLUDE_GAS_COSTS
-        if 'date_display_format' not in settings:
-            settings.date_display_format = DEFAULT_DATE_DISPLAY_FORMAT
-        if 'premium_should_sync' not in settings:
-            settings.premium_should_sync = DEFAULT_PREMIUM_SHOULD_SYNC
-        if 'last_write_ts' not in settings:
-            settings.last_write_ts = 0
-        if 'last_data_upload_ts' not in settings:
-            settings.last_data_upload_ts = 0
+            settings = DBSettings(db_version=db_versions, last_write_ts=last_write_ts, premium_should_sync=premium_should_sync, include_crypto2crypto=include_crypto2crypto,
+                                  anonymized_logs=anonymized_logs, last_data_upload_ts=last_data_upload_ts, ui_floating_precision=ui_floating_precision,
+                                  taxfree_after_period=taxfree_after_period, balance_save_frequency=balance_save_frequency, include_gas_costs=include_gas_costs)
 
         # populate values that are not saved in the setting but computed and returned
         # as part of the get_settings call
