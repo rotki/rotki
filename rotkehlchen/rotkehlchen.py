@@ -151,13 +151,8 @@ class Rotkehlchen():
             pass
 
         settings = self.data.db.get_settings()
-        historical_data_start = settings['historical_data_start']
-        # TODO: Once settings returns a named tuple this should go away
-        msg = 'setting historical_data_start should be a string'
-        assert isinstance(historical_data_start, str), msg
-        eth_rpc_endpoint = settings['eth_rpc_endpoint']
-        msg = 'setting eth_rpc_endpoint should be a string'
-        assert isinstance(eth_rpc_endpoint, str), msg
+        historical_data_start = settings.historical_data_start
+        eth_rpc_endpoint = settings.eth_rpc_endpoint
         self.trades_historian = TradesHistorian(
             user_directory=self.user_directory,
             db=self.data.db,
@@ -174,14 +169,8 @@ class Rotkehlchen():
         db_settings = self.data.db.get_settings()
         # TODO: Once settings returns a named tuple these should go away
         crypto2crypto = db_settings.include_crypto2crypto
-        msg = 'settings include_crypto2crypto should be a bool'
-        assert isinstance(crypto2crypto, bool), msg
         taxfree_after_period = db_settings.taxfree_after_period
-        msg = 'settings taxfree_after_period should be an int'
-        assert isinstance(taxfree_after_period, int), msg
         include_gas_costs = db_settings.include_gas_costs
-        msg = 'settings include_gas_costs should be a bool'
-        assert isinstance(include_gas_costs, bool), msg
         self.accountant = Accountant(
             profit_currency=self.data.main_currency(),
             user_directory=self.user_directory,
