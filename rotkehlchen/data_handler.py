@@ -6,7 +6,7 @@ import shutil
 import tempfile
 import time
 import zlib
-from typing import Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from eth_utils.address import to_checksum_address
 
@@ -15,6 +15,7 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.datatyping import BalancesData, ExternalTrade
 from rotkehlchen.db.dbhandler import DBHandler, DBSettings
+from rotkehlchen.db.settings import db_settings_from_dict
 from rotkehlchen.errors import AuthenticationError, DeserializationError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import Trade, get_pair_position_asset
 from rotkehlchen.fval import FVal
@@ -43,6 +44,9 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import create_timestamp, is_number, timestamp_to_date, ts_now
 
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.accountant import Accountant
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -61,30 +65,6 @@ otc_fields = [
 ]
 otc_optional_fields = ['otc_fee', 'otc_link', 'otc_notes']
 otc_numerical_fields = ['otc_amount', 'otc_rate', 'otc_fee']
-
-VALID_SETTINGS = (
-    'main_currency',
-    'historical_data_start',
-    'eth_rpc_endpoint',
-    'ui_floating_precision',
-    'last_write_ts',
-    'db_version',
-    'last_data_upload_ts',
-    'premium_should_sync',
-    'include_crypto2crypto',
-    'taxfree_after_period',
-    'balance_save_frequency',
-    'anonymized_logs',
-    'include_gas_costs',
-    'date_display_format',
-)
-
-BOOLEAN_SETTINGS = (
-    'premium_should_sync',
-    'include_crypto2crypto',
-    'anonymized_logs',
-    'include_gas_costs',
-)
 
 
 def verify_otctrade_data(
@@ -289,7 +269,7 @@ class DataHandler():
     def set_main_currency(
             self,
             currency: FiatAsset,
-            accountant,  # TODO: Set type after cyclic dependency fix
+            accountant: Accountant,
     ) -> None:
         log.info('Set main currency', currency=currency)
         accountant.set_main_currency(currency)
@@ -297,39 +277,33 @@ class DataHandler():
 
     def set_settings(
             self,
-            settings: DBSettings,
-            accountant=None,  # TODO: Set type after cyclic dependency fix
+            settings_dict: Dict[str, Any],
+            accountant: Accountant,
     ) -> Tuple[bool, str]:
-        given_items = list(settings.keys())
+        """Takes in a settings dict with setttings to change and dispatches change in the code"""
         msg = ''
-
+        settings = db_settings_from_dict(settings_dict, self.msg_aggregator)
         # ignore invalid settings
         invalid = []
         all_okay = True
-        for x in given_items:
-            if x not in VALID_SETTINGS:
+        for x in settings_dict:
+            if x not in DBSettings._fields:
                 invalid.append(x)
-                del settings[x]
+                del settings_dict[x]
                 all_okay = False
 
-            if x in BOOLEAN_SETTINGS:
-                if settings[x] is True:
-                    settings[x] = 'True'
-                elif settings[x] is False:
-                    settings[x] = 'False'
-                else:
-                    raise ValueError(
-                        f'Setting {x} should have a True/False value but it has {settings[x]}',
-                    )
+            # We need to save booleans as strings in the DB
+            deserealized_value = getattr(settings, x)
+            if isinstance(deserealized_value, bool):
+                settings_dict[x] = str(deserealized_value)
 
         if not all_okay:
-            msg = 'provided settings: {} are invalid'.format(','.join(invalid))
-            log.warning(msg)
+            log.warning(f'provided settings: {",".join(invalid)} are invalid')
 
-        if 'main_currency' in settings:
-            accountant.set_main_currency(settings['main_currency'])
+        if 'main_currency' in settings_dict:
+            accountant.set_main_currency(settings_dict['main_currency'])
 
-        self.db.set_settings(settings)
+        self.db.set_settings(settings_dict)
         return True, msg
 
     def should_save_balances(self) -> bool:

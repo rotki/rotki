@@ -4,8 +4,6 @@ from typing import List, NamedTuple
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.typing import BTCAddress, ChecksumEthAddress, Timestamp
 
-ROTKEHLCHEN_DB_VERSION = 6
-
 
 class BlockchainAccounts(NamedTuple):
     eth: List[ChecksumEthAddress]
@@ -35,6 +33,10 @@ class DBStartupAction(Enum):
     NOTHING = 1
     UPGRADE_3_4 = 2
     STUCK_4_3 = 3
+
+
+def str_to_bool(s: str) -> bool:
+    return True if s == 'True' else False
 
 
 # Custom enum table for trade types

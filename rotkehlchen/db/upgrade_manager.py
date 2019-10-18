@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Optional
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.db.asset_rename import rename_assets_in_db
+from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.db.upgrades.v5_v6 import upgrade_v5_to_v6
-from rotkehlchen.db.utils import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import SupportedBlockchain
