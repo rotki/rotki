@@ -12,7 +12,7 @@ export interface UnlockResult extends ActionResult<boolean> {
 }
 
 export interface DBSettings {
-    readonly db_version: number;
+    readonly version: number;
     readonly last_write_ts: number;
     readonly premium_should_sync?: boolean;
     readonly include_crypto2crypto: boolean;

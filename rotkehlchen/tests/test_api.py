@@ -7,8 +7,7 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.blockchain import Blockchain
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
-from rotkehlchen.data_handler import VALID_SETTINGS
-from rotkehlchen.db.utils import ROTKEHLCHEN_DB_VERSION
+from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION, DBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.exchanges import BINANCE_BALANCES_RESPONSE
@@ -49,8 +48,8 @@ def check_proper_unlock_result(response):
     assert response['message'] == ''
     assert isinstance(response['exchanges'], list)
     assert 'premium' in response
-    assert response['settings']['db_version'] == ROTKEHLCHEN_DB_VERSION
-    for setting in VALID_SETTINGS:
+    assert response['settings']['version'] == ROTKEHLCHEN_DB_VERSION
+    for setting in DBSettings._fields:
         assert setting in response['settings']
 
 

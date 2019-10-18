@@ -12,8 +12,8 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
+from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.db.upgrade_manager import UPGRADES_LIST
-from rotkehlchen.db.utils import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.tests.utils.constants import A_BCH, A_BSV, A_RDN
 from rotkehlchen.typing import FilePath, SupportedBlockchain

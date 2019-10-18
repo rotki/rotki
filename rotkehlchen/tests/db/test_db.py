@@ -25,12 +25,8 @@ from rotkehlchen.db.dbhandler import (
     DBHandler,
     detect_sqlcipher_version,
 )
-from rotkehlchen.db.utils import (
-    ROTKEHLCHEN_DB_VERSION,
-    AssetBalance,
-    BlockchainAccounts,
-    LocationData,
-)
+from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
+from rotkehlchen.db.utils import AssetBalance, BlockchainAccounts, LocationData
 from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
@@ -247,7 +243,7 @@ def test_writting_fetching_data(data_dir, username):
         'historical_data_start': DEFAULT_START_DATE,
         'eth_rpc_endpoint': 'http://localhost:8545',
         'ui_floating_precision': DEFAULT_UI_FLOATING_PRECISION,
-        'db_version': ROTKEHLCHEN_DB_VERSION,
+        'version': ROTKEHLCHEN_DB_VERSION,
         'include_crypto2crypto': DEFAULT_INCLUDE_CRYPTO2CRYPTO,
         'include_gas_costs': DEFAULT_INCLUDE_GAS_COSTS,
         'taxfree_after_period': YEAR_IN_SECONDS,
@@ -415,8 +411,8 @@ def test_settings_entry_types(data_dir, username):
     assert msg == '', f'set settings returned error: "{msg}"'
 
     res = data.db.get_settings()
-    assert isinstance(res['db_version'], int)
-    assert res['db_version'] == ROTKEHLCHEN_DB_VERSION
+    assert isinstance(res['version'], int)
+    assert res['version'] == ROTKEHLCHEN_DB_VERSION
     assert isinstance(res['last_write_ts'], int)
     assert isinstance(res['premium_should_sync'], bool)
     assert res['premium_should_sync'] is True

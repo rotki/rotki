@@ -5,25 +5,30 @@ import re
 import shutil
 import tempfile
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast, NamedTuple
+from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH, S_USD
-from rotkehlchen.constants.timing import YEAR_IN_SECONDS
+from rotkehlchen.constants.assets import A_USD, S_BTC, S_ETH
 from rotkehlchen.datatyping import BalancesData
+from rotkehlchen.db.settings import (
+    DEFAULT_PREMIUM_SHOULD_SYNC,
+    ROTKEHLCHEN_DB_VERSION,
+    DBSettings,
+    db_settings_from_dict,
+)
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
     DB_SCRIPT_CREATE_TABLES,
     DB_SCRIPT_REIMPORT_DATA,
-    ROTKEHLCHEN_DB_VERSION,
     AssetBalance,
     BlockchainAccounts,
     DBStartupAction,
     LocationData,
     SingleAssetBalance,
+    str_to_bool,
 )
 from rotkehlchen.errors import AuthenticationError, DeserializationError, InputError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
@@ -61,25 +66,10 @@ from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-
-DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
-DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
-DEFAULT_INCLUDE_GAS_COSTS = True
-DEFAULT_ANONYMIZED_LOGS = False
-DEFAULT_PREMIUM_SHOULD_SYNC = False
-DEFAULT_START_DATE = "01/08/2015"
-DEFAULT_UI_FLOATING_PRECISION = 2
-DEFAULT_BALANCE_SAVE_FREQUENCY = 24
-DEFAULT_MAIN_CURRENCY = S_USD
-DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z'
 KDF_ITER = 64000
 DBINFO_FILENAME = 'dbinfo.json'
 
 DBTupleType = Literal['trade', 'asset_movement', 'margin_position', 'ethereum_transaction']
-
-
-def str_to_bool(s):
-    return True if s == 'True' else False
 
 
 def detect_sqlcipher_version() -> int:
@@ -128,24 +118,6 @@ def db_tuple_to_str(
         return f'Ethereum transaction with hash "{data[0].hex()}"'
 
     raise AssertionError('db_tuple_to_str() called with invalid tuple_type {tuple_type}')
-
-
-class DBSettings(NamedTuple):
-    db_version: int = 0
-    last_write_ts: int = 0
-    premium_should_sync: bool = DEFAULT_PREMIUM_SHOULD_SYNC
-    include_crypto2crypto: bool = DEFAULT_INCLUDE_CRYPTO2CRYPTO
-    anonymized_logs: bool = DEFAULT_ANONYMIZED_LOGS
-    last_data_upload_ts: int = 0
-    ui_floating_precision: int = DEFAULT_UI_FLOATING_PRECISION
-    taxfree_after_period: Optional[int] = DEFAULT_TAXFREE_AFTER_PERIOD
-    balance_save_frequency: int = DEFAULT_BALANCE_SAVE_FREQUENCY
-    include_gas_costs: bool = DEFAULT_INCLUDE_GAS_COSTS
-    historical_data_start: str = DEFAULT_START_DATE
-    eth_rpc_endpoint: str = 'http://localhost:8545'
-    main_currency: FiatAsset = DEFAULT_MAIN_CURRENCY
-    data_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
-    last_balance_save: Timestamp = Timestamp(1)
 
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
@@ -422,45 +394,11 @@ class DBHandler:
         )
         query = query.fetchall()
 
-        settings = DBSettings()
-
+        settings_dict = {}
         for q in query:
-            if q[0] == 'version':
-                db_versions = int(q[1])
-            elif q[0] == 'last_write_ts':
-                last_write_ts = int(q[1])
-            elif q[0] == 'premium_should_sync':
-                premium_should_sync = str_to_bool(q[1])
-            elif q[0] == 'include_crypto2crypto':
-                include_crypto2crypto = str_to_bool(q[1])
-            elif q[0] == 'anonymized_logs':
-                anonymized_logs = str_to_bool(q[1])
-            elif q[0] == 'last_data_upload_ts':
-                last_data_upload_ts = int(q[1])
-            elif q[0] == 'ui_floating_precision':
-                ui_floating_precision = int(q[1])
-            elif q[0] == 'taxfree_after_period':
-                taxfree_after_period = int(q[1]) if q[1] else None
-            elif q[0] == 'balance_save_frequency':
-                balance_save_frequency = int(q[1])
-            elif q[0] == 'include_gas_costs':
-                include_gas_costs = str_to_bool(q[1])
-            else:
-                raise AssertionError(f'Unknown setting {q[0]} found in the database')
+            settings_dict[q[0]] = q[1]
 
-        settings = DBSettings(db_version=db_versions,
-                              last_write_ts=last_write_ts,
-                              premium_should_sync=premium_should_sync,
-                              include_crypto2crypto=include_crypto2crypto,
-                              anonymized_logs=anonymized_logs,
-                              last_data_upload_ts=last_data_upload_ts,
-                              ui_floating_precision=ui_floating_precision,
-                              taxfree_after_period=taxfree_after_period,
-                              balance_save_frequency=balance_save_frequency,
-                              include_gas_costs=include_gas_costs,
-                              last_balance_save=self.get_last_balance_save_time())
-
-        return settings
+        return db_settings_from_dict(settings_dict, self.msg_aggregator)
 
     def get_main_currency(self) -> Asset:
         cursor = self.conn.cursor()
@@ -483,11 +421,11 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
-    def set_settings(self, settings: DBSettings) -> None:
+    def set_settings(self, settings_dict: Dict[str, Any]) -> None:
         cursor = self.conn.cursor()
         cursor.executemany(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-            [setting for setting in list(settings.items())],
+            [setting for setting in list(settings_dict.items())],
         )
         self.conn.commit()
         self.update_last_write()
