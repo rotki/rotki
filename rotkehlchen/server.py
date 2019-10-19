@@ -503,7 +503,7 @@ class RotkehlchenServer():
             )
             res['exchanges'] = self.rotkehlchen.exchange_manager.get_connected_exchange_names()
             res['premium'] = self.rotkehlchen.premium is not None
-            res['settings'] = self.rotkehlchen.data.db.get_settings()
+            res['settings'] = process_result(self.rotkehlchen.data.db.get_settings())
         except AuthenticationError as e:
             res['result'] = False
             res['message'] = str(e)

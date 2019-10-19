@@ -12,8 +12,8 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants import YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD, FIAT_CURRENCIES, S_CNY, S_EUR
 from rotkehlchen.data_handler import DataHandler, verify_otctrade_data
-from rotkehlchen.db.dbhandler import (
-    DBINFO_FILENAME,
+from rotkehlchen.db.dbhandler import DBINFO_FILENAME, DBHandler, detect_sqlcipher_version
+from rotkehlchen.db.settings import (
     DEFAULT_ANONYMIZED_LOGS,
     DEFAULT_BALANCE_SAVE_FREQUENCY,
     DEFAULT_DATE_DISPLAY_FORMAT,
@@ -22,10 +22,8 @@ from rotkehlchen.db.dbhandler import (
     DEFAULT_MAIN_CURRENCY,
     DEFAULT_START_DATE,
     DEFAULT_UI_FLOATING_PRECISION,
-    DBHandler,
-    detect_sqlcipher_version,
+    ROTKEHLCHEN_DB_VERSION,
 )
-from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.db.utils import AssetBalance, BlockchainAccounts, LocationData
 from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
@@ -159,7 +157,7 @@ def test_export_import_db(data_dir, username):
     assert int(fiat_balances[A_EUR]) == 10
 
 
-def test_writting_fetching_data(data_dir, username):
+def test_writting_fetching_data(data_dir, username, accountant):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
@@ -235,11 +233,10 @@ def test_writting_fetching_data(data_dir, username):
 
     # With nothing inserted in settings make sure default values are returned
     result = data.db.get_settings()
-    last_write_diff = ts_now() - result['last_write_ts']
+    last_write_diff = ts_now() - result.last_write_ts
     # make sure last_write was within 3 secs
     assert last_write_diff >= 0 and last_write_diff < 3
-    del result['last_write_ts']
-    assert result == {
+    expected_dict = {
         'historical_data_start': DEFAULT_START_DATE,
         'eth_rpc_endpoint': 'http://localhost:8545',
         'ui_floating_precision': DEFAULT_UI_FLOATING_PRECISION,
@@ -255,23 +252,31 @@ def test_writting_fetching_data(data_dir, username):
         'last_data_upload_ts': 0,
         'premium_should_sync': False,
     }
+    # Make sure that results are the same. Comparing like this since we ignore last
+    # write ts check
+    result_dict = result._asdict()
+    for key, value in expected_dict.items():
+        assert key in result_dict
+        assert value == result_dict[key]
 
     # Check setting non-existing settings. Should be ignored
-    success, msg = data.set_settings({'nonexisting_setting': 1}, accountant=None)
+    success = data.set_settings({'nonexisting_setting': 1}, accountant=accountant)
     assert success
+    msg = data.db.msg_aggregator.consume_warnings()[0]
     assert msg != '' and 'nonexisting_setting' in msg
-    _, msg = data.set_settings({
+    success = data.set_settings({
         'nonexisting_setting': 1,
         'eth_rpc_endpoint': 'http://localhost:8555',
         'ui_floating_precision': 3,
-    }, accountant=None)
+    }, accountant=accountant)
+    assert success
+    msg = data.db.msg_aggregator.consume_warnings()[0]
     assert msg != '' and 'nonexisting_setting' in msg
 
     # Now check nothing funny made it in the db
     result = data.db.get_settings()
-    assert result['eth_rpc_endpoint'] == 'http://localhost:8555'
-    assert result['ui_floating_precision'] == 3
-    assert 'nonexisting_setting' not in result
+    assert result.eth_rpc_endpoint == 'http://localhost:8555'
+    assert result.ui_floating_precision == 3
 
 
 def test_writting_fetching_external_trades(data_dir, username):
@@ -389,12 +394,12 @@ def test_writting_fetching_external_trades(data_dir, username):
     assert result[0] == trade2
 
 
-def test_settings_entry_types(data_dir, username):
+def test_settings_entry_types(data_dir, username, accountant):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
 
-    success, msg = data.set_settings({
+    success = data.set_settings({
         'last_write_ts': 1,
         'premium_should_sync': True,
         'include_crypto2crypto': True,
@@ -406,39 +411,38 @@ def test_settings_entry_types(data_dir, username):
         'balance_save_frequency': 24,
         'anonymized_logs': True,
         'date_display_format': '%d/%m/%Y %H:%M:%S %z',
-    })
+    }, accountant=accountant)
     assert success
-    assert msg == '', f'set settings returned error: "{msg}"'
 
     res = data.db.get_settings()
-    assert isinstance(res['version'], int)
-    assert res['version'] == ROTKEHLCHEN_DB_VERSION
-    assert isinstance(res['last_write_ts'], int)
-    assert isinstance(res['premium_should_sync'], bool)
-    assert res['premium_should_sync'] is True
-    assert isinstance(res['include_crypto2crypto'], bool)
-    assert res['include_crypto2crypto'] is True
-    assert isinstance(res['ui_floating_precision'], int)
-    assert res['ui_floating_precision'] == 1
-    assert isinstance(res['taxfree_after_period'], int)
-    assert res['taxfree_after_period'] == 1
-    assert isinstance(res['historical_data_start'], str)
-    assert res['historical_data_start'] == '01/08/2015'
-    assert isinstance(res['eth_rpc_endpoint'], str)
-    assert res['eth_rpc_endpoint'] == 'http://localhost:8545'
-    assert isinstance(res['balance_save_frequency'], int)
-    assert res['balance_save_frequency'] == 24
-    assert isinstance(res['last_balance_save'], int)
-    assert res['last_balance_save'] == 0
-    assert isinstance(res['main_currency'], str)
-    assert res['main_currency'] == 'USD'
-    assert isinstance(res['anonymized_logs'], bool)
-    assert res['anonymized_logs'] is True
-    assert isinstance(res['date_display_format'], str)
-    assert res['date_display_format'] == '%d/%m/%Y %H:%M:%S %z'
+    assert isinstance(res.version, int)
+    assert res.version == ROTKEHLCHEN_DB_VERSION
+    assert isinstance(res.last_write_ts, int)
+    assert isinstance(res.premium_should_sync, bool)
+    assert res.premium_should_sync is True
+    assert isinstance(res.include_crypto2crypto, bool)
+    assert res.include_crypto2crypto is True
+    assert isinstance(res.ui_floating_precision, int)
+    assert res.ui_floating_precision == 1
+    assert isinstance(res.taxfree_after_period, int)
+    assert res.taxfree_after_period == 1
+    assert isinstance(res.historical_data_start, str)
+    assert res.historical_data_start == '01/08/2015'
+    assert isinstance(res.eth_rpc_endpoint, str)
+    assert res.eth_rpc_endpoint == 'http://localhost:8545'
+    assert isinstance(res.balance_save_frequency, int)
+    assert res.balance_save_frequency == 24
+    assert isinstance(res.last_balance_save, int)
+    assert res.last_balance_save == 0
+    assert isinstance(res.main_currency, str)
+    assert res.main_currency == 'USD'
+    assert isinstance(res.anonymized_logs, bool)
+    assert res.anonymized_logs is True
+    assert isinstance(res.date_display_format, str)
+    assert res.date_display_format == '%d/%m/%Y %H:%M:%S %z'
 
 
-def test_balance_save_frequency_check(data_dir, username):
+def test_balance_save_frequency_check(data_dir, username, accountant):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
@@ -450,9 +454,8 @@ def test_balance_save_frequency_check(data_dir, username):
     )])
 
     assert not data.should_save_balances()
-    success, msg = data.set_settings({'balance_save_frequency': 5})
+    success = data.set_settings({'balance_save_frequency': 5}, accountant=accountant)
     assert success
-    assert msg == '', f'set settings returned error: "{msg}"'
     assert data.should_save_balances()
 
     last_save_ts = data.db.get_last_balance_save_time()
