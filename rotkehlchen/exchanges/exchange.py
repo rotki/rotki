@@ -176,7 +176,7 @@ class ExchangeInterface():
             start_ts: Timestamp,
             end_ts: Timestamp,
             ranges_to_query: List[Tuple[Timestamp, Timestamp]],
-    ):
+    ) -> None:
         """Depending on the ranges to query and the given start and end ts update the DB"""
         starts = [x[0] for x in ranges_to_query]
         starts.append(start_ts)
