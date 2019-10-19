@@ -174,7 +174,7 @@ class Binance(ExchangeInterface):
         self.initial_backoff = initial_backoff
         self.backoff_limit = backoff_limit
 
-    def first_connection(self):
+    def first_connection(self) -> None:
         if self.first_connection_made:
             return
 
@@ -357,7 +357,7 @@ class Binance(ExchangeInterface):
         self.first_connection()
 
         if not markets:
-            iter_markets = self._symbols_to_pair.keys()
+            iter_markets = list(self._symbols_to_pair.keys())
         else:
             iter_markets = markets
 

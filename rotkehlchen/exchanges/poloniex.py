@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import csv
-import datetime
 import hashlib
 import hmac
 import logging
@@ -60,10 +59,6 @@ from rotkehlchen.utils.serialization import rlk_jsonloads, rlk_jsonloads_dict, r
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-def timestamp_to_date(s):
-    return datetime.datetime.fromtimestamp(s).strftime('%Y-%m-%d %H:%M:%S')
 
 
 def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trade:
@@ -234,7 +229,7 @@ class Poloniex(ExchangeInterface):
         })
         self.msg_aggregator = msg_aggregator
 
-    def first_connection(self):
+    def first_connection(self) -> None:
         if self.first_connection_made:
             return
 

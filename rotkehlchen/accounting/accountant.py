@@ -52,7 +52,7 @@ class Accountant():
             include_crypto2crypto: bool,
             taxfree_after_period: int,
             include_gas_costs: bool,
-    ):
+    ) -> None:
         self.msg_aggregator = msg_aggregator
         self.csvexporter = CSVExporter(profit_currency, user_directory, create_csv)
         self.events = TaxableEvents(self.csvexporter, profit_currency)

@@ -84,7 +84,7 @@ class Bitmex(ExchangeInterface):
         self.session.headers.update({'api-key': api_key})  # type: ignore
         self.msg_aggregator = msg_aggregator
 
-    def first_connection(self):
+    def first_connection(self) -> None:
         self.first_connection_made = True
 
     def validate_api_key(self) -> Tuple[bool, str]:
@@ -100,7 +100,7 @@ class Bitmex(ExchangeInterface):
                 raise
         return True, ''
 
-    def _generate_signature(self, verb: str, path: str, expires: int, data: str = ''):
+    def _generate_signature(self, verb: str, path: str, expires: int, data: str = '') -> str:
         signature = hmac.new(
             self.secret,
             (verb.upper() + path + str(expires) + data).encode(),
