@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Union
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData, SingleAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
@@ -40,6 +41,8 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
         }
     elif isinstance(entry, Trade):
         return entry.serialize()
+    elif isinstance(entry, DBSettings):
+        return entry._asdict()
     elif isinstance(entry, EthTokenInfo):
         return entry._asdict()
     elif isinstance(entry, tuple):

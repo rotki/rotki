@@ -269,7 +269,7 @@ class DataHandler():
     def set_main_currency(
             self,
             currency: FiatAsset,
-            accountant: Accountant,
+            accountant: 'Accountant',
     ) -> None:
         log.info('Set main currency', currency=currency)
         accountant.set_main_currency(currency)
@@ -278,19 +278,19 @@ class DataHandler():
     def set_settings(
             self,
             settings_dict: Dict[str, Any],
-            accountant: Accountant,
-    ) -> Tuple[bool, str]:
+            accountant: 'Accountant',
+    ) -> bool:
         """Takes in a settings dict with setttings to change and dispatches change in the code"""
-        msg = ''
         settings = db_settings_from_dict(settings_dict, self.msg_aggregator)
         # ignore invalid settings
         invalid = []
         all_okay = True
-        for x in settings_dict:
+        for x in list(settings_dict):  # list() makes copy of the dict since we modify it in loop
             if x not in DBSettings._fields:
                 invalid.append(x)
                 del settings_dict[x]
                 all_okay = False
+                continue
 
             # We need to save booleans as strings in the DB
             deserealized_value = getattr(settings, x)
@@ -304,16 +304,13 @@ class DataHandler():
             accountant.set_main_currency(settings_dict['main_currency'])
 
         self.db.set_settings(settings_dict)
-        return True, msg
+        return True
 
     def should_save_balances(self) -> bool:
         """ Returns whether or not we can save data to the database depending on
         the balance data saving frequency setting"""
         last_save = self.db.get_last_balance_save_time()
         settings = self.db.get_settings()
-        # TODO: When https://github.com/rotkehlchenio/rotkehlchen/issues/388 is done
-        # the assert should go away
-        assert isinstance(settings.balance_save_frequency, int)
         # Setting is saved in hours, convert to seconds here
         period = settings.balance_save_frequency * 60 * 60
         now = Timestamp(int(time.time()))

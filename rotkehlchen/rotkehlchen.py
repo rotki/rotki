@@ -167,19 +167,15 @@ class Rotkehlchen():
             cryptocompare=Cryptocompare(data_directory=self.data_dir),
         )
         db_settings = self.data.db.get_settings()
-        # TODO: Once settings returns a named tuple these should go away
-        crypto2crypto = db_settings.include_crypto2crypto
-        taxfree_after_period = db_settings.taxfree_after_period
-        include_gas_costs = db_settings.include_gas_costs
         self.accountant = Accountant(
             profit_currency=self.data.main_currency(),
             user_directory=self.user_directory,
             msg_aggregator=self.msg_aggregator,
             create_csv=True,
             ignored_assets=self.data.db.get_ignored_assets(),
-            include_crypto2crypto=crypto2crypto,
-            taxfree_after_period=taxfree_after_period,
-            include_gas_costs=include_gas_costs,
+            include_crypto2crypto=db_settings.include_crypto2crypto,
+            taxfree_after_period=db_settings.taxfree_after_period,
+            include_gas_costs=db_settings.include_gas_costs,
         )
 
         # Initialize the rotkehlchen logger
@@ -512,9 +508,7 @@ class Rotkehlchen():
                 message += '\n' + msg
                 return False, message
 
-            _, msg, = self.data.set_settings(settings, self.accountant)
-            if msg != '':
-                message += '\n' + msg
+            self.data.set_settings(settings, self.accountant)
 
             # Always return success here but with a message
             return True, message

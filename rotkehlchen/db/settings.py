@@ -22,11 +22,11 @@ DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z'
 
 class DBSettings(NamedTuple):
     version: int = ROTKEHLCHEN_DB_VERSION
-    last_write_ts: int = 0
+    last_write_ts: Timestamp = Timestamp(0)
     premium_should_sync: bool = DEFAULT_PREMIUM_SHOULD_SYNC
     include_crypto2crypto: bool = DEFAULT_INCLUDE_CRYPTO2CRYPTO
     anonymized_logs: bool = DEFAULT_ANONYMIZED_LOGS
-    last_data_upload_ts: int = 0
+    last_data_upload_ts: Timestamp = Timestamp(0)
     ui_floating_precision: int = DEFAULT_UI_FLOATING_PRECISION
     taxfree_after_period: int = DEFAULT_TAXFREE_AFTER_PERIOD
     balance_save_frequency: int = DEFAULT_BALANCE_SAVE_FREQUENCY
@@ -35,7 +35,7 @@ class DBSettings(NamedTuple):
     eth_rpc_endpoint: str = 'http://localhost:8545'
     main_currency: FiatAsset = DEFAULT_MAIN_CURRENCY
     date_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
-    last_balance_save: Timestamp = Timestamp(1)
+    last_balance_save: Timestamp = Timestamp(0)
 
 
 def read_boolean(value: Union[str, bool]) -> bool:
