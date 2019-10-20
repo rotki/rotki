@@ -13,12 +13,14 @@ from gevent.pywsgi import WSGIServer
 
 from rotkehlchen.api.v1.resources import (
     LogoutResource,
-    SetMainCurrencyResource,
     SettingsResource,
+    TaskResultResource,
     create_blueprint,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serializer import process_result, process_result_list
+
+OK_RESULT = {'result': True, 'message': ''}
 
 ERROR_STATUS_CODES = [
     HTTPStatus.CONFLICT,
@@ -31,12 +33,16 @@ ERROR_STATUS_CODES = [
 
 URLS_V1 = [
     ('/logout', LogoutResource),
-    ('/set_main_currency', SetMainCurrencyResource),
     ('/settings', SettingsResource),
+    ('/task_result', TaskResultResource),
 ]
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+def _wrap_in_ok_result(result: Any) -> Dict[str, Any]:
+    return {'result': result, 'message': ''}
 
 
 def restapi_setup_urls(flask_api_context, rest_api, urls):
@@ -178,19 +184,18 @@ class RestAPI(object):
         with self.task_lock:
             self.task_results = {}
         self.rotkehlchen.logout()
-        return api_response(result={}, status_code=HTTPStatus.NO_CONTENT)
-
-    def set_main_currency(self, currency_text: str) -> response_class:
-        self.rotkehlchen.set_main_currency(currency_text)
-        return api_response(result={}, status_code=HTTPStatus.NO_CONTENT)
+        return api_response(result=OK_RESULT, status_code=HTTPStatus.OK)
 
     def set_settings(self, settings: Dict[str, Any]) -> response_class:
-        result, message = self.rotkehlchen.set_settings(settings)
-        result_dict = {'result': result, 'message': message}
-        return api_response(result=result_dict, status_code=HTTPStatus.OK)
+        _, message = self.rotkehlchen.set_settings(settings)
+        new_settings = process_result(self.rotkehlchen.data.db.get_settings())
+        result_dict = {'result': new_settings, 'message': message}
+        status_code = HTTPStatus.OK if message == '' else HTTPStatus.CONFLICT
+        return api_response(result=result_dict, status_code=status_code)
 
     def get_settings(self) -> response_class:
-        result_dict = process_result(self.rotkehlchen.data.db.get_settings())
+        result_dict = _wrap_in_ok_result(process_result(self.rotkehlchen.data.db.get_settings()))
+        return api_response(result=result_dict, status_code=HTTPStatus.OK)
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
 
