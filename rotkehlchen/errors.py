@@ -1,20 +1,24 @@
 #!/usr/bin/env python
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
 
 
 class PoloniexError(Exception):
-    def __init__(self, err):
+    def __init__(self, err: str) -> None:
         self.err = err
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.err
 
 
 class RecoverableRequestError(Exception):
-    def __init__(self, exchange, err):
+    def __init__(self, exchange: str, err: str) -> None:
         self.exchange = exchange
         self.err = err
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'While querying {} got error: "{}"'.format(self.exchange, self.err)
 
 
@@ -48,26 +52,25 @@ class RemoteError(Exception):
 
 
 class PriceQueryUnknownFromAsset(Exception):
-    def __init__(self, from_asset):
+    def __init__(self, from_asset: 'Asset') -> None:
         super().__init__(
-            'Unable to query historical price for Unknown Asset: "{}"'.format(from_asset),
-        )
+            f'Unable to query historical price for unknown asset: "{from_asset.identifier}"')
 
 
 class UnprocessableTradePair(Exception):
-    def __init__(self, pair: str):
+    def __init__(self, pair: str) -> None:
         self.pair = pair
         super().__init__(f'Unprocessable pair {pair} encountered.')
 
 
 class UnknownAsset(Exception):
-    def __init__(self, asset_name: str):
+    def __init__(self, asset_name: str) -> None:
         self.asset_name = asset_name
         super().__init__(f'Unknown asset {asset_name} provided.')
 
 
 class UnsupportedAsset(Exception):
-    def __init__(self, asset_name: str):
+    def __init__(self, asset_name: str) -> None:
         self.asset_name = asset_name
         super().__init__(f'Found asset {asset_name} which is not supported.')
 
@@ -82,9 +85,9 @@ class DeserializationError(Exception):
 
 
 class NoPriceForGivenTimestamp(Exception):
-    def __init__(self, from_asset, to_asset, timestamp):
+    def __init__(self, from_asset: 'Asset', to_asset: 'Asset', date: str) -> None:
         super(NoPriceForGivenTimestamp, self).__init__(
             'Unable to query a historical price for "{}" to "{}" at {}'.format(
-                from_asset, to_asset, timestamp,
+                from_asset.identifier, to_asset.identifier, date,
             ),
         )
