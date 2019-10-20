@@ -43,3 +43,12 @@ class FiatExchangeRatesResource(BaseResource):
 
     def get(self, currencies: List[str]) -> response_class:
         return self.rest_api.get_fiat_exchange_rates(currencies=currencies)
+
+
+class ExchangeResource(BaseResource):
+
+    def put(self, name: str, api_key: str, api_secret: str) -> response_class:
+        return self.rest_api.setup_exchange(name, api_key, api_secret)
+
+    def delete(self, name: str) -> response_class:
+        return self.rest_api.remove_exchange(name=name)

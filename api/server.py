@@ -12,6 +12,7 @@ from gevent.lock import Semaphore
 from gevent.pywsgi import WSGIServer
 
 from rotkehlchen.api.v1.resources import (
+    ExchangeResource,
     FiatExchangeRatesResource,
     LogoutResource,
     SettingsResource,
@@ -39,6 +40,7 @@ URLS_V1 = [
     ('/settings', SettingsResource),
     ('/task_outcome', TaskOutcomeResource),
     ('/fiat_exchange_rates', FiatExchangeRatesResource),
+    ('/exchange', ExchangeResource),
 ]
 
 logger = logging.getLogger(__name__)
@@ -47,6 +49,10 @@ log = RotkehlchenLogsAdapter(logger)
 
 def _wrap_in_ok_result(result: Any) -> Dict[str, Any]:
     return {'result': result, 'message': ''}
+
+
+def _wrap_in_result(result: Any, message: str) -> Dict[str, Any]:
+    return {'result': result, 'message': message}
 
 
 def restapi_setup_urls(flask_api_context, rest_api, urls):
@@ -228,11 +234,25 @@ class RestAPI(object):
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
     @staticmethod
-    def get_fiat_exchange_rates(currencies: List[str]):
+    def get_fiat_exchange_rates(currencies: List[str]) -> response_class:
         fiat_currencies = cast(List[FiatAsset], currencies)
         rates = Inquirer().get_fiat_usd_exchange_rates(fiat_currencies)
         res = process_result(rates)
-        return _wrap_in_ok_result(res)
+        return api_response(_wrap_in_ok_result(res), status_code=HTTPStatus.OK)
+
+    def setup_exchange(self, name: str, api_key: str, api_secret: str) -> response_class:
+        result, message = self.rotkehlchen.setup_exchange(name, api_key, api_secret)
+        status_code = HTTPStatus.OK
+        if result is None:
+            status_code = HTTPStatus.CONFLICT
+        return api_response(_wrap_in_result(result, message), status_code=status_code)
+
+    def remove_exchange(self, name: str, api_key: str, api_secret: str) -> response_class:
+        result, message = self.rotkehlchen.remove_exchange(name)
+        status_code = HTTPStatus.OK
+        if result is None:
+            status_code = HTTPStatus.CONFLICT
+        return api_response(_wrap_in_result(result, message), status_code=status_code)
 
 
 class APIServer(object):
