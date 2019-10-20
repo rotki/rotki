@@ -14,7 +14,7 @@ from gevent.pywsgi import WSGIServer
 from rotkehlchen.api.v1.resources import (
     LogoutResource,
     SettingsResource,
-    TaskResultResource,
+    TaskOutcomeResource,
     create_blueprint,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -34,7 +34,7 @@ ERROR_STATUS_CODES = [
 URLS_V1 = [
     ('/logout', LogoutResource),
     ('/settings', SettingsResource),
-    ('/task_result', TaskResultResource),
+    ('/task_outcome', TaskOutcomeResource),
 ]
 
 logger = logging.getLogger(__name__)
@@ -196,6 +196,31 @@ class RestAPI(object):
     def get_settings(self) -> response_class:
         result_dict = _wrap_in_ok_result(process_result(self.rotkehlchen.data.db.get_settings()))
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
+
+    def query_task_outcome(self, task_id: int) -> response_class:
+        with self.task_lock:
+            for greenlet in self.killable_greenlets:
+                if greenlet.task_id == task_id:
+                    # The task is pending
+                    result_dict = {
+                        'result': {'status': 'pending', 'outcome': None},
+                        'message': f'The task with id {task_id} is still pending',
+                    }
+                    return api_response(result=result_dict, status_code=HTTPStatus.OK)
+            ret = self.task_results.pop(int(task_id), None)
+
+        if ret is None:
+            # The task has not been found
+            result_dict = {
+                'result': {'status': 'not-found', 'outcome': None},
+                'message': f'No task with id {task_id} found',
+            }
+            return api_response(result=result_dict, status_code=HTTPStatus.NOT_FOUND)
+        # Task has completed and we just got the outcome
+        result_dict = {
+            'result': {'status': 'completed', 'outcome': process_result(ret)},
+            'message': '',
+        }
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
 
