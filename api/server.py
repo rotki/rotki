@@ -2,7 +2,7 @@ import json
 import logging
 import traceback
 from http import HTTPStatus
-from typing import Any, Dict
+from typing import Any, Dict, List, cast
 
 import gevent
 from flask import Flask, make_response, request, response_class, send_from_directory, url_for
@@ -12,13 +12,16 @@ from gevent.lock import Semaphore
 from gevent.pywsgi import WSGIServer
 
 from rotkehlchen.api.v1.resources import (
+    FiatExchangeRatesResource,
     LogoutResource,
     SettingsResource,
     TaskOutcomeResource,
     create_blueprint,
 )
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serializer import process_result, process_result_list
+from rotkehlchen.typing import FiatAsset
 
 OK_RESULT = {'result': True, 'message': ''}
 
@@ -35,6 +38,7 @@ URLS_V1 = [
     ('/logout', LogoutResource),
     ('/settings', SettingsResource),
     ('/task_outcome', TaskOutcomeResource),
+    ('/fiat_exchange_rates', FiatExchangeRatesResource),
 ]
 
 logger = logging.getLogger(__name__)
@@ -222,6 +226,13 @@ class RestAPI(object):
             'message': '',
         }
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
+
+    @staticmethod
+    def get_fiat_exchange_rates(currencies: List[str]):
+        fiat_currencies = cast(List[FiatAsset], currencies)
+        rates = Inquirer().get_fiat_usd_exchange_rates(fiat_currencies)
+        res = process_result(rates)
+        return _wrap_in_ok_result(res)
 
 
 class APIServer(object):
