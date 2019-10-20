@@ -6,16 +6,18 @@ monkey.patch_all()
 logger = logging.getLogger(__name__)
 
 
-def main():
+def main() -> None:
     import traceback
     import sys
     from rotkehlchen.server import RotkehlchenServer
     try:
         rotkehlchen_server = RotkehlchenServer()
     except SystemExit as e:
-        if e.code is None or e.code == 0 or e.code == 2:
+        # Mypy here thinks e.code is always None which is not correct according to the docs:
+        # https://docs.python.org/3/library/exceptions.html#SystemExit
+        if e.code is None or e.code == 0 or e.code == 2:  # type: ignore
             # exit_code 2 is for invalid arguments
-            exit_code = 0 if e.code is None else e.code
+            exit_code = 0 if e.code is None else e.code  # type: ignore
             sys.exit(exit_code)
         else:
             tb = traceback.format_exc()
