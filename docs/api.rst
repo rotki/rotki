@@ -292,3 +292,70 @@ Query the current fiat currencies exchange rate
    :statuscode 200: The exchange rates have been sucesfully returned
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 500: Internal Rotki error
+
+Setup or remove an exchange
+============================
+
+.. http:put:: /api/(version)/exchange
+
+   Doing a PUT on this endpoint with an exchange's name, api key and secret will setup the exchange for the current user.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/logout HTTP/1.1
+      Host: localhost:5042
+
+      {"name": "kraken", "api_key": "ddddd", "api_secret": "ffffff"}
+
+   :reqjson string name: The name of the exchange to setup
+   :reqjson string api_key: The api key with which to setup the exchange
+   :reqjson string api_secret: The api secret with which to setup the exchange
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true
+	  "message": ""
+      }
+
+   :statuscode 200: The exchange has been sucesfully setup
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: The exchange has already been registered or some other error
+   :statuscode 500: Internal Rotki error
+
+.. http:delete:: /api/(version)/exchange
+
+   Doing a DELETE on this endpoint for a particular exchange name will delete the exchange from the database for the current user.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/logout HTTP/1.1
+      Host: localhost:5042
+
+      {"name": "kraken"}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true
+	  "message": ""
+      }
+
+   :statuscode 200: The exchange has been sucesfully delete
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: The exchange is not registered or some other error
+   :statuscode 500: Internal Rotki error
