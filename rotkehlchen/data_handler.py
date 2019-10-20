@@ -266,15 +266,6 @@ class DataHandler():
     ) -> None:
         self.db.set_rotkehlchen_premium(api_key, api_secret)
 
-    def set_main_currency(
-            self,
-            currency: FiatAsset,
-            accountant: 'Accountant',
-    ) -> None:
-        log.info('Set main currency', currency=currency)
-        accountant.set_main_currency(currency)
-        self.db.set_main_currency(currency)
-
     def set_settings(
             self,
             settings_dict: Dict[str, Any],

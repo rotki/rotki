@@ -413,15 +413,6 @@ class DBHandler:
         result = query[0][0]
         return Asset(result)
 
-    def set_main_currency(self, currency: FiatAsset) -> None:
-        cursor = self.conn.cursor()
-        cursor.execute(
-            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-            ('main_currency', currency),
-        )
-        self.conn.commit()
-        self.update_last_write()
-
     def set_settings(self, settings_dict: Dict[str, Any]) -> None:
         cursor = self.conn.cursor()
         cursor.executemany(
