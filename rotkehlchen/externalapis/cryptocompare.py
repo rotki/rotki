@@ -391,9 +391,9 @@ class Cryptocompare():
 
         if price == 0:
             raise NoPriceForGivenTimestamp(
-                from_asset,
-                to_asset,
-                timestamp_to_date(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'),
+                from_asset=from_asset,
+                to_asset=to_asset,
+                date=timestamp_to_date(timestamp, formatstr='%d/%m/%Y, %H:%M:%S'),
             )
 
         log.debug(
