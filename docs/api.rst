@@ -180,3 +180,83 @@ Getting or modifying settings
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: Invalid input, e.g. not the correct type for a setting
    :statuscode 500: Internal Rotki error
+
+Query the result of an ongoing backend task
+===========================================
+
+.. http:get:: /api/(version)/task_result
+
+   By querying this endpoint with a particular task identifier you can get the result of the task if it has finished and the result has not yet been queried. If the result is still in progress or if the result is not found appropriate responses are returned.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/logout HTTP/1.1
+      Host: localhost:5042
+
+      {"task_id": 42}
+
+   **Example Completed Response**:
+
+   The following is an example response of an async query to exchange balances.
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "status": "completed",
+	      "outcome": {
+	          "per_account": {"BTC": {
+	              "1Ec9S8KSw4UXXhqkoG3ZD31yjtModULKGg": {
+	          	      "amount": "10",
+	          	      "usd_value": "70500.15"
+	          	  }
+	          }},
+	          "totals": {"BTC": {"amount": "10", "usd_value": "70500.15"}}
+	      }
+	  },
+	  "message": ""
+      }
+
+   **Example Pending Response**:
+
+   The following is an example response of an async query that is still in progress.
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "status": "pending",
+	      "outcome": null
+	  },
+	  "message": ""
+      }
+
+   **Example Not Found Response**:
+
+   The following is an example response of an async query that is still in progress.
+
+   .. sourcecode:: http
+
+      HTTP/1.1 404 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "status": "not found",
+	      "outcome": null
+	  },
+	  "message": "No task with the task id 42 found"
+      }
+
+   :statuscode 200: The task's outcome is succesfully returned or pending
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 404: There is no task with the given task id
+   :statuscode 500: Internal Rotki error

@@ -32,3 +32,9 @@ class SettingsResource(BaseResource):
 
     def get(self) -> response_class:
         return self.rest_api.get_settings()
+
+
+class TaskOutcomeResource(BaseResource):
+
+    def get(self, task_id: int) -> response_class:
+        return self.rest_api.query_task_outcome(task_id=task_id)
