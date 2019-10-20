@@ -260,3 +260,35 @@ Query the result of an ongoing backend task
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 404: There is no task with the given task id
    :statuscode 500: Internal Rotki error
+
+Query the current fiat currencies exchange rate
+===============================================
+
+.. http:get:: /api/(version)/fiat_exchange_rates
+
+   Querying this endpoint with a list of strings representing FIAT currencies will return a dictionary of their current exchange rates compared to USD.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/logout HTTP/1.1
+      Host: localhost:5042
+
+      ["EUR", "CNY", "GBP"]
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {"EUR": "0.8973438622", "CNY": "7.0837221823", "GBP": "0.7756191673"},
+	  "message": ""
+      }
+
+   :statuscode 200: The exchange rates have been sucesfully returned
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 500: Internal Rotki error

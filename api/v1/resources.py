@@ -1,8 +1,7 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from flask import Blueprint, response_class
 from flask_restful import Resource
-from webargs.flaskparser import use_kwargs
 
 from rotkehlchen.api.v1.encoding import x
 
@@ -38,3 +37,9 @@ class TaskOutcomeResource(BaseResource):
 
     def get(self, task_id: int) -> response_class:
         return self.rest_api.query_task_outcome(task_id=task_id)
+
+
+class FiatExchangeRatesResource(BaseResource):
+
+    def get(self, currencies: List[str]) -> response_class:
+        return self.rest_api.get_fiat_exchange_rates(currencies=currencies)
