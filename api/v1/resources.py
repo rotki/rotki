@@ -25,11 +25,6 @@ class LogoutResource(BaseResource):
         return self.rest_api.logout()
 
 
-class SetMainCurrencyResource(BaseResource):
-    def put(self, currency: str) -> response_class:
-        return self.rest_api.set_main_currency(currency)
-
-
 class SettingsResource(BaseResource):
 
     def put(self, settings: Dict[str, Any]) -> response_class:

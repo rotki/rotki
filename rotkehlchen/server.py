@@ -108,10 +108,6 @@ class RotkehlchenServer():
             self.task_results = {}
         self.rotkehlchen.logout()
 
-    def set_main_currency(self, currency_text):
-        result, message = self.rotkehlchen.set_main_currency(currency_text)
-        return {'result': result, 'message': message}
-
     def set_settings(self, settings: Dict[str, Any]):
         result, message = self.rotkehlchen.set_settings(settings)
         return {'result': result, 'message': message}

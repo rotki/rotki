@@ -446,29 +446,6 @@ class Rotkehlchen():
 
         return result_dict
 
-    def set_main_currency(self, currency_string: str) -> Tuple[bool, str]:
-        """Takes a currency string from the API and sets it as the main currency for rotki
-
-        Returns True and empty string for success and False and error string for error
-        """
-        try:
-            currency = Asset(currency_string)
-        except UnknownAsset:
-            msg = f'An unknown asset {currency_string} was given for main currency'
-            log.critical(msg)
-            return False, msg
-
-        if not currency.is_fiat():
-            msg = f'A non-fiat asset {currency_string} was given for main currency'
-            log.critical(msg)
-            return False, msg
-
-        fiat_currency = FiatAsset(currency.identifier)
-        with self.lock:
-            self.data.set_main_currency(fiat_currency, self.accountant)
-
-        return True, ''
-
     def set_settings(self, settings: Dict[str, Any]) -> Tuple[bool, str]:
         log.info('Add new settings')
 

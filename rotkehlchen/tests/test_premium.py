@@ -21,7 +21,7 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
     assert last_ts == 0
 
     # Write anything in the DB to set a non-zero last_write_ts
-    rotkehlchen_instance.data.db.set_main_currency('EUR')
+    rotkehlchen_instance.set_settings({'main_currency': 'EUR'})
     last_write_ts = rotkehlchen_instance.data.db.get_last_write_ts()
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
     remote_hash = 'a' + our_hash[1:]
@@ -83,7 +83,7 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance, db_password):
     assert last_ts == 0
 
     # Write anything in the DB to set a non-zero last_write_ts
-    rotkehlchen_instance.data.db.set_main_currency('EUR')
+    rotkehlchen_instance.set_settings({'main_currency': 'EUR'})
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
     remote_hash = our_hash
 
@@ -114,7 +114,7 @@ def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_password):
     assert last_ts == 0
 
     # Write anything in the DB to set a non-zero last_write_ts
-    rotkehlchen_instance.data.db.set_main_currency('EUR')
+    rotkehlchen_instance.set_settings({'main_currency': 'EUR'})
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
     remote_hash = 'a' + our_hash[1:]
 
