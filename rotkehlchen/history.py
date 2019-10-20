@@ -72,7 +72,7 @@ class PriceHistorian():
             data_directory: FilePath = None,
             history_date_start: str = None,
             cryptocompare: 'Cryptocompare' = None,
-    ):
+    ) -> 'PriceHistorian':
         if PriceHistorian.__instance is not None:
             return PriceHistorian.__instance
         assert data_directory, 'arguments should be given at the first instantiation'

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import argparse
 import sys
+from typing import Any, List, Sequence, Union
 
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.utils.misc import get_system_spec
@@ -8,10 +9,21 @@ from rotkehlchen.utils.misc import get_system_spec
 
 class CommandAction(argparse.Action):
     """Interprets the positional argument as a command if that command exists"""
-    def __init__(self, option_strings, dest, **kwargs):  # pylint: disable=unused-argument
+    def __init__(
+            self,
+            option_strings: List[str],
+            dest,
+            **kwargs,  # pylint: disable=unused-argument
+    ) -> None:
         super().__init__(option_strings, dest)
 
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(
+            self,
+            parser: argparse.ArgumentParser,
+            namespace: argparse.Namespace,
+            values: Union[str, Sequence[Any], None],
+            option_string=None,
+    ) -> None:
         # Only command we have at the moment is version
         if values != 'version':
             parser.print_usage()
