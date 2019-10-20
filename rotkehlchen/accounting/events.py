@@ -4,6 +4,7 @@ from typing import Dict, Optional, Tuple
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETC, A_ETH
+from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnknownFromAsset
 from rotkehlchen.exchanges.data_structures import BuyEvent, Events, MarginPosition, SellEvent
 from rotkehlchen.fval import FVal
@@ -18,7 +19,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 class TaxableEvents():
 
-    def __init__(self, csv_exporter, profit_currency: Asset):
+    def __init__(self, csv_exporter: CSVExporter, profit_currency: Asset) -> None:
         self.events: Dict[Asset, Events] = dict()
         self.csv_exporter = csv_exporter
         self.profit_currency = profit_currency

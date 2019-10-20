@@ -1,7 +1,7 @@
 import csv
 import logging
 import os
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import (
@@ -185,8 +185,8 @@ class CSVExporter():
             total_fee_in_profit_currency: Fee,
             gain_in_profit_currency: FVal,
             selling_amount: FVal,
-            receiving_asset: Asset,
-            receiving_amount: FVal,
+            receiving_asset: Optional[Asset],
+            receiving_amount: Optional[FVal],
             receiving_asset_rate_in_profit_currency: FVal,
             taxable_amount: FVal,
             taxable_bought_cost: FVal,
@@ -196,6 +196,10 @@ class CSVExporter():
         if not self.create_csv:
             return
 
+        processed_receiving_asset: Union[EmptyStr, Asset] = (
+            EmptyStr('') if receiving_asset is None else receiving_asset
+        )
+        processed_receiving_amount = FVal(0) if not receiving_amount else receiving_amount
         exchange_rate_key = f'exchanged_asset_{self.profit_currency}_exchange_rate'
         taxable_profit_received = taxable_gain_for_sell(
             taxable_amount=taxable_amount,
@@ -213,7 +217,7 @@ class CSVExporter():
             'gained_or_invested_{}'.format(self.profit_currency): gain_in_profit_currency,
             'amount': selling_amount,
             'taxable_amount': taxable_amount,
-            'exchanged_for': receiving_asset,
+            'exchanged_for': processed_receiving_asset,
             exchange_rate_key: receiving_asset_rate_in_profit_currency,
             'taxable_bought_cost_in_{}'.format(self.profit_currency): taxable_bought_cost,
             'taxable_gain_in_{}'.format(self.profit_currency): taxable_profit_received,
@@ -227,8 +231,8 @@ class CSVExporter():
             paid_in_profit_currency=paid_in_profit_currency,
             paid_asset=selling_asset,
             paid_in_asset=selling_amount,
-            received_asset=receiving_asset,
-            received_in_asset=receiving_amount,
+            received_asset=processed_receiving_asset,
+            received_in_asset=processed_receiving_amount,
             taxable_received_in_profit_currency=taxable_profit_received,
             timestamp=timestamp,
             is_virtual=is_virtual,

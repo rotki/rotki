@@ -70,7 +70,7 @@ class Accountant():
         self.events.include_crypto2crypto = include_crypto2crypto
         self.events.taxfree_after_period = taxfree_after_period
 
-    def __del__(self):
+    def __del__(self) -> None:
         del self.events
         del self.csvexporter
 
