@@ -42,6 +42,8 @@ extensions = [
     'releases',
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
+    'sphinxcontrib.httpdomain',
+    'sphinxcontrib.httpexample',
 ]
 
 
