@@ -1,9 +1,12 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from flask import Blueprint, response_class
 from flask_restful import Resource
+from webargs.flaskparser import use_kwargs
 
-from rotkehlchen.api.v1.encoding import x
+from rotkehlchen.api.v1.encoding import TradePatchSchema, TradeSchema, TradesQuerySchema
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.typing import AssetAmount, Fee, Location, Price, Timestamp, TradeType
 
 
 def create_blueprint():
@@ -52,3 +55,80 @@ class ExchangeResource(BaseResource):
 
     def delete(self, name: str) -> response_class:
         return self.rest_api.remove_exchange(name=name)
+
+
+class TradeResource(BaseResource):
+
+    get_schema = TradesQuerySchema()
+    put_schema = TradeSchema()
+    patch_schema = TradePatchSchema()
+
+    @use_kwargs(get_schema, locations=('json',))
+    def get(
+            self,
+            from_timestamp: Optional[Timestamp],
+            to_timestamp: Optional[Timestamp],
+            location: Optional[Location],
+    ) -> response_class:
+        return self.rest_api.get_trades(
+            from_ts=from_timestamp,
+            to_ts=to_timestamp,
+            location=location,
+        )
+
+    @use_kwargs(put_schema, locations=('json',))
+    def put(
+            self,
+            timestamp: Timestamp,
+            location: Location,
+            pair: str,
+            trade_type: TradeType,
+            amount: AssetAmount,
+            rate: Price,
+            fee: Fee,
+            fee_currency: Asset,
+            link: str,
+            notes: str,
+    ) -> response_class:
+        return self.rest_api.add_trade(
+            timestamp=timestamp,
+            location=location,
+            pair=pair,
+            trade_type=trade_type,
+            amount=amount,
+            rate=rate,
+            fee=fee,
+            fee_currency=fee_currency,
+            link=link,
+            notes=notes,
+        )
+
+    @use_kwargs(patch_schema, locations=('json',))
+    def patch(
+            self,
+            trade_id: str,
+            timestamp: Timestamp,
+            pair: str,
+            trade_type: TradeType,
+            amount: AssetAmount,
+            rate: Price,
+            fee: Fee,
+            fee_currency: Asset,
+            link: str,
+            notes: str,
+    ) -> response_class:
+        return self.rest_api.edit_trade(
+            trade_id=trade_id,
+            timestamp=timestamp,
+            pair=pair,
+            trade_type=trade_type,
+            amount=amount,
+            rate=rate,
+            fee=fee,
+            fee_currency=fee_currency,
+            link=link,
+            notes=notes,
+        )
+
+    def delete(self, trade_id: str) -> response_class:
+        return self.rest_api.delete_external_trade(trade_id=trade_id)

@@ -304,7 +304,7 @@ Setup or remove an exchange
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/logout HTTP/1.1
+      PUT /api/1/exchange HTTP/1.1
       Host: localhost:5042
 
       {"name": "kraken", "api_key": "ddddd", "api_secret": "ffffff"}
@@ -338,7 +338,7 @@ Setup or remove an exchange
 
    .. http:example:: curl wget httpie python-requests
 
-      DELETE /api/1/logout HTTP/1.1
+      DELETE /api/1/exchange HTTP/1.1
       Host: localhost:5042
 
       {"name": "kraken"}
@@ -359,3 +359,211 @@ Setup or remove an exchange
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: The exchange is not registered or some other error
    :statuscode 500: Internal Rotki error
+
+Dealing with external trades
+============================
+
+.. http:get:: /api/(version)/trades
+
+   Doing a GET on this endpoint will return all trades. They can be further
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/trades HTTP/1.1
+      Host: localhost:5042
+
+      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "location": "external"}
+
+   :reqjson int from_timestamp: The timestamp from which to query. Can be missing inwhich case we query from 0.
+   :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
+   :reqjson string location: Optionally filter trades by location. A valid location name has to be provided. If missing location filtering does not happen.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+	      "trade_id": "dsadfasdsad",
+	      "timestamp": 1491606401,
+	      "location": "external",
+	      "pair": "BTC_EUR",
+	      "trade_type": "buy",
+	      "amount": "0.5541",
+	      "rate": "8422.1",
+	      "fee": "0.55",
+	      "fee_currency": "USD",
+	      "link": "Optional unique trade identifier"
+	      "notes": "Optional notes"
+	  }]
+	  "message": ""
+      }
+
+   :statuscode 200: Trades are succesfully returned
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 500: Internal Rotki error
+
+.. http:put:: /api/(version)/trades
+
+   Doing a PUT on this endpoint adds a new trade to Rotki.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/trades HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "timestamp": 1491606401,
+          "location": "external",
+          "pair": "BTC_EUR",
+          "trade_type": "buy",
+          "amount": "0.5541",
+          "rate": "8422.1",
+          "fee": "0.55",
+          "fee_currency": "USD",
+          "link": "Optional unique trade identifier"
+          "notes": "Optional notes"
+      }
+
+   :reqjson int timestamp: The timestamp at which the trade occured
+   :reqjson string location: A valid location at which the trade happened
+   :reqjson string pair: The pair for the trade. e.g. ``"BTC_EUR"``
+   :reqjson string trade_type: The type of the trade. e.g. ``"buy"`` or ``"sell"``
+   :reqjson string amount: The amount that was bought or sold
+   :reqjson string rate: The rate at which 1 unit of ``base_asset`` was exchanges for 1 unit of ``quote_asset``
+   :reqjson string fee: The fee that was paid, if anything, for this trade
+   :reqjson string fee_currency: The currency in which ``fee`` is denominated in
+   :reqjson string link: Optional unique trade identifier or link to the trade. Can be an empty string
+   :reqjson string notes: Optional notes about the trade. Can be an empty string
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+	      "trade_id": "dsadfasdsad",
+	      "timestamp": 1491606401,
+	      "location": "external",
+	      "pair": "BTC_EUR",
+	      "trade_type": "buy",
+	      "amount": "0.5541",
+	      "rate": "8422.1",
+	      "fee": "0.55",
+	      "fee_currency": "USD",
+	      "link": "Optional unique trade identifier"
+	      "notes": "Optional notes"
+	  }]
+	  "message": ""
+      }
+
+   :statuscode 200: Trades was succesfully added.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 500: Internal Rotki error
+
+.. http:patch:: /api/(version)/trades
+
+   Doing a PATCH on this endpoint edits an existing trade in Rotki using the ``trade_identifier``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/trades HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "trade_id" : "dsadfasdsad",
+          "timestamp": 1491606401,
+          "location": "external",
+          "pair": "BTC_EUR",
+          "trade_type": "buy",
+          "amount": "1.5541",
+          "rate": "8422.1",
+          "fee": "0.55",
+          "fee_currency": "USD",
+          "link": "Optional unique trade identifier"
+          "notes": "Optional notes"
+      }
+
+   :reqjson string trade_id: The ``trade_id`` of the trade to edit
+   :reqjson int timestamp: The new timestamp
+   :reqjson string location: The new location
+   :reqjson string pair: The new pair
+   :reqjson string trade_type: The new trade type
+   :reqjson string rate: The new trade rate
+   :reqjson string fee: The new fee
+   :reqjson string fee_currency: The new fee currency
+   :reqjson string link: The new link attribute
+   :reqjson string notes: The new notes attribute
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "trade_id": "sdfhdjskfha",
+	      "timestamp": 1491606401,
+	      "location": "external",
+	      "pair": "BTC_EUR",
+	      "trade_type": "buy",
+	      "amount": "1.5541",
+	      "rate": "8422.1",
+	      "fee": "0.55",
+	      "fee_currency": "USD",
+	      "link": "Optional unique trade identifier"
+	      "notes": "Optional notes"
+	  }
+	  "message": ""
+      }
+
+   :statuscode 200: Trades was succesfully edited.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: The given trade identifier to edit does not exist.
+   :statuscode 500: Internal Rotki error.
+
+.. http:delete:: /api/(version)/trades
+
+   Doing a DELETE on this endpoint deletes an existing trade in Rotki using the ``trade_identifier``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/trades HTTP/1.1
+      Host: localhost:5042
+
+      { "trade_id" : "dsadfasdsad"}
+
+   :reqjson string trade_id: The ``trade_id`` of the trade to delete.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+	  "message": ""
+      }
+
+   :statuscode 200: Trades was succesfully deleted.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: The given trade identifier to delete does not exist.
+   :statuscode 500: Internal Rotki error.

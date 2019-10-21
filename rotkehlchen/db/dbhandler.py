@@ -1287,7 +1287,7 @@ class DBHandler:
 
         return trades
 
-    def delete_external_trade(self, trade_id: str) -> Tuple[bool, str]:
+    def delete_trade(self, trade_id: str) -> Tuple[bool, str]:
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM trades WHERE id=?', (trade_id,))
         if cursor.rowcount == 0:
