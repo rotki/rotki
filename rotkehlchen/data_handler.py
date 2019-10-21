@@ -6,27 +6,20 @@ import shutil
 import tempfile
 import time
 import zlib
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.crypto import decrypt, encrypt
-from rotkehlchen.datatyping import BalancesData, ExternalTrade
+from rotkehlchen.datatyping import BalancesData
 from rotkehlchen.db.dbhandler import DBHandler, DBSettings
 from rotkehlchen.db.settings import db_settings_from_dict
 from rotkehlchen.errors import AuthenticationError, DeserializationError, UnknownAsset
-from rotkehlchen.exchanges.data_structures import Trade, get_pair_position_asset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import FIAT_CURRENCIES
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_fee,
-    deserialize_price,
-    deserialize_trade_type,
-)
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -34,15 +27,12 @@ from rotkehlchen.typing import (
     B64EncodedString,
     BlockchainAddress,
     ChecksumEthAddress,
-    FiatAsset,
     FilePath,
-    Location,
     SupportedBlockchain,
     Timestamp,
-    TradePair,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import create_timestamp, is_number, timestamp_to_date, ts_now
+from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
@@ -51,99 +41,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 DEFAULT_START_DATE = "01/08/2015"
-
-otc_fields = [
-    'otc_timestamp',
-    'otc_pair',
-    'otc_type',
-    'otc_amount',
-    'otc_rate',
-    'otc_fee',
-    'otc_fee_currency',
-    'otc_link',
-    'otc_notes',
-]
-otc_optional_fields = ['otc_fee', 'otc_link', 'otc_notes']
-otc_numerical_fields = ['otc_amount', 'otc_rate', 'otc_fee']
-
-
-def verify_otctrade_data(
-        data: ExternalTrade,
-) -> Tuple[Optional[Trade], str]:
-    """
-    Takes in the trade data dictionary, validates it and returns a trade instance
-
-    If there is an error it returns an error message in the second part of the tuple
-    """
-    for field in otc_fields:
-        if field not in data:
-            return None, f'{field} was not provided'
-
-        if data[field] in ('', None) and field not in otc_optional_fields:
-            return None, f'{field} was empty'
-
-        if field in otc_numerical_fields and not is_number(data[field]):
-            return None, f'{field} should be a number'
-
-    # Satisfy mypy typing
-    assert isinstance(data['otc_pair'], str)
-    assert isinstance(data['otc_fee_currency'], str)
-    assert isinstance(data['otc_fee'], str)
-
-    pair = TradePair(data['otc_pair'])
-    try:
-        first = get_pair_position_asset(pair, 'first')
-        second = get_pair_position_asset(pair, 'second')
-        fee_currency = Asset(data['otc_fee_currency'])
-    except UnknownAsset as e:
-        return None, f'Provided asset {e.asset_name} is not known to Rotkehlchen'
-    # Not catching DeserializationError here since we have asserts for the data
-    # being strings right above
-
-    try:
-        trade_type = deserialize_trade_type(str(data['otc_type']))
-        amount = deserialize_asset_amount(data['otc_amount'])
-        rate = deserialize_price(data['otc_rate'])
-        fee = deserialize_fee(data['otc_fee'])
-    except DeserializationError as e:
-        return None, f'Deserialization Error: {str(e)}'
-    try:
-        assert isinstance(data['otc_timestamp'], str)
-        timestamp = create_timestamp(data['otc_timestamp'], formatstr='%d/%m/%Y %H:%M')
-    except ValueError as e:
-        return None, f'Could not process the given datetime: {e}'
-
-    log.debug(
-        'Creating OTC trade data',
-        sensitive_log=True,
-        pair=pair,
-        trade_type=trade_type,
-        amount=amount,
-        rate=rate,
-        fee=fee,
-        fee_currency=fee_currency,
-    )
-
-    if data['otc_fee_currency'] not in (first, second):
-        return None, 'Trade fee currency should be one of the two in the currency pair'
-
-    if data['otc_type'] not in ('buy', 'sell'):
-        return None, 'Trade type can only be buy or sell'
-
-    trade = Trade(
-        timestamp=timestamp,
-        location=Location.EXTERNAL,
-        pair=pair,
-        trade_type=trade_type,
-        amount=amount,
-        rate=rate,
-        fee=fee,
-        fee_currency=fee_currency,
-        link=str(data['otc_link']),
-        notes=str(data['otc_notes']),
-    )
-
-    return trade, ''
 
 
 class DataHandler():
@@ -338,41 +235,6 @@ class DataHandler():
 
     def get_fiat_balances(self) -> Dict[Asset, str]:
         return self.db.get_fiat_balances()
-
-    def get_external_trades(
-            self,
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-    ) -> List[Trade]:
-        return self.db.get_trades(from_ts=from_ts, to_ts=to_ts, location=Location.EXTERNAL)
-
-    def add_external_trade(
-            self,
-            data: ExternalTrade,
-    ) -> Tuple[bool, str]:
-        trade, message = verify_otctrade_data(data)
-        if not trade:
-            return False, message
-
-        self.db.add_trades([trade])
-
-        return True, ''
-
-    def edit_external_trade(self, data: ExternalTrade) -> Tuple[bool, str]:
-        trade, message = verify_otctrade_data(data)
-        if not trade:
-            return False, message
-
-        assert isinstance(data['otc_id'], str)
-        result, message = self.db.edit_trade(
-            old_trade_id=data['otc_id'],
-            trade=trade,
-        )
-
-        return result, message
-
-    def delete_external_trade(self, trade_id: str) -> Tuple[bool, str]:
-        return self.db.delete_external_trade(trade_id)
 
     def compress_and_encrypt_db(self, password: str) -> Tuple[B64EncodedBytes, str]:
         """Decrypt the DB, dump in temporary plaintextdb, compress it,

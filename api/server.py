@@ -2,27 +2,41 @@ import json
 import logging
 import traceback
 from http import HTTPStatus
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List, Optional, cast
 
 import gevent
-from flask import Flask, make_response, request, response_class, send_from_directory, url_for
+from flask import Flask, make_response, response_class
 from flask_restful import Api, abort
 from gevent.event import Event
 from gevent.lock import Semaphore
 from gevent.pywsgi import WSGIServer
+from webargs.flaskparser import parser
 
+from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.api.v1.resources import (
     ExchangeResource,
     FiatExchangeRatesResource,
     LogoutResource,
     SettingsResource,
     TaskOutcomeResource,
+    TradesResource,
     create_blueprint,
 )
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serializer import process_result, process_result_list
-from rotkehlchen.typing import FiatAsset
+from rotkehlchen.serializer import process_result
+from rotkehlchen.typing import (
+    AssetAmount,
+    Fee,
+    FiatAsset,
+    Location,
+    Price,
+    Timestamp,
+    TradePair,
+    TradeType,
+)
 
 OK_RESULT = {'result': True, 'message': ''}
 
@@ -41,6 +55,7 @@ URLS_V1 = [
     ('/task_outcome', TaskOutcomeResource),
     ('/fiat_exchange_rates', FiatExchangeRatesResource),
     ('/exchange', ExchangeResource),
+    ('/trades', TradesResource),
 ]
 
 logger = logging.getLogger(__name__)
@@ -53,6 +68,10 @@ def _wrap_in_ok_result(result: Any) -> Dict[str, Any]:
 
 def _wrap_in_result(result: Any, message: str) -> Dict[str, Any]:
     return {'result': result, 'message': message}
+
+
+def _wrap_in_fail_result(message: str) -> Dict[str, Any]:
+    return {'result': None, 'message': message}
 
 
 def restapi_setup_urls(flask_api_context, rest_api, urls):
@@ -103,6 +122,13 @@ def endpoint_not_found(e):
     return api_error('invalid endpoint', HTTPStatus.NOT_FOUND)
 
 
+@parser.error_handler
+def handle_request_parsing_error(err, _req, _schema, _err_status_code, _err_headers):
+    """ This handles request parsing errors generated for example by schema
+    field validation failing."""
+    abort(HTTPStatus.BAD_REQUEST, errors=err.messages)
+
+
 class RestAPI(object):
     """ The Object holding the logic that runs inside all the API calls"""
     def __init__(self, rotkehlchen):
@@ -117,6 +143,8 @@ class RestAPI(object):
         self.task_lock = Semaphore()
         self.task_id = 0
         self.task_results = {}
+
+        self.trade_schema = TradeSchema()
 
     # - Private functions not exposed to the API
     def _new_task_id(self):
@@ -253,6 +281,96 @@ class RestAPI(object):
         if result is None:
             status_code = HTTPStatus.CONFLICT
         return api_response(_wrap_in_result(result, message), status_code=status_code)
+
+    def get_trades(
+            self,
+            from_ts: Optional[Timestamp],
+            to_ts: Optional[Timestamp],
+            location: Optional[Location],
+    ) -> response_class:
+        trades = self.rotkehlchen.data.db.get_trades(
+            from_ts=from_ts,
+            to_ts=to_ts,
+            location=location,
+        )
+        result = [
+            self.trade_schema.dump(trade) for trade in trades
+        ]
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    def add_trade(
+            self,
+            timestamp: Timestamp,
+            location: Location,
+            pair: TradePair,
+            trade_type: TradeType,
+            amount: AssetAmount,
+            rate: Price,
+            fee: Fee,
+            fee_currency: Asset,
+            link: str,
+            notes: str,
+    ) -> response_class:
+        trade = Trade(
+            timestamp=timestamp,
+            location=location,
+            pair=pair,
+            trade_type=trade_type,
+            amount=amount,
+            rate=rate,
+            fee=fee,
+            fee_currency=fee_currency,
+            link=link,
+            notes=notes,
+        )
+        self.rotkehlchen.data.db.add_trades([trade])
+        # For the outside world we should also add the trade identifier
+        result_dict = self.trade_schema.dump(trade)
+        result_dict['trade_id'] = trade.identifier
+        result_dict = _wrap_in_ok_result(result_dict)
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    def edit_trade(
+            self,
+            trade_id: str,
+            timestamp: Timestamp,
+            pair: TradePair,
+            trade_type: TradeType,
+            amount: AssetAmount,
+            rate: Price,
+            fee: Fee,
+            fee_currency: Asset,
+            link: str,
+            notes: str,
+    ) -> response_class:
+        trade = Trade(
+            timestamp=timestamp,
+            location=Location.EXTERNAL,
+            pair=pair,
+            trade_type=trade_type,
+            amount=amount,
+            rate=rate,
+            fee=fee,
+            fee_currency=fee_currency,
+            link=link,
+            notes=notes,
+        )
+        result, msg = self.rotkehlchen.data.db.edit_trade(old_trade_id=trade_id, trade=trade)
+        if not result:
+            return api_response(_wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+
+        # For the outside world we should also add the trade identifier
+        result_dict = self.trade_schema.dump(trade)
+        result_dict['trade_id'] = trade.identifier
+        result_dict = _wrap_in_ok_result(result_dict)
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    def delete_trade(self, trade_id: str) -> response_class:
+        result, msg = self.rotkehlchen.data.db.delete_trade(trade_id)
+        if not result:
+            return api_response(_wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
 
 class APIServer(object):
