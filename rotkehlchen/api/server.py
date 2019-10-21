@@ -5,7 +5,7 @@ from http import HTTPStatus
 from typing import Any, Dict, List, Optional, cast
 
 import gevent
-from flask import Flask, make_response, response_class
+from flask import Flask, make_response
 from flask_restful import Api, abort
 from gevent.event import Event
 from gevent.lock import Semaphore
@@ -14,7 +14,7 @@ from webargs.flaskparser import parser
 
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.api.v1.resources import (
-    ExchangeResource,
+    ExchangesResource,
     FiatExchangeRatesResource,
     LogoutResource,
     SettingsResource,
@@ -54,7 +54,7 @@ URLS_V1 = [
     ('/settings', SettingsResource),
     ('/task_outcome', TaskOutcomeResource),
     ('/fiat_exchange_rates', FiatExchangeRatesResource),
-    ('/exchange', ExchangeResource),
+    ('/exchanges', ExchangesResource),
     ('/trades', TradesResource),
 ]
 
@@ -94,7 +94,7 @@ def restapi_setup_urls(flask_api_context, rest_api, urls):
 def api_response(
         result: Dict[str, Any],
         status_code: HTTPStatus = HTTPStatus.OK,
-) -> response_class:
+) -> Flask.response_class:
     if status_code == HTTPStatus.NO_CONTENT:
         assert not result, "Provided 204 response with non-zero length response"
         data = ""
@@ -108,7 +108,7 @@ def api_response(
     return response
 
 
-def api_error(error: str, status_code: HTTPStatus) -> response_class:
+def api_error(error: str, status_code: HTTPStatus) -> Flask.response_class:
     assert status_code in ERROR_STATUS_CODES, 'Programming error, unexpected error status code'
     response = make_response((
         json.dumps(dict(error=error)),
@@ -197,8 +197,7 @@ class RestAPI(object):
         return task_id
 
     # - Public functions not exposed via the rest api
-    def shutdown(self):
-        log.debug('Shutdown initiated')
+    def stop(self):
         self.rotkehlchen.shutdown()
         log.debug('Waiting for greenlets')
         gevent.wait(self.waited_greenlets)
@@ -211,7 +210,7 @@ class RestAPI(object):
 
     # - Public functions exposed via the rest api
 
-    def logout(self) -> response_class:
+    def logout(self) -> Flask.response_class:
         # Kill all queries apart from the main loop -- perhaps a bit heavy handed
         # but the other options would be:
         # 1. to wait for all of them. That could take a lot of time, for no reason.
@@ -224,18 +223,18 @@ class RestAPI(object):
         self.rotkehlchen.logout()
         return api_response(result=OK_RESULT, status_code=HTTPStatus.OK)
 
-    def set_settings(self, settings: Dict[str, Any]) -> response_class:
+    def set_settings(self, settings: Dict[str, Any]) -> Flask.response_class:
         _, message = self.rotkehlchen.set_settings(settings)
         new_settings = process_result(self.rotkehlchen.data.db.get_settings())
         result_dict = {'result': new_settings, 'message': message}
         status_code = HTTPStatus.OK if message == '' else HTTPStatus.CONFLICT
         return api_response(result=result_dict, status_code=status_code)
 
-    def get_settings(self) -> response_class:
+    def get_settings(self) -> Flask.response_class:
         result_dict = _wrap_in_ok_result(process_result(self.rotkehlchen.data.db.get_settings()))
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
-    def query_task_outcome(self, task_id: int) -> response_class:
+    def query_task_outcome(self, task_id: int) -> Flask.response_class:
         with self.task_lock:
             for greenlet in self.killable_greenlets:
                 if greenlet.task_id == task_id:
@@ -262,20 +261,20 @@ class RestAPI(object):
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
     @staticmethod
-    def get_fiat_exchange_rates(currencies: List[str]) -> response_class:
+    def get_fiat_exchange_rates(currencies: List[str]) -> Flask.response_class:
         fiat_currencies = cast(List[FiatAsset], currencies)
         rates = Inquirer().get_fiat_usd_exchange_rates(fiat_currencies)
         res = process_result(rates)
         return api_response(_wrap_in_ok_result(res), status_code=HTTPStatus.OK)
 
-    def setup_exchange(self, name: str, api_key: str, api_secret: str) -> response_class:
+    def setup_exchange(self, name: str, api_key: str, api_secret: str) -> Flask.response_class:
         result, message = self.rotkehlchen.setup_exchange(name, api_key, api_secret)
         status_code = HTTPStatus.OK
         if result is None:
             status_code = HTTPStatus.CONFLICT
         return api_response(_wrap_in_result(result, message), status_code=status_code)
 
-    def remove_exchange(self, name: str, api_key: str, api_secret: str) -> response_class:
+    def remove_exchange(self, name: str, api_key: str, api_secret: str) -> Flask.response_class:
         result, message = self.rotkehlchen.remove_exchange(name)
         status_code = HTTPStatus.OK
         if result is None:
@@ -287,7 +286,7 @@ class RestAPI(object):
             from_ts: Optional[Timestamp],
             to_ts: Optional[Timestamp],
             location: Optional[Location],
-    ) -> response_class:
+    ) -> Flask.response_class:
         trades = self.rotkehlchen.data.db.get_trades(
             from_ts=from_ts,
             to_ts=to_ts,
@@ -310,7 +309,7 @@ class RestAPI(object):
             fee_currency: Asset,
             link: str,
             notes: str,
-    ) -> response_class:
+    ) -> Flask.response_class:
         trade = Trade(
             timestamp=timestamp,
             location=location,
@@ -342,7 +341,7 @@ class RestAPI(object):
             fee_currency: Asset,
             link: str,
             notes: str,
-    ) -> response_class:
+    ) -> Flask.response_class:
         trade = Trade(
             timestamp=timestamp,
             location=Location.EXTERNAL,
@@ -365,7 +364,7 @@ class RestAPI(object):
         result_dict = _wrap_in_ok_result(result_dict)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    def delete_trade(self, trade_id: str) -> response_class:
+    def delete_trade(self, trade_id: str) -> Flask.response_class:
         result, msg = self.rotkehlchen.data.db.delete_trade(trade_id)
         if not result:
             return api_response(_wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
@@ -426,3 +425,5 @@ class APIServer(object):
         if getattr(self, 'wsgiserver', None):
             self.wsgiserver.stop(timeout)
             self.wsgiserver = None
+
+        self.rest_api.stop()

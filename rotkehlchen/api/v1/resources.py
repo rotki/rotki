@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from flask import Blueprint, response_class
+from flask import Blueprint, Flask
 from flask_restful import Resource
 from webargs.flaskparser import use_kwargs
 
@@ -23,41 +23,41 @@ class BaseResource(Resource):
 
 
 class LogoutResource(BaseResource):
-    def get(self) -> response_class:
+    def get(self) -> Flask.response_class:
         return self.rest_api.logout()
 
 
 class SettingsResource(BaseResource):
 
-    def put(self, settings: Dict[str, Any]) -> response_class:
+    def put(self, settings: Dict[str, Any]) -> Flask.response_class:
         return self.rest_api.set_settings(settings)
 
-    def get(self) -> response_class:
+    def get(self) -> Flask.response_class:
         return self.rest_api.get_settings()
 
 
 class TaskOutcomeResource(BaseResource):
 
-    def get(self, task_id: int) -> response_class:
+    def get(self, task_id: int) -> Flask.response_class:
         return self.rest_api.query_task_outcome(task_id=task_id)
 
 
 class FiatExchangeRatesResource(BaseResource):
 
-    def get(self, currencies: List[str]) -> response_class:
+    def get(self, currencies: List[str]) -> Flask.response_class:
         return self.rest_api.get_fiat_exchange_rates(currencies=currencies)
 
 
-class ExchangeResource(BaseResource):
+class ExchangesResource(BaseResource):
 
-    def put(self, name: str, api_key: str, api_secret: str) -> response_class:
+    def put(self, name: str, api_key: str, api_secret: str) -> Flask.response_class:
         return self.rest_api.setup_exchange(name, api_key, api_secret)
 
-    def delete(self, name: str) -> response_class:
+    def delete(self, name: str) -> Flask.response_class:
         return self.rest_api.remove_exchange(name=name)
 
 
-class TradeResource(BaseResource):
+class TradesResource(BaseResource):
 
     get_schema = TradesQuerySchema()
     put_schema = TradeSchema()
@@ -69,7 +69,7 @@ class TradeResource(BaseResource):
             from_timestamp: Optional[Timestamp],
             to_timestamp: Optional[Timestamp],
             location: Optional[Location],
-    ) -> response_class:
+    ) -> Flask.response_class:
         return self.rest_api.get_trades(
             from_ts=from_timestamp,
             to_ts=to_timestamp,
@@ -89,7 +89,7 @@ class TradeResource(BaseResource):
             fee_currency: Asset,
             link: str,
             notes: str,
-    ) -> response_class:
+    ) -> Flask.response_class:
         return self.rest_api.add_trade(
             timestamp=timestamp,
             location=location,
@@ -116,7 +116,7 @@ class TradeResource(BaseResource):
             fee_currency: Asset,
             link: str,
             notes: str,
-    ) -> response_class:
+    ) -> Flask.response_class:
         return self.rest_api.edit_trade(
             trade_id=trade_id,
             timestamp=timestamp,
@@ -130,5 +130,5 @@ class TradeResource(BaseResource):
             notes=notes,
         )
 
-    def delete(self, trade_id: str) -> response_class:
+    def delete(self, trade_id: str) -> Flask.response_class:
         return self.rest_api.delete_external_trade(trade_id=trade_id)
