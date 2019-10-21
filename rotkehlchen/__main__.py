@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 def main() -> None:
     import traceback
     import sys
-    from rotkehlchen.server import RotkehlchenServer
+    from rotkehlchen.new_server import RotkehlchenServer
     try:
         rotkehlchen_server = RotkehlchenServer()
     except SystemExit as e:

@@ -53,9 +53,14 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
         default=default_data_directory(),
     )
     p.add_argument(
-        '--zerorpc-port',
-        help='The port on which to open a zerorpc server for communication with the UI',
-        default=4242,
+        '--api-host',
+        help='The host on which the rest API will run',
+        default='127.0.0.1',
+    )
+    p.add_argument(
+        '--api-port',
+        help='The port on which the rest API will run',
+        default=5042,
     )
     p.add_argument(
         '--ethrpc-port',
