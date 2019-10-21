@@ -279,6 +279,8 @@ def test_writting_fetching_data(data_dir, username, accountant):
     assert result.ui_floating_precision == 3
 
 
+# TODO: This needs to be changed/moved and become an API test for
+# adding/editing/removing/querying external trades
 def test_writting_fetching_external_trades(data_dir, username):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
