@@ -4,7 +4,13 @@ from flask import Blueprint, Flask
 from flask_restful import Resource
 from webargs.flaskparser import use_kwargs
 
-from rotkehlchen.api.v1.encoding import TradePatchSchema, TradeSchema, TradesQuerySchema
+from rotkehlchen.api.v1.encoding import (
+    NewUserSchema,
+    TradePatchSchema,
+    TradeSchema,
+    TradesQuerySchema,
+    UserActionSchema,
+)
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.typing import AssetAmount, Fee, Location, Price, Timestamp, TradeType
 
@@ -20,11 +26,6 @@ class BaseResource(Resource):
     def __init__(self, rest_api_object, **kwargs):
         super().__init__(**kwargs)
         self.rest_api = rest_api_object
-
-
-class LogoutResource(BaseResource):
-    def get(self) -> Flask.response_class:
-        return self.rest_api.logout()
 
 
 class SettingsResource(BaseResource):
@@ -132,3 +133,49 @@ class TradesResource(BaseResource):
 
     def delete(self, trade_id: str) -> Flask.response_class:
         return self.rest_api.delete_external_trade(trade_id=trade_id)
+
+
+class UsersResource(BaseResource):
+
+    put_schema = NewUserSchema()
+
+    def get(self) -> Flask.response_class:
+        return self.rest_api.get_users()
+
+    @use_kwargs(put_schema, locations=('json',))
+    def put(
+            self,
+            name: str,
+            password: str,
+            sync_approval: str,
+            premium_api_key: str,
+            premium_api_secret: str,
+    ) -> Flask.response_class:
+        return self.rest_api.create_new_user(
+            name=name,
+            password=password,
+            sync_approval=sync_approval,
+            premium_api_key=premium_api_key,
+            premium_api_secret=premium_api_secret,
+        )
+
+
+class UsersByNameResource(BaseResource):
+    patch_schema = UserActionSchema()
+
+    @use_kwargs(patch_schema, locations=('json',))
+    def patch(
+            self,
+            action: str,
+            name: str,
+            password: str,
+            sync_approval: str,
+    ) -> Flask.response_class:
+        if action == 'login':
+            return self.rest_api.user_login(
+                name=name,
+                password=password,
+                sync_approval=sync_approval,
+            )
+        else:  # Can only be logout -- checked by marshmallow
+            return self.rest_api.user_logout(name=name)

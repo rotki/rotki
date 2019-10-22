@@ -6,6 +6,7 @@ import shutil
 import tempfile
 import time
 import zlib
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
 from eth_utils.address import to_checksum_address
@@ -203,6 +204,19 @@ class DataHandler():
         period = settings.balance_save_frequency * 60 * 60
         now = Timestamp(int(time.time()))
         return now - last_save > period
+
+    def get_users(self) -> Dict[str, str]:
+        """Returns a dict with all users in the system.
+
+        Each key is a user's name and the value is denoting whether that
+        particular user is logged in or not
+        """
+        users = dict()
+        data_dir = Path(self.data_directory)
+        for x in data_dir.iterdir():
+            if x.is_dir() and (x / 'rotkehlchen.db').exists():
+                users[x.stem] = 'loggedin' if x.stem == self.username else 'loggedout'
+        return users
 
     def get_eth_accounts(self) -> List[ChecksumEthAddress]:
         blockchain_accounts = self.db.get_blockchain_accounts()
