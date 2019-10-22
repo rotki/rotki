@@ -39,19 +39,184 @@ Endpoints
 
 In this section we will see the information about the individual endpoints of the API and detailed explanation of how each one can be used to interact with Rotki.
 
-Logging out of the current user account
-=======================================
+Handling user creation, sign-in, log-out and querying
+==================================================
 
-.. http:get:: /api/(version)/logout
+.. http:get:: /api/(version)/users
 
-   With this endpoint you can logout from your currently logged in account. All user related data will be saved in the database, memory cleared and encrypted database connection closed.
+   By doing a ``GET`` at this endpoint you can see all the currently existing users and see who if any is logged in.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/logout HTTP/1.1
+      GET /api/1/users HTTP/1.1
       Host: localhost:5042
+      {}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {"john": "loggedin", "maria": "loggedout"},
+	  "message": ""
+      }
+
+   :statuscode 200: Users query is succesful
+   :statuscode 500: Internal Rotki error
+
+.. http:put:: /api/(version)/users
+
+   By doing a ``PUT`` at this endpoint you can create a new user
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/users HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "name": "john",
+	  "password": "supersecurepassword",
+	  "sync_approval": "unknown"
+	  "premium_api_key": "dasdsda",
+	  "premium_api_secret": "adsadasd",
+      }
+
+      :reqjson string name: The name to give to the new user
+      :reqjson string password: The password with which to encrypt the database for the new user
+      :reqjson string sync_approval: A string denoting if the user approved an initial syncing of data from premium when premium keys are given. Valid values are ``"unknown"``, ``"yes"`` and ``"no"``.Should always be ``"unknown"`` at first and only if the user approves should creation with approval as ``"yes`` be sent. If he does not approve a creation with approval as ``"no"`` should be sent. If there is the possibility of data sync from the premium server and this is ``"unknown"`` the creation will fail with an appropriate error asking the consumer of the api to set it to ``"yes"`` or ``"no"``.
+      :reqjson string premium_api_key: An optional api key if the user has a Rotki premium account.
+      :reqjson string premium_api_secret: An optional api secret if the user has a Rotki premium account.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "exchanges": ["kraken", "poloniex", "binance"],
+	      "premium": True,
+	      "settings": {
+                  "version": "6",
+                  "last_write_ts": 1571552172,
+                  "premium_should_sync": true,
+                  "include_crypto2crypto": true,
+                  "anonymized_logs": true,
+                  "last_data_upload_ts": 1571552172,
+                  "ui_floating_precision": 2,
+                  "taxfree_after_period": 31536000,
+                  "balance_save_frequency": 24,
+                  "include_gas_costs": true,
+                  "historical_data_start": "01/08/2015",
+                  "eth_rpc_endpoint": "http://localhost:8545",
+                  "main_currency": "USD",
+                  "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
+                  "last_balance_save": 1571552172
+	      }
+	  },
+	  "message": ""
+      }
+
+   :statuscode 200: Adding the new user was succesful
+   :statuscode 300: Possibility of syncing exists and the creation was sent with sync_approval set to ``"unknown"``. Consumer of api must resend with ``"yes"`` or ``"no"``.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: User already exists
+   :statuscode 500: Internal Rotki error
+
+   For succesful requests, result contains the currently connected exchanges, whethere the user has premium activated and the user's settings.
+
+   For failed requests, the resulting dictionary object has ``"result": None, "message": "error"``  where ``"error"`` explains what went wrong.
+
+.. http:patch:: /api/(version)/users/(username)
+
+   By doing a ``PATCH`` at this endpoint with action ``'login'`` you can login to the user with ``username``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/users/john HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "action": "login"
+	  "password": "supersecurepassword",
+	  "sync_approval": "unknown",
+      }
+
+      :reqjson string action: The action to perform. Can only be one of ``"login"`` or ``"logout"`` and for the login case has to be ``"login"``
+      :reqjson string password: The password that unlocks the account
+      :reqjson bool sync_approval: A string denoting if the user approved an initial syncing of data from premium. Valid values are ``"unknown"``, ``"yes"`` and ``"no"``.Should always be ``"unknown"`` at first and only if the user approves should an login with approval as ``"yes`` be sent. If he does not approve a login with approval as ``"no"`` should be sent. If there is the possibility of data sync from the premium server and this is ``"unknown"`` the login will fail with an appropriate error asking the consumer of the api to set it to ``"yes"`` or ``"no"``.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "exchanges": ["kraken", "poloniex", "binance"],
+	      "premium": True,
+	      "settings": {
+                  "version": "6",
+                  "last_write_ts": 1571552172,
+                  "premium_should_sync": true,
+                  "include_crypto2crypto": true,
+                  "anonymized_logs": true,
+                  "last_data_upload_ts": 1571552172,
+                  "ui_floating_precision": 2,
+                  "taxfree_after_period": 31536000,
+                  "balance_save_frequency": 24,
+                  "include_gas_costs": true,
+                  "historical_data_start": "01/08/2015",
+                  "eth_rpc_endpoint": "http://localhost:8545",
+                  "main_currency": "USD",
+                  "date_display_format": "%d/%m/%Y %H:%M:%S %Z",
+                  "last_balance_save": 1571552172
+	      }
+	  },
+	  "message": ""
+      }
+
+   :statuscode 200: Logged in succesfully
+   :statuscode 300: Possibility of syncing exists and the login was sent with sync_approval set to ``"unknown"``. Consumer of api must resend with ``"yes"`` or ``"no"``.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: User does not exist, password is wrong or some other authentication error.
+   :statuscode 500: Internal Rotki error
+
+   The result is the same as creating a new user.
+
+   For succesful requests, result contains the currently connected exchanges, whethere the user has premium activated and the user's settings.
+
+   For failed requests, the resulting dictionary object has ``"result": None, "message": "error"``  where ``"error"`` explains what went wrong.
+
+.. http:patch:: /api/(version)/users/(username)
+
+   By doing a ``PATCH`` at this endpoint with action ``'logout'`` you can logout from your currently logged in account assuming that is ``username``. All user related data will be saved in the database, memory cleared and encrypted database connection closed.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/users/john HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "action": "logout"
+      }
+
+      :reqjson string action: The action to perform. Can only be one of ``"login"`` or ``"logout"`` and for the logout case has to be ``"logout"``
 
    **Example Response**:
 
@@ -65,6 +230,10 @@ Logging out of the current user account
 	  "message": ""
       }
 
+   :statuscode 200: Logged out succesfully
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: User is not logged in, or user does not exist
+   :statuscode 500: Internal Rotki error
 
 Getting or modifying settings
 ==============================

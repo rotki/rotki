@@ -473,39 +473,13 @@ class RotkehlchenServer():
             self,
             user: str,
             password: str,
-            create_new: Union[bool, str],
+            create_new: bool,
             sync_approval: str,
             api_key: str,
             api_secret: str,
     ) -> Dict[str, Any]:
         """Either unlock an existing user or create a new one"""
         res = {'result': True, 'message': ''}
-
-        assert isinstance(sync_approval, str), "sync_approval should be a string"
-        assert isinstance(api_key, str), "api_key should be a string"
-        assert isinstance(api_secret, str), "api_secret should be a string"
-
-        if not isinstance(create_new, bool):
-            if not isinstance(create_new, str):
-                raise ValueError('create_new can only be boolean or str')
-
-            if create_new in ('False', 'false', 'FALSE'):
-                create_new = False
-            elif create_new in ('True', 'true', 'TRUE'):
-                create_new = True
-            else:
-                raise ValueError(f'Invalid string value for create_new {create_new}')
-
-        valid_actions = ['unknown', 'yes', 'no']
-        if sync_approval not in valid_actions:
-            raise ValueError('Provided invalid value for sync_approval')
-
-        if api_key != '' and create_new is False:
-            raise ValueError('Should not ever have api_key provided during a normal login')
-
-        if api_key != '' and api_secret == '' or api_secret != '' and api_key == '':
-            raise ValueError('Must provide both or neither of api key/secret')
-
         try:
             self.rotkehlchen.unlock_user(
                 user,
