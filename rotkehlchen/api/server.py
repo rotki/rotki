@@ -16,13 +16,15 @@ from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.api.v1.resources import (
     ExchangesResource,
     FiatExchangeRatesResource,
-    LogoutResource,
     SettingsResource,
     TaskOutcomeResource,
     TradesResource,
+    UsersByNameResource,
+    UsersResource,
     create_blueprint,
 )
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.errors import AuthenticationError, RotkehlchenPermissionError
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -50,7 +52,8 @@ ERROR_STATUS_CODES = [
 ]
 
 URLS_V1 = [
-    ('/logout', LogoutResource),
+    ('/users', UsersResource),
+    ('/users/<string:name>', UsersByNameResource),
     ('/settings', SettingsResource),
     ('/task_outcome', TaskOutcomeResource),
     ('/fiat_exchange_rates', FiatExchangeRatesResource),
@@ -370,6 +373,95 @@ class RestAPI(object):
             return api_response(_wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
+
+    def get_users(self) -> Flask.response_class:
+        result = self.rotkehlchen.data.get_users()
+        result_dict = _wrap_in_ok_result(result)
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    def create_new_user(
+            self,
+            name: str,
+            password: str,
+            sync_approval: str,
+            premium_api_key: str,
+            premium_api_secret: str,
+    ) -> Flask.response_class:
+
+        result_dict = {'result': None, 'message': ''}
+        if (
+                premium_api_key != '' and premium_api_secret == '' or
+                premium_api_secret != '' and premium_api_key == ''
+        ):
+            result_dict['message'] = 'Must provide both or neither of api key/secret'
+            return api_response(result_dict, status_code=HTTPStatus.BAD_REQUEST)
+
+        try:
+            result_dict = self.rotkehlchen.unlock_user(
+                user=name,
+                password=password,
+                create_new=True,
+                sync_approval=sync_approval,
+                api_key=premium_api_key,
+                api_secret=premium_api_secret,
+            )
+        except AuthenticationError as e:
+            result_dict['message'] = str(e)
+            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+        except RotkehlchenPermissionError as e:
+            result_dict['message'] = str(e)
+            return api_response(result_dict, status_code=HTTPStatus.MULTIPLE_CHOICES)
+        # Success!
+        result_dict['result'] = {
+            'exchanges': self.rotkehlchen.exchange_manager.get_connected_exchange_names(),
+            'premium': self.rotkehlchen.premium is not None,
+            'settings': process_result(self.rotkehlchen.data.db.get_settings),
+        }
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    def user_login(
+            self,
+            name: str,
+            password: str,
+            sync_approval: str,
+    ) -> Flask.response_class:
+
+        result_dict = {'result': None, 'message': ''}
+        try:
+            result_dict = self.rotkehlchen.unlock_user(
+                user=name,
+                password=password,
+                create_new=False,
+                sync_approval=sync_approval,
+                api_key='',
+                api_secret='',
+            )
+        except AuthenticationError as e:
+            result_dict['message'] = str(e)
+            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+        except RotkehlchenPermissionError as e:
+            result_dict['message'] = str(e)
+            return api_response(result_dict, status_code=HTTPStatus.MULTIPLE_CHOICES)
+        # Success!
+        result_dict['result'] = {
+            'exchanges': self.rotkehlchen.exchange_manager.get_connected_exchange_names(),
+            'premium': self.rotkehlchen.premium is not None,
+            'settings': process_result(self.rotkehlchen.data.db.get_settings),
+        }
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    def user_logout(self, name: str) -> Flask.response_class:
+        result_dict = {'result': None, 'message': ''}
+        if not self.user_is_logged_in:
+            result_dict['message'] = 'No user is currently logged in'
+            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+
+        if name != self.data.username:
+            result_dict['message'] = f'Provided user {name} is not the logged in user'
+            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+
+        result_dict['result'] = True
+        return api_response(result_dict, status_code=HTTPStatus.OK)
 
 
 class APIServer(object):

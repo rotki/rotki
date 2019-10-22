@@ -194,3 +194,29 @@ class TradeSchema(BaseSchema):
 
 class TradePatchSchema(TradeSchema):
     trade_id = fields.String(required=True)
+
+
+class BaseUserSchema(BaseSchema):
+    name = fields.String(required=True)
+    password = fields.String(required=True)
+    sync_approval = fields.String(
+        missing='unknown',
+        validate=validate.OneOf(choices=('unknown', 'yes', 'no')),
+    )
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
+class UserActionSchema(BaseUserSchema):
+    action = fields.String(
+        required=True,
+        validate=validate.OneOf(choices=('login', 'logout')),
+    )
+
+
+class NewUserSchema(BaseUserSchema):
+    premium_api_key = fields.String(missing='')
+    premium_api_secret = fields.String(missing='')
