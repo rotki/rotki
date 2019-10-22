@@ -2,7 +2,7 @@
 
 <img src="https://raw.githubusercontent.com/rotkehlchenio/rotkehlchen/master/ui/images/rotkehlchen_no_text.png" width="250">
 
-Rotki (long form: Rotkehlchen) is an asset management and accounting application specializing in Crypto assets and aims to also help with tax reporting. It has integration for multiple exchanges with more coming soon.
+Rotki (long form: Rotkehlchen) is an open source asset analytics, tracking and management application. The mission of Rotki is to bring transparency into the crypto and financial sectors through the use of open source. Most importantly unlike virtually every other competing service which consists of closed source SaaS onto which you are forced to hand over all your financial data, with Rotki your data is stored encrypted locally in your computer. It enables you to take ownership of your financial data!
 
 ## Documentation
 
@@ -48,3 +48,7 @@ For people who don't want to purchase a subscription but would still like to sup
 
  - Send **BTC donations** to: 1PfvkW8MC7Ns2y8zn6CE2P2t5f19KF8XiW
  - Send **ETH donations** to: 0x9531c059098e3d194ff87febb587ab07b30b1306
+
+#### Gitcoin Grant
+
+You can also supports us via a [Gitcoin grant](https://gitcoin.co/grants/149/rotki) and receive kudos and other NFTs in the Gitcoin platform.
