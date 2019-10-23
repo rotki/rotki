@@ -81,7 +81,13 @@ class AssetField(fields.Field):
     def _serialize(value: Asset, attr, obj, **kwargs) -> str:  # pylint: disable=unused-argument
         return str(value.identifier)
 
-    def _deserialize(self, value, attr, data, **kwargs) -> Asset:  # pylint: disable=unused-argument
+    def _deserialize(  # pylint: disable=unused-argument
+            self,
+            value: str,
+            attr,
+            data,
+            **kwargs,
+    ) -> Asset:
         try:
             asset = Asset(value)
         except (DeserializationError, UnknownAsset) as e:
@@ -214,7 +220,10 @@ class UserActionSchema(BaseUserSchema):
     action = fields.String(
         required=True,
         validate=validate.OneOf(choices=('login', 'logout')),
+        missing=None,
     )
+    premium_api_key = fields.String(missing='')
+    premium_api_secret = fields.String(missing='')
 
 
 class NewUserSchema(BaseUserSchema):

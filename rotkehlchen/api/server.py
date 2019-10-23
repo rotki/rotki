@@ -24,7 +24,11 @@ from rotkehlchen.api.v1.resources import (
     create_blueprint,
 )
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.errors import AuthenticationError, RotkehlchenPermissionError
+from rotkehlchen.errors import (
+    AuthenticationError,
+    IncorrectApiKeyFormat,
+    RotkehlchenPermissionError,
+)
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -459,6 +463,30 @@ class RestAPI(object):
         if name != self.data.username:
             result_dict['message'] = f'Provided user {name} is not the logged in user'
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+
+        result_dict['result'] = True
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    def user_set_premium_credentials(
+            self,
+            name: str,
+            api_key: str,
+            api_secret: str,
+    ) -> Flask.response_class:
+        result_dict = {'result': None, 'message': ''}
+        if not self.user_is_logged_in:
+            result_dict['message'] = 'No user is currently logged in'
+            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+
+        if name != self.data.username:
+            result_dict['message'] = f'Provided user {name} is not the logged in user'
+            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+
+        try:
+            self.rotkehlchen.set_premium_credentials(api_key, api_secret)
+        except (AuthenticationError, IncorrectApiKeyFormat) as e:
+            result_dict['message'] = str(e)
+            return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
 
         result_dict['result'] = True
         return api_response(result_dict, status_code=HTTPStatus.OK)
