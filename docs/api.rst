@@ -235,6 +235,43 @@ Handling user creation, sign-in, log-out and querying
    :statuscode 409: User is not logged in, or user does not exist
    :statuscode 500: Internal Rotki error
 
+.. http:patch:: /api/(version)/users/(username)
+
+   By doing a ``PATCH`` at this endpoint without any action but by providing api_key and api_secret you can set the premium api key and secret pair for the user.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/users/john HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "premium_api_key": "dadsfasdsd",
+          "premium_api_secret": "fdfdsgsdmf"
+      }
+
+      :reqjson string premium_api_key: The new api key to set for Rotki premium
+      :reqjson string premium_api_secret: The new api secret to set for Rotki premium
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+	  "message": ""
+      }
+
+   :statuscode 200: API key/secret set succesfully
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 401: Provided API key/secret does not authenticate or is invalid.
+   :statuscode 409: User is not logged in, or user does not exist
+   :statuscode 500: Internal Rotki error
+
 Getting or modifying settings
 ==============================
 
