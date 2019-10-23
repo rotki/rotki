@@ -166,11 +166,20 @@ class UsersByNameResource(BaseResource):
     @use_kwargs(patch_schema, locations=('json',))
     def patch(
             self,
-            action: str,
+            action: Optional[str],
             name: str,
             password: str,
             sync_approval: str,
+            premium_api_key: str,
+            premium_api_secret: str,
     ) -> Flask.response_class:
+        if action is None:
+            return self.rest_api.user_set_premium_credentials(
+                name=name,
+                api_key=premium_api_key,
+                api_secret=premium_api_secret,
+            )
+
         if action == 'login':
             return self.rest_api.user_login(
                 name=name,
