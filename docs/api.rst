@@ -34,6 +34,18 @@ In the case of a succesful response the ``"result"`` attribute is populated and 
 
 In the case of a failed response the ``"result"`` attribute is going to be ``null`` and the ``"message"`` attribute will optionally contain information about the error.
 
+Async Queries
+==============
+
+Some endpoint queries can accept the argument ``"async_query": true``. When that is done the query is no longer synchronous but will instead immediately return a task id in the following format::
+
+  {
+      "result": {"task_id": 10},
+      "message": ""
+  }
+
+The consumer of the API can later query the `ongoing backend task endpoint <#query-the-result-of-an-ongoing-backend-task>`_ with that id and obtain the outcome of the task when it's ready.
+
 Endpoints
 ***********
 
@@ -405,7 +417,7 @@ Query the result of an ongoing backend task
 
    **Example Completed Response**:
 
-   The following is an example response of an async query to exchange balances.
+   The following is an example response of an async query to blockchain balances.
 
    .. sourcecode:: http
 
@@ -502,7 +514,7 @@ Query the current fiat currencies exchange rate
 Setup or remove an exchange
 ============================
 
-.. http:put:: /api/(version)/exchange
+.. http:put:: /api/(version)/exchanges
 
    Doing a PUT on this endpoint with an exchange's name, api key and secret will setup the exchange for the current user.
 
@@ -510,7 +522,7 @@ Setup or remove an exchange
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/exchange HTTP/1.1
+      PUT /api/1/exchanges HTTP/1.1
       Host: localhost:5042
 
       {"name": "kraken", "api_key": "ddddd", "api_secret": "ffffff"}
@@ -536,7 +548,7 @@ Setup or remove an exchange
    :statuscode 409: The exchange has already been registered or some other error
    :statuscode 500: Internal Rotki error
 
-.. http:delete:: /api/(version)/exchange
+.. http:delete:: /api/(version)/exchanges
 
    Doing a DELETE on this endpoint for a particular exchange name will delete the exchange from the database for the current user.
 
@@ -544,7 +556,7 @@ Setup or remove an exchange
 
    .. http:example:: curl wget httpie python-requests
 
-      DELETE /api/1/exchange HTTP/1.1
+      DELETE /api/1/exchanges HTTP/1.1
       Host: localhost:5042
 
       {"name": "kraken"}
@@ -566,8 +578,48 @@ Setup or remove an exchange
    :statuscode 409: The exchange is not registered or some other error
    :statuscode 500: Internal Rotki error
 
-Dealing with external trades
-============================
+Querying the balances of an exchange
+====================================
+
+.. http:get:: /api/(version)/exchanges/(name)/balances
+
+   Doing a GET on the appropriate exchange endpoint will return the balances of all assets currently help in that exchange.
+
+.. note::
+   This endpoint can also be queried asynchronouly by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/exchanges/binance/balances HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "BTC": {"amount": "1", "usd_value": "7540.15"},
+	      "ETH": {"amount": "10", "usd_value": "1650.53"}
+	  },
+	  "message": ""
+      }
+
+   :statuscode 200: Balances succesfully queried.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: Exchange is not registered or some other exchange query error. Check error message for details.
+   :statuscode 500: Internal Rotki error
+
+
+Dealing with trades
+===================
 
 .. http:get:: /api/(version)/trades
 

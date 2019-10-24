@@ -2,7 +2,7 @@ import json
 import logging
 import traceback
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 import gevent
 from flask import Flask, make_response
@@ -14,6 +14,7 @@ from webargs.flaskparser import parser
 
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.api.v1.resources import (
+    ExchangeBalancesResource,
     ExchangesResource,
     FiatExchangeRatesResource,
     SettingsResource,
@@ -62,6 +63,7 @@ URLS_V1 = [
     ('/task_outcome', TaskOutcomeResource),
     ('/fiat_exchange_rates', FiatExchangeRatesResource),
     ('/exchanges', ExchangesResource),
+    ('/exchanges/<string:name>/balances', ExchangeBalancesResource),
     ('/trades', TradesResource),
 ]
 
@@ -189,7 +191,7 @@ class RestAPI(object):
         result = getattr(self, command)(**kwargs)
         self._write_task_result(task_id, result)
 
-    def _query_async(self, command: str, **kwargs) -> int:
+    def _query_async(self, command: str, **kwargs) -> Flask.response_class:
         task_id = self._new_task_id()
         log.debug("NEW TASK {} (kwargs:{}) with ID: {}".format(command, kwargs, task_id))
         greenlet = gevent.spawn(
@@ -201,7 +203,7 @@ class RestAPI(object):
         greenlet.task_id = task_id
         greenlet.link_exception(self._handle_killed_greenlets)
         self.killable_greenlets.append(greenlet)
-        return task_id
+        return api_response(_wrap_in_ok_result({'task_id': task_id}), status_code=HTTPStatus.OK)
 
     # - Public functions not exposed via the rest api
     def stop(self):
@@ -287,6 +289,23 @@ class RestAPI(object):
         if result is None:
             status_code = HTTPStatus.CONFLICT
         return api_response(_wrap_in_result(result, message), status_code=status_code)
+
+    def _query_exchange_balances(self, name: str) -> Tuple[Optional[dict], str]:
+        exchange_obj = self.rotkehlchen.exchange_manager.connected_exchanges.get(name, None)
+        if not exchange_obj:
+            return None, f'Could not query balances for {name} since it is not registered'
+
+        return exchange_obj.query_balances()
+
+    def query_exchange_balances(self, name: str, async_query: bool) -> Flask.response_class:
+        if async_query:
+            return self._query_async(command='_query_exchange_balances', name=name)
+
+        balances, msg = self._query_exchange_balances(name=name)
+        if balances is None:
+            return api_response(_wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(_wrap_in_ok_result(process_result(balances), HTTPStatus.OK))
 
     def get_trades(
             self,
