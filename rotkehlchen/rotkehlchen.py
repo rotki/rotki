@@ -31,14 +31,7 @@ from rotkehlchen.logging import DEFAULT_ANONYMIZED_LOGS, LoggingSettings, Rotkeh
 from rotkehlchen.premium.premium import premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.serialization.serialize import process_result
-from rotkehlchen.typing import (
-    ApiKey,
-    ApiSecret,
-    BlockchainAddress,
-    FiatAsset,
-    SupportedBlockchain,
-    Timestamp,
-)
+from rotkehlchen.typing import ApiKey, ApiSecret, BlockchainAddress, SupportedBlockchain, Timestamp
 from rotkehlchen.usage_analytics import maybe_submit_usage_analytics
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
