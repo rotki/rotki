@@ -229,3 +229,13 @@ class UserActionSchema(BaseUserSchema):
 class NewUserSchema(BaseUserSchema):
     premium_api_key = fields.String(missing='')
     premium_api_secret = fields.String(missing='')
+
+
+class ExchangeBalanceQuerySchema(BaseSchema):
+    name = fields.String(required=True)
+    async_query = fields.Boolean(missing=False)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
