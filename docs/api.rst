@@ -617,6 +617,60 @@ Querying the balances of an exchange
    :statuscode 409: Exchange is not registered or some other exchange query error. Check error message for details.
    :statuscode 500: Internal Rotki error
 
+Querying onchain balances
+==========================
+
+.. http:get:: /api/(version)/balances/blockchains/(blockchain_name)/
+
+   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain name will query balances only for that chain. Available blockchain names are: ``btc`` and ``eth``.
+
+.. note::
+   This endpoint can also be queried asynchronouly by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/balances/blockchains/ HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "per_account": {
+	          "BTC": { "3Kb9QPcTUJKspzjQFBppfXRcWew6hyDAPb": {
+		       "amount": "0.5", "usd_value": "3770.075"
+		   }. "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
+		       "amount": "0.5", "usd_value": "3770.075"
+		   }},
+		   "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
+		       "amount": "10", "usd_value": "1650.53"
+		  }}
+	      }
+	      "totals": {
+	          "BTC": {"amount": "1", "usd_value": "7540.15"},
+	          "ETH": {"amount": "10", "usd_value": "1650.53"}
+	      }
+	  },
+	  "message": ""
+      }
+
+   :reqjson dict per_account: The blockchain balances per account per asset
+   :reqjson dict total: The blockchain balances in total per asset
+
+   :statuscode 200: Balances succesfully queried.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: Invalid blockchain, or problems querying the given blockchain
+   :statuscode 500: Internal Rotki error
+
 
 Dealing with trades
 ===================

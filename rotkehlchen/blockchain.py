@@ -1,7 +1,8 @@
 import logging
 import operator
 from collections import defaultdict
-from typing import TYPE_CHECKING, Callable, Dict, List, Tuple, Union, cast, overload
+from copy import deepcopy
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union, cast, overload
 
 from eth_utils.address import to_checksum_address
 from web3.exceptions import BadFunctionCallOutput
@@ -76,22 +77,37 @@ class Blockchain(CacheableObject):
         return self.owned_eth_tokens
 
     @cache_response_timewise()
-    def query_balances(self) -> Tuple[Dict[str, Dict], str]:
-        try:
-            self.query_ethereum_balances()
-        except BadFunctionCallOutput as e:
-            log.error(
-                'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
-                'exception: {}'.format(str(e)),
-            )
-            msg = (
-                'Tried to use the ethereum chain of a local client to query '
-                'an eth account but the chain is not synced.'
-            )
-            return {}, msg
+    def query_balances(self, blockchain_name: str) -> Tuple[Optional[Dict[str, Dict]], str]:
+        if blockchain_name not in ('all', 'eth', 'btc'):
+            return None, f'unsupported blockchain {blockchain_name} queried'
 
-        self.query_btc_balances()
-        return {'per_account': self.balances, 'totals': self.totals}, ''
+        if blockchain_name in ('eth', 'all'):
+            try:
+                self.query_ethereum_balances()
+            except BadFunctionCallOutput as e:
+                log.error(
+                    'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
+                    'exception: {}'.format(str(e)),
+                )
+                msg = (
+                    'Tried to use the ethereum chain of a local client to query '
+                    'an eth account but the chain is not synced.'
+                )
+                return None, msg
+
+        if blockchain_name in ('btc', 'all'):
+            self.query_btc_balances()
+
+        per_account = deepcopy(self.balances)
+        totals = deepcopy(self.totals)
+        if blockchain_name not in ('eth', 'all'):
+            per_account.pop(A_ETH, None)
+            totals.pop(A_ETH, None)
+        if blockchain_name not in ('btc', 'all'):
+            per_account.pop(A_BTC, None)
+            totals.pop(A_BTC, None)
+
+        return {'per_account': per_account, 'totals': totals}, ''
 
     @staticmethod
     def query_btc_account_balance(account: BTCAddress) -> FVal:

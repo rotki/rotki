@@ -218,7 +218,6 @@ class BaseUserSchema(BaseSchema):
 
 class UserActionSchema(BaseUserSchema):
     action = fields.String(
-        required=True,
         validate=validate.OneOf(choices=('login', 'logout')),
         missing=None,
     )
@@ -233,6 +232,16 @@ class NewUserSchema(BaseUserSchema):
 
 class ExchangeBalanceQuerySchema(BaseSchema):
     name = fields.String(required=True)
+    async_query = fields.Boolean(missing=False)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
+class BlockchainBalanceQuerySchema(BaseSchema):
+    name = fields.String(missing='all')
     async_query = fields.Boolean(missing=False)
 
     class Meta:
