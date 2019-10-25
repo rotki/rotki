@@ -358,7 +358,7 @@ class Rotkehlchen():
             else:
                 balances[exchange.name] = exchange_balances
 
-        result, error_or_empty = self.blockchain.query_balances()
+        result, error_or_empty = self.blockchain.query_balances(blockchain_name='all')
         if error_or_empty == '':
             balances['blockchain'] = result['totals']
         else:

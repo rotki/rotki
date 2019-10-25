@@ -55,7 +55,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
         return entry
 
 
-def process_result(result: Dict[str, Any]) -> Dict[str, Any]:
+def process_result(result: Dict[Any, Any]) -> Dict[Any, Any]:
     """Before sending out a result a dictionary via the server we are turning:
 
         - all Decimals to strings so that the serialization to float/big number

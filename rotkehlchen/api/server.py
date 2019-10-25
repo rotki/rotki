@@ -11,6 +11,7 @@ from gevent.event import Event
 from gevent.lock import Semaphore
 from gevent.pywsgi import WSGIServer
 from webargs.flaskparser import parser
+from werkzeug.exceptions import NotFound
 
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.api.v1.resources import (
@@ -134,8 +135,13 @@ def api_error(error: str, status_code: HTTPStatus) -> Response:
     return response
 
 
-def endpoint_not_found(e):
-    return api_error('invalid endpoint', HTTPStatus.NOT_FOUND)
+def endpoint_not_found(e: NotFound) -> Response:
+    msg = 'invalid endpoint'
+    # The isinstance check is because I am not sure if e is always going to
+    # be a "NotFound" error here
+    if isinstance(e, NotFound):
+        msg = e.description
+    return api_error(msg, HTTPStatus.NOT_FOUND)
 
 
 @parser.error_handler
@@ -145,7 +151,7 @@ def handle_request_parsing_error(err, _req, _schema, _err_status_code, _err_head
     abort(HTTPStatus.BAD_REQUEST, errors=err.messages)
 
 
-class RestAPI(object):
+class RestAPI():
     """ The Object holding the logic that runs inside all the API calls"""
     def __init__(self, rotkehlchen):
         self.rotkehlchen = rotkehlchen
@@ -290,7 +296,7 @@ class RestAPI(object):
             status_code = HTTPStatus.CONFLICT
         return api_response(_wrap_in_result(result, message), status_code=status_code)
 
-    def remove_exchange(self, name: str, api_key: str, api_secret: str) -> Response:
+    def remove_exchange(self, name: str) -> Response:
         result, message = self.rotkehlchen.remove_exchange(name)
         status_code = HTTPStatus.OK
         if result is None:
@@ -312,7 +318,7 @@ class RestAPI(object):
         if balances is None:
             return api_response(_wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
-        return api_response(_wrap_in_ok_result(process_result(balances), HTTPStatus.OK))
+        return api_response(_wrap_in_ok_result(process_result(balances)), HTTPStatus.OK)
 
     def _query_blockchain_balances(self, name: str) -> Tuple[Optional[Dict[str, Dict]], str]:
         return self.rotkehlchen.blockchain.query_balances(name=name)
@@ -325,7 +331,7 @@ class RestAPI(object):
         if balances is None:
             return api_response(_wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
-        return api_response(_wrap_in_ok_result(process_result(balances), HTTPStatus.OK))
+        return api_response(_wrap_in_ok_result(process_result(balances)), HTTPStatus.OK)
 
     def get_trades(
             self,
@@ -431,7 +437,7 @@ class RestAPI(object):
             premium_api_secret: str,
     ) -> Response:
 
-        result_dict = {'result': None, 'message': ''}
+        result_dict: Dict[str, Any] = {'result': None, 'message': ''}
         if (
                 premium_api_key != '' and premium_api_secret == '' or
                 premium_api_secret != '' and premium_api_key == ''
@@ -469,7 +475,7 @@ class RestAPI(object):
             sync_approval: str,
     ) -> Response:
 
-        result_dict = {'result': None, 'message': ''}
+        result_dict: Dict[str, Any] = {'result': None, 'message': ''}
         try:
             result_dict = self.rotkehlchen.unlock_user(
                 user=name,
@@ -494,12 +500,12 @@ class RestAPI(object):
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     def user_logout(self, name: str) -> Response:
-        result_dict = {'result': None, 'message': ''}
-        if not self.user_is_logged_in:
+        result_dict: Dict[str, Any] = {'result': None, 'message': ''}
+        if not self.rotkehlchen.user_is_logged_in:
             result_dict['message'] = 'No user is currently logged in'
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
-        if name != self.data.username:
+        if name != self.rotkehlchen.data.username:
             result_dict['message'] = f'Provided user {name} is not the logged in user'
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
@@ -512,12 +518,12 @@ class RestAPI(object):
             api_key: str,
             api_secret: str,
     ) -> Response:
-        result_dict = {'result': None, 'message': ''}
-        if not self.user_is_logged_in:
+        result_dict: Dict[str, Any] = {'result': None, 'message': ''}
+        if not self.rotkehlchen.user_is_logged_in:
             result_dict['message'] = 'No user is currently logged in'
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
-        if name != self.data.username:
+        if name != self.rotkehlchen.data.username:
             result_dict['message'] = f'Provided user {name} is not the logged in user'
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
@@ -531,7 +537,7 @@ class RestAPI(object):
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
 
-class APIServer(object):
+class APIServer():
 
     _api_prefix = '/api/1'
 
