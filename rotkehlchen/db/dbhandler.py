@@ -54,7 +54,6 @@ from rotkehlchen.typing import (
     BlockchainAddress,
     ChecksumAddress,
     EthereumTransaction,
-    FiatAsset,
     FilePath,
     Location,
     SupportedBlockchain,

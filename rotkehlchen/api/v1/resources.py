@@ -5,6 +5,7 @@ from flask_restful import Resource
 from webargs.flaskparser import use_kwargs
 
 from rotkehlchen.api.v1.encoding import (
+    BlockchainBalanceQuerySchema,
     ExchangeBalanceQuerySchema,
     NewUserSchema,
     TradePatchSchema,
@@ -66,6 +67,15 @@ class ExchangeBalancesResource(BaseResource):
     @use_kwargs(get_schema, locations=('json',))
     def get(self, name: str, async_query: bool) -> Flask.response_class:
         return self.rest_api.query_exchange_balances(name=name, async_query=async_query)
+
+
+class BlockchainBalancesResource(BaseResource):
+
+    get_schema = BlockchainBalanceQuerySchema()
+
+    @use_kwargs(get_schema, locations=('json',))
+    def get(self, name: str, async_query: bool) -> Flask.response_class:
+        return self.rest_api.query_blockchain_balances(name=name, async_query=async_query)
 
 
 class TradesResource(BaseResource):

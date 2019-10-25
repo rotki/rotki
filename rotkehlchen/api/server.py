@@ -5,7 +5,7 @@ from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Tuple, cast
 
 import gevent
-from flask import Flask, make_response
+from flask import Flask, Response, make_response
 from flask_restful import Api, abort
 from gevent.event import Event
 from gevent.lock import Semaphore
@@ -14,6 +14,7 @@ from webargs.flaskparser import parser
 
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.api.v1.resources import (
+    BlockchainBalancesResource,
     ExchangeBalancesResource,
     ExchangesResource,
     FiatExchangeRatesResource,
@@ -65,6 +66,12 @@ URLS_V1 = [
     ('/exchanges', ExchangesResource),
     ('/exchanges/<string:name>/balances', ExchangeBalancesResource),
     ('/trades', TradesResource),
+    ('/balances/blockchains', BlockchainBalancesResource),
+    (
+        '/balances/blockchains/<string:name>',
+        BlockchainBalancesResource,
+        'named_blockchain_balances_resource',
+    ),
 ]
 
 logger = logging.getLogger(__name__)
@@ -103,7 +110,7 @@ def restapi_setup_urls(flask_api_context, rest_api, urls):
 def api_response(
         result: Dict[str, Any],
         status_code: HTTPStatus = HTTPStatus.OK,
-) -> Flask.response_class:
+) -> Response:
     if status_code == HTTPStatus.NO_CONTENT:
         assert not result, "Provided 204 response with non-zero length response"
         data = ""
@@ -117,7 +124,7 @@ def api_response(
     return response
 
 
-def api_error(error: str, status_code: HTTPStatus) -> Flask.response_class:
+def api_error(error: str, status_code: HTTPStatus) -> Response:
     assert status_code in ERROR_STATUS_CODES, 'Programming error, unexpected error status code'
     response = make_response((
         json.dumps(dict(error=error)),
@@ -191,7 +198,7 @@ class RestAPI(object):
         result = getattr(self, command)(**kwargs)
         self._write_task_result(task_id, result)
 
-    def _query_async(self, command: str, **kwargs) -> Flask.response_class:
+    def _query_async(self, command: str, **kwargs) -> Response:
         task_id = self._new_task_id()
         log.debug("NEW TASK {} (kwargs:{}) with ID: {}".format(command, kwargs, task_id))
         greenlet = gevent.spawn(
@@ -219,7 +226,7 @@ class RestAPI(object):
 
     # - Public functions exposed via the rest api
 
-    def logout(self) -> Flask.response_class:
+    def logout(self) -> Response:
         # Kill all queries apart from the main loop -- perhaps a bit heavy handed
         # but the other options would be:
         # 1. to wait for all of them. That could take a lot of time, for no reason.
@@ -232,18 +239,18 @@ class RestAPI(object):
         self.rotkehlchen.logout()
         return api_response(result=OK_RESULT, status_code=HTTPStatus.OK)
 
-    def set_settings(self, settings: Dict[str, Any]) -> Flask.response_class:
+    def set_settings(self, settings: Dict[str, Any]) -> Response:
         _, message = self.rotkehlchen.set_settings(settings)
         new_settings = process_result(self.rotkehlchen.data.db.get_settings())
         result_dict = {'result': new_settings, 'message': message}
         status_code = HTTPStatus.OK if message == '' else HTTPStatus.CONFLICT
         return api_response(result=result_dict, status_code=status_code)
 
-    def get_settings(self) -> Flask.response_class:
+    def get_settings(self) -> Response:
         result_dict = _wrap_in_ok_result(process_result(self.rotkehlchen.data.db.get_settings()))
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
-    def query_task_outcome(self, task_id: int) -> Flask.response_class:
+    def query_task_outcome(self, task_id: int) -> Response:
         with self.task_lock:
             for greenlet in self.killable_greenlets:
                 if greenlet.task_id == task_id:
@@ -270,20 +277,20 @@ class RestAPI(object):
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
     @staticmethod
-    def get_fiat_exchange_rates(currencies: List[str]) -> Flask.response_class:
+    def get_fiat_exchange_rates(currencies: List[str]) -> Response:
         fiat_currencies = cast(List[FiatAsset], currencies)
         rates = Inquirer().get_fiat_usd_exchange_rates(fiat_currencies)
         res = process_result(rates)
         return api_response(_wrap_in_ok_result(res), status_code=HTTPStatus.OK)
 
-    def setup_exchange(self, name: str, api_key: str, api_secret: str) -> Flask.response_class:
+    def setup_exchange(self, name: str, api_key: str, api_secret: str) -> Response:
         result, message = self.rotkehlchen.setup_exchange(name, api_key, api_secret)
         status_code = HTTPStatus.OK
         if result is None:
             status_code = HTTPStatus.CONFLICT
         return api_response(_wrap_in_result(result, message), status_code=status_code)
 
-    def remove_exchange(self, name: str, api_key: str, api_secret: str) -> Flask.response_class:
+    def remove_exchange(self, name: str, api_key: str, api_secret: str) -> Response:
         result, message = self.rotkehlchen.remove_exchange(name)
         status_code = HTTPStatus.OK
         if result is None:
@@ -297,11 +304,24 @@ class RestAPI(object):
 
         return exchange_obj.query_balances()
 
-    def query_exchange_balances(self, name: str, async_query: bool) -> Flask.response_class:
+    def query_exchange_balances(self, name: str, async_query: bool) -> Response:
         if async_query:
             return self._query_async(command='_query_exchange_balances', name=name)
 
         balances, msg = self._query_exchange_balances(name=name)
+        if balances is None:
+            return api_response(_wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(_wrap_in_ok_result(process_result(balances), HTTPStatus.OK))
+
+    def _query_blockchain_balances(self, name: str) -> Tuple[Optional[Dict[str, Dict]], str]:
+        return self.rotkehlchen.blockchain.query_balances(name=name)
+
+    def query_blockchain_balances(self, name: str, async_query: bool) -> Response:
+        if async_query:
+            return self._query_async(command='_query_blockchain_balances', name=name)
+
+        balances, msg = self._query_blockchain_balances(name=name)
         if balances is None:
             return api_response(_wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
@@ -312,7 +332,7 @@ class RestAPI(object):
             from_ts: Optional[Timestamp],
             to_ts: Optional[Timestamp],
             location: Optional[Location],
-    ) -> Flask.response_class:
+    ) -> Response:
         trades = self.rotkehlchen.data.db.get_trades(
             from_ts=from_ts,
             to_ts=to_ts,
@@ -335,7 +355,7 @@ class RestAPI(object):
             fee_currency: Asset,
             link: str,
             notes: str,
-    ) -> Flask.response_class:
+    ) -> Response:
         trade = Trade(
             timestamp=timestamp,
             location=location,
@@ -367,7 +387,7 @@ class RestAPI(object):
             fee_currency: Asset,
             link: str,
             notes: str,
-    ) -> Flask.response_class:
+    ) -> Response:
         trade = Trade(
             timestamp=timestamp,
             location=Location.EXTERNAL,
@@ -390,14 +410,14 @@ class RestAPI(object):
         result_dict = _wrap_in_ok_result(result_dict)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    def delete_trade(self, trade_id: str) -> Flask.response_class:
+    def delete_trade(self, trade_id: str) -> Response:
         result, msg = self.rotkehlchen.data.db.delete_trade(trade_id)
         if not result:
             return api_response(_wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
-    def get_users(self) -> Flask.response_class:
+    def get_users(self) -> Response:
         result = self.rotkehlchen.data.get_users()
         result_dict = _wrap_in_ok_result(result)
         return api_response(result_dict, status_code=HTTPStatus.OK)
@@ -409,7 +429,7 @@ class RestAPI(object):
             sync_approval: str,
             premium_api_key: str,
             premium_api_secret: str,
-    ) -> Flask.response_class:
+    ) -> Response:
 
         result_dict = {'result': None, 'message': ''}
         if (
@@ -447,7 +467,7 @@ class RestAPI(object):
             name: str,
             password: str,
             sync_approval: str,
-    ) -> Flask.response_class:
+    ) -> Response:
 
         result_dict = {'result': None, 'message': ''}
         try:
@@ -473,7 +493,7 @@ class RestAPI(object):
         }
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    def user_logout(self, name: str) -> Flask.response_class:
+    def user_logout(self, name: str) -> Response:
         result_dict = {'result': None, 'message': ''}
         if not self.user_is_logged_in:
             result_dict['message'] = 'No user is currently logged in'
@@ -491,7 +511,7 @@ class RestAPI(object):
             name: str,
             api_key: str,
             api_secret: str,
-    ) -> Flask.response_class:
+    ) -> Response:
         result_dict = {'result': None, 'message': ''}
         if not self.user_is_logged_in:
             result_dict['message'] = 'No user is currently logged in'
