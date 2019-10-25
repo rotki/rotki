@@ -46,8 +46,8 @@ def query_cryptocompare_for_fiat_price(asset: Asset) -> Price:
     # If there is an error in the response skip this token
     if 'USD' not in resp:
         error_message = ''
-        if resp['Response'] == 'Error':
-            error_message = resp['Message']
+        if resp.get('Response', None) == 'Error':
+            error_message = resp.get('Message', '')
 
         log.error(
             'Cryptocompare usd price query failed',
