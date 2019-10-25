@@ -187,32 +187,6 @@ class RotkehlchenServer():
         result, message = self.rotkehlchen.setup_exchange(name, api_key, api_secret)
         return {'result': result, 'message': message}
 
-    def query_otctrades(self):
-        trades = self.rotkehlchen.data.get_external_trades()
-        serialized_trades = []
-        for trade in trades:
-            serialized_trade = trade.serialize()
-            # Also since external trades need to know the id of the trade for editing
-            # add it to the serialized data
-            serialized_trade['id'] = trade.identifier
-
-            serialized_trades.append(serialized_trade)
-
-        result = {'result': serialized_trades, 'message': ''}
-        return process_result(result)
-
-    def add_otctrade(self, data):
-        result, message = self.rotkehlchen.data.add_external_trade(data)
-        return {'result': result, 'message': message}
-
-    def edit_otctrade(self, data):
-        result, message = self.rotkehlchen.data.edit_external_trade(data)
-        return {'result': result, 'message': message}
-
-    def delete_otctrade(self, trade_id):
-        result, message = self.rotkehlchen.data.delete_external_trade(trade_id)
-        return {'result': result, 'message': message}
-
     def set_premium_credentials(self, api_key, api_secret):
         msg = ''
         result = False
@@ -244,14 +218,6 @@ class RotkehlchenServer():
 
     def query_exchange_balances_async(self, name):
         res = self.query_async('query_exchange_balances', name=name)
-        return {'task_id': res}
-
-    def query_blockchain_balances(self):
-        result, empty_or_error = self.rotkehlchen.blockchain.query_balances()
-        return process_result({'result': result, 'message': empty_or_error})
-
-    def query_blockchain_balances_async(self):
-        res = self.query_async('query_blockchain_balances')
         return {'task_id': res}
 
     def query_fiat_balances(self):
