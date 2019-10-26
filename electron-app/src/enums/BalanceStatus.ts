@@ -1,5 +1,5 @@
 export enum BalanceStatus {
-    start = 1,
-    requested,
-    complete
+  start = 1,
+  requested,
+  complete
 }
