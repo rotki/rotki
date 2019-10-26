@@ -1341,11 +1341,16 @@ class DBHandler:
 
     def query_timed_balances(
             self,
-            from_ts: Timestamp,
-            to_ts: Timestamp,
+            from_ts: Optional[Timestamp],
+            to_ts: Optional[Timestamp],
             asset: Asset,
     ) -> List[SingleAssetBalance]:
         """Query all balance entries for an asset within a range of timestamps"""
+        if from_ts is None:
+            from_ts = Timestamp(0)
+        if to_ts is None:
+            to_ts = ts_now()
+
         cursor = self.conn.cursor()
         results = cursor.execute(
             f'SELECT time, amount, usd_value FROM timed_balances '
