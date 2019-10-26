@@ -8,6 +8,7 @@ from rotkehlchen.api.v1.encoding import (
     BlockchainBalanceQuerySchema,
     ExchangeBalanceQuerySchema,
     NewUserSchema,
+    StatisticsAssetBalanceSchema,
     TradePatchSchema,
     TradeSchema,
     TradesQuerySchema,
@@ -214,3 +215,27 @@ class UsersByNameResource(BaseResource):
             )
         else:  # Can only be logout -- checked by marshmallow
             return self.rest_api.user_logout(name=name)
+
+
+class StatisticsNetvalueResource(BaseResource):
+
+    def get(self) -> Response:
+        return self.rest_api.query_netvalue_data()
+
+
+class StatisticsAssetBalanceResource(BaseResource):
+
+    get_schema = StatisticsAssetBalanceSchema()
+
+    @use_kwargs(get_schema, locations=('json',))
+    def get(
+            self,
+            asset: Asset,
+            from_timestamp: Optional[Timestamp],
+            to_timestamp: Optional[Timestamp],
+    ) -> Response:
+        return self.rest_api.query_timed_balances_data(
+            asset=asset,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )

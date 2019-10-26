@@ -248,3 +248,14 @@ class BlockchainBalanceQuerySchema(BaseSchema):
         strict = True
         # decoding to a dict is required by the @use_kwargs decorator from webargs
         decoding_class = dict
+
+
+class StatisticsAssetBalanceSchema(BaseSchema):
+    asset = AssetField(required=True)
+    from_timestamp = TimestampField(missing=None)
+    to_timestamp = TimestampField(missing=None)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
