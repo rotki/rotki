@@ -1,4 +1,4 @@
 export enum PlacementType {
-    appendTo,
-    insertAfter
+  appendTo,
+  insertAfter
 }
