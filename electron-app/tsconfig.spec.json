@@ -2,9 +2,9 @@
     "compilerOptions": {
         "outDir": "./tests/dist",
         "target": "es2016",
+        "module": "commonjs",
         "types": [
             "chai",
-            "chai-as-promised",
             "mocha",
             "node",
             "webdriverio"

@@ -1,3 +1,3 @@
 export interface IgnoredAssetsResponse {
-    ignored_assets: string[];
+  ignored_assets: string[];
 }
