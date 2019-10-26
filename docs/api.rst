@@ -671,6 +671,43 @@ Querying onchain balances
    :statuscode 409: Invalid blockchain, or problems querying the given blockchain
    :statuscode 500: Internal Rotki error
 
+Querying FIAT balances
+==========================
+
+.. http:get:: /api/(version)/balances/fiat/
+
+   Doing a GET on the FIAT balances endpoint will query the FIAT balances of the user.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/balances/fiat/ HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "EUR": {"amount": "150", "usd_value": "166.21"},
+	      "CNY": {"amount": "10500", "usd_value": "1486.05"}
+	  },
+	  "message": ""
+      }
+
+
+   :statuscode 200: Balances succesfully queried.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 500: Internal Rotki error
+
 
 Dealing with trades
 ===================

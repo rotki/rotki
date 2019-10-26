@@ -18,6 +18,7 @@ from rotkehlchen.api.v1.resources import (
     BlockchainBalancesResource,
     ExchangeBalancesResource,
     ExchangesResource,
+    FiatBalancesResource,
     FiatExchangeRatesResource,
     SettingsResource,
     TaskOutcomeResource,
@@ -73,6 +74,7 @@ URLS_V1 = [
         BlockchainBalancesResource,
         'named_blockchain_balances_resource',
     ),
+    ('/balances/fiat', FiatBalancesResource),
 ]
 
 logger = logging.getLogger(__name__)
@@ -331,6 +333,10 @@ class RestAPI():
         if balances is None:
             return api_response(_wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
+        return api_response(_wrap_in_ok_result(process_result(balances)), HTTPStatus.OK)
+
+    def query_fiat_balances(self) -> Response:
+        balances = self.rotkehlchen.query_fiat_balances()
         return api_response(_wrap_in_ok_result(process_result(balances)), HTTPStatus.OK)
 
     def get_trades(
