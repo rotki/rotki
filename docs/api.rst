@@ -709,6 +709,93 @@ Querying FIAT balances
    :statuscode 500: Internal Rotki error
 
 
+Statistics for netvalue over time
+================================
+
+.. http:get:: /api/(version)/statistics/netvalue/
+
+   Doing a GET on the statistics netvalue over time endpoint will return all the saved historical data points with user's history
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/statistics/netvalue/ HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "times": [1571992200, 1572078657],
+	      "data": ["15000", "17541.23"]
+	  },
+	  "message": ""
+      }
+
+   :reqjson list(int) times: A list of timestamps for the returned data points
+   :reqjson list(str) data: A list of net usd value for the corresponding timestamps. They are matched by list index.
+
+   :statuscode 200: Netvalue statistics succesfuly queries
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 500: Internal Rotki error
+
+
+Statistics for asset balance over time
+====================================
+
+.. http:get:: /api/(version)/statistics/balance/(asset name)
+
+   Doing a GET on the statistics asset balance over time endpoint will return all saved balance entries for an asset. Optionally you can filter for a specific time range by providing appropriate arguments.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/statistics/balance/BTC HTTP/1.1
+      Host: localhost:5042
+
+      {"from_timestamp": 1514764800, "to_timestamp": 1572080165}
+
+   :reqjson int from_timestamp: The timestamp after which to return saved balances for the asset. If not given zero is considered as the start.
+   :reqjson int to_timestamp: The timestamp until which to return saved balances for the asset. If not given all balances until now are returned.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+              "time": 1571992200,
+	      "amount": "1.1",
+	      "usd_value": "8901.1"
+	      }, {
+              "time": 15720001,
+	      "amount": "1.2",
+	      "usd_value": "9501.3"
+	  }],
+	  "message": ""
+      }
+
+   :reqjson list(object) result: A list of asset balance entries. Each entry contains the timestamp of the entry, the amount in asset and the equivalent usd value at the time.
+
+   :statuscode 200: Single asset balance statistics succesfuly queried
+   :statuscode 400: Provided JSON is in some way malformed or data is invalid.
+   :statuscode 500: Internal Rotki error
+
+
 Dealing with trades
 ===================
 

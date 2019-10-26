@@ -21,6 +21,7 @@ from rotkehlchen.api.v1.resources import (
     FiatBalancesResource,
     FiatExchangeRatesResource,
     SettingsResource,
+    StatisticsNetvalueResource,
     TaskOutcomeResource,
     TradesResource,
     UsersByNameResource,
@@ -75,6 +76,7 @@ URLS_V1 = [
         'named_blockchain_balances_resource',
     ),
     ('/balances/fiat', FiatBalancesResource),
+    ('/statistics/netvalue', StatisticsNetvalueResource),
 ]
 
 logger = logging.getLogger(__name__)
@@ -541,6 +543,25 @@ class RestAPI():
 
         result_dict['result'] = True
         return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    def query_netvalue_data(self) -> Response:
+        data = self.rotkehlchen.data.db.get_netvalue_data()
+        result = process_result({'times': data[0], 'data': data[1]})
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    def query_timed_balances_data(
+            self,
+            asset: Asset,
+            from_timestamp: Optional[Timestamp],
+            to_timestamp: Optional[Timestamp],
+    ) -> Response:
+        data = self.rotkehlchen.data.db.query_timed_balances(
+            from_ts=from_timestamp,
+            to_ts=to_timestamp,
+            asset=asset,
+        )
+        result = process_result(data)
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
 
 class APIServer():
