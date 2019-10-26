@@ -118,17 +118,15 @@ class APIServer():
         self.flask_app.register_blueprint(self.blueprint)
 
         self.flask_app.errorhandler(HTTPStatus.NOT_FOUND)(endpoint_not_found)
-        # self.flask_app.register_error_handler(Exception, self.unhandled_exception)
-        # self.flask_app.before_request(self._is_raiden_running)
+        self.flask_app.register_error_handler(Exception, self.unhandled_exception)
 
-    # def unhandled_exception(self, exception: Exception):
-    #     """ Flask.errorhandler when an exception wasn't correctly handled """
-    #     log.critical(
-    #         "Unhandled exception when processing endpoint request",
-    #         exc_info=True,
-    #     )
-    #     self.greenlet.kill(exception)
-    #     return api_error([str(exception)], HTTPStatus.INTERNAL_SERVER_ERROR)
+    def unhandled_exception(self, exception: Exception):
+        """ Flask.errorhandler when an exception wasn't correctly handled """
+        log.critical(
+            "Unhandled exception when processing endpoint request",
+            exc_info=True,
+        )
+        return api_response(wrap_in_fail_result(str(exception)), HTTPStatus.INTERNAL_SERVER_ERROR)
 
     def run(self, host='127.0.0.1', port=5042, **kwargs):
         self.flask_app.run(host=host, port=port, **kwargs)
