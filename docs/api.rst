@@ -751,6 +751,9 @@ Statistics for netvalue over time
 
 .. http:get:: /api/(version)/statistics/netvalue/
 
+.. note::
+   This endpoint is only available for premium users
+
    Doing a GET on the statistics netvalue over time endpoint will return all the saved historical data points with user's history
 
 
@@ -783,13 +786,16 @@ Statistics for netvalue over time
 
    :statuscode 200: Netvalue statistics succesfuly queries.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in.
+   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
    :statuscode 500: Internal Rotki error.
 
 Statistics for asset balance over time
 ====================================
 
 .. http:get:: /api/(version)/statistics/balance/(asset name)
+
+.. note::
+   This endpoint is only available for premium users
 
    Doing a GET on the statistics asset balance over time endpoint will return all saved balance entries for an asset. Optionally you can filter for a specific time range by providing appropriate arguments.
 
@@ -830,7 +836,7 @@ Statistics for asset balance over time
 
    :statuscode 200: Single asset balance statistics succesfuly queried
    :statuscode 400: Provided JSON is in some way malformed or data is invalid.
-   :statuscode 409: No user is currently logged in.
+   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
    :statuscode 500: Internal Rotki error
 
 Statistics for value distribution
@@ -839,6 +845,9 @@ Statistics for value distribution
 .. http:get:: /api/(version)/statistics/value_distribution/
 
    Doing a GET on the statistics value distribution endpoint with the ``"distribution_by": "location"`` argument will return the distribution of netvalue across all locations.
+
+.. note::
+   This endpoint is only available for premium users
 
 
    **Example Request**:
@@ -876,10 +885,13 @@ Statistics for value distribution
 
    :statuscode 200: Value distribution succesfully queried.
    :statuscode 400: Provided JSON is in some way malformed or data is invalid.
-   :statuscode 409: No user is currently logged in.
+   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
    :statuscode 500: Internal Rotki error.
 
 .. http:get:: /api/(version)/statistics/value_distribution/
+
+.. note::
+   This endpoint is only available for premium users
 
    Doing a GET on the statistics value distribution endpoint with the ``"distribution_by": "asset"`` argument will return the distribution of netvalue across all assets.
 
@@ -921,7 +933,45 @@ Statistics for value distribution
 
    :statuscode 200: Value distribution succesfully queried.
    :statuscode 400: Provided JSON is in some way malformed or data is invalid.
-   :statuscode 409: No user is currently logged in.
+   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
+   :statuscode 500: Internal Rotki error.
+
+Statistics rendering code
+================================
+
+.. http:get:: /api/(version)/statistics/renderer/
+
+   Doing a GET on the statistics renderer will return the code to render the statistics if the currently logged in user is a premium user.
+
+.. note::
+   This endpoint is only available for premium users
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/statistics/netvalue/ HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": "code goes here"
+	  "message": ""
+      }
+
+
+   :statuscode 200: Rendering code succesfully returned.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription. There is a problem reaching the Rotki server.
    :statuscode 500: Internal Rotki error.
 
 Dealing with trades
