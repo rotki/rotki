@@ -10,7 +10,8 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants import YEAR_IN_SECONDS
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD, FIAT_CURRENCIES, S_CNY, S_EUR
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD, FIAT_CURRENCIES
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_handler import DataHandler, verify_otctrade_data
 from rotkehlchen.db.dbhandler import DBINFO_FILENAME, DBHandler, detect_sqlcipher_version
 from rotkehlchen.db.settings import (
@@ -42,6 +43,7 @@ from rotkehlchen.tests.utils.constants import (
 )
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
 from rotkehlchen.typing import (
+    AssetAmount,
     AssetMovementCategory,
     EthereumTransaction,
     Fee,
@@ -145,7 +147,7 @@ def test_export_import_db(data_dir, username):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
-    data.set_fiat_balance('EUR', '10')
+    data.set_fiat_balances({A_EUR: AssetAmount(FVal('10'))})
 
     encoded_data, _ = data.compress_and_encrypt_db('123')
 
@@ -551,24 +553,24 @@ def test_sqlcipher_detect_version():
             detect_sqlcipher_version()
 
 
-def test_data_set_fiat_balance(data_dir, username):
+def test_data_set_fiat_balances(data_dir, username):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
 
-    amount_eur = '100'
-    amount_cny = '500'
+    amount_eur = AssetAmount(FVal('100'))
+    amount_cny = AssetAmount(FVal('500'))
 
-    success, _ = data.set_fiat_balance(S_EUR, amount_eur)
+    success, _ = data.set_fiat_balances({A_EUR: amount_eur})
     assert success
-    success, _ = data.set_fiat_balance(S_CNY, amount_cny)
+    success, _ = data.set_fiat_balances({A_CNY: amount_cny})
     assert success
     balances = data.get_fiat_balances()
     assert len(balances) == 2
     assert balances[A_EUR] == amount_eur
     assert balances[A_CNY] == amount_cny
 
-    success, _ = data.set_fiat_balance(S_EUR, '')
+    success, _ = data.set_fiat_balances({A_EUR: ZERO})
     balances = data.get_fiat_balances()
     assert len(balances) == 1
     assert balances[A_CNY] == amount_cny
@@ -576,7 +578,9 @@ def test_data_set_fiat_balance(data_dir, username):
     # also check that all the fiat assets in the fiat table are in
     # all_assets.json
     for fiat in FIAT_CURRENCIES:
-        success, _ = data.set_fiat_balance(fiat, '1')
+        fiat_asset = Asset(fiat)
+        assert fiat_asset.is_fiat()
+        success, _ = data.set_fiat_balances({fiat_asset: AssetAmount(FVal('1'))})
         assert success
 
 

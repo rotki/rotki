@@ -13,17 +13,17 @@ from eth_utils.address import to_checksum_address
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.datatyping import BalancesData
 from rotkehlchen.db.dbhandler import DBHandler, DBSettings
 from rotkehlchen.db.settings import db_settings_from_dict
 from rotkehlchen.errors import AuthenticationError, DeserializationError, UnknownAsset
-from rotkehlchen.fval import FVal
-from rotkehlchen.inquirer import FIAT_CURRENCIES
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
+    AssetAmount,
     B64EncodedBytes,
     B64EncodedString,
     BlockchainAddress,
@@ -222,30 +222,22 @@ class DataHandler():
         blockchain_accounts = self.db.get_blockchain_accounts()
         return blockchain_accounts.eth
 
-    def set_fiat_balance(
+    def set_fiat_balances(
             self,
-            currency: str,
-            provided_balance: str,
-    ) -> Tuple[bool, str]:
-        if currency not in FIAT_CURRENCIES:
-            return False, 'Provided currency {} is unknown'
+            balances: Dict[Asset, AssetAmount],
+    ) -> None:
+        """Saves the given FIAT balances in the DB
 
-        currency_asset = Asset(currency)
+        The given assets should have been checked before calling this function
+        that they are FIAT currencies.
 
-        msg = 'Provided balance for set_fiat_balance should be a string'
-        assert isinstance(provided_balance, str), msg
-
-        if provided_balance == '':
-            self.db.remove_fiat_balance(currency_asset)
-        else:
-            try:
-                balance = FVal(provided_balance)
-            except ValueError:
-                return False, 'Provided amount is not a number'
-
-            self.db.add_fiat_balance(currency_asset, balance)
-
-        return True, ''
+        If the amount for an asset is 0 then that asset is removed from the DB.
+        """
+        for asset, balance in balances.items():
+            if balance == ZERO:
+                self.db.remove_fiat_balance(asset)
+            else:
+                self.db.add_fiat_balance(asset, balance)
 
     def get_fiat_balances(self) -> Dict[Asset, str]:
         return self.db.get_fiat_balances()
