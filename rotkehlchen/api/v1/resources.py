@@ -9,6 +9,7 @@ from rotkehlchen.api.v1.encoding import (
     ExchangeBalanceQuerySchema,
     NewUserSchema,
     StatisticsAssetBalanceSchema,
+    StatisticsValueDistributionSchema,
     TradePatchSchema,
     TradeSchema,
     TradesQuerySchema,
@@ -238,4 +239,15 @@ class StatisticsAssetBalanceResource(BaseResource):
             asset=asset,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
+        )
+
+
+class StatisticsValueDistributionResource(BaseResource):
+
+    get_schema = StatisticsValueDistributionSchema()
+
+    @use_kwargs(get_schema, locations=('json',))
+    def get(self, distribution_by: str) -> Response:
+        return self.rest_api.query_value_distribution_data(
+            distribution_by=distribution_by,
         )
