@@ -251,3 +251,9 @@ class StatisticsValueDistributionResource(BaseResource):
         return self.rest_api.query_value_distribution_data(
             distribution_by=distribution_by,
         )
+
+
+class MessagesResource(BaseResource):
+
+    def get(self) -> Response:
+        return self.rest_api.get_messages()

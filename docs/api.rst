@@ -1133,3 +1133,41 @@ Dealing with trades
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 409: No user is logged in. The given trade identifier to delete does not exist.
    :statuscode 500: Internal Rotki error.
+
+Querying messages to show to the user
+=====================================
+
+.. http:get:: /api/(version)/messages/
+
+   Doing a GET on the messages endpoint will pop all errors and warnings from the message queue and return them. The message queue is a queue where all errors and warnings that are supposed to be see by the user are saved and are supposed to be popped and read regularly.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/messages/ HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "errors": ["Something bad happened", "Another bad thing happened"],
+	      "warnings": ["An asset could not be queried", "Can not reach kraken"]
+	  },
+	  "message": ""
+      }
+
+   :reqjson list(str) errors: A list of strings denoting errors that need to be shown to the user.
+   :reqjson list(str) warnings: A list of strings denoting warnings that need to be shown to the user.
+
+   :statuscode 200: Messages popped and read succesfully.
+   :statuscode 500: Internal Rotki error.
