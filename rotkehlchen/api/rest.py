@@ -272,7 +272,28 @@ class RestAPI():
             status_code = HTTPStatus.CONFLICT
         return api_response(_wrap_in_result(result, message), status_code=status_code)
 
-    def _query_exchange_balances(self, name: str) -> Tuple[Optional[dict], str]:
+    def _query_all_exchange_balances(self) -> Tuple[Optional[Dict], str]:
+        final_balances = dict()
+        error_msg = ''
+        for name, exchange_obj in self.rotkehlchen.exchange_manager.connected_exchanges.items():
+            balances, msg = exchange_obj.query_balances()
+            if balances is None:
+                error_msg += msg
+            else:
+                final_balances[name] = balances
+
+        if final_balances == dict():
+            result = None
+        else:
+            result = final_balances
+        return result, error_msg
+
+    def _query_exchange_balances(self, name: Optional[str]) -> Tuple[Optional[dict], str]:
+        if name is None:
+            # Query all exchanges
+            return self._query_all_exchange_balances()
+
+        # else query only the specific exchange
         exchange_obj = self.rotkehlchen.exchange_manager.connected_exchanges.get(name, None)
         if not exchange_obj:
             return None, f'Could not query balances for {name} since it is not registered'

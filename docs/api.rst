@@ -580,12 +580,12 @@ Setup or remove an exchange
    :statuscode 409: No user is logged in. The exchange is not registered or some other error
    :statuscode 500: Internal Rotki error
 
-Querying the balances of an exchange
+Querying the balances of exchanges
 ====================================
 
-.. http:get:: /api/(version)/exchanges/(name)/balances
+.. http:get:: /api/(version)/exchanges/balances/(name)
 
-   Doing a GET on the appropriate exchange endpoint will return the balances of all assets currently help in that exchange.
+   Doing a GET on the appropriate exchanges balances endpoint will return the balances of all assets currently held in that exchange. If no name is provided then the balance of all exchanges is returned.
 
 .. note::
    This endpoint can also be queried asynchronouly by using ``"async_query": true``
@@ -594,7 +594,7 @@ Querying the balances of an exchange
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/exchanges/binance/balances HTTP/1.1
+      GET /api/1/exchanges/balances/binance HTTP/1.1
       Host: localhost:5042
 
       {}
@@ -617,6 +617,47 @@ Querying the balances of an exchange
    :statuscode 200: Balances succesfully queried.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: User is not logged in.Exchange is not registered or some other exchange query error. Check error message for details.
+   :statuscode 500: Internal Rotki error
+
+.. http:get:: /api/(version)/exchanges/balances/
+
+   Doing a GET on the exchanges balances endpoint will return the balances of all assets currently held in all exchanges.
+
+.. note::
+   This endpoint can also be queried asynchronouly by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/exchanges/balances HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "kraken": {
+	          "BTC": {"amount": "1", "usd_value": "7540.15"},
+	          "ETH": {"amount": "10", "usd_value": "1650.53"}
+	      },
+	      "binance": {
+                  "ETH": {"amount": "20", "usd_value": "3301.06"},
+	      }
+	  },
+	  "message": ""
+      }
+
+   :statuscode 200: Balances succesfully queried.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: User is not logged in. Some exchange query error. Check error message for details.
    :statuscode 500: Internal Rotki error
 
 Querying onchain balances

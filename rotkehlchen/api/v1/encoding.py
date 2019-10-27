@@ -260,7 +260,7 @@ class NewUserSchema(BaseUserSchema):
 
 
 class ExchangeBalanceQuerySchema(BaseSchema):
-    name = fields.String(required=True)
+    name = fields.String(missing=None)
     async_query = fields.Boolean(missing=False)
 
     class Meta:

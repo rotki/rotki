@@ -68,7 +68,7 @@ class ExchangeBalancesResource(BaseResource):
     get_schema = ExchangeBalanceQuerySchema()
 
     @use_kwargs(get_schema, locations=('json',))
-    def get(self, name: str, async_query: bool) -> Response:
+    def get(self, name: Optional[str], async_query: bool) -> Response:
         return self.rest_api.query_exchange_balances(name=name, async_query=async_query)
 
 
