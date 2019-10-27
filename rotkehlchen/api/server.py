@@ -45,7 +45,12 @@ URLS_V1: URLS = [
     ('/task_outcome', TaskOutcomeResource),
     ('/fiat_exchange_rates', FiatExchangeRatesResource),
     ('/exchanges', ExchangesResource),
-    ('/exchanges/<string:name>/balances', ExchangeBalancesResource),
+    ('/exchanges/balances>', ExchangeBalancesResource),
+    (
+        '/exchanges/balances/<string:name>',
+        ExchangeBalancesResource,
+        'named_exchanges_balances_resource',
+    ),
     ('/trades', TradesResource),
     ('/balances/blockchains', BlockchainBalancesResource),
     (
