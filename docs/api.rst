@@ -708,6 +708,39 @@ Querying FIAT balances
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 500: Internal Rotki error
 
+Querying owned assets
+======================
+
+.. http:get:: /api/(version)/assets/
+
+   Doing a GET on the assets endpoint will return a list of all assets ever owned.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/ HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": ["EUR", "USD", "ETH", "BTC"],
+	  "message": ""
+      }
+
+
+   :statuscode 200: Assets succesfully queried.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 500: Internal Rotki error
 
 Statistics for netvalue over time
 ================================
