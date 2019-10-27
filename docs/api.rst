@@ -141,7 +141,7 @@ Handling user creation, sign-in, log-out and querying
    :statuscode 200: Adding the new user was succesful
    :statuscode 300: Possibility of syncing exists and the creation was sent with sync_approval set to ``"unknown"``. Consumer of api must resend with ``"yes"`` or ``"no"``.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User already exists
+   :statuscode 409: User already exists. Another user is already logged in.
    :statuscode 500: Internal Rotki error
 
    For succesful requests, result contains the currently connected exchanges, whethere the user has premium activated and the user's settings.
@@ -204,7 +204,7 @@ Handling user creation, sign-in, log-out and querying
    :statuscode 200: Logged in succesfully
    :statuscode 300: Possibility of syncing exists and the login was sent with sync_approval set to ``"unknown"``. Consumer of api must resend with ``"yes"`` or ``"no"``.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User does not exist, password is wrong or some other authentication error.
+   :statuscode 409: Another user is already logged in. User does not exist, password is wrong or some other authentication error.
    :statuscode 500: Internal Rotki error
 
    The result is the same as creating a new user.
@@ -331,6 +331,7 @@ Getting or modifying settings
       }
 
    :statuscode 200: Querying of settings was succesful
+   :statuscode 409: There is no logged in user
    :statuscode 500: Internal Rotki error
 
    :reqjson int version: The database version
@@ -396,7 +397,7 @@ Getting or modifying settings
 
    :statuscode 200: Modifying settings was succesful
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: Invalid input, e.g. not the correct type for a setting
+   :statuscode 409: Invalid input, e.g. not the correct type for a setting. Or no user is logged in.
    :statuscode 500: Internal Rotki error
 
 Query the result of an ongoing backend task
@@ -477,6 +478,7 @@ Query the result of an ongoing backend task
    :statuscode 200: The task's outcome is succesfully returned or pending
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 404: There is no task with the given task id
+   :statuscode 409: No user is currently logged in
    :statuscode 500: Internal Rotki error
 
 Query the current fiat currencies exchange rate
@@ -545,7 +547,7 @@ Setup or remove an exchange
 
    :statuscode 200: The exchange has been sucesfully setup
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: The exchange has already been registered or some other error
+   :statuscode 409: No user is logged in. The exchange has already been registered or some other error.
    :statuscode 500: Internal Rotki error
 
 .. http:delete:: /api/(version)/exchanges
@@ -575,7 +577,7 @@ Setup or remove an exchange
 
    :statuscode 200: The exchange has been sucesfully delete
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: The exchange is not registered or some other error
+   :statuscode 409: No user is logged in. The exchange is not registered or some other error
    :statuscode 500: Internal Rotki error
 
 Querying the balances of an exchange
@@ -614,7 +616,7 @@ Querying the balances of an exchange
 
    :statuscode 200: Balances succesfully queried.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: Exchange is not registered or some other exchange query error. Check error message for details.
+   :statuscode 409: User is not logged in.Exchange is not registered or some other exchange query error. Check error message for details.
    :statuscode 500: Internal Rotki error
 
 Querying onchain balances
@@ -668,7 +670,7 @@ Querying onchain balances
 
    :statuscode 200: Balances succesfully queried.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: Invalid blockchain, or problems querying the given blockchain
+   :statuscode 409: User is not logged in. Invalid blockchain, or problems querying the given blockchain
    :statuscode 500: Internal Rotki error
 
 Querying FIAT balances
@@ -706,6 +708,7 @@ Querying FIAT balances
 
    :statuscode 200: Balances succesfully queried.
    :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: User is not logged in.
    :statuscode 500: Internal Rotki error
 
 Querying owned assets
@@ -740,6 +743,7 @@ Querying owned assets
 
    :statuscode 200: Assets succesfully queried.
    :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal Rotki error
 
 Statistics for netvalue over time
@@ -777,9 +781,10 @@ Statistics for netvalue over time
    :reqjson list(int) times: A list of timestamps for the returned data points
    :reqjson list(str) data: A list of net usd value for the corresponding timestamps. They are matched by list index.
 
-   :statuscode 200: Netvalue statistics succesfuly queries
-   :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 500: Internal Rotki error
+   :statuscode 200: Netvalue statistics succesfuly queries.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is currently logged in.
+   :statuscode 500: Internal Rotki error.
 
 Statistics for asset balance over time
 ====================================
@@ -825,6 +830,7 @@ Statistics for asset balance over time
 
    :statuscode 200: Single asset balance statistics succesfuly queried
    :statuscode 400: Provided JSON is in some way malformed or data is invalid.
+   :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal Rotki error
 
 Statistics for value distribution
@@ -870,6 +876,7 @@ Statistics for value distribution
 
    :statuscode 200: Value distribution succesfully queried.
    :statuscode 400: Provided JSON is in some way malformed or data is invalid.
+   :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal Rotki error.
 
 .. http:get:: /api/(version)/statistics/value_distribution/
@@ -914,6 +921,7 @@ Statistics for value distribution
 
    :statuscode 200: Value distribution succesfully queried.
    :statuscode 400: Provided JSON is in some way malformed or data is invalid.
+   :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal Rotki error.
 
 Dealing with trades
@@ -921,7 +929,7 @@ Dealing with trades
 
 .. http:get:: /api/(version)/trades
 
-   Doing a GET on this endpoint will return all trades. They can be further
+   Doing a GET on this endpoint will return all trades of the current user. They can be further filtered by time range and/or location.
 
    **Example Request**:
 
@@ -962,11 +970,12 @@ Dealing with trades
 
    :statuscode 200: Trades are succesfully returned
    :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in.
    :statuscode 500: Internal Rotki error
 
 .. http:put:: /api/(version)/trades
 
-   Doing a PUT on this endpoint adds a new trade to Rotki.
+   Doing a PUT on this endpoint adds a new trade to Rotki's currently logged in user.
 
    **Example Request**:
 
@@ -1025,11 +1034,12 @@ Dealing with trades
 
    :statuscode 200: Trades was succesfully added.
    :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal Rotki error
 
 .. http:patch:: /api/(version)/trades
 
-   Doing a PATCH on this endpoint edits an existing trade in Rotki using the ``trade_identifier``
+   Doing a PATCH on this endpoint edits an existing trade in Rotki's currently logged in user using the ``trade_identifier``.
 
    **Example Request**:
 
@@ -1089,12 +1099,12 @@ Dealing with trades
 
    :statuscode 200: Trades was succesfully edited.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: The given trade identifier to edit does not exist.
+   :statuscode 409: No user is logged in. The given trade identifier to edit does not exist.
    :statuscode 500: Internal Rotki error.
 
 .. http:delete:: /api/(version)/trades
 
-   Doing a DELETE on this endpoint deletes an existing trade in Rotki using the ``trade_identifier``
+   Doing a DELETE on this endpoint deletes an existing trade in Rotki's currently logged in user using the ``trade_identifier``.
 
    **Example Request**:
 
@@ -1121,5 +1131,5 @@ Dealing with trades
 
    :statuscode 200: Trades was succesfully deleted.
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: The given trade identifier to delete does not exist.
+   :statuscode 409: No user is logged in. The given trade identifier to delete does not exist.
    :statuscode 500: Internal Rotki error.
