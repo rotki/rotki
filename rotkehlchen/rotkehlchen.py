@@ -215,6 +215,10 @@ class Rotkehlchen():
         self.data.logout()
         self.password = ''
 
+        # Make sure no messages leak to other user sessions
+        self.msg_aggregator.consume_errors()
+        self.msg_aggregator.consume_warnings()
+
         self.user_is_logged_in = False
         log.info(
             'User successfully logged out',

@@ -16,8 +16,11 @@ from rotkehlchen.api.v1.resources import (
     ExchangesResource,
     FiatBalancesResource,
     FiatExchangeRatesResource,
+    MessagesResource,
     SettingsResource,
+    StatisticsAssetBalanceResource,
     StatisticsNetvalueResource,
+    StatisticsValueDistributionResource,
     TaskOutcomeResource,
     TradesResource,
     UsersByNameResource,
@@ -51,6 +54,9 @@ URLS_V1: URLS = [
     ),
     ('/balances/fiat', FiatBalancesResource),
     ('/statistics/netvalue', StatisticsNetvalueResource),
+    ('/statistics/balance/<string:asset>', StatisticsAssetBalanceResource),
+    ('/statistics/value_distribution', StatisticsValueDistributionResource),
+    ('/messages/', MessagesResource),
 ]
 
 logger = logging.getLogger(__name__)
