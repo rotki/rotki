@@ -112,7 +112,7 @@ export default class App extends Vue {
     this.$store.commit('resetMessage');
   }
 
-  async created() {
+  async created(): Promise<void> {
     this.$rpc.connect();
     ipcRenderer.on('failed', () => {
       // get notified if the python subprocess dies

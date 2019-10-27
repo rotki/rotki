@@ -1,5 +1,5 @@
 import { SpectronClient } from 'spectron';
-import { METHOD_TIMEOUT } from './common';
+import { METHOD_TIMEOUT } from '../utils/common';
 
 const retry = require('promise-retry');
 

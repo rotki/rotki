@@ -22,12 +22,18 @@
           v-if="action"
           text
           color="primary"
+          class="message-overlay__buttons__confirm"
           depressed
           @click="$emit('primary')"
         >
           {{ action }}
         </v-btn>
-        <v-btn text @click="$emit('close')">Close</v-btn>
+        <v-btn
+          class="message-overlay__buttons__cancel"
+          text
+          @click="$emit('close')"
+          >Close</v-btn
+        >
       </v-card-actions>
     </v-card>
   </v-overlay>

@@ -17,10 +17,20 @@
 
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="primary" text @click="cancel()">
+        <v-btn
+          color="primary"
+          text
+          class="confirm-dialog__buttons__cancel"
+          @click="cancel()"
+        >
           Cancel
         </v-btn>
-        <v-btn color="primary" text @click="confirm()">
+        <v-btn
+          color="primary"
+          text
+          class="confirm-dialog__buttons__confirm"
+          @click="confirm()"
+        >
           Confirm
         </v-btn>
       </v-card-actions>
