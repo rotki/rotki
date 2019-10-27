@@ -310,6 +310,11 @@ class RestAPI():
         return api_response(_wrap_in_ok_result(process_result(balances)), HTTPStatus.OK)
 
     @require_loggedin_user()
+    def set_fiat_balances(self, balances: Dict[Asset, AssetAmount]) -> Response:
+        self.rotkehlchen.data.set_fiat_balances(balances)
+        return api_response(OK_RESULT, HTTPStatus.OK)
+
+    @require_loggedin_user()
     def get_trades(
             self,
             from_ts: Optional[Timestamp],

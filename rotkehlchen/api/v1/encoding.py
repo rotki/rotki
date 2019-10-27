@@ -96,6 +96,26 @@ class AssetField(fields.Field):
         return asset
 
 
+class FiatAssetField(AssetField):
+
+    def _deserialize(  # pylint: disable=unused-argument
+            self,
+            value: str,
+            attr,
+            data,
+            **kwargs,
+    ) -> Asset:
+        try:
+            asset = Asset(value)
+        except (DeserializationError, UnknownAsset) as e:
+            raise ValidationError(str(e))
+
+        if not asset.is_fiat():
+            raise ValidationError(f'Asset {asset.identifier} is not a FIAT asset')
+
+        return asset
+
+
 class TradeTypeField(fields.Field):
 
     @staticmethod
@@ -191,6 +211,15 @@ class TradeSchema(BaseSchema):
     fee_currency = AssetField(required=True)
     link = fields.String(missing='')
     notes = fields.String(missing='')
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
+class FiatBalancesSchema(BaseSchema):
+    fields.Dict(keys=FiatAssetField(), values=AmountField())
 
     class Meta:
         strict = True

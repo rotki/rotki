@@ -711,6 +711,45 @@ Querying FIAT balances
    :statuscode 409: User is not logged in.
    :statuscode 500: Internal Rotki error
 
+Settings FIAT balances
+======================
+
+.. http:get:: /api/(version)/balances/fiat/
+
+   Doing a PATCH on the FIAT balances endpoint will edit the FIAT balances of the given currencies for the currently logged in user. If the balance for an asset is set to 0 then that asset is removed from the database.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/balances/fiat/ HTTP/1.1
+      Host: localhost:5042
+
+      {"EUR": "5000", "USD": "3000"}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "EUR": {"amount": "5000", "usd_value": "6130"},
+              "USD": {"amount": "3000", "usd_value": "3000"},
+	      "CNY": {"amount": "10500", "usd_value": "1486.05"}
+	  },
+	  "message": ""
+      }
+
+
+   :statuscode 200: Balances succesfully edited.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal Rotki error
+
 Querying owned assets
 ======================
 
