@@ -465,6 +465,10 @@ class RestAPI():
         result_dict['result'] = True
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
+    def query_owned_assets(self) -> Response:
+        result = process_result(self.rotkehlchen.data.db.query_owned_assets())
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
     def query_netvalue_data(self) -> Response:
         data = self.rotkehlchen.data.db.get_netvalue_data()
         result = process_result({'times': data[0], 'data': data[1]})
