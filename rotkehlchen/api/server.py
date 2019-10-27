@@ -120,7 +120,8 @@ class APIServer():
         self.flask_app.errorhandler(HTTPStatus.NOT_FOUND)(endpoint_not_found)
         self.flask_app.register_error_handler(Exception, self.unhandled_exception)
 
-    def unhandled_exception(self, exception: Exception):
+    @staticmethod
+    def unhandled_exception(exception: Exception):
         """ Flask.errorhandler when an exception wasn't correctly handled """
         log.critical(
             "Unhandled exception when processing endpoint request",

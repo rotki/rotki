@@ -487,3 +487,13 @@ class RestAPI():
         )
         result = process_result(data)
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    def query_value_distribution_data(self, distribution_by: str) -> Response:
+        if distribution_by == 'location':
+            data = self.rotkehlchen.data.db.get_latest_location_value_distribution()
+
+        else:
+            data = self.rotkehlchen.data.db.get_latest_asset_value_distribution()
+
+        result = process_result(data)
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
