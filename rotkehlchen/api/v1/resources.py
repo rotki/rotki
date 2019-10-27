@@ -7,6 +7,7 @@ from webargs.flaskparser import use_kwargs
 from rotkehlchen.api.v1.encoding import (
     BlockchainBalanceQuerySchema,
     ExchangeBalanceQuerySchema,
+    FiatBalancesSchema,
     NewUserSchema,
     StatisticsAssetBalanceSchema,
     StatisticsValueDistributionSchema,
@@ -82,8 +83,15 @@ class BlockchainBalancesResource(BaseResource):
 
 class FiatBalancesResource(BaseResource):
 
+    patch_schema = FiatBalancesSchema()
+
     def get(self) -> Response:
         return self.rest_api.query_fiat_balances()
+
+    @use_kwargs(patch_schema, locations=('json',))
+    def patch(self, balances: Dict[Asset, AssetAmount]) -> Response:
+        # The passsed assets are guaranteed to be FIAT assets thanks to marshmallow
+        return self.rest_api.set_fiat_balances(balances)
 
 
 class TradesResource(BaseResource):
