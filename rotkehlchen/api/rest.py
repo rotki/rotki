@@ -15,6 +15,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import (
     AuthenticationError,
     IncorrectApiKeyFormat,
+    RemoteError,
     RotkehlchenPermissionError,
 )
 from rotkehlchen.exchanges.data_structures import Trade
@@ -86,6 +87,42 @@ def require_loggedin_user() -> Callable:
 
         return wrapper
     return _require_loggedin_user
+
+
+def require_premium_user(active_check: bool) -> Callable:
+    """
+    Decorator only for premium
+
+    This is a decorator for the RestAPI class's methods requiring a logged in
+    user to have premium subscription.
+
+    If active_check is false there is also an API call to the rotkehlchen server
+    to check that the saved key is also valid.
+    """
+    def _require_premium_user(f: Callable):
+        @wraps(f)
+        def wrapper(wrappingobj, *args):
+            if not wrappingobj.rotkehlchen.user_is_logged_in:
+                result_dict = wrap_in_fail_result('No user is currently logged in')
+                return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+
+            msg = (
+                f'Currently logged in user {wrappingobj.rotkehlchen.data.username} '
+                f'does not have a premium subscription'
+            )
+            if not wrappingobj.rotkehlchen.premium:
+                result_dict = wrap_in_fail_result(msg)
+                return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+
+            if active_check:
+                if not wrappingobj.rotkehlchen.premium.is_active():
+                    result_dict = wrap_in_fail_result(msg)
+                    return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+
+            return f(wrappingobj, *args)
+
+        return wrapper
+    return _require_premium_user
 
 
 logger = logging.getLogger(__name__)
@@ -506,13 +543,13 @@ class RestAPI():
         result = process_result(self.rotkehlchen.data.db.query_owned_assets())
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
+    @require_premium_user(active_check=False)
     def query_netvalue_data(self) -> Response:
         data = self.rotkehlchen.data.db.get_netvalue_data()
         result = process_result({'times': data[0], 'data': data[1]})
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
+    @require_premium_user(active_check=False)
     def query_timed_balances_data(
             self,
             asset: Asset,
@@ -527,7 +564,7 @@ class RestAPI():
         result = process_result(data)
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
+    @require_premium_user(active_check=False)
     def query_value_distribution_data(self, distribution_by: str) -> Response:
         if distribution_by == 'location':
             data = self.rotkehlchen.data.db.get_latest_location_value_distribution()
@@ -537,6 +574,19 @@ class RestAPI():
 
         result = process_result(data)
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    @require_premium_user(active_check=True)
+    def query_statistics_renderer(self) -> Response:
+        result_dict = {'result': None, 'message': ''}
+        try:
+            result = self.rotkehlchen.premium.query_statistics_renderer()
+            result_dict['result'] = result
+            status_code = HTTPStatus.OK
+        except RemoteError as e:
+            result_dict['message'] = str(e)
+            status_code = HTTPStatus.CONFLICT
+
+        return api_response(process_result(result_dict), status_code=status_code)
 
     def get_messages(self) -> Response:
         warnings = self.rotkehlchen.msg_aggregator.consume_warnings()
