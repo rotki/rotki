@@ -20,6 +20,7 @@ from rotkehlchen.api.v1.resources import (
     SettingsResource,
     StatisticsAssetBalanceResource,
     StatisticsNetvalueResource,
+    StatisticsRendererResource,
     StatisticsValueDistributionResource,
     TaskOutcomeResource,
     TradesResource,
@@ -56,6 +57,7 @@ URLS_V1: URLS = [
     ('/statistics/netvalue', StatisticsNetvalueResource),
     ('/statistics/balance/<string:asset>', StatisticsAssetBalanceResource),
     ('/statistics/value_distribution', StatisticsValueDistributionResource),
+    ('/statistics/renderer', StatisticsRendererResource),
     ('/messages/', MessagesResource),
 ]
 
