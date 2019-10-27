@@ -1,8 +1,11 @@
 <template>
-  <div class="balance-table">
+  <div
+    class="balance-table"
+    :class="`${blockchain.toLocaleLowerCase()}-balance-table`"
+  >
     <v-row>
       <v-col>
-        <h3 class="text-center">{{ title }}</h3>
+        <h3 class="text-center balance-table__title">{{ title }}</h3>
       </v-col>
     </v-row>
     <v-data-table :headers="headers" :items="balances" :loading="deleting">

@@ -4,8 +4,7 @@
         "target": "es2016",
         "module": "commonjs",
         "types": [
-            "chai",
-            "mocha",
+            "jest",
             "node",
             "webdriverio"
         ],

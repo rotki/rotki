@@ -1,17 +1,19 @@
 <template>
-  <v-row>
+  <v-row class="blockchain-balances">
     <v-col>
       <v-card>
         <v-card-title>Blockchain Balance</v-card-title>
         <v-card-text>
           <v-select
             v-model="selected"
+            class="blockchain-balances__chain"
             :items="items"
             label="Choose blockchain"
             :disabled="loading"
           ></v-select>
           <v-text-field
             v-model="accountAddress"
+            class="blockchain-balances__address"
             label="Account"
             :disabled="loading"
           ></v-text-field>
@@ -21,7 +23,7 @@
           </div>
 
           <v-btn
-            id="add-blockchain-account"
+            class="blockchain-balances__buttons__add"
             depressed
             color="primary"
             type="submit"

@@ -1,12 +1,17 @@
 <template>
-  <v-dialog v-model="displayed" persistent max-width="450">
+  <v-dialog
+    v-model="displayed"
+    persistent
+    max-width="450"
+    class="create-account"
+  >
     <v-card>
       <v-card-title>Create New Account</v-card-title>
       <v-card-text>
         <v-form ref="form" v-model="valid">
           <v-text-field
-            id="username_entry"
             v-model="username"
+            class="create-account__fields__username"
             label="Username"
             prepend-icon="fa-user"
             :rules="usernameRules"
@@ -14,8 +19,8 @@
             required
           ></v-text-field>
           <v-text-field
-            id="password_entry"
             v-model="password"
+            class="create-account__fields__password"
             label="Password"
             prepend-icon="fa-lock"
             :rules="passwordRules"
@@ -24,8 +29,8 @@
             required
           ></v-text-field>
           <v-text-field
-            id="repeat_password_entry"
             v-model="passwordConfirm"
+            class="create-account__fields__password-repeat"
             prepend-icon="fa-repeat"
             :rules="passwordConfirmRules"
             :disabled="loading"
@@ -38,6 +43,7 @@
       </v-card-text>
       <v-card-actions>
         <v-btn
+          class="create-account__buttons__confirm"
           depressed
           color="primary"
           :disabled="!valid || loading"
@@ -46,7 +52,13 @@
         >
           Create
         </v-btn>
-        <v-btn depressed color="primary" :disabled="loading" @click="cancel()">
+        <v-btn
+          class="create-account__buttons__cancel"
+          depressed
+          color="primary"
+          :disabled="loading"
+          @click="cancel()"
+        >
           Cancel
         </v-btn>
       </v-card-actions>
