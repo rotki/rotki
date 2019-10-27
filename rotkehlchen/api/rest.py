@@ -1,8 +1,9 @@
 import json
 import logging
 import traceback
+from functools import wraps
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 import gevent
 from flask import Response, make_response
@@ -70,6 +71,21 @@ def api_response(
         (data, status_code, {"mimetype": "application/json", "Content-Type": "application/json"}),
     )
     return response
+
+
+def require_loggedin_user() -> Callable:
+    """ This is a decorator for the RestAPI class's methods requiring a logged in user.
+    """
+    def _require_loggedin_user(f: Callable):
+        @wraps(f)
+        def wrapper(wrappingobj, *args):
+            if not wrappingobj.rotkehlchen.user_is_logged_in:
+                result_dict = wrap_in_fail_result('No user is currently logged in')
+                return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+            return f(wrappingobj, *args)
+
+        return wrapper
+    return _require_loggedin_user
 
 
 logger = logging.getLogger(__name__)
@@ -156,20 +172,7 @@ class RestAPI():
         self.stop_event.set()
 
     # - Public functions exposed via the rest api
-
-    def logout(self) -> Response:
-        # Kill all queries apart from the main loop -- perhaps a bit heavy handed
-        # but the other options would be:
-        # 1. to wait for all of them. That could take a lot of time, for no reason.
-        #    All results would be discarded anyway since we are logging out.
-        # 2. Have an intricate stop() notification system for each greenlet, but
-        #   that is going to get complicated fast.
-        gevent.killall(self.killable_greenlets)
-        with self.task_lock:
-            self.task_results = {}
-        self.rotkehlchen.logout()
-        return api_response(result=OK_RESULT, status_code=HTTPStatus.OK)
-
+    @require_loggedin_user()
     def set_settings(self, settings: Dict[str, Any]) -> Response:
         _, message = self.rotkehlchen.set_settings(settings)
         new_settings = process_result(self.rotkehlchen.data.db.get_settings())
@@ -177,10 +180,12 @@ class RestAPI():
         status_code = HTTPStatus.OK if message == '' else HTTPStatus.CONFLICT
         return api_response(result=result_dict, status_code=status_code)
 
+    @require_loggedin_user()
     def get_settings(self) -> Response:
         result_dict = _wrap_in_ok_result(process_result(self.rotkehlchen.data.db.get_settings()))
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
+    @require_loggedin_user()
     def query_task_outcome(self, task_id: int) -> Response:
         with self.task_lock:
             for greenlet in self.killable_greenlets:
@@ -214,6 +219,7 @@ class RestAPI():
         res = process_result(rates)
         return api_response(_wrap_in_ok_result(res), status_code=HTTPStatus.OK)
 
+    @require_loggedin_user()
     def setup_exchange(self, name: str, api_key: str, api_secret: str) -> Response:
         result, message = self.rotkehlchen.setup_exchange(name, api_key, api_secret)
         status_code = HTTPStatus.OK
@@ -221,6 +227,7 @@ class RestAPI():
             status_code = HTTPStatus.CONFLICT
         return api_response(_wrap_in_result(result, message), status_code=status_code)
 
+    @require_loggedin_user()
     def remove_exchange(self, name: str) -> Response:
         result, message = self.rotkehlchen.remove_exchange(name)
         status_code = HTTPStatus.OK
@@ -235,6 +242,7 @@ class RestAPI():
 
         return exchange_obj.query_balances()
 
+    @require_loggedin_user()
     def query_exchange_balances(self, name: str, async_query: bool) -> Response:
         if async_query:
             return self._query_async(command='_query_exchange_balances', name=name)
@@ -248,6 +256,7 @@ class RestAPI():
     def _query_blockchain_balances(self, name: str) -> Tuple[Optional[Dict[str, Dict]], str]:
         return self.rotkehlchen.blockchain.query_balances(name=name)
 
+    @require_loggedin_user()
     def query_blockchain_balances(self, name: str, async_query: bool) -> Response:
         if async_query:
             return self._query_async(command='_query_blockchain_balances', name=name)
@@ -258,10 +267,12 @@ class RestAPI():
 
         return api_response(_wrap_in_ok_result(process_result(balances)), HTTPStatus.OK)
 
+    @require_loggedin_user()
     def query_fiat_balances(self) -> Response:
         balances = self.rotkehlchen.query_fiat_balances()
         return api_response(_wrap_in_ok_result(process_result(balances)), HTTPStatus.OK)
 
+    @require_loggedin_user()
     def get_trades(
             self,
             from_ts: Optional[Timestamp],
@@ -278,6 +289,7 @@ class RestAPI():
         ]
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
+    @require_loggedin_user()
     def add_trade(
             self,
             timestamp: Timestamp,
@@ -310,6 +322,7 @@ class RestAPI():
         result_dict = _wrap_in_ok_result(result_dict)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
+    @require_loggedin_user()
     def edit_trade(
             self,
             trade_id: str,
@@ -345,6 +358,7 @@ class RestAPI():
         result_dict = _wrap_in_ok_result(result_dict)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
+    @require_loggedin_user()
     def delete_trade(self, trade_id: str) -> Response:
         result, msg = self.rotkehlchen.data.db.delete_trade(trade_id)
         if not result:
@@ -367,6 +381,14 @@ class RestAPI():
     ) -> Response:
 
         result_dict: Dict[str, Any] = {'result': None, 'message': ''}
+        if self.rotkehlchen.user_is_logged_in:
+            result_dict['message'] = (
+                f'Can not create a new user because user '
+                f'{self.rotkehlchen.data.username} is already logged in. '
+                f'Log out of that user first',
+            )
+            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+
         if (
                 premium_api_key != '' and premium_api_secret == '' or
                 premium_api_secret != '' and premium_api_key == ''
@@ -405,6 +427,14 @@ class RestAPI():
     ) -> Response:
 
         result_dict: Dict[str, Any] = {'result': None, 'message': ''}
+        if self.rotkehlchen.user_is_logged_in:
+            result_dict['message'] = (
+                f'Can not login to user {name} because user '
+                f'{self.rotkehlchen.data.username} is already logged in. '
+                f'Log out of that user first',
+            )
+            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+
         try:
             result_dict = self.rotkehlchen.unlock_user(
                 user=name,
@@ -428,19 +458,28 @@ class RestAPI():
         }
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
+    @require_loggedin_user()
     def user_logout(self, name: str) -> Response:
         result_dict: Dict[str, Any] = {'result': None, 'message': ''}
-        if not self.rotkehlchen.user_is_logged_in:
-            result_dict['message'] = 'No user is currently logged in'
-            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
         if name != self.rotkehlchen.data.username:
             result_dict['message'] = f'Provided user {name} is not the logged in user'
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
+        # Kill all queries apart from the main loop -- perhaps a bit heavy handed
+        # but the other options would be:
+        # 1. to wait for all of them. That could take a lot of time, for no reason.
+        #    All results would be discarded anyway since we are logging out.
+        # 2. Have an intricate stop() notification system for each greenlet, but
+        #   that is going to get complicated fast.
+        gevent.killall(self.killable_greenlets)
+        with self.task_lock:
+            self.task_results = {}
+        self.rotkehlchen.logout()
         result_dict['result'] = True
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
+    @require_loggedin_user()
     def user_set_premium_credentials(
             self,
             name: str,
@@ -448,9 +487,6 @@ class RestAPI():
             api_secret: str,
     ) -> Response:
         result_dict: Dict[str, Any] = {'result': None, 'message': ''}
-        if not self.rotkehlchen.user_is_logged_in:
-            result_dict['message'] = 'No user is currently logged in'
-            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
         if name != self.rotkehlchen.data.username:
             result_dict['message'] = f'Provided user {name} is not the logged in user'
@@ -465,15 +501,18 @@ class RestAPI():
         result_dict['result'] = True
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
+    @require_loggedin_user()
     def query_owned_assets(self) -> Response:
         result = process_result(self.rotkehlchen.data.db.query_owned_assets())
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
+    @require_loggedin_user()
     def query_netvalue_data(self) -> Response:
         data = self.rotkehlchen.data.db.get_netvalue_data()
         result = process_result({'times': data[0], 'data': data[1]})
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
+    @require_loggedin_user()
     def query_timed_balances_data(
             self,
             asset: Asset,
@@ -488,6 +527,7 @@ class RestAPI():
         result = process_result(data)
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
+    @require_loggedin_user()
     def query_value_distribution_data(self, distribution_by: str) -> Response:
         if distribution_by == 'location':
             data = self.rotkehlchen.data.db.get_latest_location_value_distribution()
