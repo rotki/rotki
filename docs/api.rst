@@ -781,7 +781,6 @@ Statistics for netvalue over time
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 500: Internal Rotki error
 
-
 Statistics for asset balance over time
 ====================================
 
@@ -828,6 +827,94 @@ Statistics for asset balance over time
    :statuscode 400: Provided JSON is in some way malformed or data is invalid.
    :statuscode 500: Internal Rotki error
 
+Statistics for value distribution
+==============================
+
+.. http:get:: /api/(version)/statistics/value_distribution/
+
+   Doing a GET on the statistics value distribution endpoint with the ``"distribution_by": "location"`` argument will return the distribution of netvalue across all locations.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/statistics/value_distribution/ HTTP/1.1
+      Host: localhost:5042
+
+      {"distribution_by": "location"}
+
+   :reqjson str distribution_by: The type of distribution to return. It can only be ``"location"`` or ``"asset"``.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+              "time": 1571992200,
+	      "location": "kraken",
+	      "usd_value": "8901.1"
+	      }, {
+              "time": 1571992200,
+	      "location": "binance",
+	      "usd_value": "9501.3"
+	  }],
+	  "message": ""
+      }
+
+   :reqjson list(object) result: A list of location data entries. Each entry contains the timestamp of the entry, the location and the equivalent usd value at the time.
+
+   :statuscode 200: Value distribution succesfully queried.
+   :statuscode 400: Provided JSON is in some way malformed or data is invalid.
+   :statuscode 500: Internal Rotki error.
+
+.. http:get:: /api/(version)/statistics/value_distribution/
+
+   Doing a GET on the statistics value distribution endpoint with the ``"distribution_by": "asset"`` argument will return the distribution of netvalue across all assets.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/statistics/value_distribution/ HTTP/1.1
+      Host: localhost:5042
+
+      {"distribution_by": "asset"}
+
+   :reqjson str distribution_by: The type of distribution to return. It can only be ``"location"`` or ``"asset"``.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+              "time": 1571992200,
+	      "asset": "BTC",
+	      "amount": "1.2"
+	      "usd_value": "8901.1"
+	      }, {
+              "time": 1571992200,
+	      "asset": "ETH",
+	      "amount": "80.44",
+	      "usd_value": "9501.3"
+	  }],
+	  "message": ""
+      }
+
+   :reqjson list(object) result: A list of asset balance data entries. Each entry contains the timestamp of the entry, the assets, the amount in asset and the equivalent usd value at the time.
+
+   :statuscode 200: Value distribution succesfully queried.
+   :statuscode 400: Provided JSON is in some way malformed or data is invalid.
+   :statuscode 500: Internal Rotki error.
 
 Dealing with trades
 ===================

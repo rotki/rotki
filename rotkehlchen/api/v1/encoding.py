@@ -259,3 +259,15 @@ class StatisticsAssetBalanceSchema(BaseSchema):
         strict = True
         # decoding to a dict is required by the @use_kwargs decorator from webargs
         decoding_class = dict
+
+
+class StatisticsValueDistributionSchema(BaseSchema):
+    distribution_by = fields.String(
+        required=True,
+        validate=validate.OneOf(choices=('location', 'asset')),
+    )
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
