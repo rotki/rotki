@@ -16,7 +16,7 @@
 
     <message-overlay :visible="welcomeVisible" @close="closeWelcome()">
       <template #title>
-        Welcome to Rotkehlchen!
+        Welcome to Rotki!
       </template>
       It appears this is your first time using the program. Follow the
       suggestions to integrate with some exchanges or manually input data.

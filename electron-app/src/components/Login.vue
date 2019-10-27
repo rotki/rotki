@@ -1,12 +1,12 @@
 <template>
-  <v-dialog v-model="displayed" persistent max-width="450">
+  <v-dialog v-model="displayed" persistent max-width="450" class="login">
     <v-card>
       <v-card-title>Sign In</v-card-title>
       <v-card-text>
         <v-form ref="form" v-model="valid">
           <v-text-field
-            id="username_entry"
             v-model="username"
+            class="login__fields__username"
             label="Username"
             prepend-icon="fa-user"
             :rules="usernameRules"
@@ -14,8 +14,8 @@
             required
           ></v-text-field>
           <v-text-field
-            id="password_entry"
             v-model="password"
+            class="login__fields__password"
             label="Password"
             prepend-icon="fa-lock"
             :rules="passwordRules"
@@ -28,6 +28,7 @@
       </v-card-text>
       <v-card-actions>
         <v-btn
+          class="login__button__sign-in"
           depressed
           color="primary"
           :disabled="!valid || loading"
@@ -37,6 +38,7 @@
           Sign In
         </v-btn>
         <v-btn
+          class="login__button__new-account"
           depressed
           color="primary"
           :disabled="loading"

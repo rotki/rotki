@@ -1,4 +1,5 @@
 import { DateFormatter } from '@/data/date_formatter';
+
 jest.setTimeout(50000);
 
 describe('DateFormatter', function() {

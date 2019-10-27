@@ -1,5 +1,5 @@
 import { SpectronClient } from 'spectron';
-import { METHOD_TIMEOUT } from './common';
+import { METHOD_TIMEOUT } from '../utils/common';
 const retry = require('promise-retry');
 export enum AccountType {
   ETH = 'ETH',
@@ -10,32 +10,43 @@ export class UserSettingsController {
   constructor(private client: SpectronClient) {}
 
   async addFiatValue(amount: number = 50) {
-    await this.client.scroll('#fiat_type_entry', 0, 0);
-    await this.client.click('#fiat_type_entry');
-    await this.client.element('#fiat_type_entry').click('option=USD');
-    await this.client.addValue('#fiat_value_entry', amount);
+    await this.client.scroll('.fiat-balances__currency', 0, 0);
+    await this.client.click('.fiat-balances__currency');
+    await this.client.element('.fiat-balances__currency').click('option=USD');
+    await this.client.addValue('.fiat-balances__balance', amount);
     await retry(async () => {
-      this.client.click('#modify_fiat_button');
+      this.client.click('.fiat-balances__action');
     });
   }
 
   async addAccount(accountType: AccountType, account: string) {
     await this.clearAccountInput();
     await retry(async () => {
-      this.client.scroll('#crypto_type_entry', 0, 0);
-      this.client.click('#crypto_type_entry');
-      this.client.element('#crypto_type_entry').click(`option=${accountType}`);
+      this.client.scroll('.blockchain-balances__chain', 0, 0);
+      this.client.click('.blockchain-balances__chain');
+      this.client
+        .element('.blockchain-balances__chain')
+        .click(`option=${accountType}`);
     });
 
-    await this.client.addValue('#account_entry', account);
-    await this.client.click('#add_account_button');
+    await this.client.addValue('.blockchain-balances__address', account);
+    await this.client.click('.blockchain-balances__buttons__add');
   }
 
   async clearAccountInput() {
-    await this.client.waitForEnabled('#account_entry', METHOD_TIMEOUT);
-    await this.client.waitForEnabled('#crypto_type_entry', METHOD_TIMEOUT);
-    await this.client.waitForEnabled('#add_account_button', METHOD_TIMEOUT);
-    await this.client.clearElement('#account_entry');
+    await this.client.waitForEnabled(
+      '.blockchain-balances__address',
+      METHOD_TIMEOUT
+    );
+    await this.client.waitForEnabled(
+      '.blockchain-balances__chain',
+      METHOD_TIMEOUT
+    );
+    await this.client.waitForEnabled(
+      '.blockchain-balances__buttons__add',
+      METHOD_TIMEOUT
+    );
+    await this.client.clearElement('.blockchain-balances__address');
   }
 
   async addExchange(apiKey: string, apiSecret: string) {

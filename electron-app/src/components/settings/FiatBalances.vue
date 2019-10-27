@@ -1,11 +1,12 @@
 <template>
-  <v-row>
+  <v-row class="fiat-balances">
     <v-col>
       <v-card>
         <v-card-title>Fiat Balances</v-card-title>
         <v-card-text>
           <v-select
             v-model="selectedCurrency"
+            class="fiat-balances__currency"
             item-value="ticker_symbol"
             item-text="ticker_symbol"
             :items="availableCurrencies"
@@ -14,11 +15,13 @@
           ></v-select>
           <v-text-field
             v-model="balance"
+            class="fiat-balances__balance"
             type="number"
             label="Balance"
             prepend-icon="fa-money"
           ></v-text-field>
           <v-btn
+            class="fiat-balances__action-button"
             color="primary"
             depressed
             :disabled="!selectedCurrency"

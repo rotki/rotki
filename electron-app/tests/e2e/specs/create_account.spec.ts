@@ -3,33 +3,27 @@ import {
   captureOnFailure,
   createAccount,
   GLOBAL_TIMEOUT,
-  initialiseSpectron,
+  initSpectron,
   METHOD_TIMEOUT
-} from './common';
-import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
-import { Guid } from './guid';
+} from './utils/common';
+import { Guid } from './utils/guid';
 
-chai.should();
-chai.use(chaiAsPromised);
+jest.setTimeout(GLOBAL_TIMEOUT);
+jest.retryTimes(3);
 
-describe('first usage', function() {
-  // @ts-ignore
-  this.timeout(GLOBAL_TIMEOUT);
-  this.retries(3);
+describe('first usage', () => {
   let app: Application;
+  let stop: () => Promise<Application>;
 
   beforeEach(async () => {
-    app = initialiseSpectron();
-    await app.start();
+    const testEnvironment = await initSpectron();
+    app = testEnvironment.application;
+    stop = testEnvironment.stop;
   });
 
   afterEach(async function() {
-    await captureOnFailure(app, this.currentTest);
-
-    if (app && app.isRunning()) {
-      await app.stop();
-    }
+    await captureOnFailure(app);
+    await stop();
   });
 
   it('create account', async () => {
@@ -38,13 +32,12 @@ describe('first usage', function() {
 
     await createAccount(app, username, password);
 
-    await app.client.click('#user-dropdown');
-    await app.client.waitForVisible('#logout_button', METHOD_TIMEOUT);
-    await app.client.click('#logout_button');
-
-    await app.client.waitForVisible('.jconfirm', METHOD_TIMEOUT);
-    await app.client.click('.jconfirm-buttons>button');
-
-    await app.client.waitForVisible('.jconfirm', METHOD_TIMEOUT);
+    await app.client.waitForVisible('.user-dropdown', METHOD_TIMEOUT);
+    await app.client.click('.user-dropdown');
+    await app.client.waitForVisible('.user-dropdown__logout', METHOD_TIMEOUT);
+    await app.client.click('.user-dropdown__logout');
+    await app.client.waitForVisible('.confirm-dialog', METHOD_TIMEOUT);
+    await app.client.click('.confirm-dialog__buttons__confirm');
+    await app.client.waitForVisible('.login', METHOD_TIMEOUT);
   });
 });

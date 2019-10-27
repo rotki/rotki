@@ -4,13 +4,12 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "test": "mocha --require dotenv/config --require ts-node/register \"tests/e2e/**/*.spec.ts\"",
     "lint": "vue-cli-service lint",
     "electron:build": "vue-cli-service electron:build",
     "electron:serve": "vue-cli-service electron:serve",
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps",
-    "test:e2e": "vue-cli-service test:e2e",
+    "test:e2e": "jest --config tests/e2e/jest.config.js",
     "test:unit": "vue-cli-service test:unit"
   },
   "dependencies": {
@@ -20,14 +19,14 @@
     "lodash": "4.17.15",
     "register-service-worker": "latest",
     "roboto-fontface": "*",
+    "tasklist": "4.0.0",
     "vue": "2.6.10",
     "vue-class-component": "7.1.0",
     "vue-property-decorator": "8.2.2",
     "vue-router": "3.1.2",
     "vuetify": "2.0.11",
     "vuex": "3.1.1",
-    "zerorpc-rotkehlchen": "0.1.0",
-    "tasklist": "4.0.0"
+    "zerorpc-rotkehlchen": "0.1.0"
   },
   "devDependencies": {
     "@types/jest": "24.0.15",
@@ -47,7 +46,7 @@
     "babel-eslint": "10.0.3",
     "babel-jest": "24.8.0",
     "dotenv": "8.1.0",
-    "electron": "3.0.12",
+    "electron": "3.1.13",
     "electron-rebuild": "1.8.5",
     "eslint": "5.16.0",
     "eslint-config-prettier": "6.1.0",
