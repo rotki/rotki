@@ -661,7 +661,7 @@ Querying the balances of exchanges
    :statuscode 500: Internal Rotki error
 
 Querying the trades history of exchanges
-=======================================
+=========================================
 
 .. http:get:: /api/(version)/exchanges/trades/(name)
 
@@ -1423,4 +1423,107 @@ Querying messages to show to the user
    :reqjson list(str) warnings: A list of strings denoting warnings that need to be shown to the user.
 
    :statuscode 200: Messages popped and read succesfully.
+   :statuscode 500: Internal Rotki error.
+
+Querying complete action history
+================================
+
+.. http:get:: /api/(version)/history/
+
+.. note::
+   This endpoint can also be queried asynchronouly by using ``"async_query": true``
+
+   Doing a GET on the history endpoint will trigger a query and processing of the history of all actions (trades, deposits, withdrawals, loans, eth transactions) within a specific time range. 
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/history/ HTTP/1.1
+      Host: localhost:5042
+
+      {"from_timestamp": 1514764800, "to_timestamp": 1572080165, "async_query": true}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "overview": {
+		  "loan_profit": "1500",
+		  "margin_positions_profit_loss": "500",
+		  "settlement_losses": "200",
+		  "ethereum_transaction_gas_costs": "2.5",
+		  "asset_movement_fees": "3.45",
+		  "general_trade_profit_loss": "5002",
+		  "taxable_trade_profit_loss": "5002",
+		  "total_taxable_profit_loss": "6796.05",
+		  "total_profit_loss": "6796.05"
+	      },
+	      "all_events": [{
+	          "type": "buy",
+		  "paid_in_profit_currency": "4000",
+		  "paid_asset": "BTC",
+		  "paid_in_asset": "0.5",
+		  "taxable_amount": "not applicable",
+		  "taxable_bought_cost_in_profit_currency": "not applicable",
+		  "received_asset": "ETH",
+		  "taxable_received_in_profit_currency": "0",
+		  "received_in_asset": "24",
+		  "net_profit_or_loss": "0",
+		  "time": 1514765800,
+		  "is_virtual": false
+	      }, {
+	          "type": "sell",
+		  "paid_in_profit_currency": "0",
+		  "paid_asset": "BTC",
+		  "paid_in_asset": "0.2",
+		  "taxable_amount": "0.1",
+		  "taxable_bought_cost_in_profit_currency": "600",
+		  "received_asset": "EUR",
+		  "taxable_received_in_profit_currency": "800",
+		  "received_in_asset": "1600",
+		  "net_profit_or_loss": "200",
+		  "time": 1524865800,
+		  "is_virtual": false
+	      }],
+	  },
+	  "message": ""
+      }
+
+   The overview part of the result is a dictionary with the following keys:
+
+   :reqjson str loan_profit: The profit from loans inside the given time period denominated in the user's profit currency.
+   :reqjson str margin_positions_profit_loss: The profit/loss from margin positions inside the given time period denominated in the user's profit currency.
+   :reqjson str settlement_losses: The losses from margin settlements inside the given time period denominated in the user's profit currency.
+   :reqjson str ethereum_transactions_gas_costs: The losses from ethereum gas fees inside the given time period denominated in the user's profit currency.
+   :reqjson str asset_movement_fees: The losses from exchange deposit/withdral fees inside the given time period denominated in the user's profit currency.
+   :reqjson str general_trade_profit_loss: The profit/loss from all trades inside the given time period denominated in the user's profit currency.
+   :reqjson str taxable_trade_profit_loss: The portion of the profit/loss from all trades that is taxable and is inside the given time period denominated in the user's profit currency.
+   :reqjson str total_taxable_profit_loss: The portion of all profit/loss that is taxable and is inside the given time period denominated in the user's profit currency.
+   :reqjson str total_profit_loss: The total profit loss inside the given time period denominated in the user's profit currency.
+
+   The all_events part of the result is a list of events with the following keys:
+
+   :reqjson str type: The type of event. Can be one of ``"buy"``, ``"sell"``, ``"tx_gas_cost"``, ``"asset_movement"``, ``"loan_settlement"``, ``"interest_rate_payment"``, ``"margin_position_close"``
+   :reqjson str paid_in_profit_currency: The total amount paid for this action in the user's profit currency. This will always be zero for sells and other actions that only give profit.
+   :reqjson str paid_asset: The asset that was paid for in this action.
+   :reqjson str paid_in_asset: The amount of ``paid_asset`` that was used in this action.
+   :reqjson str taxable_amount: For sells and other similar actions this is the part of the ``paid_in_asset`` that is considered taxable. Can differ for jurisdictions like Germany where after a year of holding trades are not taxable. For buys this will have the string ``"not applicable"``.
+   :reqjson str taxable_bought_cost_in_profit_currency: For sells and other similar actions this is the part of the ``paid_in_asset`` that is considered taxable. Can differ for jurisdictions like Germany where after a year of holding trades are not taxable. For buys this will have the string ``"not applicable"``.
+   :reqjson str received_asset: The asset that we received from this action. For buys this is the asset that we bought and for sells the asset that we got by selling.
+   :reqjson str taxable_received_in_profit_currency: The taxable portion of the asset that we received from this action in profit currency. Can be different than the price of ``received_in_asset`` in profit currency if not the entire amount that was exchanged was taxable. For buys this would be 0.
+   :reqjson str received_in_asset: The amount of ``received_asset`` that we received from this action.
+   :reqjson str net_profit_or_loss: The net profit/loss from this action denoted in profit currency.
+   :reqjson int time: The timestamp this action took place in.
+   :reqjson bool is_virtual: A boolean denoting whether this is a virtual action. Virtual actions are special actions that are created to make accounting for crypto to crypto trades possible. For example, if you sell BTC for ETH a virtual trade to sell BTC for EUR and then a virtual buy to buy BTC with EUR will be created.
+
+   :statuscode 200: History processed and returned succesfully
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal Rotki error.

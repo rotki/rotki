@@ -9,6 +9,7 @@ from rotkehlchen.api.v1.encoding import (
     ExchangeBalanceQuerySchema,
     ExchangeTradesQuerySchema,
     FiatBalancesSchema,
+    HistoryProcessingSchema,
     NewUserSchema,
     StatisticsAssetBalanceSchema,
     StatisticsValueDistributionSchema,
@@ -81,8 +82,8 @@ class ExchangeTradesResource(BaseResource):
     def get(
             self,
             name: Optional[str],
-            from_timestamp: Optional[Timestamp],
-            to_timestamp: Optional[Timestamp],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
             async_query: bool,
     ) -> Response:
         return self.rest_api.query_exchange_trades(
@@ -124,8 +125,8 @@ class TradesResource(BaseResource):
     @use_kwargs(get_schema, locations=('json',))
     def get(
             self,
-            from_timestamp: Optional[Timestamp],
-            to_timestamp: Optional[Timestamp],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
             location: Optional[Location],
     ) -> Response:
         return self.rest_api.get_trades(
@@ -261,8 +262,8 @@ class StatisticsAssetBalanceResource(BaseResource):
     def get(
             self,
             asset: Asset,
-            from_timestamp: Optional[Timestamp],
-            to_timestamp: Optional[Timestamp],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
     ) -> Response:
         return self.rest_api.query_timed_balances_data(
             asset=asset,
@@ -292,3 +293,20 @@ class MessagesResource(BaseResource):
 
     def get(self) -> Response:
         return self.rest_api.get_messages()
+
+
+class HistoryProcessingResource(BaseResource):
+
+    get_schema = HistoryProcessingSchema()
+
+    def get(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            async_query: bool,
+    ) -> Response:
+        return self.rest_api.process_history(
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            async_query=async_query,
+        )
