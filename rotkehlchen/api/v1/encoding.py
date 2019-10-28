@@ -269,6 +269,17 @@ class ExchangeBalanceQuerySchema(BaseSchema):
         decoding_class = dict
 
 
+class ExchangeTradesQuerySchema(BaseSchema):
+    name = fields.String(missing=None)
+    from_timestamp = TimestampField(missing=None)
+    to_timestamp = TimestampField(missing=None)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
 class BlockchainBalanceQuerySchema(BaseSchema):
     name = fields.String(missing='all')
     async_query = fields.Boolean(missing=False)
