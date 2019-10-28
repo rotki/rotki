@@ -32,7 +32,6 @@ from rotkehlchen.typing import (
     TradePair,
     TradeType,
 )
-from rotkehlchen.utils.misc import ts_now
 
 OK_RESULT = {'result': True, 'message': ''}
 
@@ -322,20 +321,15 @@ class RestAPI():
     def _query_exchange_trades(
             self,
             name: Optional[str],
-            from_timestamp: Optional[Timestamp],
-            to_timestamp: Optional[Timestamp],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
     ) -> Tuple[Optional[List[Trade]], str]:
-        from_ts = Timestamp(0)
-        if from_timestamp is not None:
-            from_ts = from_timestamp
-        if to_timestamp is None:
-            to_ts = ts_now()
-        else:
-            to_ts = to_timestamp
-
         if name is None:
             # Query all exchanges
-            return self._query_all_exchange_trades(from_ts=from_ts, to_ts=to_ts), ''
+            return self._query_all_exchange_trades(
+                from_ts=from_timestamp,
+                to_ts=to_timestamp,
+            ), ''
 
         # else query only the specific exchange
         exchange_obj = self.rotkehlchen.exchange_manager.connected_exchanges.get(name, None)
@@ -348,8 +342,8 @@ class RestAPI():
     def query_exchange_trades(
             self,
             name: Optional[str],
-            from_timestamp: Optional[Timestamp],
-            to_timestamp: Optional[Timestamp],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
             async_query: bool,
     ) -> Response:
         if async_query:
@@ -398,8 +392,8 @@ class RestAPI():
     @require_loggedin_user()
     def get_trades(
             self,
-            from_ts: Optional[Timestamp],
-            to_ts: Optional[Timestamp],
+            from_ts: Timestamp,
+            to_ts: Timestamp,
             location: Optional[Location],
     ) -> Response:
         trades = self.rotkehlchen.data.db.get_trades(
@@ -639,8 +633,8 @@ class RestAPI():
     def query_timed_balances_data(
             self,
             asset: Asset,
-            from_timestamp: Optional[Timestamp],
-            to_timestamp: Optional[Timestamp],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
     ) -> Response:
         data = self.rotkehlchen.data.db.query_timed_balances(
             from_ts=from_timestamp,
@@ -679,3 +673,35 @@ class RestAPI():
         errors = self.rotkehlchen.msg_aggregator.consume_errors()
         result = {'warnings': warnings, 'errors': errors}
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    def _process_history(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Tuple[Dict[str, Any], str]:
+        result, error_or_empty = self.rotkehlchen.process_history(
+            start_ts=from_timestamp,
+            end_ts=to_timestamp,
+        )
+        return result, error_or_empty
+
+    @require_loggedin_user()
+    def process_history(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            async_query: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_process_history',
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+
+        result, msg = self._process_history(
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+        result_dict = _wrap_in_result(result=process_result(result), message=msg)
+        return api_response(result_dict, status_code=HTTPStatus.OK)
