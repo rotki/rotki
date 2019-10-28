@@ -16,6 +16,7 @@ from rotkehlchen.api.v1.resources import (
     ExchangesResource,
     FiatBalancesResource,
     FiatExchangeRatesResource,
+    HistoryExportingResource,
     HistoryProcessingResource,
     MessagesResource,
     SettingsResource,
@@ -66,6 +67,7 @@ URLS_V1: URLS = [
     ('/statistics/renderer', StatisticsRendererResource),
     ('/messages/', MessagesResource),
     ('/history/', HistoryProcessingResource),
+    ('/history/export/', HistoryExportingResource),
 ]
 
 logger = logging.getLogger(__name__)

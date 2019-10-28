@@ -3,6 +3,7 @@ import logging
 import traceback
 from functools import wraps
 from http import HTTPStatus
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 import gevent
@@ -705,3 +706,18 @@ class RestAPI():
         )
         result_dict = _wrap_in_result(result=process_result(result), message=msg)
         return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def export_processed_history_csv(self, directory_path: Path) -> Response:
+        if len(self.rotkehlchen.accountant.csv_exporter.all_events_csv) == 0:
+            result_dict = wrap_in_fail_result('No history processed in order to perform an export')
+            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+
+        result, message = self.rotkehlchen.accountant.csvexporter.create_files(
+            dirpath=directory_path,
+        )
+
+        if not result:
+            return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
