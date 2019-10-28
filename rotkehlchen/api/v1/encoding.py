@@ -279,6 +279,16 @@ class NewUserSchema(BaseUserSchema):
     premium_api_secret = fields.String(missing='')
 
 
+class AllBalancesQuerySchema(BaseSchema):
+    async_query = fields.Boolean(missing=False)
+    save_data = fields.Boolean(required=True)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
 class ExchangeBalanceQuerySchema(BaseSchema):
     name = fields.String(missing=None)
     async_query = fields.Boolean(missing=False)

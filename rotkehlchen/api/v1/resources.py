@@ -6,6 +6,7 @@ from flask_restful import Resource
 from webargs.flaskparser import use_kwargs
 
 from rotkehlchen.api.v1.encoding import (
+    AllBalancesQuerySchema,
     BlockchainBalanceQuerySchema,
     ExchangeBalanceQuerySchema,
     ExchangeTradesQuerySchema,
@@ -65,6 +66,15 @@ class ExchangesResource(BaseResource):
 
     def delete(self, name: str) -> Response:
         return self.rest_api.remove_exchange(name=name)
+
+
+class AllBalancesResource(BaseResource):
+
+    get_schema = AllBalancesQuerySchema()
+
+    @use_kwargs(get_schema, locations=('json',))
+    def get(self, save_data: bool, async_query: bool) -> Response:
+        return self.rest_api.query_all_balances(save_data=save_data, async_query=async_query)
 
 
 class ExchangeBalancesResource(BaseResource):
