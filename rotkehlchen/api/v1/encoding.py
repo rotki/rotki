@@ -12,7 +12,8 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import Location, TradeType
+from rotkehlchen.typing import Location, Timestamp, TradeType
+from rotkehlchen.utils.misc import ts_now
 
 
 class TimestampField(fields.Field):
@@ -190,8 +191,8 @@ class BaseSchema(Schema):
 
 
 class TradesQuerySchema(BaseSchema):
-    from_timestamp = TimestampField(missing=None)
-    to_timestamp = TimestampField(missing=None)
+    from_timestamp = TimestampField(missing=Timestamp(0))
+    to_timestamp = TimestampField(missing=ts_now())
     location = LocationField(missing=None)
 
     class Meta:
@@ -271,8 +272,8 @@ class ExchangeBalanceQuerySchema(BaseSchema):
 
 class ExchangeTradesQuerySchema(BaseSchema):
     name = fields.String(missing=None)
-    from_timestamp = TimestampField(missing=None)
-    to_timestamp = TimestampField(missing=None)
+    from_timestamp = TimestampField(missing=Timestamp(0))
+    to_timestamp = TimestampField(missing=ts_now())
 
     class Meta:
         strict = True
@@ -292,8 +293,8 @@ class BlockchainBalanceQuerySchema(BaseSchema):
 
 class StatisticsAssetBalanceSchema(BaseSchema):
     asset = AssetField(required=True)
-    from_timestamp = TimestampField(missing=None)
-    to_timestamp = TimestampField(missing=None)
+    from_timestamp = TimestampField(missing=Timestamp(0))
+    to_timestamp = TimestampField(missing=ts_now())
 
     class Meta:
         strict = True
@@ -306,6 +307,17 @@ class StatisticsValueDistributionSchema(BaseSchema):
         required=True,
         validate=validate.OneOf(choices=('location', 'asset')),
     )
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
+class HistoryProcessingSchema(BaseSchema):
+    from_timestamp = TimestampField(missing=Timestamp(0))
+    to_timestamp = TimestampField(missing=ts_now())
+    async_query = fields.Boolean(missing=False)
 
     class Meta:
         strict = True
