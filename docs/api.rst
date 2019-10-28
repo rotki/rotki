@@ -1527,3 +1527,40 @@ Querying complete action history
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal Rotki error.
+
+Export action history to CSV
+================================
+
+.. http:get:: /api/(version)/history/export
+
+
+   Doing a GET on the history export endpoint will export the last previously queried history to CSV files and save them in the given directory. If history has not been queried before an error is returned.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/history/export HTTP/1.1
+      Host: localhost:5042
+
+      {"directory_path": "/home/username/path/to/csvdir"}
+
+   :reqjson str directory_path: The directory in which to write the exported CSV files
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": True
+	  "message": ""
+      }
+
+
+   :statuscode 200: File were exported succesfully
+   :statuscode 400: Provided JSON is in some way malformed or given string is not a directory.
+   :statuscode 409: No user is currently logged in. No history has been processed. No permissions to write in the given directory. Check error message.
+   :statuscode 500: Internal Rotki error.

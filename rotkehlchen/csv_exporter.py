@@ -1,6 +1,7 @@
 import csv
 import logging
 import os
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset
@@ -401,12 +402,12 @@ class CSVExporter():
             timestamp=timestamp,
         )
 
-    def create_files(self, dirpath: FilePath) -> Tuple[bool, str]:
+    def create_files(self, dirpath: Path) -> Tuple[bool, str]:
         if not self.create_csv:
             return True, ''
 
         try:
-            if not os.path.exists(dirpath):
+            if not dirpath.exists():
                 os.makedirs(dirpath)
 
             _dict_to_csv_file(

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from marshmallow import Schema, SchemaOpts, fields, post_load
 from marshmallow.exceptions import ValidationError
 from webargs import validate
@@ -169,6 +171,23 @@ class LocationField(fields.Field):
         return location
 
 
+class DirectoryField(fields.Field):
+
+    @staticmethod
+    def _serialize(value, attr, obj, **kwargs):  # pylint: disable=unused-argument
+        return str(value)
+
+    def _deserialize(self, value: str, attr, data, **kwargs):  # pylint: disable=unused-argument
+        path = Path(value)
+        if not path.exists():
+            raise ValidationError(f'Given path {value} does not exist')
+
+        if not path.is_dir():
+            raise ValidationError(f'Given path {value} is not a directory')
+
+        return path
+
+
 class BaseOpts(SchemaOpts):
     """
     This allows for having the Object the Schema encodes to inside of the class Meta
@@ -318,6 +337,15 @@ class HistoryProcessingSchema(BaseSchema):
     from_timestamp = TimestampField(missing=Timestamp(0))
     to_timestamp = TimestampField(missing=ts_now())
     async_query = fields.Boolean(missing=False)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
+class HistoryExportingSchema(BaseSchema):
+    directory_path = DirectoryField(required=True)
 
     class Meta:
         strict = True
