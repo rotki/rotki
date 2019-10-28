@@ -257,6 +257,18 @@ class RestAPI():
         res = process_result(rates)
         return api_response(_wrap_in_ok_result(res), status_code=HTTPStatus.OK)
 
+    def _query_all_balances(self, save_data: bool) -> Dict[str, Any]:
+        return self.rotkehlchen.query_balances(requested_save_data=save_data)
+
+    @require_loggedin_user()
+    def query_all_balances(self, save_data: bool, async_query: bool) -> Response:
+        if async_query:
+            return self._query_async(command='_query_all_balances', save_data=save_data)
+
+        result = self._query_all_balances(save_data=save_data)
+
+        return api_response(_wrap_in_ok_result(process_result(result)), HTTPStatus.OK)
+
     @require_loggedin_user()
     def setup_exchange(self, name: str, api_key: str, api_secret: str) -> Response:
         result, message = self.rotkehlchen.setup_exchange(name, api_key, api_secret)

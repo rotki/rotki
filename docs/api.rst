@@ -588,7 +588,7 @@ Querying the balances of exchanges
    Doing a GET on the appropriate exchanges balances endpoint will return the balances of all assets currently held in that exchange. If no name is provided then the balance of all exchanges is returned.
 
 .. note::
-   This endpoint can also be queried asynchronouly by using ``"async_query": true``
+   This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    **Example Request**:
 
@@ -624,7 +624,7 @@ Querying the balances of exchanges
    Doing a GET on the exchanges balances endpoint will return the balances of all assets currently held in all exchanges.
 
 .. note::
-   This endpoint can also be queried asynchronouly by using ``"async_query": true``
+   This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    **Example Request**:
 
@@ -668,7 +668,7 @@ Querying the trades history of exchanges
    Doing a GET on the appropriate exchanges trades endpoint will return the history of all trades performed at that exchange. If no name is provided then the balance of all exchanges is returned. Trade history can be further filtered by a timestamp range.
 
 .. note::
-   This endpoint can also be queried asynchronouly by using ``"async_query": true``
+   This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    **Example Request**:
 
@@ -728,7 +728,7 @@ Querying the trades history of exchanges
    Doing a GET on the exchanges trades endpoint will return the history of all trades performed on all exchanges. Trade history can be further filtered by a timestamp range.
 
 .. note::
-   This endpoint can also be queried asynchronouly by using ``"async_query": true``
+   This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    **Example Request**:
 
@@ -791,7 +791,7 @@ Querying onchain balances
    Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain name will query balances only for that chain. Available blockchain names are: ``btc`` and ``eth``.
 
 .. note::
-   This endpoint can also be queried asynchronouly by using ``"async_query": true``
+   This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    **Example Request**:
 
@@ -835,6 +835,75 @@ Querying onchain balances
    :statuscode 200: Balances succesfully queried.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: User is not logged in. Invalid blockchain, or problems querying the given blockchain
+   :statuscode 500: Internal Rotki error
+
+Querying all balances
+==========================
+
+.. http:get:: /api/(version)/balances/
+
+.. note::
+   This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   Doing a GET on the balances endpoint will query all balances across all locations for the user. That is exchanges, blockchains and FIAT in banks. And it will return an overview of all queried balances.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/balances/ HTTP/1.1
+      Host: localhost:5042
+
+      {"async_query": true}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "ETH": {
+	          "amount": "1",
+                  "percentage_of_net_value": "9.5%",
+		  "usd_value": "180"
+	       },
+	       "BTC": {
+	          "amount": "0.5",
+                  "percentage_of_net_value": "90%",
+		  "usd_value": "4000"
+	       },
+	       "EUR": {
+	          "amount": "2",
+                  "percentage_of_net_value": "0.5%",
+		  "usd_value": "2.8"
+	       }
+	       "location": {
+	           "banks": {
+		       "percentage_of_net_value": "0.5%",
+                       "usd_value": "2.8"
+		   },
+		   "binance": {
+		       "percentage_of_net_value": "9.5%",
+                       "usd_value": "180"
+		   },
+		   "blockchain": {
+		       "percentage_of_net_value": "90%",
+                       "usd_value": "4000"
+		   }
+	       }
+
+	  },
+	  "message": ""
+      }
+
+
+   :statuscode 200: Balances succesfully queried.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: User is not logged in.
    :statuscode 500: Internal Rotki error
 
 Querying FIAT balances
@@ -1431,9 +1500,9 @@ Querying complete action history
 .. http:get:: /api/(version)/history/
 
 .. note::
-   This endpoint can also be queried asynchronouly by using ``"async_query": true``
+   This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a GET on the history endpoint will trigger a query and processing of the history of all actions (trades, deposits, withdrawals, loans, eth transactions) within a specific time range. 
+   Doing a GET on the history endpoint will trigger a query and processing of the history of all actions (trades, deposits, withdrawals, loans, eth transactions) within a specific time range.
 
 
    **Example Request**:
