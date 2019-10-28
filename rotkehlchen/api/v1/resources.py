@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from flask import Blueprint, Response
@@ -9,6 +10,7 @@ from rotkehlchen.api.v1.encoding import (
     ExchangeBalanceQuerySchema,
     ExchangeTradesQuerySchema,
     FiatBalancesSchema,
+    HistoryExportingSchema,
     HistoryProcessingSchema,
     NewUserSchema,
     StatisticsAssetBalanceSchema,
@@ -310,3 +312,11 @@ class HistoryProcessingResource(BaseResource):
             to_timestamp=to_timestamp,
             async_query=async_query,
         )
+
+
+class HistoryExportingsResource(BaseResource):
+
+    get_schema = HistoryExportingSchema()
+
+    def get(self, directory_path: Path) -> Response:
+        return self.rest_api.export_processed_history_csv(directory_path=directory_path)
