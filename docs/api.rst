@@ -660,6 +660,129 @@ Querying the balances of exchanges
    :statuscode 409: User is not logged in. Some exchange query error. Check error message for details.
    :statuscode 500: Internal Rotki error
 
+Querying the trades history of exchanges
+=======================================
+
+.. http:get:: /api/(version)/exchanges/trades/(name)
+
+   Doing a GET on the appropriate exchanges trades endpoint will return the history of all trades performed at that exchange. If no name is provided then the balance of all exchanges is returned. Trade history can be further filtered by a timestamp range.
+
+.. note::
+   This endpoint can also be queried asynchronouly by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/exchanges/trades/binance HTTP/1.1
+      Host: localhost:5042
+
+      {"from_timestamp": 1514764800, "to_timestamp": 1572080165}
+
+   :reqjson int from_timestamp: The timestamp from which and after to query for the trades. If not given 0 is the start.
+   :reqjson int to_timestamp: The timestamp until which to query for the trades. If not given trades are queried until now.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+	      "trade_id": "sdfhdjskfha",
+	      "timestamp": 1514764801,
+	      "location": "binance",
+	      "pair": "BTC_EUR",
+	      "trade_type": "buy",
+	      "amount": "1.5541",
+	      "rate": "8422.1",
+	      "fee": "0.55",
+	      "fee_currency": "EUR",
+	      "link": "Optional unique trade identifier"
+	      "notes": "Optional notes"
+	  }, {
+	      "trade_id": "binance",
+	      "timestamp": 1572080163,
+	      "location": "binance",
+	      "pair": "BTC_EUR",
+	      "trade_type": "buy",
+	      "amount": "0.541",
+	      "rate": "8432.1",
+	      "fee": "0.55",
+	      "fee_currency": "EUR",
+	      "link": "Optional unique trade identifier"
+	      "notes": "Optional notes"
+	  }],
+	  "message": ""
+      }
+
+   :statuscode 200: Trades succesfully queried.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: User is not logged in.Exchange is not registered or some other exchange query error. Check error message for details.
+   :statuscode 500: Internal Rotki error
+
+.. http:get:: /api/(version)/exchanges/trades/
+
+   Doing a GET on the exchanges trades endpoint will return the history of all trades performed on all exchanges. Trade history can be further filtered by a timestamp range.
+
+.. note::
+   This endpoint can also be queried asynchronouly by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/exchanges/trades HTTP/1.1
+      Host: localhost:5042
+
+      {"from_timestamp": 1514764800, "to_timestamp": 1572080165}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "kraken": [{
+		  "trade_id": "sdfhdjskfha",
+		  "timestamp": 1514764801,
+		  "location": "kraken",
+		  "pair": "BTC_EUR",
+		  "trade_type": "buy",
+		  "amount": "1.5541",
+		  "rate": "8422.1",
+		  "fee": "0.55",
+		  "fee_currency": "EUR",
+		  "link": "Optional unique trade identifier"
+		  "notes": "Optional notes"
+	      }],
+	      "binance": [{
+		  "trade_id": "binance",
+		  "timestamp": 1572080163,
+		  "location": "binance",
+		  "pair": "BTC_EUR",
+		  "trade_type": "buy",
+		  "amount": "0.541",
+		  "rate": "8432.1",
+		  "fee": "0.55",
+		  "fee_currency": "EUR",
+		  "link": "Optional unique trade identifier"
+		  "notes": "Optional notes"
+	      }]
+	  },
+	  "message": ""
+      }
+
+   :statuscode 200: Trades succesfully queried.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: User is not logged in. Some exchange query error. Check error message for details.
+   :statuscode 500: Internal Rotki error
+
 Querying onchain balances
 ==========================
 

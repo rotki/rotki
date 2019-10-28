@@ -21,7 +21,7 @@ from rotkehlchen.errors import (
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serializer import process_result
+from rotkehlchen.serializer import process_result, process_result_list
 from rotkehlchen.typing import (
     AssetAmount,
     Fee,
@@ -32,6 +32,7 @@ from rotkehlchen.typing import (
     TradePair,
     TradeType,
 )
+from rotkehlchen.utils.misc import ts_now
 
 OK_RESULT = {'result': True, 'message': ''}
 
@@ -310,6 +311,65 @@ class RestAPI():
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
         return api_response(_wrap_in_ok_result(process_result(balances)), HTTPStatus.OK)
+
+    def _query_all_exchange_trades(self, from_ts: Timestamp, to_ts: Timestamp) -> List[Trade]:
+        trades: List[Trade] = list()
+        for _, exchange_obj in self.rotkehlchen.exchange_manager.connected_exchanges.items():
+            trades.extend(exchange_obj.query_trade_history(start_ts=from_ts, end_ts=to_ts))
+
+        return trades
+
+    def _query_exchange_trades(
+            self,
+            name: Optional[str],
+            from_timestamp: Optional[Timestamp],
+            to_timestamp: Optional[Timestamp],
+    ) -> Tuple[Optional[List[Trade]], str]:
+        from_ts = Timestamp(0)
+        if from_timestamp is not None:
+            from_ts = from_timestamp
+        if to_timestamp is None:
+            to_ts = ts_now()
+        else:
+            to_ts = to_timestamp
+
+        if name is None:
+            # Query all exchanges
+            return self._query_all_exchange_trades(from_ts=from_ts, to_ts=to_ts), ''
+
+        # else query only the specific exchange
+        exchange_obj = self.rotkehlchen.exchange_manager.connected_exchanges.get(name, None)
+        if not exchange_obj:
+            return None, f'Could not query trades for {name} since it is not registered'
+
+        return exchange_obj.query_trade_history(), ''
+
+    @require_loggedin_user()
+    def query_exchange_trades(
+            self,
+            name: Optional[str],
+            from_timestamp: Optional[Timestamp],
+            to_timestamp: Optional[Timestamp],
+            async_query: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_query_exchange_trades',
+                name=name,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+
+        trades, msg = self._query_exchange_trades(
+            name=name,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+        if trades is None:
+            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(_wrap_in_ok_result(process_result_list(trades)), HTTPStatus.OK)
 
     def _query_blockchain_balances(self, name: str) -> Tuple[Optional[Dict[str, Dict]], str]:
         return self.rotkehlchen.blockchain.query_balances(name=name)

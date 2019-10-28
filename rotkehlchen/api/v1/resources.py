@@ -7,6 +7,7 @@ from webargs.flaskparser import use_kwargs
 from rotkehlchen.api.v1.encoding import (
     BlockchainBalanceQuerySchema,
     ExchangeBalanceQuerySchema,
+    ExchangeTradesQuerySchema,
     FiatBalancesSchema,
     NewUserSchema,
     StatisticsAssetBalanceSchema,
@@ -70,6 +71,26 @@ class ExchangeBalancesResource(BaseResource):
     @use_kwargs(get_schema, locations=('json',))
     def get(self, name: Optional[str], async_query: bool) -> Response:
         return self.rest_api.query_exchange_balances(name=name, async_query=async_query)
+
+
+class ExchangeTradesResource(BaseResource):
+
+    get_schema = ExchangeTradesQuerySchema()
+
+    @use_kwargs(get_schema, locations=('json',))
+    def get(
+            self,
+            name: Optional[str],
+            from_timestamp: Optional[Timestamp],
+            to_timestamp: Optional[Timestamp],
+            async_query: bool,
+    ) -> Response:
+        return self.rest_api.query_exchange_trades(
+            name=name,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            async_query=async_query,
+        )
 
 
 class BlockchainBalancesResource(BaseResource):
