@@ -733,3 +733,9 @@ class RestAPI():
             return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.CONFLICT)
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def query_periodic_data(self) -> Response:
+        data = self.rotkehlchen.query_periodic_data()
+        result = process_result(data)
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
