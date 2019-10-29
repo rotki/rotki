@@ -1633,3 +1633,48 @@ Export action history to CSV
    :statuscode 400: Provided JSON is in some way malformed or given string is not a directory.
    :statuscode 409: No user is currently logged in. No history has been processed. No permissions to write in the given directory. Check error message.
    :statuscode 500: Internal Rotki error.
+
+Querying periodic data
+======================
+
+.. http:get:: /api/(version)/periodic/
+
+
+   Doing a GET on the periodic data endpoint will return data that would be usually frequently queried by an application. Check the example response to see what these data would be.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/periodict/ HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "last_balance_save": 1572345881,
+	      "eth_node_connection": true,
+	      "history_process_start_ts": 1572325881,
+	      "history_process_current_ts": 1572345881,
+	  }
+	  "message": ""
+      }
+
+   :reqjson int last_balance_save: The last time (unix timestamp) at which balances were saved in the database.
+   :reqjson bool eth_node_connection: A boolean denoting if the application is connected to an ethereum node. If ``false`` that means we fall back to etherscan.
+   :reqjson int history_process_start_ts: A unix timestamp indicating the time that the last history processing started. Meant to be queried frequently so that a progress bar can be provided to the user.
+   :reqjson int history_process_current_ts: A unix timestamp indicating the current time as far as the last history processing is concerned. Meant to be queried frequently so that a progress bar can be provided to the user.
+
+
+   :statuscode 200: Data were queried succesfully.
+   :statuscode 409: No user is currently logged in.
+   :statuscode 500: Internal Rotki error.
