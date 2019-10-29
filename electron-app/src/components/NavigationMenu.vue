@@ -4,6 +4,10 @@
       <v-list-item-action><v-icon>fa-dashboard</v-icon></v-list-item-action>
       <v-list-item-title>Dashboard</v-list-item-title>
     </v-list-item>
+    <v-list-item to="/import">
+      <v-list-item-action><v-icon>fa-download</v-icon></v-list-item-action>
+      <v-list-item-title>Import Data</v-list-item-title>
+    </v-list-item>
     <v-list-group prepend-icon="fa-exchange" value="true">
       <template #activator>
         <v-list-item>
