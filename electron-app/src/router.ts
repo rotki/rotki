@@ -46,6 +46,11 @@ export default new Router({
       path: '/exchange-balances/:exchange',
       name: 'exchange-balances',
       component: () => import('./views/ExchangeBalances.vue')
+    },
+    {
+      path: '/import',
+      name: 'import',
+      component: () => import('./views/ImportData.vue')
     }
   ]
 });
