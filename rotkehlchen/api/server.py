@@ -19,6 +19,7 @@ from rotkehlchen.api.v1.resources import (
     HistoryExportingResource,
     HistoryProcessingResource,
     MessagesResource,
+    PeriodicDataResource,
     SettingsResource,
     StatisticsAssetBalanceResource,
     StatisticsNetvalueResource,
@@ -66,6 +67,7 @@ URLS_V1: URLS = [
     ('/statistics/value_distribution', StatisticsValueDistributionResource),
     ('/statistics/renderer', StatisticsRendererResource),
     ('/messages/', MessagesResource),
+    ('/periodic/', PeriodicDataResource),
     ('/history/', HistoryProcessingResource),
     ('/history/export/', HistoryExportingResource),
 ]

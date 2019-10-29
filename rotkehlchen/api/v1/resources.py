@@ -330,3 +330,9 @@ class HistoryExportingsResource(BaseResource):
 
     def get(self, directory_path: Path) -> Response:
         return self.rest_api.export_processed_history_csv(directory_path=directory_path)
+
+
+class PeriodicDataResource(BaseResource):
+
+    def get(self) -> Response:
+        return self.rest_api.query_periodic_data()
