@@ -236,7 +236,9 @@ class HasEthereumToken(Asset):
         data = AssetResolver().get_asset_data(self.identifier)  # pylint: disable=no-member
 
         if not data.ethereum_address:
-            raise ValueError('Tried to initialize a non Ethereum asset as Ethereum Token')
+            raise DeserializationError(
+                'Tried to initialize a non Ethereum asset as Ethereum Token',
+            )
 
         object.__setattr__(self, 'ethereum_address', data.ethereum_address)
         object.__setattr__(self, 'decimals', data.decimals)

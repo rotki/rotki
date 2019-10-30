@@ -12,6 +12,7 @@ from werkzeug.exceptions import NotFound
 from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
 from rotkehlchen.api.v1.resources import (
     BlockchainBalancesResource,
+    EthereumTokensResource,
     ExchangeBalancesResource,
     ExchangesResource,
     FiatBalancesResource,
@@ -70,6 +71,7 @@ URLS_V1: URLS = [
     ('/periodic/', PeriodicDataResource),
     ('/history/', HistoryProcessingResource),
     ('/history/export/', HistoryExportingResource),
+    ('/blockchains/ETH/tokens', EthereumTokensResource),
 ]
 
 logger = logging.getLogger(__name__)
