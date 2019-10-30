@@ -1,10 +1,10 @@
 <template>
-  <v-row>
+  <v-row class="exchange-settings">
     <v-col>
       <v-card>
         <v-card-title>Exchange Settings</v-card-title>
         <v-card-text>
-          <v-row class="connected-exchanges">
+          <v-row class="exchange-settings__connected-exchanges">
             <exchange-badge
               v-for="exchange in connectedExchanges"
               :key="exchange"
@@ -13,20 +13,21 @@
           </v-row>
           <v-select
             v-model="selectedExchange"
+            class="exchange-settings__fields__exchange"
             :items="availableExchanges"
             label="Exchange"
           ></v-select>
           <v-text-field
-            id="premium_api_key_entry"
             v-model="apiKey"
+            class="exchange-settings__fields__api-key"
             prepend-icon="fa-key"
             label="API Key"
             :disabled="isConnected"
             type="text"
           ></v-text-field>
           <v-text-field
-            id="premium_api_secret_entry"
             v-model="apiSecret"
+            class="exchange-settings__fields__api-secret"
             prepend-icon="fa-user-secret"
             label="API Secret"
             :disabled="isConnected"
@@ -35,7 +36,7 @@
         </v-card-text>
         <v-card-actions>
           <v-btn
-            id="setup_exchange"
+            class="exchange-settings__buttons__setup"
             depressed
             color="primary"
             type="submit"
