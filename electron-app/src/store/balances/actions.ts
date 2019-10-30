@@ -114,9 +114,10 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       address
     );
     const { ETH, BTC } = per_account;
-    if (ETH) {
+    console.log(per_account);
+    if (blockchain === 'ETH') {
       commit('updateEth', convertEthBalances(ETH));
-    } else if (BTC) {
+    } else {
       commit('updateBtc', convertBalances(BTC));
     }
     commit('updateTotals', convertBalances(totals));
@@ -129,9 +130,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       address
     );
     const { ETH, BTC } = per_account;
-    if (ETH) {
+    if (blockchain === 'ETH') {
       commit('updateEth', convertEthBalances(ETH));
-    } else if (BTC) {
+    } else {
       commit('updateBtc', convertBalances(BTC));
     }
     commit('updateTotals', convertBalances(totals));
