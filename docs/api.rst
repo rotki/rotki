@@ -1678,3 +1678,160 @@ Querying periodic data
    :statuscode 200: Data were queried succesfully.
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal Rotki error.
+
+Getting information about ETH tokens
+====================================
+
+.. http:get:: /api/(version)/blockchains/ETH/tokens
+
+   Doing a GET on the eth tokens endpoint will return a list of all known ETH tokens and a list of the currently owned ETH tokens.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/tokens HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "all_eth_tokens": [{
+	          "address": "0x6810e776880C02933D47DB1b9fc05908e5386b96",
+		  "symbol": "GNO",
+		  "name": "Gnosis token",
+		  "decimal": 18
+	      }, {
+	          "address": "0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6",
+		  "symbol": "RDN",
+		  "name": "Raiden Network Token",
+		  "decimal": 18
+	      },
+	      ...
+	      ],
+	      "owned_eth_tokens": ["RDN", "DAI"]
+	  },
+	  "message": ""
+      }
+
+   :reqjson list(dict) all_eth_tokens: A list of token information for all tokens that Rotki knows about. Each entry contains the checksummed address of the token, the symbol, the name and the decimals.
+   :reqjson list(str) owned_eth_tokens: A list of the symbols of all the tokens the user tracks/owns.
+
+   :statuscode 200: Tokens succesfully queried.
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal Rotki error
+
+Adding owned ETH tokens
+=========================
+
+.. http:put:: /api/(version)/blockchains/ETH/tokens
+
+   Doing a PUT on the eth tokens endpoint with a list of tokens to add will add new ethereum tokens for tracking to the currently logged in user. It returns the updated blockchain per account and totals balances after the additions
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blockchains/ETH/tokens HTTP/1.1
+      Host: localhost:5042
+
+      {"eth_tokens": ["RDN", "GNO"]}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "per_account": {
+	          "BTC": { "3Kb9QPcTUJKspzjQFBppfXRcWew6hyDAPb": {
+		       "amount": "0.5", "usd_value": "3770.075"
+		   }. "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
+		       "amount": "0.5", "usd_value": "3770.075"
+		   }},
+		   "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
+		       "amount": "10", "usd_value": "1755.53", "GNO": "1", "RDN": "1"
+		  }}
+	      }
+	      "totals": {
+	          "BTC": {"amount": "1", "usd_value": "7540.15"},
+	          "ETH": {"amount": "10", "usd_value": "1650.53"},
+	          "RDN": {"amount": "1", "usd_value": "1.5"}.
+	          "GNO": {"amount": "1", "usd_value": "50"}.
+	      }
+	  },
+	  "message": ""
+      }
+
+   :reqjson dict per_account: The blockchain balances per account per asset
+   :reqjson dict total: The blockchain balances in total per asset
+
+   :statuscode 200: Tokens succesfully added.
+   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 409: User is not logged in. Some error occured when re-querying the balances after addition. Check message for details.
+   :statuscode 500: Internal Rotki error
+
+Removing owned ETH tokens
+=========================
+
+.. http:delete:: /api/(version)/blockchains/ETH/tokens
+
+   Doing a DELETE on the eth tokens endpoint with a list of tokens to delete will remove the given ethereum tokens from tracking for the currently logged in user. It returns the updated blockchain per account and totals balances after the deletions.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/blockchains/ETH/tokens HTTP/1.1
+      Host: localhost:5042
+
+      {"eth_tokens": ["RDN", "GNO"]}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "per_account": {
+	          "BTC": { "3Kb9QPcTUJKspzjQFBppfXRcWew6hyDAPb": {
+		       "amount": "0.5", "usd_value": "3770.075"
+		   }. "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
+		       "amount": "0.5", "usd_value": "3770.075"
+		   }},
+		   "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
+		       "amount": "10", "usd_value": "1755.53",1"
+		  }}
+	      }
+	      "totals": {
+	          "BTC": {"amount": "1", "usd_value": "7540.15"},
+	          "ETH": {"amount": "10", "usd_value": "1650.53"},
+	      }
+	  },
+	  "message": ""
+      }
+
+   :reqjson dict per_account: The blockchain balances per account per asset
+   :reqjson dict total: The blockchain balances in total per asset
+
+   :statuscode 200: Tokens succesfully deleted.
+   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 409: User is not logged in. Some error occured when re-querying the balances after addition. Check message for details.
+   :statuscode 500: Internal Rotki error

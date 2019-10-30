@@ -4,7 +4,7 @@ from marshmallow import Schema, SchemaOpts, fields, post_load
 from marshmallow.exceptions import ValidationError
 from webargs import validate
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
@@ -108,15 +108,37 @@ class FiatAssetField(AssetField):
             data,
             **kwargs,
     ) -> Asset:
-        try:
-            asset = Asset(value)
-        except (DeserializationError, UnknownAsset) as e:
-            raise ValidationError(str(e))
-
+        asset = super()._deserialize(value, attr, data, **kwargs)
         if not asset.is_fiat():
             raise ValidationError(f'Asset {asset.identifier} is not a FIAT asset')
 
         return asset
+
+
+class EthereumTokenAssetField(AssetField):
+
+    @staticmethod
+    def _serialize(  # pylint: disable=unused-argument
+            value: EthereumToken,
+            attr,
+            obj,
+            **kwargs,
+    ) -> str:
+        return str(value.identifier)
+
+    def _deserialize(  # pylint: disable=unused-argument
+            self,
+            value: str,
+            attr,
+            data,
+            **kwargs,
+    ) -> Asset:
+        try:
+            token = EthereumToken(value)
+        except (DeserializationError, UnknownAsset) as e:
+            raise ValidationError(str(e))
+
+        return token
 
 
 class TradeTypeField(fields.Field):
@@ -356,6 +378,15 @@ class HistoryProcessingSchema(BaseSchema):
 
 class HistoryExportingSchema(BaseSchema):
     directory_path = DirectoryField(required=True)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
+class EthTokensSchema(BaseSchema):
+    eth_tokens = fields.List(EthereumTokenAssetField(), required=True)
 
     class Meta:
         strict = True

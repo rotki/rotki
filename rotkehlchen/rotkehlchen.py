@@ -3,14 +3,14 @@
 import argparse
 import logging
 import time
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import gevent
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.blockchain import Blockchain
+from rotkehlchen.blockchain import Blockchain, BlockchainBalancesUpdate
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
@@ -30,32 +30,15 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import DEFAULT_ANONYMIZED_LOGS, LoggingSettings, RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
-from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.typing import ApiKey, ApiSecret, BlockchainAddress, SupportedBlockchain, Timestamp
 from rotkehlchen.usage_analytics import maybe_submit_usage_analytics
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import (
-    combine_stat_dicts,
-    dict_get_sumof,
-    merge_dicts,
-    simple_result,
-    ts_now,
-)
+from rotkehlchen.utils.misc import combine_stat_dicts, dict_get_sumof, merge_dicts, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 MAIN_LOOP_SECS_DELAY = 60
-
-
-def accounts_result(per_account: Dict[Asset, Any], totals: Dict[Asset, Any]) -> Dict:
-    result = {
-        'result': True,
-        'message': '',
-        'per_account': per_account,
-        'totals': totals,
-    }
-    return process_result(result)
 
 
 class Rotkehlchen():
@@ -254,48 +237,49 @@ class Rotkehlchen():
             self,
             blockchain: SupportedBlockchain,
             account: BlockchainAddress,
-    ) -> Dict:
+    ) -> Tuple[Optional[BlockchainBalancesUpdate], str]:
         try:
             new_data = self.blockchain.add_blockchain_account(blockchain, account)
         except (InputError, EthSyncError) as e:
-            return simple_result(False, str(e))
+            return None, str(e)
+
         self.data.add_blockchain_account(blockchain, account)
-        return accounts_result(new_data['per_account'], new_data['totals'])
+        return new_data, ''
 
     def remove_blockchain_account(
             self,
             blockchain: SupportedBlockchain,
             account: BlockchainAddress,
-    ) -> Dict[str, Any]:
+    ) -> Tuple[Optional[BlockchainBalancesUpdate], str]:
         try:
             new_data = self.blockchain.remove_blockchain_account(blockchain, account)
         except (InputError, EthSyncError) as e:
-            return simple_result(False, str(e))
+            return None, str(e)
         self.data.remove_blockchain_account(blockchain, account)
-        return accounts_result(new_data['per_account'], new_data['totals'])
+        return new_data, ''
 
-    def add_owned_eth_tokens(self, tokens: List[str]) -> Dict[str, Any]:
-        ethereum_tokens = [
-            EthereumToken(identifier=identifier) for identifier in tokens
-        ]
+    def add_owned_eth_tokens(
+            self,
+            tokens: List[EthereumToken],
+    ) -> Tuple[Optional[BlockchainBalancesUpdate], str]:
         try:
-            new_data = self.blockchain.track_new_tokens(ethereum_tokens)
+            new_data = self.blockchain.track_new_tokens(tokens)
         except (InputError, EthSyncError) as e:
-            return simple_result(False, str(e))
+            return None, str(e)
 
         self.data.write_owned_eth_tokens(self.blockchain.owned_eth_tokens)
-        return accounts_result(new_data['per_account'], new_data['totals'])
+        return new_data, ''
 
-    def remove_owned_eth_tokens(self, tokens: List[str]) -> Dict[str, Any]:
-        ethereum_tokens = [
-            EthereumToken(identifier=identifier) for identifier in tokens
-        ]
+    def remove_owned_eth_tokens(
+            self,
+            tokens: List[EthereumToken],
+    ) -> Tuple[Optional[BlockchainBalancesUpdate], str]:
         try:
-            new_data = self.blockchain.remove_eth_tokens(ethereum_tokens)
+            new_data = self.blockchain.remove_eth_tokens(tokens)
         except InputError as e:
-            return simple_result(False, str(e))
+            return None, str(e)
         self.data.write_owned_eth_tokens(self.blockchain.owned_eth_tokens)
-        return accounts_result(new_data['per_account'], new_data['totals'])
+        return new_data, ''
 
     def process_history(
             self,

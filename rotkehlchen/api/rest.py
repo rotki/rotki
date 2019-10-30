@@ -12,7 +12,7 @@ from gevent.event import Event
 from gevent.lock import Semaphore
 
 from rotkehlchen.api.v1.encoding import TradeSchema
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.errors import (
     AuthenticationError,
     IncorrectApiKeyFormat,
@@ -738,4 +738,28 @@ class RestAPI():
     def query_periodic_data(self) -> Response:
         data = self.rotkehlchen.query_periodic_data()
         result = process_result(data)
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def get_eth_tokens(self) -> Response:
+        result_dict = process_result({
+            'all_eth_tokens': self.rotkehlchen.data.eth_tokens,
+            'owned_eth_tokens': self.rotkehlchen.blockchain.eth_tokens,
+        })
+        return api_response(_wrap_in_ok_result(result_dict), status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def add_owned_eth_tokens(self, tokens: List[EthereumToken]) -> Response:
+        result, msg = self.rotkehlchen.add_owned_eth_tokens(tokens=tokens)
+        if not result:
+            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def removed_owned_eth_tokens(self, tokens: List[EthereumToken]) -> Response:
+        result, msg = self.rotkehlchen.remove_owned_eth_tokens(tokens=tokens)
+        if not result:
+            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)

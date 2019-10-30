@@ -29,15 +29,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.serialization.serialize import process_result
-from rotkehlchen.typing import (
-    ApiKey,
-    ApiSecret,
-    BlockchainAddress,
-    FiatAsset,
-    SupportedBlockchain,
-    Timestamp,
-)
-from rotkehlchen.utils.misc import simple_result
+from rotkehlchen.typing import ApiKey, ApiSecret, FiatAsset, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.serialization import pretty_json_dumps
 from rotkehlchen.utils.version_check import check_if_version_up_to_date
 
@@ -377,9 +369,9 @@ class RotkehlchenServer():
             blockchain = SupportedBlockchain(given_blockchain)
         except ValueError:
             msg = f'Tried to add blockchain account for unsupported blockchain {given_blockchain}'
-            return simple_result(False, msg)
-        account = cast(BlockchainAddress, given_account)
-        return self.rotkehlchen.add_blockchain_account(blockchain, account)
+            return {'whatever': msg}  # This used to be like the commented code down there
+            # return simple_result(False, msg)
+        return self.rotkehlchen.add_blockchain_account(blockchain, given_account)
 
     def remove_blockchain_account(self, given_blockchain: str, given_account: str):
         try:
@@ -388,9 +380,9 @@ class RotkehlchenServer():
             msg = (
                 f'Tried to remove blockchain account for unsupported blockchain {given_blockchain}'
             )
-            return simple_result(False, msg)
-        account = cast(BlockchainAddress, given_account)
-        return self.rotkehlchen.remove_blockchain_account(blockchain, account)
+            return {'whatever': msg}  # This used to be like the commented code down there
+            # return simple_result(False, msg)
+        return self.rotkehlchen.remove_blockchain_account(blockchain, given_account)
 
     def get_ignored_assets(self):
         result = {

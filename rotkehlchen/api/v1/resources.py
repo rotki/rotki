@@ -8,6 +8,7 @@ from webargs.flaskparser import use_kwargs
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
     BlockchainBalanceQuerySchema,
+    EthTokensSchema,
     ExchangeBalanceQuerySchema,
     ExchangeTradesQuerySchema,
     FiatBalancesSchema,
@@ -21,7 +22,7 @@ from rotkehlchen.api.v1.encoding import (
     TradesQuerySchema,
     UserActionSchema,
 )
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.typing import AssetAmount, Fee, Location, Price, Timestamp, TradeType
 
 
@@ -336,3 +337,25 @@ class PeriodicDataResource(BaseResource):
 
     def get(self) -> Response:
         return self.rest_api.query_periodic_data()
+
+
+class EthereumTokensResource(BaseResource):
+
+    modify_schema = EthTokensSchema()
+
+    def get(self) -> Response:
+        return self.rest_api.get_eth_tokens()
+
+    @use_kwargs(modify_schema, locations=('json',))
+    def put(
+            self,
+            eth_tokens: List[EthereumToken],
+    ) -> Response:
+        return self.rest_api.add_owned_eth_tokens(tokens=eth_tokens)
+
+    @use_kwargs(modify_schema, locations=('json',))
+    def delete(
+            self,
+            eth_tokens: List[EthereumToken],
+    ) -> Response:
+        return self.rest_api.remove_owned_eth_tokens(tokens=eth_tokens)
