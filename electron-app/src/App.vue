@@ -141,4 +141,8 @@ export default class App extends Vue {
   margin: 10px auto;
   padding: 15px;
 }
+
+::v-deep .v-content__wrap {
+  border-top: #bcbcbc solid thin;
+}
 </style>
