@@ -6,6 +6,7 @@
         :disabled="loading"
         :loading="loading"
         :items="allTokens"
+        class="token-track__search"
         small-chips
         color="blue-grey lighten-2"
         label="Owned Tokens"
@@ -18,6 +19,7 @@
       >
         <template #selection="data">
           <v-chip
+            :id="`token-chip__${data.item.symbol.toLocaleLowerCase()}`"
             :input-value="data.selected"
             close
             class="chip--select-multi token-track__chip"

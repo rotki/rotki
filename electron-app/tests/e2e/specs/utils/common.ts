@@ -153,7 +153,8 @@ export async function navigateTo(client: SpectronClient, elementId: string) {
   await client.click('.user-dropdown');
   await client.waitForVisible(elementId, METHOD_TIMEOUT);
   await client.click(elementId);
-  await client.pause(100);
+  await client.waitForVisible('.user-dropdown', METHOD_TIMEOUT, false);
+  await client.pause(500);
 }
 
 export async function closeAddYourSettingsPopup(client: SpectronClient) {
@@ -254,7 +255,7 @@ export async function setupTest(
 export async function captureOnFailure(app: Application) {
   // @ts-ignore
   const currentTest = window.currentTest;
-  if (currentTest && currentTest.state === 'failed') {
-    await takeScreenshot(app, currentTest.title);
+  if (currentTest && currentTest.failedExpectations.length > 0) {
+    await takeScreenshot(app, currentTest.fullName);
   }
 }

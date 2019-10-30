@@ -1,10 +1,8 @@
 <template>
-  <v-menu id="currency-dropdown" transition="slide-y-transition" bottom>
+  <v-menu transition="slide-y-transition" bottom>
     <template #activator="{ on }">
-      <v-btn color="primary" dark icon text v-on="on">
-        <v-icon id="current-main-currency" class="" :class="currency.icon">
-          fa {{ currency.icon }}
-        </v-icon>
+      <v-btn class="currency-dropdown" color="primary" dark icon text v-on="on">
+        <v-icon :class="currency.icon"> fa {{ currency.icon }} </v-icon>
       </v-btn>
     </template>
     <v-list>
@@ -56,8 +54,8 @@ export default class CurrencyDropDown extends Vue {
 
     this.$rpc
       .set_main_currency(currency)
-      .then(value => {
-        this.$store.commit('session/defaultCurrency', value);
+      .then(() => {
+        this.$store.commit('session/defaultCurrency', currency);
       })
       .catch((reason: Error) => {
         this.$store.commit('setMessage', {
