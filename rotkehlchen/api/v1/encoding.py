@@ -14,7 +14,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import Location, Timestamp, TradeType
+from rotkehlchen.typing import Location, SupportedBlockchain, Timestamp, TradeType
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -76,6 +76,23 @@ class FeeField(fields.Field):
             raise ValidationError(str(e))
 
         return fee
+
+
+class BlockchainField(fields.Field):
+
+    @staticmethod
+    def _serialize(value, attr, obj, **kwargs):  # pylint: disable=unused-argument
+        return str(value)
+
+    def _deserialize(self, value, attr, data, **kwargs):  # pylint: disable=unused-argument
+        if value in ('btc', 'BTC'):
+            blockchain = SupportedBlockchain.BTC
+        elif value in ('eth', 'ETH'):
+            blockchain = SupportedBlockchain.ETH
+        else:
+            raise ValidationError(f'Unrecognized value {value} given for blockchain name')
+
+        return blockchain
 
 
 class AssetField(fields.Field):
@@ -387,6 +404,16 @@ class HistoryExportingSchema(BaseSchema):
 
 class EthTokensSchema(BaseSchema):
     eth_tokens = fields.List(EthereumTokenAssetField(), required=True)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
+class BlockchainsAccountsSchema(BaseSchema):
+    blockchain = BlockchainField(required=True)
+    accounts = fields.List(fields.String())
 
     class Meta:
         strict = True

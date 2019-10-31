@@ -118,6 +118,9 @@ class Blockchain(CacheableObject):
             # https://blockchain.info/q
             backoff_in_seconds=10,
         )
+        # TODO: Move this validation into our own code and before the balance query
+        if btc_resp in ('Checksum does not validate', 'Input too short'):
+            raise InputError(f'The given string {account} is not a valid BTC address')
         return FVal(btc_resp) * FVal('0.00000001')  # result is in satoshis
 
     def query_btc_balances(self) -> None:
@@ -232,7 +235,7 @@ class Blockchain(CacheableObject):
         elif append_or_remove == 'remove':
             del self.balances[A_BTC][account]
         else:
-            raise ValueError('Programmer error: Should be append or remove')
+            raise AssertionError('Programmer error: Should be append or remove')
 
         if len(self.balances[A_BTC]) == 0:
             # If the last account was removed balance should be 0
@@ -260,7 +263,10 @@ class Blockchain(CacheableObject):
         Call with 'remove', operator.sub to remove the account
         """
         # Make sure account goes into web3.py as a properly checksummed address
-        account = to_checksum_address(given_account)
+        try:
+            account = to_checksum_address(given_account)
+        except ValueError:
+            raise InputError(f'The given string {given_account} is not a valid ETH address')
         eth_usd_price = Inquirer().find_usd_price(A_ETH)
         balance = self.ethchain.get_eth_balance(account)
         usd_balance = balance * eth_usd_price
@@ -273,7 +279,7 @@ class Blockchain(CacheableObject):
             self.accounts.eth.remove(account)
             del self.balances[A_ETH][account]
         else:
-            raise ValueError('Programmer error: Should be append or remove')
+            raise AssertionError('Programmer error: Should be append or remove')
 
         if len(self.balances[A_ETH]) == 0:
             # If the last account was removed balance should be 0
@@ -320,19 +326,75 @@ class Blockchain(CacheableObject):
                 ),
             }
 
-    def add_blockchain_account(
+    def add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            account: BlockchainAddress,
-    ) -> BlockchainBalancesUpdate:
-        return self.modify_blockchain_account(blockchain, account, 'append', operator.add)
+            accounts: List[BlockchainAddress],
+    ) -> Tuple[BlockchainBalancesUpdate, List[BlockchainAddress], str]:
+        """Adds new blockchain accounts and requeries all balances after the addition.
 
-    def remove_blockchain_account(
+        Returns the new total balances, the actually added accounts (some
+        accounts may have been invalid) and also any errors that occured
+        during the addition.
+
+        May Raise:
+        - EthSyncError from modify_blockchain_account
+        - InputError if the given accounts list is empty
+        """
+        if len(accounts) == 0:
+            raise InputError('Empty list of blockchain accounts to add was given')
+
+        added_accounts = []
+        full_msg = ''
+        for account in accounts:
+            try:
+                result = self.modify_blockchain_account(
+                    blockchain=blockchain,
+                    account=account,
+                    append_or_remove='append',
+                    add_or_sub=operator.add,
+                )
+                added_accounts.append(account)
+            except InputError as e:
+                full_msg += str(e)
+                result = {'per_account': self.balances, 'totals': self.totals}
+
+        return result, added_accounts, full_msg
+
+    def remove_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            account: BlockchainAddress,
-    ) -> BlockchainBalancesUpdate:
-        return self.modify_blockchain_account(blockchain, account, 'remove', operator.sub)
+            accounts: List[BlockchainAddress],
+    ) -> Tuple[BlockchainBalancesUpdate, List[BlockchainAddress], str]:
+        """Removes blockchain accounts and requeries all balances after the removal.
+
+        Returns the new total balances, the actually removes accounts (some
+        accounts may have been invalid) and also any errors that occured
+        during the removal.
+
+        May Raise:
+        - EthSyncError from modify_blockchain_account
+        - InputError if the given accounts list is empty
+        """
+        if len(accounts) == 0:
+            raise InputError('Empty list of blockchain accounts to add was given')
+
+        removed_accounts = []
+        full_msg = ''
+        for account in accounts:
+            try:
+                result = self.modify_blockchain_account(
+                    blockchain=blockchain,
+                    account=account,
+                    append_or_remove='remove',
+                    add_or_sub=operator.sub,
+                )
+                removed_accounts.append(account)
+            except InputError as e:
+                full_msg += str(e)
+                result = {'per_account': self.balances, 'totals': self.totals}
+
+        return result, removed_accounts, full_msg
 
     def modify_blockchain_account(
             self,
@@ -341,6 +403,14 @@ class Blockchain(CacheableObject):
             append_or_remove: str,
             add_or_sub: Callable[[FVal, FVal], FVal],
     ) -> BlockchainBalancesUpdate:
+        """Add or remove a blockchain account
+
+        May raise:
+
+        - InputError if accounts to remove do not exist or if the ethereum/BTC
+          addresses are not valid.
+        - EthSyncError if there is a problem querying the ethereum chain
+        """
 
         if blockchain == SupportedBlockchain.BITCOIN:
             if append_or_remove == 'remove' and account not in self.accounts.btc:
@@ -368,7 +438,8 @@ class Blockchain(CacheableObject):
                 )
 
         else:
-            raise InputError(
+            # That should not happen. Should be checked by marshmallow
+            raise AssertionError(
                 'Unsupported blockchain {} provided at remove_blockchain_account'.format(
                     blockchain),
             )

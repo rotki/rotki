@@ -233,30 +233,44 @@ class Rotkehlchen():
                 self.premium_sync_manager.maybe_upload_data_to_server()
                 log.debug('Main loop end')
 
-    def add_blockchain_account(
+    def add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            account: BlockchainAddress,
+            accounts: List[BlockchainAddress],
     ) -> Tuple[Optional[BlockchainBalancesUpdate], str]:
-        try:
-            new_data = self.blockchain.add_blockchain_account(blockchain, account)
-        except (InputError, EthSyncError) as e:
-            return None, str(e)
+        """Adds new blockchain accounts
 
-        self.data.add_blockchain_account(blockchain, account)
-        return new_data, ''
+        Adds the accounts to the blockchain instance and queries them to get the
+        updates balances. Also adds the ones that were valid in the DB
+        """
 
-    def remove_blockchain_account(
+        new_data, added_accounts, msg = self.blockchain.add_blockchain_accounts(
+            blockchain=blockchain,
+            accounts=accounts,
+        )
+        for account in added_accounts:
+            self.data.add_blockchain_account(blockchain, account)
+
+        return new_data, msg
+
+    def remove_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            account: BlockchainAddress,
+            accounts: List[BlockchainAddress],
     ) -> Tuple[Optional[BlockchainBalancesUpdate], str]:
-        try:
-            new_data = self.blockchain.remove_blockchain_account(blockchain, account)
-        except (InputError, EthSyncError) as e:
-            return None, str(e)
-        self.data.remove_blockchain_account(blockchain, account)
-        return new_data, ''
+        """Removes blockchain accounts
+
+        Removes the accounts from the blockchain instance and queries them to get
+        the updated balances. Also removes the ones that were valid from the DB
+        """
+        new_data, removed_accounts, msg = self.blockchain.remove_blockchain_accounts(
+            blockchain=blockchain,
+            accounts=accounts,
+        )
+        for account in removed_accounts:
+            self.data.remove_blockchain_account(blockchain, account)
+
+        return new_data, msg
 
     def add_owned_eth_tokens(
             self,
