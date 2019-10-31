@@ -1835,3 +1835,106 @@ Removing owned ETH tokens
    :statuscode 400: Provided JSON or data is in some way malformed.
    :statuscode 409: User is not logged in. Some error occured when re-querying the balances after addition. Check message for details.
    :statuscode 500: Internal Rotki error
+
+Adding blockchain accounts
+===========================
+
+.. http:put:: /api/(version)/blockchains/(name)/
+
+   Doing a PUT on the the blockchains endpoint with a specific blockchain URL and a list of accounts in the json data will add these accounts to the tracked accounts for the given blockchain and the current user. The updated balances after the account additions are returned.
+   Note that the message may even be populated for succesful queries, giving us information about what happened. For example one of the given accounts may have been invalid.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blockchains/ETH/ HTTP/1.1
+      Host: localhost:5042
+
+      {"accounts": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B"]}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "per_account": {
+	          "BTC": { "3Kb9QPcTUJKspzjQFBppfXRcWew6hyDAPb": {
+		       "amount": "0.5", "usd_value": "3770.075"
+		   }. "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
+		       "amount": "0.5", "usd_value": "3770.075"
+		   }},
+		   "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
+		       "amount": "10", "usd_value": "1755.53", "GNO": "1", "RDN": "1"
+		  }}
+	      }
+	      "totals": {
+	          "BTC": {"amount": "1", "usd_value": "7540.15"},
+	          "ETH": {"amount": "10", "usd_value": "1650.53"},
+	      }
+	  },
+	  "message": ""
+      }
+
+   :reqjson dict per_account: The blockchain balances per account per asset
+   :reqjson dict total: The blockchain balances in total per asset
+
+   :statuscode 200: Accounts succesfully added
+   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 409: User is not logged in. Some error occured when re-querying the balances after addition. Check message for details.
+   :statuscode 500: Internal Rotki error
+
+Removing blockchain accounts
+==============================
+
+.. http:delete:: /api/(version)/blockchains/(name)/
+
+   Doing a PUT on the the blockchains endpoint with a specific blockchain URL and a list of accounts in the json data will remove these accounts from the tracked accounts for the given blockchain and the current user. The updated balances after the account deletions are returned.
+
+   Note that the message may even be populated for succesful queries, giving us information about what happened. For example one of the given accounts may have been invalid.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/blockchains/ETH/tokens HTTP/1.1
+      Host: localhost:5042
+
+      {"accounts": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B"]}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "per_account": {
+	          "BTC": { "3Kb9QPcTUJKspzjQFBppfXRcWew6hyDAPb": {
+		       "amount": "0.5", "usd_value": "3770.075"
+		   }. "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
+		       "amount": "0.5", "usd_value": "3770.075"
+		   }},
+	      }
+	      "totals": {
+	          "BTC": {"amount": "1", "usd_value": "7540.15"},
+	      }
+	  },
+	  "message": ""
+      }
+
+   :reqjson dict per_account: The blockchain balances per account per asset
+   :reqjson dict total: The blockchain balances in total per asset
+
+   :statuscode 200: Accounts succesfully deleted
+   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 409: User is not logged in. Some error occured when re-querying the balances after addition. Check message for details.
+   :statuscode 500: Internal Rotki error

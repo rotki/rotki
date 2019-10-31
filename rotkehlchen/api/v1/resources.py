@@ -8,6 +8,7 @@ from webargs.flaskparser import use_kwargs
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
     BlockchainBalanceQuerySchema,
+    BlockchainsAccountsSchema,
     EthTokensSchema,
     ExchangeBalanceQuerySchema,
     ExchangeTradesQuerySchema,
@@ -23,7 +24,16 @@ from rotkehlchen.api.v1.encoding import (
     UserActionSchema,
 )
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.typing import AssetAmount, Fee, Location, Price, Timestamp, TradeType
+from rotkehlchen.typing import (
+    AssetAmount,
+    BlockchainAddress,
+    Fee,
+    Location,
+    Price,
+    SupportedBlockchain,
+    Timestamp,
+    TradeType,
+)
 
 
 def create_blueprint():
@@ -359,3 +369,24 @@ class EthereumTokensResource(BaseResource):
             eth_tokens: List[EthereumToken],
     ) -> Response:
         return self.rest_api.remove_owned_eth_tokens(tokens=eth_tokens)
+
+
+class BlockchainsAccountsResource(BaseResource):
+
+    modify_schema = BlockchainsAccountsSchema()
+
+    @use_kwargs(modify_schema, locations=('json',))
+    def put(
+            self,
+            blockchain: SupportedBlockchain,
+            accounts: List[BlockchainAddress],
+    ) -> Response:
+        return self.rest_api.add_blockchain_accounts(blockchain=blockchain, accounts=accounts)
+
+    @use_kwargs(modify_schema, locations=('json',))
+    def delete(
+            self,
+            blockchain: SupportedBlockchain,
+            accounts: List[BlockchainAddress],
+    ) -> Response:
+        return self.rest_api.remove_blockchain_accounts(blockchain=blockchain, accounts=accounts)
