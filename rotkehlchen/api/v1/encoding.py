@@ -419,3 +419,12 @@ class BlockchainsAccountsSchema(BaseSchema):
         strict = True
         # decoding to a dict is required by the @use_kwargs decorator from webargs
         decoding_class = dict
+
+
+class IgnoredAssetsSchema(BaseSchema):
+    assets = fields.List(AssetField(), required=True)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict

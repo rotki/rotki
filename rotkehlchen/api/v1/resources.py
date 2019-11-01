@@ -15,6 +15,7 @@ from rotkehlchen.api.v1.encoding import (
     FiatBalancesSchema,
     HistoryExportingSchema,
     HistoryProcessingSchema,
+    IgnoredAssetsSchema,
     NewUserSchema,
     StatisticsAssetBalanceSchema,
     StatisticsValueDistributionSchema,
@@ -390,3 +391,19 @@ class BlockchainsAccountsResource(BaseResource):
             accounts: List[BlockchainAddress],
     ) -> Response:
         return self.rest_api.remove_blockchain_accounts(blockchain=blockchain, accounts=accounts)
+
+
+class IgnoredAssetsResource(BaseResource):
+
+    modify_schema = IgnoredAssetsSchema()
+
+    def get(self) -> Response:
+        return self.rest_api.get_ignored_assets()
+
+    @use_kwargs(modify_schema, locations=('json',))
+    def put(self, assets: List[Asset]) -> Response:
+        return self.rest_api.add_ignored_assets(assets=assets)
+
+    @use_kwargs(modify_schema, locations=('json',))
+    def delete(self, assets: List[Asset]) -> Response:
+        return self.rest_api.remove_ignored_assets(assets=assets)
