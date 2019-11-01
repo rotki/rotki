@@ -805,3 +805,20 @@ class RestAPI():
 
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def get_ignored_assets(self) -> Response:
+        result = [identifier for identifier in self.rotkehlchen.data.db.get_ignored_assets()]
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def add_ignored_assets(self, assets: List[Asset]) -> Response:
+        result, msg = self.rotkehlchen.data.add_ignored_assets(assets=assets)
+        result_dict = _wrap_in_result(process_result_list(result), msg)
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def remove_ignored_assets(self, assets: List[Asset]) -> Response:
+        result, msg = self.rotkehlchen.data.remove_ignored_assets(assets=assets)
+        result_dict = _wrap_in_result(process_result_list(result), msg)
+        return api_response(result_dict, status_code=HTTPStatus.OK)

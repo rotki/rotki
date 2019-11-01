@@ -18,7 +18,7 @@ from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.datatyping import BalancesData
 from rotkehlchen.db.dbhandler import DBHandler, DBSettings
 from rotkehlchen.db.settings import db_settings_from_dict
-from rotkehlchen.errors import AuthenticationError, DeserializationError, UnknownAsset
+from rotkehlchen.errors import AuthenticationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
     ApiKey,
@@ -129,33 +129,33 @@ class DataHandler():
             account = to_checksum_address(account)
         self.db.remove_blockchain_account(blockchain, account)
 
-    def add_ignored_asset(self, given_asset: str) -> Tuple[bool, str]:
-        try:
-            asset = Asset(given_asset)
-        except UnknownAsset:
-            return False, f'Given asset {given_asset} for ignoring is not known/supported'
-        except DeserializationError:
-            return False, f'Given asset for ignoring is not a string'
+    def add_ignored_assets(self, assets: List[Asset]) -> Tuple[List[Asset], str]:
+        """Adds ignored assets to the DB.
 
+        Returns a string containing possible warnings for the user
+        """
         ignored_assets = self.db.get_ignored_assets()
-        if asset in ignored_assets:
-            return False, f'{asset.identifier} is already in ignored assets'
-        self.db.add_to_ignored_assets(asset)
-        return True, ''
+        final_msg = ''
+        for asset in assets:
+            if asset in ignored_assets:
+                final_msg += f'{asset.identifier} is already in ignored assets'
+                continue
+            # else
+            self.db.add_to_ignored_assets(asset)
 
-    def remove_ignored_asset(self, given_asset: str) -> Tuple[bool, str]:
-        try:
-            asset = Asset(given_asset)
-        except UnknownAsset:
-            return False, f'Given asset {given_asset} for ignoring is not known/supported'
-        except DeserializationError:
-            return False, f'Given asset for ignoring is not a string'
+        return self.db.get_ignored_assets(), final_msg
 
+    def remove_ignored_assets(self, assets: List[Asset]) -> Tuple[List[Asset], str]:
         ignored_assets = self.db.get_ignored_assets()
-        if asset not in ignored_assets:
-            return False, f'{asset.identifier} is not in ignored assets'
-        self.db.remove_from_ignored_assets(asset)
-        return True, ''
+        final_msg = ''
+        for asset in assets:
+            if asset not in ignored_assets:
+                final_msg += f'{asset.identifier} is not in ignored assets'
+                continue
+            # else
+            self.db.remove_from_ignored_assets(asset)
+
+        return self.db.get_ignored_assets(), final_msg
 
     def set_premium_credentials(
             self,

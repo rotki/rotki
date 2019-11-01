@@ -20,6 +20,7 @@ from rotkehlchen.api.v1.resources import (
     FiatExchangeRatesResource,
     HistoryExportingResource,
     HistoryProcessingResource,
+    IgnoredAssetsResource,
     MessagesResource,
     PeriodicDataResource,
     SettingsResource,
@@ -74,6 +75,7 @@ URLS_V1: URLS = [
     ('/history/export/', HistoryExportingResource),
     ('/blockchains/ETH/tokens', EthereumTokensResource),
     ('/blockchains/<string:name>', BlockchainsAccountsResource),
+    ('/assets/ignored', IgnoredAssetsResource),
 ]
 
 logger = logging.getLogger(__name__)

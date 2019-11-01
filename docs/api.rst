@@ -1938,3 +1938,101 @@ Removing blockchain accounts
    :statuscode 400: Provided JSON or data is in some way malformed.
    :statuscode 409: User is not logged in. Some error occured when re-querying the balances after addition. Check message for details.
    :statuscode 500: Internal Rotki error
+
+Dealing with ignored assets
+===========================
+
+.. http:get:: /api/(version)/assets/ignored/
+
+   Doing a GET on the ignored assets endpoint will return a list of all assets that the user has set to have ignored.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/ignored HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": ["1ST", "DAO"]
+	  "message": ""
+      }
+
+   :statuscode 200: Assets succesfully queried
+   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal Rotki error
+
+.. http:put:: /api/(version)/assets/ignored/
+
+   Doing a PUT on the ignored assets endpoint will add new assets to the ignored assets list. Returns the new list with the added assets in the response.
+   Note that the message may even be populated for succesful queries, giving us information about what happened. For example one of the given assets may have been already in the ignored assets list.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/ignored HTTP/1.1
+      Host: localhost:5042
+
+      {"assets": ["GNO"]}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": ["1ST", "DAO", "GNO]
+	  "message": ""
+      }
+
+   :statuscode 200: Assets succesfully added
+   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal Rotki error
+
+.. http:delete:: /api/(version)/assets/ignored/
+
+   Doing a DELETE on the ignored assets endpoint will remove the given assets from the ignored assets list. Returns the new list without the removed assets in the response.
+   Note that the message may even be populated for succesful queries, giving us information about what happened. For example one of the given assets to remove may have not been in the ignored assets list.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/ignored HTTP/1.1
+      Host: localhost:5042
+
+      {"assets": ["DAO"]}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": ["1ST"]
+	  "message": ""
+      }
+
+   :statuscode 200: Assets succesfully removed
+   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal Rotki error
