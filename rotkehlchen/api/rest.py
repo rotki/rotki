@@ -37,6 +37,7 @@ from rotkehlchen.typing import (
     TradePair,
     TradeType,
 )
+from rotkehlchen.utils.version_check import check_if_version_up_to_date
 
 OK_RESULT = {'result': True, 'message': ''}
 
@@ -822,3 +823,8 @@ class RestAPI():
         result, msg = self.rotkehlchen.data.remove_ignored_assets(assets=assets)
         result_dict = _wrap_in_result(process_result_list(result), msg)
         return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    @staticmethod
+    def version_check() -> Response:
+        result = _wrap_in_ok_result(check_if_version_up_to_date())
+        return api_response(process_result(result), status_code=HTTPStatus.OK)

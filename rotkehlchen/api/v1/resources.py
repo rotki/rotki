@@ -407,3 +407,9 @@ class IgnoredAssetsResource(BaseResource):
     @use_kwargs(modify_schema, locations=('json',))
     def delete(self, assets: List[Asset]) -> Response:
         return self.rest_api.remove_ignored_assets(assets=assets)
+
+
+class VersionResource(BaseResource):
+
+    def get(self) -> Response:
+        return self.rest_api.version_check()
