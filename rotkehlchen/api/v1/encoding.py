@@ -227,6 +227,23 @@ class DirectoryField(fields.Field):
         return path
 
 
+class FileField(fields.Field):
+
+    @staticmethod
+    def _serialize(value, attr, obj, **kwargs):  # pylint: disable=unused-argument
+        return str(value)
+
+    def _deserialize(self, value: str, attr, data, **kwargs):  # pylint: disable=unused-argument
+        path = Path(value)
+        if not path.exists():
+            raise ValidationError(f'Given path {value} does not exist')
+
+        if not path.is_file():
+            raise ValidationError(f'Given path {value} is not a file')
+
+        return path
+
+
 class BaseOpts(SchemaOpts):
     """
     This allows for having the Object the Schema encodes to inside of the class Meta
@@ -423,6 +440,19 @@ class BlockchainsAccountsSchema(BaseSchema):
 
 class IgnoredAssetsSchema(BaseSchema):
     assets = fields.List(AssetField(), required=True)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
+class DataImportSchema(BaseSchema):
+    source = fields.String(
+        required=True,
+        validate=validate.OneOf(choices=('cointracking.info')),
+    )
+    filepath = FileField(required=True)
 
     class Meta:
         strict = True
