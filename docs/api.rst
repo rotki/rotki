@@ -2076,3 +2076,40 @@ Querying the version
 
    :statuscode 200: Version information queried
    :statuscode 500: Internal Rotki error
+
+Data imports
+=============
+
+.. http:get:: /api/(version)/import
+
+   Doing a PUT on data import endpoint will facilitate importing data from external sources. The arguments are the source of data import and the filepath to the data for importing.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/import HTTP/1.1
+      Host: localhost:5042
+
+      {"source": "cointracking.info", "filepath": "/path/to/data/file"}
+
+   :reqjson str source: The source of the data to import. Valid values are ``"cointracking.info"``
+   :reqjson str filepath: The filepath to the data for importing
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": True,
+	  "message": ""
+      }
+
+   :statuscode 200: Data imported. Check user messages for warnings.
+   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal Rotki error
