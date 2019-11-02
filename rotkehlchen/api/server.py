@@ -32,6 +32,7 @@ from rotkehlchen.api.v1.resources import (
     TradesResource,
     UsersByNameResource,
     UsersResource,
+    VersionResource,
     create_blueprint,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -76,6 +77,7 @@ URLS_V1: URLS = [
     ('/blockchains/ETH/tokens', EthereumTokensResource),
     ('/blockchains/<string:name>', BlockchainsAccountsResource),
     ('/assets/ignored', IgnoredAssetsResource),
+    ('/version', VersionResource),
 ]
 
 logger = logging.getLogger(__name__)

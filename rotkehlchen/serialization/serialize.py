@@ -7,6 +7,7 @@ from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_location_from_db
 from rotkehlchen.typing import EthTokenInfo, Location, TradeType
+from rotkehlchen.version_check import VersionCheckResult
 
 
 def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
@@ -44,6 +45,8 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
     elif isinstance(entry, DBSettings):
         return entry._asdict()
     elif isinstance(entry, EthTokenInfo):
+        return entry._asdict()
+    elif isinstance(entry, VersionCheckResult):
         return entry._asdict()
     elif isinstance(entry, tuple):
         raise ValueError('Query results should not contain tuples')

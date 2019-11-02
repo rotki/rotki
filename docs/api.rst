@@ -2036,3 +2036,43 @@ Dealing with ignored assets
    :statuscode 400: Provided JSON or data is in some way malformed.
    :statuscode 409: User is not logged in.
    :statuscode 500: Internal Rotki error
+
+Querying the version
+====================
+
+.. http:get:: /api/(version)/version
+
+   Doing a GET on the version endpoint will return information about the version of Rotki. If there is a newer version then ``"latest_version"`` and ``"download_url"`` will be populated. If not then only ``"our_version"`` will be.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/version HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "our_version": "1.0.3",
+	      "latest_version": "1.0.4",
+	      "download_url": "https://github.com/rotkehlchenio/rotkehlchen/releases/tag/v1.0.4"
+	  },
+	  "message": ""
+      }
+
+   :reqjson str our_version: The version of Rotki present in the system
+   :reqjson str latest_version: The latest version of Rotki available
+   :reqjson str url: URL link to download the latest version
+
+   :statuscode 200: Version information queried
+   :statuscode 500: Internal Rotki error
