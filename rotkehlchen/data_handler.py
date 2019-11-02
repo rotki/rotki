@@ -111,24 +111,6 @@ class DataHandler():
     def write_owned_eth_tokens(self, tokens: List[EthereumToken]) -> None:
         self.db.write_owned_tokens(tokens)
 
-    def add_blockchain_account(
-            self,
-            blockchain: SupportedBlockchain,
-            account: BlockchainAddress,
-    ) -> None:
-        if blockchain == SupportedBlockchain.ETHEREUM:
-            account = to_checksum_address(account)
-        self.db.add_blockchain_account(blockchain, account)
-
-    def remove_blockchain_account(
-            self,
-            blockchain: SupportedBlockchain,
-            account: BlockchainAddress,
-    ) -> None:
-        if blockchain == SupportedBlockchain.ETHEREUM:
-            account = to_checksum_address(account)
-        self.db.remove_blockchain_account(blockchain, account)
-
     def add_ignored_assets(self, assets: List[Asset]) -> Tuple[List[Asset], str]:
         """Adds ignored assets to the DB.
 
