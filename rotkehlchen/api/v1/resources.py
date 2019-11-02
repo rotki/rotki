@@ -338,7 +338,7 @@ class HistoryProcessingResource(BaseResource):
         )
 
 
-class HistoryExportingsResource(BaseResource):
+class HistoryExportingResource(BaseResource):
 
     get_schema = HistoryExportingSchema()
 
@@ -378,7 +378,7 @@ class BlockchainsAccountsResource(BaseResource):
 
     modify_schema = BlockchainsAccountsSchema()
 
-    @use_kwargs(modify_schema, locations=('json',))
+    @use_kwargs(modify_schema, locations=('json', 'view_args'))
     def put(
             self,
             blockchain: SupportedBlockchain,
@@ -386,7 +386,7 @@ class BlockchainsAccountsResource(BaseResource):
     ) -> Response:
         return self.rest_api.add_blockchain_accounts(blockchain=blockchain, accounts=accounts)
 
-    @use_kwargs(modify_schema, locations=('json',))
+    @use_kwargs(modify_schema, locations=('json', 'view_args'))
     def delete(
             self,
             blockchain: SupportedBlockchain,

@@ -1,7 +1,5 @@
-import argparse
 import base64
 from collections import namedtuple
-from unittest.mock import patch
 
 import pytest
 
@@ -10,7 +8,7 @@ from rotkehlchen.history import TradesHistorian
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.server import RotkehlchenServer
+from rotkehlchen.tests.utils.api import create_api_server
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 
 
@@ -113,8 +111,9 @@ def uninitialized_rotkehlchen(cli_args):
 
 
 @pytest.fixture()
-def rotkehlchen_server(
+def rotkehlchen_api_server(
         cli_args,
+        uninitialized_rotkehlchen,
         username,
         blockchain,
         accountant,
@@ -127,11 +126,11 @@ def rotkehlchen_server(
         accounting_data_dir,
 ):
     """A partially mocked rotkehlchen server instance"""
-    with patch.object(argparse.ArgumentParser, 'parse_args', return_value=cli_args):
-        server = RotkehlchenServer()
+
+    api_server = create_api_server(rotki=uninitialized_rotkehlchen, port_number=9595)
 
     initialize_mock_rotkehlchen_instance(
-        rotki=server.rotkehlchen,
+        rotki=api_server.rest_api.rotkehlchen,
         start_with_logged_in_user=start_with_logged_in_user,
         start_with_valid_premium=start_with_valid_premium,
         msg_aggregator=function_scope_messages_aggregator,
@@ -143,7 +142,7 @@ def rotkehlchen_server(
         rotkehlchen_api_secret=rotkehlchen_api_secret,
         data_dir=accounting_data_dir,
     )
-    return server
+    return api_server
 
 
 @pytest.fixture()
@@ -179,8 +178,8 @@ def rotkehlchen_instance(
 
 
 @pytest.fixture()
-def rotkehlchen_server_with_exchanges(
-        rotkehlchen_server,
+def rotkehlchen_api_server_with_exchanges(
+        rotkehlchen_api_server,
         function_scope_kraken,
         function_scope_poloniex,
         function_scope_bittrex,
@@ -188,7 +187,7 @@ def rotkehlchen_server_with_exchanges(
         mock_bitmex,
 ):
     """Adds mock exchange objects to the rotkehlchen_server fixture"""
-    exchanges = rotkehlchen_server.rotkehlchen.exchange_manager.connected_exchanges
+    exchanges = rotkehlchen_server.rest_api.rotkehlchen.exchange_manager.connected_exchanges
     exchanges['kraken'] = function_scope_kraken
     exchanges['poloniex'] = function_scope_poloniex
     exchanges['bittrex'] = function_scope_bittrex
