@@ -3,12 +3,14 @@ from typing import Any, Dict, List, Optional
 
 from flask import Blueprint, Response
 from flask_restful import Resource
+from typing_extensions import Literal
 from webargs.flaskparser import use_kwargs
 
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
     BlockchainBalanceQuerySchema,
     BlockchainsAccountsSchema,
+    DataImportSchema,
     EthTokensSchema,
     ExchangeBalanceQuerySchema,
     ExchangeTradesQuerySchema,
@@ -413,3 +415,11 @@ class VersionResource(BaseResource):
 
     def get(self) -> Response:
         return self.rest_api.version_check()
+
+
+class DataImportResource(BaseResource):
+
+    put_schema = DataImportSchema()
+
+    def put(self, source: Literal['cointracking.info'], filepath: Path) -> None:
+        return self.rest_api.import_data(source=source, filepath=filepath)

@@ -10,6 +10,7 @@ import gevent
 from flask import Response, make_response
 from gevent.event import Event
 from gevent.lock import Semaphore
+from typing_extensions import Literal
 
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset, EthereumToken
@@ -828,3 +829,12 @@ class RestAPI():
     def version_check() -> Response:
         result = _wrap_in_ok_result(check_if_version_up_to_date())
         return api_response(process_result(result), status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def import_data(
+            self,
+            source: Literal['cointracking.info'],  # pylint: disable=unused-argument
+            filepath: Path,
+    ) -> Response:
+        self.rotkehlchen.data_importer.import_cointracking_csv(filepath)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
