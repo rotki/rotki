@@ -86,9 +86,9 @@ class BlockchainField(fields.Field):
 
     def _deserialize(self, value, attr, data, **kwargs):  # pylint: disable=unused-argument
         if value in ('btc', 'BTC'):
-            blockchain = SupportedBlockchain.BTC
+            blockchain = SupportedBlockchain.BITCOIN
         elif value in ('eth', 'ETH'):
-            blockchain = SupportedBlockchain.ETH
+            blockchain = SupportedBlockchain.ETHEREUM
         else:
             raise ValidationError(f'Unrecognized value {value} given for blockchain name')
 

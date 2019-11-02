@@ -52,7 +52,7 @@ URLS_V1: URLS = [
     ('/task_outcome', TaskOutcomeResource),
     ('/fiat_exchange_rates', FiatExchangeRatesResource),
     ('/exchanges', ExchangesResource),
-    ('/exchanges/balances>', ExchangeBalancesResource),
+    ('/exchanges/balances', ExchangeBalancesResource),
     (
         '/exchanges/balances/<string:name>',
         ExchangeBalancesResource,
@@ -75,7 +75,7 @@ URLS_V1: URLS = [
     ('/history/', HistoryProcessingResource),
     ('/history/export/', HistoryExportingResource),
     ('/blockchains/ETH/tokens', EthereumTokensResource),
-    ('/blockchains/<string:name>', BlockchainsAccountsResource),
+    ('/blockchains/<string:blockchain>', BlockchainsAccountsResource),
     ('/assets/ignored', IgnoredAssetsResource),
     ('/version', VersionResource),
 ]
@@ -118,7 +118,7 @@ def endpoint_not_found(e: NotFound) -> Response:
 def handle_request_parsing_error(err, _req, _schema, _err_status_code, _err_headers):
     """ This handles request parsing errors generated for example by schema
     field validation failing."""
-    abort(HTTPStatus.BAD_REQUEST, errors=err.messages)
+    abort(HTTPStatus.BAD_REQUEST, result=None, message=str(err))
 
 
 class APIServer():

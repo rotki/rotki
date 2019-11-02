@@ -86,11 +86,11 @@ def require_loggedin_user() -> Callable:
     """
     def _require_loggedin_user(f: Callable):
         @wraps(f)
-        def wrapper(wrappingobj, *args):
+        def wrapper(wrappingobj, *args, **kwargs):
             if not wrappingobj.rotkehlchen.user_is_logged_in:
                 result_dict = wrap_in_fail_result('No user is currently logged in')
                 return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
-            return f(wrappingobj, *args)
+            return f(wrappingobj, *args, **kwargs)
 
         return wrapper
     return _require_loggedin_user
@@ -777,7 +777,7 @@ class RestAPI():
             accounts: List[BlockchainAddress],
     ) -> Response:
         try:
-            result, msg = self.rotkehlchen.blockchain.add_blockchain_accounts(
+            result, _, msg = self.rotkehlchen.blockchain.add_blockchain_accounts(
                 blockchain=blockchain,
                 accounts=accounts,
             )
@@ -787,7 +787,7 @@ class RestAPI():
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 
         result_dict = _wrap_in_result(result, msg)
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
     def remove_blockchain_accounts(
@@ -796,7 +796,7 @@ class RestAPI():
             accounts: List[BlockchainAddress],
     ) -> Response:
         try:
-            result, msg = self.rotkehlchen.blockchain.remove_blockchain_accounts(
+            result, _, msg = self.rotkehlchen.blockchain.remove_blockchain_accounts(
                 blockchain=blockchain,
                 accounts=accounts,
             )
@@ -806,7 +806,7 @@ class RestAPI():
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 
         result_dict = _wrap_in_result(result, msg)
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
     def get_ignored_assets(self) -> Response:
