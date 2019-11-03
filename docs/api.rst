@@ -341,9 +341,9 @@ Getting or modifying settings
    :reqjson bool include_crypto2crypto: A boolean denoting whether crypto to crypto trades should be counted.
    :reqjson bool anonymized_logs: A boolean denoting whether sensitive logs should be anonymized.
    :reqjson int last_data_upload_ts: The unix timestamp at which the last data upload to the server happened.
-   :reqjson int ui_floating_precision: The number of decimals points to be shown for floating point numbers in the UI
-   :reqjson int taxfree_after_period: The number of seconds after which holding a crypto in FIFO order is considered no longer taxable. The default is 1 year, as per current german tax rules. Can also be 0 which means there is no taxfree period.
-   :reqjson int balance_save_frequency: The number of hours after which user balances should be saved in the DB again. This is useful for the statistics kept in the DB for each user. Default is 24 hours.
+   :reqjson int ui_floating_precision: The number of decimals points to be shown for floating point numbers in the UI. Can be between 0 and 8.
+   :reqjson int taxfree_after_period: The number of seconds after which holding a crypto in FIFO order is considered no longer taxable. The default is 1 year, as per current german tax rules. Can also be set to ``-1`` which will then set the taxfree_after_period to ``null`` which means there is no taxfree period.
+   :reqjson int balance_save_frequency: The number of hours after which user balances should be saved in the DB again. This is useful for the statistics kept in the DB for each user. Default is 24 hours. Can't be less than 1 hour.
    :reqjson bool include_gas_costs: A boolean denoting whether gas costs should be counted as loss in profit/loss calculation.
    :reqjson string historical_data_start: A date in the DAY/MONTH/YEAR format at which we consider historical data to have started.
    :reqjson string eth_rpc_endpoint: A URL denoting the rpc endpoint for the ethereum node to use when contacting the ethereum blockchain. If it can not be reached or if it is invalid etherscan is used instead.
@@ -397,8 +397,8 @@ Getting or modifying settings
       }
 
    :statuscode 200: Modifying settings was succesful
-   :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: Invalid input, e.g. not the correct type for a setting. Or no user is logged in.
+   :statuscode 400: Provided JSON is in some way malformed, of invalid value for a setting.
+   :statuscode 409: No user is logged in or tried to set eth rpc endpoint that could not be reached.
    :statuscode 500: Internal Rotki error
 
 Query the result of an ongoing backend task

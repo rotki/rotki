@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from flask import Blueprint, Response
 from flask_restful import Resource
@@ -18,6 +18,7 @@ from rotkehlchen.api.v1.encoding import (
     HistoryExportingSchema,
     HistoryProcessingSchema,
     IgnoredAssetsSchema,
+    ModifiableSettingsSchema,
     NewUserSchema,
     StatisticsAssetBalanceSchema,
     StatisticsValueDistributionSchema,
@@ -27,6 +28,7 @@ from rotkehlchen.api.v1.encoding import (
     UserActionSchema,
 )
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.typing import (
     AssetAmount,
     BlockchainAddress,
@@ -54,7 +56,36 @@ class BaseResource(Resource):
 
 class SettingsResource(BaseResource):
 
-    def put(self, settings: Dict[str, Any]) -> Response:
+    put_schema = ModifiableSettingsSchema()
+
+    @use_kwargs(put_schema, locations=('json',))
+    def put(
+            self,
+            premium_should_sync: Optional[bool],
+            include_crypto2crypto: Optional[bool],
+            anonymized_logs: Optional[bool],
+            ui_floating_precision: Optional[int],
+            taxfree_after_period: Optional[int],
+            balance_save_frequency: Optional[int],
+            include_gas_costs: Optional[bool],
+            historical_data_start: Optional[str],
+            eth_rpc_endpoint: Optional[str],
+            main_currency: Optional[Asset],
+            date_display_format: Optional[str],
+    ) -> Response:
+        settings = ModifiableDBSettings(
+            premium_should_sync=premium_should_sync,
+            include_crypto2crypto=include_crypto2crypto,
+            anonymized_logs=anonymized_logs,
+            ui_floating_precision=ui_floating_precision,
+            taxfree_after_period=taxfree_after_period,
+            balance_save_frequency=balance_save_frequency,
+            include_gas_costs=include_gas_costs,
+            historical_data_start=historical_data_start,
+            eth_rpc_endpoint=eth_rpc_endpoint,
+            main_currency=main_currency,
+            date_display_format=date_display_format,
+        )
         return self.rest_api.set_settings(settings)
 
     def get(self) -> Response:

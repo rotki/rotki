@@ -248,7 +248,7 @@ def test_writting_fetching_data(data_dir, username, accountant):
         'taxfree_after_period': YEAR_IN_SECONDS,
         'balance_save_frequency': DEFAULT_BALANCE_SAVE_FREQUENCY,
         'last_balance_save': 0,
-        'main_currency': DEFAULT_MAIN_CURRENCY,
+        'main_currency': DEFAULT_MAIN_CURRENCY.identifier,
         'anonymized_logs': DEFAULT_ANONYMIZED_LOGS,
         'date_display_format': DEFAULT_DATE_DISPLAY_FORMAT,
         'last_data_upload_ts': 0,
