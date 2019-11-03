@@ -9,8 +9,6 @@ import zlib
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
-from eth_utils.address import to_checksum_address
-
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.misc import ZERO
@@ -26,10 +24,8 @@ from rotkehlchen.typing import (
     AssetAmount,
     B64EncodedBytes,
     B64EncodedString,
-    BlockchainAddress,
     ChecksumEthAddress,
     FilePath,
-    SupportedBlockchain,
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator

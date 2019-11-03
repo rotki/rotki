@@ -8,6 +8,7 @@ import tempfile
 from json.decoder import JSONDecodeError
 from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
 
+from eth_utils import to_checksum_address
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
@@ -152,19 +153,18 @@ class DBHandler:
         try:
             self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-            migrated = False
             errstr = str(e)
+            migrated = False
             if self.sqlcipher_version == 4:
                 migrated, errstr = self.upgrade_db_sqlcipher_3_to_4(password)
 
             if self.sqlcipher_version != 4 or not migrated:
-                errstr = (
-                    'Wrong password while decrypting the database or not a database. Perhaps '
-                    'trying to use an sqlcipher 4 version DB with sqlciper 3?'
+                log.error(
+                    f'SQLCipher version: {self.sqlcipher_version} - Error: {errstr}'
+                    f'Wrong password while decrypting the database or not a database. Perhaps '
+                    f'trying to use an sqlcipher 4 version DB with sqlciper 3?',
                 )
-                raise AuthenticationError(
-                    f'SQLCipher version: {self.sqlcipher_version} - {errstr}',
-                )
+                raise AuthenticationError('Wrong password or invalid/corrupt database for user')
 
         # Run upgrades if needed
         DBUpgradeManager(self).run_upgrades()
@@ -547,6 +547,9 @@ class DBHandler:
             blockchain: SupportedBlockchain,
             account: BlockchainAddress,
     ) -> None:
+        # Make sure checksummed address makes it here
+        if blockchain == SupportedBlockchain.ETHEREUM:
+            account = to_checksum_address(account)
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
@@ -560,6 +563,9 @@ class DBHandler:
             blockchain: SupportedBlockchain,
             account: BlockchainAddress,
     ) -> None:
+        # Make sure checksummed address makes it here
+        if blockchain == SupportedBlockchain.ETHEREUM:
+            account = to_checksum_address(account)
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT COUNT(*) from blockchain_accounts WHERE '

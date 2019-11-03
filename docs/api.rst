@@ -204,7 +204,8 @@ Handling user creation, sign-in, log-out and querying
    :statuscode 200: Logged in succesfully
    :statuscode 300: Possibility of syncing exists and the login was sent with sync_approval set to ``"unknown"``. Consumer of api must resend with ``"yes"`` or ``"no"``.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: Another user is already logged in. User does not exist, password is wrong or some other authentication error.
+   :statuscode 401: Provided password is wrong for the user or some other authentication error.
+   :statuscode 409: Another user is already logged in. User does not exist.
    :statuscode 500: Internal Rotki error
 
    The result is the same as creating a new user.
@@ -244,7 +245,7 @@ Handling user creation, sign-in, log-out and querying
 
    :statuscode 200: Logged out succesfully
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User is not logged in, or user does not exist
+   :statuscode 409: No user is logged in, or current logged in user is different to the one requested for logout.
    :statuscode 500: Internal Rotki error
 
 .. http:patch:: /api/(version)/users/(username)

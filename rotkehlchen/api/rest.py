@@ -515,7 +515,6 @@ class RestAPI():
             premium_api_key: str,
             premium_api_secret: str,
     ) -> Response:
-
         result_dict: Dict[str, Any] = {'result': None, 'message': ''}
         if self.rotkehlchen.user_is_logged_in:
             result_dict['message'] = (
@@ -533,7 +532,7 @@ class RestAPI():
             return api_response(result_dict, status_code=HTTPStatus.BAD_REQUEST)
 
         try:
-            result_dict = self.rotkehlchen.unlock_user(
+            self.rotkehlchen.unlock_user(
                 user=name,
                 password=password,
                 create_new=True,
@@ -551,7 +550,7 @@ class RestAPI():
         result_dict['result'] = {
             'exchanges': self.rotkehlchen.exchange_manager.get_connected_exchange_names(),
             'premium': self.rotkehlchen.premium is not None,
-            'settings': process_result(self.rotkehlchen.data.db.get_settings),
+            'settings': process_result(self.rotkehlchen.data.db.get_settings()),
         }
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
@@ -572,7 +571,7 @@ class RestAPI():
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
         try:
-            result_dict = self.rotkehlchen.unlock_user(
+            self.rotkehlchen.unlock_user(
                 user=name,
                 password=password,
                 create_new=False,
@@ -582,7 +581,7 @@ class RestAPI():
             )
         except AuthenticationError as e:
             result_dict['message'] = str(e)
-            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+            return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
         except RotkehlchenPermissionError as e:
             result_dict['message'] = str(e)
             return api_response(result_dict, status_code=HTTPStatus.MULTIPLE_CHOICES)
@@ -590,7 +589,7 @@ class RestAPI():
         result_dict['result'] = {
             'exchanges': self.rotkehlchen.exchange_manager.get_connected_exchange_names(),
             'premium': self.rotkehlchen.premium is not None,
-            'settings': process_result(self.rotkehlchen.data.db.get_settings),
+            'settings': process_result(self.rotkehlchen.data.db.get_settings()),
         }
         return api_response(result_dict, status_code=HTTPStatus.OK)
 

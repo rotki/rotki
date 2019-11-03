@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from marshmallow import Schema, SchemaOpts, fields, post_load
+from marshmallow import Schema, SchemaOpts, fields, post_load, validates_schema
 from marshmallow.exceptions import ValidationError
 from webargs import validate
 
@@ -321,13 +321,36 @@ class BaseUserSchema(BaseSchema):
         decoding_class = dict
 
 
-class UserActionSchema(BaseUserSchema):
+class UserActionSchema(BaseSchema):
+    name = fields.String(required=True)
+    # All the fields below are not needed for logout/modification so are not required=True
+    password = fields.String(missing=None)
+    sync_approval = fields.String(
+        missing='unknown',
+        validate=validate.OneOf(choices=('unknown', 'yes', 'no')),
+    )
     action = fields.String(
         validate=validate.OneOf(choices=('login', 'logout')),
         missing=None,
     )
     premium_api_key = fields.String(missing='')
     premium_api_secret = fields.String(missing='')
+
+    @validates_schema
+    def validate_user_action_schema(self, data, **kwargs):
+        if data['action'] == 'login':
+            if data['password'] is None:
+                raise ValidationError('Missing password field for login')
+        elif data['action'] is None:
+            if data['premium_api_key'] == '' or data['premium_api_secret'] == '':
+                raise ValidationError(
+                    'Without an action premium api key and secret must be provided',
+                )
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
 
 
 class NewUserSchema(BaseUserSchema):
