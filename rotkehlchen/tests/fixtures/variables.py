@@ -36,3 +36,9 @@ def port_generator(request):
 @pytest.fixture
 def db_password():
     return '123'
+
+
+@pytest.fixture
+def api_port(port_generator):
+    port = next(port_generator)
+    return port
