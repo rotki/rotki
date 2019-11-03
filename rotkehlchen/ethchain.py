@@ -17,12 +17,20 @@ from rotkehlchen.utils.serialization import rlk_jsonloads
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+DEFAULT_ETH_RPC_TIMEOUT = 10
+
 
 class Ethchain():
-    def __init__(self, ethrpc_endpoint: str, attempt_connect: bool = True):
+    def __init__(
+            self,
+            ethrpc_endpoint: str,
+            attempt_connect: bool = True,
+            eth_rpc_timeout: int = DEFAULT_ETH_RPC_TIMEOUT,
+    ) -> None:
         self.web3: Web3 = None
         self.rpc_endpoint = ethrpc_endpoint
         self.connected = False
+        self.eth_rpc_timeout = eth_rpc_timeout
         if attempt_connect:
             self.attempt_connect(ethrpc_endpoint)
 
@@ -47,7 +55,10 @@ class Ethchain():
             parsed_eth_rpc_endpoint = urlparse(ethrpc_endpoint)
             if not parsed_eth_rpc_endpoint.scheme:
                 ethrpc_endpoint = f"http://{ethrpc_endpoint}"
-            provider = HTTPProvider(ethrpc_endpoint)
+            provider = HTTPProvider(
+                endpoint_uri=ethrpc_endpoint,
+                request_kwargs={'timeout': self.eth_rpc_timeout},
+            )
             self.web3 = Web3(provider)
         except requests.exceptions.ConnectionError:
             log.warning('Could not connect to an ethereum node. Will use etherscan only')

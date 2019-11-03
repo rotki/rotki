@@ -7,15 +7,14 @@ import tempfile
 import time
 import zlib
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple
+from typing import Dict, List, Tuple
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.datatyping import BalancesData
-from rotkehlchen.db.dbhandler import DBHandler, DBSettings
-from rotkehlchen.db.settings import db_settings_from_dict
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import AuthenticationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
@@ -30,9 +29,6 @@ from rotkehlchen.typing import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
-
-if TYPE_CHECKING:
-    from rotkehlchen.accounting.accountant import Accountant
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -141,37 +137,6 @@ class DataHandler():
             api_secret: ApiSecret,
     ) -> None:
         self.db.set_rotkehlchen_premium(api_key, api_secret)
-
-    def set_settings(
-            self,
-            settings_dict: Dict[str, Any],
-            accountant: 'Accountant',
-    ) -> bool:
-        """Takes in a settings dict with setttings to change and dispatches change in the code"""
-        settings = db_settings_from_dict(settings_dict, self.msg_aggregator)
-        # ignore invalid settings
-        invalid = []
-        all_okay = True
-        for x in list(settings_dict):  # list() makes copy of the dict since we modify it in loop
-            if x not in DBSettings._fields:
-                invalid.append(x)
-                del settings_dict[x]
-                all_okay = False
-                continue
-
-            # We need to save booleans as strings in the DB
-            deserealized_value = getattr(settings, x)
-            if isinstance(deserealized_value, bool):
-                settings_dict[x] = str(deserealized_value)
-
-        if not all_okay:
-            log.warning(f'provided settings: {",".join(invalid)} are invalid')
-
-        if 'main_currency' in settings_dict:
-            accountant.set_main_currency(settings_dict['main_currency'])
-
-        self.db.set_settings(settings_dict)
-        return True
 
     def should_save_balances(self) -> bool:
         """ Returns whether or not we can save data to the database depending on

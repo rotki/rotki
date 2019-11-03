@@ -147,7 +147,9 @@ class Asset():
         invalid data were given to us by the server if an API was queried.
         """
         if not isinstance(self.identifier, str):
-            raise DeserializationError('Non-string identifier ended up in asset initialization')
+            raise DeserializationError(
+                'Tried to initialize an asset out of a non-string identifier',
+            )
 
         if not AssetResolver().is_identifier_canonical(self.identifier):
             raise UnknownAsset(self.identifier)
