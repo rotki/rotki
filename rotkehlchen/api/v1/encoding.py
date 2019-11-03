@@ -430,7 +430,7 @@ class EthTokensSchema(BaseSchema):
 
 class BlockchainsAccountsSchema(BaseSchema):
     blockchain = BlockchainField(required=True)
-    accounts = fields.List(fields.String())
+    accounts = fields.List(fields.String(), required=True)
 
     class Meta:
         strict = True

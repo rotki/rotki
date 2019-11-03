@@ -777,7 +777,7 @@ class RestAPI():
             accounts: List[BlockchainAddress],
     ) -> Response:
         try:
-            result, _, msg = self.rotkehlchen.blockchain.add_blockchain_accounts(
+            result, added_accounts, msg = self.rotkehlchen.blockchain.add_blockchain_accounts(
                 blockchain=blockchain,
                 accounts=accounts,
             )
@@ -785,6 +785,10 @@ class RestAPI():
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+
+        # If no accounts were added, that means the only account given was invalid
+        if len(added_accounts) == 0:
+            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.BAD_REQUEST)
 
         result_dict = _wrap_in_result(result, msg)
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
@@ -796,7 +800,7 @@ class RestAPI():
             accounts: List[BlockchainAddress],
     ) -> Response:
         try:
-            result, _, msg = self.rotkehlchen.blockchain.remove_blockchain_accounts(
+            result, removed_accounts, msg = self.rotkehlchen.blockchain.remove_blockchain_accounts(
                 blockchain=blockchain,
                 accounts=accounts,
             )
@@ -804,6 +808,10 @@ class RestAPI():
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+
+        # If no accounts were removed, that means the only account given was invalid
+        if len(removed_accounts) == 0:
+            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.BAD_REQUEST)
 
         result_dict = _wrap_in_result(result, msg)
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
