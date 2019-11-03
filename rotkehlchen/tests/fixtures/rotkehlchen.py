@@ -114,6 +114,7 @@ def uninitialized_rotkehlchen(cli_args):
 def rotkehlchen_api_server(
         cli_args,
         uninitialized_rotkehlchen,
+        api_port,
         username,
         blockchain,
         accountant,
@@ -127,7 +128,7 @@ def rotkehlchen_api_server(
 ):
     """A partially mocked rotkehlchen server instance"""
 
-    api_server = create_api_server(rotki=uninitialized_rotkehlchen, port_number=9595)
+    api_server = create_api_server(rotki=uninitialized_rotkehlchen, port_number=api_port)
 
     initialize_mock_rotkehlchen_instance(
         rotki=api_server.rest_api.rotkehlchen,
