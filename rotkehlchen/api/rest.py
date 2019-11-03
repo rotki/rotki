@@ -218,11 +218,13 @@ class RestAPI():
     # - Public functions exposed via the rest api
     @require_loggedin_user()
     def set_settings(self, settings: Dict[str, Any]) -> Response:
-        _, message = self.rotkehlchen.set_settings(settings)
+        success, message = self.rotkehlchen.set_settings(settings)
+        if not success:
+            return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.CONFLICT)
+
         new_settings = process_result(self.rotkehlchen.data.db.get_settings())
-        result_dict = {'result': new_settings, 'message': message}
-        status_code = HTTPStatus.OK if message == '' else HTTPStatus.CONFLICT
-        return api_response(result=result_dict, status_code=status_code)
+        result_dict = {'result': new_settings, 'message': ''}
+        return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
     def get_settings(self) -> Response:

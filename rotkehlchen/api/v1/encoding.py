@@ -307,6 +307,55 @@ class TradePatchSchema(TradeSchema):
     trade_id = fields.String(required=True)
 
 
+class ModifiableSettingsSchema(BaseSchema):
+    """This is the Schema for the settings that can be modified via the API"""
+    premium_should_sync = fields.Bool(missing=None)
+    include_crypto2crypto = fields.Bool(missing=None)
+    anonymized_logs = fields.Bool(missing=None)
+    ui_floating_precision = fields.Integer(
+        strict=True,
+        validate=validate.Range(
+            min=0,
+            max=8,
+            error='Floating numbers precision in the UI must be between 0 and 8',
+        ),
+        missing=None,
+    )
+    taxfree_after_period = fields.Integer(
+        strict=True,
+        validate=validate.Range(
+            min=-1,
+            error=(
+                'Number of seconds after which taxfree period starts should not '
+                'be negative. Apart from the value of -1 to disable the setting'
+            ),
+        ),
+        missing=None,
+    )
+    balance_save_frequency = fields.Integer(
+        strict=True,
+        validate=validate.Range(
+            min=1,
+            error='The number of hours after which balances should be saved should be >= 1',
+        ),
+        missing=None,
+    )
+    include_gas_costs = fields.Bool(missing=None)
+    # TODO: Add some validation to this field
+    historical_data_start = fields.String(missing=None)
+    # TODO: Add some validation to this field
+    # even though it gets validated since we try to connect to it
+    eth_rpc_endpoint = fields.String(missing=None)
+    main_currency = FiatAssetField(missing=None)
+    # TODO: Add some validation to this field
+    date_display_format = fields.String(missing=None)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
 class BaseUserSchema(BaseSchema):
     name = fields.String(required=True)
     password = fields.String(required=True)

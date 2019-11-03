@@ -340,61 +340,6 @@
 #     assert isinstance(distribution[3]['asset'], str)
 
 
-# def test_set_settings(rotkehlchen_server):
-#     # Test that failing to connect to an rpc endpoint returns an error
-#     given_settings = {
-#         'eth_rpc_endpoint': 'http://foo.boo.nodes.com:8545',
-#     }
-#     response = rotkehlchen_server.set_settings(given_settings)
-#     assert response['result'] is True
-#     assert 'Failed to connect to ethereum node at endpoint' in response['message']
-#     settings = rotkehlchen_server.get_settings()
-#     assert settings['eth_rpc_endpoint'] == 'http://localhost:8545'
-
-#     # Test that when connection is a success all is good with the set value
-#     given_settings = {
-#         'eth_rpc_endpoint': 'http://working.nodes.com:8545',
-#     }
-#     block_query = patch('rotkehlchen.ethchain.Ethchain.query_eth_highest_block', return_value=0)
-#     mock_web3 = patch('rotkehlchen.ethchain.Web3', MockWeb3)
-#     with block_query, mock_web3:
-#         response = rotkehlchen_server.set_settings(given_settings)
-#     assert response['result'] is True
-#     assert response['message'] == ''
-#     settings = rotkehlchen_server.get_settings()
-#     assert settings['eth_rpc_endpoint'] == 'http://working.nodes.com:8545'
-
-#     # Test that changing the main currency to a valid fiat works
-#     given_settings = {
-#         'main_currency': 'CAD',
-#     }
-#     response = rotkehlchen_server.set_settings(given_settings)
-#     assert response['result'] is True
-#     assert response['message'] == ''
-#     settings = rotkehlchen_server.get_settings()
-#     assert settings['main_currency'] == 'CAD'
-
-#     # Test that using a nonsence currency for main currencly fails with message
-#     given_settings = {
-#         'main_currency': 'XDADADAD',
-#     }
-#     response = rotkehlchen_server.set_settings(given_settings)
-#     assert response['result'] is False
-#     assert response['message'] == 'Unknown fiat currency XDADADAD provided'
-#     settings = rotkehlchen_server.get_settings()
-#     assert settings['main_currency'] == 'CAD'
-
-#     # Test that using a crypto currency for main currency fails with message
-#     given_settings = {
-#         'main_currency': 'BTC',
-#     }
-#     response = rotkehlchen_server.set_settings(given_settings)
-#     assert response['result'] is False
-#     assert response['message'] == 'Provided symbol for main currency BTC is not a fiat currency'
-#     settings = rotkehlchen_server.get_settings()
-#     assert settings['main_currency'] == 'CAD'
-
-
 # def test_ignored_assets(rotkehlchen_server):
 #     response = rotkehlchen_server.get_ignored_assets()
 #     assert response['ignored_assets'] == []

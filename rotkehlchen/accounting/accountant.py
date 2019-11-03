@@ -7,6 +7,7 @@ from rotkehlchen.accounting.events import TaxableEvents
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.csv_exporter import CSVExporter
+from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import (
     DeserializationError,
     NoPriceForGivenTimestamp,
@@ -50,13 +51,13 @@ class Accountant():
             create_csv: bool,
             ignored_assets: List[Asset],
             include_crypto2crypto: bool,
-            taxfree_after_period: int,
+            taxfree_after_period: Optional[int],
             include_gas_costs: bool,
     ) -> None:
         self.msg_aggregator = msg_aggregator
         self.csvexporter = CSVExporter(profit_currency, user_directory, create_csv)
         self.events = TaxableEvents(self.csvexporter, profit_currency)
-        self.set_main_currency(profit_currency.identifier)
+        self.set_main_currency(profit_currency)
 
         self.asset_movement_fees = FVal(0)
         self.last_gas_price = FVal(0)
@@ -82,35 +83,20 @@ class Accountant():
     def taxable_trade_pl(self) -> FVal:
         return self.events.taxable_trade_profit_loss
 
-    def customize(self, settings: Dict[str, Any]) -> Tuple[bool, str]:
-        if 'include_crypto2crypto' in settings:
-            given_include_c2c = settings['include_crypto2crypto']
-            if not isinstance(given_include_c2c, bool):
-                return False, 'Value for include_crypto2crypto must be boolean'
+    def customize(self, settings: ModifiableDBSettings) -> None:
+        if settings.include_crypto2crypto is not None:
+            self.events.include_crypto2crypto = settings.include_crypto2crypto
 
-            self.events.include_crypto2crypto = given_include_c2c
-
-        if 'taxfree_after_period' in settings:
-            given_taxfree_after_period = settings['taxfree_after_period']
-            if given_taxfree_after_period is not None:
-                if not isinstance(given_taxfree_after_period, int):
-                    return False, 'Value for taxfree_after_period must be an integer'
-
-                if given_taxfree_after_period == 0:
-                    return False, 'Value for taxfree_after_period can not be 0 days'
-
-                # turn to seconds
-                given_taxfree_after_period = given_taxfree_after_period * 86400
-                settings['taxfree_after_period'] = given_taxfree_after_period
+        if settings.taxfree_after_period is not None:
+            given_taxfree_after_period: Optional[int] = settings.taxfree_after_period
+            if given_taxfree_after_period == -1:
+                # That means user requested to disable taxfree_after_period
+                given_taxfree_after_period = None
 
             self.events.taxfree_after_period = given_taxfree_after_period
 
-        return True, ''
-
-    def set_main_currency(self, given_currency: str) -> None:
-        currency = Asset(given_currency)
-        msg = 'main currency checks should have happened at rotkehlchen.set_settings()'
-        assert currency.is_fiat(), msg
+    def set_main_currency(self, currency: Asset) -> None:
+        assert currency.is_fiat(), 'main currency checks should happen at marshmallow validation'
 
         self.profit_currency = currency
         self.events.profit_currency = currency

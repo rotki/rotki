@@ -14,13 +14,8 @@ from rotkehlchen.blockchain import Blockchain, BlockchainBalancesUpdate
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
-from rotkehlchen.errors import (
-    AuthenticationError,
-    DeserializationError,
-    EthSyncError,
-    InputError,
-    UnknownAsset,
-)
+from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.errors import AuthenticationError, EthSyncError, InputError
 from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis import Cryptocompare
@@ -441,43 +436,27 @@ class Rotkehlchen():
 
         return result_dict
 
-    def set_settings(self, settings: Dict[str, Any]) -> Tuple[bool, str]:
-        log.info('Add new settings')
-
-        message = ''
+    def set_settings(self, settings: ModifiableDBSettings) -> Tuple[bool, str]:
+        """Tries to set new settings. Returns True in success or False with message if error"""
         with self.lock:
-            if 'eth_rpc_endpoint' in settings:
-                result, msg = self.blockchain.set_eth_rpc_endpoint(settings['eth_rpc_endpoint'])
+            if settings.eth_rpc_endpoint is not None:
+                result, msg = self.blockchain.set_eth_rpc_endpoint(settings.eth_rpc_endpoint)
                 if not result:
-                    # Don't save it in the DB
-                    del settings['eth_rpc_endpoint']
-                    message += "\nEthereum RPC endpoint not set: " + msg
-
-            if 'main_currency' in settings:
-                given_symbol = settings['main_currency']
-                try:
-                    main_currency = Asset(given_symbol)
-                except UnknownAsset:
-                    return False, f'Unknown fiat currency {given_symbol} provided'
-                except DeserializationError:
-                    return False, 'Non string type given for fiat currency'
-
-                if not main_currency.is_fiat():
-                    msg = (
-                        f'Provided symbol for main currency {given_symbol} is '
-                        f'not a fiat currency'
-                    )
                     return False, msg
 
-            res, msg = self.accountant.customize(settings)
-            if not res:
-                message += '\n' + msg
-                return False, message
+            if settings.main_currency is not None:
+                if settings.main_currency != A_USD:
+                    self.usd_to_main_currency_rate = Inquirer().query_fiat_pair(
+                        base=A_USD,
+                        quote=settings.main_currency,
+                    )
+                    self.accountant.set_main_currency(settings.main_currency)
 
-            self.data.set_settings(settings, self.accountant)
+            self.accountant.customize(settings)
+            settings_dict = settings.serialize()
+            self.data.db.set_settings(settings_dict)
 
-            # Always return success here but with a message
-            return True, message
+            return True, ''
 
     def setup_exchange(
             self,
