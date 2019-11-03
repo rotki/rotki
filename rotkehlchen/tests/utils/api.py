@@ -1,7 +1,10 @@
 import os
+from http import HTTPStatus
+from typing import Optional
 
 import gevent
 import psutil
+import requests
 from flask import url_for
 
 from rotkehlchen.api.server import APIServer, RestAPI
@@ -40,9 +43,35 @@ def create_api_server(rotki: Rotkehlchen, port_number: int) -> APIServer:
 
 
 def api_url_for(api_server: APIServer, endpoint: str, **kwargs) -> str:
-    # url_for() expects binary address so we have to convert here
-    # for key, val in kwargs.items():
-    #     if isinstance(val, str) and val.startswith("0x"):
-    #         kwargs[key] = to_canonical_address(val)
     with api_server.flask_app.app_context():
         return url_for(f"v1_resources.{endpoint}", **kwargs)
+
+
+def assert_proper_response(response: requests.Response, status_code=HTTPStatus.OK) -> None:
+    assert (
+        response is not None and
+        response.status_code == status_code and
+        response.headers["Content-Type"] == "application/json"
+    )
+
+
+def assert_simple_ok_response(response: requests.Response) -> None:
+    assert_proper_response(response)
+    data = response.json()
+    assert data['result'] is True
+    assert data['message'] == ''
+
+
+def assert_error_response(
+        response: requests.Response,
+        contained_in_msg: Optional[str] = None,
+        status_code: HTTPStatus = HTTPStatus.BAD_REQUEST,
+):
+    assert (
+        response is not None and
+        response.status_code == status_code and
+        response.headers["Content-Type"] == "application/json"
+    )
+    if contained_in_msg:
+        response_data = response.json()
+        assert contained_in_msg in response_data['message']
