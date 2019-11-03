@@ -247,12 +247,12 @@ class UsersResource(BaseResource):
 class UsersByNameResource(BaseResource):
     patch_schema = UserActionSchema()
 
-    @use_kwargs(patch_schema, locations=('json',))
+    @use_kwargs(patch_schema, locations=('json', 'view_args'))
     def patch(
             self,
             action: Optional[str],
             name: str,
-            password: str,
+            password: Optional[str],
             sync_approval: str,
             premium_api_key: str,
             premium_api_secret: str,
@@ -265,6 +265,7 @@ class UsersByNameResource(BaseResource):
             )
 
         if action == 'login':
+            assert password is not None, 'Marshmallow validation should not let password=None here'
             return self.rest_api.user_login(
                 name=name,
                 password=password,

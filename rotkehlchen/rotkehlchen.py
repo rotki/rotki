@@ -249,7 +249,7 @@ class Rotkehlchen():
             accounts=accounts,
         )
         for account in added_accounts:
-            self.data.add_blockchain_account(blockchain, account)
+            self.data.db.add_blockchain_account(blockchain, account)
 
         return new_data, msg
 
@@ -268,7 +268,7 @@ class Rotkehlchen():
             accounts=accounts,
         )
         for account in removed_accounts:
-            self.data.remove_blockchain_account(blockchain, account)
+            self.data.db.remove_blockchain_account(blockchain, account)
 
         return new_data, msg
 

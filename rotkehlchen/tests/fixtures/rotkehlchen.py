@@ -112,7 +112,6 @@ def uninitialized_rotkehlchen(cli_args):
 
 @pytest.fixture()
 def rotkehlchen_api_server(
-        cli_args,
         uninitialized_rotkehlchen,
         api_port,
         username,
@@ -188,10 +187,10 @@ def rotkehlchen_api_server_with_exchanges(
         mock_bitmex,
 ):
     """Adds mock exchange objects to the rotkehlchen_server fixture"""
-    exchanges = rotkehlchen_server.rest_api.rotkehlchen.exchange_manager.connected_exchanges
+    exchanges = rotkehlchen_api_server.rest_api.rotkehlchen.exchange_manager.connected_exchanges
     exchanges['kraken'] = function_scope_kraken
     exchanges['poloniex'] = function_scope_poloniex
     exchanges['bittrex'] = function_scope_bittrex
     exchanges['binance'] = function_scope_binance
     exchanges['bitmex'] = mock_bitmex
-    return rotkehlchen_server
+    return rotkehlchen_api_server

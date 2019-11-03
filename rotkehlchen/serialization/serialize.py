@@ -48,6 +48,8 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
         return entry._asdict()
     elif isinstance(entry, VersionCheckResult):
         return entry._asdict()
+    elif isinstance(entry, DBSettings):
+        return entry._asdict()
     elif isinstance(entry, tuple):
         raise ValueError('Query results should not contain tuples')
     elif isinstance(entry, Asset):
