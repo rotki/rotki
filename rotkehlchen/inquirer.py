@@ -13,7 +13,7 @@ from rotkehlchen.constants.assets import A_USD, FIAT_CURRENCIES
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import FiatAsset, FilePath, Price, Timestamp
+from rotkehlchen.typing import FilePath, Price, Timestamp
 from rotkehlchen.utils.misc import request_get_dict, retry_calls, timestamp_to_date, ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
@@ -61,32 +61,38 @@ def query_cryptocompare_for_fiat_price(asset: Asset) -> Price:
     return price
 
 
-def _query_exchanges_rateapi(base: FiatAsset, quote: FiatAsset) -> Optional[Price]:
+def _query_exchanges_rateapi(base: Asset, quote: Asset) -> Optional[Price]:
+    assert base.is_fiat(), 'fiat currency should have been provided'
+    assert quote.is_fiat(), 'fiat currency should have been provided'
     log.debug(
         'Querying api.exchangeratesapi.io fiat pair',
-        base_currency=base,
-        quote_currency=quote,
+        base_currency=base.identifier,
+        quote_currency=quote.identifier,
     )
-    querystr = f'https://api.exchangeratesapi.io/latest?base={base}&symbols={quote}'
+    querystr = (
+        f'https://api.exchangeratesapi.io/latest?base={base.identifier}&symbols={quote.identifier}'
+    )
     try:
         resp = request_get_dict(querystr)
-        return Price(FVal(resp['rates'][quote]))
+        return Price(FVal(resp['rates'][quote.identifier]))
     except (ValueError, RemoteError, KeyError, requests.exceptions.TooManyRedirects):
         log.error(
             'Querying api.exchangeratesapi.io for fiat pair failed',
-            base_currency=base,
-            quote_currency=quote,
+            base_currency=base.identifier,
+            quote_currency=quote.identifier,
         )
         return None
 
 
-def _query_currency_converterapi(base: FiatAsset, quote: FiatAsset) -> Optional[Price]:
+def _query_currency_converterapi(base: Asset, quote: Asset) -> Optional[Price]:
+    assert base.is_fiat(), 'fiat currency should have been provided'
+    assert quote.is_fiat(), 'fiat currency should have been provided'
     log.debug(
         'Query free.currencyconverterapi.com fiat pair',
-        base_currency=base,
-        quote_currency=quote,
+        base_currency=base.identifier,
+        quote_currency=quote.identifier,
     )
-    pair = f'{base}_{quote}'
+    pair = f'{base.identifier}_{quote.identifier}'
     querystr = (
         f'https://free.currencyconverterapi.com/api/v6/convert?'
         f'q={pair}&apiKey={CURRENCYCONVERTER_API_KEY}'
@@ -97,8 +103,8 @@ def _query_currency_converterapi(base: FiatAsset, quote: FiatAsset) -> Optional[
     except (ValueError, RemoteError, KeyError):
         log.error(
             'Querying free.currencyconverterapi.com fiat pair failed',
-            base_currency=base,
-            quote_currency=quote,
+            base_currency=base.identifier,
+            quote_currency=quote.identifier,
         )
         return None
 
@@ -145,10 +151,12 @@ class Inquirer():
 
     @staticmethod
     def query_historical_fiat_exchange_rates(
-            from_fiat_currency: FiatAsset,
-            to_fiat_currency: FiatAsset,
+            from_fiat_currency: Asset,
+            to_fiat_currency: Asset,
             timestamp: Timestamp,
     ) -> Optional[Price]:
+        assert from_fiat_currency.is_fiat(), 'fiat currency should have been provided'
+        assert to_fiat_currency.is_fiat(), 'fiat currency should have been provided'
         date = timestamp_to_date(timestamp, formatstr='%Y-%m-%d')
         instance = Inquirer()
         rate = instance._get_cached_forex_data(date, from_fiat_currency, to_fiat_currency)
@@ -157,14 +165,14 @@ class Inquirer():
 
         log.debug(
             'Querying exchangeratesapi',
-            from_fiat_currency=from_fiat_currency,
-            to_fiat_currency=to_fiat_currency,
+            from_fiat_currency=from_fiat_currency.identifier,
+            to_fiat_currency=to_fiat_currency.identifier,
             timestamp=timestamp,
         )
 
         query_str = (
             f'https://api.exchangeratesapi.io/{date}?'
-            f'base={from_fiat_currency}'
+            f'base={from_fiat_currency.identifier}'
         )
         resp = retry_calls(
             times=5,
@@ -185,7 +193,7 @@ class Inquirer():
         except JSONDecodeError:
             return None
 
-        if 'rates' not in result or to_fiat_currency not in result['rates']:
+        if 'rates' not in result or to_fiat_currency.identifier not in result['rates']:
             return None
 
         if date not in instance._cached_forex_data:
@@ -197,17 +205,19 @@ class Inquirer():
         for key, value in result['rates'].items():
             instance._cached_forex_data[date][from_fiat_currency][key] = FVal(value)
 
-        rate = Price(FVal(result['rates'][to_fiat_currency]))
+        rate = Price(FVal(result['rates'][to_fiat_currency.identifier]))
         log.debug('Exchangeratesapi query succesful', rate=rate)
         return rate
 
     @staticmethod
     def _save_forex_rate(
             date: str,
-            from_currency: FiatAsset,
-            to_currency: FiatAsset,
+            from_currency: Asset,
+            to_currency: Asset,
             price: FVal,
     ) -> None:
+        assert from_currency.is_fiat(), 'fiat currency should have been provided'
+        assert to_currency.is_fiat(), 'fiat currency should have been provided'
         instance = Inquirer()
         if date not in instance._cached_forex_data:
             instance._cached_forex_data[date] = {}
@@ -223,8 +233,8 @@ class Inquirer():
     @staticmethod
     def _get_cached_forex_data(
             date: str,
-            from_currency: FiatAsset,
-            to_currency: FiatAsset,
+            from_currency: Asset,
+            to_currency: Asset,
     ) -> Optional[Price]:
         instance = Inquirer()
         if date in instance._cached_forex_data:
@@ -233,8 +243,8 @@ class Inquirer():
                 if rate:
                     log.debug(
                         'Got cached forex rate',
-                        from_currency=from_currency,
-                        to_currency=to_currency,
+                        from_currency=from_currency.identifier,
+                        to_currency=to_currency.identifier,
                         rate=rate,
                     )
                 return rate
@@ -252,36 +262,36 @@ class Inquirer():
         if base == quote:
             return Price(FVal('1'))
 
-        base_str = FiatAsset(base.identifier)
-        quote_str = FiatAsset(quote.identifier)
         instance = Inquirer()
         now = ts_now()
         date = timestamp_to_date(ts_now(), formatstr='%Y-%m-%d')
-        price = instance._get_cached_forex_data(date, base_str, quote_str)
+        price = instance._get_cached_forex_data(date, base, quote)
         if price:
             return price
 
-        price = _query_exchanges_rateapi(base_str, quote_str)
+        price = _query_exchanges_rateapi(base, quote)
         if not price:
-            price = _query_currency_converterapi(base_str, quote_str)
+            price = _query_currency_converterapi(base, quote)
 
         if not price:
             # Search the cache for any price in the last month
             for i in range(1, 31):
                 now = Timestamp(now - Timestamp(86401))
                 date = timestamp_to_date(now, formatstr='%Y-%m-%d')
-                price = instance._get_cached_forex_data(date, base_str, quote_str)
+                price = instance._get_cached_forex_data(date, base, quote)
                 if price:
                     log.debug(
                         f'Could not query online apis for a fiat price. '
                         f'Used cached value from {i} days ago.',
-                        base_currency=base_str,
-                        quote_currency=quote_str,
+                        base_currency=base.identifier,
+                        quote_currency=quote.identifier,
                         price=price,
                     )
                     return price
 
-            raise ValueError('Could not find a "{}" price for "{}"'.format(base_str, quote_str))
+            raise ValueError(
+                'Could not find a "{}" price for "{}"'.format(base.identifier, quote.identifier),
+            )
 
-        instance._save_forex_rate(date, base_str, quote_str, price)
+        instance._save_forex_rate(date, base, quote, price)
         return price

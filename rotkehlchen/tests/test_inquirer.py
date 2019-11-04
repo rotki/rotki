@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.constants.assets import A_CNY, A_EUR, A_JPY, A_USD
+from rotkehlchen.constants.assets import A_CNY, A_EUR, A_GBP, A_JPY, A_USD
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import _query_currency_converterapi, _query_exchanges_rateapi
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -17,11 +17,11 @@ from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 )
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_query_realtime_price_apis(inquirer):
-    result = _query_currency_converterapi('USD', 'EUR')
+    result = _query_currency_converterapi(A_USD, A_EUR)
     assert result and isinstance(result, FVal)
-    result = _query_exchanges_rateapi('USD', 'GBP')
+    result = _query_exchanges_rateapi(A_USD, A_GBP)
     assert result and isinstance(result, FVal)
-    result = inquirer.query_historical_fiat_exchange_rates('USD', 'CNY', 1411603200)
+    result = inquirer.query_historical_fiat_exchange_rates(A_USD, A_CNY, 1411603200)
     assert result == FVal('6.1371932033')
 
 
@@ -65,10 +65,10 @@ def test_fallback_to_cached_values_within_a_month(inquirer):  # pylint: disable=
     now = ts_now()
     eurjpy_val = FVal('124.123')
     date = timestamp_to_date(now - 86400 * 15, formatstr='%Y-%m-%d')
-    inquirer._save_forex_rate(date, 'EUR', 'JPY', eurjpy_val)
+    inquirer._save_forex_rate(date, A_EUR, A_JPY, eurjpy_val)
     # Get a date 31 days ago and insert a cache entry for EUR CNY then
     date = timestamp_to_date(now - 86400 * 31, formatstr='%Y-%m-%d')
-    inquirer._save_forex_rate(date, 'EUR', 'CNY', FVal('7.719'))
+    inquirer._save_forex_rate(date, A_EUR, A_CNY, FVal('7.719'))
 
     with patch('requests.get', side_effect=mock_api_remote_fail):
         # We fail to find a response but then go back 15 days and find the cached response
