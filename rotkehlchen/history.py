@@ -13,7 +13,6 @@ from rotkehlchen.transactions import query_etherscan_for_transactions
 from rotkehlchen.typing import (
     ChecksumAddress,
     EthereumTransaction,
-    FiatAsset,
     FilePath,
     Location,
     Price,
@@ -116,8 +115,8 @@ class PriceHistorian():
         if from_asset.is_fiat() and to_asset.is_fiat():
             # if we are querying historical forex data then try something other than cryptocompare
             price = Inquirer().query_historical_fiat_exchange_rates(
-                from_fiat_currency=FiatAsset(from_asset.identifier),
-                to_fiat_currency=FiatAsset(to_asset.identifier),
+                from_fiat_currency=from_asset,
+                to_fiat_currency=to_asset,
                 timestamp=timestamp,
             )
             if price is not None:

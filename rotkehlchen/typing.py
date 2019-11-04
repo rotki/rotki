@@ -44,9 +44,6 @@ FilePath = NewType('FilePath', T_FilePath)
 T_TradePair = str
 TradePair = NewType('TradePair', T_TradePair)
 
-T_FiatAsset = str
-FiatAsset = NewType('FiatAsset', T_FiatAsset)
-
 T_EthAddres = str
 EthAddress = NewType('EthAddress', T_EthAddres)
 
