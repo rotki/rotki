@@ -3,10 +3,9 @@ import os
 from unittest.mock import patch
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
-from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants.assets import A_GBP, A_USD
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import ApiKey, ApiSecret
 
