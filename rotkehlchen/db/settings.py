@@ -5,7 +5,7 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.db.utils import str_to_bool
 from rotkehlchen.errors import DeserializationError
-from rotkehlchen.typing import FiatAsset, Timestamp
+from rotkehlchen.typing import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 ROTKEHLCHEN_DB_VERSION = 8
@@ -110,7 +110,7 @@ def db_settings_from_dict(
         elif key == 'balance_save_frequency':
             specified_args[key] = int(value)
         elif key == 'main_currency':
-            specified_args[key] = FiatAsset(str(value))
+            specified_args[key] = Asset(str(value))
         elif key == 'anonymized_logs':
             specified_args[key] = read_boolean(value)
         elif key == 'include_gas_costs':

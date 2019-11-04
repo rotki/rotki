@@ -487,7 +487,7 @@ Query the current fiat currencies exchange rate
 
 .. http:get:: /api/(version)/fiat_exchange_rates
 
-   Querying this endpoint with a list of strings representing FIAT currencies will return a dictionary of their current exchange rates compared to USD.
+   Querying this endpoint with a list of strings representing FIAT currencies will return a dictionary of their current exchange rates compared to USD. If no list is given then the exchange rates of all currencies is returned. Providing an empty list is an error.
 
    **Example Request**:
 
@@ -496,7 +496,7 @@ Query the current fiat currencies exchange rate
       GET /api/1/logout HTTP/1.1
       Host: localhost:5042
 
-      ["EUR", "CNY", "GBP"]
+      {"currencies": ["EUR", "CNY", "GBP"]}
 
    **Example Response**:
 
@@ -511,7 +511,7 @@ Query the current fiat currencies exchange rate
       }
 
    :statuscode 200: The exchange rates have been sucesfully returned
-   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 400: Provided JSON is in some way malformed. Empty currencies list given
    :statuscode 500: Internal Rotki error
 
 Setup or remove an exchange

@@ -4,7 +4,7 @@ import traceback
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import gevent
 from flask import Response, make_response
@@ -30,7 +30,6 @@ from rotkehlchen.typing import (
     AssetAmount,
     BlockchainAddress,
     Fee,
-    FiatAsset,
     Location,
     Price,
     SupportedBlockchain,
@@ -259,9 +258,13 @@ class RestAPI():
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
     @staticmethod
-    def get_fiat_exchange_rates(currencies: List[str]) -> Response:
-        fiat_currencies = cast(List[FiatAsset], currencies)
-        rates = Inquirer().get_fiat_usd_exchange_rates(fiat_currencies)
+    def get_fiat_exchange_rates(currencies: Optional[List[Asset]]) -> Response:
+        if currencies is not None and len(currencies) == 0:
+            return api_response(
+                wrap_in_fail_result('Empy list of currencies provided'),
+                status_code=HTTPStatus.BAD_REQUEST,
+            )
+        rates = Inquirer().get_fiat_usd_exchange_rates(currencies)
         res = process_result(rates)
         return api_response(_wrap_in_ok_result(res), status_code=HTTPStatus.OK)
 

@@ -4,10 +4,9 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.constants.assets import A_EUR, A_USD
+from rotkehlchen.constants.assets import A_CNY, A_EUR, A_JPY, A_USD
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import _query_currency_converterapi, _query_exchanges_rateapi
-from rotkehlchen.tests.utils.constants import A_CNY, A_JPY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 

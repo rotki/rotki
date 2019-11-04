@@ -10,7 +10,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants import YEAR_IN_SECONDS
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD, FIAT_CURRENCIES
+from rotkehlchen.constants.assets import A_BTC, A_CNY, A_ETH, A_EUR, A_USD, FIAT_CURRENCIES
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_handler import DataHandler, verify_otctrade_data
 from rotkehlchen.db.dbhandler import DBINFO_FILENAME, DBHandler, detect_sqlcipher_version
@@ -30,7 +30,6 @@ from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import (
-    A_CNY,
     A_DAO,
     A_DOGE,
     A_GNO,
@@ -577,8 +576,7 @@ def test_data_set_fiat_balances(data_dir, username):
 
     # also check that all the fiat assets in the fiat table are in
     # all_assets.json
-    for fiat in FIAT_CURRENCIES:
-        fiat_asset = Asset(fiat)
+    for fiat_asset in FIAT_CURRENCIES:
         assert fiat_asset.is_fiat()
         success, _ = data.set_fiat_balances({fiat_asset: AssetAmount(FVal('1'))})
         assert success

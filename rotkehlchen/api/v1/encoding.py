@@ -530,3 +530,12 @@ class DataImportSchema(BaseSchema):
         strict = True
         # decoding to a dict is required by the @use_kwargs decorator from webargs
         decoding_class = dict
+
+
+class FiatExchangeRatesSchema(BaseSchema):
+    currencies = fields.List(FiatAssetField(), missing=None)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict

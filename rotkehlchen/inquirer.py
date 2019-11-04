@@ -9,7 +9,7 @@ import requests
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, ZERO
-from rotkehlchen.constants.assets import A_USD, FIAT_CURRENCIES, S_USD
+from rotkehlchen.constants.assets import A_USD, FIAT_CURRENCIES
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -134,13 +134,13 @@ class Inquirer():
 
     @staticmethod
     def get_fiat_usd_exchange_rates(
-            currencies: Optional[Iterable[FiatAsset]] = None,
-    ) -> Dict[FiatAsset, FVal]:
-        rates = {S_USD: FVal(1)}
+            currencies: Optional[Iterable[Asset]] = None,
+    ) -> Dict[Asset, FVal]:
+        rates = {A_USD: FVal(1)}
         if not currencies:
             currencies = FIAT_CURRENCIES[1:]
         for currency in currencies:
-            rates[currency] = Inquirer().query_fiat_pair(A_USD, Asset(currency))
+            rates[currency] = Inquirer().query_fiat_pair(A_USD, currency)
         return rates
 
     @staticmethod

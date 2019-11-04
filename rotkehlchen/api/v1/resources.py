@@ -15,6 +15,7 @@ from rotkehlchen.api.v1.encoding import (
     ExchangeBalanceQuerySchema,
     ExchangeTradesQuerySchema,
     FiatBalancesSchema,
+    FiatExchangeRatesSchema,
     HistoryExportingSchema,
     HistoryProcessingSchema,
     IgnoredAssetsSchema,
@@ -100,7 +101,10 @@ class TaskOutcomeResource(BaseResource):
 
 class FiatExchangeRatesResource(BaseResource):
 
-    def get(self, currencies: List[str]) -> Response:
+    get_schema = FiatExchangeRatesSchema()
+
+    @use_kwargs(get_schema, locations=('json',))
+    def get(self, currencies: Optional[List[Asset]]) -> Response:
         return self.rest_api.get_fiat_exchange_rates(currencies=currencies)
 
 

@@ -6,7 +6,7 @@ import logging
 import os
 import signal
 import traceback
-from typing import Any, Dict, List, cast
+from typing import Any, Dict
 
 import gevent
 import zerorpc
@@ -24,12 +24,11 @@ from rotkehlchen.errors import (
     UnknownAsset,
 )
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.serialization.serialize import process_result
-from rotkehlchen.typing import ApiKey, ApiSecret, FiatAsset, Timestamp
+from rotkehlchen.typing import ApiKey, ApiSecret, List, Timestamp
 from rotkehlchen.utils.serialization import pretty_json_dumps
 from rotkehlchen.utils.version_check import check_if_version_up_to_date
 
@@ -160,13 +159,6 @@ class RotkehlchenServer():
             if ret:
                 log.debug("Found response for task {}".format(task_id))
         return ret
-
-    @staticmethod
-    def get_fiat_exchange_rates(currencies: List[str]):
-        fiat_currencies = cast(List[FiatAsset], currencies)
-        rates = Inquirer().get_fiat_usd_exchange_rates(fiat_currencies)
-        res = {'exchange_rates': rates}
-        return process_result(res)
 
     def get_settings(self):
         return process_result(self.rotkehlchen.data.db.get_settings())

@@ -4,6 +4,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.constants.assets import A_JPY
 from rotkehlchen.db.settings import (
     DEFAULT_ANONYMIZED_LOGS,
     DEFAULT_BALANCE_SAVE_FREQUENCY,
@@ -21,7 +22,6 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response,
     assert_simple_ok_response,
 )
-from rotkehlchen.tests.utils.constants import A_JPY
 from rotkehlchen.tests.utils.mock import MockWeb3
 
 
