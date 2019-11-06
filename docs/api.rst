@@ -514,6 +514,39 @@ Query the current fiat currencies exchange rate
    :statuscode 400: Provided JSON is in some way malformed. Empty currencies list given
    :statuscode 500: Internal Rotki error
 
+
+Get a list of setup exchanges
+==============================
+
+.. http:put:: /api/(version)/exchanges
+
+   Doing a GET on this endpoint will return a list of which exchanges are currently setup for the logged in user.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/exchanges HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": ['kraken', 'binance']
+	  "message": ""
+      }
+
+   :statuscode 200: The exchanges list has been sucesfully setup
+   :statuscode 409: No user is logged in.
+   :statuscode 500: Internal Rotki error
+
 Setup or remove an exchange
 ============================
 

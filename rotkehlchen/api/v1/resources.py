@@ -110,6 +110,8 @@ class FiatExchangeRatesResource(BaseResource):
 
 class ExchangesResource(BaseResource):
 
+    def get(self):
+        return self.rest_api.get_exchanges()
     def put(self, name: str, api_key: str, api_secret: str) -> Response:
         return self.rest_api.setup_exchange(name, api_key, api_secret)
 
