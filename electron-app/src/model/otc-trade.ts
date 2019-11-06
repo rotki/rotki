@@ -1,5 +1,5 @@
 export interface OtcTrade {
-  readonly id: number;
+  readonly id: string;
   readonly timestamp: number;
   readonly pair: string;
   readonly trade_type: 'buy' | 'sell';
@@ -12,7 +12,7 @@ export interface OtcTrade {
 }
 
 export interface OtcPayload {
-  readonly otc_id: number | null;
+  readonly otc_id: string | null;
   readonly otc_timestamp: string;
   readonly otc_pair: string;
   readonly otc_type: 'buy' | 'sell';
@@ -23,16 +23,3 @@ export interface OtcPayload {
   readonly otc_link: string;
   readonly otc_notes: string;
 }
-
-export const placeholderOtcTrade = (): OtcTrade => ({
-  id: -1,
-  timestamp: -1,
-  pair: '',
-  trade_type: 'buy',
-  amount: '',
-  rate: '',
-  fee: '',
-  fee_currency: '',
-  link: '',
-  notes: ''
-});
