@@ -70,9 +70,9 @@
                     </span>
                   </v-tooltip>
                 </v-list-item-action-text>
-                <v-icon :color="color(notification)">{{
-                  icon(notification)
-                }}</v-icon>
+                <v-icon :color="color(notification)">
+                  {{ icon(notification) }}
+                </v-icon>
               </v-list-item-action>
             </v-list-item>
 

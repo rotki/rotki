@@ -98,7 +98,7 @@ export async function initSpectron(): Promise<TestEnvironment> {
 export async function wait(ms: number) {
   if (ms === undefined) ms = 1000;
 
-  return new Promise(function(resolve, reject) {
+  return new Promise(function(resolve) {
     setTimeout(resolve, ms);
   });
 }

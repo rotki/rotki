@@ -19,7 +19,26 @@ module.exports = {
     'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
     'vuetify/no-deprecated-classes': 'error',
     'vuetify/grid-unknown-attributes': 'error',
-    'vuetify/no-legacy-grid': 'error'
+    'vuetify/no-legacy-grid': 'error',
+    'vue/multiline-html-element-content-newline': [
+      'error',
+      {
+        ignoreWhenEmpty: true,
+        ignores: ['pre', 'textarea'],
+        allowEmptyLines: false
+      }
+    ],
+    'vue/v-bind-style': ['error', 'shorthand'],
+    'vue/v-on-style': ['error', 'shorthand'],
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      {
+        vars: 'all',
+        args: 'after-used',
+        ignoreRestSiblings: false,
+        argsIgnorePattern: '^_'
+      }
+    ]
   },
 
   parserOptions: {

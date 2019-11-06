@@ -82,7 +82,7 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { OtcPayload, OtcTrade, placeholderOtcTrade } from '@/model/otc-trade';
+import { OtcPayload, OtcTrade } from '@/model/otc-trade';
 import OtcForm from '@/components/OtcForm.vue';
 import { createNamespacedHelpers } from 'vuex';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';

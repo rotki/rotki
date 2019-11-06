@@ -44,6 +44,7 @@ export const mutations: MutationTree<SessionState> = {
   nodeConnection(state: SessionState, nodeConnection: boolean) {
     state.nodeConnection = nodeConnection;
   },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   reset(state: SessionState) {
     state = Object.assign(state, defaultState());
   }
