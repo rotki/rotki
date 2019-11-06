@@ -17,78 +17,66 @@
           <v-data-table
             :headers="headers"
             :items="otcTrades"
-            :expand="expand"
-            item-key="timestamp"
+            :expanded.sync="expanded"
+            single-expand
+            show-expand
+            item-key="id"
           >
-            <template #items="props">
-              <tr
-                @click="props.expanded = !props.expanded"
-                @contextmenu="show($event, props.item)"
-              >
-                <td>{{ props.item.pair }}</td>
-                <td>{{ props.item.type }}</td>
-                <td>{{ props.item.amount }}</td>
-                <td>{{ props.item.rate }}</td>
-                <td>
-                  {{ props.item.timestamp | formatDate(dateDisplayFormat) }}
-                </td>
-              </tr>
+            <template #item.pair="{ item }">
+              {{ item.pair }}
             </template>
-            <template #expand="props">
-              <v-card flat>
-                <v-card-title class="font-weight-bold">Details</v-card-title>
-                <v-card-text>
-                  <p v-if="props.item.notes">
+            <template #item.type="{ item }">
+              {{ item.type }}
+            </template>
+            <template #item.amount="{ item }">
+              {{ item.amount }}
+            </template>
+            <template #item.rate="{ item }">
+              {{ item.rate }}
+            </template>
+            <template #item.timestamp="{ item }">
+              {{ item.timestamp | formatDate(dateDisplayFormat) }}
+            </template>
+            <template #item.actions="{ item }">
+              <v-icon small class="mr-2" @click="editItem(item)">
+                fa-edit
+              </v-icon>
+              <v-icon small @click="askForDeleteConfirmation(item)">
+                fa-trash
+              </v-icon>
+            </template>
+            <template v-slot:expanded-item="{ headers, item }">
+              <td :colspan="headers.length">
+                <v-col cols="12">
+                  <v-row>
+                    <h2>Details</h2>
+                  </v-row>
+                  <v-row v-if="item.notes">
                     <span class="font-weight-medium">Extra Info:</span>
-                    {{ props.item.notes }}
-                  </p>
-                  <p v-if="props.item.link">
+                    {{ item.notes }}
+                  </v-row>
+                  <v-row v-if="item.link">
                     <span class="font-weight-medium">Links:</span>
-                    {{ props.item.link }}}
-                  </p>
-                  <p v-if="props.item.fee">
+                    {{ item.link }}}
+                  </v-row>
+                  <v-row v-if="item.fee">
                     <span class="font-weight-medium">Fee:</span>
-                    {{ props.item.fee }} {{ props.item.fee_currency }}
-                  </p>
-                </v-card-text>
-              </v-card>
+                    {{ item.fee }} {{ item.fee_currency }}
+                  </v-row>
+                </v-col>
+              </td>
             </template>
           </v-data-table>
-          <v-menu
-            v-model="showMenu"
-            :position-x="x"
-            :position-y="y"
-            absolute
-            offset-y
-          >
-            <v-list>
-              <v-list-item @click="editItem()">
-                <v-list-item-title>
-                  Edit
-                </v-list-item-title>
-              </v-list-item>
-              <v-list-item @click="deleteItem()">
-                <v-list-item-title>
-                  Delete
-                </v-list-item-title>
-              </v-list-item>
-            </v-list>
-          </v-menu>
         </v-card>
       </v-col>
     </v-row>
-    <message-dialog
-      title="Success"
-      success
-      :message="successMessage"
-      @dismiss="successMessage = ''"
-    ></message-dialog>
-    <message-dialog
-      title="Error"
-      :message="errorMessage"
-      @dismiss="errorMessage = ''"
-    ></message-dialog>
-    <div id="otc-trades"></div>
+    <confirm-dialog
+      message="Are you sure you want to delete the trade"
+      title="Delete OTC Trade"
+      :display="displayConfirmation"
+      @cancel="cancelConfirmation()"
+      @confirm="deleteItem()"
+    ></confirm-dialog>
   </v-container>
 </template>
 
@@ -96,25 +84,24 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { OtcPayload, OtcTrade, placeholderOtcTrade } from '@/model/otc-trade';
 import OtcForm from '@/components/OtcForm.vue';
-import { mapGetters } from 'vuex';
+import { createNamespacedHelpers } from 'vuex';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
+import { Message } from '@/store/store';
+import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 
+const { mapGetters } = createNamespacedHelpers('session');
 @Component({
-  components: { MessageDialog, OtcForm },
+  components: { ConfirmDialog, MessageDialog, OtcForm },
   computed: mapGetters(['dateDisplayFormat'])
 })
 export default class OtcTrades extends Vue {
   dateDisplayFormat!: string;
-  expand: boolean = false;
-  showMenu: boolean = false;
+  expanded = [];
   editMode: boolean = false;
-  errorMessage: string = '';
-  successMessage: string = '';
-  x: number = 0;
-  y: number = 0;
+  displayConfirmation: boolean = false;
 
-  selectedItem?: OtcTrade;
-  editableItem: OtcTrade = placeholderOtcTrade();
+  deleteId: string = '';
+  editableItem: OtcTrade | null = null;
 
   otcTrades: OtcTrade[] = [];
 
@@ -123,62 +110,77 @@ export default class OtcTrades extends Vue {
     { text: 'Type', value: 'type' },
     { text: 'Amount', value: 'amount' },
     { text: 'Rate', value: 'rate' },
-    { text: 'Time', value: 'timestamp' }
+    { text: 'Time', value: 'timestamp' },
+    { text: 'Actions', value: 'actions' }
   ];
-
-  show(event: any, item: OtcTrade) {
-    event.preventDefault();
-    this.showMenu = false;
-    this.x = event.clientX;
-    this.y = event.clientY;
-    this.$nextTick(() => {
-      this.showMenu = true;
-    });
-    this.selectedItem = item;
-  }
 
   saveItem(otcTrade: OtcPayload) {
     this.$rpc
       .modify_otc_trades(!this.editMode, otcTrade)
       .then(() => {
-        this.successMessage = 'Trade submitted';
+        this.$store.commit('setMessage', {
+          title: 'Success',
+          description: 'Trade was submitted successfully',
+          success: true
+        } as Message);
         this.fetchData();
       })
       .catch((reason: Error) => {
-        this.errorMessage = `Trade Addition Error: ${reason.message}`;
+        this.$store.commit('setMessage', {
+          title: 'Failure',
+          description: `Trade Addition Error: ${reason.message}`
+        } as Message);
       })
-      .finally(() => {
-        this.editMode = false;
-        this.selectedItem = undefined;
-        this.editableItem = placeholderOtcTrade();
-      });
+      .finally(() => this.cancelEdit());
   }
 
-  editItem() {
+  editItem(item: OtcTrade) {
     this.editMode = true;
-    this.editableItem = this.selectedItem || placeholderOtcTrade();
+    this.editableItem = item;
+  }
+
+  askForDeleteConfirmation(item: OtcTrade) {
+    this.deleteId = item.id;
+    this.displayConfirmation = true;
+    this.cancelEdit();
+  }
+
+  cancelConfirmation() {
+    this.deleteId = '';
+    this.displayConfirmation = false;
   }
 
   deleteItem() {
+    this.displayConfirmation = false;
     this.$rpc
-      .delete_otctrade(this.selectedItem!.id)
+      .delete_otctrade(this.deleteId)
       .then(() => {
-        this.successMessage = 'Trade Deleted';
-        const index = this.otcTrades.indexOf(this.selectedItem!!);
-        this.otcTrades.splice(index, 1);
+        this.$store.commit('setMessage', {
+          title: 'Success',
+          description: 'Trade was deleted successfully',
+          success: true
+        } as Message);
+        const index = this.otcTrades.findIndex(
+          value => value.id === this.deleteId
+        );
+        if (index >= 0) {
+          this.otcTrades.splice(index, 1);
+        }
       })
-      .catch(reason => {
-        this.errorMessage = `Error at Trade Deletion: ${reason.message}`;
+      .catch((reason: Error) => {
+        this.$store.commit('setMessage', {
+          title: 'Failure',
+          description: `Error at Trade Deletion: ${reason.message}`
+        } as Message);
       })
       .finally(() => {
-        this.selectedItem = undefined;
+        this.deleteId = '';
       });
   }
 
   cancelEdit() {
     this.editMode = false;
-    this.selectedItem = undefined;
-    this.editableItem = placeholderOtcTrade();
+    this.editableItem = null;
   }
 
   created() {
@@ -192,7 +194,10 @@ export default class OtcTrades extends Vue {
         this.otcTrades = value;
       })
       .catch(reason => {
-        this.errorMessage = `Trade loading failed: ${reason.message}`;
+        this.$store.commit('setMessage', {
+          title: 'Failure',
+          description: `OTC Trade loading failed: ${reason.message}`
+        } as Message);
       });
   }
 }

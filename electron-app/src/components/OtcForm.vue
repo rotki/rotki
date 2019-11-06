@@ -101,9 +101,9 @@ export default class OtcForm extends Vue {
   @Prop({ required: true })
   editMode!: boolean;
   @Prop({ required: false })
-  otcTrade?: OtcTrade;
+  otcTrade: OtcTrade | null = null;
 
-  id: number = 0;
+  id: string = '';
   pair: string = '';
   datetime: string = '';
   amount: string = '';
@@ -152,7 +152,7 @@ export default class OtcForm extends Vue {
   }
 
   private resetFields() {
-    this.id = 0;
+    this.id = '';
     this.pair = '';
     this.datetime = '';
     this.amount = '';
@@ -182,7 +182,9 @@ export default class OtcForm extends Vue {
   }
 
   @Emit()
-  cancel() {}
+  cancel() {
+    this.resetFields();
+  }
 }
 </script>
 
