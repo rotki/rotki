@@ -6,6 +6,7 @@ from webargs import validate
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.errors import DeserializationError, UnknownAsset
+from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
@@ -210,6 +211,31 @@ class LocationField(fields.Field):
         return location
 
 
+class ExchangeNameField(fields.Field):
+
+    @staticmethod
+    def _serialize(
+            value: str,
+            attr,  # pylint: disable=unused-argument
+            obj,  # pylint: disable=unused-argument
+            **kwargs,  # pylint: disable=unused-argument
+    ) -> str:
+        return value
+
+    def _deserialize(
+            self,
+            value: str,
+            attr,  # pylint: disable=unused-argument
+            data,  # pylint: disable=unused-argument
+            **kwargs,  # pylint: disable=unused-argument
+    ) -> str:
+        if not isinstance(value, str):
+            raise ValidationError('Exchange name should be a string')
+        if value not in SUPPORTED_EXCHANGES:
+            raise ValidationError(f'Exchange {value} is not supported')
+
+        return value
+
 class DirectoryField(fields.Field):
 
     @staticmethod
@@ -410,6 +436,26 @@ class NewUserSchema(BaseUserSchema):
 class AllBalancesQuerySchema(BaseSchema):
     async_query = fields.Boolean(missing=False)
     save_data = fields.Boolean(required=True)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
+class ExchangesResourceAddSchema(BaseSchema):
+    name = ExchangeNameField(required=True)
+    api_key = fields.String(required=True)
+    api_secret = fields.String(required=True)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
+class ExchangesResourceRemoveSchema(BaseSchema):
+    name = ExchangeNameField(required=True)
 
     class Meta:
         strict = True

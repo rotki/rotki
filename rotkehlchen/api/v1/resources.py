@@ -13,6 +13,8 @@ from rotkehlchen.api.v1.encoding import (
     DataImportSchema,
     EthTokensSchema,
     ExchangeBalanceQuerySchema,
+    ExchangesResourceAddSchema,
+    ExchangesResourceRemoveSchema,
     ExchangeTradesQuerySchema,
     FiatBalancesSchema,
     FiatExchangeRatesSchema,
@@ -110,11 +112,17 @@ class FiatExchangeRatesResource(BaseResource):
 
 class ExchangesResource(BaseResource):
 
+    put_schema = ExchangesResourceAddSchema()
+    delete_schema = ExchangesResourceRemoveSchema()
+
     def get(self):
         return self.rest_api.get_exchanges()
+
+    @use_kwargs(put_schema, locations=('json',))
     def put(self, name: str, api_key: str, api_secret: str) -> Response:
         return self.rest_api.setup_exchange(name, api_key, api_secret)
 
+    @use_kwargs(put_schema, locations=('json',))
     def delete(self, name: str) -> Response:
         return self.rest_api.remove_exchange(name=name)
 
