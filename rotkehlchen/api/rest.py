@@ -281,6 +281,13 @@ class RestAPI():
         return api_response(_wrap_in_ok_result(process_result(result)), HTTPStatus.OK)
 
     @require_loggedin_user()
+    def get_exchanges(self) -> List[str]:
+        return api_response(
+            _wrap_in_ok_result(self.rotkehlchen.exchange_manager.get_connected_exchange_names()),
+            status_code=HTTPStatus.OK,
+        )
+
+    @require_loggedin_user()
     def setup_exchange(self, name: str, api_key: str, api_secret: str) -> Response:
         result, message = self.rotkehlchen.setup_exchange(name, api_key, api_secret)
         status_code = HTTPStatus.OK
