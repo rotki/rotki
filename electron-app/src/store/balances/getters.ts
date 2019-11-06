@@ -61,14 +61,16 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     exchange: string
   ): AssetBalance[] => {
     const exchangeBalances = state.exchangeBalances[exchange];
-    return Object.keys(exchangeBalances).map(
-      asset =>
-        ({
-          asset,
-          amount: exchangeBalances[asset].amount,
-          usdValue: exchangeBalances[asset].usdValue
-        } as AssetBalance)
-    );
+    return exchangeBalances
+      ? Object.keys(exchangeBalances).map(
+          asset =>
+            ({
+              asset,
+              amount: exchangeBalances[asset].amount,
+              usdValue: exchangeBalances[asset].usdValue
+            } as AssetBalance)
+        )
+      : [];
   },
 
   aggregatedBalances: (state: BalanceState, getters) => {
@@ -81,7 +83,13 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
         } as AssetBalance)
     );
 
-    return currencyBalances.concat(getters.totals);
+    const exchangeBalances = state.connectedExchanges
+      .map(exchange => getters.exchangeBalances(exchange))
+      .reduce(
+        (previousValue, currentValue) => previousValue.concat(currentValue),
+        new Array<AssetBalance>()
+      );
+    return currencyBalances.concat(getters.totals).concat(exchangeBalances);
   },
 
   fiatTotal: (state: BalanceState) => {
