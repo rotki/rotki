@@ -103,7 +103,7 @@ export default class DateTimePicker extends Vue {
   }
 
   @Emit()
-  public input(value?: string) {}
+  public input(_value?: string) {}
 
   formatDate(date: string) {
     if (!date) return '';

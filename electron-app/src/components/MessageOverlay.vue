@@ -32,8 +32,9 @@
           class="message-overlay__buttons__cancel"
           text
           @click="$emit('close')"
-          >Close</v-btn
         >
+          Close
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-overlay>

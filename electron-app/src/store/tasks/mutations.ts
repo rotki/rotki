@@ -29,6 +29,7 @@ export const mutations: MutationTree<TaskState> = {
     }
     state.balanceTasks = balanceTasks;
   },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   reset: (state: TaskState) => {
     state = Object.assign(state, defaultState());
   },
