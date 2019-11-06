@@ -290,8 +290,10 @@ class RestAPI():
     @require_loggedin_user()
     def setup_exchange(self, name: str, api_key: str, api_secret: str) -> Response:
         result, message = self.rotkehlchen.setup_exchange(name, api_key, api_secret)
+
         status_code = HTTPStatus.OK
-        if result is None:
+        if not result:
+            result = None
             status_code = HTTPStatus.CONFLICT
         return api_response(_wrap_in_result(result, message), status_code=status_code)
 
@@ -299,7 +301,8 @@ class RestAPI():
     def remove_exchange(self, name: str) -> Response:
         result, message = self.rotkehlchen.remove_exchange(name)
         status_code = HTTPStatus.OK
-        if result is None:
+        if not result:
+            result = None
             status_code = HTTPStatus.CONFLICT
         return api_response(_wrap_in_result(result, message), status_code=status_code)
 
