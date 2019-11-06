@@ -122,7 +122,7 @@ export class RotkehlchenService {
     });
   }
 
-  delete_otctrade(id: number): Promise<boolean> {
+  delete_otctrade(id: string): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
       client.invoke(
         'delete_otctrade',
