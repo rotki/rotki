@@ -165,8 +165,10 @@ export default class ExchangeSettings extends Vue {
 </script>
 
 <style scoped lang="scss">
-.connected-exchanges {
-  margin-left: 16px;
-  margin-right: 16px;
+.exchange-settings__connected-exchanges {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  padding: 8px;
 }
 </style>
