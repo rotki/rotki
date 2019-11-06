@@ -581,7 +581,7 @@ Setup or remove an exchange
 
    :statuscode 200: The exchange has been sucesfully setup
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is logged in. The exchange has already been registered or some other error.
+   :statuscode 409: No user is logged in. The exchange has already been registered. The API key/secret is invalid or some other error.
    :statuscode 500: Internal Rotki error
 
 .. http:delete:: /api/(version)/exchanges
@@ -609,7 +609,7 @@ Setup or remove an exchange
 	  "message": ""
       }
 
-   :statuscode 200: The exchange has been sucesfully delete
+   :statuscode 200: The exchange has been sucesfully deleted
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in. The exchange is not registered or some other error
    :statuscode 500: Internal Rotki error
