@@ -1,7 +1,8 @@
 <template>
   <div :id="`${name}_badge`" class="exchange-badge">
-    <img
+    <v-img
       :title="name"
+      contain
       class="exchange-badge__icon"
       :src="require(`../assets/images/${name}.png`)"
       alt="Exchange icon"
@@ -23,19 +24,21 @@ export default class ExchangeBadge extends Vue {
 <style scoped lang="scss">
 .exchange-badge {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  max-width: 95px;
+  width: 350px;
   padding: 8px;
 }
 
 .exchange-badge__icon {
-  width: 60px;
+  height: 50px;
+  max-width: 50px;
+  filter: grayscale(100%);
 }
 
 .exchange-badge__name {
-  margin-top: 16px;
-  font-size: 20px;
+  margin-left: 16px;
+  padding: 8px;
+  font-size: 30px;
 }
 </style>

@@ -85,6 +85,7 @@ export default class ExchangeBox extends Vue {
 .exchange-box__icon {
   margin-left: 8px;
   width: 45px;
+  filter: grayscale(100%);
 }
 
 .exchange-box__information {
