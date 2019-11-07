@@ -1,14 +1,20 @@
 from http import HTTPStatus
+from typing import Any, Dict
 from unittest.mock import patch
 
+import gevent
+import pytest
 import requests
 
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
+    assert_ok_async_response,
     assert_proper_response,
     assert_simple_ok_response,
 )
+from rotkehlchen.tests.utils.exchanges import BINANCE_BALANCES_RESPONSE, POLONIEX_BALANCES_RESPONSE
+from rotkehlchen.tests.utils.mock import MockResponse
 
 API_KEYPAIR_VALIDATION_PATCH = patch(
     'rotkehlchen.exchanges.kraken.Kraken.validate_api_key',
@@ -215,4 +221,171 @@ def test_remove_exchange_errors(rotkehlchen_api_server):
         response=response,
         contained_in_msg='Missing data for required field',
         status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+
+def assert_binance_balances_result(balances: Dict[str, Any]) -> None:
+    assert balances['BTC']['amount'] == '4723846.89208129'
+    assert balances['BTC']['usd_value'] is not None
+    assert balances['ETH']['amount'] == '4763368.68006011'
+    assert balances['ETH']['usd_value'] is not None
+
+
+def assert_poloniex_balances_result(balances: Dict[str, Any]) -> None:
+    assert balances['BTC']['amount'] == '5.5'
+    assert balances['BTC']['usd_value'] is not None
+    assert balances['ETH']['amount'] == '11.0'
+    assert balances['ETH']['usd_value'] is not None
+
+
+@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+def test_exchange_query_balances(rotkehlchen_api_server_with_exchanges):
+    """Test that using the exchange balances query endpoint works fine"""
+
+    # query balances of one specific exchange
+    server = rotkehlchen_api_server_with_exchanges
+    binance = server.rest_api.rotkehlchen.exchange_manager.connected_exchanges['binance']
+
+    def mock_binance_asset_return(url):  # pylint: disable=unused-argument
+        return MockResponse(200, BINANCE_BALANCES_RESPONSE)
+
+    binance_patch = patch.object(binance.session, 'get', side_effect=mock_binance_asset_return)
+
+    with binance_patch:
+        response = requests.get(api_url_for(
+            server,
+            "named_exchanges_balances_resource",
+            name='binance',
+        ))
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == ''
+    result = json_data['result']
+    assert_binance_balances_result(json_data['result'])
+
+    # query balances of all setup exchanges
+    poloniex = server.rest_api.rotkehlchen.exchange_manager.connected_exchanges['poloniex']
+
+    def mock_poloniex_asset_return(url, req):  # pylint: disable=unused-argument
+        return MockResponse(200, POLONIEX_BALANCES_RESPONSE)
+
+    poloniex_patch = patch.object(poloniex.session, 'post', side_effect=mock_poloniex_asset_return)
+
+    with binance_patch, poloniex_patch:
+        response = requests.get(api_url_for(server, "exchangebalancesresource"))
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == ''
+    result = json_data['result']
+    assert_binance_balances_result(result['binance'])
+    assert_poloniex_balances_result(result['poloniex'])
+
+
+@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+def test_exchange_query_balances_async(rotkehlchen_api_server_with_exchanges):
+    """Test that using the exchange balances query endpoint works fine for async calls"""
+
+    # async query balances of one specific exchange
+    server = rotkehlchen_api_server_with_exchanges
+    binance = server.rest_api.rotkehlchen.exchange_manager.connected_exchanges['binance']
+
+    def mock_binance_asset_return(url):  # pylint: disable=unused-argument
+        return MockResponse(200, BINANCE_BALANCES_RESPONSE)
+
+    binance_patch = patch.object(binance.session, 'get', side_effect=mock_binance_asset_return)
+
+    with binance_patch:
+        response = requests.get(api_url_for(
+            server,
+            "named_exchanges_balances_resource",
+            name='binance',
+        ), json={'async_query': True})
+    task_id = assert_ok_async_response(response)
+
+    # now check that there is a task (this is also a test for task list getting)
+    response = requests.get(api_url_for(server, "asynctasksresource"))
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == ''
+    assert json_data['result'] == [task_id]
+
+    # now query for the task result and see it's still pending (test for task lists)
+    response = requests.get(
+        api_url_for(server, "specific_async_tasks_resource", task_id=task_id),
+    )
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == 'The task with id 0 is still pending'
+    assert json_data['result'] == {'status': 'pending', 'outcome': None}
+
+    # context switch so that the greenlet to query balances can operate
+    gevent.sleep(.8)
+
+    # and now query for the task result and assert on it
+    response = requests.get(
+        api_url_for(server, "specific_async_tasks_resource", task_id=task_id),
+    )
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == ''
+    assert json_data['result']['status'] == 'completed'
+    assert_binance_balances_result(json_data['result']['outcome']['result'])
+
+    # async query balances of all setup exchanges
+    poloniex = server.rest_api.rotkehlchen.exchange_manager.connected_exchanges['poloniex']
+
+    def mock_poloniex_asset_return(url, req):  # pylint: disable=unused-argument
+        return MockResponse(200, POLONIEX_BALANCES_RESPONSE)
+
+    poloniex_patch = patch.object(poloniex.session, 'post', side_effect=mock_poloniex_asset_return)
+
+    with binance_patch, poloniex_patch:
+        response = requests.get(
+            api_url_for(server, "exchangebalancesresource"),
+            json={'async_query': True},
+        )
+    task_id = assert_ok_async_response(response)
+
+    # context switch so that the greenlet to query balances can operate
+    gevent.sleep(.8)
+
+    # and now query for the task result and assert on it
+    response = requests.get(
+        api_url_for(server, "specific_async_tasks_resource", task_id=task_id),
+    )
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == ''
+    assert json_data['result']['status'] == 'completed'
+    result = json_data['result']['outcome']['result']
+    assert_binance_balances_result(result['binance'])
+    assert_poloniex_balances_result(result['poloniex'])
+
+
+@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+def test_exchange_query_balances_errors(rotkehlchen_api_server_with_exchanges):
+    """Test errors and edge cases of the exchange balances query endpoint"""
+    server = rotkehlchen_api_server_with_exchanges
+    # Invalid exchange
+    response = requests.get(api_url_for(
+        server,
+        "named_exchanges_balances_resource",
+        name='dasdsad',
+    ))
+    assert_error_response(
+        response=response,
+        contained_in_msg='Exchange dasdsad is not supported',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # not registered exchange
+    response = requests.get(api_url_for(
+        server,
+        "named_exchanges_balances_resource",
+        name='kraken',
+    ))
+    assert_error_response(
+        response=response,
+        contained_in_msg='Could not query balances for kraken since it is not registered',
+        status_code=HTTPStatus.CONFLICT,
     )
