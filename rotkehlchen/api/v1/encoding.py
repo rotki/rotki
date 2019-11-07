@@ -474,7 +474,7 @@ class ExchangesResourceRemoveSchema(BaseSchema):
 
 
 class ExchangeBalanceQuerySchema(BaseSchema):
-    name = fields.String(missing=None)
+    name = ExchangeNameField(missing=None)
     async_query = fields.Boolean(missing=False)
 
     class Meta:

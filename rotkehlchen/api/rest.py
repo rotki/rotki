@@ -159,7 +159,7 @@ class RestAPI():
             self.task_id += 1
         return task_id
 
-    def _write_task_result(self, task_id, result):
+    def _write_task_result(self, task_id: int, result: Any) -> None:
         with self.task_lock:
             self.task_results[task_id] = result
 
@@ -190,7 +190,7 @@ class RestAPI():
 
     def _query_async(self, command: str, **kwargs) -> Response:
         task_id = self._new_task_id()
-        log.debug("NEW TASK {} (kwargs:{}) with ID: {}".format(command, kwargs, task_id))
+
         greenlet = gevent.spawn(
             self._do_query_async,
             command,
@@ -238,29 +238,35 @@ class RestAPI():
             return api_response(result=result, status_code=HTTPStatus.OK)
 
         with self.task_lock:
-            for greenlet in self.killable_greenlets:
+            for idx, greenlet in enumerate(self.killable_greenlets):
                 if greenlet.task_id == task_id:
-                    # The task is pending
-                    result_dict = {
-                        'result': {'status': 'pending', 'outcome': None},
-                        'message': f'The task with id {task_id} is still pending',
-                    }
-                    return api_response(result=result_dict, status_code=HTTPStatus.OK)
-            ret = self.task_results.pop(int(task_id), None)
+                    if task_id in self.task_results:
+                        # Task has completed and we just got the outcome
+                        function_response = self.task_results.pop(int(task_id), None)
+                        # First part of the tuple is the original result
+                        # second is the message of the original request
+                        ret = {'result': function_response[0], 'message': function_response[1]}
+                        result_dict = {
+                            'result': {'status': 'completed', 'outcome': process_result(ret)},
+                            'message': '',
+                        }
+                        # Also remove the greenlet from the killable_greenlets
+                        self.killable_greenlets.pop(idx)
+                        return api_response(result=result_dict, status_code=HTTPStatus.OK)
+                    else:
+                        # Task is still pending and the greenlet is running
+                        result_dict = {
+                            'result': {'status': 'pending', 'outcome': None},
+                            'message': f'The task with id {task_id} is still pending',
+                        }
+                        return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
-        if ret is None:
-            # The task has not been found
-            result_dict = {
-                'result': {'status': 'not-found', 'outcome': None},
-                'message': f'No task with id {task_id} found',
-            }
-            return api_response(result=result_dict, status_code=HTTPStatus.NOT_FOUND)
-        # Task has completed and we just got the outcome
+        # The task has not been found
         result_dict = {
-            'result': {'status': 'completed', 'outcome': process_result(ret)},
-            'message': '',
+            'result': {'status': 'not-found', 'outcome': None},
+            'message': f'No task with id {task_id} found',
         }
-        return api_response(result=result_dict, status_code=HTTPStatus.OK)
+        return api_response(result=result_dict, status_code=HTTPStatus.NOT_FOUND)
 
     @staticmethod
     def get_fiat_exchange_rates(currencies: Optional[List[Asset]]) -> Response:

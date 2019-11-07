@@ -75,3 +75,12 @@ def assert_error_response(
     if contained_in_msg:
         response_data = response.json()
         assert contained_in_msg in response_data['message']
+
+
+def assert_ok_async_response(response: requests.Response) -> int:
+    """Asserts that the response is okay and contains an async task id"""
+    assert_proper_response(response)
+    data = response.json()
+    assert data['message'] == ''
+    assert len(data['result']) == 1
+    return int(data['result']['task_id'])

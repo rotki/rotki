@@ -42,3 +42,9 @@ def db_password():
 def api_port(port_generator):
     port = next(port_generator)
     return port
+
+
+@pytest.fixture
+def added_exchanges():
+    """A fixture determining which exchanges to add to a test rotkehlchen api server"""
+    return ('kraken', 'poloniex', 'bittrex', 'binance', 'bitmex', 'coinbase')
