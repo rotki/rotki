@@ -12,9 +12,10 @@
     "sourceMap": true,
     "baseUrl": ".",
     "types": [
+      "vuetify",
+      "webpack",
       "webpack-env",
-      "jest",
-      "vuetify"
+      "jest"
     ],
     "paths": {
       "@/*": [
@@ -26,16 +27,18 @@
       "dom",
       "dom.iterable",
       "scripthost"
+    ],
+    "typeRoots": [
+      "node_modules/@types"
     ]
   },
+  "exclude": [
+    "node_modules",
+    "node_modules/vuetify"
+  ],
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.vue"
-//    "tests/**/*.ts",
-//    "tests/**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules"
   ]
 }
