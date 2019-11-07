@@ -231,7 +231,12 @@ class RestAPI():
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
-    def query_task_outcome(self, task_id: int) -> Response:
+    def query_tasks_outcome(self, task_id: Optional[int]) -> Response:
+        if task_id is None:
+            # If no task id is given return list of all pending/completed tasks
+            result = _wrap_in_ok_result([greenlet.task_id for greenlet in self.killable_greenlets])
+            return api_response(result=result, status_code=HTTPStatus.OK)
+
         with self.task_lock:
             for greenlet in self.killable_greenlets:
                 if greenlet.task_id == task_id:
@@ -335,7 +340,7 @@ class RestAPI():
         return exchange_obj.query_balances()
 
     @require_loggedin_user()
-    def query_exchange_balances(self, name: str, async_query: bool) -> Response:
+    def query_exchange_balances(self, name: Optional[str], async_query: bool) -> Response:
         if async_query:
             return self._query_async(command='_query_exchange_balances', name=name)
 

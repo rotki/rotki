@@ -8,6 +8,7 @@ from webargs.flaskparser import use_kwargs
 
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
+    AsyncTasksQuerySchema,
     BlockchainBalanceQuerySchema,
     BlockchainsAccountsSchema,
     DataImportSchema,
@@ -95,10 +96,13 @@ class SettingsResource(BaseResource):
         return self.rest_api.get_settings()
 
 
-class TaskOutcomeResource(BaseResource):
+class AsyncTasksResource(BaseResource):
 
-    def get(self, task_id: int) -> Response:
-        return self.rest_api.query_task_outcome(task_id=task_id)
+    get_schema = AsyncTasksQuerySchema()
+
+    @use_kwargs(get_schema, locations=('view_args',))
+    def get(self, task_id: Optional[int]) -> Response:
+        return self.rest_api.query_tasks_outcome(task_id=task_id)
 
 
 class FiatExchangeRatesResource(BaseResource):
