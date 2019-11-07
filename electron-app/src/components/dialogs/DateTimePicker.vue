@@ -31,7 +31,6 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import { VuetifyRuleValidations } from 'vuetify/src/mixins/validatable/index';
 
 @Component({})
 export default class DateTimePicker extends Vue {
@@ -44,7 +43,7 @@ export default class DateTimePicker extends Vue {
   @Prop({ default: '' })
   value!: string;
   @Prop({ default: () => [] })
-  rules!: VuetifyRuleValidations;
+  rules!: ((v: string) => boolean | string)[];
   @Prop({ required: false, default: false, type: Boolean })
   limitNow!: boolean;
 

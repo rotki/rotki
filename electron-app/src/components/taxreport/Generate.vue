@@ -44,7 +44,6 @@
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
-import { VuetifyRuleValidations } from 'vuetify/src/mixins/validatable/index';
 import { convertToTimestamp } from '@/utils/conversion';
 
 @Component({
@@ -61,13 +60,13 @@ export default class Generate extends Vue {
 
   date = /^([0-2]\d|[3][0-1])\/([0]\d|[1][0-2])\/([2][01]|[1][6-9])\d{2}(\s([0-1]\d|[2][0-3])(:[0-5]\d))?$/;
 
-  startRules: VuetifyRuleValidations = [
+  startRules: ((v: string) => boolean | string)[] = [
     (v: string) => !!v || 'Start date cannot be empty',
     (v: string) =>
       (v && this.date.test(v)) || 'Date should be in DD/MM/YYYY HH:MM format'
   ];
 
-  endRules: VuetifyRuleValidations = [
+  endRules: ((v: string) => boolean | string)[] = [
     (v: string) => !!v || 'End date cannot be empty',
     (v: string) =>
       (v && this.date.test(v)) || 'Date should be in DD/MM/YYYY HH:MM format'

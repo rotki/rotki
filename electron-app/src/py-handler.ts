@@ -2,7 +2,7 @@ import * as Electron from 'electron';
 import { app } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { ChildProcess, spawn, execFile } from 'child_process';
+import { ChildProcess, execFile, spawn } from 'child_process';
 import tasklist from 'tasklist';
 import ipcMain = Electron.ipcMain;
 import App = Electron.App;
@@ -102,8 +102,12 @@ export default class PyHandler {
   }
 
   private guessPackaged() {
-    const fullPath = path.join(__dirname, PyHandler.PY_DIST_FOLDER);
-    return fs.existsSync(fullPath);
+    return fs.existsSync(this.packagedBackendPath());
+  }
+
+  private packagedBackendPath() {
+    const resources = process.resourcesPath ? process.resourcesPath : __dirname;
+    return path.join(resources, PyHandler.PY_DIST_FOLDER);
   }
 
   private selectPort() {
@@ -138,7 +142,7 @@ export default class PyHandler {
   }
 
   private startProcessPackaged(port: number, args: string[]) {
-    let dist_dir = path.join(__dirname, PyHandler.PY_DIST_FOLDER);
+    let dist_dir = this.packagedBackendPath();
     let files = fs.readdirSync(dist_dir);
     if (files.length === 0) {
       this.logAndQuit('No files found in the dist directory');
