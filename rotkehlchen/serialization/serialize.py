@@ -51,7 +51,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
     elif isinstance(entry, DBSettings):
         return process_result(entry._asdict())
     elif isinstance(entry, tuple):
-        raise ValueError('Query results should not contain tuples')
+        raise ValueError('Query results should not contain plain tuples')
     elif isinstance(entry, Asset):
         return entry.identifier
     elif isinstance(entry, (TradeType, Location)):

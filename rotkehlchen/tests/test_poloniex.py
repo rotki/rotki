@@ -11,7 +11,10 @@ from rotkehlchen.exchanges.data_structures import Loan, Trade, TradeType
 from rotkehlchen.exchanges.poloniex import process_polo_loans, trade_from_poloniex
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_DASH
-from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
+from rotkehlchen.tests.utils.exchanges import (
+    POLONIEX_BALANCES_RESPONSE,
+    POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE,
+)
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import AssetMovementCategory, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -369,15 +372,7 @@ def test_poloniex_query_balances_unknown_asset(function_scope_poloniex):
     poloniex = function_scope_poloniex
 
     def mock_unknown_asset_return(url, req):  # pylint: disable=unused-argument
-        response = MockResponse(
-            200,
-            """{
-            "BTC": {"available": "5.0", "onOrders": "0.5"},
-            "ETH": {"available": "10.0", "onOrders": "1.0"},
-            "IDONTEXIST": {"available": "1.0", "onOrders": "2.0"},
-            "CNOTE": {"available": "2.0", "onOrders": "3.0"}
-            }""")
-        return response
+        return MockResponse(200, POLONIEX_BALANCES_RESPONSE)
 
     with patch.object(poloniex.session, 'post', side_effect=mock_unknown_asset_return):
         # Test that after querying the assets only ETH and BTC are there

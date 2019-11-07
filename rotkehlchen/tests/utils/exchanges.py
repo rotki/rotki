@@ -49,6 +49,15 @@ POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE = """{
   }]
 }"""
 
+POLONIEX_BALANCES_RESPONSE = """
+{
+    "BTC": {"available": "5.0", "onOrders": "0.5"},
+    "ETH": {"available": "10.0", "onOrders": "1.0"},
+    "IDONTEXIST": {"available": "1.0", "onOrders": "2.0"},
+    "CNOTE": {"available": "2.0", "onOrders": "3.0"}
+}
+"""
+
 
 KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE = """{
     "trades": {

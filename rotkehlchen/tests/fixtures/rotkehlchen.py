@@ -180,6 +180,7 @@ def rotkehlchen_instance(
 @pytest.fixture()
 def rotkehlchen_api_server_with_exchanges(
         rotkehlchen_api_server,
+        added_exchanges,
         function_scope_kraken,
         function_scope_poloniex,
         function_scope_bittrex,
@@ -188,9 +189,17 @@ def rotkehlchen_api_server_with_exchanges(
 ):
     """Adds mock exchange objects to the rotkehlchen_server fixture"""
     exchanges = rotkehlchen_api_server.rest_api.rotkehlchen.exchange_manager.connected_exchanges
-    exchanges['kraken'] = function_scope_kraken
-    exchanges['poloniex'] = function_scope_poloniex
-    exchanges['bittrex'] = function_scope_bittrex
-    exchanges['binance'] = function_scope_binance
-    exchanges['bitmex'] = mock_bitmex
+    if 'kraken' in added_exchanges:
+        exchanges['kraken'] = function_scope_kraken
+    if 'poloniex' in added_exchanges:
+        exchanges['poloniex'] = function_scope_poloniex
+    if 'bittrex' in added_exchanges:
+        exchanges['bittrex'] = function_scope_bittrex
+    if 'binance' in added_exchanges:
+        exchanges['binance'] = function_scope_binance
+    if 'bitmex' in added_exchanges:
+        exchanges['bitmex'] = mock_bitmex
+
+    # TODO: Also add coinbase here
+
     return rotkehlchen_api_server
