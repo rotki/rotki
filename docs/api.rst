@@ -404,7 +404,33 @@ Getting or modifying settings
 Query the result of an ongoing backend task
 ===========================================
 
-.. http:get:: /api/(version)/task_result
+.. http:get:: /api/(version)/tasks
+   By querying this endpoint without any given task id a list of all pending/completed tasks is returned.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/tasks HTTP/1.1
+      Host: localhost:5042
+
+      {}
+
+   **Example Response**:
+
+   The following is an example response of querying pending/completed tasks
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [4, 23],
+	  "message": ""
+      }
+
+.. http:get:: /api/(version)/tasks/(task_id)
 
    By querying this endpoint with a particular task identifier you can get the result of the task if it has finished and the result has not yet been queried. If the result is still in progress or if the result is not found appropriate responses are returned.
 
@@ -412,10 +438,10 @@ Query the result of an ongoing backend task
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/logout HTTP/1.1
+      GET /api/1/tasks/42 HTTP/1.1
       Host: localhost:5042
 
-      {"task_id": 42}
+      {}
 
    **Example Completed Response**:
 
@@ -461,7 +487,7 @@ Query the result of an ongoing backend task
 
    **Example Not Found Response**:
 
-   The following is an example response of an async query that is still in progress.
+   The following is an example response of an async query that does not exist.
 
    .. sourcecode:: http
 

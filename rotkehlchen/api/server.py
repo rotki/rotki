@@ -11,6 +11,7 @@ from werkzeug.exceptions import NotFound
 
 from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
 from rotkehlchen.api.v1.resources import (
+    AsyncTasksResource,
     BlockchainBalancesResource,
     BlockchainsAccountsResource,
     EthereumTokensResource,
@@ -28,7 +29,6 @@ from rotkehlchen.api.v1.resources import (
     StatisticsNetvalueResource,
     StatisticsRendererResource,
     StatisticsValueDistributionResource,
-    TaskOutcomeResource,
     TradesResource,
     UsersByNameResource,
     UsersResource,
@@ -49,7 +49,7 @@ URLS_V1: URLS = [
     ('/users', UsersResource),
     ('/users/<string:name>', UsersByNameResource),
     ('/settings', SettingsResource),
-    ('/task_outcome', TaskOutcomeResource),
+    ('/tasks/<int:task_id>', AsyncTasksResource),
     ('/fiat_exchange_rates', FiatExchangeRatesResource),
     ('/exchanges', ExchangesResource),
     ('/exchanges/balances', ExchangeBalancesResource),

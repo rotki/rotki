@@ -292,6 +292,15 @@ class BaseSchema(Schema):
         return decoding_class(**data)
 
 
+class AsyncTasksQuerySchema(BaseSchema):
+    task_id = fields.Integer(strict=True, missing=None)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
 class TradesQuerySchema(BaseSchema):
     from_timestamp = TimestampField(missing=Timestamp(0))
     to_timestamp = TimestampField(missing=ts_now())
