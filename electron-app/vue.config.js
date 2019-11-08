@@ -28,11 +28,11 @@ module.exports = {
           icon: 'src/assets/images/rotki.icns'
         },
         win: {
-          target: 'nsis',
+          target: ['nsis', 'portable'],
           icon: 'src/assets/images/rotki.ico'
         },
         linux: {
-          target: ['AppImage'],
+          target: ['AppImage', 'tar.xz'],
           icon: 'srs/assets/images/rotki_1024x1024.png',
           category: 'Finance'
         }
