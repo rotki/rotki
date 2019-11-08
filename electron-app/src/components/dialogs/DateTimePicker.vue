@@ -5,7 +5,6 @@
     :close-on-content-click="false"
     transition="scale-transition"
     offset-y
-    full-width
     max-width="580px"
     class="date-time-picker"
   >
