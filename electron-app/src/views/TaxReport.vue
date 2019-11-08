@@ -5,7 +5,7 @@
         <h1>Tax Report</h1>
       </v-row>
     </v-col>
-    <generate @generate="generate($event)"></generate>
+    <generate v-show="!isRunning" @generate="generate($event)"></generate>
     <div v-if="loaded && !isRunning">
       <v-btn
         class="tax-report__export-csv"
@@ -19,25 +19,40 @@
       <tax-report-events class="tax-report__section"></tax-report-events>
     </div>
     <v-col v-if="isRunning" cols="12" class="tax-report__progress">
-      <v-row align="center" justify="center">
-        <h2 class="text-center">Generating Report</h2>
+      <v-row
+        align="center"
+        justify="center"
+        class="font-weight-light tax-report__progress__percentage"
+      >
+        {{ progress }} %
       </v-row>
       <v-row
         align="center"
         justify="center"
         class="tax-report__progress__progress"
       >
-        <v-progress-circular
-          class="text-center"
-          size="80"
-          color="primary"
-          :value="progress"
-        >
-          {{ progress }} %
-        </v-progress-circular>
+        <v-col cols="10">
+          <v-progress-linear
+            class="text-center"
+            rounded
+            height="16"
+            color="primary"
+            :value="progress"
+          >
+          </v-progress-linear>
+        </v-col>
       </v-row>
       <v-row align="center" justify="center">
-        <p class="text-center">Please wait...</p>
+        <p
+          class="text-center font-weight-light tax-report__progress__description"
+        >
+          Please wait while your report is generated...
+        </p>
+      </v-row>
+      <v-row align="center" justify="center">
+        <v-col cols="4">
+          <v-divider></v-divider>
+        </v-col>
       </v-row>
     </v-col>
   </v-container>
@@ -110,12 +125,20 @@ export default class TaxReport extends Vue {
 }
 
 .tax-report__progress {
-  margin-top: 20px;
+  margin-top: 140px;
   height: 100%;
   min-height: 300px;
 }
 
 .tax-report__progress__progress {
-  min-height: 150px;
+  min-height: 80px;
+}
+
+.tax-report__progress__percentage {
+  font-size: 46px;
+}
+
+.tax-report__progress__description {
+  font-size: 16px;
 }
 </style>

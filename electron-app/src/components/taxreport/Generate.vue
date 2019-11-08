@@ -58,7 +58,7 @@ export default class Generate extends Vue {
   invalidRange: boolean = false;
   message: string = '';
 
-  date = /^([0-2]\d|[3][0-1])\/([0]\d|[1][0-2])\/([2][01]|[1][6-9])\d{2}(\s([0-1]\d|[2][0-3])(:[0-5]\d))?$/;
+  date = /^([0-2]\d|[3][0-1])\/([0]\d|[1][0-2])\/([2][01]|[1][6-9])\d{2}(\s([0-1]\d|[2][0-3])(:[0-5]\d))$/;
 
   startRules: ((v: string) => boolean | string)[] = [
     (v: string) => !!v || 'Start date cannot be empty',
@@ -75,6 +75,8 @@ export default class Generate extends Vue {
   @Watch('start')
   onStartChange() {
     this.invalidRange =
+      !!this.start &&
+      !!this.end &&
       convertToTimestamp(this.start) > convertToTimestamp(this.end);
     this.message = 'The end time should be after the start time.';
   }
@@ -82,6 +84,8 @@ export default class Generate extends Vue {
   @Watch('end')
   onEndChange() {
     this.invalidRange =
+      !!this.start &&
+      !!this.end &&
       convertToTimestamp(this.start) > convertToTimestamp(this.end);
     this.message = 'The end time should be after the start time.';
   }
