@@ -492,6 +492,9 @@ class Poloniex(ExchangeInterface):
                 category = trade.get('category', None)
                 try:
                     if category == 'exchange' or category == 'settlement':
+                        timestamp = deserialize_timestamp_from_poloniex_date(trade['date'])
+                        if timestamp < start_ts or timestamp > end_ts:
+                            continue
                         our_trades.append(trade_from_poloniex(trade, TradePair(pair)))
                     elif category == 'marginTrade':
                         # We don't take poloniex margin trades into account at the moment

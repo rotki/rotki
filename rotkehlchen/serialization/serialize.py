@@ -25,6 +25,8 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
                 k = k.identifier
             new_dict[k] = _process_entry(v)
         return new_dict
+    elif isinstance(entry, Location):
+        return str(entry)
     elif isinstance(entry, LocationData):
         return {
             'time': entry.time,
@@ -61,13 +63,15 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
 
 
 def process_result(result: Dict[Any, Any]) -> Dict[Any, Any]:
-    """Before sending out a result a dictionary via the server we are turning:
+    """Before sending out a result dictionary via the server we are serializing it.
+    Turning:
 
         - all Decimals to strings so that the serialization to float/big number
           is handled by the client application and we lose nothing in the transfer
 
         - if a dictionary has an Asset for a key use its identifier as the key value
         - all NamedTuples and Dataclasses must be serialized into dicts
+        - all enums and more
     """
     processed_result = _process_entry(result)
     assert isinstance(processed_result, Dict)
@@ -75,7 +79,7 @@ def process_result(result: Dict[Any, Any]) -> Dict[Any, Any]:
 
 
 def process_result_list(result: List[Any]) -> List[Any]:
-    """Just lke process_result but for lists"""
+    """Just like process_result but for lists"""
     processed_result = _process_entry(result)
     assert isinstance(processed_result, List)
     return processed_result
