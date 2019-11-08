@@ -4,7 +4,7 @@ import traceback
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import gevent
 from flask import Response, make_response
@@ -356,10 +356,14 @@ class RestAPI():
 
         return api_response(_wrap_in_ok_result(process_result(balances)), HTTPStatus.OK)
 
-    def _query_all_exchange_trades(self, from_ts: Timestamp, to_ts: Timestamp) -> List[Trade]:
-        trades: List[Trade] = list()
-        for _, exchange_obj in self.rotkehlchen.exchange_manager.connected_exchanges.items():
-            trades.extend(exchange_obj.query_trade_history(start_ts=from_ts, end_ts=to_ts))
+    def _query_all_exchange_trades(
+            self,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+    ) -> Dict[str, List[Trade]]:
+        trades: Dict[str, List[Trade]] = dict()
+        for name, exchange_obj in self.rotkehlchen.exchange_manager.connected_exchanges.items():
+            trades[name] = exchange_obj.query_trade_history(start_ts=from_ts, end_ts=to_ts)
 
         return trades
 
@@ -368,7 +372,7 @@ class RestAPI():
             name: Optional[str],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> Tuple[Optional[List[Trade]], str]:
+    ) -> Tuple[Union[Optional[List[Trade]], Optional[Dict[str, List[Trade]]]], str]:
         if name is None:
             # Query all exchanges
             return self._query_all_exchange_trades(
@@ -381,7 +385,7 @@ class RestAPI():
         if not exchange_obj:
             return None, f'Could not query trades for {name} since it is not registered'
 
-        return exchange_obj.query_trade_history(), ''
+        return exchange_obj.query_trade_history(start_ts=from_timestamp, end_ts=to_timestamp), ''
 
     @require_loggedin_user()
     def query_exchange_trades(
@@ -408,7 +412,9 @@ class RestAPI():
         if trades is None:
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
-        return api_response(_wrap_in_ok_result(process_result_list(trades)), HTTPStatus.OK)
+        # If it's a single exchange query, it's a list, otherwise it's a dict
+        result = process_result_list(trades) if name else process_result(trades)  # type: ignore
+        return api_response(_wrap_in_ok_result(result), HTTPStatus.OK)
 
     def _query_blockchain_balances(self, name: str) -> Tuple[Optional[Dict[str, Dict]], str]:
         return self.rotkehlchen.blockchain.query_balances(name=name)

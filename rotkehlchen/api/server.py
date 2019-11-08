@@ -17,6 +17,7 @@ from rotkehlchen.api.v1.resources import (
     EthereumTokensResource,
     ExchangeBalancesResource,
     ExchangesResource,
+    ExchangeTradesResource,
     FiatBalancesResource,
     FiatExchangeRatesResource,
     HistoryExportingResource,
@@ -60,6 +61,8 @@ URLS_V1: URLS = [
         'named_exchanges_balances_resource',
     ),
     ('/trades', TradesResource),
+    ('/exchanges/trades/', ExchangeTradesResource),
+    ('/exchanges/trades/<string:name>', ExchangeTradesResource, 'named_exchanges_trades_resource'),
     ('/balances/blockchains', BlockchainBalancesResource),
     (
         '/balances/blockchains/<string:name>',

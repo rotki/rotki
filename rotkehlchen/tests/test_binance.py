@@ -18,7 +18,7 @@ from rotkehlchen.exchanges.binance import Binance, trade_from_binance
 from rotkehlchen.exchanges.data_structures import Location, Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_BNB, A_RDN, A_USDT, A_XMR
-from rotkehlchen.tests.utils.exchanges import BINANCE_BALANCES_RESPONSE
+from rotkehlchen.tests.utils.exchanges import BINANCE_BALANCES_RESPONSE, BINANCE_MYTRADES_RESPONSE
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -248,24 +248,6 @@ def test_binance_query_balances_unknown_asset(function_scope_binance):
     assert len(warnings) == 2
     assert 'unknown binance asset IDONTEXIST' in warnings[0]
     assert 'unsupported binance asset ETF' in warnings[1]
-
-
-BINANCE_MYTRADES_RESPONSE = """
-[
-    {
-    "symbol": "BNBBTC",
-    "id": 28457,
-    "orderId": 100234,
-    "price": "4.00000100",
-    "qty": "12.00000000",
-    "quoteQty": "48.000012",
-    "commission": "10.10000000",
-    "commissionAsset": "BNB",
-    "time": 1499865549590,
-    "isBuyer": true,
-    "isMaker": false,
-    "isBestMatch": true
-    }]"""
 
 
 def test_binance_query_trade_history(function_scope_binance):

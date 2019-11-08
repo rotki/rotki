@@ -58,6 +58,29 @@ POLONIEX_BALANCES_RESPONSE = """
 }
 """
 
+POLONIEX_TRADES_RESPONSE = """{ "BTC_BCH":
+        [ { "globalTradeID": 394131412,
+        "tradeID": "5455033",
+        "date": "2018-10-16 18:05:17",
+        "rate": "0.06935244",
+        "amount": "1.40308443",
+        "total": "0.09730732",
+        "fee": "0.00100000",
+        "orderNumber": "104768235081",
+        "type": "sell",
+        "category": "exchange" }],
+        "BTC_ETH":
+        [{ "globalTradeID": 394127361,
+        "tradeID": "13536350",
+        "date": "2018-10-16 17:03:43",
+        "rate": "0.00003432",
+        "amount": "3600.53748129",
+        "total": "0.12357044",
+        "fee": "0.00200000",
+        "orderNumber": "96238912841",
+        "type": "buy",
+        "category": "exchange"}]}"""
+
 
 KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE = """{
     "trades": {
@@ -235,3 +258,20 @@ BINANCE_BALANCES_RESPONSE = """
       "free": "5.0",
       "locked": "0.0"
 }]}"""
+
+BINANCE_MYTRADES_RESPONSE = """
+[
+    {
+    "symbol": "BNBBTC",
+    "id": 28457,
+    "orderId": 100234,
+    "price": "4.00000100",
+    "qty": "12.00000000",
+    "quoteQty": "48.000012",
+    "commission": "10.10000000",
+    "commissionAsset": "BNB",
+    "time": 1499865549590,
+    "isBuyer": true,
+    "isMaker": false,
+    "isBestMatch": true
+    }]"""
