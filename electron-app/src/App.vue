@@ -47,7 +47,10 @@
       :message="startupError"
       @dismiss="terminate()"
     ></message-dialog>
-    <account-management :logged="logged"></account-management>
+    <account-management
+      v-if="startupError.length === 0"
+      :logged="logged"
+    ></account-management>
   </v-app>
 </template>
 

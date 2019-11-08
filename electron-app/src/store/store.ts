@@ -62,6 +62,9 @@ const store: StoreOptions<RotkehlchenState> = {
       const { version } = state.version;
       const indexOfDev = version.indexOf('dev');
       return indexOfDev > 0 ? version.substring(0, indexOfDev + 3) : version;
+    },
+    message: (state: RotkehlchenState) => {
+      return state.message.title.length > 0;
     }
   },
   modules: {

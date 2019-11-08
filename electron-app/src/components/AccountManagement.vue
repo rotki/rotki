@@ -1,7 +1,7 @@
 <template>
   <div>
     <login
-      :displayed="!logged && !accountCreation"
+      :displayed="!message && !logged && !accountCreation"
       :loading="loading"
       @login="login($event)"
       @new-account="accountCreation = true"
@@ -9,12 +9,15 @@
 
     <create-account
       :loading="loading"
-      :displayed="!logged && accountCreation"
+      :displayed="!message && !logged && accountCreation"
       @cancel="accountCreation = false"
       @confirm="createAccount($event)"
     ></create-account>
 
-    <message-overlay :visible="welcomeVisible" @close="closeWelcome()">
+    <message-overlay
+      :visible="!message && welcomeVisible"
+      @close="closeWelcome()"
+    >
       <template #title>
         Welcome to Rotki!
       </template>
@@ -23,23 +26,8 @@
     </message-overlay>
 
     <message-overlay
-      action="Download"
-      :visible="versionVisible"
-      @primary="download()"
-      @close="closeUpdateDialog()"
-    >
-      <template #title>
-        Version Update Available
-      </template>
-
-      Your Rotki version {{ version.version }} is outdated. The latest version
-      is {{ version.latestVersion }} and it is available on Github. Press
-      download to open the download link on your browser.
-    </message-overlay>
-
-    <message-overlay
       action="Upgrade"
-      :visible="premiumVisible"
+      :visible="!message && premiumVisible"
       @primary="upgrade()"
       @close="dismiss()"
     >
@@ -76,20 +64,19 @@ const { mapState: mapSessionState } = createNamespacedHelpers('session');
   },
   computed: {
     ...mapSessionState(['newAccount']),
-    ...mapState(['version']),
-    ...mapGetters(['updateNeeded'])
+    ...mapState(['version', 'message']),
+    ...mapGetters(['updateNeeded', 'message'])
   }
 })
 export default class AccountManagement extends Vue {
   accountCreation: boolean = false;
   newAccount!: boolean;
   loading: boolean = false;
-  updateNeeded!: boolean;
   version!: Version;
+  message!: boolean;
 
-  welcomeVisible: boolean = false;
-  versionVisible: boolean = false;
-  premiumVisible: boolean = false;
+  private welcomeVisible = false;
+  private premiumVisible = false;
 
   @Prop({ required: true, type: Boolean })
   logged!: boolean;
@@ -102,7 +89,9 @@ export default class AccountManagement extends Vue {
       password: password
     } as UnlockPayload);
     this.loading = false;
-    this.firstStep();
+    if (this.logged) {
+      this.firstStep();
+    }
   }
 
   async createAccount(credentials: Credentials) {
@@ -118,11 +107,6 @@ export default class AccountManagement extends Vue {
     this.firstStep();
   }
 
-  download() {
-    shell.openExternal(this.version.url);
-    this.closeUpdateDialog();
-  }
-
   upgrade() {
     shell.openExternal('https://rotkehlchen.io/products/');
     this.dismiss();
@@ -130,15 +114,12 @@ export default class AccountManagement extends Vue {
 
   dismiss() {
     this.welcomeVisible = false;
-    this.versionVisible = false;
     this.premiumVisible = false;
   }
 
   private firstStep() {
     if (this.newAccount) {
       this.welcomeVisible = true;
-    } else if (this.updateNeeded) {
-      this.versionVisible = true;
     } else {
       this.premiumVisible = true;
     }
@@ -146,11 +127,7 @@ export default class AccountManagement extends Vue {
 
   closeWelcome() {
     this.dismiss();
-    if (this.updateNeeded) {
-      this.versionVisible = true;
-    } else {
-      this.premiumVisible = true;
-    }
+    this.premiumVisible = true;
   }
 
   closeUpdateDialog() {
