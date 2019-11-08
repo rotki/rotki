@@ -153,7 +153,7 @@ class ExchangeTradesResource(BaseResource):
 
     get_schema = ExchangeTradesQuerySchema()
 
-    @use_kwargs(get_schema, locations=('json',))
+    @use_kwargs(get_schema, locations=('json', 'view_args'))
     def get(
             self,
             name: Optional[str],

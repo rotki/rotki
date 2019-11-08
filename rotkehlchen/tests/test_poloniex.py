@@ -14,6 +14,7 @@ from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.tests.utils.exchanges import (
     POLONIEX_BALANCES_RESPONSE,
     POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE,
+    POLONIEX_TRADES_RESPONSE,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import AssetMovementCategory, Location, Timestamp
@@ -218,29 +219,7 @@ def test_query_trade_history(function_scope_poloniex):
     poloniex = function_scope_poloniex
 
     def mock_api_return(url, req):  # pylint: disable=unused-argument
-        contents = """{ "BTC_BCH":
-        [ { "globalTradeID": 394131412,
-        "tradeID": "5455033",
-        "date": "2018-10-16 18:05:17",
-        "rate": "0.06935244",
-        "amount": "1.40308443",
-        "total": "0.09730732",
-        "fee": "0.00100000",
-        "orderNumber": "104768235081",
-        "type": "sell",
-        "category": "exchange" }],
-        "BTC_ETH":
-        [{ "globalTradeID": 394127361,
-        "tradeID": "13536350",
-        "date": "2018-10-16 17:03:43",
-        "rate": "0.00003432",
-        "amount": "3600.53748129",
-        "total": "0.12357044",
-        "fee": "0.00200000",
-        "orderNumber": "96238912841",
-        "type": "buy",
-        "category": "exchange"}]}"""
-        return MockResponse(200, contents)
+        return MockResponse(200, POLONIEX_TRADES_RESPONSE)
 
     with patch.object(poloniex.session, 'post', side_effect=mock_api_return):
         trades = poloniex.query_trade_history(
