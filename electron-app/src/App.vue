@@ -16,7 +16,7 @@
           @click="openSite()"
         />
       </div>
-      <div id="welcome_text" class="text-center">Welcome {{ username }}</div>
+      <div class="text-center rotki__welcome-text font-weight-medium">Welcome {{ username }}</div>
       <navigation-menu></navigation-menu>
     </v-navigation-drawer>
     <v-app-bar app fixed clipped-left flat class="grey lighten-4">
@@ -143,6 +143,12 @@ export default class App extends Vue {
   display: block;
   margin: 10px auto;
   padding: 15px;
+}
+
+.rotki__welcome-text {
+  font-size: 18px;
+  margin-top: 16px;
+  margin-bottom: 20px;
 }
 
 ::v-deep .v-content__wrap {
