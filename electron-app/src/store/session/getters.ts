@@ -13,5 +13,9 @@ export const getters: GetterTree<SessionState, RotkehlchenState> = {
 
   lastBalanceSave: (state: SessionState) => {
     return state.accountingSettings.lastBalanceSave;
+  },
+
+  currency: (state: SessionState) => {
+    return state.settings.selectedCurrency;
   }
 };

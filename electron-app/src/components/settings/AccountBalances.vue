@@ -72,7 +72,7 @@ import { createNamespacedHelpers } from 'vuex';
 import { Currency } from '@/model/currency';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 
-const { mapGetters, mapState } = createNamespacedHelpers('session');
+const { mapGetters } = createNamespacedHelpers('session');
 const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 
 @Component({
@@ -80,8 +80,7 @@ const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
     ConfirmDialog
   },
   computed: {
-    ...mapState(['currency']),
-    ...mapGetters(['floatingPrecision']),
+    ...mapGetters(['floatingPrecision', 'currency']),
     ...mapBalancesGetters(['exchangeRate'])
   }
 })
