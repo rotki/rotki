@@ -14,6 +14,7 @@ stages:
   - name: ui-test
     if: commit_message =~ /\[ui tests\]/ AND tag IS NOT present
   - name: ui-lint
+  - name: ui-unit-test
   - name: deploy
     if: tag IS present
 
@@ -93,6 +94,12 @@ jobs:
         - cd ./electron-app
         - npm ci
         - npm run lint:check
+
+    - stage: ui-unit-test
+      script:
+        - cd ./electron-app
+        - npm ci
+        - npm run test:unit
 
     - stage: ui-test
       <<: *job-template-linux
