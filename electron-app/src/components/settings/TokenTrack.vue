@@ -61,6 +61,8 @@ import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import { BlockchainAccountResult } from '@/model/blockchain_account_result';
 import { convertBalances, convertEthBalances } from '@/utils/conversion';
 import { Message } from '@/store/store';
+import { notify } from '@/store/notifications/utils';
+import { Severity } from '@/typing/types';
 
 @Component({
   components: {
@@ -125,7 +127,11 @@ export default class TokenTrack extends Vue {
         this.allTokens = result.all_eth_tokens;
       })
       .catch((reason: Error) => {
-        console.log(`Error at getting ETH tokens: ${reason.message}`);
+        notify(
+          `Error at getting ETH tokens: ${reason.message}`,
+          'Token retrieval',
+          Severity.ERROR
+        );
       });
   }
 
