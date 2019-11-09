@@ -21,17 +21,21 @@
             v-model="apiKey"
             class="exchange-settings__fields__api-key"
             prepend-icon="fa-key"
+            :append-icon="showKey ? 'fa-eye' : 'fa-eye-slash'"
             label="API Key"
             :disabled="isConnected"
-            type="text"
+            :type="showKey ? 'text' : 'password'"
+            @click:append="showKey = !showKey"
           ></v-text-field>
           <v-text-field
             v-model="apiSecret"
+            :append-icon="showSecret ? 'fa-eye' : 'fa-eye-slash'"
+            :type="showSecret ? 'text' : 'password'"
             class="exchange-settings__fields__api-secret"
             prepend-icon="fa-user-secret"
             label="API Secret"
             :disabled="isConnected"
-            type="text"
+            @click:append="showSecret = !showSecret"
           ></v-text-field>
         </v-card-text>
         <v-card-actions>
@@ -78,6 +82,9 @@ export default class ExchangeSettings extends Vue {
   apiSecret: string = '';
   selectedExchange: string = exchanges[0];
   confirmation: boolean = false;
+
+  showKey: boolean = false;
+  showSecret: boolean = false;
 
   connectedExchanges!: string[];
 
