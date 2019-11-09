@@ -1,3 +1,4 @@
+import { Severity } from "@/typing/types";
 <template>
   <v-row class="blockchain-balances">
     <v-col>
@@ -67,6 +68,8 @@ import { createNamespacedHelpers } from 'vuex';
 import AccountBalances from '@/components/settings/AccountBalances.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
 import { createTask, TaskType } from '@/model/task';
+import { notify } from '@/store/notifications/utils';
+import { Severity } from '@/typing/types';
 
 const { mapGetters } = createNamespacedHelpers('balances');
 
@@ -89,7 +92,6 @@ export default class BlockchainBalances extends Vue {
     this.$rpc
       .query_blockchain_balances_async()
       .then(value => {
-        console.log(value);
         const task = createTask(
           value.task_id,
           TaskType.USER_SETTINGS_QUERY_BLOCKCHAIN_BALANCES,
@@ -99,8 +101,10 @@ export default class BlockchainBalances extends Vue {
         this.$store.commit('tasks/addBalanceTask', task);
       })
       .catch((reason: Error) => {
-        console.log(
-          `Error at querying blockchain balances async: ${reason.message}`
+        notify(
+          `Error at querying blockchain balances async: ${reason.message}`,
+          'Query blockchain balances',
+          Severity.ERROR
         );
       });
   }
@@ -116,7 +120,11 @@ export default class BlockchainBalances extends Vue {
       });
       this.accountAddress = '';
     } catch (e) {
-      console.error(e);
+      notify(
+        `Error while adding account: ${e}`,
+        'Adding Account',
+        Severity.ERROR
+      );
     }
     this.loading = false;
   }

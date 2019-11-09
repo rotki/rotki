@@ -90,7 +90,24 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
         (previousValue, currentValue) => previousValue.concat(currentValue),
         new Array<AssetBalance>()
       );
-    return currencyBalances.concat(getters.totals).concat(exchangeBalances);
+
+    const balances = currencyBalances
+      .concat(getters.totals)
+      .concat(exchangeBalances)
+      .reduce(
+        (accumulator, assetBalance) => {
+          const balance = accumulator[assetBalance.asset];
+          if (!balance) {
+            accumulator[assetBalance.asset] = assetBalance;
+          } else {
+            balance.amount.plus(assetBalance.amount);
+            balance.usdValue.plus(assetBalance.usdValue);
+          }
+          return accumulator;
+        },
+        {} as { [asset: string]: AssetBalance }
+      );
+    return Object.values(balances);
   },
 
   fiatTotal: (state: BalanceState) => {
