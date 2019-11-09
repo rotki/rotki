@@ -452,13 +452,78 @@ def test_upgrade_db_5_to_6(data_dir, username):
         '6395.62369468235924484',  # usd_value
     )]
     results = results.fetchall()
+
     assert results == expected_results
 
     # Also make sure the cache files were deleted
     for filename in fake_cache_files:
         assert not os.path.exists(filename)
-    # Finally slso make sure that we have updated to the target version
+    # Finally also make sure that we have updated to the target version
     assert db.get_version() == 6
+
+
+def test_upgrade_db_6_to_7(data_dir, username):
+    """Test upgrading the DB from version 6 to version 7.
+
+    Test that the trades tables has the new trade ids.
+    """
+    msg_aggregator = MessagesAggregator()
+    userdata_dir = os.path.join(data_dir, username)
+    os.mkdir(userdata_dir)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    copyfile(
+        os.path.join(os.path.dirname(dir_path), 'data', 'v6_rotkehlchen.db'),
+        os.path.join(userdata_dir, 'rotkehlchen.db'),
+    )
+
+    with target_patch(target_version=7):
+        db = DBHandler(user_data_dir=userdata_dir, password='123', msg_aggregator=msg_aggregator)
+
+    cursor = db.conn.cursor()
+    query = (
+        'SELECT id,'
+        '  time,'
+        '  location,'
+        '  pair,'
+        '  type,'
+        '  amount,'
+        '  rate,'
+        '  fee,'
+        '  fee_currency,'
+        '  link,'
+        '  notes FROM trades ORDER BY time ASC;'
+    )
+    results = cursor.execute(query)
+    expected_results = [(
+        'fafd58fce59b9d5c5308be1994633e4adc35bce82ac04a9f793f8137ba4a6793',
+        1568928120,  # time
+        'A',  # external symbol for location Enum
+        'ETH_EUR',  # pair
+        'B',  # type sell
+        '10',  # amount
+        '196.6',  # rate
+        '0.001',  # fee
+        'ETH',  # fee currency
+        '',  # link
+        'Test Sell 1',  # notes
+    ), (
+        'dca097b6e0b5aa2b3d5fc26fd9d83527db7fe447e2a42b4000799ddb17bf1e83',
+        1569010800,  # time
+        'A',  # external symbol for location Enum
+        'BTC_EUR',  # pair
+        'A',  # type buy
+        '0.5',  # amount
+        '9240.1',  # rate
+        '0.1',  # fee
+        'EUR',  # fee currency
+        '',  # link
+        'Test Buy 1',  # notes
+    )]
+    results = results.fetchall()
+    assert results == expected_results
+
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 7
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):
