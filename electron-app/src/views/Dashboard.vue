@@ -93,13 +93,12 @@ import { Zero } from '@/utils/bignumbers';
 import { AssetBalance } from '@/model/blockchain-balances';
 
 const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
-const { mapState, mapGetters } = createNamespacedHelpers('session');
+const { mapGetters } = createNamespacedHelpers('session');
 
 @Component({
   components: { ExchangeBox, InformationBox, CryptoIcon },
   computed: {
-    ...mapState(['currency']),
-    ...mapGetters(['floatingPrecision']),
+    ...mapGetters(['floatingPrecision', 'currency']),
     ...mapBalanceGetters([
       'exchangeRate',
       'exchanges',

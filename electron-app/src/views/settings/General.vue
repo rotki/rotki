@@ -29,7 +29,6 @@
               :nudge-right="40"
               transition="scale-transition"
               offset-y
-              full-width
               max-width="290px"
               min-width="290px"
             >
@@ -56,6 +55,8 @@
               id="maincurrencyselector"
               v-model="selectedCurrency"
               label="Select Main Currency"
+              item-text="ticker_symbol"
+              return-object
               :items="currencies"
             >
             </v-select>
@@ -109,12 +110,13 @@ import { createNamespacedHelpers } from 'vuex';
 import { Currency } from '@/model/currency';
 import { Message } from '@/store/store';
 
-const { mapState } = createNamespacedHelpers('session');
+const { mapState, mapGetters } = createNamespacedHelpers('session');
 
 @Component({
   components: { MessageDialog },
   computed: {
-    ...mapState(['settings', 'currency'])
+    ...mapState(['settings']),
+    ...mapGetters(['currency'])
   }
 })
 export default class General extends Vue {
@@ -127,7 +129,7 @@ export default class General extends Vue {
   rpcEndpoint: string = 'http://localhost:8546';
   balanceSaveFrequency: number = 0;
   dateDisplayFormat: string = '';
-  selectedCurrency: string = '';
+  selectedCurrency: Currency = currencies[0];
 
   historicDateMenu: boolean = false;
   date: string = '';
@@ -150,12 +152,12 @@ export default class General extends Vue {
     return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   }
 
-  get currencies(): string[] {
-    return currencies.map(x => x.ticker_symbol);
+  get currencies(): Currency[] {
+    return currencies;
   }
 
   mounted() {
-    this.selectedCurrency = this.currency.ticker_symbol;
+    this.selectedCurrency = this.currency;
     const settings = this.settings;
     this.floatingPrecision = settings.floatingPrecision;
     this.anonymizedLogs = settings.anonymizedLogs;
@@ -170,7 +172,7 @@ export default class General extends Vue {
     const payload = {
       ui_floating_precision: this.floatingPrecision,
       historical_data_start: this.historicDataStart,
-      main_currency: this.selectedCurrency,
+      main_currency: this.selectedCurrency.ticker_symbol,
       eth_rpc_endpoint: this.rpcEndpoint,
       balance_save_frequency: this.balanceSaveFrequency,
       anonymized_logs: this.anonymizedLogs,

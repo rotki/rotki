@@ -64,7 +64,7 @@ import { Zero } from '@/utils/bignumbers';
 import { FiatBalance } from '@/model/blockchain-balances';
 import { Message } from '@/store/store';
 
-const { mapGetters, mapState } = createNamespacedHelpers('session');
+const { mapGetters } = createNamespacedHelpers('session');
 const {
   mapGetters: mapBalanceGetters,
   mapState: mapBalanceState
@@ -72,9 +72,8 @@ const {
 
 @Component({
   computed: {
-    ...mapGetters(['floatingPrecision']),
+    ...mapGetters(['floatingPrecision', 'currency']),
     ...mapBalanceGetters(['exchangeRate']),
-    ...mapState(['currency']),
     ...mapBalanceState(['fiatBalances'])
   }
 })

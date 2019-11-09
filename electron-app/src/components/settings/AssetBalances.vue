@@ -54,14 +54,13 @@ import { createNamespacedHelpers } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import { Currency } from '@/model/currency';
 
-const { mapState, mapGetters } = createNamespacedHelpers('session');
+const { mapGetters } = createNamespacedHelpers('session');
 const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 
 @Component({
   components: { CryptoIcon },
   computed: {
-    ...mapState(['currency']),
-    ...mapGetters(['floatingPrecision']),
+    ...mapGetters(['floatingPrecision', 'currency']),
     ...mapBalancesGetters(['exchangeRate'])
   }
 })

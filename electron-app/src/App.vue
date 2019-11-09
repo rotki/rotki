@@ -16,7 +16,9 @@
           @click="openSite()"
         />
       </div>
-      <div class="text-center rotki__welcome-text font-weight-medium">Welcome {{ username }}</div>
+      <div class="text-center rotki__welcome-text font-weight-medium">
+        Welcome {{ username }}
+      </div>
       <navigation-menu></navigation-menu>
     </v-navigation-drawer>
     <v-app-bar app fixed clipped-left flat class="grey lighten-4">

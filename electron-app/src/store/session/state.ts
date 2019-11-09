@@ -1,13 +1,10 @@
-import { currencies } from '@/data/currencies';
 import { defaultAccountingSettings, defaultSettings } from '@/data/factories';
-import { Currency } from '@/model/currency';
 import { AccountingSettings, GeneralSettings } from '@/typing/types';
 
 export interface SessionState {
   newAccount: boolean;
   logged: boolean;
   username: string;
-  currency: Currency;
   settings: GeneralSettings;
   accountingSettings: AccountingSettings;
   premium: boolean;
@@ -19,7 +16,6 @@ export const defaultState: () => SessionState = () => ({
   newAccount: false,
   logged: false,
   username: '',
-  currency: currencies[0],
   settings: defaultSettings(),
   accountingSettings: defaultAccountingSettings(),
   premium: false,
