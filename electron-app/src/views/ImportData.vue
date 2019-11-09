@@ -8,48 +8,52 @@
           </v-col>
         </v-row>
         <v-row>
-          <p>
+          <v-col cols="12">
             You can manually import data from the services below by clicking on
             the respective logo
-          </p>
+          </v-col>
         </v-row>
         <v-row>
-          <h3>Cointracking.info</h3>
+          <v-col cols="12">
+            <h3>Cointracking.info</h3>
+          </v-col>
         </v-row>
         <v-row>
-          <p>
+          <v-col cols="12">
             Important notes for importing data from cointracking's CSV exports.
-          </p>
-          <ul>
-            <li>
-              Trades/deposits/withdrawals from Cointracking do not include fees.
-            </li>
-            <li>
-              All timestamps are rounded up to the minute. That is extremely
-              innacurate for fast paced trading.
-            </li>
-            <li>
-              All trades imported from Cointracking will always be considered as
-              buys due to the way the data are represented.
-            </li>
-            <li>
-              ETH/BTC Transactions are treated as deposits/withdrawals so they
-              are not imported in Rotkehlchen. To import ETH transactions simply
-              input your accounts in user settings and they will be imported
-              automatically for you.
-            </li>
-          </ul>
+            <ul>
+              <li>
+                Trades/deposits/withdrawals from Cointracking do not include
+                fees.
+              </li>
+              <li>
+                All timestamps are rounded up to the minute. That is extremely
+                innacurate for fast paced trading.
+              </li>
+              <li>
+                All trades imported from Cointracking will always be considered
+                as buys due to the way the data are represented.
+              </li>
+              <li>
+                ETH/BTC Transactions are treated as deposits/withdrawals so they
+                are not imported in Rotkehlchen. To import ETH transactions
+                simply input your accounts in user settings and they will be
+                imported automatically for you.
+              </li>
+            </ul>
+          </v-col>
         </v-row>
         <v-row>
-          <p>
+          <v-col cols="12">
             For the above reasons it's preferred to directly connect your
             exchanges in order to import data from there. If you do not do that
             a lot of accuracy is lost.
-          </p>
+          </v-col>
         </v-row>
         <v-row>
-          <v-col cols="3">
+          <v-col cols="12">
             <v-img
+              max-width="200"
               class="import-data__cointracking-info elevation-1"
               :src="require('../assets/images/cointracking_info.png')"
               @click="coinTrackingInfoImport()"
