@@ -72,7 +72,7 @@ import { Currency } from '@/model/currency';
 
 const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 const { mapState, mapGetters } = createNamespacedHelpers('reports');
-const { mapState: mapSessionState } = createNamespacedHelpers('session');
+const { mapGetters: mapSessionGetters } = createNamespacedHelpers('session');
 
 @Component({
   components: { TaxReportEvents, TaxReportOverview, MessageDialog, Generate },
@@ -80,7 +80,7 @@ const { mapState: mapSessionState } = createNamespacedHelpers('session');
     ...mapTaskGetters(['isTaskRunning']),
     ...mapGetters(['progress']),
     ...mapState(['loaded']),
-    ...mapSessionState(['currency'])
+    ...mapSessionGetters(['currency'])
   }
 })
 export default class TaxReport extends Vue {

@@ -9,7 +9,9 @@ import {
 
 export const mutations: MutationTree<SessionState> = {
   defaultCurrency(state: SessionState, currency: Currency) {
-    state.currency = currency;
+    state.settings = Object.assign(state.settings, {
+      selectedCurrency: currency
+    });
   },
   login(
     state: SessionState,
@@ -21,7 +23,7 @@ export const mutations: MutationTree<SessionState> = {
     state.username = username;
   },
   settings(state: SessionState, settings: GeneralSettings) {
-    state.settings = { ...settings };
+    state.settings = Object.assign(state.settings, settings);
   },
   premium(state: SessionState, premium: boolean) {
     state.premium = premium;

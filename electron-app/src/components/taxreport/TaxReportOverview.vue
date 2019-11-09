@@ -35,15 +35,14 @@ import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import { Currency } from '@/model/currency';
 
-const { mapState, mapGetters } = createNamespacedHelpers('session');
+const { mapGetters } = createNamespacedHelpers('session');
 const { mapState: mapReportsState } = createNamespacedHelpers('reports');
 const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
 
 @Component({
   computed: {
     ...mapReportsState(['overview']),
-    ...mapState(['currency']),
-    ...mapGetters(['floatingPrecision']),
+    ...mapGetters(['floatingPrecision', 'currency']),
     ...mapBalanceGetters(['exchangeRate'])
   }
 })

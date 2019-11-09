@@ -1,4 +1,5 @@
 import { ApiAssetBalance, AssetBalances } from '@/model/blockchain-balances';
+import { Currency } from '@/model/currency';
 
 export interface GeneralSettings {
   readonly floatingPrecision: number;
@@ -7,7 +8,7 @@ export interface GeneralSettings {
   readonly ethRpcEndpoint: string;
   readonly balanceSaveFrequency: number;
   readonly dateDisplayFormat: string;
-  readonly selectedCurrency: string;
+  readonly selectedCurrency: Currency;
 }
 
 export interface AccountingSettings {

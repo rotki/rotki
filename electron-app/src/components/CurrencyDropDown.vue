@@ -35,10 +35,10 @@ import { currencies } from '@/data/currencies';
 import { createNamespacedHelpers } from 'vuex';
 import { Message } from '@/store/store';
 
-const { mapState } = createNamespacedHelpers('session');
+const { mapGetters } = createNamespacedHelpers('session');
 
 @Component({
-  computed: mapState(['currency'])
+  computed: mapGetters(['currency'])
 })
 export default class CurrencyDropDown extends Vue {
   currency!: Currency;
