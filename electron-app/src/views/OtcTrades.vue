@@ -45,7 +45,7 @@
                 fa-trash
               </v-icon>
             </template>
-            <template v-slot:expanded-item="{ headers, item }">
+            <template #expanded-item="{ headers, item }">
               <td :colspan="headers.length">
                 <v-col cols="12">
                   <v-row>

@@ -30,6 +30,14 @@ module.exports = {
     ],
     'vue/v-bind-style': ['error', 'shorthand'],
     'vue/v-on-style': ['error', 'shorthand'],
+    'vue/v-slot-style': [
+      'error',
+      {
+        atComponent: 'shorthand',
+        default: 'shorthand',
+        named: 'shorthand'
+      }
+    ],
     '@typescript-eslint/no-unused-vars': [
       'error',
       {

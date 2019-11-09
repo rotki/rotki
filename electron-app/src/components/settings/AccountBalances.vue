@@ -62,7 +62,7 @@
           </td>
         </tr>
       </template>
-      <template v-slot:expanded-item="{ headers, item }">
+      <template #expanded-item="{ headers, item }">
         <td :colspan="headers.length" class="asset-balances__expanded">
           <account-asset-balances
             :account="item.account"
