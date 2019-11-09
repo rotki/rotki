@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`534` Old external trades can now be edited/deleted properly again.
 * :bug:`527` If cryptocompare query returns an empty object Rotki client no longer crashes.
 
 * :release:`1.0.4 <2019-10-04>`
