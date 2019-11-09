@@ -8,7 +8,15 @@
         <h3 class="text-center balance-table__title">{{ title }}</h3>
       </v-col>
     </v-row>
-    <v-data-table :headers="headers" :items="balances" :loading="deleting">
+    <v-data-table
+      :headers="headers"
+      :items="balances"
+      :loading="deleting"
+      single-expand
+      item-key="account"
+      :expanded.sync="expanded"
+      :show-expand="expandable"
+    >
       <template #header.usdValue>
         {{ currency.ticker_symbol }} value
       </template>
@@ -54,6 +62,13 @@
           </td>
         </tr>
       </template>
+      <template v-slot:expanded-item="{ headers, item }">
+        <td :colspan="headers.length" class="asset-balances__expanded">
+          <account-asset-balances
+            :account="item.account"
+          ></account-asset-balances>
+        </td>
+      </template>
     </v-data-table>
     <confirm-dialog
       :display="toDeleteAccount !== ''"
@@ -71,12 +86,16 @@ import { AccountBalance } from '@/model/blockchain-balances';
 import { createNamespacedHelpers } from 'vuex';
 import { Currency } from '@/model/currency';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import AssetBalances from '@/components/settings/AssetBalances.vue';
+import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
 
 const { mapGetters } = createNamespacedHelpers('session');
 const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 
 @Component({
   components: {
+    AccountAssetBalances,
+    AssetBalances,
     ConfirmDialog
   },
   computed: {
@@ -92,6 +111,12 @@ export default class AccountBalances extends Vue {
   @Prop({ required: true })
   title!: string;
 
+  expanded = [];
+
+  get expandable(): boolean {
+    return this.blockchain === 'ETH';
+  }
+
   currency!: Currency;
   floatingPrecision!: number;
   exchangeRate!: (currency: string) => number;
@@ -103,7 +128,8 @@ export default class AccountBalances extends Vue {
     { text: 'Account', value: 'account' },
     { text: this.blockchain, value: 'amount' },
     { text: 'USD Value', value: 'usdValue' },
-    { text: 'Actions', value: 'actions', sortable: false }
+    { text: 'Actions', value: 'actions', sortable: false, width: '50' },
+    { text: '', value: 'data-table-expand' }
   ];
 
   async deleteAccount() {
@@ -129,5 +155,9 @@ export default class AccountBalances extends Vue {
 
 .balance-table__totals {
   font-weight: 500;
+}
+
+.asset-balances__expanded {
+  padding: 0 !important;
 }
 </style>

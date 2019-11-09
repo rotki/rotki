@@ -107,11 +107,12 @@ export default class OtcTrades extends Vue {
 
   readonly headers = [
     { text: 'Pair', value: 'pair' },
-    { text: 'Type', value: 'type' },
+    { text: 'Type', value: 'trade_type' },
     { text: 'Amount', value: 'amount' },
     { text: 'Rate', value: 'rate' },
     { text: 'Time', value: 'timestamp' },
-    { text: 'Actions', value: 'actions' }
+    { text: 'Actions', value: 'actions', width: '50' },
+    { text: '', value: 'data-table-expand' }
   ];
 
   saveItem(otcTrade: OtcPayload) {
