@@ -11,6 +11,7 @@ import map from 'lodash/map';
 import BigNumber from 'bignumber.js';
 import { Zero } from '@/utils/bignumbers';
 import { assetSum } from '@/utils/calculation';
+import isEmpty from 'lodash/isEmpty';
 
 export const getters: GetterTree<BalanceState, RotkehlchenState> = {
   ethAccounts(state: BalanceState): AccountBalance[] {
@@ -102,5 +103,21 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     return getters.totals.reduce((sum: BigNumber, asset: AssetBalance) => {
       return sum.plus(asset.usdValue);
     }, Zero);
+  },
+
+  accountTokens: (state: BalanceState) => (account: string) => {
+    const ethAccount = state.eth[account];
+    if (!ethAccount || isEmpty(ethAccount)) {
+      return [];
+    }
+
+    return Object.entries(ethAccount.tokens).map(
+      ([key, value]) =>
+        ({
+          asset: key,
+          amount: value,
+          usdValue: Zero
+        } as AssetBalance)
+    );
   }
 };
