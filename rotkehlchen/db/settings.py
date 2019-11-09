@@ -7,7 +7,7 @@ from rotkehlchen.errors import DeserializationError
 from rotkehlchen.typing import FiatAsset, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
-ROTKEHLCHEN_DB_VERSION = 6
+ROTKEHLCHEN_DB_VERSION = 7
 DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
 DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
 DEFAULT_INCLUDE_GAS_COSTS = True
