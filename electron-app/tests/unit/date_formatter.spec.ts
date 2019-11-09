@@ -1,4 +1,4 @@
-import { DateFormatter } from '@/data/date_formatter';
+import { DateFormatter } from '../../src/data/date_formatter';
 
 jest.setTimeout(50000);
 
