@@ -45,12 +45,13 @@
       @dismiss="dismiss()"
     ></message-dialog>
     <message-dialog
+      v-if="startupError.length > 0"
       title="Startup Error"
       :message="startupError"
       @dismiss="terminate()"
     ></message-dialog>
     <account-management
-      v-if="startupError.length === 0"
+      v-if="startupError.length === 0 && !logged"
       :logged="logged"
     ></account-management>
   </v-app>
