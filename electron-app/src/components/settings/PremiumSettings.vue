@@ -5,38 +5,44 @@
         <v-card-title>Premium Settings</v-card-title>
         <v-card-text>
           <v-text-field
-            id="premium_api_key_entry"
             v-model="apiKey"
+            class="premium-settings__fields__api-key"
+            :append-icon="showKey ? 'fa-eye' : 'fa-eye-slash'"
             prepend-icon="fa-key"
             :disabled="premium && !edit"
+            :type="showKey ? 'text' : 'password'"
             label="Rotkehlchen API Key"
-            type="text"
+            @click:append="showKey = !showKey"
           ></v-text-field>
           <v-text-field
-            id="premium_api_secret_entry"
             v-model="apiSecret"
+            class="premium-settings__fields__api-secret"
+            :append-icon="showSecret ? 'fa-eye' : 'fa-eye-slash'"
             :disabled="premium && !edit"
             prepend-icon="fa-user-secret"
-            label="Rotkehlchen API Key"
-            type="text"
+            :type="showSecret ? 'text' : 'password'"
+            label="Rotkehlchen API Secret"
+            @click:append="showSecret = !showSecret"
           ></v-text-field>
+          <div v-if="premium" class="premium-settings__premium-active">
+            <v-icon color="success">fa-check-circle</v-icon>
+            <div>Rotkehlchen Premium is active</div>
+          </div>
         </v-card-text>
         <v-card-actions>
           <v-btn
-            id="setup_premium_button"
+            class="premium-settings__button__setup"
             depressed
             color="primary"
             type="submit"
-            :disable="premium"
             @click="setupPremium()"
           >
-            {{ premium ? 'Replace Key' : 'Setup' }}
+            {{ premium && !edit ? 'Replace Key' : 'Setup' }}
           </v-btn>
           <v-btn
             v-if="edit"
             id="premium-edit-cancel-button"
             depressed
-            :disabled="!apiKey && !apiSecret"
             color="primary"
             @click="edit = false"
           >
@@ -57,9 +63,11 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { mapState } from 'vuex';
+import { createNamespacedHelpers } from 'vuex';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import { Message } from '@/store/store';
+
+const { mapState } = createNamespacedHelpers('session');
 
 @Component({
   components: {
@@ -72,6 +80,9 @@ export default class PremiumSettings extends Vue {
   apiSecret: string = '';
   sync: boolean = false;
   edit: boolean = false;
+
+  showKey: boolean = false;
+  showSecret: boolean = false;
 
   premium!: boolean;
   premiumSync!: boolean;
@@ -95,7 +106,7 @@ export default class PremiumSettings extends Vue {
     this.$rpc
       .set_premium_credentials(apiKey, apiSecret)
       .then(() => {
-        commit('premium', true);
+        commit('session/premium', true);
         commit('setMessage', {
           title: 'Premium Credentials',
           description: 'Successfully set Premium Credentials',
@@ -106,7 +117,7 @@ export default class PremiumSettings extends Vue {
         this.edit = false;
       })
       .catch((reason: Error) => {
-        commit('premium', hasPremium);
+        commit('session/premium', hasPremium);
         commit('setMessage', {
           title: 'Premium Credentials Error',
           description:
@@ -123,15 +134,15 @@ export default class PremiumSettings extends Vue {
     this.$rpc
       .set_premium_option_sync(shouldSync)
       .then(() => {
-        commit('premiumSync', shouldSync);
+        commit('session/premiumSync', shouldSync);
       })
       .catch(() => {
-        commit('premiumSync', !shouldSync);
+        commit('session/premiumSync', !shouldSync);
         commit('setMessage', {
           title: 'Premium Settings Error',
           description: 'Failed to change sync settings',
           success: false
-        });
+        } as Message);
         this.sync = !shouldSync;
       });
   }
@@ -141,5 +152,16 @@ export default class PremiumSettings extends Vue {
 <style scoped lang="scss">
 .premium-settings__sync {
   margin-left: 20px;
+}
+
+.premium-settings__premium-active {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.premium-settings__premium-active div {
+  margin-left: 10px;
 }
 </style>
