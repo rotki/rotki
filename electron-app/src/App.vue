@@ -44,12 +44,10 @@
       :success="message.success"
       @dismiss="dismiss()"
     ></message-dialog>
-    <message-dialog
+    <error-screen
       v-if="startupError.length > 0"
-      title="Startup Error"
       :message="startupError"
-      @dismiss="terminate()"
-    ></message-dialog>
+    ></error-screen>
     <account-management
       v-if="startupError.length === 0 && !logged"
       :logged="logged"
@@ -70,15 +68,17 @@ import NotificationIndicator from '@/components/status/NotificationIndicator.vue
 import ProgressIndicator from '@/components/status/ProgressIndicator.vue';
 import './services/task_manager';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import { ipcRenderer, remote, shell } from 'electron';
+import { ipcRenderer, shell } from 'electron';
 import { Message } from '@/store/store';
 import UpdateIndicator from './components/status/UpdateIndicator.vue';
 import AccountManagement from './components/AccountManagement.vue';
+import ErrorScreen from '@/ErrorScreen.vue';
 
 const { mapState: mapSessionState } = createNamespacedHelpers('session');
 
 @Component({
   components: {
+    ErrorScreen,
     AccountManagement,
     UpdateIndicator,
     ProgressIndicator,
@@ -108,10 +108,6 @@ export default class App extends Vue {
 
   openSite() {
     shell.openExternal('http://rotkehlchen.io');
-  }
-
-  terminate() {
-    remote.getCurrentWindow().close();
   }
 
   dismiss() {
