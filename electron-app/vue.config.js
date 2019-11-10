@@ -14,8 +14,12 @@ module.exports = {
   },
   pluginOptions: {
     electronBuilder: {
+      outputDir: 'dist',
       builderOptions: {
         appId: 'io.rotkehlchen',
+        buildVersion: process.env.ROTKEHLCHEN_VERSION,
+        artifactName:
+          '${productName}-${platform}_${arch}-${buildVersion}.${ext}',
         extraResources: [
           {
             from: '../rotkehlchen_py_dist',
