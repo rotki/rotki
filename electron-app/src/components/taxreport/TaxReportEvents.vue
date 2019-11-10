@@ -41,6 +41,11 @@
                   | formatPrice(floatingPrecision)
               }}
             </template>
+            <template #item.isVirtual="{ item }">
+              <v-icon v-if="item.isVirtual" color="success">
+                fa-check
+              </v-icon>
+            </template>
           </v-data-table>
         </v-card-text>
       </v-card>
@@ -88,7 +93,7 @@ export default class TaxReportEvents extends Vue {
       value: 'taxableReceivedInProfitCurrency'
     },
     { text: 'Time', value: 'time' },
-    { text: 'Virtual?', value: 'isVirtual' }
+    { text: 'Virtual?', value: 'isVirtual', align: 'center' }
   ];
 }
 </script>
