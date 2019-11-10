@@ -28,7 +28,6 @@ export const actions: ActionTree<TaxReportState, RotkehlchenState> = {
     service
       .export_processed_history_csv(path)
       .then(() => {
-        console.log('dd');
         notify(
           'History exported to CVS successfully',
           'CSV Export',

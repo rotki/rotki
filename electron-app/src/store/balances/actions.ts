@@ -3,7 +3,7 @@ import { RotkehlchenState } from '@/store/store';
 import { BalanceState } from '@/store/balances/state';
 import { service } from '@/services/rotkehlchen_service';
 import { createTask, TaskType } from '@/model/task';
-import { UsdToFiatExchangeRates } from '@/typing/types';
+import { Severity, UsdToFiatExchangeRates } from '@/typing/types';
 import { notify } from '@/store/notifications/utils';
 import { FiatBalance } from '@/model/blockchain-balances';
 import { bigNumberify } from '@/utils/bignumbers';
@@ -15,7 +15,6 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     service
       .query_exchange_balances_async(name)
       .then(result => {
-        console.log(`Query ${name} returned task id ${result.task_id}`);
         const task = createTask(
           result.task_id,
           TaskType.QUERY_EXCHANGE_BALANCES,
@@ -30,7 +29,11 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         }
       })
       .catch(reason => {
-        console.log(`Error at querying exchange ${name} balances: ${reason}`);
+        notify(
+          `Error at querying exchange ${name} balances: ${reason}`,
+          'Exchange balance query',
+          Severity.ERROR
+        );
       });
   },
   async fetchExchangeRates({ commit }): Promise<void> {
@@ -54,7 +57,6 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   async fetchBlockchainBalances({ commit }): Promise<void> {
     try {
       const result = await service.query_blockchain_balances_async();
-      console.log(`Blockchain balances returned task id ${result.task_id}`);
       const task = createTask(
         result.task_id,
         TaskType.QUERY_BLOCKCHAIN_BALANCES,
@@ -114,7 +116,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       address
     );
     const { ETH, BTC } = per_account;
-    console.log(per_account);
+
     if (blockchain === 'ETH') {
       commit('updateEth', convertEthBalances(ETH));
     } else {

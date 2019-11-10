@@ -2,9 +2,9 @@ import { ActionResult } from '@/model/action-result';
 import { BlockchainBalances } from '@/model/blockchain-balances';
 import store from '@/store/store';
 import {
+  convertAssetBalances,
   convertBalances,
-  convertEthBalances,
-  convertAssetBalances
+  convertEthBalances
 } from '@/utils/conversion';
 import { ExchangeBalanceResult } from '@/model/exchange-balance-result';
 import { TaskType } from '@/model/task';
@@ -18,9 +18,10 @@ import {
   TradeHistoryResult
 } from '@/model/trade-history-types';
 import map from 'lodash/map';
+import { Severity } from '@/typing/types';
 
 export class TaskManager {
-  private onUserSettingsQueryBlockchainBalances(
+  private static onUserSettingsQueryBlockchainBalances(
     result: ActionResult<BlockchainBalances>
   ) {
     let msg: string = '';
@@ -44,7 +45,7 @@ export class TaskManager {
     store.commit('balances/updateTotals', convertBalances(totals));
   }
 
-  private onQueryExchangeBalances(result: ExchangeBalanceResult) {
+  private static onQueryExchangeBalances(result: ExchangeBalanceResult) {
     if (result.error) {
       notify(
         `Querying ${result.name} failed because of: ${result.error}. Check the logs for more details.`,
@@ -125,10 +126,11 @@ export class TaskManager {
       }
       const task = tasks[id];
       if (task.id == null) {
-        console.info({
-          title: 'Task with null id',
-          task: JSON.stringify(task, null, 4)
-        });
+        notify(
+          JSON.stringify(task, null, 4),
+          'Task with null id',
+          Severity.INFO
+        );
         continue;
       }
 
@@ -145,8 +147,10 @@ export class TaskManager {
         const handler = this.handler[task.type];
 
         if (!handler) {
-          console.log(
-            `No handler found for task '${task.type}' with id ${task.id}`
+          notify(
+            `No handler found for task '${task.type}' with id ${task.id}`,
+            'Tasks',
+            Severity.INFO
           );
           return;
         }
@@ -158,9 +162,9 @@ export class TaskManager {
   }
 
   readonly handler: { [type: string]: (result: any) => void } = {
-    [TaskType.USER_SETTINGS_QUERY_BLOCKCHAIN_BALANCES]: this
-      .onUserSettingsQueryBlockchainBalances,
-    [TaskType.QUERY_EXCHANGE_BALANCES]: this.onQueryExchangeBalances,
+    [TaskType.USER_SETTINGS_QUERY_BLOCKCHAIN_BALANCES]:
+      TaskManager.onUserSettingsQueryBlockchainBalances,
+    [TaskType.QUERY_EXCHANGE_BALANCES]: TaskManager.onQueryExchangeBalances,
     [TaskType.QUERY_BLOCKCHAIN_BALANCES]: this.onQueryBlockchainBalances,
     [TaskType.TRADE_HISTORY]: this.onTradeHistory
   };

@@ -7,11 +7,6 @@ export const getters: GetterTree<TaxReportState, RotkehlchenState> = {
     const { historyStart, historyEnd, historyProcess } = state;
     const percentage =
       (historyProcess - historyStart) * (1 / (historyEnd - historyStart));
-    console.log({
-      historyProcess,
-      historyStart,
-      historyEnd
-    });
     return (percentage * 100).toFixed(2);
   }
 };
