@@ -14,8 +14,9 @@
         :label="label"
         :hint="hint"
         :persistent-hint="persistentHint"
-        :rules="rules"
+        :rules="allRules"
         append-icon="fa-clock-o"
+        @input="input($event)"
         @click:append="setNow()"
         v-on="on"
       ></v-text-field>
@@ -46,6 +47,10 @@ export default class DateTimePicker extends Vue {
   @Prop({ required: false, default: false, type: Boolean })
   limitNow!: boolean;
 
+  private date = /^([0-2]\d|[3][0-1])\/([0]\d|[1][0-2])\/([2][01]|[1][6-9])\d{2}(\s([0-1]\d|[2][0-3])(:[0-5]\d))$/;
+  private dateFormatRule = (v: string) =>
+    (v && this.date.test(v)) || 'Date should be in DD/MM/YYYY HH:MM format';
+
   timeModel: string = DateTimePicker.timeNow();
   dateModel: string = '';
 
@@ -53,6 +58,10 @@ export default class DateTimePicker extends Vue {
   maxTime: string = '';
 
   menu: boolean = false;
+
+  get allRules(): ((v: string) => boolean | string)[] {
+    return this.rules.concat([this.dateFormatRule]);
+  }
 
   private setMaxTime() {
     if (this.limitNow) {
@@ -97,6 +106,16 @@ export default class DateTimePicker extends Vue {
     if (!this.value) {
       this.dateModel = '';
       this.timeModel = DateTimePicker.timeNow();
+    } else if (this.date.test(this.value)) {
+      const [date, time] = this.value.split(' ');
+      const [day, month, year] = date.split('/');
+      const formattedDate = `${year}-${month}-${day}`;
+      if (formattedDate !== this.dateModel) {
+        this.dateModel = formattedDate;
+      }
+      if (time != this.timeModel) {
+        this.timeModel = time;
+      }
     }
   }
 
