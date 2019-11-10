@@ -19,6 +19,7 @@
             <v-checkbox
               id="anonymized_logs_input"
               v-model="anonymizedLogs"
+              off-icon="fa fa-square-o"
               label="Should logs by anonymized?"
             ></v-checkbox>
 
@@ -38,7 +39,6 @@
                   v-model="historicDataStart"
                   label="Date from when to count historical data"
                   hint="DD/MM/YYYY format"
-                  persistent-hint
                   prepend-icon="fa-calendar"
                   @blur="date = parseDate(historicDataStart)"
                   v-on="on"
