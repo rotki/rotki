@@ -535,3 +535,74 @@ def test_exchange_query_trades_async(rotkehlchen_api_server_with_exchanges):
     result = json_data['result']['outcome']['result']
     assert_binance_trades_result(result['binance'])
     assert_poloniex_trades_result(result['poloniex'])
+
+
+@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+def test_exchange_query_trades_errors(rotkehlchen_api_server_with_exchanges):
+    """Test errors and edge case of the exchange trades query endpoint"""
+    server = rotkehlchen_api_server_with_exchanges
+    # invalid exchange
+    response = requests.get(api_url_for(
+        server,
+        "named_exchanges_trades_resource",
+        name='boomshakalaka',
+    ))
+    assert_error_response(
+        response=response,
+        contained_in_msg='Exchange boomshakalaka is not supported',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # not registered exchange
+    response = requests.get(api_url_for(
+        server,
+        "named_exchanges_trades_resource",
+        name='bitmex',
+    ))
+    assert_error_response(
+        response=response,
+        contained_in_msg='Could not query trades for bitmex since it is not registered',
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    data = {'from_timestamp': 0, 'to_timestamp': 1573409648}
+    # TODO: move this into own test
+    # from_timestamp being out of range (general test for timestamps field validation)
+
+    data = {'from_timestamp': -1, 'to_timestamp': 1573409648}
+    response = requests.get(api_url_for(
+        server,
+        "named_exchanges_trades_resource",
+        name='binance',
+    ), json=data)
+    assert_error_response(
+        response=response,
+        contained_in_msg='Timestamps can not have negative values',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # from_timestamp not being a valid timestamp type
+    data = {'from_timestamp': 'dasd', 'to_timestamp': 1573409648}
+    response = requests.get(api_url_for(
+        server,
+        "named_exchanges_trades_resource",
+        name='binance',
+    ), json=data)
+    assert_error_response(
+        response=response,
+        contained_in_msg='Failed to deserialize a timestamp entry from string dasd',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # to_timestamp not being a valid timestamp type
+    data = {'from_timestamp': 1, 'to_timestamp': 'dasd'}
+    response = requests.get(api_url_for(
+        server,
+        "named_exchanges_trades_resource",
+        name='binance',
+    ), json=data)
+    assert_error_response(
+        response=response,
+        contained_in_msg='Failed to deserialize a timestamp entry from string dasd',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
