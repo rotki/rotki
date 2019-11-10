@@ -43,10 +43,10 @@ def deserialize_timestamp(timestamp: Union[int, str]) -> Timestamp:
         raise DeserializationError('Failed to deserialize a timestamp entry from a null entry')
 
     if isinstance(timestamp, int):
-        return Timestamp(timestamp)
+        processed_timestamp = Timestamp(timestamp)
     elif isinstance(timestamp, FVal):
         try:
-            return Timestamp(timestamp.to_int(exact=True))
+            processed_timestamp = Timestamp(timestamp.to_int(exact=True))
         except ValueError:
             # An fval was not representing an exact int
             raise DeserializationError(
@@ -54,17 +54,24 @@ def deserialize_timestamp(timestamp: Union[int, str]) -> Timestamp:
             )
     elif isinstance(timestamp, str):
         try:
-            return Timestamp(int(timestamp))
+            processed_timestamp = Timestamp(int(timestamp))
         except ValueError:
             # String could not be turned to an int
             raise DeserializationError(
                 f'Failed to deserialize a timestamp entry from string {timestamp}',
             )
+    else:
+        raise DeserializationError(
+            f'Failed to deserialize a timestamp entry. Unexpected type {type(timestamp)} given',
+        )
 
-    # else
-    raise DeserializationError(
-        f'Failed to deserialize a timestamp entry. Unexpected type {type(timestamp)} given',
-    )
+    if processed_timestamp < 0:
+        raise DeserializationError(
+            f'Failed to deserialize a timestamp entry. Timestamps can not have'
+            f' negative values. Given value was {processed_timestamp}',
+        )
+
+    return processed_timestamp
 
 
 def deserialize_timestamp_from_date(date: str, formatstr: str, location: str) -> Timestamp:
