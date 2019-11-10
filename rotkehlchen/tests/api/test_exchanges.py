@@ -470,3 +470,68 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges):
     assert len(json_data['result']) == 2, 'only two exchanges should be registered'
     assert_binance_trades_result(json_data['result']['binance'])
     assert_poloniex_trades_result(json_data['result']['poloniex'])
+
+
+@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+def test_exchange_query_trades_async(rotkehlchen_api_server_with_exchanges):
+    """Test that using the exchange trades query endpoint works fine when called asynchronously"""
+    server = rotkehlchen_api_server_with_exchanges
+    # async query trades of one specific exchange
+    binance = server.rest_api.rotkehlchen.exchange_manager.connected_exchanges['binance']
+
+    def mock_binance_trades_return(url):  # pylint: disable=unused-argument
+        text = '[]'
+        if 'symbol=BNBBTC' in url or 'symbol=BTCBBTC' in url:
+            text = BINANCE_MYTRADES_RESPONSE
+        return MockResponse(200, text)
+
+    binance_patch = patch.object(binance.session, 'get', side_effect=mock_binance_trades_return)
+
+    with binance_patch:
+        response = requests.get(api_url_for(
+            server,
+            "named_exchanges_trades_resource",
+            name='binance',
+        ), json={'async_query': True})
+    task_id = assert_ok_async_response(response)
+
+    # context switch so that the greenlet to query trades can operate
+    gevent.sleep(.8)
+
+    # and now query for the task result and assert on it
+    response = requests.get(
+        api_url_for(server, "specific_async_tasks_resource", task_id=task_id),
+    )
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == ''
+    assert json_data['result']['status'] == 'completed'
+    assert_binance_trades_result(json_data['result']['outcome']['result'])
+
+    # query trades of all exchanges and in a specific range asynchronously
+    poloniex = server.rest_api.rotkehlchen.exchange_manager.connected_exchanges['poloniex']
+
+    def mock_polo_trades_return(url, req):  # pylint: disable=unused-argument
+        return MockResponse(200, POLONIEX_TRADES_RESPONSE)
+
+    poloniex_patch = patch.object(poloniex.session, 'post', side_effect=mock_polo_trades_return)
+
+    data = {'from_timestamp': 1499865548, 'to_timestamp': 1539709433, 'async_query': True}
+    with binance_patch, poloniex_patch:
+        response = requests.get(api_url_for(server, "exchangetradesresource"), json=data)
+    task_id = assert_ok_async_response(response)
+
+    # context switch so that the greenlet to query trades can operate
+    gevent.sleep(.8)
+
+    # and now query for the task result and assert on it
+    response = requests.get(
+        api_url_for(server, "specific_async_tasks_resource", task_id=task_id),
+    )
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == ''
+    assert json_data['result']['status'] == 'completed'
+    result = json_data['result']['outcome']['result']
+    assert_binance_trades_result(result['binance'])
+    assert_poloniex_trades_result(result['poloniex'])
