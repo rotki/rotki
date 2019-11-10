@@ -9,11 +9,11 @@ python:
 
 stages:
   - name: lint
+  - name: ui-lint
   - name: test
     if: NOT commit_message =~ /\[no ci tests\]/ AND tag IS NOT present
   - name: ui-test
     if: commit_message =~ /\[ui tests\]/ AND tag IS NOT present
-  - name: ui-lint
   - name: ui-unit-test
   - name: deploy
     if: tag IS present
