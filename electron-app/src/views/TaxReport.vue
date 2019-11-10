@@ -54,6 +54,16 @@
           <v-divider></v-divider>
         </v-col>
       </v-row>
+      <v-row
+        align="center"
+        justify="center"
+        class="tax-report__progress__warning"
+      >
+        <div class="font-weight-light subtitle-2">
+          Your report generation might take a while depending on the amount of
+          trades and actions you performed during the selected period.
+        </div>
+      </v-row>
     </v-col>
   </v-container>
 </template>
@@ -140,5 +150,9 @@ export default class TaxReport extends Vue {
 
 .tax-report__progress__description {
   font-size: 16px;
+}
+
+.tax-report__progress__warning {
+  margin-top: 30px;
 }
 </style>
