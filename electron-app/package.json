@@ -22,7 +22,6 @@
     "cryptocurrency-icons": "0.16.1",
     "font-awesome": "4.7.0",
     "lodash": "4.17.15",
-    "register-service-worker": "latest",
     "roboto-fontface": "*",
     "tasklist": "4.0.0",
     "vue": "2.6.10",
