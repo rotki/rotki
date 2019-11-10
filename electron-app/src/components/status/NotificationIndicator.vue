@@ -16,11 +16,14 @@
         title="Clear active notifications"
         message="This action will clear all the active notifications. Do you want to proceed?"
         @cancel="confirmClear = false"
-        @confirm="clear()"
+        @confirm="reset()"
       ></confirm-dialog>
     </template>
     <v-row class="notification-indicator__details">
-      <v-col v-if="false" class="notification-indicator__no-messages">
+      <v-col
+        v-if="notifications.length === 0"
+        class="notification-indicator__no-messages"
+      >
         <v-icon color="primary">fa fa-info-circle</v-icon>
         <p class="notification-indicator__no-messages__label">No messages!</p>
       </v-col>
@@ -91,15 +94,12 @@ import { createNamespacedHelpers } from 'vuex';
 import orderBy from 'lodash/orderBy';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 
-const { mapState, mapGetters, mapMutations } = createNamespacedHelpers(
-  'notifications'
-);
+const { mapState, mapGetters } = createNamespacedHelpers('notifications');
 
 @Component({
   computed: {
     ...mapState(['data']),
-    ...mapGetters(['count']),
-    ...mapMutations(['remove', 'reset'])
+    ...mapGetters(['count'])
   },
   components: {
     ConfirmDialog
@@ -108,10 +108,17 @@ const { mapState, mapGetters, mapMutations } = createNamespacedHelpers(
 export default class NotificationIndicator extends Vue {
   data!: NotificationData[];
   count!: number;
-  remove!: (id: number) => void;
-  reset!: () => void;
 
   confirmClear: boolean = false;
+
+  remove(id: number) {
+    this.$store.commit('notifications/remove', id);
+  }
+
+  reset() {
+    this.confirmClear = false;
+    this.$store.commit('notifications/reset');
+  }
 
   icon(notification: NotificationData) {
     switch (notification.severity) {
