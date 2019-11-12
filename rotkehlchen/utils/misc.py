@@ -321,7 +321,6 @@ def get_system_spec() -> Dict[str, str]:
     """Collect information about the system and installation."""
     import pkg_resources
     import platform
-    import rotkehlchen
 
     if sys.platform == 'darwin':
         system_info = 'macOS {} {}'.format(
@@ -337,7 +336,9 @@ def get_system_spec() -> Dict[str, str]:
         )
 
     system_spec = dict(
-        rotkehlchen=pkg_resources.require(rotkehlchen.__name__)[0].version,
+        # used to be require 'rotkehlchen.__name__' but as long as setup.py
+        # target differs from package we need this
+        rotkehlchen=pkg_resources.require('rotki')[0].version,
         python_implementation=platform.python_implementation(),
         python_version=platform.python_version(),
         system=system_info,
