@@ -1,5 +1,5 @@
 Rotki Usage Guide
-##################################################
+#####################
 .. toctree::
   :maxdepth: 2
 
@@ -18,7 +18,7 @@ If you have never created an account before press "Create New Account". Provide 
 
 If you already have an account just write the name and the password here.
 
-All accounts are created in the rotkehlchen directory which is located in: ``$HOME/.rotkehlchen``. Each user has their own subdirectory.
+All accounts are created in the rotki directory which is located in: ``$HOME/.rotkehlchen``. Each user has their own subdirectory.
 
 Changing the Profit Currency
 =============================
@@ -129,7 +129,7 @@ Set the backend's arguments
 
 Rotki runs a python daemon on the backend. Most times you won't need to customize its arguments but if you need to do so, especially for debugging purposes this is how you can.
 
-Create or edit if it exists a file with the name ``rotki_config.json`` in the same directory as the rotkehlchen executable. Add to the json object any arguments that are also arguments of rotkehlchen. Then when rotkehlchen starts these will be passed as arguments to the backend. An example ``rotki_config.json`` follows::
+Create or edit if it exists a file with the name ``rotki_config.json`` in the same directory as the rotki executable. Add to the json object any arguments that are also arguments of rotki. Then when rotki starts these will be passed as arguments to the backend. An example ``rotki_config.json`` follows::
 
   {
       "loglevel": "debug",
@@ -142,7 +142,7 @@ Create or edit if it exists a file with the name ``rotki_config.json`` in the sa
 The above arguments are:
 
 - **loglevel**: Set the loglevel for the application. Valid values are: ``'debug', 'info', 'warn', 'error', 'critical'``.
-- **logfromothermodules**: If this argument appears then logging will also include log entries from other dependent libraries and not only rotkehlchen. Default is ``false``.
+- **logfromothermodules**: If this argument appears then logging will also include log entries from other dependent libraries and not only rotki. Default is ``false``.
 - **logfile**: The name for the logfile. Default is: ``rotkehlchen.log``.
-- **data-dir**: The path to the directory where all rotkehlchen data will be saved. Default is ``/home/$USER/.rotkehlchen``.
-- **sleep-secs**: This is the amount of seconds that the main loop of rotkehlchen sleeps for. Default is 20.
+- **data-dir**: The path to the directory where all rotki data will be saved. Default is ``/home/$USER/.rotkehlchen``.
+- **sleep-secs**: This is the amount of seconds that the main loop of rotki sleeps for. Default is 20.

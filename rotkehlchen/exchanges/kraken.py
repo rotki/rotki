@@ -498,7 +498,7 @@ class Kraken(ExchangeInterface):
             if response_length == 0 and offset != count:
                 # If we have provided specific filtering then this is a known
                 # issue documented below, so skip the warning logging
-                # https://github.com/rotkehlchenio/rotkehlchen/issues/116
+                # https://github.com/rotki/rotki/issues/116
                 if extra_dict:
                     break
                 # it is possible that kraken misbehaves and either does not

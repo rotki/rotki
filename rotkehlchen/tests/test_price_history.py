@@ -12,7 +12,7 @@ from rotkehlchen.tests.utils.history import prices
 def test_inconsistent_prices_double_checking(price_historian):
     """ This is a regression test for the inconsistent DASH/EUR and DASH/USD prices
     that were returned on 02/12/2018. Issue:
-    https://github.com/rotkehlchenio/rotkehlchen/issues/221
+    https://github.com/rotki/rotki/issues/221
     """
 
     # Note the prices are not the same as in the issue because rotkehlchen uses
@@ -57,7 +57,7 @@ def test_cryptocompare_iota_query(price_historian):
     """
     Test that IOTA can be properly queried from cryptocompare
 
-    Issue: https://github.com/rotkehlchenio/rotkehlchen/issues/299
+    Issue: https://github.com/rotki/rotki/issues/299
     """
     usd_price = price_historian.query_historical_price(A_IOTA, A_USD, 1511793374)
     assert usd_price.is_close(FVal('0.954'))

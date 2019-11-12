@@ -19,7 +19,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'Rotkehlchen'
+project = 'Rotki'
 copyright = '2018-2019, Lefteris Karapetsas'
 author = 'Lefteris Karapetsas'
 
@@ -46,8 +46,8 @@ extensions = [
 
 
 # 'releases' (changelog) settings
-releases_issue_uri = "https://github.com/rotkehlchenio/rotkehlchen/issues/%s"
-releases_release_uri = "https://github.com/rotkehlchenio/rotkehlchen/releases/tag/v%s"
+releases_issue_uri = "https://github.com/rotki/rotki/issues/%s"
+releases_release_uri = "https://github.com/rotki/rotki/releases/tag/v%s"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -115,7 +115,7 @@ html_show_copyright = False
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Rotkehlchendoc'
+htmlhelp_basename = 'Rotkidoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -142,7 +142,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'Rotkehlchen.tex', 'Rotkehlchen Documentation',
+    (master_doc, 'Rotki.tex', 'Rotki Documentation',
      'Lefteris Karapetsas', 'manual'),
 ]
 
@@ -152,7 +152,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'rotkehlchen', 'Rotkehlchen Documentation',
+    (master_doc, 'rotki', 'Rotki Documentation',
      [author], 1)
 ]
 
@@ -163,8 +163,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'Rotkehlchen', 'Rotkehlchen Documentation',
-     author, 'Rotkehlchen', 'One line description of project.',
+    (master_doc, 'Rotki', 'Rotki Documentation',
+     author, 'Rotki', 'One line description of project.',
      'Miscellaneous'),
 ]
 

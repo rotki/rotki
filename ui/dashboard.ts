@@ -27,7 +27,7 @@ function setup_brand_behavior() {
     const brand = $('a.navbar-brand');
     brand.click((event: JQuery.Event) => {
         event.preventDefault();
-        shell.openExternal('http://rotkehlchen.io');
+        shell.openExternal('http://rotki.com');
     });
 }
 

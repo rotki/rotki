@@ -24,13 +24,13 @@ install_requirements = list(set(
 version = '1.0.4'  # Do not edit: this is maintained by bumpversion (see .bumpversion.cfg)
 
 setup(
-    name='rotkehlchen',
+    name='rotki',
     author='Lefteris Karapetsas',
     author_email='lefteris@refu.co',
     description=('Acccounting, asset management and tax report helper for cryptocurrencies'),
     license='BSD-3',
     keywords='accounting tax-report portfolio asset-management cryptocurrencies',
-    url='https://github.com/rotkehlchenio/rotkehlchen',
+    url='https://github.com/rotki/rotki',
     packages=['rotkehlchen'],
     install_requires=install_requirements,
     use_scm_version=True,

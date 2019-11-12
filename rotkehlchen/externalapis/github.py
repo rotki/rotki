@@ -34,7 +34,7 @@ class Github():
         In success returns a tuple (version_tag, version_download_url)
         Will raise RemoteError in all kind of errors
         """
-        response = self._query('repos/rotkehlchenio/rotkehlchen/releases/latest')
+        response = self._query('repos/rotki/rotki/releases/latest')
         if 'tag_name' not in response:
             raise RemoteError(
                 'Github latest release did not contain a "tag_name" entry in the response',

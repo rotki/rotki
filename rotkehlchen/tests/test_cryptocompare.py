@@ -68,7 +68,7 @@ def test_cryptocompare_histohour_query_old_ts_xcp(
 ):
     """Test that as a result of this query a crash does not happen.
 
-    Regression for: https://github.com/rotkehlchenio/rotkehlchen/issues/432
+    Regression for: https://github.com/rotki/rotki/issues/432
     Unfortunately still no price is found so we have to expect a NoPriceForGivenTimestamp
 
     This test is now skipped since it's a subset of:

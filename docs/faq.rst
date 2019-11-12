@@ -7,10 +7,10 @@ Frequently Asked Questions
 Questions on the application
 ******************************
 
-What is Rotkehlchen?
+What is Rotki?
 =======================
 
-Rotkehlchen (Rotki for short) is an opensource asset analytics, management and tax reporting application. It is focused on Crypto assets but will also slowly facilitate tracking of more traditional assets.
+Rotki is an opensource asset analytics, management and tax reporting application. It is focused on Crypto assets but will also slowly facilitate tracking of more traditional assets.
 
 Why should I use it?
 =====================
@@ -38,14 +38,14 @@ Rotki's base version will always remain opensource and free to use. It's in gith
 Questions on Premium
 *************************
 
-What is Rotkehlchen Premium?
+What is Rotki Premium?
 ================================
 
 Rotki is an opensource and free application. In order to fund development we also have a paid tier which offers more features and for which many new awesome features will be developed.
 
-If you like Rotki you can support us with a premium subscription and you not only get to fund opensource but also get extra analytics and other features in your daily usage of the app. To get a rotkehlchen subscription register in `our website <https://rotkehlchen.io/products.html>`__.
+If you like Rotki you can support us with a premium subscription and you not only get to fund opensource but also get extra analytics and other features in your daily usage of the app. To get a Rotki subscription register in `our website <https://rotki.com/products.html>`__.
 
-What does Rotkehlchen Premium offer me?
+What does Rotki Premium offer me?
 ==========================================
 
 At the moment of writting you can get:
@@ -58,7 +58,7 @@ At the moment of writting you can get:
 Why should I subscribe? What's planned for the future in Premium?
 ===========================================================================
 
-From here and on Rotkehlchen premium will be getting a lot of features. In no particular order:
+From here and on Rotki premium will be getting a lot of features. In no particular order:
 
 - More statistic and analytics on the app
 - Special overlays in the app over existing data providing more information. For example when you have broken even with an asset, if you are on the red, if you are on the green e.t.c.
@@ -72,26 +72,20 @@ Questions on Roadmap and Features
 How can I see what's planned for Rotki?
 =============================================
 
-Please take a look at the Github issues `here <https://github.com/rotkehlchenio/rotkehlchen/issues>`__. For more specific planning check the `next release <https://github.com/rotkehlchenio/rotkehlchen/projects/1>`__ github project and the `milestones <https://github.com/rotkehlchenio/rotkehlchen/milestones>`__.
+Please take a look at the Github issues `here <https://github.com/rotki/rotki/issues>`__. For more specific planning check the `next release <https://github.com/rotki/rotki/projects/1>`__ github project and the `milestones <https://github.com/rotki/rotki/milestones>`__.
 
 Why doesn't Rotki support exchange X/Y/Z or have feature X/Y/Z?
 ============================================================================
 
-Rotki is opensource software and we welcome Pull Requests. If you would really like something to be done about a feature request consider supporting us with a `premium subscription <https://rotkehlchen.io/products/>`__ and when you register give us your Github username. Your feature request will then be prioritized.
+Rotki is opensource software and we welcome Pull Requests. If you would really like something to be done about a feature request consider supporting us with a `premium subscription <https://rotki.com/products/>`__ and when you register give us your Github username. Your feature request will then be prioritized.
 
 
 Miscellaneous Questions
 ***************************
 
-What does the name Rotkehlchen mean?
-========================================
+Where does the name come from?
+=================================
 
-Rotkehlchen is the german word for the bird known in English as the `European Robin <https://en.wikipedia.org/wiki/European_robin>`__. For pronounciation check `here <https://upload.wikimedia.org/wikipedia/commons/4/42/De-Rotkehlchen2.ogg>`__.
-
-The name is long. Can I use an abbreviation?
-=============================================
-
-Sure. Use rotki. If you have any other suggestion ping us in `twitter <https://twitter.com/rotkehlchenio>`__.
-
+Rotki is an abbreviation for Rotkehlchen. That is the german word for the bird known in English as the `European Robin <https://en.wikipedia.org/wiki/European_robin>`__. For pronounciation check `here <https://upload.wikimedia.org/wikipedia/commons/4/42/De-Rotkehlchen2.ogg>`__.
 
 

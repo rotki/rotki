@@ -302,7 +302,7 @@ function load_dashboard_after_unlock(exchanges: string[], is_new_user: boolean) 
                 This way you can help us further develop the software and you can
                 also enjoy additional premium-only features.`,
                 'Upgrade',
-                function() {shell.openExternal('https://rotkehlchen.io/products/'); }
+                function() {shell.openExternal('https://rotki.com/products/'); }
             );
         }
         get_blockchain_total();

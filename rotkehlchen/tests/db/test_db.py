@@ -464,7 +464,7 @@ def test_balance_save_frequency_check(data_dir, username, accountant):
 
 def test_upgrade_sqlcipher_v3_to_v4_without_dbinfo(data_dir):
     """Test that we can upgrade from an sqlcipher v3 to v4 rotkehlchen database
-    Issue: https://github.com/rotkehlchenio/rotkehlchen/issues/229
+    Issue: https://github.com/rotki/rotki/issues/229
     """
     sqlcipher_version = detect_sqlcipher_version()
     if sqlcipher_version != 4:
