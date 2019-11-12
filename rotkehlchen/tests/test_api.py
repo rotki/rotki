@@ -58,7 +58,7 @@ def test_add_remove_blockchain_account(rotkehlchen_server):
     Test that the api call to add or remove a blockchain account correctly appends
     the accounts and properly updates the balances
 
-    Also serves as regression for issue https://github.com/rotkehlchenio/rotkehlchen/issues/66
+    Also serves as regression for issue https://github.com/rotki/rotki/issues/66
     """
     response = rotkehlchen_server.add_blockchain_account(
         'ETH',
@@ -88,7 +88,7 @@ def test_add_remove_blockchain_account(rotkehlchen_server):
 
 @pytest.mark.parametrize('number_of_accounts', [0])
 def test_add_remove_eth_tokens(rotkehlchen_server):
-    """Regression test for https://github.com/rotkehlchenio/rotkehlchen/issues/83"""
+    """Regression test for https://github.com/rotki/rotki/issues/83"""
     # Addition of tokens into the DB fires up balance checks for each account
     # we got. For that reason we give 0 accounts for this test
 
@@ -186,7 +186,7 @@ def test_logout_and_login_again(rotkehlchen_server, username):
 
     Tests that unlock works correctly and returns proper response
 
-    Also regression test for https://github.com/rotkehlchenio/rotkehlchen/issues/288
+    Also regression test for https://github.com/rotki/rotki/issues/288
     """
     rotkehlchen_server.logout()
     assert not rotkehlchen_server.rotkehlchen.user_is_logged_in

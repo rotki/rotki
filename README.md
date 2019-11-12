@@ -6,22 +6,22 @@ Rotki (long form: Rotkehlchen) is an open source asset analytics, tracking and m
 
 ## Documentation
 
-For documentation look [here](https://rotkehlchen.readthedocs.io/en/latest/)
+For documentation look [here](https://rotki.readthedocs.io/en/latest/)
 
 Some quick links to useful parts of the documentation follow below for your convenience
 
 ### Installation
 
-For a guide on how to install Rotkehlchen please see [here](https://rotkehlchen.readthedocs.io/en/latest/installation_guide.html#introduction).
+For a guide on how to install Rotki please see [here](https://rotki.readthedocs.io/en/latest/installation_guide.html#introduction).
 
 
 ### Usage
 
-For a detailed guide on how to use Rotkehlchen see [here](https://rotkehlchen.readthedocs.io/en/latest/usage_guide.html).
+For a detailed guide on how to use Rotki see [here](https://rotki.readthedocs.io/en/latest/usage_guide.html).
 
 ## Changelog
 
-Click [here](https://rotkehlchen.readthedocs.io/en/latest/changelog.html) for the latest changelog.
+Click [here](https://rotki.readthedocs.io/en/latest/changelog.html) for the latest changelog.
 
 ## Contribute
 
@@ -29,14 +29,14 @@ Rotki is an opensource project and as such any and all help is really appreciate
 
 ### Issues or code
 
-If you would like to contribute by testing the software please opene any issues you find in the github issue tracker. If you would like to contribute by code check out our open issues [here](https://github.com/rotkehlchenio/rotkehlchen/issues) and if you would like to solve any of them please contribute by opening a PR all the while following the [contributing guide](https://rotkehlchen.readthedocs.io/en/latest/contribute.html).
+If you would like to contribute by testing the software please opene any issues you find in the github issue tracker. If you would like to contribute by code check out our open issues [here](https://github.com/rotki/rotki/issues) and if you would like to solve any of them please contribute by opening a PR all the while following the [contributing guide](https://rotki.readthedocs.io/en/latest/contribute.html).
 
 ### Financially
 
 
 #### Purchase a premium subscription
 
-The best way to contribute financially and all the while help with the development of the project is to [purchase](https://rotkehlchen.io/products/) a premium subscription. We accept both crypto and fiat currencies!
+The best way to contribute financially and all the while help with the development of the project is to [purchase](https://rotki.com/products/) a premium subscription. We accept both crypto and fiat currencies!
 
 #### Github sponsor
 
@@ -47,7 +47,7 @@ You can sponsor us through Github [here](https://github.com/users/LefterisJP/spo
 For people who don't want to purchase a subscription but would still like to support the development of Rotki we also accept donations in BTC and ETH or tokens.
 
  - Send **BTC donations** to: 1PfvkW8MC7Ns2y8zn6CE2P2t5f19KF8XiW
- - Send **ETH donations** to: 0x9531c059098e3d194ff87febb587ab07b30b1306
+ - Send **ETH donations** to: `rotki.eth` (0x9531c059098e3d194ff87febb587ab07b30b1306)
 
 #### Gitcoin Grant
 

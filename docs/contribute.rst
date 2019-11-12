@@ -6,18 +6,18 @@ Rotki is an opensource project so help is really appreciated.
 Bug Reporting
 =============
 
-Use the `proper template <https://github.com/rotkehlchenio/rotkehlchen/issues/new?template=bug_report.md>`_ to create bug report issues.
+Use the `proper template <https://github.com/rotki/rotki/issues/new?template=bug_report.md>`_ to create bug report issues.
 
 Make sure to check the issue tracker for similar issues before reporting. If this is a new issue then provide a detailed description of the problem, what happened and what you were expecting to happen instead.
 
-Also provide a detailed description of your system and of the rotkehlchen version used as the issue template explains.
+Also provide a detailed description of your system and of the rotki version used as the issue template explains.
 
 Feature Requests
 ================
 
-Use the `feature request <https://github.com/rotkehlchenio/rotkehlchen/issues/new?template=feature_request.md>`_ template.
+Use the `feature request <https://github.com/rotki/rotki/issues/new?template=feature_request.md>`_ template.
 
-Describe exactly what it is that you would like to see added to rotkehlchen and why that would provide additional value.
+Describe exactly what it is that you would like to see added to rotki and why that would provide additional value.
 
 Please note that feature requests are just that. Requests. There is no guarantee that they will be worked on in the near future.
 

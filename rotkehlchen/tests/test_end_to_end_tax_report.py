@@ -582,7 +582,7 @@ def test_cryptocompare_asset_and_price_not_found_in_history_processing(accountan
     Make sure that in history processing if no price is found for a trade it's skipped
     and an error is logged. Same for price query of an unknown asset.
 
-    Regression for https://github.com/rotkehlchenio/rotkehlchen/issues/432
+    Regression for https://github.com/rotki/rotki/issues/432
     Superset test for test_cryptocompare::test_cryptocompare_histohour_query_old_ts_xcp
     When we add multiple price data sources and this test does not use cryptocompare
     the other test should be unskipped.

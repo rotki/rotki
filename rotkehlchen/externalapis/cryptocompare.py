@@ -417,7 +417,7 @@ class Cryptocompare():
         then take the USD adjusted price.
 
         This is due to incosistencies in the provided historical data from
-        cryptocompare. https://github.com/rotkehlchenio/rotkehlchen/issues/221
+        cryptocompare. https://github.com/rotki/rotki/issues/221
 
         Note: Since 12/01/2019 this seems to no longer be happening, but I will
         keep the code around just in case a regression is introduced on the side

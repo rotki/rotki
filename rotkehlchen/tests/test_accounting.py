@@ -316,7 +316,7 @@ def test_buy_event_creation(accountant):
 def test_not_include_gas_costs(accountant):
     """
     Added ignored assets here only to have a test for
-    https://github.com/rotkehlchenio/rotkehlchen/issues/399
+    https://github.com/rotki/rotki/issues/399
     """
     history = [{
         'timestamp': 1476979735,

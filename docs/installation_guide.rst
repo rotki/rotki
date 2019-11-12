@@ -18,9 +18,9 @@ Packaged Binaries
 Linux
 ==========
 
-Go to the `releases <https://github.com/rotkehlchenio/rotkehlchen/releases>`_ page and download the linux-x64 package from the `latest release <https://github.com/rotkehlchenio/rotkehlchen/releases/latest>`_.
+Go to the `releases <https://github.com/rotki/rotki/releases>`_ page and download the linux-x64 package from the `latest release <https://github.com/rotki/rotki/releases/latest>`_.
 
-Unzip it in a directory of your choice. In the root directory of the unzipped archive there is a ``rotkehlchen`` executable. Run it via the terminal to start rotkehlchen.
+Unzip it in a directory of your choice. In the root directory of the unzipped archive there is a ``rotki`` executable. Run it via the terminal to start rotki.
 
 Troubleshooting
 ------------------
@@ -30,7 +30,7 @@ If you get a problem when starting the application or during its usage please op
 OSX
 ========
 
-Go to the `releases <https://github.com/rotkehlchenio/rotkehlchen/releases>`_ page and download the darwin-x64 package from the `latest release <https://github.com/rotkehlchenio/rotkehlchen/releases/latest>`_.
+Go to the `releases <https://github.com/rotki/rotki/releases>`_ page and download the darwin-x64 package from the `latest release <https://github.com/rotki/rotki/releases/latest>`_.
 
 Click on the dmg installer and when prompted drag the Rotki logo to your Applications. This will install the application and once finished you can select Rotki from your applications folder and launch it.
 
@@ -43,9 +43,9 @@ If you get a problem when starting the application or during its usage please op
 Windows
 ==========
 
-Go to the `releases <https://github.com/rotkehlchenio/rotkehlchen/releases>`_ page and download the win32-x64 package from the `latest release <https://github.com/rotkehlchenio/rotkehlchen/releases/latest>`_.
+Go to the `releases <https://github.com/rotki/rotki/releases>`_ page and download the win32-x64 package from the `latest release <https://github.com/rotki/rotki/releases/latest>`_.
 
-Unzip it in a folder of your choice. In the root directory of the unzipped archive there is a ``rotkehlchen`` executable. Double click it to start rotkehlchen.
+Unzip it in a folder of your choice. In the root directory of the unzipped archive there is a ``rotki`` executable. Double click it to start rotki.
 
 Troubleshooting
 ---------------
@@ -78,13 +78,13 @@ Install electron and any other npm dependencies by::
 
 Create a new `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ to install all the python dependencies. If you don't have ``mkvirtualenv`` then check how to get it depending on your distribution. `Here <http://exponential.io/blog/2015/02/10/install-virtualenv-and-virtualenvwrapper-on-ubuntu/>`_ is a guide for Ubuntu and `here <https://wiki.archlinux.org/index.php/Python/Virtual_environment>`__ is one for ArchLinux::
 
-    mkvirtualenv rotkehlchen
+    mkvirtualenv rotki
 
 Then install all the python requirements by doing::
 
     pip install -r requirements.txt
 
-If you want to also have the developer requirements in order to develop rotkehlchen
+If you want to also have the developer requirements in order to develop rotki
 then do::
 
     pip install -r requirements_dev.txt
@@ -122,8 +122,8 @@ If you wish to use Conda, use the following commands:::
     $ echo "export PATH=$PATH:/usr/local/anaconda3/bin" >> ~/.bash_profile
     $ echo ". /usr/local/anaconda3/etc/profile.d/conda.sh" >> ~/.bash_profile
     $ source ~/.bash_profile
-    $ conda create python=3.7 --name rotkehlchen
-    $ conda activate rotkehlchen
+    $ conda create python=3.7 --name rotki
+    $ conda activate rotki
 
 If you wish to use Virtualenvwrapper use the following::
 
@@ -144,7 +144,7 @@ Install all the requirements:::
 
     $ sudo pip install -r requirements.txt
 
-If you want to also have the developer requirements in order to develop rotkehlchen
+If you want to also have the developer requirements in order to develop rotki
 then do:::
 
     $ pip install -r requirements_dev.txt
@@ -170,7 +170,7 @@ You can now start Rotki:::
 Windows
 ==========
 
-This is the guide on how to manually build rotkehlchen binaries in Windows from source.
+This is the guide on how to manually build rotki binaries in Windows from source.
 
 Dependencies
 -------------
@@ -221,7 +221,7 @@ Get node.js from `here <https://nodejs.org/en/download/>`__.
 Installation
 ------------
 
-Inside rotkehlchen install normally like you would in linux  ... but you got to either copy ``slqcipher.dll`` in the rotkehlchen directory or put it in the directory where windows searches for DLLs.
+Inside rotki install normally like you would in linux  ... but you got to either copy ``slqcipher.dll`` in the rotki directory or put it in the directory where windows searches for DLLs.
 
 Troubleshooting
 ---------------
@@ -251,7 +251,7 @@ Environment variable should be: ``VS140COMNTOOLS``
 Alternative dependencies with sqlciper amalgamation
 -------------------------------------------------------------
 
-This is a not so well tested way but some work has been done by cryptomental in `this <https://github.com/rotkehlchenio/rotkehlchen/issues/28>`__ issue for it. With the amalgamation you can obtain all sqlcipher dependencies precompiled and amalgamated in one big blog. But ... it's tricky, hense not so well tested.
+This is a not so well tested way but some work has been done by cryptomental in `this <https://github.com/rotki/rotki/issues/28>`__ issue for it. With the amalgamation you can obtain all sqlcipher dependencies precompiled and amalgamated in one big blog. But ... it's tricky, hense not so well tested.
 
 Read the issue for a lot of details and also the ``appveyor.yml`` for what needs to be done to build sqlcipher and keep the following in mind:
 

@@ -53,7 +53,7 @@ def test_search_buys_calculate_profit_after_year(accountant):
 def test_search_buys_calculate_profit_1_buy_consumed_by_1_sell(accountant):
     """ Assert bought_cost is correct when 1 buy is completely consumed by 1 sell
 
-    Regression test for part of https://github.com/rotkehlchenio/rotkehlchen/issues/223
+    Regression test for part of https://github.com/rotki/rotki/issues/223
     """
     asset = 'BTC'
     events = accountant.events.events
@@ -87,7 +87,7 @@ def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxable(accountant):
     """ Make sure that when 1 buy is used by 2 sells bought cost is correct
 
     Regression test for taxable part of:
-    https://github.com/rotkehlchenio/rotkehlchen/issues/223
+    https://github.com/rotki/rotki/issues/223
     """
     asset = 'BTC'
     events = accountant.events.events
@@ -139,7 +139,7 @@ def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxfree(accountant):
     """ Make sure that when 1 buy is used by 2 sells bought cost is correct
 
     Regression test for taxfree part of:
-    https://github.com/rotkehlchenio/rotkehlchen/issues/223
+    https://github.com/rotki/rotki/issues/223
     """
     asset = 'BTC'
     events = accountant.events.events
