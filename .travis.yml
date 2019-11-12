@@ -117,7 +117,7 @@ jobs:
           on:
             tags: true
             condition: $TRAVIS_OS_NAME = linux
-            repo: rotkehlchenio/rotkehlchen
+            repo: rotki/rotki
             branch: master
 
     - stage: deploy
@@ -133,7 +133,7 @@ jobs:
           on:
             tags: true
             condition: $TRAVIS_OS_NAME = osx
-            repo: rotkehlchenio/rotkehlchen
+            repo: rotki/rotki
             branch: master
 
 

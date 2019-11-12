@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Install the rotkehlchen package and pyinstaller. Needed by the pyinstaller
+# Install the rotki package and pyinstaller. Needed by the pyinstaller
 pip install -e .
 pip install pyinstaller
 
