@@ -53,7 +53,7 @@ export default class PyHandler {
     let args: string[] = [];
     this.loadArgumentsFromFile(args);
 
-    if (this.guessPackaged()) {
+    if (PyHandler.guessPackaged()) {
       this.startProcessPackaged(port, args);
     } else {
       this.startProcess(port, args);
@@ -101,11 +101,11 @@ export default class PyHandler {
     }
   }
 
-  private guessPackaged() {
-    return fs.existsSync(this.packagedBackendPath());
+  private static guessPackaged() {
+    return fs.existsSync(PyHandler.packagedBackendPath());
   }
 
-  private packagedBackendPath() {
+  private static packagedBackendPath() {
     const resources = process.resourcesPath ? process.resourcesPath : __dirname;
     return path.join(resources, PyHandler.PY_DIST_FOLDER);
   }
@@ -142,7 +142,7 @@ export default class PyHandler {
   }
 
   private startProcessPackaged(port: number, args: string[]) {
-    let dist_dir = this.packagedBackendPath();
+    let dist_dir = PyHandler.packagedBackendPath();
     let files = fs.readdirSync(dist_dir);
     if (files.length === 0) {
       this.logAndQuit('No files found in the dist directory');
@@ -224,21 +224,23 @@ export default class PyHandler {
 
       try {
         let jsondata = JSON.parse(raw_data.toString());
-        if (jsondata.hasOwnProperty('loglevel')) {
+        if (Object.prototype.hasOwnProperty.call(jsondata, 'loglevel')) {
           args.push('--loglevel', jsondata['loglevel']);
         }
-        if (jsondata.hasOwnProperty('logfromothermodules')) {
+        if (
+          Object.prototype.hasOwnProperty.call(jsondata, 'logfromothermodules')
+        ) {
           if (jsondata['logfromothermodules'] === true) {
             args.push('--logfromothermodules');
           }
         }
-        if (jsondata.hasOwnProperty('logfile')) {
+        if (Object.prototype.hasOwnProperty.call(jsondata, 'logfile')) {
           args.push('--logfile', jsondata['logfile']);
         }
-        if (jsondata.hasOwnProperty('data-dir')) {
+        if (Object.prototype.hasOwnProperty.call(jsondata, 'data-dir')) {
           args.push('--data-dir', jsondata['data-dir']);
         }
-        if (jsondata.hasOwnProperty('sleep-secs')) {
+        if (Object.prototype.hasOwnProperty.call(jsondata, 'sleep-secs')) {
           args.push('--sleep-secs', jsondata['sleep-secs']);
         }
       } catch (e) {

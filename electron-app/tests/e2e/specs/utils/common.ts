@@ -17,6 +17,7 @@ type TestEnvironment = {
 };
 
 export async function initSpectron(): Promise<TestEnvironment> {
+  // eslint-disable-next-line no-async-promise-executor
   return new Promise(async (resolve, reject) => {
     let log = '';
     let outputDir = '';

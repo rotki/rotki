@@ -15,7 +15,7 @@ import { ApiAssetBalances } from '@/typing/types';
 export function convertEthBalances(apiBalances: ApiEthBalances): EthBalances {
   const balances: EthBalances = {};
   for (const account in apiBalances) {
-    if (!apiBalances.hasOwnProperty(account)) {
+    if (!Object.prototype.hasOwnProperty.call(apiBalances, account)) {
       continue;
     }
 
@@ -41,7 +41,7 @@ export function convertEthBalances(apiBalances: ApiEthBalances): EthBalances {
 export function convertBalances(apiBalances: ApiBalances): Balances {
   const balances: Balances = {};
   for (const account in apiBalances) {
-    if (!apiBalances.hasOwnProperty(account)) {
+    if (!Object.prototype.hasOwnProperty.call(apiBalances, account)) {
       continue;
     }
     balances[account] = {
@@ -58,7 +58,7 @@ export function convertAssetBalances(
   const assets: AssetBalances = {};
 
   for (const asset in assetBalances) {
-    if (!assetBalances.hasOwnProperty(asset)) {
+    if (!Object.prototype.hasOwnProperty.call(assetBalances, asset)) {
       continue;
     }
 

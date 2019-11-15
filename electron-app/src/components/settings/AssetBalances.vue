@@ -6,9 +6,7 @@
       </v-col>
     </v-row>
     <v-data-table :headers="headers" :items="balances">
-      <template #header.usdValue>
-        {{ currency.ticker_symbol }} value
-      </template>
+      <template #header.usdValue> {{ currency.ticker_symbol }} value </template>
       <template #item.asset="{ item }">
         <span class="asset-balances__balance__asset">
           <crypto-icon

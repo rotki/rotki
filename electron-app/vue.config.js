@@ -5,8 +5,8 @@ module.exports = {
     config.module
       .rule('node')
       .test(/\.node$/)
-      .use('node-loader')
-      .loader('node-loader')
+      .use('native-ext-loader')
+      .loader('native-ext-loader')
       .end();
   },
   configureWebpack: {
@@ -32,7 +32,7 @@ module.exports = {
           icon: 'src/assets/images/rotki.icns'
         },
         win: {
-          target: ['nsis', 'portable'],
+          target: ['portable'],
           icon: 'src/assets/images/rotki.ico'
         },
         linux: {
