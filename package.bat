@@ -32,6 +32,8 @@ if %errorlevel% neq 0 (
    exit /b %errorlevel%
 )
 
+for /f %%i in ('python setup.py --version') do set ROTKEHLCHEN_VERSION=%%i
+
 Rem Use pyinstaller to package the python app
 IF EXIST build rmdir build /s /Q
 IF EXIST rotkehlchen_py_dist rmdir rotkehlchen_py_dist /s /Q
@@ -55,68 +57,18 @@ if %errorlevel% neq 0 (
    exit /b %errorlevel%
 )
 
+CD electron-app/
+
 Rem npm stuff
-IF EXIST node_modules rmdir node_modules /s /Q
-call npm config set python python2.7
 call npm ci
-call npm rebuild zeromq --runtime=electron --target=3.0.0
 if %errorlevel% neq 0 (
    echo "package.bat - ERROR - npm ci step failed"
    exit /b %errorlevel%
 )
 
-call node_modules/.bin/electron-rebuild
+call npm run electron:build
 if %errorlevel% neq 0 (
-   echo "package.bat - ERROR - electron rebuild step failed"
-   exit /b %errorlevel%
-)
-
-call npm run build
-if %errorlevel% neq 0 (
-   echo "package.bat - ERROR - npm build step failed"
-   exit /b %errorlevel%
-)
-
-call node_modules/.bin/electron-packager . --overwrite ^
-                                      --ignore="rotkehlchen$" ^
-				      --ignore="rotkehlchen.egg-info" ^
-				      --ignore="^/tools$" ^
-				      --ignore="^/docs$" ^
-				      --ignore="^/build$" ^
-				      --ignore="appveyor*" ^
-				      --ignore="^/.eggs" ^
-				      --ignore="^/.github" ^
-				      --ignore="^/.coverage" ^
-				      --ignore="^/.gitignore" ^
-				      --ignore="^/.ignore" ^
-				      --ignore=".nvmrc" ^
-				      --ignore="^/package-lock.json" ^
-				      --ignore="requirements*" ^
-				      --ignore="^/rotki_config.json" ^
-				      --ignore="^/rotkehlchen.spec" ^
-				      --ignore="setup.cfg" ^
-				      --ignore="^/stubs" ^
-				      --ignore="^/.mypy_cache" ^
-				      --ignore=".travis*" ^
-				      --ignore="tsconfig*" ^
-				      --ignore="tsfmt.json" ^
-				      --ignore="tslint.json" ^
-				      --ignore="^/.bumpversion.cfg" ^
-				      --ignore="^/.mypy_cache/" ^
-				      --ignore="^/.coveragerc" ^
-				      --ignore="^/.coverage" ^
-				      --ignore="^/.env" ^
-				      --ignore="^/README.md" ^
-				      --ignore="rotkehlchen.log" ^
-				      --ignore=".*\.sh" ^
-				      --ignore=".*\.py" ^
-				      --ignore=".*\.bat" ^
-				      --ignore="^/CONTRIBUTING.md" ^
-				      --ignore="^/Makefile" ^
-				      --icon="ui/images/rotki.ico"
-
-if %errorlevel% neq 0 (
-   echo "package.bat - ERROR - electron-packager step failed"
+   echo "ERROR - npm build step failed"
    exit /b %errorlevel%
 )
 
