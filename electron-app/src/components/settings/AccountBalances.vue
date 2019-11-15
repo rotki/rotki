@@ -17,9 +17,7 @@
       :expanded.sync="expanded"
       :show-expand="expandable"
     >
-      <template #header.usdValue>
-        {{ currency.ticker_symbol }} value
-      </template>
+      <template #header.usdValue> {{ currency.ticker_symbol }} value </template>
       <template #item.account="{ item }">
         {{ item.account }}
       </template>

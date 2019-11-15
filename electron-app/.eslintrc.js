@@ -38,6 +38,7 @@ module.exports = {
         named: 'shorthand'
       }
     ],
+    'no-unused-vars': 'off',
     '@typescript-eslint/no-unused-vars': [
       'error',
       {

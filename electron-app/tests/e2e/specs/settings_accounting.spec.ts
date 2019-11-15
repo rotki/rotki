@@ -121,9 +121,9 @@ describe('accounting settings', function() {
   it('should be able to add and remove ignored assets', async function() {
     this.retries(0);
 
-    let matchedElements = (await client.elements(
-      '#ignored_assets_selection > option'
-    )).value;
+    let matchedElements = (
+      await client.elements('#ignored_assets_selection > option')
+    ).value;
     let numberOfElements = matchedElements.length;
     expect(numberOfElements).to.be.equal(
       1,
@@ -133,9 +133,9 @@ describe('accounting settings', function() {
     await addIgnoredAsset(client, 'BSV');
     await addIgnoredAsset(client, 'GNT');
 
-    matchedElements = (await client.elements(
-      '#ignored_assets_selection > option'
-    )).value;
+    matchedElements = (
+      await client.elements('#ignored_assets_selection > option')
+    ).value;
     numberOfElements = matchedElements.length;
     expect(numberOfElements).to.be.equal(
       3,
@@ -147,9 +147,9 @@ describe('accounting settings', function() {
     await removeIgnoredAsset(client, 'GNT');
     await client.waitForExist('//option[@value="GNT"]', METHOD_TIMEOUT, true);
 
-    matchedElements = (await client.elements(
-      '#ignored_assets_selection > option'
-    )).value;
+    matchedElements = (
+      await client.elements('#ignored_assets_selection > option')
+    ).value;
     numberOfElements = matchedElements.length;
 
     expect(numberOfElements).to.be.equal(
