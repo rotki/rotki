@@ -69,9 +69,9 @@ describe('otc trades', function() {
   it('should add two OTC trades and show them on the table', async function() {
     await controller.addTrade(otcData[0]);
     await controller.addTrade(otcData[1]);
-    const matchedElements = (await client.elements(
-      '#table_otctrades > tbody > tr'
-    )).value;
+    const matchedElements = (
+      await client.elements('#table_otctrades > tbody > tr')
+    ).value;
     const numberOfElements = matchedElements.length;
     numberOfElements.should.equal(2, 'there should be two entries');
 
@@ -118,9 +118,9 @@ describe('otc trades', function() {
 
     await controller.closeSuccessDialog();
 
-    const matchedElements = (await client.elements(
-      '#table_otctrades > tbody > tr'
-    )).value;
+    const matchedElements = (
+      await client.elements('#table_otctrades > tbody > tr')
+    ).value;
     const numberOfElements = matchedElements.length;
     numberOfElements.should.equal(1, 'there should be one entry left');
   });

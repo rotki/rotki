@@ -94,19 +94,16 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     const balances = currencyBalances
       .concat(getters.totals)
       .concat(exchangeBalances)
-      .reduce(
-        (accumulator, assetBalance) => {
-          const balance = accumulator[assetBalance.asset];
-          if (!balance) {
-            accumulator[assetBalance.asset] = assetBalance;
-          } else {
-            balance.amount.plus(assetBalance.amount);
-            balance.usdValue.plus(assetBalance.usdValue);
-          }
-          return accumulator;
-        },
-        {} as { [asset: string]: AssetBalance }
-      );
+      .reduce((accumulator, assetBalance) => {
+        const balance = accumulator[assetBalance.asset];
+        if (!balance) {
+          accumulator[assetBalance.asset] = assetBalance;
+        } else {
+          balance.amount.plus(assetBalance.amount);
+          balance.usdValue.plus(assetBalance.usdValue);
+        }
+        return accumulator;
+      }, {} as { [asset: string]: AssetBalance });
     return Object.values(balances);
   },
 

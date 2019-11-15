@@ -121,7 +121,7 @@ export class TaskManager {
     // @ts-ignore
     const tasks: TaskMap = store.state.tasks.tasks;
     for (const id in tasks) {
-      if (!tasks.hasOwnProperty(id)) {
+      if (!Object.prototype.hasOwnProperty.call(tasks, id)) {
         continue;
       }
       const task = tasks[id];

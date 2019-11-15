@@ -43,7 +43,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const exchangeRates: UsdToFiatExchangeRates = {};
 
       for (const asset in rates) {
-        if (!rates.hasOwnProperty(asset)) {
+        if (!Object.prototype.hasOwnProperty.call(rates, asset)) {
           continue;
         }
 
