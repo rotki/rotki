@@ -108,7 +108,7 @@ export default class AccountManagement extends Vue {
   }
 
   upgrade() {
-    shell.openExternal('https://rotkehlchen.io/products/');
+    shell.openExternal('https://rotki.com/products/');
     this.dismiss();
   }
 

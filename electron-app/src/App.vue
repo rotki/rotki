@@ -107,7 +107,7 @@ export default class App extends Vue {
   startupError: string = '';
 
   openSite() {
-    shell.openExternal('http://rotkehlchen.io');
+    shell.openExternal('http://rotki.com');
   }
 
   dismiss() {
