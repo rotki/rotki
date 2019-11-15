@@ -23,7 +23,7 @@ export default class PyHandler {
     } else {
       this.logsPath = app.getPath('logs');
     }
-    this.ELECTRON_LOG_PATH = `${this.logsPath}rotki_electron.log`;
+    this.ELECTRON_LOG_PATH = path.join(this.logsPath, 'rotki_electron.log');
     fs.writeFileSync(
       this.ELECTRON_LOG_PATH,
       'Rotki Electron Log initialization\n'
