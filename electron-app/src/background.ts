@@ -54,7 +54,6 @@ function createWindow() {
 
   win.on('closed', async () => {
     win = null;
-    await pyHandler.exitPyProc();
   });
 
   pyHandler.createPyProc(win);
@@ -89,18 +88,22 @@ app.on('ready', async () => {
   }
   createWindow();
 });
-app.on('will-quit', async () => await pyHandler.exitPyProc());
+app.on('will-quit', async e => {
+  e.preventDefault();
+  await pyHandler.exitPyProc();
+  app.exit();
+});
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
   if (process.platform === 'win32') {
     process.on('message', data => {
       if (data === 'graceful-exit') {
-        pyHandler.exitPyProc().then(() => app.quit());
+        app.quit();
       }
     });
   } else {
     process.on('SIGTERM', () => {
-      pyHandler.exitPyProc().then(() => app.quit());
+      app.quit();
     });
   }
 }

@@ -92,18 +92,19 @@ export default class PyHandler {
 
   async exitPyProc() {
     this.logToFile('Exiting the application');
-    let client = this.childProcess;
-    if (client) {
-      client.kill();
-      this.logToFile(
-        `The Python sub-process was terminated successfully (${client.killed})`
-      );
-      this.childProcess = undefined;
-      this.port = undefined;
-    }
 
     if (process.platform === 'win32') {
       await this.terminateWindowsProcesses();
+    } else {
+      let client = this.childProcess;
+      if (client) {
+        client.kill();
+        this.logToFile(
+          `The Python sub-process was terminated successfully (${client.killed})`
+        );
+        this.childProcess = undefined;
+        this.port = undefined;
+      }
     }
   }
 
@@ -161,8 +162,8 @@ export default class PyHandler {
         `Unexpected executable name "${executable}" in the dist directory`
       );
     }
-    executable = path.join(dist_dir, executable);
     this.executable = executable;
+    executable = path.join(dist_dir, executable);
     this.childProcess = execFile(
       executable,
       ['--zerorpc-port', port.toString()].concat(args)
@@ -181,44 +182,43 @@ export default class PyHandler {
 
     this.logToFile('Starting windows process termination');
     const executable = this.executable;
+    if (!executable) {
+      this.logToFile('No python sub-process executable detected');
+      return;
+    }
 
     const tasks: tasklist.Task[] = await tasklist();
+    this.logToFile(`Currently running: ${tasks.length} tasks`);
 
-    this.logToFile(`In task list result for executable: ${executable}`);
-
-    let pidsToKill: number[] = [];
-
-    for (let i = 0; i < tasks.length; i++) {
-      if (tasks[i]['imageName'] !== executable) {
-        continue;
-      }
-
-      pidsToKill.push(tasks[i]['pid']);
-      this.logToFile(`Adding PID ${tasks[i].pid}`);
-    }
-
-    // now that we have all the pids gathered, call taskkill on them
-    this.logToFile('Calling task kill for Windows PIDs');
-
-    let args = ['/f', '/t'];
-
-    for (let i = 0; i < pidsToKill.length; i++) {
-      args.push('/PID');
-      args.push(pidsToKill[i].toString());
-    }
+    const pids = tasks
+      .filter(task => task.imageName === executable)
+      .map(task => task.pid);
     this.logToFile(
-      'Calling Task kill and args: ' + JSON.stringify(args, null, 4)
+      `Detected the following running python sub-processes: ${pids.join(', ')}`
+    );
+
+    const args = ['/f', '/t'];
+
+    for (let i = 0; i < pids.length; i++) {
+      args.push('/PID');
+      args.push(pids[i].toString());
+    }
+
+    this.logToFile(
+      `Preparing to call "taskill ${args.join(
+        ' '
+      )}" on the python sub-processes`
     );
 
     const taskKill = spawn('taskkill', args);
 
     taskKill.on('exit', () => {
-      this.logToFile('Task kill exited');
+      this.logToFile('Call to taskkill exited');
       app.exit();
     });
 
     taskKill.on('error', err => {
-      this.logToFile('Task kill failed:' + err);
+      this.logToFile(`Call to taskkill failed:\n\n ${err}`);
       app.exit();
     });
   }
