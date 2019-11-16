@@ -12,6 +12,7 @@ Changelog
   - `Kava (KAVA) <https://coinmarketcap.com/currencies/kava/>`__
   - `Medibloc (MED) <https://coinmarketcap.com/currencies/medibloc/>`__
   - `FNB Protocol (FNB) <https://coinmarketcap.com/currencies/fnb-protocol/>`__
+  - `Pledge coin (PLG) <https://coinmarketcap.com/currencies/pledge-coin/>`__
 
 
 * :release:`1.0.4 <2019-10-04>`

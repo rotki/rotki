@@ -560,6 +560,8 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # Wisepass (https://coinmarketcap.com/currencies/wisepass/)
     # is not in cryptocompare but is in paprika
     'PASS-2',
+    # PLG is pledgecoin for rotki but in cryptocompare it's pledgecamp so we skip
+    'PLG',
     # Kleros (https://coinmarketcap.com/currencies/kleros/)
     # is not in cryptocompare but is in paprika
     # Note: Cryptocompare has SteamPunk as PNK ...

@@ -6645,6 +6645,14 @@
         "symbol": "PLBT",
         "type": "ethereum token"
     },
+    "PLG": {
+        "ethereum_address": "0x85ca6710D0F1D511d130f6935eDDA88ACBD921bD",
+        "ethereum_token_decimals": 18,
+        "name": "Pledge Coin",
+        "started": 1556755200,
+        "symbol": "PLG",
+        "type": "ethereum token"
+    },
     "PLR": {
         "ethereum_address": "0xe3818504c1B32bF1557b16C238B2E01Fd3149C17",
         "ethereum_token_decimals": 18,
