@@ -8,4 +8,4 @@ flake8-tuple==0.4.0
 pep8-naming==0.8.2
 isort==4.3.4
 # Required for the ethereum related typing
-eth-utils==1.6.2
+eth-utils==1.8.0
