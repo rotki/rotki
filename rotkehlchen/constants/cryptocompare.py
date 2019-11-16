@@ -491,6 +491,9 @@ KNOWN_TO_MISS_FROM_CRYPTOCOMPARE = (
     # Jury.Online Token (https://coinmarketcap.com/currencies/jury-online-token/)
     # is not in cryptocompare but is in paprika
     'JOT',
+    # Kava (https://coinmarketcap.com/currencies/kava/)
+    # is not in cryptocompare but is in paprika
+    'KAVA',
     # KanadeCoin (https://coinmarketcap.com/currencies/kanadecoin/)
     # is not in cryptocompare but is in paprika
     'KNDC',

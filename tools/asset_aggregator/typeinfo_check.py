@@ -78,6 +78,8 @@ MANUALLY_CHECKED_TYPES = {
     'ZEUS': 'ethereum token',
     'ZIX': 'ethereum token',
     'ALGO': 'own chain',
+    # For some reason the entry for KAVA does not have a platform entry in paprika
+    'KAVA': 'own chain',
 }
 
 
