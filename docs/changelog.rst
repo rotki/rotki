@@ -13,6 +13,7 @@ Changelog
   - `Medibloc (MED) <https://coinmarketcap.com/currencies/medibloc/>`__
   - `FNB Protocol (FNB) <https://coinmarketcap.com/currencies/fnb-protocol/>`__
   - `Pledge coin (PLG) <https://coinmarketcap.com/currencies/pledge-coin/>`__
+  - `SIX Network (SIX) <https://coinmarketcap.com/currencies/six/>`__
 
 
 * :release:`1.0.4 <2019-10-04>`
