@@ -132,7 +132,7 @@ def geth_wait_and_check(ethchain_client, rpc_endpoint, random_marker):
         else:
             # inject the web3 middleware for PoA to not fail at extraData validation
             # https://github.com/ethereum/web3.py/issues/549
-            ethchain_client.web3.middleware_stack.inject(geth_poa_middleware, layer=0)
+            ethchain_client.web3.middleware_onion.inject(geth_poa_middleware, layer=0)
             jsonrpc_running = True
             block = ethchain_client.get_block_by_number(0)
             running_marker = hexlify(block['proofOfAuthorityData'])[:24].decode()
