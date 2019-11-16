@@ -6,6 +6,11 @@ Changelog
 * :bug:`534` Old external trades can now be edited/deleted properly again.
 * :bug:`527` If cryptocompare query returns an empty object Rotki client no longer crashes.
 
+* :feature:`-` Added support for the following tokens
+
+  - `ArpaChain (ARPA) <https://coinmarketcap.com/currencies/arpa-chain/>`__
+
+
 * :release:`1.0.4 <2019-10-04>`
 * :feature:`498` Users can now import data from Cointracking into Rotki. Create a CSV export from Cointracking and import it from the Import Data menu.
 * :bug:`500` Fix cryptocompare price queries for LBRY credits.
