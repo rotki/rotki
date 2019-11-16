@@ -4735,6 +4735,12 @@
         "symbol": "KAN",
         "type": "ethereum token"
     },
+    "KAVA": {
+        "name": "Kava",
+        "started": 1571980454,
+        "symbol": "KAVA",
+        "type": "own chain"
+    },
     "KDC": {
         "active": false,
         "ended": 1539129600,
