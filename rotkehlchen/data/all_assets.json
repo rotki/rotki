@@ -7622,6 +7622,12 @@
         "symbol": "SILK",
         "type": "own chain"
     },
+    "SIX": {
+        "name": "SIX",
+        "started": 1522368000,
+        "symbol": "SIX",
+        "type": "stellar token"
+    },
     "SJCX": {
         "active": false,
         "ended": 1530316800,
