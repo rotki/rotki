@@ -3497,6 +3497,14 @@
         "symbol": "FLDC",
         "type": "counterparty token"
     },
+    "FLETA": {
+        "ethereum_address": "0x7788D759F21F53533051A9AE657fA05A1E068fc6",
+        "ethereum_token_decimals": 18,
+        "name": "FLETA",
+        "started": 1555372800,
+        "symbol": "FLETA",
+        "type": "ethereum token"
+    },
     "FLIXX": {
         "ethereum_address": "0xf04a8ac553FceDB5BA99A64799155826C136b0Be",
         "ethereum_token_decimals": 18,

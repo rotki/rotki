@@ -15,6 +15,7 @@ Changelog
   - `Pledge coin (PLG) <https://coinmarketcap.com/currencies/pledge-coin/>`__
   - `SIX Network (SIX) <https://coinmarketcap.com/currencies/six/>`__
   - `W Green Pay (WGP) <https://coinmarketcap.com/currencies/w-green-pay/>`__
+  - `FLETA (FLETA) <https://coinmarketcap.com/currencies/fleta/>`__
 
 
 * :release:`1.0.4 <2019-10-04>`
