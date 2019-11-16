@@ -106,6 +106,7 @@ WORLD_TO_KRAKEN = {
     'NANO': 'NANO',
     'OMG': 'OMG',
     'SC': 'SC',
+    'PAXG': 'PAXG',
 }
 
 WORLD_TO_BINANCE = {

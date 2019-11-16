@@ -6492,6 +6492,14 @@
         "symbol": "PAX",
         "type": "ethereum token"
     },
+    "PAXG": {
+        "ethereum_address": "0x45804880De22913dAFE09f4980848ECE6EcbAf78",
+        "ethereum_token_decimals": 18,
+        "name": "PAX Gold",
+        "started": 1566777600,
+        "symbol": "PAXG",
+        "type": "ethereum token"
+    },
     "PAY": {
         "ethereum_address": "0xB97048628DB6B661D4C2aA833e95Dbe1A905B280",
         "ethereum_token_decimals": 18,

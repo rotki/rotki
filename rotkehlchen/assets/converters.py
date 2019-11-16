@@ -51,6 +51,7 @@ KRAKEN_TO_WORLD = {
     'NANO': 'NANO',
     'OMG': 'OMG',
     'SC': 'SC',
+    'PAXG': 'PAXG',
 }
 
 

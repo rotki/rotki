@@ -91,6 +91,7 @@ KRAKEN_ASSETS = (
     'NANO',
     'OMG',
     'SC',
+    'PAXG',
 )
 
 KRAKEN_DELISTED = ('XDAO', 'XXVN', 'ZKRW', 'XNMC', 'BSV', 'XICN')
