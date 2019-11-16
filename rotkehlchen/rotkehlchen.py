@@ -246,10 +246,10 @@ class Rotkehlchen():
 
     def main_loop(self) -> None:
         while self.shutdown_event.wait(MAIN_LOOP_SECS_DELAY) is not True:
-            log.debug('Main loop start')
-            self.premium_sync_manager.maybe_upload_data_to_server()
-
-            log.debug('Main loop end')
+            if self.user_is_logged_in:
+                log.debug('Main loop start')
+                self.premium_sync_manager.maybe_upload_data_to_server()
+                log.debug('Main loop end')
 
     def add_blockchain_account(
             self,

@@ -90,19 +90,18 @@ def initialize_mock_rotkehlchen_instance(
             exchange_manager=rotki.exchange_manager,
         )
         rotki.user_is_logged_in = True
+        rotki.premium_sync_manager = PremiumSyncManager(
+            data=rotki.data,
+            password=db_password,
+        )
         if start_with_valid_premium:
             rotki.premium = Premium(
                 api_key=rotkehlchen_api_key,
                 api_secret=rotkehlchen_api_secret,
             )
-            rotki.premium_sync_manager = PremiumSyncManager(
-                data=rotki.data,
-                password=db_password,
-            )
             rotki.premium_sync_manager.premium = rotki.premium
         else:
             rotki.premium = None
-            rotki.premium_sync_manager = None
 
 
 @pytest.fixture()
