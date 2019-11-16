@@ -48,6 +48,9 @@ KRAKEN_TO_WORLD = {
     'BSV': 'BSV',
     'WAVES': 'WAVES',
     'ICX': 'ICX',
+    'NANO': 'NANO',
+    'OMG': 'OMG',
+    'SC': 'SC',
 }
 
 
