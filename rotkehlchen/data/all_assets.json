@@ -508,6 +508,14 @@
         "symbol": "ARN",
         "type": "ethereum token"
     },
+    "ARPA": {
+        "ethereum_address": "0xBA50933C268F567BDC86E1aC131BE072C6B0b71a",
+        "ethereum_token_decimals": 18,
+        "name": "ARPA Chain",
+        "started": 1555891200,
+        "symbol": "ARPA",
+        "type": "ethereum token"
+    },
     "ART": {
         "ethereum_address": "0xfec0cF7fE078a500abf15F1284958F22049c2C7e",
         "ethereum_token_decimals": 18,
