@@ -199,6 +199,8 @@ WORLD_TO_CRYPTOCOMPARE = {
     'MAN': 'MXAI',
     # For Rotkehlchen MDT is Measurable Data Token but in cryptocompare it's MSDT
     'MDT': 'MSDT',
+    # For Rotki MED is Medibloc but in cryptocompare it's MEDIB
+    'MED': 'MEDIB',
     # For Rotkehlchen MNT is Media Network Token but in cryptocompare it's MNT*
     'MNT': 'MNT*',
     # For Rotkehlchen MRP is MoneyReel but in cryptocompare it's MNRB

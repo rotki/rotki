@@ -5370,6 +5370,12 @@
         "symbol": "MEC",
         "type": "own chain"
     },
+    "MED": {
+        "name": "MediBloc",
+        "started": 1508284800,
+        "symbol": "MED",
+        "type": "qtum token"
+    },
     "MEDX": {
         "ethereum_address": "0xfd1e80508F243E64CE234eA88A5Fd2827c71D4b7",
         "ethereum_token_decimals": 8,
