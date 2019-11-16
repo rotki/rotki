@@ -1,22 +1,31 @@
 // vue.config.js
 module.exports = {
   chainWebpack: config => {
-    // GraphQL Loader
-    config.module
-      .rule('node')
-      .test(/\.node$/)
-      .use('native-ext-loader')
-      .loader('native-ext-loader')
-      .end();
+    if (process.env.NODE_ENV === 'production') {
+      config.module
+        .rule('node')
+        .test(/\.node$/)
+        .use('native-ext-loader')
+        .loader('native-ext-loader')
+        .end();
+    } else {
+      config.module
+        .rule('node')
+        .test(/\.node$/)
+        .use('node-loader')
+        .loader('node-loader')
+        .end();
+    }
   },
   configureWebpack: {
     devtool: 'source-map'
   },
   pluginOptions: {
     electronBuilder: {
+      externals: ['zeromq'],
       outputDir: 'dist',
       builderOptions: {
-        appId: 'io.rotkehlchen',
+        appId: 'com.rotki',
         buildVersion: process.env.ROTKEHLCHEN_VERSION,
         artifactName:
           '${productName}-${platform}_${arch}-${buildVersion}.${ext}',
