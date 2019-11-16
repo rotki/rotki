@@ -400,6 +400,7 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'USDSB',  # https://www.binance.com/en/support/articles/360029522132
     'BGBP',  # https://www.binance.com/en/support/articles/360030827252
     'TUSDB',  # https://www.binance.com/en/support/articles/360032154071
+    'NGN',  # https://www.binance.com/en/support/articles/360035511611
     '123',  # https://twitter.com/rotkiapp/status/1161977327078838272
     '456',  # https://twitter.com/rotkiapp/status/1161977327078838272
 )
