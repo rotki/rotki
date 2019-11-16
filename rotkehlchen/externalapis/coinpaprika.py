@@ -364,6 +364,8 @@ WORLD_TO_PAPRIKA_ID = {
     # For Rotkehlchen PLA is Plair and PLA-2 is Playchip
     'PLA': 'pla-plair',
     'PLA-2': 'pla-playchip',
+    # For Rotkehlchen PLG is Pledgecoin
+    'PLG': 'plg-pledge-coin',
     # For Rotkehlchen POP is PopularCoin, and POP-2 is POP Chest Token
     'POP': 'pop-popularcoin',
     'POP-2': 'pop-pop-chest-token',
