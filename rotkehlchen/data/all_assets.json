@@ -3559,6 +3559,14 @@
         "symbol": "FMF",
         "type": "ethereum token"
     },
+    "FNB": {
+        "ethereum_address": "0x47b28F365Bf4CB38DB4B6356864BDE7bc4B35129",
+        "ethereum_token_decimals": 18,
+        "name": "FNB Protocol",
+        "started": 1542758400,
+        "symbol": "FNB",
+        "type": "ethereum token"
+    },
     "FND": {
         "ethereum_address": "0x4DF47B4969B2911C966506E3592c41389493953b",
         "ethereum_token_decimals": 18,

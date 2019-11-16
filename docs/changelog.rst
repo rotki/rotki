@@ -11,6 +11,7 @@ Changelog
   - `ArpaChain (ARPA) <https://coinmarketcap.com/currencies/arpa-chain/>`__
   - `Kava (KAVA) <https://coinmarketcap.com/currencies/kava/>`__
   - `Medibloc (MED) <https://coinmarketcap.com/currencies/medibloc/>`__
+  - `FNB Protocol (FNB) <https://coinmarketcap.com/currencies/fnb-protocol/>`__
 
 
 * :release:`1.0.4 <2019-10-04>`
