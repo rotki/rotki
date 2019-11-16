@@ -390,6 +390,9 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # Tether CNH. As of 30/09/2019 no data found outside of Bittrex for this token
     # https://medium.com/bittrex/new-bittrex-international-listing-tether-cnh-cnht-c9ad966ac303
     'CNHT',
+    # APM Coin. As of 16/11/2019 no data found outside of Bittrex for this token
+    # https://global.bittrex.com/Market/Index?MarketName=BTC-APM
+    'APM',
 )
 
 
