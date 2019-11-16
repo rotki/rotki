@@ -9195,6 +9195,14 @@
         "symbol": "WETH",
         "type": "ethereum token"
     },
+    "WGP": {
+        "ethereum_address": "0xdD94842C15abfe4c9bAFE4222adE02896Beb064c",
+        "ethereum_token_decimals": 18,
+        "name": "W Green Pay",
+        "started": 1551830400,
+        "symbol": "WGP",
+        "type": "ethereum token"
+    },
     "WHEN": {
         "ethereum_address": "0xF4FE95603881D0e07954fD7605E0e9a916e42C44",
         "ethereum_token_decimals": 18,
