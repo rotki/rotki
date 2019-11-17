@@ -227,7 +227,8 @@ function unlock_user(
                     settings.user_logged = true;
                     settings.has_premium = response.premium;
                     if (db_settings.premium_should_sync) {
-                        settings.premium_should_sync = db_settings.premium_should_sync;
+                        settings.
+                            premium_should_sync = db_settings.premium_should_sync;
                     } else {
                         settings.premium_should_sync = false;
                     }
@@ -258,6 +259,7 @@ function unlock_user(
                         settings.last_balance_save = db_settings.last_balance_save;
                         settings.anonymized_logs = db_settings.anonymized_logs;
                         settings.date_display_format = db_settings.date_display_format;
+                        settings.submit_usage_analytics = db_settings.submit_usage_analytics;
 
                         const is_new_user = create_true && api_key === '';
                         const exchanges = response.exchanges;

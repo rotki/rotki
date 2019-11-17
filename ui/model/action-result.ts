@@ -15,6 +15,7 @@ export interface DBSettings {
     readonly version: number;
     readonly last_write_ts: number;
     readonly premium_should_sync?: boolean;
+    readonly submit_usage_analytics: boolean;
     readonly include_crypto2crypto: boolean;
     readonly include_gas_costs: boolean;
     readonly last_data_upload_ts: number;

@@ -18,6 +18,7 @@ DEFAULT_UI_FLOATING_PRECISION = 2
 DEFAULT_BALANCE_SAVE_FREQUENCY = 24
 DEFAULT_MAIN_CURRENCY = S_USD
 DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z'
+DEFAULT_SUBMIT_USAGE_ANALYTICS = True
 
 
 class DBSettings(NamedTuple):
@@ -36,6 +37,7 @@ class DBSettings(NamedTuple):
     main_currency: FiatAsset = DEFAULT_MAIN_CURRENCY
     date_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
     last_balance_save: Timestamp = Timestamp(0)
+    submit_usage_analytics: bool = DEFAULT_SUBMIT_USAGE_ANALYTICS
 
 
 def read_boolean(value: Union[str, bool]) -> bool:
@@ -85,6 +87,8 @@ def db_settings_from_dict(
             specified_args[key] = Timestamp(int(value))
         elif key == 'last_balance_save':
             specified_args[key] = Timestamp(int(value))
+        elif key == 'submit_usage_analytics':
+            specified_args[key] = read_boolean(value)
         else:
             msg_aggregator.add_warning(
                 f'Unknown DB setting {key} given. Ignoring it. Should not '

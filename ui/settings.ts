@@ -27,6 +27,7 @@ export class Settings {
     taxfree_after_period = 0;
     anonymized_logs = false;
     date_display_format = Settings.DEFAULT_DISPLAY_FORMAT;
+    submit_usage_analytics = true;
     private exchanges = ['kraken', 'poloniex', 'bittrex', 'bitmex', 'binance', 'coinbase'];
     private currencies = [
         new Currency('United States Dollar', 'fa-usd', 'USD', '$'),
@@ -63,6 +64,7 @@ export class Settings {
         this.anonymized_logs = false;
         this.connected_exchanges = [];
         this.date_display_format = Settings.DEFAULT_DISPLAY_FORMAT;
+        this.submit_usage_analytics = false;
     }
 
     get EXCHANGES(): string[] {
@@ -153,6 +155,7 @@ export function add_settings_listeners() {
         }
 
         const anonymized_logs = $('#anonymized_logs_input').is(':checked');
+        const submit_usage_analytics = $('#submit_usage_analytics').is(':checked');
         const eth_rpc_endpoint = $('#eth_rpc_endpoint').val() as string;
 
         const balance_save_frequency = $('#balance_save_frequency').val();
@@ -166,6 +169,7 @@ export function add_settings_listeners() {
             'eth_rpc_endpoint': eth_rpc_endpoint,
             'balance_save_frequency': balance_save_frequency,
             'anonymized_logs': anonymized_logs,
+            'submit_usage_analytics': submit_usage_analytics,
             'date_display_format': date_display_format
         };
         // and now send the data to the python process
@@ -194,6 +198,7 @@ export function create_settings_ui() {
 
     str = form_entry('Floating Precision', 'floating_precision', settings.floating_precision.toString(), '', 'number');
     str += form_checkbox('anonymized_logs_input', 'Should logs by anonymized?', settings.anonymized_logs);
+    str += form_checkbox('submit_usage_analytics', 'Should anonymous usage analytics be submitted?', settings.submit_usage_analytics);
     str += form_entry('Date from when to count historical data', 'historical_data_start', settings.historical_data_start);
     str += form_select(
         'Select Main Currency',
