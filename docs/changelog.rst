@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`541` If the user allows anonymous usage analytics are submitted to a server for analysis of the application's active users.
 * :feature:`-` Rebranding Rotkehlchen to Rotki inside the application. All website and api links should now target rotki.com
 * :bug:`534` Old external trades can now be edited/deleted properly again.
 * :bug:`527` If cryptocompare query returns an empty object Rotki client no longer crashes.
