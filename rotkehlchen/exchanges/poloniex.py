@@ -368,7 +368,7 @@ class Poloniex(ExchangeInterface):
         ...
 
     @overload  # noqa: F811
-    def return_trade_history(  # pylint: disable=unused-argument, no-self-use
+    def return_trade_history(   # noqa: F811  # pylint: disable=unused-argument, no-self-use
             self,
             currency_pair: Union[TradePair, str],
             start: Timestamp,

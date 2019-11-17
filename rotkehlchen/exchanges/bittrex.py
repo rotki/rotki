@@ -201,7 +201,7 @@ class Bittrex(ExchangeInterface):
         ...
 
     @overload  # noqa: F811
-    def api_query(  # pylint: disable=unused-argument, no-self-use
+    def api_query(  # noqa: F811  # pylint: disable=unused-argument, no-self-use
             self,
             method: Literal['getbalance'],
             options: Optional[Dict[str, Any]] = None,
@@ -209,7 +209,7 @@ class Bittrex(ExchangeInterface):
         ...
 
     @overload  # noqa: F811
-    def api_query(  # pylint: disable=unused-argument, no-self-use
+    def api_query(   # noqa: F811  # pylint: disable=unused-argument, no-self-use
             self,
             method: str,
             options: Optional[Dict[str, Any]] = None,
