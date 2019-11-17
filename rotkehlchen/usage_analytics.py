@@ -1,3 +1,4 @@
+import logging
 import platform
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
@@ -12,6 +13,9 @@ from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 # A "best" geolocation API list: https://rapidapi.com/blog/ip-geolocation-api/
 
 LOCATION_DATA_QUERY_TIMEOUT = 5
+
+
+log = logging.getLogger(__name__)
 
 
 class GeolocationData(NamedTuple):
@@ -136,9 +140,18 @@ def create_usage_analytics() -> Dict[str, Any]:
     return analytics
 
 
-def maybe_submit_usage_analytics(settings: DBSettings) -> None:
-    if settings.submit_usage_analytics is False:
-        return
+def maybe_submit_usage_analytics(should_submit: bool) -> None:
+    if should_submit is False:
+        return None
 
     analytics = create_usage_analytics()
-    # TODO: Submit usage analytics here
+    try:
+        response = requests.put('https://rotki.com/api/1/usage_analytics', json=analytics)
+    except requests.ConnectionError:
+        return None
+
+    if response.status_code == HTTPStatus.NO_CONTENT:
+        # Succesfully submitted
+        log.info('Submitted usage analytics')
+
+    return None

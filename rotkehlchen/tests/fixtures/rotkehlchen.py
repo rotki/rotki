@@ -103,6 +103,8 @@ def initialize_mock_rotkehlchen_instance(
         else:
             rotki.premium = None
 
+        # DO not submit usage analytics during tests
+
 
 @pytest.fixture()
 def uninitialized_rotkehlchen(cli_args):
