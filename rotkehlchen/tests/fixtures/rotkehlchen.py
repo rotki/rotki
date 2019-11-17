@@ -76,6 +76,8 @@ def initialize_mock_rotkehlchen_instance(
         # Unlock must come after we have set the aggregator if we are to get the
         # messages caused by DB initialization
         rotki.data.unlock(username, db_password, create_new=True)
+        # DO not submit usage analytics during tests
+        rotki.data.db.set_settings({'submit_usage_analytics': False})
         rotki.data_importer = DataImporter(db=rotki.data.db)
         rotki.password = db_password
         # Remember accountant fixture has a mocked accounting data dir
@@ -102,8 +104,6 @@ def initialize_mock_rotkehlchen_instance(
             rotki.premium_sync_manager.premium = rotki.premium
         else:
             rotki.premium = None
-
-        # DO not submit usage analytics during tests
 
 
 @pytest.fixture()
