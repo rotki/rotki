@@ -6,8 +6,7 @@ from typing import Any, Dict, NamedTuple, Optional
 
 import requests
 
-from rotkehlchen.db.settings import DBSettings
-from rotkehlchen.utils.misc import get_system_spec, ts_now
+from rotkehlchen.utils.misc import get_system_spec
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 # A "best" geolocation API list: https://rapidapi.com/blog/ip-geolocation-api/
