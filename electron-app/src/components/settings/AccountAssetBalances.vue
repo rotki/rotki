@@ -31,17 +31,20 @@ import { AssetBalances } from '@/model/blockchain-balances';
 import { createNamespacedHelpers } from 'vuex';
 
 const { mapGetters } = createNamespacedHelpers('balances');
+const { mapGetters: mapSessionGetters } = createNamespacedHelpers('session');
 
 @Component({
   components: { CryptoIcon },
   computed: {
-    ...mapGetters(['accountTokens'])
+    ...mapGetters(['accountTokens']),
+    ...mapSessionGetters(['floatingPrecision'])
   }
 })
 export default class AccountAssetBalances extends Vue {
   @Prop({ required: true })
   account!: string;
   accountTokens!: (account: string) => AssetBalances[];
+  floatingPrecision!: number;
 
   headers = [
     { text: 'Asset', value: 'asset' },
