@@ -39,6 +39,7 @@ from rotkehlchen.typing import (
     SupportedBlockchain,
     Timestamp,
 )
+from rotkehlchen.usage_analytics import maybe_submit_usage_analytics
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
     combine_stat_dicts,
@@ -151,6 +152,7 @@ class Rotkehlchen():
             pass
 
         settings = self.data.db.get_settings()
+        maybe_submit_usage_analytics(settings.submit_usage_analytics)
         historical_data_start = settings.historical_data_start
         eth_rpc_endpoint = settings.eth_rpc_endpoint
         self.trades_historian = TradesHistorian(
