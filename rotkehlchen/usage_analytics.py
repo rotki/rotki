@@ -124,7 +124,6 @@ def retrieve_location_data() -> Optional[GeolocationData]:
 def create_usage_analytics() -> Dict[str, Any]:
     analytics = dict()
 
-    analytics['timestamp'] = ts_now()
     analytics['system_os'] = platform.system()
     analytics['system_release'] = platform.release()
     analytics['system_version'] = platform.version()
