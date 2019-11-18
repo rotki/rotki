@@ -271,7 +271,6 @@ BINANCE_MYTRADES_RESPONSE = """
 def test_binance_query_trade_history(function_scope_binance):
     """Test that turning a binance trade as returned by the server to our format works"""
     binance = function_scope_binance
-    binance.cache_ttl_secs = 0
 
     def mock_my_trades(url):  # pylint: disable=unused-argument
         if 'symbol=BNBBTC' in url:
@@ -459,7 +458,6 @@ BINANCE_WITHDRAWALS_HISTORY_RESPONSE = """{
 def test_binance_query_deposits_withdrawals(function_scope_binance):
     """Test the happy case of binance deposit withdrawal query"""
     binance = function_scope_binance
-    binance.cache_ttl_secs = 0
 
     def mock_get_deposit_withdrawal(url):  # pylint: disable=unused-argument
         if 'deposit' in url:
@@ -515,7 +513,6 @@ def test_binance_query_deposits_withdrawals(function_scope_binance):
 def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binance):
     """Test that we handle unexpected deposit withdrawal query data gracefully"""
     binance = function_scope_binance
-    binance.cache_ttl_secs = 0
 
     def mock_binance_and_query(deposits, withdrawals, expected_warnings_num, expected_errors_num):
 
