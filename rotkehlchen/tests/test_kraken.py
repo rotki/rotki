@@ -132,7 +132,6 @@ def test_kraken_query_deposit_withdrawals_unexpected_data(function_scope_kraken)
     """Test if a kraken deposits_withdrawals query returns invalid data we handle it gracefully"""
     kraken = function_scope_kraken
     kraken.random_ledgers_data = False
-    kraken.cache_ttl_secs = 0
 
     test_deposits = """{
     "ledger": {

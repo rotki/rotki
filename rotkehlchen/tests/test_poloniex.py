@@ -213,7 +213,6 @@ def test_poloniex_trade_with_asset_needing_conversion():
 def test_query_trade_history(function_scope_poloniex):
     """Happy path test for poloniex trade history querying"""
     poloniex = function_scope_poloniex
-    poloniex.cache_ttl_secs = 0
 
     def mock_api_return(url, req):  # pylint: disable=unused-argument
         contents = """{ "BTC_BCH":

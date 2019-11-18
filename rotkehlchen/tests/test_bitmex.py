@@ -107,7 +107,6 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(test_bitmex):
 
 def test_bitmex_api_withdrawals_deposit_unexpected_data(test_bitmex):
     """Test getting unexpected data in bitmex withdrawals deposit query is handled gracefully"""
-    test_bitmex.cache_ttl_secs = 0
 
     original_input = """[{
 "transactID": "b6c6fd2c-4d0c-b101-a41c-fa5aa1ce7ef1", "account": 126541, "currency": "XBt",

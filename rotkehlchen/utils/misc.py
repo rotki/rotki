@@ -95,25 +95,34 @@ def cache_response_timewise() -> Callable:
     """
     def _cache_response_timewise(f: Callable):
         @wraps(f)
-        def wrapper(wrappingobj, *args):
+        def wrapper(wrappingobj, *args, **kwargs):
+            cache_key = f.__name__
+            for arg in args:
+                cache_key += str(arg)
+            for _, value in kwargs.items():
+                cache_key += str(value)
+            # TODO: Do I really need hash() here?
+            cache_key = hash(cache_key)
+
             with wrappingobj.lock:
                 now = ts_now()
-                if f.__name__ in wrappingobj.results_cache:
-                    cache_life_secs = now - wrappingobj.results_cache[f.__name__].timestamp
+                if cache_key in wrappingobj.results_cache:
+                    cache_life_secs = now - wrappingobj.results_cache[cache_key].timestamp
+
                 cache_miss = (
-                    f.__name__ not in wrappingobj.results_cache or
+                    cache_key not in wrappingobj.results_cache or
                     cache_life_secs >= wrappingobj.cache_ttl_secs
                 )
 
             if cache_miss:
-                result = f(wrappingobj, *args)
+                result = f(wrappingobj, *args, **kwargs)
                 with wrappingobj.lock:
-                    wrappingobj.results_cache[f.__name__] = ResultCache(result, now)
+                    wrappingobj.results_cache[cache_key] = ResultCache(result, now)
                 return result
 
             # else hit the cache
             with wrappingobj.lock:
-                return wrappingobj.results_cache[f.__name__].result
+                return wrappingobj.results_cache[cache_key].result
 
         return wrapper
     return _cache_response_timewise

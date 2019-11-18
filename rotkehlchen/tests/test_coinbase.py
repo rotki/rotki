@@ -649,7 +649,6 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
 def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
     """Test that coinbase deposit/withdrawals history query works fine for the happy path"""
     coinbase = function_scope_coinbase
-    coinbase.cache_ttl_secs = 0
 
     with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
         movements = coinbase.query_online_deposits_withdrawals(
@@ -713,7 +712,6 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
 def test_coinbase_query_deposit_withdrawals_unexpected_data(function_scope_coinbase):
     """Test that coinbase deposit/withdrawals query handles unexpected data properly"""
     coinbase = function_scope_coinbase
-    coinbase.cache_ttl_secs = 0
 
     # first query with proper data and expect no errors
     query_coinbase_and_test(

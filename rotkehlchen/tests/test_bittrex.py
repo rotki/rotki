@@ -148,8 +148,6 @@ BITTREX_ORDER_HISTORY_RESPONSE = """
 
 def test_bittrex_query_trade_history(bittrex):
     """Test that turning a bittrex trade to our format works"""
-    # turn caching off
-    bittrex.cache_ttl_secs = 0
 
     def mock_order_history(url):  # pylint: disable=unused-argument
         response = MockResponse(200, BITTREX_ORDER_HISTORY_RESPONSE)
@@ -340,8 +338,6 @@ BITTREX_WITHDRAWAL_HISTORY_RESPONSE = """
 
 def test_bittrex_query_deposits_withdrawals(bittrex):
     """Test the happy case of bittrex deposit withdrawal query"""
-    # turn caching off
-    bittrex.cache_ttl_secs = 0
 
     def mock_get_deposit_withdrawal(url):  # pylint: disable=unused-argument
         if 'deposit' in url:
@@ -409,8 +405,6 @@ def test_bittrex_query_deposits_withdrawals(bittrex):
 
 def test_bittrex_query_deposits_withdrawals_unexpected_data(bittrex):
     """Test that we handle unexpected bittrex deposit withdrawal data gracefully"""
-    # turn caching off
-    bittrex.cache_ttl_secs = 0
 
     def mock_bittrex_and_query(deposits, withdrawals, expected_warnings_num, expected_errors_num):
 
