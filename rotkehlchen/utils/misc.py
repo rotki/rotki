@@ -210,12 +210,6 @@ def retry_calls(
             result = function(**kwargs)
 
             if handle_429:
-                if not isinstance(result, Response):
-                    raise AssertionError(
-                        'At retry calls with handle_429 got a non Response object '
-                        'as a result. Should never happen',
-                    )
-
                 if result.status_code == HTTPStatus.TOO_MANY_REQUESTS and tries != 0:
                     gevent.sleep(backoff_in_seconds)
                     continue

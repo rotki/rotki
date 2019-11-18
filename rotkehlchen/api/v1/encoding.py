@@ -496,7 +496,7 @@ class ExchangeTradesQuerySchema(BaseSchema):
 
 
 class BlockchainBalanceQuerySchema(BaseSchema):
-    name = fields.String(missing='all')
+    blockchain = BlockchainField(missing=None)
     async_query = fields.Boolean(missing=False)
 
     class Meta:

@@ -65,7 +65,7 @@ URLS_V1: URLS = [
     ('/exchanges/trades/<string:name>', ExchangeTradesResource, 'named_exchanges_trades_resource'),
     ('/balances/blockchains', BlockchainBalancesResource),
     (
-        '/balances/blockchains/<string:name>',
+        '/balances/blockchains/<string:blockchain>',
         BlockchainBalancesResource,
         'named_blockchain_balances_resource',
     ),
