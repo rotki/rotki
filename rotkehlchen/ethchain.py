@@ -210,6 +210,7 @@ class Ethchain():
                     sensitive_log=True,
                     eth_accounts=account_slice,
                 )
+
                 eth_resp = request_get_dict(
                     'https://api.etherscan.io/api?module=account&action=balancemulti&address=%s' %
                     ','.join(account_slice),

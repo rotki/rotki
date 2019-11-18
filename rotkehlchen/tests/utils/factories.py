@@ -33,5 +33,18 @@ def make_api_key() -> ApiKey:
     return ApiKey(make_random_b64bytes(128).decode())
 
 
+<<<<<<< HEAD
 def make_api_secret() -> ApiSecret:
     return ApiSecret(base64.b64encode(make_random_b64bytes(128)))
+=======
+def make_api_secret():
+    return base64.b64encode(make_random_b64bytes(128))
+
+
+def make_ethereum_address():
+    return '0x' + make_random_bytes(20).hex()
+
+
+UNIT_BTC_ADDRESS1 = '1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2'
+UNIT_BTC_ADDRESS2 = '1CounterpartyXXXXXXXXXXXXXXXUWLpVr'
+>>>>>>> Add tests for REST API endpoint query blockchain balances happy case
