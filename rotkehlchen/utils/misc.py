@@ -14,7 +14,6 @@ from typing import Any, Callable, Dict, List, Union
 import gevent
 import requests
 from gevent.lock import Semaphore
-from requests import Response
 from rlp.sedes import big_endian_int
 
 from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, CACHE_RESPONSE_FOR_SECS, ZERO
