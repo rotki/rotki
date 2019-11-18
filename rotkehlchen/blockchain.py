@@ -111,7 +111,7 @@ class Blockchain(CacheableObject):
         if not should_query_eth:
             per_account.pop(A_ETH, None)
             # only keep BTC, remove ETH and any tokens that may be in the result
-            totals = {'BTC': totals['BTC']}
+            totals = {A_BTC: totals[A_BTC]}
         if not should_query_btc:
             per_account.pop(A_BTC, None)
             totals.pop(A_BTC, None)
