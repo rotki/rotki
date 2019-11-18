@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`543` User will not get unexpected balance results in the same Rotki run due to same cache being used for different arguments.
 * :feature:`541` If the user allows anonymous usage analytics are submitted to a server for analysis of the application's active users.
 * :feature:`-` Rebranding Rotkehlchen to Rotki inside the application. All website and api links should now target rotki.com
 * :bug:`534` Old external trades can now be edited/deleted properly again.
