@@ -190,7 +190,7 @@ class RestAPI():
             result = {
                 'error': str(greenlet.exception),
             }
-            self.write_task_result(greenlet.task_id, result)
+            self._write_task_result(task_id, result)
 
     def _do_query_async(self, command: str, task_id: int, **kwargs) -> None:
         result = getattr(self, command)(**kwargs)
