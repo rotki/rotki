@@ -416,15 +416,22 @@ class RestAPI():
         result = process_result_list(trades) if name else process_result(trades)  # type: ignore
         return api_response(_wrap_in_ok_result(result), HTTPStatus.OK)
 
-    def _query_blockchain_balances(self, name: str) -> Tuple[Optional[Dict[str, Dict]], str]:
-        return self.rotkehlchen.blockchain.query_balances(name=name)
+    def _query_blockchain_balances(
+            self,
+            blockchain: Optional[SupportedBlockchain],
+    ) -> Tuple[Optional[Dict[str, Dict]], str]:
+        return self.rotkehlchen.blockchain.query_balances(blockchain=blockchain)
 
     @require_loggedin_user()
-    def query_blockchain_balances(self, name: str, async_query: bool) -> Response:
+    def query_blockchain_balances(
+            self,
+            blockchain: Optional[SupportedBlockchain],
+            async_query: bool,
+    ) -> Response:
         if async_query:
-            return self._query_async(command='_query_blockchain_balances', name=name)
+            return self._query_async(command='_query_blockchain_balances', blockchain=blockchain)
 
-        balances, msg = self._query_blockchain_balances(name=name)
+        balances, msg = self._query_blockchain_balances(blockchain=blockchain)
         if balances is None:
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 

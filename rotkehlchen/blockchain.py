@@ -22,7 +22,12 @@ from rotkehlchen.typing import (
     SupportedBlockchain,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import CacheableObject, cache_response_timewise, request_get_direct
+from rotkehlchen.utils.misc import (
+    CacheableObject,
+    cache_response_timewise,
+    request_get_direct,
+    satoshis_to_btc,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.ethchain import Ethchain
@@ -77,11 +82,14 @@ class Blockchain(CacheableObject):
         return self.owned_eth_tokens
 
     @cache_response_timewise()
-    def query_balances(self, blockchain_name: str) -> Tuple[Optional[Dict[str, Dict]], str]:
-        if blockchain_name not in ('all', 'eth', 'btc'):
-            return None, f'unsupported blockchain {blockchain_name} queried'
+    def query_balances(
+            self,
+            blockchain: Optional[SupportedBlockchain],
+    ) -> Tuple[Optional[Dict[str, Dict]], str]:
+        should_query_eth = not blockchain or blockchain == SupportedBlockchain.ETHEREUM
+        should_query_btc = not blockchain or blockchain == SupportedBlockchain.BITCOIN
 
-        if blockchain_name in ('eth', 'all'):
+        if should_query_eth:
             try:
                 self.query_ethereum_balances()
             except BadFunctionCallOutput as e:
@@ -95,15 +103,16 @@ class Blockchain(CacheableObject):
                 )
                 return None, msg
 
-        if blockchain_name in ('btc', 'all'):
+        if not blockchain or blockchain == SupportedBlockchain.BITCOIN:
             self.query_btc_balances()
 
         per_account = deepcopy(self.balances)
         totals = deepcopy(self.totals)
-        if blockchain_name not in ('eth', 'all'):
+        if not should_query_eth:
             per_account.pop(A_ETH, None)
-            totals.pop(A_ETH, None)
-        if blockchain_name not in ('btc', 'all'):
+            # only keep BTC, remove ETH and any tokens that may be in the result
+            totals = {'BTC': totals['BTC']}
+        if not should_query_btc:
             per_account.pop(A_BTC, None)
             totals.pop(A_BTC, None)
 
@@ -118,10 +127,11 @@ class Blockchain(CacheableObject):
             # https://blockchain.info/q
             backoff_in_seconds=10,
         )
+
         # TODO: Move this validation into our own code and before the balance query
         if btc_resp in ('Checksum does not validate', 'Input too short'):
             raise InputError(f'The given string {account} is not a valid BTC address')
-        return FVal(btc_resp) * FVal('0.00000001')  # result is in satoshis
+        return satoshis_to_btc(FVal(btc_resp))  # result is in satoshis
 
     def query_btc_balances(self) -> None:
         if len(self.accounts.btc) == 0:

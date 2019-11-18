@@ -5,6 +5,7 @@ from typing import List
 import pytest
 from eth_utils.address import to_checksum_address
 
+from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.blockchain import Blockchain
 from rotkehlchen.crypto import address_encoder, privatekey_to_address, sha3
@@ -12,7 +13,7 @@ from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.tests.utils.blockchain import geth_create_blockchain
 from rotkehlchen.tests.utils.tests import cleanup_tasks
-from rotkehlchen.typing import ChecksumEthAddress, EthTokenInfo
+from rotkehlchen.typing import BTCAddress, ChecksumEthAddress, EthTokenInfo
 
 
 @pytest.fixture(scope='session')
@@ -58,8 +59,16 @@ def ethereum_accounts(private_keys) -> List[ChecksumEthAddress]:
 
 
 @pytest.fixture
-def blockchain_accounts(ethereum_accounts: List[ChecksumEthAddress]) -> BlockchainAccounts:
-    return BlockchainAccounts(eth=ethereum_accounts, btc=[])
+def btc_accounts() -> List[BTCAddress]:
+    return []
+
+
+@pytest.fixture
+def blockchain_accounts(
+        ethereum_accounts: List[ChecksumEthAddress],
+        btc_accounts: List[BTCAddress],
+) -> BlockchainAccounts:
+    return BlockchainAccounts(eth=ethereum_accounts, btc=btc_accounts)
 
 
 @pytest.fixture
@@ -161,16 +170,22 @@ def blockchain_backend(
 
 
 @pytest.fixture
+def owned_eth_tokens() -> List[EthereumToken]:
+    return []
+
+
+@pytest.fixture
 def blockchain(
         blockchain_backend,  # pylint: disable=unused-argument
         ethchain_client,
         blockchain_accounts,
         inquirer,  # pylint: disable=unused-argument
         messages_aggregator,
+        owned_eth_tokens,
 ):
     return Blockchain(
         blockchain_accounts=blockchain_accounts,
-        owned_eth_tokens=[],
+        owned_eth_tokens=owned_eth_tokens,
         ethchain=ethchain_client,
         msg_aggregator=messages_aggregator,
     )

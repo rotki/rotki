@@ -173,9 +173,12 @@ class BlockchainBalancesResource(BaseResource):
 
     get_schema = BlockchainBalanceQuerySchema()
 
-    @use_kwargs(get_schema, locations=('json',))
-    def get(self, name: str, async_query: bool) -> Response:
-        return self.rest_api.query_blockchain_balances(name=name, async_query=async_query)
+    @use_kwargs(get_schema, locations=('json', 'view_args'))
+    def get(self, blockchain: Optional[SupportedBlockchain], async_query: bool) -> Response:
+        return self.rest_api.query_blockchain_balances(
+            blockchain=blockchain,
+            async_query=async_query,
+        )
 
 
 class FiatBalancesResource(BaseResource):
