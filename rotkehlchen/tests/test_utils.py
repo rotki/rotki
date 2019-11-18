@@ -1,15 +1,22 @@
 import json
 import time
+from typing import Any, Dict
 from unittest.mock import patch
 
 import pytest
+from gevent.lock import Semaphore
 
 from rotkehlchen.errors import UnprocessableTradePair
 from rotkehlchen.exchanges.data_structures import invert_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.utils.misc import combine_dicts, combine_stat_dicts, iso8601ts_to_timestamp
+from rotkehlchen.utils.misc import (
+    cache_response_timewise,
+    combine_dicts,
+    combine_stat_dicts,
+    iso8601ts_to_timestamp,
+)
 from rotkehlchen.utils.version_check import check_if_version_up_to_date
 
 
@@ -152,3 +159,41 @@ def test_check_if_version_up_to_date():
     with patch('requests.get', side_effect=mock_invalid_json_github_return):
         result = check_if_version_up_to_date()
         assert not result
+
+
+class Foo():
+    def __init__(self):
+        self.lock = Semaphore()
+        self.results_cache: Dict[str, Any] = {}
+        self.cache_ttl_secs = 60
+
+        self.do_something_call_count = 0
+
+    @cache_response_timewise()
+    def do_sum(self, arg1, arg2):  # pylint: disable=no-self-use
+        return arg1 + arg2
+
+    @cache_response_timewise()
+    def do_something(self):
+        self.do_something_call_count += 1
+        return 5
+
+
+def test_cache_response_timewise():
+    """Test that cached value is called and not the function again"""
+    instance = Foo()
+
+    assert instance.do_something() == 5
+    assert instance.do_something() == 5
+
+    assert instance.do_something_call_count == 1
+
+
+def test_cache_response_timewise_different_args():
+    """Test that applying the cache timewise decorator works fine for different arguments
+
+    Regression test for https://github.com/rotki/rotki/issues/543
+    """
+    instance = Foo()
+    assert instance.do_sum(1, 1) == 2
+    assert instance.do_sum(2, 2) == 4
