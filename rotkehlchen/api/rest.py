@@ -168,21 +168,29 @@ class RestAPI():
             log.warning('handle_killed_greenlets without an exception')
             return
 
+        try:
+            task_id = greenlet.task_id
+            task_str = f'Greenlet for task {task_id}'
+        except AttributeError:
+            task_id = None
+            task_str = f'Main greenlet'
+
         log.error(
-            'Greenlet for task {} dies with exception: {}.\n'
+            '{} dies with exception: {}.\n'
             'Exception Name: {}\nException Info: {}\nTraceback:\n {}'
             .format(
-                greenlet.task_id,
+                task_str,
                 greenlet.exception,
                 greenlet.exc_info[0],
                 greenlet.exc_info[1],
                 ''.join(traceback.format_tb(greenlet.exc_info[2])),
             ))
-        # also write an error for the task result
-        result = {
-            'error': str(greenlet.exception),
-        }
-        self._write_task_result(greenlet.task_id, result)
+        # also write an error for the task result if it's not the main greenlet
+        if task_id is not None:
+            result = {
+                'error': str(greenlet.exception),
+            }
+            self.write_task_result(greenlet.task_id, result)
 
     def _do_query_async(self, command: str, task_id: int, **kwargs) -> None:
         result = getattr(self, command)(**kwargs)
