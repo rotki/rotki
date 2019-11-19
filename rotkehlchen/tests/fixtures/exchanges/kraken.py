@@ -5,15 +5,11 @@ from typing import Dict, List, Optional
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.converters import KRAKEN_TO_WORLD
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import TradeType
-from rotkehlchen.exchanges.kraken import (
-    KRAKEN_ASSETS,
-    KRAKEN_DELISTED,
-    Kraken,
-    world_to_kraken_pair,
-)
+from rotkehlchen.exchanges.kraken import KRAKEN_DELISTED, Kraken, world_to_kraken_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.exchanges import (
     KRAKEN_SPECIFIC_DEPOSITS_RESPONSE,
@@ -33,12 +29,12 @@ from rotkehlchen.utils.serialization import rlk_jsonloads
 
 
 def get_random_kraken_asset() -> Asset:
-    kraken_assets = set(KRAKEN_ASSETS) - set(KRAKEN_DELISTED)
+    kraken_assets = set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED)
     return random.choice(list(kraken_assets))
 
 
 def generate_random_kraken_balance_response():
-    kraken_assets = set(KRAKEN_ASSETS) - set(KRAKEN_DELISTED)
+    kraken_assets = set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED)
     number_of_assets = random.randrange(0, len(kraken_assets))
     chosen_assets = random.sample(kraken_assets, number_of_assets)
 

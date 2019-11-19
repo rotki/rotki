@@ -4,11 +4,11 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.converters import asset_from_kraken
+from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import UnprocessableTradePair
 from rotkehlchen.exchanges.data_structures import Trade
-from rotkehlchen.exchanges.kraken import KRAKEN_ASSETS, KRAKEN_DELISTED, kraken_to_world_pair
+from rotkehlchen.exchanges.kraken import KRAKEN_DELISTED, kraken_to_world_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.typing import AssetMovementCategory
@@ -19,7 +19,7 @@ def test_coverage_of_kraken_balances(kraken):
     # Since 05/08/2019 Kraken removed all delisted assets from their public API
     # query except for BSV. No idea why or why this incosistency.
     got_assets = set(kraken.query_public('Assets').keys())
-    expected_assets = (set(KRAKEN_ASSETS) - set(KRAKEN_DELISTED)).union(set(['BSV']))
+    expected_assets = (set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED)).union(set(['BSV']))
     diff = expected_assets.symmetric_difference(got_assets)
     if len(diff) != 0:
         test_warnings.warn(UserWarning(
@@ -65,14 +65,35 @@ def test_querying_deposits_withdrawals(kraken):
     assert len(result) != 0
 
 
-def test_kraken_to_world_pair():
+def test_kraken_to_world_pair(kraken):
+    """Kraken does not consistently list its pairs so test here that most pairs work
+
+    For example ETH can be ETH or XETH, BTC can be XXBT or XBT
+    """
+    # Some standard tests that should always pass
     assert kraken_to_world_pair('QTUMXBT') == 'QTUM_BTC'
     assert kraken_to_world_pair('ADACAD') == 'ADA_CAD'
     assert kraken_to_world_pair('BCHUSD') == 'BCH_USD'
     assert kraken_to_world_pair('DASHUSD') == 'DASH_USD'
     assert kraken_to_world_pair('XTZETH') == 'XTZ_ETH'
+    assert kraken_to_world_pair('ETHDAI') == 'ETH_DAI'
+    assert kraken_to_world_pair('SCXBT') == 'SC_BTC'
+    assert kraken_to_world_pair('SCEUR') == 'SC_EUR'
+    assert kraken_to_world_pair('WAVESUSD') == 'WAVES_USD'
     assert kraken_to_world_pair('XXBTZGBP.d') == 'BTC_GBP'
 
+    # now try to test all pairs that kraken returns and if one does not work note
+    # down a test warning so that it can be fixed by us later
+    pairs = kraken.query_public('AssetPairs').keys()
+    for pair in pairs:
+        try:
+            kraken_to_world_pair(pair)
+        except Exception:
+            test_warnings.warn(UserWarning(
+                f'Could not process kraken pair {pair}',
+            ))
+
+    # Finally test that wrong pairs raise proper exception
     with pytest.raises(UnprocessableTradePair):
         kraken_to_world_pair('GABOOBABOO')
 
