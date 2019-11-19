@@ -12,8 +12,9 @@ from urllib.parse import urlencode
 
 from requests import Response
 
-from rotkehlchen.assets.converters import asset_from_kraken
+from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
+from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
     DeserializationError,
@@ -50,50 +51,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-KRAKEN_ASSETS = (
-    'ATOM',
-    'BAT',
-    'XDAO',
-    'XETC',
-    'XETH',
-    'XLTC',
-    'XREP',
-    'XXBT',
-    'XXMR',
-    'XXRP',
-    'XZEC',
-    'ZEUR',
-    'ZUSD',
-    'ZGBP',
-    'ZCAD',
-    'ZJPY',
-    'ZKRW',
-    'XMLN',
-    'XICN',
-    'GNO',
-    'BCH',
-    'BSV',
-    'XXLM',
-    'LINK',
-    'DASH',
-    'DAI',
-    'EOS',
-    'USDT',
-    'KFEE',
-    'ADA',
-    'QTUM',
-    'XNMC',
-    'XXVN',
-    'XXDG',
-    'XTZ',
-    'ICX',
-    'WAVES',
-    'NANO',
-    'OMG',
-    'SC',
-    'PAXG',
-)
-
 KRAKEN_DELISTED = ('XDAO', 'XXVN', 'ZKRW', 'XNMC', 'BSV', 'XICN')
 
 
@@ -109,12 +66,20 @@ def kraken_to_world_pair(pair: str) -> TradePair:
     if pair[-2:] == '.d':
         pair = pair[:-2]
 
-    if pair[0:3] in KRAKEN_ASSETS:
+    if pair == 'ETHDAI':
+        return trade_pair_from_assets(base=A_ETH, quote=A_DAI)
+    elif pair[0:2] in KRAKEN_TO_WORLD:
+        base_asset_str = pair[0:2]
+        quote_asset_str = pair[2:]
+    elif pair[0:3] in KRAKEN_TO_WORLD:
         base_asset_str = pair[0:3]
         quote_asset_str = pair[3:]
-    elif pair[0:4] in KRAKEN_ASSETS:
+    elif pair[0:4] in KRAKEN_TO_WORLD:
         base_asset_str = pair[0:4]
         quote_asset_str = pair[4:]
+    elif pair[0:5] in KRAKEN_TO_WORLD:
+        base_asset_str = pair[0:5]
+        quote_asset_str = pair[5:]
     else:
         raise UnprocessableTradePair(pair)
 
