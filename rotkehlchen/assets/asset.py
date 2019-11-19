@@ -107,6 +107,7 @@ WORLD_TO_KRAKEN = {
     'OMG': 'OMG',
     'SC': 'SC',
     'PAXG': 'PAXG',
+    'LSK': 'LSK',
 }
 
 WORLD_TO_BINANCE = {
