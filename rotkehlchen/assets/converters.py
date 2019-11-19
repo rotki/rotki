@@ -1,59 +1,12 @@
-from rotkehlchen.assets.asset import WORLD_TO_BINANCE, WORLD_TO_BITTREX, WORLD_TO_POLONIEX, Asset
+from rotkehlchen.assets.asset import (
+    WORLD_TO_BINANCE,
+    WORLD_TO_BITTREX,
+    WORLD_TO_KRAKEN,
+    WORLD_TO_POLONIEX,
+    Asset,
+)
 from rotkehlchen.constants.cryptocompare import WORLD_TO_CRYPTOCOMPARE
 from rotkehlchen.errors import DeserializationError, UnsupportedAsset
-
-KRAKEN_TO_WORLD = {
-    'ATOM': 'ATOM',
-    'BAT': 'BAT',
-    'LINK': 'LINK',
-    'XDAO': 'DAO',
-    'XETC': 'ETC',
-    'XETH': 'ETH',
-    'ETH': 'ETH',
-    'XLTC': 'LTC',
-    'XREP': 'REP',
-    'XXBT': 'BTC',
-    'XBT': 'BTC',
-    'XXMR': 'XMR',
-    'XXRP': 'XRP',
-    'XZEC': 'ZEC',
-    'ZEUR': 'EUR',
-    'EUR': 'EUR',
-    'ZUSD': 'USD',
-    'USD': 'USD',
-    'ZGBP': 'GBP',
-    'GBP': 'GBP',
-    'ZCAD': 'CAD',
-    'CAD': 'CAD',
-    'ZJPY': 'JPY',
-    'JPY': 'JPY',
-    'ZKRW': 'KRW',
-    'KRW': 'KRW',
-    'XMLN': 'MLN',
-    'XICN': 'ICN',
-    'GNO': 'GNO',
-    'BCH': 'BCH',
-    'XXLM': 'XLM',
-    'DASH': 'DASH',
-    'DAI': 'DAI',
-    'EOS': 'EOS',
-    'USDT': 'USDT',
-    'KFEE': 'KFEE',
-    'ADA': 'ADA',
-    'QTUM': 'QTUM',
-    'XNMC': 'NMC',
-    'XXVN': 'VEN',
-    'XXDG': 'DOGE',
-    'XTZ': 'XTZ',
-    'BSV': 'BSV',
-    'WAVES': 'WAVES',
-    'ICX': 'ICX',
-    'NANO': 'NANO',
-    'OMG': 'OMG',
-    'SC': 'SC',
-    'PAXG': 'PAXG',
-}
-
 
 UNSUPPORTED_POLONIEX_ASSETS = (
     # This was a super shortlived coin.
@@ -417,6 +370,7 @@ CRYPTOCOMPARE_TO_WORLD = {v: k for k, v in WORLD_TO_CRYPTOCOMPARE.items()}
 POLONIEX_TO_WORLD = {v: k for k, v in WORLD_TO_POLONIEX.items()}
 BITTREX_TO_WORLD = {v: k for k, v in WORLD_TO_BITTREX.items()}
 BINANCE_TO_WORLD = {v: k for k, v in WORLD_TO_BINANCE.items()}
+KRAKEN_TO_WORLD = {v: k for k, v in WORLD_TO_KRAKEN.items()}
 
 RENAMED_BINANCE_ASSETS = {
     # The old BCC in binance forked into BCHABC and BCHSV
@@ -440,7 +394,16 @@ ETH_TOKENS_MOVED_TO_OWN_CHAIN = {
 def asset_from_kraken(kraken_name: str) -> Asset:
     if not isinstance(kraken_name, str):
         raise DeserializationError(f'Got non-string type {type(kraken_name)} for kraken asset')
-    name = KRAKEN_TO_WORLD.get(kraken_name, kraken_name)
+
+    # Some names are not in the map since kraken can have multiple representations
+    # depending on the pair for the same asset. For example XXBT and XBT, XETH and ETH,
+    # ZUSD and USD
+    if kraken_name == 'XBT':
+        name = 'BTC'
+    elif kraken_name in ('ETH', 'EUR', 'USD', 'GBP', 'CAD', 'JPY', 'KRW'):
+        name = kraken_name
+    else:
+        name = KRAKEN_TO_WORLD.get(kraken_name, kraken_name)
     return Asset(name)
 
 
