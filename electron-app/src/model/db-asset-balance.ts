@@ -2,6 +2,6 @@
 export interface DBAssetBalance {
   readonly time: number;
   readonly asset: string;
-  readonly amount: number | string;
-  readonly usd_value: number | string;
+  readonly amount: string;
+  readonly usd_value: string;
 }
