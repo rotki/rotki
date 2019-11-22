@@ -118,16 +118,6 @@ def deserialize_timestamp_from_bittrex_date(date: str) -> Timestamp:
     return deserialize_timestamp_from_date(date, '%Y-%m-%dT%H:%M:%S.%f', 'bittrex')
 
 
-def deserialize_timestamp_from_coinbase_date(date: str) -> Timestamp:
-    """Deserializes a timestamp from a coinbase api query result date entry
-
-    Coinbase dates can be in iso8601 format.
-
-    Can throw DeserializationError if the data is not as expected
-    """
-    return deserialize_timestamp_from_date(date, 'iso8601', 'coinbase')
-
-
 def deserialize_timestamp_from_kraken(time: Union[str, FVal]) -> Timestamp:
     """Deserializes a timestamp from a kraken api query result entry
     Kraken has timestamps in floating point strings. Example: '1561161486.3056'.

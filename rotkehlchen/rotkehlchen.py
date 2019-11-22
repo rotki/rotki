@@ -466,8 +466,6 @@ class Rotkehlchen():
         fiat_currency = FiatAsset(currency.identifier)
         with self.lock:
             self.data.set_main_currency(fiat_currency, self.accountant)
-            if currency != A_USD:
-                self.usd_to_main_currency_rate = Inquirer().query_fiat_pair(A_USD, currency)
 
         return True, ''
 
@@ -498,12 +496,6 @@ class Rotkehlchen():
                         f'not a fiat currency'
                     )
                     return False, msg
-
-                if main_currency != A_USD:
-                    self.usd_to_main_currency_rate = Inquirer().query_fiat_pair(
-                        A_USD,
-                        main_currency,
-                    )
 
             res, msg = self.accountant.customize(settings)
             if not res:

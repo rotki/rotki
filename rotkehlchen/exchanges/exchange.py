@@ -27,21 +27,6 @@ ExchangeHistorySuccessCallback = Callable[
 ExchangeHistoryFailCallback = Callable[[str], None]
 
 
-def data_up_todate(json_data: Dict[str, Any], start_ts: Timestamp, end_ts: Timestamp) -> bool:
-    if 'data' not in json_data or 'start_time' not in json_data or 'end_time' not in json_data:
-        return False
-
-    start_ts_ok = (
-        (json_data['start_time'] is not None) and
-        start_ts >= json_data['start_time']
-    )
-    end_ts_ok = (
-        json_data['end_time'] is not None and
-        end_ts <= json_data['end_time']
-    )
-    return start_ts_ok and end_ts_ok
-
-
 class ExchangeInterface():
 
     def __init__(
