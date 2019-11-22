@@ -327,10 +327,6 @@ class Poloniex(ExchangeInterface):
         response = self.api_query_dict('returnCurrencies')
         return response
 
-    def return_ticker(self) -> Dict:
-        response = self.api_query_dict('returnTicker')
-        return response
-
     def return_fee_info(self) -> Dict:
         response = self.api_query_dict('returnFeeInfo')
         return response

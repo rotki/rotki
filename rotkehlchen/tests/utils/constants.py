@@ -14,7 +14,6 @@ A_GBP = Asset('GBP')
 A_SNGLS = Asset('SNGLS')
 A_BNB = Asset('BNB')
 A_USDT = Asset('USDT')
-A_LTC = Asset('LTC')
 A_CNY = Asset('CNY')
 A_JPY = Asset('JPY')
 

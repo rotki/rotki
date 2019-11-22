@@ -4,7 +4,6 @@ import datetime
 import json
 import logging
 import operator
-import os
 import re
 import sys
 import time
@@ -21,8 +20,8 @@ from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, ZERO
 from rotkehlchen.errors import DeserializationError, RecoverableRequestError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Fee, FilePath, Numerical, ResultCache, Timestamp
-from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads, rlk_jsonloads_dict
+from rotkehlchen.typing import Fee, Numerical, ResultCache, Timestamp
+from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -372,16 +371,3 @@ def write_history_data_in_file(data, filepath, start_ts, end_ts):
         history_dict['start_time'] = start_ts
         history_dict['end_time'] = end_ts
         outfile.write(rlk_jsondumps(history_dict))
-
-
-def get_jsonfile_contents_or_empty_dict(filepath: FilePath) -> Dict:
-    if not os.path.isfile(filepath):
-        return dict()
-
-    with open(filepath, 'r') as infile:
-        try:
-            data = rlk_jsonloads_dict(infile.read())
-        except json.decoder.JSONDecodeError:
-            data = dict()
-
-    return data

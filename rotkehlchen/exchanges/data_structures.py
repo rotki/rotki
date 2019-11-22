@@ -1,7 +1,6 @@
-from dataclasses import dataclass
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
-from typing_extensions import Literal
+from dataclasses import dataclass
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.crypto import sha3
@@ -27,8 +26,6 @@ from rotkehlchen.typing import (
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-
-ExchangeName = Literal['kraken', 'poloniex', 'bittrex', 'binance', 'bitmex', 'coinbase']
 
 
 def hash_id(hashable: str) -> TradeID:
