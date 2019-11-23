@@ -14,6 +14,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.db.upgrade_manager import UPGRADES_LIST
+from rotkehlchen.db.upgrades.v7_v8 import MCDAI_LAUNCH_TS
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.tests.utils.constants import A_BCH, A_BSV, A_RDN
 from rotkehlchen.typing import FilePath, SupportedBlockchain
@@ -524,6 +525,132 @@ def test_upgrade_db_6_to_7(data_dir, username):
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 7
+
+
+def test_upgrade_db_7_to_8(data_dir, username):
+    """Test upgrading the DB from version 7 to version 8.
+
+    Test that the SAI to DAI upgrade and renaming is done succesfully.
+    """
+    msg_aggregator = MessagesAggregator()
+    userdata_dir = os.path.join(data_dir, username)
+    os.mkdir(userdata_dir)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    copyfile(
+        os.path.join(os.path.dirname(dir_path), 'data', 'v7_rotkehlchen.db'),
+        os.path.join(userdata_dir, 'rotkehlchen.db'),
+    )
+    # userdata_dir = os.path.join(os.path.dirname(dir_path), 'data')
+    with target_patch(target_version=8):
+        db = DBHandler(user_data_dir=userdata_dir, password='123', msg_aggregator=msg_aggregator)
+    cursor = db.conn.cursor()
+
+    # Check that trades got upgraded properly
+    query = (
+        'SELECT id,'
+        '  time,'
+        '  location,'
+        '  pair,'
+        '  type,'
+        '  amount,'
+        '  rate,'
+        '  fee,'
+        '  fee_currency,'
+        '  link,'
+        '  notes FROM trades ORDER BY time ASC;'
+    )
+    results = cursor.execute(query)
+    count = 0
+    for result in results:
+        count += 1
+        time = int(result[1])
+        location = result[2]
+        pair = result[3]
+        fee_currency = result[8]
+
+        # External trades, kraken trades
+        if location in ('A', 'B'):
+            if time < MCDAI_LAUNCH_TS:
+                assert pair == 'SAI_EUR'
+                assert fee_currency == 'EUR'
+            else:
+                assert pair == 'DAI_EUR'
+                assert fee_currency == 'EUR'
+        # coinbase trades
+        elif location == 'G':
+            if time < MCDAI_LAUNCH_TS:
+                assert pair == 'SAI_USD'
+                assert fee_currency == 'USD'
+            else:
+                assert pair == 'DAI_USD'
+                assert fee_currency == 'USD'
+        # bittrex trades
+        elif location == 'D':
+            if time < MCDAI_LAUNCH_TS:
+                assert pair == 'SAI_BTC'
+                assert fee_currency == 'SAI'
+            else:
+                assert pair == 'DAI_BTC'
+                assert fee_currency == 'DAI'
+        else:
+            raise AssertionError('Unexpected location data')
+
+    assert count == 8, '8 trades should have been found'
+
+    # Check that deposits/withdrawals got upgraded properly
+    query = (
+        'SELECT id,'
+        '  location,'
+        '  category,'
+        '  time,'
+        '  asset,'
+        '  amount,'
+        '  fee_asset,'
+        '  fee,'
+        '  link FROM asset_movements '
+    )
+    results = cursor.execute(query)
+    count = 0
+    for result in results:
+        count += 1
+        location = result[1]
+        time = result[3]
+        asset = result[4]
+        fee_asset = result[6]
+
+        # kraken , bittrex, coinbase
+        assert location in ('B', 'D', 'G'), 'Unexpected location of asset movement'
+        if time < MCDAI_LAUNCH_TS:
+            assert asset == 'SAI'
+            assert fee_asset == 'SAI'
+        else:
+            assert asset == 'DAI'
+            assert fee_asset == 'DAI'
+
+    assert count == 12, '12 asset movements should have been found'
+
+    # Check that both SAI and DAI are included in the ETH tokens owned
+    query = cursor.execute(
+        'SELECT value FROM multisettings WHERE name="eth_token";',
+    )
+    assert query.fetchall() == ['SAI', 'DAI']
+
+    # Check that saved balances of DAI are upgraded to SAI if before the upgrade time
+    query = cursor.execute('SELECT time, currency, amount, usd_value FROM timed_balances;')
+    count = 0
+    for result in query:
+        time = int(result[0])
+        asset = result[1]
+
+        if time < MCDAI_LAUNCH_TS:
+            assert asset == 'SAI'
+        else:
+            assert asset == 'DAI'
+
+    assert count == 2, '2 saved balances should have been found'
+
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 8
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):
