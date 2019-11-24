@@ -10,6 +10,7 @@ from rotkehlchen.db.asset_rename import rename_assets_in_db
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.db.upgrades.v5_v6 import upgrade_v5_to_v6
 from rotkehlchen.db.upgrades.v6_v7 import upgrade_v6_to_v7
+from rotkehlchen.db.upgrades.v7_v8 import upgrade_v7_to_v8
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import SupportedBlockchain
@@ -83,6 +84,10 @@ UPGRADES_LIST = [
     UpgradeRecord(
         from_version=6,
         function=upgrade_v6_to_v7,
+    ),
+    UpgradeRecord(
+        from_version=7,
+        function=upgrade_v7_to_v8,
     ),
 ]
 

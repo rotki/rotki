@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 from rotkehlchen.crypto import sha3
 from rotkehlchen.errors import DBUpgradeError
@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-def _v6_deserialize_location_from_db(symbol: str) -> Location:
+def v6_deserialize_location_from_db(symbol: str) -> Location:
     """We copy the deserialize_location_from_db() function at v6
 
     This is done in case the function ever changes in the future. Also another
@@ -40,7 +40,7 @@ def _v6_deserialize_location_from_db(symbol: str) -> Location:
         )
 
 
-def _v6_deserialize_trade_type_from_db(symbol: str) -> TradeType:
+def v6_deserialize_trade_type_from_db(symbol: str) -> TradeType:
     """We copy the deserialize_trade_type_from_db() function at v6
 
     This is done in case the function ever changes in the future. Also another
@@ -58,6 +58,31 @@ def _v6_deserialize_trade_type_from_db(symbol: str) -> TradeType:
         raise DBUpgradeError(
             f'Failed to deserialize trade type. Unknown DB symbol {symbol} for trade type in DB',
         )
+
+
+def v6_generate_trade_id(
+        location: Location,
+        time: Union[str, int],
+        trade_type: TradeType,
+        pair: str,
+        amount: str,
+        rate: str,
+        link: str,
+) -> str:
+    """We copy the identifier() property of a trade at v6
+
+    This is done in case the function ever changes in the future.
+    """
+    source_str = (
+        str(location) +
+        str(time) +
+        str(trade_type) +
+        pair +
+        amount +
+        rate +
+        link
+    )
+    return sha3(source_str).hex()
 
 
 def _upgrade_trades_table(db: 'DBHandler') -> None:
@@ -81,12 +106,18 @@ def _upgrade_trades_table(db: 'DBHandler') -> None:
         link = result[8]
         notes = result[9]
         # make sure to deserialize the db enums
-        location = _v6_deserialize_location_from_db(db_location)
-        trade_type = _v6_deserialize_trade_type_from_db(db_trade_type)
+        location = v6_deserialize_location_from_db(db_location)
+        trade_type = v6_deserialize_trade_type_from_db(db_trade_type)
 
-        new_trade_id = sha3(
-            (str(location) + str(time) + str(trade_type) + pair + amount + rate + link).encode(),
-        ).hex()
+        new_trade_id = v6_generate_trade_id(
+            location=location,
+            time=time,
+            trade_type=trade_type,
+            pair=pair,
+            amount=amount,
+            rate=rate,
+            link=link,
+        )
         trade_tuples.append((
             new_trade_id,
             time,

@@ -14,7 +14,16 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.db.upgrade_manager import UPGRADES_LIST
-from rotkehlchen.db.upgrades.v7_v8 import MCDAI_LAUNCH_TS
+from rotkehlchen.db.upgrades.v6_v7 import (
+    v6_deserialize_location_from_db,
+    v6_deserialize_trade_type_from_db,
+    v6_generate_trade_id,
+)
+from rotkehlchen.db.upgrades.v7_v8 import (
+    MCDAI_LAUNCH_TS,
+    v7_deserialize_asset_movement_category,
+    v7_generate_asset_movement_id,
+)
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.tests.utils.constants import A_BCH, A_BSV, A_RDN
 from rotkehlchen.typing import FilePath, SupportedBlockchain
@@ -563,10 +572,15 @@ def test_upgrade_db_7_to_8(data_dir, username):
     count = 0
     for result in results:
         count += 1
+        trade_id = result[0]
         time = int(result[1])
         location = result[2]
         pair = result[3]
+        trade_type = result[4]
+        amount = result[5]
+        rate = result[6]
         fee_currency = result[8]
+        link = result[9]
 
         # External trades, kraken trades
         if location in ('A', 'B'):
@@ -595,6 +609,20 @@ def test_upgrade_db_7_to_8(data_dir, username):
         else:
             raise AssertionError('Unexpected location data')
 
+        # also make sure the ids still match
+        serialized_location = v6_deserialize_location_from_db(location)
+        serialized_trade_type = v6_deserialize_trade_type_from_db(trade_type)
+        expected_trade_id = v6_generate_trade_id(
+            location=serialized_location,
+            time=time,
+            trade_type=serialized_trade_type,
+            pair=pair,
+            amount=amount,
+            rate=rate,
+            link=link,
+        )
+        assert trade_id == expected_trade_id
+
     assert count == 8, '8 trades should have been found'
 
     # Check that deposits/withdrawals got upgraded properly
@@ -613,10 +641,13 @@ def test_upgrade_db_7_to_8(data_dir, username):
     count = 0
     for result in results:
         count += 1
+        entry_id = result[0]
         location = result[1]
+        category = result[2]
         time = result[3]
         asset = result[4]
         fee_asset = result[6]
+        link = result[8]
 
         # kraken , bittrex, coinbase
         assert location in ('B', 'D', 'G'), 'Unexpected location of asset movement'
@@ -626,6 +657,18 @@ def test_upgrade_db_7_to_8(data_dir, username):
         else:
             assert asset == 'DAI'
             assert fee_asset == 'DAI'
+
+        deserialized_location = v6_deserialize_location_from_db(location)
+        deserialized_category = v7_deserialize_asset_movement_category(category)
+        expected_id = v7_generate_asset_movement_id(
+            location=deserialized_location,
+            category=deserialized_category,
+            time=time,
+            asset=asset,
+            fee_asset=fee_asset,
+            link=link,
+        )
+        assert expected_id == entry_id
 
     assert count == 12, '12 asset movements should have been found'
 
