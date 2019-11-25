@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlencode
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
@@ -62,16 +63,16 @@ def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Optional[Trade]:
     timestamp = deserialize_timestamp_from_date(raw_time, 'iso8601', 'coinbase')
     trade_type = deserialize_trade_type(raw_trade['resource'])
     tx_amount = deserialize_asset_amount(raw_trade['amount']['amount'])
-    tx_asset = Asset(raw_trade['amount']['currency'])
+    tx_asset = asset_from_coinbase(raw_trade['amount']['currency'], time=timestamp)
     native_amount = deserialize_asset_amount(raw_trade['subtotal']['amount'])
-    native_asset = Asset(raw_trade['subtotal']['currency'])
+    native_asset = asset_from_coinbase(raw_trade['subtotal']['currency'], time=timestamp)
     # in coinbase you are buying/selling tx_asset for native_asset
     pair = TradePair(f'{tx_asset.identifier}_{native_asset.identifier}')
     amount = tx_amount
     # The rate is how much you get/give in quotecurrency if you buy/sell 1 unit of base currency
     rate = native_amount / tx_amount
     fee_amount = deserialize_fee(raw_trade['fee']['amount'])
-    fee_asset = Asset(raw_trade['fee']['currency'])
+    fee_asset = asset_from_coinbase(raw_trade['fee']['currency'], time=timestamp)
 
     return Trade(
         timestamp=timestamp,
@@ -331,7 +332,7 @@ class Coinbase(ExchangeInterface):
                 if amount == ZERO:
                     continue
 
-                asset = Asset(account['balance']['currency'])
+                asset = asset_from_coinbase(account['balance']['currency'])
 
                 usd_price = Inquirer().find_usd_price(asset=asset)
                 if asset in returned_balances:
@@ -437,6 +438,16 @@ class Coinbase(ExchangeInterface):
             if raw_data['status'] != 'completed':
                 return None
 
+            payout_date = raw_data.get('payout_at', None)
+            if payout_date:
+                timestamp = deserialize_timestamp_from_date(payout_date, 'iso8601', 'coinbase')
+            else:
+                timestamp = deserialize_timestamp_from_date(
+                    raw_data['created_at'],
+                    'iso8601',
+                    'coinbase',
+                )
+
             # movement_category: Union[Literal['deposit'], Literal['withdrawal']]
             if 'type' in raw_data:
                 # Then this should be a "send" which is the way Coinbase uses to send
@@ -450,7 +461,7 @@ class Coinbase(ExchangeInterface):
                 amount = deserialize_asset_amount(raw_data['amount']['amount'])
                 # For sends the amount is always returned negative so we have to fix this here
                 amount *= FVal('-1')
-                asset = Asset(raw_data['amount']['currency'])
+                asset = asset_from_coinbase(raw_data['amount']['currency'], time=timestamp)
                 # Fees dont appear in the docs but from an experiment of sending ETH
                 # to an address from coinbase there is the network fee in the response
                 fee = Fee(ZERO)
@@ -460,7 +471,7 @@ class Coinbase(ExchangeInterface):
 
                 if raw_fee:
                     # Since this is a withdrawal the fee should be the same as the moved asset
-                    if asset != Asset(raw_fee['currency']):
+                    if asset != asset_from_coinbase(raw_fee['currency'], time=timestamp):
                         # If not we set ZERO fee and ignore
                         log.error(
                             f'In a coinbase withdrawal of {asset.identifier} the fee'
@@ -473,17 +484,7 @@ class Coinbase(ExchangeInterface):
                 movement_category = deserialize_asset_movement_category(raw_data['resource'])
                 amount = deserialize_asset_amount(raw_data['amount']['amount'])
                 fee = deserialize_fee(raw_data['fee']['amount'])
-                asset = Asset(raw_data['amount']['currency'])
-
-            payout_date = raw_data.get('payout_at', None)
-            if payout_date:
-                timestamp = deserialize_timestamp_from_date(payout_date, 'iso8601', 'coinbase')
-            else:
-                timestamp = deserialize_timestamp_from_date(
-                    raw_data['created_at'],
-                    'iso8601',
-                    'coinbase',
-                )
+                asset = asset_from_coinbase(raw_data['amount']['currency'], time=timestamp)
 
             return AssetMovement(
                 location=Location.COINBASE,

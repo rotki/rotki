@@ -2320,11 +2320,19 @@
         "type": "ethereum token"
     },
     "DAI": {
+        "ethereum_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        "ethereum_token_decimals": 18,
+        "name": "Multi Collateral Dai",
+        "started": 1573672677,
+        "symbol": "DAI",
+        "type": "ethereum token"
+    },
+    "SAI": {
         "ethereum_address": "0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
         "ethereum_token_decimals": 18,
-        "name": "Dai",
+        "name": "Single Collateral Dai",
         "started": 1513586475,
-        "symbol": "DAI",
+        "symbol": "SAI",
         "type": "ethereum token"
     },
     "DALC": {

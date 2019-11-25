@@ -1,3 +1,5 @@
+from typing import Optional
+
 from rotkehlchen.assets.asset import (
     WORLD_TO_BINANCE,
     WORLD_TO_BITTREX,
@@ -5,8 +7,12 @@ from rotkehlchen.assets.asset import (
     WORLD_TO_POLONIEX,
     Asset,
 )
+from rotkehlchen.constants.assets import A_DAI, A_SAI
 from rotkehlchen.constants.cryptocompare import WORLD_TO_CRYPTOCOMPARE
+from rotkehlchen.db.upgrades.v7_v8 import COINBASE_DAI_UPGRADE_END_TS
 from rotkehlchen.errors import DeserializationError, UnsupportedAsset
+from rotkehlchen.typing import Timestamp
+from rotkehlchen.utils.misc import ts_now
 
 UNSUPPORTED_POLONIEX_ASSETS = (
     # This was a super shortlived coin.
@@ -445,3 +451,23 @@ def asset_from_binance(binance_name: str) -> Asset:
 
     name = BINANCE_TO_WORLD.get(binance_name, binance_name)
     return Asset(name)
+
+
+def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset:
+    # During the transition from DAI(SAI) to MCDAI(DAI) coinbase introduced an MCDAI
+    # wallet for the new DAI during the transition period. We should be able to handle this
+    # https://support.coinbase.com/customer/portal/articles/2982947
+    if cb_name == 'MCDAI':
+        return A_DAI
+    elif cb_name == 'DAI':
+        # If it's dai and it's squeried from the exchange before the end of the upgrade
+        if not time:
+            time = ts_now()
+        if time < COINBASE_DAI_UPGRADE_END_TS:
+            # Then it should be the single collateral version
+            return A_SAI
+        else:
+            return A_DAI
+
+    # else
+    return Asset(cb_name)
