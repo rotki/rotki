@@ -224,6 +224,9 @@ WORLD_TO_CRYPTOCOMPARE = {
     'PLA-2': 'PLA',
     # For Rotkehlchen RDN is Raiden Network but it's RDNN in cryptocompare
     'RDN': 'RDNN',
+    # For Rotki SAI is single collateral DAI but cryptocompare
+    # does not seem to differentiate between them at the moment
+    'SAI': 'DAI',
     # For Rotkehlchen SKB is SakuraBloom but it's SKRB in cryptocompare
     'SKB': 'SKRB',
     # For Rotkehlchen SKR is SkrillaToken but it's SKR* in cryptocompare
