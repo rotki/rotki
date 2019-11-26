@@ -77,7 +77,7 @@ def v7_generate_asset_movement_id(
         fee_asset +
         link
     )
-    return sha3(source_str).hex()
+    return sha3(source_str.encode()).hex()
 
 
 def _upgrade_asset_movements_table(db: 'DBHandler') -> None:
@@ -97,6 +97,7 @@ def _upgrade_asset_movements_table(db: 'DBHandler') -> None:
     )
 
     entries_to_edit = []
+    entries_to_delete = []
     for result in query:
         old_id = result[0]
         db_location = result[1]
@@ -110,8 +111,8 @@ def _upgrade_asset_movements_table(db: 'DBHandler') -> None:
 
         should_edit = time < MCDAI_LAUNCH_TS and (asset == 'DAI' or fee_asset == 'DAI')
         if should_edit:
-            # Delete old asset movement from the DB
-            cursor.execute(f'DELETE FROM asset_movements where id="{old_id}"')
+            # mark old asset movement for deletion from DB
+            entries_to_delete.append((old_id,))
             location = v6_deserialize_location_from_db(db_location)
             category = v7_deserialize_asset_movement_category(db_category)
             if asset == 'DAI':
@@ -130,7 +131,9 @@ def _upgrade_asset_movements_table(db: 'DBHandler') -> None:
                 new_id, db_location, db_category, time, asset, amount, fee_asset, fee, link,
             ))
 
-    # Insert all newly edited asset movements back in the DB
+    # First delete all marked asset movements
+    cursor.executemany('DELETE FROM asset_movements WHERE id = ?', entries_to_delete)
+    # then insert all newly edited asset movements back in the DB
     query = """
         INSERT INTO asset_movements(
           id,
@@ -152,7 +155,7 @@ def _upgrade_trades_table(db: 'DBHandler') -> None:
     """Upgrade the trades for DAI->SAI renaming"""
     cursor = db.conn.cursor()
     # This is the data we need from trades table at v6
-    query = cursor.execute(
+    cursor.execute(
         'SELECT id,'
         '  time,'
         '  location,'
@@ -165,8 +168,12 @@ def _upgrade_trades_table(db: 'DBHandler') -> None:
         '  link,'
         '  notes FROM trades;',
     )
+
     trades_to_edit = []
-    for result in query:
+    trades_to_delete = []
+    count = 0
+    for result in cursor:
+        count += 1
         # for each trade get all the relevant data
         old_trade_id = result[0]
         time = int(result[1])
@@ -184,14 +191,13 @@ def _upgrade_trades_table(db: 'DBHandler') -> None:
             time < MCDAI_LAUNCH_TS and
             ('DAI' in pair or fee_currency == 'DAI')
         )
+
         if should_edit_trade:
-            # Delete old trade
-            cursor.execute(f'DELETE FROM trades where id="{old_trade_id}"')
+            # Mark old trade for deletion
+            trades_to_delete.append((old_trade_id,))
             # Generate data for new trade
             location = v6_deserialize_location_from_db(db_location)
             trade_type = v6_deserialize_trade_type_from_db(db_trade_type)
-            trades_to_edit.append(
-            )
             pair = pair.replace('DAI_', 'SAI_')
             pair = pair.replace('_DAI', '_SAI')
             if fee_currency == 'DAI':
@@ -211,7 +217,9 @@ def _upgrade_trades_table(db: 'DBHandler') -> None:
                 amount, rate, fee, fee_currency, link, notes,
             ))
 
-    # add all newly edited trades back in the DB
+    # and now delete all old trades
+    cursor.executemany(f'DELETE FROM trades WHERE id = ?', trades_to_delete)
+    # and add all newly edited trades back in the DB
     query = """
     INSERT INTO trades(
           id,
@@ -235,16 +243,16 @@ def _upgrade_multisettings_table(db: 'DBHandler') -> None:
     """Upgrade the owned ETH tokens for DAI->SAI renaming"""
     cursor = db.conn.cursor()
     has_dai = cursor.execute(
-        'SELECT count(*) FROM multisettings WHERE name="eth_token" AND name="DAI"',
+        'SELECT count(*) FROM multisettings WHERE name="eth_token" AND value="DAI"',
     ).fetchone()[0] > 0
     has_sai = cursor.execute(
-        'SELECT count(*) FROM multisettings WHERE name="eth_token" AND name="SAI"',
+        'SELECT count(*) FROM multisettings WHERE name="eth_token" AND value="SAI"',
     ).fetchone()[0] > 0
     if has_sai:
         raise DBUpgradeError('SAI eth_token detected in DB before the DAI->SAI renaming upgrade')
 
     if has_dai:
-        cursor.execute('INSERT INTO multisettings(name, value) VALUES(eth_token, SAI);')
+        cursor.execute('INSERT INTO multisettings(name, value) VALUES("eth_token", "SAI");')
     db.conn.commit()
 
 
@@ -253,7 +261,7 @@ def _upgrade_timed_balances_table(db: 'DBHandler') -> None:
     cursor = db.conn.cursor()
     query_str = f"""
     UPDATE timed_balances SET currency="SAI"
-    WHERE CURRENCY=="DAI" and time<{MCDAI_LAUNCH_TS}
+    WHERE CURRENCY=="DAI" and time<{MCDAI_LAUNCH_TS};
     """
     cursor.execute(query_str)
     db.conn.commit()

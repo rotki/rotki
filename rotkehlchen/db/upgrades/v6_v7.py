@@ -82,7 +82,7 @@ def v6_generate_trade_id(
         rate +
         link
     )
-    return sha3(source_str).hex()
+    return sha3(source_str.encode()).hex()
 
 
 def _upgrade_trades_table(db: 'DBHandler') -> None:
