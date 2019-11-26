@@ -549,7 +549,6 @@ def test_upgrade_db_7_to_8(data_dir, username):
         os.path.join(os.path.dirname(dir_path), 'data', 'v7_rotkehlchen.db'),
         os.path.join(userdata_dir, 'rotkehlchen.db'),
     )
-    # userdata_dir = os.path.join(os.path.dirname(dir_path), 'data')
     with target_patch(target_version=8):
         db = DBHandler(user_data_dir=userdata_dir, password='123', msg_aggregator=msg_aggregator)
     cursor = db.conn.cursor()
@@ -568,6 +567,7 @@ def test_upgrade_db_7_to_8(data_dir, username):
         '  link,'
         '  notes FROM trades ORDER BY time ASC;'
     )
+
     results = cursor.execute(query)
     count = 0
     for result in results:
@@ -676,12 +676,13 @@ def test_upgrade_db_7_to_8(data_dir, username):
     query = cursor.execute(
         'SELECT value FROM multisettings WHERE name="eth_token";',
     )
-    assert query.fetchall() == ['SAI', 'DAI']
+    assert [q[0] for q in query.fetchall()] == ['DAI', 'SAI']
 
     # Check that saved balances of DAI are upgraded to SAI if before the upgrade time
     query = cursor.execute('SELECT time, currency, amount, usd_value FROM timed_balances;')
     count = 0
     for result in query:
+        count += 1
         time = int(result[0])
         asset = result[1]
 
