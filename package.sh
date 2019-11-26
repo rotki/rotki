@@ -47,6 +47,13 @@ if [[ $? -ne 0 ]]; then
     exit 1
 fi
 
+PYINSTALLER_GENERATED_EXECUTABLE=$(ls rotkehlchen_py_dist | head -n 1)
+./rotkehlchen_py_dist/$PYINSTALLER_GENERATED_EXECUTABLE version
+if [[ $? -ne 0 ]]; then
+    echo "package.sh - ERROR: The generated python executable does not work properly"
+    exit 1
+fi
+
 
 # Now use electron packager to bundle the entire app together with electron in a dir
 
