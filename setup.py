@@ -24,7 +24,7 @@ install_requirements = list(set(
 version = '1.0.4'  # Do not edit: this is maintained by bumpversion (see .bumpversion.cfg)
 
 setup(
-    name='rotki',
+    name='rotkehlchen',
     author='Lefteris Karapetsas',
     author_email='lefteris@refu.co',
     description=('Acccounting, asset management and tax report helper for cryptocurrencies'),
