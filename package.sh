@@ -13,7 +13,7 @@ pip uninstall -y packaging
 
 # Install the rotki package and pyinstaller. Needed by the pyinstaller
 pip install -e .
-pip install pyinstaller
+pip install pyinstaller==3.5
 
 # Get the arch
 ARCH=`uname -m`
