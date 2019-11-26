@@ -697,6 +697,21 @@ def test_upgrade_db_7_to_8(data_dir, username):
     assert db.get_version() == 8
 
 
+def test_upgrade_broken_db_7_to_8(data_dir, username):
+    """Test that if SAI is already in owned tokens upgrade fails"""
+    msg_aggregator = MessagesAggregator()
+    userdata_dir = os.path.join(data_dir, username)
+    os.mkdir(userdata_dir)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    copyfile(
+        os.path.join(os.path.dirname(dir_path), 'data', 'v7_rotkehlchen_broken.db'),
+        os.path.join(userdata_dir, 'rotkehlchen.db'),
+    )
+    with pytest.raises(DBUpgradeError):
+        with target_patch(target_version=8):
+            DBHandler(user_data_dir=userdata_dir, password='123', msg_aggregator=msg_aggregator)
+
+
 def test_db_newer_than_software_raises_error(data_dir, username):
     """
     If the DB version is greater than the current known version in the
