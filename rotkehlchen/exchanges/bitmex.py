@@ -3,12 +3,11 @@ import hmac
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, Location, MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface
@@ -20,6 +19,9 @@ from rotkehlchen.typing import ApiKey, ApiSecret, AssetAmount, AssetMovementCate
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, iso8601ts_to_timestamp, satoshis_to_btc
 from rotkehlchen.utils.serialization import rlk_jsonloads
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -76,7 +78,7 @@ class Bitmex(ExchangeInterface):
             self,
             api_key: ApiKey,
             secret: ApiSecret,
-            database: DBHandler,
+            database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
         super(Bitmex, self).__init__('bitmex', api_key, secret, database)

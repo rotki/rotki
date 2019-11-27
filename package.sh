@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Perform some sanity checks
+# Perform sanity checks before pip install
 pip install packaging  # required for the following script
 # We use npm ci. That needs npm >= 5.7.0
 npm --version | python -c "import sys;npm_version=sys.stdin.readlines()[0].rstrip('\n');from packaging import version;supported=version.parse(npm_version) >= version.parse('5.7.0');sys.exit(1) if not supported else sys.exit(0);"
@@ -14,6 +14,14 @@ pip uninstall -y packaging
 # Install the rotki package and pyinstaller. Needed by the pyinstaller
 pip install -e .
 pip install pyinstaller==3.5
+
+# Perform sanity checks that need pip install
+python -c "import sys;from rotkehlchen.db.dbhandler import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)"
+if [[ $? -ne 0 ]]; then
+    echo "package.sh - ERROR: The packaging system's sqlcipher version is not >= v4"
+    exit 1
+fi
+
 
 # Get the arch
 ARCH=`uname -m`

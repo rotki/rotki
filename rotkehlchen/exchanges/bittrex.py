@@ -3,7 +3,7 @@ import hmac
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Tuple, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, overload
 from urllib.parse import urlencode
 
 from typing_extensions import Literal
@@ -11,7 +11,6 @@ from typing_extensions import Literal
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bittrex
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
@@ -50,6 +49,10 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -168,7 +171,7 @@ class Bittrex(ExchangeInterface):
             self,
             api_key: ApiKey,
             secret: ApiSecret,
-            database: DBHandler,
+            database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
         super(Bittrex, self).__init__('bittrex', api_key, secret, database)

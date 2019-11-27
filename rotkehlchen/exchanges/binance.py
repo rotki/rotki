@@ -3,7 +3,7 @@ import hmac
 import logging
 import time
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, Union
 from urllib.parse import urlencode
 
 import gevent
@@ -11,7 +11,6 @@ import gevent
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import BINANCE_BASE_URL
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
@@ -33,6 +32,9 @@ from rotkehlchen.typing import ApiKey, ApiSecret, AssetMovementCategory, Fee, Lo
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, ts_now
 from rotkehlchen.utils.serialization import rlk_jsonloads
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -159,7 +161,7 @@ class Binance(ExchangeInterface):
             self,
             api_key: ApiKey,
             secret: ApiSecret,
-            database: DBHandler,
+            database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             initial_backoff: int = 4,
             backoff_limit: int = 180,

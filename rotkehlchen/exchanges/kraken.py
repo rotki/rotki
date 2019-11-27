@@ -7,7 +7,7 @@ import hashlib
 import hmac
 import logging
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
 
 from requests import Response
@@ -15,7 +15,6 @@ from requests import Response
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_DAI, A_ETH
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
     DeserializationError,
     RecoverableRequestError,
@@ -46,6 +45,10 @@ from rotkehlchen.typing import ApiKey, ApiSecret, Location, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import cache_response_timewise, retry_calls
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -228,7 +231,7 @@ class Kraken(ExchangeInterface):
             self,
             api_key: ApiKey,
             secret: ApiSecret,
-            database: DBHandler,
+            database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
         super(Kraken, self).__init__('kraken', api_key, secret, database)
