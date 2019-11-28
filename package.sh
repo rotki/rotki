@@ -55,6 +55,7 @@ if [[ $? -ne 0 ]]; then
     exit 1
 fi
 
+# Sanity check that the generated python executable works
 PYINSTALLER_GENERATED_EXECUTABLE=$(ls rotkehlchen_py_dist | head -n 1)
 ./rotkehlchen_py_dist/$PYINSTALLER_GENERATED_EXECUTABLE version
 if [[ $? -ne 0 ]]; then
