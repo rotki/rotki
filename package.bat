@@ -16,6 +16,14 @@ if %errorlevel% neq 0 (
    echo "package.bat - ERROR - Pip install step failed"
    exit /b %errorlevel%
 )
+Rem also for Windows we expect a pysqlcipher3 project to exist to properly
+Rem build and install that into the venv since pip install pysqlcipher3 without
+Rem having manually compiled sqlcipher will not work.
+Rem Reference: https://rotki.readthedocs.io/en/latest/installation_guide.html#sqlcipher-and-pysqlcipher3
+cd ../pysqlcipher3
+python setup.py build
+python setup.py install
+cd ../rotkehlchen
 
 Rem Perform sanity checks that need pip install
 python -c "import sys;from rotkehlchen.db.dbhandler import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)"
