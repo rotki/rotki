@@ -13,3 +13,4 @@ typing-extensions==3.7.4
 #constraints
 setuptools==40.4.2
 eth-account==0.4.0
+eth-utils==1.8.0  # constraint required by web3==5.3.0
