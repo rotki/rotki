@@ -356,6 +356,9 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # APM Coin. As of 16/11/2019 no data found outside of Bittrex for this token
     # https://global.bittrex.com/Market/Index?MarketName=BTC-APM
     'APM',
+    # BlockTV. As of 29/11/2019 no data found outside of Bittrex for this token
+    # https://global.bittrex.com/Market/Index?MarketName=BTC-BLTV
+    'BLTV',
 )
 
 
