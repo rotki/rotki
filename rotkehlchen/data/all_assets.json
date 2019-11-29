@@ -2327,14 +2327,6 @@
         "symbol": "DAI",
         "type": "ethereum token"
     },
-    "SAI": {
-        "ethereum_address": "0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
-        "ethereum_token_decimals": 18,
-        "name": "Single Collateral Dai",
-        "started": 1513586475,
-        "symbol": "SAI",
-        "type": "ethereum token"
-    },
     "DALC": {
         "ethereum_address": "0x07D9e49Ea402194bf48A8276dAfB16E4eD633317",
         "ethereum_token_decimals": 8,
@@ -4248,6 +4240,12 @@
         "name": "Harvest Masternode Coin",
         "started": 1515974400,
         "symbol": "HC",
+        "type": "own chain"
+    },
+    "HDAC": {
+        "name": "Hdac",
+        "started": 1533150567,
+        "symbol": "HDAC",
         "type": "own chain"
     },
     "HDG": {
@@ -7457,6 +7455,14 @@
         "name": "Smart Application Chain",
         "started": 1525689856,
         "symbol": "SAC",
+        "type": "ethereum token"
+    },
+    "SAI": {
+        "ethereum_address": "0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+        "ethereum_token_decimals": 18,
+        "name": "Single Collateral Dai",
+        "started": 1513586475,
+        "symbol": "SAI",
         "type": "ethereum token"
     },
     "SALT": {

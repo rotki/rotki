@@ -21,6 +21,7 @@ Changelog
   - `W Green Pay (WGP) <https://coinmarketcap.com/currencies/w-green-pay/>`__
   - `FLETA (FLETA) <https://coinmarketcap.com/currencies/fleta/>`__
   - `PAX Gold (PAXG) <https://coinmarketcap.com/currencies/pax-gold/>`__
+  - `Hdac (HDAC) <https://coinmarketcap.com/currencies/hdac/>`__
 
 
 * :release:`1.0.4 <2019-10-04>`
