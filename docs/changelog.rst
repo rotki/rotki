@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.0.5 <2019-11-30>`
 * :feature:`547` Support Multicollateral DAI upgrade and Single Collateral DAI renaming to SAI.
 * :bug:`545` Trades from all Kraken pairs should now be processed properly again. For example all SC trade pairs should now work again.
 * :bug:`543` User will not get unexpected balance results in the same Rotki run due to same cache being used for different arguments.
