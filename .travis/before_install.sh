@@ -16,6 +16,7 @@ else
     # Thankfully OSX has sqlcipher v4 in homebrew: https://formulae.brew.sh/formula/sqlcipher
     brew update && brew install sqlcipher
     brew install zmq
+    brew install nvm
     # Moved to travis.yml since environment was not properly built here
     # git clone https://github.com/MacPython/terryfy.git
     # source terryfy/travis_tools.sh

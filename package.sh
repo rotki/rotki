@@ -71,8 +71,11 @@ fi
 rm -rf ./node_modules
 npm config set python python2.7
 if [[ $PLATFORM == "darwin" ]]; then
-  # If we add the specific electron runtime compile in OSX fails with an error
-  # that looks like this: https://www.npmjs.com/package/nan#compiling-against-nodejs-012-on-osx
+    # It seems that with node v12, v13 zmq fails to build
+    nvm install 11
+    nvm use 11
+    # If we add the specific electron runtime compile in OSX fails with an error
+    # that looks like this: https://www.npmjs.com/package/nan#compiling-against-nodejs-012-on-osx
     npm ci
 else
     npm ci

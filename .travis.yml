@@ -106,6 +106,7 @@ jobs:
 
     - stage: deploy
       <<: *job-template-linux
+      name: "Deploy Job"
       script:
         - source ./package.sh
       deploy:
@@ -122,6 +123,7 @@ jobs:
 
     - stage: deploy
       <<: *job-template-osx
+      name: "Deploy Job"
       script:
         - source ./package.sh
       deploy:
