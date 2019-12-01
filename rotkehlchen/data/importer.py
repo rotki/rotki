@@ -58,7 +58,7 @@ class DataImporter():
     def __init__(self, db: DBHandler) -> None:
         self.db = db
 
-    def _consume_cointracking_entry(self, csv_row: List[str]):
+    def _consume_cointracking_entry(self, csv_row: List[str]) -> None:
         """Consumes a cointracking entry row from the CSV and adds it into the database
         Can raise:
             - DeserializationError if something is wrong with the format of the expected values

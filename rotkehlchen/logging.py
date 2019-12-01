@@ -2,9 +2,10 @@ import logging
 import random
 import string
 import time
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, MutableMapping, Tuple
 
 from rotkehlchen.fval import FVal
+from rotkehlchen.typing import EthAddress
 
 ANONYMIZABLE_BIGINT_VALUES = ('tx_value', 'gas_price', 'gas', 'gas_used')
 ANONYMIZABLE_BIG_VALUES = (
@@ -49,17 +50,17 @@ ANONYMIZABLE_ETH_TXHASH = ('eth_tx_hash')
 DEFAULT_ANONYMIZED_LOGS = False
 
 
-def random_eth_address():
+def random_eth_address() -> EthAddress:
     b = bytes(''.join(random.choice(string.printable) for _ in range(20)), encoding='utf-8')
-    return '0x' + b.hex()
+    return EthAddress('0x' + b.hex())
 
 
-def random_hash():
+def random_hash() -> str:
     b = bytes(''.join(random.choice(string.printable) for _ in range(32)), encoding='utf-8')
     return '0x' + b.hex()
 
 
-def make_sensitive(data):
+def make_sensitive(data: Dict[str, Any]) -> Dict[str, Any]:
     return dict(data, **{'sensitive_log': True})
 
 
@@ -74,7 +75,7 @@ class LoggingSettings():
         return LoggingSettings.__instance
 
     @staticmethod
-    def get():
+    def get() -> 'LoggingSettings':
         if LoggingSettings.__instance is None:
             LoggingSettings.__instance = LoggingSettings()
 
@@ -86,7 +87,7 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
     def __init__(self, logger: logging.Logger):
         return super().__init__(logger, extra={})
 
-    def process(self, msg: str, kwargs) -> Tuple[str, Dict]:
+    def process(self, msg: str, kwargs: MutableMapping[str, Any]) -> Tuple[str, Dict]:
         """
         This is the main post-processing function for Rotki logs
 
@@ -103,8 +104,8 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
             del kwargs['sensitive_log']
             is_sensitive = True
 
-        if is_sensitive and settings.anonymized_logs:
-            new_kwargs: Dict[str, Any] = {}
+        if is_sensitive and settings.anonymized_logs:  # type: ignore
+            new_kwargs: MutableMapping[str, Any] = {}
             for key, val in kwargs.items():
                 if key in ANONYMIZABLE_BIG_VALUES:
                     new_kwargs[key] = FVal(round(random.uniform(0, 10000), 3))
