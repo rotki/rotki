@@ -106,6 +106,8 @@ jobs:
 
     - stage: deploy
       <<: *job-template-linux
+      install:
+        - echo "empty step to skip install.sh from the template"
       script:
         - source ./package.sh
       deploy:
@@ -122,6 +124,8 @@ jobs:
 
     - stage: deploy
       <<: *job-template-osx
+      install:
+        - echo "empty step to skip install.sh from the template"
       script:
         - source ./package.sh
       deploy:
