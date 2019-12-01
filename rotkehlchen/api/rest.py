@@ -421,7 +421,7 @@ class RestAPI():
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
         # If it's a single exchange query, it's a list, otherwise it's a dict
-        result = process_result_list(trades) if name else process_result(trades)  # type: ignore
+        result = process_result_list(trades) if name else process_result(trades)
         return api_response(_wrap_in_ok_result(result), HTTPStatus.OK)
 
     def _query_blockchain_balances(
