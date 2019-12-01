@@ -4,7 +4,7 @@ import os
 import re
 import time
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, NamedTuple, NewType
+from typing import Any, Dict, Iterable, Iterator, List, NamedTuple, NewType
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
@@ -64,13 +64,17 @@ def _dict_history_to_data(data: Dict[str, Any]) -> PriceHistoryData:
     )
 
 
-def pairwise(iterable):
+def pairwise(iterable: Iterable[Any]) -> Iterator:
     "s -> (s0, s1), (s2, s3), (s4, s5), ..."
     a = iter(iterable)
     return zip(a, a)
 
 
-def _check_hourly_data_sanity(data, from_asset, to_asset):
+def _check_hourly_data_sanity(
+        data: List[Dict[str, Any]],
+        from_asset: Asset,
+        to_asset: Asset,
+) -> bool:
     """Check that the hourly data is an array of objects having timestamps
     increasing by 1 hour.
     """
