@@ -25,11 +25,15 @@ class Ethchain():
         if attempt_connect:
             self.attempt_connect(ethrpc_endpoint)
 
-    def __del__(self):
+    def __del__(self) -> None:
         if self.web3:
             del self.web3
 
-    def attempt_connect(self, ethrpc_endpoint: str, mainnet_check=True) -> Tuple[bool, str]:
+    def attempt_connect(
+            self,
+            ethrpc_endpoint: str,
+            mainnet_check: bool = True,
+    ) -> Tuple[bool, str]:
         message = ''
         if self.rpc_endpoint == ethrpc_endpoint and self.connected:
             # We are already connected

@@ -1,6 +1,7 @@
-from dataclasses import dataclass, field
 from functools import total_ordering
 from typing import Any, Optional
+
+from dataclasses import dataclass, field
 
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.cryptocompare import WORLD_TO_CRYPTOCOMPARE
@@ -136,7 +137,7 @@ class Asset():
     forked: Optional[str] = field(init=False)
     swapped_for: Optional[str] = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """
         Asset post initialization
 
@@ -198,7 +199,7 @@ class Asset():
 
         return cryptocompare_str
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.identifier)
 
     def __eq__(self, other: Any) -> bool:
@@ -230,7 +231,7 @@ class HasEthereumToken(Asset):
     ethereum_address: ChecksumEthAddress = field(init=False)
     decimals: int = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         super().__post_init__()
         data = AssetResolver().get_asset_data(self.identifier)  # pylint: disable=no-member
 

@@ -143,7 +143,7 @@ class Accountant():
             to_asset=self.profit_currency,
             timestamp=trade.timestamp,
         )
-        return fee_rate * trade.fee
+        return Fee(fee_rate * trade.fee)
 
     def add_asset_movement_to_events(self, movement: AssetMovement) -> None:
         timestamp = movement.timestamp

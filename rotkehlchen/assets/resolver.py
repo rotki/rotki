@@ -34,9 +34,9 @@ class AssetResolver():
     __instance = None
     assets: Dict[str, Dict[str, Any]] = {}
 
-    def __new__(cls):
+    def __new__(cls) -> 'AssetResolver':
         if AssetResolver.__instance is not None:
-            return AssetResolver.__instance
+            return AssetResolver.__instance  # type: ignore
 
         AssetResolver.__instance = object.__new__(cls)
 

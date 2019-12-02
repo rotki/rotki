@@ -447,8 +447,8 @@ class TaxableEvents():
         ) = self.search_buys_calculate_profit(
             selling_amount, selling_asset, timestamp,
         )
-        general_profit_loss = 0
-        taxable_profit_loss = 0
+        general_profit_loss = ZERO
+        taxable_profit_loss = ZERO
 
         # If we don't include crypto2crypto and we sell for crypto, stop here
         if receiving_asset and not receiving_asset.is_fiat() and not self.include_crypto2crypto:

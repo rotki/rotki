@@ -492,7 +492,7 @@ def check_paprika_token_address(
         paprika_token_address: Optional[EthAddress],
         given_token_address: Optional[EthAddress],
         asset_symbol: str,
-):
+) -> None:
     if asset_symbol in KNOWN_WRONG_PAPRIKA_DATA:
         return
 
@@ -515,7 +515,7 @@ def check_paprika_token_address(
 
 class CoinPaprika():
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.prefix = 'https://api.coinpaprika.com/v1/'
         self.backoff_limit = 180
 

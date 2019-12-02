@@ -9,11 +9,11 @@ from rotkehlchen.utils.misc import get_system_spec
 
 class CommandAction(argparse.Action):
     """Interprets the positional argument as a command if that command exists"""
-    def __init__(
+    def __init__(  # pylint: disable=unused-argument
             self,
             option_strings: List[str],
-            dest,
-            **kwargs,  # pylint: disable=unused-argument
+            dest: str,
+            **kwargs: Any,
     ) -> None:
         super().__init__(option_strings, dest)
 
@@ -22,7 +22,7 @@ class CommandAction(argparse.Action):
             parser: argparse.ArgumentParser,
             namespace: argparse.Namespace,
             values: Union[str, Sequence[Any], None],
-            option_string=None,
+            option_string: str = None,
     ) -> None:
         # Only command we have at the moment is version
         if values != 'version':
