@@ -156,10 +156,10 @@ class DataHandler():
         self.username = 'no_user'
         self.msg_aggregator = msg_aggregator
 
-    def logout(self):
+    def logout(self) -> None:
         if self.logged_in:
             self.username = 'no_user'
-            self.user_data_dir = None
+            self.user_data_dir: Optional[FilePath] = None
             del self.db
             self.logged_in = False
 

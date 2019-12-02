@@ -1,15 +1,16 @@
 import logging
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
 import requests
+from eth_utils.address import to_checksum_address
 from web3 import HTTPProvider, Web3
 
-from rotkehlchen import typing
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.utils.misc import from_wei, request_get_dict
 from rotkehlchen.utils.serialization import rlk_jsonloads
 
@@ -147,7 +148,7 @@ class Ethchain():
         log.debug('ETH highest block result', block=block_number)
         return block_number
 
-    def get_eth_balance(self, account: typing.ChecksumEthAddress) -> FVal:
+    def get_eth_balance(self, account: ChecksumEthAddress) -> FVal:
         if not self.connected:
             log.debug(
                 'Querying etherscan for account balance',
@@ -181,8 +182,8 @@ class Ethchain():
 
     def get_multieth_balance(
             self,
-            accounts: List[typing.ChecksumEthAddress],
-    ) -> Dict[typing.EthAddress, FVal]:
+            accounts: List[ChecksumEthAddress],
+    ) -> Dict[ChecksumEthAddress, FVal]:
         """Returns a dict with keys being accounts and balances in ETH"""
         balances = {}
 
@@ -208,7 +209,10 @@ class Ethchain():
 
                 for account_entry in eth_accounts:
                     amount = FVal(account_entry['balance'])
-                    balances[account_entry['account']] = from_wei(amount)
+                    # Etherscan does not return accounts checksummed so make sure they
+                    # are converted properly here
+                    checksum_account = to_checksum_address(account_entry['account'])
+                    balances[checksum_account] = from_wei(amount)
                     log.debug(
                         'Etherscan account balance result',
                         sensitive_log=True,
@@ -232,8 +236,8 @@ class Ethchain():
     def get_multitoken_balance(
             self,
             token: EthereumToken,
-            accounts: List[typing.EthAddress],
-    ) -> Dict[typing.EthAddress, FVal]:
+            accounts: List[ChecksumEthAddress],
+    ) -> Dict[ChecksumEthAddress, FVal]:
         """Return a dictionary with keys being accounts and value balances of token
         Balance value is normalized through the token decimals.
         """
@@ -301,12 +305,12 @@ class Ethchain():
     def get_token_balance(
             self,
             token: EthereumToken,
-            account: typing.EthAddress,
+            account: ChecksumEthAddress,
     ) -> FVal:
         res = self.get_multitoken_balance(token=token, accounts=[account])
         return res.get(account, FVal(0))
 
-    def get_block_by_number(self, num: int):
+    def get_block_by_number(self, num: int) -> Optional[Dict[str, Any]]:
         if not self.connected:
             return None
 
