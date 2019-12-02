@@ -9,7 +9,13 @@ from eth_utils.address import to_checksum_address
 
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
+from rotkehlchen.tests.utils.api import (
+    api_url_for,
+    assert_error_response,
+    assert_ok_async_response,
+    assert_proper_response,
+    wait_for_async_task,
+)
 from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS1,
@@ -248,6 +254,79 @@ def mock_balances_query(eth_map: Dict[str, str], btc_map: Dict[str, str], origin
     return patch('rotkehlchen.utils.misc.requests.get', wraps=mock_requests_get)
 
 
+def assert_eth_result(
+        json_data: Dict[str, Any],
+        eth_accounts: List[str],
+        eth_balances: List[str],
+        rdn_balance: str,
+        also_btc: bool,
+) -> None:
+    eth_acc1 = eth_accounts[0]
+    eth_acc2 = eth_accounts[1]
+    eth_balance1 = eth_balances[0]
+    eth_balance2 = eth_balances[1]
+    result = json_data['result']
+    per_account = result['per_account']
+    if also_btc:
+        assert len(per_account) == 2
+    else:
+        assert len(per_account) == 1
+    per_account = per_account['ETH']
+    assert len(per_account) == 2
+    assert FVal(per_account[eth_acc1]['ETH']) == from_wei(FVal(eth_balance1))
+    assert FVal(per_account[eth_acc1]['usd_value']) > ZERO
+    assert FVal(per_account[eth_acc2]['ETH']) == from_wei(FVal(eth_balance2))
+    assert FVal(per_account[eth_acc2]['RDN']) == from_wei(FVal(rdn_balance))
+    assert FVal(per_account[eth_acc2]['usd_value']) > ZERO
+
+    totals = result['totals']
+    if also_btc:
+        assert len(totals) == 3
+    else:
+        assert len(totals) == 2
+
+    assert FVal(totals['ETH']['amount']) == (
+        from_wei(FVal(eth_balance1)) +
+        from_wei(FVal(eth_balance2))
+    )
+    assert FVal(totals['ETH']['usd_value']) > ZERO
+    assert FVal(totals['RDN']['amount']) == from_wei(FVal(rdn_balance))
+    assert FVal(totals['RDN']['usd_value']) > ZERO
+
+
+def assert_btc_result(json_data: Dict[str, Any], btc_balances: List[str], also_eth: bool) -> None:
+    btc_balance1 = btc_balances[0]
+    btc_balance2 = btc_balances[1]
+    result = json_data['result']
+    per_account = result['per_account']
+    if also_eth:
+        assert len(per_account) == 2
+    else:
+        assert len(per_account) == 1
+    per_account = per_account['BTC']
+    assert len(per_account) == 2
+    assert FVal(per_account[UNIT_BTC_ADDRESS1]['amount']) == satoshis_to_btc(
+        FVal(btc_balance1),
+    )
+    assert FVal(per_account[UNIT_BTC_ADDRESS1]['usd_value']) > ZERO
+    assert FVal(per_account[UNIT_BTC_ADDRESS2]['amount']) == satoshis_to_btc(
+        FVal(btc_balance2),
+    )
+    assert FVal(per_account[UNIT_BTC_ADDRESS2]['usd_value']) > ZERO
+
+    totals = result['totals']
+    if also_eth:
+        assert len(totals) == 3
+    else:
+        assert len(totals) == 1
+
+    assert FVal(totals['BTC']['amount']) == (
+        satoshis_to_btc(FVal(btc_balance1)) +
+        satoshis_to_btc(FVal(btc_balance2))
+    )
+    assert FVal(totals['BTC']['usd_value']) > ZERO
+
+
 @pytest.mark.parametrize('ethereum_accounts', [[make_ethereum_address(), make_ethereum_address()]])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
@@ -266,68 +345,11 @@ def test_query_blockchain_balances(rotkehlchen_api_server, ethereum_accounts, bt
     eth_acc2 = ethereum_accounts[1]
     eth_balance1 = '1000000'
     eth_balance2 = '2000000'
+    eth_balances = [eth_balance1, eth_balance2]
     btc_balance1 = '3000000'
     btc_balance2 = '5000000'
+    btc_balances = [btc_balance1, btc_balance2]
     rdn_balance = '4000000'
-
-    def assert_eth_result(json_data: Dict[str, Any], also_btc: bool) -> None:
-        result = json_data['result']
-        per_account = result['per_account']
-        if also_btc:
-            assert len(per_account) == 2
-        else:
-            assert len(per_account) == 1
-        per_account = per_account['ETH']
-        assert len(per_account) == 2
-        assert FVal(per_account[eth_acc1]['ETH']) == from_wei(FVal(eth_balance1))
-        assert FVal(per_account[eth_acc1]['usd_value']) > ZERO
-        assert FVal(per_account[eth_acc2]['ETH']) == from_wei(FVal(eth_balance2))
-        assert FVal(per_account[eth_acc2]['RDN']) == from_wei(FVal(rdn_balance))
-        assert FVal(per_account[eth_acc2]['usd_value']) > ZERO
-
-        totals = result['totals']
-        if also_btc:
-            assert len(totals) == 3
-        else:
-            assert len(totals) == 2
-
-        assert FVal(totals['ETH']['amount']) == (
-            from_wei(FVal(eth_balance1)) +
-            from_wei(FVal(eth_balance2))
-        )
-        assert FVal(totals['ETH']['usd_value']) > ZERO
-        assert FVal(totals['RDN']['amount']) == from_wei(FVal(rdn_balance))
-        assert FVal(totals['RDN']['usd_value']) > ZERO
-
-    def assert_btc_result(json_data: Dict[str, Any], also_eth: bool) -> None:
-        result = json_data['result']
-        per_account = result['per_account']
-        if also_eth:
-            assert len(per_account) == 2
-        else:
-            assert len(per_account) == 1
-        per_account = per_account['BTC']
-        assert len(per_account) == 2
-        assert FVal(per_account[UNIT_BTC_ADDRESS1]['amount']) == satoshis_to_btc(
-            FVal(btc_balance1),
-        )
-        assert FVal(per_account[UNIT_BTC_ADDRESS1]['usd_value']) > ZERO
-        assert FVal(per_account[UNIT_BTC_ADDRESS2]['amount']) == satoshis_to_btc(
-            FVal(btc_balance2),
-        )
-        assert FVal(per_account[UNIT_BTC_ADDRESS2]['usd_value']) > ZERO
-
-        totals = result['totals']
-        if also_eth:
-            assert len(totals) == 3
-        else:
-            assert len(totals) == 1
-
-        assert FVal(totals['BTC']['amount']) == (
-            satoshis_to_btc(FVal(btc_balance1)) +
-            satoshis_to_btc(FVal(btc_balance2))
-        )
-        assert FVal(totals['BTC']['usd_value']) > ZERO
 
     patched_balances = mock_balances_query(
         eth_map={
@@ -349,7 +371,7 @@ def test_query_blockchain_balances(rotkehlchen_api_server, ethereum_accounts, bt
     assert_proper_response(response)
     json_data = response.json()
     assert json_data['message'] == ''
-    assert_eth_result(json_data, also_btc=False)
+    assert_eth_result(json_data, ethereum_accounts, eth_balances, rdn_balance, also_btc=False)
 
     # Then query only BTC balances
     with patched_balances:
@@ -361,7 +383,7 @@ def test_query_blockchain_balances(rotkehlchen_api_server, ethereum_accounts, bt
     assert_proper_response(response)
     assert json_data['message'] == ''
     json_data = response.json()
-    assert_btc_result(json_data, also_eth=False)
+    assert_btc_result(json_data, btc_balances, also_eth=False)
 
     # Finally query all balances
     with patched_balances:
@@ -372,5 +394,82 @@ def test_query_blockchain_balances(rotkehlchen_api_server, ethereum_accounts, bt
     assert_proper_response(response)
     assert json_data['message'] == ''
     json_data = response.json()
-    assert_eth_result(json_data, also_btc=True)
-    assert_btc_result(json_data, also_eth=True)
+    assert_eth_result(json_data, ethereum_accounts, eth_balances, rdn_balance, also_btc=True)
+    assert_btc_result(json_data, btc_balances, also_eth=True)
+
+    # Try to query not existing blockchain
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "named_blockchain_balances_resource",
+        blockchain='NOTEXISTING',
+    ))
+    assert_error_response(
+        response=response,
+        contained_in_msg='Unrecognized value NOTEXISTING given for blockchain name',
+    )
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[make_ethereum_address(), make_ethereum_address()]])
+@pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
+@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
+def test_query_blockchain_balances_async(rotkehlchen_api_server, ethereum_accounts, btc_accounts):
+    """Test that the query blockchain balances endpoint works when queried asynchronously
+    """
+    # Disable caching of query results
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    rotki.blockchain.cache_ttl_secs = 0
+
+    eth_acc1 = ethereum_accounts[0]
+    eth_acc2 = ethereum_accounts[1]
+    eth_balance1 = '1000000'
+    eth_balance2 = '2000000'
+    eth_balances = [eth_balance1, eth_balance2]
+    btc_balance1 = '3000000'
+    btc_balance2 = '5000000'
+    btc_balances = [btc_balance1, btc_balance2]
+    rdn_balance = '4000000'
+
+    patched_balances = mock_balances_query(
+        eth_map={
+            eth_acc1: {'ETH': eth_balance1},
+            eth_acc2: {'ETH': eth_balance2, 'RDN': rdn_balance},
+        },
+        btc_map={btc_accounts[0]: btc_balance1, btc_accounts[1]: btc_balance2},
+        original_requests_get=requests.get,
+    )
+
+    # First query only ETH and token balances
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "named_blockchain_balances_resource",
+        blockchain='ETH',
+    ), json={'async_query': True})
+    task_id = assert_ok_async_response(response)
+
+    with patched_balances:
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+    assert_eth_result(outcome, ethereum_accounts, eth_balances, rdn_balance, also_btc=False)
+
+    # Then query only BTC balances
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "named_blockchain_balances_resource",
+        blockchain='BTC',
+    ), json={'async_query': True})
+    task_id = assert_ok_async_response(response)
+
+    with patched_balances:
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+    assert_btc_result(outcome, btc_balances, also_eth=False)
+
+    # Finally query all balances
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainbalancesresource",
+    ), json={'async_query': True})
+    task_id = assert_ok_async_response(response)
+
+    with patched_balances:
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+    assert_eth_result(outcome, ethereum_accounts, eth_balances, rdn_balance, also_btc=True)
+    assert_btc_result(outcome, btc_balances, also_eth=True)

@@ -1,6 +1,6 @@
 import os
 from http import HTTPStatus
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import gevent
 import psutil
@@ -84,3 +84,27 @@ def assert_ok_async_response(response: requests.Response) -> int:
     assert data['message'] == ''
     assert len(data['result']) == 1
     return int(data['result']['task_id'])
+
+
+def wait_for_async_task(server: APIServer, task_id: int, timeout=10) -> Dict[str, Any]:
+    """Waits until an async task is ready and when it is returns the response's outcome
+
+    If the task's outcome is not ready within timeout seconds then the test fails"""
+
+    with gevent.Timeout(timeout):
+        while True:
+            response = requests.get(
+                api_url_for(server, "specific_async_tasks_resource", task_id=task_id),
+            )
+            json_data = response.json()
+            status = json_data['result']['status']
+            if status == 'completed':
+                return json_data['result']['outcome']
+            elif status == 'not-found':
+                raise AssertionError(f'Tried to wait for task id {task_id} but it is not found')
+            elif status == 'pending':
+                gevent.sleep(1)
+            else:
+                raise AssertionError(
+                    f'Waiting for task id {task_id} returned unexpected status {status}',
+                )

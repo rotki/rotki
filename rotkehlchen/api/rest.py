@@ -25,7 +25,7 @@ from rotkehlchen.errors import (
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serializer import process_result, process_result_list
+from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.typing import (
     AssetAmount,
     BlockchainAddress,
