@@ -496,7 +496,7 @@ Query the result of an ongoing backend task
 
       {
           "result": {
-	      "status": "not found",
+	      "status": "not-found",
 	      "outcome": null
 	  },
 	  "message": "No task with the task id 42 found"
