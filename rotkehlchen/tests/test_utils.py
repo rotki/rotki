@@ -1,10 +1,8 @@
 import json
 import time
-from typing import Any, Dict
 from unittest.mock import patch
 
 import pytest
-from gevent.lock import Semaphore
 
 from rotkehlchen.errors import UnprocessableTradePair
 from rotkehlchen.exchanges.data_structures import invert_pair
@@ -12,6 +10,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.utils.misc import (
+    CacheableObject,
     cache_response_timewise,
     combine_dicts,
     combine_stat_dicts,
@@ -161,11 +160,9 @@ def test_check_if_version_up_to_date():
         assert not result
 
 
-class Foo():
+class Foo(CacheableObject):
     def __init__(self):
-        self.lock = Semaphore()
-        self.results_cache: Dict[str, Any] = {}
-        self.cache_ttl_secs = 60
+        super().__init__()
 
         self.do_something_call_count = 0
 
