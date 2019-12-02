@@ -5,19 +5,21 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Location, TradeType
 
+DecodableValue = Union[Dict, List, float, bytes, str]
+DecodedValue = Union[Dict, FVal, List, bytes, str]
+
 
 class RKLDecoder(json.JSONDecoder):
-
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         kwargs['object_hook'] = self.object_hook
         json.JSONDecoder.__init__(self, *args, **kwargs)
 
-    def object_hook(self, obj):  # pylint: disable=no-self-use
+    def object_hook(self, obj: DecodableValue) -> DecodedValue:  # pylint: disable=no-self-use
         return rkl_decode_value(obj)
 
 
 class RKLEncoder(json.JSONEncoder):
-    def default(self, obj):
+    def default(self, obj: Any) -> Any:
         if isinstance(obj, FVal):
             return str(obj)
         if isinstance(obj, (TradeType, Location)):
@@ -29,15 +31,15 @@ class RKLEncoder(json.JSONEncoder):
 
         return json.JSONEncoder.default(self, obj)
 
-    def _encode(self, obj):
+    def _encode(self, obj: Any) -> Any:
         if isinstance(obj, dict):
-            def transform_asset(o):
+            def transform_asset(o: Any) -> Any:
                 return self._encode(o.identifier if isinstance(o, Asset) else o)
             return {transform_asset(k): transform_asset(v) for k, v in obj.items()}
         else:
             return obj
 
-    def encode(self, obj):
+    def encode(self, obj: Any) -> Any:
         return super().encode(self._encode(obj))
 
 
@@ -62,8 +64,8 @@ def rlk_jsondumps(data: Union[Dict, List]) -> str:
 
 
 def rkl_decode_value(
-        val: Union[Dict, List, float, bytes, str],
-) -> Union[Dict, FVal, List, bytes, str]:
+        val: DecodableValue,
+) -> DecodedValue:
     """Decodes a value seen externally, most likely an API call
 
     This is mostly used to make sure that all string floats end up as FVal when

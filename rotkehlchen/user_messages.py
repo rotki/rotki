@@ -10,7 +10,7 @@ class MessagesAggregator():
     This class is passed around where needed and aggreggates messages for the user
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.warnings: Deque = deque()
         self.errors: Deque = deque()
 

@@ -108,7 +108,7 @@ class Inquirer():
     _cached_forex_data: Dict
     _data_directory: FilePath
 
-    def __new__(cls, data_dir: FilePath = None):
+    def __new__(cls, data_dir: FilePath = None) -> 'Inquirer':
         if Inquirer.__instance is not None:
             return Inquirer.__instance
 
@@ -207,7 +207,7 @@ class Inquirer():
             from_currency: FiatAsset,
             to_currency: FiatAsset,
             price: FVal,
-    ):
+    ) -> None:
         instance = Inquirer()
         if date not in instance._cached_forex_data:
             instance._cached_forex_data[date] = {}

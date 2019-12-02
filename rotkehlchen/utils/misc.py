@@ -20,7 +20,7 @@ from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, ZERO
 from rotkehlchen.errors import DeserializationError, RecoverableRequestError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Fee, Numerical, ResultCache, Timestamp
+from rotkehlchen.typing import Fee, FilePath, ResultCache, Timestamp
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads
 
 logger = logging.getLogger(__name__)
@@ -71,7 +71,7 @@ def iso8601ts_to_timestamp(datestr: str) -> Timestamp:
     return Timestamp(ts + 1) if add_a_second else ts
 
 
-def satoshis_to_btc(satoshis: Numerical) -> Numerical:
+def satoshis_to_btc(satoshis: FVal) -> FVal:
     return satoshis * FVal('0.00000001')
 
 
@@ -92,16 +92,16 @@ def cache_response_timewise() -> Callable:
         - the Rotkehlchen object
         - the Blockchain object
     """
-    def _cache_response_timewise(f: Callable):
+    def _cache_response_timewise(f: Callable) -> Callable:
         @wraps(f)
-        def wrapper(wrappingobj, *args, **kwargs):
-            cache_key = f.__name__
+        def wrapper(wrappingobj: Any, *args: Any, **kwargs: Any) -> Any:
+            function_sig = f.__name__
             for arg in args:
-                cache_key += str(arg)
+                function_sig += str(arg)
             for _, value in kwargs.items():
-                cache_key += str(value)
+                function_sig += str(value)
             # TODO: Do I really need hash() here?
-            cache_key = hash(cache_key)
+            cache_key = hash(function_sig)
 
             with wrappingobj.lock:
                 now = ts_now()
@@ -131,7 +131,7 @@ def from_wei(wei_value: FVal) -> FVal:
     return wei_value / FVal(10 ** 18)
 
 
-def combine_dicts(a: Dict, b: Dict, op=operator.add) -> Dict:
+def combine_dicts(a: Dict, b: Dict, op: Callable = operator.add) -> Dict:
     new_dict = a.copy()
     new_dict.update(b)
     new_dict.update([(k, op(a[k], b[k])) for k in set(b) & set(a)])
@@ -358,7 +358,12 @@ def simple_result(v: Any, msg: str) -> Dict:
     return {'result': v, 'message': msg}
 
 
-def write_history_data_in_file(data, filepath, start_ts, end_ts):
+def write_history_data_in_file(
+        data: List[Dict[str, Any]],
+        filepath: FilePath,
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+) -> None:
     log.info(
         'Writing history file',
         filepath=filepath,
@@ -366,7 +371,7 @@ def write_history_data_in_file(data, filepath, start_ts, end_ts):
         end_time=end_ts,
     )
     with open(filepath, 'w') as outfile:
-        history_dict = dict()
+        history_dict: Dict[str, Any] = dict()
         history_dict['data'] = data
         history_dict['start_time'] = start_ts
         history_dict['end_time'] = end_ts

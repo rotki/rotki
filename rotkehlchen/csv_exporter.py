@@ -192,7 +192,7 @@ class CSVExporter():
             taxable_bought_cost: FVal,
             timestamp: Timestamp,
             is_virtual: bool,
-    ):
+    ) -> None:
         if not self.create_csv:
             return
 

@@ -67,7 +67,7 @@ def make_sensitive(data: Dict[str, Any]) -> Dict[str, Any]:
 class LoggingSettings():
     __instance = None
 
-    def __new__(cls, anonymized_logs=DEFAULT_ANONYMIZED_LOGS):
+    def __new__(cls, anonymized_logs: bool = DEFAULT_ANONYMIZED_LOGS) -> 'LoggingSettings':
         if LoggingSettings.__instance is None:
             LoggingSettings.__instance = object.__new__(cls)
 

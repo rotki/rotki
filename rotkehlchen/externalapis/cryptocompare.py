@@ -2,7 +2,6 @@ import glob
 import logging
 import os
 import re
-import time
 from json.decoder import JSONDecodeError
 from typing import Any, Dict, Iterable, Iterator, List, NamedTuple, NewType
 
@@ -220,9 +219,9 @@ class Cryptocompare():
         if got_cached_value:
             return self.price_history[cache_key].data
 
-        now_ts = int(time.time())
+        now_ts = ts_now()
         cryptocompare_hourquerylimit = 2000
-        calculated_history: List = list()
+        calculated_history: List[Dict[str, Any]] = list()
 
         if historical_data_start <= timestamp:
             end_date = historical_data_start
@@ -350,7 +349,7 @@ class Cryptocompare():
                 # If we get some None in the hourly set price to 0 so that we check alternatives
                 price = Price(ZERO)
             else:
-                price = (data[index].high + data[index].low) / 2
+                price = Price((data[index].high + data[index].low) / 2)
         else:
             # no price found in the historical data from/to asset, try alternatives
             price = Price(ZERO)
@@ -372,7 +371,7 @@ class Cryptocompare():
                     to_asset=to_asset,
                     timestamp=timestamp,
                 )
-                price = asset_btc_price * btc_to_asset_price
+                price = Price(asset_btc_price * btc_to_asset_price)
             else:
                 log.debug(
                     f"Couldn't find historical price from {from_asset} to "
@@ -438,7 +437,7 @@ class Cryptocompare():
             timestamp=timestamp,
         )
 
-        usd_invert_conversion = from_asset_usd / to_asset_usd
+        usd_invert_conversion = Price(from_asset_usd / to_asset_usd)
         abs_diff = abs(usd_invert_conversion - price)
         relative_difference = abs_diff / max(price, usd_invert_conversion)
         if relative_difference >= FVal('0.1'):
