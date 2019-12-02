@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Tuple
 
 import requests
-from gevent.lock import Semaphore
 
-from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_location
 from rotkehlchen.typing import ApiKey, ApiSecret, T_ApiKey, T_ApiSecret, Timestamp
+from rotkehlchen.utils.misc import CacheableObject
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -27,7 +26,7 @@ ExchangeHistorySuccessCallback = Callable[
 ExchangeHistoryFailCallback = Callable[[str], None]
 
 
-class ExchangeInterface():
+class ExchangeInterface(CacheableObject):
 
     def __init__(
             self,
@@ -50,12 +49,7 @@ class ExchangeInterface():
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
 
-        # -- Cache related variales
-        self.lock = Semaphore()
-        self.results_cache: Dict[str, Any] = {}
-        # The amount of seconds cache of cache_response_timewise is supposed to last
-        # IF 0 is given then cache is disabled. A zero value also disabled the trades cache
-        self.cache_ttl_secs = CACHE_RESPONSE_FOR_SECS
+        super().__init__()
         log.info(f'Initialized {name} exchange')
 
     def query_balances(self) -> Tuple[Optional[dict], str]:

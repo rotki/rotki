@@ -4,26 +4,18 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Callable, Dict, List, Tuple, Union, cast
 
 from eth_utils.address import to_checksum_address
-from gevent.lock import Semaphore
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.constants import CACHE_RESPONSE_FOR_SECS
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.errors import EthSyncError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import (
-    BlockchainAddress,
-    BTCAddress,
-    EthAddress,
-    ResultCache,
-    SupportedBlockchain,
-)
+from rotkehlchen.typing import BlockchainAddress, BTCAddress, EthAddress, SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import cache_response_timewise, request_get_direct
+from rotkehlchen.utils.misc import CacheableObject, cache_response_timewise, request_get_direct
 
 if TYPE_CHECKING:
     from rotkehlchen.ethchain import Ethchain
@@ -41,7 +33,7 @@ BlockchainBalancesUpdate = Dict[str, Union[Balances, Totals]]
 EthBalances = Dict[EthAddress, Dict[Union[Asset, str], FVal]]
 
 
-class Blockchain():
+class Blockchain(CacheableObject):
 
     def __init__(
             self,
@@ -65,10 +57,7 @@ class Blockchain():
         # Per asset total balances
         self.totals: Totals = defaultdict(dict)
 
-        # -- Cache related variables
-        self.lock = Semaphore()
-        self.results_cache: Dict[str, ResultCache] = {}
-        self.cache_ttl_secs = CACHE_RESPONSE_FOR_SECS
+        super().__init__()
 
     def __del__(self):
         del self.ethchain

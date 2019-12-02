@@ -13,10 +13,11 @@ from typing import Any, Callable, Dict, List, Union
 
 import gevent
 import requests
+from gevent.lock import Semaphore
 from requests import Response
 from rlp.sedes import big_endian_int
 
-from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, ZERO
+from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, CACHE_RESPONSE_FOR_SECS, ZERO
 from rotkehlchen.errors import DeserializationError, RecoverableRequestError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -79,6 +80,19 @@ def timestamp_to_date(ts: Timestamp, formatstr: str = '%d/%m/%Y %H:%M:%S') -> st
     return datetime.datetime.utcfromtimestamp(ts).strftime(formatstr)
 
 
+class CacheableObject():
+    """Interface for objects that can use timewise caches
+
+    Any object that adheres to this interface can have its functions
+    use the @cache_response_timewise decorator
+    """
+
+    def __init__(self) -> None:
+        self.lock = Semaphore()
+        self.results_cache: Dict[int, ResultCache] = {}
+        self.cache_ttl_secs = CACHE_RESPONSE_FOR_SECS
+
+
 def cache_response_timewise() -> Callable:
     """ This is a decorator for caching results of functions of objects.
     The objects must adhere to the interface of having:
@@ -94,7 +108,7 @@ def cache_response_timewise() -> Callable:
     """
     def _cache_response_timewise(f: Callable) -> Callable:
         @wraps(f)
-        def wrapper(wrappingobj: Any, *args: Any, **kwargs: Any) -> Any:
+        def wrapper(wrappingobj: CacheableObject, *args: Any, **kwargs: Any) -> Any:
             function_sig = f.__name__
             for arg in args:
                 function_sig += str(arg)
