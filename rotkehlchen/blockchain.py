@@ -1,7 +1,7 @@
 import logging
 import operator
 from collections import defaultdict
-from typing import TYPE_CHECKING, Callable, Dict, List, Tuple, Union, cast
+from typing import TYPE_CHECKING, Callable, Dict, List, Tuple, Union, cast, overload
 
 from eth_utils.address import to_checksum_address
 from web3.exceptions import BadFunctionCallOutput
@@ -13,7 +13,13 @@ from rotkehlchen.errors import EthSyncError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import BlockchainAddress, BTCAddress, EthAddress, SupportedBlockchain
+from rotkehlchen.typing import (
+    BlockchainAddress,
+    BTCAddress,
+    ChecksumEthAddress,
+    EthAddress,
+    SupportedBlockchain,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import CacheableObject, cache_response_timewise, request_get_direct
 
@@ -30,7 +36,7 @@ Balances = Dict[
 ]
 Totals = Dict[Asset, Dict[str, FVal]]
 BlockchainBalancesUpdate = Dict[str, Union[Balances, Totals]]
-EthBalances = Dict[EthAddress, Dict[Union[Asset, str], FVal]]
+EthBalances = Dict[ChecksumEthAddress, Dict[Union[Asset, str], FVal]]
 
 
 class Blockchain(CacheableObject):
@@ -59,7 +65,7 @@ class Blockchain(CacheableObject):
 
         super().__init__()
 
-    def __del__(self):
+    def __del__(self) -> None:
         del self.ethchain
 
     def set_eth_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
@@ -115,19 +121,40 @@ class Blockchain(CacheableObject):
 
         self.totals[A_BTC] = {'amount': total, 'usd_value': total * btc_usd_price}
 
+    @overload
     @staticmethod
     def _query_token_balances(
             token_asset: EthereumToken,
+            query_callback: Callable[[EthereumToken, ChecksumEthAddress], FVal],
+            argument: ChecksumEthAddress,
+    ) -> FVal:
+        ...
+
+    @overload  # noqa: F811
+    @staticmethod
+    def _query_token_balances(
+            token_asset: EthereumToken,
+            query_callback: Callable[
+                [EthereumToken, List[ChecksumEthAddress]],
+                Dict[ChecksumEthAddress, FVal],
+            ],
+            argument: List[ChecksumEthAddress],
+    ) -> Dict[ChecksumEthAddress, FVal]:
+        ...
+
+    @staticmethod  # noqa: F811
+    def _query_token_balances(
+            token_asset: EthereumToken,
             query_callback: Callable,
-            **kwargs,
-    ):
+            argument: Union[List[ChecksumEthAddress], ChecksumEthAddress],
+    ) -> Union[FVal, Dict[ChecksumEthAddress, FVal]]:
         """Query tokens by checking the eth_tokens mapping and using the respective query callback.
 
         The callback is either self.ethchain.get_multitoken_balance or
         self.ethchain.get_token_balance"""
         result = query_callback(
             token_asset,
-            **kwargs,
+            argument,
         )
 
         return result
@@ -252,10 +279,10 @@ class Blockchain(CacheableObject):
                 # skip tokens that have no price
                 continue
 
-            token_balance = self._query_token_balances(
+            token_balance = Blockchain._query_token_balances(
                 token_asset=token,
                 query_callback=self.ethchain.get_token_balance,
-                account=account,
+                argument=account,
             )
             if token_balance == 0:
                 continue
@@ -346,10 +373,10 @@ class Blockchain(CacheableObject):
                 continue
             token_usd_price[token] = usd_price
 
-            token_balances[token] = self._query_token_balances(
+            token_balances[token] = Blockchain._query_token_balances(
                 token_asset=token,
                 query_callback=self.ethchain.get_multitoken_balance,
-                accounts=self.accounts.eth,
+                argument=self.accounts.eth,
             )
 
         for token, token_accounts in token_balances.items():

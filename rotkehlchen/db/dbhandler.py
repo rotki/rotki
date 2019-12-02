@@ -169,7 +169,7 @@ class DBHandler:
         # Run upgrades if needed
         DBUpgradeManager(self).run_upgrades()
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.disconnect()
         dbinfo = {'sqlcipher_version': self.sqlcipher_version, 'md5_hash': self.get_md5hash()}
         with open(os.path.join(self.user_data_dir, DBINFO_FILENAME), 'w') as f:
@@ -261,7 +261,7 @@ class DBHandler:
             self.conn.executescript(script)
         self.conn.execute('PRAGMA foreign_keys=ON')
 
-    def upgrade_db_sqlcipher_3_to_4(self, password):
+    def upgrade_db_sqlcipher_3_to_4(self, password: str) -> Tuple[bool, str]:
         if hasattr(self, 'conn') and self.conn:
             self.conn.close()
             self.conn = None
@@ -280,7 +280,7 @@ class DBHandler:
 
         return success, msg
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         self.conn.close()
         self.conn = None
 
@@ -290,7 +290,7 @@ class DBHandler:
         doing. For normal database upgrades the proper scripts should be used"""
         self.conn.executescript(DB_SCRIPT_REIMPORT_DATA)
 
-    def export_unencrypted(self, temppath: FilePath):
+    def export_unencrypted(self, temppath: FilePath) -> None:
         self.conn.executescript(
             'ATTACH DATABASE "{}" AS plaintext KEY "";'
             'SELECT sqlcipher_export("plaintext");'
@@ -748,7 +748,7 @@ class DBHandler:
             tuple_type: DBTupleType,
             query: str,
             tuples: List[Tuple[Any, ...]],
-            **kwargs,
+            **kwargs: Any,
     ) -> None:
         cursor = self.conn.cursor()
         try:
