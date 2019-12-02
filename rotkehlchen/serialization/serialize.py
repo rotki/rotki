@@ -45,7 +45,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
     elif isinstance(entry, Trade):
         return entry.serialize()
     elif isinstance(entry, DBSettings):
-        return entry._asdict()
+        return process_result(entry._asdict())
     elif isinstance(entry, EthTokenInfo):
         return process_result(entry._asdict())
     elif isinstance(entry, VersionCheckResult):
