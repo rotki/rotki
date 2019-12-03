@@ -85,7 +85,7 @@ class ActionWriter(object):
         self.rotki.query_balances(requested_save_data=True, timestamp=save_ts)
         self.last_balance_save_ts = save_ts
 
-    def generate_history(self):
+    def generate_history(self) -> None:
         created_trades = 0
         while created_trades <= self.trades_number:
             current_ts, save_balances, make_trade = self.get_next_ts()

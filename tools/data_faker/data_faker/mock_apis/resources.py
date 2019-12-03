@@ -5,7 +5,7 @@ from webargs.flaskparser import use_kwargs
 from .encoding import BinanceMyTradesSchema
 
 
-def create_blueprint():
+def create_blueprint() -> Blueprint:
     # Take a look at this SO question on hints how to organize versioned
     # API with flask:
     # http://stackoverflow.com/questions/28795561/support-multiple-api-versions-in-flask#28797512

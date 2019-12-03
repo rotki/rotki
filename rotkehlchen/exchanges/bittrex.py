@@ -240,7 +240,7 @@ class Bittrex(ExchangeInterface):
         request_url = self.uri + method_type + '/' + method + '?'
 
         if method_type != 'public':
-            request_url += 'apikey=' + self.api_key.decode() + "&nonce=" + nonce + '&'
+            request_url += 'apikey=' + self.api_key + "&nonce=" + nonce + '&'
 
         request_url += urlencode(options)
         signature = hmac.new(

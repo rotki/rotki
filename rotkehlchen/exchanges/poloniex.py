@@ -227,7 +227,7 @@ class Poloniex(ExchangeInterface):
         self.uri = 'https://poloniex.com/'
         self.public_uri = self.uri + 'public?command='
         self.session.headers.update({
-            'Key': self.api_key,   # type: ignore
+            'Key': self.api_key,
         })
         self.msg_aggregator = msg_aggregator
 

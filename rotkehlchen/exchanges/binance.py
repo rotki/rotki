@@ -170,7 +170,7 @@ class Binance(ExchangeInterface):
         self.uri = BINANCE_BASE_URL
         self.session.headers.update({
             'Accept': 'application/json',
-            'X-MBX-APIKEY': self.api_key,  # type: ignore
+            'X-MBX-APIKEY': self.api_key,
         })
         self.msg_aggregator = msg_aggregator
         self.initial_backoff = initial_backoff

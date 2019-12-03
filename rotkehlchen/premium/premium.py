@@ -88,7 +88,8 @@ class Premium():
 
     def reset_credentials(self, api_key: ApiKey, api_secret: ApiSecret) -> None:
         self.api_key = api_key
-        self.secret = base64.b64decode(api_secret)
+        self.secret = api_secret
+        # self.secret = base64.b64decode(api_secret)
         self.session.headers.update({  # type: ignore
             'API-KEY': self.api_key,
         })

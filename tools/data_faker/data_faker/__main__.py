@@ -9,7 +9,7 @@ from data_faker.mock_apis.api import APIServer, RestAPI
 logger = logging.getLogger(__name__)
 
 
-def main():
+def main() -> None:
     arg_parser = data_faker_args()
     args = arg_parser.parse_args()
     faker = DataFaker(args)

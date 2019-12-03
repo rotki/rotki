@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import logging
 import os
@@ -1312,7 +1313,7 @@ class DBHandler:
         # We don't care about previous value so this simple insert or replace should work
         cursor.execute(
             'INSERT OR REPLACE INTO user_credentials(name, api_key, api_secret) VALUES (?, ?, ?)',
-            ('rotkehlchen', api_key, api_secret),
+            ('rotkehlchen', api_key, api_secret.decode()),
         )
         self.conn.commit()
         # Do not update the last write here. If we are starting in a new machine
@@ -1320,14 +1321,14 @@ class DBHandler:
         # an empty last write ts in that case
         # self.update_last_write()
 
-    def get_rotkehlchen_premium(self) -> Optional[Tuple[str, str]]:
+    def get_rotkehlchen_premium(self) -> Optional[Tuple[ApiKey, ApiSecret]]:
         cursor = self.conn.cursor()
         result = cursor.execute(
             'SELECT api_key, api_secret FROM user_credentials where name="rotkehlchen";',
         )
         result = result.fetchall()
         if len(result) == 1:
-            return result[0]
+            return ApiKey(result[0][0]), ApiSecret(base64.b64decode(result[0][1]))
         else:
             return None
 

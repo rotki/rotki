@@ -2,7 +2,7 @@ import json
 import os
 import random
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from data_faker.utils import assets_exist_at_time
 
@@ -43,7 +43,7 @@ DISALLOWED_ASSETS = (
 
 class FakeBinance(object):
 
-    def __init__(self):
+    def __init__(self) -> None:
         this_dir = os.path.dirname(os.path.abspath(__file__))
         root_dir = Path(this_dir).parent.parent.parent
         json_path = (
@@ -54,10 +54,10 @@ class FakeBinance(object):
 
         self._symbols_to_pair = create_binance_symbols_to_pair(self._exchange_info)
 
-        self.trades_list = []
-        self.balances_dict = {}
-        self.deposits_ledger = []
-        self.withdrawals_ledger = []
+        self.trades_list: List[Dict[str, Any]] = []
+        self.balances_dict: Dict[str, FVal] = {}
+        self.deposits_ledger: List[Dict[str, Any]] = []
+        self.withdrawals_ledger: List[Dict[str, Any]] = []
 
     def increase_asset(self, asset: Asset, amount: FVal) -> None:
         binance_symbol = asset.to_binance()
@@ -111,7 +111,7 @@ class FakeBinance(object):
 
     def get_balance(self, asset: Asset) -> Optional[FVal]:
         """Returns the balance of asset that's held in the exchance or None"""
-        return self.balances_dict.get(asset)
+        return self.balances_dict.get(asset.identifier)
 
     def deposit(self, asset: Asset, amount: FVal, time: Timestamp) -> None:
         self.increase_asset(asset, amount)

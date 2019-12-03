@@ -83,7 +83,7 @@ class Bitmex(ExchangeInterface):
     ):
         super(Bitmex, self).__init__('bitmex', api_key, secret, database)
         self.uri = 'https://bitmex.com'
-        self.session.headers.update({'api-key': api_key})  # type: ignore
+        self.session.headers.update({'api-key': api_key})
         self.msg_aggregator = msg_aggregator
 
     def first_connection(self) -> None:

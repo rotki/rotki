@@ -121,7 +121,7 @@ class Rotkehlchen():
             user: str,
             password: str,
             create_new: bool,
-            sync_approval: bool,
+            sync_approval: str,
             api_key: ApiKey,
             api_secret: ApiSecret,
     ) -> None:
@@ -243,7 +243,7 @@ class Rotkehlchen():
 
         self.data.set_premium_credentials(api_key, api_secret)
 
-    def start(self) -> None:
+    def start(self) -> gevent.Greenlet:
         return gevent.spawn(self.main_loop)
 
     def main_loop(self) -> None:

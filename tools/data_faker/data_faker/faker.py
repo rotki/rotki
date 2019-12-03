@@ -1,3 +1,4 @@
+import argparse
 import datetime
 import logging
 import random
@@ -11,13 +12,14 @@ from data_faker.mock_apis.api import APIServer, RestAPI
 
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
+from rotkehlchen.typing import ApiKey, ApiSecret
 
 logger = logging.getLogger(__name__)
 
 
 class DataFaker(object):
 
-    def __init__(self, args):
+    def __init__(self, args: argparse.Namespace) -> None:
         args.logfile = 'data_faker.log'
         self.rotki = Rotkehlchen(args)
 
@@ -71,7 +73,7 @@ class DataFaker(object):
             user=user_name,
             password=given_password,
             create_new=True,
-            sync_approval=False,
-            api_key='',
-            api_secret='',
+            sync_approval='no',
+            api_key=ApiKey(''),
+            api_secret=ApiSecret(b''),
         )
