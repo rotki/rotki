@@ -1,7 +1,7 @@
 import json
 import os
 import random
-from typing import Callable, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from data_faker.utils import assets_exist_at_time
 
@@ -16,7 +16,7 @@ from rotkehlchen.typing import Timestamp, TradePair
 
 class FakeKraken(object):
 
-    def __init__(self):
+    def __init__(self) -> None:
 
         # Use real data from 2019-02-15 for the AssetPairs
         dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -29,13 +29,13 @@ class FakeKraken(object):
 
             self.ticker = json.loads(f.read())
 
-        self.trades_dict = {}
-        self.balances_dict = {}
-        self.deposits_ledger = []
-        self.withdrawals_ledger = []
+        self.trades_dict: Dict[str, Dict[str, Any]] = {}
+        self.balances_dict: Dict[str, FVal] = {}
+        self.deposits_ledger: List[Dict[str, Any]] = []
+        self.withdrawals_ledger: List[Dict[str, Any]] = []
         self.current_ledger_id = 1
 
-    def next_ledger_id(self):
+    def next_ledger_id(self) -> int:
         ledger_id = self.current_ledger_id
         self.current_ledger_id += 1
         return ledger_id

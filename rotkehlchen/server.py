@@ -1,6 +1,7 @@
 # Based on https://github.com/fyears/electron-python-example
 from __future__ import print_function
 
+import base64
 import logging
 import os
 import signal
@@ -28,7 +29,14 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.serialization.serialize import process_result
-from rotkehlchen.typing import FiatAsset, SupportedBlockchain, Timestamp
+from rotkehlchen.typing import (
+    ApiKey,
+    ApiSecret,
+    BlockchainAddress,
+    FiatAsset,
+    SupportedBlockchain,
+    Timestamp,
+)
 from rotkehlchen.utils.misc import simple_result
 from rotkehlchen.utils.serialization import pretty_json_dumps
 from rotkehlchen.utils.version_check import check_if_version_up_to_date
@@ -38,7 +46,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class RotkehlchenServer():
-    def __init__(self):
+    def __init__(self) -> None:
         arg_parser = app_args(
             prog='rotkehlchen',
             description='Rotkehlchen Crypto Portfolio Management',
@@ -51,10 +59,10 @@ class RotkehlchenServer():
         # Greenlets that will be waited for when we shutdown
         self.waited_greenlets = [mainloop_greenlet]
         # Greenlets that can be killed instead of waited for when we shutdown
-        self.killable_greenlets = []
+        self.killable_greenlets: List[gevent.Greenlet] = []
         self.task_lock = Semaphore()
         self.task_id = 0
-        self.task_results = {}
+        self.task_results: Dict[int, Any] = {}
 
     def new_task_id(self):
         with self.task_lock:
@@ -70,7 +78,7 @@ class RotkehlchenServer():
         with self.task_lock:
             return self.task_results[task_id]
 
-    def port(self):
+    def port(self) -> int:
         return self.args.zerorpc_port
 
     def shutdown(self):
@@ -261,15 +269,15 @@ class RotkehlchenServer():
 
     def query_timed_balances_data(self, given_asset: str, start_ts: int, end_ts: int) -> Dict:
         try:
-            start_ts = deserialize_timestamp(start_ts)
-            end_ts = deserialize_timestamp(end_ts)
+            from_ts = deserialize_timestamp(start_ts)
+            to_ts = deserialize_timestamp(end_ts)
             asset = Asset(given_asset)
         except (UnknownAsset, DeserializationError) as e:
             return {'result': False, 'message': str(e)}
 
         res = self.rotkehlchen.data.db.query_timed_balances(
-            from_ts=start_ts,
-            to_ts=end_ts,
+            from_ts=from_ts,
+            to_ts=to_ts,
             asset=asset,
         )
         result = {'result': res, 'message': ''}
@@ -408,7 +416,8 @@ class RotkehlchenServer():
         except ValueError:
             msg = f'Tried to add blockchain account for unsupported blockchain {given_blockchain}'
             return simple_result(False, msg)
-        return self.rotkehlchen.add_blockchain_account(blockchain, given_account)
+        account = cast(BlockchainAddress, given_account)
+        return self.rotkehlchen.add_blockchain_account(blockchain, account)
 
     def remove_blockchain_account(self, given_blockchain: str, given_account: str):
         try:
@@ -418,7 +427,8 @@ class RotkehlchenServer():
                 f'Tried to remove blockchain account for unsupported blockchain {given_blockchain}'
             )
             return simple_result(False, msg)
-        return self.rotkehlchen.remove_blockchain_account(blockchain, given_account)
+        account = cast(BlockchainAddress, given_account)
+        return self.rotkehlchen.remove_blockchain_account(blockchain, account)
 
     def get_ignored_assets(self):
         result = {
@@ -506,8 +516,8 @@ class RotkehlchenServer():
                 password,
                 create_new,
                 sync_approval,
-                api_key,
-                api_secret,
+                ApiKey(api_key),
+                ApiSecret(base64.b64decode(api_secret)),
             )
             res['exchanges'] = self.rotkehlchen.exchange_manager.get_connected_exchange_names()
             res['premium'] = self.rotkehlchen.premium is not None
@@ -522,7 +532,7 @@ class RotkehlchenServer():
 
         return res
 
-    def main(self):
+    def main(self) -> None:
         if os.name != 'nt':
             gevent.hub.signal(signal.SIGQUIT, self.shutdown)
         gevent.hub.signal(signal.SIGINT, self.shutdown)

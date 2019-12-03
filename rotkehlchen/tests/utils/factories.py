@@ -3,6 +3,7 @@ import random
 import string
 
 from rotkehlchen.fval import FVal
+from rotkehlchen.typing import ApiKey, ApiSecret
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -28,9 +29,9 @@ def make_random_timestamp(start=1451606400, end=None):
     return random.randint(start, end)
 
 
-def make_api_key():
-    return base64.b64encode(make_random_b64bytes(128))
+def make_api_key() -> ApiKey:
+    return ApiKey(make_random_b64bytes(128).decode())
 
 
-def make_api_secret():
-    return base64.b64encode(make_random_b64bytes(128))
+def make_api_secret() -> ApiSecret:
+    return ApiSecret(base64.b64encode(make_random_b64bytes(128)))

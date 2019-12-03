@@ -1,6 +1,7 @@
 import json
 import logging
 from http import HTTPStatus
+from typing import Optional
 
 from data_faker.mock_apis.resources import (
     BinanceAccountResource,
@@ -54,7 +55,7 @@ def endpoint_not_found(e):
     return api_error('invalid endpoint', HTTPStatus.NOT_FOUND)
 
 
-def restapi_setup_urls(flask_api_context, rest_api, urls):
+def restapi_setup_urls(flask_api_context, rest_api, urls) -> None:
     for route, resource_cls in urls:
         flask_api_context.add_resource(
             resource_cls,
@@ -65,7 +66,7 @@ def restapi_setup_urls(flask_api_context, rest_api, urls):
 
 class APIServer(object):
 
-    def __init__(self, rest_api):
+    def __init__(self, rest_api) -> None:
         flask_app = Flask(__name__)
         blueprint = create_blueprint()
         flask_api_context = Api(blueprint)
@@ -81,15 +82,15 @@ class APIServer(object):
         self.blueprint = blueprint
         self.flask_api_context = flask_api_context
 
-        self.wsgiserver = None
+        self.wsgiserver: Optional[WSGIServer] = None
         self.flask_app.register_blueprint(self.blueprint)
 
         self.flask_app.errorhandler(HTTPStatus.NOT_FOUND)(endpoint_not_found)
 
-    def run(self, host='127.0.0.1', port=5001, **kwargs):
+    def run(self, host='127.0.0.1', port=5001, **kwargs) -> None:
         self.flask_app.run(host=host, port=port, **kwargs)
 
-    def start(self, host='127.0.0.1', port=5001):
+    def start(self, host: str = '127.0.0.1', port: int = 5001) -> None:
         wsgi_logger = logging.getLogger(__name__ + '.pywsgi')
         self.wsgiserver = WSGIServer(
             (host, port),
@@ -99,14 +100,14 @@ class APIServer(object):
         )
         self.wsgiserver.start()
 
-    def stop(self, timeout=5):
-        if getattr(self, 'wsgiserver', None):
+    def stop(self, timeout: int = 5) -> None:
+        if self.wsgiserver is not None:
             self.wsgiserver.stop(timeout)
             self.wsgiserver = None
 
 
 class RestAPI(object):
-    def __init__(self, fake_kraken, fake_binance):
+    def __init__(self, fake_kraken, fake_binance) -> None:
         self.kraken = fake_kraken
         self.binance = fake_binance
 

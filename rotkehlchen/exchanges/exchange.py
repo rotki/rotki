@@ -36,7 +36,7 @@ class ExchangeInterface(CacheableObject):
             database: 'DBHandler',
     ):
         assert isinstance(api_key, T_ApiKey), (
-            'api key for {} should be a bytestring'.format(name)
+            'api key for {} should be a string'.format(name)
         )
         assert isinstance(secret, T_ApiSecret), (
             'secret for {} should be a bytestring'.format(name)

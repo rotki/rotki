@@ -129,9 +129,9 @@ def test_add_remove_exchange(data_dir, username):
     # and check the credentials can be retrieved
     credentials = db.get_exchange_credentials()
     assert len(credentials) == 2
-    assert credentials['kraken'].api_key == b'kraken_api_key'
+    assert credentials['kraken'].api_key == 'kraken_api_key'
     assert credentials['kraken'].api_secret == b'kraken_api_secret'
-    assert credentials['binance'].api_key == b'binance_api_key'
+    assert credentials['binance'].api_key == 'binance_api_key'
     assert credentials['binance'].api_secret == b'binance_api_secret'
 
     # remove an exchange and see it works

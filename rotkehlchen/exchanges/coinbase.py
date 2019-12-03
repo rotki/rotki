@@ -259,7 +259,7 @@ class Coinbase(ExchangeInterface):
         self.session.headers.update({
             'CB-ACCESS-SIGN': signature,
             'CB-ACCESS-TIMESTAMP': timestamp,
-            'CB-ACCESS-KEY': self.api_key.decode(),
+            'CB-ACCESS-KEY': self.api_key,
             # This is needed to guarantee the up to the given date
             # API version response.
             'CB-VERSION': '2019-08-25',
