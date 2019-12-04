@@ -331,7 +331,7 @@ class Rotkehlchen():
 
     def query_balances(
             self,
-            requested_save_data: bool = False,
+            requested_save_data: bool = True,
             timestamp: Timestamp = None,
     ) -> Dict[str, Any]:
         """Query all balances rotkehlchen can see.
@@ -399,7 +399,7 @@ class Rotkehlchen():
 
         result_dict = merge_dicts(combined, stats)
 
-        allowed_to_save = requested_save_data or self.data.should_save_balances()
+        allowed_to_save = requested_save_data and self.data.should_save_balances()
         if problem_free and allowed_to_save:
             if not timestamp:
                 timestamp = Timestamp(int(time.time()))
