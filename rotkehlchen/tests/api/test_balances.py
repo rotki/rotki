@@ -1,4 +1,6 @@
 from http import HTTPStatus
+from typing import Dict, List, NamedTuple
+from unittest.mock import _patch
 
 import pytest
 import requests
@@ -20,7 +22,7 @@ from rotkehlchen.tests.utils.exchanges import (
     patch_poloniex_balances_query,
 )
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
-from rotkehlchen.typing import Location
+from rotkehlchen.typing import BTCAddress, ChecksumEthAddress, Location
 from rotkehlchen.utils.misc import from_wei, satoshis_to_btc
 
 
@@ -119,6 +121,66 @@ def assert_all_balances(
         assert location_data[4].location == Location.BLOCKCHAIN.serialize_for_db()
 
 
+class BalancesTestSetup(NamedTuple):
+    eth_balances: List[ChecksumEthAddress]
+    btc_balances: List[BTCAddress]
+    eur_balance: FVal
+    rdn_balance: FVal
+    binance_balances: Dict[str, FVal]
+    poloniex_balances: Dict[str, FVal]
+    poloniex_patch: _patch
+    binance_patch: _patch
+    blockchain_patch: _patch
+
+
+def setup_balances(
+        rotki,
+        ethereum_accounts: List[ChecksumEthAddress],
+        btc_accounts: List[BTCAddress],
+) -> BalancesTestSetup:
+    """Setup the blockchain, exchange and fiat balances for some tests"""
+    eth_acc1 = ethereum_accounts[0]
+    eth_acc2 = ethereum_accounts[1]
+    eth_balance1 = '1000000'
+    eth_balance2 = '2000000'
+    eth_balances = [eth_balance1, eth_balance2]
+    btc_balance1 = '3000000'
+    btc_balance2 = '5000000'
+    btc_balances = [btc_balance1, btc_balance2]
+    rdn_balance = '4000000'
+    eur_balance = FVal('1550')
+
+    rotki.data.db.add_fiat_balance(A_EUR, eur_balance)
+    binance = rotki.exchange_manager.connected_exchanges['binance']
+    poloniex = rotki.exchange_manager.connected_exchanges['poloniex']
+    poloniex_patch = patch_poloniex_balances_query(poloniex)
+    binance_patch = patch_binance_balances_query(binance)
+    blockchain_patch = mock_etherscan_balances_query(
+        eth_map={
+            eth_acc1: {'ETH': eth_balance1},
+            eth_acc2: {'ETH': eth_balance2, 'RDN': rdn_balance},
+        },
+        btc_map={btc_accounts[0]: btc_balance1, btc_accounts[1]: btc_balance2},
+        original_requests_get=requests.get,
+    )
+    # Taken from BINANCE_BALANCES_RESPONSE from tests.utils.exchanges
+    binance_balances = {'ETH': FVal('4763368.68006011'), 'BTC': FVal('4723846.89208129')}
+    # Taken from POLONIEX_BALANCES_RESPONSE from tests.utils.exchanges
+    poloniex_balances = {'ETH': FVal('11.0'), 'BTC': FVal('5.5')}
+
+    return BalancesTestSetup(
+        eth_balances=eth_balances,
+        btc_balances=btc_balances,
+        rdn_balance=rdn_balance,
+        eur_balance=eur_balance,
+        binance_balances=binance_balances,
+        poloniex_balances=poloniex_balances,
+        poloniex_patch=poloniex_patch,
+        binance_patch=binance_patch,
+        blockchain_patch=blockchain_patch,
+    )
+
+
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
@@ -136,38 +198,10 @@ def test_query_all_balances(
     # Disable caching of query results
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     rotki.blockchain.cache_ttl_secs = 0
-
-    eth_acc1 = ethereum_accounts[0]
-    eth_acc2 = ethereum_accounts[1]
-    eth_balance1 = '1000000'
-    eth_balance2 = '2000000'
-    eth_balances = [eth_balance1, eth_balance2]
-    btc_balance1 = '3000000'
-    btc_balance2 = '5000000'
-    btc_balances = [btc_balance1, btc_balance2]
-    rdn_balance = '4000000'
-    eur_balance = FVal('1550')
-
-    rotki.data.db.add_fiat_balance(A_EUR, eur_balance)
-    binance = rotki.exchange_manager.connected_exchanges['binance']
-    poloniex = rotki.exchange_manager.connected_exchanges['poloniex']
-    poloniex_patch = patch_poloniex_balances_query(poloniex)
-    binance_patch = patch_binance_balances_query(binance)
-    blockchain_patch = mock_etherscan_balances_query(
-        eth_map={
-            eth_acc1: {'ETH': eth_balance1},
-            eth_acc2: {'ETH': eth_balance2, 'RDN': rdn_balance},
-        },
-        btc_map={btc_accounts[0]: btc_balance1, btc_accounts[1]: btc_balance2},
-        original_requests_get=requests.get,
-    )
-    # Taken from BINANCE_BALANCES_RESPONSE from tests.utils.exchanges
-    binance_balances = {'ETH': FVal('4763368.68006011'), 'BTC': FVal('4723846.89208129')}
-    # Taken from POLONIEX_BALANCES_RESPONSE from tests.utils.exchanges
-    poloniex_balances = {'ETH': FVal('11.0'), 'BTC': FVal('5.5')}
+    setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
 
     # Test all balances request by requesting to not save the data
-    with poloniex_patch, binance_patch, blockchain_patch:
+    with setup.poloniex_patch, setup.binance_patch, setup.blockchain_patch:
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
@@ -181,17 +215,17 @@ def test_query_all_balances(
         data=json_data,
         db=rotki.data.db,
         expected_data_in_db=False,
-        eth_balances=eth_balances,
-        btc_balances=btc_balances,
-        rdn_balances=[rdn_balance],
-        fiat_balances={A_EUR: eur_balance},
-        binance_balances=binance_balances,
-        poloniex_balances=poloniex_balances,
+        eth_balances=setup.eth_balances,
+        btc_balances=setup.btc_balances,
+        rdn_balances=[setup.rdn_balance],
+        fiat_balances={A_EUR: setup.eur_balance},
+        binance_balances=setup.binance_balances,
+        poloniex_balances=setup.poloniex_balances,
     )
 
     # now do the same but save the data in the DB and test it works
     # Omit the argument to test that default value of save_data is True
-    with poloniex_patch, binance_patch, blockchain_patch:
+    with setup.poloniex_patch, setup.binance_patch, setup.blockchain_patch:
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
@@ -204,12 +238,12 @@ def test_query_all_balances(
         data=json_data,
         db=rotki.data.db,
         expected_data_in_db=True,
-        eth_balances=eth_balances,
-        btc_balances=btc_balances,
-        rdn_balances=[rdn_balance],
-        fiat_balances={A_EUR: eur_balance},
-        binance_balances=binance_balances,
-        poloniex_balances=poloniex_balances,
+        eth_balances=setup.eth_balances,
+        btc_balances=setup.btc_balances,
+        rdn_balances=[setup.rdn_balance],
+        fiat_balances={A_EUR: setup.eur_balance},
+        binance_balances=setup.binance_balances,
+        poloniex_balances=setup.poloniex_balances,
     )
 
 
@@ -227,38 +261,10 @@ def test_query_all_balances_async(
     # Disable caching of query results
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     rotki.blockchain.cache_ttl_secs = 0
-
-    eth_acc1 = ethereum_accounts[0]
-    eth_acc2 = ethereum_accounts[1]
-    eth_balance1 = '1000000'
-    eth_balance2 = '2000000'
-    eth_balances = [eth_balance1, eth_balance2]
-    btc_balance1 = '3000000'
-    btc_balance2 = '5000000'
-    btc_balances = [btc_balance1, btc_balance2]
-    rdn_balance = '4000000'
-    eur_balance = FVal('1550')
-
-    rotki.data.db.add_fiat_balance(A_EUR, eur_balance)
-    binance = rotki.exchange_manager.connected_exchanges['binance']
-    poloniex = rotki.exchange_manager.connected_exchanges['poloniex']
-    poloniex_patch = patch_poloniex_balances_query(poloniex)
-    binance_patch = patch_binance_balances_query(binance)
-    blockchain_patch = mock_etherscan_balances_query(
-        eth_map={
-            eth_acc1: {'ETH': eth_balance1},
-            eth_acc2: {'ETH': eth_balance2, 'RDN': rdn_balance},
-        },
-        btc_map={btc_accounts[0]: btc_balance1, btc_accounts[1]: btc_balance2},
-        original_requests_get=requests.get,
-    )
-    # Taken from BINANCE_BALANCES_RESPONSE from tests.utils.exchanges
-    binance_balances = {'ETH': FVal('4763368.68006011'), 'BTC': FVal('4723846.89208129')}
-    # Taken from POLONIEX_BALANCES_RESPONSE from tests.utils.exchanges
-    poloniex_balances = {'ETH': FVal('11.0'), 'BTC': FVal('5.5')}
+    setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
 
     # Test all balances request by requesting to not save the data
-    with poloniex_patch, binance_patch, blockchain_patch:
+    with setup.poloniex_patch, setup.binance_patch, setup.blockchain_patch:
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
@@ -272,12 +278,12 @@ def test_query_all_balances_async(
         data=outcome,
         db=rotki.data.db,
         expected_data_in_db=True,
-        eth_balances=eth_balances,
-        btc_balances=btc_balances,
-        rdn_balances=[rdn_balance],
-        fiat_balances={A_EUR: eur_balance},
-        binance_balances=binance_balances,
-        poloniex_balances=poloniex_balances,
+        eth_balances=setup.eth_balances,
+        btc_balances=setup.btc_balances,
+        rdn_balances=[setup.rdn_balance],
+        fiat_balances={A_EUR: setup.eur_balance},
+        binance_balances=setup.binance_balances,
+        poloniex_balances=setup.poloniex_balances,
     )
 
 
@@ -459,3 +465,43 @@ def test_settting_fiat_balances_errors(rotkehlchen_api_server):
         contained_in_msg='Asset ETH is not a FIAT asset',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+@pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
+@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
+@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+def test_query_owned_assets(
+        rotkehlchen_api_server_with_exchanges,
+        ethereum_accounts,
+        btc_accounts,
+        number_of_eth_accounts,
+):
+    """Test that using the query all owned assets endpoint works"""
+    # Disable caching of query results
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    rotki.blockchain.cache_ttl_secs = 0
+    setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
+
+    # Get all our mocked balances and save them in the DB
+    with setup.poloniex_patch, setup.binance_patch, setup.blockchain_patch:
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                "allbalancesresource",
+            ), json={'save_data': True}
+        )
+    assert_proper_response(response)
+
+    # And now check that the query owned assets endpoint works
+    with setup.poloniex_patch, setup.binance_patch, setup.blockchain_patch:
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                "ownedassetsresource",
+            )
+        )
+    assert_proper_response(response)
+    data = response.json()
+    assert data['message'] == ''
+    assert set(data['result']) == {'ETH', 'BTC', 'EUR', 'RDN'}
