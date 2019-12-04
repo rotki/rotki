@@ -299,9 +299,9 @@ class RestAPI():
         if async_query:
             return self._query_async(command='_query_all_balances', save_data=save_data)
 
-        result = self._query_all_balances(save_data=save_data)
+        result, message = self._query_all_balances(save_data=save_data)
 
-        return api_response(_wrap_in_ok_result(process_result(result)), HTTPStatus.OK)
+        return api_response(_wrap_in_result(process_result(result), message), HTTPStatus.OK)
 
     @require_loggedin_user()
     def get_exchanges(self) -> Response:
@@ -689,7 +689,7 @@ class RestAPI():
 
     @require_loggedin_user()
     def query_owned_assets(self) -> Response:
-        result = process_result(self.rotkehlchen.data.db.query_owned_assets())
+        result = process_result_list(self.rotkehlchen.data.db.query_owned_assets())
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     @require_premium_user(active_check=False)

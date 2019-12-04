@@ -24,6 +24,7 @@ from rotkehlchen.api.v1.resources import (
     HistoryProcessingResource,
     IgnoredAssetsResource,
     MessagesResource,
+    OwnedAssetsResource,
     PeriodicDataResource,
     SettingsResource,
     StatisticsAssetBalanceResource,
@@ -81,6 +82,7 @@ URLS_V1: URLS = [
     ('/history/export/', HistoryExportingResource),
     ('/blockchains/ETH/tokens', EthereumTokensResource),
     ('/blockchains/<string:blockchain>', BlockchainsAccountsResource),
+    ('/assets', OwnedAssetsResource),
     ('/assets/ignored', IgnoredAssetsResource),
     ('/version', VersionResource),
 ]
