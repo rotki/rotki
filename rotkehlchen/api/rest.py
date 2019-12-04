@@ -289,8 +289,10 @@ class RestAPI():
         res = process_result(rates)
         return api_response(_wrap_in_ok_result(res), status_code=HTTPStatus.OK)
 
-    def _query_all_balances(self, save_data: bool) -> Dict[str, Any]:
-        return self.rotkehlchen.query_balances(requested_save_data=save_data)
+    def _query_all_balances(self, save_data: bool) -> Tuple[Dict[str, Any], str]:
+        result = self.rotkehlchen.query_balances(requested_save_data=save_data)
+        message = ''
+        return result, message
 
     @require_loggedin_user()
     def query_all_balances(self, save_data: bool, async_query: bool) -> Response:
