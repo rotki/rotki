@@ -1004,7 +1004,7 @@ Querying FIAT balances
    :statuscode 409: User is not logged in.
    :statuscode 500: Internal Rotki error
 
-Settings FIAT balances
+Setting FIAT balances
 ======================
 
 .. http:get:: /api/(version)/balances/fiat/
@@ -1019,7 +1019,7 @@ Settings FIAT balances
       PATCH /api/1/balances/fiat/ HTTP/1.1
       Host: localhost:5042
 
-      {"EUR": "5000", "USD": "3000"}
+      {"balances": {"EUR": "5000", "USD": "3000"}}
 
    **Example Response**:
 

@@ -384,7 +384,7 @@ class TradeSchema(BaseSchema):
 
 
 class FiatBalancesSchema(BaseSchema):
-    fields.Dict(keys=FiatAssetField(), values=AmountField())
+    balances = fields.Dict(keys=FiatAssetField(), values=AmountField(), required=True)
 
     class Meta:
         strict = True
