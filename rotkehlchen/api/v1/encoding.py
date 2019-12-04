@@ -498,7 +498,7 @@ class NewUserSchema(BaseUserSchema):
 
 class AllBalancesQuerySchema(BaseSchema):
     async_query = fields.Boolean(missing=False)
-    save_data = fields.Boolean(required=True)
+    save_data = fields.Boolean(missing=True)
 
     class Meta:
         strict = True
