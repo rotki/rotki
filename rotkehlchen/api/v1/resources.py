@@ -151,6 +151,12 @@ class ExchangeBalancesResource(BaseResource):
         return self.rest_api.query_exchange_balances(name=name, async_query=async_query)
 
 
+class OwnedAssetsResource(BaseResource):
+
+    def get(self) -> Response:
+        return self.rest_api.query_owned_assets()
+
+
 class ExchangeTradesResource(BaseResource):
 
     get_schema = ExchangeTradesQuerySchema()
