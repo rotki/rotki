@@ -6,12 +6,19 @@ import shutil
 import subprocess
 import sys
 from binascii import hexlify
+from typing import Any, Dict, List
+from unittest.mock import patch
 
 import gevent
 from web3.middleware import geth_poa_middleware
 
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.crypto import address_encoder, privatekey_to_address
+from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.genesis import GENESIS_STUB
+from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.utils.misc import from_wei, satoshis_to_btc
 
 if os.name != 'nt':
     # termios does not exist in windows
@@ -216,3 +223,122 @@ def geth_create_blockchain(
         raise ValueError('geth failed to start')
 
     return process
+
+
+def assert_btc_balances_result(
+        json_data: Dict[str, Any],
+        btc_balances: List[str],
+        also_eth: bool,
+) -> None:
+    """Asserts for correct BTC blockchain balances when mocked in tests"""
+    btc_balance1 = btc_balances[0]
+    btc_balance2 = btc_balances[1]
+    result = json_data['result']
+    per_account = result['per_account']
+    if also_eth:
+        assert len(per_account) == 2
+    else:
+        assert len(per_account) == 1
+    per_account = per_account['BTC']
+    assert len(per_account) == 2
+    assert FVal(per_account[UNIT_BTC_ADDRESS1]['amount']) == satoshis_to_btc(
+        FVal(btc_balance1),
+    )
+    assert FVal(per_account[UNIT_BTC_ADDRESS1]['usd_value']) > ZERO
+    assert FVal(per_account[UNIT_BTC_ADDRESS2]['amount']) == satoshis_to_btc(
+        FVal(btc_balance2),
+    )
+    assert FVal(per_account[UNIT_BTC_ADDRESS2]['usd_value']) > ZERO
+
+    totals = result['totals']
+    if also_eth:
+        assert len(totals) == 3
+    else:
+        assert len(totals) == 1
+
+    assert FVal(totals['BTC']['amount']) == (
+        satoshis_to_btc(FVal(btc_balance1)) +
+        satoshis_to_btc(FVal(btc_balance2))
+    )
+    assert FVal(totals['BTC']['usd_value']) > ZERO
+
+
+def assert_eth_balances_result(
+        json_data: Dict[str, Any],
+        eth_accounts: List[str],
+        eth_balances: List[str],
+        rdn_balance: str,
+        also_btc: bool,
+        totals_only: bool = False
+) -> None:
+    """Asserts for correct ETH blockchain balances when mocked in tests
+
+    If totals_only is given then this is a query for all balances so only the totals are shown
+    """
+    eth_acc1 = eth_accounts[0]
+    eth_acc2 = eth_accounts[1]
+    eth_balance1 = eth_balances[0]
+    eth_balance2 = eth_balances[1]
+    result = json_data['result']
+    if not totals_only:
+        per_account = result['per_account']
+        if also_btc:
+            assert len(per_account) == 2
+        else:
+            assert len(per_account) == 1
+        per_account = per_account['ETH']
+        assert len(per_account) == 2
+        assert FVal(per_account[eth_acc1]['ETH']) == from_wei(FVal(eth_balance1))
+        assert FVal(per_account[eth_acc1]['usd_value']) > ZERO
+        assert FVal(per_account[eth_acc2]['ETH']) == from_wei(FVal(eth_balance2))
+        assert FVal(per_account[eth_acc2]['RDN']) == from_wei(FVal(rdn_balance))
+        assert FVal(per_account[eth_acc2]['usd_value']) > ZERO
+
+    if totals_only:
+        totals = result
+    else:
+        totals = result['totals']
+    if also_btc:
+        assert len(totals) == 3
+    else:
+        assert len(totals) == 2
+
+    assert FVal(totals['ETH']['amount']) == (
+        from_wei(FVal(eth_balance1)) +
+        from_wei(FVal(eth_balance2))
+    )
+    assert FVal(totals['ETH']['usd_value']) > ZERO
+    assert FVal(totals['RDN']['amount']) == from_wei(FVal(rdn_balance))
+    assert FVal(totals['RDN']['usd_value']) > ZERO
+
+
+def mock_etherscan_balances_query(
+        eth_map: Dict[str, str],
+        btc_map: Dict[str, str],
+        original_requests_get,
+):
+
+    def mock_requests_get(url, *args, **kwargs):
+        if 'etherscan.io/api?module=account&action=balancemulti' in url:
+            accounts = []
+            for addr, value in eth_map.items():
+                accounts.append({'account': addr, 'balance': value['ETH']})
+            response = f'{{"status":"1","message":"OK","result":{json.dumps(accounts)}}}'
+        elif 'api.etherscan.io/api?module=account&action=tokenbalance' in url:
+            response = '{"status":"1","message":"OK","result":"0"}'
+            for addr, value in eth_map.items():
+                if addr in url and 'RDN' in value:
+                    response = f'{{"status":"1","message":"OK","result":"{value["RDN"]}"}}'
+
+        elif 'blockchain.info' in url:
+            queried_addr = url.split('/')[-1]
+            msg = f'Queried BTC address {queried_addr} is not in the given btc map to mock'
+            assert queried_addr in btc_map, msg
+            response = btc_map[queried_addr]
+
+        else:
+            return original_requests_get(url, *args, **kwargs)
+
+        return MockResponse(200, response)
+
+    return patch('rotkehlchen.utils.misc.requests.get', wraps=mock_requests_get)

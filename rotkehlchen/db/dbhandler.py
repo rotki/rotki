@@ -699,8 +699,8 @@ class DBHandler:
     def add_exchange(
             self,
             name: str,
-            api_key: str,
-            api_secret: str,
+            api_key: ApiKey,
+            api_secret: ApiSecret,
     ) -> None:
         if name not in SUPPORTED_EXCHANGES:
             raise InputError('Unsupported exchange {}'.format(name))
@@ -708,7 +708,7 @@ class DBHandler:
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT INTO user_credentials (name, api_key, api_secret) VALUES (?, ?, ?)',
-            (name, api_key, api_secret),
+            (name, api_key, api_secret.decode()),
         )
         self.conn.commit()
         self.update_last_write()

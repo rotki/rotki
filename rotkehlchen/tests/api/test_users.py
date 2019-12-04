@@ -176,7 +176,7 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
     assert_error_response(
         response=response,
-        contained_in_msg='Not a valid string',
+        contained_in_msg='Given API Key should be a string',
     )
     # Invalid type for premium api secret
     data = {
@@ -188,7 +188,7 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
     assert_error_response(
         response=response,
-        contained_in_msg='Not a valid string',
+        contained_in_msg='Given API Secret should be a string',
     )
 
     # Check that the directory was NOT created

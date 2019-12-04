@@ -7,7 +7,7 @@ import tempfile
 import time
 import zlib
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver

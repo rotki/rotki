@@ -15,10 +15,12 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.exchanges import (
-    BINANCE_BALANCES_RESPONSE,
     BINANCE_MYTRADES_RESPONSE,
-    POLONIEX_BALANCES_RESPONSE,
     POLONIEX_TRADES_RESPONSE,
+    assert_binance_balances_result,
+    assert_poloniex_balances_result,
+    patch_binance_balances_query,
+    patch_poloniex_balances_query,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 
@@ -121,7 +123,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server):
         )
     assert_error_response(
         response=response,
-        contained_in_msg='Not a valid string',
+        contained_in_msg='Given API Key should be a string',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -145,7 +147,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server):
         )
     assert_error_response(
         response=response,
-        contained_in_msg='Not a valid string',
+        contained_in_msg='Given API Secret should be a string',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -229,20 +231,6 @@ def test_remove_exchange_errors(rotkehlchen_api_server):
     )
 
 
-def assert_binance_balances_result(balances: Dict[str, Any]) -> None:
-    assert balances['BTC']['amount'] == '4723846.89208129'
-    assert balances['BTC']['usd_value'] is not None
-    assert balances['ETH']['amount'] == '4763368.68006011'
-    assert balances['ETH']['usd_value'] is not None
-
-
-def assert_poloniex_balances_result(balances: Dict[str, Any]) -> None:
-    assert balances['BTC']['amount'] == '5.5'
-    assert balances['BTC']['usd_value'] is not None
-    assert balances['ETH']['amount'] == '11.0'
-    assert balances['ETH']['usd_value'] is not None
-
-
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
 def test_exchange_query_balances(rotkehlchen_api_server_with_exchanges):
     """Test that using the exchange balances query endpoint works fine"""
@@ -251,11 +239,7 @@ def test_exchange_query_balances(rotkehlchen_api_server_with_exchanges):
     server = rotkehlchen_api_server_with_exchanges
     binance = server.rest_api.rotkehlchen.exchange_manager.connected_exchanges['binance']
 
-    def mock_binance_asset_return(url):  # pylint: disable=unused-argument
-        return MockResponse(200, BINANCE_BALANCES_RESPONSE)
-
-    binance_patch = patch.object(binance.session, 'get', side_effect=mock_binance_asset_return)
-
+    binance_patch = patch_binance_balances_query(binance)
     with binance_patch:
         response = requests.get(api_url_for(
             server,
@@ -271,11 +255,7 @@ def test_exchange_query_balances(rotkehlchen_api_server_with_exchanges):
     # query balances of all setup exchanges
     poloniex = server.rest_api.rotkehlchen.exchange_manager.connected_exchanges['poloniex']
 
-    def mock_poloniex_asset_return(url, req):  # pylint: disable=unused-argument
-        return MockResponse(200, POLONIEX_BALANCES_RESPONSE)
-
-    poloniex_patch = patch.object(poloniex.session, 'post', side_effect=mock_poloniex_asset_return)
-
+    poloniex_patch = patch_poloniex_balances_query(poloniex)
     with binance_patch, poloniex_patch:
         response = requests.get(api_url_for(server, "exchangebalancesresource"))
     assert_proper_response(response)
@@ -293,11 +273,7 @@ def test_exchange_query_balances_async(rotkehlchen_api_server_with_exchanges):
     server = rotkehlchen_api_server_with_exchanges
     binance = server.rest_api.rotkehlchen.exchange_manager.connected_exchanges['binance']
 
-    def mock_binance_asset_return(url):  # pylint: disable=unused-argument
-        return MockResponse(200, BINANCE_BALANCES_RESPONSE)
-
-    binance_patch = patch.object(binance.session, 'get', side_effect=mock_binance_asset_return)
-
+    binance_patch = patch_binance_balances_query(binance)
     with binance_patch:
         response = requests.get(api_url_for(
             server,
@@ -311,11 +287,7 @@ def test_exchange_query_balances_async(rotkehlchen_api_server_with_exchanges):
     # async query balances of all setup exchanges
     poloniex = server.rest_api.rotkehlchen.exchange_manager.connected_exchanges['poloniex']
 
-    def mock_poloniex_asset_return(url, req):  # pylint: disable=unused-argument
-        return MockResponse(200, POLONIEX_BALANCES_RESPONSE)
-
-    poloniex_patch = patch.object(poloniex.session, 'post', side_effect=mock_poloniex_asset_return)
-
+    poloniex_patch = patch_poloniex_balances_query(poloniex)
     with binance_patch, poloniex_patch:
         response = requests.get(
             api_url_for(server, "exchangebalancesresource"),

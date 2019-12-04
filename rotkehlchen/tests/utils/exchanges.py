@@ -1,3 +1,11 @@
+from typing import TYPE_CHECKING, Any, Dict
+from unittest.mock import patch
+
+from rotkehlchen.tests.utils.mock import MockResponse
+
+if TYPE_CHECKING:
+    from rotkehlchen.exchanges.binance import Binance, Poloniex
+
 POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE = """{
   "withdrawals": [
     {
@@ -275,3 +283,33 @@ BINANCE_MYTRADES_RESPONSE = """
     "isMaker": false,
     "isBestMatch": true
     }]"""
+
+
+def assert_binance_balances_result(balances: Dict[str, Any]) -> None:
+    assert balances['BTC']['amount'] == '4723846.89208129'
+    assert balances['BTC']['usd_value'] is not None
+    assert balances['ETH']['amount'] == '4763368.68006011'
+    assert balances['ETH']['usd_value'] is not None
+
+
+def assert_poloniex_balances_result(balances: Dict[str, Any]) -> None:
+    assert balances['BTC']['amount'] == '5.5'
+    assert balances['BTC']['usd_value'] is not None
+    assert balances['ETH']['amount'] == '11.0'
+    assert balances['ETH']['usd_value'] is not None
+
+
+def patch_binance_balances_query(binance: 'Binance'):
+    def mock_binance_asset_return(url, *args):  # pylint: disable=unused-argument
+        return MockResponse(200, BINANCE_BALANCES_RESPONSE)
+
+    binance_patch = patch.object(binance.session, 'get', side_effect=mock_binance_asset_return)
+    return binance_patch
+
+
+def patch_poloniex_balances_query(poloniex: 'Poloniex'):
+    def mock_poloniex_asset_return(url, *args):  # pylint: disable=unused-argument
+        return MockResponse(200, POLONIEX_BALANCES_RESPONSE)
+
+    poloniex_patch = patch.object(poloniex.session, 'post', side_effect=mock_poloniex_asset_return)
+    return poloniex_patch
