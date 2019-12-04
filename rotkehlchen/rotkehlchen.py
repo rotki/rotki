@@ -461,8 +461,8 @@ class Rotkehlchen():
     def setup_exchange(
             self,
             name: str,
-            api_key: str,
-            api_secret: str,
+            api_key: ApiKey,
+            api_secret: ApiSecret,
     ) -> Tuple[bool, str]:
         """
         Setup a new exchange with an api key and an api secret

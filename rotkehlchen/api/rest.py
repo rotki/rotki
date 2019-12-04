@@ -27,6 +27,8 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.typing import (
+    ApiKey,
+    ApiSecret,
     AssetAmount,
     BlockchainAddress,
     Fee,
@@ -307,7 +309,7 @@ class RestAPI():
         )
 
     @require_loggedin_user()
-    def setup_exchange(self, name: str, api_key: str, api_secret: str) -> Response:
+    def setup_exchange(self, name: str, api_key: ApiKey, api_secret: ApiSecret) -> Response:
         result, message = self.rotkehlchen.setup_exchange(name, api_key, api_secret)
 
         status_code = HTTPStatus.OK
@@ -559,8 +561,8 @@ class RestAPI():
             name: str,
             password: str,
             sync_approval: str,
-            premium_api_key: str,
-            premium_api_secret: str,
+            premium_api_key: ApiKey,
+            premium_api_secret: ApiSecret,
     ) -> Response:
         result_dict: Dict[str, Any] = {'result': None, 'message': ''}
         if self.rotkehlchen.user_is_logged_in:
@@ -572,8 +574,8 @@ class RestAPI():
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
         if (
-                premium_api_key != '' and premium_api_secret == '' or
-                premium_api_secret != '' and premium_api_key == ''
+                premium_api_key != '' and premium_api_secret == b'' or
+                premium_api_secret != b'' and premium_api_key == ''
         ):
             result_dict['message'] = 'Must provide both or neither of api key/secret'
             return api_response(result_dict, status_code=HTTPStatus.BAD_REQUEST)
@@ -665,8 +667,8 @@ class RestAPI():
     def user_set_premium_credentials(
             self,
             name: str,
-            api_key: str,
-            api_secret: str,
+            api_key: ApiKey,
+            api_secret: ApiSecret,
     ) -> Response:
         result_dict: Dict[str, Any] = {'result': None, 'message': ''}
 

@@ -2,12 +2,12 @@ import operator
 import os
 
 import pytest
+from eth_utils.address import to_checksum_address
 
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.tests.utils.blockchain import DEFAULT_BALANCE
-from rotkehlchen.utils.misc import from_wei
 from rotkehlchen.typing import SupportedBlockchain
-from eth_utils.address import to_checksum_address
+from rotkehlchen.utils.misc import from_wei
 
 
 @pytest.mark.skipif(
@@ -17,7 +17,7 @@ from eth_utils.address import to_checksum_address
 @pytest.mark.parametrize('have_blockchain_backend', [True])
 def test_eth_connection_initial_balances(
         blockchain,
-        number_of_accounts,
+        number_of_eth_accounts,
         ethereum_accounts,
         inquirer,  # pylint: disable=unused-argument
 ):
@@ -27,7 +27,7 @@ def test_eth_connection_initial_balances(
     assert 'totals' in res
 
     per_eth_account = res['per_account']['ETH']
-    assert len(ethereum_accounts) == len(per_eth_account) == number_of_accounts
+    assert len(ethereum_accounts) == len(per_eth_account) == number_of_eth_accounts
 
     eth_default_balance = from_wei(DEFAULT_BALANCE)
     for acc, values in per_eth_account.items():
@@ -36,7 +36,7 @@ def test_eth_connection_initial_balances(
         assert 'usd_value' in values
 
     totals_eth = res['totals']['ETH']
-    assert totals_eth['amount'] == number_of_accounts * eth_default_balance
+    assert totals_eth['amount'] == number_of_eth_accounts * eth_default_balance
     assert 'usd_value' in totals_eth
 
 

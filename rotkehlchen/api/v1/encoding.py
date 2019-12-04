@@ -15,7 +15,14 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import Location, SupportedBlockchain, Timestamp, TradeType
+from rotkehlchen.typing import (
+    ApiKey,
+    ApiSecret,
+    Location,
+    SupportedBlockchain,
+    Timestamp,
+    TradeType,
+)
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -237,6 +244,52 @@ class ExchangeNameField(fields.Field):
         return value
 
 
+class ApiKeyField(fields.Field):
+
+    @staticmethod
+    def _serialize(
+            value: ApiKey,
+            attr,  # pylint: disable=unused-argument
+            obj,  # pylint: disable=unused-argument
+            **kwargs,  # pylint: disable=unused-argument
+    ) -> str:
+        return str(value)
+
+    def _deserialize(
+            self,
+            value: str,
+            attr,  # pylint: disable=unused-argument
+            data,  # pylint: disable=unused-argument
+            **kwargs,  # pylint: disable=unused-argument
+    ) -> ApiKey:
+        if not isinstance(value, str):
+            raise ValidationError('Given API Key should be a string')
+        return ApiKey(value)
+
+
+class ApiSecretField(fields.Field):
+
+    @staticmethod
+    def _serialize(
+            value: ApiSecret,
+            attr,  # pylint: disable=unused-argument
+            obj,  # pylint: disable=unused-argument
+            **kwargs,  # pylint: disable=unused-argument
+    ) -> str:
+        return str(value.decode())
+
+    def _deserialize(
+            self,
+            value: str,
+            attr,  # pylint: disable=unused-argument
+            data,  # pylint: disable=unused-argument
+            **kwargs,  # pylint: disable=unused-argument
+    ) -> ApiSecret:
+        if not isinstance(value, str):
+            raise ValidationError('Given API Secret should be a string')
+        return ApiSecret(value.encode())
+
+
 class DirectoryField(fields.Field):
 
     @staticmethod
@@ -418,8 +471,8 @@ class UserActionSchema(BaseSchema):
         validate=validate.OneOf(choices=('login', 'logout')),
         missing=None,
     )
-    premium_api_key = fields.String(missing='')
-    premium_api_secret = fields.String(missing='')
+    premium_api_key = ApiKeyField(missing=ApiKey(''))
+    premium_api_secret = ApiSecretField(missing=ApiSecret(b''))
 
     @validates_schema
     def validate_user_action_schema(self, data, **kwargs):
@@ -427,7 +480,7 @@ class UserActionSchema(BaseSchema):
             if data['password'] is None:
                 raise ValidationError('Missing password field for login')
         elif data['action'] is None:
-            if data['premium_api_key'] == '' or data['premium_api_secret'] == '':
+            if data['premium_api_key'] == '' or data['premium_api_secret'] == b'':
                 raise ValidationError(
                     'Without an action premium api key and secret must be provided',
                 )
@@ -439,8 +492,8 @@ class UserActionSchema(BaseSchema):
 
 
 class NewUserSchema(BaseUserSchema):
-    premium_api_key = fields.String(missing='')
-    premium_api_secret = fields.String(missing='')
+    premium_api_key = ApiKeyField(missing=ApiKey(''))
+    premium_api_secret = ApiSecretField(missing=ApiSecret(b''))
 
 
 class AllBalancesQuerySchema(BaseSchema):
@@ -455,8 +508,8 @@ class AllBalancesQuerySchema(BaseSchema):
 
 class ExchangesResourceAddSchema(BaseSchema):
     name = ExchangeNameField(required=True)
-    api_key = fields.String(required=True)
-    api_secret = fields.String(required=True)
+    api_key = ApiKeyField(required=True)
+    api_secret = ApiSecretField(required=True)
 
     class Meta:
         strict = True

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Dict, List, Tuple
 
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ApiCredentials
+from rotkehlchen.typing import ApiCredentials, ApiKey, ApiSecret
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
@@ -37,8 +37,8 @@ class ExchangeManager():
     def setup_exchange(
             self,
             name: str,
-            api_key: str,
-            api_secret: str,
+            api_key: ApiKey,
+            api_secret: ApiSecret,
             database: 'DBHandler',
     ) -> Tuple[bool, str]:
         """
@@ -53,7 +53,7 @@ class ExchangeManager():
             return False, 'Exchange {} is already registered'.format(name)
 
         credentials_dict = {}
-        api_credentials = ApiCredentials.serialize(api_key=api_key, api_secret=api_secret)
+        api_credentials = ApiCredentials(api_key=api_key, api_secret=api_secret)
         credentials_dict[name] = api_credentials
         self.initialize_exchanges(credentials_dict, database)
 
