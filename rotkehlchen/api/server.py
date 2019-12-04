@@ -11,6 +11,7 @@ from werkzeug.exceptions import NotFound
 
 from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
 from rotkehlchen.api.v1.resources import (
+    AllBalancesResource,
     AsyncTasksResource,
     BlockchainBalancesResource,
     BlockchainsAccountsResource,
@@ -69,6 +70,7 @@ URLS_V1: URLS = [
         BlockchainBalancesResource,
         'named_blockchain_balances_resource',
     ),
+    ('/balances/', AllBalancesResource),
     ('/balances/fiat', FiatBalancesResource),
     ('/statistics/netvalue', StatisticsNetvalueResource),
     ('/statistics/balance/<string:asset>', StatisticsAssetBalanceResource),

@@ -34,6 +34,8 @@ from rotkehlchen.api.v1.encoding import (
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.typing import (
+    ApiKey,
+    ApiSecret,
     AssetAmount,
     BlockchainAddress,
     Fee,
@@ -123,7 +125,7 @@ class ExchangesResource(BaseResource):
         return self.rest_api.get_exchanges()
 
     @use_kwargs(put_schema, locations=('json',))
-    def put(self, name: str, api_key: str, api_secret: str) -> Response:
+    def put(self, name: str, api_key: ApiKey, api_secret: ApiSecret) -> Response:
         return self.rest_api.setup_exchange(name, api_key, api_secret)
 
     @use_kwargs(delete_schema, locations=('json',))
@@ -284,8 +286,8 @@ class UsersResource(BaseResource):
             name: str,
             password: str,
             sync_approval: str,
-            premium_api_key: str,
-            premium_api_secret: str,
+            premium_api_key: ApiKey,
+            premium_api_secret: ApiSecret,
     ) -> Response:
         return self.rest_api.create_new_user(
             name=name,
@@ -306,8 +308,8 @@ class UsersByNameResource(BaseResource):
             name: str,
             password: Optional[str],
             sync_approval: str,
-            premium_api_key: str,
-            premium_api_secret: str,
+            premium_api_key: ApiKey,
+            premium_api_secret: ApiSecret,
     ) -> Response:
         if action is None:
             return self.rest_api.user_set_premium_credentials(

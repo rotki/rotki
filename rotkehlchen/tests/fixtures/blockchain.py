@@ -22,7 +22,7 @@ def all_eth_tokens() -> List[EthTokenInfo]:
 
 
 @pytest.fixture
-def number_of_accounts():
+def number_of_eth_accounts():
     return 4
 
 
@@ -35,17 +35,17 @@ def privatekey_seed(request):
 
 
 @pytest.fixture
-def private_keys(number_of_accounts, privatekey_seed):
+def private_keys(number_of_eth_accounts, privatekey_seed):
     """ Private keys for each raiden node. """
 
     # Note: The fixtures depend on the order of the private keys
     result = [
         sha3(privatekey_seed.format(position).encode())
-        for position in range(number_of_accounts)
+        for position in range(number_of_eth_accounts)
     ]
 
     # this must not happen, otherwise the keys and addresses will be equal!
-    assert len(set(result)) == number_of_accounts, '`privatekey_seed` generate repeated keys'
+    assert len(set(result)) == number_of_eth_accounts, '`privatekey_seed` generated repeated keys'
 
     return result
 
