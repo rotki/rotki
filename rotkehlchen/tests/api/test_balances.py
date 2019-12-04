@@ -1,17 +1,20 @@
+from http import HTTPStatus
+
 import pytest
 import requests
 
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
+    assert_error_response,
     assert_ok_async_response,
     assert_proper_response,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.blockchain import mock_etherscan_balances_query
-from rotkehlchen.tests.utils.constants import A_RDN
+from rotkehlchen.tests.utils.constants import A_CNY, A_RDN
 from rotkehlchen.tests.utils.exchanges import (
     patch_binance_balances_query,
     patch_poloniex_balances_query,
@@ -275,4 +278,184 @@ def test_query_all_balances_async(
         fiat_balances={A_EUR: eur_balance},
         binance_balances=binance_balances,
         poloniex_balances=poloniex_balances,
+    )
+
+
+def test_query_all_balances_errors(rotkehlchen_api_server):
+    """Test that errors are handled correctly by the all balances endpoint"""
+    # invoke the endpoint with non boolean save_data
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            "allbalancesresource",
+        ), json={'save_data': 14545}
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Not a valid boolean',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    # invoke the endpoint with non boolean async_query
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            "allbalancesresource",
+        ), json={'async_query': 14545}
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Not a valid boolean',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+
+def assert_fiat_balances(data, eur_balance, cny_balance, usd_balance, cny_deleted=False):
+    """Convenience assertion function for the fiat balance tests"""
+    assert data['message'] == ''
+    if cny_deleted:
+        assert len(data['result']) == 2
+    else:
+        assert len(data['result']) == 3
+    assert FVal(data['result']['EUR']['amount']) == eur_balance
+    assert data['result']['EUR']['usd_value'] is not None
+    assert FVal(data['result']['USD']['amount']) == usd_balance
+    assert data['result']['USD']['usd_value'] is not None
+    if not cny_deleted:
+        assert FVal(data['result']['CNY']['amount']) == cny_balance
+        assert data['result']['CNY']['usd_value'] is not None
+
+
+def test_query_fiat_balances(rotkehlchen_api_server):
+    """Test that querying FIAT balances works"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    eur_balance = FVal('1550')
+    cny_balance = FVal('250500.51')
+    usd_balance = FVal('4520.32')
+
+    # Have the balances set already in the DB
+    rotki.data.db.add_fiat_balance(A_EUR, eur_balance)
+    rotki.data.db.add_fiat_balance(A_CNY, cny_balance)
+    rotki.data.db.add_fiat_balance(A_USD, usd_balance)
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            "fiatbalancesresource",
+        )
+    )
+
+    # Check that the DB balances match what is returned
+    assert_proper_response(response)
+    assert_fiat_balances(response.json(), eur_balance, cny_balance, usd_balance)
+
+
+def test_settting_fiat_balances(rotkehlchen_api_server):
+    """Test that setting FIAT balances works"""
+    eur_balance = FVal('1550')
+    cny_balance = FVal('250500.51')
+    usd_balance = FVal('4520.32')
+
+    # Check that setting the fiat balances via the API works
+    balances = {'EUR': str(eur_balance), 'CNY': str(cny_balance), 'USD': str(usd_balance)}
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            "fiatbalancesresource",
+        ), json={'balances': balances},
+    )
+    assert_proper_response(response)
+    assert_fiat_balances(response.json(), eur_balance, cny_balance, usd_balance)
+
+    # Check that requesting the set balances works
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            "fiatbalancesresource",
+        )
+    )
+    assert_proper_response(response)
+    assert_fiat_balances(response.json(), eur_balance, cny_balance, usd_balance)
+
+    # Check that setting a balance to 0 deletes the entry
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            "fiatbalancesresource",
+        ), json={'balances': {'CNY': '0'}},
+    )
+    assert_proper_response(response)
+    assert_fiat_balances(response.json(), eur_balance, cny_balance, usd_balance, cny_deleted=True)
+
+    # Also check it's not in the DB
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert 'CNY' not in rotki.data.db.get_fiat_balances()
+
+
+def test_settting_fiat_balances_errors(rotkehlchen_api_server):
+    """Test for error handling of the FIAT balances endpoint"""
+    # Check that not setting the balances results in failure
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            "fiatbalancesresource",
+        ), json={'ddsaad': 'foo'},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Missing data for required field',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Check that not non-dict balances result in failure
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            "fiatbalancesresource",
+        ), json={'balances': 'foo'},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Not a valid mapping type',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Check that non-valid amount is properly handled
+    balances = {'EUR': '1500', 'CNY': 'dasdsad'}
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            "fiatbalancesresource",
+        ), json={'balances': balances},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Failed to deserialize an amount entry',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Check that non-valid asset is properly handled
+    balances = {'EUR': '1500', 'DSADSDADASD': '55'}
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            "fiatbalancesresource",
+        ), json={'balances': balances},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Unknown asset DSADSDADASD provided',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Check that non-FIAT asset is an error and properly handled
+    balances = {'EUR': '1500', 'ETH': '55'}
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            "fiatbalancesresource",
+        ), json={'balances': balances},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Asset ETH is not a FIAT asset',
+        status_code=HTTPStatus.BAD_REQUEST,
     )
