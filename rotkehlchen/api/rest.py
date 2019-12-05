@@ -722,7 +722,7 @@ class RestAPI():
         else:
             data = self.rotkehlchen.data.db.get_latest_asset_value_distribution()
 
-        result = process_result(data)
+        result = process_result_list(data)
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     @require_premium_user(active_check=True)
