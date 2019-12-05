@@ -1283,7 +1283,7 @@ Statistics rendering code
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/statistics/netvalue/ HTTP/1.1
+      GET /api/1/statistics/renderer/ HTTP/1.1
       Host: localhost:5042
 
       {}
