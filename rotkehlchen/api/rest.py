@@ -109,7 +109,7 @@ def require_premium_user(active_check: bool) -> Callable:
     """
     def _require_premium_user(f: Callable):
         @wraps(f)
-        def wrapper(wrappingobj, *args):
+        def wrapper(wrappingobj, *args, **kwargs):
             if not wrappingobj.rotkehlchen.user_is_logged_in:
                 result_dict = wrap_in_fail_result('No user is currently logged in')
                 return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
@@ -127,7 +127,7 @@ def require_premium_user(active_check: bool) -> Callable:
                     result_dict = wrap_in_fail_result(msg)
                     return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
-            return f(wrappingobj, *args)
+            return f(wrappingobj, *args, **kwargs)
 
         return wrapper
     return _require_premium_user
@@ -710,7 +710,8 @@ class RestAPI():
             to_ts=to_timestamp,
             asset=asset,
         )
-        result = process_result(data)
+
+        result = process_result_list(data)
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     @require_premium_user(active_check=False)
