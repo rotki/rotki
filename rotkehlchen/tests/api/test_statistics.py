@@ -1,4 +1,6 @@
+import contextlib
 from http import HTTPStatus
+from unittest.mock import patch
 
 import pytest
 import requests
@@ -8,6 +10,7 @@ from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, asse
 from rotkehlchen.tests.utils.balances import get_asset_balance_total
 from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
+from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.utils.misc import ts_now
 
@@ -304,7 +307,7 @@ def test_query_statistics_value_distribution(
         )
 
 
-@pytest.mark.parametrize('start_with_valid_premium', [True, False])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_query_statistics_value_distribution_errors(rotkehlchen_api_server):
     """Test that the statistics value distribution endpoint handles errors properly"""
     # Test omitting the distribution_by argument
@@ -312,7 +315,7 @@ def test_query_statistics_value_distribution_errors(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             "statisticsvaluedistributionresource",
-        )
+        ),
     )
     assert_error_response(
         response=response,
@@ -325,10 +328,48 @@ def test_query_statistics_value_distribution_errors(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             "statisticsvaluedistributionresource",
-        ), json={'distribution_by': 'haircolor'}
+        ), json={'distribution_by': 'haircolor'},
     )
     assert_error_response(
         response=response,
         contained_in_msg='Must be one of: location, asset',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True, False])
+def test_query_statistics_renderer(rotkehlchen_api_server, start_with_valid_premium):
+    """Test that the statistics renderer endpoint works when properly queried"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    if start_with_valid_premium:
+        def mock_premium_get(url, *args, **kwargs):
+            if 'last_data_metadata' in url:
+                response = (
+                    '{"upload_ts": 0, "last_modify_ts": 0, "data_hash": "0x0", "data_size": 0}'
+                )
+            else:
+                response = '{"data": "codegoeshere"}'
+            return MockResponse(200, response)
+        premium_patch = patch.object(rotki.premium.session, 'get', mock_premium_get)
+    else:
+        premium_patch = contextlib.nullcontext()
+
+    with premium_patch:
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                "statisticsrendererresource",
+            ),
+        )
+    if start_with_valid_premium:
+        assert_proper_response(response)
+        data = response.json()
+        assert data['message'] == ''
+        assert data['result'] == 'codegoeshere'
+    else:
+        assert_error_response(
+            response=response,
+            contained_in_msg='logged in user testuser does not have a premium subscription',
+            status_code=HTTPStatus.CONFLICT,
+        )
