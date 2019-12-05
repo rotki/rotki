@@ -345,7 +345,7 @@ class StatisticsAssetBalanceResource(BaseResource):
 
     get_schema = StatisticsAssetBalanceSchema()
 
-    @use_kwargs(get_schema, locations=('json',))
+    @use_kwargs(get_schema, locations=('json', 'view_args'))
     def get(
             self,
             asset: Asset,
