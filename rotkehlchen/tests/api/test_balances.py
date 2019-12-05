@@ -4,7 +4,6 @@ import pytest
 import requests
 
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -13,40 +12,23 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response,
     wait_for_async_task,
 )
+from rotkehlchen.tests.utils.balances import get_asset_balance_total
 from rotkehlchen.tests.utils.constants import A_CNY, A_RDN
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
-from rotkehlchen.tests.utils.rotkehlchen import setup_balances
+from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup, setup_balances
 from rotkehlchen.typing import Location
-from rotkehlchen.utils.misc import from_wei, satoshis_to_btc
 
 
 def assert_all_balances(
         data,
         db,
         expected_data_in_db,
-        eth_balances,
-        btc_balances,
-        rdn_balances,
-        fiat_balances,
-        binance_balances,
-        poloniex_balances,
+        setup: BalancesTestSetup
 ) -> None:
     result = data['result']
-
-    total_eth = ZERO
-    total_eth += sum(from_wei(FVal(b)) for b in eth_balances)
-    total_eth += binance_balances.get('ETH', ZERO)
-    total_eth += poloniex_balances.get('ETH', ZERO)
-
-    total_rdn = ZERO
-    total_rdn += sum(from_wei(FVal(b)) for b in rdn_balances)
-    total_rdn += binance_balances.get('RDN', ZERO)
-    total_rdn += poloniex_balances.get('RDN', ZERO)
-
-    total_btc = ZERO
-    total_btc += sum(satoshis_to_btc(FVal(b)) for b in btc_balances)
-    total_btc += binance_balances.get('BTC', ZERO)
-    total_btc += poloniex_balances.get('BTC', ZERO)
+    total_eth = get_asset_balance_total('ETH', setup)
+    total_rdn = get_asset_balance_total('RDN', setup)
+    total_btc = get_asset_balance_total('BTC', setup)
 
     assert FVal(result['ETH']['amount']) == total_eth
     assert result['ETH']['usd_value'] is not None
@@ -57,7 +39,7 @@ def assert_all_balances(
     assert FVal(result['BTC']['amount']) == total_btc
     assert result['BTC']['usd_value'] is not None
     assert result['BTC']['percentage_of_net_value'] is not None
-    assert FVal(result['EUR']['amount']) == fiat_balances['EUR']
+    assert FVal(result['EUR']['amount']) == setup.fiat_balances['EUR']
     assert result['BTC']['usd_value'] is not None
     assert result['EUR']['percentage_of_net_value'] is not None
 
@@ -149,12 +131,7 @@ def test_query_all_balances(
         data=json_data,
         db=rotki.data.db,
         expected_data_in_db=False,
-        eth_balances=setup.eth_balances,
-        btc_balances=setup.btc_balances,
-        rdn_balances=[setup.rdn_balance],
-        fiat_balances={A_EUR: setup.eur_balance},
-        binance_balances=setup.binance_balances,
-        poloniex_balances=setup.poloniex_balances,
+        setup=setup,
     )
 
     # now do the same but save the data in the DB and test it works
@@ -172,12 +149,7 @@ def test_query_all_balances(
         data=json_data,
         db=rotki.data.db,
         expected_data_in_db=True,
-        eth_balances=setup.eth_balances,
-        btc_balances=setup.btc_balances,
-        rdn_balances=[setup.rdn_balance],
-        fiat_balances={A_EUR: setup.eur_balance},
-        binance_balances=setup.binance_balances,
-        poloniex_balances=setup.poloniex_balances,
+        setup=setup,
     )
 
 
@@ -212,12 +184,7 @@ def test_query_all_balances_async(
         data=outcome,
         db=rotki.data.db,
         expected_data_in_db=True,
-        eth_balances=setup.eth_balances,
-        btc_balances=setup.btc_balances,
-        rdn_balances=[setup.rdn_balance],
-        fiat_balances={A_EUR: setup.eur_balance},
-        binance_balances=setup.binance_balances,
-        poloniex_balances=setup.poloniex_balances,
+        setup=setup,
     )
 
 

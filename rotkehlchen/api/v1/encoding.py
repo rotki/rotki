@@ -356,7 +356,7 @@ class AsyncTasksQuerySchema(BaseSchema):
 
 class TradesQuerySchema(BaseSchema):
     from_timestamp = TimestampField(missing=Timestamp(0))
-    to_timestamp = TimestampField(missing=ts_now())
+    to_timestamp = TimestampField(missing=ts_now)
     location = LocationField(missing=None)
 
     class Meta:
@@ -539,7 +539,7 @@ class ExchangeBalanceQuerySchema(BaseSchema):
 class ExchangeTradesQuerySchema(BaseSchema):
     name = ExchangeNameField(missing=None)
     from_timestamp = TimestampField(missing=Timestamp(0))
-    to_timestamp = TimestampField(missing=ts_now())
+    to_timestamp = TimestampField(missing=ts_now)
     async_query = fields.Boolean(missing=False)
 
     class Meta:
@@ -561,7 +561,7 @@ class BlockchainBalanceQuerySchema(BaseSchema):
 class StatisticsAssetBalanceSchema(BaseSchema):
     asset = AssetField(required=True)
     from_timestamp = TimestampField(missing=Timestamp(0))
-    to_timestamp = TimestampField(missing=ts_now())
+    to_timestamp = TimestampField(missing=ts_now)
 
     class Meta:
         strict = True
@@ -583,7 +583,7 @@ class StatisticsValueDistributionSchema(BaseSchema):
 
 class HistoryProcessingSchema(BaseSchema):
     from_timestamp = TimestampField(missing=Timestamp(0))
-    to_timestamp = TimestampField(missing=ts_now())
+    to_timestamp = TimestampField(missing=ts_now)
     async_query = fields.Boolean(missing=False)
 
     class Meta:

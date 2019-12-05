@@ -16,10 +16,10 @@ from rotkehlchen.typing import BTCAddress, ChecksumEthAddress, Location, Timesta
 
 
 class BalancesTestSetup(NamedTuple):
-    eth_balances: List[ChecksumEthAddress]
-    btc_balances: List[BTCAddress]
-    eur_balance: FVal
-    rdn_balance: FVal
+    eth_balances: List[str]
+    btc_balances: List[str]
+    fiat_balances: Dict[str, FVal]
+    rdn_balances: List[str]
     binance_balances: Dict[str, FVal]
     poloniex_balances: Dict[str, FVal]
     poloniex_patch: _patch
@@ -65,8 +65,8 @@ def setup_balances(
     return BalancesTestSetup(
         eth_balances=eth_balances,
         btc_balances=btc_balances,
-        rdn_balance=rdn_balance,
-        eur_balance=eur_balance,
+        rdn_balances=[rdn_balance],
+        fiat_balances={A_EUR: eur_balance},
         binance_balances=binance_balances,
         poloniex_balances=poloniex_balances,
         poloniex_patch=poloniex_patch,
