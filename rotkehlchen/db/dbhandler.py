@@ -30,6 +30,7 @@ from rotkehlchen.db.utils import (
     DBStartupAction,
     LocationData,
     SingleAssetBalance,
+    form_query_to_filter_timestamps,
     str_to_bool,
 )
 from rotkehlchen.errors import AuthenticationError, DeserializationError, InputError, UnknownAsset
@@ -873,21 +874,7 @@ class DBHandler:
         )
         if location is not None:
             query += f'WHERE location="{location}" '
-        bindings: Union[
-            Tuple,
-            Tuple[Timestamp],
-            Tuple[Timestamp, Timestamp],
-        ] = ()
-        if from_ts:
-            query += 'AND close_time >= ? '
-            bindings = (from_ts,)
-            if to_ts:
-                query += 'AND close_time <= ? '
-                bindings = (from_ts, to_ts)
-        elif to_ts:
-            query += 'AND close_time <= ? '
-            bindings = (to_ts,)
-        query += 'ORDER BY close_time ASC;'
+        query, bindings = form_query_to_filter_timestamps(query, 'close_time', from_ts, to_ts)
         results = cursor.execute(query, bindings)
 
         margin_positions = []
@@ -978,21 +965,7 @@ class DBHandler:
         )
         if location is not None:
             query += f'WHERE location="{location}" '
-        bindings: Union[
-            Tuple,
-            Tuple[Timestamp],
-            Tuple[Timestamp, Timestamp],
-        ] = ()
-        if from_ts:
-            query += 'AND time >= ? '
-            bindings = (from_ts,)
-            if to_ts:
-                query += 'AND time <= ? '
-                bindings = (from_ts, to_ts)
-        elif to_ts:
-            query += 'AND time <= ? '
-            bindings = (to_ts,)
-        query += 'ORDER BY time ASC;'
+        query, bindings = form_query_to_filter_timestamps(query, 'time', from_ts, to_ts)
         results = cursor.execute(query, bindings)
 
         asset_movements = []
@@ -1098,23 +1071,9 @@ class DBHandler:
               input_data,
               nonce FROM ethereum_transactions
         """
-        bindings: Union[
-            Tuple,
-            Tuple[Timestamp],
-            Tuple[Timestamp, Timestamp],
-        ] = ()
         if address is not None:
             query += f'WHERE from_address="{address}" '
-        if from_ts:
-            query += 'AND timestamp >= ? '
-            bindings = (from_ts,)
-            if to_ts:
-                query += 'AND timestatmp <= ? '
-                bindings = (from_ts, to_ts)
-        elif to_ts:
-            query += 'AND timestamp <= ? '
-            bindings = (to_ts,)
-        query += 'ORDER BY timestamp ASC;'
+        query, bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
         results = cursor.execute(query, bindings)
 
         ethereum_transactions = []
@@ -1245,21 +1204,7 @@ class DBHandler:
         )
         if location is not None:
             query += f'WHERE location="{location.serialize_for_db()}" '
-        bindings: Union[
-            Tuple,
-            Tuple[Timestamp],
-            Tuple[Timestamp, Timestamp],
-        ] = ()
-        if from_ts:
-            query += 'AND time >= ? '
-            bindings = (from_ts,)
-            if to_ts:
-                query += 'AND time <= ? '
-                bindings = (from_ts, to_ts)
-        elif to_ts:
-            query += 'AND time <= ? '
-            bindings = (to_ts,)
-        query += 'ORDER BY time ASC;'
+        query, bindings = form_query_to_filter_timestamps(query, 'time', from_ts, to_ts)
         results = cursor.execute(query, bindings)
 
         trades = []
