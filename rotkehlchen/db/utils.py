@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.typing import BTCAddress, ChecksumEthAddress, Timestamp
@@ -37,6 +37,36 @@ class DBStartupAction(Enum):
 
 def str_to_bool(s: str) -> bool:
     return True if s == 'True' else False
+
+
+def form_query_to_filter_timestamps(
+        query: str,
+        timestamp_attribute: str,
+        from_ts: Optional[Timestamp],
+        to_ts: Optional[Timestamp],
+) -> Tuple[str, Union[Tuple, Tuple[Timestamp], Tuple[Timestamp, Timestamp]]]:
+    """Formulates the query string and its bindings to filter for timestamps"""
+    bindings = ()
+    got_from_ts = from_ts is not None
+    got_to_ts = to_ts is not None
+    if (got_from_ts or got_to_ts):
+        if 'WHERE' not in query:
+            query += 'WHERE '
+        else:
+            query += 'AND '
+
+    if got_from_ts:
+        query += f'{timestamp_attribute} >= ? '
+        bindings = (from_ts,)
+        if got_to_ts:
+            query += f'AND {timestamp_attribute} <= ? '
+            bindings = (from_ts, to_ts)
+    elif got_to_ts:
+        query += f'AND {timestamp_attribute} <= ? '
+        bindings = (to_ts,)
+
+    query += f'ORDER BY {timestamp_attribute} ASC;'
+    return query, bindings
 
 
 # Custom enum table for trade types

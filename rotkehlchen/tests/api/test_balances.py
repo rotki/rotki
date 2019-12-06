@@ -23,7 +23,7 @@ def assert_all_balances(
         data,
         db,
         expected_data_in_db,
-        setup: BalancesTestSetup
+        setup: BalancesTestSetup,
 ) -> None:
     result = data['result']
     total_eth = get_asset_balance_total('ETH', setup)
@@ -122,7 +122,7 @@ def test_query_all_balances(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
                 "allbalancesresource",
-            ), json={'save_data': False}
+            ), json={'save_data': False},
         )
 
     assert_proper_response(response)
@@ -141,7 +141,7 @@ def test_query_all_balances(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
                 "allbalancesresource",
-            )
+            ),
         )
     assert_proper_response(response)
     json_data = response.json()
@@ -175,7 +175,7 @@ def test_query_all_balances_async(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
                 "allbalancesresource",
-            ), json={'async_query': True}
+            ), json={'async_query': True},
         )
         task_id = assert_ok_async_response(response)
         outcome = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id)

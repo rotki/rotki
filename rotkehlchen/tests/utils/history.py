@@ -1,5 +1,7 @@
-from typing import Any, Dict, List, Union
-from unittest.mock import patch
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from unittest.mock import _patch, patch
+
+import requests
 
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
@@ -593,12 +595,10 @@ def mock_history_processing(rotki: Rotkehlchen, remote_errors=False):
     return accountant_patch
 
 
-def mock_etherscan_transaction_response():
-    def mocked_request_dict(url, timeout):
+def mock_etherscan_transaction_response(original_requests_get):
+    def mocked_request_dict(url, *args, **kwargs):
         if 'etherscan' not in url:
-            raise AssertionError(
-                'Requested non-etherscan url for transaction response test',
-            )
+            return original_requests_get(url, *args, **kwargs)
 
         addr1_tx = f"""{{"blockNumber":"54092","timeStamp":"1439048640","hash":"{TX_HASH_STR1}","nonce":"0","blockHash":"0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{ETH_ADDRESS1}","to":"","value":"11901464239480000000000000","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"{MOCK_INPUT_DATA_HEX}","contractAddress":"0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"8569454"}}
         """
@@ -631,17 +631,134 @@ def mock_etherscan_transaction_response():
     )
 
 
-def mock_history_processing_and_exchanges(rotki: Rotkehlchen, remote_errors=False):
+class TradesTestSetup(NamedTuple):
+    polo_patch: _patch
+    binance_patch: _patch
+    bittrex_patch: _patch
+    bitmex_patch: _patch
+    accountant_patch: _patch
+    etherscan_patch: _patch
+
+
+def mock_history_processing_and_exchanges(
+        rotki: Rotkehlchen,
+        remote_errors=False,
+) -> TradesTestSetup:
+    """Prepare patches to mock querying of trade history from various locations for testing"""
     accountant_patch = mock_history_processing(rotki, remote_errors=remote_errors)
     polo_patch, binance_patch, bittrex_patch, bitmex_patch = mock_exchange_responses(
         rotki,
         remote_errors,
     )
-    return (
-        accountant_patch,
-        polo_patch,
-        binance_patch,
-        bittrex_patch,
-        bitmex_patch,
-        mock_etherscan_transaction_response(),
+    return TradesTestSetup(
+        polo_patch=polo_patch,
+        binance_patch=binance_patch,
+        bittrex_patch=bittrex_patch,
+        bitmex_patch=bitmex_patch,
+        accountant_patch=accountant_patch,
+        etherscan_patch=mock_etherscan_transaction_response(original_requests_get=requests.get),
     )
+
+
+def assert_binance_trades_result(
+        trades: List[Dict[str, Any]],
+        trades_to_check: Optional[Tuple[int]] = None,
+) -> None:
+    """Convenience function to assert on the trades returned by binance's mock
+
+    'trades_to_check' is a tuple of indexes indicating which trades should be checked.
+    For example (1, 2) would mean that we have given two trades for checking and that
+    they corresponse to the second and third of the normally expected trades.
+    So the first trade is skipped.
+    The mock trade data are set in tests/utils/history.py
+    """
+    if trades_to_check is None:
+        assert len(trades) == 2
+        trades_to_check = (0, 1)
+    else:
+        assert len(trades) == len(trades_to_check)
+
+    for given_idx, idx in enumerate(trades_to_check):
+        trade = trades[given_idx]
+        if idx == 0:
+            assert trade['timestamp'] == 1512561941
+            assert trade['location'] == 'binance'
+            assert trade['pair'] == 'ETH_BTC'
+            assert trade['trade_type'] == 'buy'
+            assert trade['amount'] == '5.0'
+            assert trade['rate'] == '0.0063213'
+            assert trade['fee'] == '0.005'
+            assert trade['fee_currency'] == 'ETH'
+            assert trade['link'] == '1'
+            assert trade['notes'] == ''
+        elif idx == 1:
+            assert trade['timestamp'] == 1512561942
+            assert trade['location'] == 'binance'
+            assert trade['pair'] == 'RDN_ETH'
+            assert trade['trade_type'] == 'sell'
+            assert trade['amount'] == '5.0'
+            assert trade['rate'] == '0.0063213'
+            assert trade['fee'] == '0.005'
+            assert trade['fee_currency'] == 'RDN'
+            assert trade['link'] == '2'
+            assert trade['notes'] == ''
+        else:
+            raise AssertionError('index out of range')
+
+
+def assert_poloniex_trades_result(
+        trades: List[Dict[str, Any]],
+        trades_to_check: Optional[Tuple[int]] = None,
+) -> None:
+    """Convenience function to assert on the trades returned by poloniex's mock
+
+    'trades_to_check' is a tuple of indexes indicating which trades should be checked.
+    For example (1, 2) would mean that we have given two trades for checking and that
+    they corresponse to the second and third of the normally expected trades.
+    So the first trade is skipped.
+
+    The mock trade data are set in tests/utils/history.py
+    """
+    if trades_to_check is None:
+        assert len(trades) == 3
+        trades_to_check = (0, 1, 2)
+    else:
+        assert len(trades) == len(trades_to_check)
+
+    for given_idx, idx in enumerate(trades_to_check):
+        trade = trades[given_idx]
+        if idx == 0:
+            assert trade['timestamp'] == 1539713117
+            assert trade['location'] == 'poloniex'
+            assert trade['pair'] == 'ETH_BTC'
+            assert trade['trade_type'] == 'sell'
+            assert trade['amount'] == '1.40308443'
+            assert trade['rate'] == '0.06935244'
+            assert trade['fee'] == '0.0000973073287465092'
+            assert trade['fee_currency'] == 'BTC'
+            assert trade['link'] == '394131412'
+            assert trade['notes'] == ''
+        elif idx == 1:
+            assert trade['timestamp'] == 1539713237
+            assert trade['location'] == 'poloniex'
+            assert trade['pair'] == 'ETH_BTC'
+            assert trade['trade_type'] == 'buy'
+            assert trade['amount'] == '1.40308443'
+            assert trade['rate'] == '0.06935244'
+            assert trade['fee'] == '0.00140308443'
+            assert trade['fee_currency'] == 'ETH'
+            assert trade['link'] == '394131413'
+            assert trade['notes'] == ''
+        elif idx == 2:
+            assert trade['timestamp'] == 1539713238
+            assert trade['location'] == 'poloniex'
+            assert trade['pair'] == 'XMR_ETH'
+            assert trade['trade_type'] == 'buy'
+            assert trade['amount'] == '1.40308443'
+            assert trade['rate'] == '0.06935244'
+            assert trade['fee'] == '0.00140308443'
+            assert trade['fee_currency'] == 'XMR'
+            assert trade['link'] == '394131415'
+            assert trade['notes'] == ''
+        else:
+            raise AssertionError('index out of range')
