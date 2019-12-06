@@ -86,3 +86,21 @@ def test_cryptocompare_histohour_query_old_ts_xcp(
             timestamp=1392685761,
             historical_data_start=1438387200,
         )
+
+
+def test_cryptocompare_dao_query(accounting_data_dir):
+    """
+    Test that querying the DAO token for cryptocompare historical prices works. At some point
+    it got accidentaly removed from cryptocompare. Then it got fixed.
+    This test will show us if this happens again.
+
+    Regression test for https://github.com/rotki/rotki/issues/548
+    """
+    cc = Cryptocompare(data_directory=accounting_data_dir)
+    price = cc.query_historical_price(
+        from_asset=Asset('DAO'),
+        to_asset=A_USD,
+        timestamp=1468886400,
+        historical_data_start=1438387200,
+    )
+    assert price is not None
