@@ -27,7 +27,6 @@ from rotkehlchen.exchanges.data_structures import (
     Loan,
     Trade,
     TradeType,
-    get_pair_position_str,
     invert_pair,
     trade_pair_from_assets,
 )
@@ -42,6 +41,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
     deserialize_timestamp_from_poloniex_date,
     deserialize_trade_type,
+    get_pair_position_str,
 )
 from rotkehlchen.typing import (
     ApiKey,

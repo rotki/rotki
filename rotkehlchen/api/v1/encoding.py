@@ -13,6 +13,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_location,
     deserialize_price,
     deserialize_timestamp,
+    deserialize_trade_pair,
     deserialize_trade_type,
 )
 from rotkehlchen.typing import (
@@ -21,6 +22,7 @@ from rotkehlchen.typing import (
     Location,
     SupportedBlockchain,
     Timestamp,
+    TradePair,
     TradeType,
 )
 from rotkehlchen.utils.misc import ts_now
@@ -190,6 +192,34 @@ class TradeTypeField(fields.Field):
             raise ValidationError(str(e))
 
         return trade_type
+
+
+class TradePairField(fields.Field):
+
+    @staticmethod
+    def _serialize(
+            value: str,
+            attr,  # pylint: disable=unused-argument
+            obj,  # pylint: disable=unused-argument
+            **kwargs,  # pylint: disable=unused-argument
+    ) -> str:
+        return str(value)
+
+    def _deserialize(
+            self,
+            value: str,
+            attr,  # pylint: disable=unused-argument
+            data,  # pylint: disable=unused-argument
+            **kwargs,  # pylint: disable=unused-argument
+    ) -> TradePair:
+        if not isinstance(value, str):
+            raise ValidationError(f'Provided non-string trade pair value {value}')
+        try:
+            trade_pair = deserialize_trade_pair(value)
+        except DeserializationError as e:
+            raise ValidationError(str(e))
+
+        return trade_pair
 
 
 class LocationField(fields.Field):
@@ -368,7 +398,7 @@ class TradesQuerySchema(BaseSchema):
 class TradeSchema(BaseSchema):
     timestamp = TimestampField(required=True)
     location = LocationField(required=True)
-    pair = fields.String(required=True)
+    pair = TradePairField(required=True)
     trade_type = TradeTypeField(required=True)
     amount = AmountField(required=True)
     rate = PriceField(required=True)

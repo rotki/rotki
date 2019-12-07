@@ -680,6 +680,11 @@ def assert_binance_trades_result(
 
     for given_idx, idx in enumerate(trades_to_check):
         trade = trades[given_idx]
+        expected_id = Trade(
+            **{k: v for k, v in trades[given_idx].items() if k != 'trade_id'},
+        ).identifier
+
+        assert trade['trade_id'] == expected_id
         if idx == 0:
             assert trade['timestamp'] == 1512561941
             assert trade['location'] == 'binance'
@@ -727,6 +732,11 @@ def assert_poloniex_trades_result(
 
     for given_idx, idx in enumerate(trades_to_check):
         trade = trades[given_idx]
+        expected_id = Trade(
+            **{k: v for k, v in trades[given_idx].items() if k != 'trade_id'},
+        ).identifier
+
+        assert trade['trade_id'] == expected_id
         if idx == 0:
             assert trade['timestamp'] == 1539713117
             assert trade['location'] == 'poloniex'
