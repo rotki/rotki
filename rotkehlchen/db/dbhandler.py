@@ -1241,7 +1241,7 @@ class DBHandler:
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM trades WHERE id=?', (trade_id,))
         if cursor.rowcount == 0:
-            return False, 'Tried to delete non-existing external trade'
+            return False, 'Tried to delete non-existing trade'
         self.conn.commit()
         return True, ''
 

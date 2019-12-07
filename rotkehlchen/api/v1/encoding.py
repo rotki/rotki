@@ -426,6 +426,15 @@ class TradePatchSchema(TradeSchema):
     trade_id = fields.String(required=True)
 
 
+class TradeDeleteSchema(BaseSchema):
+    trade_id = fields.String(required=True)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
 class ModifiableSettingsSchema(BaseSchema):
     """This is the Schema for the settings that can be modified via the API"""
     premium_should_sync = fields.Bool(missing=None)
