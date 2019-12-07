@@ -43,6 +43,7 @@ from rotkehlchen.typing import (
     Price,
     SupportedBlockchain,
     Timestamp,
+    TradePair,
     TradeType,
 )
 
@@ -226,7 +227,7 @@ class TradesResource(BaseResource):
             self,
             timestamp: Timestamp,
             location: Location,
-            pair: str,
+            pair: TradePair,
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,
@@ -253,7 +254,7 @@ class TradesResource(BaseResource):
             self,
             trade_id: str,
             timestamp: Timestamp,
-            pair: str,
+            pair: TradePair,
             trade_type: TradeType,
             amount: AssetAmount,
             rate: Price,

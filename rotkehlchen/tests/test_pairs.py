@@ -5,11 +5,10 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.errors import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.exchanges.data_structures import (
     get_pair_position_asset,
-    get_pair_position_str,
     invert_pair,
-    pair_get_assets,
     trade_pair_from_assets,
 )
+from rotkehlchen.serialization.deserialize import get_pair_position_str, pair_get_assets
 from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.typing import TradePair
 

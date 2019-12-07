@@ -22,8 +22,6 @@ from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     Trade,
     get_pair_position_asset,
-    get_pair_position_str,
-    pair_get_assets,
     trade_pair_from_assets,
 )
 from rotkehlchen.exchanges.exchange import ExchangeInterface
@@ -36,6 +34,8 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_price,
     deserialize_timestamp_from_bittrex_date,
     deserialize_trade_type,
+    get_pair_position_str,
+    pair_get_assets,
 )
 from rotkehlchen.typing import (
     ApiKey,

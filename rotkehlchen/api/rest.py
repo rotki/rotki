@@ -471,9 +471,12 @@ class RestAPI():
             to_ts=to_ts,
             location=location,
         )
-        result = [
-            self.trade_schema.dump(trade) for trade in trades
-        ]
+        result = []
+        for trade in trades:
+            serialized_trade = self.trade_schema.dump(trade)
+            serialized_trade['trade_id'] = trade.identifier
+            result.append(serialized_trade)
+
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
