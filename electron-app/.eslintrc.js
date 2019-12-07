@@ -48,10 +48,14 @@ module.exports = {
         argsIgnorePattern: '^_'
       }
     ],
-    "vue/component-name-in-template-casing": ["error", "kebab-case", {
-      "registeredComponentsOnly": false,
-      "ignores": []
-    }]
+    'vue/component-name-in-template-casing': [
+      'error',
+      'kebab-case',
+      {
+        registeredComponentsOnly: false,
+        ignores: []
+      }
+    ]
   },
 
   parserOptions: {

@@ -8,10 +8,12 @@ import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'font-awesome/css/font-awesome.css';
 import vuetify from '@/plugins/vuetify';
 import '@babel/polyfill';
+import { setupPremium } from '@/utils/premium';
 
 Vue.config.productionTip = false;
 
 Vue.use(Rpc);
+setupPremium();
 
 new Vue({
   vuetify,
@@ -19,3 +21,4 @@ new Vue({
   store,
   render: h => h(App)
 }).$mount('#app');
+
