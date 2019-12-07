@@ -5,6 +5,7 @@ export class Defaults {
   static BALANCE_SAVE_FREQUENCY = 24;
   static ANONYMIZED_LOGS = false;
   static HISTORICAL_DATA_START = '01/08/2015';
+  static ANONYMOUS_USAGE_ANALYTICS = true;
 }
 
 export const exchanges = [
