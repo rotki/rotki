@@ -17,7 +17,6 @@ from rotkehlchen.tests.utils.history import (
 def test_query_trades(rotkehlchen_api_server_with_exchanges):
     """Test that querying the trades endpoint works as expected"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-
     setup = mock_history_processing_and_exchanges(rotki)
 
     # Query trades of all exchanges to get them saved in the DB
