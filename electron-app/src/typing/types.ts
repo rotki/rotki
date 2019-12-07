@@ -4,6 +4,7 @@ import { Currency } from '@/model/currency';
 export interface GeneralSettings {
   readonly floatingPrecision: number;
   readonly anonymizedLogs: boolean;
+  readonly anonymousUsageAnalytics: boolean;
   readonly historicDataStart: string;
   readonly ethRpcEndpoint: string;
   readonly balanceSaveFrequency: number;

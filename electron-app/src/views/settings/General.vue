@@ -16,11 +16,19 @@
               label="Floating Precision"
               type="number"
             ></v-text-field>
+
             <v-checkbox
               id="anonymized_logs_input"
               v-model="anonymizedLogs"
               off-icon="fa fa-square-o"
               label="Should logs by anonymized?"
+            ></v-checkbox>
+
+            <v-checkbox
+              id="anonymous_usage_analytics"
+              v-model="anonymousUsageAnalytics"
+              off-icon="fa fa-square-o"
+              label="Should anonymous usage analytics be submitted?"
             ></v-checkbox>
 
             <v-menu
@@ -125,6 +133,7 @@ export default class General extends Vue {
 
   floatingPrecision: number = 0;
   anonymizedLogs: boolean = false;
+  anonymousUsageAnalytics: boolean = false;
   historicDataStart: string = '';
   rpcEndpoint: string = 'http://localhost:8546';
   balanceSaveFrequency: number = 0;
@@ -161,6 +170,7 @@ export default class General extends Vue {
     const settings = this.settings;
     this.floatingPrecision = settings.floatingPrecision;
     this.anonymizedLogs = settings.anonymizedLogs;
+    this.anonymousUsageAnalytics = settings.anonymousUsageAnalytics;
     this.historicDataStart = settings.historicDataStart;
     this.rpcEndpoint = settings.ethRpcEndpoint;
     this.balanceSaveFrequency = settings.balanceSaveFrequency;
@@ -176,6 +186,7 @@ export default class General extends Vue {
       eth_rpc_endpoint: this.rpcEndpoint,
       balance_save_frequency: this.balanceSaveFrequency,
       anonymized_logs: this.anonymizedLogs,
+      submit_usage_analytics: this.anonymousUsageAnalytics,
       date_display_format: this.dateDisplayFormat
     };
 
@@ -186,7 +197,8 @@ export default class General extends Vue {
       balanceSaveFrequency: this.balanceSaveFrequency,
       anonymizedLogs: this.anonymizedLogs,
       dateDisplayFormat: this.dateDisplayFormat,
-      selectedCurrency: this.selectedCurrency
+      selectedCurrency: this.selectedCurrency,
+      anonymousUsageAnalytics: this.anonymousUsageAnalytics
     };
 
     const { commit } = this.$store;
