@@ -47,7 +47,9 @@ const store: StoreOptions<RotkehlchenState> = {
     async version({ commit }): Promise<void> {
       try {
         const version = await service.version_check();
-        commit('versions', version);
+        if (version) {
+          commit('versions', version);
+        }
       } catch (e) {
         console.error(e);
       }
