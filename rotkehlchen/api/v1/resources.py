@@ -26,6 +26,7 @@ from rotkehlchen.api.v1.encoding import (
     NewUserSchema,
     StatisticsAssetBalanceSchema,
     StatisticsValueDistributionSchema,
+    TradeDeleteSchema,
     TradePatchSchema,
     TradeSchema,
     TradesQuerySchema,
@@ -208,6 +209,7 @@ class TradesResource(BaseResource):
     get_schema = TradesQuerySchema()
     put_schema = TradeSchema()
     patch_schema = TradePatchSchema()
+    delete_schema = TradeDeleteSchema()
 
     @use_kwargs(get_schema, locations=('json',))
     def get(
@@ -278,8 +280,9 @@ class TradesResource(BaseResource):
             notes=notes,
         )
 
+    @use_kwargs(delete_schema, locations=('json',))
     def delete(self, trade_id: str) -> Response:
-        return self.rest_api.delete_external_trade(trade_id=trade_id)
+        return self.rest_api.delete_trade(trade_id=trade_id)
 
 
 class UsersResource(BaseResource):
