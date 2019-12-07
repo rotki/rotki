@@ -12,40 +12,39 @@
         To get a premium subscription please visit our
         <a href="https://rotki.com/products" target="_blank">website</a>.
       </div>
+      <div v-else>
+        <premium-statistics
+          :service="$rpc"
+          :floating-precision="floatingPrecision"
+        ></premium-statistics>
+      </div>
     </div>
   </v-container>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { mapState } from 'vuex';
+import { createNamespacedHelpers } from 'vuex';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
-import { Message } from '@/store/store';
+import { PremiumStatistics } from '@/utils/premium';
+
+const { mapState, mapGetters } = createNamespacedHelpers('session');
 
 @Component({
-  components: { MessageDialog },
-  computed: mapState(['premium'])
+  components: { MessageDialog, PremiumStatistics },
+  computed: {
+    ...mapState(['premium']),
+    ...mapGetters(['floatingPrecision'])
+  }
 })
 export default class Statistics extends Vue {
   premium!: boolean;
+  floatingPrecision!: number;
 
   mounted() {
     if (!this.premium) {
       return;
     }
-
-    this.$rpc
-      .query_statistics_renderer()
-      .then(result => {
-        eval(result);
-      })
-      .catch(reason => {
-        const { commit } = this.$store;
-        commit('setMessage', {
-          title: 'Error at querying statistics renderer',
-          description: reason.message
-        } as Message);
-      });
   }
 }
 </script>
