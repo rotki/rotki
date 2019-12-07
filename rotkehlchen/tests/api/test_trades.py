@@ -457,7 +457,6 @@ def _check_trade_is_edited(original_trade: Dict[str, Any], result_trade: Dict[st
 def test_edit_trades(rotkehlchen_api_server_with_exchanges):
     """Test that editing a trade via the trades endpoint works as expected"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-
     setup = mock_history_processing_and_exchanges(rotki)
 
     # Query trades of all exchanges to get them saved in the DB
@@ -511,9 +510,8 @@ def test_edit_trades(rotkehlchen_api_server_with_exchanges):
 
 
 def test_edit_trades_errors(rotkehlchen_api_server):
-    """Test that editing a trade with non-existing id is handled properly"""
+    """Test that editing a trade with non-existing or invalid id is handled properly"""
     trade = {
-        'trade_id': 'this_id_does_not_exit',
         'timestamp': 1575640208,
         'location': 'external',
         'pair': 'BTC_EUR',
@@ -525,6 +523,20 @@ def test_edit_trades_errors(rotkehlchen_api_server):
         'link': 'optional trader identifier',
         'notes': 'optional notes',
     }
+    # check that editing a trade without giving a trade id is handled as an error
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            "tradesresource",
+        ), json=trade,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="Missing data for required field",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    trade['trade_id'] = 'this_id_does_not_exit'
+    # Check that non-existing trade id is is handled
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
@@ -534,5 +546,110 @@ def test_edit_trades_errors(rotkehlchen_api_server):
     assert_error_response(
         response=response,
         contained_in_msg="Tried to edit non existing trade id",
+        status_code=HTTPStatus.CONFLICT,
+    )
+    # Check that invalid trade_id type is is handled
+    trade['trade_id'] = 523
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            "tradesresource",
+        ), json=trade,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="Not a valid string",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+
+@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+def test_delete_trades(rotkehlchen_api_server_with_exchanges):
+    """Test that deleting a trade via the trades endpoint works as expected"""
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    setup = mock_history_processing_and_exchanges(rotki)
+
+    # Query trades of all exchanges to get them saved in the DB
+    with setup.binance_patch, setup.polo_patch:
+        response = requests.get(
+            api_url_for(rotkehlchen_api_server_with_exchanges, "exchangetradesresource"))
+    assert_proper_response(response)
+
+    # Simply get all trades without any filtering
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "tradesresource",
+        ),
+    )
+    assert_proper_response(response)
+    data = response.json()
+
+    # get the poloniex trade ids
+    poloniex_trade_ids = [t['trade_id'] for t in data['result'] if t['location'] == 'poloniex']
+
+    for trade_id in poloniex_trade_ids:
+        # delete all poloniex trades
+        response = requests.delete(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                "tradesresource",
+            ), json={'trade_id': trade_id},
+        )
+        assert_proper_response(response)
+        data = response.json()
+        assert data['message'] == ''
+        assert data['result'] is True
+
+    # Finally also query poloniex trades to see they no longer exist
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "tradesresource",
+        ), json={'location': 'poloniex'},
+    )
+    assert_proper_response(response)
+    data = response.json()
+    assert data['message'] == ''
+    assert len(data['result']) == 0
+
+
+def test_delete_trades_trades_errors(rotkehlchen_api_server):
+    """Test that errors at the deleting a trade endpoint are handled properly"""
+    # Check that omitting the trade id is is handled
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            "tradesresource",
+        ),
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="Missing data for required field",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Check that providing invalid value for trade id is is handled
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            "tradesresource",
+        ), json={'trade_id': 55},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="Not a valid string",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    # Check that providing non existing trade id is is handled
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            "tradesresource",
+        ), json={'trade_id': 'this_trade_id_does_not_exist'},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="Tried to delete non-existing trade",
         status_code=HTTPStatus.CONFLICT,
     )
