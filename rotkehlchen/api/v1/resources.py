@@ -254,6 +254,7 @@ class TradesResource(BaseResource):
             self,
             trade_id: str,
             timestamp: Timestamp,
+            location: Location,
             pair: TradePair,
             trade_type: TradeType,
             amount: AssetAmount,
@@ -266,6 +267,7 @@ class TradesResource(BaseResource):
         return self.rest_api.edit_trade(
             trade_id=trade_id,
             timestamp=timestamp,
+            location=location,
             pair=pair,
             trade_type=trade_type,
             amount=amount,
