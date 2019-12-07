@@ -517,6 +517,7 @@ class RestAPI():
             self,
             trade_id: str,
             timestamp: Timestamp,
+            location: Location,
             pair: TradePair,
             trade_type: TradeType,
             amount: AssetAmount,
@@ -528,7 +529,7 @@ class RestAPI():
     ) -> Response:
         trade = Trade(
             timestamp=timestamp,
-            location=Location.EXTERNAL,
+            location=location,
             pair=pair,
             trade_type=trade_type,
             amount=amount,
