@@ -22,7 +22,8 @@ export const convertToGeneralSettings = (
   dateDisplayFormat: settings.date_display_format,
   balanceSaveFrequency: settings.balance_save_frequency,
   ethRpcEndpoint: settings.eth_rpc_endpoint,
-  anonymizedLogs: settings.anonymized_logs
+  anonymizedLogs: settings.anonymized_logs,
+  anonymousUsageAnalytics: settings.submit_usage_analytics
 });
 
 export const convertToAccountingSettings = (

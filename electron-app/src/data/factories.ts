@@ -9,6 +9,7 @@ export const defaultSettings = (): GeneralSettings => ({
   balanceSaveFrequency: Defaults.BALANCE_SAVE_FREQUENCY,
   dateDisplayFormat: Defaults.DEFAULT_DISPLAY_FORMAT,
   historicDataStart: Defaults.HISTORICAL_DATA_START,
+  anonymousUsageAnalytics: Defaults.ANONYMOUS_USAGE_ANALYTICS,
   selectedCurrency: currencies[0]
 });
 
