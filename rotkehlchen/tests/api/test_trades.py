@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import Any, Dict
 
 import pytest
 import requests
@@ -437,4 +438,101 @@ def test_add_trades_errors(rotkehlchen_api_server):
         response=response,
         contained_in_msg='Not a valid string',
         status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+
+def _check_trade_is_edited(original_trade: Dict[str, Any], result_trade: Dict[str, Any]) -> None:
+    for key, value in result_trade.items():
+        if key == 'trade_id':
+            assert value != original_trade[key]
+        elif key == 'amount':
+            assert value == '1337.5'
+        elif key == 'notes':
+            assert value == 'edited trade'
+        else:
+            assert value == original_trade[key]
+
+
+@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+def test_edit_trades(rotkehlchen_api_server_with_exchanges):
+    """Test that editing a trade via the trades endpoint works as expected"""
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+
+    setup = mock_history_processing_and_exchanges(rotki)
+
+    # Query trades of all exchanges to get them saved in the DB
+    with setup.binance_patch, setup.polo_patch:
+        response = requests.get(
+            api_url_for(rotkehlchen_api_server_with_exchanges, "exchangetradesresource"))
+    assert_proper_response(response)
+
+    # Simply get all trades without any filtering
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "tradesresource",
+        ),
+    )
+    assert_proper_response(response)
+    data = response.json()
+
+    # get the binance trades
+    original_binance_trades = [t for t in data['result'] if t['location'] == 'binance']
+
+    for trade in original_binance_trades:
+        # edit two fields of each binance trade
+        trade['amount'] = '1337.5'
+        trade['notes'] = 'edited trade'
+        response = requests.patch(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                "tradesresource",
+            ), json=trade,
+        )
+        assert_proper_response(response)
+        data = response.json()
+        assert data['message'] == ''
+        # check that the returned trade is edited
+        _check_trade_is_edited(original_trade=trade, result_trade=data['result'])
+
+    # Finally also query binance trades to see they are edited
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "tradesresource",
+        ), json={'location': 'binance'},
+    )
+    assert_proper_response(response)
+    data = response.json()
+    assert data['message'] == ''
+    assert len(data['result']) == 2  # only 2 binance trades
+    for idx, trade in enumerate(data['result']):
+        _check_trade_is_edited(original_trade=original_binance_trades[idx], result_trade=trade)
+
+
+def test_edit_trades_errors(rotkehlchen_api_server):
+    """Test that editing a trade with non-existing id is handled properly"""
+    trade = {
+        'trade_id': 'this_id_does_not_exit',
+        'timestamp': 1575640208,
+        'location': 'external',
+        'pair': 'BTC_EUR',
+        'trade_type': 'buy',
+        'amount': '0.5541',
+        'rate': '8422.1',
+        'fee': '0.55',
+        'fee_currency': 'USD',
+        'link': 'optional trader identifier',
+        'notes': 'optional notes',
+    }
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            "tradesresource",
+        ), json=trade,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="Tried to edit non existing trade id",
+        status_code=HTTPStatus.CONFLICT,
     )
