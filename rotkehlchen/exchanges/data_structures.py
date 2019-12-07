@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.crypto import sha3
-from rotkehlchen.errors import UnknownAsset, UnprocessableTradePair
+from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
@@ -12,7 +12,10 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_location,
     deserialize_price,
     deserialize_timestamp,
+    deserialize_trade_pair,
     deserialize_trade_type,
+    get_pair_position_str,
+    pair_get_assets,
 )
 from rotkehlchen.typing import (
     AssetAmount,
@@ -225,42 +228,13 @@ class Loan(NamedTuple):
     amount_lent: AssetAmount
 
 
-def _split_pair(pair: TradePair) -> Tuple[str, str]:
-    assets = pair.split('_')
-    if len(assets) != 2:
-        # Could not split the pair
-        raise UnprocessableTradePair(pair)
-
-    if len(assets[0]) == 0 or len(assets[1]) == 0:
-        # no base or no quote asset
-        raise UnprocessableTradePair(pair)
-
-    return assets[0], assets[1]
-
-
 def trade_pair_from_assets(base: Asset, quote: Asset) -> TradePair:
     return TradePair(f'{base.identifier}_{quote.identifier}')
-
-
-def pair_get_assets(pair: TradePair) -> Tuple[Asset, Asset]:
-    """Returns a tuple with the (base, quote) assets"""
-    base_str, quote_str = _split_pair(pair)
-
-    base_asset = Asset(base_str)
-    quote_asset = Asset(quote_str)
-    return base_asset, quote_asset
 
 
 def invert_pair(pair: TradePair) -> TradePair:
     left, right = pair_get_assets(pair)
     return trade_pair_from_assets(right, left)
-
-
-def get_pair_position_str(pair: TradePair, position: str) -> str:
-    """Get the string representation of an asset of a trade pair"""
-    assert position == 'first' or position == 'second'
-    base_str, quote_str = _split_pair(pair)
-    return base_str if position == 'first' else quote_str
 
 
 def get_pair_position_asset(pair: TradePair, position: str) -> Asset:
@@ -285,7 +259,7 @@ def deserialize_trade(data: Dict[str, Any]) -> Trade:
         - UnknownAsset: If the fee_currency string is not a known asset
         - DeserializationError: If any of the trade dict entries is not as expected
     """
-    pair = data['pair']
+    pair = deserialize_trade_pair(data['pair'])
     rate = deserialize_price(data['rate'])
     amount = deserialize_asset_amount(data['amount'])
     trade_type = deserialize_trade_type(data['trade_type'])

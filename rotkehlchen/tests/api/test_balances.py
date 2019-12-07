@@ -195,7 +195,7 @@ def test_query_all_balances_errors(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             "allbalancesresource",
-        ), json={'save_data': 14545}
+        ), json={'save_data': 14545},
     )
     assert_error_response(
         response=response,
@@ -207,7 +207,7 @@ def test_query_all_balances_errors(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             "allbalancesresource",
-        ), json={'async_query': 14545}
+        ), json={'async_query': 14545},
     )
     assert_error_response(
         response=response,

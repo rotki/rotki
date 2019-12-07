@@ -1,7 +1,8 @@
-from typing import Union
+from typing import Tuple, Union
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import DeserializationError
+from rotkehlchen.errors import DeserializationError, UnknownAsset, UnprocessableTradePair
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
 from rotkehlchen.typing import (
     AssetAmount,
@@ -11,6 +12,7 @@ from rotkehlchen.typing import (
     Optional,
     Price,
     Timestamp,
+    TradePair,
     TradeType,
 )
 from rotkehlchen.utils.misc import convert_to_int, create_timestamp, iso8601ts_to_timestamp
@@ -282,6 +284,49 @@ def deserialize_location(symbol: str) -> Location:
         raise DeserializationError(
             f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
         )
+
+
+def _split_pair(pair: TradePair) -> Tuple[str, str]:
+    assets = pair.split('_')
+    if len(assets) != 2:
+        # Could not split the pair
+        raise UnprocessableTradePair(pair)
+
+    if len(assets[0]) == 0 or len(assets[1]) == 0:
+        # no base or no quote asset
+        raise UnprocessableTradePair(pair)
+
+    return assets[0], assets[1]
+
+
+def pair_get_assets(pair: TradePair) -> Tuple[Asset, Asset]:
+    """Returns a tuple with the (base, quote) assets"""
+    base_str, quote_str = _split_pair(pair)
+
+    base_asset = Asset(base_str)
+    quote_asset = Asset(quote_str)
+    return base_asset, quote_asset
+
+
+def get_pair_position_str(pair: TradePair, position: str) -> str:
+    """Get the string representation of an asset of a trade pair"""
+    assert position == 'first' or position == 'second'
+    base_str, quote_str = _split_pair(pair)
+    return base_str if position == 'first' else quote_str
+
+
+def deserialize_trade_pair(pair: str) -> TradePair:
+    """Takes a trade pair string, makes sure it's valid, wraps it in proper type and returns it"""
+    try:
+        pair_get_assets(pair)
+    except UnprocessableTradePair as e:
+        raise DeserializationError(str(e))
+    except UnknownAsset as e:
+        raise DeserializationError(
+            f'Unknown asset {e.asset_name} found while processing trade pair',
+        )
+
+    return TradePair(pair)
 
 
 def deserialize_location_from_db(symbol: str) -> Location:

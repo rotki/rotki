@@ -26,7 +26,6 @@ from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     Trade,
     get_pair_position_asset,
-    pair_get_assets,
     trade_pair_from_assets,
 )
 from rotkehlchen.exchanges.exchange import ExchangeInterface
@@ -40,6 +39,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_price,
     deserialize_timestamp_from_kraken,
     deserialize_trade_type,
+    pair_get_assets,
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, Location, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
