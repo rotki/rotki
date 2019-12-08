@@ -1957,7 +1957,7 @@
         "type": "ethereum token"
     },
     "CNY": {
-        "name": "ChineseYuan",
+        "name": "Chinese Yuan",
         "symbol": "CNY",
         "type": "fiat"
     },
@@ -7411,6 +7411,11 @@
         "started": 1510394777,
         "symbol": "RTH",
         "type": "ethereum token"
+    },
+    "RUB": {
+        "name": "Russian Ruble",
+        "symbol": "RUB",
+        "type": "fiat"
     },
     "RUFF": {
         "ethereum_address": "0xf278c1CA969095ffddDED020290cf8B5C424AcE2",
