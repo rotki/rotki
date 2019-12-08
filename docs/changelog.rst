@@ -6,6 +6,7 @@ Changelog
 * :feature:`-` Added support for the following tokens
 
   - `Troy (TROY) <https://coinmarketcap.com/currencies/troy/>`__
+  - `Hycon (HYC) <https://coinmarketcap.com/currencies/hycon/>`__
 
 
 * :release:`1.0.5 <2019-11-30>`

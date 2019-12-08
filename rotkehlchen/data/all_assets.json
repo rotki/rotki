@@ -4404,6 +4404,12 @@
         "symbol": "HXRO",
         "type": "ethereum token"
     },
+    "HYC": {
+        "name": "HYCON",
+        "started": 1519862400,
+        "symbol": "HYC",
+        "type": "own chain"
+    },
     "HYDRO": {
         "ethereum_address": "0xEBBdf302c940c6bfd49C6b165f457fdb324649bc",
         "ethereum_token_decimals": 18,
