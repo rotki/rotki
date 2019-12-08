@@ -118,8 +118,7 @@ export class TaskManager {
   }
 
   monitor() {
-    // @ts-ignore
-    const tasks: TaskMap = store.state.tasks.tasks;
+    const tasks: TaskMap = store.state.tasks!.tasks;
     for (const id in tasks) {
       if (!Object.prototype.hasOwnProperty.call(tasks, id)) {
         continue;
