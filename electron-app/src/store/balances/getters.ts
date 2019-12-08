@@ -133,5 +133,14 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
           usdValue: Zero
         } as AssetBalance)
     );
+  },
+
+  hasTokens: (state: BalanceState) => (account: string) => {
+    const ethAccount = state.eth[account];
+    if (!ethAccount || isEmpty(ethAccount)) {
+      return false;
+    }
+
+    return Object.entries(ethAccount.tokens).length > 0;
   }
 };

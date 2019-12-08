@@ -15,7 +15,6 @@
       single-expand
       item-key="account"
       :expanded.sync="expanded"
-      :show-expand="expandable"
     >
       <template #header.usdValue> {{ currency.ticker_symbol }} value </template>
       <template #item.account="{ item }">
@@ -67,6 +66,14 @@
           ></account-asset-balances>
         </td>
       </template>
+      <template #item.expand="{ item }">
+        <span v-if="expandable && hasTokens(item.account)">
+          <v-icon v-if="expanded.includes(item)" @click="expanded = []">
+            fa fa-angle-up
+          </v-icon>
+          <v-icon v-else @click="expanded = [item]">fa fa-angle-down</v-icon>
+        </span>
+      </template>
     </v-data-table>
     <confirm-dialog
       :display="toDeleteAccount !== ''"
@@ -98,7 +105,7 @@ const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
   },
   computed: {
     ...mapGetters(['floatingPrecision', 'currency']),
-    ...mapBalancesGetters(['exchangeRate'])
+    ...mapBalancesGetters(['exchangeRate', 'hasTokens'])
   }
 })
 export default class AccountBalances extends Vue {
@@ -118,6 +125,7 @@ export default class AccountBalances extends Vue {
   currency!: Currency;
   floatingPrecision!: number;
   exchangeRate!: (currency: string) => number;
+  hasTokens!: (account: string) => boolean;
 
   toDeleteAccount: string = '';
   deleting = false;
@@ -127,7 +135,7 @@ export default class AccountBalances extends Vue {
     { text: this.blockchain, value: 'amount' },
     { text: 'USD Value', value: 'usdValue' },
     { text: 'Actions', value: 'actions', sortable: false, width: '50' },
-    { text: '', value: 'data-table-expand' }
+    { text: '', value: 'expand', align: 'end' }
   ];
 
   async deleteAccount() {

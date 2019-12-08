@@ -7,6 +7,11 @@ import { session } from '@/store/session';
 import { reports } from '@/store/reports';
 import { service } from '@/services/rotkehlchen_service';
 import { VersionCheck } from '@/model/version-check';
+import { SessionState } from '@/store/session/state';
+import { TaskState } from '@/store/tasks/state';
+import { NotificationState } from '@/store/notifications/state';
+import { TaxReportState } from '@/store/reports/state';
+import { BalanceState } from '@/store/balances/state';
 
 Vue.use(Vuex);
 
@@ -88,6 +93,11 @@ export interface Version {
 export interface RotkehlchenState {
   message: Message;
   version: Version;
+  session?: SessionState;
+  tasks?: TaskState;
+  notifications?: NotificationState;
+  reports?: TaxReportState;
+  balances?: BalanceState;
 }
 
 export interface Message {
