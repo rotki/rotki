@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`-` Add support for the Russian ruble (RUB - ‎₽) as a fiat currency
+
 * :release:`1.0.5 <2019-11-30>`
 * :feature:`547` Support Multicollateral DAI upgrade and Single Collateral DAI renaming to SAI.
 * :bug:`545` Trades from all Kraken pairs should now be processed properly again. For example all SC trade pairs should now work again.

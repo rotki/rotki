@@ -37,6 +37,7 @@ export class Settings {
         new Currency('Chinese Yuan', 'fa-jpy', 'CNY', '¥'),
         new Currency('Korean Won', 'fa-krw', 'KRW', '₩'),
         new Currency('Canadian Dollar', 'fa-cad', 'CAD', '$'),
+        new Currency('Russian Ruble', 'fa-rub', 'RUB', '‎₽'),
     ];
     public main_currency: Currency = this.currencies[0];
     private readonly icon_map: { [asset: string]: string };
