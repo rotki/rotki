@@ -3,6 +3,10 @@ Changelog
 =========
 
 * :feature:`-` Add support for the Russian ruble (RUB - ‎₽) as a fiat currency
+* :feature:`-` Added support for the following tokens
+
+  - `Troy (TROY) <https://coinmarketcap.com/currencies/troy/>`__
+
 
 * :release:`1.0.5 <2019-11-30>`
 * :feature:`547` Support Multicollateral DAI upgrade and Single Collateral DAI renaming to SAI.
