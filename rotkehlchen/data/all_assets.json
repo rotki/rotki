@@ -8668,6 +8668,12 @@
         "symbol": "TRIO",
         "type": "ethereum token"
     },
+    "TROY": {
+        "name": "Troy",
+        "started": 1571097600,
+        "symbol": "TROY",
+        "type": "own chain"
+    },
     "TRST": {
         "ethereum_address": "0xCb94be6f13A1182E4A4B6140cb7bf2025d28e41B",
         "ethereum_token_decimals": 6,
