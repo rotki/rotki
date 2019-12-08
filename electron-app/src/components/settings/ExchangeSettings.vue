@@ -172,10 +172,19 @@ export default class ExchangeSettings extends Vue {
 </script>
 
 <style scoped lang="scss">
-.exchange-settings__connected-exchanges {
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-start;
-  padding: 8px;
+.exchange-settings {
+  &__connected-exchanges {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 8px;
+  }
+
+  ::v-deep .v-input--is-disabled {
+    .v-icon,
+    .v-label {
+      color: green !important;
+    }
+  }
 }
 </style>
