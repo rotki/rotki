@@ -32,9 +32,11 @@ def price_historian(
             try:
                 price = mocked_price_queries[from_asset.identifier][to_asset.identifier][timestamp]
             except KeyError:
-                print(from_asset.identifier)
-                print(to_asset.identifier)
-                print(timestamp)
+                raise AssertionError(
+                    f'No mocked price found from {from_asset.identifier} to '
+                    f'{to_asset.identifier} at {timestamp}',
+                )
+
             return price
 
         historian.query_historical_price = mock_historical_price_query

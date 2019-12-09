@@ -410,6 +410,7 @@ class HistoryExportingResource(BaseResource):
 
     get_schema = HistoryExportingSchema()
 
+    @use_kwargs(get_schema, locations=('json',))
     def get(self, directory_path: Path) -> Response:
         return self.rest_api.export_processed_history_csv(directory_path=directory_path)
 

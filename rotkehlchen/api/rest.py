@@ -782,7 +782,7 @@ class RestAPI():
 
     @require_loggedin_user()
     def export_processed_history_csv(self, directory_path: Path) -> Response:
-        if len(self.rotkehlchen.accountant.csv_exporter.all_events_csv) == 0:
+        if len(self.rotkehlchen.accountant.csvexporter.all_events_csv) == 0:
             result_dict = wrap_in_fail_result('No history processed in order to perform an export')
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
