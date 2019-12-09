@@ -1,9 +1,25 @@
+import csv
+import os
 from contextlib import ExitStack
 from http import HTTPStatus
+from pathlib import Path
 
 import pytest
 import requests
 
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.csv_exporter import (
+    FILENAME_ALL_CSV,
+    FILENAME_ASSET_MOVEMENTS_CSV,
+    FILENAME_GAS_CSV,
+    FILENAME_LOAN_PROFITS_CSV,
+    FILENAME_LOAN_SETTLEMENTS_CSV,
+    FILENAME_MARGIN_CSV,
+    FILENAME_TRADES_CSV,
+)
+from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -12,6 +28,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test, prices
+from rotkehlchen.utils.misc import create_timestamp
 
 
 @pytest.mark.parametrize(
@@ -34,7 +51,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges):
                 continue
             stack.enter_context(manager)
         response = requests.get(
-            api_url_for(rotkehlchen_api_server_with_exchanges, "historyprocessingresource")
+            api_url_for(rotkehlchen_api_server_with_exchanges, "historyprocessingresource"),
         )
 
     # Simply check that the results got returned here. The actual correctness of
@@ -193,5 +210,246 @@ def test_query_history_errors(rotkehlchen_api_server):
     assert_error_response(
         response=response,
         contained_in_msg="async_query': ['Not a valid boolean",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+
+@pytest.mark.parametrize(
+    'added_exchanges',
+    [('binance', 'poloniex', 'bittrex', 'bitmex', 'kraken')],
+)
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_history_export_csv(
+        rotkehlchen_api_server_with_exchanges,
+        profit_currency,
+        tmpdir_factory,
+):
+    """Test that the csv export REST API endpoint works correctly"""
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    setup = prepare_rotki_for_history_processing_test(
+        rotki,
+        should_mock_history_processing=False,
+    )
+    csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
+
+    # First, query history processing to have data for exporting
+    with ExitStack() as stack:
+        for manager in setup:
+            if manager is None:
+                continue
+            stack.enter_context(manager)
+        response = requests.get(
+            api_url_for(rotkehlchen_api_server_with_exchanges, "historyprocessingresource"),
+        )
+    assert_proper_response(response)
+
+    # now query the export endpoint
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server_with_exchanges, "historyexportingresource"),
+        json={'directory_path': csv_dir},
+    )
+    assert_proper_response(response)
+    data = response.json()
+    assert data['message'] == ''
+    assert data['result'] is True
+
+    # and check the csv files were generated succesfully. Here we are only checking
+    # for valid CSV and not for the values to be valid.
+    # TODO: In the future make a test that checks the values are also valid
+    with open(os.path.join(csv_dir, FILENAME_TRADES_CSV), newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        count = 0
+        for row in reader:
+            assert len(row) == 14
+            assert row['type'] in ('buy', 'sell')
+            assert Asset(row['asset']).identifier is not None
+            assert FVal(row[f'fee_in_{profit_currency.identifier}']) >= ZERO
+            assert FVal(row[f'price_in_{profit_currency.identifier}']) >= ZERO
+            assert FVal(row[f'fee_in_{profit_currency.identifier}']) is not None
+            assert FVal(row[f'gained_or_invested_{profit_currency.identifier}']) is not None
+            assert FVal(row['amount']) > ZERO
+            assert row['taxable_amount'] is not None
+            assert Asset(row['exchanged_for']).identifier is not None
+            key = f'exchanged_asset_{profit_currency.identifier}_exchange_rate'
+            assert FVal(row[key]) >= ZERO
+            key = f'taxable_bought_cost_in_{profit_currency.identifier}'
+            assert row[key] is not None
+            assert FVal(row[f'taxable_gain_in_{profit_currency.identifier}']) >= ZERO
+            assert row[f'taxable_profit_loss_in_{profit_currency.identifier}'] is not None
+            assert create_timestamp(row['time'], '%d/%m/%Y %H:%M:%S') > 0
+            assert row['is_virtual'] in ('True', 'False')
+
+            count += 1
+    NUM_TRADES = 18
+    assert count == NUM_TRADES, 'Incorrect amount of trade CSV entries found'
+
+    with open(os.path.join(csv_dir, FILENAME_LOAN_PROFITS_CSV), newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        count = 0
+        for row in reader:
+            assert len(row) == 6
+            assert create_timestamp(row['open_time'], '%d/%m/%Y %H:%M:%S') > 0
+            assert create_timestamp(row['close_time'], '%d/%m/%Y %H:%M:%S') > 0
+            assert Asset(row['gained_asset']).identifier is not None
+            assert FVal(row['gained_amount']) > ZERO
+            assert FVal(row['lent_amount']) > ZERO
+            assert FVal(row[f'profit_in_{profit_currency.identifier}']) > ZERO
+            count += 1
+    num_loans = 2
+    assert count == num_loans, 'Incorrect amount of loans CSV entries found'
+
+    with open(os.path.join(csv_dir, FILENAME_ASSET_MOVEMENTS_CSV), newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        count = 0
+        for row in reader:
+            assert len(row) == 6
+            assert create_timestamp(row['time'], '%d/%m/%Y %H:%M:%S') > 0
+            assert row['exchange'] in SUPPORTED_EXCHANGES
+            assert row['type'] in ('deposit', 'withdrawal')
+            assert Asset(row['moving_asset']).identifier is not None
+            assert FVal(row['fee_in_asset']) >= ZERO
+            assert FVal(row[f'fee_in_{profit_currency.identifier}']) >= ZERO
+            count += 1
+    num_asset_movements = 11
+    assert count == num_asset_movements, 'Incorrect amount of asset movement CSV entries found'
+
+    with open(os.path.join(csv_dir, FILENAME_GAS_CSV), newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        count = 0
+        for row in reader:
+            assert len(row) == 4
+            assert create_timestamp(row['time'], '%d/%m/%Y %H:%M:%S') > 0
+            assert row['transaction_hash'] is not None
+            assert FVal(row['eth_burned_as_gas']) > ZERO
+            assert FVal(row[f'cost_in_{profit_currency.identifier}']) > ZERO
+            count += 1
+    num_transactions = 3
+    assert count == num_transactions, 'Incorrect amount of transaction costs CSV entries found'
+
+    with open(os.path.join(csv_dir, FILENAME_MARGIN_CSV), newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        count = 0
+        for row in reader:
+            assert len(row) == 5
+            assert row['name'] is not None
+            assert create_timestamp(row['time'], '%d/%m/%Y %H:%M:%S') > 0
+            assert Asset(row['gain_loss_asset']).identifier is not None
+            assert FVal(row['gain_loss_amount']) is not None
+            assert FVal(row[f'profit_loss_in_{profit_currency.identifier}']) is not None
+            count += 1
+    num_margins = 2
+    assert count == num_margins, 'Incorrect amount of margin CSV entries found'
+
+    # None of this in the current history. TODO: add
+    # with open(os.path.join(csv_dir, FILENAME_LOAN_SETTLEMENTS_CSV), newline='') as csvfile:
+    #     reader = csv.DictReader(csvfile)
+    #     count = 0
+    #     for row in reader:
+    #         assert len(row) == 6
+    #         assert Asset(row['asset']).identifier is not None
+    #         assert FVal(row['amount']) is not None
+    #         assert FVal(row[f'price_in_{profit_currency.identifier}']) > ZERO
+    #         assert FVal(row[f'fee_in_{profit_currency.identifier}']) >= ZERO
+    #         assert row[f'loss_in_{profit_currency.identifier}'] is not None
+    #         assert create_timestamp(row['time'], '%d/%m/%Y %H:%M:%S') > 0
+    #         count += 1
+    # num_loan_settlements = 2
+    # assert count == num_loan_settlements, 'Incorrect amount of loan settlement CSV entries found'
+
+    with open(os.path.join(csv_dir, FILENAME_ALL_CSV), newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        count = 0
+        for row in reader:
+            assert len(row) == 12
+            assert row['type'] in (
+                'buy',
+                'sell',
+                'asset_movement',
+                'tx_gas_cost',
+                'interest_rate_payment',
+                'margin_position_close',
+            )
+            paid_asset = row['paid_asset']
+            if paid_asset != '':
+                assert Asset(paid_asset).identifier is not None
+            assert FVal(row['paid_in_asset']) >= ZERO
+            assert row['taxable_amount'] is not None
+            received_asset = row['received_asset']
+            if received_asset != '':
+                assert Asset(received_asset).identifier is not None
+            assert FVal(row['received_in_asset']) >= ZERO
+            assert row['net_profit_or_loss'] is not None
+            assert create_timestamp(row['time'], '%d/%m/%Y %H:%M:%S') > 0
+            assert row['is_virtual'] in ('True', 'False')
+            assert FVal(row[f'paid_in_{profit_currency.identifier}']) >= ZERO
+            assert row[f'taxable_received_in_{profit_currency.identifier}'] is not None
+            assert row[f'taxable_bought_cost_in_{profit_currency.identifier}'] is not None
+            count += 1
+    assert count == (
+        NUM_TRADES + num_loans + num_asset_movements + num_transactions + num_margins
+    )
+
+
+@pytest.mark.parametrize(
+    'added_exchanges',
+    [('binance', 'poloniex', 'bittrex', 'bitmex', 'kraken')],
+)
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_history_export_csv_errors(
+        rotkehlchen_api_server_with_exchanges,
+        profit_currency,
+        tmpdir_factory,
+):
+    """Test that errors on the csv export REST API endpoint are handled correctly"""
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    setup = prepare_rotki_for_history_processing_test(
+        rotki,
+        should_mock_history_processing=False,
+    )
+    csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
+
+    # Query the export endpoint without first having queried the history
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server_with_exchanges, "historyexportingresource"),
+        json={'directory_path': csv_dir},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='No history processed in order to perform an export',
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # Now, query history processing to have data for exporting
+    with ExitStack() as stack:
+        for manager in setup:
+            if manager is None:
+                continue
+            stack.enter_context(manager)
+        response = requests.get(
+            api_url_for(rotkehlchen_api_server_with_exchanges, "historyprocessingresource"),
+        )
+    assert_proper_response(response)
+
+    # And now provide non-existing path for directory
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server_with_exchanges, "historyexportingresource"),
+        json={'directory_path': '/idont/exist/for/sure/'},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="'directory_path': ['Given path /idont/exist/for/sure/ does not exist",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # And now provide valid path but not directory
+    tempfile = Path(Path(csv_dir) / 'f.txt')
+    tempfile.touch()
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server_with_exchanges, "historyexportingresource"),
+        json={'directory_path': str(tempfile)},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='is not a directory',
         status_code=HTTPStatus.BAD_REQUEST,
     )

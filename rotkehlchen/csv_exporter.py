@@ -33,6 +33,14 @@ from rotkehlchen.utils.misc import taxable_gain_for_sell, timestamp_to_date
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+FILENAME_TRADES_CSV = 'trades.csv'
+FILENAME_LOAN_PROFITS_CSV = 'loan_profits.csv'
+FILENAME_ASSET_MOVEMENTS_CSV = 'asset_movements.csv'
+FILENAME_GAS_CSV = 'tx_gas_costs.csv'
+FILENAME_MARGIN_CSV = 'margin_positions.csv'
+FILENAME_LOAN_SETTLEMENTS_CSV = 'loan_settlements.csv'
+FILENAME_ALL_CSV = 'all_events.csv'
+
 
 def _dict_to_csv_file(path: FilePath, dictionary_list: List) -> None:
     """Takes a filepath and a list of dictionaries representing the rows and writes them
@@ -132,10 +140,11 @@ class CSVExporter():
         new_entry = entry.copy()
         new_entry['net_profit_or_loss'] = net_profit_or_loss_csv
         new_entry['time'] = timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S')
-        new_entry['paid_in_{}'.format(self.profit_currency)] = paid_in_profit_currency
-        key = f'taxable_received_in_{self.profit_currency}'
+        new_entry[f'paid_in_{self.profit_currency.identifier}'] = paid_in_profit_currency
+        key = f'taxable_received_in_{self.profit_currency.identifier}'
         new_entry[key] = taxable_received_in_profit_currency
-        new_entry['taxable_bought_cost_in_{}'.format(self.profit_currency)] = taxable_bought_cost
+        key = f'taxable_bought_cost_in_{self.profit_currency.identifier}'
+        new_entry[key] = taxable_bought_cost
         del new_entry['paid_in_profit_currency']
         del new_entry['taxable_received_in_profit_currency']
         del new_entry['taxable_bought_cost_in_profit_currency']
@@ -156,20 +165,20 @@ class CSVExporter():
         if not self.create_csv:
             return
 
-        exchange_rate_key = f'exchanged_asset_{self.profit_currency}_exchange_rate'
+        exchange_rate_key = f'exchanged_asset_{self.profit_currency.identifier}_exchange_rate'
         self.trades_csv.append({
             'type': 'buy',
             'asset': bought_asset.identifier,
-            'price_in_{}'.format(self.profit_currency): rate,
-            'fee_in_{}'.format(self.profit_currency): fee_cost,
-            'gained_or_invested_{}'.format(self.profit_currency): cost,
+            'price_in_{}'.format(self.profit_currency.identifier): rate,
+            'fee_in_{}'.format(self.profit_currency.identifier): fee_cost,
+            'gained_or_invested_{}'.format(self.profit_currency.identifier): cost,
             'amount': amount,
             'taxable_amount': 'not applicable',  # makes no difference for buying
             'exchanged_for': paid_with_asset.identifier,
             exchange_rate_key: paid_with_asset_rate,
-            'taxable_bought_cost_in_{}'.format(self.profit_currency): 'not applicable',
-            'taxable_gain_in_{}'.format(self.profit_currency): FVal(0),
-            'taxable_profit_loss_in_{}'.format(self.profit_currency): FVal(0),
+            'taxable_bought_cost_in_{}'.format(self.profit_currency.identifier): 'not applicable',
+            'taxable_gain_in_{}'.format(self.profit_currency.identifier): FVal(0),
+            'taxable_profit_loss_in_{}'.format(self.profit_currency.identifier): FVal(0),
             'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
             'is_virtual': is_virtual,
         })
@@ -208,7 +217,7 @@ class CSVExporter():
         )
         exported_receiving_asset = '' if receiving_asset is None else receiving_asset.identifier
         processed_receiving_amount = FVal(0) if not receiving_amount else receiving_amount
-        exchange_rate_key = f'exchanged_asset_{self.profit_currency}_exchange_rate'
+        exchange_rate_key = f'exchanged_asset_{self.profit_currency.identifier}_exchange_rate'
         taxable_profit_received = taxable_gain_for_sell(
             taxable_amount=taxable_amount,
             rate_in_profit_currency=rate_in_profit_currency,
@@ -220,16 +229,16 @@ class CSVExporter():
         self.trades_csv.append({
             'type': 'sell',
             'asset': selling_asset.identifier,
-            'price_in_{}'.format(self.profit_currency): rate_in_profit_currency,
-            'fee_in_{}'.format(self.profit_currency): total_fee_in_profit_currency,
-            'gained_or_invested_{}'.format(self.profit_currency): gain_in_profit_currency,
+            f'price_in_{self.profit_currency.identifier}': rate_in_profit_currency,
+            f'fee_in_{self.profit_currency.identifier}': total_fee_in_profit_currency,
+            f'gained_or_invested_{self.profit_currency.identifier}': gain_in_profit_currency,
             'amount': selling_amount,
             'taxable_amount': taxable_amount,
             'exchanged_for': exported_receiving_asset,
             exchange_rate_key: receiving_asset_rate_in_profit_currency,
-            'taxable_bought_cost_in_{}'.format(self.profit_currency): taxable_bought_cost,
-            'taxable_gain_in_{}'.format(self.profit_currency): taxable_profit_received,
-            'taxable_profit_loss_in_{}'.format(self.profit_currency): taxable_profit_formula,
+            f'taxable_bought_cost_in_{self.profit_currency.identifier}': taxable_bought_cost,
+            f'taxable_gain_in_{self.profit_currency.identifier}': taxable_profit_received,
+            f'taxable_profit_loss_in_{self.profit_currency.identifier}': taxable_profit_formula,
             'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
             'is_virtual': is_virtual,
         })
@@ -264,9 +273,9 @@ class CSVExporter():
         self.loan_settlements_csv.append({
             'asset': asset.identifier,
             'amount': amount,
-            'price_in_{}'.format(self.profit_currency): rate_in_profit_currency,
-            'fee_in_{}'.format(self.profit_currency): total_fee_in_profit_currency,
-            'loss_in_{}'.format(self.profit_currency): loss_formula,
+            f'price_in_{self.profit_currency.identifier}': rate_in_profit_currency,
+            f'fee_in_{self.profit_currency.identifier}': total_fee_in_profit_currency,
+            f'loss_in_{self.profit_currency.identifier}': loss_formula,
             'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
         })
         paid_in_profit_currency = amount * rate_in_profit_currency + total_fee_in_profit_currency
@@ -299,7 +308,7 @@ class CSVExporter():
             'gained_asset': gained_asset.identifier,
             'gained_amount': gained_amount,
             'lent_amount': lent_amount,
-            'profit_in_{}'.format(self.profit_currency): gain_in_profit_currency,
+            f'profit_in_{self.profit_currency.identifier}': gain_in_profit_currency,
         })
         self.add_to_allevents(
             event_type=EV_INTEREST_PAYMENT,
@@ -331,7 +340,7 @@ class CSVExporter():
             'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
             'gain_loss_asset': gain_loss_asset.identifier,
             'gain_loss_amount': gain_loss_amount,
-            'profit_loss_in_{}'.format(self.profit_currency): gain_loss_in_profit_currency,
+            f'profit_loss_in_{self.profit_currency.identifier}': gain_loss_in_profit_currency,
         })
         self.add_to_allevents(
             event_type=EV_MARGIN_CLOSE,
@@ -362,7 +371,7 @@ class CSVExporter():
             'type': str(category),
             'moving_asset': asset.identifier,
             'fee_in_asset': fee,
-            'fee_in_{}'.format(self.profit_currency): fee * rate,
+            f'fee_in_{self.profit_currency.identifier}': fee * rate,
         })
         self.add_to_allevents(
             event_type=EV_ASSET_MOVE,
@@ -389,7 +398,7 @@ class CSVExporter():
             'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
             'transaction_hash': transaction_hash.hex(),
             'eth_burned_as_gas': eth_burned_as_gas,
-            'cost_in_{}'.format(self.profit_currency): eth_burned_as_gas * rate,
+            f'cost_in_{self.profit_currency.identifier}': eth_burned_as_gas * rate,
         })
         self.add_to_allevents(
             event_type=EV_TX_GAS_COST,
@@ -411,31 +420,31 @@ class CSVExporter():
                 os.makedirs(dirpath)
 
             _dict_to_csv_file(
-                FilePath(os.path.join(dirpath, 'trades.csv')),
+                FilePath(os.path.join(dirpath, FILENAME_TRADES_CSV)),
                 self.trades_csv,
             )
             _dict_to_csv_file(
-                FilePath(os.path.join(dirpath, 'loan_profits.csv')),
+                FilePath(os.path.join(dirpath, FILENAME_LOAN_PROFITS_CSV)),
                 self.loan_profits_csv,
             )
             _dict_to_csv_file(
-                FilePath(os.path.join(dirpath, 'asset_movements.csv')),
+                FilePath(os.path.join(dirpath, FILENAME_ASSET_MOVEMENTS_CSV)),
                 self.asset_movements_csv,
             )
             _dict_to_csv_file(
-                FilePath(os.path.join(dirpath, 'tx_gas_costs.csv')),
+                FilePath(os.path.join(dirpath, FILENAME_GAS_CSV)),
                 self.tx_gas_costs_csv,
             )
             _dict_to_csv_file(
-                FilePath(os.path.join(dirpath, 'margin_positions.csv')),
+                FilePath(os.path.join(dirpath, FILENAME_MARGIN_CSV)),
                 self.margin_positions_csv,
             )
             _dict_to_csv_file(
-                FilePath(os.path.join(dirpath, 'loan_settlements.csv')),
+                FilePath(os.path.join(dirpath, FILENAME_LOAN_SETTLEMENTS_CSV)),
                 self.loan_settlements_csv,
             )
             _dict_to_csv_file(
-                FilePath(os.path.join(dirpath, 'all_events.csv')),
+                FilePath(os.path.join(dirpath, FILENAME_ALL_CSV)),
                 self.all_events_csv,
             )
         except (PermissionError, OSError) as e:
