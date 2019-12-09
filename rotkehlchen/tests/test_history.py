@@ -1,12 +1,13 @@
+from contextlib import ExitStack
+
 import pytest
 
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import limit_trade_list_to_period
-from rotkehlchen.tests.utils.constants import ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3
-from rotkehlchen.tests.utils.history import TEST_END_TS, mock_history_processing_and_exchanges
-from rotkehlchen.typing import Location, SupportedBlockchain, TradeType
+from rotkehlchen.tests.utils.history import TEST_END_TS, prepare_rotki_for_history_processing_test
+from rotkehlchen.typing import Location, TradeType
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -26,22 +27,10 @@ def test_history_creation(
     rotki = server.rotkehlchen
     rotki.accountant = accountant
 
-    kraken = rotki.exchange_manager.connected_exchanges['kraken']
-    kraken.random_trade_data = False
-    kraken.random_ledgers_data = False
-    # Let's add 3 blockchain accounts
-    rotki.data.db.add_blockchain_account(SupportedBlockchain.ETHEREUM, ETH_ADDRESS1)
-    rotki.data.db.add_blockchain_account(SupportedBlockchain.ETHEREUM, ETH_ADDRESS2)
-    rotki.data.db.add_blockchain_account(SupportedBlockchain.ETHEREUM, ETH_ADDRESS3)
-    setup = mock_history_processing_and_exchanges(rotki)
-    with (
-            setup.accountant_patch,
-            setup.polo_patch,
-            setup.binance_patch,
-            setup.bittrex_patch,
-            setup.bitmex_patch,
-            setup.etherscan_patch,
-    ):
+    setup = prepare_rotki_for_history_processing_test(rotki)
+    with ExitStack() as stack:
+        for manager in setup:
+            stack.enter_context(manager)
         response = server.process_trade_history(start_ts='0', end_ts=str(TEST_END_TS))
     # The history processing is completely mocked away and omitted in this test.
     # because it is only for the history creation not its processing.
@@ -85,19 +74,10 @@ def test_history_creation_remote_errors(
     server = rotkehlchen_server_with_exchanges
     rotki = server.rotkehlchen
     rotki.accountant = accountant
-    kraken = rotki.exchange_manager.connected_exchanges['kraken']
-    kraken.random_trade_data = False
-    kraken.random_ledgers_data = False
-    kraken.remote_errors = True
-    setup = mock_history_processing_and_exchanges(rotki, remote_errors=True)
-    with (
-            setup.accountant_patch,
-            setup.polo_patch,
-            setup.binance_patch,
-            setup.bittrex_patch,
-            setup.bitmex_patch,
-            setup.etherscan_patch,
-    ):
+    setup = prepare_rotki_for_history_processing_test(rotki, remote_errors=True)
+    with ExitStack() as stack:
+        for manager in setup:
+            stack.enter_context(manager)
         response = server.process_trade_history(start_ts='0', end_ts=str(TEST_END_TS))
     # The history processing is completely mocked away and omitted in this test.
     # because it is only for the history creation not its processing.
