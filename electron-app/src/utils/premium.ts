@@ -25,7 +25,6 @@ export const PremiumStatistics = (): Promise<VueConstructor> => {
     // @ts-ignore
     const library = window[components[0]];
     Vue.use(library.install);
-    await library.prepare();
     resolve(library.PremiumStatistics);
 
     script.addEventListener('error', reject);
