@@ -28,7 +28,14 @@ def price_historian(
         def mock_historical_price_query(from_asset, to_asset, timestamp):
             if from_asset == to_asset:
                 return FVal(1)
-            return mocked_price_queries[from_asset][to_asset][timestamp]
+
+            try:
+                price = mocked_price_queries[from_asset.identifier][to_asset.identifier][timestamp]
+            except KeyError:
+                print(from_asset.identifier)
+                print(to_asset.identifier)
+                print(timestamp)
+            return price
 
         historian.query_historical_price = mock_historical_price_query
 

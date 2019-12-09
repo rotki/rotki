@@ -392,6 +392,7 @@ class HistoryProcessingResource(BaseResource):
 
     get_schema = HistoryProcessingSchema()
 
+    @use_kwargs(get_schema, locations=('json',))
     def get(
             self,
             from_timestamp: Timestamp,

@@ -55,7 +55,10 @@ def profit_currency():
 
 @pytest.fixture
 def accounting_create_csv():
-    return False
+    # TODO: The whole create_csv argument should be deleted.
+    # Or renamed. Since it's not about actually creating the CSV
+    # but keeping the events in memory
+    return True
 
 
 @pytest.fixture

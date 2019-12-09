@@ -4,6 +4,7 @@ from unittest.mock import _patch, patch
 import requests
 
 from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -20,18 +21,28 @@ from rotkehlchen.tests.utils.constants import (
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.transactions import EthereumTransaction
-from rotkehlchen.typing import AssetAmount, AssetMovementCategory, Location, Timestamp, TradeType
+from rotkehlchen.typing import (
+    AssetAmount,
+    AssetMovementCategory,
+    Location,
+    SupportedBlockchain,
+    Timestamp,
+    TradeType,
+)
 from rotkehlchen.utils.misc import hexstring_to_bytes
 
 TEST_END_TS = 1559427707
 
 
-# Prices queried by cryptocompare  @ 02/10/2019
+# Prices queried by cryptocompare
 prices = {
     'BTC': {
         'EUR': {
+            1428994442: FVal(206.47),
             1446979735: FVal(355.9),
+            1448994442: FVal(342.33),
             1449809536: FVal(386.175),
+            1458994442: FVal(374.12),
             1464393600: FVal(422.9),
             1473505138: FVal(556.435),
             1473897600: FVal(542.87),
@@ -40,32 +51,67 @@ prices = {
             1476979735: FVal(578.505),
             1479200704: FVal(667.185),
             1480683904: FVal(723.505),
+            1483314171: FVal(946.47),
             1484629704: FVal(810.49),
             1486299904: FVal(942.78),
             1487289600: FVal(979.39),
             1491177600: FVal(1039.935),
+            1491231601: FVal(1073.27),
+            1493650800: FVal(1258.54),
+            1493737201: FVal(1317.71),
+            1495551601: FVal(1995.49),
             1495969504: FVal(1964.685),
             1498694400: FVal(2244.465),
+            1512561941: FVal(11795.53),
             1512693374: FVal(14415.365),
+            1539713117: FVal(5627.58),
+            1539713237: FVal(5627.58),
+            1566572401: FVal(9334.78),
         },
     },
     'ETH': {
         'EUR': {
+            1418994442: ZERO,
+            1438994442: FVal(0.65),
+            1439048640: FVal(0.65),
+            1439048643: FVal(0.65),
+            1439048645: FVal(0.65),
             1446979735: FVal(0.8583),
+            1448994442: FVal(0.8206),
             1463184190: FVal(9.187),
             1463508234: FVal(10.785),
+            1468994442: FVal(11.41),
             1473505138: FVal(10.36),
             1475042230: FVal(11.925),
             1476536704: FVal(10.775),
             1479510304: FVal(8.9145),
+            1483313925: FVal(7.749),
             1491062063: FVal(47.865),
             1493291104: FVal(53.175),
+            1493737200: FVal(69.4),
             1511626623: FVal(396.56),
+            1512561941: FVal(361.49),
+            1512561942: FVal(361.49),
+            1539713117: FVal(179.04),
+            1539713237: FVal(179.04),
+            1539713238: FVal(179.04),
+        },
+    },
+    'RDN': {
+        'EUR': {
+            1512561942: ZERO,
+        },
+    },
+    'LTC': {
+        'EUR': {
+            1493650800: FVal(14.07),
+            1493737200: FVal(14.56),
         },
     },
     'XMR': {
         'EUR': {
             1449809536: FVal(0.39665),
+            1539713238: FVal(91.86),
         },
     },
     'DASH': {
@@ -81,123 +127,6 @@ prices = {
         },
     },
 }
-
-
-def check_result_of_history_creation(
-        start_ts: Timestamp,
-        end_ts: Timestamp,
-        trade_history: List[Union[Trade, MarginPosition]],
-        loan_history: Dict,
-        asset_movements: List[AssetMovement],
-        eth_transactions: List[EthereumTransaction],
-) -> Dict[str, Any]:
-    """This function offers some simple assertions on the result of the
-    created history. The entire processing part of the history is mocked
-    away by this checking function"""
-    assert start_ts == 0, 'should be same as given to process_history'
-    assert end_ts == TEST_END_TS, 'should be same as given to process_history'
-
-    # TODO: Add more assertions/check for each action
-    # OR instead do it in tests for conversion of actions(trades, loans, deposits e.t.c.)
-    # from exchange to our format for each exchange
-    assert len(trade_history) == 11
-    assert trade_history[0].location == Location.KRAKEN
-    assert trade_history[0].pair == 'ETH_EUR'
-    assert trade_history[0].trade_type == TradeType.BUY
-    assert trade_history[1].location == Location.KRAKEN
-    assert trade_history[1].pair == 'BTC_EUR'
-    assert trade_history[1].trade_type == TradeType.BUY
-    assert trade_history[2].location == Location.BITTREX
-    assert trade_history[2].pair == 'LTC_BTC'
-    assert trade_history[2].trade_type == TradeType.BUY
-    assert trade_history[3].location == Location.BITTREX
-    assert trade_history[3].pair == 'LTC_ETH'
-    assert trade_history[3].trade_type == TradeType.SELL
-    assert isinstance(trade_history[4], MarginPosition)
-    assert trade_history[4].profit_loss == FVal('0.05')
-    assert trade_history[5].location == Location.BINANCE
-    assert trade_history[5].pair == 'ETH_BTC'
-    assert trade_history[5].trade_type == TradeType.BUY
-    assert trade_history[6].location == Location.BINANCE
-    assert trade_history[6].pair == 'RDN_ETH'
-    assert trade_history[6].trade_type == TradeType.SELL
-    assert trade_history[7].location == Location.POLONIEX
-    assert trade_history[7].pair == 'ETH_BTC'
-    assert trade_history[7].trade_type == TradeType.SELL
-    assert trade_history[8].location == Location.POLONIEX
-    assert trade_history[8].pair == 'ETH_BTC'
-    assert trade_history[8].trade_type == TradeType.BUY
-    assert trade_history[9].location == Location.POLONIEX
-    assert trade_history[9].pair == 'XMR_ETH'
-    assert trade_history[9].trade_type == TradeType.BUY
-    # TODO: investigate why this new bitmex position popped up
-    assert isinstance(trade_history[10], MarginPosition)
-    assert trade_history[10].profit_loss == FVal('5E-9')
-
-    assert len(loan_history) == 2
-    assert loan_history[0].currency == A_ETH
-    assert loan_history[0].earned == AssetAmount(FVal('0.00000001'))
-    assert loan_history[1].currency == A_BTC
-    assert loan_history[1].earned == AssetAmount(FVal('0.00000005'))
-
-    assert len(asset_movements) == 11
-    assert asset_movements[0].location == Location.KRAKEN
-    assert asset_movements[0].category == AssetMovementCategory.DEPOSIT
-    assert asset_movements[0].asset == A_BTC
-    assert asset_movements[1].location == Location.KRAKEN
-    assert asset_movements[1].category == AssetMovementCategory.DEPOSIT
-    assert asset_movements[1].asset == A_ETH
-    assert asset_movements[2].location == Location.KRAKEN
-    assert asset_movements[2].category == AssetMovementCategory.WITHDRAWAL
-    assert asset_movements[2].asset == A_BTC
-    assert asset_movements[3].location == Location.KRAKEN
-    assert asset_movements[3].category == AssetMovementCategory.WITHDRAWAL
-    assert asset_movements[3].asset == A_ETH
-    assert asset_movements[4].location == Location.POLONIEX
-    assert asset_movements[4].category == AssetMovementCategory.WITHDRAWAL
-    assert asset_movements[4].asset == A_BTC
-    assert asset_movements[5].location == Location.POLONIEX
-    assert asset_movements[5].category == AssetMovementCategory.WITHDRAWAL
-    assert asset_movements[5].asset == A_ETH
-    assert asset_movements[6].location == Location.POLONIEX
-    assert asset_movements[6].category == AssetMovementCategory.DEPOSIT
-    assert asset_movements[6].asset == A_BTC
-    assert asset_movements[7].location == Location.POLONIEX
-    assert asset_movements[7].category == AssetMovementCategory.DEPOSIT
-    assert asset_movements[7].asset == A_ETH
-    assert asset_movements[8].location == Location.BITMEX
-    assert asset_movements[8].category == AssetMovementCategory.DEPOSIT
-    assert asset_movements[8].asset == A_BTC
-    assert asset_movements[9].location == Location.BITMEX
-    assert asset_movements[9].category == AssetMovementCategory.WITHDRAWAL
-    assert asset_movements[9].asset == A_BTC
-    # TODO: investigate why this new bitmex withdrawal popped up
-    assert asset_movements[10].location == Location.BITMEX
-    assert asset_movements[10].category == AssetMovementCategory.WITHDRAWAL
-    assert asset_movements[10].asset == A_BTC
-
-    # The history creation for these is not yet tested
-    assert len(eth_transactions) == 3
-    assert eth_transactions[0].block_number == 54092
-    assert eth_transactions[0].tx_hash == hexstring_to_bytes(TX_HASH_STR1)
-    assert eth_transactions[0].from_address == ETH_ADDRESS1
-    assert eth_transactions[0].to_address == ''
-    assert eth_transactions[0].value == FVal('11901464239480000000000000')
-    assert eth_transactions[0].input_data == MOCK_INPUT_DATA
-    assert eth_transactions[1].block_number == 54093
-    assert eth_transactions[1].tx_hash == hexstring_to_bytes(TX_HASH_STR2)
-    assert eth_transactions[1].from_address == ETH_ADDRESS2
-    assert eth_transactions[1].to_address == ETH_ADDRESS1
-    assert eth_transactions[1].value == FVal('40000300')
-    assert eth_transactions[1].input_data == MOCK_INPUT_DATA
-    assert eth_transactions[2].block_number == 54094
-    assert eth_transactions[2].tx_hash == hexstring_to_bytes(TX_HASH_STR3)
-    assert eth_transactions[2].from_address == ETH_ADDRESS3
-    assert eth_transactions[2].to_address == ETH_ADDRESS1
-    assert eth_transactions[2].value == FVal('500520300')
-    assert eth_transactions[2].input_data == MOCK_INPUT_DATA
-
-    return {}
 
 
 def check_result_of_history_creation_for_remote_errors(
@@ -582,9 +511,171 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
     return polo_patch, binance_patch, bittrex_patch, bitmex_patch
 
 
-def mock_history_processing(rotki: Rotkehlchen, remote_errors=False):
+def mock_history_processing(
+        rotki: Rotkehlchen,
+        should_mock_history_processing: bool = True,
+        remote_errors: bool = False,
+        history_start_ts: Optional[Timestamp] = None,
+        history_end_ts: Optional[Timestamp] = None,
+):
     """ Patch away the processing of history """
-    mock_function = check_result_of_history_creation
+    if remote_errors is True and should_mock_history_processing is False:
+        raise AssertionError(
+            'Checking for remote errors while not mocking history is not supported',
+        )
+    original_history_processing_function = rotki.accountant.process_history
+
+    def check_result_of_history_creation(
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            trade_history: List[Union[Trade, MarginPosition]],
+            loan_history: Dict,
+            asset_movements: List[AssetMovement],
+            eth_transactions: List[EthereumTransaction],
+    ) -> Dict[str, Any]:
+        """This function offers some simple assertions on the result of the
+        created history. The entire processing part of the history is mocked
+        away by this checking function"""
+        if history_start_ts is None:
+            assert start_ts == 0, 'if no start_ts is given it should be zero'
+        else:
+            assert start_ts == history_start_ts, 'should be same as given to process_history'
+        if history_end_ts is not None:
+            assert end_ts == history_end_ts, 'should be same as given to process_history'
+
+        # TODO: Add more assertions/check for each action
+        # OR instead do it in tests for conversion of actions(trades, loans, deposits e.t.c.)
+        # from exchange to our format for each exchange
+        assert len(trade_history) == 11
+        assert trade_history[0].location == Location.KRAKEN
+        assert trade_history[0].pair == 'ETH_EUR'
+        assert trade_history[0].trade_type == TradeType.BUY
+        assert trade_history[1].location == Location.KRAKEN
+        assert trade_history[1].pair == 'BTC_EUR'
+        assert trade_history[1].trade_type == TradeType.BUY
+        assert trade_history[2].location == Location.BITTREX
+        assert trade_history[2].pair == 'LTC_BTC'
+        assert trade_history[2].trade_type == TradeType.BUY
+        assert trade_history[3].location == Location.BITTREX
+        assert trade_history[3].pair == 'LTC_ETH'
+        assert trade_history[3].trade_type == TradeType.SELL
+        assert isinstance(trade_history[4], MarginPosition)
+        assert trade_history[4].profit_loss == FVal('0.05')
+        assert trade_history[5].location == Location.BINANCE
+        assert trade_history[5].pair == 'ETH_BTC'
+        assert trade_history[5].trade_type == TradeType.BUY
+        assert trade_history[6].location == Location.BINANCE
+        assert trade_history[6].pair == 'RDN_ETH'
+        assert trade_history[6].trade_type == TradeType.SELL
+        assert trade_history[7].location == Location.POLONIEX
+        assert trade_history[7].pair == 'ETH_BTC'
+        assert trade_history[7].trade_type == TradeType.SELL
+        assert trade_history[8].location == Location.POLONIEX
+        assert trade_history[8].pair == 'ETH_BTC'
+        assert trade_history[8].trade_type == TradeType.BUY
+        assert trade_history[9].location == Location.POLONIEX
+        assert trade_history[9].pair == 'XMR_ETH'
+        assert trade_history[9].trade_type == TradeType.BUY
+        # TODO: investigate why this new bitmex position popped up
+        assert isinstance(trade_history[10], MarginPosition)
+        assert trade_history[10].profit_loss == FVal('5E-9')
+
+        assert len(loan_history) == 2
+        assert loan_history[0].currency == A_ETH
+        assert loan_history[0].earned == AssetAmount(FVal('0.00000001'))
+        assert loan_history[1].currency == A_BTC
+        assert loan_history[1].earned == AssetAmount(FVal('0.00000005'))
+
+        assert len(asset_movements) == 11
+        assert asset_movements[0].location == Location.KRAKEN
+        assert asset_movements[0].category == AssetMovementCategory.DEPOSIT
+        assert asset_movements[0].asset == A_BTC
+        assert asset_movements[1].location == Location.KRAKEN
+        assert asset_movements[1].category == AssetMovementCategory.DEPOSIT
+        assert asset_movements[1].asset == A_ETH
+        assert asset_movements[2].location == Location.KRAKEN
+        assert asset_movements[2].category == AssetMovementCategory.WITHDRAWAL
+        assert asset_movements[2].asset == A_BTC
+        assert asset_movements[3].location == Location.KRAKEN
+        assert asset_movements[3].category == AssetMovementCategory.WITHDRAWAL
+        assert asset_movements[3].asset == A_ETH
+        assert asset_movements[4].location == Location.POLONIEX
+        assert asset_movements[4].category == AssetMovementCategory.WITHDRAWAL
+        assert asset_movements[4].asset == A_BTC
+        assert asset_movements[5].location == Location.POLONIEX
+        assert asset_movements[5].category == AssetMovementCategory.WITHDRAWAL
+        assert asset_movements[5].asset == A_ETH
+        assert asset_movements[6].location == Location.POLONIEX
+        assert asset_movements[6].category == AssetMovementCategory.DEPOSIT
+        assert asset_movements[6].asset == A_BTC
+        assert asset_movements[7].location == Location.POLONIEX
+        assert asset_movements[7].category == AssetMovementCategory.DEPOSIT
+        assert asset_movements[7].asset == A_ETH
+        assert asset_movements[8].location == Location.BITMEX
+        assert asset_movements[8].category == AssetMovementCategory.DEPOSIT
+        assert asset_movements[8].asset == A_BTC
+        assert asset_movements[9].location == Location.BITMEX
+        assert asset_movements[9].category == AssetMovementCategory.WITHDRAWAL
+        assert asset_movements[9].asset == A_BTC
+        # TODO: investigate why this new bitmex withdrawal popped up
+        assert asset_movements[10].location == Location.BITMEX
+        assert asset_movements[10].category == AssetMovementCategory.WITHDRAWAL
+        assert asset_movements[10].asset == A_BTC
+
+        # The history creation for these is not yet tested
+        assert len(eth_transactions) == 3
+        assert eth_transactions[0].block_number == 54092
+        assert eth_transactions[0].tx_hash == hexstring_to_bytes(TX_HASH_STR1)
+        assert eth_transactions[0].from_address == ETH_ADDRESS1
+        assert eth_transactions[0].to_address == ''
+        assert eth_transactions[0].value == FVal('11901464239480000000000000')
+        assert eth_transactions[0].input_data == MOCK_INPUT_DATA
+        assert eth_transactions[1].block_number == 54093
+        assert eth_transactions[1].tx_hash == hexstring_to_bytes(TX_HASH_STR2)
+        assert eth_transactions[1].from_address == ETH_ADDRESS2
+        assert eth_transactions[1].to_address == ETH_ADDRESS1
+        assert eth_transactions[1].value == FVal('40000300')
+        assert eth_transactions[1].input_data == MOCK_INPUT_DATA
+        assert eth_transactions[2].block_number == 54094
+        assert eth_transactions[2].tx_hash == hexstring_to_bytes(TX_HASH_STR3)
+        assert eth_transactions[2].from_address == ETH_ADDRESS3
+        assert eth_transactions[2].to_address == ETH_ADDRESS1
+        assert eth_transactions[2].value == FVal('500520300')
+        assert eth_transactions[2].input_data == MOCK_INPUT_DATA
+
+        return {}
+
+    def check_result_of_history_creation_and_process_it(
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            trade_history: List[Union[Trade, MarginPosition]],
+            loan_history: Dict,
+            asset_movements: List[AssetMovement],
+            eth_transactions: List[EthereumTransaction],
+    ) -> Dict[str, Any]:
+        """Checks results of history creation but also proceeds to normal history processing"""
+        check_result_of_history_creation(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            trade_history=trade_history,
+            loan_history=loan_history,
+            asset_movements=asset_movements,
+            eth_transactions=eth_transactions,
+        )
+        return original_history_processing_function(
+            start_ts,
+            end_ts,
+            trade_history,
+            loan_history,
+            asset_movements,
+            eth_transactions,
+        )
+
+    if should_mock_history_processing is True:
+        mock_function = check_result_of_history_creation
+    else:
+        mock_function = check_result_of_history_creation_and_process_it
+
     if remote_errors:
         mock_function = check_result_of_history_creation_for_remote_errors
     accountant_patch = patch.object(
@@ -642,10 +733,26 @@ class TradesTestSetup(NamedTuple):
 
 def mock_history_processing_and_exchanges(
         rotki: Rotkehlchen,
-        remote_errors=False,
+        should_mock_history_processing: bool = True,
+        history_start_ts: Optional[Timestamp] = None,
+        history_end_ts: Optional[Timestamp] = None,
+        remote_errors: bool = False,
 ) -> TradesTestSetup:
-    """Prepare patches to mock querying of trade history from various locations for testing"""
-    accountant_patch = mock_history_processing(rotki, remote_errors=remote_errors)
+    """Prepare patches to mock querying of trade history from various locations for testing
+
+    If should_mock_history_processing is True then the history is only created and checked
+    by a special test function but it is not processed to generate tax report.
+
+    If remote_errors is True then all the mocked exchange remotes return remote errors
+    """
+    accountant_patch = mock_history_processing(
+        rotki,
+        should_mock_history_processing=should_mock_history_processing,
+        history_start_ts=history_start_ts,
+        history_end_ts=history_end_ts,
+        remote_errors=remote_errors,
+    )
+
     polo_patch, binance_patch, bittrex_patch, bitmex_patch = mock_exchange_responses(
         rotki,
         remote_errors,
@@ -658,6 +765,35 @@ def mock_history_processing_and_exchanges(
         accountant_patch=accountant_patch,
         etherscan_patch=mock_etherscan_transaction_response(original_requests_get=requests.get),
     )
+
+
+def prepare_rotki_for_history_processing_test(
+        rotki: Rotkehlchen,
+        should_mock_history_processing: bool = True,
+        history_start_ts: Optional[Timestamp] = None,
+        history_end_ts: Optional[Timestamp] = None,
+        remote_errors: bool = False,
+) -> TradesTestSetup:
+    """Prepares rotki for the history processing tests
+
+    Makes sure blockchain accounts are loaded, kraken does not generate random trades
+    and that all mocks are ready.
+    """
+    kraken = rotki.exchange_manager.connected_exchanges['kraken']
+    kraken.random_trade_data = False
+    kraken.random_ledgers_data = False
+    # Let's add 3 blockchain accounts
+    rotki.data.db.add_blockchain_account(SupportedBlockchain.ETHEREUM, ETH_ADDRESS1)
+    rotki.data.db.add_blockchain_account(SupportedBlockchain.ETHEREUM, ETH_ADDRESS2)
+    rotki.data.db.add_blockchain_account(SupportedBlockchain.ETHEREUM, ETH_ADDRESS3)
+    setup = mock_history_processing_and_exchanges(
+        rotki=rotki,
+        should_mock_history_processing=should_mock_history_processing,
+        history_start_ts=history_start_ts,
+        history_end_ts=history_end_ts,
+        remote_errors=remote_errors,
+    )
+    return setup
 
 
 def assert_binance_trades_result(
