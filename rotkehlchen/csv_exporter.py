@@ -106,14 +106,20 @@ class CSVExporter():
         else:
             raise ValueError('Illegal event type "{}" at add_to_allevents'.format(event_type))
 
+        exported_paid_asset = (
+            paid_asset if isinstance(paid_asset, str) else paid_asset.identifier
+        )
+        exported_received_asset = (
+            received_asset if isinstance(received_asset, str) else received_asset.identifier
+        )
         entry = {
             'type': event_type,
             'paid_in_profit_currency': paid_in_profit_currency,
-            'paid_asset': paid_asset,
+            'paid_asset': exported_paid_asset,
             'paid_in_asset': paid_in_asset,
             'taxable_amount': taxable_amount,
             'taxable_bought_cost_in_profit_currency': taxable_bought_cost,
-            'received_asset': received_asset,
+            'received_asset': exported_received_asset,
             'taxable_received_in_profit_currency': taxable_received_in_profit_currency,
             'received_in_asset': received_in_asset,
             'net_profit_or_loss': net_profit_or_loss,
@@ -152,13 +158,13 @@ class CSVExporter():
         exchange_rate_key = f'exchanged_asset_{self.profit_currency}_exchange_rate'
         self.trades_csv.append({
             'type': 'buy',
-            'asset': bought_asset,
+            'asset': bought_asset.identifier,
             'price_in_{}'.format(self.profit_currency): rate,
             'fee_in_{}'.format(self.profit_currency): fee_cost,
             'gained_or_invested_{}'.format(self.profit_currency): cost,
             'amount': amount,
             'taxable_amount': 'not applicable',  # makes no difference for buying
-            'exchanged_for': paid_with_asset,
+            'exchanged_for': paid_with_asset.identifier,
             exchange_rate_key: paid_with_asset_rate,
             'taxable_bought_cost_in_{}'.format(self.profit_currency): 'not applicable',
             'taxable_gain_in_{}'.format(self.profit_currency): FVal(0),
@@ -199,6 +205,7 @@ class CSVExporter():
         processed_receiving_asset: Union[EmptyStr, Asset] = (
             EmptyStr('') if receiving_asset is None else receiving_asset
         )
+        exported_receiving_asset = '' if receiving_asset is None else receiving_asset.identifier
         processed_receiving_amount = FVal(0) if not receiving_amount else receiving_amount
         exchange_rate_key = f'exchanged_asset_{self.profit_currency}_exchange_rate'
         taxable_profit_received = taxable_gain_for_sell(
@@ -211,13 +218,13 @@ class CSVExporter():
         taxable_profit_formula = '=IF(G{}=0,0,K{}-J{})'.format(row, row, row)
         self.trades_csv.append({
             'type': 'sell',
-            'asset': selling_asset,
+            'asset': selling_asset.identifier,
             'price_in_{}'.format(self.profit_currency): rate_in_profit_currency,
             'fee_in_{}'.format(self.profit_currency): total_fee_in_profit_currency,
             'gained_or_invested_{}'.format(self.profit_currency): gain_in_profit_currency,
             'amount': selling_amount,
             'taxable_amount': taxable_amount,
-            'exchanged_for': processed_receiving_asset,
+            'exchanged_for': exported_receiving_asset,
             exchange_rate_key: receiving_asset_rate_in_profit_currency,
             'taxable_bought_cost_in_{}'.format(self.profit_currency): taxable_bought_cost,
             'taxable_gain_in_{}'.format(self.profit_currency): taxable_profit_received,
@@ -254,7 +261,7 @@ class CSVExporter():
         row = len(self.loan_settlements_csv) + 2
         loss_formula = '=B{}*C{}+D{}'.format(row, row, row)
         self.loan_settlements_csv.append({
-            'asset': asset,
+            'asset': asset.identifier,
             'amount': amount,
             'price_in_{}'.format(self.profit_currency): rate_in_profit_currency,
             'fee_in_{}'.format(self.profit_currency): total_fee_in_profit_currency,
@@ -288,7 +295,7 @@ class CSVExporter():
         self.loan_profits_csv.append({
             'open_time': timestamp_to_date(open_time, formatstr='%d/%m/%Y %H:%M:%S'),
             'close_time': timestamp_to_date(close_time, formatstr='%d/%m/%Y %H:%M:%S'),
-            'gained_asset': gained_asset,
+            'gained_asset': gained_asset.identifier,
             'gained_amount': gained_amount,
             'lent_amount': lent_amount,
             'profit_in_{}'.format(self.profit_currency): gain_in_profit_currency,
@@ -321,7 +328,7 @@ class CSVExporter():
         self.margin_positions_csv.append({
             'name': margin_notes,
             'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
-            'gain_loss_asset': gain_loss_asset,
+            'gain_loss_asset': gain_loss_asset.identifier,
             'gain_loss_amount': gain_loss_amount,
             'profit_loss_in_{}'.format(self.profit_currency): gain_loss_in_profit_currency,
         })
@@ -352,7 +359,7 @@ class CSVExporter():
             'time': timestamp_to_date(timestamp, formatstr='%d/%m/%Y %H:%M:%S'),
             'exchange': str(exchange),
             'type': str(category),
-            'moving_asset': asset,
+            'moving_asset': asset.identifier,
             'fee_in_asset': fee,
             'fee_in_{}'.format(self.profit_currency): fee * rate,
         })
