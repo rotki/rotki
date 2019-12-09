@@ -1,27 +1,19 @@
-from http import HTTPStatus
-from typing import Any, Dict
-
 import pytest
 import requests
 
-from rotkehlchen.exchanges.data_structures import Trade
-from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
-from rotkehlchen.tests.utils.history import (
-    assert_binance_trades_result,
-    assert_poloniex_trades_result,
-    mock_history_processing_and_exchanges,
-)
+from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
+from rotkehlchen.tests.utils.history import mock_history_processing_and_exchanges
 
 
-@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+@pytest.mark.parametrize('added_exchanges', [('poloniex')])
 def test_query_messages(rotkehlchen_api_server_with_exchanges):
     """Test that querying the messages endpoint returns notifications for the user"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     setup = mock_history_processing_and_exchanges(rotki)
 
-    # Query trades of all exchanges to get them saved in the DB. This generates
+    # Query polo trades of to get them saved in the DB. This generates
     # warnings due to unsupported assets found during querying
-    with setup.binance_patch, setup.polo_patch:
+    with setup.polo_patch:
         response = requests.get(
             api_url_for(rotkehlchen_api_server_with_exchanges, "exchangetradesresource"))
     assert_proper_response(response)
