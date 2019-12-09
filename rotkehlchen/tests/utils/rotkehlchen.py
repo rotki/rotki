@@ -33,15 +33,31 @@ def setup_balances(
         btc_accounts: List[BTCAddress],
 ) -> BalancesTestSetup:
     """Setup the blockchain, exchange and fiat balances for some tests"""
-    eth_acc1 = ethereum_accounts[0]
-    eth_acc2 = ethereum_accounts[1]
-    eth_balance1 = '1000000'
-    eth_balance2 = '2000000'
-    eth_balances = [eth_balance1, eth_balance2]
-    btc_balance1 = '3000000'
-    btc_balance2 = '5000000'
-    btc_balances = [btc_balance1, btc_balance2]
-    rdn_balance = '4000000'
+    if len(ethereum_accounts) != 0:
+        eth_acc1 = ethereum_accounts[0]
+        eth_acc2 = ethereum_accounts[1]
+        eth_balance1 = '1000000'
+        eth_balance2 = '2000000'
+        eth_balances = [eth_balance1, eth_balance2]
+        rdn_balance = '4000000'
+        eth_map = {
+            eth_acc1: {'ETH': eth_balance1},
+            eth_acc2: {'ETH': eth_balance2, 'RDN': rdn_balance},
+        }
+    else:
+        eth_map = {}
+        eth_balances = []
+        rdn_balance = '0'
+
+    if len(btc_accounts) != 0:
+        btc_balance1 = '3000000'
+        btc_balance2 = '5000000'
+        btc_balances = [btc_balance1, btc_balance2]
+        btc_map = {btc_accounts[0]: btc_balance1, btc_accounts[1]: btc_balance2}
+    else:
+        btc_map = {}
+        btc_balances = []
+
     eur_balance = FVal('1550')
 
     rotki.data.db.add_fiat_balance(A_EUR, eur_balance)
@@ -50,11 +66,8 @@ def setup_balances(
     poloniex_patch = patch_poloniex_balances_query(poloniex)
     binance_patch = patch_binance_balances_query(binance)
     blockchain_patch = mock_etherscan_balances_query(
-        eth_map={
-            eth_acc1: {'ETH': eth_balance1},
-            eth_acc2: {'ETH': eth_balance2, 'RDN': rdn_balance},
-        },
-        btc_map={btc_accounts[0]: btc_balance1, btc_accounts[1]: btc_balance2},
+        eth_map=eth_map,
+        btc_map=btc_map,
         original_requests_get=requests.get,
     )
     # Taken from BINANCE_BALANCES_RESPONSE from tests.utils.exchanges
