@@ -128,6 +128,16 @@ def test_query_history_timerange(rotkehlchen_api_server_with_exchanges):
     assert isinstance(all_events, list)
     assert len(all_events) == 4
 
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server_with_exchanges, "periodicdataresource"),
+    )
+    assert_proper_response(response)
+    data = response.json()
+    assert data['result']['last_balance_save'] == 0
+    assert data['result']['eth_node_connection'] is False
+    assert data['result']['history_process_start_ts'] == 1418994442
+    assert data['result']['history_process_current_ts'] == end_ts
+
 
 @pytest.mark.parametrize(
     'added_exchanges',
