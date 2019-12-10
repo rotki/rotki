@@ -239,14 +239,14 @@ class Premium():
         Raises RemoteError if there are problems reaching the server or if
         there is an error returned by the server
         """
-        signature, data = self.sign('statistics_renderer')
+        signature, data = self.sign('statistics_rendererv2')
         self.session.headers.update({  # type: ignore
             'API-SIGN': base64.b64encode(signature.digest()),
         })
 
         try:
             response = self.session.get(
-                self.uri + 'statistics_renderer',
+                self.uri + 'statistics_rendererv2',
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
