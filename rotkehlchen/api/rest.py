@@ -387,17 +387,37 @@ class RestAPI():
     ) -> Tuple[Union[Optional[List[Trade]], Optional[Dict[str, List[Trade]]]], str]:
         if name is None:
             # Query all exchanges
-            return self._query_all_exchange_trades(
+            trades = self._query_all_exchange_trades(
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
-            ), ''
+            )
+        else:
+            # else query only the specific exchange
+            exchange_obj = self.rotkehlchen.exchange_manager.connected_exchanges.get(name, None)
+            if not exchange_obj:
+                return None, f'Could not query trades for {name} since it is not registered'
+            trades = exchange_obj.query_trade_history(
+                start_ts=from_timestamp,
+                end_ts=to_timestamp,
+            )
 
-        # else query only the specific exchange
-        exchange_obj = self.rotkehlchen.exchange_manager.connected_exchanges.get(name, None)
-        if not exchange_obj:
-            return None, f'Could not query trades for {name} since it is not registered'
+        # For the outside world we should also add the trade identifier
+        if name:
+            processed_trades = []
+            for trade in trades:
+                t = self.trade_schema.dump(trade)
+                t['trade_id'] = trade.identifier
+                processed_trades.append(t)
+        else:
+            processed_trades = {}
+            for name, trades_dict in trades.items():
+                processed_trades[name] = []
+                for trade in trades_dict:
+                    t = self.trade_schema.dump(trade)
+                    t['trade_id'] = trade.identifier
+                    processed_trades[name].append(t)
 
-        return exchange_obj.query_trade_history(start_ts=from_timestamp, end_ts=to_timestamp), ''
+        return processed_trades, ''
 
     @require_loggedin_user()
     def query_exchange_trades(
