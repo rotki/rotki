@@ -52,7 +52,7 @@ Troubleshooting
 
 If you get "The python backend crushed" or any other error please run the executable via the Command Prompt. Then provide us with the output that is visible in the prompt and this will help us debug your issue.
 
-You should also include all logs that can be found in `%APPDATA%/rotkehlchen/`.
+You should also include all logs that can be found in `%APPDATA%/rotki/`.
 
 
 Build from Source
