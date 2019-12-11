@@ -834,16 +834,15 @@ class RestAPI():
         result, msg = self.rotkehlchen.add_owned_eth_tokens(tokens=tokens)
         if not result:
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
-
-        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+        return api_response(_wrap_in_ok_result(process_result(result)), status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
-    def removed_owned_eth_tokens(self, tokens: List[EthereumToken]) -> Response:
+    def remove_owned_eth_tokens(self, tokens: List[EthereumToken]) -> Response:
         result, msg = self.rotkehlchen.remove_owned_eth_tokens(tokens=tokens)
         if not result:
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
-        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+        return api_response(_wrap_in_ok_result(process_result(result)), status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
     def add_blockchain_accounts(

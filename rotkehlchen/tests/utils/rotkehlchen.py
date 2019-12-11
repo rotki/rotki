@@ -1,4 +1,4 @@
-from typing import Dict, List, NamedTuple
+from typing import Dict, List, NamedTuple, Optional
 from unittest.mock import _patch
 
 import requests
@@ -19,7 +19,7 @@ class BalancesTestSetup(NamedTuple):
     eth_balances: List[str]
     btc_balances: List[str]
     fiat_balances: Dict[str, FVal]
-    rdn_balances: List[str]
+    token_balances: Dict[str, List[str]]
     binance_balances: Dict[str, FVal]
     poloniex_balances: Dict[str, FVal]
     poloniex_patch: _patch
@@ -31,40 +31,76 @@ def setup_balances(
         rotki,
         ethereum_accounts: List[ChecksumEthAddress],
         btc_accounts: List[BTCAddress],
+        eth_balances: Optional[List[str]] = None,
+        token_balances: Optional[Dict[str, List[str]]] = None,
+        btc_balances: Optional[List[str]] = None,
 ) -> BalancesTestSetup:
-    """Setup the blockchain, exchange and fiat balances for some tests"""
-    if len(ethereum_accounts) != 0:
-        eth_acc1 = ethereum_accounts[0]
-        eth_acc2 = ethereum_accounts[1]
-        eth_balance1 = '1000000'
-        eth_balance2 = '2000000'
-        eth_balances = [eth_balance1, eth_balance2]
-        rdn_balance = '4000000'
-        eth_map = {
-            eth_acc1: {'ETH': eth_balance1},
-            eth_acc2: {'ETH': eth_balance2, 'RDN': rdn_balance},
-        }
-    else:
-        eth_map = {}
-        eth_balances = []
-        rdn_balance = '0'
+    """Setup the blockchain, exchange and fiat balances for some tests
 
-    if len(btc_accounts) != 0:
-        btc_balance1 = '3000000'
-        btc_balance2 = '5000000'
-        btc_balances = [btc_balance1, btc_balance2]
-        btc_map = {btc_accounts[0]: btc_balance1, btc_accounts[1]: btc_balance2}
+    When eth_balances, token_balances and btc_balances are not provided some
+    default values are provided.
+    """
+    # Sanity checks for setup input
+    if eth_balances is not None:
+        msg = (
+            'The eth balances should be a list with each '
+            'element representing balance of an account'
+        )
+        assert len(eth_balances) == len(ethereum_accounts)
     else:
-        btc_map = {}
-        btc_balances = []
+        # Default test values
+        if len(ethereum_accounts) != 0:
+            eth_balances = ['1000000', '2000000']
+        else:
+            eth_balances = []
+    if token_balances is not None:
+        msg = 'token balances length does not match number of owned eth tokens'
+        # We use >= here since the test may add more tokens to the owned eth tokens
+        # at later points after setup
+        assert len(token_balances) >= len(rotki.blockchain.owned_eth_tokens), msg
+        for _, balances in token_balances.items():
+            msg = (
+                'The token balances should be a list with each '
+                'element representing balance of an account'
+            )
+            assert len(balances) == len(ethereum_accounts), msg
+    else:
+        # Default test values
+        if len(ethereum_accounts) != 0:
+            token_balances = {'RDN': ['0', '4000000']}
+        else:
+            token_balances = {}
+    if btc_balances is not None:
+        msg = (
+            'The btc balances should be a list with each '
+            'element representing balance of an account'
+        )
+        assert len(eth_balances) == len(ethereum_accounts)
+    else:
+        # Default test values
+        if len(btc_accounts) != 0:
+            btc_balances = ['3000000', '5000000']
+        else:
+            btc_balances = []
+
+    eth_map = {}
+    for idx, acc in enumerate(ethereum_accounts):
+        eth_map[acc] = {}
+        eth_map[acc]['ETH'] = eth_balances[idx]
+        for symbol in token_balances:
+            eth_map[acc][symbol] = token_balances[symbol][idx]
+
+    btc_map = {}
+    for idx, acc in enumerate(btc_accounts):
+        btc_map[acc] = btc_balances[idx]
 
     eur_balance = FVal('1550')
 
     rotki.data.db.add_fiat_balance(A_EUR, eur_balance)
-    binance = rotki.exchange_manager.connected_exchanges['binance']
-    poloniex = rotki.exchange_manager.connected_exchanges['poloniex']
-    poloniex_patch = patch_poloniex_balances_query(poloniex)
-    binance_patch = patch_binance_balances_query(binance)
+    binance = rotki.exchange_manager.connected_exchanges.get('binance', None)
+    binance_patch = patch_binance_balances_query(binance) if binance else None
+    poloniex = rotki.exchange_manager.connected_exchanges.get('poloniex', None)
+    poloniex_patch = patch_poloniex_balances_query(poloniex) if poloniex else None
     blockchain_patch = mock_etherscan_balances_query(
         eth_map=eth_map,
         btc_map=btc_map,
@@ -78,7 +114,7 @@ def setup_balances(
     return BalancesTestSetup(
         eth_balances=eth_balances,
         btc_balances=btc_balances,
-        rdn_balances=[rdn_balance],
+        token_balances=token_balances,
         fiat_balances={A_EUR: eur_balance},
         binance_balances=binance_balances,
         poloniex_balances=poloniex_balances,
