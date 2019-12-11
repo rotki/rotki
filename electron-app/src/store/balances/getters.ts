@@ -74,37 +74,34 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
       : [];
   },
 
-  aggregatedBalances: (state: BalanceState, getters) => {
-    const currencyBalances = state.fiatBalances.map(
-      value =>
-        ({
-          asset: value.currency,
-          amount: value.amount,
-          usdValue: value.usdValue
-        } as AssetBalance)
-    );
+  aggregatedBalances: (state: BalanceState, getters): AssetBalance[] => {
+    const ownedAssets: { [asset: string]: AssetBalance } = {};
+    const addToOwned = (value: AssetBalance) => {
+      const asset = ownedAssets[value.asset];
+      ownedAssets[value.asset] = !asset
+        ? value
+        : {
+            asset: asset.asset,
+            amount: asset.amount.plus(value.amount),
+            usdValue: asset.usdValue.plus(value.usdValue)
+          };
+    };
 
-    const exchangeBalances = state.connectedExchanges
-      .map(exchange => getters.exchangeBalances(exchange))
-      .reduce(
-        (previousValue, currentValue) => previousValue.concat(currentValue),
-        new Array<AssetBalance>()
-      );
+    state.fiatBalances.forEach(value => {
+      ownedAssets[value.currency] = {
+        asset: value.currency,
+        usdValue: value.usdValue,
+        amount: value.amount
+      };
+    });
 
-    const balances = currencyBalances
-      .concat(getters.totals)
-      .concat(exchangeBalances)
-      .reduce((accumulator, assetBalance) => {
-        const balance = accumulator[assetBalance.asset];
-        if (!balance) {
-          accumulator[assetBalance.asset] = assetBalance;
-        } else {
-          balance.amount.plus(assetBalance.amount);
-          balance.usdValue.plus(assetBalance.usdValue);
-        }
-        return accumulator;
-      }, {} as { [asset: string]: AssetBalance });
-    return Object.values(balances);
+    for (const exchange of state.connectedExchanges) {
+      const balances = getters.exchangeBalances(exchange);
+      balances.forEach((value: AssetBalance) => addToOwned(value));
+    }
+
+    getters.totals.forEach((value: AssetBalance) => addToOwned(value));
+    return Object.values(ownedAssets);
   },
 
   fiatTotal: (state: BalanceState) => {
