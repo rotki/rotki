@@ -196,13 +196,25 @@ class Blockchain(CacheableObject):
 
         self.owned_eth_tokens.extend(new_tokens)
         eth_balances = cast(EthBalances, self.balances[A_ETH])
-        self.query_ethereum_tokens(
-            tokens=new_tokens,
-            eth_balances=eth_balances,
-        )
+
+        if eth_balances == {}:
+            # if balances have not been yet queried then we should do the entire
+            # balance query first in order to create the eth_balances mappings
+            self.query_ethereum_balances()
+        else:
+            # simply update all accounts with any changes adding the token may have
+            self.query_ethereum_tokens(
+                tokens=new_tokens,
+                eth_balances=eth_balances,
+            )
         return {'per_account': self.balances, 'totals': self.totals}
 
     def remove_eth_tokens(self, tokens: List[EthereumToken]) -> BlockchainBalancesUpdate:
+        if self.balances[A_ETH] == {}:
+            # if balances have not been yet queried then we should do the entire
+            # balance query first in order to create the eth_balances mappings
+            self.query_ethereum_balances()
+
         for token in tokens:
             usd_price = Inquirer().find_usd_price(token)
             for account, account_data in self.balances[A_ETH].items():
