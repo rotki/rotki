@@ -1,4 +1,5 @@
 import {
+  AssetBalances,
   Balances,
   EthBalances,
   FiatBalance
@@ -8,7 +9,7 @@ import { ExchangeData, UsdToFiatExchangeRates } from '@/typing/types';
 export interface BalanceState {
   eth: EthBalances;
   btc: Balances;
-  totals: Balances;
+  totals: AssetBalances;
   usdToFiatExchangeRates: UsdToFiatExchangeRates;
   connectedExchanges: string[];
   exchangeBalances: ExchangeData;
