@@ -1122,7 +1122,7 @@ Statistics for netvalue over time
    :statuscode 500: Internal Rotki error.
 
 Statistics for asset balance over time
-====================================
+======================================
 
 .. http:get:: /api/(version)/statistics/balance/(asset name)
 
@@ -1172,7 +1172,7 @@ Statistics for asset balance over time
    :statuscode 500: Internal Rotki error
 
 Statistics for value distribution
-==============================
+==================================
 
 .. http:get:: /api/(version)/statistics/value_distribution/
 

@@ -16,14 +16,10 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.blockchain import (
     assert_btc_balances_result,
     assert_eth_balances_result,
-    mock_etherscan_balances_query,
 )
 from rotkehlchen.tests.utils.constants import A_RDN
-from rotkehlchen.tests.utils.factories import (
-    UNIT_BTC_ADDRESS1,
-    UNIT_BTC_ADDRESS2,
-    make_ethereum_address,
-)
+from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
+from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 
 
 def check_positive_balances_result(
@@ -245,27 +241,10 @@ def test_query_blockchain_balances(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     rotki.blockchain.cache_ttl_secs = 0
 
-    eth_acc1 = ethereum_accounts[0]
-    eth_acc2 = ethereum_accounts[1]
-    eth_balance1 = '1000000'
-    eth_balance2 = '2000000'
-    eth_balances = [eth_balance1, eth_balance2]
-    btc_balance1 = '3000000'
-    btc_balance2 = '5000000'
-    btc_balances = [btc_balance1, btc_balance2]
-    rdn_balance = '4000000'
-
-    patched_balances = mock_etherscan_balances_query(
-        eth_map={
-            eth_acc1: {'ETH': eth_balance1},
-            eth_acc2: {'ETH': eth_balance2, 'RDN': rdn_balance},
-        },
-        btc_map={btc_accounts[0]: btc_balance1, btc_accounts[1]: btc_balance2},
-        original_requests_get=requests.get,
-    )
+    setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=btc_accounts)
 
     # First query only ETH and token balances
-    with patched_balances:
+    with setup.blockchain_patch:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "named_blockchain_balances_resource",
@@ -277,15 +256,16 @@ def test_query_blockchain_balances(
 
     assert json_data['message'] == ''
     assert_eth_balances_result(
+        rotki=rotki,
         json_data=json_data,
         eth_accounts=ethereum_accounts,
-        eth_balances=eth_balances,
-        rdn_balance=rdn_balance,
+        eth_balances=setup.eth_balances,
+        token_balances=setup.token_balances,
         also_btc=False,
     )
 
     # Then query only BTC balances
-    with patched_balances:
+    with setup.blockchain_patch:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "named_blockchain_balances_resource",
@@ -294,10 +274,15 @@ def test_query_blockchain_balances(
     assert_proper_response(response)
     assert json_data['message'] == ''
     json_data = response.json()
-    assert_btc_balances_result(json_data, btc_balances, also_eth=False)
+    assert_btc_balances_result(
+        json_data=json_data,
+        btc_accounts=btc_accounts,
+        btc_balances=setup.btc_balances,
+        also_eth=False,
+    )
 
     # Finally query all balances
-    with patched_balances:
+    with setup.blockchain_patch:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
@@ -306,13 +291,19 @@ def test_query_blockchain_balances(
     assert json_data['message'] == ''
     json_data = response.json()
     assert_eth_balances_result(
+        rotki=rotki,
         json_data=json_data,
         eth_accounts=ethereum_accounts,
-        eth_balances=eth_balances,
-        rdn_balance=rdn_balance,
+        eth_balances=setup.eth_balances,
+        token_balances=setup.token_balances,
         also_btc=True,
     )
-    assert_btc_balances_result(json_data, btc_balances, also_eth=True)
+    assert_btc_balances_result(
+        json_data=json_data,
+        btc_accounts=btc_accounts,
+        btc_balances=setup.btc_balances,
+        also_eth=True,
+    )
 
     # Try to query not existing blockchain
     response = requests.get(api_url_for(
@@ -341,24 +332,7 @@ def test_query_blockchain_balances_async(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     rotki.blockchain.cache_ttl_secs = 0
 
-    eth_acc1 = ethereum_accounts[0]
-    eth_acc2 = ethereum_accounts[1]
-    eth_balance1 = '1000000'
-    eth_balance2 = '2000000'
-    eth_balances = [eth_balance1, eth_balance2]
-    btc_balance1 = '3000000'
-    btc_balance2 = '5000000'
-    btc_balances = [btc_balance1, btc_balance2]
-    rdn_balance = '4000000'
-
-    patched_balances = mock_etherscan_balances_query(
-        eth_map={
-            eth_acc1: {'ETH': eth_balance1},
-            eth_acc2: {'ETH': eth_balance2, 'RDN': rdn_balance},
-        },
-        btc_map={btc_accounts[0]: btc_balance1, btc_accounts[1]: btc_balance2},
-        original_requests_get=requests.get,
-    )
+    setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=btc_accounts)
 
     # First query only ETH and token balances
     response = requests.get(api_url_for(
@@ -368,13 +342,14 @@ def test_query_blockchain_balances_async(
     ), json={'async_query': True})
     task_id = assert_ok_async_response(response)
 
-    with patched_balances:
+    with setup.blockchain_patch:
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
     assert_eth_balances_result(
+        rotki=rotki,
         json_data=outcome,
         eth_accounts=ethereum_accounts,
-        eth_balances=eth_balances,
-        rdn_balance=rdn_balance,
+        eth_balances=setup.eth_balances,
+        token_balances=setup.token_balances,
         also_btc=False,
     )
 
@@ -386,9 +361,14 @@ def test_query_blockchain_balances_async(
     ), json={'async_query': True})
     task_id = assert_ok_async_response(response)
 
-    with patched_balances:
+    with setup.blockchain_patch:
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
-    assert_btc_balances_result(outcome, btc_balances, also_eth=False)
+    assert_btc_balances_result(
+        json_data=outcome,
+        btc_accounts=btc_accounts,
+        btc_balances=setup.btc_balances,
+        also_eth=False,
+    )
 
     # Finally query all balances
     response = requests.get(api_url_for(
@@ -397,13 +377,19 @@ def test_query_blockchain_balances_async(
     ), json={'async_query': True})
     task_id = assert_ok_async_response(response)
 
-    with patched_balances:
+    with setup.blockchain_patch:
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
     assert_eth_balances_result(
+        rotki=rotki,
         json_data=outcome,
         eth_accounts=ethereum_accounts,
-        eth_balances=eth_balances,
-        rdn_balance=rdn_balance,
+        eth_balances=setup.eth_balances,
+        token_balances=setup.token_balances,
         also_btc=True,
     )
-    assert_btc_balances_result(outcome, btc_balances, also_eth=True)
+    assert_btc_balances_result(
+        json_data=outcome,
+        btc_accounts=btc_accounts,
+        btc_balances=setup.btc_balances,
+        also_eth=True,
+    )
