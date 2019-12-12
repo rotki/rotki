@@ -1954,7 +1954,7 @@ Removing blockchain accounts
 
 .. http:delete:: /api/(version)/blockchains/(name)/
 
-   Doing a PUT on the the blockchains endpoint with a specific blockchain URL and a list of accounts in the json data will remove these accounts from the tracked accounts for the given blockchain and the current user. The updated balances after the account deletions are returned.
+   Doing a DELETE on the the blockchains endpoint with a specific blockchain URL and a list of accounts in the json data will remove these accounts from the tracked accounts for the given blockchain and the current user. The updated balances after the account deletions are returned.
 
    Note that the message may even be populated for succesful queries, giving us information about what happened. For example one of the given accounts may have been invalid.
 

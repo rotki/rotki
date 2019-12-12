@@ -329,11 +329,27 @@ def mock_etherscan_balances_query(
 ):
 
     def mock_requests_get(url, *args, **kwargs):
-        if 'etherscan.io/api?module=account&action=balancemulti' in url:
+        if 'etherscan.io/api?module=account&action=balance&address' in url:
+            addr = url[67:109]
+            value = eth_map[addr].get('ETH', '0')
+            response = f'{{"status":"1","message":"OK","result":{value}}}'
+
+        elif 'etherscan.io/api?module=account&action=balancemulti' in url:
+            queried_accounts = []
+            length = 72
+            # process url and get the accounts
+            while True:
+                if len(url) < length:
+                    break
+                queried_accounts.append(url[length:length + 42])
+                length += 43
+
             accounts = []
-            for addr, value in eth_map.items():
-                accounts.append({'account': addr, 'balance': value['ETH']})
+            for addr in queried_accounts:
+                value = eth_map[addr].get('ETH', '0')
+                accounts.append({'account': addr, 'balance': eth_map[addr]['ETH']})
             response = f'{{"status":"1","message":"OK","result":{json.dumps(accounts)}}}'
+
         elif 'api.etherscan.io/api?module=account&action=tokenbalance' in url:
             token_address = url[80:122]
             msg = 'token address missing from test mapping'
@@ -341,15 +357,13 @@ def mock_etherscan_balances_query(
             response = '{"status":"1","message":"OK","result":"0"}'
             token = CONTRACT_ADDRESS_TO_TOKEN[token_address]
             account = url[131:173]
-            assert account in eth_map, 'ethereum account missing from test mapping'
             value = eth_map[account].get(token.identifier, 0)
             response = f'{{"status":"1","message":"OK","result":"{value}"}}'
 
         elif 'blockchain.info' in url:
             queried_addr = url.split('/')[-1]
             msg = f'Queried BTC address {queried_addr} is not in the given btc map to mock'
-            assert queried_addr in btc_map, msg
-            response = btc_map[queried_addr]
+            response = btc_map.get(queried_addr, '0')
 
         else:
             return original_requests_get(url, *args, **kwargs)

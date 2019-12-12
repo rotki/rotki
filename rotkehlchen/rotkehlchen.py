@@ -236,7 +236,7 @@ class Rotkehlchen():
         """Adds new blockchain accounts
 
         Adds the accounts to the blockchain instance and queries them to get the
-        updates balances. Also adds the ones that were valid in the DB
+        updated balances. Also adds the ones that were valid in the DB
         """
 
         new_data, added_accounts, msg = self.blockchain.add_blockchain_accounts(

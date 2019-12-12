@@ -91,3 +91,7 @@ class NoPriceForGivenTimestamp(Exception):
                 from_asset.identifier, to_asset.identifier, date,
             ),
         )
+
+
+class InvalidBTCAddress(Exception):
+    pass
