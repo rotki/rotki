@@ -68,7 +68,7 @@ def blockchain_accounts(
         ethereum_accounts: List[ChecksumEthAddress],
         btc_accounts: List[BTCAddress],
 ) -> BlockchainAccounts:
-    return BlockchainAccounts(eth=ethereum_accounts, btc=btc_accounts)
+    return BlockchainAccounts(eth=ethereum_accounts, btc=btc_accounts.copy())
 
 
 @pytest.fixture

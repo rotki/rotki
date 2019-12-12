@@ -10,7 +10,7 @@ from web3.exceptions import BadFunctionCallOutput
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.db.utils import BlockchainAccounts
-from rotkehlchen.errors import EthSyncError, InputError
+from rotkehlchen.errors import EthSyncError, InputError, InvalidBTCAddress
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -120,17 +120,18 @@ class Blockchain(CacheableObject):
 
     @staticmethod
     def query_btc_account_balance(account: BTCAddress) -> FVal:
-        btc_resp = request_get_direct(
-            url='https://blockchain.info/q/addressbalance/%s' % account,
-            handle_429=True,
-            # If we get a 429 then their docs suggest 10 seconds
-            # https://blockchain.info/q
-            backoff_in_seconds=10,
-        )
-
-        # TODO: Move this validation into our own code and before the balance query
-        if btc_resp in ('Checksum does not validate', 'Input too short'):
+        try:
+            btc_resp = request_get_direct(
+                url='https://blockchain.info/q/addressbalance/%s' % account,
+                handle_429=True,
+                # If we get a 429 then their docs suggest 10 seconds
+                # https://blockchain.info/q
+                backoff_in_seconds=10,
+            )
+        except InvalidBTCAddress:
+            # TODO: Move this validation into our own code and before the balance query
             raise InputError(f'The given string {account} is not a valid BTC address')
+
         return satoshis_to_btc(FVal(btc_resp))  # result is in satoshis
 
     def query_btc_balances(self) -> None:
@@ -250,12 +251,20 @@ class Blockchain(CacheableObject):
         """
         getattr(self.accounts.btc, append_or_remove)(account)
         btc_usd_price = Inquirer().find_usd_price(A_BTC)
-        balance = self.query_btc_account_balance(account)
-        usd_balance = balance * btc_usd_price
+        remove_with_populated_balance = (
+            append_or_remove == 'remove' and len(self.balances[A_BTC]) != 0
+        )
+        # Query the balance of the account except for the case when it's removed
+        # and there is no other account in the balances
+        if append_or_remove == 'append' or remove_with_populated_balance:
+            balance = self.query_btc_account_balance(account)
+            usd_balance = balance * btc_usd_price
+
         if append_or_remove == 'append':
             self.balances[A_BTC][account] = {'amount': balance, 'usd_value': usd_balance}
         elif append_or_remove == 'remove':
-            del self.balances[A_BTC][account]
+            if account in self.balances[A_BTC][account]:
+                del self.balances[A_BTC][account]
         else:
             raise AssertionError('Programmer error: Should be append or remove')
 
@@ -290,8 +299,15 @@ class Blockchain(CacheableObject):
         except ValueError:
             raise InputError(f'The given string {given_account} is not a valid ETH address')
         eth_usd_price = Inquirer().find_usd_price(A_ETH)
-        balance = self.ethchain.get_eth_balance(account)
-        usd_balance = balance * eth_usd_price
+        remove_with_populated_balance = (
+            append_or_remove == 'remove' and len(self.balances[A_ETH]) != 0
+        )
+        # Query the balance of the account except for the case when it's removed
+        # and there is no other account in the balances
+        if append_or_remove == 'append' or remove_with_populated_balance:
+            balance = self.ethchain.get_eth_balance(account)
+            usd_balance = balance * eth_usd_price
+
         if append_or_remove == 'append':
             self.accounts.eth.append(account)
             self.balances[A_ETH][account] = {A_ETH: balance, 'usd_value': usd_balance}
@@ -299,7 +315,8 @@ class Blockchain(CacheableObject):
             if account not in self.accounts.eth:
                 raise InputError('Tried to remove a non existing ETH account')
             self.accounts.eth.remove(account)
-            del self.balances[A_ETH][account]
+            if account in self.balances[A_ETH]:
+                del self.balances[A_ETH][account]
         else:
             raise AssertionError('Programmer error: Should be append or remove')
 
@@ -321,6 +338,10 @@ class Blockchain(CacheableObject):
             usd_price = Inquirer().find_usd_price(token)
             if usd_price == 0:
                 # skip tokens that have no price
+                continue
+
+            if append_or_remove == 'remove' and token not in self.totals:
+                # If we remove an account, and the token has no totals entry skip
                 continue
 
             token_balance = Blockchain._query_token_balances(
@@ -366,8 +387,14 @@ class Blockchain(CacheableObject):
         if len(accounts) == 0:
             raise InputError('Empty list of blockchain accounts to add was given')
 
+        # If no blockchain query has happened before then we need to query the relevant
+        # chain to populate the self.balances mapping
+        if str(blockchain) not in self.balances:
+            self.query_balances(blockchain)
+
         added_accounts = []
         full_msg = ''
+
         for account in accounts:
             try:
                 result = self.modify_blockchain_account(
@@ -401,11 +428,18 @@ class Blockchain(CacheableObject):
         if len(accounts) == 0:
             raise InputError('Empty list of blockchain accounts to add was given')
 
+        # If no blockchain query has happened before then we need to query the relevant
+        # chain to populate the self.balances mapping. But query has to happen after
+        # account removal so as not to query unneeded accounts
+        balances_queried_before = True
+        if str(blockchain) not in self.balances:
+            balances_queried_before = False
+
         removed_accounts = []
         full_msg = ''
         for account in accounts:
             try:
-                result = self.modify_blockchain_account(
+                self.modify_blockchain_account(
                     blockchain=blockchain,
                     account=account,
                     append_or_remove='remove',
@@ -413,8 +447,12 @@ class Blockchain(CacheableObject):
                 )
                 removed_accounts.append(account)
             except InputError as e:
-                full_msg += str(e)
-                result = {'per_account': self.balances, 'totals': self.totals}
+                full_msg += '. ' + str(e)
+
+        if not balances_queried_before:
+            self.query_balances(blockchain)
+
+        result = {'per_account': self.balances, 'totals': self.totals}
 
         return result, removed_accounts, full_msg
 
@@ -433,7 +471,6 @@ class Blockchain(CacheableObject):
           addresses are not valid.
         - EthSyncError if there is a problem querying the ethereum chain
         """
-
         if blockchain == SupportedBlockchain.BITCOIN:
             if append_or_remove == 'remove' and account not in self.accounts.btc:
                 raise InputError('Tried to remove a non existing BTC account')
