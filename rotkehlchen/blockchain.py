@@ -334,7 +334,7 @@ class Blockchain(CacheableObject):
             usd_value = token_balance * usd_price
             if append_or_remove == 'append':
                 account_balance = self.balances[A_ETH][account]
-                account_balance[token] = balance
+                account_balance[token] = token_balance
                 account_balance['usd_value'] = account_balance['usd_value'] + usd_value
 
             self.totals[token] = {
