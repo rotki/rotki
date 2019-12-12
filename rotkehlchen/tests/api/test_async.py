@@ -60,15 +60,21 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
     assert json_data['message'] == 'The task with id 0 is still pending'
     assert json_data['result'] == {'status': 'pending', 'outcome': None}
 
-    # context switch so that the greenlet to query balances can operate
-    gevent.sleep(1)
+    while True:
+        # and now query for the task result and assert on it
+        response = requests.get(
+            api_url_for(server, "specific_async_tasks_resource", task_id=task_id),
+        )
+        assert_proper_response(response)
+        json_data = response.json()
+        if json_data['result']['status'] == 'pending':
+            # context switch so that the greenlet to query balances can operate
+            gevent.sleep(1)
+        elif json_data['result']['status'] == 'completed':
+            break
+        else:
+            raise AssertionError(f"Unexpected status: {json_data['result']['status']}")
 
-    # and now query for the task result and assert on it
-    response = requests.get(
-        api_url_for(server, "specific_async_tasks_resource", task_id=task_id),
-    )
-    assert_proper_response(response)
-    json_data = response.json()
     assert json_data['message'] == ''
     assert json_data['result']['status'] == 'completed'
     # assert that there is an outcome
