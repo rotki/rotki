@@ -17,7 +17,12 @@ from gevent.lock import Semaphore
 from rlp.sedes import big_endian_int
 
 from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, CACHE_RESPONSE_FOR_SECS, ZERO
-from rotkehlchen.errors import DeserializationError, RecoverableRequestError, RemoteError
+from rotkehlchen.errors import (
+    DeserializationError,
+    InvalidBTCAddress,
+    RecoverableRequestError,
+    RemoteError,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Fee, FilePath, ResultCache, Timestamp
@@ -250,7 +255,10 @@ def request_get(
     )
 
     if response.status_code != 200:
-        raise RemoteError('Get {} returned status code {}'.format(url, response.status_code))
+        if 'https://blockchain.info/q/addressbalance' in url and response.status_code == 500:
+            # For some weird reason blockchain.info returns
+            # 500 server error when giving invalid account
+            raise InvalidBTCAddress('Invalid BTC address given to blockchain.info')
 
     try:
         result = rlk_jsonloads(response.text)
