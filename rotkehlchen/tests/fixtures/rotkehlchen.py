@@ -63,6 +63,7 @@ def initialize_mock_rotkehlchen_instance(
         rotkehlchen_api_key,
         rotkehlchen_api_secret,
         data_dir,
+        accounting_ignored_assets,
 ):
     if start_with_logged_in_user:
         # Rotkehlchen initializes its own messages aggregator normally but here we
@@ -79,8 +80,13 @@ def initialize_mock_rotkehlchen_instance(
         rotki.data_importer = DataImporter(db=rotki.data.db)
         rotki.password = db_password
         # Remember accountant fixture has a mocked accounting data dir
-        # different to the usual user one
+        # different to the usual user one. Accountant would normally be unlocked
+        # during the normal unlock but due to mocking initialization has to be tweaked here
         rotki.accountant = accountant
+        rotki.accountant.db = rotki.data.db
+        for asset in accounting_ignored_assets:
+            rotki.accountant.db.add_to_ignored_assets(asset)
+
         rotki.blockchain = blockchain
         rotki.trades_historian = TradesHistorian(
             user_directory=data_dir,
@@ -124,6 +130,7 @@ def rotkehlchen_api_server(
         rotkehlchen_api_key,
         rotkehlchen_api_secret,
         accounting_data_dir,
+        accounting_ignored_assets,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -141,6 +148,7 @@ def rotkehlchen_api_server(
         rotkehlchen_api_key=rotkehlchen_api_key,
         rotkehlchen_api_secret=rotkehlchen_api_secret,
         data_dir=accounting_data_dir,
+        accounting_ignored_assets=accounting_ignored_assets,
     )
     return api_server
 
@@ -158,6 +166,7 @@ def rotkehlchen_instance(
         rotkehlchen_api_key,
         rotkehlchen_api_secret,
         accounting_data_dir,
+        accounting_ignored_assets,
 ):
     """A partially mocked rotkehlchen instance"""
 
@@ -173,6 +182,7 @@ def rotkehlchen_instance(
         rotkehlchen_api_key=rotkehlchen_api_key,
         rotkehlchen_api_secret=rotkehlchen_api_secret,
         data_dir=accounting_data_dir,
+        accounting_ignored_assets=accounting_ignored_assets,
     )
     return uninitialized_rotkehlchen
 

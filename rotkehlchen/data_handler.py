@@ -106,30 +106,36 @@ class DataHandler():
     def add_ignored_assets(self, assets: List[Asset]) -> Tuple[List[Asset], str]:
         """Adds ignored assets to the DB.
 
-        Returns a string containing possible warnings for the user
+        If any of the given assets is already in the DB the function does nothing
+        and returns an error message.
         """
         ignored_assets = self.db.get_ignored_assets()
-        final_msg = ''
         for asset in assets:
             if asset in ignored_assets:
-                final_msg += f'{asset.identifier} is already in ignored assets'
-                continue
-            # else
+                msg = f'{asset.identifier} is already in ignored assets'
+                return [], msg
+
+        for asset in assets:
             self.db.add_to_ignored_assets(asset)
 
-        return self.db.get_ignored_assets(), final_msg
+        return self.db.get_ignored_assets(), ''
 
     def remove_ignored_assets(self, assets: List[Asset]) -> Tuple[List[Asset], str]:
+        """Removes ignored assets from the DB.
+
+        If any of the given assets is not in the DB the call function does nothing
+        and returns an error message.
+        """
         ignored_assets = self.db.get_ignored_assets()
-        final_msg = ''
         for asset in assets:
             if asset not in ignored_assets:
-                final_msg += f'{asset.identifier} is not in ignored assets'
-                continue
-            # else
+                msg = f'{asset.identifier} is not in ignored assets'
+                return [], msg
+
+        for asset in assets:
             self.db.remove_from_ignored_assets(asset)
 
-        return self.db.get_ignored_assets(), final_msg
+        return self.db.get_ignored_assets(), ''
 
     def set_premium_credentials(
             self,

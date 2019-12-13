@@ -892,20 +892,26 @@ class RestAPI():
 
     @require_loggedin_user()
     def get_ignored_assets(self) -> Response:
-        result = [identifier for identifier in self.rotkehlchen.data.db.get_ignored_assets()]
+        result = [asset.identifier for asset in self.rotkehlchen.data.db.get_ignored_assets()]
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
     def add_ignored_assets(self, assets: List[Asset]) -> Response:
         result, msg = self.rotkehlchen.data.add_ignored_assets(assets=assets)
+        status_code = HTTPStatus.OK
+        if msg != '':
+            status_code = HTTPStatus.CONFLICT
         result_dict = _wrap_in_result(process_result_list(result), msg)
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        return api_response(result_dict, status_code=status_code)
 
     @require_loggedin_user()
     def remove_ignored_assets(self, assets: List[Asset]) -> Response:
         result, msg = self.rotkehlchen.data.remove_ignored_assets(assets=assets)
+        status_code = HTTPStatus.OK
+        if msg != '':
+            status_code = HTTPStatus.CONFLICT
         result_dict = _wrap_in_result(process_result_list(result), msg)
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        return api_response(result_dict, status_code=status_code)
 
     @staticmethod
     def version_check() -> Response:
