@@ -87,18 +87,17 @@ def accountant(
         profit_currency,
         accounting_data_dir,
         accounting_create_csv,
-        accounting_ignored_assets,
         accounting_include_crypto2crypto,
         accounting_taxfree_after_period,
         accounting_include_gas_costs,
         messages_aggregator,
 ):
     return Accountant(
+        db=None,  # Set by the initialize_mock_rotkehlchen_instance() function
         profit_currency=profit_currency,
         user_directory=accounting_data_dir,
         msg_aggregator=messages_aggregator,
         create_csv=accounting_create_csv,
-        ignored_assets=accounting_ignored_assets,
         include_crypto2crypto=accounting_include_crypto2crypto,
         taxfree_after_period=accounting_taxfree_after_period,
         include_gas_costs=accounting_include_gas_costs,

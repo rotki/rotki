@@ -7,6 +7,7 @@ from rotkehlchen.accounting.events import TaxableEvents
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.csv_exporter import CSVExporter
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import (
     DeserializationError,
@@ -45,15 +46,16 @@ class Accountant():
 
     def __init__(
             self,
+            db: DBHandler,
             profit_currency: Asset,
             user_directory: FilePath,
             msg_aggregator: MessagesAggregator,
             create_csv: bool,
-            ignored_assets: List[Asset],
             include_crypto2crypto: bool,
             taxfree_after_period: Optional[int],
             include_gas_costs: bool,
     ) -> None:
+        self.db = db
         self.msg_aggregator = msg_aggregator
         self.csvexporter = CSVExporter(profit_currency, user_directory, create_csv)
         self.events = TaxableEvents(self.csvexporter, profit_currency)
@@ -66,7 +68,6 @@ class Accountant():
         self.currently_processing_timestamp = Timestamp(-1)
 
         # Customizable Options
-        self.ignored_assets = ignored_assets
         self.include_gas_costs = include_gas_costs
         self.events.include_crypto2crypto = include_crypto2crypto
         self.events.taxfree_after_period = taxfree_after_period
@@ -363,6 +364,7 @@ class Accountant():
         # is a synced call, and if async don't do this yielding. In any case
         # this calculation should definitely be async
         now = ts_now()
+        ignored_assets = self.db.get_ignored_assets()
         if now - self.last_sleep_ts >= 7:  # choose 7 seconds to be safe
             self.last_sleep_ts = now
             gevent.sleep(0.01)  # context switch
@@ -402,7 +404,7 @@ class Accountant():
             )
             return True, prev_time, count
 
-        if asset1 in self.ignored_assets or asset2 in self.ignored_assets:
+        if asset1 in ignored_assets or asset2 in ignored_assets:
             log.debug(
                 'Ignoring action with ignored asset',
                 action_type=action_type,
