@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`354` Introduces a modern, easily extendable material design UI based on Vue.js and Vuetify.
 * :bug:`561` Export unique asset symbols during CSV exporting and not long name descriptions.
 * :feature:`-` Add support for the Russian ruble (RUB - ‎₽) as a fiat currency
 * :feature:`-` Added support for the following tokens
@@ -80,7 +81,7 @@ Changelog
 * :bug:`443` Fix bug in deserialization of non-exact floating point kraken timestamp values which could lead to a crash during tax report generation.
 
 * :release:`1.0.1 <2019-08-02>`
-* :feature:`425` Users can now provide arguments to the backend via a config file. For more information check the `docs <https://rotkehlchen.readthedocs.io/en/latest/usage_guide.html#set-the-backend-s-arguments`__. 
+* :feature:`425` Users can now provide arguments to the backend via a config file. For more information check the `docs <https://rotkehlchen.readthedocs.io/en/latest/usage_guide.html#set-the-backend-s-arguments`__.
 * :feature:`-` Added support for the following tokens
 
   - `Luna Coin <https://coinmarketcap.com/currencies/luna-coin/>`__
