@@ -2043,7 +2043,7 @@ Dealing with ignored assets
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/assets/ignored HTTP/1.1
+      PUT /api/1/assets/ignored HTTP/1.1
       Host: localhost:5042
 
       {"assets": ["GNO"]}
@@ -2062,7 +2062,7 @@ Dealing with ignored assets
 
    :statuscode 200: Assets succesfully added
    :statuscode 400: Provided JSON or data is in some way malformed.
-   :statuscode 409: User is not logged in.
+   :statuscode 409: User is not logged in. One of the assets provided is already on the list.
    :statuscode 500: Internal Rotki error
 
 .. http:delete:: /api/(version)/assets/ignored/
@@ -2075,7 +2075,7 @@ Dealing with ignored assets
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/assets/ignored HTTP/1.1
+      DELETE /api/1/assets/ignored HTTP/1.1
       Host: localhost:5042
 
       {"assets": ["DAO"]}
@@ -2094,7 +2094,7 @@ Dealing with ignored assets
 
    :statuscode 200: Assets succesfully removed
    :statuscode 400: Provided JSON or data is in some way malformed.
-   :statuscode 409: User is not logged in.
+   :statuscode 409: User is not logged in. One of the assets provided is not on the list.
    :statuscode 500: Internal Rotki error
 
 Querying the version
