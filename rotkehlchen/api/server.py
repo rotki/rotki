@@ -14,6 +14,7 @@ from rotkehlchen.api.v1.resources import (
     AsyncTasksResource,
     BlockchainBalancesResource,
     BlockchainsAccountsResource,
+    DataImportResource,
     EthereumTokensResource,
     ExchangeBalancesResource,
     ExchangesResource,
@@ -85,6 +86,7 @@ URLS_V1: URLS = [
     ('/assets', OwnedAssetsResource),
     ('/assets/ignored', IgnoredAssetsResource),
     ('/version', VersionResource),
+    ('/import', DataImportResource),
 ]
 
 logger = logging.getLogger(__name__)

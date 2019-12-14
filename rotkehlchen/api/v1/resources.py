@@ -490,5 +490,6 @@ class DataImportResource(BaseResource):
 
     put_schema = DataImportSchema()
 
+    @use_kwargs(put_schema, locations=('json',))
     def put(self, source: Literal['cointracking.info'], filepath: Path) -> None:
         return self.rest_api.import_data(source=source, filepath=filepath)
