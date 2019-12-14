@@ -26,6 +26,10 @@ module.exports = {
       outputDir: 'dist',
       builderOptions: {
         appId: 'com.rotki',
+        publish: {
+          provider: 'github',
+          vPrefixedTagName: true
+        },
         buildVersion: process.env.ROTKEHLCHEN_VERSION,
         artifactName:
           '${productName}-${platform}_${arch}-${buildVersion}.${ext}',
