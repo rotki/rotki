@@ -9,7 +9,6 @@ from rotkehlchen.utils.misc import get_system_spec
 
 def test_query_version(rotkehlchen_api_server):
     """Test that endpoint to query the rotki version works fine"""
-
     # Test for the case that the version is up to date
     response = requests.get(
         api_url_for(

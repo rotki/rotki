@@ -344,6 +344,9 @@ class FileField(fields.Field):
         return str(value)
 
     def _deserialize(self, value: str, attr, data, **kwargs):  # pylint: disable=unused-argument
+        if not isinstance(value, str):
+            raise ValidationError('Provided non string type for filepath')
+
         path = Path(value)
         if not path.exists():
             raise ValidationError(f'Given path {value} does not exist')
@@ -671,7 +674,7 @@ class IgnoredAssetsSchema(BaseSchema):
 class DataImportSchema(BaseSchema):
     source = fields.String(
         required=True,
-        validate=validate.OneOf(choices=('cointracking.info')),
+        validate=validate.OneOf(choices=('cointracking.info',)),
     )
     filepath = FileField(required=True)
 
