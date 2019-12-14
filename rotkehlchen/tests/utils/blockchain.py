@@ -17,7 +17,6 @@ from rotkehlchen.crypto import address_encoder, privatekey_to_address
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.eth_tokens import CONTRACT_ADDRESS_TO_TOKEN
-from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.genesis import GENESIS_STUB
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.utils.misc import from_wei, satoshis_to_btc
