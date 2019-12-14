@@ -2102,7 +2102,7 @@ Querying the version
 
 .. http:get:: /api/(version)/version
 
-   Doing a GET on the version endpoint will return information about the version of Rotki. If there is a newer version then ``"latest_version"`` and ``"download_url"`` will be populated. If not then only ``"our_version"`` will be.
+   Doing a GET on the version endpoint will return information about the version of Rotki. If there is a newer version then ``"download_url"`` will be populated. If not then only ``"our_version"`` and ``"latest_version"`` will be. There is a possibility that latest version may not be populated due to github not being reachable.
 
 
    **Example Request**:
@@ -2125,7 +2125,7 @@ Querying the version
           "result": {
 	      "our_version": "1.0.3",
 	      "latest_version": "1.0.4",
-	      "download_url": "https://github.com/rotkehlchenio/rotkehlchen/releases/tag/v1.0.4"
+	      "download_url": "https://github.com/rotki/rotki/releases/tag/v1.0.4"
 	  },
 	  "message": ""
       }

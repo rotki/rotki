@@ -16,8 +16,8 @@ class VersionCheckResult(NamedTuple):
 def check_if_version_up_to_date() -> VersionCheckResult:
     """Checks if there is a newer Rotkehlchen version available for download
 
-    If not returns only our current version.
-    If yes returns a named tuple: (our_version_str, latest_version_str, url)
+    If not returns only our current version and latest version.
+    If yes returns (our_version_str, latest_version_str, url)
     """
     our_version_str = get_system_spec()['rotkehlchen']
     our_version = parse_version(our_version_str)
@@ -32,7 +32,7 @@ def check_if_version_up_to_date() -> VersionCheckResult:
     latest_version = parse_version(latest_version_str)
 
     if latest_version <= our_version:
-        return VersionCheckResult(our_version=our_version_str)
+        return VersionCheckResult(our_version=our_version_str, latest_version=latest_version_str)
 
     return VersionCheckResult(
         our_version=our_version_str,
