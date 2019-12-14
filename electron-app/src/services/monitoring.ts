@@ -11,8 +11,8 @@ class Monitoring {
   }
 
   /**
-   * This function is called periodically, query some data from the
-   * client and update the UI with the response.
+   * This function is called periodically, queries some data from the
+   * client and updates the UI with the response.
    */
   start() {
     if (!this.monitoring) {

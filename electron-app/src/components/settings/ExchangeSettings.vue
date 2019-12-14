@@ -54,7 +54,7 @@
     <confirm-dialog
       :display="confirmation"
       title="Confirmation Required"
-      message="Are you sure you want to delete the API key and secret from rotkehlchen? This action is not undoable and you will need to obtain the key and secret again from the exchange."
+      message="Are you sure you want to delete the API key and secret from rotkehlchen? This action can not be undone and you will need to obtain the key and secret again from the exchange."
       @cancel="confirmation = false"
       @confirm="remove()"
     ></confirm-dialog>

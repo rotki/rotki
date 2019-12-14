@@ -254,7 +254,7 @@ export default class PyHandler {
         // TODO: Perhaps in the future warn the user inside
         // the app that there is a config file with invalid json
         this.logToFile(
-          `Could not read the rotki_config.json file due to: "${e}". Proceeding normally without a config file ....`
+          `Could not read the rotki_config.json file due to: "${e}". Proceeding normally without a config file ...`
         );
       }
     }
