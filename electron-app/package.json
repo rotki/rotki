@@ -3,7 +3,7 @@
   "version": "1.0.5",
   "author": "Lefteris Karapetsas",
   "description": "A portfolio tracking, asset analytics and tax reporting application specializing in Cryptoassets",
-  "repository": "https://github.com/rotkehlchenio/rotkehlchen",
+  "repository": "https://github.com/rotki/rotki",
   "homepage": "https://rotki.com",
   "scripts": {
     "serve": "vue-cli-service serve",

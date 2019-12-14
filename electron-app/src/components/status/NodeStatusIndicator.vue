@@ -14,10 +14,10 @@
       </v-col>
       <v-col cols="10">
         <span v-if="nodeConnection">
-          Connected to a local ethereum node
+          Connected to an ethereum node
         </span>
         <span v-else>
-          Not connected to a local ethereum node
+          Not connected to an ethereum node
         </span>
       </v-col>
     </v-row>
