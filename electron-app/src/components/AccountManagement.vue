@@ -35,7 +35,7 @@
         Upgrade to Premium
       </template>
 
-      Rotki is open source software and need your support! Please consider
+      Rotki is open source software and needs your support! Please consider
       upgrading to premium by purchasing a premium subscription. This way you
       can help us further develop the software and you can also enjoy additional
       premium-only features.
