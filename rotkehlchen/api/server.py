@@ -1,10 +1,13 @@
 import logging
 from http import HTTPStatus
-from typing import List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
+import werkzeug
 from flask import Flask, Response
 from flask_restful import Api, Resource, abort
 from gevent.pywsgi import WSGIServer
+from marshmallow import Schema
+from marshmallow.exceptions import ValidationError
 from webargs.flaskparser import parser
 from werkzeug.exceptions import NotFound
 
@@ -124,7 +127,13 @@ def endpoint_not_found(e: NotFound) -> Response:
 
 
 @parser.error_handler
-def handle_request_parsing_error(err, _req, _schema, _err_status_code, _err_headers):
+def handle_request_parsing_error(
+        err: ValidationError,
+        _request: werkzeug.local.LocalProxy,
+        _schema: Schema,
+        _err_status_code: Optional[int],
+        _err_headers: Optional[Dict],
+) -> None:
     """ This handles request parsing errors generated for example by schema
     field validation failing."""
     abort(HTTPStatus.BAD_REQUEST, result=None, message=str(err))
@@ -150,14 +159,14 @@ class APIServer():
         self.blueprint = blueprint
         self.flask_api_context = flask_api_context
 
-        self.wsgiserver = None
+        self.wsgiserver: Optional[WSGIServer] = None
         self.flask_app.register_blueprint(self.blueprint)
 
         self.flask_app.errorhandler(HTTPStatus.NOT_FOUND)(endpoint_not_found)
         self.flask_app.register_error_handler(Exception, self.unhandled_exception)
 
     @staticmethod
-    def unhandled_exception(exception: Exception):
+    def unhandled_exception(exception: Exception) -> Response:
         """ Flask.errorhandler when an exception wasn't correctly handled """
         log.critical(
             "Unhandled exception when processing endpoint request",
@@ -165,10 +174,12 @@ class APIServer():
         )
         return api_response(wrap_in_fail_result(str(exception)), HTTPStatus.INTERNAL_SERVER_ERROR)
 
-    def run(self, host='127.0.0.1', port=5042, **kwargs):
+    def run(self, host: str = '127.0.0.1', port: int = 5042, **kwargs: Any) -> None:
+        """This is only used for the data faker and not used in production"""
         self.flask_app.run(host=host, port=port, **kwargs)
 
-    def start(self, host='127.0.0.1', port=5042):
+    def start(self, host: str = '127.0.0.1', port: int = 5042) -> None:
+        """This is used to start the API server in production"""
         wsgi_logger = logging.getLogger(__name__ + '.pywsgi')
         self.wsgiserver = WSGIServer(
             (host, port),
@@ -178,8 +189,9 @@ class APIServer():
         )
         self.wsgiserver.start()
 
-    def stop(self, timeout=5):
-        if getattr(self, 'wsgiserver', None):
+    def stop(self, timeout: int = 5) -> None:
+        """Stops the API server. If handlers are running after timeout they are killed"""
+        if self.wsgiserver is not None:
             self.wsgiserver.stop(timeout)
             self.wsgiserver = None
 

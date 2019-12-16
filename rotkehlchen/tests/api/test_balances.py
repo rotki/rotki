@@ -247,7 +247,7 @@ def test_query_fiat_balances(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             "fiatbalancesresource",
-        )
+        ),
     )
 
     # Check that the DB balances match what is returned
@@ -277,7 +277,7 @@ def test_settting_fiat_balances(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             "fiatbalancesresource",
-        )
+        ),
     )
     assert_proper_response(response)
     assert_fiat_balances(response.json(), eur_balance, cny_balance, usd_balance)

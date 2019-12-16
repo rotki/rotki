@@ -39,7 +39,7 @@ def test_query_statistics_netvalue(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
                 "allbalancesresource",
-            ), json={'save_data': True}
+            ), json={'save_data': True},
         )
     assert_proper_response(response)
 
@@ -48,7 +48,7 @@ def test_query_statistics_netvalue(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
             "statisticsnetvalueresource",
-        )
+        ),
     )
     if start_with_valid_premium:
         assert_proper_response(response)
@@ -90,7 +90,7 @@ def test_query_statistics_asset_balance(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
                 "allbalancesresource",
-            ), json={'save_data': True}
+            ), json={'save_data': True},
         )
     assert_proper_response(response)
 
@@ -245,7 +245,7 @@ def test_query_statistics_value_distribution(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
                 "allbalancesresource",
-            ), json={'save_data': True}
+            ), json={'save_data': True},
         )
     assert_proper_response(response)
 

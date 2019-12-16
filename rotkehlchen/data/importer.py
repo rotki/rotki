@@ -1,4 +1,5 @@
 import csv
+from pathlib import Path
 from typing import List
 
 from rotkehlchen.assets.asset import Asset
@@ -131,7 +132,7 @@ class DataImporter():
                 f'data import. Ignoring entry',
             )
 
-    def import_cointracking_csv(self, filepath: str) -> None:
+    def import_cointracking_csv(self, filepath: Path) -> None:
         with open(filepath, 'r') as csvfile:
             data = csv.reader(csvfile, delimiter=',', quotechar='"')
             next(data)  # skip header row
