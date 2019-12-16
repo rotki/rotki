@@ -1,11 +1,11 @@
 import errno
 import os
 from collections import defaultdict
+from typing import Optional
 
 import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
-from rotkehlchen.constants import YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.inquirer import Inquirer
 
@@ -49,11 +49,6 @@ def mocked_price_queries():
 
 
 @pytest.fixture
-def profit_currency():
-    return A_EUR
-
-
-@pytest.fixture
 def accounting_create_csv():
     # TODO: The whole create_csv argument should be deleted.
     # Or renamed. Since it's not about actually creating the CSV
@@ -62,45 +57,22 @@ def accounting_create_csv():
 
 
 @pytest.fixture
-def accounting_ignored_assets():
-    return []
-
-
-@pytest.fixture
-def accounting_include_crypto2crypto():
-    return True
-
-
-@pytest.fixture
-def accounting_taxfree_after_period():
-    return YEAR_IN_SECONDS
-
-
-@pytest.fixture
-def accounting_include_gas_costs():
-    return True
-
-
-@pytest.fixture
 def accountant(
         price_historian,  # pylint: disable=unused-argument
-        profit_currency,
+        database,
         accounting_data_dir,
         accounting_create_csv,
-        accounting_include_crypto2crypto,
-        accounting_taxfree_after_period,
-        accounting_include_gas_costs,
         messages_aggregator,
-):
+        start_with_logged_in_user,
+) -> Optional[Accountant]:
+    if not start_with_logged_in_user:
+        return None
+
     return Accountant(
-        db=None,  # Set by the initialize_mock_rotkehlchen_instance() function
-        profit_currency=profit_currency,
+        db=database,
         user_directory=accounting_data_dir,
         msg_aggregator=messages_aggregator,
         create_csv=accounting_create_csv,
-        include_crypto2crypto=accounting_include_crypto2crypto,
-        taxfree_after_period=accounting_taxfree_after_period,
-        include_gas_costs=accounting_include_gas_costs,
     )
 
 

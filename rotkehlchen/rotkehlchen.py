@@ -144,13 +144,9 @@ class Rotkehlchen():
         db_settings = self.data.db.get_settings()
         self.accountant = Accountant(
             db=self.data.db,
-            profit_currency=self.data.main_currency(),
             user_directory=self.user_directory,
             msg_aggregator=self.msg_aggregator,
             create_csv=True,
-            include_crypto2crypto=db_settings.include_crypto2crypto,
-            taxfree_after_period=db_settings.taxfree_after_period,
-            include_gas_costs=db_settings.include_gas_costs,
         )
 
         # Initialize the rotkehlchen logger
@@ -450,9 +446,7 @@ class Rotkehlchen():
                         base=A_USD,
                         quote=settings.main_currency,
                     )
-                    self.accountant.set_main_currency(settings.main_currency)
 
-            self.accountant.customize(settings)
             settings_dict = settings.serialize()
             self.data.db.set_settings(settings_dict)
 
