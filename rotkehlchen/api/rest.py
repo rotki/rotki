@@ -4,7 +4,7 @@ import traceback
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, overload
 
 import gevent
 from flask import Response, make_response
@@ -14,6 +14,8 @@ from typing_extensions import Literal
 
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.errors import (
     AuthenticationError,
     EthSyncError,
@@ -25,6 +27,7 @@ from rotkehlchen.errors import (
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.typing import (
     ApiKey,
@@ -85,9 +88,9 @@ def api_response(
 def require_loggedin_user() -> Callable:
     """ This is a decorator for the RestAPI class's methods requiring a logged in user.
     """
-    def _require_loggedin_user(f: Callable):
+    def _require_loggedin_user(f: Callable) -> Callable:
         @wraps(f)
-        def wrapper(wrappingobj, *args, **kwargs):
+        def wrapper(wrappingobj: 'RestAPI', *args: Any, **kwargs: Any) -> Any:
             if not wrappingobj.rotkehlchen.user_is_logged_in:
                 result_dict = wrap_in_fail_result('No user is currently logged in')
                 return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
@@ -107,9 +110,9 @@ def require_premium_user(active_check: bool) -> Callable:
     If active_check is false there is also an API call to the rotkehlchen server
     to check that the saved key is also valid.
     """
-    def _require_premium_user(f: Callable):
+    def _require_premium_user(f: Callable) -> Callable:
         @wraps(f)
-        def wrapper(wrappingobj, *args, **kwargs):
+        def wrapper(wrappingobj: 'RestAPI', *args: Any, **kwargs: Any) -> Any:
             if not wrappingobj.rotkehlchen.user_is_logged_in:
                 result_dict = wrap_in_fail_result('No user is currently logged in')
                 return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
@@ -139,7 +142,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 class RestAPI():
     """ The Object holding the logic that runs inside all the API calls"""
-    def __init__(self, rotkehlchen):
+    def __init__(self, rotkehlchen: Rotkehlchen) -> None:
         self.rotkehlchen = rotkehlchen
         self.stop_event = Event()
         mainloop_greenlet = self.rotkehlchen.start()
@@ -147,15 +150,15 @@ class RestAPI():
         # Greenlets that will be waited for when we shutdown
         self.waited_greenlets = [mainloop_greenlet]
         # Greenlets that can be killed instead of waited for when we shutdown
-        self.killable_greenlets = []
+        self.killable_greenlets: List[gevent.Greenlet] = []
         self.task_lock = Semaphore()
         self.task_id = 0
-        self.task_results = {}
+        self.task_results: Dict[int, Any] = {}
 
         self.trade_schema = TradeSchema()
 
     # - Private functions not exposed to the API
-    def _new_task_id(self):
+    def _new_task_id(self) -> int:
         with self.task_lock:
             task_id = self.task_id
             self.task_id += 1
@@ -165,7 +168,7 @@ class RestAPI():
         with self.task_lock:
             self.task_results[task_id] = result
 
-    def _handle_killed_greenlets(self, greenlet):
+    def _handle_killed_greenlets(self, greenlet: gevent.Greenlet) -> None:
         if not greenlet.exception:
             log.warning('handle_killed_greenlets without an exception')
             return
@@ -194,11 +197,11 @@ class RestAPI():
             }
             self._write_task_result(task_id, result)
 
-    def _do_query_async(self, command: str, task_id: int, **kwargs) -> None:
+    def _do_query_async(self, command: str, task_id: int, **kwargs: Any) -> None:
         result = getattr(self, command)(**kwargs)
         self._write_task_result(task_id, result)
 
-    def _query_async(self, command: str, **kwargs) -> Response:
+    def _query_async(self, command: str, **kwargs: Any) -> Response:
         task_id = self._new_task_id()
 
         greenlet = gevent.spawn(
@@ -213,7 +216,7 @@ class RestAPI():
         return api_response(_wrap_in_ok_result({'task_id': task_id}), status_code=HTTPStatus.OK)
 
     # - Public functions not exposed via the rest api
-    def stop(self):
+    def stop(self) -> None:
         self.rotkehlchen.shutdown()
         log.debug('Waiting for greenlets')
         gevent.wait(self.waited_greenlets)
@@ -226,7 +229,7 @@ class RestAPI():
 
     # - Public functions exposed via the rest api
     @require_loggedin_user()
-    def set_settings(self, settings: Dict[str, Any]) -> Response:
+    def set_settings(self, settings: ModifiableDBSettings) -> Response:
         success, message = self.rotkehlchen.set_settings(settings)
         if not success:
             return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.CONFLICT)
@@ -312,6 +315,7 @@ class RestAPI():
 
     @require_loggedin_user()
     def setup_exchange(self, name: str, api_key: ApiKey, api_secret: ApiSecret) -> Response:
+        result: Optional[bool]
         result, message = self.rotkehlchen.setup_exchange(name, api_key, api_secret)
 
         status_code = HTTPStatus.OK
@@ -322,6 +326,7 @@ class RestAPI():
 
     @require_loggedin_user()
     def remove_exchange(self, name: str) -> Response:
+        result: Optional[bool]
         result, message = self.rotkehlchen.remove_exchange(name)
         status_code = HTTPStatus.OK
         if not result:
@@ -379,18 +384,48 @@ class RestAPI():
 
         return trades
 
-    def _query_exchange_trades(
+    @overload  # noqa: F811
+    def _query_exchange_trades(  # pylint: disable=no-self-use
+            self,
+            name: None,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Tuple[Optional[Dict[str, List[Trade]]], str]:
+        ...
+
+    @overload  # noqa: F811
+    def _query_exchange_trades(  # pylint: disable=no-self-use
+            self,
+            name: str,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Tuple[Optional[List[Trade]], str]:
+        ...
+
+    def _query_exchange_trades(  # noqa: F811
             self,
             name: Optional[str],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> Tuple[Union[Optional[List[Trade]], Optional[Dict[str, List[Trade]]]], str]:
+        """Returns a list of trades if a single exchange is queried or a dict of
+        exchange names to list of trades if multiple exchanges are queried"""
         if name is None:
             # Query all exchanges
-            trades = self._query_all_exchange_trades(
+            trades_map = self._query_all_exchange_trades(
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
             )
+            # For the outside world we should also add the trade identifier
+            processed_map: Dict[str, List[Trade]] = {}
+            for name, trades_dict in trades_map.items():
+                processed_map[name] = []
+                for trade in trades_dict:
+                    t = self.trade_schema.dump(trade)
+                    t['trade_id'] = trade.identifier
+                    processed_map[name].append(t)
+
+            return processed_map, ''
         else:
             # else query only the specific exchange
             exchange_obj = self.rotkehlchen.exchange_manager.connected_exchanges.get(name, None)
@@ -400,24 +435,14 @@ class RestAPI():
                 start_ts=from_timestamp,
                 end_ts=to_timestamp,
             )
-
-        # For the outside world we should also add the trade identifier
-        if name:
-            processed_trades = []
+            # For the outside world we should also add the trade identifier
+            processed_trades: List[Trade] = []
             for trade in trades:
                 t = self.trade_schema.dump(trade)
                 t['trade_id'] = trade.identifier
                 processed_trades.append(t)
-        else:
-            processed_trades = {}
-            for name, trades_dict in trades.items():
-                processed_trades[name] = []
-                for trade in trades_dict:
-                    t = self.trade_schema.dump(trade)
-                    t['trade_id'] = trade.identifier
-                    processed_trades[name].append(t)
 
-        return processed_trades, ''
+            return processed_trades, ''
 
     @require_loggedin_user()
     def query_exchange_trades(
@@ -651,8 +676,8 @@ class RestAPI():
                 password=password,
                 create_new=False,
                 sync_approval=sync_approval,
-                api_key='',
-                api_secret='',
+                api_key=ApiKey(''),
+                api_secret=ApiSecret(b''),
             )
         except AuthenticationError as e:
             result_dict['message'] = str(e)
@@ -740,10 +765,11 @@ class RestAPI():
 
     @require_premium_user(active_check=False)
     def query_value_distribution_data(self, distribution_by: str) -> Response:
+        data: Union[List[AssetBalance], List[LocationData]]
         if distribution_by == 'location':
             data = self.rotkehlchen.data.db.get_latest_location_value_distribution()
-
         else:
+            # Can only be 'asset'. Checked by the marshmallow encoding
             data = self.rotkehlchen.data.db.get_latest_asset_value_distribution()
 
         result = process_result_list(data)
@@ -753,7 +779,8 @@ class RestAPI():
     def query_statistics_renderer(self) -> Response:
         result_dict = {'result': None, 'message': ''}
         try:
-            result = self.rotkehlchen.premium.query_statistics_renderer()
+            # Here we ignore mypy error since we use @require_premium_user() decorator
+            result = self.rotkehlchen.premium.query_statistics_renderer()  # type: ignore
             result_dict['result'] = result
             status_code = HTTPStatus.OK
         except RemoteError as e:

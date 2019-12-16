@@ -18,7 +18,7 @@ def test_data_import_cointracking(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             "dataimportresource",
-        ), json=json_data
+        ), json=json_data,
     )
     assert_proper_response(response)
     data = response.json()
@@ -39,7 +39,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
         api_url_for(
             rotkehlchen_api_server,
             "dataimportresource",
-        ), json=json_data
+        ), json=json_data,
     )
     assert_error_response(
         response=response,
@@ -53,7 +53,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
         api_url_for(
             rotkehlchen_api_server,
             "dataimportresource",
-        ), json=json_data
+        ), json=json_data,
     )
     assert_error_response(
         response=response,
@@ -67,7 +67,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
         api_url_for(
             rotkehlchen_api_server,
             "dataimportresource",
-        ), json=json_data
+        ), json=json_data,
     )
     assert_error_response(
         response=response,
@@ -81,7 +81,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
         api_url_for(
             rotkehlchen_api_server,
             "dataimportresource",
-        ), json=json_data
+        ), json=json_data,
     )
     assert_error_response(
         response=response,
@@ -95,7 +95,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
         api_url_for(
             rotkehlchen_api_server,
             "dataimportresource",
-        ), json=json_data
+        ), json=json_data,
     )
     assert_error_response(
         response=response,
@@ -109,7 +109,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
         api_url_for(
             rotkehlchen_api_server,
             "dataimportresource",
-        ), json=json_data
+        ), json=json_data,
     )
     assert_error_response(
         response=response,
@@ -124,7 +124,7 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
         api_url_for(
             rotkehlchen_api_server,
             "dataimportresource",
-        ), json=json_data
+        ), json=json_data,
     )
     assert_error_response(
         response=response,

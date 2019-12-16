@@ -14,7 +14,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class RotkehlchenServer():
-    def __init__(self):
+    def __init__(self) -> None:
         arg_parser = app_args(
             prog='rotkehlchen',
             description='Rotkehlchen Crypto Portfolio Management',
@@ -24,12 +24,12 @@ class RotkehlchenServer():
         self.stop_event = gevent.event.Event()
         self.api_server = APIServer(RestAPI(rotkehlchen=self.rotkehlchen))
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         log.debug('Shutdown initiated')
         self.api_server.stop()
         self.stop_event.set()
 
-    def main(self):
+    def main(self) -> None:
         if os.name != 'nt':
             gevent.hub.signal(signal.SIGQUIT, self.shutdown)
         gevent.hub.signal(signal.SIGINT, self.shutdown)

@@ -6,7 +6,7 @@ import re
 import shutil
 import tempfile
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Set, Tuple, cast
 
 from eth_utils import to_checksum_address
 from pysqlcipher3 import dbapi2 as sqlcipher

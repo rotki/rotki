@@ -335,7 +335,6 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges):
     server = rotkehlchen_api_server_with_exchanges
     setup = mock_history_processing_and_exchanges(server.rest_api.rotkehlchen)
     # query trades of one specific exchange
-
     with setup.binance_patch:
         response = requests.get(api_url_for(
             server,

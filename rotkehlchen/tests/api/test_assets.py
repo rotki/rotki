@@ -141,7 +141,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
             "ignoredassetsresource",
-        ), json={'assets': 'foo'}
+        ), json={'assets': 'foo'},
     )
     assert_error_response(
         response=response,
@@ -154,7 +154,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
             "ignoredassetsresource",
-        ), json={'assets': ['notanasset']}
+        ), json={'assets': ['notanasset']},
     )
     assert_error_response(
         response=response,
@@ -172,7 +172,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
             "ignoredassetsresource",
-        ), json={'assets': [asset, 'notanasset']}
+        ), json={'assets': [asset, 'notanasset']},
     )
     assert_error_response(
         response=response,
@@ -193,7 +193,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
             "ignoredassetsresource",
-        ), json={'assets': [asset]}
+        ), json={'assets': [asset]},
     )
     assert_error_response(
         response=response,

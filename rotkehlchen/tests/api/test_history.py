@@ -289,8 +289,8 @@ def test_history_export_csv(
             assert row['is_virtual'] in ('True', 'False')
 
             count += 1
-    NUM_TRADES = 18
-    assert count == NUM_TRADES, 'Incorrect amount of trade CSV entries found'
+    num_trades = 18
+    assert count == num_trades, 'Incorrect amount of trade CSV entries found'
 
     with open(os.path.join(csv_dir, FILENAME_LOAN_PROFITS_CSV), newline='') as csvfile:
         reader = csv.DictReader(csvfile)
@@ -395,7 +395,7 @@ def test_history_export_csv(
             assert row[f'taxable_bought_cost_in_{profit_currency.identifier}'] is not None
             count += 1
     assert count == (
-        NUM_TRADES + num_loans + num_asset_movements + num_transactions + num_margins
+        num_trades + num_loans + num_asset_movements + num_transactions + num_margins
     )
 
 
