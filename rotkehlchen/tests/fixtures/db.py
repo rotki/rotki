@@ -1,8 +1,10 @@
 import os
+from typing import Any, Dict, Optional
 
 import pytest
 
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.user_messages import MessagesAggregator
 
 
 @pytest.fixture
@@ -43,11 +45,66 @@ def session_user_data_dir(session_data_dir, session_username):
     return user_data_dir
 
 
+def _init_database(
+        data_dir: str,
+        password: str,
+        msg_aggregator: MessagesAggregator,
+        db_settings: Optional[Dict[str, Any]],
+) -> DBHandler:
+    db = DBHandler(data_dir, password, msg_aggregator)
+    settings = {
+        # DO not submit usage analytics during tests
+        'submit_usage_analytics': False,
+        # Default main currency for tests is EUR
+        'main_currency': 'EUR',
+    }
+    # Set the given db_settings. But the pre-set values have priority
+    if db_settings is not None:
+        for key, value in db_settings.items():
+            settings[key] = value
+
+    db.set_settings(settings)
+    return db
+
+
 @pytest.fixture
-def database(user_data_dir, function_scope_messages_aggregator):
-    return DBHandler(user_data_dir, '123', function_scope_messages_aggregator)
+def database(
+        user_data_dir,
+        function_scope_messages_aggregator,
+        db_password,
+        db_settings,
+        start_with_logged_in_user,
+) -> Optional[DBHandler]:
+    if not start_with_logged_in_user:
+        return None
+
+    return _init_database(
+        data_dir=user_data_dir,
+        msg_aggregator=function_scope_messages_aggregator,
+        password=db_password,
+        db_settings=db_settings,
+    )
 
 
 @pytest.fixture(scope='session')
-def session_database(session_user_data_dir, messages_aggregator):
-    return DBHandler(session_user_data_dir, '123', messages_aggregator)
+def session_database(
+        session_user_data_dir,
+        messages_aggregator,
+        db_password,
+        db_settings,
+        start_with_logged_in_user,
+) -> Optional[DBHandler]:
+    if not start_with_logged_in_user:
+        return None
+
+    return _init_database(
+        data_dir=session_user_data_dir,
+        msg_aggregator=messages_aggregator,
+        password=db_password,
+        db_settings=db_settings,
+    )
+
+
+@pytest.fixture
+def db_settings() -> Optional[Dict[str, Any]]:
+    return None

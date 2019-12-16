@@ -12,7 +12,7 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants import YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_BTC, A_CNY, A_ETH, A_EUR, A_USD, FIAT_CURRENCIES
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.data_handler import DataHandler, verify_otctrade_data
+from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBINFO_FILENAME, DBHandler, detect_sqlcipher_version
 from rotkehlchen.db.settings import (
     DEFAULT_ANONYMIZED_LOGS,
@@ -278,123 +278,6 @@ def test_writting_fetching_data(data_dir, username, accountant):
     result = data.db.get_settings()
     assert result.eth_rpc_endpoint == 'http://localhost:8555'
     assert result.ui_floating_precision == 3
-
-
-# TODO: This needs to be changed/moved and become an API test for
-# adding/editing/removing/querying external trades
-def test_writting_fetching_external_trades(data_dir, username):
-    msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=True)
-
-    # add 2 trades and check they are in the DB
-    otc_trade1 = {
-        'otc_timestamp': '10/03/2018 23:30',
-        'otc_pair': 'ETH_EUR',
-        'otc_type': 'buy',
-        'otc_amount': '10',
-        'otc_rate': '100',
-        'otc_fee': '0.001',
-        'otc_fee_currency': 'ETH',
-        'otc_link': 'a link',
-        'otc_notes': 'a note',
-    }
-    otc_trade2 = {
-        'otc_timestamp': '15/03/2018 23:35',
-        'otc_pair': 'ETH_EUR',
-        'otc_type': 'buy',
-        'otc_amount': '5',
-        'otc_rate': '100',
-        'otc_fee': '0.001',
-        'otc_fee_currency': 'ETH',
-        'otc_link': 'a link 2',
-        'otc_notes': 'a note 2',
-    }
-    trade1, _ = verify_otctrade_data(otc_trade1)
-    trade2, _ = verify_otctrade_data(otc_trade2)
-
-    result, _, = data.add_external_trade(otc_trade1)
-    assert result
-    result, _ = data.add_external_trade(otc_trade2)
-    assert result
-    result = data.get_external_trades()
-    assert result[0] == trade1
-    assert result[1] == trade2
-
-    # query trades in period
-    result = data.get_external_trades(
-        from_ts=1520553600,  # 09/03/2018
-        to_ts=1520726400,  # 11/03/2018
-    )
-    assert len(result) == 1
-    # make sure id is there but do not compare it
-    assert result[0] == trade1
-
-    # query trades only with to_ts
-    result = data.get_external_trades(
-        to_ts=1520726400,  # 11/03/2018
-    )
-    assert len(result) == 1
-    # make sure id is there but do not compare it
-    assert result[0] == trade1
-
-    # edit a trade and check the edit made it in the DB
-    otc_trade1['otc_rate'] = '120'
-    trade1_id = trade1.identifier
-    otc_trade1['otc_id'] = trade1_id
-    result, _ = data.edit_external_trade(otc_trade1)
-    assert result
-    result = data.get_external_trades()
-    edited_trade1 = trade1._replace(rate=FVal(120))
-    assert result[0] == edited_trade1
-    assert result[1] == trade2
-
-    # edit a trade's time (or any other field which makes up the id) and see
-    # that the ID changes later
-    new_time_str = '10/03/2018 23:35'
-    new_timestamp = 1520724900
-    otc_trade1['otc_timestamp'] = new_time_str
-    otc_trade1['otc_id'] = edited_trade1.identifier
-
-    result, _ = data.edit_external_trade(otc_trade1)
-    assert result
-    result = data.get_external_trades()
-    edited_trade1 = trade1._replace(rate=FVal(120), timestamp=new_timestamp)
-    assert result[0] == edited_trade1
-    assert result[1] == trade2
-    # Here trade is edited succesfully but let's also look in the DB to see
-    # if the trade is indeed there with a new ID
-    cursor = data.db.conn.cursor()
-    results = cursor.execute(
-        f'SELECT id, time, pair, amount FROM trades where id="{edited_trade1.identifier}";',
-    )
-    results = results.fetchall()
-    assert len(results) == 1
-    result = results[0]
-    assert result[0] == edited_trade1.identifier
-    assert result[1] == new_timestamp
-    assert result[2] == otc_trade1['otc_pair']
-    assert result[3] == otc_trade1['otc_amount']
-
-    # try to edit a non-existing trade
-    otc_trade1['otc_rate'] = '160'
-    otc_trade1['otc_id'] = '5'
-    result, _ = data.edit_external_trade(otc_trade1)
-    assert not result
-    otc_trade1['otc_rate'] = '120'
-    otc_trade1['otc_id'] = trade1_id
-    result = data.get_external_trades()
-    assert result[0] == edited_trade1
-    assert result[1] == trade2
-
-    # try to delete non-existing trade
-    result, _ = data.delete_external_trade('dasdasd')
-    assert not result
-
-    # delete an external trade
-    result, _ = data.delete_external_trade(edited_trade1.identifier)
-    result = data.get_external_trades()
-    assert result[0] == trade2
 
 
 def test_settings_entry_types(data_dir, username, accountant):
