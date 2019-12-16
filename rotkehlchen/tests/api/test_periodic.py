@@ -2,7 +2,6 @@ import pytest
 import requests
 
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
-from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test, prices
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.utils.misc import ts_now
 

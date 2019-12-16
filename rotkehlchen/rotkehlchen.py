@@ -23,7 +23,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian, TradesHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import DEFAULT_ANONYMIZED_LOGS, LoggingSettings, RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import premium_create_and_verify
+from rotkehlchen.premium.premium import Premium, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.typing import ApiKey, ApiSecret, BlockchainAddress, SupportedBlockchain, Timestamp
 from rotkehlchen.usage_analytics import maybe_submit_usage_analytics
@@ -41,7 +41,9 @@ class Rotkehlchen():
         self.lock = Semaphore()
         self.lock.acquire()
 
-        self.premium = None
+        # Can also be None after unlock if premium credentials did not
+        # authenticate or premium server temporarily offline
+        self.premium: Optional[Premium] = None
         self.user_is_logged_in = False
 
         logfilename = None
@@ -188,8 +190,7 @@ class Rotkehlchen():
         del self.data_importer
 
         if self.premium is not None:
-            # For some reason mypy does not see that self.premium is set
-            del self.premium  # type: ignore
+            del self.premium
         self.data.logout()
         self.password = ''
 
@@ -211,8 +212,7 @@ class Rotkehlchen():
         log.info('Setting new premium credentials')
 
         if self.premium is not None:
-            # For some reason mypy does not see that self.premium is set
-            self.premium.set_credentials(api_key, api_secret)  # type: ignore
+            self.premium.set_credentials(api_key, api_secret)
         else:
             self.premium = premium_create_and_verify(api_key, api_secret)
 

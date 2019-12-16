@@ -452,7 +452,7 @@ class Blockchain(CacheableObject):
         if not balances_queried_before:
             self.query_balances(blockchain)
 
-        result = {'per_account': self.balances, 'totals': self.totals}
+        result: BlockchainBalancesUpdate = {'per_account': self.balances, 'totals': self.totals}
 
         return result, removed_accounts, full_msg
 

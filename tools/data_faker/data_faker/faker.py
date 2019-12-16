@@ -40,13 +40,13 @@ class DataFaker(object):
 
         self.rotki.setup_exchange(
             name='kraken',
-            api_key=str(make_random_b64bytes(128)),
-            api_secret=str(make_random_b64bytes(128)),
+            api_key=ApiKey(str(make_random_b64bytes(128))),
+            api_secret=ApiSecret(make_random_b64bytes(128)),
         )
         self.rotki.setup_exchange(
             name='binance',
-            api_key=str(make_random_b64bytes(128)),
-            api_secret=str(make_random_b64bytes(128)),
+            api_key=ApiKey(str(make_random_b64bytes(128))),
+            api_secret=ApiSecret(make_random_b64bytes(128)),
         )
 
         self.writer = ActionWriter(

@@ -46,7 +46,7 @@ def form_query_to_filter_timestamps(
         to_ts: Optional[Timestamp],
 ) -> Tuple[str, Union[Tuple, Tuple[Timestamp], Tuple[Timestamp, Timestamp]]]:
     """Formulates the query string and its bindings to filter for timestamps"""
-    bindings = ()
+    bindings: Union[Tuple, Tuple[Timestamp], Tuple[Timestamp, Timestamp]] = ()
     got_from_ts = from_ts is not None
     got_to_ts = to_ts is not None
     if (got_from_ts or got_to_ts):
