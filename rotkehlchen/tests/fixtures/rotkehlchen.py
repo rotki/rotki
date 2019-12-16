@@ -56,14 +56,14 @@ def initialize_mock_rotkehlchen_instance(
         start_with_logged_in_user,
         start_with_valid_premium,
         msg_aggregator,
-        username,
         accountant,
         blockchain,
         db_password,
         rotkehlchen_api_key,
         rotkehlchen_api_secret,
         data_dir,
-        accounting_ignored_assets,
+        database,
+        username,
 ):
     if start_with_logged_in_user:
         # Rotkehlchen initializes its own messages aggregator normally but here we
@@ -74,19 +74,14 @@ def initialize_mock_rotkehlchen_instance(
         rotki.data.msg_aggregator = rotki.msg_aggregator
         # Unlock must come after we have set the aggregator if we are to get the
         # messages caused by DB initialization
-        rotki.data.unlock(username, db_password, create_new=True)
-        # DO not submit usage analytics during tests
-        rotki.data.db.set_settings({'submit_usage_analytics': False})
+        rotki.data.db = database
+        rotki.data.username = username
         rotki.data_importer = DataImporter(db=rotki.data.db)
         rotki.password = db_password
         # Remember accountant fixture has a mocked accounting data dir
         # different to the usual user one. Accountant would normally be unlocked
         # during the normal unlock but due to mocking initialization has to be tweaked here
         rotki.accountant = accountant
-        rotki.accountant.db = rotki.data.db
-        for asset in accounting_ignored_assets:
-            rotki.accountant.db.add_to_ignored_assets(asset)
-
         rotki.blockchain = blockchain
         rotki.trades_historian = TradesHistorian(
             user_directory=data_dir,
@@ -119,8 +114,8 @@ def uninitialized_rotkehlchen(cli_args):
 @pytest.fixture()
 def rotkehlchen_api_server(
         uninitialized_rotkehlchen,
+        database,
         api_port,
-        username,
         blockchain,
         accountant,
         start_with_logged_in_user,
@@ -130,7 +125,7 @@ def rotkehlchen_api_server(
         rotkehlchen_api_key,
         rotkehlchen_api_secret,
         accounting_data_dir,
-        accounting_ignored_assets,
+        username,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -141,14 +136,14 @@ def rotkehlchen_api_server(
         start_with_logged_in_user=start_with_logged_in_user,
         start_with_valid_premium=start_with_valid_premium,
         msg_aggregator=function_scope_messages_aggregator,
-        username=username,
         accountant=accountant,
         blockchain=blockchain,
         db_password=db_password,
         rotkehlchen_api_key=rotkehlchen_api_key,
         rotkehlchen_api_secret=rotkehlchen_api_secret,
         data_dir=accounting_data_dir,
-        accounting_ignored_assets=accounting_ignored_assets,
+        database=database,
+        username=username,
     )
     return api_server
 
@@ -156,7 +151,7 @@ def rotkehlchen_api_server(
 @pytest.fixture()
 def rotkehlchen_instance(
         uninitialized_rotkehlchen,
-        username,
+        database,
         blockchain,
         accountant,
         start_with_logged_in_user,
@@ -166,7 +161,7 @@ def rotkehlchen_instance(
         rotkehlchen_api_key,
         rotkehlchen_api_secret,
         accounting_data_dir,
-        accounting_ignored_assets,
+        username,
 ):
     """A partially mocked rotkehlchen instance"""
 
@@ -175,14 +170,14 @@ def rotkehlchen_instance(
         start_with_logged_in_user=start_with_logged_in_user,
         start_with_valid_premium=start_with_valid_premium,
         msg_aggregator=function_scope_messages_aggregator,
-        username=username,
         accountant=accountant,
         blockchain=blockchain,
         db_password=db_password,
         rotkehlchen_api_key=rotkehlchen_api_key,
         rotkehlchen_api_secret=rotkehlchen_api_secret,
         data_dir=accounting_data_dir,
-        accounting_ignored_assets=accounting_ignored_assets,
+        database=database,
+        username=username,
     )
     return uninitialized_rotkehlchen
 

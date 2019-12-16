@@ -68,7 +68,6 @@ history_unknown_assets = [
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_simple_accounting(accountant):
     accounting_history_process(accountant, 1436979735, 1495751688, history1)
-    # assert accountant.general_trade_pl.is_close("557.528104903")
     assert accountant.general_trade_pl.is_close("557.5284549025")
     assert accountant.taxable_trade_pl.is_close("557.5284549025")
 
@@ -252,7 +251,9 @@ history5 = history1 + [{
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-@pytest.mark.parametrize('accounting_include_crypto2crypto', [False])
+@pytest.mark.parametrize('db_settings', [{
+    'include_crypto2crypto': False,
+}])
 def test_nocrypto2crypto(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
     assert accountant.general_trade_pl.is_close("264693.43364282")
@@ -260,7 +261,9 @@ def test_nocrypto2crypto(accountant):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-@pytest.mark.parametrize('accounting_taxfree_after_period', [None])
+@pytest.mark.parametrize('db_settings', [{
+    'taxfree_after_period': None,
+}])
 def test_no_taxfree_period(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
     assert accountant.general_trade_pl.is_close('265250.9620977')
@@ -268,7 +271,9 @@ def test_no_taxfree_period(accountant):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-@pytest.mark.parametrize('accounting_taxfree_after_period', [86400])
+@pytest.mark.parametrize('db_settings', [{
+    'taxfree_after_period': 86400,
+}])
 def test_big_taxfree_period(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
     assert accountant.general_trade_pl.is_close('265250.9620977')
@@ -311,8 +316,10 @@ def test_buy_event_creation(accountant):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-@pytest.mark.parametrize('accounting_include_gas_costs', [False])
-@pytest.mark.parametrize('accounting_ignored_assets', [[A_DASH]])
+@pytest.mark.parametrize('db_settings', [{
+    'ignored_assets': [A_DASH],
+    'include_gas_costs': False,
+}])
 def test_not_include_gas_costs(accountant):
     """
     Added ignored assets here only to have a test for
@@ -363,7 +370,9 @@ def test_not_include_gas_costs(accountant):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-@pytest.mark.parametrize('accounting_ignored_assets', [[A_DASH]])
+@pytest.mark.parametrize('db_settings', [{
+    'ignored_assets': [A_DASH],
+}])
 def test_ignored_assets(accountant):
     history = history1 + [{
         'timestamp': 1476979735,

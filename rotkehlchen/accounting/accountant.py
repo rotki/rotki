@@ -8,7 +8,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
 from rotkehlchen.errors import (
     DeserializationError,
     NoPriceForGivenTimestamp,
@@ -47,30 +47,21 @@ class Accountant():
     def __init__(
             self,
             db: DBHandler,
-            profit_currency: Asset,
             user_directory: FilePath,
             msg_aggregator: MessagesAggregator,
             create_csv: bool,
-            include_crypto2crypto: bool,
-            taxfree_after_period: Optional[int],
-            include_gas_costs: bool,
     ) -> None:
         self.db = db
+        profit_currency = db.get_main_currency()
         self.msg_aggregator = msg_aggregator
         self.csvexporter = CSVExporter(profit_currency, user_directory, create_csv)
         self.events = TaxableEvents(self.csvexporter, profit_currency)
-        self.set_main_currency(profit_currency)
 
         self.asset_movement_fees = FVal(0)
         self.last_gas_price = FVal(0)
 
         self.started_processing_timestamp = Timestamp(-1)
         self.currently_processing_timestamp = Timestamp(-1)
-
-        # Customizable Options
-        self.include_gas_costs = include_gas_costs
-        self.events.include_crypto2crypto = include_crypto2crypto
-        self.events.taxfree_after_period = taxfree_after_period
 
     def __del__(self) -> None:
         del self.events
@@ -84,7 +75,8 @@ class Accountant():
     def taxable_trade_pl(self) -> FVal:
         return self.events.taxable_trade_profit_loss
 
-    def customize(self, settings: ModifiableDBSettings) -> None:
+    def _customize(self, settings: ModifiableDBSettings) -> None:
+        """Customize parameters after pulling DBSettings"""
         if settings.include_crypto2crypto is not None:
             self.events.include_crypto2crypto = settings.include_crypto2crypto
 
@@ -96,11 +88,9 @@ class Accountant():
 
             self.events.taxfree_after_period = given_taxfree_after_period
 
-    def set_main_currency(self, currency: Asset) -> None:
-        assert currency.is_fiat(), 'main currency checks should happen at marshmallow validation'
-
-        self.profit_currency = currency
-        self.events.profit_currency = currency
+        self.profit_currency = settings.main_currency
+        self.events.profit_currency = settings.main_currency
+        self.csvexporter.profit_currency = settings.main_currency
 
     @staticmethod
     def query_historical_price(
@@ -159,8 +149,12 @@ class Accountant():
             timestamp=timestamp,
         )
 
-    def account_for_gas_costs(self, transaction: EthereumTransaction) -> None:
-        if not self.include_gas_costs:
+    def account_for_gas_costs(
+            self,
+            transaction: EthereumTransaction,
+            include_gas_costs: bool,
+    ) -> None:
+        if not include_gas_costs:
             return
         if transaction.timestamp < self.start_ts:
             return
@@ -260,6 +254,11 @@ class Accountant():
         # Used only in the "avoid zerorpc remote lost after 10ms problem"
         self.last_sleep_ts = 0
 
+        # Ask the DB for the settings once at the start of processing so we got the
+        # same settings through the entire task
+        db_settings = self.db.get_settings()
+        self._customize(db_settings)
+
         actions: List[TaxableAction] = list(trade_history)
         # If we got loans, we need to interleave them with the full history and re-sort
         if len(loan_history) != 0:
@@ -287,7 +286,7 @@ class Accountant():
                     should_continue,
                     prev_time,
                     count,
-                ) = self.process_action(action, end_ts, prev_time, count)
+                ) = self.process_action(action, end_ts, prev_time, count, db_settings)
             except PriceQueryUnknownFromAsset as e:
                 ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
@@ -353,6 +352,7 @@ class Accountant():
             end_ts: Timestamp,
             prev_time: Timestamp,
             count: int,
+            db_settings: DBSettings,
     ) -> Tuple[bool, Timestamp, int]:
         """Processes each individual action and returns whether we should continue
         looping through the rest of the actions or not"""
@@ -435,7 +435,7 @@ class Accountant():
             return True, prev_time, count
         elif action_type == 'ethereum_transaction':
             action = cast(EthereumTransaction, action)
-            self.account_for_gas_costs(action)
+            self.account_for_gas_costs(action, db_settings.include_gas_costs)
             return True, prev_time, count
 
         # if we get here it's a trade

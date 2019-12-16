@@ -230,11 +230,11 @@ def test_query_history_errors(rotkehlchen_api_server):
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_history_export_csv(
         rotkehlchen_api_server_with_exchanges,
-        profit_currency,
         tmpdir_factory,
 ):
     """Test that the csv export REST API endpoint works correctly"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    profit_currency = rotki.data.db.get_main_currency()
     setup = prepare_rotki_for_history_processing_test(
         rotki,
         should_mock_history_processing=False,
@@ -406,7 +406,6 @@ def test_history_export_csv(
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_history_export_csv_errors(
         rotkehlchen_api_server_with_exchanges,
-        profit_currency,
         tmpdir_factory,
 ):
     """Test that errors on the csv export REST API endpoint are handled correctly"""
