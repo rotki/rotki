@@ -29,6 +29,9 @@ class TaxableEvents():
         # amount is taken as a loss
         self.count_profit_for_settlements = False
 
+        self._taxfree_after_period = None
+        self._include_crypto2crypto = None
+
     def reset(self, start_ts: Timestamp, end_ts: Timestamp) -> None:
         self.events = dict()
         self.query_start_ts = start_ts
