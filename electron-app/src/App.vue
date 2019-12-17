@@ -66,7 +66,7 @@ import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
 import BalanceSavedIndicator from '@/components/status/BalanceSavedIndicator.vue';
 import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
 import ProgressIndicator from '@/components/status/ProgressIndicator.vue';
-import './services/task_manager';
+import './services/task-manager';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { ipcRenderer, shell } from 'electron';
 import { Message } from '@/store/store';
@@ -115,7 +115,7 @@ export default class App extends Vue {
   }
 
   async created(): Promise<void> {
-    this.$rpc.connect();
+    this.$api.connect(4242);
     ipcRenderer.on('failed', () => {
       // get notified if the python subprocess dies
       this.startupError =

@@ -89,8 +89,8 @@ export default class BlockchainBalances extends Vue {
   loading: boolean = false;
 
   mounted() {
-    this.$rpc
-      .query_blockchain_balances_async()
+    this.$api
+      .queryBlockchainBalancesAsync()
       .then(value => {
         const task = createTask(
           value.task_id,

@@ -122,8 +122,8 @@ export default class ExchangeSettings extends Vue {
 
     const exchangeName = this.selectedExchange;
     const { commit, dispatch } = this.$store;
-    this.$rpc
-      .setup_exchange(exchangeName, this.apiKey, this.apiSecret)
+    this.$api
+      .setupExchange(exchangeName, this.apiKey, this.apiSecret)
       .then(() => {
         this.resetFields(true);
         commit('balances/addExchange', exchangeName);
@@ -145,8 +145,8 @@ export default class ExchangeSettings extends Vue {
     this.confirmation = false;
     const exchangeName = this.selectedExchange;
 
-    this.$rpc
-      .remove_exchange(exchangeName)
+    this.$api
+      .removeExchange(exchangeName)
       .then(() => {
         this.resetFields(true);
         const exchangeIndex = this.connectedExchanges.findIndex(

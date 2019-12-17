@@ -114,7 +114,7 @@ export default class TaxReport extends Vue {
         title: 'Select a directory',
         properties: ['openDirectory']
       },
-      async filePaths => {
+      async (filePaths: string[] | undefined) => {
         if (!filePaths) {
           return;
         }

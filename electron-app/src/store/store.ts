@@ -5,7 +5,7 @@ import { balances } from '@/store/balances';
 import { tasks } from '@/store/tasks';
 import { session } from '@/store/session';
 import { reports } from '@/store/reports';
-import { service } from '@/services/rotkehlchen_service';
+import { api } from '@/services/rotkehlchen-api';
 import { VersionCheck } from '@/model/version-check';
 import { SessionState } from '@/store/session/state';
 import { TaskState } from '@/store/tasks/state';
@@ -51,7 +51,7 @@ const store: StoreOptions<RotkehlchenState> = {
   actions: {
     async version({ commit }): Promise<void> {
       try {
-        const version = await service.version_check();
+        const version = await api.checkVersion();
         if (version) {
           commit('versions', version);
         }

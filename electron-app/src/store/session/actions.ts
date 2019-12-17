@@ -6,7 +6,7 @@ import {
   convertToGeneralSettings
 } from '@/data/converters';
 import { DBSettings } from '@/model/action-result';
-import { service } from '@/services/rotkehlchen_service';
+import { api } from '@/services/rotkehlchen-api';
 import { monitor } from '@/services/monitoring';
 import { notify } from '@/store/notifications/utils';
 
@@ -20,28 +20,25 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     commit('accountingSettings', convertToAccountingSettings(settings));
   },
   async unlock({ commit, dispatch }, payload: UnlockPayload) {
+    let settings: DBSettings;
+    let premium: boolean;
+    let exchanges: string[];
+
     try {
-      const { username, password, create, syncApproval } = payload;
-
-      const response = await service.unlock_user(
-        username,
-        password,
-        create,
-        syncApproval
-      );
-
-      const { settings, premium, exchanges } = response;
-
-      if (!settings) {
-        commit(
-          'setMessage',
-          {
-            title: 'Unlock failed',
-            description: response.message || response.error || ''
-          } as Message,
-          { root: true }
-        );
-        return;
+      const { username, password, create } = payload;
+      const isLogged = await api.checkIfLogged(username);
+      if (isLogged) {
+        [settings, premium, exchanges] = await Promise.all([
+          api.getSettings(),
+          Promise.resolve(false),
+          api.getExchanges()
+        ]);
+      } else {
+        ({ settings, premium, exchanges } = await api.unlockUser(
+          username,
+          password,
+          create
+        ));
       }
 
       await dispatch('start', {
@@ -77,7 +74,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
   },
   async periodicCheck({ commit }) {
     try {
-      const result = await service.query_periodic_data();
+      const result = await api.queryPeriodicData();
       if (Object.keys(result).length === 0) {
         // an empty object means user is not logged in yet
         return;
@@ -103,9 +100,9 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       notify(`Error at periodic client query: ${e}`, 'Periodic client query');
     }
   },
-  async logout({ commit }) {
+  async logout({ commit, state }) {
     try {
-      await service.logout();
+      await api.logout(state.username);
       monitor.stop();
       commit('session/reset', {}, { root: true });
       commit('notifications/reset', {}, { root: true });

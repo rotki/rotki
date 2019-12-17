@@ -2,7 +2,7 @@ import { ActionTree } from 'vuex';
 import { RotkehlchenState } from '@/store/store';
 import { TaxReportState } from '@/store/reports/state';
 import { Severity, TaxReportEvent } from '@/typing/types';
-import { service } from '@/services/rotkehlchen_service';
+import { api } from '@/services/rotkehlchen-api';
 import { notify } from '@/store/notifications/utils';
 import { createTask, TaskType } from '@/model/task';
 
@@ -10,7 +10,7 @@ export const actions: ActionTree<TaxReportState, RotkehlchenState> = {
   async generate({ commit }, payload: TaxReportEvent) {
     try {
       const { start, end } = payload;
-      const result = await service.process_trade_history_async(start, end);
+      const result = await api.processTradeHistoryAsync(start, end);
       commit('reportPeriod', { start, end });
       const task = createTask(
         result.task_id,
@@ -25,8 +25,8 @@ export const actions: ActionTree<TaxReportState, RotkehlchenState> = {
   },
 
   async createCSV(_, path: string) {
-    service
-      .export_processed_history_csv(path)
+    api
+      .exportHistoryCSV(path)
       .then(() => {
         notify(
           'History exported to CVS successfully',

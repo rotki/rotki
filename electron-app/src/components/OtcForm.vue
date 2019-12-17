@@ -91,7 +91,7 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import { OtcPayload, OtcTrade } from '@/model/otc-trade';
+import { StoredTrade, TradePayload } from '@/model/stored-trade';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
 
 @Component({
@@ -101,7 +101,7 @@ export default class OtcForm extends Vue {
   @Prop({ required: true })
   editMode!: boolean;
   @Prop({ required: false })
-  otcTrade: OtcTrade | null = null;
+  otcTrade: StoredTrade | null = null;
 
   id: string = '';
   pair: string = '';
@@ -138,7 +138,7 @@ export default class OtcForm extends Vue {
     );
   }
 
-  private updateFields(trade: OtcTrade) {
+  private updateFields(trade: StoredTrade) {
     this.pair = trade.pair;
     this.datetime = OtcForm.convertTimestamp(trade.timestamp);
     this.amount = trade.amount;
@@ -148,7 +148,7 @@ export default class OtcForm extends Vue {
     this.link = trade.link;
     this.notes = trade.notes;
     this.type = trade.trade_type;
-    this.id = trade.id;
+    this.id = trade.trade_id;
   }
 
   private resetFields() {
@@ -165,17 +165,17 @@ export default class OtcForm extends Vue {
   }
 
   addTrade() {
-    const trade: OtcPayload = {
-      otc_amount: this.amount,
-      otc_fee: this.fee,
-      otc_fee_currency: this.feeCurrency,
-      otc_link: this.link,
-      otc_notes: this.notes,
-      otc_pair: this.pair,
-      otc_rate: this.rate,
-      otc_timestamp: this.datetime,
-      otc_type: this.type,
-      otc_id: this.editMode ? this.id : null
+    const trade: TradePayload = {
+      amount: this.amount,
+      fee: this.fee,
+      fee_currency: this.feeCurrency,
+      link: this.link,
+      notes: this.notes,
+      pair: this.pair,
+      rate: this.rate,
+      timestamp: this.datetime,
+      trade_type: this.type,
+      trade_id: this.editMode ? this.id : undefined
     };
 
     this.$emit('save', trade);

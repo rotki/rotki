@@ -73,7 +73,7 @@ const { mapState } = createNamespacedHelpers('session');
   components: {
     MessageDialog
   },
-  computed: mapState(['premium', 'premiumSync'])
+  computed: mapState(['premium', 'premiumSync', 'username'])
 })
 export default class PremiumSettings extends Vue {
   apiKey: string = '';
@@ -86,6 +86,7 @@ export default class PremiumSettings extends Vue {
 
   premium!: boolean;
   premiumSync!: boolean;
+  username!: string;
 
   mounted() {
     this.sync = this.premiumSync;
@@ -103,8 +104,8 @@ export default class PremiumSettings extends Vue {
 
     const { commit } = this.$store;
 
-    this.$rpc
-      .set_premium_credentials(apiKey, apiSecret)
+    this.$api
+      .setPremiumCredentials(this.username, apiKey, apiSecret)
       .then(() => {
         commit('session/premium', true);
         commit('setMessage', {
@@ -131,8 +132,8 @@ export default class PremiumSettings extends Vue {
   onSyncChange() {
     const { commit } = this.$store;
     const shouldSync = this.sync;
-    this.$rpc
-      .set_premium_option_sync(shouldSync)
+    this.$api
+      .setPremiumSync(shouldSync)
       .then(() => {
         commit('session/premiumSync', shouldSync);
       })

@@ -14,7 +14,7 @@
       </div>
       <div v-else>
         <premium-statistics
-          :service="$rpc"
+          :service="$api"
           :floating-precision="floatingPrecision"
         ></premium-statistics>
       </div>

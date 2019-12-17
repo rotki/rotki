@@ -61,3 +61,11 @@ export interface TaxReportEvent {
   readonly start: number;
   readonly end: number;
 }
+
+export interface FiatExchangeRates {
+  [currency: string]: string;
+}
+
+export interface AccountSession {
+  [account: string]: 'loggedin' | 'loggedout';
+}

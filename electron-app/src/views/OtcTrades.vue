@@ -82,12 +82,13 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { OtcPayload, OtcTrade } from '@/model/otc-trade';
+import { StoredTrade, TradePayload } from '@/model/stored-trade';
 import OtcForm from '@/components/OtcForm.vue';
 import { createNamespacedHelpers } from 'vuex';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import { Message } from '@/store/store';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import { assert } from '@/utils/assertions';
 
 const { mapGetters } = createNamespacedHelpers('session');
 @Component({
@@ -101,9 +102,9 @@ export default class OtcTrades extends Vue {
   displayConfirmation: boolean = false;
 
   deleteId: string = '';
-  editableItem: OtcTrade | null = null;
+  editableItem: StoredTrade | null = null;
 
-  otcTrades: OtcTrade[] = [];
+  otcTrades: StoredTrade[] = [];
 
   readonly headers = [
     { text: 'Pair', value: 'pair' },
@@ -115,33 +116,43 @@ export default class OtcTrades extends Vue {
     { text: '', value: 'data-table-expand' }
   ];
 
-  saveItem(otcTrade: OtcPayload) {
-    this.$rpc
-      .modify_otc_trades(!this.editMode, otcTrade)
-      .then(() => {
-        this.$store.commit('setMessage', {
-          title: 'Success',
-          description: 'Trade was submitted successfully',
-          success: true
-        } as Message);
-        this.fetchData();
-      })
-      .catch((reason: Error) => {
-        this.$store.commit('setMessage', {
-          title: 'Failure',
-          description: `Trade Addition Error: ${reason.message}`
-        } as Message);
-      })
+  saveItem(trade: TradePayload) {
+    const onfulfilled = () => {
+      this.$store.commit('setMessage', {
+        title: 'Success',
+        description: 'Trade was submitted successfully',
+        success: true
+      } as Message);
+      this.fetchData();
+    };
+    const onrejected = (reason: Error) => {
+      this.$store.commit('setMessage', {
+        title: 'Failure',
+        description: `Trade Addition Error: ${reason.message}`
+      } as Message);
+    };
+
+    let promise: Promise<StoredTrade[]>;
+    if (this.editMode) {
+      assert(trade.trade_id != null);
+      promise = this.$api.editExternalTrade(trade as StoredTrade);
+    } else {
+      promise = this.$api.addExternalTrade(trade);
+    }
+
+    promise
+      .then(onfulfilled)
+      .catch(onrejected)
       .finally(() => this.cancelEdit());
   }
 
-  editItem(item: OtcTrade) {
+  editItem(item: StoredTrade) {
     this.editMode = true;
     this.editableItem = item;
   }
 
-  askForDeleteConfirmation(item: OtcTrade) {
-    this.deleteId = item.id;
+  askForDeleteConfirmation(item: StoredTrade) {
+    this.deleteId = item.trade_id;
     this.displayConfirmation = true;
     this.cancelEdit();
   }
@@ -153,8 +164,8 @@ export default class OtcTrades extends Vue {
 
   deleteItem() {
     this.displayConfirmation = false;
-    this.$rpc
-      .delete_otctrade(this.deleteId)
+    this.$api
+      .deleteExternalTrade(this.deleteId)
       .then(() => {
         this.$store.commit('setMessage', {
           title: 'Success',
@@ -162,7 +173,7 @@ export default class OtcTrades extends Vue {
           success: true
         } as Message);
         const index = this.otcTrades.findIndex(
-          value => value.id === this.deleteId
+          value => value.trade_id === this.deleteId
         );
         if (index >= 0) {
           this.otcTrades.splice(index, 1);
@@ -189,8 +200,8 @@ export default class OtcTrades extends Vue {
   }
 
   private fetchData() {
-    this.$rpc
-      .query_otctrades()
+    this.$api
+      .queryExternalTrades()
       .then(value => {
         this.otcTrades = value;
       })

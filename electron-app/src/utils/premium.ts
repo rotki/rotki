@@ -1,5 +1,5 @@
 import { VueConstructor } from 'vue';
-import { service } from '@/services/rotkehlchen_service';
+import { api } from '@/services/rotkehlchen-api';
 import Vue from 'vue';
 import Chart from 'chart.js';
 import moment from 'moment';
@@ -12,7 +12,7 @@ export const setupPremium = () => {
 
 export const PremiumStatistics = (): Promise<VueConstructor> => {
   return new Promise(async (resolve, reject) => {
-    const result = await service.query_statistics_renderer();
+    const result = await api.queryStatisticsRenderer();
     const script = document.createElement('script');
     script.text = result;
     document.head.appendChild(script);

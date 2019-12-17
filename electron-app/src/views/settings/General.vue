@@ -203,12 +203,12 @@ export default class General extends Vue {
 
     const { commit } = this.$store;
 
-    this.$rpc
-      .set_settings(payload)
-      .then(result => {
+    this.$api
+      .setSettings(payload)
+      .then(() => {
         commit('setMessage', {
           title: 'Successfully modified settings.',
-          description: result.message || '',
+          description: '',
           success: true
         } as Message);
         commit('session/settings', generalSettings);

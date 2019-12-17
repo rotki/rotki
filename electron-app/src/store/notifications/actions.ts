@@ -1,13 +1,13 @@
 import { ActionTree } from 'vuex';
 import { NotificationState } from '@/store/notifications/state';
 import { RotkehlchenState } from '@/store/store';
-import { service } from '@/services/rotkehlchen_service';
+import { api } from '@/services/rotkehlchen-api';
 import { Severity } from '@/typing/types';
 import { toNotification } from '@/store/notifications/utils';
 
 export const actions: ActionTree<NotificationState, RotkehlchenState> = {
   consume({ commit, getters }): any {
-    service
+    api
       .consumeMessages()
       .then(value => {
         let id = getters.nextId;

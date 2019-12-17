@@ -3,7 +3,7 @@ import App from './App.vue';
 import router from './router';
 import store from './store/store';
 import './filters';
-import { Rpc } from '@/plugins/rpc';
+import { Api } from '@/plugins/api';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'font-awesome/css/font-awesome.css';
 import vuetify from '@/plugins/vuetify';
@@ -12,7 +12,7 @@ import { setupPremium } from '@/utils/premium';
 
 Vue.config.productionTip = false;
 
-Vue.use(Rpc);
+Vue.use(Api);
 setupPremium();
 
 new Vue({

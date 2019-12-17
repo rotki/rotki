@@ -2,7 +2,7 @@ import { ActionTree } from 'vuex';
 import { RotkehlchenState } from '@/store/store';
 import { TaskState } from '@/store/tasks/state';
 import { BalanceStatus } from '@/enums/BalanceStatus';
-import { service } from '@/services/rotkehlchen_service';
+import { api } from '@/services/rotkehlchen-api';
 import { createTask, TaskType } from '@/model/task';
 
 export const actions: ActionTree<TaskState, RotkehlchenState> = {
@@ -26,8 +26,8 @@ export const actions: ActionTree<TaskState, RotkehlchenState> = {
         if (balanceTasks.length === 0) {
           commit('status', BalanceStatus.complete);
 
-          service
-            .query_balances_async()
+          api
+            .queryBalancesAsync()
             .then(result => {
               const task = createTask(
                 result.task_id,

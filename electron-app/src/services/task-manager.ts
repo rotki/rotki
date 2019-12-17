@@ -9,7 +9,7 @@ import {
 import { ExchangeBalanceResult } from '@/model/exchange-balance-result';
 import { TaskType } from '@/model/task';
 import { notify } from '@/store/notifications/utils';
-import { service } from '@/services/rotkehlchen_service';
+import { api } from '@/services/rotkehlchen-api';
 import { TaskMap } from '@/store/tasks/state';
 import {
   ApiEventEntry,
@@ -89,17 +89,9 @@ export class TaskManager {
   }
 
   onTradeHistory(tradeHistoryResult: ActionResult<TradeHistoryResult>) {
-    const { error, message, result } = tradeHistoryResult;
+    const { message, result } = tradeHistoryResult;
 
-    if (error) {
-      notify(
-        `Querying trade history died because of: ${error}. Check the logs for more details`,
-        'Trade History Query Error'
-      );
-      return;
-    }
-
-    if (message !== '') {
+    if (message) {
       notify(
         `During trade history query we got:${message}. History report is probably not complete.`,
         'Trade History Query Warning'
@@ -133,7 +125,7 @@ export class TaskManager {
         continue;
       }
 
-      service.query_task_result(task.id).then(result => {
+      api.queryTaskResult(task.id).then(result => {
         if (!task.asyncResult) {
           store.commit('tasks/remove', task.id);
           return;

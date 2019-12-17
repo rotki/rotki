@@ -78,14 +78,14 @@ export default class ImportData extends Vue {
         title: 'Select a file',
         properties: ['openFile']
       },
-      async filePaths => {
+      async (filePaths: string[] | undefined) => {
         if (!filePaths) {
           return;
         }
 
         const file = filePaths[0];
-        this.$rpc
-          .import_data_from('cointracking_info', file)
+        this.$api
+          .importDataFrom('cointracking_info', file)
           .then(() => {
             this.$store.commit('setMessage', {
               success: true,
