@@ -17,6 +17,11 @@ def start_with_logged_in_user():
     return True
 
 
+@pytest.fixture(scope='session')
+def session_start_with_logged_in_user():
+    return True
+
+
 @pytest.fixture
 def start_with_valid_premium():
     return False

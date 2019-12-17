@@ -6,7 +6,6 @@ from typing import Optional
 import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
-from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.inquirer import Inquirer
 
 
@@ -57,6 +56,17 @@ def accounting_create_csv():
 
 
 @pytest.fixture
+def accounting_initialize_parameters():
+    """
+    If True initialize the DB parameters of the accountant and the events
+
+    Normally they are initialized at the start of process_history, but if the
+    test does not go there and is a unit test then we need to do it ourselves for the test
+    """
+    return False
+
+
+@pytest.fixture
 def accountant(
         price_historian,  # pylint: disable=unused-argument
         database,
@@ -64,16 +74,23 @@ def accountant(
         accounting_create_csv,
         messages_aggregator,
         start_with_logged_in_user,
+        accounting_initialize_parameters,
 ) -> Optional[Accountant]:
     if not start_with_logged_in_user:
         return None
 
-    return Accountant(
+    accountant = Accountant(
         db=database,
         user_directory=accounting_data_dir,
         msg_aggregator=messages_aggregator,
         create_csv=accounting_create_csv,
     )
+
+    if accounting_initialize_parameters:
+        db_settings = accountant.db.get_settings()
+        accountant._customize(db_settings)
+
+    return accountant
 
 
 @pytest.fixture
