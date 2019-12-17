@@ -1,8 +1,9 @@
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import pytest
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -10,6 +11,11 @@ from rotkehlchen.user_messages import MessagesAggregator
 @pytest.fixture
 def username():
     return 'testuser'
+
+
+@pytest.fixture
+def ignored_assets() -> Optional[List[Asset]]:
+    return None
 
 
 @pytest.fixture(scope='session')
@@ -50,6 +56,7 @@ def _init_database(
         password: str,
         msg_aggregator: MessagesAggregator,
         db_settings: Optional[Dict[str, Any]],
+        ignored_assets: Optional[List[Asset]],
 ) -> DBHandler:
     db = DBHandler(data_dir, password, msg_aggregator)
     settings = {
@@ -64,6 +71,11 @@ def _init_database(
             settings[key] = value
 
     db.set_settings(settings)
+
+    if ignored_assets:
+        for asset in ignored_assets:
+            db.add_to_ignored_assets(asset)
+
     return db
 
 
@@ -74,6 +86,7 @@ def database(
         db_password,
         db_settings,
         start_with_logged_in_user,
+        ignored_assets,
 ) -> Optional[DBHandler]:
     if not start_with_logged_in_user:
         return None
@@ -83,6 +96,7 @@ def database(
         msg_aggregator=function_scope_messages_aggregator,
         password=db_password,
         db_settings=db_settings,
+        ignored_assets=ignored_assets,
     )
 
 
@@ -93,6 +107,7 @@ def session_database(
         db_password,
         db_settings,
         start_with_logged_in_user,
+        ignored_assets,
 ) -> Optional[DBHandler]:
     if not start_with_logged_in_user:
         return None
@@ -102,6 +117,7 @@ def session_database(
         msg_aggregator=messages_aggregator,
         password=db_password,
         db_settings=db_settings,
+        ignored_assets=ignored_assets,
     )
 
 
