@@ -3,9 +3,10 @@ import os
 from unittest.mock import patch
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
-from rotkehlchen.constants.assets import A_GBP, A_USD
+from rotkehlchen.constants.assets import A_GBP
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.rotkehlchen import Rotkehlchen
+from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import ApiKey, ApiSecret
 
@@ -128,7 +129,7 @@ def setup_starting_environment(
 
     rotkehlchen_instance.data.db.update_premium_sync(db_can_sync_setting)
     our_last_write_ts = rotkehlchen_instance.data.db.get_last_write_ts()
-    assert rotkehlchen_instance.data.db.get_main_currency() == A_USD
+    assert rotkehlchen_instance.data.db.get_main_currency() == DEFAULT_TESTS_MAIN_CURRENCY
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
 
     if same_hash_with_remote:
@@ -173,6 +174,8 @@ def setup_starting_environment(
 
 def assert_db_got_replaced(rotkehlchen_instance: Rotkehlchen, username: str):
     """For environment setup with setup_starting_environment make sure DB is replaced"""
+    msg = 'Test default main currency should be different from the restored currency'
+    assert DEFAULT_TESTS_MAIN_CURRENCY != A_GBP, msg
     # At this point pulling data from rotkehlchen server should have worked
     # and our database should have been replaced. The new data have different
     # main currency

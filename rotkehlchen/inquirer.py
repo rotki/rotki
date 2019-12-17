@@ -10,7 +10,7 @@ import requests
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, ZERO
 from rotkehlchen.constants.assets import A_USD, FIAT_CURRENCIES
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.errors import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import FilePath, Price, Timestamp
@@ -75,7 +75,12 @@ def _query_exchanges_rateapi(base: Asset, quote: Asset) -> Optional[Price]:
     try:
         resp = request_get_dict(querystr)
         return Price(FVal(resp['rates'][quote.identifier]))
-    except (ValueError, RemoteError, KeyError, requests.exceptions.TooManyRedirects):
+    except (
+            RemoteError,
+            KeyError,
+            requests.exceptions.TooManyRedirects,
+            UnableToDecryptRemoteData,
+    ):
         log.error(
             'Querying api.exchangeratesapi.io for fiat pair failed',
             base_currency=base.identifier,
@@ -100,7 +105,7 @@ def _query_currency_converterapi(base: Asset, quote: Asset) -> Optional[Price]:
     try:
         resp = request_get_dict(querystr)
         return Price(FVal(resp['results'][pair]['val']))
-    except (ValueError, RemoteError, KeyError):
+    except (ValueError, RemoteError, KeyError, UnableToDecryptRemoteData):
         log.error(
             'Querying free.currencyconverterapi.com fiat pair failed',
             base_currency=base.identifier,

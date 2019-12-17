@@ -3,8 +3,8 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
-from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.errors import UnableToDecryptRemoteData
+from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.premium import (
     assert_db_got_replaced,
@@ -21,7 +21,7 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
     assert last_ts == 0
 
     # Write anything in the DB to set a non-zero last_write_ts
-    rotkehlchen_instance.set_settings({'main_currency': 'EUR'})
+    rotkehlchen_instance.data.db.set_settings({'main_currency': 'EUR'})
     last_write_ts = rotkehlchen_instance.data.db.get_last_write_ts()
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
     remote_hash = 'a' + our_hash[1:]
@@ -83,7 +83,7 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance, db_password):
     assert last_ts == 0
 
     # Write anything in the DB to set a non-zero last_write_ts
-    rotkehlchen_instance.set_settings({'main_currency': 'EUR'})
+    rotkehlchen_instance.data.db.set_settings({'main_currency': 'EUR'})
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
     remote_hash = our_hash
 
@@ -114,7 +114,7 @@ def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_password):
     assert last_ts == 0
 
     # Write anything in the DB to set a non-zero last_write_ts
-    rotkehlchen_instance.set_settings({'main_currency': 'EUR'})
+    rotkehlchen_instance.data.db.set_settings({'main_currency': 'EUR'})
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
     remote_hash = 'a' + our_hash[1:]
 
@@ -203,7 +203,7 @@ def test_try_premium_at_start_old_account_doesnt_pull_data_with_no_premium_sync(
         db_can_sync_setting=False,
     )
     # DB should not have changed
-    assert rotkehlchen_instance.data.db.get_main_currency() == A_USD
+    assert rotkehlchen_instance.data.db.get_main_currency() == DEFAULT_TESTS_MAIN_CURRENCY
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -226,7 +226,7 @@ def test_try_premium_at_start_old_account_same_hash(
         db_can_sync_setting=True,
     )
     # DB should not have changed
-    assert rotkehlchen_instance.data.db.get_main_currency() == A_USD
+    assert rotkehlchen_instance.data.db.get_main_currency() == DEFAULT_TESTS_MAIN_CURRENCY
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -249,7 +249,7 @@ def test_try_premium_at_start_old_account_older_remote_ts(
         db_can_sync_setting=True,
     )
     # DB should not have changed
-    assert rotkehlchen_instance.data.db.get_main_currency() == A_USD
+    assert rotkehlchen_instance.data.db.get_main_currency() == DEFAULT_TESTS_MAIN_CURRENCY
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])

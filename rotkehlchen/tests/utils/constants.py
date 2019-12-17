@@ -1,4 +1,5 @@
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.typing import EthAddress
 
 A_RDN = EthereumToken('RDN')
@@ -27,3 +28,5 @@ TX_HASH_STR3 = '0x3c81144c29f60236f735cd0a8a2f2a7e3a6db52a713f8211b562fd15d3e0e1
 
 MOCK_INPUT_DATA = b'123'
 MOCK_INPUT_DATA_HEX = '0x313233'
+
+DEFAULT_TESTS_MAIN_CURRENCY = A_EUR

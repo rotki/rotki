@@ -84,7 +84,7 @@ class Blockchain(CacheableObject):
     @cache_response_timewise()
     def query_balances(
             self,
-            blockchain: Optional[SupportedBlockchain],
+            blockchain: Optional[SupportedBlockchain] = None,
     ) -> Tuple[Optional[Dict[str, Dict]], str]:
         should_query_eth = not blockchain or blockchain == SupportedBlockchain.ETHEREUM
         should_query_btc = not blockchain or blockchain == SupportedBlockchain.BITCOIN
