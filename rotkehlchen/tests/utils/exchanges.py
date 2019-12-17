@@ -215,7 +215,7 @@ KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE = """
                 },
                 "5": {
                     "refid": "5",
-                    "time": "1418994442",
+                    "time": "1439994442",
                     "type": "withdrawal",
                     "aclass": "currency",
                     "asset": "ETH",
