@@ -1,6 +1,5 @@
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple
-
 from dataclasses import dataclass
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.crypto import sha3
@@ -310,9 +309,6 @@ def trades_from_dictlist(
 
         try:
             returned_trades.append(deserialize_trade(given_trade))
-        except DeserializationError as e:
-            msg_aggregator.add_warning(str(e))
-            continue
         except UnknownAsset as e:
             msg_aggregator.add_warning(
                 f'When processing {location} trades found a trade containing unknown '
