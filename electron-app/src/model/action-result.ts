@@ -1,14 +1,12 @@
 export interface ActionResult<T> {
   readonly result: T;
   readonly message: string;
-  readonly error?: string;
 }
 
-export interface UnlockResult extends ActionResult<boolean> {
-  readonly permission_needed?: boolean;
+export interface AccountState {
   readonly premium: boolean;
-  readonly settings?: DBSettings;
-  readonly exchanges?: string[];
+  readonly settings: DBSettings;
+  readonly exchanges: string[];
 }
 
 export interface DBSettings {

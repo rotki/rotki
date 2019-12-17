@@ -124,8 +124,8 @@ export default class FiatBalances extends Vue {
 
     const currency = this.selectedCurrency;
     const balance = this.balance;
-    this.$rpc
-      .set_fiat_balance(currency, balance.toString())
+    this.$api
+      .setFiatBalance(currency, balance.toString())
       .then(() => {
         dispatch('balances/fetchFiatBalances');
         this.selectedCurrency = '';

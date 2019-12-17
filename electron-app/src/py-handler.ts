@@ -7,15 +7,21 @@ import tasklist from 'tasklist';
 import ipcMain = Electron.ipcMain;
 import App = Electron.App;
 import BrowserWindow = Electron.BrowserWindow;
+import { assert } from '@/utils/assertions';
 
 export default class PyHandler {
   private static PY_DIST_FOLDER = 'rotkehlchen_py_dist';
   private rpcFailureNotifier?: any;
   private childProcess?: ChildProcess;
-  private port?: number;
+  private _port?: number;
   private executable?: string;
   private readonly logsPath: string;
   private readonly ELECTRON_LOG_PATH: string;
+
+  get port(): number {
+    assert(this._port != null);
+    return this._port;
+  }
 
   constructor(private app: App) {
     if (process.platform === 'linux') {
@@ -103,7 +109,7 @@ export default class PyHandler {
           `The Python sub-process was terminated successfully (${client.killed})`
         );
         this.childProcess = undefined;
-        this.port = undefined;
+        this._port = undefined;
       }
     }
   }
@@ -119,8 +125,8 @@ export default class PyHandler {
 
   private selectPort() {
     // TODO: Perhaps find free port and return it here?
-    this.port = 4242;
-    return this.port;
+    this._port = 4242;
+    return this._port;
   }
 
   private setNotification(window: Electron.BrowserWindow) {
@@ -133,7 +139,7 @@ export default class PyHandler {
     let defaultArgs: string[] = [
       '-m',
       'rotkehlchen',
-      '--zerorpc-port',
+      '--api-port',
       port.toString()
     ];
 

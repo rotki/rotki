@@ -5,6 +5,7 @@ import {
   installVueDevtools
 } from 'vue-cli-plugin-electron-builder/lib';
 import PyHandler from './py-handler';
+import MenuItemConstructorOptions = Electron.MenuItemConstructorOptions;
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
@@ -14,11 +15,22 @@ let win: BrowserWindow | null;
 const pyHandler = new PyHandler(app);
 
 // Standard scheme must be registered before the app is ready
-protocol.registerStandardSchemes(['app'], { secure: true });
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'app',
+    privileges: { standard: true, secure: true, supportFetchAPI: true }
+  }
+]);
 
 function createWindow() {
   // Create the browser window.
-  win = new BrowserWindow({ width: 800, height: 600 });
+  win = new BrowserWindow({
+    width: 800,
+    height: 600,
+    webPreferences: {
+      nodeIntegration: true
+    }
+  });
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
     win.loadURL(process.env.WEBPACK_DEV_SERVER_URL);
@@ -32,24 +44,23 @@ function createWindow() {
   // Check if we are on a MAC
   if (process.platform === 'darwin') {
     // Create our menu entries so that we can use MAC shortcuts
-    Menu.setApplicationMenu(
-      Menu.buildFromTemplate([
-        {
-          label: 'Edit',
-          submenu: [
-            { role: 'undo' },
-            { role: 'redo' },
-            { type: 'separator' },
-            { role: 'cut' },
-            { role: 'copy' },
-            { role: 'paste' },
-            { role: 'pasteandmatchstyle' },
-            { role: 'delete' },
-            { role: 'selectall' }
-          ]
-        }
-      ])
-    );
+    const template: MenuItemConstructorOptions[] = [
+      {
+        label: 'Edit',
+        submenu: [
+          { role: 'undo' },
+          { role: 'redo' },
+          { type: 'separator' },
+          { role: 'cut' },
+          { role: 'copy' },
+          { role: 'paste' },
+          { role: 'pasteAndMatchStyle' },
+          { role: 'delete' },
+          { role: 'selectAll' }
+        ]
+      }
+    ];
+    Menu.setApplicationMenu(Menu.buildFromTemplate(template));
   }
 
   win.on('closed', async () => {
@@ -58,6 +69,7 @@ function createWindow() {
 
   pyHandler.createPyProc(win);
   pyHandler.listenForMessages();
+  win.webContents.send('service-port', pyHandler.port);
 }
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {

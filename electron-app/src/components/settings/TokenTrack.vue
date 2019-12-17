@@ -58,7 +58,7 @@ import { Component, Vue } from 'vue-property-decorator';
 import { EthToken } from '@/model/eth_token';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
-import { BlockchainAccountResult } from '@/model/blockchain_account_result';
+import { BlockchainAccount } from '@/model/blockchain_account_result';
 import { convertBalances, convertEthBalances } from '@/utils/conversion';
 import { Message } from '@/store/store';
 import { notify } from '@/store/notifications/utils';
@@ -79,8 +79,8 @@ export default class TokenTrack extends Vue {
   add(tokens: string[]) {
     const symbol = tokens[tokens.length - 1];
     this.loading = true;
-    this.$rpc
-      .add_owned_eth_tokens([symbol])
+    this.$api
+      .addOwnedEthTokens([symbol])
       .then(result => {
         this.update(result);
       })
@@ -97,8 +97,8 @@ export default class TokenTrack extends Vue {
   remove(token: EthToken) {
     const symbol = token.symbol;
     this.loading = true;
-    this.$rpc
-      .remove_owned_eth_tokens([symbol])
+    this.$api
+      .removeOwnedEthTokens([symbol])
       .then(result => {
         this.update(result);
         this.removeToken(symbol);
@@ -120,8 +120,8 @@ export default class TokenTrack extends Vue {
   }
 
   created() {
-    this.$rpc
-      .get_eth_tokens()
+    this.$api
+      .getEthTokens()
       .then(result => {
         this.ownedTokens = result.owned_eth_tokens;
         this.allTokens = result.all_eth_tokens;
@@ -144,7 +144,7 @@ export default class TokenTrack extends Vue {
     );
   }
 
-  private update(result: BlockchainAccountResult) {
+  private update(result: BlockchainAccount) {
     const { per_account, totals } = result;
     const { ETH, BTC } = per_account;
     const { commit } = this.$store;

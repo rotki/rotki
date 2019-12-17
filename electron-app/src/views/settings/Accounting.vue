@@ -141,8 +141,8 @@ export default class Accounting extends Vue {
   assetToRemove: string = '';
 
   created() {
-    this.$rpc
-      .get_ignored_assets()
+    this.$api
+      .ignoredAssets()
       .then(assets => {
         this.ignoredAssets = assets;
       })
@@ -175,8 +175,8 @@ export default class Accounting extends Vue {
 
     const { commit } = this.$store;
 
-    this.$rpc
-      .set_settings({ taxfree_after_period: period })
+    this.$api
+      .setSettings({ taxfree_after_period: period })
       .then(() => {
         commit('setMessage', {
           title: 'Success',
@@ -212,8 +212,8 @@ export default class Accounting extends Vue {
 
   onCrypto2CryptoChange(enabled: boolean) {
     const { commit } = this.$store;
-    this.$rpc
-      .set_settings({ include_crypto2crypto: enabled })
+    this.$api
+      .setSettings({ include_crypto2crypto: enabled })
       .then(() => {
         commit('setMessage', {
           title: 'Success',
@@ -236,8 +236,8 @@ export default class Accounting extends Vue {
   onGasCostChange(enabled: boolean) {
     const { commit } = this.$store;
 
-    this.$rpc
-      .set_settings({ include_gas_costs: enabled })
+    this.$api
+      .setSettings({ include_gas_costs: enabled })
       .then(() => {
         commit('setMessage', {
           title: 'Success',
@@ -260,8 +260,8 @@ export default class Accounting extends Vue {
   addAsset() {
     const { commit } = this.$store;
 
-    this.$rpc
-      .modify_asset(true, this.assetToIgnore)
+    this.$api
+      .modifyAsset(true, this.assetToIgnore)
       .then(() => {
         this.ignoredAssets.push(this.assetToIgnore);
         this.assetToIgnore = '';
@@ -275,8 +275,8 @@ export default class Accounting extends Vue {
   }
 
   removeAsset() {
-    this.$rpc
-      .modify_asset(false, this.assetToRemove)
+    this.$api
+      .modifyAsset(false, this.assetToRemove)
       .then(() => {
         const index = this.ignoredAssets.findIndex(
           value => value == this.assetToRemove

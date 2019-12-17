@@ -52,8 +52,8 @@ export default class CurrencyDropDown extends Vue {
       return;
     }
 
-    this.$rpc
-      .set_main_currency(currency)
+    this.$api
+      .setMainCurrency(currency)
       .then(() => {
         this.$store.commit('session/defaultCurrency', currency);
       })

@@ -60,6 +60,7 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
     p.add_argument(
         '--api-port',
         help='The port on which the rest API will run',
+        type=int,
         default=5042,
     )
     p.add_argument(
