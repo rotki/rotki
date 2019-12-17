@@ -73,23 +73,6 @@ def test_simple_accounting(accountant):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_simple_accounting_with_unknown_and_unsupported_assets(accountant):
-    """Make sure that if for some reason in the action processing we get an
-    unknown asset a warning is logged and we don't crash.
-
-    Note though that if this happens probably something wrong happened in the
-    history creation as the unknown/unsupported assets should have been filtered
-    out then"""
-    history = history1 + history_unknown_assets
-    accounting_history_process(accountant, 1436979735, 1495751688, history)
-    assert accountant.general_trade_pl.is_close('557.52845490257')
-    assert accountant.taxable_trade_pl.is_close('557.52845490257')
-    warnings = accountant.msg_aggregator.consume_warnings()
-    assert len(warnings) == 1
-    assert 'found a trade containing unknown asset UNKNOWNASSET. Ignoring it.' in warnings[0]
-
-
-@pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_selling_crypto_bought_with_crypto(accountant):
     history = [{
         'timestamp': 1446979735,
