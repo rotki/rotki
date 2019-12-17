@@ -316,8 +316,8 @@ def test_buy_event_creation(accountant):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('ignored_assets', [[A_DASH]])
 @pytest.mark.parametrize('db_settings', [{
-    'ignored_assets': [A_DASH],
     'include_gas_costs': False,
 }])
 def test_not_include_gas_costs(accountant):
@@ -370,9 +370,7 @@ def test_not_include_gas_costs(accountant):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-@pytest.mark.parametrize('db_settings', [{
-    'ignored_assets': [A_DASH],
-}])
+@pytest.mark.parametrize('ignored_assets', [[A_DASH]])
 def test_ignored_assets(accountant):
     history = history1 + [{
         'timestamp': 1476979735,
