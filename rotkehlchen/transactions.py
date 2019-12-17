@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from rotkehlchen.errors import DeserializationError
+from rotkehlchen.errors import DeserializationError, UnableToDecryptRemoteData
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
@@ -109,7 +109,14 @@ def query_ethereum_txlist(
     if to_block:
         reqstring += '&endblock={}'.format(to_block)
 
-    resp = request_get_dict(reqstring)
+    try:
+        resp = request_get_dict(reqstring)
+    except UnableToDecryptRemoteData:
+        msg_aggregator.add_warning(
+            f"Invalid JSON returned from etherscan's query {reqstring}. "
+            f"Considering the query's transaction list empty",
+        )
+        return list()
 
     if 'status' not in resp or convert_to_int(resp['status']) != 1:
         status = convert_to_int(resp['status'])
