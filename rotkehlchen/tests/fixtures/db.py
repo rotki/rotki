@@ -5,12 +5,18 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.user_messages import MessagesAggregator
 
 
 @pytest.fixture
 def username():
     return 'testuser'
+
+
+@pytest.fixture(scope='session')
+def session_ignored_assets() -> Optional[List[Asset]]:
+    return None
 
 
 @pytest.fixture
@@ -62,10 +68,9 @@ def _init_database(
     settings = {
         # DO not submit usage analytics during tests
         'submit_usage_analytics': False,
-        # Default main currency for tests is EUR
-        'main_currency': 'EUR',
+        'main_currency': DEFAULT_TESTS_MAIN_CURRENCY.identifier,
     }
-    # Set the given db_settings. But the pre-set values have priority
+    # Set the given db_settings. The pre-set values have priority unless overriden here
     if db_settings is not None:
         for key, value in db_settings.items():
             settings[key] = value
@@ -104,23 +109,28 @@ def database(
 def session_database(
         session_user_data_dir,
         messages_aggregator,
-        db_password,
-        db_settings,
-        start_with_logged_in_user,
-        ignored_assets,
+        session_db_password,
+        session_db_settings,
+        session_start_with_logged_in_user,
+        session_ignored_assets,
 ) -> Optional[DBHandler]:
-    if not start_with_logged_in_user:
+    if not session_start_with_logged_in_user:
         return None
 
     return _init_database(
         data_dir=session_user_data_dir,
         msg_aggregator=messages_aggregator,
-        password=db_password,
-        db_settings=db_settings,
-        ignored_assets=ignored_assets,
+        password=session_db_password,
+        db_settings=session_db_settings,
+        ignored_assets=session_ignored_assets,
     )
 
 
 @pytest.fixture
 def db_settings() -> Optional[Dict[str, Any]]:
+    return None
+
+
+@pytest.fixture(scope='session')
+def session_db_settings() -> Optional[Dict[str, Any]]:
     return None

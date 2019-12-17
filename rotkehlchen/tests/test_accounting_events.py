@@ -1,8 +1,11 @@
+import pytest
+
 from rotkehlchen.exchanges.data_structures import BuyEvent, Events
 from rotkehlchen.fval import FVal
 
 
-def test_search_buys_calculate_profit_after_year(accountant):
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
+def test_search_buys_calculate_profit_after_year(accountant, accounting_initialize_parameters):
     asset = 'BTC'
     events = accountant.events.events
     events[asset] = Events(list(), list())
@@ -135,7 +138,11 @@ def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxable(accountant):
     assert (len(accountant.events.events[asset].buys)) == 0, 'the buy should have been used'
 
 
-def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxfree(accountant):
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
+def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxfree(
+        accountant,
+        accounting_initialize_parameters,
+):
     """ Make sure that when 1 buy is used by 2 sells bought cost is correct
 
     Regression test for taxfree part of:
@@ -187,7 +194,11 @@ def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxfree(accountant):
     assert (len(accountant.events.events[asset].buys)) == 0, 'the buy should have been used'
 
 
-def test_search_buys_calculate_profit_sell_more_than_bought_within_year(accountant):
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
+def test_search_buys_calculate_profit_sell_more_than_bought_within_year(
+        accountant,
+        accounting_initialize_parameters,
+):
     asset = 'BTC'
     events = accountant.events.events
     events[asset] = Events(list(), list())
@@ -225,7 +236,11 @@ def test_search_buys_calculate_profit_sell_more_than_bought_within_year(accounta
     assert (len(accountant.events.events[asset].buys)) == 0, 'only buy should have been used'
 
 
-def test_search_buys_calculate_profit_sell_more_than_bought_after_year(accountant):
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
+def test_search_buys_calculate_profit_sell_more_than_bought_after_year(
+        accountant,
+        accounting_initialize_parameters,
+):
     asset = 'BTC'
     events = accountant.events.events
     events[asset] = Events(list(), list())
