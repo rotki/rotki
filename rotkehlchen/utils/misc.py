@@ -22,6 +22,7 @@ from rotkehlchen.errors import (
     InvalidBTCAddress,
     RecoverableRequestError,
     RemoteError,
+    UnableToDecryptRemoteData,
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -263,7 +264,7 @@ def request_get(
     try:
         result = rlk_jsonloads(response.text)
     except json.decoder.JSONDecodeError:
-        raise ValueError('{} returned malformed json'.format(url))
+        raise UnableToDecryptRemoteData('{} returned malformed json'.format(url))
 
     return result
 

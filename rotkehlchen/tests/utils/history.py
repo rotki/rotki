@@ -686,10 +686,13 @@ def mock_history_processing(
     return accountant_patch
 
 
-def mock_etherscan_transaction_response(original_requests_get):
+def mock_etherscan_transaction_response(original_requests_get, remote_errors: bool):
     def mocked_request_dict(url, *args, **kwargs):
         if 'etherscan' not in url:
             return original_requests_get(url, *args, **kwargs)
+
+        if remote_errors:
+            return MockResponse(200, "[{")
 
         addr1_tx = f"""{{"blockNumber":"54092","timeStamp":"1439048640","hash":"{TX_HASH_STR1}","nonce":"0","blockHash":"0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{ETH_ADDRESS1}","to":"","value":"11901464239480000000000000","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"{MOCK_INPUT_DATA_HEX}","contractAddress":"0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"8569454"}}
         """
@@ -757,13 +760,17 @@ def mock_history_processing_and_exchanges(
         rotki,
         remote_errors,
     )
+    etherscan_patch = mock_etherscan_transaction_response(
+        original_requests_get=requests.get,
+        remote_errors=remote_errors,
+    )
     return TradesTestSetup(
         polo_patch=polo_patch,
         binance_patch=binance_patch,
         bittrex_patch=bittrex_patch,
         bitmex_patch=bitmex_patch,
         accountant_patch=accountant_patch,
-        etherscan_patch=mock_etherscan_transaction_response(original_requests_get=requests.get),
+        etherscan_patch=etherscan_patch,
     )
 
 
@@ -782,6 +789,7 @@ def prepare_rotki_for_history_processing_test(
     kraken = rotki.exchange_manager.connected_exchanges['kraken']
     kraken.random_trade_data = False
     kraken.random_ledgers_data = False
+    kraken.remote_errors = remote_errors
     # Let's add 3 blockchain accounts
     rotki.data.db.add_blockchain_account(SupportedBlockchain.ETHEREUM, ETH_ADDRESS1)
     rotki.data.db.add_blockchain_account(SupportedBlockchain.ETHEREUM, ETH_ADDRESS2)
