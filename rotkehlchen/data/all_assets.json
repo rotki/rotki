@@ -1804,6 +1804,11 @@
         "symbol": "CHAT",
         "type": "own chain"
     },
+    "CHF": {
+        "name": "Swiss Franc",
+        "symbol": "CHF",
+        "type": "fiat"
+    },
     "CHP": {
         "ethereum_address": "0xf3db7560E820834658B590C96234c333Cd3D5E5e",
         "ethereum_token_decimals": 18,

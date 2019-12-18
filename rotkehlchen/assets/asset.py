@@ -1,7 +1,6 @@
+from dataclasses import dataclass, field
 from functools import total_ordering
 from typing import Any, Optional
-
-from dataclasses import dataclass, field
 
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.cryptocompare import WORLD_TO_CRYPTOCOMPARE
@@ -84,6 +83,7 @@ WORLD_TO_KRAKEN = {
     'GBP': 'ZGBP',
     'CAD': 'ZCAD',
     'JPY': 'ZJPY',
+    'CHF': 'CHF',
     'KRW': 'ZKRW',
     'DAO': 'XDAO',
     'MLN': 'XMLN',
