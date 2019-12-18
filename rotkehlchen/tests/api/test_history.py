@@ -202,7 +202,7 @@ def test_query_history_timerange(rotkehlchen_api_server_with_exchanges):
     data = response.json()
     assert data['result']['last_balance_save'] == 0
     assert data['result']['eth_node_connection'] is False
-    assert data['result']['history_process_start_ts'] == 1439994442
+    assert data['result']['history_process_start_ts'] == 1428994442
     assert data['result']['history_process_current_ts'] == end_ts
 
 

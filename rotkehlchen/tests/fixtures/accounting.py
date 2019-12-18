@@ -7,6 +7,7 @@ import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.typing import FilePath
 
 
 @pytest.fixture
@@ -16,11 +17,11 @@ def use_clean_caching_directory():
 
 
 @pytest.fixture
-def accounting_data_dir(use_clean_caching_directory, tmpdir_factory):
+def accounting_data_dir(use_clean_caching_directory, tmpdir_factory) -> FilePath:
     """For accounting we have a dedicated test data dir so that it's easy to
     cache the results of the historic price queries also in Travis"""
     if use_clean_caching_directory:
-        return tmpdir_factory.mktemp('accounting_data')
+        return FilePath(tmpdir_factory.mktemp('accounting_data'))
 
     home = os.path.expanduser("~")
     if 'TRAVIS' in os.environ:
@@ -34,7 +35,7 @@ def accounting_data_dir(use_clean_caching_directory, tmpdir_factory):
         if exception.errno != errno.EEXIST:
             raise
 
-    return data_directory
+    return FilePath(data_directory)
 
 
 @pytest.fixture

@@ -121,7 +121,8 @@ def test_check_if_version_up_to_date():
     )
 
     with patch_our_version, patch_github:
-        assert check_if_version_up_to_date() is None, 'Same version should return none'
+        result = check_if_version_up_to_date()
+        assert result.download_url is None, 'Same version should return None as url'
 
     def mock_github_return(url):  # pylint: disable=unused-argument
         contents = '{"tag_name": "v99.99.99", "html_url": "https://foo"}'
@@ -131,8 +132,8 @@ def test_check_if_version_up_to_date():
         result = check_if_version_up_to_date()
     assert result
     assert result[0]
-    assert result[1] == 'v99.99.99'
-    assert result[2] == 'https://foo'
+    assert result.latest_version == 'v99.99.99'
+    assert result.download_url == 'https://foo'
 
     # Also test that bad responses are handled gracefully
     def mock_non_200_github_return(url):  # pylint: disable=unused-argument
@@ -141,7 +142,9 @@ def test_check_if_version_up_to_date():
 
     with patch('requests.get', side_effect=mock_non_200_github_return):
         result = check_if_version_up_to_date()
-        assert not result
+        assert result.our_version
+        assert not result.latest_version
+        assert not result.latest_version
 
     def mock_missing_fields_github_return(url):  # pylint: disable=unused-argument
         contents = '{"html_url": "https://foo"}'
@@ -149,7 +152,9 @@ def test_check_if_version_up_to_date():
 
     with patch('requests.get', side_effect=mock_missing_fields_github_return):
         result = check_if_version_up_to_date()
-        assert not result
+        assert result.our_version
+        assert not result.latest_version
+        assert not result.latest_version
 
     def mock_invalid_json_github_return(url):  # pylint: disable=unused-argument
         contents = '{html_url: "https://foo"}'
@@ -157,7 +162,9 @@ def test_check_if_version_up_to_date():
 
     with patch('requests.get', side_effect=mock_invalid_json_github_return):
         result = check_if_version_up_to_date()
-        assert not result
+        assert result.our_version
+        assert not result.latest_version
+        assert not result.latest_version
 
 
 class Foo(CacheableObject):

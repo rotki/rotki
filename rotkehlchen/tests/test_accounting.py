@@ -245,7 +245,7 @@ def test_nocrypto2crypto(accountant):
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('db_settings', [{
-    'taxfree_after_period': None,
+    'taxfree_after_period': -1,
 }])
 def test_no_taxfree_period(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)

@@ -5,7 +5,9 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
+from rotkehlchen.typing import FilePath
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -30,22 +32,22 @@ def session_username():
 
 
 @pytest.fixture
-def data_dir(tmpdir_factory):
-    return tmpdir_factory.mktemp('data')
+def data_dir(tmpdir_factory) -> FilePath:
+    return FilePath(tmpdir_factory.mktemp('data'))
 
 
 @pytest.fixture(scope='session')
-def session_data_dir(tmpdir_factory):
-    return tmpdir_factory.mktemp('session_data')
+def session_data_dir(tmpdir_factory) -> FilePath:
+    return FilePath(tmpdir_factory.mktemp('session_data'))
 
 
 @pytest.fixture
-def user_data_dir(data_dir, username):
+def user_data_dir(data_dir, username) -> FilePath:
     """Create and return the user data directory"""
     user_data_dir = os.path.join(data_dir, username)
     if not os.path.exists(user_data_dir):
         os.mkdir(user_data_dir)
-    return user_data_dir
+    return FilePath(user_data_dir)
 
 
 @pytest.fixture(scope='session')
@@ -58,7 +60,7 @@ def session_user_data_dir(session_data_dir, session_username):
 
 
 def _init_database(
-        data_dir: str,
+        data_dir: FilePath,
         password: str,
         msg_aggregator: MessagesAggregator,
         db_settings: Optional[Dict[str, Any]],
@@ -68,14 +70,13 @@ def _init_database(
     settings = {
         # DO not submit usage analytics during tests
         'submit_usage_analytics': False,
-        'main_currency': DEFAULT_TESTS_MAIN_CURRENCY.identifier,
+        'main_currency': DEFAULT_TESTS_MAIN_CURRENCY,
     }
     # Set the given db_settings. The pre-set values have priority unless overriden here
     if db_settings is not None:
         for key, value in db_settings.items():
             settings[key] = value
-
-    db.set_settings(settings)
+    db.set_settings(ModifiableDBSettings(**settings))
 
     if ignored_assets:
         for asset in ignored_assets:

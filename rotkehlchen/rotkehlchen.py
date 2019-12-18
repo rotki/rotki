@@ -447,9 +447,7 @@ class Rotkehlchen():
                         quote=settings.main_currency,
                     )
 
-            settings_dict = settings.serialize()
-            self.data.db.set_settings(settings_dict)
-
+            self.data.db.set_settings(settings)
             return True, ''
 
     def setup_exchange(
