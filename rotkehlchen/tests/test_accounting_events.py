@@ -5,7 +5,7 @@ from rotkehlchen.fval import FVal
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_search_buys_calculate_profit_after_year(accountant, accounting_initialize_parameters):
+def test_search_buys_calculate_profit_after_year(accountant):
     asset = 'BTC'
     events = accountant.events.events
     events[asset] = Events(list(), list())
@@ -139,10 +139,7 @@ def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxable(accountant):
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxfree(
-        accountant,
-        accounting_initialize_parameters,
-):
+def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxfree(accountant):
     """ Make sure that when 1 buy is used by 2 sells bought cost is correct
 
     Regression test for taxfree part of:
@@ -195,10 +192,7 @@ def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxfree(
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_search_buys_calculate_profit_sell_more_than_bought_within_year(
-        accountant,
-        accounting_initialize_parameters,
-):
+def test_search_buys_calculate_profit_sell_more_than_bought_within_year(accountant):
     asset = 'BTC'
     events = accountant.events.events
     events[asset] = Events(list(), list())
@@ -237,10 +231,7 @@ def test_search_buys_calculate_profit_sell_more_than_bought_within_year(
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_search_buys_calculate_profit_sell_more_than_bought_after_year(
-        accountant,
-        accounting_initialize_parameters,
-):
+def test_search_buys_calculate_profit_sell_more_than_bought_after_year(accountant):
     asset = 'BTC'
     events = accountant.events.events
     events[asset] = Events(list(), list())

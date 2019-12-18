@@ -29,8 +29,8 @@ class TaxableEvents():
         # amount is taken as a loss
         self.count_profit_for_settlements = False
 
-        self._taxfree_after_period = None
-        self._include_crypto2crypto = None
+        self._taxfree_after_period: Optional[int] = None
+        self._include_crypto2crypto: Optional[bool] = None
 
     def reset(self, start_ts: Timestamp, end_ts: Timestamp) -> None:
         self.events = dict()
@@ -43,11 +43,11 @@ class TaxableEvents():
         self.margin_positions_profit_loss = FVal(0)
 
     @property
-    def include_crypto2crypto(self) -> bool:
+    def include_crypto2crypto(self) -> Optional[bool]:
         return self._include_crypto2crypto
 
     @include_crypto2crypto.setter
-    def include_crypto2crypto(self, value: bool) -> None:
+    def include_crypto2crypto(self, value: Optional[bool]) -> None:
         self._include_crypto2crypto = value
 
     @property

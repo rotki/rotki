@@ -1,4 +1,3 @@
-import logging
 from typing import Any, Dict, NamedTuple, Optional, Union
 
 from rotkehlchen.assets.asset import Asset
@@ -54,6 +53,7 @@ class ModifiableDBSettings(NamedTuple):
     eth_rpc_endpoint: Optional[str] = None
     main_currency: Optional[Asset] = None
     date_display_format: Optional[str] = None
+    submit_usage_analytics: Optional[bool] = None
 
     def serialize(self) -> Dict[str, Any]:
         settings_dict = dict()
