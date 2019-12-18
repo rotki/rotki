@@ -81,6 +81,8 @@ def test_kraken_to_world_pair(kraken):
     assert kraken_to_world_pair('SCEUR') == 'SC_EUR'
     assert kraken_to_world_pair('WAVESUSD') == 'WAVES_USD'
     assert kraken_to_world_pair('XXBTZGBP.d') == 'BTC_GBP'
+    assert kraken_to_world_pair('ETHCHF') == 'ETH_CHF'
+    assert kraken_to_world_pair('XBTCHF') == 'BTC_CHF'
 
     # now try to test all pairs that kraken returns and if one does not work note
     # down a test warning so that it can be fixed by us later
