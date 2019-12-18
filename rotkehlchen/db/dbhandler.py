@@ -19,6 +19,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_PREMIUM_SHOULD_SYNC,
     ROTKEHLCHEN_DB_VERSION,
     DBSettings,
+    ModifiableDBSettings,
     db_settings_from_dict,
 )
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
@@ -413,7 +414,8 @@ class DBHandler:
         result = query[0][0]
         return Asset(result)
 
-    def set_settings(self, settings_dict: Dict[str, Any]) -> None:
+    def set_settings(self, settings: ModifiableDBSettings) -> None:
+        settings_dict = settings.serialize()
         cursor = self.conn.cursor()
         cursor.executemany(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',

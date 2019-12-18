@@ -16,8 +16,9 @@ class VersionCheckResult(NamedTuple):
 def check_if_version_up_to_date() -> VersionCheckResult:
     """Checks if there is a newer Rotkehlchen version available for download
 
-    If not returns only our current version and latest version.
-    If yes returns (our_version_str, latest_version_str, url)
+    If there is a remote query error return only our version.
+    If there is no newer version for download returns only our current version and latest version.
+    If yes returns (our_version_str, latest_version_str, download_url)
     """
     our_version_str = get_system_spec()['rotkehlchen']
     our_version = parse_version(our_version_str)

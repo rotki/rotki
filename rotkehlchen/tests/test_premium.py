@@ -3,6 +3,8 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
+from rotkehlchen.constants.assets import A_EUR
+from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import UnableToDecryptRemoteData
 from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -21,7 +23,7 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
     assert last_ts == 0
 
     # Write anything in the DB to set a non-zero last_write_ts
-    rotkehlchen_instance.data.db.set_settings({'main_currency': 'EUR'})
+    rotkehlchen_instance.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))
     last_write_ts = rotkehlchen_instance.data.db.get_last_write_ts()
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
     remote_hash = 'a' + our_hash[1:]
@@ -83,7 +85,7 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance, db_password):
     assert last_ts == 0
 
     # Write anything in the DB to set a non-zero last_write_ts
-    rotkehlchen_instance.data.db.set_settings({'main_currency': 'EUR'})
+    rotkehlchen_instance.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
     remote_hash = our_hash
 
@@ -114,7 +116,7 @@ def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_password):
     assert last_ts == 0
 
     # Write anything in the DB to set a non-zero last_write_ts
-    rotkehlchen_instance.data.db.set_settings({'main_currency': 'EUR'})
+    rotkehlchen_instance.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
     remote_hash = 'a' + our_hash[1:]
 

@@ -8,7 +8,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
+from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors import (
     DeserializationError,
     NoPriceForGivenTimestamp,
@@ -75,7 +75,7 @@ class Accountant():
     def taxable_trade_pl(self) -> FVal:
         return self.events.taxable_trade_profit_loss
 
-    def _customize(self, settings: ModifiableDBSettings) -> None:
+    def _customize(self, settings: DBSettings) -> None:
         """Customize parameters after pulling DBSettings"""
         if settings.include_crypto2crypto is not None:
             self.events.include_crypto2crypto = settings.include_crypto2crypto
