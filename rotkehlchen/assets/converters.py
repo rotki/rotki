@@ -314,6 +314,9 @@ UNSUPPORTED_POLONIEX_ASSETS = (
 )
 
 UNSUPPORTED_BITTREX_ASSETS = (
+    # APIX, As of 19/12/2019 no data found outside of Bittrex
+    # https://medium.com/apisplatform/apix-trading-open-on-bittrex-global-61653fa346fa
+    'APIX',
     # Foresting. As of 22/03/2019 no data found.
     # Only exists in bittrex. Perhaps it will soon be added to other APIs.
     # https://international.bittrex.com/Market/Index?MarketName=BTC-PTON
