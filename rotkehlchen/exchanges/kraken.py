@@ -77,8 +77,8 @@ def kraken_to_world_pair(pair: str) -> TradePair:
     elif pair[0:3] in KRAKEN_TO_WORLD:
         base_asset_str = pair[0:3]
         quote_asset_str = pair[3:]
-    elif pair[0:3] in ('XBT', 'ETH'):
-        # BTC and ETH can appear as XBT instead of XXBT and ETH instead of XETH
+    elif pair[0:3] in ('XBT', 'ETH', 'XDG'):
+        # Some assets can have the 'X' prefix omitted for some pairs
         base_asset_str = pair[0:3]
         quote_asset_str = pair[3:]
     elif pair[0:4] in KRAKEN_TO_WORLD:
