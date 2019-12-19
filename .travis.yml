@@ -64,7 +64,7 @@ templates:
       # inside ./run_tests.sh but need to have them all here so
       # that the environment is properly picked up
       - source terryfy/test_tools.sh
-      - python -m pytest $COVERAGE_ARGS rotkehlchen/
+      - python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/
 
 cache:
   pip: true
