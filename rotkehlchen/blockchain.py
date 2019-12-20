@@ -57,12 +57,7 @@ class Blockchain(CacheableObject):
         self.ethchain = ethchain
         self.msg_aggregator = msg_aggregator
         self.owned_eth_tokens = owned_eth_tokens
-
         self.accounts = blockchain_accounts
-        # go through ETH accounts and make sure they are EIP55 encoded
-        # TODO: really really bad thing here. Should not have to force mutate
-        # a named tuple. Move this into the named tuple constructor
-        self.accounts._replace(eth=[to_checksum_address(x) for x in self.accounts.eth])
 
         # Per account balances
         self.balances: Balances = defaultdict(dict)

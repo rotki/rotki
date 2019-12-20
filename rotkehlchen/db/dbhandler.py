@@ -8,7 +8,7 @@ import tempfile
 from json.decoder import JSONDecodeError
 from typing import Any, Dict, List, Optional, Set, Tuple, cast
 
-from eth_utils import to_checksum_address
+from eth_utils import is_checksum_address, to_checksum_address
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
@@ -644,6 +644,14 @@ class DBHandler:
 
         for entry in query:
             if entry[0] == S_ETH:
+                if not is_checksum_address(entry[1]):
+                    self.msg_aggregator.add_warning(
+                        f'Non-checksummed eth address {entry[1]} detected in the DB. This '
+                        f'should not happen unless the DB was manually modified. '
+                        f' Skipping entry. This needs to be fixed manually. If you '
+                        f' can not do that alone ask for help in the issue tracker',
+                    )
+                    continue
                 eth_list.append(entry[1])
             elif entry[0] == S_BTC:
                 btc_list.append(entry[1])
