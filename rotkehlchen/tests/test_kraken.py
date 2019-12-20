@@ -31,6 +31,9 @@ def test_coverage_of_kraken_balances(kraken):
             asset = asset_from_kraken(kraken_asset)
             assert asset.to_kraken() == kraken_asset
 
+    # also check that staked assets are properly processed
+    assert asset_from_kraken('XTZ.S') == Asset('XTZ')
+
 
 def test_querying_balances(kraken):
     result, error_or_empty = kraken.query_balances()
