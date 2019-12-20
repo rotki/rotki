@@ -900,3 +900,39 @@ def test_add_ethereum_transactions(data_dir, username):
     assert len(warnings) == 0
     returned_transactions = data.db.get_ethereum_transactions()
     assert returned_transactions == [tx1, tx2, tx3]
+
+
+def test_non_checksummed_eth_account_in_db(database):
+    """
+    Regression test for  https://github.com/rotki/rotki/issues/519
+
+    This is a test for an occasion that should not happen in a normal run.
+    Only if the user manually edits the DB and modifies a blockchain account
+    to be non-checksummed then this scenario will happen.
+
+    This test verifies that the user is warned and the address is skipped.
+    """
+    # Manually enter three blockchain ETH accounts one of which is only valid
+    cursor = database.conn.cursor()
+    valid_address = '0x9531C059098e3d194fF87FebB587aB07B30B1306'
+    non_checksummed_address = '0xe7302e6d805656cf37bd6839a977fe070184bf45'
+    invalid_address = 'dsads'
+    cursor.executemany(
+        'INSERT INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
+        (
+            ('ETH', non_checksummed_address),
+            ('ETH', valid_address),
+            ('ETH', invalid_address)),
+    )
+    database.conn.commit()
+
+    blockchain_accounts = database.get_blockchain_accounts()
+    eth_accounts = blockchain_accounts.eth
+    assert len(eth_accounts) == 1
+    assert eth_accounts[0] == valid_address
+    errors = database.msg_aggregator.consume_errors()
+    warnings = database.msg_aggregator.consume_warnings()
+    assert len(errors) == 0
+    assert len(warnings) == 2
+    assert f'Non-checksummed eth address {non_checksummed_address}' in warnings[0]
+    assert f'Non-checksummed eth address {invalid_address}' in warnings[1]
