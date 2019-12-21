@@ -36,9 +36,10 @@ export class Settings {
         new Currency('Japanese Yen', 'fa-jpy', 'JPY', '¥'),
         new Currency('Chinese Yuan', 'fa-jpy', 'CNY', '¥'),
         new Currency('Korean Won', 'fa-krw', 'KRW', '₩'),
-        new Currency('Canadian Dollar', 'fa-cad', 'CAD', '$'),
+        new Currency('Canadian Dollar', 'fa-usd', 'CAD', '$'),
         new Currency('Russian Ruble', 'fa-rub', 'RUB', '‎₽'),
         new Currency('Swiss Franc', 'fa-usd', 'CHF', 'Fr.'),
+        new Currency('Turkish Lyra', 'fa-try', 'TRY', '₺'),
     ];
     public main_currency: Currency = this.currencies[0];
     private readonly icon_map: { [asset: string]: string };

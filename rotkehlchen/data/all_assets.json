@@ -8709,6 +8709,11 @@
         "symbol": "TRX",
         "type": "ethereum token and more"
     },
+    "TRY": {
+        "name": "Turkish Lyra",
+        "symbol": "TRY",
+        "type": "fiat"
+    },
     "TTC": {
         "ethereum_address": "0x9389434852b94bbaD4c8AfEd5B7BDBc5Ff0c2275",
         "ethereum_token_decimals": 18,

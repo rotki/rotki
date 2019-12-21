@@ -10,7 +10,8 @@ S_CAD = FiatAsset('CAD')
 S_KRW = FiatAsset('KRW')
 S_RUB = FiatAsset('RUB')
 S_CHF = FiatAsset('CHF')
-FIAT_CURRENCIES = (S_USD, S_EUR, S_GBP, S_JPY, S_CNY, S_CAD, S_KRW, S_RUB, S_CHF)
+S_TRY = FiatAsset('TRY')
+FIAT_CURRENCIES = (S_USD, S_EUR, S_GBP, S_JPY, S_CNY, S_CAD, S_KRW, S_RUB, S_CHF, S_TRY)
 
 S_BTC = 'BTC'
 S_ETH = 'ETH'
