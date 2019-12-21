@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`561` Export unique asset symbols during CSV exporting and not long name descriptions.
+* :feature:`-` Add support for the Turkish Lyra  (TRY - ₺) as a fiat currency
 * :feature:`-` Add support for the Russian ruble (RUB - ‎₽) as a fiat currency
 * :feature:`-` Add support for the Swiss Franc (CHF - Fr.) as a fiat currency
 * :feature:`-` Added support for the following tokens
