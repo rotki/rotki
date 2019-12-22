@@ -64,6 +64,12 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
         default=5042,
     )
     p.add_argument(
+        '--api-cors',
+        help='Comma separated list of domains for the API to accept cross origin requests.',
+        default="http://localhost:*/*",
+        type=str,
+    )
+    p.add_argument(
         '--ethrpc-port',
         help="The port on which to communicate with an ethereum client's RPC.",
         default=8545,
