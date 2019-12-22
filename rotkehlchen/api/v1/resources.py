@@ -113,7 +113,7 @@ class FiatExchangeRatesResource(BaseResource):
 
     get_schema = FiatExchangeRatesSchema()
 
-    @use_kwargs(get_schema, locations=('json',))
+    @use_kwargs(get_schema, locations=('json', 'query'))
     def get(self, currencies: Optional[List[Asset]]) -> Response:
         return self.rest_api.get_fiat_exchange_rates(currencies=currencies)
 
@@ -139,7 +139,7 @@ class AllBalancesResource(BaseResource):
 
     get_schema = AllBalancesQuerySchema()
 
-    @use_kwargs(get_schema, locations=('json',))
+    @use_kwargs(get_schema, locations=('json', 'query'))
     def get(self, save_data: bool, async_query: bool) -> Response:
         return self.rest_api.query_all_balances(save_data=save_data, async_query=async_query)
 
@@ -163,7 +163,7 @@ class ExchangeTradesResource(BaseResource):
 
     get_schema = ExchangeTradesQuerySchema()
 
-    @use_kwargs(get_schema, locations=('json', 'view_args'))
+    @use_kwargs(get_schema, locations=('json', 'view_args', 'query'))
     def get(
             self,
             name: Optional[str],
@@ -211,7 +211,7 @@ class TradesResource(BaseResource):
     patch_schema = TradePatchSchema()
     delete_schema = TradeDeleteSchema()
 
-    @use_kwargs(get_schema, locations=('json',))
+    @use_kwargs(get_schema, locations=('json', 'query'))
     def get(
             self,
             from_timestamp: Timestamp,
@@ -351,7 +351,7 @@ class StatisticsAssetBalanceResource(BaseResource):
 
     get_schema = StatisticsAssetBalanceSchema()
 
-    @use_kwargs(get_schema, locations=('json', 'view_args'))
+    @use_kwargs(get_schema, locations=('json', 'view_args', 'query'))
     def get(
             self,
             asset: Asset,
@@ -369,7 +369,7 @@ class StatisticsValueDistributionResource(BaseResource):
 
     get_schema = StatisticsValueDistributionSchema()
 
-    @use_kwargs(get_schema, locations=('json',))
+    @use_kwargs(get_schema, locations=('json', 'query'))
     def get(self, distribution_by: str) -> Response:
         return self.rest_api.query_value_distribution_data(
             distribution_by=distribution_by,
@@ -410,7 +410,7 @@ class HistoryExportingResource(BaseResource):
 
     get_schema = HistoryExportingSchema()
 
-    @use_kwargs(get_schema, locations=('json',))
+    @use_kwargs(get_schema, locations=('json', 'query'))
     def get(self, directory_path: Path) -> Response:
         return self.rest_api.export_processed_history_csv(directory_path=directory_path)
 

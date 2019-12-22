@@ -39,18 +39,30 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges):
     assert_binance_trades_result([t for t in data['result'] if t['location'] == 'binance'])
     assert_poloniex_trades_result([t for t in data['result'] if t['location'] == 'poloniex'])
 
-    # Now filter by location
+    def assert_okay(response):
+        """Helper function to run next query and its assertion twice"""
+        assert_proper_response(response)
+        data = response.json()
+        assert data['message'] == ''
+        assert len(data['result']) == 2  # only 2 binance trades
+        assert_binance_trades_result([t for t in data['result'] if t['location'] == 'binance'])
+
+    # Now filter by location with json body
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
             "tradesresource",
         ), json={'location': 'binance'},
     )
-    assert_proper_response(response)
-    data = response.json()
-    assert data['message'] == ''
-    assert len(data['result']) == 2  # only 2 binance trades
-    assert_binance_trades_result([t for t in data['result'] if t['location'] == 'binance'])
+    assert_okay(response)
+    # Now filter by location with query params
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "tradesresource",
+        ) + '?location=binance',
+    )
+    assert_okay(response)
 
     # Now filter by time
     response = requests.get(

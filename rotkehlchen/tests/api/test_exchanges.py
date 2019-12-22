@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from unittest.mock import patch
+from urllib.parse import urlencode
 
 import pytest
 import requests
@@ -356,16 +357,25 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges):
     assert_binance_trades_result(json_data['result']['binance'])
     assert_poloniex_trades_result(json_data['result']['poloniex'])
 
+    def assert_okay(response):
+        """Helper function for DRY checking below assertions"""
+        assert_proper_response(response)
+        json_data = response.json()
+        assert json_data['message'] == ''
+        assert len(json_data['result']) == 2, 'only two exchanges should be registered'
+        assert_binance_trades_result(json_data['result']['binance'])
+        assert_poloniex_trades_result(json_data['result']['poloniex'], trades_to_check=(0,))
+
     # and now query them in a specific time range excluding two of poloniex's trades
     data = {'from_timestamp': 1499865548, 'to_timestamp': 1539713118}
     with setup.binance_patch, setup.polo_patch:
         response = requests.get(api_url_for(server, "exchangetradesresource"), json=data)
-    assert_proper_response(response)
-    json_data = response.json()
-    assert json_data['message'] == ''
-    assert len(json_data['result']) == 2, 'only two exchanges should be registered'
-    assert_binance_trades_result(json_data['result']['binance'])
-    assert_poloniex_trades_result(json_data['result']['poloniex'], trades_to_check=(0,))
+    assert_okay(response)
+    # do the same but with query args. This serves as test of from/to timestamp with query args
+    with setup.binance_patch, setup.polo_patch:
+        response = requests.get(
+            api_url_for(server, "exchangetradesresource") + '?' + urlencode(data))
+    assert_okay(response)
 
 
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
@@ -382,17 +392,26 @@ def test_exchange_query_trades_async(rotkehlchen_api_server_with_exchanges):
         ), json={'async_query': True})
     task_id = assert_ok_async_response(response)
     outcome = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id)
-
     assert_binance_trades_result(outcome['result'])
+
+    def assert_okay(response):
+        """Helper function for DRY checking below assertions"""
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id)
+        assert_binance_trades_result(outcome['result']['binance'])
+        assert_poloniex_trades_result(outcome['result']['poloniex'], trades_to_check=(0,))
 
     # query trades of all exchanges and in a specific range asynchronously
     data = {'from_timestamp': 1499865548, 'to_timestamp': 1539713118, 'async_query': True}
     with setup.binance_patch, setup.polo_patch:
         response = requests.get(api_url_for(server, "exchangetradesresource"), json=data)
-    task_id = assert_ok_async_response(response)
-    outcome = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id)
-    assert_binance_trades_result(outcome['result']['binance'])
-    assert_poloniex_trades_result(outcome['result']['poloniex'], trades_to_check=(0,))
+    assert_okay(response)
+    # do the same but with query args. This serves as test of async query with query args
+    with setup.binance_patch, setup.polo_patch:
+        response = requests.get(
+            api_url_for(server, "exchangetradesresource") + '?' + urlencode(data),
+        )
+    assert_okay(response)
 
 
 @pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])

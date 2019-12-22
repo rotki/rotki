@@ -291,40 +291,7 @@ def test_query_history_errors(rotkehlchen_api_server):
     )
 
 
-@pytest.mark.parametrize(
-    'added_exchanges',
-    [('binance', 'poloniex', 'bittrex', 'bitmex', 'kraken')],
-)
-@pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_history_export_csv(
-        rotkehlchen_api_server_with_exchanges,
-        tmpdir_factory,
-):
-    """Test that the csv export REST API endpoint works correctly"""
-    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    profit_currency = rotki.data.db.get_main_currency()
-    setup = prepare_rotki_for_history_processing_test(
-        rotki,
-        should_mock_history_processing=False,
-    )
-    csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
-
-    # First, query history processing to have data for exporting
-    with ExitStack() as stack:
-        for manager in setup:
-            if manager is None:
-                continue
-            stack.enter_context(manager)
-        response = requests.get(
-            api_url_for(rotkehlchen_api_server_with_exchanges, "historyprocessingresource"),
-        )
-    assert_proper_response(response)
-
-    # now query the export endpoint
-    response = requests.get(
-        api_url_for(rotkehlchen_api_server_with_exchanges, "historyexportingresource"),
-        json={'directory_path': csv_dir},
-    )
+def assert_csv_export_response(response, profit_currency, csv_dir):
     assert_proper_response(response)
     data = response.json()
     assert data['message'] == ''
@@ -465,6 +432,50 @@ def test_history_export_csv(
     assert count == (
         num_trades + num_loans + num_asset_movements + num_transactions + num_margins
     )
+
+
+@pytest.mark.parametrize(
+    'added_exchanges',
+    [('binance', 'poloniex', 'bittrex', 'bitmex', 'kraken')],
+)
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_history_export_csv(
+        rotkehlchen_api_server_with_exchanges,
+        tmpdir_factory,
+):
+    """Test that the csv export REST API endpoint works correctly"""
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    profit_currency = rotki.data.db.get_main_currency()
+    setup = prepare_rotki_for_history_processing_test(
+        rotki,
+        should_mock_history_processing=False,
+    )
+    csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
+    csv_dir2 = str(tmpdir_factory.mktemp('test_csv_dir2'))
+
+    # First, query history processing to have data for exporting
+    with ExitStack() as stack:
+        for manager in setup:
+            if manager is None:
+                continue
+            stack.enter_context(manager)
+        response = requests.get(
+            api_url_for(rotkehlchen_api_server_with_exchanges, "historyprocessingresource"),
+        )
+    assert_proper_response(response)
+
+    # now query the export endpoint with json body
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server_with_exchanges, "historyexportingresource"),
+        json={'directory_path': csv_dir},
+    )
+    assert_csv_export_response(response, profit_currency, csv_dir)
+    # now query the export endpoint with query params
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server_with_exchanges, "historyexportingresource") +
+        f'?directory_path={csv_dir2}',
+    )
+    assert_csv_export_response(response, profit_currency, csv_dir2)
 
 
 @pytest.mark.parametrize(

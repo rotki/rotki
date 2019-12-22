@@ -249,32 +249,44 @@ def test_query_statistics_value_distribution(
         )
     assert_proper_response(response)
 
-    # and now test that statistics work fine for distribution by location
+    def assert_okay_by_location(response):
+        """Helper function to run next query and its assertion twice"""
+        if start_with_valid_premium:
+            assert_proper_response(response)
+            data = response.json()
+            assert data['message'] == ''
+            assert len(data['result']) == 5
+            locations = {'poloniex', 'binance', 'banks', 'blockchain', 'total'}
+            for entry in data['result']:
+                assert len(entry) == 3
+                assert entry['time'] > start_time
+                assert entry['usd_value'] is not None
+                assert entry['location'] in locations
+                locations.remove(entry['location'])
+            assert len(locations) == 0
+        else:
+            assert_error_response(
+                response=response,
+                contained_in_msg='logged in user testuser does not have a premium subscription',
+                status_code=HTTPStatus.CONFLICT,
+            )
+
+    # and now test that statistics work fine for distribution by location for json body
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
             "statisticsvaluedistributionresource",
         ), json={'distribution_by': 'location'},
     )
-    if start_with_valid_premium:
-        assert_proper_response(response)
-        data = response.json()
-        assert data['message'] == ''
-        assert len(data['result']) == 5
-        locations = {'poloniex', 'binance', 'banks', 'blockchain', 'total'}
-        for entry in data['result']:
-            assert len(entry) == 3
-            assert entry['time'] > start_time
-            assert entry['usd_value'] is not None
-            assert entry['location'] in locations
-            locations.remove(entry['location'])
-        assert len(locations) == 0
-    else:
-        assert_error_response(
-            response=response,
-            contained_in_msg='logged in user testuser does not have a premium subscription',
-            status_code=HTTPStatus.CONFLICT,
-        )
+    assert_okay_by_location(response)
+    # and now test that statistics work fine for distribution by location for query params
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "statisticsvaluedistributionresource",
+        ) + '?distribution_by=location',
+    )
+    assert_okay_by_location(response)
 
     # finally test that statistics work fine for distribution by asset
     response = requests.get(
