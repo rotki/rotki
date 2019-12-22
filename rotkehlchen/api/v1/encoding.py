@@ -2,7 +2,7 @@ from pathlib import Path
 
 from marshmallow import Schema, SchemaOpts, fields, post_load, validates_schema
 from marshmallow.exceptions import ValidationError
-from webargs import validate
+from webargs import fields as webargs_fields, validate
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.errors import DeserializationError, UnknownAsset
@@ -687,7 +687,7 @@ class DataImportSchema(BaseSchema):
 
 
 class FiatExchangeRatesSchema(BaseSchema):
-    currencies = fields.List(FiatAssetField(), missing=None)
+    currencies = webargs_fields.DelimitedList(FiatAssetField(), missing=None)
 
     class Meta:
         strict = True

@@ -22,19 +22,29 @@ def test_qerying_fiat_exchange_rates(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    # Test with some currencies
+    def assert_okay(response):
+        """Helper function for DRY checking below assertions"""
+        assert_proper_response(response)
+        json_data = response.json()
+        assert json_data['message'] == ''
+        result = json_data['result']
+        assert len(result) == 3
+        assert FVal(result['EUR']) > 0
+        assert FVal(result['USD']) > 0
+        assert FVal(result['KRW']) > 0
+
+    # Test with some currencies, both JSON body and query parameters
     data = {'currencies': ['EUR', 'USD', 'KRW']}
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'fiatexchangeratesresource'), json=data,
     )
-    assert_proper_response(response)
-    json_data = response.json()
-    assert json_data['message'] == ''
-    result = json_data['result']
-    assert len(result) == 3
-    assert FVal(result['EUR']) > 0
-    assert FVal(result['USD']) > 0
-    assert FVal(result['KRW']) > 0
+    assert_okay(response)
+    # The query parameters test serves as a test that a list of parametrs works with query args too
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server, 'fiatexchangeratesresource') + '?currencies=' +
+        ','.join(data['currencies']),
+    )
+    assert_okay(response)
 
     # Test with all currencies (give no input)
     response = requests.get(api_url_for(rotkehlchen_api_server, 'fiatexchangeratesresource'))

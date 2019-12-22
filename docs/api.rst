@@ -10,6 +10,11 @@ Introduction
 When the Rotki backend runs it exposes an HTTP Rest API that is accessed by either the electron front-end or a web browser. The endpoints accept and return JSON encoded objects. All queries have the following prefix: ``/api/<version>/`` where ``version`` is the current version. The current version at the moment is ``1``.
 
 
+Request parameters
+********************
+
+All endpoints that take parameters accept a json body with said parameters. If the request is a ``GET`` request then it also accepts query parameters since for multiple implementations a JSON body will not work.
+
 Response Format
 *****************
 
@@ -515,11 +520,14 @@ Query the current fiat currencies exchange rate
 
    Querying this endpoint with a list of strings representing FIAT currencies will return a dictionary of their current exchange rates compared to USD. If no list is given then the exchange rates of all currencies is returned. Providing an empty list is an error.
 
+.. note::
+   This endpoint also accepts parameters as query arguments. List as a query argument here would be given as: ``?currencies=EUR,CNY,GBP``
+
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/logout HTTP/1.1
+      GET /api/1/fiat_exchange_rates HTTP/1.1
       Host: localhost:5042
 
       {"currencies": ["EUR", "CNY", "GBP"]}
@@ -544,7 +552,7 @@ Query the current fiat currencies exchange rate
 Get a list of setup exchanges
 ==============================
 
-.. http:put:: /api/(version)/exchanges
+.. http:get:: /api/(version)/exchanges
 
    Doing a GET on this endpoint will return a list of which exchanges are currently setup for the logged in user.
 
@@ -730,6 +738,9 @@ Querying the trades history of exchanges
 .. note::
    This endpoint can also be queried asynchronously by using ``"async_query": true``
 
+.. note::
+   This endpoint also accepts parameters as query arguments.
+
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
@@ -904,6 +915,9 @@ Querying all balances
 
 .. note::
    This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+.. note::
+   This endpoint also accepts parameters as query arguments.
 
    Doing a GET on the balances endpoint will query all balances across all locations for the user. That is exchanges, blockchains and FIAT in banks. And it will return an overview of all queried balances.
 
@@ -1129,6 +1143,9 @@ Statistics for asset balance over time
 .. note::
    This endpoint is only available for premium users
 
+.. note::
+   This endpoint also accepts parameters as query arguments.
+
    Doing a GET on the statistics asset balance over time endpoint will return all saved balance entries for an asset. Optionally you can filter for a specific time range by providing appropriate arguments.
 
 
@@ -1180,6 +1197,9 @@ Statistics for value distribution
 
 .. note::
    This endpoint is only available for premium users
+
+.. note::
+   This endpoint also accepts parameters as query arguments.
 
 
    **Example Request**:
@@ -1310,6 +1330,9 @@ Dealing with trades
 ===================
 
 .. http:get:: /api/(version)/trades
+
+.. note::
+   This endpoint also accepts parameters as query arguments.
 
    Doing a GET on this endpoint will return all trades of the current user. They can be further filtered by time range and/or location.
 
@@ -1562,6 +1585,9 @@ Querying complete action history
 .. note::
    This endpoint can also be queried asynchronously by using ``"async_query": true``
 
+.. note::
+   This endpoint also accepts parameters as query arguments.
+
    Doing a GET on the history endpoint will trigger a query and processing of the history of all actions (trades, deposits, withdrawals, loans, eth transactions) within a specific time range.
 
 
@@ -1662,6 +1688,8 @@ Export action history to CSV
 
 .. http:get:: /api/(version)/history/export
 
+.. note::
+   This endpoint also accepts parameters as query arguments.
 
    Doing a GET on the history export endpoint will export the last previously queried history to CSV files and save them in the given directory. If history has not been queried before an error is returned.
 
