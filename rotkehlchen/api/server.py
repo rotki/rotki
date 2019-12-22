@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import werkzeug
 from flask import Flask, Response
+from flask_cors import CORS
 from flask_restful import Api, Resource, abort
 from gevent.pywsgi import WSGIServer
 from marshmallow import Schema
@@ -143,8 +144,10 @@ class APIServer():
 
     _api_prefix = '/api/1'
 
-    def __init__(self, rest_api: RestAPI) -> None:
+    def __init__(self, rest_api: RestAPI, cors_domain_list: List[str] = None) -> None:
         flask_app = Flask(__name__)
+        if cors_domain_list:
+            CORS(flask_app, origins=cors_domain_list)
         blueprint = create_blueprint()
         flask_api_context = Api(blueprint, prefix=self._api_prefix)
         setup_urls(

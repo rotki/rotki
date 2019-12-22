@@ -22,7 +22,17 @@ class RotkehlchenServer():
         self.args = arg_parser.parse_args()
         self.rotkehlchen = Rotkehlchen(self.args)
         self.stop_event = gevent.event.Event()
-        self.api_server = APIServer(RestAPI(rotkehlchen=self.rotkehlchen))
+        domain_list = []
+        if self.args.api_cors:
+            if "," in self.args.api_cors:
+                for domain in self.args.api_cors.split(","):
+                    domain_list.append(str(domain))
+            else:
+                domain_list.append(str(self.args.api_cors))
+        self.api_server = APIServer(
+            rest_api=RestAPI(rotkehlchen=self.rotkehlchen),
+            cors_domain_list=domain_list,
+        )
 
     def shutdown(self) -> None:
         log.debug('Shutdown initiated')
