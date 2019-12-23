@@ -148,7 +148,7 @@ class ExchangeBalancesResource(BaseResource):
 
     get_schema = ExchangeBalanceQuerySchema()
 
-    @use_kwargs(get_schema, locations=('json', 'view_args'))
+    @use_kwargs(get_schema, locations=('json', 'view_args', 'query'))
     def get(self, name: Optional[str], async_query: bool) -> Response:
         return self.rest_api.query_exchange_balances(name=name, async_query=async_query)
 
@@ -183,7 +183,7 @@ class BlockchainBalancesResource(BaseResource):
 
     get_schema = BlockchainBalanceQuerySchema()
 
-    @use_kwargs(get_schema, locations=('json', 'view_args'))
+    @use_kwargs(get_schema, locations=('json', 'view_args', 'query'))
     def get(self, blockchain: Optional[SupportedBlockchain], async_query: bool) -> Response:
         return self.rest_api.query_blockchain_balances(
             blockchain=blockchain,
@@ -392,7 +392,7 @@ class HistoryProcessingResource(BaseResource):
 
     get_schema = HistoryProcessingSchema()
 
-    @use_kwargs(get_schema, locations=('json',))
+    @use_kwargs(get_schema, locations=('json', 'query'))
     def get(
             self,
             from_timestamp: Timestamp,
