@@ -1,10 +1,8 @@
 import warnings as test_warnings
-from typing import Any, Dict, List
 from unittest.mock import patch
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BITTREX_ASSETS, asset_from_bittrex
-from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
@@ -13,33 +11,6 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import AssetMovementCategory, Location, TradeType
-
-
-def analyze_bittrex_assets(currencies: List[Dict[str, Any]]):
-    """Go through all bittrex assets and print info whether or not Rotkehlchen
-    supports each asset or not.
-
-    This function should be used when wanting to analyze/categorize new Bittrex assets
-    """
-    checking_index = 0
-    for idx, bittrex_asset in enumerate(currencies):
-        if idx >= checking_index:
-            symbol = bittrex_asset['Currency']
-            if symbol in UNSUPPORTED_BITTREX_ASSETS:
-                print(f'{idx} - {symbol} is NOT SUPPORTED')
-                continue
-
-            if not AssetResolver().is_identifier_canonical(symbol):
-                raise AssertionError(
-                    f'{idx} - {symbol} is not known. '
-                    f'Bittrex name: {bittrex_asset["CurrencyLong"]}',
-                )
-            else:
-                asset = Asset(symbol)
-                print(
-                    f'{idx} - {symbol} with name {asset.name} '
-                    f'is known. Bittrex name: {bittrex_asset["CurrencyLong"]}',
-                )
 
 
 def test_bittrex_assets_are_known(bittrex):

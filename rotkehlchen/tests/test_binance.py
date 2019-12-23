@@ -4,13 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.converters import (
-    BINANCE_TO_WORLD,
-    RENAMED_BINANCE_ASSETS,
-    UNSUPPORTED_BINANCE_ASSETS,
-    asset_from_binance,
-)
-from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.assets.converters import UNSUPPORTED_BINANCE_ASSETS, asset_from_binance
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
@@ -171,30 +165,6 @@ def test_binance_backoff_after_429(function_scope_binance):
         count = -9999999
         with pytest.raises(RemoteError):
             binance.api_query('exchangeInfo')
-
-
-def analyze_binance_assets(sorted_assets):
-    """Go through all binance assets and print info whether or not Rotkehlchen
-    supports each asset or not.
-
-    This function should be used when wanting to analyze/categorize new Binance assets
-    """
-    length = len(sorted_assets)
-    for idx, binance_asset in enumerate(sorted_assets):
-        if binance_asset in RENAMED_BINANCE_ASSETS:
-            continue
-
-        binance_asset = BINANCE_TO_WORLD.get(binance_asset, binance_asset)
-
-        if not AssetResolver().is_identifier_canonical(binance_asset):
-            raise AssertionError(
-                f'{idx}/{length} - {binance_asset} is not known.',
-            )
-        else:
-            asset = Asset(binance_asset)
-            print(
-                f'{idx}/{length} - {binance_asset} with name {asset.name} is known',
-            )
 
 
 def test_binance_assets_are_known(

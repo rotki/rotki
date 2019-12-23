@@ -131,7 +131,6 @@ class Rotkehlchen():
         self.trades_historian = TradesHistorian(
             user_directory=self.user_directory,
             db=self.data.db,
-            eth_accounts=self.data.get_eth_accounts(),
             msg_aggregator=self.msg_aggregator,
             exchange_manager=self.exchange_manager,
         )
@@ -439,13 +438,6 @@ class Rotkehlchen():
                 result, msg = self.blockchain.set_eth_rpc_endpoint(settings.eth_rpc_endpoint)
                 if not result:
                     return False, msg
-
-            if settings.main_currency is not None:
-                if settings.main_currency != A_USD:
-                    self.usd_to_main_currency_rate = Inquirer().query_fiat_pair(
-                        base=A_USD,
-                        quote=settings.main_currency,
-                    )
 
             self.data.db.set_settings(settings)
             return True, ''

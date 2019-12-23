@@ -147,7 +147,6 @@ class APIServer():
         flask_app = Flask(__name__)
         blueprint = create_blueprint()
         flask_api_context = Api(blueprint, prefix=self._api_prefix)
-
         setup_urls(
             flask_api_context=flask_api_context,
             rest_api=rest_api,
@@ -157,7 +156,6 @@ class APIServer():
         self.rest_api = rest_api
         self.flask_app = flask_app
         self.blueprint = blueprint
-        self.flask_api_context = flask_api_context
 
         self.wsgiserver: Optional[WSGIServer] = None
         self.flask_app.register_blueprint(self.blueprint)

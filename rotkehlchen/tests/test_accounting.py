@@ -51,19 +51,6 @@ history1 = [
     },
 ]
 
-history_unknown_assets = [
-    {
-        'timestamp': 1446979735,
-        'pair': 'UNKNOWNASSET_ETH',
-        'trade_type': 'buy',
-        'rate': 268.678317859,
-        'fee': 0,
-        'fee_currency': 'UNKNOWNASSET',
-        'amount': 82,
-        'location': 'kraken',
-    },
-]
-
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_simple_accounting(accountant):

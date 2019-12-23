@@ -10,14 +10,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.transactions import query_etherscan_for_transactions
-from rotkehlchen.typing import (
-    ChecksumAddress,
-    EthereumTransaction,
-    FilePath,
-    Location,
-    Price,
-    Timestamp,
-)
+from rotkehlchen.typing import EthereumTransaction, FilePath, Location, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.accounting import action_get_timestamp
 from rotkehlchen.utils.misc import create_timestamp
@@ -138,7 +131,6 @@ class TradesHistorian():
             self,
             user_directory: FilePath,
             db: 'DBHandler',
-            eth_accounts: List[ChecksumAddress],
             msg_aggregator: MessagesAggregator,
             exchange_manager: ExchangeManager,
     ) -> None:
@@ -146,7 +138,6 @@ class TradesHistorian():
         self.msg_aggregator = msg_aggregator
         self.user_directory = user_directory
         self.db = db
-        self.eth_accounts = eth_accounts
         self.exchange_manager = exchange_manager
 
     def create_history(self, start_ts: Timestamp, end_ts: Timestamp) -> HistoryResult:
