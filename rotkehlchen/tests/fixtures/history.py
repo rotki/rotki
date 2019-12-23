@@ -51,7 +51,6 @@ def trades_historian(accounting_data_dir, function_scope_messages_aggregator):
     historian = TradesHistorian(
         user_directory=accounting_data_dir,
         db=database,
-        eth_accounts=[],
         msg_aggregator=function_scope_messages_aggregator,
         exchange_manager=exchange_manager,
     )

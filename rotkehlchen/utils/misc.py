@@ -325,14 +325,6 @@ def taxable_gain_for_sell(
     )
 
 
-def is_number(s: Any) -> bool:
-    try:
-        float(s)
-        return True
-    except ValueError:
-        return False
-
-
 def int_to_big_endian(x: int) -> bytes:
     return big_endian_int.serialize(x)
 
@@ -368,10 +360,6 @@ def get_system_spec() -> Dict[str, str]:
         system=system_info,
     )
     return system_spec
-
-
-def simple_result(v: Any, msg: str) -> Dict:
-    return {'result': v, 'message': msg}
 
 
 def write_history_data_in_file(

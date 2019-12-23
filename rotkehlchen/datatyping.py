@@ -5,4 +5,3 @@ from rotkehlchen.fval import FVal
 
 # Types used by dbhandler and datahandler
 BalancesData = Dict[Union[str, Asset], Dict[str, Union[FVal, Dict]]]
-ExternalTrade = Dict[str, Union[str, int]]

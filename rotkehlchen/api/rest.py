@@ -46,15 +46,6 @@ from rotkehlchen.utils.version_check import check_if_version_up_to_date
 
 OK_RESULT = {'result': True, 'message': ''}
 
-ERROR_STATUS_CODES = [
-    HTTPStatus.CONFLICT,
-    HTTPStatus.REQUEST_TIMEOUT,
-    HTTPStatus.PAYMENT_REQUIRED,
-    HTTPStatus.BAD_REQUEST,
-    HTTPStatus.NOT_FOUND,
-    HTTPStatus.UNAUTHORIZED,
-]
-
 
 def _wrap_in_ok_result(result: Any) -> Dict[str, Any]:
     return {'result': result, 'message': ''}

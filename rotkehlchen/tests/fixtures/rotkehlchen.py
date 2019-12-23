@@ -91,7 +91,6 @@ def initialize_mock_rotkehlchen_instance(
         rotki.trades_historian = TradesHistorian(
             user_directory=data_dir,
             db=rotki.data.db,
-            eth_accounts=rotki.data.get_eth_accounts(),
             msg_aggregator=rotki.msg_aggregator,
             exchange_manager=rotki.exchange_manager,
         )
