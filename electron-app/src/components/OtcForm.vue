@@ -93,11 +93,14 @@
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { StoredTrade, TradePayload } from '@/model/stored-trade';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
+import moment from 'moment';
 
 @Component({
   components: { DateTimePicker }
 })
 export default class OtcForm extends Vue {
+  private static format = 'DD/MM/YYYY HH:mm';
+
   @Prop({ required: true })
   editMode!: boolean;
   @Prop({ required: false })
@@ -123,24 +126,9 @@ export default class OtcForm extends Vue {
     }
   }
 
-  private static convertTimestamp(timestamp: number): string {
-    const date = new Date(timestamp * 1000);
-    return (
-      ('0' + date.getUTCDate()).slice(-2) +
-      '/' +
-      ('0' + (date.getUTCMonth() + 1)).slice(-2) +
-      '/' +
-      date.getUTCFullYear() +
-      ' ' +
-      ('0' + date.getUTCHours()).slice(-2) +
-      ':' +
-      ('0' + date.getUTCMinutes()).slice(-2)
-    );
-  }
-
   private updateFields(trade: StoredTrade) {
     this.pair = trade.pair;
-    this.datetime = OtcForm.convertTimestamp(trade.timestamp);
+    this.datetime = moment(trade.timestamp * 1000).format(OtcForm.format);
     this.amount = trade.amount;
     this.rate = trade.rate;
     this.fee = trade.fee;
@@ -154,7 +142,7 @@ export default class OtcForm extends Vue {
   private resetFields() {
     this.id = '';
     this.pair = '';
-    this.datetime = '';
+    this.datetime = moment().format(OtcForm.format);
     this.amount = '';
     this.rate = '';
     this.fee = '';
@@ -173,7 +161,8 @@ export default class OtcForm extends Vue {
       notes: this.notes,
       pair: this.pair,
       rate: this.rate,
-      timestamp: this.datetime,
+      location: 'external',
+      timestamp: moment(this.datetime, OtcForm.format).unix(),
       trade_type: this.type,
       trade_id: this.editMode ? this.id : undefined
     };

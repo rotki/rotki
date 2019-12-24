@@ -31,9 +31,13 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import moment from 'moment';
 
 @Component({})
 export default class DateTimePicker extends Vue {
+  private static dateFormat = 'YYYY-MM-DD';
+  private static timeFormat = 'HH:mm';
+
   @Prop({ required: true })
   label!: string;
   @Prop({ required: false, default: '' })
@@ -49,9 +53,9 @@ export default class DateTimePicker extends Vue {
 
   private date = /^([0-2]\d|[3][0-1])\/([0]\d|[1][0-2])\/([2][01]|[1][6-9])\d{2}(\s([0-1]\d|[2][0-3])(:[0-5]\d))$/;
   private dateFormatRule = (v: string) =>
-    (v && this.date.test(v)) || 'Date should be in DD/MM/YYYY HH:MM format';
+    (v && this.date.test(v)) || 'Date should be in DD/MM/YYYY HH:mm format';
 
-  timeModel: string = DateTimePicker.timeNow();
+  timeModel: string = moment().format(DateTimePicker.timeFormat);
   dateModel: string = '';
 
   maxDate: string = '';
@@ -65,17 +69,13 @@ export default class DateTimePicker extends Vue {
 
   private setMaxTime() {
     if (this.limitNow) {
-      this.maxTime = DateTimePicker.timeNow();
+      this.maxTime = moment().format(DateTimePicker.timeFormat);
     }
-  }
-
-  private static isoDate() {
-    return new Date().toISOString();
   }
 
   private setMaxDate() {
     if (this.limitNow) {
-      this.maxDate = DateTimePicker.dateNow();
+      this.maxDate = moment().format(DateTimePicker.dateFormat);
     }
   }
 
@@ -105,7 +105,7 @@ export default class DateTimePicker extends Vue {
   onValueChange() {
     if (!this.value) {
       this.dateModel = '';
-      this.timeModel = DateTimePicker.timeNow();
+      this.timeModel = moment().format(DateTimePicker.timeFormat);
     } else if (this.date.test(this.value)) {
       const [date, time] = this.value.split(' ');
       const [day, month, year] = date.split('/');
@@ -130,24 +130,9 @@ export default class DateTimePicker extends Vue {
   }
 
   setNow() {
-    const isoString = DateTimePicker.isoDate();
-    const date = isoString.split('T');
-    this.dateModel = date[0];
-    this.timeModel = DateTimePicker.timeNow();
-  }
-
-  private static timeNow(): string {
-    const isoString = DateTimePicker.isoDate();
-    const date = isoString.split('T');
-    const time = date[1];
-    const lastIndex = time.lastIndexOf(':');
-    return time.slice(0, lastIndex);
-  }
-
-  private static dateNow(): string {
-    const isoString = DateTimePicker.isoDate();
-    const date = isoString.split('T');
-    return date[0];
+    const now = moment();
+    this.timeModel = now.format(DateTimePicker.timeFormat);
+    this.dateModel = now.format(DateTimePicker.dateFormat);
   }
 }
 </script>
