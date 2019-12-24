@@ -17,6 +17,7 @@ export default class PyHandler {
   private executable?: string;
   private readonly logsPath: string;
   private readonly ELECTRON_LOG_PATH: string;
+  private _corsURL?: string;
 
   get port(): number {
     assert(this._port != null);
@@ -40,6 +41,14 @@ export default class PyHandler {
     const message = `${new Date(Date.now()).toISOString()}: ${msg}`;
     console.log(message);
     fs.appendFileSync(this.ELECTRON_LOG_PATH, `${message}\n`);
+  }
+
+  setCorsURL(url: string) {
+    if (url.endsWith('/')) {
+      this._corsURL = url.substring(0, url.length - 1);
+    } else {
+      this._corsURL = url;
+    }
   }
 
   listenForMessages() {
@@ -143,6 +152,10 @@ export default class PyHandler {
       port.toString()
     ];
 
+    if (this._corsURL) {
+      defaultArgs.push('--api-cors', this._corsURL);
+    }
+
     if (process.env.ROTKEHLCHEN_ENVIRONMENT === 'test') {
       let tempPath = path.join(this.app.getPath('temp'), 'rotkehlchen');
       if (!fs.existsSync(tempPath)) {
@@ -170,9 +183,12 @@ export default class PyHandler {
     }
     this.executable = executable;
     executable = path.join(dist_dir, executable);
+    if (this._corsURL) {
+      args.push('--api-cors', this._corsURL);
+    }
     this.childProcess = execFile(
       executable,
-      ['--zerorpc-port', port.toString()].concat(args)
+      ['--api-port', port.toString()].concat(args)
     );
   }
 
