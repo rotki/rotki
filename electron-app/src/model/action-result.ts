@@ -27,3 +27,7 @@ export interface DBSettings {
   readonly anonymized_logs: boolean;
   readonly date_display_format: string;
 }
+
+export interface AsyncQuery {
+  readonly task_id: number;
+}

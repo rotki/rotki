@@ -68,7 +68,6 @@ import { createNamespacedHelpers } from 'vuex';
 import ExchangeBadge from '@/components/ExchangeBadge.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import { createExchangePayload } from '@/store/balances/actions';
 import { Message } from '@/store/store';
 
 const { mapState } = createNamespacedHelpers('balances');
@@ -127,10 +126,9 @@ export default class ExchangeSettings extends Vue {
       .then(() => {
         this.resetFields(true);
         commit('balances/addExchange', exchangeName);
-        dispatch(
-          'balances/fetchExchangeBalances',
-          createExchangePayload(exchangeName)
-        );
+        dispatch('balances/fetchExchangeBalances', {
+          name: exchangeName
+        });
       })
       .catch((reason: Error) => {
         commit('setMessage', {

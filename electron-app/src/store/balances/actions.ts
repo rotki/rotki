@@ -2,7 +2,7 @@ import { ActionTree } from 'vuex';
 import { RotkehlchenState } from '@/store/store';
 import { BalanceState } from '@/store/balances/state';
 import { api } from '@/services/rotkehlchen-api';
-import { createTask, TaskType } from '@/model/task';
+import { createTask, ExchangeMeta, TaskType } from '@/model/task';
 import { Severity, UsdToFiatExchangeRates } from '@/typing/types';
 import { notify } from '@/store/notifications/utils';
 import { FiatBalance } from '@/model/blockchain-balances';
@@ -11,23 +11,51 @@ import { convertBalances, convertEthBalances } from '@/utils/conversion';
 import { currencies } from '@/data/currencies';
 
 export const actions: ActionTree<BalanceState, RotkehlchenState> = {
-  fetchExchangeBalances({ commit }, payload: ExchangeBalancePayload): void {
-    const { name, balanceTask } = payload;
+  fetchBalances({ commit, rootGetters }): void {
+    const isTaskRunning = rootGetters['tasks/isTaskRunning'];
+    if (isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES)) {
+      return;
+    }
     api
-      .queryExchangeBalancesAsync(name)
+      .queryBalancesAsync()
       .then(result => {
         const task = createTask(
           result.task_id,
           TaskType.QUERY_EXCHANGE_BALANCES,
-          `Query ${name} Balances`,
-          true
+          {
+            description: `Query All Balances`,
+            ignoreResult: true
+          }
         );
 
-        if (balanceTask) {
-          commit('tasks/addBalanceTask', task, { root: true });
-        } else {
-          commit('tasks/add', task, { root: true });
-        }
+        commit('tasks/add', task, { root: true });
+      })
+      .catch(reason => {
+        notify(
+          `Failed to fetch all balances: ${reason}`,
+          'Querying all Balances',
+          Severity.ERROR
+        );
+      });
+  },
+  fetchExchangeBalances({ commit }, payload: ExchangeBalancePayload): void {
+    const { name } = payload;
+    api
+      .queryExchangeBalancesAsync(name)
+      .then(result => {
+        const meta: ExchangeMeta = {
+          name,
+          description: `Query ${name} Balances`,
+          ignoreResult: false
+        };
+
+        const task = createTask(
+          result.task_id,
+          TaskType.QUERY_EXCHANGE_BALANCES,
+          meta
+        );
+
+        commit('tasks/add', task, { root: true });
       })
       .catch(reason => {
         notify(
@@ -40,7 +68,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   async fetchExchangeRates({ commit }): Promise<void> {
     try {
       const rates = await api.getFiatExchangeRates(
-        currencies.map(value => value.name)
+        currencies.map(value => value.ticker_symbol)
       );
       const exchangeRates: UsdToFiatExchangeRates = {};
 
@@ -62,10 +90,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const task = createTask(
         result.task_id,
         TaskType.QUERY_BLOCKCHAIN_BALANCES,
-        'Query Blockchain Balances',
-        true
+        {
+          description: 'Query Blockchain Balances',
+          ignoreResult: false
+        }
       );
-      commit('tasks/addBalanceTask', task, { root: true });
+      commit('tasks/add', task, { root: true });
     } catch (e) {
       notify(
         `Error at querying blockchain balances: ${e}`,
@@ -90,7 +120,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   async addExchanges({ commit, dispatch }, exchanges: string[]): Promise<void> {
     commit('connectedExchanges', exchanges);
     for (const exchange of exchanges) {
-      await dispatch('fetchExchangeBalances', createExchangePayload(exchange));
+      await dispatch('fetchExchangeBalances', {
+        name: exchange
+      });
     }
   },
   async fetch(
@@ -100,6 +132,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     const { exchanges, newUser } = payload;
 
     await dispatch('fetchExchangeRates');
+    await dispatch('fetchBalances');
 
     if (exchanges) {
       await dispatch('addExchanges', exchanges);
@@ -150,13 +183,4 @@ export interface BlockchainAccountPayload {
 
 export interface ExchangeBalancePayload {
   readonly name: string;
-  readonly balanceTask: boolean;
 }
-
-export const createExchangePayload: (
-  name: string,
-  balanceTask?: boolean
-) => ExchangeBalancePayload = (name, balanceTask = false) => ({
-  name,
-  balanceTask
-});

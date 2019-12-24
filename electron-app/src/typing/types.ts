@@ -69,3 +69,8 @@ export interface FiatExchangeRates {
 export interface AccountSession {
   [account: string]: 'loggedin' | 'loggedout';
 }
+
+export interface TaskResult<T> {
+  outcome: T | null;
+  status: 'completed' | 'not-found' | 'pending';
+}

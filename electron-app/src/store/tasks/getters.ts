@@ -1,7 +1,7 @@
 import { GetterTree } from 'vuex';
 import { RotkehlchenState } from '@/store/store';
 import { TaskState } from '@/store/tasks/state';
-import { Task, TaskType } from '@/model/task';
+import { Task, TaskMeta, TaskType } from '@/model/task';
 import find from 'lodash/find';
 import toArray from 'lodash/toArray';
 
@@ -14,7 +14,7 @@ export const getters: GetterTree<TaskState, RotkehlchenState> = {
     return Object.keys(state.tasks).length > 0;
   },
 
-  tasks: (state: TaskState): Task[] => {
+  tasks: (state: TaskState): Task<TaskMeta>[] => {
     return toArray(state.tasks);
   }
 };

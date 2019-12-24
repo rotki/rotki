@@ -95,10 +95,12 @@ export default class BlockchainBalances extends Vue {
         const task = createTask(
           value.task_id,
           TaskType.USER_SETTINGS_QUERY_BLOCKCHAIN_BALANCES,
-          'Query blockchain balances',
-          true
+          {
+            description: 'Query blockchain balances',
+            ignoreResult: false
+          }
         );
-        this.$store.commit('tasks/addBalanceTask', task);
+        this.$store.commit('tasks/add', task);
       })
       .catch((reason: Error) => {
         notify(
