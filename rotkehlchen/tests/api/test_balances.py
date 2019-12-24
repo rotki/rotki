@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from unittest.mock import patch
 
 import pytest
 import requests
@@ -13,7 +14,9 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.balances import get_asset_balance_total
+from rotkehlchen.tests.utils.blockchain import assert_eth_balances_result
 from rotkehlchen.tests.utils.constants import A_CNY, A_RDN
+from rotkehlchen.tests.utils.exchanges import assert_binance_balances_result
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup, setup_balances
 from rotkehlchen.typing import Location
@@ -213,6 +216,82 @@ def test_query_all_balances_errors(rotkehlchen_api_server):
         response=response,
         contained_in_msg='Not a valid boolean',
         status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+@pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
+@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
+@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+def test_multiple_balance_queries_not_concurrent(
+        rotkehlchen_api_server_with_exchanges,
+        ethereum_accounts,
+        btc_accounts,
+        number_of_eth_accounts,
+):
+    """Test multiple different balance query requests happening concurrently
+
+    This tests that if multiple balance query requests happen concurrently we
+    do not end up doing them multiple times, but reuse the results thanks to cache.
+    """
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
+
+    e = patch.object(
+        rotki.blockchain,
+        'query_ethereum_balances',
+        wraps=rotki.blockchain.query_ethereum_balances,
+    )
+    binance = rotki.exchange_manager.connected_exchanges['binance']
+    b = patch.object(binance, 'query_balances', wraps=binance.query_balances)
+
+    # Test all balances request by requesting to not save the data
+    with setup.poloniex_patch, setup.binance_patch, setup.blockchain_patch, e as eth, b as bn:
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                "allbalancesresource",
+            ), json={'async_query': True},
+        )
+        task_id_all = assert_ok_async_response(response)
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "named_exchanges_balances_resource",
+            name='binance',
+        ), json={'async_query': True})
+        task_id_one_exchange = assert_ok_async_response(response)
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "named_blockchain_balances_resource",
+            blockchain='ETH',
+        ), json={'async_query': True})
+        task_id_blockchain = assert_ok_async_response(response)
+        outcome_all = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id_all)
+        outcome_one_exchange = wait_for_async_task(
+            rotkehlchen_api_server_with_exchanges,
+            task_id_one_exchange,
+        )
+        outcome_blockchain = wait_for_async_task(
+            rotkehlchen_api_server_with_exchanges,
+            task_id_blockchain,
+        )
+        assert eth.call_count == 1, 'eth blockchain balance call should not happen concurrently'
+        assert bn.call_count == 1, 'binance balance call should not happen concurrently'
+
+    assert_all_balances(
+        data=outcome_all,
+        db=rotki.data.db,
+        expected_data_in_db=True,
+        setup=setup,
+    )
+    assert_binance_balances_result(outcome_one_exchange['result'])
+    assert_eth_balances_result(
+        rotki=rotki,
+        json_data=outcome_blockchain,
+        eth_accounts=ethereum_accounts,
+        eth_balances=setup.eth_balances,
+        token_balances=setup.token_balances,
+        also_btc=False,
     )
 
 
