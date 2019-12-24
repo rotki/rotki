@@ -6,8 +6,7 @@ import {
   convertBalances,
   convertEthBalances
 } from '@/utils/conversion';
-import { ExchangeBalanceResult } from '@/model/exchange-balance-result';
-import { TaskType } from '@/model/task';
+import { ExchangeMeta, TaskMeta, TaskType } from '@/model/task';
 import { notify } from '@/store/notifications/utils';
 import { api } from '@/services/rotkehlchen-api';
 import { TaskMap } from '@/store/tasks/state';
@@ -18,26 +17,21 @@ import {
   TradeHistoryResult
 } from '@/model/trade-history-types';
 import map from 'lodash/map';
-import { Severity } from '@/typing/types';
+import { ApiAssetBalances, Severity } from '@/typing/types';
 
 export class TaskManager {
   private static onUserSettingsQueryBlockchainBalances(
-    result: ActionResult<BlockchainBalances>
+    payload: ActionResult<BlockchainBalances>,
+    _meta: TaskMeta
   ) {
-    let msg: string = '';
-    if (!result) {
-      msg = 'Querying blockchain balances for user settings failed';
-    } else if (result.message !== '') {
-      msg = result.message;
-    }
+    const { result, message } = payload;
 
-    if (msg) {
-      notify(msg);
+    if (message) {
+      notify(message, 'Blockchain query error');
       return;
     }
 
-    const { result: data } = result;
-    const { per_account, totals } = data;
+    const { per_account, totals } = result;
     const { ETH, BTC } = per_account;
 
     store.commit('balances/updateEth', convertEthBalances(ETH));
@@ -45,42 +39,38 @@ export class TaskManager {
     store.commit('balances/updateTotals', convertBalances(totals));
   }
 
-  private static onQueryExchangeBalances(result: ExchangeBalanceResult) {
-    if (result.error) {
-      notify(
-        `Querying ${result.name} failed because of: ${result.error}. Check the logs for more details.`,
-        'Exchange Query Error'
-      );
+  private static onQueryExchangeBalances(
+    payload: ActionResult<ApiAssetBalances>,
+    meta: ExchangeMeta
+  ) {
+    const { result, message } = payload;
+
+    if (message) {
+      notify(message, 'Exchange Query Error ');
       return;
     }
-
-    const { name, balances } = result;
 
     store.commit('balances/addExchangeBalances', {
-      name,
-      balances: convertAssetBalances(balances)
+      name: meta.name,
+      balances: convertAssetBalances(result)
     });
-
-    if (!balances) {
-      notify(
-        `Querying ${result.name} failed. Result contains no balances. Check the logs for more details.`,
-        'Exchange Query Error'
-      );
-      return;
-    }
   }
 
-  onQueryBlockchainBalances(result: ActionResult<BlockchainBalances>) {
-    if (result.message !== '') {
+  onQueryBlockchainBalances(
+    data: ActionResult<BlockchainBalances>,
+    _meta: TaskMeta
+  ) {
+    const { result, message } = data;
+
+    if (message) {
       notify(
-        `Querying blockchain balances died because of: ${result.message}. Check the logs for more details.`,
+        `Querying blockchain balances died because of: ${message}. Check the logs for more details.`,
         'Blockchain Query Error'
       );
       return;
     }
 
-    const { result: data } = result;
-    const { per_account, totals } = data;
+    const { per_account, totals } = result;
     const { ETH, BTC } = per_account;
 
     store.commit('balances/updateEth', convertEthBalances(ETH));
@@ -88,8 +78,8 @@ export class TaskManager {
     store.commit('balances/updateTotals', convertBalances(totals));
   }
 
-  onTradeHistory(tradeHistoryResult: ActionResult<TradeHistoryResult>) {
-    const { message, result } = tradeHistoryResult;
+  onTradeHistory(data: ActionResult<TradeHistoryResult>, _meta: TaskMeta) {
+    const { message, result } = data;
 
     if (message) {
       notify(
@@ -110,7 +100,7 @@ export class TaskManager {
   }
 
   monitor() {
-    const tasks: TaskMap = store.state.tasks!.tasks;
+    const tasks: TaskMap<TaskMeta> = store.state.tasks!.tasks;
     for (const id in tasks) {
       if (!Object.prototype.hasOwnProperty.call(tasks, id)) {
         continue;
@@ -118,41 +108,45 @@ export class TaskManager {
       const task = tasks[id];
       if (task.id == null) {
         notify(
-          JSON.stringify(task, null, 4),
-          'Task with null id',
-          Severity.INFO
+          `Task ${task.type} -> ${task.meta.description} had a null identifier`,
+          'Invalid task found',
+          Severity.WARNING
         );
         continue;
       }
+      api
+        .queryTaskResult(task.id)
+        .then(result => {
+          if (task.meta.ignoreResult) {
+            store.commit('tasks/remove', task.id);
+            return;
+          }
 
-      api.queryTaskResult(task.id).then(result => {
-        if (!task.asyncResult) {
+          if (result == null) {
+            return;
+          }
+
+          const handler = this.handler[task.type];
+
+          if (!handler) {
+            notify(
+              `No handler found for task '${task.type}' with id ${task.id}`,
+              'Tasks',
+              Severity.INFO
+            );
+            return;
+          }
+
+          handler(result, task.meta);
           store.commit('tasks/remove', task.id);
-          return;
-        }
-
-        if (result == null) {
-          return;
-        }
-
-        const handler = this.handler[task.type];
-
-        if (!handler) {
-          notify(
-            `No handler found for task '${task.type}' with id ${task.id}`,
-            'Tasks',
-            Severity.INFO
-          );
-          return;
-        }
-
-        handler(result);
-        store.commit('tasks/remove', task.id);
-      });
+        })
+        .catch(() => {});
     }
   }
 
-  readonly handler: { [type: string]: (result: any) => void } = {
+  readonly handler: {
+    [type: string]: (result: any, meta: any) => void;
+  } = {
     [TaskType.USER_SETTINGS_QUERY_BLOCKCHAIN_BALANCES]:
       TaskManager.onUserSettingsQueryBlockchainBalances,
     [TaskType.QUERY_EXCHANGE_BALANCES]: TaskManager.onQueryExchangeBalances,

@@ -1,22 +1,27 @@
 import { VersionCheck } from '@/model/version-check';
-import { ActionResult, DBSettings, AccountState } from '@/model/action-result';
+import {
+  ActionResult,
+  DBSettings,
+  AccountState,
+  AsyncQuery
+} from '@/model/action-result';
 import { DBAssetBalance } from '@/model/db-asset-balance';
 import { SingleAssetBalance } from '@/model/single-asset-balance';
 import { BlockchainAccount } from '@/model/blockchain_account_result';
 import { StoredTrade, Trade } from '@/model/stored-trade';
 import { Currency } from '@/model/currency';
 import { LocationData } from '@/model/location-data';
-import { AsyncQuery } from '@/model/balance-result';
-import { EthTokens } from '@/model/eth_tokens_result';
 import { PeriodicClientQueryResult } from '@/model/periodic_client_query_result';
 import { NetvalueDataResult } from '@/model/query-netvalue-data-result';
 import { Messages } from '@/model/messages';
 import {
   AccountSession,
   ApiAssetBalances,
-  FiatExchangeRates
+  FiatExchangeRates,
+  TaskResult
 } from '@/typing/types';
 import axios, { AxiosInstance } from 'axios';
+import { EthTokens } from '@/model/eth_token';
 
 export class RotkehlchenApi {
   private _axios?: AxiosInstance;
@@ -76,7 +81,7 @@ export class RotkehlchenApi {
   queryPeriodicData(): Promise<PeriodicClientQueryResult> {
     return new Promise<PeriodicClientQueryResult>((resolve, reject) => {
       this.axios
-        .get<ActionResult<PeriodicClientQueryResult>>('/periodic')
+        .get<ActionResult<PeriodicClientQueryResult>>('/periodic/')
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -336,15 +341,14 @@ export class RotkehlchenApi {
     });
   }
 
-  //TODO: optimize task result handling
-  queryTaskResult(id: number): Promise<any> {
+  queryTaskResult<T>(id: number): Promise<ActionResult<T>> {
     return new Promise<any>((resolve, reject) => {
       this.axios
-        .get<ActionResult<any>>(`/tasks/${id}`)
+        .get<ActionResult<TaskResult<ActionResult<T>>>>(`/tasks/${id}`)
         .then(response => {
           const { result, message } = response.data;
-          if (result) {
-            resolve(result);
+          if (result && result.outcome) {
+            resolve(result.outcome);
           } else {
             reject(new Error(message));
           }
@@ -827,7 +831,7 @@ export class RotkehlchenApi {
   consumeMessages(): Promise<Messages> {
     return new Promise<any>((resolve, reject) => {
       this.axios
-        .get<ActionResult<Messages>>('/messages')
+        .get<ActionResult<Messages>>('/messages/')
         .then(response => {
           const { result, message } = response.data;
           if (result) {

@@ -1,20 +1,15 @@
-import { Task } from '@/model/task';
-import { BalanceStatus } from '@/enums/BalanceStatus';
+import { Task, TaskMeta } from '@/model/task';
 
 export interface TaskState {
-  balanceTasks: number[];
-  tasks: TaskMap;
-  queryStatus: BalanceStatus;
+  tasks: TaskMap<TaskMeta>;
 }
 
-export interface TaskMap {
-  [taskId: number]: Task;
+export interface TaskMap<T extends TaskMeta> {
+  [taskId: number]: Task<T>;
 }
 
 export const defaultState: () => TaskState = () => ({
-  balanceTasks: [],
-  tasks: {},
-  queryStatus: BalanceStatus.start
+  tasks: {}
 });
 
 export const state: TaskState = defaultState();

@@ -19,7 +19,7 @@
             <v-list-item :key="task.id" class="progress-indicator__task">
               <v-list-item-content>
                 <v-list-item-title
-                  v-text="task.description"
+                  v-text="task.meta.description"
                 ></v-list-item-title>
                 <v-progress-linear
                   v-if="task.type !== 'process_trade_history'"
@@ -48,7 +48,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
-import { Task } from '@/model/task';
+import { Task, TaskMeta } from '@/model/task';
 
 const { mapGetters } = createNamespacedHelpers('tasks');
 const { mapGetters: mapReportGetters } = createNamespacedHelpers('reports');
@@ -61,7 +61,7 @@ const { mapGetters: mapReportGetters } = createNamespacedHelpers('reports');
 })
 export default class ProgressIndicator extends Vue {
   hasRunningTasks!: boolean;
-  tasks!: Task[];
+  tasks!: Task<TaskMeta>[];
   progress!: number;
 }
 </script>

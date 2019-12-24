@@ -1,20 +1,26 @@
-export interface Task {
+export interface Task<T> {
   readonly id: number;
   readonly type: TaskType;
-  readonly description: string;
-  readonly asyncResult: boolean;
+  readonly meta: T;
 }
 
-export const createTask: (
+export interface TaskMeta {
+  readonly description: string;
+  readonly ignoreResult: boolean;
+}
+
+export interface ExchangeMeta extends TaskMeta {
+  readonly name: string;
+}
+
+export const createTask: <T extends TaskMeta>(
   id: number,
   type: TaskType,
-  description: string,
-  asyncResult?: boolean
-) => Task = (id, type, description, asyncResult = false) => ({
+  meta: T
+) => Task<T> = (id, type, meta) => ({
   id,
   type,
-  description,
-  asyncResult
+  meta
 });
 
 export enum TaskType {

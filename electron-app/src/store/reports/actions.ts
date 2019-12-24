@@ -12,12 +12,10 @@ export const actions: ActionTree<TaxReportState, RotkehlchenState> = {
       const { start, end } = payload;
       const result = await api.processTradeHistoryAsync(start, end);
       commit('reportPeriod', { start, end });
-      const task = createTask(
-        result.task_id,
-        TaskType.TRADE_HISTORY,
-        'Create tax report',
-        true
-      );
+      const task = createTask(result.task_id, TaskType.TRADE_HISTORY, {
+        description: 'Create tax report',
+        ignoreResult: false
+      });
       commit('tasks/add', task, { root: true });
     } catch (e) {
       notify(e.message, 'Trade History Report');
