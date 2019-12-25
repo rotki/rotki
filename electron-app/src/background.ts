@@ -71,7 +71,7 @@ function createWindow() {
 
   pyHandler.createPyProc(win);
   pyHandler.listenForMessages();
-  win.webContents.send('service-port', pyHandler.port);
+  win.webContents.send('connected');
 }
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {

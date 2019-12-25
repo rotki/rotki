@@ -9,12 +9,11 @@ import {
 import { ExchangeMeta, TaskMeta, TaskType } from '@/model/task';
 import { notify } from '@/store/notifications/utils';
 import { api } from '@/services/rotkehlchen-api';
-import { TaskMap } from '@/store/tasks/state';
 import {
   ApiEventEntry,
   convertEventEntry,
   convertTradeHistoryOverview,
-  TradeHistoryResult
+  TradeHistory
 } from '@/model/trade-history-types';
 import map from 'lodash/map';
 import { ApiAssetBalances, Severity } from '@/typing/types';
@@ -78,7 +77,7 @@ export class TaskManager {
     store.commit('balances/updateTotals', convertBalances(totals));
   }
 
-  onTradeHistory(data: ActionResult<TradeHistoryResult>, _meta: TaskMeta) {
+  onTradeHistory(data: ActionResult<TradeHistory>, _meta: TaskMeta) {
     const { message, result } = data;
 
     if (message) {
@@ -100,12 +99,15 @@ export class TaskManager {
   }
 
   monitor() {
-    const tasks: TaskMap<TaskMeta> = store.state.tasks!.tasks;
-    for (const id in tasks) {
-      if (!Object.prototype.hasOwnProperty.call(tasks, id)) {
+    const state = store.state;
+    const taskState = state.tasks!;
+    const { tasks: taskMap, processingTasks } = taskState;
+
+    for (const id in taskMap) {
+      if (!Object.prototype.hasOwnProperty.call(taskMap, id)) {
         continue;
       }
-      const task = tasks[id];
+      const task = taskMap[id];
       if (task.id == null) {
         notify(
           `Task ${task.type} -> ${task.meta.description} had a null identifier`,
@@ -114,6 +116,11 @@ export class TaskManager {
         );
         continue;
       }
+
+      if (processingTasks.indexOf(task.id) > -1) {
+        return;
+      }
+
       api
         .queryTaskResult(task.id)
         .then(result => {
@@ -136,6 +143,8 @@ export class TaskManager {
             );
             return;
           }
+
+          store.commit('tasks/processing', task.id);
 
           handler(result, task.meta);
           store.commit('tasks/remove', task.id);

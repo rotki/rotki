@@ -8,6 +8,9 @@ export const mutations: MutationTree<TaskState> = {
     update[task.id] = task;
     state.tasks = { ...state.tasks, ...update };
   },
+  processing: (state: TaskState, taskId: number) => {
+    state.processingTasks.push(taskId);
+  },
   remove: (state: TaskState, taskId: number) => {
     const tasks = { ...state.tasks };
     delete tasks[taskId];
