@@ -4,7 +4,7 @@ import traceback
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, overload
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import gevent
 from flask import Response, make_response
@@ -14,7 +14,6 @@ from typing_extensions import Literal
 
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.blockchain import BlockchainBalancesUpdate
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.errors import (
@@ -248,9 +247,11 @@ class RestAPI():
                     if task_id in self.task_results:
                         # Task has completed and we just got the outcome
                         function_response = self.task_results.pop(int(task_id), None)
-                        # First part of the tuple is the original result
-                        # second is the message of the original request
-                        ret = {'result': function_response[0], 'message': function_response[1]}
+                        # The result of the original request
+                        result = function_response['result']
+                        # The message of the original request
+                        message = function_response['message']
+                        ret = {'result': result, 'message': message}
                         result_dict = {
                             'result': {'status': 'completed', 'outcome': process_result(ret)},
                             'message': '',
@@ -284,19 +285,20 @@ class RestAPI():
         res = process_result(rates)
         return api_response(_wrap_in_ok_result(res), status_code=HTTPStatus.OK)
 
-    def _query_all_balances(self, save_data: bool) -> Tuple[Dict[str, Any], str]:
+    def _query_all_balances(self, save_data: bool) -> Dict[str, Any]:
         result = self.rotkehlchen.query_balances(requested_save_data=save_data)
-        message = ''
-        return result, message
+        return {'result': result, 'message': ''}
 
     @require_loggedin_user()
     def query_all_balances(self, save_data: bool, async_query: bool) -> Response:
         if async_query:
             return self._query_async(command='_query_all_balances', save_data=save_data)
 
-        result, message = self._query_all_balances(save_data=save_data)
-
-        return api_response(_wrap_in_result(process_result(result), message), HTTPStatus.OK)
+        response = self._query_all_balances(save_data=save_data)
+        return api_response(
+            _wrap_in_result(process_result(response['result']), response['message']),
+            HTTPStatus.OK,
+        )
 
     @require_loggedin_user()
     def get_exchanges(self) -> Response:
@@ -326,7 +328,7 @@ class RestAPI():
             status_code = HTTPStatus.CONFLICT
         return api_response(_wrap_in_result(result, message), status_code=status_code)
 
-    def _query_all_exchange_balances(self) -> Tuple[Optional[Dict], str]:
+    def _query_all_exchange_balances(self) -> Dict[str, Any]:
         final_balances = dict()
         error_msg = ''
         for name, exchange_obj in self.rotkehlchen.exchange_manager.connected_exchanges.items():
@@ -340,9 +342,9 @@ class RestAPI():
             result = None
         else:
             result = final_balances
-        return result, error_msg
+        return {'result': result, 'message': error_msg}
 
-    def _query_exchange_balances(self, name: Optional[str]) -> Tuple[Optional[dict], str]:
+    def _query_exchange_balances(self, name: Optional[str]) -> Dict[str, Any]:
         if name is None:
             # Query all exchanges
             return self._query_all_exchange_balances()
@@ -350,16 +352,22 @@ class RestAPI():
         # else query only the specific exchange
         exchange_obj = self.rotkehlchen.exchange_manager.connected_exchanges.get(name, None)
         if not exchange_obj:
-            return None, f'Could not query balances for {name} since it is not registered'
+            return {
+                'result': None,
+                'message': f'Could not query balances for {name} since it is not registered',
+            }
 
-        return exchange_obj.query_balances()
+        result, msg = exchange_obj.query_balances()
+        return {'result': result, 'message': msg}
 
     @require_loggedin_user()
     def query_exchange_balances(self, name: Optional[str], async_query: bool) -> Response:
         if async_query:
             return self._query_async(command='_query_exchange_balances', name=name)
 
-        balances, msg = self._query_exchange_balances(name=name)
+        response = self._query_exchange_balances(name=name)
+        balances = response['result']
+        msg = response['msg']
         if balances is None:
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
@@ -376,30 +384,12 @@ class RestAPI():
 
         return trades
 
-    @overload  # noqa: F811
-    def _query_exchange_trades(  # pylint: disable=no-self-use
-            self,
-            name: None,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> Tuple[Optional[Dict[str, List[Trade]]], str]:
-        ...
-
-    @overload  # noqa: F811
-    def _query_exchange_trades(  # pylint: disable=no-self-use
-            self,
-            name: str,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> Tuple[Optional[List[Trade]], str]:
-        ...
-
-    def _query_exchange_trades(  # noqa: F811
+    def _query_exchange_trades(
             self,
             name: Optional[str],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> Tuple[Union[Optional[List[Trade]], Optional[Dict[str, List[Trade]]]], str]:
+    ) -> Dict[str, Any]:
         """Returns a list of trades if a single exchange is queried or a dict of
         exchange names to list of trades if multiple exchanges are queried"""
         if name is None:
@@ -417,12 +407,15 @@ class RestAPI():
                     t['trade_id'] = trade.identifier
                     processed_map[name].append(t)
 
-            return processed_map, ''
+            return {'result': processed_map, 'message': ''}
         else:
             # else query only the specific exchange
             exchange_obj = self.rotkehlchen.exchange_manager.connected_exchanges.get(name, None)
             if not exchange_obj:
-                return None, f'Could not query trades for {name} since it is not registered'
+                return {
+                    'result': None,
+                    'message': f'Could not query trades for {name} since it is not registered',
+                }
             trades = exchange_obj.query_trade_history(
                 start_ts=from_timestamp,
                 end_ts=to_timestamp,
@@ -434,7 +427,7 @@ class RestAPI():
                 t['trade_id'] = trade.identifier
                 processed_trades.append(t)
 
-            return processed_trades, ''
+            return {'result': processed_trades, 'message': ''}
 
     @require_loggedin_user()
     def query_exchange_trades(
@@ -452,11 +445,13 @@ class RestAPI():
                 to_timestamp=to_timestamp,
             )
 
-        trades, msg = self._query_exchange_trades(
+        response = self._query_exchange_trades(
             name=name,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
         )
+        trades = response['result']
+        msg = response['message']
 
         if trades is None:
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
@@ -468,8 +463,9 @@ class RestAPI():
     def _query_blockchain_balances(
             self,
             blockchain: Optional[SupportedBlockchain],
-    ) -> Tuple[Optional[Dict[str, Dict]], str]:
-        return self.rotkehlchen.blockchain.query_balances(blockchain=blockchain)
+    ) -> Dict[str, Any]:
+        result, msg = self.rotkehlchen.blockchain.query_balances(blockchain=blockchain)
+        return {'result': result, 'message': msg}
 
     @require_loggedin_user()
     def query_blockchain_balances(
@@ -480,7 +476,9 @@ class RestAPI():
         if async_query:
             return self._query_async(command='_query_blockchain_balances', blockchain=blockchain)
 
-        balances, msg = self._query_blockchain_balances(blockchain=blockchain)
+        response = self._query_blockchain_balances(blockchain=blockchain)
+        balances = response['result']
+        msg = response['message']
         if balances is None:
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
@@ -791,12 +789,12 @@ class RestAPI():
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> Tuple[Dict[str, Any], str]:
+    ) -> Dict[str, Any]:
         result, error_or_empty = self.rotkehlchen.process_history(
             start_ts=from_timestamp,
             end_ts=to_timestamp,
         )
-        return result, error_or_empty
+        return {'result': result, 'message': error_or_empty}
 
     @require_loggedin_user()
     def process_history(
@@ -812,10 +810,12 @@ class RestAPI():
                 to_timestamp=to_timestamp,
             )
 
-        result, msg = self._process_history(
+        response = self._process_history(
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
         )
+        result = response['result']
+        msg = response['message']
         result_dict = _wrap_in_result(result=process_result(result), message=msg)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
@@ -851,16 +851,18 @@ class RestAPI():
     def _add_owned_eth_tokens(
             self,
             tokens: List[EthereumToken],
-    ) -> Tuple[Optional[BlockchainBalancesUpdate], str]:
+    ) -> Dict[str, Any]:
         result, msg = self.rotkehlchen.add_owned_eth_tokens(tokens=tokens)
-        return result, msg
+        return {'result': result, 'message': msg}
 
     @require_loggedin_user()
     def add_owned_eth_tokens(self, tokens: List[EthereumToken], async_query: bool) -> Response:
         if async_query:
             return self._query_async(command='_add_owned_eth_tokens', tokens=tokens)
 
-        result, msg = self._add_owned_eth_tokens(tokens=tokens)
+        response = self._add_owned_eth_tokens(tokens=tokens)
+        result = response['result']
+        msg = response['message']
         if not result:
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
         return api_response(_wrap_in_ok_result(process_result(result)), status_code=HTTPStatus.OK)
@@ -868,16 +870,18 @@ class RestAPI():
     def _remove_owned_eth_tokens(
             self,
             tokens: List[EthereumToken],
-    ) -> Tuple[Optional[BlockchainBalancesUpdate], str]:
+    ) -> Dict[str, Any]:
         result, msg = self.rotkehlchen.remove_owned_eth_tokens(tokens=tokens)
-        return result, msg
+        return {'result': result, 'message': msg}
 
     @require_loggedin_user()
     def remove_owned_eth_tokens(self, tokens: List[EthereumToken], async_query: bool) -> Response:
         if async_query:
             return self._query_async(command='_remove_owned_eth_tokens', tokens=tokens)
 
-        result, msg = self._remove_owned_eth_tokens(tokens=tokens)
+        response = self._remove_owned_eth_tokens(tokens=tokens)
+        result = response['result']
+        msg = response['message']
         if not result:
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
