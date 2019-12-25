@@ -20,7 +20,7 @@
             :expanded.sync="expanded"
             single-expand
             show-expand
-            item-key="id"
+            item-key="trade_id"
           >
             <template #item.pair="{ item }">
               {{ item.pair }}
