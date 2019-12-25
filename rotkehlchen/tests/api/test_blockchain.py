@@ -321,6 +321,123 @@ def test_add_blockchain_accounts(
     )
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+@pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
+@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
+def test_add_blockchain_accounts_async(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+        btc_accounts,
+        number_of_eth_accounts,
+):
+    """A simpler version of the above test for adding blockchain accounts for async
+
+    The main purpose of this test is to see that querying the endpoint asynchronously also works"""
+    # Disable caching of query results
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    rotki.blockchain.cache_ttl_secs = 0
+    # Test by having balances queried before adding an account
+    eth_balances = ['1000000', '2000000']
+    token_balances = {'RDN': ['0', '4000000']}
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=btc_accounts,
+        eth_balances=eth_balances,
+        token_balances=token_balances,
+    )
+
+    new_eth_accounts = [make_ethereum_address(), make_ethereum_address()]
+    all_eth_accounts = ethereum_accounts + new_eth_accounts
+    eth_balances = ['1000000', '2000000', '3000000', '4000000']
+    token_balances = {'RDN': ['0', '4000000', '0', '250000000']}
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=all_eth_accounts,
+        btc_accounts=btc_accounts,
+        eth_balances=eth_balances,
+        token_balances=token_balances,
+    )
+
+    # The application has started only with 2 ethereum accounts. Let's add two more
+    with setup.blockchain_patch:
+        response = requests.put(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainsaccountsresource",
+            blockchain='ETH',
+        ), json={'accounts': new_eth_accounts, 'async_query': True})
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+    assert_eth_balances_result(
+        rotki=rotki,
+        json_data=outcome,
+        eth_accounts=all_eth_accounts,
+        eth_balances=setup.eth_balances,
+        token_balances=setup.token_balances,
+        also_btc=False,  # All blockchain assets have not been queried yet
+    )
+
+    # Now try to query all balances to make sure the result is the stored
+    with setup.blockchain_patch:
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainbalancesresource",
+        ))
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == ''
+    assert_eth_balances_result(
+        rotki=rotki,
+        json_data=json_data,
+        eth_accounts=all_eth_accounts,
+        eth_balances=setup.eth_balances,
+        token_balances=setup.token_balances,
+        also_btc=True,
+    )
+
+    # Now we will try to add a new BTC account. Setup the mocking infrastructure again
+    all_btc_accounts = btc_accounts + [UNIT_BTC_ADDRESS3]
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=all_eth_accounts,
+        btc_accounts=all_btc_accounts,
+        eth_balances=eth_balances,
+        token_balances=token_balances,
+        btc_balances=['3000000', '5000000', '600000000'],
+    )
+    # add the new BTC account
+    with setup.blockchain_patch:
+        response = requests.put(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainsaccountsresource",
+            blockchain='BTC',
+        ), json={'accounts': [UNIT_BTC_ADDRESS3], 'async_query': True})
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+    assert_btc_balances_result(
+        json_data=outcome,
+        btc_accounts=all_btc_accounts,
+        btc_balances=setup.btc_balances,
+        also_eth=True,
+    )
+
+    # Now try to query all balances to make sure the result is also stored
+    with setup.blockchain_patch:
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainbalancesresource",
+        ))
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == ''
+    assert_btc_balances_result(
+        json_data=json_data,
+        btc_accounts=all_btc_accounts,
+        btc_balances=setup.btc_balances,
+        also_eth=True,
+    )
+
+
 @pytest.mark.parametrize('method', ['put', 'delete'])
 def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, method):
     """
@@ -485,7 +602,6 @@ def test_remove_blockchain_accounts(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     rotki.blockchain.cache_ttl_secs = 0
 
-    # query_balances_before_first_modification = False
     if query_balances_before_first_modification:
         # Also test by having balances queried before removing an account
         removed_eth_accounts = [ethereum_accounts[0], ethereum_accounts[2]]
@@ -579,6 +695,132 @@ def test_remove_blockchain_accounts(
     assert json_data['message'] == ''
     assert_btc_balances_result(
         json_data=json_data,
+        btc_accounts=all_btc_accounts,
+        btc_balances=setup.btc_balances,
+        also_eth=True,
+    )
+
+    # Now try to query all balances to make sure the result is also stored
+    with setup.blockchain_patch:
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainbalancesresource",
+        ))
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == ''
+    assert_btc_balances_result(
+        json_data=json_data,
+        btc_accounts=all_btc_accounts,
+        btc_balances=setup.btc_balances,
+        also_eth=True,
+    )
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [4])
+@pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
+@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
+def test_remove_blockchain_accounts_async(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+        btc_accounts,
+        number_of_eth_accounts,
+):
+    """A simpler version of the above test for removing blockchain accounts for async
+
+    The main purpose of this test is to see that querying the endpoint asynchronously also works"""
+    # Disable caching of query results
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    rotki.blockchain.cache_ttl_secs = 0
+
+    # Test by having balances queried before removing an account
+    removed_eth_accounts = [ethereum_accounts[0], ethereum_accounts[2]]
+    all_eth_accounts = [ethereum_accounts[1], ethereum_accounts[3]]
+    eth_balances = ['3000000', '4000000']
+    token_balances = {'RDN': ['0', '250000000']}
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=all_eth_accounts,
+        btc_accounts=btc_accounts,
+        eth_balances=eth_balances,
+        token_balances=token_balances,
+    )
+    with setup.blockchain_patch:
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainbalancesresource",
+        ))
+
+    # Accounts to remove. Assure they are not in order to test that it does not affect anything
+    removed_eth_accounts = [ethereum_accounts[0], ethereum_accounts[2]]
+    all_eth_accounts = [ethereum_accounts[1], ethereum_accounts[3]]
+    eth_balances = ['3000000', '4000000']
+    token_balances = {'RDN': ['0', '250000000']}
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=all_eth_accounts,
+        btc_accounts=btc_accounts,
+        eth_balances=eth_balances,
+        token_balances=token_balances,
+    )
+
+    # The application has started with 4 ethereum accounts. Remove two and see that balances match
+    with setup.blockchain_patch:
+        response = requests.delete(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainsaccountsresource",
+            blockchain='ETH',
+        ), json={'accounts': removed_eth_accounts, 'async_query': True})
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+    assert_eth_balances_result(
+        rotki=rotki,
+        json_data=outcome,
+        eth_accounts=all_eth_accounts,
+        eth_balances=setup.eth_balances,
+        token_balances=setup.token_balances,
+        also_btc=False,  # All blockchain assets have not been queried yet
+    )
+
+    # Now try to query all balances to make sure the result is the stored
+    with setup.blockchain_patch:
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainbalancesresource",
+        ))
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == ''
+    assert_eth_balances_result(
+        rotki=rotki,
+        json_data=json_data,
+        eth_accounts=all_eth_accounts,
+        eth_balances=setup.eth_balances,
+        token_balances=setup.token_balances,
+        also_btc=True,
+    )
+
+    # Now we will try to remove a BTC account. Setup the mocking infrastructure again
+    all_btc_accounts = [UNIT_BTC_ADDRESS2]
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=all_eth_accounts,
+        btc_accounts=all_btc_accounts,
+        eth_balances=eth_balances,
+        token_balances=token_balances,
+        btc_balances=['600000000'],
+    )
+    # remove the new BTC account
+    with setup.blockchain_patch:
+        response = requests.delete(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainsaccountsresource",
+            blockchain='BTC',
+        ), json={'accounts': [UNIT_BTC_ADDRESS1], 'async_query': True})
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+    assert_btc_balances_result(
+        json_data=outcome,
         btc_accounts=all_btc_accounts,
         btc_balances=setup.btc_balances,
         also_eth=True,
