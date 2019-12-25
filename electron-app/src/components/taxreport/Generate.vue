@@ -44,7 +44,7 @@
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
-import { convertToTimestamp } from '@/utils/conversion';
+import moment from 'moment';
 
 @Component({
   components: {
@@ -66,12 +66,17 @@ export default class Generate extends Vue {
     (v: string) => !!v || 'End date cannot be empty'
   ];
 
+  private convertToTimestamp(date: string): number {
+    const format = date.indexOf(' ') > -1 ? 'DD/MM/YYYY HH:mm' : 'DD/MM/YYYY';
+    return moment(date, format).unix();
+  }
+
   @Watch('start')
   onStartChange() {
     this.invalidRange =
       !!this.start &&
       !!this.end &&
-      convertToTimestamp(this.start) > convertToTimestamp(this.end);
+      this.convertToTimestamp(this.start) > this.convertToTimestamp(this.end);
     this.message = 'The end time should be after the start time.';
   }
 
@@ -80,13 +85,13 @@ export default class Generate extends Vue {
     this.invalidRange =
       !!this.start &&
       !!this.end &&
-      convertToTimestamp(this.start) > convertToTimestamp(this.end);
+      this.convertToTimestamp(this.start) > this.convertToTimestamp(this.end);
     this.message = 'The end time should be after the start time.';
   }
 
   generate() {
-    const start = convertToTimestamp(this.start);
-    const end = convertToTimestamp(this.end);
+    const start = this.convertToTimestamp(this.start);
+    const end = this.convertToTimestamp(this.end);
     this.$emit('generate', {
       start,
       end

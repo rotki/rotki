@@ -51,9 +51,10 @@ export default class DateTimePicker extends Vue {
   @Prop({ required: false, default: false, type: Boolean })
   limitNow!: boolean;
 
-  private date = /^([0-2]\d|[3][0-1])\/([0]\d|[1][0-2])\/([2][01]|[1][6-9])\d{2}(\s([0-1]\d|[2][0-3])(:[0-5]\d))$/;
+  private date = /^([0-2]\d|[3][0-1])\/([0]\d|[1][0-2])\/([2][01]|[1][6-9])\d{2}(\s([0-1]\d|[2][0-3])(:[0-5]\d))?$/;
   private dateFormatRule = (v: string) =>
-    (v && this.date.test(v)) || 'Date should be in DD/MM/YYYY HH:mm format';
+    (v && this.date.test(v)) ||
+    'Date should be in DD/MM/YYYY or DD/MM/YYYY HH:MM format';
 
   timeModel: string = moment().format(DateTimePicker.timeFormat);
   dateModel: string = '';
@@ -80,7 +81,10 @@ export default class DateTimePicker extends Vue {
   }
 
   private updateActualDate() {
-    const value = `${this.formatDate(this.dateModel)} ${this.timeModel}`;
+    let value = this.formatDate(this.dateModel);
+    if (this.timeModel) {
+      value += ` ${this.timeModel}`;
+    }
     this.input(value);
   }
 
