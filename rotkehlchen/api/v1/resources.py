@@ -454,16 +454,26 @@ class BlockchainsAccountsResource(BaseResource):
             self,
             blockchain: SupportedBlockchain,
             accounts: List[BlockchainAddress],
+            async_query: bool,
     ) -> Response:
-        return self.rest_api.add_blockchain_accounts(blockchain=blockchain, accounts=accounts)
+        return self.rest_api.add_blockchain_accounts(
+            blockchain=blockchain,
+            accounts=accounts,
+            async_query=async_query,
+        )
 
     @use_kwargs(modify_schema, locations=('json', 'view_args'))
     def delete(
             self,
             blockchain: SupportedBlockchain,
             accounts: List[BlockchainAddress],
+            async_query: bool,
     ) -> Response:
-        return self.rest_api.remove_blockchain_accounts(blockchain=blockchain, accounts=accounts)
+        return self.rest_api.remove_blockchain_accounts(
+            blockchain=blockchain,
+            accounts=accounts,
+            async_query=async_query,
+        )
 
 
 class IgnoredAssetsResource(BaseResource):

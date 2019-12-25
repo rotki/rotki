@@ -656,6 +656,7 @@ class EthTokensSchema(BaseSchema):
 class BlockchainsAccountsSchema(BaseSchema):
     blockchain = BlockchainField(required=True)
     accounts = fields.List(fields.String(), required=True)
+    async_query = fields.Boolean(missing=False)
 
     class Meta:
         strict = True

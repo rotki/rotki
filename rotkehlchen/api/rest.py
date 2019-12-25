@@ -887,49 +887,104 @@ class RestAPI():
 
         return api_response(_wrap_in_ok_result(process_result(result)), status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
-    def add_blockchain_accounts(
+    def _add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
             accounts: List[BlockchainAddress],
-    ) -> Response:
+    ) -> Dict[str, Any]:
+        """
+        This returns the typical async response dict but with the
+        extra status code argument for errors
+        """
         try:
             result, added_accounts, msg = self.rotkehlchen.blockchain.add_blockchain_accounts(
                 blockchain=blockchain,
                 accounts=accounts,
             )
         except EthSyncError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
 
-        # If no accounts were added, that means the only account given was invalid
+        # If no accounts were added, that means the only account/s given were invalid
         if len(added_accounts) == 0:
-            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.BAD_REQUEST)
+            return {'result': None, 'message': msg, 'status_code': HTTPStatus.BAD_REQUEST}
 
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+        # success
+        return {'result': result, 'message': ''}
 
     @require_loggedin_user()
-    def remove_blockchain_accounts(
+    def add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
             accounts: List[BlockchainAddress],
+            async_query: bool,
     ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_add_blockchain_accounts',
+                blockchain=blockchain,
+                accounts=accounts,
+            )
+
+        response = self._add_blockchain_accounts(blockchain=blockchain, accounts=accounts)
+        result = response['result']
+        msg = response['message']
+
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+
+    def _remove_blockchain_accounts(
+            self,
+            blockchain: SupportedBlockchain,
+            accounts: List[BlockchainAddress],
+    ) -> Dict[str, Any]:
+        """
+        This returns the typical async response dict but with the
+        extra status code argument for errors
+        """
         try:
             result, removed_accounts, msg = self.rotkehlchen.blockchain.remove_blockchain_accounts(
                 blockchain=blockchain,
                 accounts=accounts,
             )
         except EthSyncError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
 
-        # If no accounts were removed, that means the only account given was invalid
+        # If no accounts were removed, that means the only account/s given were invalid
         if len(removed_accounts) == 0:
-            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.BAD_REQUEST)
+            return {'result': None, 'message': msg, 'status_code': HTTPStatus.BAD_REQUEST}
 
+        return {'result': result, 'message': ''}
+
+    @require_loggedin_user()
+    def remove_blockchain_accounts(
+            self,
+            blockchain: SupportedBlockchain,
+            accounts: List[BlockchainAddress],
+            async_query: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_remove_blockchain_accounts',
+                blockchain=blockchain,
+                accounts=accounts,
+            )
+
+        response = self._remove_blockchain_accounts(blockchain=blockchain, accounts=accounts)
+        result = response['result']
+        msg = response['message']
+
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=response['status_code'])
+
+        # success
         result_dict = _wrap_in_result(result, msg)
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
 
