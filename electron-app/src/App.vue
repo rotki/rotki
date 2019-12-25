@@ -123,7 +123,10 @@ export default class App extends Vue {
       // send ack to main.
       ipcRenderer.send('ack', 1);
     });
-    await this.$store.dispatch('version');
+    ipcRenderer.on('connected', async () => {
+      await this.$store.dispatch('version');
+      ipcRenderer.send('ack', 1);
+    });
   }
 }
 </script>

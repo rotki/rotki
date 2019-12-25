@@ -38,8 +38,15 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         );
       });
   },
-  fetchExchangeBalances({ commit }, payload: ExchangeBalancePayload): void {
+  fetchExchangeBalances(
+    { commit, rootGetters },
+    payload: ExchangeBalancePayload
+  ): void {
     const { name } = payload;
+    const isTaskRunning = rootGetters['tasks/isTaskRunning'];
+    if (isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES)) {
+      return;
+    }
     api
       .queryExchangeBalancesAsync(name)
       .then(result => {
@@ -84,8 +91,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       notify(`Failed fetching exchange rates: ${e.message}`, 'Exchange Rates');
     }
   },
-  async fetchBlockchainBalances({ commit }): Promise<void> {
+  async fetchBlockchainBalances({ commit, rootGetters }): Promise<void> {
     try {
+      const isTaskRunning = rootGetters['tasks/isTaskRunning'];
+      if (isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES)) {
+        return;
+      }
       const result = await api.queryBlockchainBalancesAsync();
       const task = createTask(
         result.task_id,

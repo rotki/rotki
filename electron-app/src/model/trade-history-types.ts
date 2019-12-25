@@ -28,10 +28,9 @@ export interface ApiTradeHistoryOverview {
   readonly total_profit_loss: string;
 }
 
-export interface TradeHistoryResult {
+export interface TradeHistory {
   readonly overview: ApiTradeHistoryOverview;
   readonly all_events: ApiEventEntry[];
-  readonly error?: string;
 }
 
 export interface TradeHistoryOverview {

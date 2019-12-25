@@ -417,7 +417,7 @@ export class RotkehlchenApi {
     });
   }
 
-  query_latest_location_value_distribution(): Promise<LocationData[]> {
+  queryLatestLocationValueDistribution(): Promise<LocationData[]> {
     return new Promise<LocationData[]>((resolve, reject) => {
       this.axios
         .get<ActionResult<LocationData[]>>('/statistics/value_distribution', {
@@ -475,7 +475,7 @@ export class RotkehlchenApi {
   ): Promise<AsyncQuery> {
     return new Promise<AsyncQuery>((resolve, reject) => {
       this.axios
-        .get<ActionResult<AsyncQuery>>('/exchanges/trades', {
+        .get<ActionResult<AsyncQuery>>('/history', {
           params: {
             async_query: true,
             from_timestamp: start_ts,

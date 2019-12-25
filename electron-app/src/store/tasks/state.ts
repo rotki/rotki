@@ -2,6 +2,7 @@ import { Task, TaskMeta } from '@/model/task';
 
 export interface TaskState {
   tasks: TaskMap<TaskMeta>;
+  processingTasks: number[];
 }
 
 export interface TaskMap<T extends TaskMeta> {
@@ -9,7 +10,8 @@ export interface TaskMap<T extends TaskMeta> {
 }
 
 export const defaultState: () => TaskState = () => ({
-  tasks: {}
+  tasks: {},
+  processingTasks: []
 });
 
 export const state: TaskState = defaultState();
