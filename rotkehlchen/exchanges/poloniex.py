@@ -9,6 +9,7 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, overload
 from urllib.parse import urlencode
 
+from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
@@ -53,7 +54,12 @@ from rotkehlchen.typing import (
     TradePair,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import cache_response_timewise, create_timestamp, retry_calls
+from rotkehlchen.utils.misc import (
+    cache_response_timewise,
+    create_timestamp,
+    protect_with_lock,
+    retry_calls,
+)
 from rotkehlchen.utils.serialization import rlk_jsonloads, rlk_jsonloads_dict, rlk_jsonloads_list
 
 if TYPE_CHECKING:
@@ -230,13 +236,13 @@ class Poloniex(ExchangeInterface):
             'Key': self.api_key,
         })
         self.msg_aggregator = msg_aggregator
+        self.nonce_lock = Semaphore()
 
     def first_connection(self) -> None:
         if self.first_connection_made:
             return
 
-        with self.lock:
-            self.first_connection_made = True
+        self.first_connection_made = True
 
     def validate_api_key(self) -> Tuple[bool, str]:
         try:
@@ -289,7 +295,7 @@ class Poloniex(ExchangeInterface):
             return rlk_jsonloads(ret.text)
 
         req['command'] = command
-        with self.lock:
+        with self.nonce_lock:
             # Protect this region with a lock since poloniex will reject
             # non-increasing nonces. So if two greenlets come in here at
             # the same time one of them will fail
@@ -405,6 +411,7 @@ class Poloniex(ExchangeInterface):
         return response
 
     # ---- General exchanges interface ----
+    @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
         try:

@@ -47,7 +47,7 @@ from rotkehlchen.typing import (
     TradePair,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import cache_response_timewise
+from rotkehlchen.utils.misc import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 if TYPE_CHECKING:
@@ -275,6 +275,7 @@ class Bittrex(ExchangeInterface):
         result = self.api_query('getcurrencies')
         return result
 
+    @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
         try:

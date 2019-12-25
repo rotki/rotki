@@ -7,6 +7,7 @@ import operator
 import re
 import sys
 import time
+from collections import defaultdict
 from functools import wraps
 from http import HTTPStatus
 from typing import Any, Callable, Dict, List, Union
@@ -85,6 +86,17 @@ def timestamp_to_date(ts: Timestamp, formatstr: str = '%d/%m/%Y %H:%M:%S') -> st
     return datetime.datetime.utcfromtimestamp(ts).strftime(formatstr)
 
 
+def _function_sig_key(name: str, *args: Any, **kwargs: Any) -> int:
+    """Return a unique int identifying a function's call signature"""
+    function_sig = name
+    for arg in args:
+        function_sig += str(arg)
+    for _, value in kwargs.items():
+        function_sig += str(value)
+
+    return hash(function_sig)
+
+
 class CacheableObject():
     """Interface for objects that can use timewise caches
 
@@ -93,18 +105,15 @@ class CacheableObject():
     """
 
     def __init__(self) -> None:
-        self.lock = Semaphore()
+        super().__init__()
         self.results_cache: Dict[int, ResultCache] = {}
+        # Can also be 0 which means cache is disabled.
         self.cache_ttl_secs = CACHE_RESPONSE_FOR_SECS
 
 
 def cache_response_timewise() -> Callable:
     """ This is a decorator for caching results of functions of objects.
-    The objects must adhere to the interface of having:
-        - A results_cache dictionary attribute
-        - A semaphore attribute named lock
-        - A cache_ttl_secs attribute denoting how long the cache should live.
-          Can also be 0 which means cache is disabled.
+    The objects must adhere to the CachableOject interface.
 
     Objects adhering to this interface are:
         - all the exchanges
@@ -114,33 +123,63 @@ def cache_response_timewise() -> Callable:
     def _cache_response_timewise(f: Callable) -> Callable:
         @wraps(f)
         def wrapper(wrappingobj: CacheableObject, *args: Any, **kwargs: Any) -> Any:
-            function_sig = f.__name__
-            for arg in args:
-                function_sig += str(arg)
-            for _, value in kwargs.items():
-                function_sig += str(value)
-            # TODO: Do I really need hash() here?
-            cache_key = hash(function_sig)
 
-            with wrappingobj.lock:
-                now = ts_now()
-                if cache_key in wrappingobj.results_cache:
-                    cache_life_secs = now - wrappingobj.results_cache[cache_key].timestamp
+            cache_key = _function_sig_key(f.__name__, *args, **kwargs)
+            # Check the cache
+            now = ts_now()
+            if cache_key in wrappingobj.results_cache:
+                cache_life_secs = now - wrappingobj.results_cache[cache_key].timestamp
 
-                cache_miss = (
-                    cache_key not in wrappingobj.results_cache or
-                    cache_life_secs >= wrappingobj.cache_ttl_secs
-                )
+            cache_miss = (
+                cache_key not in wrappingobj.results_cache or
+                cache_life_secs >= wrappingobj.cache_ttl_secs
+            )
 
             if cache_miss:
+                # Call the function, write the result in cache and return it
                 result = f(wrappingobj, *args, **kwargs)
-                with wrappingobj.lock:
-                    wrappingobj.results_cache[cache_key] = ResultCache(result, now)
+                wrappingobj.results_cache[cache_key] = ResultCache(result, now)
                 return result
 
-            # else hit the cache
-            with wrappingobj.lock:
-                return wrappingobj.results_cache[cache_key].result
+            # else hit the cache and return it
+            return wrappingobj.results_cache[cache_key].result
+
+        return wrapper
+    return _cache_response_timewise
+
+
+class LockableQueryObject():
+    """Interface for objects who have queries that disallow concurrency
+
+    Any object that adheres to this interface can have its functions
+    use the @protect_with_lock decorator
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.query_locks_map: Dict[int, Semaphore] = defaultdict(Semaphore)
+        # Accessing and writing to the query_locks map also needs to be protected
+        self.query_locks_map_lock = Semaphore()
+
+
+def protect_with_lock() -> Callable:
+    """ This is a decorator for protecting a call of an object with a lock
+    The objects must adhere to the interface of having:
+        - A mapping of ids to query_lock objects
+
+    Objects adhering to this interface(LockableQueryObject) are:
+        - all the exchanges
+        - the Blockchain object
+    """
+    def _cache_response_timewise(f: Callable) -> Callable:
+        @wraps(f)
+        def wrapper(wrappingobj: LockableQueryObject, *args: Any, **kwargs: Any) -> Any:
+            lock_key = _function_sig_key(f.__name__, *args, **kwargs)
+            with wrappingobj.query_locks_map_lock:
+                lock = wrappingobj.query_locks_map[lock_key]
+            with lock:
+                result = f(wrappingobj, *args, **kwargs)
+                return result
 
         return wrapper
     return _cache_response_timewise

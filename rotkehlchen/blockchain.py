@@ -24,7 +24,9 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
     CacheableObject,
+    LockableQueryObject,
     cache_response_timewise,
+    protect_with_lock,
     request_get_direct,
     satoshis_to_btc,
 )
@@ -45,7 +47,7 @@ BlockchainBalancesUpdate = Dict[str, Union[Balances, Totals]]
 EthBalances = Dict[ChecksumEthAddress, Dict[Union[Asset, str], FVal]]
 
 
-class Blockchain(CacheableObject):
+class Blockchain(CacheableObject, LockableQueryObject):
 
     def __init__(
             self,
@@ -54,6 +56,7 @@ class Blockchain(CacheableObject):
             ethchain: 'Ethchain',
             msg_aggregator: MessagesAggregator,
     ):
+        super().__init__()
         self.ethchain = ethchain
         self.msg_aggregator = msg_aggregator
         self.owned_eth_tokens = owned_eth_tokens
@@ -63,8 +66,6 @@ class Blockchain(CacheableObject):
         self.balances: Balances = defaultdict(dict)
         # Per asset total balances
         self.totals: Totals = defaultdict(dict)
-
-        super().__init__()
 
     def __del__(self) -> None:
         del self.ethchain
@@ -76,7 +77,6 @@ class Blockchain(CacheableObject):
     def eth_tokens(self) -> List[EthereumToken]:
         return self.owned_eth_tokens
 
-    @cache_response_timewise()
     def query_balances(
             self,
             blockchain: Optional[SupportedBlockchain] = None,
@@ -129,6 +129,8 @@ class Blockchain(CacheableObject):
 
         return satoshis_to_btc(FVal(btc_resp))  # result is in satoshis
 
+    @protect_with_lock()
+    @cache_response_timewise()
     def query_btc_balances(self) -> None:
         if len(self.accounts.btc) == 0:
             return
@@ -500,6 +502,8 @@ class Blockchain(CacheableObject):
 
         return {'per_account': self.balances, 'totals': self.totals}
 
+    @protect_with_lock()
+    @cache_response_timewise()
     def query_ethereum_tokens(
             self,
             tokens: List[EthereumToken],
@@ -538,6 +542,8 @@ class Blockchain(CacheableObject):
             eth_balances,
         )
 
+    @protect_with_lock()
+    @cache_response_timewise()
     def query_ethereum_balances(self) -> None:
         if len(self.accounts.eth) == 0:
             return

@@ -350,9 +350,9 @@ class Rotkehlchen():
             else:
                 balances[exchange.name] = exchange_balances
 
-        result, error_or_empty = self.blockchain.query_balances(blockchain=None)
-        if error_or_empty == '':
-            balances['blockchain'] = result['totals']
+        blockchain_result, _ = self.blockchain.query_balances(blockchain=None)
+        if blockchain_result is not None:
+            balances['blockchain'] = blockchain_result['totals']
         else:
             problem_free = False
 
