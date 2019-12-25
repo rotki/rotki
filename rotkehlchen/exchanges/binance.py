@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, 
 from urllib.parse import urlencode
 
 import gevent
+from gevent.lock import Semaphore
 
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import BINANCE_BASE_URL
@@ -30,7 +31,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, AssetMovementCategory, Fee, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import cache_response_timewise, ts_now
+from rotkehlchen.utils.misc import cache_response_timewise, protect_with_lock, ts_now
 from rotkehlchen.utils.serialization import rlk_jsonloads
 
 if TYPE_CHECKING:
@@ -175,6 +176,7 @@ class Binance(ExchangeInterface):
         self.msg_aggregator = msg_aggregator
         self.initial_backoff = initial_backoff
         self.backoff_limit = backoff_limit
+        self.nonce_lock = Semaphore()
 
     def first_connection(self) -> None:
         if self.first_connection_made:
@@ -215,7 +217,7 @@ class Binance(ExchangeInterface):
         backoff = self.initial_backoff
 
         while True:
-            with self.lock:
+            with self.nonce_lock:
                 # Protect this region with a lock since binance will reject
                 # non-increasing nonces. So if two greenlets come in here at
                 # the same time one of them will fail
@@ -284,6 +286,7 @@ class Binance(ExchangeInterface):
         return json_ret
 
     def api_query_dict(self, method: str, options: Optional[Dict] = None) -> Dict:
+        print(f'At binance api_query_dict with {method}')
         result = self.api_query(method, options)
         assert isinstance(result, Dict)
         return result
@@ -293,6 +296,7 @@ class Binance(ExchangeInterface):
         assert isinstance(result, List)
         return result
 
+    @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[dict], str]:
         self.first_connection()

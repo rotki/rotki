@@ -10,6 +10,7 @@ import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
 
+from gevent.lock import Semaphore
 from requests import Response
 
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
@@ -43,7 +44,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, Location, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import cache_response_timewise, retry_calls
+from rotkehlchen.utils.misc import cache_response_timewise, protect_with_lock, retry_calls
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 if TYPE_CHECKING:
@@ -243,6 +244,7 @@ class Kraken(ExchangeInterface):
         self.session.headers.update({
             'API-Key': self.api_key,
         })
+        self.nonce_lock = Semaphore()
 
     def validate_api_key(self) -> Tuple[bool, str]:
         """Validates that the Kraken API Key is good for usage in Rotkehlchen
@@ -352,8 +354,8 @@ class Kraken(ExchangeInterface):
 
         urlpath = '/' + KRAKEN_API_VERSION + '/private/' + method
 
-        with self.lock:
-            # Protect this section, or else
+        with self.nonce_lock:
+            # Protect this section, or else, non increasing nonces will be rejected
             req['nonce'] = int(1000 * time.time())
             post_data = urlencode(req)
             # any unicode strings must be turned to bytes
@@ -376,6 +378,7 @@ class Kraken(ExchangeInterface):
         return _check_and_get_response(response, method)
 
     # ---- General exchanges interface ----
+    @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[dict], str]:
         try:

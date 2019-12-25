@@ -235,15 +235,17 @@ def test_multiple_balance_queries_not_concurrent(
     do not end up doing them multiple times, but reuse the results thanks to cache.
     """
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    # # Disable caching of query results
+    # rotki.blockchain.cache_ttl_secs = 0
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
 
     e = patch.object(
-        rotki.blockchain,
-        'query_ethereum_balances',
-        wraps=rotki.blockchain.query_ethereum_balances,
+        rotki.blockchain.ethchain,
+        'get_multieth_balance',
+        wraps=rotki.blockchain.ethchain.get_multieth_balance,
     )
     binance = rotki.exchange_manager.connected_exchanges['binance']
-    b = patch.object(binance, 'query_balances', wraps=binance.query_balances)
+    b = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
 
     # Test all balances request by requesting to not save the data
     with setup.poloniex_patch, setup.binance_patch, setup.blockchain_patch, e as eth, b as bn:

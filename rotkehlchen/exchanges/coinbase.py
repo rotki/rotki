@@ -33,7 +33,7 @@ from rotkehlchen.typing import (
     TradePair,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import cache_response_timewise
+from rotkehlchen.utils.misc import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
@@ -307,6 +307,7 @@ class Coinbase(ExchangeInterface):
 
         return final_data
 
+    @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
         try:

@@ -9,7 +9,7 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition,
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_location
 from rotkehlchen.typing import ApiKey, ApiSecret, T_ApiKey, T_ApiSecret, Timestamp
-from rotkehlchen.utils.misc import CacheableObject
+from rotkehlchen.utils.misc import CacheableObject, LockableQueryObject
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -26,7 +26,7 @@ ExchangeHistorySuccessCallback = Callable[
 ExchangeHistoryFailCallback = Callable[[str], None]
 
 
-class ExchangeInterface(CacheableObject):
+class ExchangeInterface(CacheableObject, LockableQueryObject):
 
     def __init__(
             self,
@@ -41,6 +41,7 @@ class ExchangeInterface(CacheableObject):
         assert isinstance(secret, T_ApiSecret), (
             'secret for {} should be a bytestring'.format(name)
         )
+        super().__init__()
         self.name = name
         self.db = database
         self.api_key = api_key
@@ -48,8 +49,6 @@ class ExchangeInterface(CacheableObject):
         self.first_connection_made = False
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
-
-        super().__init__()
         log.info(f'Initialized {name} exchange')
 
     def query_balances(self) -> Tuple[Optional[dict], str]:
