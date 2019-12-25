@@ -67,7 +67,6 @@ import { AccountBalance } from '@/model/blockchain-balances';
 import { createNamespacedHelpers } from 'vuex';
 import AccountBalances from '@/components/settings/AccountBalances.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
-import { createTask, TaskType } from '@/model/task';
 import { notify } from '@/store/notifications/utils';
 import { Severity } from '@/typing/types';
 
@@ -89,26 +88,7 @@ export default class BlockchainBalances extends Vue {
   loading: boolean = false;
 
   mounted() {
-    this.$api
-      .queryBlockchainBalancesAsync()
-      .then(value => {
-        const task = createTask(
-          value.task_id,
-          TaskType.USER_SETTINGS_QUERY_BLOCKCHAIN_BALANCES,
-          {
-            description: 'Query blockchain balances',
-            ignoreResult: false
-          }
-        );
-        this.$store.commit('tasks/add', task);
-      })
-      .catch((reason: Error) => {
-        notify(
-          `Error at querying blockchain balances async: ${reason.message}`,
-          'Query blockchain balances',
-          Severity.ERROR
-        );
-      });
+    this.$store.dispatch('balances/fetchBlockchainBalances');
   }
 
   async addAccount() {

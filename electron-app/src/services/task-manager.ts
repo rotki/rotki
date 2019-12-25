@@ -19,25 +19,6 @@ import map from 'lodash/map';
 import { ApiAssetBalances, Severity } from '@/typing/types';
 
 export class TaskManager {
-  private static onUserSettingsQueryBlockchainBalances(
-    payload: ActionResult<BlockchainBalances>,
-    _meta: TaskMeta
-  ) {
-    const { result, message } = payload;
-
-    if (message) {
-      notify(message, 'Blockchain query error');
-      return;
-    }
-
-    const { per_account, totals } = result;
-    const { ETH, BTC } = per_account;
-
-    store.commit('balances/updateEth', convertEthBalances(ETH));
-    store.commit('balances/updateBtc', convertBalances(BTC));
-    store.commit('balances/updateTotals', convertBalances(totals));
-  }
-
   private static onQueryExchangeBalances(
     payload: ActionResult<ApiAssetBalances>,
     meta: ExchangeMeta
@@ -156,8 +137,6 @@ export class TaskManager {
   readonly handler: {
     [type: string]: (result: any, meta: any) => void;
   } = {
-    [TaskType.USER_SETTINGS_QUERY_BLOCKCHAIN_BALANCES]:
-      TaskManager.onUserSettingsQueryBlockchainBalances,
     [TaskType.QUERY_EXCHANGE_BALANCES]: TaskManager.onQueryExchangeBalances,
     [TaskType.QUERY_BLOCKCHAIN_BALANCES]: this.onQueryBlockchainBalances,
     [TaskType.TRADE_HISTORY]: this.onTradeHistory
