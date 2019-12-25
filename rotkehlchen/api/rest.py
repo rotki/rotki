@@ -14,6 +14,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.blockchain import BlockchainBalancesUpdate
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.errors import (
@@ -847,16 +848,36 @@ class RestAPI():
         })
         return api_response(_wrap_in_ok_result(result_dict), status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
-    def add_owned_eth_tokens(self, tokens: List[EthereumToken]) -> Response:
+    def _add_owned_eth_tokens(
+            self,
+            tokens: List[EthereumToken],
+    ) -> Tuple[Optional[BlockchainBalancesUpdate], str]:
         result, msg = self.rotkehlchen.add_owned_eth_tokens(tokens=tokens)
+        return result, msg
+
+    @require_loggedin_user()
+    def add_owned_eth_tokens(self, tokens: List[EthereumToken], async_query: bool) -> Response:
+        if async_query:
+            return self._query_async(command='_add_owned_eth_tokens', tokens=tokens)
+
+        result, msg = self._add_owned_eth_tokens(tokens=tokens)
         if not result:
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
         return api_response(_wrap_in_ok_result(process_result(result)), status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
-    def remove_owned_eth_tokens(self, tokens: List[EthereumToken]) -> Response:
+    def _remove_owned_eth_tokens(
+            self,
+            tokens: List[EthereumToken],
+    ) -> Tuple[Optional[BlockchainBalancesUpdate], str]:
         result, msg = self.rotkehlchen.remove_owned_eth_tokens(tokens=tokens)
+        return result, msg
+
+    @require_loggedin_user()
+    def remove_owned_eth_tokens(self, tokens: List[EthereumToken], async_query: bool) -> Response:
+        if async_query:
+            return self._query_async(command='_remove_owned_eth_tokens', tokens=tokens)
+
+        result, msg = self._remove_owned_eth_tokens(tokens=tokens)
         if not result:
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 

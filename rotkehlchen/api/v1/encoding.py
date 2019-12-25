@@ -645,6 +645,7 @@ class HistoryExportingSchema(BaseSchema):
 
 class EthTokensSchema(BaseSchema):
     eth_tokens = fields.List(EthereumTokenAssetField(), required=True)
+    async_query = fields.Boolean(missing=False)
 
     class Meta:
         strict = True

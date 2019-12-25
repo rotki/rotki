@@ -1795,6 +1795,9 @@ Adding owned ETH tokens
 
 .. http:put:: /api/(version)/blockchains/ETH/tokens
 
+.. note::
+   This endpoint can also be queried asynchronously by using ``"async_query": true``
+
    Doing a PUT on the eth tokens endpoint with a list of tokens to add will add new ethereum tokens for tracking to the currently logged in user. It returns the updated blockchain per account and totals balances after the additions
 
 
@@ -1848,6 +1851,9 @@ Removing owned ETH tokens
 =========================
 
 .. http:delete:: /api/(version)/blockchains/ETH/tokens
+
+.. note::
+   This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    Doing a DELETE on the eth tokens endpoint with a list of tokens to delete will remove the given ethereum tokens from tracking for the currently logged in user. It returns the updated blockchain per account and totals balances after the deletions.
 
