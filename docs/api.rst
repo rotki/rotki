@@ -656,7 +656,7 @@ Querying the balances of exchanges
    Doing a GET on the appropriate exchanges balances endpoint will return the balances of all assets currently held in that exchange. If no name is provided then the balance of all exchanges is returned.
 
 .. note::
-   This endpoint can also be queried asynchronously by using ``"async_query": true``
+   This endpoint can also be queried asynchronously by using ``"async_query": true``. Passing it as a query argument here would be given as: ``?async_query=true``.
 
    **Example Request**:
 
@@ -862,7 +862,7 @@ Querying onchain balances
    Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain name will query balances only for that chain. Available blockchain names are: ``btc`` and ``eth``.
 
 .. note::
-   This endpoint can also be queried asynchronously by using ``"async_query": true``
+   This endpoint can also be queried asynchronously by using ``"async_query": true``. Passing it as a query argument here would be given as: ``?async_query=true``.
 
    **Example Request**:
 
@@ -1588,7 +1588,7 @@ Querying complete action history
 .. note::
    This endpoint also accepts parameters as query arguments.
 
-   Doing a GET on the history endpoint will trigger a query and processing of the history of all actions (trades, deposits, withdrawals, loans, eth transactions) within a specific time range.
+   Doing a GET on the history endpoint will trigger a query and processing of the history of all actions (trades, deposits, withdrawals, loans, eth transactions) within a specific time range. Passing them as a query arguments here would be given as: ``?async_query=true&from_timestamp=1514764800&to_timestamp=1572080165``.
 
 
    **Example Request**:
