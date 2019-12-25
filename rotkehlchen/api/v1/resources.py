@@ -432,15 +432,17 @@ class EthereumTokensResource(BaseResource):
     def put(
             self,
             eth_tokens: List[EthereumToken],
+            async_query: bool,
     ) -> Response:
-        return self.rest_api.add_owned_eth_tokens(tokens=eth_tokens)
+        return self.rest_api.add_owned_eth_tokens(tokens=eth_tokens, async_query=async_query)
 
     @use_kwargs(modify_schema, locations=('json',))
     def delete(
             self,
             eth_tokens: List[EthereumToken],
+            async_query: bool,
     ) -> Response:
-        return self.rest_api.remove_owned_eth_tokens(tokens=eth_tokens)
+        return self.rest_api.remove_owned_eth_tokens(tokens=eth_tokens, async_query=async_query)
 
 
 class BlockchainsAccountsResource(BaseResource):
