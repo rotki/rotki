@@ -17,12 +17,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_fee
 from rotkehlchen.typing import ApiKey, ApiSecret, AssetAmount, AssetMovementCategory, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import (
-    cache_response_timewise,
-    iso8601ts_to_timestamp,
-    protect_with_lock,
-    satoshis_to_btc,
-)
+from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
+from rotkehlchen.utils.misc import iso8601ts_to_timestamp, satoshis_to_btc
 from rotkehlchen.utils.serialization import rlk_jsonloads
 
 if TYPE_CHECKING:

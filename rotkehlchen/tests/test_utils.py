@@ -9,13 +9,8 @@ from rotkehlchen.exchanges.data_structures import invert_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.utils.misc import (
-    CacheableObject,
-    cache_response_timewise,
-    combine_dicts,
-    combine_stat_dicts,
-    iso8601ts_to_timestamp,
-)
+from rotkehlchen.utils.interfaces import CacheableObject, cache_response_timewise
+from rotkehlchen.utils.misc import combine_dicts, combine_stat_dicts, iso8601ts_to_timestamp
 from rotkehlchen.utils.version_check import check_if_version_up_to_date
 
 
