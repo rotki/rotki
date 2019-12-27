@@ -22,14 +22,13 @@ from rotkehlchen.typing import (
     SupportedBlockchain,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import (
+from rotkehlchen.utils.interfaces import (
     CacheableObject,
     LockableQueryObject,
     cache_response_timewise,
     protect_with_lock,
-    request_get_direct,
-    satoshis_to_btc,
 )
+from rotkehlchen.utils.misc import request_get_direct, satoshis_to_btc
 
 if TYPE_CHECKING:
     from rotkehlchen.ethchain import Ethchain
