@@ -3,7 +3,20 @@ import { Severity } from "@/typing/types";
   <v-row class="blockchain-balances">
     <v-col>
       <v-card>
-        <v-card-title>Blockchain Balance</v-card-title>
+        <v-card-title>
+          <span>Blockchain Balances</span>
+          <v-spacer></v-spacer>
+          <v-tooltip bottom>
+            <template #activator="{ on }">
+              <v-btn color="primary" text icon v-on="on" @click="refresh()">
+                <v-icon>fa-refresh</v-icon>
+              </v-btn>
+            </template>
+            <span>
+              Refreshes the blockchain data ignoring any cached entries
+            </span>
+          </v-tooltip>
+        </v-card-title>
         <v-card-text>
           <v-select
             v-model="selected"
@@ -105,6 +118,10 @@ export default class BlockchainBalances extends Vue {
       );
     }
     this.loading = false;
+  }
+
+  refresh() {
+    this.$store.dispatch('balances/fetchBlockchainBalances', true);
   }
 }
 </script>

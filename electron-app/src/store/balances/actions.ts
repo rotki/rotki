@@ -42,13 +42,13 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     { commit, rootGetters },
     payload: ExchangeBalancePayload
   ): void {
-    const { name } = payload;
+    const { name, ignoreCache } = payload;
     const isTaskRunning = rootGetters['tasks/isTaskRunning'];
     if (isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES)) {
       return;
     }
     api
-      .queryExchangeBalancesAsync(name)
+      .queryExchangeBalancesAsync(name, ignoreCache)
       .then(result => {
         const meta: ExchangeMeta = {
           name,
@@ -91,13 +91,16 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       notify(`Failed fetching exchange rates: ${e.message}`, 'Exchange Rates');
     }
   },
-  async fetchBlockchainBalances({ commit, rootGetters }): Promise<void> {
+  async fetchBlockchainBalances(
+    { commit, rootGetters },
+    ignoreCache: boolean = false
+  ): Promise<void> {
     try {
       const isTaskRunning = rootGetters['tasks/isTaskRunning'];
       if (isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES)) {
         return;
       }
-      const result = await api.queryBlockchainBalancesAsync();
+      const result = await api.queryBlockchainBalancesAsync(ignoreCache);
       const task = createTask(
         result.task_id,
         TaskType.QUERY_BLOCKCHAIN_BALANCES,
@@ -132,8 +135,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     commit('connectedExchanges', exchanges);
     for (const exchange of exchanges) {
       await dispatch('fetchExchangeBalances', {
-        name: exchange
-      });
+        name: exchange,
+        ignoreCache: false
+      } as ExchangeBalancePayload);
     }
   },
   async fetch(
@@ -194,4 +198,5 @@ export interface BlockchainAccountPayload {
 
 export interface ExchangeBalancePayload {
   readonly name: string;
+  readonly ignoreCache: boolean;
 }

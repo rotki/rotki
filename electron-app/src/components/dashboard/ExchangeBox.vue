@@ -46,6 +46,18 @@
             fa fa-arrow-circle-right
           </v-icon>
         </v-btn>
+        <v-tooltip bottom>
+          <template #activator="{ on }">
+            <v-btn text icon color="primary" @click="refresh()" v-on="on">
+              <v-icon>
+                fa-refresh
+              </v-icon>
+            </v-btn>
+          </template>
+          <span>
+            Refreshes the exchange data ignoring any cached entries
+          </span>
+        </v-tooltip>
       </v-col>
     </v-row>
   </v-card>
@@ -55,6 +67,7 @@
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import { Currency } from '@/model/currency';
+import { ExchangeBalancePayload } from '@/store/balances/actions';
 
 const { mapGetters } = createNamespacedHelpers('session');
 const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
@@ -78,6 +91,13 @@ export default class ExchangeBox extends Vue {
   get inverted(): boolean {
     return ['poloniex', 'binance', 'bitmex'].indexOf(name) > -1;
   }
+
+  refresh() {
+    this.$store.dispatch('balances/fetchExchangeBalances', {
+      name: this.name,
+      ignoreCache: true
+    } as ExchangeBalancePayload);
+  }
 }
 </script>
 <style scoped lang="scss">
@@ -100,7 +120,7 @@ export default class ExchangeBox extends Vue {
 .exchange-box__footer__view-details {
   border: none !important;
   height: 24px !important;
-  width: 100%;
+  width: calc(100% - 40px);
 }
 
 .exchange-box__footer .col-12 {

@@ -265,12 +265,16 @@ export class RotkehlchenApi {
     });
   }
 
-  queryExchangeBalancesAsync(name: string): Promise<AsyncQuery> {
+  queryExchangeBalancesAsync(
+    name: string,
+    ignoreCache: boolean = false
+  ): Promise<AsyncQuery> {
     return new Promise<AsyncQuery>((resolve, reject) => {
       this.axios
         .get<ActionResult<AsyncQuery>>(`/exchanges/balances/${name}`, {
           params: {
-            async_query: true
+            async_query: true,
+            ignore_cache: ignoreCache ? true : undefined
           }
         })
         .then(response => {
@@ -305,12 +309,15 @@ export class RotkehlchenApi {
     });
   }
 
-  queryBlockchainBalancesAsync(): Promise<AsyncQuery> {
+  queryBlockchainBalancesAsync(
+    ignoreCache: boolean = false
+  ): Promise<AsyncQuery> {
     return new Promise<AsyncQuery>((resolve, reject) => {
       this.axios
         .get<ActionResult<AsyncQuery>>('/balances/blockchains', {
           params: {
-            async_query: true
+            async_query: true,
+            ignore_cache: ignoreCache ? true : undefined
           }
         })
         .then(response => {
