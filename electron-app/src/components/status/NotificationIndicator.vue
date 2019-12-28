@@ -79,9 +79,26 @@
                       </span>
                     </v-tooltip>
                   </v-list-item-action-text>
-                  <v-icon :color="color(notification)">
-                    {{ icon(notification) }}
-                  </v-icon>
+                  <div>
+                    <v-icon
+                      :color="color(notification)"
+                      class="notification-indicator__messages__severity"
+                    >
+                      {{ icon(notification) }}
+                    </v-icon>
+                  </div>
+                  <v-list-item-action-text>
+                    <v-tooltip bottom>
+                      <template #activator="{ on }">
+                        <v-btn text icon v-on="on" @click="copy(notification)">
+                          <v-icon>fa fa-copy</v-icon>
+                        </v-btn>
+                      </template>
+                      <span>
+                        Copies the notification message to the clipboard
+                      </span>
+                    </v-tooltip>
+                  </v-list-item-action-text>
                 </v-list-item-action>
               </v-list-item>
 
@@ -91,6 +108,11 @@
         </v-col>
       </v-row>
     </v-menu>
+    <textarea
+      ref="copyText"
+      v-model="copyText"
+      class="notification-indicator__copy-text"
+    ></textarea>
   </div>
 </template>
 
@@ -117,6 +139,7 @@ export default class NotificationIndicator extends Vue {
   count!: number;
 
   confirmClear: boolean = false;
+  copyText: string = '';
 
   remove(id: number) {
     this.$store.commit('notifications/remove', id);
@@ -125,6 +148,16 @@ export default class NotificationIndicator extends Vue {
   reset() {
     this.confirmClear = false;
     this.$store.commit('notifications/reset');
+  }
+
+  copy(notification: NotificationData) {
+    this.copyText = notification.message;
+    setTimeout(() => {
+      copy.focus();
+      copy.select();
+      document.execCommand('copy');
+    }, 200);
+    const copy = this.$refs.copyText as HTMLTextAreaElement;
   }
 
   icon(notification: NotificationData) {
@@ -196,6 +229,17 @@ export default class NotificationIndicator extends Vue {
 .notification-indicator__messages__message {
   font-size: 13px;
   color: rgb(0, 0, 0, 0.6);
+  min-height: 60px;
+}
+
+.notification-indicator__copy-text {
+  position: absolute;
+  left: -999em;
+}
+
+.notification-indicator__messages__severity {
+  margin-top: 2px;
+  margin-bottom: 10px;
 }
 
 ::v-deep .v-badge__badge {
