@@ -76,6 +76,8 @@ class Blockchain(CacheableObject, LockableQueryObject):
     def eth_tokens(self) -> List[EthereumToken]:
         return self.owned_eth_tokens
 
+    @protect_with_lock()
+    @cache_response_timewise()
     def query_balances(
             self,
             blockchain: Optional[SupportedBlockchain] = None,
@@ -128,8 +130,6 @@ class Blockchain(CacheableObject, LockableQueryObject):
 
         return satoshis_to_btc(FVal(btc_resp))  # result is in satoshis
 
-    @protect_with_lock()
-    @cache_response_timewise()
     def query_btc_balances(self) -> None:
         if len(self.accounts.btc) == 0:
             return
@@ -245,7 +245,6 @@ class Blockchain(CacheableObject, LockableQueryObject):
         Call with 'append', operator.add to add the account
         Call with 'remove', operator.sub to remove the account
         """
-        getattr(self.accounts.btc, append_or_remove)(account)
         btc_usd_price = Inquirer().find_usd_price(A_BTC)
         remove_with_populated_balance = (
             append_or_remove == 'remove' and len(self.balances[A_BTC]) != 0
@@ -277,6 +276,8 @@ class Blockchain(CacheableObject, LockableQueryObject):
                 self.totals[A_BTC].get('usd_value', FVal(0)),
                 usd_balance,
             )
+        # At the very end add/remove it from the accounts
+        getattr(self.accounts.btc, append_or_remove)(account)
 
     def modify_eth_account(
             self,
@@ -288,6 +289,8 @@ class Blockchain(CacheableObject, LockableQueryObject):
 
         Call with 'append', operator.add to add the account
         Call with 'remove', operator.sub to remove the account
+
+        Raises Input error if the given_account is not a valid ETH address
         """
         # Make sure account goes into web3.py as a properly checksummed address
         try:
@@ -384,9 +387,9 @@ class Blockchain(CacheableObject, LockableQueryObject):
             raise InputError('Empty list of blockchain accounts to add was given')
 
         # If no blockchain query has happened before then we need to query the relevant
-        # chain to populate the self.balances mapping
+        # chain to populate the self.balances mapping.
         if str(blockchain) not in self.balances:
-            self.query_balances(blockchain)
+            self.query_balances(blockchain, ignore_cache=True)
 
         added_accounts = []
         full_msg = ''
@@ -446,7 +449,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
                 full_msg += '. ' + str(e)
 
         if not balances_queried_before:
-            self.query_balances(blockchain)
+            self.query_balances(blockchain, ignore_cache=True)
 
         result: BlockchainBalancesUpdate = {'per_account': self.balances, 'totals': self.totals}
 
@@ -501,8 +504,6 @@ class Blockchain(CacheableObject, LockableQueryObject):
 
         return {'per_account': self.balances, 'totals': self.totals}
 
-    @protect_with_lock()
-    @cache_response_timewise()
     def query_ethereum_tokens(
             self,
             tokens: List[EthereumToken],
@@ -541,8 +542,6 @@ class Blockchain(CacheableObject, LockableQueryObject):
             eth_balances,
         )
 
-    @protect_with_lock()
-    @cache_response_timewise()
     def query_ethereum_balances(self) -> None:
         if len(self.accounts.eth) == 0:
             return

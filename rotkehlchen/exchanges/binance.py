@@ -287,7 +287,6 @@ class Binance(ExchangeInterface):
         return json_ret
 
     def api_query_dict(self, method: str, options: Optional[Dict] = None) -> Dict:
-        print(f'At binance api_query_dict with {method}')
         result = self.api_query(method, options)
         assert isinstance(result, Dict)
         return result

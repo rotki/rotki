@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from unittest.mock import patch
 
 import pytest
 import requests
@@ -196,6 +197,91 @@ def test_query_blockchain_balances_async(
         btc_balances=setup.btc_balances,
         also_eth=True,
     )
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
+def test_query_blockchain_balances_ignore_cache(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+        btc_accounts,
+        number_of_eth_accounts,
+):
+    """Test that the query blockchain balances endpoint can ignore the cache"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=btc_accounts)
+    eth_query = patch.object(
+        rotki.blockchain,
+        'query_ethereum_balances',
+        wraps=rotki.blockchain.query_ethereum_balances,
+    )
+    tokens_query = patch.object(
+        rotki.blockchain,
+        'query_ethereum_tokens',
+        wraps=rotki.blockchain.query_ethereum_tokens,
+    )
+
+    with setup.blockchain_patch, eth_query as eth_mock, tokens_query as tokens_mock:
+        # Query ETH and token balances once
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "named_blockchain_balances_resource",
+            blockchain='ETH',
+        ))
+        assert_proper_response(response)
+        json_data = response.json()
+        assert json_data['message'] == ''
+        assert_eth_balances_result(
+            rotki=rotki,
+            json_data=json_data,
+            eth_accounts=ethereum_accounts,
+            eth_balances=setup.eth_balances,
+            token_balances=setup.token_balances,
+            also_btc=False,
+        )
+        assert eth_mock.call_count == 1
+        assert tokens_mock.call_count == 1
+
+        # Query again and make sure this time cache is used
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "named_blockchain_balances_resource",
+            blockchain='ETH',
+        ))
+        assert_proper_response(response)
+        json_data = response.json()
+        assert json_data['message'] == ''
+        assert_eth_balances_result(
+            rotki=rotki,
+            json_data=json_data,
+            eth_accounts=ethereum_accounts,
+            eth_balances=setup.eth_balances,
+            token_balances=setup.token_balances,
+            also_btc=False,
+        )
+        assert eth_mock.call_count == 1
+        assert tokens_mock.call_count == 1
+
+        # Finally query with ignoring the cache
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "named_blockchain_balances_resource",
+            blockchain='ETH',
+        ), json={'ignore_cache': True})
+        assert_proper_response(response)
+        json_data = response.json()
+        assert json_data['message'] == ''
+        assert_eth_balances_result(
+            rotki=rotki,
+            json_data=json_data,
+            eth_accounts=ethereum_accounts,
+            eth_balances=setup.eth_balances,
+            token_balances=setup.token_balances,
+            also_btc=False,
+        )
+        assert eth_mock.call_count == 2
+        assert tokens_mock.call_count == 2
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
@@ -446,6 +532,7 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, m
     Test for errors when both adding and removing a blockhain account. Both put/delete
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    rotki.blockchain.cache_ttl_secs = 0
 
     # Provide unsupported blockchain name
     account = '0x00d74c25bbf93df8b2a41d82b0076843b4db0349'
@@ -532,6 +619,8 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, m
         response=response,
         contained_in_msg=msg,
     )
+    assert_msg = 'Invalid BTC account should not have been added'
+    assert '18ddjB7HWTaxzvTbLp1nWvaixU3U2oTZ1' not in rotki.blockchain.accounts.btc, assert_msg
 
     # Provide not existing but valid ETH account for removal
     data = {'accounts': [make_ethereum_address()]}

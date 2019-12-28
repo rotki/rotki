@@ -285,16 +285,28 @@ class RestAPI():
         res = process_result(rates)
         return api_response(_wrap_in_ok_result(res), status_code=HTTPStatus.OK)
 
-    def _query_all_balances(self, save_data: bool) -> Dict[str, Any]:
-        result = self.rotkehlchen.query_balances(requested_save_data=save_data)
+    def _query_all_balances(self, save_data: bool, ignore_cache: bool) -> Dict[str, Any]:
+        result = self.rotkehlchen.query_balances(
+            requested_save_data=save_data,
+            ignore_cache=ignore_cache,
+        )
         return {'result': result, 'message': ''}
 
     @require_loggedin_user()
-    def query_all_balances(self, save_data: bool, async_query: bool) -> Response:
+    def query_all_balances(
+            self,
+            save_data: bool,
+            async_query: bool,
+            ignore_cache: bool,
+    ) -> Response:
         if async_query:
-            return self._query_async(command='_query_all_balances', save_data=save_data)
+            return self._query_async(
+                command='_query_all_balances',
+                save_data=save_data,
+                ignore_cache=ignore_cache,
+            )
 
-        response = self._query_all_balances(save_data=save_data)
+        response = self._query_all_balances(save_data=save_data, ignore_cache=ignore_cache)
         return api_response(
             _wrap_in_result(process_result(response['result']), response['message']),
             HTTPStatus.OK,
@@ -328,11 +340,11 @@ class RestAPI():
             status_code = HTTPStatus.CONFLICT
         return api_response(_wrap_in_result(result, message), status_code=status_code)
 
-    def _query_all_exchange_balances(self) -> Dict[str, Any]:
+    def _query_all_exchange_balances(self, ignore_cache: bool) -> Dict[str, Any]:
         final_balances = dict()
         error_msg = ''
         for name, exchange_obj in self.rotkehlchen.exchange_manager.connected_exchanges.items():
-            balances, msg = exchange_obj.query_balances()
+            balances, msg = exchange_obj.query_balances(ignore_cache=ignore_cache)
             if balances is None:
                 error_msg += msg
             else:
@@ -344,10 +356,10 @@ class RestAPI():
             result = final_balances
         return {'result': result, 'message': error_msg}
 
-    def _query_exchange_balances(self, name: Optional[str]) -> Dict[str, Any]:
+    def _query_exchange_balances(self, name: Optional[str], ignore_cache: bool) -> Dict[str, Any]:
         if name is None:
             # Query all exchanges
-            return self._query_all_exchange_balances()
+            return self._query_all_exchange_balances(ignore_cache=ignore_cache)
 
         # else query only the specific exchange
         exchange_obj = self.rotkehlchen.exchange_manager.connected_exchanges.get(name, None)
@@ -357,17 +369,26 @@ class RestAPI():
                 'message': f'Could not query balances for {name} since it is not registered',
             }
 
-        result, msg = exchange_obj.query_balances()
+        result, msg = exchange_obj.query_balances(ignore_cache=ignore_cache)
         return {'result': result, 'message': msg}
 
     @require_loggedin_user()
-    def query_exchange_balances(self, name: Optional[str], async_query: bool) -> Response:
+    def query_exchange_balances(
+            self,
+            name: Optional[str],
+            async_query: bool,
+            ignore_cache: bool,
+    ) -> Response:
         if async_query:
-            return self._query_async(command='_query_exchange_balances', name=name)
+            return self._query_async(
+                command='_query_exchange_balances',
+                name=name,
+                ignore_cache=ignore_cache,
+            )
 
-        response = self._query_exchange_balances(name=name)
+        response = self._query_exchange_balances(name=name, ignore_cache=ignore_cache)
         balances = response['result']
-        msg = response['msg']
+        msg = response['message']
         if balances is None:
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
@@ -463,8 +484,12 @@ class RestAPI():
     def _query_blockchain_balances(
             self,
             blockchain: Optional[SupportedBlockchain],
+            ignore_cache: bool,
     ) -> Dict[str, Any]:
-        result, msg = self.rotkehlchen.blockchain.query_balances(blockchain=blockchain)
+        result, msg = self.rotkehlchen.blockchain.query_balances(
+            blockchain=blockchain,
+            ignore_cache=ignore_cache,
+        )
         return {'result': result, 'message': msg}
 
     @require_loggedin_user()
@@ -472,11 +497,19 @@ class RestAPI():
             self,
             blockchain: Optional[SupportedBlockchain],
             async_query: bool,
+            ignore_cache: bool,
     ) -> Response:
         if async_query:
-            return self._query_async(command='_query_blockchain_balances', blockchain=blockchain)
+            return self._query_async(
+                command='_query_blockchain_balances',
+                blockchain=blockchain,
+                ignore_cache=ignore_cache,
+            )
 
-        response = self._query_blockchain_balances(blockchain=blockchain)
+        response = self._query_blockchain_balances(
+            blockchain=blockchain,
+            ignore_cache=ignore_cache,
+        )
         balances = response['result']
         msg = response['message']
         if balances is None:
@@ -911,7 +944,7 @@ class RestAPI():
             return {'result': None, 'message': msg, 'status_code': HTTPStatus.BAD_REQUEST}
 
         # success
-        return {'result': result, 'message': ''}
+        return {'result': result, 'message': msg}
 
     @require_loggedin_user()
     def add_blockchain_accounts(
@@ -961,7 +994,7 @@ class RestAPI():
         if len(removed_accounts) == 0:
             return {'result': None, 'message': msg, 'status_code': HTTPStatus.BAD_REQUEST}
 
-        return {'result': result, 'message': ''}
+        return {'result': result, 'message': msg}
 
     @require_loggedin_user()
     def remove_blockchain_accounts(

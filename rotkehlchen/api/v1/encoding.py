@@ -541,6 +541,7 @@ class NewUserSchema(BaseUserSchema):
 class AllBalancesQuerySchema(BaseSchema):
     async_query = fields.Boolean(missing=False)
     save_data = fields.Boolean(missing=True)
+    ignore_cache = fields.Boolean(missing=False)
 
     class Meta:
         strict = True
@@ -571,6 +572,7 @@ class ExchangesResourceRemoveSchema(BaseSchema):
 class ExchangeBalanceQuerySchema(BaseSchema):
     name = ExchangeNameField(missing=None)
     async_query = fields.Boolean(missing=False)
+    ignore_cache = fields.Boolean(missing=False)
 
     class Meta:
         strict = True
@@ -593,6 +595,7 @@ class ExchangeTradesQuerySchema(BaseSchema):
 class BlockchainBalanceQuerySchema(BaseSchema):
     blockchain = BlockchainField(missing=None)
     async_query = fields.Boolean(missing=False)
+    ignore_cache = fields.Boolean(missing=False)
 
     class Meta:
         strict = True

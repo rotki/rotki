@@ -166,10 +166,12 @@ class Foo(CacheableObject):
     def __init__(self):
         super().__init__()
 
+        self.do_sum_call_count = 0
         self.do_something_call_count = 0
 
     @cache_response_timewise()
     def do_sum(self, arg1, arg2):  # pylint: disable=no-self-use
+        self.do_sum_call_count += 1
         return arg1 + arg2
 
     @cache_response_timewise()
@@ -196,3 +198,18 @@ def test_cache_response_timewise_different_args():
     instance = Foo()
     assert instance.do_sum(1, 1) == 2
     assert instance.do_sum(2, 2) == 4
+    assert instance.do_sum_call_count == 2
+
+
+def test_cache_response_timewise_ignore_cache():
+    """Test that if the magic keyword argument `ignore_cache=True` is given the cache is ignored"""
+    instance = Foo()
+
+    assert instance.do_something() == 5
+    assert instance.do_something(ignore_cache=True) == 5
+    assert instance.do_something_call_count == 2
+
+    assert instance.do_sum(1, 1) == 2
+    assert instance.do_sum(1, 1) == 2
+    assert instance.do_sum(1, 1, ignore_cache=True) == 2
+    assert instance.do_sum_call_count == 2
