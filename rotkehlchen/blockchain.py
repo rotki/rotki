@@ -2,7 +2,7 @@ import logging
 import operator
 from collections import defaultdict
 from copy import deepcopy
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, cast, overload
 
 from eth_utils.address import to_checksum_address
 from web3.exceptions import BadFunctionCallOutput
@@ -79,8 +79,10 @@ class Blockchain(CacheableObject, LockableQueryObject):
     @protect_with_lock()
     @cache_response_timewise()
     def query_balances(
-            self,
+            self,  # pylint: disable=unused-argument
             blockchain: Optional[SupportedBlockchain] = None,
+            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
+            **kwargs: Any,
     ) -> Tuple[Optional[Dict[str, Dict]], str]:
         should_query_eth = not blockchain or blockchain == SupportedBlockchain.ETHEREUM
         should_query_btc = not blockchain or blockchain == SupportedBlockchain.BITCOIN

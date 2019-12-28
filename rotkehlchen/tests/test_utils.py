@@ -170,12 +170,12 @@ class Foo(CacheableObject):
         self.do_something_call_count = 0
 
     @cache_response_timewise()
-    def do_sum(self, arg1, arg2):  # pylint: disable=no-self-use
+    def do_sum(self, arg1, arg2, **kwargs):  # pylint: disable=no-self-use, unused-argument
         self.do_sum_call_count += 1
         return arg1 + arg2
 
     @cache_response_timewise()
-    def do_something(self):
+    def do_something(self, **kwargs):  # pylint: disable=unused-argument
         self.do_something_call_count += 1
         return 5
 
