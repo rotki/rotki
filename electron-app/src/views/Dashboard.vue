@@ -18,6 +18,7 @@
         id="blockchain_box"
         icon="fa-hdd-o"
         :amount="blockchainTotal"
+        blockchain
       ></information-box>
       <information-box
         v-if="!fiatTotal.isZero()"

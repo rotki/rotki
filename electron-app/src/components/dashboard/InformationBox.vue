@@ -23,6 +23,29 @@
         </v-icon>
       </v-col>
     </v-row>
+    <v-row
+      v-if="blockchain"
+      align="center"
+      justify="end"
+      class="information-box__footer"
+    >
+      <v-col cols="12">
+        <v-row justify="end" no-gutters>
+          <v-tooltip bottom>
+            <template #activator="{ on }">
+              <v-btn text icon color="primary" @click="refresh()" v-on="on">
+                <v-icon>
+                  fa-refresh
+                </v-icon>
+              </v-btn>
+            </template>
+            <span>
+              Refreshes the blockchain data ignoring any cached entries
+            </span>
+          </v-tooltip>
+        </v-row>
+      </v-col>
+    </v-row>
   </v-card>
 </template>
 
@@ -54,12 +77,19 @@ export default class InformationBox extends Vue {
 
   @Prop({ required: true })
   icon!: string;
+
+  @Prop({ default: false, type: Boolean })
+  blockchain!: boolean;
+
+  refresh() {
+    this.$store.dispatch('balances/fetchBlockchainBalances', true);
+  }
 }
 </script>
 
 <style scoped lang="scss">
 .information-box {
-  height: 72px;
+  min-height: 72px;
 }
 
 .information-box__icon {
@@ -84,5 +114,16 @@ export default class InformationBox extends Vue {
 
 .information-box__content {
   width: 100%;
+}
+
+.information-box__footer {
+  background-color: white;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  ::v-deep .col {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+    padding-right: 10px !important;
+  }
 }
 </style>
