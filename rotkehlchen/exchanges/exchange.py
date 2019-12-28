@@ -51,7 +51,7 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
         log.info(f'Initialized {name} exchange')
 
-    def query_balances(self) -> Tuple[Optional[dict], str]:
+    def query_balances(self, **kwargs: Any) -> Tuple[Optional[dict], str]:
         """Returns the balances held in the exchange in the following format:
         {
             'name' : {'amount': 1337, 'usd_value': 42},
