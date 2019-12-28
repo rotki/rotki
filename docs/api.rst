@@ -658,6 +658,9 @@ Querying the balances of exchanges
 .. note::
    This endpoint can also be queried asynchronously by using ``"async_query": true``. Passing it as a query argument here would be given as: ``?async_query=true``.
 
+.. note::
+   This endpoint uses a cache. If queried within the ``CACHE_TIME`` the cached value will be returned. If you want to skip the cache add the ``ignore_cache: true`` argument. Can also be passed as a query argument.
+
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
@@ -864,6 +867,9 @@ Querying onchain balances
 .. note::
    This endpoint can also be queried asynchronously by using ``"async_query": true``. Passing it as a query argument here would be given as: ``?async_query=true``.
 
+.. note::
+   This endpoint uses a cache. If queried within the ``CACHE_TIME`` the cached value will be returned. If you want to skip the cache add the ``ignore_cache: true`` argument. Can also be passed as a query argument.
+
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
@@ -918,6 +924,9 @@ Querying all balances
 
 .. note::
    This endpoint also accepts parameters as query arguments.
+
+.. note::
+   This endpoint uses a cache. If queried within the ``CACHE_TIME`` the cached value will be returned. If you want to skip the cache add the ``ignore_cache: true`` argument. Can also be passed as a query argument.
 
    Doing a GET on the balances endpoint will query all balances across all locations for the user. That is exchanges, blockchains and FIAT in banks. And it will return an overview of all queried balances.
 

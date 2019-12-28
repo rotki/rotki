@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 from http import HTTPStatus
 from unittest.mock import patch
 
@@ -191,6 +192,104 @@ def test_query_all_balances_async(
     )
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+@pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
+@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
+@pytest.mark.parametrize('added_exchanges', [('binance', 'poloniex')])
+def test_query_all_balances_ignore_cache(
+        rotkehlchen_api_server_with_exchanges,
+        ethereum_accounts,
+        btc_accounts,
+        number_of_eth_accounts,
+):
+    """Test that using the query all balances endpoint can ignore the cache"""
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
+    binance = rotki.exchange_manager.connected_exchanges['binance']
+    poloniex = rotki.exchange_manager.connected_exchanges['poloniex']
+    eth_query_patch = patch.object(
+        rotki.blockchain,
+        'query_ethereum_balances',
+        wraps=rotki.blockchain.query_ethereum_balances,
+    )
+    btc_query_patch = patch.object(
+        rotki.blockchain,
+        'query_btc_balances',
+        wraps=rotki.blockchain.query_btc_balances,
+    )
+    tokens_query_patch = patch.object(
+        rotki.blockchain,
+        'query_ethereum_tokens',
+        wraps=rotki.blockchain.query_ethereum_tokens,
+    )
+    binance_query_patch = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
+    poloniex_query_patch = patch.object(poloniex, 'api_query_dict', wraps=poloniex.api_query_dict)
+
+    with ExitStack() as stack:
+        stack.enter_context(setup.poloniex_patch)
+        stack.enter_context(setup.binance_patch)
+        stack.enter_context(setup.blockchain_patch)
+        function_call_counters = []
+        function_call_counters.append(stack.enter_context(eth_query_patch))
+        function_call_counters.append(stack.enter_context(btc_query_patch))
+        function_call_counters.append(stack.enter_context(tokens_query_patch))
+        function_call_counters.append(stack.enter_context(binance_query_patch))
+        function_call_counters.append(stack.enter_context(poloniex_query_patch))
+
+        # Query all balances for the first time and test it works
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                "allbalancesresource",
+            ),
+        )
+        assert_proper_response(response)
+        json_data = response.json()
+        assert_all_balances(
+            data=json_data,
+            db=rotki.data.db,
+            expected_data_in_db=True,
+            setup=setup,
+        )
+        assert all(fn.call_count == 1 for fn in function_call_counters)
+
+        # Query all balances second time and assert cache was used
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                "allbalancesresource",
+            ),
+        )
+        assert_proper_response(response)
+        json_data = response.json()
+        assert_all_balances(
+            data=json_data,
+            db=rotki.data.db,
+            expected_data_in_db=True,
+            setup=setup,
+        )
+        msg = 'call count should stay the same since cache should have been used'
+        assert all(fn.call_count == 1 for fn in function_call_counters), msg
+
+        # Now query all balances but request cache ignoring
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                "allbalancesresource",
+            ), json={'ignore_cache': True},
+        )
+        assert_proper_response(response)
+        json_data = response.json()
+        assert_all_balances(
+            data=json_data,
+            db=rotki.data.db,
+            expected_data_in_db=True,
+            setup=setup,
+        )
+        msg = 'call count should increase since cache should have been ignored'
+        assert all(fn.call_count == 2 for fn in function_call_counters), msg
+
+
 def test_query_all_balances_errors(rotkehlchen_api_server):
     """Test that errors are handled correctly by the all balances endpoint"""
     # invoke the endpoint with non boolean save_data
@@ -235,8 +334,6 @@ def test_multiple_balance_queries_not_concurrent(
     do not end up doing them multiple times, but reuse the results thanks to cache.
     """
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    # # Disable caching of query results
-    # rotki.blockchain.cache_ttl_secs = 0
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
 
     e = patch.object(
@@ -264,8 +361,7 @@ def test_multiple_balance_queries_not_concurrent(
         task_id_one_exchange = assert_ok_async_response(response)
         response = requests.get(api_url_for(
             rotkehlchen_api_server_with_exchanges,
-            "named_blockchain_balances_resource",
-            blockchain='ETH',
+            "blockchainbalancesresource",
         ), json={'async_query': True})
         task_id_blockchain = assert_ok_async_response(response)
         outcome_all = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id_all)
@@ -277,7 +373,7 @@ def test_multiple_balance_queries_not_concurrent(
             rotkehlchen_api_server_with_exchanges,
             task_id_blockchain,
         )
-        assert eth.call_count == 1, 'eth blockchain balance call should not happen concurrently'
+        assert eth.call_count == 1, 'blockchain balance call should not happen concurrently'
         assert bn.call_count == 1, 'binance balance call should not happen concurrently'
 
     assert_all_balances(
@@ -293,7 +389,7 @@ def test_multiple_balance_queries_not_concurrent(
         eth_accounts=ethereum_accounts,
         eth_balances=setup.eth_balances,
         token_balances=setup.token_balances,
-        also_btc=False,
+        also_btc=True,
     )
 
 

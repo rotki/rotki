@@ -328,6 +328,7 @@ class Rotkehlchen():
             self,
             requested_save_data: bool = True,
             timestamp: Timestamp = None,
+            ignore_cache: bool = False,
     ) -> Dict[str, Any]:
         """Query all balances rotkehlchen can see.
 
@@ -335,6 +336,7 @@ class Rotkehlchen():
         If timestamp is None then the current timestamp is used.
         If a timestamp is given then that is the time that the balances are going
         to be saved in the DB
+        If ignore_cache is True then all underlying calls that have a cache ignore it
 
         Returns a dictionary with the queried balances.
         """
@@ -343,14 +345,17 @@ class Rotkehlchen():
         balances = {}
         problem_free = True
         for _, exchange in self.exchange_manager.connected_exchanges.items():
-            exchange_balances, _ = exchange.query_balances()
+            exchange_balances, _ = exchange.query_balances(ignore_cache=ignore_cache)
             # If we got an error, disregard that exchange but make sure we don't save data
             if not isinstance(exchange_balances, dict):
                 problem_free = False
             else:
                 balances[exchange.name] = exchange_balances
 
-        blockchain_result, _ = self.blockchain.query_balances(blockchain=None)
+        blockchain_result, _ = self.blockchain.query_balances(
+            blockchain=None,
+            ignore_cache=ignore_cache,
+        )
         if blockchain_result is not None:
             balances['blockchain'] = blockchain_result['totals']
         else:

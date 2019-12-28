@@ -140,8 +140,12 @@ class AllBalancesResource(BaseResource):
     get_schema = AllBalancesQuerySchema()
 
     @use_kwargs(get_schema, locations=('json', 'query'))
-    def get(self, save_data: bool, async_query: bool) -> Response:
-        return self.rest_api.query_all_balances(save_data=save_data, async_query=async_query)
+    def get(self, save_data: bool, async_query: bool, ignore_cache: bool) -> Response:
+        return self.rest_api.query_all_balances(
+            save_data=save_data,
+            async_query=async_query,
+            ignore_cache=ignore_cache,
+        )
 
 
 class ExchangeBalancesResource(BaseResource):
@@ -149,8 +153,12 @@ class ExchangeBalancesResource(BaseResource):
     get_schema = ExchangeBalanceQuerySchema()
 
     @use_kwargs(get_schema, locations=('json', 'view_args', 'query'))
-    def get(self, name: Optional[str], async_query: bool) -> Response:
-        return self.rest_api.query_exchange_balances(name=name, async_query=async_query)
+    def get(self, name: Optional[str], async_query: bool, ignore_cache: bool) -> Response:
+        return self.rest_api.query_exchange_balances(
+            name=name,
+            async_query=async_query,
+            ignore_cache=ignore_cache,
+        )
 
 
 class OwnedAssetsResource(BaseResource):
@@ -184,10 +192,16 @@ class BlockchainBalancesResource(BaseResource):
     get_schema = BlockchainBalanceQuerySchema()
 
     @use_kwargs(get_schema, locations=('json', 'view_args', 'query'))
-    def get(self, blockchain: Optional[SupportedBlockchain], async_query: bool) -> Response:
+    def get(
+            self,
+            blockchain: Optional[SupportedBlockchain],
+            async_query: bool,
+            ignore_cache: bool,
+    ) -> Response:
         return self.rest_api.query_blockchain_balances(
             blockchain=blockchain,
             async_query=async_query,
+            ignore_cache=ignore_cache,
         )
 
 

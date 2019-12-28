@@ -42,18 +42,23 @@ def cache_response_timewise() -> Callable:
         - all the exchanges
         - the Rotkehlchen object
         - the Blockchain object
+
+    If the special keyword argument ignore_cache=True is given then the cache check
+    is completely skipped
     """
     def _cache_response_timewise(f: Callable) -> Callable:
         @wraps(f)
         def wrapper(wrappingobj: CacheableObject, *args: Any, **kwargs: Any) -> Any:
-
+            ignore_cache = kwargs.pop('ignore_cache', False)
             cache_key = _function_sig_key(f.__name__, *args, **kwargs)
-            # Check the cache
             now = ts_now()
-            if cache_key in wrappingobj.results_cache:
-                cache_life_secs = now - wrappingobj.results_cache[cache_key].timestamp
+            if ignore_cache is False:
+                # Check the cache
+                if cache_key in wrappingobj.results_cache:
+                    cache_life_secs = now - wrappingobj.results_cache[cache_key].timestamp
 
             cache_miss = (
+                ignore_cache is True or
                 cache_key not in wrappingobj.results_cache or
                 cache_life_secs >= wrappingobj.cache_ttl_secs
             )
