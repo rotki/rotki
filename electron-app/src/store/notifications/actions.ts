@@ -18,7 +18,11 @@ export const actions: ActionTree<NotificationState, RotkehlchenState> = {
           toNotification(warning, Severity.WARNING, id++)
         );
 
-        commit('update', errors.concat(warnings));
+        const notifications = errors.concat(warnings);
+        if (notifications.length === 0) {
+          return;
+        }
+        commit('update', notifications);
       })
       .catch(reason => {
         commit('update', [

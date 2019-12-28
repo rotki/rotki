@@ -1,90 +1,97 @@
 <template>
-  <v-menu transition="slide-y-transition" bottom>
-    <template #activator="{ on }">
-      <v-badge color="accent" right overlap>
-        <template #badge>
-          <span>{{ count }}</span>
-        </template>
-        <v-btn color="primary" dark icon text v-on="on">
-          <v-icon>
-            fa fa-bell
-          </v-icon>
-        </v-btn>
-      </v-badge>
-      <confirm-dialog
-        :display="confirmClear"
-        title="Clear active notifications"
-        message="This action will clear all the active notifications. Do you want to proceed?"
-        @cancel="confirmClear = false"
-        @confirm="reset()"
-      ></confirm-dialog>
-    </template>
-    <v-row class="notification-indicator__details">
-      <v-col
-        v-if="notifications.length === 0"
-        class="notification-indicator__no-messages"
-      >
-        <v-icon color="primary">fa fa-info-circle</v-icon>
-        <p class="notification-indicator__no-messages__label">No messages!</p>
-      </v-col>
-      <v-col v-else class="notification-indicator__messages">
-        <v-list two-line>
-          <div class="notification-indicator__messages__clear">
-            <v-tooltip bottom>
-              <template #activator="{ on }">
-                <v-btn
-                  text
-                  icon
-                  color="primary"
-                  class="notification-indicator__clear"
-                  v-on="on"
-                  @click="confirmClear = true"
-                >
-                  <v-icon id="notifications-clear-all">
-                    fa fa-trash
-                  </v-icon>
-                </v-btn>
-              </template>
-              <span>
-                Clears all notifications
-              </span>
-            </v-tooltip>
-          </div>
-          <template v-for="notification in notifications">
-            <v-list-item :key="notification.id">
-              <v-list-item-content>
-                <v-list-item-title
-                  v-text="notification.title"
-                ></v-list-item-title>
-                <span class="notification-indicator__messages__message">
-                  {{ notification.message }}
-                </span>
-              </v-list-item-content>
-              <v-list-item-action>
-                <v-list-item-action-text>
-                  <v-tooltip bottom>
-                    <template #activator="{ on }">
-                      <v-btn text icon v-on="on" @click="dismiss(notification)">
-                        <v-icon>fa fa-close</v-icon>
-                      </v-btn>
-                    </template>
-                    <span>
-                      Dismisses Notification
-                    </span>
-                  </v-tooltip>
-                </v-list-item-action-text>
-                <v-icon :color="color(notification)">
-                  {{ icon(notification) }}
-                </v-icon>
-              </v-list-item-action>
-            </v-list-item>
-
-            <v-divider :key="`notification-${notification.id}`"></v-divider>
+  <div>
+    <confirm-dialog
+      :display="confirmClear"
+      title="Clear active notifications"
+      message="This action will clear all the active notifications. Do you want to proceed?"
+      @cancel="confirmClear = false"
+      @confirm="reset()"
+    ></confirm-dialog>
+    <v-menu transition="slide-y-transition" bottom>
+      <template #activator="{ on }">
+        <v-badge color="accent" right overlap>
+          <template #badge>
+            <span>{{ count }}</span>
           </template>
-        </v-list>
-      </v-col>
-    </v-row>
-  </v-menu>
+          <v-btn color="primary" dark icon text v-on="on">
+            <v-icon>
+              fa fa-bell
+            </v-icon>
+          </v-btn>
+        </v-badge>
+      </template>
+      <v-row class="notification-indicator__details">
+        <v-col
+          v-if="notifications.length === 0"
+          class="notification-indicator__no-messages"
+        >
+          <v-icon color="primary">fa fa-info-circle</v-icon>
+          <p class="notification-indicator__no-messages__label">No messages!</p>
+        </v-col>
+        <v-col v-else class="notification-indicator__messages">
+          <v-list two-line>
+            <div class="notification-indicator__messages__clear">
+              <v-tooltip bottom>
+                <template #activator="{ on }">
+                  <v-btn
+                    text
+                    icon
+                    color="primary"
+                    class="notification-indicator__clear"
+                    v-on="on"
+                    @click="confirmClear = true"
+                  >
+                    <v-icon id="notifications-clear-all">
+                      fa fa-trash
+                    </v-icon>
+                  </v-btn>
+                </template>
+                <span>
+                  Clears all notifications
+                </span>
+              </v-tooltip>
+            </div>
+            <template v-for="notification in notifications">
+              <v-list-item :key="notification.id">
+                <v-list-item-content>
+                  <v-list-item-title
+                    v-text="notification.title"
+                  ></v-list-item-title>
+                  <span class="notification-indicator__messages__message">
+                    {{ notification.message }}
+                  </span>
+                </v-list-item-content>
+                <v-list-item-action>
+                  <v-list-item-action-text>
+                    <v-tooltip bottom>
+                      <template #activator="{ on }">
+                        <v-btn
+                          text
+                          icon
+                          v-on="on"
+                          @click="dismiss(notification)"
+                        >
+                          <v-icon>fa fa-close</v-icon>
+                        </v-btn>
+                      </template>
+                      <span>
+                        Dismisses Notification
+                      </span>
+                    </v-tooltip>
+                  </v-list-item-action-text>
+                  <v-icon :color="color(notification)">
+                    {{ icon(notification) }}
+                  </v-icon>
+                </v-list-item-action>
+              </v-list-item>
+
+              <v-divider :key="`notification-${notification.id}`"></v-divider>
+            </template>
+          </v-list>
+        </v-col>
+      </v-row>
+    </v-menu>
+  </div>
 </template>
 
 <script lang="ts">
