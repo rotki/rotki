@@ -87,10 +87,6 @@ export default class BlockchainBalances extends Vue {
 
   loading: boolean = false;
 
-  mounted() {
-    this.$store.dispatch('balances/fetchBlockchainBalances');
-  }
-
   async addAccount() {
     const address = this.accountAddress;
     const blockchain = this.selected;
