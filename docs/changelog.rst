@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`168` Users can now force-refresh exchange/blockchain balances via the UI and ignore the cache.
 * :feature:`354` Introduces a modern, easily extendable material design UI based on Vue.js and Vuetify.
 
 * :release:`1.0.6 <2019-12-31>`
