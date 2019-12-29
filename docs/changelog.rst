@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`168` Users can now force-refresh exchange/blockchain balances via the UI and ignore the cache.
 * :feature:`354` Introduces a modern, easily extendable material design UI based on Vue.js and Vuetify.
 * :bug:`561` Export unique asset symbols during CSV exporting and not long name descriptions.
 * :feature:`-` Add support for the Turkish Lyra  (TRY - ₺) as a fiat currency
