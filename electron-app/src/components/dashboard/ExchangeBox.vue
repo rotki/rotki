@@ -55,7 +55,7 @@
             </v-btn>
           </template>
           <span>
-            Refreshes the exchange data ignoring any cached entries
+            Refreshes the exchange balances ignoring any cached entries
           </span>
         </v-tooltip>
       </v-col>

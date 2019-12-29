@@ -40,7 +40,7 @@
               </v-btn>
             </template>
             <span>
-              Refreshes the blockchain data ignoring any cached entries
+              Refreshes the blockchain balances ignoring any cached entries
             </span>
           </v-tooltip>
         </v-row>
