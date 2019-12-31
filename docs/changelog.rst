@@ -2,6 +2,8 @@
 Changelog
 =========
 
+
+* :bug:`589` If there is an error an unexpected error during sign-in properly catch it and add a log entry.
 * :bug:`588` The electron log is now written in the proper directory depending on the Operating system.
 * :bug:`587` If a user has a disabled taxfree period setting rotki no longer fails to sign the user in.
 * :bug:`561` Export unique asset symbols during CSV exporting and not long name descriptions.
