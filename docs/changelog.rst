@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`587` If a user has a disabled taxfree period setting rotki no longer fails to sign the user in.
 * :bug:`561` Export unique asset symbols during CSV exporting and not long name descriptions.
 * :feature:`-` Add support for the Turkish Lyra  (TRY - ₺) as a fiat currency
 * :feature:`-` Add support for the Russian ruble (RUB - ‎₽) as a fiat currency
