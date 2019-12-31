@@ -68,7 +68,23 @@ def db_settings_from_dict(
         elif key == 'include_crypto2crypto':
             specified_args[key] = read_boolean(value)
         elif key == 'taxfree_after_period':
-            specified_args[key] = int(value)
+            # taxfree_after_period can also be None, to signify disabled setting
+            if value is None:
+                specified_args[key] = value
+            else:
+                int_value = int(value)
+                if int_value <= 0:
+                    value = None
+                    msg_aggregator.add_warning(
+                        f'A negative or zero value ({int_value}) for taxfree_after_period '
+                        f'ended up in the DB. Setting it to None. Please open an issue in '
+                        f'Github: https://github.com/rotki/rotki/issues/new/choose',
+                    )
+
+                else:
+                    value = int_value
+
+                specified_args[key] = value
         elif key == 'balance_save_frequency':
             specified_args[key] = int(value)
         elif key == 'main_currency':
