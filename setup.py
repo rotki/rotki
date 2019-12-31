@@ -21,7 +21,7 @@ install_requirements = list(set(
     if not requirement.lstrip().startswith('#')
 ))
 
-version = '1.0.5'  # Do not edit: this is maintained by bumpversion (see .bumpversion.cfg)
+version = '1.0.6'  # Do not edit: this is maintained by bumpversion (see .bumpversion.cfg)
 
 setup(
     name='rotkehlchen',
