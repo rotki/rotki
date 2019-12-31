@@ -156,7 +156,8 @@ if (process.platform === 'linux') {
 } else {
     logspath = app.getPath("logs");
 }
-ELECTRON_LOG_PATH = logspath + "rotki_electron.log";
+
+ELECTRON_LOG_PATH = path.join(logspath, "rotki_electron.log");
 fs.writeFileSync(ELECTRON_LOG_PATH, "Rotki Electron Log initialization\n");
 function electron_log(msg) {
     console.log(msg);
@@ -213,7 +214,7 @@ const createPyProc = () => {
         executable_name = executable;
         executable = path.join(dist_dir, executable);
         args.push("--zerorpc-port", port);
-        args.push("--logfile", logspath + "/rotkehlchen.log");
+        args.push("--logfile", path.join(logspath, "rotkehlchen.log"));
         electron_log('Calling python backend with: ' + executable + ' ' + args.join(' '));
         pyProc = require('child_process').execFile(executable, args);
     } else {
