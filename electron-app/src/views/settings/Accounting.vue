@@ -171,6 +171,8 @@ export default class Accounting extends Vue {
     let period = this.taxFreeAfterPeriod;
     if (period !== null) {
       period *= 86400;
+    } else {
+      period = -1;
     }
 
     const { commit } = this.$store;
