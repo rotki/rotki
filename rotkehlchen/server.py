@@ -529,6 +529,11 @@ class RotkehlchenServer():
             res['result'] = False
             res['permission_needed'] = True
             res['message'] = str(e)
+        except: # noqa
+            tb = traceback.format_exc()
+            logging.critical(tb)
+            res['result'] = False
+            res['message'] = 'Unexpected exception occured during unlock. Check log for details'
 
         return res
 
