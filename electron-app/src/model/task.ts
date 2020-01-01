@@ -1,3 +1,5 @@
+import { Blockchain } from '@/typing/types';
+
 export interface Task<T> {
   readonly id: number;
   readonly type: TaskType;
@@ -11,6 +13,10 @@ export interface TaskMeta {
 
 export interface ExchangeMeta extends TaskMeta {
   readonly name: string;
+}
+
+export interface BlockchainMetadata extends TaskMeta {
+  readonly blockchain?: Blockchain;
 }
 
 export const createTask: <T extends TaskMeta>(

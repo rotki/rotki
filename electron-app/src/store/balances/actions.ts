@@ -2,8 +2,13 @@ import { ActionTree } from 'vuex';
 import { RotkehlchenState } from '@/store/store';
 import { BalanceState } from '@/store/balances/state';
 import { api } from '@/services/rotkehlchen-api';
-import { createTask, ExchangeMeta, TaskType } from '@/model/task';
-import { Severity, UsdToFiatExchangeRates } from '@/typing/types';
+import {
+  BlockchainMetadata,
+  createTask,
+  ExchangeMeta,
+  TaskType
+} from '@/model/task';
+import { Blockchain, Severity, UsdToFiatExchangeRates } from '@/typing/types';
 import { notify } from '@/store/notifications/utils';
 import { FiatBalance } from '@/model/blockchain-balances';
 import { bigNumberify } from '@/utils/bignumbers';
@@ -93,22 +98,26 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
   async fetchBlockchainBalances(
     { commit, rootGetters },
-    ignoreCache: boolean = false
+    payload: BlockchainBalancePayload = {
+      ignoreCache: false
+    }
   ): Promise<void> {
+    const { blockchain, ignoreCache } = payload;
     try {
+      const taskType = TaskType.QUERY_BLOCKCHAIN_BALANCES;
       const isTaskRunning = rootGetters['tasks/isTaskRunning'];
-      if (isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES)) {
+      const taskMetadata = rootGetters['tasks/metadata'];
+
+      const metadata: BlockchainMetadata = taskMetadata(taskType);
+      if (isTaskRunning(taskType) && metadata.blockchain === blockchain) {
         return;
       }
       const result = await api.queryBlockchainBalancesAsync(ignoreCache);
-      const task = createTask(
-        result.task_id,
-        TaskType.QUERY_BLOCKCHAIN_BALANCES,
-        {
-          description: 'Query Blockchain Balances',
-          ignoreResult: false
-        }
-      );
+      const task = createTask(result.task_id, taskType, {
+        blockchain,
+        description: `Query ${blockchain || 'Blockchain'} Balances`,
+        ignoreResult: false
+      } as BlockchainMetadata);
       commit('tasks/add', task, { root: true });
     } catch (e) {
       notify(
@@ -193,10 +202,15 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
 export interface BlockchainAccountPayload {
   readonly address: string;
-  readonly blockchain: 'ETH' | 'BTC';
+  readonly blockchain: Blockchain;
 }
 
 export interface ExchangeBalancePayload {
   readonly name: string;
+  readonly ignoreCache: boolean;
+}
+
+export interface BlockchainBalancePayload {
+  readonly blockchain?: Blockchain;
   readonly ignoreCache: boolean;
 }

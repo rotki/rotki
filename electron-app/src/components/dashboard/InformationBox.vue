@@ -54,6 +54,7 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import { Currency } from '@/model/currency';
 import BigNumber from 'bignumber.js';
+import { BlockchainBalancePayload } from '@/store/balances/actions';
 
 const { mapGetters } = createNamespacedHelpers('session');
 const { mapGetters: mapBalanceGetters } = createNamespacedHelpers('balances');
@@ -82,7 +83,9 @@ export default class InformationBox extends Vue {
   blockchain!: boolean;
 
   refresh() {
-    this.$store.dispatch('balances/fetchBlockchainBalances', true);
+    this.$store.dispatch('balances/fetchBlockchainBalances', {
+      ignoreCache: true
+    } as BlockchainBalancePayload);
   }
 }
 </script>

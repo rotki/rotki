@@ -4,8 +4,20 @@
     :class="`${blockchain.toLocaleLowerCase()}-balance-table`"
   >
     <v-row>
-      <v-col>
+      <v-col cols="11">
         <h3 class="text-center balance-table__title">{{ title }}</h3>
+      </v-col>
+      <v-col cols="1">
+        <v-tooltip bottom>
+          <template #activator="{ on }">
+            <v-btn color="primary" text icon v-on="on" @click="refresh()">
+              <v-icon>fa-refresh</v-icon>
+            </v-btn>
+          </template>
+          <span>
+            Refreshes the {{ blockchain }} balances ignoring any cached entries
+          </span>
+        </v-tooltip>
       </v-col>
     </v-row>
     <v-data-table
@@ -93,6 +105,8 @@ import { Currency } from '@/model/currency';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
 import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
+import { Blockchain } from '@/typing/types';
+import { BlockchainBalancePayload } from '@/store/balances/actions';
 
 const { mapGetters } = createNamespacedHelpers('session');
 const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
@@ -112,7 +126,7 @@ export default class AccountBalances extends Vue {
   @Prop({ required: true })
   balances!: AccountBalance[];
   @Prop({ required: true })
-  blockchain!: string;
+  blockchain!: Blockchain;
   @Prop({ required: true })
   title!: string;
 
@@ -149,6 +163,13 @@ export default class AccountBalances extends Vue {
       blockchain
     });
     this.deleting = false;
+  }
+
+  refresh() {
+    this.$store.dispatch('balances/fetchBlockchainBalances', {
+      ignoreCache: true,
+      blockchain: this.blockchain
+    } as BlockchainBalancePayload);
   }
 }
 </script>
