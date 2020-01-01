@@ -936,3 +936,21 @@ def test_non_checksummed_eth_account_in_db(database):
     assert len(warnings) == 2
     assert f'Non-checksummed eth address {non_checksummed_address}' in warnings[0]
     assert f'Non-checksummed eth address {invalid_address}' in warnings[1]
+
+
+def test_can_unlock_db_with_disabled_taxfree_after_period(data_dir, username):
+    """Test that with taxfree_after_period being empty the DB can be opened
+
+    Regression test for https://github.com/rotki/rotki/issues/587
+    """
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
+    data.unlock(username, '123', create_new=True)
+    data.db.set_settings({'taxfree_after_period': None})
+
+    # now relogin and check that no exception is thrown
+    del data
+    data = DataHandler(data_dir, msg_aggregator)
+    data.unlock(username, '123', create_new=False)
+    settings = data.db.get_settings()
+    assert settings.taxfree_after_period is None
