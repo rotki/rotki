@@ -3,20 +3,7 @@ import { Severity } from "@/typing/types";
   <v-row class="blockchain-balances">
     <v-col>
       <v-card>
-        <v-card-title>
-          <span>Blockchain Balances</span>
-          <v-spacer></v-spacer>
-          <v-tooltip bottom>
-            <template #activator="{ on }">
-              <v-btn color="primary" text icon v-on="on" @click="refresh()">
-                <v-icon>fa-refresh</v-icon>
-              </v-btn>
-            </template>
-            <span>
-              Refreshes the blockchain balances ignoring any cached entries
-            </span>
-          </v-tooltip>
-        </v-card-title>
+        <v-card-title>Blockchain Balances</v-card-title>
         <v-card-text>
           <v-select
             v-model="selected"
@@ -81,7 +68,7 @@ import { createNamespacedHelpers } from 'vuex';
 import AccountBalances from '@/components/settings/AccountBalances.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
 import { notify } from '@/store/notifications/utils';
-import { Severity } from '@/typing/types';
+import { Blockchain, Severity, SupportedBlockchains } from '@/typing/types';
 
 const { mapGetters } = createNamespacedHelpers('balances');
 
@@ -90,8 +77,8 @@ const { mapGetters } = createNamespacedHelpers('balances');
   computed: mapGetters(['ethAccounts', 'btcAccounts', 'totals'])
 })
 export default class BlockchainBalances extends Vue {
-  selected: 'ETH' | 'BTC' = 'ETH';
-  readonly items: string[] = ['ETH', 'BTC'];
+  selected: Blockchain = 'ETH';
+  readonly items: string[] = SupportedBlockchains;
   accountAddress: string = '';
 
   ethAccounts!: AccountBalance[];
@@ -122,10 +109,6 @@ export default class BlockchainBalances extends Vue {
       );
     }
     this.loading = false;
-  }
-
-  refresh() {
-    this.$store.dispatch('balances/fetchBlockchainBalances', true);
   }
 }
 </script>

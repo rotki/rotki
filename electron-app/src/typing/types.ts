@@ -74,3 +74,7 @@ export interface TaskResult<T> {
   outcome: T | null;
   status: 'completed' | 'not-found' | 'pending';
 }
+
+export const SupportedBlockchains = ['ETH', 'BTC'];
+
+export type Blockchain = 'ETH' | 'BTC';

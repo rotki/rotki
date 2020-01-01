@@ -17,6 +17,7 @@ import { Messages } from '@/model/messages';
 import {
   AccountSession,
   ApiAssetBalances,
+  Blockchain,
   FiatExchangeRates,
   TaskResult
 } from '@/typing/types';
@@ -310,11 +311,16 @@ export class RotkehlchenApi {
   }
 
   queryBlockchainBalancesAsync(
-    ignoreCache: boolean = false
+    ignoreCache: boolean = false,
+    blockchain?: Blockchain
   ): Promise<AsyncQuery> {
     return new Promise<AsyncQuery>((resolve, reject) => {
+      let url = '/balances/blockchains';
+      if (blockchain) {
+        url += `/${blockchain}`;
+      }
       this.axios
-        .get<ActionResult<AsyncQuery>>('/balances/blockchains', {
+        .get<ActionResult<AsyncQuery>>(url, {
           params: {
             async_query: true,
             ignore_cache: ignoreCache ? true : undefined
