@@ -3,6 +3,11 @@ Changelog
 =========
 
 * :feature:`354` Introduces a modern, easily extendable material design UI based on Vue.js and Vuetify.
+
+* :release:`1.0.6 <2019-12-31>`
+* :bug:`589` If there is an error an unexpected error during sign-in properly catch it and add a log entry.
+* :bug:`588` The electron log is now written in the proper directory depending on the Operating system.
+* :bug:`587` If a user has a disabled taxfree period setting rotki no longer fails to sign the user in.
 * :bug:`561` Export unique asset symbols during CSV exporting and not long name descriptions.
 * :feature:`-` Add support for the Turkish Lyra  (TRY - ₺) as a fiat currency
 * :feature:`-` Add support for the Russian ruble (RUB - ‎₽) as a fiat currency
