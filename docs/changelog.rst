@@ -6,6 +6,7 @@ Changelog
 * :feature:`168` Users can now force-refresh exchange/blockchain balances via the UI and ignore the cache.
 * :feature:`354` Introduces a modern, easily extendable material design UI based on Vue.js and Vuetify.
 * :feature:`404` Removed ZMQ as the messaging layer between backend - frontend and introduced a full-fledged REST API instead.
+* :bug:`465` Asset icons and names show consistently in the UI after the vue.js rewrite.
 
 * :release:`1.0.6 <2019-12-31>`
 * :bug:`589` If there is an error an unexpected error during sign-in properly catch it and add a log entry.
