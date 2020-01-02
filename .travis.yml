@@ -128,7 +128,7 @@ jobs:
         tags: true
         condition: $TRAVIS_OS_NAME = linux
         repo: rotki/rotki
-        branch: master
+        all_branch: true
 
     - stage: deploy
       <<: *job-template-osx
@@ -139,4 +139,4 @@ jobs:
         tags: true
         condition: $TRAVIS_OS_NAME = osx
         repo: rotki/rotki
-        branch: master
+        all_branch: true
