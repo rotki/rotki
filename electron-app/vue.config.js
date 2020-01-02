@@ -10,11 +10,12 @@ module.exports = {
         appId: 'com.rotki',
         publish: {
           provider: 'github',
-          vPrefixedTagName: true
+          vPrefixedTagName: true,
+          releaseType: 'draft'
         },
         buildVersion: process.env.ROTKEHLCHEN_VERSION,
         artifactName:
-          '${productName}-${platform}_${arch}-${buildVersion}.${ext}',
+          '${productName}-${platform}_${arch}-v${buildVersion}.${ext}',
         extraResources: [
           {
             from: '../rotkehlchen_py_dist',
@@ -34,6 +35,9 @@ module.exports = {
           target: ['AppImage', 'tar.xz'],
           icon: 'srs/assets/images/rotki_1024x1024.png',
           category: 'Finance'
+        },
+        appImage: {
+          publish: null
         }
       }
     }
