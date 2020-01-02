@@ -23,6 +23,7 @@ env:
   - GETH_URL_LINUX='https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.8.13-225171a4.tar.gz'
   - GETH_URL_MACOS='https://gethstore.blob.core.windows.net/builds/geth-darwin-amd64-1.8.13-225171a4.tar.gz'
   - GETH_VERSION='1.8.13'
+  - secure: GHP9nhN+M8aYU+XY7R2vzpIftCEv9J/rPnvtJZ8mcYT591Fpom8OvWFrJlHgDDVU0kGKNNE6kMcvZ4zKpOakiKzghONemclUSMotaJSTnWkdEUHi7oUFWtP/VQMv4/ywBbhrIY7R6kZzlJ0QAGh9Yl62Azlq2cal3XrURNP1ehOr5yENgg+rQwPoeqyv5lvcTbI8D5dq+7XqodKdh4toCb2BRbBzj8xPE+m71hzA3McwEBXa5Hn1A2U7HUWM74mOPV1JFoG8ED0qIHfprLWW2mwHZNYgwuLgSsyzNeqN2+jL6OIFoBSzugzfLojD9hmiAJTLI/QNR/7lXN7N/CjBlQos7aeWdaZhnVfj+ca2w0qJ1MLGz17fJWzko5UbWBWFqNF2IMBvI9VB0MXCMYVZEAns7r//ymPM4i6rVD8Tnh0vOkCoRdaM5MEGMfO8hYDKzrcava59CGJA5XjBIka3feb5fkYhUdqnvZCcbZu7upCKQXadTxFxHhKxWXjUD/yOw7o20gujVRnzcsJ51/rKy9gwbGjWh0t/6+2SgWdaM20TJDbrzTLSnI1GHwMphCHkl2vHY10uclauihdjruvh4fwIYhU+Ic1FXsvaKexCDgArOSdp5UxX/xiK/AlHu/8EKV4bg7efKxYTi+EK/sm815GaOi1AVHd/2tm7OLdkfJQ=
 
 templates:
   job-template-linux: &job-template-linux
@@ -128,8 +129,6 @@ jobs:
         condition: $TRAVIS_OS_NAME = linux
         repo: rotki/rotki
         branch: master
-        api_key:
-          - secure: U2qhMWImw4vgTbEpjxOJh8Xr1mI2p+WR2dLDfCNJB617kxPQbgZtYK0WNoDq284k8Baz9i/pIoIbP390OHfqhgMLKlFGFI/xTLryOLmBn1Hi05LAVeFIEvHBAOFZRryiffFw+34P6s5fHxfCPtTQUaWcRAaOpm5bCrXIjyteDCFA7RV4BqORDLpupepy+ipB2GuaumHrZFTGxNhLpCBlbnHojfQs2SFrSHu84Q20wEbyigiOVEK7j75S5TLyqvZe1ELJ7rRU91lA2L4fkZUwf43mdDEa2QJMDzc9JtCV1BpypJ3h8rjpYGSptu0moxqQfugSa5ju2NRunMa9o+4HvrGMIreAusBYF5mfCKEqfqIoMbzeoOBqtUw90YU9I+hVdo2SxeEK/R8aqbkf3RPKCgOA2DCzV582DUuIj7WOR1XLeX9C3EARlFj9PSGiqb7Dpr57VdL6cu4cPUR0LZN/2GCdpMap/WIPm1l/AP1UvObox8WkJYjrTrqyybkoB8VOeLgY7h8Znx490by/5TsraRDvXOimOsPbmepkPSF7cXSihLUK4KysMeG7lzZ2WBsj8OfTadohPuHAJPJIvs424LIvsXVbBKlJojbrPpbJgORI+tGtE2lgSXlTdhwW8VUg1xQrWkZlPfqLkcV/aT7bWV6d2mqi152mhQH/vzyJR1Y=
 
     - stage: deploy
       <<: *job-template-osx
@@ -141,5 +140,3 @@ jobs:
         condition: $TRAVIS_OS_NAME = osx
         repo: rotki/rotki
         branch: master
-        api_key:
-          - secure: U2qhMWImw4vgTbEpjxOJh8Xr1mI2p+WR2dLDfCNJB617kxPQbgZtYK0WNoDq284k8Baz9i/pIoIbP390OHfqhgMLKlFGFI/xTLryOLmBn1Hi05LAVeFIEvHBAOFZRryiffFw+34P6s5fHxfCPtTQUaWcRAaOpm5bCrXIjyteDCFA7RV4BqORDLpupepy+ipB2GuaumHrZFTGxNhLpCBlbnHojfQs2SFrSHu84Q20wEbyigiOVEK7j75S5TLyqvZe1ELJ7rRU91lA2L4fkZUwf43mdDEa2QJMDzc9JtCV1BpypJ3h8rjpYGSptu0moxqQfugSa5ju2NRunMa9o+4HvrGMIreAusBYF5mfCKEqfqIoMbzeoOBqtUw90YU9I+hVdo2SxeEK/R8aqbkf3RPKCgOA2DCzV582DUuIj7WOR1XLeX9C3EARlFj9PSGiqb7Dpr57VdL6cu4cPUR0LZN/2GCdpMap/WIPm1l/AP1UvObox8WkJYjrTrqyybkoB8VOeLgY7h8Znx490by/5TsraRDvXOimOsPbmepkPSF7cXSihLUK4KysMeG7lzZ2WBsj8OfTadohPuHAJPJIvs424LIvsXVbBKlJojbrPpbJgORI+tGtE2lgSXlTdhwW8VUg1xQrWkZlPfqLkcV/aT7bWV6d2mqi152mhQH/vzyJR1Y=
