@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# cleanup before starting to package stuff
+make clean
+
 # Perform sanity checks before pip install
 pip install packaging  # required for the following script
 # We use npm ci. That needs npm >= 5.7.0
@@ -65,16 +68,30 @@ if [[ $? -ne 0 ]]; then
     exit 1
 fi
 
+
+# From here and on we go into the electron-app directory
 cd electron-app
 
 # Let's make sure all npm dependencies are installed.
 npm ci
-
 if [[ $? -ne 0 ]]; then
     echo "package.sh - ERROR: npm ci step failed"
     exit 1
 fi
 
+# Finally run the packaging
 echo "Packaging Rotki ${ROTKEHLCHEN_VERSION}"
-
 npm run electron:build
+if [[ $? -ne 0 ]]; then
+    echo "package.sh - ERROR: electron builder step failed"
+    exit 1
+fi
+
+echo "Packaging finished for Rotki ${ROTKEHLCHEN_VERSION}"
+# Now if in linux make the AppImage executable
+if [[ "$PLATFORM" == "linux" ]]; then
+    # They don't do it automatically. Long discussion here:
+    # https://github.com/electron-userland/electron-builder/issues/893
+    GENERATED_APPIMAGE=$(ls dist/*AppImage | head -n 1)
+    chmod +x $GENERATED_APPIMAGE
+fi
