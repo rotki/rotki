@@ -3,24 +3,22 @@ import { captureOnFailure, GLOBAL_TIMEOUT, initSpectron } from './utils/common';
 
 jest.setTimeout(GLOBAL_TIMEOUT);
 
-describe('application launch', function() {
-  let app: Application;
+describe('application launch', () => {
+  let application: Application;
   let stop: () => Promise<Application>;
 
   beforeEach(async () => {
-    const promise = await initSpectron();
-    app = promise.application;
-    stop = promise.stop;
+    ({ application, stop } = await initSpectron());
   });
 
-  afterEach(async function() {
-    await captureOnFailure(app);
+  afterEach(async () => {
+    await captureOnFailure(application);
     await stop();
   });
 
   it('make sure we get the login popup', async () => {
-    await expect(app.client.waitForExist('.login', 5000)).resolves.toEqual(
-      true
-    );
+    await expect(
+      application.client.waitForExist('.login', 5000)
+    ).resolves.toEqual(true);
   });
 });

@@ -3,42 +3,33 @@ import {
   captureOnFailure,
   createAccount,
   GLOBAL_TIMEOUT,
-  initialiseSpectron,
+  initSpectron,
   login,
   logout,
   METHOD_TIMEOUT,
   navigateTo,
   setupTest
-} from './common';
-import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
-import { Guid } from './guid';
+} from './utils/common';
+import { Guid } from './utils/guid';
 const retry = require('promise-retry');
 
-chai.should();
-chai.use(chaiAsPromised);
+jest.setTimeout(GLOBAL_TIMEOUT);
 
-describe('general settings', function() {
-  // @ts-ignore
-  this.timeout(GLOBAL_TIMEOUT);
-  this.retries(3);
-  const title = this.title;
-
-  let app: Application;
+describe('general settings', () => {
+  let application: Application;
   let client: SpectronClient;
+  let stop: () => Promise<Application>;
 
   let username: string;
   const password: string = process.env.PASSWORD as string;
 
-  before(async function() {
+  beforeAll(async () => {
     username = Guid.newGuid().toString();
-    app = initialiseSpectron();
-    await app.start();
-    client = app.client;
-
-    await setupTest(app, title, async () => {
-      await createAccount(app, username, password);
-      await navigateTo(client, '#settingsbutton');
+    ({ application, stop } = await initSpectron());
+    ({ client } = application);
+    await setupTest(application, 'general settings', async () => {
+      await createAccount(application, username, password);
+      await navigateTo(client, '.user-dropdown__accounting-settings');
       await client.waitUntilTextExists(
         '.page-header',
         'Settings',
@@ -47,14 +38,12 @@ describe('general settings', function() {
     });
   });
 
-  after(async () => {
-    if (app && app.isRunning()) {
-      await app.stop();
-    }
+  afterAll(async () => {
+    await stop();
   });
 
-  afterEach(async function() {
-    await captureOnFailure(app, this.currentTest);
+  afterEach(async () => {
+    await captureOnFailure(application);
   });
 
   it('should change the general settings and save them', async () => {
@@ -110,10 +99,9 @@ describe('general settings', function() {
       'Success',
       METHOD_TIMEOUT
     );
-    await client
-      .element('.jconfirm-content > div')
-      .getText()
-      .should.eventually.contain('Successfully modified settings.');
+    await expect(
+      client.element('.jconfirm-content > div').getText()
+    ).resolves.toMatch('Successfully modified settings.');
 
     await retry(async () => {
       client.click('.jconfirm-buttons > button');
@@ -129,7 +117,7 @@ describe('general settings', function() {
       METHOD_TIMEOUT
     );
 
-    await navigateTo(client, '#settingsbutton');
+    await navigateTo(client, '.user-dropdown__accounting-settings');
 
     await client.waitUntilTextExists(
       '.page-header',
@@ -137,22 +125,28 @@ describe('general settings', function() {
       METHOD_TIMEOUT
     );
 
-    await client.getValue('#floating_precision').should.eventually.equal('4');
-    await client
-      .getValue('#historical_data_start')
-      .should.eventually.equal('03/10/2018');
-    await client
-      .getValue('#balance_save_frequency')
-      .should.eventually.equal('48');
-    await client
-      .getValue('#eth_rpc_endpoint')
-      .should.eventually.equal('http://localhost:8545');
-    await client.isSelected('#anonymized_logs_input').should.eventually.be.true;
-    await client
-      .getValue('#maincurrencyselector')
-      .should.eventually.equal('JPY');
-    await client
-      .getValue('#date_display_format')
-      .should.eventually.equal('%d-%m-%Y %H:%M:%S %z');
+    await expect(client.getValue('#floating_precision')).resolves.toEqual('4');
+    await expect(client.getValue('#historical_data_start')).resolves.toEqual(
+      '03/10/2018'
+    );
+
+    await expect(client.getValue('#balance_save_frequency')).resolves.toEqual(
+      '48'
+    );
+
+    await expect(client.getValue('#eth_rpc_endpoint')).resolves.toEqual(
+      'http://localhost:8545'
+    );
+
+    await expect(client.isSelected('#anonymized_logs_input')).resolves.toBe(
+      true
+    );
+
+    await expect(client.getValue('#maincurrencyselector')).resolves.toEqual(
+      'JPY'
+    );
+    await expect(client.getValue('#date_display_format')).resolves.toEqual(
+      '%d-%m-%Y %H:%M:%S %z'
+    );
   });
 });

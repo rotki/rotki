@@ -3,39 +3,33 @@ import {
   captureOnFailure,
   createAccount,
   GLOBAL_TIMEOUT,
-  initialiseSpectron,
+  initSpectron,
   METHOD_TIMEOUT,
   setupTest
-} from './common';
-import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
-import { Guid } from './guid';
-import OtcController, { otcData } from './otc_controller';
+} from './utils/common';
+import OtcController, { otcData } from './support/otc_controller';
+import { Guid } from './utils/guid';
 
 const retry = require('promise-retry');
-chai.should();
-chai.use(chaiAsPromised);
 
-describe('otc trades', function() {
-  // @ts-ignore
-  this.timeout(GLOBAL_TIMEOUT);
+jest.setTimeout(GLOBAL_TIMEOUT);
 
-  const title = this.title;
-  let app: Application;
+describe('otc trades', () => {
+  let application: Application;
+  let stop: () => Promise<Application>;
   let client: SpectronClient;
 
   let username: string;
   const password: string = process.env.PASSWORD as string;
   let controller: OtcController;
 
-  before(async function() {
+  beforeAll(async () => {
     username = Guid.newGuid().toString();
-    app = initialiseSpectron();
-    await app.start();
+    ({ application, stop } = await initSpectron());
+    ({ client } = application);
 
-    await setupTest(app, title, async () => {
-      await createAccount(app, username, password);
-      client = app.client;
+    await setupTest(application, 'otc trades', async () => {
+      await createAccount(application, username, password);
       controller = new OtcController(client);
 
       await retry(async () => {
@@ -56,61 +50,69 @@ describe('otc trades', function() {
     });
   });
 
-  after(async () => {
-    if (app && app.isRunning()) {
-      await app.stop();
-    }
+  afterAll(async () => {
+    await stop();
   });
 
-  afterEach(async function() {
-    await captureOnFailure(app, this.currentTest);
+  afterEach(async () => {
+    await captureOnFailure(application);
   });
 
-  it('should add two OTC trades and show them on the table', async function() {
+  it('should add two OTC trades and show them on the table', async () => {
     await controller.addTrade(otcData[0]);
     await controller.addTrade(otcData[1]);
     const matchedElements = (
       await client.elements('#table_otctrades > tbody > tr')
     ).value;
-    const numberOfElements = matchedElements.length;
-    numberOfElements.should.equal(2, 'there should be two entries');
 
-    await client
-      .getText('#table_otctrades > tbody > tr:nth-child(1) > td:nth-child(2)')
-      .should.eventually.contain('BTC_EUR');
-    await client
-      .getText('#table_otctrades > tbody > tr:nth-child(1) > td:nth-child(4)')
-      .should.eventually.contain('82');
-    await client
-      .getText('#table_otctrades > tbody > tr:nth-child(1) > td:nth-child(5)')
-      .should.eventually.contain('268.678317859');
-    await client
-      .getText('#table_otctrades > tbody > tr:nth-child(1) > td:nth-child(6)')
-      .should.eventually.contain('08/10/2015 10:48');
+    expect(matchedElements.length).toEqual(2);
+
+    await expect(
+      client.getText(
+        '#table_otctrades > tbody > tr:nth-child(1) > td:nth-child(2)'
+      )
+    ).resolves.toContain('BTC_EUR');
+    await expect(
+      client.getText(
+        '#table_otctrades > tbody > tr:nth-child(1) > td:nth-child(4)'
+      )
+    ).resolves.toContain('82');
+    await expect(
+      client.getText(
+        '#table_otctrades > tbody > tr:nth-child(1) > td:nth-child(5)'
+      )
+    ).resolves.toContain('268.678317859');
+    await expect(
+      client.getText(
+        '#table_otctrades > tbody > tr:nth-child(1) > td:nth-child(6)'
+      )
+    ).resolves.toContain('08/10/2015 10:48');
   });
 
-  it('should edit a trade and show the edit changes on the table', async function() {
+  it('should edit a trade and show the edit changes on the table', async () => {
     await client
       .element('#table_otctrades > tbody > tr:nth-child(1)')
       .rightClick();
     await client.click('.context-menu-list > li:first-child');
-    await retry(async function() {
+    await retry(async () => {
       await client.clearElement('#otc_amount');
     });
-    await retry(async function() {
+    await retry(async () => {
       await client.addValue('#otc_amount', 120);
     });
-    await retry(async function() {
+    await retry(async () => {
       await client.click('#otctradesubmit');
     });
     await controller.closeSuccessDialog();
 
-    await client
-      .getText('#table_otctrades > tbody > tr:nth-child(1) > td:nth-child(4)')
-      .should.eventually.contain('120');
+    await expect(
+      client.getText(
+        '#table_otctrades > tbody > tr:nth-child(1) > td:nth-child(4)'
+      )
+    ).resolves.toContain('120');
   });
 
-  it('should delete an otc trade and the trade should be removed', async function() {
+  it('should delete an otc trade and the trade should be removed', async () => {
     await client
       .element('#table_otctrades > tbody > tr:nth-child(1)')
       .rightClick();
@@ -121,7 +123,7 @@ describe('otc trades', function() {
     const matchedElements = (
       await client.elements('#table_otctrades > tbody > tr')
     ).value;
-    const numberOfElements = matchedElements.length;
-    numberOfElements.should.equal(1, 'there should be one entry left');
+
+    await expect(matchedElements.length).resolves.toEqual(1);
   });
 });
