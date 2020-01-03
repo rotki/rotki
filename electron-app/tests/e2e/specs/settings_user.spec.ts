@@ -15,10 +15,9 @@ import {
 } from './support/user_settings_controller';
 
 jest.setTimeout(GLOBAL_TIMEOUT);
-jest.retryTimes(3);
 
 describe('user settings', () => {
-  let app: Application;
+  let application: Application;
   let stop: () => Promise<Application>;
   let client: SpectronClient;
 
@@ -32,13 +31,10 @@ describe('user settings', () => {
 
   beforeAll(async () => {
     username = Guid.newGuid().toString();
-    const testEnvironment = await initSpectron();
-    app = testEnvironment.application;
-    stop = testEnvironment.stop;
-    client = app.client;
-
-    await setupTest(app, 'user settings', async () => {
-      await createAccount(app, username, password);
+    ({ application, stop } = await initSpectron());
+    ({ client } = application);
+    await setupTest(application, 'user settings', async () => {
+      await createAccount(application, username, password);
 
       controller = new UserSettingsController(client);
 
@@ -61,8 +57,8 @@ describe('user settings', () => {
     await stop();
   });
 
-  afterEach(async function() {
-    await captureOnFailure(app);
+  afterEach(async () => {
+    await captureOnFailure(application);
   });
 
   test('should add an ETH account and view the account balance', async () => {

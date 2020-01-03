@@ -9,20 +9,17 @@ import {
 import { Guid } from './utils/guid';
 
 jest.setTimeout(GLOBAL_TIMEOUT);
-jest.retryTimes(3);
 
 describe('first usage', () => {
-  let app: Application;
+  let application: Application;
   let stop: () => Promise<Application>;
 
   beforeEach(async () => {
-    const testEnvironment = await initSpectron();
-    app = testEnvironment.application;
-    stop = testEnvironment.stop;
+    ({ application, stop } = await initSpectron());
   });
 
-  afterEach(async function() {
-    await captureOnFailure(app);
+  afterEach(async () => {
+    await captureOnFailure(application);
     await stop();
   });
 
@@ -30,14 +27,16 @@ describe('first usage', () => {
     const username: string = Guid.newGuid().toString();
     const password: string = process.env.PASSWORD as string;
 
-    await createAccount(app, username, password);
+    await createAccount(application, username, password);
 
-    await app.client.waitForVisible('.user-dropdown', METHOD_TIMEOUT);
-    await app.client.click('.user-dropdown');
-    await app.client.waitForVisible('.user-dropdown__logout', METHOD_TIMEOUT);
-    await app.client.click('.user-dropdown__logout');
-    await app.client.waitForVisible('.confirm-dialog', METHOD_TIMEOUT);
-    await app.client.click('.confirm-dialog__buttons__confirm');
-    await app.client.waitForVisible('.login', METHOD_TIMEOUT);
+    const { client } = application;
+
+    await client.waitForVisible('.user-dropdown', METHOD_TIMEOUT);
+    await client.click('.user-dropdown');
+    await client.waitForVisible('.user-dropdown__logout', METHOD_TIMEOUT);
+    await client.click('.user-dropdown__logout');
+    await client.waitForVisible('.confirm-dialog', METHOD_TIMEOUT);
+    await client.click('.confirm-dialog__buttons__confirm');
+    await client.waitForVisible('.login', METHOD_TIMEOUT);
   });
 });

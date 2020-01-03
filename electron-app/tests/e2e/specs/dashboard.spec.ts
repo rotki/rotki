@@ -1,32 +1,25 @@
 import { Application, SpectronClient } from 'spectron';
 import {
+  AccountType,
+  UserSettingsController
+} from './support/user_settings_controller';
+import { Guid } from './utils/guid';
+import {
   captureOnFailure,
   closeAddYourSettingsPopup,
   createAccount,
-  GLOBAL_TIMEOUT,
-  initialiseSpectron,
+  initSpectron,
   login,
   logout,
   METHOD_TIMEOUT,
   navigateTo,
   setupTest
-} from './common';
-import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
-import { Guid } from './guid';
-import {
-  AccountType,
-  UserSettingsController
-} from './user_settings_controller';
-
+} from './utils/common';
 const retry = require('promise-retry');
-chai.should();
-chai.use(chaiAsPromised);
 
-describe('dashboard', function() {
-  // @ts-ignore
-  this.timeout(GLOBAL_TIMEOUT);
-  let app: Application;
+describe('dashboard', () => {
+  let application: Application;
+  let stop: () => Promise<Application>;
   let client: SpectronClient;
   let controller: UserSettingsController;
 
@@ -36,18 +29,13 @@ describe('dashboard', function() {
   const ethAccount: string = process.env.ETH_ADDRESS as string;
   const btcAccount: string = process.env.BTC_ADDRESS as string;
 
-  const title = this.title;
-
-  before(async function() {
+  beforeAll(async () => {
     username = Guid.newGuid().toString();
-    app = initialiseSpectron();
-    await app.start();
-    client = app.client;
+    ({ application, stop } = await initSpectron());
+    ({ client } = application);
 
-    console.log(title);
-
-    await setupTest(app, title, async () => {
-      await createAccount(app, username, password);
+    await setupTest(application, 'dashboard', async () => {
+      await createAccount(application, username, password);
 
       controller = new UserSettingsController(client);
       await client.waitUntilTextExists(
@@ -58,27 +46,24 @@ describe('dashboard', function() {
     });
   });
 
-  after(async function() {
-    await captureOnFailure(app, this.currentTest);
-
-    if (app && app.isRunning()) {
-      await app.stop();
-    }
+  afterAll(async () => {
+    await captureOnFailure(application);
+    await stop();
   });
 
   it('should be originally empty', async () => {
     await client.waitForVisible('#table_balances_total_body', METHOD_TIMEOUT);
-    await client
-      .getText('.dataTables_empty')
-      .should.eventually.contain('No data available in table');
+    await expect(client.getText('.dataTables_empty')).toMatch(
+      'No data available in table'
+    );
   });
 
   describe('after adding the accounts', () => {
     const apiKey = process.env.BITTREX_API_KEY as string;
     const apiSecret = process.env.BITTREX_API_SECRET as string;
 
-    before(async function() {
-      await setupTest(app, `${title}_after_adding`, async () => {
+    beforeAll(async () => {
+      await setupTest(application, `dashboard_after_adding`, async () => {
         await retry(async () => {
           await navigateTo(client, '#user_settings_button');
         });
@@ -117,21 +102,21 @@ describe('dashboard', function() {
         '#table_balances_total > thead > tr > th:nth-child(1)'
       );
 
-      await client
-        .getText(
+      await expect(
+        client.getText(
           '#table_balances_total_body > tr:nth-child(1) > td:nth-child(1)'
         )
-        .should.eventually.contain('BTC');
-      await client
-        .getText(
+      ).resolves.toContain('BTC');
+      await expect(
+        client.getText(
           '#table_balances_total_body > tr:nth-child(2) > td:nth-child(1)'
         )
-        .should.eventually.contain('ETH');
-      await client
-        .getText(
+      ).resolves.toContain('ETH');
+      await expect(
+        client.getText(
           '#table_balances_total_body > tr:nth-child(3) > td:nth-child(1)'
         )
-        .should.eventually.contain('USD');
+      ).resolves.toContain('USD');
     });
   });
 
@@ -149,13 +134,21 @@ describe('dashboard', function() {
 async function navigateToDashboard(client: SpectronClient) {
   await retry(async () => {
     client.click('#side-menu > li');
-    client.waitUntilTextExists('.page-header', 'Dashboard', METHOD_TIMEOUT);
+    await client.waitUntilTextExists(
+      '.page-header',
+      'Dashboard',
+      METHOD_TIMEOUT
+    );
   });
 }
 
 async function navigateToStatistics(client: SpectronClient) {
   await retry(async () => {
     client.click('#side-menu > li:nth-child(3)');
-    client.waitUntilTextExists('.page-header', 'Statistics', METHOD_TIMEOUT);
+    await client.waitUntilTextExists(
+      '.page-header',
+      'Statistics',
+      METHOD_TIMEOUT
+    );
   });
 }

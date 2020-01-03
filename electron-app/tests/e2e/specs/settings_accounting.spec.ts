@@ -1,21 +1,16 @@
 import { Application, SpectronClient } from 'spectron';
 import {
+  captureOnFailure,
   createAccount,
   GLOBAL_TIMEOUT,
-  initialiseSpectron,
+  initSpectron,
   METHOD_TIMEOUT,
   navigateTo,
-  setupTest,
-  captureOnFailure
-} from './common';
-import * as chai from 'chai';
-import { expect } from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
-import { Guid } from './guid';
+  setupTest
+} from './utils/common';
+import { Guid } from './utils/guid';
 
 const retry = require('promise-retry');
-chai.should();
-chai.use(chaiAsPromised);
 
 async function dismissSuccessDialog(client: SpectronClient, message: string) {
   await client.waitUntilTextExists(
@@ -23,33 +18,32 @@ async function dismissSuccessDialog(client: SpectronClient, message: string) {
     'Success',
     METHOD_TIMEOUT
   );
-  await client
-    .element('.jconfirm-content > div')
-    .getText()
-    .should.eventually.contain(message);
+  await expect(
+    client.element('.jconfirm-content > div').getText()
+  ).resolves.toMatch(message);
+
   await client.click('.jconfirm-buttons > button');
   await client.waitForExist('.jconfirm-box', METHOD_TIMEOUT, true);
 }
 
-describe('accounting settings', function() {
-  // @ts-ignore
-  this.timeout(GLOBAL_TIMEOUT);
-  this.retries(3);
-  const title = this.title;
-  let app: Application;
+jest.setTimeout(GLOBAL_TIMEOUT);
+
+describe('accounting settings', () => {
+  let application: Application;
+  let stop: () => Promise<Application>;
   let client: SpectronClient;
 
   let username: string;
   const password: string = process.env.PASSWORD as string;
 
-  before(async function() {
+  beforeAll(async () => {
     username = Guid.newGuid().toString();
-    app = initialiseSpectron();
-    await app.start();
+    ({ application, stop } = await initSpectron());
+    ({ client } = application);
 
-    await setupTest(app, title, async () => {
-      await createAccount(app, username, password);
-      client = app.client;
+    await setupTest(application, 'accounting settings', async () => {
+      await createAccount(application, username, password);
+      client = application.client;
 
       await retry(async () => {
         await navigateTo(client, '#accounting_settings_button');
@@ -62,14 +56,12 @@ describe('accounting settings', function() {
     });
   });
 
-  after(async () => {
-    if (app && app.isRunning()) {
-      await app.stop();
-    }
+  afterAll(async () => {
+    await stop();
   });
 
-  afterEach(async function() {
-    await captureOnFailure(app, this.currentTest);
+  afterEach(async () => {
+    await captureOnFailure(application);
   });
 
   it('should change take into account crypto 2 crypto trades', async () => {
@@ -118,17 +110,12 @@ describe('accounting settings', function() {
     await dismissSuccessDialog(client, message);
   });
 
-  it('should be able to add and remove ignored assets', async function() {
-    this.retries(0);
-
+  it('should be able to add and remove ignored assets', async () => {
     let matchedElements = (
       await client.elements('#ignored_assets_selection > option')
     ).value;
-    let numberOfElements = matchedElements.length;
-    expect(numberOfElements).to.be.equal(
-      1,
-      'First there should only be only one option in #ignored_assets_selection'
-    );
+
+    expect(matchedElements.length).toEqual(1);
 
     await addIgnoredAsset(client, 'BSV');
     await addIgnoredAsset(client, 'GNT');
@@ -136,11 +123,8 @@ describe('accounting settings', function() {
     matchedElements = (
       await client.elements('#ignored_assets_selection > option')
     ).value;
-    numberOfElements = matchedElements.length;
-    expect(numberOfElements).to.be.equal(
-      3,
-      'After ignoring two there should only be only three options in #ignored_assets_selection'
-    );
+
+    expect(matchedElements.length).toEqual(3);
 
     await removeIgnoredAsset(client, 'BSV');
     await client.waitForExist('//option[@value="BSV"]', METHOD_TIMEOUT, true);
@@ -150,21 +134,16 @@ describe('accounting settings', function() {
     matchedElements = (
       await client.elements('#ignored_assets_selection > option')
     ).value;
-    numberOfElements = matchedElements.length;
-
-    expect(numberOfElements).to.be.equal(
-      1,
-      'After removal there should only be only one option in #ignored_assets_selection'
-    );
+    expect(matchedElements.length).toEqual(1);
   });
 });
 
 async function removeIgnoredAsset(client: SpectronClient, asset: string) {
   await client.selectByValue('#ignored_assets_selection', asset);
-  await client.getValue('#ignored_asset_entry').should.eventually.equal(asset);
-  await client
-    .getText('#modify_ignored_asset_button')
-    .should.eventually.equal('Remove', 'Button should have the label Remove');
+  await expect(client.getValue('#ignored_asset_entry')).resolves.toEqual(asset);
+  await expect(client.getText('#modify_ignored_asset_button')).resolves.toEqual(
+    'Remove'
+  );
   await client.click('#modify_ignored_asset_button');
 }
 
@@ -172,15 +151,14 @@ async function addIgnoredAsset(client: SpectronClient, asset: string) {
   await client.clearElement('#ignored_asset_entry');
   await client.scroll('#ignored_assets_selection');
   await client.addValue('#ignored_asset_entry', asset);
-  await client
-    .getText('#modify_ignored_asset_button')
-    .should.eventually.equal('Add', 'Button should have the label add');
+  await expect(client.getText('#modify_ignored_asset_button')).resolves.toEqual(
+    'Add'
+  );
+
   await client.click('#modify_ignored_asset_button');
   await client.waitUntil(
     async () => {
-      return client
-        .getValue('#ignored_assets_selection')
-        .should.eventually.equal(asset);
+      return client.getValue('#ignored_assets_selection') === asset;
     },
     METHOD_TIMEOUT,
     'Wait until selected value changes after add'
