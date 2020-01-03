@@ -112,7 +112,10 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       if (isTaskRunning(taskType) && metadata.blockchain === blockchain) {
         return;
       }
-      const result = await api.queryBlockchainBalancesAsync(ignoreCache);
+      const result = await api.queryBlockchainBalancesAsync(
+        ignoreCache,
+        blockchain
+      );
       const task = createTask(result.task_id, taskType, {
         blockchain,
         description: `Query ${blockchain || 'Blockchain'} Balances`,
