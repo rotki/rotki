@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`602` A bug that lead to the coinbase exchange being unusable in last 2 releases was fixed.
+
 * :release:`1.0.6 <2019-12-31>`
 * :bug:`589` If there is an error an unexpected error during sign-in properly catch it and add a log entry.
 * :bug:`588` The electron log is now written in the proper directory depending on the Operating system.
