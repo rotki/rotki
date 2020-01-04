@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import logging
 import time
+from base64 import b64decode, b64encode
 from binascii import Error as BinasciiError
 from enum import Enum
 from http import HTTPStatus
@@ -13,7 +14,7 @@ import requests
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.errors import AuthenticationError, IncorrectApiKeyFormat, RemoteError
-from rotkehlchen.typing import ApiKey, ApiSecret, Timestamp
+from rotkehlchen.typing import Timestamp
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
@@ -35,24 +36,6 @@ class RemoteMetadata(NamedTuple):
     data_hash: str
     # This is the size in bytes of the remote DB data
     data_size: int
-
-
-def premium_create_and_verify(api_key: ApiKey, api_secret: ApiSecret):
-    """Create a Premium object with the key pairs and verify them.
-
-    Returns the created premium object
-
-    raises IncorrectApiKeyFormat if the given key is in the wrong format
-    raises AuthenticationError if the given key is rejected by the server
-    """
-    try:
-        premium = Premium(api_key, api_secret)
-    except BinasciiError:
-        raise IncorrectApiKeyFormat('Rotkehlchen api key is not in the correct format')
-    if premium.is_active():
-        return premium
-
-    raise AuthenticationError('Rotkehlchen API key was rejected by server')
 
 
 def _process_dict_response(response: requests.Response) -> Dict:
@@ -77,44 +60,67 @@ class SubscriptionStatus(Enum):
     INACTIVE = 3
 
 
+class PremiumCredentials():
+    """Represents properly encoded premium credentials
+
+    Constructor can raise IncorrectApiKeyFormat
+    """
+
+    def __init__(self, given_api_key: str, given_api_secret: str) -> None:
+        self.api_key = given_api_key
+        try:
+            self.api_secret = b64decode(given_api_secret)
+        except BinasciiError:
+            raise IncorrectApiKeyFormat('Rotkehlchen api secret is not in the correct format')
+
+    def serialize_key(self) -> str:
+        """Turn the API key into the format to send outside Rotki (network, DB e.t.c.)"""
+        return self.api_key
+
+    def serialize_secret(self) -> str:
+        """Turn the API secret into the format to send outside Rotki (network, DB e.t.c.)"""
+        return b64encode(self.api_secret).decode()
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, PremiumCredentials):
+            return NotImplemented
+        return self.api_key == other.api_key and self.api_secret == other.api_secret
+
+
 class Premium():
 
-    def __init__(self, api_key: ApiKey, api_secret: ApiSecret):
+    def __init__(self, credentials: PremiumCredentials):
         self.status = SubscriptionStatus.UNKNOWN
         self.session = requests.session()
         self.apiversion = '1'
         self.uri = 'https://rotki.com/api/{}/'.format(self.apiversion)
-        self.reset_credentials(api_key, api_secret)
+        self.reset_credentials(credentials)
 
-    def reset_credentials(self, api_key: ApiKey, api_secret: ApiSecret) -> None:
-        self.api_key = api_key
-        self.secret = api_secret
-        # self.secret = base64.b64decode(api_secret)
+    def reset_credentials(self, credentials: PremiumCredentials) -> None:
+        self.credentials = credentials
         self.session.headers.update({  # type: ignore
-            'API-KEY': self.api_key,
+            'API-KEY': self.credentials.serialize_key(),
         })
 
-    def set_credentials(self, api_key: ApiKey, api_secret: ApiSecret) -> None:
+    def set_credentials(self, credentials: PremiumCredentials) -> None:
         """Try to set the credentials for a premium rotkehlchen subscription
 
-        Raises IncorrectApiKeyFormat if the given key is not in a proper format
         Raises AuthenticationError if the given key is rejected by the Rotkehlchen server
         """
-        old_api_key = self.api_key
-        old_secret = ApiSecret(base64.b64encode(self.secret))
+        old_credentials = self.credentials
 
         # Forget the last active value since we are trying new credentials
         self.status = SubscriptionStatus.UNKNOWN
 
         # If what's given is not even valid b64 encoding then stop here
         try:
-            self.reset_credentials(api_key, api_secret)
+            self.reset_credentials(credentials)
         except BinasciiError as e:
             raise IncorrectApiKeyFormat(f'Secret Key formatting error: {str(e)}')
 
         active = self.is_active()
         if not active:
-            self.reset_credentials(old_api_key, old_secret)
+            self.reset_credentials(old_credentials)
             raise AuthenticationError('Rotkehlchen API key was rejected by server')
 
     def is_active(self) -> bool:
@@ -139,7 +145,7 @@ class Premium():
         hashable = post_data.encode()
         message = urlpath.encode() + hashlib.sha256(hashable).digest()
         signature = hmac.new(
-            self.secret,
+            self.credentials.api_secret,
             message,
             hashlib.sha512,
         )
@@ -255,3 +261,18 @@ class Premium():
 
         result = _process_dict_response(response)
         return result['data']
+
+
+def premium_create_and_verify(credentials: PremiumCredentials) -> Premium:
+    """Create a Premium object with the key pairs and verify them.
+
+    Returns the created premium object
+
+    raises AuthenticationError if the given key is rejected by the server
+    """
+    premium = Premium(credentials)
+
+    if premium.is_active():
+        return premium
+
+    raise AuthenticationError('Rotkehlchen API key was rejected by server')

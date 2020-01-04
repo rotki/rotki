@@ -28,8 +28,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_trade_type,
 )
 from rotkehlchen.typing import (
-    ApiKey,
-    ApiSecret,
     B64EncodedBytes,
     B64EncodedString,
     BlockchainAddress,
@@ -258,13 +256,6 @@ class DataHandler():
             return False, f'{asset.identifier} is not in ignored assets'
         self.db.remove_from_ignored_assets(asset)
         return True, ''
-
-    def set_premium_credentials(
-            self,
-            api_key: ApiKey,
-            api_secret: ApiSecret,
-    ) -> None:
-        self.db.set_rotkehlchen_premium(api_key, api_secret)
 
     def set_main_currency(
             self,

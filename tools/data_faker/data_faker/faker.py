@@ -12,7 +12,6 @@ from data_faker.mock_apis.api import APIServer, RestAPI
 
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
-from rotkehlchen.typing import ApiKey, ApiSecret
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +73,5 @@ class DataFaker(object):
             password=given_password,
             create_new=True,
             sync_approval='no',
-            api_key=ApiKey(''),
-            api_secret=ApiSecret(b''),
+            premium_credentials=None,
         )

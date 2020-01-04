@@ -3,20 +3,14 @@ import logging
 import os
 import shutil
 from enum import Enum
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 from typing_extensions import Literal
 
 from rotkehlchen.data_handler import DataHandler
-from rotkehlchen.errors import (
-    AuthenticationError,
-    IncorrectApiKeyFormat,
-    RemoteError,
-    RotkehlchenPermissionError,
-)
+from rotkehlchen.errors import AuthenticationError, RemoteError, RotkehlchenPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import Premium, premium_create_and_verify
-from rotkehlchen.typing import ApiKey, ApiSecret
+from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 logger = logging.getLogger(__name__)
@@ -187,8 +181,7 @@ class PremiumSyncManager():
 
     def try_premium_at_start(
             self,
-            api_key: ApiKey,
-            api_secret: ApiSecret,
+            given_premium_credentials: Optional[PremiumCredentials],
             username: str,
             create_new: bool,
             sync_approval: Literal['yes', 'no', 'unknown'],
@@ -201,12 +194,12 @@ class PremiumSyncManager():
         If not it will raise AuthenticationError.
         """
 
-        if api_key != '':
+        if given_premium_credentials is not None:
             assert create_new, 'We should never get here for an already existing account'
 
             try:
-                self.premium = premium_create_and_verify(api_key, api_secret)
-            except (IncorrectApiKeyFormat, AuthenticationError) as e:
+                self.premium = premium_create_and_verify(given_premium_credentials)
+            except AuthenticationError as e:
                 log.error('Given API key is invalid')
                 # At this point we are at a new user trying to create an account with
                 # premium API keys and we failed. But a directory was created. Remove it.
@@ -226,14 +219,12 @@ class PremiumSyncManager():
                 )
 
         # else, if we got premium data in the DB initialize it and try to sync with the server
-        premium_credentials = self.data.db.get_rotkehlchen_premium()
-        if premium_credentials:
+        db_credentials = self.data.db.get_rotkehlchen_premium()
+        if db_credentials:
             assert not create_new, 'We should never get here for a new account'
-            api_key = premium_credentials[0]
-            api_secret = premium_credentials[1]
             try:
-                self.premium = premium_create_and_verify(api_key, api_secret)
-            except (IncorrectApiKeyFormat, AuthenticationError) as e:
+                self.premium = premium_create_and_verify(db_credentials)
+            except AuthenticationError as e:
                 message = (
                     f'Could not authenticate with the rotkehlchen server with '
                     f'the API keys found in the Database. Error: {str(e)}'
@@ -241,6 +232,7 @@ class PremiumSyncManager():
                 log.error(message)
                 raise AuthenticationError(message)
 
+        # From this point on we should have a self.premium with valid credentials
         result = self._can_sync_data_from_server(new_account=create_new)
         if result.can_sync == CanSync.ASK_USER:
             if sync_approval == 'unknown':
@@ -253,7 +245,7 @@ class PremiumSyncManager():
                         # if we successfully synced data from the server and this is
                         # a new account, make sure the api keys are properly stored
                         # in the DB
-                        self.data.db.set_rotkehlchen_premium(api_key, api_secret)
+                        self.data.db.set_rotkehlchen_premium(self.premium.credentials)
             else:
                 log.debug('Could sync data from server but user refused')
         elif result.can_sync == CanSync.YES:
@@ -263,7 +255,7 @@ class PremiumSyncManager():
                     # if we successfully synced data from the server and this is
                     # a new account, make sure the api keys are properly stored
                     # in the DB
-                    self.data.db.set_rotkehlchen_premium(api_key, api_secret)
+                    self.data.db.set_rotkehlchen_premium(self.premium.credentials)
 
         # else result.can_sync was no, so we do nothing
 
