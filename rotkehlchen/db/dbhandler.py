@@ -1,4 +1,3 @@
-import base64
 import hashlib
 import logging
 import os
@@ -31,11 +30,18 @@ from rotkehlchen.db.utils import (
     SingleAssetBalance,
     str_to_bool,
 )
-from rotkehlchen.errors import AuthenticationError, DeserializationError, InputError, UnknownAsset
+from rotkehlchen.errors import (
+    AuthenticationError,
+    DeserializationError,
+    IncorrectApiKeyFormat,
+    InputError,
+    UnknownAsset,
+)
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_movement_category_from_db,
@@ -49,8 +55,6 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.typing import (
     ApiCredentials,
-    ApiKey,
-    ApiSecret,
     BlockchainAddress,
     ChecksumAddress,
     EthereumTransaction,
@@ -1304,16 +1308,13 @@ class DBHandler:
         self.conn.commit()
         return True, ''
 
-    def set_rotkehlchen_premium(
-            self,
-            api_key: ApiKey,
-            api_secret: ApiSecret,
-    ) -> None:
+    def set_rotkehlchen_premium(self, credentials: PremiumCredentials) -> None:
+        """Save the rotki premium credentials in the DB"""
         cursor = self.conn.cursor()
         # We don't care about previous value so this simple insert or replace should work
         cursor.execute(
             'INSERT OR REPLACE INTO user_credentials(name, api_key, api_secret) VALUES (?, ?, ?)',
-            ('rotkehlchen', api_key, api_secret.decode()),
+            ('rotkehlchen', credentials.serialize_key(), credentials.serialize_secret()),
         )
         self.conn.commit()
         # Do not update the last write here. If we are starting in a new machine
@@ -1321,14 +1322,25 @@ class DBHandler:
         # an empty last write ts in that case
         # self.update_last_write()
 
-    def get_rotkehlchen_premium(self) -> Optional[Tuple[ApiKey, ApiSecret]]:
+    def get_rotkehlchen_premium(self) -> Optional[PremiumCredentials]:
         cursor = self.conn.cursor()
         result = cursor.execute(
             'SELECT api_key, api_secret FROM user_credentials where name="rotkehlchen";',
         )
         result = result.fetchall()
         if len(result) == 1:
-            return ApiKey(result[0][0]), ApiSecret(base64.b64decode(result[0][1]))
+            try:
+                credentials = PremiumCredentials(
+                    given_api_key=result[0][0],
+                    given_api_secret=result[0][1],
+                )
+            except IncorrectApiKeyFormat:
+                self.msg_aggregator.add_error(
+                    f'Incorrect Rotki API Key/Secret format found in the DB. Skipping ...',
+                )
+                return None
+
+            return credentials
         else:
             return None
 

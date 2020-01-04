@@ -3,7 +3,7 @@
 import argparse
 import logging
 import time
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import gevent
 from gevent.lock import Semaphore
@@ -28,17 +28,10 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian, TradesHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import DEFAULT_ANONYMIZED_LOGS, LoggingSettings, RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import premium_create_and_verify
+from rotkehlchen.premium.premium import PremiumCredentials, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.serialization.serialize import process_result
-from rotkehlchen.typing import (
-    ApiKey,
-    ApiSecret,
-    BlockchainAddress,
-    FiatAsset,
-    SupportedBlockchain,
-    Timestamp,
-)
+from rotkehlchen.typing import BlockchainAddress, FiatAsset, SupportedBlockchain, Timestamp
 from rotkehlchen.usage_analytics import maybe_submit_usage_analytics
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
@@ -122,8 +115,7 @@ class Rotkehlchen():
             password: str,
             create_new: bool,
             sync_approval: str,
-            api_key: ApiKey,
-            api_secret: ApiSecret,
+            premium_credentials: Optional[PremiumCredentials],
     ) -> None:
         """Unlocks an existing user or creates a new one if `create_new` is True"""
         log.info(
@@ -138,10 +130,10 @@ class Rotkehlchen():
         self.data_importer = DataImporter(db=self.data.db)
         self.last_data_upload_ts = self.data.db.get_last_data_upload_ts()
         self.premium_sync_manager = PremiumSyncManager(data=self.data, password=password)
+
         try:
             self.premium = self.premium_sync_manager.try_premium_at_start(
-                api_key=api_key,
-                api_secret=api_secret,
+                given_premium_credentials=premium_credentials,
                 username=user,
                 create_new=create_new,
                 sync_approval=sync_approval,
@@ -228,20 +220,20 @@ class Rotkehlchen():
             user=user,
         )
 
-    def set_premium_credentials(self, api_key: ApiKey, api_secret: ApiSecret) -> None:
+    def set_premium_credentials(self, credentials: PremiumCredentials) -> None:
         """
-        Raises IncorrectApiKeyFormat if the given key is not in a proper format
+        Sets the premium credentials for Rotki
+
         Raises AuthenticationError if the given key is rejected by the Rotkehlchen server
         """
         log.info('Setting new premium credentials')
-
         if self.premium is not None:
             # For some reason mypy does not see that self.premium is set
-            self.premium.set_credentials(api_key, api_secret)  # type: ignore
+            self.premium.set_credentials(credentials)  # type: ignore
         else:
-            self.premium = premium_create_and_verify(api_key, api_secret)
+            self.premium = premium_create_and_verify(credentials)
 
-        self.data.set_premium_credentials(api_key, api_secret)
+        self.data.db.set_rotkehlchen_premium(credentials)
 
     def start(self) -> gevent.Greenlet:
         return gevent.spawn(self.main_loop)

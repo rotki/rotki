@@ -4,11 +4,10 @@ from unittest.mock import patch
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.premium.premium import Premium
+from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import ApiKey, ApiSecret
 
 # Remote data containing a different main currency (GBP)
 REMOTE_DATA = b'qLQdzIvX6c8jJyucladYh2wZvpPbna/hmokjLu8NX64blb+lM/HxIGtCq5YH9TNUV51VHGMqMBhUeHqdtdOh1/VLg5q2NuzNmiCUroV0u97YMYM5dsGrKpy+J9d1Hbq33dlx8YcQxBsJEM2lSmLXiW8DQ/AfNJfT7twe6u+w1i9soFF7hbkafnrg2s7QGukB8D4CY1sIcZd2VRlMy7ATwtOF9ur8KDrKfVpZSQlTsWfyfiWyJmcVTmvPjqPAmZ0PEDlwqmNETe6yeRnkKgU0T2xTrTAJkawoGn41g0LnYi+ghTBPTboiLVTqASk/C71ofdEjN0gacy/9wNIBrq3cvfZBsrTpjzt88W2pnPHbLdfxrycToeGKNBASexs42uzBWOqa6BFPEiy7mSzKClLp4q+hiZtasyhnwMzUYvsIb25BvXBAPJQnjcBW+hzuiwQp+C3hynxTSPY1v2S80i3fqDK7BKY8VpPpjV+tC5B0pn6PsBETKZjB1pPKQ//m/I8HI0bWb+0fpVs4NbK9nFpRN6Capd8wJTzWtSp7vGbHOoaDAwtNtp61QI7eDsiMZGYXFy5jn8CmE+uWC4zDhLmoAUwAehuUSjv0v5RJGX/IAgWxoRMhAEra54bRwZ0vY1YRBS/Xf/AXp17BRzqE8NwSAUstgizOk7ryT3BQaTqybrt4y4omyw1VVpeisJROVK0fcFJFFH1zYUbbUB+0CBRq20y54faSSNNjc05pYHv456BBBIwpUwMS4M7yZz+HwP8b/OIq0LMr7d5SJdDjG9Ut1siZbaGRdyqv86WNTiSrlMmTASHi7+z+Z8CX9GnmEgVJna5mvvOhBC/zIpZiRLzwbYjdvrtw3N9X+NHzIaDGrAo1LtWh+eGmRHPKlb+CICOMj4TGvtGKlL/IfzBcrBfeTwkNSge2l4mOFG9l82ci4RZ7I4Yr6WUQJ+NU6DYQYKb5wMz+xTJmenHHaQxy0fsTulO5/RKfY8u1O9xT5kDtNc/R00CDheqcTS773NLDL4dqHEE/+lVxoVdFT/VvxzHrBKnI6M1UyJgDHu1BFIto2/z2wS0GjVXkBVFvMfQTYMZmb88RP/04F00kt3wqg/lrhAqr60BaC/FzIKG9lepDXXBAhHZyy+a1HYCkJlA43QoX3duu3fauViP+2RN306/tFw6HJvkRiCU7E3T9tLOHU508PLhcN8a5ON7aVyBtzdGO5i57j6Xm96di79IsfwStowS31kDix+B1mYeD8R1nvthWOKgL2KiAl/UpbXDPOuVBYubZ+V4/D8jxRCivM2ukME+SCIGzraR3EBqAdvjp3dLC1tomnawaEzAQYTUHbHndYatmIYnzEsTzFd8OWoX/gy0KGaZJ/mUGDTFBbkWIDE8='  # noqa: E501
@@ -70,18 +69,14 @@ def create_patched_premium_session_get(
 
 
 def create_patched_premium(
-        api_key: ApiKey,
-        api_secret: ApiSecret,
+        premium_credentials: PremiumCredentials,
         patch_get: bool,
         metadata_last_modify_ts=None,
         metadata_data_hash=None,
         metadata_data_size=None,
         saved_data=None,
 ):
-    premium = Premium(
-        api_key=api_key,
-        api_secret=api_secret,
-    )
+    premium = Premium(premium_credentials)
     patched_get = None
     if patch_get:
         patched_get = create_patched_premium_session_get(
@@ -108,8 +103,7 @@ def setup_starting_environment(
         same_hash_with_remote: bool,
         newer_remote_db: bool,
         db_can_sync_setting: bool,
-        api_key: ApiKey,
-        api_secret: ApiSecret,
+        premium_credentials: PremiumCredentials,
 ):
     """
     Sets up the starting environment for premium testing when the user
@@ -118,10 +112,7 @@ def setup_starting_environment(
     """
     if not first_time:
         # Emulate already having the api keys in the DB
-        rotkehlchen_instance.data.db.set_rotkehlchen_premium(
-            api_key=api_key,
-            api_secret=api_secret,
-        )
+        rotkehlchen_instance.data.db.set_rotkehlchen_premium(premium_credentials)
 
     rotkehlchen_instance.data.db.update_premium_sync(db_can_sync_setting)
     our_last_write_ts = rotkehlchen_instance.data.db.get_last_write_ts()
@@ -140,8 +131,7 @@ def setup_starting_environment(
         metadata_last_modify_ts = our_last_write_ts - 10
 
     patched_premium, patched_get = create_patched_premium(
-        api_key=api_key,
-        api_secret=api_secret,
+        premium_credentials=premium_credentials,
         patch_get=True,
         metadata_last_modify_ts=metadata_last_modify_ts,
         metadata_data_hash=remote_hash,
@@ -150,18 +140,15 @@ def setup_starting_environment(
     )
 
     if first_time:
-        api_key = api_key
-        api_secret = api_secret
+        given_premium_credentials = premium_credentials
         create_new = True
     else:
-        api_key = ''
-        api_secret = ''
+        given_premium_credentials = None
         create_new = False
 
     with patched_premium, patched_get:
         rotkehlchen_instance.premium_sync_manager.try_premium_at_start(
-            api_key=api_key,
-            api_secret=api_secret,
+            given_premium_credentials=given_premium_credentials,
             username=username,
             create_new=create_new,
             sync_approval='yes',

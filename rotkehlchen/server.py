@@ -1,7 +1,6 @@
 # Based on https://github.com/fyears/electron-python-example
 from __future__ import print_function
 
-import base64
 import logging
 import os
 import signal
@@ -26,17 +25,11 @@ from rotkehlchen.errors import (
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.serialization.serialize import process_result
-from rotkehlchen.typing import (
-    ApiKey,
-    ApiSecret,
-    BlockchainAddress,
-    FiatAsset,
-    SupportedBlockchain,
-    Timestamp,
-)
+from rotkehlchen.typing import BlockchainAddress, FiatAsset, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import simple_result
 from rotkehlchen.utils.serialization import pretty_json_dumps
 from rotkehlchen.utils.version_check import check_if_version_up_to_date
@@ -217,11 +210,19 @@ class RotkehlchenServer():
         result, message = self.rotkehlchen.data.delete_external_trade(trade_id)
         return {'result': result, 'message': message}
 
-    def set_premium_credentials(self, api_key, api_secret):
+    def set_premium_credentials(self, string_api_key, string_api_secret):
         msg = ''
         result = False
         try:
-            self.rotkehlchen.set_premium_credentials(api_key, api_secret)
+            credentials = PremiumCredentials(
+                given_api_key=string_api_key,
+                given_api_secret=string_api_secret,
+            )
+        except IncorrectApiKeyFormat:
+            return {'result': result, 'message': 'Wrong format for the given Rotki Api Secret'}
+
+        try:
+            self.rotkehlchen.set_premium_credentials(credentials)
             result = True
         except (AuthenticationError, IncorrectApiKeyFormat) as e:
             msg = str(e)
@@ -510,14 +511,26 @@ class RotkehlchenServer():
         if api_key != '' and api_secret == '' or api_secret != '' and api_key == '':
             raise ValueError('Must provide both or neither of api key/secret')
 
+        premium_credentials = None
+        if api_key != '' and api_secret != '':
+            try:
+                premium_credentials = PremiumCredentials(
+                    given_api_key=api_key,
+                    given_api_secret=api_secret,
+                )
+            except IncorrectApiKeyFormat:
+                return {
+                    'result': False,
+                    'message': 'Given API Key/Secret has invalid format',
+                }
+
         try:
             self.rotkehlchen.unlock_user(
                 user,
                 password,
                 create_new,
                 sync_approval,
-                ApiKey(api_key),
-                ApiSecret(base64.b64decode(api_secret)),
+                premium_credentials,
             )
             res['exchanges'] = self.rotkehlchen.exchange_manager.get_connected_exchange_names()
             res['premium'] = self.rotkehlchen.premium is not None

@@ -28,6 +28,7 @@ from rotkehlchen.db.utils import AssetBalance, BlockchainAccounts, LocationData
 from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.tests.utils.constants import (
     A_CNY,
     A_DAO,
@@ -1045,6 +1046,7 @@ def test_can_unlock_db_with_disabled_taxfree_after_period(data_dir, username):
 
     Regression test for https://github.com/rotki/rotki/issues/587
     """
+    # Set the setting
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
@@ -1056,3 +1058,56 @@ def test_can_unlock_db_with_disabled_taxfree_after_period(data_dir, username):
     data.unlock(username, '123', create_new=False)
     settings = data.db.get_settings()
     assert settings.taxfree_after_period is None
+
+
+def test_set_get_rotkehlchen_premium_credentials(data_dir, username):
+    """Test that setting the premium credentials and getting them back from the DB works
+    """
+    api_key = (
+        'kWT/MaPHwM2W1KUEl2aXtkKG6wJfMW9KxI7SSerI6/QzchC45/GebPV9xYZy7f+VKBeh5nDRBJBCYn7WofMO4Q=='
+    )
+    secret = (
+        'TEF5dFFrOFcwSXNrM2p1aDdHZmlndFRoMTZQRWJhU2dacTdscUZSeHZTRmJLRm5ZaVRlV2NYU'
+        'llYR1lxMjlEdUtRdFptelpCYmlXSUZGRTVDNWx3NDNYbjIx'
+    )
+    credentials = PremiumCredentials(
+        given_api_key=api_key,
+        given_api_secret=secret,
+    )
+
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
+    data.unlock(username, '123', create_new=True)
+    data.db.set_rotkehlchen_premium(credentials)
+    returned_credentials = data.db.get_rotkehlchen_premium()
+    assert returned_credentials == credentials
+    assert returned_credentials.serialize_key() == api_key
+    assert returned_credentials.serialize_secret() == secret
+
+
+def test_unlock_with_invalid_premium_data(data_dir, username):
+    """Test that invalid premium credentials unlock still works
+    """
+    # First manually write invalid data to the DB
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
+    data.unlock(username, '123', create_new=True)
+    cursor = data.db.conn.cursor()
+    cursor.execute(
+        'INSERT OR REPLACE INTO user_credentials(name, api_key, api_secret) VALUES (?, ?, ?)',
+        ('rotkehlchen', 'foo', 'boo'),
+    )
+    data.db.conn.commit()
+
+    # now relogin and check that no exception is thrown
+    del data
+    data = DataHandler(data_dir, msg_aggregator)
+    data.unlock(username, '123', create_new=False)
+    # and that an error is logged when trying to get premium
+    assert not data.db.get_rotkehlchen_premium()
+    warnings = msg_aggregator.consume_warnings()
+    errors = msg_aggregator.consume_errors()
+
+    assert len(warnings) == 0
+    assert len(errors) == 1
+    assert 'Incorrect Rotki API Key/Secret format found in the DB' in errors[0]
