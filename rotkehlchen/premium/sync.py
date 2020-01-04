@@ -206,13 +206,12 @@ class PremiumSyncManager():
                 # But create a backup of it in case something went really wrong
                 # and the directory contained data we did not want to lose
                 shutil.move(
-                    self.data.user_directory,
+                    self.data.user_data_dir,
                     os.path.join(
                         self.data.data_directory,
                         f'auto_backup_{username}_{ts_now()}',
                     ),
                 )
-                shutil.rmtree(self.data.user_directory)
                 raise AuthenticationError(
                     'Could not verify keys for the new account. '
                     '{}'.format(str(e)),

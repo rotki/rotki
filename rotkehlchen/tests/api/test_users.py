@@ -80,6 +80,33 @@ def test_user_creation(rotkehlchen_api_server, data_dir):
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
+def test_user_creation_with_invalid_premium_credentials(rotkehlchen_api_server, data_dir):
+    """Test that invalid premium credentials are handled properly at new user creation"""
+    # Create a user
+    username = 'hania'
+    data = {
+        'name': username,
+        'password': '1234',
+        'sync_approval': 'unknown',
+        'premium_api_key': 'foo',
+        'premium_api_secret': 'boo',
+    }
+    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    assert_error_response(
+        response=response,
+        contained_in_msg='Provided API/Key secret format is invalid',
+    )
+
+    # Check that the directory was NOT created
+    assert not Path(data_dir / username).exists(), 'The directory should not have een created'
+    # TODO: Add a test with valid but not authenticated credentials so that this
+    # can be tested
+    # backups = list(Path(data_dir).glob('auto_backup_*'))
+    # assert len(backups) == 1
+    # assert 'auto_backup_hania_' in backups[0]
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [False])
 def test_user_creation_errors(rotkehlchen_api_server, data_dir):
     """Test errors and edge cases for user creation"""
     # Missing username
@@ -175,7 +202,7 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
     assert_error_response(
         response=response,
-        contained_in_msg='Given API Key should be a string',
+        contained_in_msg='Not a valid string',
     )
     # Invalid type for premium api secret
     data = {
@@ -187,7 +214,7 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
     assert_error_response(
         response=response,
-        contained_in_msg='Given API Secret should be a string',
+        contained_in_msg='Not a valid string',
     )
 
     # Check that the directory was NOT created
