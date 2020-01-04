@@ -2,7 +2,8 @@
 Changelog
 =========
 
-* :bug:`602` A bug that lead to the coinbase exchange being unusable in last 2 releases was fixed.
+* :bug:`605` Adding a premium API key via the front-end now works properly again.
+* :bug:`602` Fixed a bug that lead to the coinbase exchange integration not working.
 
 * :release:`1.0.6 <2019-12-31>`
 * :bug:`589` If there is an error an unexpected error during sign-in properly catch it and add a log entry.
