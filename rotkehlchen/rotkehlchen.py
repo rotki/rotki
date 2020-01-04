@@ -206,8 +206,7 @@ class Rotkehlchen():
         """
         log.info('Setting new premium credentials')
         if self.premium is not None:
-            # For some reason mypy does not see that self.premium is set
-            self.premium.set_credentials(credentials)  # type: ignore
+            self.premium.set_credentials(credentials)
         else:
             self.premium = premium_create_and_verify(credentials)
 

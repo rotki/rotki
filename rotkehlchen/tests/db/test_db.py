@@ -948,7 +948,7 @@ def test_can_unlock_db_with_disabled_taxfree_after_period(data_dir, username):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
-    data.db.set_settings({'taxfree_after_period': None})
+    data.db.set_settings(ModifiableDBSettings(taxfree_after_period=-1))
 
     # now relogin and check that no exception is thrown
     del data

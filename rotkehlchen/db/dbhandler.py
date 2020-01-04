@@ -58,6 +58,8 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.typing import (
     ApiCredentials,
+    ApiKey,
+    ApiSecret,
     BlockchainAddress,
     ChecksumAddress,
     EthereumTransaction,

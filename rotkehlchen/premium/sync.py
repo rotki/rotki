@@ -200,6 +200,8 @@ class PremiumSyncManager():
             try:
                 self.premium = premium_create_and_verify(given_premium_credentials)
             except AuthenticationError as e:
+                __import__("pdb").set_trace()
+
                 log.error('Given API key is invalid')
                 # At this point we are at a new user trying to create an account with
                 # premium API keys and we failed. But a directory was created. Remove it.
