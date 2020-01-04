@@ -2,11 +2,16 @@
 Changelog
 =========
 
+
 * :feature:`583` The UI's notifications can finally be copy pasted.
 * :feature:`168` Users can now force-refresh exchange/blockchain balances via the UI and ignore the cache.
 * :feature:`354` Introduces a modern, easily extendable material design UI based on Vue.js and Vuetify.
 * :feature:`404` Removed ZMQ as the messaging layer between backend - frontend and introduced a full-fledged REST API instead.
 * :bug:`465` Asset icons and names show consistently in the UI after the vue.js rewrite.
+
+* :release:`1.0.7 <2020-01-04>`
+* :bug:`605` Adding a premium API key via the front-end now works properly again.
+* :bug:`602` Fixed a bug that lead to the coinbase exchange integration not working.
 
 * :release:`1.0.6 <2019-12-31>`
 * :bug:`589` If there is an error an unexpected error during sign-in properly catch it and add a log entry.
@@ -20,7 +25,6 @@ Changelog
 
   - `Troy (TROY) <https://coinmarketcap.com/currencies/troy/>`__
   - `Hycon (HYC) <https://coinmarketcap.com/currencies/hycon/>`__
-
 
 * :release:`1.0.5 <2019-11-30>`
 * :feature:`547` Support Multicollateral DAI upgrade and Single Collateral DAI renaming to SAI.
@@ -43,7 +47,6 @@ Changelog
   - `FLETA (FLETA) <https://coinmarketcap.com/currencies/fleta/>`__
   - `PAX Gold (PAXG) <https://coinmarketcap.com/currencies/pax-gold/>`__
   - `Hdac (HDAC) <https://coinmarketcap.com/currencies/hdac/>`__
-
 
 * :release:`1.0.4 <2019-10-04>`
 * :feature:`498` Users can now import data from Cointracking into Rotki. Create a CSV export from Cointracking and import it from the Import Data menu.
