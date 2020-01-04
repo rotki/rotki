@@ -5,7 +5,7 @@ import pytest
 
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.history import TradesHistorian
-from rotkehlchen.premium.premium import Premium
+from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.api import create_api_server
@@ -28,13 +28,11 @@ def start_with_valid_premium():
 
 
 @pytest.fixture
-def rotkehlchen_api_key():
-    return base64.b64encode(make_random_b64bytes(128))
-
-
-@pytest.fixture
-def rotkehlchen_api_secret():
-    return base64.b64encode(make_random_b64bytes(128))
+def rotki_premium_credentials() -> PremiumCredentials:
+    return PremiumCredentials(
+        given_api_key=base64.b64encode(make_random_b64bytes(128)),
+        given_api_secret=base64.b64encode(make_random_b64bytes(128)),
+    )
 
 
 @pytest.fixture()
@@ -64,8 +62,7 @@ def initialize_mock_rotkehlchen_instance(
         accountant,
         blockchain,
         db_password,
-        rotkehlchen_api_key,
-        rotkehlchen_api_secret,
+        rotki_premium_credentials,
         data_dir,
         database,
         username,
@@ -100,10 +97,7 @@ def initialize_mock_rotkehlchen_instance(
             password=db_password,
         )
         if start_with_valid_premium:
-            rotki.premium = Premium(
-                api_key=rotkehlchen_api_key,
-                api_secret=rotkehlchen_api_secret,
-            )
+            rotki.premium = Premium(rotki_premium_credentials)
             rotki.premium_sync_manager.premium = rotki.premium
         else:
             rotki.premium = None
@@ -126,8 +120,7 @@ def rotkehlchen_api_server(
         start_with_valid_premium,
         function_scope_messages_aggregator,
         db_password,
-        rotkehlchen_api_key,
-        rotkehlchen_api_secret,
+        rotki_premium_credentials,
         accounting_data_dir,
         username,
 ):
@@ -143,8 +136,7 @@ def rotkehlchen_api_server(
         accountant=accountant,
         blockchain=blockchain,
         db_password=db_password,
-        rotkehlchen_api_key=rotkehlchen_api_key,
-        rotkehlchen_api_secret=rotkehlchen_api_secret,
+        rotki_premium_credentials=rotki_premium_credentials,
         data_dir=accounting_data_dir,
         database=database,
         username=username,
@@ -162,8 +154,7 @@ def rotkehlchen_instance(
         start_with_valid_premium,
         function_scope_messages_aggregator,
         db_password,
-        rotkehlchen_api_key,
-        rotkehlchen_api_secret,
+        rotki_premium_credentials,
         accounting_data_dir,
         username,
 ):
@@ -177,8 +168,7 @@ def rotkehlchen_instance(
         accountant=accountant,
         blockchain=blockchain,
         db_password=db_password,
-        rotkehlchen_api_key=rotkehlchen_api_key,
-        rotkehlchen_api_secret=rotkehlchen_api_secret,
+        rotki_premium_credentials=rotki_premium_credentials,
         data_dir=accounting_data_dir,
         database=database,
         username=username,

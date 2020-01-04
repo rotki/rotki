@@ -285,8 +285,8 @@ Handling user creation, sign-in, log-out and querying
       }
 
    :statuscode 200: API key/secret set succesfully
-   :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 401: Provided API key/secret does not authenticate or is invalid.
+   :statuscode 400: Provided JSON is in some way malformed. For example invalid API key format
+   :statuscode 401: Provided API key/secret does not authenticate.
    :statuscode 409: User is not logged in, or user does not exist
    :statuscode 500: Internal Rotki error
 

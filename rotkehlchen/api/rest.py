@@ -27,6 +27,7 @@ from rotkehlchen.errors import (
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.typing import (
@@ -635,10 +636,11 @@ class RestAPI():
             name: str,
             password: str,
             sync_approval: str,
-            premium_api_key: ApiKey,
-            premium_api_secret: ApiSecret,
+            premium_api_key: str,
+            premium_api_secret: str,
     ) -> Response:
         result_dict: Dict[str, Any] = {'result': None, 'message': ''}
+
         if self.rotkehlchen.user_is_logged_in:
             result_dict['message'] = (
                 f'Can not create a new user because user '
@@ -648,11 +650,22 @@ class RestAPI():
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
         if (
-                premium_api_key != '' and premium_api_secret == b'' or
-                premium_api_secret != b'' and premium_api_key == ''
+                premium_api_key != '' and premium_api_secret == '' or
+                premium_api_secret != '' and premium_api_key == ''
         ):
             result_dict['message'] = 'Must provide both or neither of api key/secret'
             return api_response(result_dict, status_code=HTTPStatus.BAD_REQUEST)
+
+        premium_credentials = None
+        if premium_api_key != '' and premium_api_secret != '':
+            try:
+                premium_credentials = PremiumCredentials(
+                    given_api_key=premium_api_key,
+                    given_api_secret=premium_api_secret,
+                )
+            except IncorrectApiKeyFormat:
+                result_dict['message'] = 'Provided API/Key secret format is invalid'
+                return api_response(result_dict, status_code=HTTPStatus.BAD_REQUEST)
 
         try:
             self.rotkehlchen.unlock_user(
@@ -660,8 +673,7 @@ class RestAPI():
                 password=password,
                 create_new=True,
                 sync_approval=sync_approval,
-                api_key=premium_api_key,
-                api_secret=premium_api_secret,
+                premium_credentials=premium_credentials,
             )
         except AuthenticationError as e:
             result_dict['message'] = str(e)
@@ -699,8 +711,7 @@ class RestAPI():
                 password=password,
                 create_new=False,
                 sync_approval=sync_approval,
-                api_key=ApiKey(''),
-                api_secret=ApiSecret(b''),
+                premium_credentials=None,
             )
         except AuthenticationError as e:
             result_dict['message'] = str(e)
@@ -741,8 +752,8 @@ class RestAPI():
     def user_set_premium_credentials(
             self,
             name: str,
-            api_key: ApiKey,
-            api_secret: ApiSecret,
+            api_key: str,
+            api_secret: str,
     ) -> Response:
         result_dict: Dict[str, Any] = {'result': None, 'message': ''}
 
@@ -751,8 +762,17 @@ class RestAPI():
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
         try:
-            self.rotkehlchen.set_premium_credentials(api_key, api_secret)
-        except (AuthenticationError, IncorrectApiKeyFormat) as e:
+            credentials = PremiumCredentials(
+                given_api_key=api_key,
+                given_api_secret=api_secret,
+            )
+        except IncorrectApiKeyFormat:
+            result_dict['message'] = 'Given API Key/Secret pair format is invalid'
+            return api_response(result_dict, status_code=HTTPStatus.BAD_REQUEST)
+
+        try:
+            self.rotkehlchen.set_premium_credentials(credentials)
+        except AuthenticationError as e:
             result_dict['message'] = str(e)
             return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
 

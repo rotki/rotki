@@ -1,3 +1,4 @@
+from base64 import b64decode
 from unittest.mock import patch
 
 import pytest
@@ -5,7 +6,8 @@ import pytest
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.errors import UnableToDecryptRemoteData
+from rotkehlchen.errors import IncorrectApiKeyFormat, UnableToDecryptRemoteData
+from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.premium import (
@@ -145,16 +147,14 @@ def test_try_premium_at_start_new_account_can_pull_data(
         rotkehlchen_instance,
         username,
         db_password,
-        rotkehlchen_api_key,
-        rotkehlchen_api_secret,
+        rotki_premium_credentials,
 ):
     # Test that even with can_sync False, at start of new account we attempt data pull
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
         db_password=db_password,
-        api_key=rotkehlchen_api_key,
-        api_secret=rotkehlchen_api_secret,
+        premium_credentials=rotki_premium_credentials,
         first_time=True,
         same_hash_with_remote=False,
         newer_remote_db=True,
@@ -168,15 +168,13 @@ def test_try_premium_at_start_old_account_can_pull_data(
         rotkehlchen_instance,
         username,
         db_password,
-        rotkehlchen_api_key,
-        rotkehlchen_api_secret,
+        rotki_premium_credentials,
 ):
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
         db_password=db_password,
-        api_key=rotkehlchen_api_key,
-        api_secret=rotkehlchen_api_secret,
+        premium_credentials=rotki_premium_credentials,
         first_time=False,
         same_hash_with_remote=False,
         newer_remote_db=True,
@@ -190,15 +188,13 @@ def test_try_premium_at_start_old_account_doesnt_pull_data_with_no_premium_sync(
         rotkehlchen_instance,
         username,
         db_password,
-        rotkehlchen_api_key,
-        rotkehlchen_api_secret,
+        rotki_premium_credentials,
 ):
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
         db_password=db_password,
-        api_key=rotkehlchen_api_key,
-        api_secret=rotkehlchen_api_secret,
+        premium_credentials=rotki_premium_credentials,
         first_time=False,
         same_hash_with_remote=False,
         newer_remote_db=True,
@@ -213,15 +209,13 @@ def test_try_premium_at_start_old_account_same_hash(
         rotkehlchen_instance,
         username,
         db_password,
-        rotkehlchen_api_key,
-        rotkehlchen_api_secret,
+        rotki_premium_credentials,
 ):
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
         db_password=db_password,
-        api_key=rotkehlchen_api_key,
-        api_secret=rotkehlchen_api_secret,
+        premium_credentials=rotki_premium_credentials,
         first_time=False,
         same_hash_with_remote=True,
         newer_remote_db=True,
@@ -236,15 +230,13 @@ def test_try_premium_at_start_old_account_older_remote_ts(
         rotkehlchen_instance,
         username,
         db_password,
-        rotkehlchen_api_key,
-        rotkehlchen_api_secret,
+        rotki_premium_credentials,
 ):
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
         username=username,
         db_password=db_password,
-        api_key=rotkehlchen_api_key,
-        api_secret=rotkehlchen_api_secret,
+        premium_credentials=rotki_premium_credentials,
         first_time=False,
         same_hash_with_remote=False,
         newer_remote_db=False,
@@ -260,8 +252,7 @@ def test_try_premium_at_start_new_account_different_password_than_remote_db(
         rotkehlchen_instance,
         username,
         db_password,
-        rotkehlchen_api_key,
-        rotkehlchen_api_secret,
+        rotki_premium_credentials,
 ):
     """
     If we make a new account with api keys and provide a password different than
@@ -273,10 +264,32 @@ def test_try_premium_at_start_new_account_different_password_than_remote_db(
             rotkehlchen_instance=rotkehlchen_instance,
             username=username,
             db_password=db_password,
-            api_key=rotkehlchen_api_key,
-            api_secret=rotkehlchen_api_secret,
+            premium_credentials=rotki_premium_credentials,
             first_time=True,
             same_hash_with_remote=False,
             newer_remote_db=False,
             db_can_sync_setting=True,
         )
+
+
+def test_premium_credentials():
+    """Test the premium credentials class"""
+    # Test that improperly formatted keys are spotted
+    with pytest.raises(IncorrectApiKeyFormat):
+        credentials = PremiumCredentials('foo', 'boo')
+
+    api_key = (
+        'kWT/MaPHwM2W1KUEl2aXtkKG6wJfMW9KxI7SSerI6/QzchC45/GebPV9xYZy7f+VKBeh5nDRBJBCYn7WofMO4Q=='
+    )
+    secret = (
+        'TEF5dFFrOFcwSXNrM2p1aDdHZmlndFRoMTZQRWJhU2dacTdscUZSeHZTRmJLRm5ZaVRlV2NYU'
+        'llYR1lxMjlEdUtRdFptelpCYmlXSUZGRTVDNWx3NDNYbjIx'
+    )
+    credentials = PremiumCredentials(
+        given_api_key=api_key,
+        given_api_secret=secret,
+    )
+    assert isinstance(credentials.api_key, str)
+    assert credentials.api_key == api_key
+    assert isinstance(credentials.api_secret, bytes)
+    assert credentials.api_secret == b64decode(secret)

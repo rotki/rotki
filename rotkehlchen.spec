@@ -5,6 +5,7 @@ import platform
 import sys
 from distutils.spawn import find_executable
 
+from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.utils.misc import get_system_spec
 
 """
@@ -70,12 +71,19 @@ executable_name = 'rotkehlchen-{}-{}'.format(
     get_system_spec()['rotkehlchen'],
     'macos' if platform.system() == 'Darwin' else platform.system().lower())
 
+hiddenimports = ['cytoolz.utils', 'cytoolz._signatures']
+# Since the exchanges are loaded dynamically and some of them may not be detected
+# by pyinstaller (https://github.com/rotki/rotki/issues/602) make sure they are
+# all included as imports in the created executable
+for exchange_name in SUPPORTED_EXCHANGES:
+    hiddenimports.append(f'rotkehlchen.exchanges.{exchange_name}')
+
 a = Entrypoint(
     'rotkehlchen',
     'console_scripts',
     'rotkehlchen',
     hookspath=['tools/pyinstaller_hooks'],
-    hiddenimports=['cytoolz.utils', 'cytoolz._signatures'],
+    hiddenimports=hiddenimports,
     datas=[
         ('rotkehlchen/data/token_abi.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/all_assets.json', 'rotkehlchen/data'),

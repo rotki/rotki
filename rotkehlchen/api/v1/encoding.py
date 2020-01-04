@@ -513,8 +513,8 @@ class UserActionSchema(BaseSchema):
         validate=validate.OneOf(choices=('login', 'logout')),
         missing=None,
     )
-    premium_api_key = ApiKeyField(missing=ApiKey(''))
-    premium_api_secret = ApiSecretField(missing=ApiSecret(b''))
+    premium_api_key = fields.String(missing='')
+    premium_api_secret = fields.String(missing='')
 
     @validates_schema
     def validate_user_action_schema(self, data, **kwargs):
@@ -522,7 +522,7 @@ class UserActionSchema(BaseSchema):
             if data['password'] is None:
                 raise ValidationError('Missing password field for login')
         elif data['action'] is None:
-            if data['premium_api_key'] == '' or data['premium_api_secret'] == b'':
+            if data['premium_api_key'] == '' or data['premium_api_secret'] == '':
                 raise ValidationError(
                     'Without an action premium api key and secret must be provided',
                 )
@@ -534,8 +534,8 @@ class UserActionSchema(BaseSchema):
 
 
 class NewUserSchema(BaseUserSchema):
-    premium_api_key = ApiKeyField(missing=ApiKey(''))
-    premium_api_secret = ApiSecretField(missing=ApiSecret(b''))
+    premium_api_key = fields.String(missing='')
+    premium_api_secret = fields.String(missing='')
 
 
 class AllBalancesQuerySchema(BaseSchema):

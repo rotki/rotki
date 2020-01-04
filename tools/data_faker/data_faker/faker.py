@@ -74,6 +74,5 @@ class DataFaker(object):
             password=given_password,
             create_new=True,
             sync_approval='no',
-            api_key=ApiKey(''),
-            api_secret=ApiSecret(b''),
+            premium_credentials=None,
         )

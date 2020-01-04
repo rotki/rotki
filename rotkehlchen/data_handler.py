@@ -18,8 +18,6 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import AuthenticationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
-    ApiKey,
-    ApiSecret,
     AssetAmount,
     B64EncodedBytes,
     B64EncodedString,
@@ -136,13 +134,6 @@ class DataHandler():
             self.db.remove_from_ignored_assets(asset)
 
         return self.db.get_ignored_assets(), ''
-
-    def set_premium_credentials(
-            self,
-            api_key: ApiKey,
-            api_secret: ApiSecret,
-    ) -> None:
-        self.db.set_rotkehlchen_premium(api_key, api_secret)
 
     def should_save_balances(self) -> bool:
         """ Returns whether or not we can save data to the database depending on

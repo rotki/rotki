@@ -312,8 +312,8 @@ class UsersResource(BaseResource):
             name: str,
             password: str,
             sync_approval: str,
-            premium_api_key: ApiKey,
-            premium_api_secret: ApiSecret,
+            premium_api_key: str,
+            premium_api_secret: str,
     ) -> Response:
         return self.rest_api.create_new_user(
             name=name,
@@ -334,8 +334,8 @@ class UsersByNameResource(BaseResource):
             name: str,
             password: Optional[str],
             sync_approval: str,
-            premium_api_key: ApiKey,
-            premium_api_secret: ApiSecret,
+            premium_api_key: str,
+            premium_api_secret: str,
     ) -> Response:
         if action is None:
             return self.rest_api.user_set_premium_credentials(
