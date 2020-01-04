@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.0.7 <2020-01-04>`
 * :bug:`605` Adding a premium API key via the front-end now works properly again.
 * :bug:`602` Fixed a bug that lead to the coinbase exchange integration not working.
 
