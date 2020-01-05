@@ -15,7 +15,7 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.errors import AuthenticationError, EthSyncError, InputError
+from rotkehlchen.errors import EthSyncError, InputError
 from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis import Cryptocompare
@@ -97,7 +97,11 @@ class Rotkehlchen():
             sync_approval: str,
             premium_credentials: Optional[PremiumCredentials],
     ) -> None:
-        """Unlocks an existing user or creates a new one if `create_new` is True"""
+        """Unlocks an existing user or creates a new one if `create_new` is True
+
+        Can raise AuthenticationError if premium_credentials are given and are invalid
+        or can't authenticate with the server
+        """
         log.info(
             'Unlocking user',
             user=user,
@@ -111,17 +115,12 @@ class Rotkehlchen():
         self.last_data_upload_ts = self.data.db.get_last_data_upload_ts()
         self.premium_sync_manager = PremiumSyncManager(data=self.data, password=password)
 
-        try:
-            self.premium = self.premium_sync_manager.try_premium_at_start(
-                given_premium_credentials=premium_credentials,
-                username=user,
-                create_new=create_new,
-                sync_approval=sync_approval,
-            )
-        except AuthenticationError:
-            # It means that our credentials were not accepted by the server
-            # or some other error happened
-            pass
+        self.premium = self.premium_sync_manager.try_premium_at_start(
+            given_premium_credentials=premium_credentials,
+            username=user,
+            create_new=create_new,
+            sync_approval=sync_approval,
+        )
 
         settings = self.data.db.get_settings()
         maybe_submit_usage_analytics(settings.submit_usage_analytics)
