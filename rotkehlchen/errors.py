@@ -34,6 +34,10 @@ class AuthenticationError(Exception):
     pass
 
 
+class PremiumAuthenticationError(Exception):
+    pass
+
+
 class IncorrectApiKeyFormat(Exception):
     pass
 

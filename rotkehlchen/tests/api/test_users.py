@@ -387,6 +387,55 @@ def test_user_login(rotkehlchen_api_server, username, db_password):
         api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
         json=data,
     )
+    # And make sure it works
+    assert_proper_response(response)
+    check_proper_unlock_result(response.json())
+    assert rotki.user_is_logged_in is True
+
+    # Logout again
+    data = {'action': 'logout'}
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        json=data,
+    )
+    assert_simple_ok_response(response)
+    assert rotki.user_is_logged_in is False
+
+    # Now try to login with a wrong password
+    data = {'action': 'login', "password": 'wrong_password', 'sync_approval': 'unknown'}
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        json=data,
+    )
+    # And make sure it fails
+    assert_error_response(
+        response=response,
+        contained_in_msg='Wrong password or invalid/corrupt database for user',
+        status_code=HTTPStatus.UNAUTHORIZED,
+    )
+
+    # Now let's manually add valid but not authenticable premium credentials in the DB
+    data = {'action': 'login', "password": db_password, 'sync_approval': 'unknown'}
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        json=data,
+    )
+    credentials = PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET)
+    rotki.data.db.set_rotkehlchen_premium(credentials)
+    data = {'action': 'logout'}
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        json=data,
+    )
+    assert_simple_ok_response(response)
+    assert rotki.user_is_logged_in is False
+    # And try to login while having these unauthenticable premium credentials in the DB
+    data = {'action': 'login', "password": db_password, 'sync_approval': 'unknown'}
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+        json=data,
+    )
+    # And make sure it works despite having unauthenticable premium credentials in the DB
     assert_proper_response(response)
     check_proper_unlock_result(response.json())
     assert rotki.user_is_logged_in is True

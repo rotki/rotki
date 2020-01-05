@@ -15,7 +15,7 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.errors import EthSyncError, InputError
+from rotkehlchen.errors import EthSyncError, InputError, PremiumAuthenticationError
 from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis import Cryptocompare
@@ -99,6 +99,7 @@ class Rotkehlchen():
     ) -> None:
         """Unlocks an existing user or creates a new one if `create_new` is True
 
+        Can raise PremiumAuthenticationError if the password can't unlock the database.
         Can raise AuthenticationError if premium_credentials are given and are invalid
         or can't authenticate with the server
         """
@@ -115,12 +116,20 @@ class Rotkehlchen():
         self.last_data_upload_ts = self.data.db.get_last_data_upload_ts()
         self.premium_sync_manager = PremiumSyncManager(data=self.data, password=password)
 
-        self.premium = self.premium_sync_manager.try_premium_at_start(
-            given_premium_credentials=premium_credentials,
-            username=user,
-            create_new=create_new,
-            sync_approval=sync_approval,
-        )
+        try:
+            self.premium = self.premium_sync_manager.try_premium_at_start(
+                given_premium_credentials=premium_credentials,
+                username=user,
+                create_new=create_new,
+                sync_approval=sync_approval,
+            )
+        except PremiumAuthenticationError:
+            # Reraise it only if this is during the creation of a new account where
+            # the premium credentials were given by the user
+            if create_new:
+                raise
+            # else let's just continue. User signed in succesfully, but he just
+            # has unauthenticable/invalide premium credentials remaining in his DB
 
         settings = self.data.db.get_settings()
         maybe_submit_usage_analytics(settings.submit_usage_analytics)
@@ -201,7 +210,7 @@ class Rotkehlchen():
         """
         Sets the premium credentials for Rotki
 
-        Raises AuthenticationError if the given key is rejected by the Rotkehlchen server
+        Raises PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
         log.info('Setting new premium credentials')
         if self.premium is not None:

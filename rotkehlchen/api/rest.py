@@ -21,6 +21,7 @@ from rotkehlchen.errors import (
     EthSyncError,
     IncorrectApiKeyFormat,
     InputError,
+    PremiumAuthenticationError,
     RemoteError,
     RotkehlchenPermissionError,
 )
@@ -675,7 +676,7 @@ class RestAPI():
                 sync_approval=sync_approval,
                 premium_credentials=premium_credentials,
             )
-        except AuthenticationError as e:
+        except (AuthenticationError, PremiumAuthenticationError) as e:
             result_dict['message'] = str(e)
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
         except RotkehlchenPermissionError as e:
@@ -713,6 +714,8 @@ class RestAPI():
                 sync_approval=sync_approval,
                 premium_credentials=None,
             )
+        # We are not catching PremiumAuthenticationError here since it should not bubble
+        # up until here. Even with non valid keys in the DB login should work fine
         except AuthenticationError as e:
             result_dict['message'] = str(e)
             return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)

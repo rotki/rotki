@@ -8,7 +8,7 @@ from typing import NamedTuple, Optional
 from typing_extensions import Literal
 
 from rotkehlchen.data_handler import DataHandler
-from rotkehlchen.errors import AuthenticationError, RemoteError, RotkehlchenPermissionError
+from rotkehlchen.errors import PremiumAuthenticationError, RemoteError, RotkehlchenPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
@@ -191,7 +191,7 @@ class PremiumSyncManager():
 
         Returns the created premium if user's premium credentials were fine.
 
-        If not it will raise AuthenticationError.
+        If not it will raise PremiumAuthenticationError.
         """
 
         if given_premium_credentials is not None:
@@ -199,7 +199,7 @@ class PremiumSyncManager():
 
             try:
                 self.premium = premium_create_and_verify(given_premium_credentials)
-            except AuthenticationError as e:
+            except PremiumAuthenticationError as e:
                 log.error('Given API key is invalid')
                 # At this point we are at a new user trying to create an account with
                 # premium API keys and we failed. But a directory was created. Remove it.
@@ -212,7 +212,7 @@ class PremiumSyncManager():
                         f'auto_backup_{username}_{ts_now()}',
                     ),
                 )
-                raise AuthenticationError(
+                raise PremiumAuthenticationError(
                     'Could not verify keys for the new account. '
                     '{}'.format(str(e)),
                 )
@@ -223,13 +223,13 @@ class PremiumSyncManager():
             assert not create_new, 'We should never get here for a new account'
             try:
                 self.premium = premium_create_and_verify(db_credentials)
-            except AuthenticationError as e:
+            except PremiumAuthenticationError as e:
                 message = (
                     f'Could not authenticate with the rotkehlchen server with '
                     f'the API keys found in the Database. Error: {str(e)}'
                 )
                 log.error(message)
-                raise AuthenticationError(message)
+                raise PremiumAuthenticationError(message)
 
         # From this point on we should have a self.premium with valid credentials
         result = self._can_sync_data_from_server(new_account=create_new)
