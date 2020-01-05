@@ -146,7 +146,7 @@ Handling user creation, sign-in, log-out and querying
    :statuscode 200: Adding the new user was succesful
    :statuscode 300: Possibility of syncing exists and the creation was sent with sync_approval set to ``"unknown"``. Consumer of api must resend with ``"yes"`` or ``"no"``.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User already exists. Another user is already logged in.
+   :statuscode 409: User already exists. Another user is already logged in. Given Premium API credentials are invalid.
    :statuscode 500: Internal Rotki error
 
    For succesful requests, result contains the currently connected exchanges, whethere the user has premium activated and the user's settings.

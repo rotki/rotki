@@ -11,8 +11,10 @@ from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.premium import (
+    VALID_PREMIUM_KEY,
+    VALID_PREMIUM_SECRET,
     assert_db_got_replaced,
-    create_patched_premium_session_get,
+    create_patched_requests_get_for_premium,
     setup_starting_environment,
 )
 from rotkehlchen.utils.misc import ts_now
@@ -53,7 +55,7 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
         'put',
         side_effect=mock_succesfull_upload_data_to_server,
     )
-    patched_get = create_patched_premium_session_get(
+    patched_get = create_patched_requests_get_for_premium(
         session=rotkehlchen_instance.premium.session,
         metadata_last_modify_ts=0,
         metadata_data_hash=remote_hash,
@@ -96,7 +98,7 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance, db_password):
         'put',
         return_value=None,
     )
-    patched_get = create_patched_premium_session_get(
+    patched_get = create_patched_requests_get_for_premium(
         session=rotkehlchen_instance.premium.session,
         metadata_last_modify_ts=0,
         metadata_data_hash=remote_hash,
@@ -127,7 +129,7 @@ def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_password):
         'put',
         return_value=None,
     )
-    patched_get = create_patched_premium_session_get(
+    patched_get = create_patched_requests_get_for_premium(
         session=rotkehlchen_instance.premium.session,
         metadata_last_modify_ts=0,
         metadata_data_hash=remote_hash,
@@ -278,13 +280,8 @@ def test_premium_credentials():
     with pytest.raises(IncorrectApiKeyFormat):
         credentials = PremiumCredentials('foo', 'boo')
 
-    api_key = (
-        'kWT/MaPHwM2W1KUEl2aXtkKG6wJfMW9KxI7SSerI6/QzchC45/GebPV9xYZy7f+VKBeh5nDRBJBCYn7WofMO4Q=='
-    )
-    secret = (
-        'TEF5dFFrOFcwSXNrM2p1aDdHZmlndFRoMTZQRWJhU2dacTdscUZSeHZTRmJLRm5ZaVRlV2NYU'
-        'llYR1lxMjlEdUtRdFptelpCYmlXSUZGRTVDNWx3NDNYbjIx'
-    )
+    api_key = VALID_PREMIUM_KEY
+    secret = VALID_PREMIUM_SECRET
     credentials = PremiumCredentials(
         given_api_key=api_key,
         given_api_secret=secret,

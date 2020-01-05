@@ -6,13 +6,18 @@ import pytest
 import requests
 
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION, DBSettings
+from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response,
     assert_simple_ok_response,
 )
-from rotkehlchen.tests.utils.premium import VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET
+from rotkehlchen.tests.utils.premium import (
+    VALID_PREMIUM_KEY,
+    VALID_PREMIUM_SECRET,
+    create_patched_premium,
+)
 
 
 def check_proper_unlock_result(response_data: Dict[str, Any]) -> None:
@@ -57,7 +62,7 @@ def test_not_loggedin_user_querying(rotkehlchen_api_server, username, data_dir):
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
 def test_user_creation(rotkehlchen_api_server, data_dir):
     """Test that PUT at user endpoint can create a new user"""
-    # Create a user
+    # Create a user without any premium credentials
     username = 'hania'
     data = {
         'name': username,
@@ -80,9 +85,55 @@ def test_user_creation(rotkehlchen_api_server, data_dir):
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
+def test_user_creation_with_premium_credentials(rotkehlchen_api_server, data_dir):
+    """Test that PUT at user endpoint can create a new user"""
+    # Create a user with premium credentials
+    username = 'hania'
+    data = {
+        'name': username,
+        'password': '1234',
+        'sync_approval': 'unknown',
+        'premium_api_key': VALID_PREMIUM_KEY,
+        'premium_api_secret': VALID_PREMIUM_SECRET,
+    }
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    patched_premium_at_start, _, patched_get = create_patched_premium(
+        PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET),
+        patch_get=True,
+        metadata_last_modify_ts=0,
+        metadata_data_hash=b'',
+        metadata_data_size=0,
+    )
+
+    with patched_premium_at_start:
+        response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    assert_proper_response(response)
+    check_proper_unlock_result(response.json())
+
+    # Query users and make sure the new user is logged in
+    response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
+    assert_proper_response(response)
+    json = response.json()
+    assert json['result'][username] == 'loggedin'
+    assert len(json['result']) == 1
+
+    # Check that the directory was created
+    assert Path(data_dir / username / 'rotkehlchen.db').exists()
+
+    # Check that the user has premium
+    assert rotki.premium is not None
+    assert rotki.premium.credentials.serialize_key() == VALID_PREMIUM_KEY
+    assert rotki.premium.credentials.serialize_secret() == VALID_PREMIUM_SECRET
+    with patched_get:
+        assert rotki.premium.is_active()
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [False])
 def test_user_creation_with_invalid_premium_credentials(rotkehlchen_api_server, data_dir):
-    """Test that invalid premium credentials are handled properly at new user creation"""
-    # Create a user
+    """
+    Test that invalid and unauthenticated premium credentials are handled at new user creation
+    """
+    # Create a user with invalid credentials
     username = 'hania'
     data = {
         'name': username,
@@ -98,12 +149,34 @@ def test_user_creation_with_invalid_premium_credentials(rotkehlchen_api_server, 
     )
 
     # Check that the directory was NOT created
-    assert not Path(data_dir / username).exists(), 'The directory should not have een created'
-    # TODO: Add a test with valid but not authenticated credentials so that this
-    # can be tested
-    # backups = list(Path(data_dir).glob('auto_backup_*'))
-    # assert len(backups) == 1
-    # assert 'auto_backup_hania_' in backups[0]
+    assert not Path(data_dir / username).exists(), 'The directory should not have been created'
+
+    # Create a new user with valid but not authenticable credentials
+    username = 'Anja'
+    data = {
+        'name': username,
+        'password': '1234',
+        'sync_approval': 'unknown',
+        'premium_api_key': VALID_PREMIUM_KEY,
+        'premium_api_secret': VALID_PREMIUM_SECRET,
+    }
+    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+
+    expected_msg = (
+        'Could not verify keys for the new account. Rotkehlchen API key was rejected by server'
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg=expected_msg,
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # Check that the directory was NOT created
+    assert not Path(data_dir / username).exists(), 'The directory should not have been created'
+    # But check that a backup of the directory was made just in case
+    backups = list(Path(data_dir).glob('auto_backup_*'))
+    assert len(backups) == 1
+    assert 'auto_backup_Anja_' in str(backups[0]), 'An automatic backup should have been made'
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
@@ -319,12 +392,37 @@ def test_user_login(rotkehlchen_api_server, username, db_password):
     assert rotki.user_is_logged_in is True
 
 
-def test_user_set_premium_credentials_errors(rotkehlchen_api_server, username):
-    """Test that setting the premium credentials endpoint exists.
+def test_user_set_premium_credentials(rotkehlchen_api_server, username):
+    """Test that setting the premium credentials endpoint works.
 
-    TODO: Should make a test with patched validation it so that we can
-          mock premium credentials being accepted
+    We mock the server accepting the premium credentials
     """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    _, patched_premium_at_set, patched_get = create_patched_premium(
+        PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET),
+        patch_get=True,
+        metadata_last_modify_ts=0,
+        metadata_data_hash=b'',
+        metadata_data_size=0,
+    )
+
+    # Set premium credentials for current user
+    data = {'premium_api_key': VALID_PREMIUM_KEY, 'premium_api_secret': VALID_PREMIUM_SECRET}
+    with patched_premium_at_set:
+        response = requests.patch(
+            api_url_for(rotkehlchen_api_server, "usersbynameresource", name=username),
+            json=data,
+        )
+    assert_simple_ok_response(response)
+    assert rotki.premium is not None
+    assert rotki.premium.credentials.serialize_key() == VALID_PREMIUM_KEY
+    assert rotki.premium.credentials.serialize_secret() == VALID_PREMIUM_SECRET
+    with patched_get:
+        assert rotki.premium.is_active()
+
+
+def test_user_set_premium_credentials_errors(rotkehlchen_api_server, username):
+    """Test that setting the premium credentials endpoint reacts properly to bad input"""
     # Set premium credentials for non-logged in user
     data = {'premium_api_key': 'dadssad', 'premium_api_secret': 'jhjhkh'}
     response = requests.patch(
