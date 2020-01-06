@@ -28,6 +28,7 @@ export default class PyHandler {
     if (process.platform === 'linux') {
       this.logsPath = app.getPath('appData');
     } else {
+      app.setAppLogsPath();
       this.logsPath = app.getPath('logs');
     }
     this.ELECTRON_LOG_PATH = path.join(this.logsPath, 'rotki_electron.log');
