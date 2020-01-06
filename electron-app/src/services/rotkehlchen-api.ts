@@ -592,7 +592,28 @@ export class RotkehlchenApi {
             reject(new Error(message));
           }
         })
-        .catch(error => reject(error));
+        .catch(error => {
+          if (error.response) {
+            const { result, message } = error.response.data;
+            if (result) {
+              resolve(result);
+            } else {
+              reject(new Error(message));
+            }
+          } else if (error.request) {
+            /*
+             * The request was made but no response was received, `error.request`
+             * is an instance of XMLHttpRequest in the browser and an instance
+             * of http.ClientRequest in Node.js
+             */
+            console.log(error.request);
+            reject(new Error(error));
+          } else {
+            // Something happened in setting up the request and triggered an Error
+            console.log('Error', error.message);
+            reject(new Error(error.message));
+          }
+        });
     });
   }
 
