@@ -167,10 +167,11 @@ class DBHandler:
                 migrated, errstr = self.upgrade_db_sqlcipher_3_to_4(password)
 
             if self.sqlcipher_version != 4 or not migrated:
+                # Note this can also happen if trying to use an sqlcipher 4 version
+                # DB with sqlcipher version 3
                 log.error(
-                    f'SQLCipher version: {self.sqlcipher_version} - Error: {errstr}'
-                    f'Wrong password while decrypting the database or not a database. Perhaps '
-                    f'trying to use an sqlcipher 4 version DB with sqlciper 3?',
+                    f'SQLCipher version: {self.sqlcipher_version} - Error: {errstr}. '
+                    f'Wrong password while decrypting the database or not a database.',
                 )
                 raise AuthenticationError('Wrong password or invalid/corrupt database for user')
 
