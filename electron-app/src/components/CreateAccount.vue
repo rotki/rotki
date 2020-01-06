@@ -93,7 +93,10 @@ export default class CreateAccount extends Vue {
 
   readonly passwordRules = [(v: string) => !!v || 'Please provide a password'];
   readonly passwordConfirmRules = [
-    (v: string) => !!v || 'Please provide a password confirmation'
+    (v: string) => !!v || 'Please provide a password confirmation',
+    (v: string) =>
+      v == this.password ||
+      'The password confirmation does not match the provided password'
   ];
 
   @Watch('displayed')
