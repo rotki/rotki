@@ -24,6 +24,7 @@ module.exports = {
           }
         ],
         mac: {
+          identity: false,
           category: 'public.app-category.finance',
           icon: 'src/assets/images/rotki.icns'
         },
