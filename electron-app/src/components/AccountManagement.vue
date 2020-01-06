@@ -1,5 +1,20 @@
 <template>
   <div>
+    <div class="account_management__privacy_notice">
+      <v-alert
+        id="privacy_notice__message"
+        outlined
+        dense
+        color="primary"
+        class="account_management__privacy_notice__message"
+      >
+        <div>Rotki is a local application that respects your privacy.</div>
+        <div>
+          Rotki accounts are encrypted using your password and saved in your
+          local filesystem.
+        </div>
+      </v-alert>
+    </div>
     <login
       :displayed="!message && !logged && !accountCreation"
       :loading="loading"
@@ -136,3 +151,25 @@ export default class AccountManagement extends Vue {
   }
 }
 </script>
+
+<style lang="scss">
+.account_management__privacy_notice {
+  width: 100%;
+  position: absolute;
+  bottom: 20px;
+  z-index: 9999;
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+
+  &__message {
+    text-align: center;
+    max-width: 650px;
+    font-size: 14px !important;
+  }
+}
+
+#privacy_notice__message {
+  background: #e0e0e0 !important;
+}
+</style>
