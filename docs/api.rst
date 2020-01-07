@@ -100,14 +100,12 @@ Handling user creation, sign-in, log-out and querying
       {
           "name": "john",
 	  "password": "supersecurepassword",
-	  "sync_approval": "unknown"
 	  "premium_api_key": "dasdsda",
 	  "premium_api_secret": "adsadasd",
       }
 
       :reqjson string name: The name to give to the new user
       :reqjson string password: The password with which to encrypt the database for the new user
-      :reqjson string sync_approval: A string denoting if the user approved an initial syncing of data from premium when premium keys are given. Valid values are ``"unknown"``, ``"yes"`` and ``"no"``.Should always be ``"unknown"`` at first and only if the user approves should creation with approval as ``"yes`` be sent. If he does not approve a creation with approval as ``"no"`` should be sent. If there is the possibility of data sync from the premium server and this is ``"unknown"`` the creation will fail with an appropriate error asking the consumer of the api to set it to ``"yes"`` or ``"no"``.
       :reqjson string premium_api_key: An optional api key if the user has a Rotki premium account.
       :reqjson string premium_api_secret: An optional api secret if the user has a Rotki premium account.
 
@@ -144,7 +142,6 @@ Handling user creation, sign-in, log-out and querying
       }
 
    :statuscode 200: Adding the new user was succesful
-   :statuscode 300: Possibility of syncing exists and the creation was sent with sync_approval set to ``"unknown"``. Consumer of api must resend with ``"yes"`` or ``"no"``.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: User already exists. Another user is already logged in. Given Premium API credentials are invalid.
    :statuscode 500: Internal Rotki error

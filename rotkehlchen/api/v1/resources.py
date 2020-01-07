@@ -311,14 +311,12 @@ class UsersResource(BaseResource):
             self,
             name: str,
             password: str,
-            sync_approval: str,
             premium_api_key: str,
             premium_api_secret: str,
     ) -> Response:
         return self.rest_api.create_new_user(
             name=name,
             password=password,
-            sync_approval=sync_approval,
             premium_api_key=premium_api_key,
             premium_api_secret=premium_api_secret,
         )
