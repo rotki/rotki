@@ -32,6 +32,17 @@ def check_proper_unlock_result(response_data: Dict[str, Any]) -> None:
         assert setting in result['settings']
 
 
+def check_user_status(api_server) -> Dict[str, str]:
+    # Check users status
+    response = requests.get(
+        api_url_for(api_server, "usersresource"),
+    )
+    assert_proper_response(response)
+    data = response.json()
+    assert data['message'] == ''
+    return response.json()['result']
+
+
 def test_loggedin_user_querying(rotkehlchen_api_server, username, data_dir):
     """Start with a logged in user and make sure we can query all users"""
     Path(data_dir / 'another_user').mkdir()
@@ -368,9 +379,19 @@ def test_user_logout(rotkehlchen_api_server, username):
     assert rotki.user_is_logged_in is False
 
 
-def test_user_login(rotkehlchen_api_server, username, db_password):
+def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
     """Test that user login works properly"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    # Let's pretend there is another user, and try to create them again
+    Path(data_dir / 'another_user').mkdir()
+    Path(data_dir / 'another_user' / 'rotkehlchen.db').touch()
+
+    # Check users status
+    users_data = check_user_status(rotkehlchen_api_server)
+    assert len(users_data) == 2
+    assert users_data[username] == 'loggedin'
+    assert users_data['another_user'] == 'loggedout'
 
     # Logout of the active user
     data = {'action': 'logout'}
@@ -380,6 +401,10 @@ def test_user_login(rotkehlchen_api_server, username, db_password):
     )
     assert_simple_ok_response(response)
     assert rotki.user_is_logged_in is False
+    users_data = check_user_status(rotkehlchen_api_server)
+    assert len(users_data) == 2
+    assert users_data[username] == 'loggedout'
+    assert users_data['another_user'] == 'loggedout'
 
     # Now let's try to login
     data = {'action': 'login', "password": db_password, 'sync_approval': 'unknown'}
@@ -391,6 +416,10 @@ def test_user_login(rotkehlchen_api_server, username, db_password):
     assert_proper_response(response)
     check_proper_unlock_result(response.json())
     assert rotki.user_is_logged_in is True
+    users_data = check_user_status(rotkehlchen_api_server)
+    assert len(users_data) == 2
+    assert users_data[username] == 'loggedin'
+    assert users_data['another_user'] == 'loggedout'
 
     # Logout again
     data = {'action': 'logout'}
@@ -400,6 +429,10 @@ def test_user_login(rotkehlchen_api_server, username, db_password):
     )
     assert_simple_ok_response(response)
     assert rotki.user_is_logged_in is False
+    users_data = check_user_status(rotkehlchen_api_server)
+    assert len(users_data) == 2
+    assert users_data[username] == 'loggedout'
+    assert users_data['another_user'] == 'loggedout'
 
     # Now try to login with a wrong password
     data = {'action': 'login', "password": 'wrong_password', 'sync_approval': 'unknown'}
@@ -413,6 +446,10 @@ def test_user_login(rotkehlchen_api_server, username, db_password):
         contained_in_msg='Wrong password or invalid/corrupt database for user',
         status_code=HTTPStatus.UNAUTHORIZED,
     )
+    users_data = check_user_status(rotkehlchen_api_server)
+    assert len(users_data) == 2
+    assert users_data[username] == 'loggedout'
+    assert users_data['another_user'] == 'loggedout'
 
     # Now let's manually add valid but not authenticable premium credentials in the DB
     data = {'action': 'login', "password": db_password, 'sync_approval': 'unknown'}
@@ -439,6 +476,10 @@ def test_user_login(rotkehlchen_api_server, username, db_password):
     assert_proper_response(response)
     check_proper_unlock_result(response.json())
     assert rotki.user_is_logged_in is True
+    users_data = check_user_status(rotkehlchen_api_server)
+    assert len(users_data) == 2
+    assert users_data[username] == 'loggedin'
+    assert users_data['another_user'] == 'loggedout'
 
 
 def test_user_set_premium_credentials(rotkehlchen_api_server, username):

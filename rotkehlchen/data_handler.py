@@ -57,7 +57,6 @@ class DataHandler():
             password: str,
             create_new: bool,
     ) -> FilePath:
-        self.username = username
         user_data_dir = FilePath(os.path.join(self.data_directory, username))
         if create_new:
             if os.path.exists(user_data_dir):
@@ -89,6 +88,7 @@ class DataHandler():
         self.db: DBHandler = DBHandler(user_data_dir, password, self.msg_aggregator)
         self.user_data_dir = user_data_dir
         self.logged_in = True
+        self.username = username
         return user_data_dir
 
     def main_currency(self) -> Asset:
