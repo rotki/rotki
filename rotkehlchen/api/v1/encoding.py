@@ -490,10 +490,6 @@ class ModifiableSettingsSchema(BaseSchema):
 class BaseUserSchema(BaseSchema):
     name = fields.String(required=True)
     password = fields.String(required=True)
-    sync_approval = fields.String(
-        missing='unknown',
-        validate=validate.OneOf(choices=('unknown', 'yes', 'no')),
-    )
 
     class Meta:
         strict = True

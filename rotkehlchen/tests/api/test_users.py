@@ -78,7 +78,6 @@ def test_user_creation(rotkehlchen_api_server, data_dir):
     data = {
         'name': username,
         'password': '1234',
-        'sync_approval': 'unknown',
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
     assert_proper_response(response)
@@ -103,7 +102,6 @@ def test_user_creation_with_premium_credentials(rotkehlchen_api_server, data_dir
     data = {
         'name': username,
         'password': '1234',
-        'sync_approval': 'unknown',
         'premium_api_key': VALID_PREMIUM_KEY,
         'premium_api_secret': VALID_PREMIUM_SECRET,
     }
@@ -149,7 +147,6 @@ def test_user_creation_with_invalid_premium_credentials(rotkehlchen_api_server, 
     data = {
         'name': username,
         'password': '1234',
-        'sync_approval': 'unknown',
         'premium_api_key': 'foo',
         'premium_api_secret': 'boo',
     }
@@ -167,7 +164,6 @@ def test_user_creation_with_invalid_premium_credentials(rotkehlchen_api_server, 
     data = {
         'name': username,
         'password': '1234',
-        'sync_approval': 'unknown',
         'premium_api_key': VALID_PREMIUM_KEY,
         'premium_api_secret': VALID_PREMIUM_SECRET,
     }
@@ -197,7 +193,6 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
     username = 'hania'
     data = {
         'password': '1234',
-        'sync_approval': 'unknown',
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
     assert_error_response(
@@ -208,7 +203,6 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
     username = 'hania'
     data = {
         'name': username,
-        'sync_approval': 'unknown',
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
     assert_error_response(
@@ -220,7 +214,6 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
     data = {
         'name': 5435345.31,
         'password': '1234',
-        'sync_approval': 'unknown',
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
     assert_error_response(
@@ -232,19 +225,6 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
     data = {
         'name': username,
         'password': 4535,
-        'sync_approval': 'unknown',
-    }
-    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
-    assert_error_response(
-        response=response,
-        contained_in_msg='Not a valid string',
-    )
-
-    # Invalid type for sync_approval
-    data = {
-        'name': username,
-        'password': '1234',
-        'sync_approval': False,
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
     assert_error_response(
@@ -256,7 +236,6 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
     data = {
         'name': username,
         'password': '1234',
-        'sync_approval': 'unknown',
         'premium_api_key': 'asdsada',
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
@@ -268,7 +247,6 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
     data = {
         'name': username,
         'password': '1234',
-        'sync_approval': 'unknown',
         'premium_api_secret': 'asdsada',
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
@@ -280,7 +258,6 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
     data = {
         'name': username,
         'password': '1234',
-        'sync_approval': 'unknown',
         'premium_api_key': True,
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
@@ -292,7 +269,6 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
     data = {
         'name': username,
         'password': '1234',
-        'sync_approval': 'unknown',
         'premium_api_secret': 45.2,
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
@@ -310,7 +286,6 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
     data = {
         'name': 'another_user',
         'password': '1234',
-        'sync_approval': 'unknown',
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
     assert_error_response(
@@ -326,7 +301,6 @@ def test_user_creation_with_already_loggedin_user(rotkehlchen_api_server, userna
     data = {
         'name': username,
         'password': '1234',
-        'sync_approval': 'unknown',
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
     msg = (

@@ -636,7 +636,6 @@ class RestAPI():
             self,
             name: str,
             password: str,
-            sync_approval: str,
             premium_api_key: str,
             premium_api_secret: str,
     ) -> Response:
@@ -673,15 +672,17 @@ class RestAPI():
                 user=name,
                 password=password,
                 create_new=True,
-                sync_approval=sync_approval,
+                # For new accounts the value of sync approval does not matter.
+                # Will always get the latest data from the server since locally we got nothing
+                sync_approval='yes',
                 premium_credentials=premium_credentials,
             )
+        # not catching RotkehlchenPermissionError here as for new account with premium
+        # syncing there is no way that permission needs to be asked by the user
         except (AuthenticationError, PremiumAuthenticationError) as e:
             result_dict['message'] = str(e)
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
-        except RotkehlchenPermissionError as e:
-            result_dict['message'] = str(e)
-            return api_response(result_dict, status_code=HTTPStatus.MULTIPLE_CHOICES)
+
         # Success!
         result_dict['result'] = {
             'exchanges': self.rotkehlchen.exchange_manager.get_connected_exchange_names(),
@@ -775,7 +776,7 @@ class RestAPI():
 
         try:
             self.rotkehlchen.set_premium_credentials(credentials)
-        except AuthenticationError as e:
+        except PremiumAuthenticationError as e:
             result_dict['message'] = str(e)
             return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
 
