@@ -78,6 +78,7 @@ def initialize_mock_rotkehlchen_instance(
         # messages caused by DB initialization
         rotki.data.db = database
         rotki.data.username = username
+        rotki.data.logged_in = True
         rotki.data_importer = DataImporter(db=rotki.data.db)
         rotki.password = db_password
         # Remember accountant fixture has a mocked accounting data dir
