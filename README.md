@@ -2,7 +2,7 @@
 
 <img src="https://raw.githubusercontent.com/rotkehlchenio/rotkehlchen/master/ui/images/rotkehlchen_no_text.png" width="250">
 
-Rotki (long form: Rotkehlchen) is an open source asset analytics, tracking and management application. The mission of Rotki is to bring transparency into the crypto and financial sectors through the use of open source. Most importantly unlike virtually every other competing service which consists of closed source SaaS onto which you are forced to hand over all your financial data, with Rotki your data is stored encrypted locally in your computer. It enables you to take ownership of your financial data!
+Rotki is an open source portfolio tracking, analytics, accounting and tax reporting tool that respects your privacy.  The mission of Rotki is to bring transparency into the crypto and financial sectors through the use of open source. Most importantly unlike virtually every other competing service which consists of closed source SaaS onto which you are forced to hand over all your financial data, with Rotki your data is stored encrypted locally in your computer. It enables you to take ownership of your financial data!
 
 ## Documentation
 
