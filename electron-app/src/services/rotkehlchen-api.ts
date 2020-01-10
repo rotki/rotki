@@ -44,7 +44,7 @@ export class RotkehlchenApi {
   checkIfLogged(username: string): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
       this.axios
-        .get<ActionResult<AccountSession>>(`/users`)
+        .get<ActionResult<AccountSession>>(`/users`) // no need to validate status. Defaults are okay.
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -59,12 +59,26 @@ export class RotkehlchenApi {
     });
   }
 
+  private validate_status_patch_username(status: number) {
+    return (
+      status == 200 ||
+      status == 300 ||
+      status == 400 ||
+      status == 401 ||
+      status == 409
+    );
+  }
+
   logout(username: string): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
       this.axios
-        .patch<ActionResult<boolean>>(`/users/${username}`, {
-          action: 'logout'
-        })
+        .patch<ActionResult<boolean>>(
+          `/users/${username}`,
+          {
+            action: 'logout'
+          },
+          { validateStatus: this.validate_status_patch_username }
+        )
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -82,7 +96,11 @@ export class RotkehlchenApi {
   queryPeriodicData(): Promise<PeriodicClientQueryResult> {
     return new Promise<PeriodicClientQueryResult>((resolve, reject) => {
       this.axios
-        .get<ActionResult<PeriodicClientQueryResult>>('/periodic/')
+        .get<ActionResult<PeriodicClientQueryResult>>('/periodic/', {
+          validateStatus: function(status) {
+            return status == 200 || status == 409;
+          }
+        })
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -104,10 +122,14 @@ export class RotkehlchenApi {
   ): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
       this.axios
-        .patch<ActionResult<boolean>>(`/users/${username}`, {
-          api_key,
-          api_secret
-        })
+        .patch<ActionResult<boolean>>(
+          `/users/${username}`,
+          {
+            api_key,
+            api_secret
+          },
+          { validateStatus: this.validate_status_patch_username }
+        )
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -128,6 +150,9 @@ export class RotkehlchenApi {
         .delete<ActionResult<BlockchainAccount>>('/blockchains/ETH/tokens', {
           data: {
             eth_tokens: tokens
+          },
+          validateStatus: function(status) {
+            return status == 200 || status == 400 || status == 409;
           }
         })
         .then(response => {
@@ -145,9 +170,17 @@ export class RotkehlchenApi {
   addOwnedEthTokens(tokens: string[]): Promise<BlockchainAccount> {
     return new Promise<BlockchainAccount>((resolve, reject) => {
       this.axios
-        .put<ActionResult<BlockchainAccount>>('/blockchains/ETH/tokens', {
-          eth_tokens: tokens
-        })
+        .put<ActionResult<BlockchainAccount>>(
+          '/blockchains/ETH/tokens',
+          {
+            eth_tokens: tokens
+          },
+          {
+            validateStatus: function(status) {
+              return status == 200 || status == 400 || status == 409;
+            }
+          }
+        )
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -166,6 +199,9 @@ export class RotkehlchenApi {
         .delete<ActionResult<boolean>>('/trades', {
           data: {
             trade_id: id
+          },
+          validateStatus: function(status) {
+            return status == 200 || status == 400 || status == 409;
           }
         })
         .then(response => {
@@ -184,7 +220,10 @@ export class RotkehlchenApi {
     return new Promise<StoredTrade[]>((resolve, reject) => {
       this.axios
         .get<ActionResult<StoredTrade[]>>('/trades', {
-          params: { location: 'external' }
+          params: { location: 'external' },
+          validateStatus: function(status) {
+            return status == 200 || status == 400 || status == 409;
+          }
         })
         .then(response => {
           const { result, message } = response.data;
@@ -201,7 +240,11 @@ export class RotkehlchenApi {
   ignoredAssets(): Promise<string[]> {
     return new Promise<string[]>((resolve, reject) => {
       this.axios
-        .get<ActionResult<string[]>>('/assets/ignored')
+        .get<ActionResult<string[]>>('/assets/ignored', {
+          validateStatus: function(status) {
+            return status == 200 || status == 400 || status == 409;
+          }
+        })
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -217,7 +260,7 @@ export class RotkehlchenApi {
   checkVersion(): Promise<VersionCheck> {
     return new Promise<VersionCheck>((resolve, reject) => {
       this.axios
-        .get<ActionResult<VersionCheck>>('/version')
+        .get<ActionResult<VersionCheck>>('/version') // no validate status here since defaults work
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -230,12 +273,20 @@ export class RotkehlchenApi {
     });
   }
 
+  private validate_status_put_settings(status: number) {
+    return status == 200 || status == 400 || status == 409;
+  }
+
   setSettings(settings: { [key: string]: any }): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
       this.axios
-        .put<ActionResult<DBSettings>>('/settings', {
-          ...settings
-        })
+        .put<ActionResult<DBSettings>>(
+          '/settings',
+          {
+            ...settings
+          },
+          { validateStatus: this.validate_status_put_settings }
+        )
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -251,9 +302,13 @@ export class RotkehlchenApi {
   setMainCurrency(currency: Currency): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
       this.axios
-        .put<ActionResult<DBSettings>>('/settings', {
-          main_currency: currency.ticker_symbol
-        })
+        .put<ActionResult<DBSettings>>(
+          '/settings',
+          {
+            main_currency: currency.ticker_symbol
+          },
+          { validateStatus: this.validate_status_put_settings }
+        )
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -276,6 +331,9 @@ export class RotkehlchenApi {
           params: {
             async_query: true,
             ignore_cache: ignoreCache ? true : undefined
+          },
+          validateStatus: function(status) {
+            return status == 200 || status == 400 || status == 409;
           }
         })
         .then(response => {
@@ -296,6 +354,9 @@ export class RotkehlchenApi {
         .get<ActionResult<AsyncQuery>>('/balances', {
           params: {
             async_query: true
+          },
+          validateStatus: function(status) {
+            return status == 200 || status == 400 || status == 409;
           }
         })
         .then(response => {
@@ -324,6 +385,9 @@ export class RotkehlchenApi {
           params: {
             async_query: true,
             ignore_cache: ignoreCache ? true : undefined
+          },
+          validateStatus: function(status) {
+            return status == 200 || status == 400 || status == 409;
           }
         })
         .then(response => {
@@ -341,7 +405,11 @@ export class RotkehlchenApi {
   queryFiatBalances(): Promise<ApiAssetBalances> {
     return new Promise<ApiAssetBalances>((resolve, reject) => {
       this.axios
-        .get<ActionResult<ApiAssetBalances>>('/balances/fiat')
+        .get<ActionResult<ApiAssetBalances>>('/balances/fiat', {
+          validateStatus: function(status) {
+            return status == 200 || status == 400 || status == 409;
+          }
+        })
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -357,7 +425,13 @@ export class RotkehlchenApi {
   queryTaskResult<T>(id: number): Promise<ActionResult<T>> {
     return new Promise<any>((resolve, reject) => {
       this.axios
-        .get<ActionResult<TaskResult<ActionResult<T>>>>(`/tasks/${id}`)
+        .get<ActionResult<TaskResult<ActionResult<T>>>>(`/tasks/${id}`, {
+          validateStatus: function(status) {
+            return (
+              status == 200 || status == 400 || status == 404 || status == 409
+            );
+          }
+        })
         .then(response => {
           const { result, message } = response.data;
           if (result && result.outcome) {
@@ -373,7 +447,11 @@ export class RotkehlchenApi {
   queryNetvalueData(): Promise<NetvalueDataResult> {
     return new Promise<NetvalueDataResult>((resolve, reject) => {
       this.axios
-        .get<ActionResult<NetvalueDataResult>>('/statistics/netvalue')
+        .get<ActionResult<NetvalueDataResult>>('/statistics/netvalue', {
+          validateStatus: function(status) {
+            return status == 200 || status == 400 || status == 409;
+          }
+        })
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -389,7 +467,11 @@ export class RotkehlchenApi {
   queryOwnedAssets(): Promise<string[]> {
     return new Promise<string[]>((resolve, reject) => {
       this.axios
-        .get<ActionResult<string[]>>('/assets')
+        .get<ActionResult<string[]>>('/assets', {
+          validateStatus: function(status) {
+            return status == 200 || status == 400 || status == 409;
+          }
+        })
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -415,6 +497,9 @@ export class RotkehlchenApi {
             params: {
               from_timestamp: start_ts,
               to_timestamp: end_ts
+            },
+            validateStatus: function(status) {
+              return status == 200 || status == 400 || status == 409;
             }
           }
         )
@@ -430,11 +515,16 @@ export class RotkehlchenApi {
     });
   }
 
+  private validate_status_get_statistics_val_distribution(status: number) {
+    return status == 200 || status == 400 || status == 409;
+  }
+
   queryLatestLocationValueDistribution(): Promise<LocationData[]> {
     return new Promise<LocationData[]>((resolve, reject) => {
       this.axios
         .get<ActionResult<LocationData[]>>('/statistics/value_distribution', {
-          params: { distribution_by: 'location' }
+          params: { distribution_by: 'location' },
+          validateStatus: this.validate_status_get_statistics_val_distribution
         })
         .then(response => {
           const { result, message } = response.data;
@@ -452,7 +542,8 @@ export class RotkehlchenApi {
     return new Promise<DBAssetBalance[]>((resolve, reject) => {
       this.axios
         .get<ActionResult<DBAssetBalance[]>>('/statistics/value_distribution', {
-          params: { distribution_by: 'asset' }
+          params: { distribution_by: 'asset' },
+          validateStatus: this.validate_status_get_statistics_val_distribution
         })
         .then(response => {
           const { result, message } = response.data;
@@ -469,7 +560,11 @@ export class RotkehlchenApi {
   queryStatisticsRenderer(): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       this.axios
-        .get<ActionResult<string>>('/statistics/renderer')
+        .get<ActionResult<string>>('/statistics/renderer', {
+          validateStatus: function(status) {
+            return status == 200 || status == 400 || status == 409;
+          }
+        })
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -493,6 +588,9 @@ export class RotkehlchenApi {
             async_query: true,
             from_timestamp: start_ts,
             to_timestamp: end_ts
+          },
+          validateStatus: function(status) {
+            return status == 200 || status == 400 || status == 409;
           }
         })
         .then(response => {
@@ -510,9 +608,13 @@ export class RotkehlchenApi {
   setPremiumSync(enabled: boolean): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
       this.axios
-        .put<ActionResult<DBSettings>>('/settings', {
-          premium_should_sync: enabled
-        })
+        .put<ActionResult<DBSettings>>(
+          '/settings',
+          {
+            premium_should_sync: enabled
+          },
+          { validateStatus: this.validate_status_put_settings }
+        )
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -531,6 +633,9 @@ export class RotkehlchenApi {
         .get<ActionResult<FiatExchangeRates>>('/fiat_exchange_rates', {
           params: {
             currencies
+          },
+          validateStatus: function(status) {
+            return status == 200 || status == 400;
           }
         })
         .then(response => {
@@ -560,10 +665,18 @@ export class RotkehlchenApi {
   registerUser(name: string, password: string): Promise<AccountState> {
     return new Promise<AccountState>((resolve, reject) => {
       this.axios
-        .put<ActionResult<AccountState>>('/users', {
-          name,
-          password
-        })
+        .put<ActionResult<AccountState>>(
+          '/users',
+          {
+            name,
+            password
+          },
+          {
+            validateStatus: function(status) {
+              return status == 200 || status == 400 || status == 409;
+            }
+          }
+        )
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -579,11 +692,15 @@ export class RotkehlchenApi {
   login(name: string, password: string): Promise<AccountState> {
     return new Promise<AccountState>((resolve, reject) => {
       this.axios
-        .patch<ActionResult<AccountState>>(`/users/${name}`, {
-          action: 'login',
-          password,
-          sync_approval: 'unknown'
-        })
+        .patch<ActionResult<AccountState>>(
+          `/users/${name}`,
+          {
+            action: 'login',
+            password,
+            sync_approval: 'unknown'
+          },
+          { validateStatus: this.validate_status_patch_username }
+        )
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -592,28 +709,7 @@ export class RotkehlchenApi {
             reject(new Error(message));
           }
         })
-        .catch(error => {
-          if (error.response) {
-            const { result, message } = error.response.data;
-            if (result) {
-              resolve(result);
-            } else {
-              reject(new Error(message));
-            }
-          } else if (error.request) {
-            /*
-             * The request was made but no response was received, `error.request`
-             * is an instance of XMLHttpRequest in the browser and an instance
-             * of http.ClientRequest in Node.js
-             */
-            console.log(error.request);
-            reject(new Error(error));
-          } else {
-            // Something happened in setting up the request and triggered an Error
-            console.log('Error', error.message);
-            reject(new Error(error.message));
-          }
-        });
+        .catch(error => reject(error));
     });
   }
 
@@ -623,6 +719,9 @@ export class RotkehlchenApi {
         .delete<ActionResult<boolean>>('/exchanges', {
           data: {
             name
+          },
+          validateStatus: function(status) {
+            return status == 200 || status == 400 || status == 409;
           }
         })
         .then(response => {
@@ -640,7 +739,11 @@ export class RotkehlchenApi {
   getEthTokens(): Promise<EthTokens> {
     return new Promise<EthTokens>((resolve, reject) => {
       this.axios
-        .get<ActionResult<EthTokens>>('/blockchains/ETH/tokens')
+        .get<ActionResult<EthTokens>>('/blockchains/ETH/tokens', {
+          validateStatus: function(status) {
+            return status == 200 || status == 409;
+          }
+        })
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -656,10 +759,18 @@ export class RotkehlchenApi {
   importDataFrom(source: string, filepath: string): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
       this.axios
-        .put<ActionResult<boolean>>('/import', {
-          source,
-          filepath
-        })
+        .put<ActionResult<boolean>>(
+          '/import',
+          {
+            source,
+            filepath
+          },
+          {
+            validateStatus: function(status) {
+              return status == 200 || status == 400 || status == 409;
+            }
+          }
+        )
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -681,6 +792,9 @@ export class RotkehlchenApi {
         .delete<ActionResult<BlockchainAccount>>(`/blockchains/${blockchain}`, {
           data: {
             accounts: [account]
+          },
+          validateStatus: function(status) {
+            return status == 200 || status == 400 || status == 409;
           }
         })
         .then(response => {
@@ -701,9 +815,17 @@ export class RotkehlchenApi {
   ): Promise<BlockchainAccount> {
     return new Promise<BlockchainAccount>((resolve, reject) => {
       this.axios
-        .put<ActionResult<BlockchainAccount>>(`/blockchains/${blockchain}`, {
-          accounts: [account]
-        })
+        .put<ActionResult<BlockchainAccount>>(
+          `/blockchains/${blockchain}`,
+          {
+            accounts: [account]
+          },
+          {
+            validateStatus: function(status) {
+              return status == 200 || status == 400 || status == 409;
+            }
+          }
+        )
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -719,11 +841,19 @@ export class RotkehlchenApi {
   setFiatBalance(currency: string, balance: string): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
       this.axios
-        .patch<ActionResult<boolean>>('/balances/fiat', {
-          balances: {
-            [currency]: balance
+        .patch<ActionResult<boolean>>(
+          '/balances/fiat',
+          {
+            balances: {
+              [currency]: balance
+            }
+          },
+          {
+            validateStatus: function(status) {
+              return status == 200 || status == 400 || status == 409;
+            }
           }
-        })
+        )
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -743,11 +873,19 @@ export class RotkehlchenApi {
   ): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
       this.axios
-        .put<ActionResult<boolean>>('/exchanges', {
-          name,
-          api_key,
-          api_secret
-        })
+        .put<ActionResult<boolean>>(
+          '/exchanges',
+          {
+            name,
+            api_key,
+            api_secret
+          },
+          {
+            validateStatus: function(status) {
+              return status == 200 || status == 400 || status == 409;
+            }
+          }
+        )
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -766,6 +904,9 @@ export class RotkehlchenApi {
         .get<ActionResult<boolean>>('/history/export', {
           data: {
             directory_path: directory
+          },
+          validateStatus: function(status) {
+            return status == 200 || status == 400 || status == 409;
           }
         })
         .then(response => {
@@ -791,9 +932,17 @@ export class RotkehlchenApi {
   addIgnoredAsset(asset: string): Promise<string[]> {
     return new Promise<string[]>((resolve, reject) => {
       this.axios
-        .put<ActionResult<string[]>>('/assets/ignored', {
-          assets: [asset]
-        })
+        .put<ActionResult<string[]>>(
+          '/assets/ignored',
+          {
+            assets: [asset]
+          },
+          {
+            validateStatus: function(status) {
+              return status == 200 || status == 400 || status == 409;
+            }
+          }
+        )
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -812,6 +961,9 @@ export class RotkehlchenApi {
         .delete<ActionResult<string[]>>('/assets/ignored', {
           data: {
             assets: [asset]
+          },
+          validateStatus: function(status) {
+            return status == 200 || status == 400 || status == 409;
           }
         })
         .then(response => {
@@ -829,9 +981,17 @@ export class RotkehlchenApi {
   addExternalTrade(trade: Trade): Promise<StoredTrade[]> {
     return new Promise<StoredTrade[]>((resolve, reject) => {
       this.axios
-        .put<ActionResult<StoredTrade[]>>('/trades', {
-          ...trade
-        })
+        .put<ActionResult<StoredTrade[]>>(
+          '/trades',
+          {
+            ...trade
+          },
+          {
+            validateStatus: function(status) {
+              return status == 200 || status == 400 || status == 409;
+            }
+          }
+        )
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -847,9 +1007,17 @@ export class RotkehlchenApi {
   editExternalTrade(trade: StoredTrade): Promise<StoredTrade[]> {
     return new Promise<StoredTrade[]>((resolve, reject) => {
       this.axios
-        .patch<ActionResult<StoredTrade[]>>('/trades', {
-          ...trade
-        })
+        .patch<ActionResult<StoredTrade[]>>(
+          '/trades',
+          {
+            ...trade
+          },
+          {
+            validateStatus: function(status) {
+              return status == 200 || status == 400 || status == 409;
+            }
+          }
+        )
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -865,7 +1033,7 @@ export class RotkehlchenApi {
   consumeMessages(): Promise<Messages> {
     return new Promise<any>((resolve, reject) => {
       this.axios
-        .get<ActionResult<Messages>>('/messages/')
+        .get<ActionResult<Messages>>('/messages/') // no need to validate status. Defaults are okay.
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -881,7 +1049,11 @@ export class RotkehlchenApi {
   async getSettings(): Promise<DBSettings> {
     return new Promise<DBSettings>((resolve, reject) => {
       this.axios
-        .get<ActionResult<DBSettings>>('/settings')
+        .get<ActionResult<DBSettings>>('/settings', {
+          validateStatus: function(status) {
+            return status == 200 || status == 409;
+          }
+        })
         .then(response => {
           const { result, message } = response.data;
           if (result) {
@@ -897,7 +1069,11 @@ export class RotkehlchenApi {
   async getExchanges(): Promise<string[]> {
     return new Promise<string[]>((resolve, reject) => {
       this.axios
-        .get<ActionResult<string[]>>('/exchanges')
+        .get<ActionResult<string[]>>('/exchanges', {
+          validateStatus: function(status) {
+            return status == 200 || status == 409;
+          }
+        })
         .then(response => {
           const { result, message } = response.data;
           if (result) {
