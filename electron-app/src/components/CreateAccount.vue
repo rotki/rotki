@@ -32,6 +32,7 @@
             v-model="passwordConfirm"
             class="create-account__fields__password-repeat"
             prepend-icon="fa-repeat"
+            :error-messages="errorMessages"
             :rules="passwordConfirmRules"
             :disabled="loading"
             label="Repeat Password"
@@ -83,6 +84,7 @@ export default class CreateAccount extends Vue {
   passwordConfirm: string = '';
 
   valid: boolean = false;
+  errorMessages: string[] = [];
 
   readonly usernameRules = [
     (v: string) => !!v || 'Please provide a user name',
@@ -93,11 +95,35 @@ export default class CreateAccount extends Vue {
 
   readonly passwordRules = [(v: string) => !!v || 'Please provide a password'];
   readonly passwordConfirmRules = [
-    (v: string) => !!v || 'Please provide a password confirmation',
-    (v: string) =>
-      v == this.password ||
-      'The password confirmation does not match the provided password'
+    (v: string) => !!v || 'Please provide a password confirmation'
   ];
+
+  private updateConfirmationError() {
+    if (this.errorMessages.length > 0) {
+      return;
+    }
+    this.errorMessages.push(
+      'The password confirmation does not match the provided password'
+    );
+  }
+
+  @Watch('password')
+  onPasswordChange() {
+    if (this.password && this.password !== this.passwordConfirm) {
+      this.updateConfirmationError();
+    } else {
+      this.errorMessages.pop();
+    }
+  }
+
+  @Watch('passwordConfirm')
+  onPasswordConfirmationChange() {
+    if (this.passwordConfirm && this.passwordConfirm !== this.password) {
+      this.updateConfirmationError();
+    } else {
+      this.errorMessages.pop();
+    }
+  }
 
   @Watch('displayed')
   onDisplayChange() {
