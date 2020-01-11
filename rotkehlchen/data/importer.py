@@ -36,6 +36,9 @@ def exchange_row_to_location(entry: str) -> Location:
         return Location.BITMEX
     elif entry == 'Coinbase':
         return Location.COINBASE
+    # TODO: Check if this is the correct string for CoinbasePro from cointracking
+    elif entry == 'CoinbasePro':
+        return Location.COINBASEPRO
     elif entry == 'ETH Transaction':
         raise UnsupportedCointrackingEntry(
             'Not importing ETH Transactions from Cointracking. Cointracking does not '

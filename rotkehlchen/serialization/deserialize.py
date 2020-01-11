@@ -280,6 +280,8 @@ def deserialize_location(symbol: str) -> Location:
         return Location.BANKS
     elif symbol == 'blockchain':
         return Location.BLOCKCHAIN
+    elif symbol == 'coinbasepro':
+        return Location.COINBASEPRO
     else:
         raise DeserializationError(
             f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',

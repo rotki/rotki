@@ -52,4 +52,4 @@ def api_port(port_generator):
 @pytest.fixture
 def added_exchanges():
     """A fixture determining which exchanges to add to a test rotkehlchen api server"""
-    return ('kraken', 'poloniex', 'bittrex', 'binance', 'bitmex', 'coinbase')
+    return ('kraken', 'poloniex', 'bittrex', 'binance', 'bitmex', 'coinbase', 'coinbasepro')

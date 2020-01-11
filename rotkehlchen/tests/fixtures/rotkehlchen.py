@@ -200,6 +200,6 @@ def rotkehlchen_api_server_with_exchanges(
     if 'bitmex' in added_exchanges:
         exchanges['bitmex'] = mock_bitmex
 
-    # TODO: Also add coinbase here
+    # TODO: Also add coinbase and coinbasepro here and in the history tests and utils
 
     return rotkehlchen_api_server
