@@ -13,7 +13,15 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-SUPPORTED_EXCHANGES = ['kraken', 'poloniex', 'bittrex', 'bitmex', 'binance', 'coinbase']
+SUPPORTED_EXCHANGES = [
+    'kraken',
+    'poloniex',
+    'bittrex',
+    'bitmex',
+    'binance',
+    'coinbase',
+    'coinbasepro',
+]
 
 
 class ExchangeManager():
