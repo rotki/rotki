@@ -6,11 +6,17 @@ from rotkehlchen.assets.converters import UNSUPPORTED_BITTREX_ASSETS, asset_from
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
+from rotkehlchen.exchanges.bittrex import Bittrex
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import AssetMovementCategory, Location, TradeType
+
+
+def test_name():
+    exchange = Bittrex('a', b'a', object(), object())
+    assert exchange.name == 'bittrex'
 
 
 def test_bittrex_assets_are_known(bittrex):

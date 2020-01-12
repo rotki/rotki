@@ -3,11 +3,17 @@ from unittest.mock import patch
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.exchanges.bitmex import Bitmex
 from rotkehlchen.exchanges.data_structures import AssetMovement, Location, MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import AssetMovementCategory
 from rotkehlchen.utils.misc import ts_now
+
+
+def test_name():
+    exchange = Bitmex('a', b'a', object(), object())
+    assert exchange.name == 'bitmex'
 
 
 def test_bitmex_api_signature(mock_bitmex):
