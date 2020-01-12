@@ -20,6 +20,11 @@ from rotkehlchen.typing import AssetMovementCategory
 from rotkehlchen.user_messages import MessagesAggregator
 
 
+def test_name():
+    exchange = Binance('a', b'a', object(), object())
+    assert exchange.name == 'binance'
+
+
 def test_trade_from_binance(function_scope_binance):
     binance = function_scope_binance
     binance_trades_list = [

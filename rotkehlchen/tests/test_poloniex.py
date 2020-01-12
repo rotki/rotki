@@ -8,7 +8,7 @@ from rotkehlchen.assets.converters import UNSUPPORTED_POLONIEX_ASSETS, asset_fro
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import Loan, Trade, TradeType
-from rotkehlchen.exchanges.poloniex import process_polo_loans, trade_from_poloniex
+from rotkehlchen.exchanges.poloniex import Poloniex, process_polo_loans, trade_from_poloniex
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.tests.utils.exchanges import (
@@ -59,6 +59,11 @@ TEST_POLO_LOAN_2 = {
     'earned': '0.0035',
     'amount': '2',
 }
+
+
+def test_name():
+    exchange = Poloniex('a', b'a', object(), object())
+    assert exchange.name == 'poloniex'
 
 
 def test_trade_from_poloniex():

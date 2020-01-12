@@ -8,11 +8,16 @@ from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import UnprocessableTradePair
 from rotkehlchen.exchanges.data_structures import Trade
-from rotkehlchen.exchanges.kraken import KRAKEN_DELISTED, kraken_to_world_pair
+from rotkehlchen.exchanges.kraken import KRAKEN_DELISTED, Kraken, kraken_to_world_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.typing import AssetMovementCategory
 from rotkehlchen.utils.misc import ts_now
+
+
+def test_name():
+    exchange = Kraken('a', b'a', object(), object())
+    assert exchange.name == 'kraken'
 
 
 def test_coverage_of_kraken_balances(kraken):
