@@ -89,7 +89,7 @@ export default class ExchangeBox extends Vue {
   amount!: number;
 
   get inverted(): boolean {
-    return ['poloniex', 'binance', 'bitmex'].indexOf(name) > -1;
+    return ['poloniex', 'binance', 'bitmex', 'coinbasepro'].indexOf(name) > -1;
   }
 
   refresh() {

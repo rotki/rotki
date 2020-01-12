@@ -137,7 +137,7 @@ class Coinbase(ExchangeInterface):
                     f'Unexpected coinbase method {method_str} at API key validation',
                 )
             msg = (
-                f'Provided API key needs to have {permission} permission activated. '
+                f'Provided Coinbase API key needs to have {permission} permission activated. '
                 f'Please log into your coinbase account and set all required permissions: '
                 f'wallet:accounts:read, wallet:transactions:read, '
                 f'wallet:buys:read, wallet:sells:read, wallet:withdrawals:read, '
@@ -158,7 +158,7 @@ class Coinbase(ExchangeInterface):
         return result, ''
 
     def validate_api_key(self) -> Tuple[bool, str]:
-        """Validates that the Coinbase API key is good for usage in Rotkehlchen
+        """Validates that the Coinbase API key is good for usage in Rotki
 
         Makes sure that the following permissions are given to the key:
         wallet:accounts:read, wallet:transactions:read,
