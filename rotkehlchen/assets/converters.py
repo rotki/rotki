@@ -474,7 +474,7 @@ def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset
     if cb_name == 'MCDAI':
         return A_DAI
     elif cb_name == 'DAI':
-        # If it's dai and it's squeried from the exchange before the end of the upgrade
+        # If it's dai and it's queried from the exchange before the end of the upgrade
         if not time:
             time = ts_now()
         if time < COINBASE_DAI_UPGRADE_END_TS:
