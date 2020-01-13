@@ -29,6 +29,8 @@ export interface AccountingSettingsUpdate {
 export interface Credentials {
   readonly username: string;
   readonly password: string;
+  readonly apiKey?: string;
+  readonly apiSecret?: string;
 }
 
 export type UsdToFiatExchangeRates = { [key: string]: number };
@@ -78,3 +80,14 @@ export interface TaskResult<T> {
 export const SupportedBlockchains = ['ETH', 'BTC'];
 
 export type Blockchain = 'ETH' | 'BTC';
+
+export type SyncApproval = 'yes' | 'no' | 'unknown';
+
+export interface UnlockPayload {
+  readonly username: string;
+  readonly password: string;
+  readonly create: boolean;
+  readonly syncApproval: SyncApproval;
+  readonly apiKey?: string;
+  readonly apiSecret?: string;
+}

@@ -19,7 +19,9 @@ import {
   ApiAssetBalances,
   Blockchain,
   FiatExchangeRates,
-  TaskResult
+  SyncApproval,
+  TaskResult,
+  UnlockPayload
 } from '@/typing/types';
 import axios, { AxiosInstance } from 'axios';
 import { EthTokens } from '@/model/eth_token';
@@ -650,26 +652,37 @@ export class RotkehlchenApi {
     });
   }
 
-  unlockUser(
-    username: string,
-    password: string,
-    create_true: boolean = false
-  ): Promise<AccountState> {
-    if (create_true) {
-      return this.registerUser(username, password);
+  unlockUser(payload: UnlockPayload): Promise<AccountState> {
+    const {
+      create,
+      username,
+      password,
+      apiKey,
+      apiSecret,
+      syncApproval
+    } = payload;
+    if (create) {
+      return this.registerUser(username, password, apiKey, apiSecret);
     } else {
-      return this.login(username, password);
+      return this.login(username, password, syncApproval);
     }
   }
 
-  registerUser(name: string, password: string): Promise<AccountState> {
+  registerUser(
+    name: string,
+    password: string,
+    apiKey?: string,
+    apiSecret?: string
+  ): Promise<AccountState> {
     return new Promise<AccountState>((resolve, reject) => {
       this.axios
         .put<ActionResult<AccountState>>(
           '/users',
           {
             name,
-            password
+            password,
+            premium_api_key: apiKey,
+            premium_api_secret: apiSecret
           },
           {
             validateStatus: function(status) {
@@ -689,7 +702,11 @@ export class RotkehlchenApi {
     });
   }
 
-  login(name: string, password: string): Promise<AccountState> {
+  login(
+    name: string,
+    password: string,
+    syncApproval: SyncApproval = 'unknown'
+  ): Promise<AccountState> {
     return new Promise<AccountState>((resolve, reject) => {
       this.axios
         .patch<ActionResult<AccountState>>(
@@ -697,7 +714,7 @@ export class RotkehlchenApi {
           {
             action: 'login',
             password,
-            sync_approval: 'unknown'
+            sync_approval: syncApproval
           },
           { validateStatus: this.validate_status_patch_username }
         )

@@ -63,8 +63,7 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers, mapGetters, mapState } from 'vuex';
 import Login from './Login.vue';
 import CreateAccount from './CreateAccount.vue';
-import { Credentials } from '@/typing/types';
-import { UnlockPayload } from '@/store/session/actions';
+import { Credentials, UnlockPayload } from '@/typing/types';
 import MessageOverlay from '@/components/MessageOverlay.vue';
 import { Version } from '@/store/store';
 import { shell } from 'electron';
@@ -110,16 +109,20 @@ export default class AccountManagement extends Vue {
   }
 
   async createAccount(credentials: Credentials) {
-    const { username, password } = credentials;
+    const { username, password, apiKey, apiSecret } = credentials;
     this.loading = true;
     await this.$store.dispatch('session/unlock', {
       username: username,
       password: password,
       create: true,
-      syncApproval: 'unknown'
+      syncApproval: 'unknown',
+      apiKey,
+      apiSecret
     } as UnlockPayload);
     this.loading = false;
-    this.firstStep();
+    if (this.logged) {
+      this.firstStep();
+    }
   }
 
   upgrade() {

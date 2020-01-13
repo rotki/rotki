@@ -9,6 +9,7 @@ import { DBSettings } from '@/model/action-result';
 import { api } from '@/services/rotkehlchen-api';
 import { monitor } from '@/services/monitoring';
 import { notify } from '@/store/notifications/utils';
+import { UnlockPayload } from '@/typing/types';
 
 export const actions: ActionTree<SessionState, RotkehlchenState> = {
   start({ commit }, payload: { premium: boolean; settings: DBSettings }) {
@@ -25,7 +26,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     let exchanges: string[];
 
     try {
-      const { username, password, create } = payload;
+      const { username, create } = payload;
       const isLogged = await api.checkIfLogged(username);
       if (isLogged) {
         [settings, premium, exchanges] = await Promise.all([
@@ -34,11 +35,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
           api.getExchanges()
         ]);
       } else {
-        ({ settings, premium, exchanges } = await api.unlockUser(
-          username,
-          password,
-          create
-        ));
+        ({ settings, premium, exchanges } = await api.unlockUser(payload));
       }
 
       await dispatch('start', {
@@ -121,10 +118,3 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     }
   }
 };
-
-export interface UnlockPayload {
-  readonly username: string;
-  readonly password: string;
-  readonly create: boolean;
-  readonly syncApproval: 'yes' | 'no' | 'unknown';
-}
