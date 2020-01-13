@@ -49,14 +49,15 @@
       :message="startupError"
     ></error-screen>
     <account-management
-      v-if="startupError.length === 0 && !logged"
+      v-if="startupError.length === 0 && !loginIn"
       :logged="logged"
+      @login-complete="loginComplete = true"
     ></account-management>
   </v-app>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Vue, Watch } from 'vue-property-decorator';
 import UserDropdown from '@/components/UserDropdown.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
@@ -101,6 +102,19 @@ export default class App extends Vue {
   logged!: boolean;
   message!: Message;
   version!: string;
+
+  loginComplete: boolean = false;
+
+  get loginIn(): boolean {
+    return this.logged && this.loginComplete;
+  }
+
+  @Watch('logged')
+  onLoggedChange() {
+    if (!this.logged) {
+      this.loginComplete = false;
+    }
+  }
 
   drawer = true;
 

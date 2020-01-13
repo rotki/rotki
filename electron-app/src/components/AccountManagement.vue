@@ -44,7 +44,7 @@
       action="Upgrade"
       :visible="!message && premiumVisible"
       @primary="upgrade()"
-      @close="dismiss()"
+      @close="loginComplete"
     >
       <template #title>
         Upgrade to Premium
@@ -59,7 +59,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers, mapGetters, mapState } from 'vuex';
 import Login from './Login.vue';
 import CreateAccount from './CreateAccount.vue';
@@ -95,6 +95,11 @@ export default class AccountManagement extends Vue {
 
   @Prop({ required: true, type: Boolean })
   logged!: boolean;
+
+  @Emit()
+  loginComplete() {
+    this.dismiss();
+  }
 
   async login(credentials: Credentials) {
     const { username, password } = credentials;
