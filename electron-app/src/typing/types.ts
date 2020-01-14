@@ -29,6 +29,7 @@ export interface AccountingSettingsUpdate {
 export interface Credentials {
   readonly username: string;
   readonly password: string;
+  readonly syncApproval: SyncApproval;
   readonly apiKey?: string;
   readonly apiSecret?: string;
 }
@@ -80,6 +81,8 @@ export interface TaskResult<T> {
 export const SupportedBlockchains = ['ETH', 'BTC'];
 
 export type Blockchain = 'ETH' | 'BTC';
+
+export class SyncConflictError extends Error {}
 
 export type SyncApproval = 'yes' | 'no' | 'unknown';
 

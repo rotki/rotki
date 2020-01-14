@@ -18,6 +18,7 @@
     <login
       :displayed="!message && !logged && !accountCreation"
       :loading="loading"
+      :sync-conflict="syncConflict"
       @login="login($event)"
       @new-account="accountCreation = true"
     ></login>
@@ -77,7 +78,7 @@ const { mapState: mapSessionState } = createNamespacedHelpers('session');
     CreateAccount
   },
   computed: {
-    ...mapSessionState(['newAccount']),
+    ...mapSessionState(['newAccount', 'syncConflict']),
     ...mapState(['version', 'message']),
     ...mapGetters(['updateNeeded', 'message'])
   }
@@ -88,6 +89,7 @@ export default class AccountManagement extends Vue {
   loading: boolean = false;
   version!: Version;
   message!: boolean;
+  syncConflict!: boolean;
 
   private welcomeVisible = false;
   private premiumVisible = false;
@@ -101,11 +103,12 @@ export default class AccountManagement extends Vue {
   }
 
   async login(credentials: Credentials) {
-    const { username, password } = credentials;
+    const { username, password, syncApproval } = credentials;
     this.loading = true;
     await this.$store.dispatch('session/unlock', {
-      username: username,
-      password: password
+      username,
+      password,
+      syncApproval
     } as UnlockPayload);
     this.loading = false;
     if (this.logged) {
@@ -117,8 +120,8 @@ export default class AccountManagement extends Vue {
     const { username, password, apiKey, apiSecret } = credentials;
     this.loading = true;
     await this.$store.dispatch('session/unlock', {
-      username: username,
-      password: password,
+      username,
+      password,
       create: true,
       syncApproval: 'unknown',
       apiKey,

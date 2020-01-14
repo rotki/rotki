@@ -19,8 +19,9 @@ import {
   ApiAssetBalances,
   Blockchain,
   FiatExchangeRates,
-  SyncApproval,
+  SyncConflictError,
   TaskResult,
+  SyncApproval,
   UnlockPayload
 } from '@/typing/types';
 import axios, { AxiosInstance } from 'axios';
@@ -722,6 +723,8 @@ export class RotkehlchenApi {
           const { result, message } = response.data;
           if (result) {
             resolve(result);
+          } else if (response.status === 300) {
+            reject(new SyncConflictError(message));
           } else {
             reject(new Error(message));
           }

@@ -49,5 +49,8 @@ export const mutations: MutationTree<SessionState> = {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   reset(state: SessionState) {
     state = Object.assign(state, defaultState());
+  },
+  syncConflict(state: SessionState, syncConflict: string) {
+    state.syncConflict = syncConflict;
   }
 };
