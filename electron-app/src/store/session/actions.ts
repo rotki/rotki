@@ -9,6 +9,7 @@ import { DBSettings } from '@/model/action-result';
 import { api } from '@/services/rotkehlchen-api';
 import { monitor } from '@/services/monitoring';
 import { notify } from '@/store/notifications/utils';
+import { SyncConflictError } from '@/typing/types';
 import { UnlockPayload } from '@/typing/types';
 
 export const actions: ActionTree<SessionState, RotkehlchenState> = {
@@ -20,7 +21,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     commit('settings', convertToGeneralSettings(settings));
     commit('accountingSettings', convertToAccountingSettings(settings));
   },
-  async unlock({ commit, dispatch }, payload: UnlockPayload) {
+  async unlock({ commit, dispatch, state }, payload: UnlockPayload) {
     let settings: DBSettings;
     let premium: boolean;
     let exchanges: string[];
@@ -28,13 +29,14 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       const { username, create } = payload;
       const isLogged = await api.checkIfLogged(username);
-      if (isLogged) {
+      if (isLogged && !state.syncConflict) {
         [settings, premium, exchanges] = await Promise.all([
           api.getSettings(),
           Promise.resolve(false),
           api.getExchanges()
         ]);
       } else {
+        commit('syncConflict', '');
         ({ settings, premium, exchanges } = await api.unlockUser(payload));
       }
 
@@ -58,6 +60,10 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
 
       commit('login', { username, newAccount: create });
     } catch (e) {
+      if (e instanceof SyncConflictError) {
+        commit('syncConflict', e.message);
+        return;
+      }
       commit(
         'setMessage',
         {
