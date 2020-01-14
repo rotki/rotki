@@ -40,6 +40,15 @@
             required
           >
           </v-text-field>
+          <premium-credentials
+            :enabled="premiumEnabled"
+            :api-secret="apiSecret"
+            :api-key="apiKey"
+            :loading="loading"
+            @api-key-changed="apiKey = $event"
+            @api-secret-changed="apiSecret = $event"
+            @enabled-changed="premiumEnabled = $event"
+          ></premium-credentials>
         </v-form>
       </v-card-text>
       <v-card-actions>
@@ -70,8 +79,11 @@
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { Credentials } from '@/typing/types';
+import PremiumCredentials from '@/components/PremiumCredentials.vue';
 
-@Component({})
+@Component({
+  components: { PremiumCredentials }
+})
 export default class CreateAccount extends Vue {
   @Prop({ required: true })
   displayed!: boolean;
@@ -82,6 +94,10 @@ export default class CreateAccount extends Vue {
   username: string = '';
   password: string = '';
   passwordConfirm: string = '';
+
+  premiumEnabled: boolean = false;
+  apiKey: string = '';
+  apiSecret: string = '';
 
   valid: boolean = false;
   errorMessages: string[] = [];
@@ -138,9 +154,19 @@ export default class CreateAccount extends Vue {
   }
 
   confirm() {
-    const credentials: Credentials = {
+    const premiumKeys = {
+      apiKey: this.apiKey,
+      apiSecret: this.apiSecret
+    };
+
+    const accountCredentials: Credentials = {
       username: this.username,
       password: this.password
+    };
+
+    const credentials: Credentials = {
+      ...accountCredentials,
+      ...(this.premiumEnabled ? premiumKeys : {})
     };
     this.$emit('confirm', credentials);
   }
