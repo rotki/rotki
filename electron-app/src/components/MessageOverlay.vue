@@ -1,5 +1,5 @@
 <template>
-  <v-overlay v-if="visible" class="messsage-overlay">
+  <v-overlay v-if="visible" class="message-overlay">
     <v-card light max-width="500" class="mx-auto">
       <v-card-title>
         <slot name="title"></slot>
