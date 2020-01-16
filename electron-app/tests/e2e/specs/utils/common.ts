@@ -109,7 +109,7 @@ export async function createAccount(
   username: string,
   password: string
 ) {
-  await app.client.waitForVisible('.login', METHOD_TIMEOUT);
+  await app.client.waitForVisible('.login__fields__username', METHOD_TIMEOUT);
 
   await app.client.click('.login__button__new-account');
   await app.client.waitForExist('.create-account', METHOD_TIMEOUT);
@@ -147,10 +147,10 @@ export async function createAccount(
     METHOD_TIMEOUT
   );
   await app.client.click('.message-overlay__buttons__cancel');
-  await app.client.waitForVisible('.confirm-dialog', METHOD_TIMEOUT, false);
 }
 
 export async function navigateTo(client: SpectronClient, elementId: string) {
+  await client.waitForVisible('.user-dropdown', METHOD_TIMEOUT);
   await client.click('.user-dropdown');
   await client.waitForVisible(elementId, METHOD_TIMEOUT);
   await client.click(elementId);
@@ -259,4 +259,19 @@ export async function captureOnFailure(app: Application) {
   if (currentTest && currentTest.failedExpectations.length > 0) {
     await takeScreenshot(app, currentTest.fullName);
   }
+}
+
+export async function clearValue(
+  client: SpectronClient,
+  elementSelector: string
+) {
+  client.execute((selector: string) => {
+    const element: HTMLInputElement = document.querySelector(
+      selector
+    ) as HTMLInputElement;
+    const event: Event = new Event('input', { bubbles: true });
+    element.value = '';
+    element.dispatchEvent(event);
+    element.focus();
+  }, elementSelector);
 }

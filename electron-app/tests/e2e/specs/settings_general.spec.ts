@@ -1,6 +1,7 @@
 import { Application, SpectronClient } from 'spectron';
 import {
   captureOnFailure,
+  clearValue,
   createAccount,
   GLOBAL_TIMEOUT,
   initSpectron,
@@ -11,9 +12,31 @@ import {
   setupTest
 } from './utils/common';
 import { Guid } from './utils/guid';
+
 const retry = require('promise-retry');
 
 jest.setTimeout(GLOBAL_TIMEOUT);
+
+async function changeValue(
+  client: SpectronClient,
+  elementSelector: string,
+  expectedValue: string
+) {
+  await client.waitUntil(
+    async () => await client.element(elementSelector).isEnabled(),
+    METHOD_TIMEOUT
+  );
+
+  await clearValue(client, elementSelector);
+
+  await retry(async () => {
+    await client.addValue(elementSelector, expectedValue);
+  });
+
+  await expect(client.getValue(elementSelector)).resolves.toEqual(
+    expectedValue
+  );
+}
 
 describe('general settings', () => {
   let application: Application;
@@ -29,12 +52,8 @@ describe('general settings', () => {
     ({ client } = application);
     await setupTest(application, 'general settings', async () => {
       await createAccount(application, username, password);
-      await navigateTo(client, '.user-dropdown__accounting-settings');
-      await client.waitUntilTextExists(
-        '.page-header',
-        'Settings',
-        METHOD_TIMEOUT
-      );
+      await navigateTo(client, '.user-dropdown__settings');
+      await client.waitUntilTextExists('h1', 'Settings', METHOD_TIMEOUT);
     });
   });
 
@@ -46,107 +65,155 @@ describe('general settings', () => {
     await captureOnFailure(application);
   });
 
-  it('should change the general settings and save them', async () => {
-    await retry(async () => {
-      client.clearElement('#eth_rpc_endpoint');
-    });
-    await retry(async () => {
-      client.addValue('#eth_rpc_endpoint', 9001);
-    });
-
-    await retry(async () => {
-      client.clearElement('#floating_precision');
-    });
-    await retry(async () => {
-      client.addValue('#floating_precision', 4);
+  describe('change settings one by one and verify that they change', () => {
+    test('floating precision', async () => {
+      await changeValue(
+        client,
+        '.settings-general__fields__floating-precision input',
+        '4'
+      );
     });
 
-    await retry(async () => {
-      client.clearElement('#balance_save_frequency');
-    });
-    await retry(async () => {
-      client.addValue('#balance_save_frequency', 48);
-    });
-
-    await retry(async () => {
-      client.click('#anonymized_logs_input');
-    });
-
-    await retry(async () => {
-      client.clearElement('#historical_data_start');
+    test('anonymized logs', async () => {
+      await client.click('.settings-general__fields__anonymized-logs label');
+      await expect(
+        client.getAttribute(
+          '.settings-general__fields__anonymized-logs input',
+          'aria-checked'
+        )
+      ).resolves.toBe('true');
     });
 
-    await retry(async () => {
-      client.addValue('#historical_data_start', '03/10/2018');
+    test('anonymous usage statistic', async () => {
+      await client.click(
+        '.settings-general__fields__anonymous-usage-statistics label'
+      );
+      await expect(
+        client.getAttribute(
+          '.settings-general__fields__anonymous-usage-statistics input',
+          'aria-checked'
+        )
+      ).resolves.toBe('false');
     });
 
-    await retry(async () => {
-      client.clearElement('#date_display_format');
+    test('historic data start', async () => {
+      await changeValue(
+        client,
+        '.settings-general__fields__historic-data-start input',
+        '03/10/2018'
+      );
     });
 
-    await retry(async () => {
-      client.addValue('#date_display_format', '%d-%m-%Y %H:%M:%S %z');
+    test('currency selection', async () => {
+      await client.waitUntil(
+        () =>
+          client
+            .element('.settings-general__fields__currency-selector')
+            .isEnabled(),
+        METHOD_TIMEOUT
+      );
+      await client
+        .element('.settings-general__fields__currency-selector')
+        .click();
+      await client.waitForVisible('.v-select-list', METHOD_TIMEOUT);
+      await client.element(`.v-list-item__title=JPY`).click();
+      await client.waitForVisible('.v-select-list', METHOD_TIMEOUT, true);
+
+      await expect(
+        client.getValue('.settings-general__fields__currency-selector input')
+      ).resolves.toMatch('JPY');
     });
 
-    await client.selectByValue('#maincurrencyselector', 'JPY');
-
-    await retry(async () => {
-      client.click('#settingssubmit');
+    test('rpc endpoint', async () => {
+      await changeValue(
+        client,
+        '.settings-general__fields__rpc-endpoint input',
+        'http://localhost:9001'
+      );
     });
 
-    await client.waitUntilTextExists(
-      '.jconfirm-title',
-      'Success',
-      METHOD_TIMEOUT
-    );
+    test('balance save frequency', async () => {
+      await changeValue(
+        client,
+        '.settings-general__fields__balance-save-frequency input',
+        '48'
+      );
+    });
+
+    test('date display format', async () => {
+      await changeValue(
+        client,
+        '.settings-general__fields__date-display-format input',
+        '%d-%m-%Y %H:%M:%S %z'
+      );
+    });
+  });
+
+  test('save settings and confirm saving', async () => {
+    await retry(async () => {
+      client.click('.settings-general__buttons__save');
+    });
+
+    await client.waitForVisible('.message-dialog__title', METHOD_TIMEOUT);
     await expect(
-      client.element('.jconfirm-content > div').getText()
+      client.element('.message-dialog__title').getValue()
+    ).resolves.toMatch('Success');
+    await expect(
+      client.element('.message-dialog__message').getText()
     ).resolves.toMatch('Successfully modified settings.');
 
     await retry(async () => {
-      client.click('.jconfirm-buttons > button');
+      client.click('.message-dialog__buttons__confirm');
     });
-    await client.waitForExist('.jconfirm-box', METHOD_TIMEOUT, true);
+    await client.waitForExist('.message-dialog__message', METHOD_TIMEOUT, true);
+  });
 
+  test('verify that changes persist after login in', async () => {
     await logout(client);
     await login(client, username, password);
 
-    await client.waitUntilTextExists(
-      '.page-header',
-      'Dashboard',
-      METHOD_TIMEOUT
-    );
+    await client.waitUntilTextExists('h1', 'Dashboard', METHOD_TIMEOUT);
 
-    await navigateTo(client, '.user-dropdown__accounting-settings');
+    await navigateTo(client, '.user-dropdown__settings');
 
-    await client.waitUntilTextExists(
-      '.page-header',
-      'Settings',
-      METHOD_TIMEOUT
-    );
+    await client.waitUntilTextExists('h1', 'Settings', METHOD_TIMEOUT);
 
-    await expect(client.getValue('#floating_precision')).resolves.toEqual('4');
-    await expect(client.getValue('#historical_data_start')).resolves.toEqual(
-      '03/10/2018'
-    );
+    await expect(
+      client.getValue('.settings-general__fields__floating-precision input')
+    ).resolves.toEqual('4');
 
-    await expect(client.getValue('#balance_save_frequency')).resolves.toEqual(
-      '48'
-    );
+    await expect(
+      client.getAttribute(
+        '.settings-general__fields__anonymized-logs input',
+        'aria-checked'
+      )
+    ).resolves.toBe('true');
 
-    await expect(client.getValue('#eth_rpc_endpoint')).resolves.toEqual(
-      'http://localhost:8545'
-    );
+    await expect(
+      client.getAttribute(
+        '.settings-general__fields__anonymous-usage-statistics',
+        'aria-checked'
+      )
+    ).resolves.toBe('false');
 
-    await expect(client.isSelected('#anonymized_logs_input')).resolves.toBe(
-      true
-    );
+    await expect(
+      client.getValue('.settings-general__fields__historic-data-start input')
+    ).resolves.toEqual('03/10/2018');
 
-    await expect(client.getValue('#maincurrencyselector')).resolves.toEqual(
-      'JPY'
-    );
-    await expect(client.getValue('#date_display_format')).resolves.toEqual(
-      '%d-%m-%Y %H:%M:%S %z'
-    );
+    await expect(
+      client.getValue('.settings-general__fields__currency-selector input')
+    ).resolves.toMatch('JPY');
+
+    await expect(
+      client.getValue('.settings-general__fields__rpc-endpoint')
+    ).resolves.toEqual('http://localhost:9001');
+
+    await expect(
+      client.getValue('.settings-general__fields__balance-save-frequency input')
+    ).resolves.toEqual('48');
+
+    await expect(
+      client.getValue('.settings-general__fields__date-display-format input')
+    ).resolves.toEqual('%d-%m-%Y %H:%M:%S %z');
   });
 });
