@@ -97,6 +97,32 @@ def test_set_settings(rotkehlchen_api_server):
         assert result[setting] == value
 
 
+def test_set_rpc_endpoint_fail_not_set_others(rotkehlchen_api_server):
+    """Test that setting a non-existing eth rpc along with other settings does not modify them"""
+    eth_rpc_endpoint = 'http://working.nodes.com:8545'
+    main_currency = A_JPY
+    data = {
+        'eth_rpc_endpoint': eth_rpc_endpoint,
+        'main_currency': main_currency.identifier,
+    }
+
+    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    assert_error_response(
+        response=response,
+        contained_in_msg='Failed to connect to ethereum node at endpoint',
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # Get settings and make sure they have not been modified
+    response = requests.get(api_url_for(rotkehlchen_api_server, "settingsresource"))
+    assert_proper_response(response)
+    json_data = response.json()
+    result = json_data['result']
+    assert json_data['message'] == ''
+    assert result['main_currency'] != 'JPY'
+    assert result['eth_rpc_endpoint'] != 'http://working.nodes.com:8545'
+
+
 def test_disable_taxfree_after_period(rotkehlchen_api_server):
     """Test that providing -1 for the taxfree_after_period setting disables it """
     data = {
