@@ -29,7 +29,7 @@ export interface AccountingSettingsUpdate {
 export interface Credentials {
   readonly username: string;
   readonly password: string;
-  readonly syncApproval: SyncApproval;
+  readonly syncApproval?: SyncApproval;
   readonly apiKey?: string;
   readonly apiSecret?: string;
 }
@@ -93,4 +93,22 @@ export interface UnlockPayload {
   readonly syncApproval: SyncApproval;
   readonly apiKey?: string;
   readonly apiSecret?: string;
+}
+
+export type SettingsUpdate = {
+  +readonly [P in keyof SettingsPayload]+?: SettingsPayload[P];
+};
+
+export interface SettingsPayload {
+  balance_save_frequency: number;
+  main_currency: string;
+  anonymized_logs: boolean;
+  submit_usage_analytics: boolean;
+  historical_data_start: string;
+  eth_rpc_endpoint: string;
+  ui_floating_precision: number;
+  date_display_format: string;
+  include_gas_costs: boolean;
+  include_crypto2crypto: boolean;
+  taxfree_after_period: number;
 }
