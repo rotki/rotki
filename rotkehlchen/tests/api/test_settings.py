@@ -11,6 +11,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_INCLUDE_CRYPTO2CRYPTO,
     DEFAULT_INCLUDE_GAS_COSTS,
     DEFAULT_PREMIUM_SHOULD_SYNC,
+    DEFAULT_SUBMIT_USAGE_ANALYTICS,
     DEFAULT_TAXFREE_AFTER_PERIOD,
     DEFAULT_UI_FLOATING_PRECISION,
     ROTKEHLCHEN_DB_VERSION,
@@ -72,6 +73,7 @@ def test_set_settings(rotkehlchen_api_server):
         'eth_rpc_endpoint': eth_rpc_endpoint,
         'main_currency': main_currency.identifier,
         'date_display_format': display_format,
+        'submit_usage_analytics': not DEFAULT_SUBMIT_USAGE_ANALYTICS,
     }
 
     block_query = patch('rotkehlchen.ethchain.Ethchain.query_eth_highest_block', return_value=0)
@@ -80,6 +82,9 @@ def test_set_settings(rotkehlchen_api_server):
         response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_proper_response(response)
     json_data = response.json()
+    result = json_data['result']
+    for setting, value in data.items():
+        assert result[setting] == value
     # Check that new settings are returned in the response
     assert json_data['message'] == ''
     result = json_data['result']
