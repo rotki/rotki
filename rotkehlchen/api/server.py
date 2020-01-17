@@ -188,6 +188,9 @@ class APIServer():
             log=wsgi_logger,
             error_log=wsgi_logger,
         )
+        msg = f'Rotki API server is running at: {host}:{port}'
+        print(msg)
+        log.info(msg)
         self.wsgiserver.start()
 
     def stop(self, timeout: int = 5) -> None:

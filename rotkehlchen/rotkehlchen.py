@@ -61,7 +61,7 @@ class Rotkehlchen():
         elif args.loglevel == 'critical':
             loglevel = logging.CRITICAL
         else:
-            raise ValueError('Should never get here. Illegal log value')
+            raise AssertionError('Should never get here. Illegal log value')
 
         logging.basicConfig(
             filename=logfilename,

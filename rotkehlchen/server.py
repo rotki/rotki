@@ -16,8 +16,10 @@ log = RotkehlchenLogsAdapter(logger)
 class RotkehlchenServer():
     def __init__(self) -> None:
         arg_parser = app_args(
-            prog='rotkehlchen',
-            description='Rotkehlchen Crypto Portfolio Management',
+            prog='rotki',
+            description=(
+                'Rotki, the portfolio tracker and accounting tool that respects your privacy'
+            ),
         )
         self.args = arg_parser.parse_args()
         self.rotkehlchen = Rotkehlchen(self.args)

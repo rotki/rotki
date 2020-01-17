@@ -35,7 +35,7 @@ class CommandAction(argparse.Action):
 
 
 def app_args(prog: str, description: str) -> argparse.ArgumentParser:
-    """Add the Rotkehlchen arguments to the argument parser and return it"""
+    """Add the Rotki arguments to the argument parser and return it"""
     p = argparse.ArgumentParser(
         prog=prog,
         description=description,
