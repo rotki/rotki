@@ -74,17 +74,15 @@ class Ethchain():
             synchronized = True
             msg = ''
             if mainnet_check:
-                genesis_hash = self.web3.eth.getBlock(0)['hash'].hex()  # pylint: disable=no-member
-                target = '0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3'
-                if genesis_hash != target:
-                    log.warning(
-                        'Connected to an ethereum node but it is not on the ethereum mainnet',
-                    )
-                    self.connected = False
+                chain_id = self.web3.eth.chainId
+                if chain_id != 1:
                     message = (
                         f'Connected to ethereum node at endpoint {ethrpc_endpoint} but '
-                        f'it is not on the ethereum mainnet'
+                        f'it is not on the ethereum mainnet. The chain id '
+                        f'the node is in is {chain_id}.'
                     )
+                    log.warning(message)
+                    self.connected = False
                     return False, message
 
                 if self.web3.eth.syncing:  # pylint: disable=no-member
