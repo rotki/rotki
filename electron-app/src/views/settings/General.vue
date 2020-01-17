@@ -2,7 +2,7 @@
   <v-container id="settings-general">
     <v-row>
       <v-col>
-        <h1 class="page-header">Settings</h1>
+        <h1>Settings</h1>
       </v-col>
     </v-row>
     <v-row>
@@ -11,22 +11,22 @@
           <v-card-title>General Settings</v-card-title>
           <v-card-text>
             <v-text-field
-              id="floating_precision"
               v-model="floatingPrecision"
+              class="settings-general__fields__floating-precision"
               label="Floating Precision"
               type="number"
             ></v-text-field>
 
             <v-checkbox
-              id="anonymized_logs_input"
               v-model="anonymizedLogs"
+              class="settings-general__fields__anonymized-logs"
               off-icon="fa fa-square-o"
               label="Should logs by anonymized?"
             ></v-checkbox>
 
             <v-checkbox
-              id="anonymous_usage_analytics"
               v-model="anonymousUsageAnalytics"
+              class="settings-general__fields__anonymous-usage-statistics"
               off-icon="fa fa-square-o"
               label="Should anonymous usage analytics be submitted?"
             ></v-checkbox>
@@ -43,8 +43,8 @@
             >
               <template #activator="{ on }">
                 <v-text-field
-                  id="historical_data_start"
                   v-model="historicDataStart"
+                  class="settings-general__fields__historic-data-start"
                   label="Date from when to count historical data"
                   hint="DD/MM/YYYY format"
                   prepend-icon="fa-calendar"
@@ -60,8 +60,8 @@
             </v-menu>
 
             <v-select
-              id="maincurrencyselector"
               v-model="selectedCurrency"
+              class="settings-general__fields__currency-selector"
               label="Select Main Currency"
               item-text="ticker_symbol"
               return-object
@@ -70,23 +70,23 @@
             </v-select>
 
             <v-text-field
-              id="eth_rpc_endpoint"
               v-model="rpcEndpoint"
+              class="settings-general__fields__rpc-endpoint"
               label="Eth RPC Endpoint"
               type="text"
               data-vv-name="eth_rpc_endpoint"
             ></v-text-field>
 
             <v-text-field
-              id="balance_save_frequency"
               v-model="balanceSaveFrequency"
+              class="settings-general__fields__balance-save-frequency"
               label="Balance data saving frequency in hours"
               type="number"
             ></v-text-field>
 
             <v-text-field
-              id="date_display_format"
               v-model="dateDisplayFormat"
+              class="settings-general__fields__date-display-format"
               label="Date display format"
               type="text"
             ></v-text-field>
@@ -94,8 +94,8 @@
 
           <v-card-actions>
             <v-btn
-              id="settingssubmit"
               depressed
+              class="settings-general__buttons__save"
               color="primary"
               type="submit"
               @click="save()"
