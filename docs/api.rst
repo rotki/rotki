@@ -2082,7 +2082,6 @@ Dealing with ignored assets
 .. http:put:: /api/(version)/assets/ignored/
 
    Doing a PUT on the ignored assets endpoint will add new assets to the ignored assets list. Returns the new list with the added assets in the response.
-   Note that the message may even be populated for succesful queries, giving us information about what happened. For example one of the given assets may have been already in the ignored assets list.
 
 
    **Example Request**:
@@ -2114,7 +2113,6 @@ Dealing with ignored assets
 .. http:delete:: /api/(version)/assets/ignored/
 
    Doing a DELETE on the ignored assets endpoint will remove the given assets from the ignored assets list. Returns the new list without the removed assets in the response.
-   Note that the message may even be populated for succesful queries, giving us information about what happened. For example one of the given assets to remove may have not been in the ignored assets list.
 
 
    **Example Request**:

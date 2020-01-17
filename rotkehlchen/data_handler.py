@@ -101,7 +101,7 @@ class DataHandler():
     def write_owned_eth_tokens(self, tokens: List[EthereumToken]) -> None:
         self.db.write_owned_tokens(tokens)
 
-    def add_ignored_assets(self, assets: List[Asset]) -> Tuple[List[Asset], str]:
+    def add_ignored_assets(self, assets: List[Asset]) -> Tuple[Optional[List[Asset]], str]:
         """Adds ignored assets to the DB.
 
         If any of the given assets is already in the DB the function does nothing
@@ -111,14 +111,14 @@ class DataHandler():
         for asset in assets:
             if asset in ignored_assets:
                 msg = f'{asset.identifier} is already in ignored assets'
-                return [], msg
+                return None, msg
 
         for asset in assets:
             self.db.add_to_ignored_assets(asset)
 
         return self.db.get_ignored_assets(), ''
 
-    def remove_ignored_assets(self, assets: List[Asset]) -> Tuple[List[Asset], str]:
+    def remove_ignored_assets(self, assets: List[Asset]) -> Tuple[Optional[List[Asset]], str]:
         """Removes ignored assets from the DB.
 
         If any of the given assets is not in the DB the call function does nothing
@@ -128,7 +128,7 @@ class DataHandler():
         for asset in assets:
             if asset not in ignored_assets:
                 msg = f'{asset.identifier} is not in ignored assets'
-                return [], msg
+                return None, msg
 
         for asset in assets:
             self.db.remove_from_ignored_assets(asset)
