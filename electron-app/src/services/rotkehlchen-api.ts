@@ -22,7 +22,8 @@ import {
   SyncConflictError,
   TaskResult,
   SyncApproval,
-  UnlockPayload
+  UnlockPayload,
+  SettingsUpdate
 } from '@/typing/types';
 import axios, { AxiosInstance } from 'axios';
 import { EthTokens } from '@/model/eth_token';
@@ -280,8 +281,8 @@ export class RotkehlchenApi {
     return status == 200 || status == 400 || status == 409;
   }
 
-  setSettings(settings: { [key: string]: any }): Promise<boolean> {
-    return new Promise<boolean>((resolve, reject) => {
+  setSettings(settings: SettingsUpdate): Promise<DBSettings> {
+    return new Promise<DBSettings>((resolve, reject) => {
       this.axios
         .put<ActionResult<DBSettings>>(
           '/settings',
@@ -293,7 +294,7 @@ export class RotkehlchenApi {
         .then(response => {
           const { result, message } = response.data;
           if (result) {
-            resolve(true);
+            resolve(result);
           } else {
             reject(new Error(message));
           }

@@ -112,11 +112,12 @@
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import { currencies } from '@/data/currencies';
-import { GeneralSettings } from '@/typing/types';
+import { GeneralSettings, SettingsUpdate } from '@/typing/types';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import { createNamespacedHelpers } from 'vuex';
 import { Currency } from '@/model/currency';
 import { Message } from '@/store/store';
+import { convertToGeneralSettings } from '@/data/converters';
 
 const { mapState, mapGetters } = createNamespacedHelpers('session');
 
@@ -131,12 +132,12 @@ export default class General extends Vue {
   settings!: GeneralSettings;
   currency!: Currency;
 
-  floatingPrecision: number = 0;
+  floatingPrecision: string = '0';
   anonymizedLogs: boolean = false;
   anonymousUsageAnalytics: boolean = false;
   historicDataStart: string = '';
-  rpcEndpoint: string = 'http://localhost:8546';
-  balanceSaveFrequency: number = 0;
+  rpcEndpoint: string = 'http://localhost:8545';
+  balanceSaveFrequency: string = '0';
   dateDisplayFormat: string = '';
   selectedCurrency: Currency = currencies[0];
 
@@ -155,7 +156,12 @@ export default class General extends Vue {
     return `${day}/${month}/${year}`;
   }
   parseDate(date: string) {
-    if (!date) return null;
+    if (
+      !/^([0-2]\d|[3][0-1])\/([0]\d|[1][0-2])\/([2][01]|[1][6-9])\d{2}$/.test(
+        date
+      )
+    )
+      return null;
 
     const [day, month, year] = date.split('/');
     return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
@@ -166,57 +172,82 @@ export default class General extends Vue {
   }
 
   mounted() {
+    this.loadFromState();
+  }
+
+  private loadFromState() {
     this.selectedCurrency = this.currency;
     const settings = this.settings;
-    this.floatingPrecision = settings.floatingPrecision;
+    this.floatingPrecision = settings.floatingPrecision.toString();
     this.anonymizedLogs = settings.anonymizedLogs;
     this.anonymousUsageAnalytics = settings.anonymousUsageAnalytics;
     this.historicDataStart = settings.historicDataStart;
     this.rpcEndpoint = settings.ethRpcEndpoint;
-    this.balanceSaveFrequency = settings.balanceSaveFrequency;
+    this.balanceSaveFrequency = settings.balanceSaveFrequency.toString();
     this.dateDisplayFormat = settings.dateDisplayFormat;
     this.date = this.parseDate(settings.historicDataStart) || '';
   }
 
   save() {
-    const payload = {
-      ui_floating_precision: this.floatingPrecision,
-      historical_data_start: this.historicDataStart,
-      main_currency: this.selectedCurrency.ticker_symbol,
-      eth_rpc_endpoint: this.rpcEndpoint,
-      balance_save_frequency: this.balanceSaveFrequency,
-      anonymized_logs: this.anonymizedLogs,
-      submit_usage_analytics: this.anonymousUsageAnalytics,
-      date_display_format: this.dateDisplayFormat
-    };
-
-    const generalSettings: GeneralSettings = {
-      floatingPrecision: this.floatingPrecision,
-      historicDataStart: this.historicDataStart,
-      ethRpcEndpoint: this.rpcEndpoint,
-      balanceSaveFrequency: this.balanceSaveFrequency,
-      anonymizedLogs: this.anonymizedLogs,
-      dateDisplayFormat: this.dateDisplayFormat,
-      selectedCurrency: this.selectedCurrency,
-      anonymousUsageAnalytics: this.anonymousUsageAnalytics
-    };
+    function setOnlyIfDifferent<T>(value: T, oldValue: T): T | undefined {
+      return value !== oldValue ? value : undefined;
+    }
 
     const { commit } = this.$store;
 
+    const floatingPrecision = parseInt(this.floatingPrecision);
+    const balanceSaveFrequency = parseInt(this.balanceSaveFrequency);
+
+    const update: SettingsUpdate = {
+      ui_floating_precision: setOnlyIfDifferent(
+        floatingPrecision,
+        this.settings.floatingPrecision
+      ),
+      historical_data_start: setOnlyIfDifferent(
+        this.historicDataStart,
+        this.settings.historicDataStart
+      ),
+      main_currency: setOnlyIfDifferent(
+        this.selectedCurrency.ticker_symbol,
+        this.currency.ticker_symbol
+      ),
+      eth_rpc_endpoint: setOnlyIfDifferent(
+        this.rpcEndpoint,
+        this.settings.ethRpcEndpoint
+      ),
+      balance_save_frequency: setOnlyIfDifferent(
+        balanceSaveFrequency,
+        this.settings.balanceSaveFrequency
+      ),
+      anonymized_logs: setOnlyIfDifferent(
+        this.anonymizedLogs,
+        this.settings.anonymizedLogs
+      ),
+      submit_usage_analytics: setOnlyIfDifferent(
+        this.anonymousUsageAnalytics,
+        this.settings.anonymousUsageAnalytics
+      ),
+      date_display_format: setOnlyIfDifferent(
+        this.dateDisplayFormat,
+        this.settings.dateDisplayFormat
+      )
+    };
     this.$api
-      .setSettings(payload)
-      .then(() => {
+      .setSettings(update)
+      .then(settings => {
         commit('setMessage', {
-          title: 'Successfully modified settings.',
-          description: '',
+          title: 'Success',
+          description: 'Successfully changed settings.',
           success: true
         } as Message);
-        commit('session/settings', generalSettings);
+        commit('session/settings', convertToGeneralSettings(settings));
+        this.loadFromState();
       })
       .catch((error: Error) => {
+        this.loadFromState();
         commit('setMessage', {
           title: 'Settings Error',
-          description: `Error at modifying settings: ${error.message}`
+          description: `Error at changing settings: ${error.message}`
         } as Message);
       });
   }
