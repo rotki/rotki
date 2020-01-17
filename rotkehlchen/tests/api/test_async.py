@@ -89,6 +89,7 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
         response=response,
         contained_in_msg='No task with id 568 found',
         status_code=HTTPStatus.NOT_FOUND,
+        result_exists=True,
     )
     json_data = response.json()
     assert json_data['result'] == {'status': 'not-found', 'outcome': None}

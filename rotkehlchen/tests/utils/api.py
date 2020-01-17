@@ -66,14 +66,19 @@ def assert_error_response(
         response: requests.Response,
         contained_in_msg: Optional[str] = None,
         status_code: HTTPStatus = HTTPStatus.BAD_REQUEST,
+        result_exists: bool = False,
 ):
     assert (
         response is not None and
         response.status_code == status_code and
         response.headers["Content-Type"] == "application/json"
     )
+    response_data = response.json()
+    if result_exists:
+        assert response_data['result'] is not None
+    else:
+        assert response_data['result'] is None
     if contained_in_msg:
-        response_data = response.json()
         assert contained_in_msg in response_data['message']
 
 
