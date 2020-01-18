@@ -5,18 +5,7 @@ import pytest
 import requests
 
 from rotkehlchen.constants.assets import A_JPY
-from rotkehlchen.db.settings import (
-    DEFAULT_ANONYMIZED_LOGS,
-    DEFAULT_BALANCE_SAVE_FREQUENCY,
-    DEFAULT_INCLUDE_CRYPTO2CRYPTO,
-    DEFAULT_INCLUDE_GAS_COSTS,
-    DEFAULT_PREMIUM_SHOULD_SYNC,
-    DEFAULT_SUBMIT_USAGE_ANALYTICS,
-    DEFAULT_TAXFREE_AFTER_PERIOD,
-    DEFAULT_UI_FLOATING_PRECISION,
-    ROTKEHLCHEN_DB_VERSION,
-    DBSettings,
-)
+from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION, DBSettings
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -57,40 +46,57 @@ def test_qerying_settings(rotkehlchen_api_server, username):
 
 def test_set_settings(rotkehlchen_api_server):
     """Happy case settings modification test"""
-    start_date = '10/10/2016'
-    display_format = '%d/%m/%Y-%H:%M:%S'
-    eth_rpc_endpoint = 'http://working.nodes.com:8545'
-    main_currency = A_JPY
-    data = {
-        'premium_should_sync': not DEFAULT_PREMIUM_SHOULD_SYNC,
-        'include_crypto2crypto': not DEFAULT_INCLUDE_CRYPTO2CRYPTO,
-        'anonymized_logs': not DEFAULT_ANONYMIZED_LOGS,
-        'ui_floating_precision': DEFAULT_UI_FLOATING_PRECISION + 1,
-        'taxfree_after_period': DEFAULT_TAXFREE_AFTER_PERIOD + 1,
-        'balance_save_frequency': DEFAULT_BALANCE_SAVE_FREQUENCY + 1,
-        'include_gas_costs': not DEFAULT_INCLUDE_GAS_COSTS,
-        'historical_data_start': start_date,
-        'eth_rpc_endpoint': eth_rpc_endpoint,
-        'main_currency': main_currency.identifier,
-        'date_display_format': display_format,
-        'submit_usage_analytics': not DEFAULT_SUBMIT_USAGE_ANALYTICS,
-    }
+    # Get the starting settings
+    response = requests.get(api_url_for(rotkehlchen_api_server, "settingsresource"))
+    assert_proper_response(response)
+    json_data = response.json()
+    original_settings = json_data['result']
+    assert json_data['message'] == ''
+    # Create new settings which modify all of the original ones
+    new_settings = {}
+    unmodifiable_settings = (
+        'version',
+        'last_write_ts',
+        'last_data_upload_ts',
+        'last_balance_save',
+    )
+    for setting, value in original_settings.items():
+        if setting in unmodifiable_settings:
+            continue
+        elif setting == 'historical_data_start':
+            value = '10/10/2016'
+        elif setting == 'date_display_format':
+            value = '%d/%m/%Y-%H:%M:%S'
+        elif setting == 'eth_rpc_endpoint':
+            value = 'http://working.nodes.com:8545'
+        elif setting == 'main_currency':
+            value = 'JPY'
+        elif type(value) == bool:
+            value = not value
+        elif type(value) == int:
+            value += 1
+        else:
+            raise AssertionError(f'Unexpected settting {setting} encountered')
 
+        new_settings[setting] = value
+
+    # modify the settings
     block_query = patch('rotkehlchen.ethchain.Ethchain.query_eth_highest_block', return_value=0)
     mock_web3 = patch('rotkehlchen.ethchain.Web3', MockWeb3)
     with block_query, mock_web3:
-        response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, "settingsresource"),
+            json=new_settings,
+        )
+    # Check that new settings are returned in the response
     assert_proper_response(response)
     json_data = response.json()
-    result = json_data['result']
-    for setting, value in data.items():
-        assert result[setting] == value
-    # Check that new settings are returned in the response
     assert json_data['message'] == ''
     result = json_data['result']
     assert result['version'] == ROTKEHLCHEN_DB_VERSION
-    for setting, value in data.items():
-        assert result[setting] == value
+    for setting, value in new_settings.items():
+        msg = f'Error for {setting} setting. Expected: {value}. Got: {result[setting]}'
+        assert result[setting] == value, msg
 
     # now check that the same settings are returned in a settings query
     response = requests.get(api_url_for(rotkehlchen_api_server, "settingsresource"))
@@ -98,7 +104,7 @@ def test_set_settings(rotkehlchen_api_server):
     json_data = response.json()
     result = json_data['result']
     assert json_data['message'] == ''
-    for setting, value in data.items():
+    for setting, value in new_settings.items():
         assert result[setting] == value
 
 
