@@ -14,7 +14,7 @@
     "electron:serve": "vue-cli-service electron:serve",
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps",
-    "test:e2e": "jest --config tests/e2e/jest.config.js",
+    "test:e2e": "jest --config tests/e2e/jest.config.js --runInBand",
     "test:unit": "vue-cli-service test:unit"
   },
   "dependencies": {
