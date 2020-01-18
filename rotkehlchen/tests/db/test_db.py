@@ -24,6 +24,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_START_DATE,
     DEFAULT_UI_FLOATING_PRECISION,
     ROTKEHLCHEN_DB_VERSION,
+    DBSettings,
     ModifiableDBSettings,
 )
 from rotkehlchen.db.utils import AssetBalance, BlockchainAccounts, LocationData
@@ -258,26 +259,33 @@ def test_writting_fetching_data(data_dir, username):
         'date_display_format': DEFAULT_DATE_DISPLAY_FORMAT,
         'last_data_upload_ts': 0,
         'premium_should_sync': False,
+        'submit_usage_analytics': True,
+        'last_write_ts': 0,
     }
+    assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
+
     # Make sure that results are the same. Comparing like this since we ignore last
     # write ts check
     result_dict = result._asdict()
     for key, value in expected_dict.items():
         assert key in result_dict
-        assert value == result_dict[key]
+        if key != 'last_write_ts':
+            assert value == result_dict[key]
 
 
 def test_settings_entry_types(database):
     database.set_settings(ModifiableDBSettings(
         premium_should_sync=True,
         include_crypto2crypto=True,
+        anonymized_logs=True,
         ui_floating_precision=1,
         taxfree_after_period=1,
+        include_gas_costs=True,
         historical_data_start='01/08/2015',
         eth_rpc_endpoint='http://localhost:8545',
         balance_save_frequency=24,
-        anonymized_logs=True,
         date_display_format='%d/%m/%Y %H:%M:%S %z',
+        submit_usage_analytics=False,
     ))
 
     res = database.get_settings()
@@ -307,6 +315,8 @@ def test_settings_entry_types(database):
     assert res.anonymized_logs is True
     assert isinstance(res.date_display_format, str)
     assert res.date_display_format == '%d/%m/%Y %H:%M:%S %z'
+    assert isinstance(res.submit_usage_analytics, bool)
+    assert res.submit_usage_analytics is False
 
 
 def test_balance_save_frequency_check(data_dir, username):
