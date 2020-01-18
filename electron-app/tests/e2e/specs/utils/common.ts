@@ -2,6 +2,7 @@ import { Application, SpectronClient } from 'spectron';
 import * as electron from 'electron';
 import * as fs from 'fs';
 import { spawn } from 'child_process';
+
 const retry = require('promise-retry');
 
 export const GLOBAL_TIMEOUT = 120_000;
@@ -109,44 +110,31 @@ export async function createAccount(
   username: string,
   password: string
 ) {
-  await app.client.waitForVisible('.login__fields__username', METHOD_TIMEOUT);
+  const { client } = app;
+  await client.waitForVisible('.login__fields__username', METHOD_TIMEOUT);
 
-  await app.client.click('.login__button__new-account');
-  await app.client.waitForExist('.create-account', METHOD_TIMEOUT);
+  await client.click('.login__button__new-account');
+  await client.waitForExist('.create-account', METHOD_TIMEOUT);
   await wait(1000);
 
-  await app.client.click('.create-account__fields__username');
-  await app.client.addValue(
-    '.create-account__fields__username input',
-    username
-  );
+  await client.click('.create-account__fields__username');
+  await client.addValue('.create-account__fields__username input', username);
 
   await wait(200);
-  await app.client.click('.create-account__fields__password');
-  await app.client.addValue(
-    '.create-account__fields__password input',
-    password
-  );
+  await client.click('.create-account__fields__password');
+  await client.addValue('.create-account__fields__password input', password);
   await wait(200);
-  await app.client.click('.create-account__fields__password-repeat');
-  await app.client.addValue(
+  await client.click('.create-account__fields__password-repeat');
+  await client.addValue(
     '.create-account__fields__password-repeat input',
     password
   );
 
-  await app.client.click('.create-account__buttons__confirm');
-  await app.client.waitUntilTextExists(
-    'div',
-    `Welcome to Rotki!`,
-    METHOD_TIMEOUT
-  );
-  await app.client.click('.message-overlay__buttons__cancel');
-  await app.client.waitUntilTextExists(
-    'div',
-    `Upgrade to Premium`,
-    METHOD_TIMEOUT
-  );
-  await app.client.click('.message-overlay__buttons__cancel');
+  await client.click('.create-account__buttons__confirm');
+  await client.waitUntilTextExists('div', `Welcome to Rotki!`, METHOD_TIMEOUT);
+  await client.click('.message-overlay__buttons__cancel');
+  await client.waitUntilTextExists('div', `Upgrade to Premium`, METHOD_TIMEOUT);
+  await client.click('.message-overlay__buttons__cancel');
 }
 
 export async function selectFromUserMenu(
