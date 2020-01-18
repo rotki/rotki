@@ -21,3 +21,4 @@ dist/
 docs/_build
 .idea
 failure-screenshots/
+chromedriverlog.txt

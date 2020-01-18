@@ -18,5 +18,13 @@ module.exports = {
     'ts-jest': {
       babelConfig: true
     }
-  }
+  },
+  collectCoverage: true,
+  collectCoverageFrom: [
+    'src/**/*.{ts,vue}',
+    '!**/node_modules/**',
+    '!**/vendor/**'
+  ],
+  coverageReporters: ['html', 'lcov', 'text-summary'],
+  reporters: ['default', ['jest-junit', { outputDirectory: 'coverage' }]]
 };
