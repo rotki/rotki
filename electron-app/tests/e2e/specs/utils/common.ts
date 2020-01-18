@@ -149,7 +149,10 @@ export async function createAccount(
   await app.client.click('.message-overlay__buttons__cancel');
 }
 
-export async function navigateTo(client: SpectronClient, elementId: string) {
+export async function selectFromUserMenu(
+  client: SpectronClient,
+  elementId: string
+) {
   await client.waitForVisible('.user-dropdown', METHOD_TIMEOUT);
   await client.click('.user-dropdown');
   await client.waitForVisible(elementId, METHOD_TIMEOUT);
@@ -158,35 +161,14 @@ export async function navigateTo(client: SpectronClient, elementId: string) {
   await client.pause(500);
 }
 
-export async function closeAddYourSettingsPopup(client: SpectronClient) {
-  await client.waitUntilTextExists(
-    '.jconfirm-title',
-    'Add your settings',
-    METHOD_TIMEOUT
-  );
-  await retry(async () => {
-    await client.click('.jconfirm-buttons>button');
-  });
-}
-
 export async function logout(client: SpectronClient) {
-  await retry(async () => {
-    client.click('#user-dropdown');
-  });
-  await client.waitForVisible('#logout_button', METHOD_TIMEOUT);
-  await retry(async () => {
-    client.click('#logout_button');
-  });
+  await selectFromUserMenu(client, '.user-dropdown__logout');
 
-  await client.waitForVisible('.jconfirm', METHOD_TIMEOUT);
+  await client.waitForVisible('.confirm-dialog__body', METHOD_TIMEOUT);
   await retry(async () => {
-    client.click('.jconfirm-buttons>button');
+    await client.click('.confirm-dialog__buttons__confirm');
   });
-  await client.waitUntilTextExists(
-    '.jconfirm-title',
-    'Sign In',
-    METHOD_TIMEOUT
-  );
+  await client.waitForVisible('.login__fields__username', METHOD_TIMEOUT);
 }
 
 export async function login(
@@ -194,25 +176,19 @@ export async function login(
   username: string,
   password: string
 ) {
-  await client.clearElement('#username_entry');
-  await client.addValue('#username_entry', username);
-
-  await client.clearElement('#password_entry');
-  await client.addValue('#password_entry', password);
-
-  await retry(async () => {
-    client.click('.jconfirm-buttons>button');
-  });
-
-  await client.waitUntilTextExists(
-    '.jconfirm-title',
-    'Successful Sign In',
-    METHOD_TIMEOUT
+  await client.waitUntil(
+    async () =>
+      await client.element('.login__fields__username input').isEnabled()
   );
+  await client.addValue('.login__fields__username input', username);
+  await client.addValue('.login__fields__password input', password);
+
   await retry(async () => {
-    client.click('.jconfirm-buttons>button');
+    client.click('.login__button__sign-in');
   });
-  await client.waitForVisible('.jconfirm', METHOD_TIMEOUT, true);
+
+  await client.waitUntilTextExists('div', `Upgrade to Premium`, METHOD_TIMEOUT);
+  await client.click('.message-overlay__buttons__cancel');
 }
 
 export function takeScreenshot(app: Application, title: string): Promise<void> {

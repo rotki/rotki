@@ -5,7 +5,7 @@ import {
   GLOBAL_TIMEOUT,
   initSpectron,
   METHOD_TIMEOUT,
-  navigateTo,
+  selectFromUserMenu,
   setupTest
 } from './utils/common';
 import { Guid } from './utils/guid';
@@ -46,7 +46,7 @@ describe('accounting settings', () => {
       client = application.client;
 
       await retry(async () => {
-        await navigateTo(client, '#accounting_settings_button');
+        await selectFromUserMenu(client, '#accounting_settings_button');
       });
       await client.waitUntilTextExists(
         '.page-header',

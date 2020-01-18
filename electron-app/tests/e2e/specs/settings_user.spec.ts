@@ -5,7 +5,7 @@ import {
   GLOBAL_TIMEOUT,
   initSpectron,
   METHOD_TIMEOUT,
-  navigateTo,
+  selectFromUserMenu,
   setupTest
 } from './utils/common';
 import { Guid } from './utils/guid';
@@ -38,17 +38,17 @@ describe('user settings', () => {
 
       controller = new UserSettingsController(client);
 
-      await navigateTo(client, '.user-dropdown__user-settings');
+      await selectFromUserMenu(client, '.user-dropdown__user-settings');
       await client.waitForVisible('.user-settings', METHOD_TIMEOUT);
       // navigate to accounting settings and then back to user settings to
       // try and recreate https://github.com/rotki/rotki/issues/320
-      await navigateTo(client, '.user-dropdown__accounting-settings');
+      await selectFromUserMenu(client, '.user-dropdown__accounting-settings');
       await client.waitUntilTextExists(
         '.page-header',
         'Accounting Settings',
         METHOD_TIMEOUT
       );
-      await navigateTo(client, '.user-dropdown__user-settings');
+      await selectFromUserMenu(client, '.user-dropdown__user-settings');
       await client.waitForVisible('.user-settings', METHOD_TIMEOUT);
     });
   });
