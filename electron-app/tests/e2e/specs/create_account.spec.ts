@@ -1,42 +1,41 @@
-import { Application } from 'spectron';
+import { Application, SpectronClient } from 'spectron';
 import {
   captureOnFailure,
   createAccount,
   GLOBAL_TIMEOUT,
   initSpectron,
-  METHOD_TIMEOUT
+  logout
 } from './utils/common';
 import { Guid } from './utils/guid';
 
 jest.setTimeout(GLOBAL_TIMEOUT);
 
-describe('first usage', () => {
+describe('on first usage', () => {
   let application: Application;
   let stop: () => Promise<Application>;
+  let client: SpectronClient;
 
-  beforeEach(async () => {
+  const username: string = Guid.newGuid().toString();
+  const password: string = process.env.PASSWORD as string;
+
+  beforeAll(async () => {
     ({ application, stop } = await initSpectron());
+    ({ client } = application);
   });
 
   afterEach(async () => {
     await captureOnFailure(application);
+  });
+
+  afterAll(async () => {
     await stop();
   });
 
-  it('create account', async () => {
-    const username: string = Guid.newGuid().toString();
-    const password: string = process.env.PASSWORD as string;
-
+  test('create a new account', async () => {
     await createAccount(application, username, password);
+  });
 
-    const { client } = application;
-
-    await client.waitForVisible('.user-dropdown', METHOD_TIMEOUT);
-    await client.click('.user-dropdown');
-    await client.waitForVisible('.user-dropdown__logout', METHOD_TIMEOUT);
-    await client.click('.user-dropdown__logout');
-    await client.waitForVisible('.confirm-dialog', METHOD_TIMEOUT);
-    await client.click('.confirm-dialog__buttons__confirm');
-    await client.waitForVisible('.login', METHOD_TIMEOUT);
+  test('logout', async () => {
+    await logout(client);
   });
 });
