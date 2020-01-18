@@ -72,6 +72,7 @@ class SettingsResource(BaseResource):
             premium_should_sync: Optional[bool],
             include_crypto2crypto: Optional[bool],
             anonymized_logs: Optional[bool],
+            submit_usage_analytics: Optional[bool],
             ui_floating_precision: Optional[int],
             taxfree_after_period: Optional[int],
             balance_save_frequency: Optional[int],
@@ -93,6 +94,7 @@ class SettingsResource(BaseResource):
             eth_rpc_endpoint=eth_rpc_endpoint,
             main_currency=main_currency,
             date_display_format=date_display_format,
+            submit_usage_analytics=submit_usage_analytics,
         )
         return self.rest_api.set_settings(settings)
 

@@ -443,6 +443,7 @@ class ModifiableSettingsSchema(BaseSchema):
     premium_should_sync = fields.Bool(missing=None)
     include_crypto2crypto = fields.Bool(missing=None)
     anonymized_logs = fields.Bool(missing=None)
+    submit_usage_analytics = fields.Bool(missing=None)
     ui_floating_precision = fields.Integer(
         strict=True,
         validate=validate.Range(
