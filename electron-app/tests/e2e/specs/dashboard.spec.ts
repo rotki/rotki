@@ -6,13 +6,12 @@ import {
 import { Guid } from './utils/guid';
 import {
   captureOnFailure,
-  closeAddYourSettingsPopup,
   createAccount,
   initSpectron,
   login,
   logout,
   METHOD_TIMEOUT,
-  navigateTo,
+  selectFromUserMenu,
   setupTest
 } from './utils/common';
 const retry = require('promise-retry');
@@ -65,9 +64,8 @@ describe('dashboard', () => {
     beforeAll(async () => {
       await setupTest(application, `dashboard_after_adding`, async () => {
         await retry(async () => {
-          await navigateTo(client, '#user_settings_button');
+          await selectFromUserMenu(client, '#user_settings_button');
         });
-        await closeAddYourSettingsPopup(client);
 
         await client.waitForVisible(
           '#blockchain_balances_panel_body',
