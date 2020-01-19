@@ -6435,6 +6435,14 @@
         "symbol": "OWN",
         "type": "ethereum token"
     },
+    "OXT": {
+        "ethereum_address": "0x4575f41308EC1483f3d399aa9a2826d74Da13Deb",
+        "ethereum_token_decimals": 18,
+        "name": "Orchid",
+        "started": 1575331200,
+        "symbol": "OXT",
+        "type": "ethereum token"
+    },
     "PAI": {
         "name": "Project Pai",
         "started": 1509408000,
