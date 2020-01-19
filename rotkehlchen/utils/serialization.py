@@ -79,7 +79,7 @@ def rkl_decode_value(
         new_val = dict()
         for k, v in val.items():
             value = rkl_decode_value(v)
-            # In some places such as coind paprika's symbols
+            # In some places such as coin paprika's symbols
             # binance pairs e.t.c.
             # there are some symbols like 1337 which are all numeric and
             # are interpreted as FVAL. Adjust for it here.

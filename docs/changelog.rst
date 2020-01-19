@@ -9,6 +9,10 @@ Changelog
 * :feature:`404` Removed ZMQ as the messaging layer between backend - frontend and introduced a full-fledged REST API instead.
 * :bug:`465` Asset icons and names show consistently in the UI after the vue.js rewrite.
 
+* :feature:`-` Added support for the following tokens
+
+  - `Orchid (OXT) <https://coinmarketcap.com/currencies/orchid/>`__
+
 * :release:`1.0.7 <2020-01-04>`
 * :bug:`605` Adding a premium API key via the front-end now works properly again.
 * :bug:`602` Fixed a bug that lead to the coinbase exchange integration not working.
