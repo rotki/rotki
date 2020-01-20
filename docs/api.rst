@@ -592,11 +592,12 @@ Setup or remove an exchange
       PUT /api/1/exchanges HTTP/1.1
       Host: localhost:5042
 
-      {"name": "kraken", "api_key": "ddddd", "api_secret": "ffffff"}
+      {"name": "kraken", "api_key": "ddddd", "api_secret": "ffffff", "passphrase": "secret"}
 
    :reqjson string name: The name of the exchange to setup
    :reqjson string api_key: The api key with which to setup the exchange
    :reqjson string api_secret: The api secret with which to setup the exchange
+   :reqjson string passphrase: An optional passphrase, only for exchanges, like coinbase pro, which need a passphrase.
 
    **Example Response**:
 

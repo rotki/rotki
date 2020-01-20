@@ -129,8 +129,14 @@ class ExchangesResource(BaseResource):
         return self.rest_api.get_exchanges()
 
     @use_kwargs(put_schema, locations=('json',))
-    def put(self, name: str, api_key: ApiKey, api_secret: ApiSecret) -> Response:
-        return self.rest_api.setup_exchange(name, api_key, api_secret)
+    def put(
+            self,
+            name: str,
+            api_key: ApiKey,
+            api_secret: ApiSecret,
+            passphrase: Optional[str],
+    ) -> Response:
+        return self.rest_api.setup_exchange(name, api_key, api_secret, passphrase)
 
     @use_kwargs(delete_schema, locations=('json',))
     def delete(self, name: str) -> Response:

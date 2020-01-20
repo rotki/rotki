@@ -150,7 +150,8 @@ DB_CREATE_USER_CREDENTIALS = """
 CREATE TABLE IF NOT EXISTS user_credentials (
     name VARCHAR[24] NOT NULL PRIMARY KEY,
     api_key TEXT,
-    api_secret TEXT
+    api_secret TEXT,
+    passphrase TEXT
 );
 """
 

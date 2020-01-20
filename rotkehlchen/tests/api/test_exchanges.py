@@ -29,6 +29,10 @@ API_KEYPAIR_VALIDATION_PATCH = patch(
     'rotkehlchen.exchanges.kraken.Kraken.validate_api_key',
     return_value=(True, ''),
 )
+API_KEYPAIR_COINBASEPRO_VALIDATION_PATCH = patch(
+    'rotkehlchen.exchanges.coinbasepro.Coinbasepro.validate_api_key',
+    return_value=(True, ''),
+)
 
 
 def test_setup_exchange(rotkehlchen_api_server):
@@ -75,6 +79,20 @@ def test_setup_exchange(rotkehlchen_api_server):
         contained_in_msg='Exchange kraken is already registered',
         status_code=HTTPStatus.CONFLICT,
     )
+
+    # Check that giving a passphrase is fine
+    data = {'name': 'coinbasepro', 'api_key': 'ddddd', 'api_secret': 'fffff', 'passphrase': 'sdf'}
+    with API_KEYPAIR_COINBASEPRO_VALIDATION_PATCH:
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data,
+        )
+    assert_simple_ok_response(response)
+    # and check that coinbasepro is now registered
+    response = requests.get(api_url_for(rotkehlchen_api_server, "exchangesresource"))
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == ''
+    assert json_data['result'] == ['kraken', 'coinbasepro']
 
 
 def test_setup_exchange_errors(rotkehlchen_api_server):

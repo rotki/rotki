@@ -9,6 +9,11 @@ class MockCoinbasepro(Coinbasepro):
 
 
 @pytest.fixture(scope='session')
+def coinbasepro_passphrase():
+    return 'supersecretpassphrase'
+
+
+@pytest.fixture(scope='session')
 def coinbasepro(session_database, session_inquirer, messages_aggregator):
     mock = MockCoinbasepro(
         api_key=make_api_key(),
@@ -24,11 +29,13 @@ def function_scope_coinbasepro(
         database,
         inquirer,  # pylint: disable=unused-argument,
         function_scope_messages_aggregator,
+        coinbasepro_passphrase,
 ):
     mock = MockCoinbasepro(
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
         msg_aggregator=function_scope_messages_aggregator,
+        passphrase=coinbasepro_passphrase,
     )
     return mock
