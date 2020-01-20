@@ -4,13 +4,14 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
-from rotkehlchen.constants.assets import A_EUR
+from rotkehlchen.constants.assets import A_EUR, A_GBP
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import IncorrectApiKeyFormat, UnableToDecryptRemoteData
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.premium import (
+    REMOTE_DATA_OLDER_DB,
     VALID_PREMIUM_KEY,
     VALID_PREMIUM_SECRET,
     assert_db_got_replaced,
@@ -27,7 +28,7 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
     assert last_ts == 0
 
     # Write anything in the DB to set a non-zero last_write_ts
-    rotkehlchen_instance.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))
+    rotkehlchen_instance.data.db.set_settings(ModifiableDBSettings(main_currency=A_GBP))
     last_write_ts = rotkehlchen_instance.data.db.get_last_write_ts()
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
     remote_hash = 'a' + our_hash[1:]
@@ -166,6 +167,32 @@ def test_try_premium_at_start_new_account_can_pull_data(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_try_premium_at_start_new_account_pull_old_data(
+        rotkehlchen_instance,
+        username,
+        db_password,
+        rotki_premium_credentials,
+):
+    """
+    Test that if the remote DB is of an old version its upgraded before replacing our current
+
+    For a new account
+    """
+    setup_starting_environment(
+        rotkehlchen_instance=rotkehlchen_instance,
+        username=username,
+        db_password=db_password,
+        premium_credentials=rotki_premium_credentials,
+        first_time=True,
+        same_hash_with_remote=False,
+        newer_remote_db=True,
+        db_can_sync_setting=False,
+        remote_data=REMOTE_DATA_OLDER_DB,
+    )
+    assert_db_got_replaced(rotkehlchen_instance=rotkehlchen_instance, username=username)
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_try_premium_at_start_old_account_can_pull_data(
         rotkehlchen_instance,
         username,
@@ -181,6 +208,32 @@ def test_try_premium_at_start_old_account_can_pull_data(
         same_hash_with_remote=False,
         newer_remote_db=True,
         db_can_sync_setting=True,
+    )
+    assert_db_got_replaced(rotkehlchen_instance=rotkehlchen_instance, username=username)
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_try_premium_at_start_old_account_can_pull_old_data(
+        rotkehlchen_instance,
+        username,
+        db_password,
+        rotki_premium_credentials,
+):
+    """
+    Test that if the remote DB is of an old version its upgraded before replacing our current
+
+    For an old account
+    """
+    setup_starting_environment(
+        rotkehlchen_instance=rotkehlchen_instance,
+        username=username,
+        db_password=db_password,
+        premium_credentials=rotki_premium_credentials,
+        first_time=False,
+        same_hash_with_remote=False,
+        newer_remote_db=True,
+        db_can_sync_setting=True,
+        remote_data=REMOTE_DATA_OLDER_DB,
     )
     assert_db_got_replaced(rotkehlchen_instance=rotkehlchen_instance, username=username)
 
