@@ -712,6 +712,42 @@ def test_upgrade_broken_db_7_to_8(data_dir, username):
             DBHandler(user_data_dir=userdata_dir, password='123', msg_aggregator=msg_aggregator)
 
 
+def test_upgrade_db_8_to_9(data_dir, username):
+    """Test upgrading the DB from version 8 to version 9.
+
+    Adding the passphrase column to user credentials"""
+    msg_aggregator = MessagesAggregator()
+    userdata_dir = os.path.join(data_dir, username)
+    os.mkdir(userdata_dir)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    copyfile(
+        os.path.join(os.path.dirname(dir_path), 'data', 'v8_rotkehlchen.db'),
+        os.path.join(userdata_dir, 'rotkehlchen.db'),
+    )
+
+    with target_patch(target_version=9):
+        db = DBHandler(user_data_dir=userdata_dir, password='123', msg_aggregator=msg_aggregator)
+
+    cursor = db.conn.cursor()
+    results = cursor.execute(
+        'SELECT name, api_key, api_secret, passphrase FROM user_credentials;',
+    )
+    names = set(('coinbase', 'coinbasepro', 'binance', 'bittrex', 'kraken', 'bitmex'))
+    for result in results:
+        assert result[0] in names
+        names.remove(result[0])
+        assert result[1] == '9f07a6f548f3d0ddb68fb406353063ba'  # api key
+        assert result[2] == (
+            'auIO4FWI3HmL1AnhYaNoK0vr4tTaZyAU3/TI9M46V9IeeCPTxyWV'
+            '3JCVzHmcVV9+n+v4TbsIyRndaL9XbFkCuQ=='
+        )  # api secret
+        assert result[3] is None  # passphrase
+
+    assert len(names) == 0, 'not all exchanges were found in the new DB'
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 9
+
+
 def test_db_newer_than_software_raises_error(data_dir, username):
     """
     If the DB version is greater than the current known version in the
