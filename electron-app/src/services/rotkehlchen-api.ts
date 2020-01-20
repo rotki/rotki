@@ -890,7 +890,8 @@ export class RotkehlchenApi {
   setupExchange(
     name: string,
     api_key: string,
-    api_secret: string
+    api_secret: string,
+    passphrase?: string
   ): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
       this.axios
@@ -899,7 +900,8 @@ export class RotkehlchenApi {
           {
             name,
             api_key,
-            api_secret
+            api_secret,
+            passphrase
           },
           {
             validateStatus: function(status) {
