@@ -158,6 +158,21 @@ class DBHandler:
         else:
             self.connect(password)
 
+        self._run_actions_after_first_connection(password)
+
+    def __del__(self) -> None:
+        self.disconnect()
+        dbinfo = {'sqlcipher_version': self.sqlcipher_version, 'md5_hash': self.get_md5hash()}
+        with open(os.path.join(self.user_data_dir, DBINFO_FILENAME), 'w') as f:
+            f.write(rlk_jsondumps(dbinfo))
+
+    def _run_actions_after_first_connection(self, password: str):
+        """Perform the actions that are needed after the first DB connection
+
+        Such as:
+            - Create tables that are missing
+            - DB Upgrades
+        """
         try:
             self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
@@ -177,12 +192,6 @@ class DBHandler:
 
         # Run upgrades if needed
         DBUpgradeManager(self).run_upgrades()
-
-    def __del__(self) -> None:
-        self.disconnect()
-        dbinfo = {'sqlcipher_version': self.sqlcipher_version, 'md5_hash': self.get_md5hash()}
-        with open(os.path.join(self.user_data_dir, DBINFO_FILENAME), 'w') as f:
-            f.write(rlk_jsondumps(dbinfo))
 
     def get_md5hash(self) -> str:
         no_active_connection = not hasattr(self, 'conn') or not self.conn
@@ -332,6 +341,7 @@ class DBHandler:
             self.disconnect()
 
         self.connect(password)
+        self._run_actions_after_first_connection(password)
         # all went okay, remove the original temp backup
         os.remove(os.path.join(self.user_data_dir, 'rotkehlchen_temp_backup.db'))
 
