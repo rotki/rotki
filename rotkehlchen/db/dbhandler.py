@@ -166,7 +166,7 @@ class DBHandler:
         with open(os.path.join(self.user_data_dir, DBINFO_FILENAME), 'w') as f:
             f.write(rlk_jsondumps(dbinfo))
 
-    def _run_actions_after_first_connection(self, password: str):
+    def _run_actions_after_first_connection(self, password: str) -> None:
         """Perform the actions that are needed after the first DB connection
 
         Such as:
