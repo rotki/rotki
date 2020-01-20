@@ -252,13 +252,13 @@ def create_coinbasepro_query_mock(
 
 
 def test_name():
-    exchange = Coinbasepro('a', b'a', object(), object())
+    exchange = Coinbasepro('a', b'a', object(), object(), '')
     assert exchange.name == 'coinbasepro'
 
 
 def test_coverage_of_products():
     """Test that we can process all pairs and assets of the offered coinbasepro products"""
-    exchange = Coinbasepro('a', b'a', object(), object())
+    exchange = Coinbasepro('a', b'a', object(), object(), '')
     products = exchange._api_query('products', request_method='GET')
     for product in products:
         try:

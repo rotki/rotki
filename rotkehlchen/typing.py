@@ -29,12 +29,18 @@ class ApiCredentials(NamedTuple):
     """Represents Credentials for various APIs. Exchanges, Premium e.t.c."""
     api_key: ApiKey
     api_secret: ApiSecret
+    passphrase: Optional[str] = None
 
     @staticmethod
-    def serialize(api_key: str, api_secret: str) -> 'ApiCredentials':
+    def serialize(
+            api_key: str,
+            api_secret: str,
+            passphrase: Optional[str] = None,
+    ) -> 'ApiCredentials':
         return ApiCredentials(
             api_key=ApiKey(api_key),
             api_secret=ApiSecret(str.encode(api_secret)),
+            passphrase=passphrase,
         )
 
 

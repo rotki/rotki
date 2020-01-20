@@ -459,6 +459,7 @@ class Rotkehlchen():
             name: str,
             api_key: ApiKey,
             api_secret: ApiSecret,
+            passphrase: Optional[str] = None,
     ) -> Tuple[bool, str]:
         """
         Setup a new exchange with an api key and an api secret
@@ -470,11 +471,12 @@ class Rotkehlchen():
             api_key=api_key,
             api_secret=api_secret,
             database=self.data.db,
+            passphrase=passphrase,
         )
 
         if is_success:
             # Success, save the result in the DB
-            self.data.db.add_exchange(name, api_key, api_secret)
+            self.data.db.add_exchange(name, api_key, api_secret, passphrase=passphrase)
         return is_success, msg
 
     def remove_exchange(self, name: str) -> Tuple[bool, str]:

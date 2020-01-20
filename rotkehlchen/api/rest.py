@@ -326,9 +326,15 @@ class RestAPI():
         )
 
     @require_loggedin_user()
-    def setup_exchange(self, name: str, api_key: ApiKey, api_secret: ApiSecret) -> Response:
+    def setup_exchange(
+            self,
+            name: str,
+            api_key: ApiKey,
+            api_secret: ApiSecret,
+            passphrase: Optional[str],
+    ) -> Response:
         result: Optional[bool]
-        result, message = self.rotkehlchen.setup_exchange(name, api_key, api_secret)
+        result, message = self.rotkehlchen.setup_exchange(name, api_key, api_secret, passphrase)
 
         status_code = HTTPStatus.OK
         if not result:

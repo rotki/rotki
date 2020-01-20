@@ -729,14 +729,16 @@ class DBHandler:
             name: str,
             api_key: ApiKey,
             api_secret: ApiSecret,
+            passphrase: Optional[str] = None,
     ) -> None:
         if name not in SUPPORTED_EXCHANGES:
             raise InputError('Unsupported exchange {}'.format(name))
 
         cursor = self.conn.cursor()
         cursor.execute(
-            'INSERT INTO user_credentials (name, api_key, api_secret) VALUES (?, ?, ?)',
-            (name, api_key, api_secret.decode()),
+            'INSERT INTO user_credentials '
+            '(name, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?)',
+            (name, api_key, api_secret.decode(), passphrase),
         )
         self.conn.commit()
         self.update_last_write()
@@ -752,7 +754,7 @@ class DBHandler:
     def get_exchange_credentials(self) -> Dict[str, ApiCredentials]:
         cursor = self.conn.cursor()
         result = cursor.execute(
-            'SELECT name, api_key, api_secret FROM user_credentials;',
+            'SELECT name, api_key, api_secret, passphrase FROM user_credentials;',
         )
         result = result.fetchall()
         credentials = {}
@@ -761,9 +763,11 @@ class DBHandler:
             if entry[0] == 'rotkehlchen':
                 continue
             name = entry[0]
+            passphrase = None if entry[3] is None else str(entry[3])
             credentials[name] = ApiCredentials.serialize(
                 api_key=str(entry[1]),
                 api_secret=str(entry[2]),
+                passphrase=passphrase,
             )
 
         return credentials
@@ -1277,8 +1281,9 @@ class DBHandler:
         cursor = self.conn.cursor()
         # We don't care about previous value so this simple insert or replace should work
         cursor.execute(
-            'INSERT OR REPLACE INTO user_credentials(name, api_key, api_secret) VALUES (?, ?, ?)',
-            ('rotkehlchen', credentials.serialize_key(), credentials.serialize_secret()),
+            'INSERT OR REPLACE INTO user_credentials'
+            '(name, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?)',
+            ('rotkehlchen', credentials.serialize_key(), credentials.serialize_secret(), None),
         )
         self.conn.commit()
         # Do not update the last write here. If we are starting in a new machine

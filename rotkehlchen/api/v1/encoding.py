@@ -550,6 +550,7 @@ class ExchangesResourceAddSchema(BaseSchema):
     name = ExchangeNameField(required=True)
     api_key = ApiKeyField(required=True)
     api_secret = ApiSecretField(required=True)
+    passphrase = fields.String(missing=None)
 
     class Meta:
         strict = True

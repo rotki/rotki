@@ -78,10 +78,17 @@ class Coinbasepro(ExchangeInterface):
             secret: ApiSecret,
             database: DBHandler,
             msg_aggregator: MessagesAggregator,
+            passphrase: str,
     ):
         super(Coinbasepro, self).__init__('coinbasepro', api_key, secret, database)
         self.base_uri = 'https://api.pro.coinbase.com'
         self.msg_aggregator = msg_aggregator
+
+        self.session.headers.update({
+            'Content-Type': 'Application/JSON',
+            'CB-ACCESS-KEY': self.api_key,
+            'CB-ACCESS-PASSPHRASE': passphrase,
+        })
 
     def validate_api_key(self) -> Tuple[bool, str]:
         """Validates that the Coinbase Pro API key is good for usage in Rotki
@@ -175,12 +182,8 @@ class Coinbasepro(ExchangeInterface):
             ).digest()
 
             self.session.headers.update({
-                'Content-Type': 'Application/JSON',
                 'CB-ACCESS-SIGN': b64encode(signature).decode('utf-8'),
                 'CB-ACCESS-TIMESTAMP': timestamp,
-                'CB-ACCESS-KEY': self.api_key,
-                # At the moment Rotki supports only API keys with a pre-set passphrase
-                'CB-ACCESS-PASSPHRASE': 'rotki',
             })
 
         retries_left = QUERY_RETRY_TIMES
