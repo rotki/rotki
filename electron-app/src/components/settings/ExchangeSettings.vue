@@ -37,6 +37,17 @@
             :disabled="isConnected"
             @click:append="showSecret = !showSecret"
           ></v-text-field>
+          <v-text-field
+            v-if="selectedExchange === 'coinbasepro'"
+            v-model="passphrase"
+            class="exchange-settings__fields__passphrase"
+            prepend-icon="fa-key"
+            :append-icon="showKey ? 'fa-eye' : 'fa-eye-slash'"
+            label="Passphrase"
+            :disabled="isConnected"
+            :type="showKey ? 'text' : 'password'"
+            @click:append="showKey = !showKey"
+          ></v-text-field>
         </v-card-text>
         <v-card-actions>
           <v-btn
@@ -79,6 +90,7 @@ const { mapState } = createNamespacedHelpers('balances');
 export default class ExchangeSettings extends Vue {
   apiKey: string = '';
   apiSecret: string = '';
+  passphrase: ?string = null;
   selectedExchange: string = exchanges[0];
   confirmation: boolean = false;
 
@@ -95,6 +107,7 @@ export default class ExchangeSettings extends Vue {
   private resetFields(includeExchange: boolean = false) {
     this.apiKey = '';
     this.apiSecret = '';
+    this.passphrase = null;
 
     if (includeExchange) {
       this.selectedExchange = exchanges[0];
@@ -122,7 +135,7 @@ export default class ExchangeSettings extends Vue {
     const exchangeName = this.selectedExchange;
     const { commit, dispatch } = this.$store;
     this.$api
-      .setupExchange(exchangeName, this.apiKey, this.apiSecret)
+      .setupExchange(exchangeName, this.apiKey, this.apiSecret, this.passphrase)
       .then(() => {
         this.resetFields(true);
         commit('balances/addExchange', exchangeName);
