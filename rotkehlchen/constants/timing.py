@@ -6,6 +6,10 @@ ALL_REMOTES_TIMEOUT = 20
 
 YEAR_IN_SECONDS = 31536000  # 60 * 60 * 24 * 365
 
+# For queries that are attempted multiple times:
+# How many times to retry an external query before giving up
+QUERY_RETRY_TIMES = 5
+
 # Seconds for which cached api queries will be cached
 # By default 10 minutes.
 # TODO: Make configurable!

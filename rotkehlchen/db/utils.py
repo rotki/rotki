@@ -111,6 +111,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('H', 8);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('I', 9);
 /* Blockchain */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('J', 10);
+/* Coinbase Pro */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('K', 11);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)
