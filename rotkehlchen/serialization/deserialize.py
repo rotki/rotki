@@ -211,9 +211,9 @@ def deserialize_trade_type(symbol: str) -> TradeType:
             f'Failed to deserialize trade type symbol from {type(symbol)} entry',
         )
 
-    if symbol in ('buy', 'LIMIT_BUY'):
+    if symbol in ('buy', 'LIMIT_BUY', 'BUY'):
         return TradeType.BUY
-    elif symbol in ('sell', 'LIMIT_SELL'):
+    elif symbol in ('sell', 'LIMIT_SELL', 'SELL'):
         return TradeType.SELL
     elif symbol == 'settlement_buy':
         return TradeType.SETTLEMENT_BUY
@@ -362,6 +362,8 @@ def deserialize_location_from_db(symbol: str) -> Location:
         return Location.BANKS
     elif symbol == 'J':
         return Location.BLOCKCHAIN
+    elif symbol == 'K':
+        return Location.COINBASEPRO
     else:
         raise DeserializationError(
             f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',

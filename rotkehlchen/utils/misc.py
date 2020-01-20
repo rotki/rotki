@@ -15,6 +15,7 @@ import requests
 from rlp.sedes import big_endian_int
 
 from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, ZERO
+from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.errors import (
     DeserializationError,
     InvalidBTCAddress,
@@ -73,6 +74,11 @@ def iso8601ts_to_timestamp(datestr: str) -> Timestamp:
         raise DeserializationError(f'Couldnt read {datestr} as iso8601ts timestamp')
 
     return Timestamp(ts + 1) if add_a_second else ts
+
+
+def timestamp_to_iso8601(ts: Timestamp) -> str:
+    """Turns a timestamp to an iso8601 compliant string time"""
+    return datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc).isoformat()
 
 
 def satoshis_to_btc(satoshis: FVal) -> FVal:
@@ -181,7 +187,7 @@ def request_get(
     # TODO make this a bit more smart. Perhaps conditional on the type of request.
     # Not all requests would need repeated attempts
     response = retry_calls(
-        times=5,
+        times=QUERY_RETRY_TIMES,
         location='',
         handle_429=handle_429,
         backoff_in_seconds=backoff_in_seconds,
