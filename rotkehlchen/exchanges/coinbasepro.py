@@ -12,6 +12,7 @@ from tempfile import TemporaryDirectory
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, overload
 
 import gevent
+import requests
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
@@ -160,7 +161,12 @@ class Coinbasepro(ExchangeInterface):
             stringified_options = ''
             options = {}
         message = timestamp + request_method + request_url + stringified_options
-        log.debug('Coinbase Pro API query', request_method=request_method, request_url=request_url)
+        log.debug(
+            'Coinbase Pro API query',
+            request_method=request_method,
+            request_url=request_url,
+            options=options,
+        )
         if 'products' not in endpoint:
             signature = hmac.new(
                 b64decode(self.secret),
@@ -481,17 +487,19 @@ class Coinbasepro(ExchangeInterface):
                 assert isinstance(get_result, dict)
                 if get_result['status'] != 'ready':
                     continue
-
                 file_url = get_result['file_url']
-                response = self.session.get(file_url)
+                response = requests.get(file_url)
                 length = len(response.content)
                 # empty fill reports have length of 95, empty account reports 85
                 # So we assume a report of more than 100 chars has data.
                 if length > 100:
+                    log.debug(f'Got a populated report for id: {report_id}. Writing it to disk')
                     filepath = os.path.join(tempdir, f'report_{report_id}.csv')
                     with open(filepath, 'wb') as f:
                         f.write(response.content)
                     report_paths.append(filepath)
+                else:
+                    log.debug(f'Got report for id: {report_id} with length {length}. Skipping it')
 
                 finished_ids_indices.append(idx)
 
@@ -517,6 +525,7 @@ class Coinbasepro(ExchangeInterface):
         2. Reads all files from that directory and extracts deposits/withdrawals
         3. Temporary directory is removed
         """
+        log.debug('Query coinbasepro asset movements', start_ts=start_ts, end_ts=end_ts)
         movements = []
         with TemporaryDirectory() as tempdir:
             try:
@@ -555,6 +564,7 @@ class Coinbasepro(ExchangeInterface):
         2. Reads all files from that directory and extracts Trades
         3. Temporary directory is removed
         """
+        log.debug('Query coinbasepro trade history', start_ts=start_ts, end_ts=end_ts)
         trades = []
         with TemporaryDirectory() as tempdir:
             try:

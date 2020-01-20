@@ -64,6 +64,7 @@ def wrap_in_fail_result(message: str) -> Dict[str, Any]:
 def api_response(
         result: Dict[str, Any],
         status_code: HTTPStatus = HTTPStatus.OK,
+        log_result: bool = True,
 ) -> Response:
     if status_code == HTTPStatus.NO_CONTENT:
         assert not result, "Provided 204 response with non-zero length response"
@@ -71,7 +72,10 @@ def api_response(
     else:
         data = json.dumps(result)
 
-    log.debug("Request successful", response=result, status_code=status_code)
+    logged_response = data
+    if log_result is False:
+        logged_response = '<redacted>'
+    log.debug("Request successful", response=logged_response, status_code=status_code)
     response = make_response(
         (data, status_code, {"mimetype": "application/json", "Content-Type": "application/json"}),
     )
@@ -786,7 +790,10 @@ class RestAPI():
     @require_loggedin_user()
     def query_owned_assets(self) -> Response:
         result = process_result_list(self.rotkehlchen.data.db.query_owned_assets())
-        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+        return api_response(
+            _wrap_in_ok_result(result),
+            status_code=HTTPStatus.OK,
+        )
 
     @require_premium_user(active_check=False)
     def query_netvalue_data(self) -> Response:
@@ -903,7 +910,10 @@ class RestAPI():
             'all_eth_tokens': self.rotkehlchen.data.eth_tokens,
             'owned_eth_tokens': self.rotkehlchen.blockchain.eth_tokens,
         })
-        return api_response(_wrap_in_ok_result(result_dict), status_code=HTTPStatus.OK)
+        return api_response(
+            _wrap_in_ok_result(result_dict),
+            status_code=HTTPStatus.OK,
+            log_result=False)
 
     def _add_owned_eth_tokens(
             self,

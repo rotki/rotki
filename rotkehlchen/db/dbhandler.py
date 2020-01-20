@@ -770,7 +770,7 @@ class DBHandler:
             cursor.executemany(query, tuples)
         except sqlcipher.IntegrityError:  # pylint: disable=no-member
             # That means that one of the tuples hit a constraint, most probably
-            # already existing in the DB, in which case we resort to writting them
+            # already existing in the DB, in which case we resort to writing them
             # one by one to only reject the duplicates
 
             nonces_set: Set[int] = set()

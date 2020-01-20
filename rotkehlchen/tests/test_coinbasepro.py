@@ -1,8 +1,10 @@
 import json
 import warnings as test_warnings
 from enum import Enum
+from typing import Callable, Optional
 from unittest.mock import patch
 
+import requests
 from typing_extensions import Literal
 
 from rotkehlchen.constants.assets import A_ETH
@@ -141,7 +143,40 @@ class ErrorEmulation(Enum):
 def create_coinbasepro_query_mock(
         cb: Coinbasepro,
         emulate_errors: ErrorEmulation = ErrorEmulation.NONE,
+        original_get: Optional[Callable] = None,
 ):
+
+    def mock_get_request(url: str) -> MockResponse:
+        if 'download_report/' in url:
+            parts = url.split('download_report/')
+            assert len(parts) == 2
+            report_id = parts[1]
+            if report_id == ETH_ACCOUNT_REPORT_ID:
+                if emulate_errors == ErrorEmulation.UNKNOWN_ASSET:
+                    text = ETH_ACCOUNT_REPORT_UNKNOWN_ASSET
+                else:
+                    text = ETH_ACCOUNT_REPORT
+            elif report_id == BAT_ACCOUNT_REPORT_ID:
+                if emulate_errors == ErrorEmulation.ASSET_MOVEMENTS_WRONG_FORMAT:
+                    text = BAT_ACCOUNT_REPORT_WRONG_FORMAT
+                else:
+                    text = BAT_ACCOUNT_REPORT
+            elif report_id == ETH_BAT_REPORT_ID:
+                if emulate_errors == ErrorEmulation.UNKNOWN_ASSET:
+                    text = FILL_REPORT_UNKNOWN_ASSET
+                elif emulate_errors == ErrorEmulation.KEY_ERROR:
+                    text = FILL_REPORT_KEY_ERROR
+                else:
+                    text = ETH_BAT_REPORT
+            else:
+                raise AssertionError(
+                    f'Tried to download invalid coinbasepro report during tests',
+                )
+
+            return MockResponse(200, text)
+        else:
+            assert original_get, 'for mocked gets we need also the original function'
+            return original_get(url)
 
     def mock_coinbasepro_request(
             request_method: Literal['get', 'post'],
@@ -204,36 +239,16 @@ def create_coinbasepro_query_mock(
                     report_id,
                     f'http://download_report/{report_id}',
                 )
-        elif 'download_report/' in url:
-            parts = url.split('download_report/')
-            assert len(parts) == 2
-            report_id = parts[1]
-            if report_id == ETH_ACCOUNT_REPORT_ID:
-                if emulate_errors == ErrorEmulation.UNKNOWN_ASSET:
-                    text = ETH_ACCOUNT_REPORT_UNKNOWN_ASSET
-                else:
-                    text = ETH_ACCOUNT_REPORT
-            elif report_id == BAT_ACCOUNT_REPORT_ID:
-                if emulate_errors == ErrorEmulation.ASSET_MOVEMENTS_WRONG_FORMAT:
-                    text = BAT_ACCOUNT_REPORT_WRONG_FORMAT
-                else:
-                    text = BAT_ACCOUNT_REPORT
-            elif report_id == ETH_BAT_REPORT_ID:
-                if emulate_errors == ErrorEmulation.UNKNOWN_ASSET:
-                    text = FILL_REPORT_UNKNOWN_ASSET
-                elif emulate_errors == ErrorEmulation.KEY_ERROR:
-                    text = FILL_REPORT_KEY_ERROR
-                else:
-                    text = ETH_BAT_REPORT
-            else:
-                raise AssertionError(
-                    f'Tried to download invalid coinbasepro report during tests',
-                )
         else:
             raise AssertionError(f'Unknown url: {url} encountered during CoinbasePro mocking')
         return MockResponse(200, text)
 
-    return patch.object(cb.session, 'request', side_effect=mock_coinbasepro_request)
+    coinbasepro_mock = patch.object(cb.session, 'request', side_effect=mock_coinbasepro_request)
+    if original_get:
+        requests_get_mock = patch('requests.get', side_effect=mock_get_request)
+        return coinbasepro_mock, requests_get_mock
+
+    return coinbasepro_mock
 
 
 def test_name():
@@ -260,7 +275,8 @@ def test_query_balances(function_scope_coinbasepro):
     """Test that querying balances from coinbasepro works fine"""
     cb = function_scope_coinbasepro
 
-    with create_coinbasepro_query_mock(cb):
+    cb_mock = create_coinbasepro_query_mock(cb)
+    with cb_mock:
         balances, message = cb.query_balances()
 
     assert message == ''
@@ -349,8 +365,11 @@ EXPECTED_TRADE = Trade(
 def test_query_trade_history(function_scope_coinbasepro):
     """Test that querying trade data from coinbase pro works"""
     cb = function_scope_coinbasepro
-
-    with create_coinbasepro_query_mock(cb):
+    cb_query_mock, get_mock = create_coinbasepro_query_mock(
+        cb,
+        original_get=requests.get,
+    )
+    with cb_query_mock, get_mock:
         trades = cb.query_trade_history(start_ts=0, end_ts=1579449769)
 
     assert len(trades) == 1
@@ -362,11 +381,12 @@ def test_query_trade_history(function_scope_coinbasepro):
 def test_query_trade_history_unknown_assets(function_scope_coinbasepro):
     """Test that unknown assets are handled when querying trade data from coinbase pro"""
     cb = function_scope_coinbasepro
-    cb_query_mock = create_coinbasepro_query_mock(
+    cb_query_mock, get_mock = create_coinbasepro_query_mock(
         cb,
         emulate_errors=ErrorEmulation.UNKNOWN_ASSET,
+        original_get=requests.get,
     )
-    with cb_query_mock:
+    with cb_query_mock, get_mock:
         trades = cb.query_trade_history(start_ts=0, end_ts=1579449769)
 
     assert len(trades) == 1
@@ -382,11 +402,12 @@ def test_query_trade_history_unknown_assets(function_scope_coinbasepro):
 def test_query_trade_history_wrong_format(function_scope_coinbasepro):
     """Test that wrong data format are handled when querying trade data from coinbase pro"""
     cb = function_scope_coinbasepro
-    cb_query_mock = create_coinbasepro_query_mock(
+    cb_query_mock, get_mock = create_coinbasepro_query_mock(
         cb,
         emulate_errors=ErrorEmulation.KEY_ERROR,
+        original_get=requests.get,
     )
-    with cb_query_mock:
+    with cb_query_mock, get_mock:
         trades = cb.query_trade_history(start_ts=0, end_ts=1579449769)
 
     assert len(trades) == 1
@@ -406,11 +427,12 @@ def test_query_trade_history_invalid_response(function_scope_coinbasepro):
     We make the invalid response be in the POST report query in this test.
 """
     cb = function_scope_coinbasepro
-    cb_query_mock = create_coinbasepro_query_mock(
+    cb_query_mock, get_mock = create_coinbasepro_query_mock(
         cb,
         emulate_errors=ErrorEmulation.INVALID_RESPONSE_POST_REPORT,
+        original_get=requests.get,
     )
-    with cb_query_mock:
+    with cb_query_mock, get_mock:
         trades = cb.query_trade_history(start_ts=0, end_ts=1579449769)
 
     assert len(trades) == 0
@@ -464,8 +486,8 @@ EXPECTED_MOVEMENTS = [AssetMovement(
 def test_query_asset_movements(function_scope_coinbasepro):
     """Test that querying deposits/withdrawals from coinbase pro works"""
     cb = function_scope_coinbasepro
-
-    with create_coinbasepro_query_mock(cb):
+    cb_query_mock, get_mock = create_coinbasepro_query_mock(cb, original_get=requests.get)
+    with cb_query_mock, get_mock:
         movements = cb.query_deposits_withdrawals(start_ts=0, end_ts=1579449769)
 
     assert movements == EXPECTED_MOVEMENTS
@@ -478,11 +500,12 @@ def test_query_asset_movements(function_scope_coinbasepro):
 def test_query_asset_movements_unknown_assets(function_scope_coinbasepro):
     """Test that unknown assets are handled in querying deposits/withdrawals from coinbase pro"""
     cb = function_scope_coinbasepro
-    cb_query_mock = create_coinbasepro_query_mock(
+    cb_query_mock, get_mock = create_coinbasepro_query_mock(
         cb,
         emulate_errors=ErrorEmulation.UNKNOWN_ASSET,
+        original_get=requests.get,
     )
-    with cb_query_mock:
+    with cb_query_mock, get_mock:
         movements = cb.query_deposits_withdrawals(start_ts=0, end_ts=1579449769)
 
     assert movements == EXPECTED_MOVEMENTS
@@ -497,11 +520,12 @@ def test_query_asset_movements_unknown_assets(function_scope_coinbasepro):
 def test_query_asset_movements_wrong_format(function_scope_coinbasepro):
     """Test that invalid data are handled in querying deposits/withdrawals from coinbase pro"""
     cb = function_scope_coinbasepro
-    cb_query_mock = create_coinbasepro_query_mock(
+    cb_query_mock, get_mock = create_coinbasepro_query_mock(
         cb,
         emulate_errors=ErrorEmulation.ASSET_MOVEMENTS_WRONG_FORMAT,
+        original_get=requests.get,
     )
-    with cb_query_mock:
+    with cb_query_mock, get_mock:
         movements = cb.query_deposits_withdrawals(start_ts=0, end_ts=1579449769)
 
     assert movements == EXPECTED_MOVEMENTS
@@ -518,11 +542,12 @@ def test_query_asset_movements_invalid_response(function_scope_coinbasepro):
     We make the invalid response be in the GET report query in this test.
 """
     cb = function_scope_coinbasepro
-    cb_query_mock = create_coinbasepro_query_mock(
+    cb_query_mock, get_mock = create_coinbasepro_query_mock(
         cb,
         emulate_errors=ErrorEmulation.INVALID_RESPONSE_GET_REPORT,
+        original_get=requests.get,
     )
-    with cb_query_mock:
+    with cb_query_mock, get_mock:
         movements = cb.query_deposits_withdrawals(start_ts=0, end_ts=1579449769)
 
     assert movements == []

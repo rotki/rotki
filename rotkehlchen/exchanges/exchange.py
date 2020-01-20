@@ -178,7 +178,7 @@ class ExchangeInterface(CacheableObject, LockableQueryObject):
             to_ts=end_ts,
             location=deserialize_location(self.name),
         )
-        ranges_to_query = self.get_online_query_ranges('_trades', start_ts, end_ts)
+        ranges_to_query = self.get_online_query_ranges('_trades', start_ts=start_ts, end_ts=end_ts)
 
         new_trades = []
         for query_start_ts, query_end_ts in ranges_to_query:
