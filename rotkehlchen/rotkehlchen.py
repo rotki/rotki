@@ -129,7 +129,7 @@ class Rotkehlchen():
             if create_new:
                 raise
             # else let's just continue. User signed in succesfully, but he just
-            # has unauthenticable/invalide premium credentials remaining in his DB
+            # has unauthenticable/invalid premium credentials remaining in his DB
 
         settings = self.data.db.get_settings()
         maybe_submit_usage_analytics(settings.submit_usage_analytics)
