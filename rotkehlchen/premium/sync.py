@@ -8,7 +8,12 @@ from typing import NamedTuple, Optional
 from typing_extensions import Literal
 
 from rotkehlchen.data_handler import DataHandler
-from rotkehlchen.errors import PremiumAuthenticationError, RemoteError, RotkehlchenPermissionError
+from rotkehlchen.errors import (
+    PremiumAuthenticationError,
+    RemoteError,
+    RotkehlchenPermissionError,
+    UnableToDecryptRemoteData,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
@@ -108,8 +113,9 @@ class PremiumSyncManager():
 
         Returns true for success and False for error/failure
 
-        Can raise UnableToDecryptRemoteData due to decompress_and_decrypt_db.
-        We let it bubble up so that it can be handled by the uper layer.
+        Can raise PremiumAuthenticationError due to an UnableToDecryptRemoteData
+        coming from  decompress_and_decrypt_db. This happens when the given password
+        does not match the one on the saved DB.
         """
         try:
             result = self.premium.pull_data()
@@ -117,7 +123,14 @@ class PremiumSyncManager():
             log.debug('sync from server -- pulling failed.', error=str(e))
             return False
 
-        self.data.decompress_and_decrypt_db(self.password, result['data'])
+        try:
+            self.data.decompress_and_decrypt_db(self.password, result['data'])
+        except UnableToDecryptRemoteData:
+            raise PremiumAuthenticationError(
+                'The given password can not unlock the database that was retrieved  from '
+                'the server. Make sure to use the same password as when the account was created.',
+            )
+
         return True
 
     def maybe_upload_data_to_server(self) -> None:
