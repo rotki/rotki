@@ -1,11 +1,22 @@
 <template>
   <div>
-    <v-checkbox
-      :value="enabled"
-      label="Enable Premium"
-      off-icon="fa fa-square-o"
-      @change="enabledChanged"
-    ></v-checkbox>
+    <v-tooltip bottom>
+      <template #activator="{ on }">
+        <v-checkbox
+          :value="enabled"
+          label="Enable Premium"
+          off-icon="fa fa-square-o"
+          v-on="on"
+          @change="enabledChanged"
+        ></v-checkbox>
+      </template>
+      <div>
+        Enabling premium for a new account will restore the database associated
+        with these credentials from the server. Ensure that the account uses the
+        same password as the database originally backed up.
+      </div>
+    </v-tooltip>
+
     <div v-if="enabled">
       <v-text-field
         :value="apiKey"
