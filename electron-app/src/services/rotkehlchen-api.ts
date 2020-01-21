@@ -891,7 +891,7 @@ export class RotkehlchenApi {
     name: string,
     api_key: string,
     api_secret: string,
-    passphrase?: string
+    passphrase: string | null
   ): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
       this.axios

@@ -42,7 +42,7 @@
             v-model="passphrase"
             class="exchange-settings__fields__passphrase"
             prepend-icon="fa-key"
-            :append-icon="showKey ? 'fa-eye' : 'fa-eye-slash'"
+            :append-icon="showPassphrase ? 'fa-eye' : 'fa-eye-slash'"
             label="Passphrase"
             :disabled="isConnected"
             :type="showKey ? 'text' : 'password'"
@@ -90,12 +90,13 @@ const { mapState } = createNamespacedHelpers('balances');
 export default class ExchangeSettings extends Vue {
   apiKey: string = '';
   apiSecret: string = '';
-  passphrase: ?string = null;
+  passphrase: string | null = null;
   selectedExchange: string = exchanges[0];
   confirmation: boolean = false;
 
   showKey: boolean = false;
   showSecret: boolean = false;
+  showPassphrase: boolean = false;
 
   connectedExchanges!: string[];
 
