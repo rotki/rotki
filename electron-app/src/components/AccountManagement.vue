@@ -31,6 +31,7 @@
     ></create-account>
 
     <message-overlay
+      class="account_management__welcome"
       :visible="!message && welcomeVisible"
       @close="closeWelcome()"
     >
@@ -42,8 +43,9 @@
     </message-overlay>
 
     <message-overlay
+      class="account_management__premium"
       action="Upgrade"
-      :visible="!message && premiumVisible"
+      :visible="!premium && !message && premiumVisible"
       @primary="upgrade()"
       @close="loginComplete"
     >
@@ -78,7 +80,7 @@ const { mapState: mapSessionState } = createNamespacedHelpers('session');
     CreateAccount
   },
   computed: {
-    ...mapSessionState(['newAccount', 'syncConflict']),
+    ...mapSessionState(['newAccount', 'syncConflict', 'premium']),
     ...mapState(['version', 'message']),
     ...mapGetters(['updateNeeded', 'message'])
   }
@@ -86,6 +88,7 @@ const { mapState: mapSessionState } = createNamespacedHelpers('session');
 export default class AccountManagement extends Vue {
   accountCreation: boolean = false;
   newAccount!: boolean;
+  premium!: boolean;
   loading: boolean = false;
   version!: Version;
   message!: boolean;
@@ -147,12 +150,20 @@ export default class AccountManagement extends Vue {
     if (this.newAccount) {
       this.welcomeVisible = true;
     } else {
-      this.premiumVisible = true;
+      this.showPremiumDialog();
     }
   }
 
   closeWelcome() {
     this.dismiss();
+    this.showPremiumDialog();
+  }
+
+  private showPremiumDialog() {
+    if (this.premium) {
+      this.loginComplete();
+      return;
+    }
     this.premiumVisible = true;
   }
 
