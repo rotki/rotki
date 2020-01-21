@@ -5,7 +5,12 @@
         <h3 class="text-center">{{ title }}</h3>
       </v-col>
     </v-row>
-    <v-data-table :headers="headers" :items="balances">
+    <v-data-table
+      :headers="headers"
+      :items="balances"
+      :loading="isLoading"
+      loading-text="Please wait while Rotki fetches your balances..."
+    >
       <template #header.usdValue> {{ currency.ticker_symbol }} value </template>
       <template #item.asset="{ item }">
         <span class="asset-balances__balance__asset">
@@ -51,13 +56,16 @@ import { AssetBalance } from '@/model/blockchain-balances';
 import { createNamespacedHelpers } from 'vuex';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import { Currency } from '@/model/currency';
+import { TaskType } from '@/model/task';
 
+const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 const { mapGetters } = createNamespacedHelpers('session');
 const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 
 @Component({
   components: { CryptoIcon },
   computed: {
+    ...mapTaskGetters(['isTaskRunning']),
     ...mapGetters(['floatingPrecision', 'currency']),
     ...mapBalancesGetters(['exchangeRate'])
   }
@@ -71,6 +79,11 @@ export default class AssetBalances extends Vue {
   currency!: Currency;
   floatingPrecision!: number;
   exchangeRate!: (currency: string) => number;
+  isTaskRunning!: (type: TaskType) => boolean;
+
+  get isLoading(): boolean {
+    return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
+  }
 
   headers = [
     { text: 'Asset', value: 'asset' },
