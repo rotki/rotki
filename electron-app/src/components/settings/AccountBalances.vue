@@ -10,7 +10,14 @@
       <v-col cols="1">
         <v-tooltip bottom>
           <template #activator="{ on }">
-            <v-btn color="primary" text icon v-on="on" @click="refresh()">
+            <v-btn
+              color="primary"
+              text
+              icon
+              :disabled="isLoading"
+              v-on="on"
+              @click="refresh()"
+            >
               <v-icon>fa-refresh</v-icon>
             </v-btn>
           </template>
@@ -23,7 +30,8 @@
     <v-data-table
       :headers="headers"
       :items="balances"
-      :loading="deleting"
+      :loading="deleting || isLoading"
+      loading-text="Please wait while Rotki fetches your balances..."
       single-expand
       item-key="account"
       :expanded.sync="expanded"
@@ -107,7 +115,9 @@ import AssetBalances from '@/components/settings/AssetBalances.vue';
 import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
 import { Blockchain } from '@/typing/types';
 import { BlockchainBalancePayload } from '@/store/balances/actions';
+import { TaskType } from '@/model/task';
 
+const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 const { mapGetters } = createNamespacedHelpers('session');
 const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 
@@ -118,6 +128,7 @@ const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
     ConfirmDialog
   },
   computed: {
+    ...mapTaskGetters(['isTaskRunning']),
     ...mapGetters(['floatingPrecision', 'currency']),
     ...mapBalancesGetters(['exchangeRate', 'hasTokens'])
   }
@@ -129,6 +140,12 @@ export default class AccountBalances extends Vue {
   blockchain!: Blockchain;
   @Prop({ required: true })
   title!: string;
+
+  isTaskRunning!: (type: TaskType) => boolean;
+
+  get isLoading(): boolean {
+    return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
+  }
 
   expanded = [];
 
