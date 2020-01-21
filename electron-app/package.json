@@ -73,6 +73,7 @@
     "typescript": "3.7.3",
     "vue-cli-plugin-electron-builder": "1.4.4",
     "vue-cli-plugin-vuetify": "2.0.2",
+    "vue-jest": "^3.0.5",
     "vue-template-compiler": "2.6.11",
     "vuetify-loader": "1.4.3"
   },
