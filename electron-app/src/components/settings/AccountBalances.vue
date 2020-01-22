@@ -11,6 +11,7 @@
         <v-tooltip bottom>
           <template #activator="{ on }">
             <v-btn
+              class="balance-table__refresh"
               color="primary"
               text
               icon
