@@ -43,7 +43,7 @@ describe('AssetBalances.vue', () => {
 
     expect(wrapper.find('.v-data-table__progress').exists()).toBeTruthy();
     expect(wrapper.find('.v-data-table__empty-wrapper td').text()).toMatch(
-      'Please wait while Rotki fetches your balances'
+      'Please wait while Rotki queries the blockchain...'
     );
 
     store.commit('tasks/remove', 1);
