@@ -63,6 +63,8 @@ from rotkehlchen.typing import (
     BlockchainAddress,
     ChecksumAddress,
     EthereumTransaction,
+    ExternalService,
+    ExternalServiceApiCredentials,
     FilePath,
     Location,
     SupportedBlockchain,
@@ -440,6 +442,42 @@ class DBHandler:
         )
         self.conn.commit()
         self.update_last_write()
+
+    def add_external_service_credentials(
+            self,
+            credentials: List[ExternalServiceApiCredentials],
+    ) -> None:
+        cursor = self.conn.cursor()
+        cursor.executemany(
+            'INSERT OR REPLACE INTO external_service_credentials(name, api_key) VALUES(?, ?)',
+            [c.serialize_for_db() for c in credentials],
+        )
+        self.conn.commit()
+
+    def delete_external_service_credentials(self, services: List[ExternalService]) -> None:
+        cursor = self.conn.cursor()
+        cursor.executemany(
+            'DELETE FROM external_service_credentials WHERE name=?;',
+            [(service.name.lower(),) for service in services],
+        )
+        self.conn.commit()
+
+    def get_external_service_credentials(self) -> List[ExternalServiceApiCredentials]:
+        cursor = self.conn.cursor()
+        query = cursor.execute('SELECT name, api_key from external_service_credentials;')
+
+        result = []
+        for q in query:
+            service = ExternalService.serialize(q[0])
+            if not service:
+                log.error(f'Unknown external service name "{q[0]}" found in the DB')
+                continue
+
+            result.append(ExternalServiceApiCredentials(
+                service=service,
+                api_key=q[1],
+            ))
+        return result
 
     def add_to_ignored_assets(self, asset: Asset) -> None:
         cursor = self.conn.cursor()

@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Dict
 
 from marshmallow import Schema, SchemaOpts, fields, post_load, validates_schema
 from marshmallow.exceptions import ValidationError
@@ -19,6 +20,8 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
+    ExternalService,
+    ExternalServiceApiCredentials,
     Location,
     SupportedBlockchain,
     Timestamp,
@@ -246,6 +249,33 @@ class LocationField(fields.Field):
             raise ValidationError(str(e))
 
         return location
+
+
+class ExternalServiceNameField(fields.Field):
+
+    @staticmethod
+    def _serialize(
+            value: str,
+            attr,  # pylint: disable=unused-argument
+            obj,  # pylint: disable=unused-argument
+            **kwargs,  # pylint: disable=unused-argument
+    ) -> str:
+        return value
+
+    def _deserialize(
+            self,
+            value: str,
+            attr,  # pylint: disable=unused-argument
+            data,  # pylint: disable=unused-argument
+            **kwargs,  # pylint: disable=unused-argument
+    ) -> ExternalService:
+        if not isinstance(value, str):
+            raise ValidationError('External service name should be a string')
+        service = ExternalService.serialize(value)
+        if not service:
+            raise ValidationError(f'External service {value} is not known')
+
+        return service
 
 
 class ExchangeNameField(fields.Field):
@@ -539,6 +569,34 @@ class AllBalancesQuerySchema(BaseSchema):
     async_query = fields.Boolean(missing=False)
     save_data = fields.Boolean(missing=True)
     ignore_cache = fields.Boolean(missing=False)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
+class ExternalServiceSchema(Schema):
+    name = ExternalServiceNameField(required=True)
+    api_key = fields.String(required=True)
+
+    @post_load
+    def make_external_service(self, data: Dict, **kwargs) -> ExternalServiceApiCredentials:
+        """Used when encoding an external resource given in via the API"""
+        return ExternalServiceApiCredentials(service=data['name'], api_key=data['api_key'])
+
+
+class ExternalServicesResourceAddSchema(BaseSchema):
+    services = fields.List(fields.Nested(ExternalServiceSchema), required=True)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
+class ExternalServicesResourceDeleteSchema(BaseSchema):
+    services = fields.List(ExternalServiceNameField(), required=True)
 
     class Meta:
         strict = True

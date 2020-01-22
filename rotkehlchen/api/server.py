@@ -23,6 +23,7 @@ from rotkehlchen.api.v1.resources import (
     ExchangeBalancesResource,
     ExchangesResource,
     ExchangeTradesResource,
+    ExternalServicesResource,
     FiatBalancesResource,
     FiatExchangeRatesResource,
     HistoryExportingResource,
@@ -59,6 +60,7 @@ URLS_V1: URLS = [
     ('/tasks/', AsyncTasksResource),
     ('/tasks/<int:task_id>', AsyncTasksResource, 'specific_async_tasks_resource'),
     ('/fiat_exchange_rates', FiatExchangeRatesResource),
+    ('/external_services/', ExternalServicesResource),
     ('/exchanges', ExchangesResource),
     ('/exchanges/balances', ExchangeBalancesResource),
     (
