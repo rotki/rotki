@@ -32,7 +32,7 @@
       :headers="headers"
       :items="balances"
       :loading="deleting || isLoading"
-      loading-text="Please wait while Rotki fetches your balances..."
+      loading-text="Please wait while Rotki queries the blockchain......"
       single-expand
       item-key="account"
       :expanded.sync="expanded"
