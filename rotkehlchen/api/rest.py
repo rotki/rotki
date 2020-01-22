@@ -321,7 +321,7 @@ class RestAPI():
         )
 
     def _return_external_services_response(self) -> Response:
-        credentials_list = self.rotkehlchen.data.db.get_external_service_credentials()
+        credentials_list = self.rotkehlchen.data.db.get_all_external_service_credentials()
         response_dict = {}
         for credential in credentials_list:
             name = credential.service.name.lower()

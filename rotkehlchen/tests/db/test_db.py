@@ -51,6 +51,8 @@ from rotkehlchen.typing import (
     AssetAmount,
     AssetMovementCategory,
     EthereumTransaction,
+    ExternalService,
+    ExternalServiceApiCredentials,
     Fee,
     Location,
     SupportedBlockchain,
@@ -1020,3 +1022,20 @@ def test_unlock_with_invalid_premium_data(data_dir, username):
     assert len(warnings) == 0
     assert len(errors) == 1
     assert 'Incorrect Rotki API Key/Secret format found in the DB' in errors[0]
+
+
+def test_get_external_service_credentials(database):
+    # Test that if the service is not in DB 'None' is returned
+    for service in ExternalService:
+        assert not database.get_external_service_credentials(service)
+
+    # add entries for all services
+    database.add_external_service_credentials(
+        [ExternalServiceApiCredentials(s, f'{s.name.lower()}_key') for s in ExternalService],
+    )
+
+    # now make sure that they are returned individually
+    for service in ExternalService:
+        credentials = database.get_external_service_credentials(service)
+        assert credentials.service == service
+        assert credentials.api_key == f'{service.name.lower()}_key'
