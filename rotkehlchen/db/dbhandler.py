@@ -462,7 +462,8 @@ class DBHandler:
         )
         self.conn.commit()
 
-    def get_external_service_credentials(self) -> List[ExternalServiceApiCredentials]:
+    def get_all_external_service_credentials(self) -> List[ExternalServiceApiCredentials]:
+        """Returns a list with all the external service credentials saved in the DB"""
         cursor = self.conn.cursor()
         query = cursor.execute('SELECT name, api_key from external_service_credentials;')
 
@@ -478,6 +479,23 @@ class DBHandler:
                 api_key=q[1],
             ))
         return result
+
+    def get_external_service_credentials(
+            self,
+            service_name: ExternalService,
+    ) -> Optional[ExternalServiceApiCredentials]:
+        """If existing it returns the external service credentials for the given service"""
+        cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT api_key from external_service_credentials WHERE name=?;',
+            (service_name.name.lower(),),
+        )
+        query = query.fetchall()
+        if len(query) == 0:
+            return None
+
+        # There can only be 1 result, since name is the primary key of the table
+        return ExternalServiceApiCredentials(service=service_name, api_key=query[0][0])
 
     def add_to_ignored_assets(self, asset: Asset) -> None:
         cursor = self.conn.cursor()
