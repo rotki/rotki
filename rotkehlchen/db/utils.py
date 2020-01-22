@@ -155,6 +155,13 @@ CREATE TABLE IF NOT EXISTS user_credentials (
 );
 """
 
+DB_CREATE_EXTERNAL_SERVICE_CREDENTIALS = """
+CREATE TABLE IF NOT EXISTS external_service_credentials (
+    name VARCHAR[30] NOT NULL PRIMARY KEY,
+    api_key TEXT
+);
+"""
+
 DB_CREATE_BLOCKCHAIN_ACCOUNTS = """
 CREATE TABLE IF NOT EXISTS blockchain_accounts (
     blockchain VARCHAR[24],
@@ -347,7 +354,7 @@ PRAGMA foreign_keys=on;
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -357,6 +364,7 @@ PRAGMA foreign_keys=on;
     DB_CREATE_TIMED_BALANCES,
     DB_CREATE_TIMED_LOCATION_DATA,
     DB_CREATE_USER_CREDENTIALS,
+    DB_CREATE_EXTERNAL_SERVICE_CREDENTIALS,
     DB_CREATE_BLOCKCHAIN_ACCOUNTS,
     DB_CREATE_MULTISETTINGS,
     DB_CREATE_CURRENT_BALANCES,

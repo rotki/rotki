@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, NamedTuple, NewType, Optional, Union
+from typing import Dict, NamedTuple, NewType, Optional, Tuple, Union
 
 from eth_utils.typing import ChecksumAddress
 
@@ -26,7 +26,10 @@ B64EncodedString = NewType('B64EncodedString', T_B64EncodedString)
 
 
 class ApiCredentials(NamedTuple):
-    """Represents Credentials for various APIs. Exchanges, Premium e.t.c."""
+    """Represents Credentials for various APIs. Exchanges, Premium e.t.c.
+
+    The Api in question must at least have an API key and an API secret.
+    """
     api_key: ApiKey
     api_secret: ApiSecret
     passphrase: Optional[str] = None
@@ -42,6 +45,32 @@ class ApiCredentials(NamedTuple):
             api_secret=ApiSecret(str.encode(api_secret)),
             passphrase=passphrase,
         )
+
+
+class ExternalService(Enum):
+    ETHERSCAN = 0
+    CRYPTOCOMPARE = 1
+
+    @staticmethod
+    def serialize(name: str) -> Optional['ExternalService']:
+        if name == 'etherscan':
+            return ExternalService.ETHERSCAN
+        elif name == 'cryptocompare':
+            return ExternalService.CRYPTOCOMPARE
+
+        return None
+
+
+class ExternalServiceApiCredentials(NamedTuple):
+    """Represents Credentials for various External APIs. Etherscan, Cryptocompare e.t.c.
+
+    The Api in question must at least have an API key.
+    """
+    service: ExternalService
+    api_key: ApiKey
+
+    def serialize_for_db(self) -> Tuple[str, str]:
+        return (self.service.name.lower(), self.api_key)
 
 
 T_FilePath = str

@@ -36,6 +36,8 @@ from rotkehlchen.typing import (
     ApiSecret,
     AssetAmount,
     BlockchainAddress,
+    ExternalService,
+    ExternalServiceApiCredentials,
     Fee,
     Location,
     Price,
@@ -317,6 +319,29 @@ class RestAPI():
             _wrap_in_result(process_result(response['result']), response['message']),
             HTTPStatus.OK,
         )
+
+    def _return_external_services_response(self) -> Response:
+        credentials_list = self.rotkehlchen.data.db.get_external_service_credentials()
+        response_dict = {}
+        for credential in credentials_list:
+            name = credential.service.name.lower()
+            response_dict[name] = {'api_key': credential.api_key}
+
+        return api_response(_wrap_in_ok_result(response_dict), status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def get_external_services(self) -> Response:
+        return self._return_external_services_response()
+
+    @require_loggedin_user()
+    def add_external_services(self, services: List[ExternalServiceApiCredentials]) -> Response:
+        self.rotkehlchen.data.db.add_external_service_credentials(services)
+        return self._return_external_services_response()
+
+    @require_loggedin_user()
+    def delete_external_services(self, services: List[ExternalService]) -> Response:
+        self.rotkehlchen.data.db.delete_external_service_credentials(services)
+        return self._return_external_services_response()
 
     @require_loggedin_user()
     def get_exchanges(self) -> Response:

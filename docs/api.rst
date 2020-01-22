@@ -287,6 +287,126 @@ Handling user creation, sign-in, log-out and querying
    :statuscode 409: User is not logged in, or user does not exist
    :statuscode 500: Internal Rotki error
 
+Getting or modifying external services API credentials
+====================================================
+
+.. http:get:: /api/(version)/external_services
+
+   By doing a GET on the external services endpoint you can get all the credentials
+   that the user has set for external services such as etherscan, cryptocompare e.t.c.
+
+   Entries are returned only for the services that have had an api key setup.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/external_services HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json
+
+      {}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "etherscan": {"api_key": "foooooookey"},
+	      "cryptocompare": {"api_key": "boooookey"}
+	  },
+	  "message": ""
+      }
+
+   :statuscode 200: Querying of external service credentials was succesful
+   :statuscode 409: There is no logged in user
+   :statuscode 500: Internal Rotki error
+
+.. http:put:: /api/(version)/external_services
+
+   By doing a PUT on the external services endpoint you can save credentials
+   for external services such as etherscan, cryptocompare e.t.c.
+   If a credential already exists for a service it is overwritten.
+
+   Returns external service entries after the additions.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/external_services HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json
+
+      {
+          "services": [{"name": "etherscan", "api_key": "goookey"}]
+      }
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "etherscan": {"api_key": "goookey"},
+	      "cryptocompare": {"api_key": "boooookey"}
+	  },
+	  "message": ""
+      }
+
+   :statuscode 200: Saving new external service credentials was succesful
+   :statuscode 400: Provided JSON is in some way malformed, of invalid value provided.
+   :statuscode 409: There is no logged in user
+   :statuscode 500: Internal Rotki error
+
+.. http:delete:: /api/(version)/external_services
+
+   By doing a DELETE on the external services endpoint you can delete credential
+   entries for external services such as etherscan, cryptocompare e.t.c.
+
+   Accepts a list of names whose credentials to delete. If credentials do not exist
+   for an entry then nothing happens and deletion for that entry is silently skipped.
+
+   Returns external service entries after the deletion.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/external_services HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json
+
+      {
+          "services": ["etherscan"]
+      }
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+	      "cryptocompare": {"api_key": "boooookey"}
+	  },
+	  "message": ""
+      }
+
+   :statuscode 200: Deleting external service credentials was succesful
+   :statuscode 400: Provided JSON is in some way malformed, of invalid value provided.
+   :statuscode 409: There is no logged in user
+   :statuscode 500: Internal Rotki error
+
 Getting or modifying settings
 ==============================
 

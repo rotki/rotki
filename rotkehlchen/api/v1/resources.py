@@ -17,6 +17,8 @@ from rotkehlchen.api.v1.encoding import (
     ExchangesResourceAddSchema,
     ExchangesResourceRemoveSchema,
     ExchangeTradesQuerySchema,
+    ExternalServicesResourceAddSchema,
+    ExternalServicesResourceDeleteSchema,
     FiatBalancesSchema,
     FiatExchangeRatesSchema,
     HistoryExportingSchema,
@@ -39,6 +41,8 @@ from rotkehlchen.typing import (
     ApiSecret,
     AssetAmount,
     BlockchainAddress,
+    ExternalService,
+    ExternalServiceApiCredentials,
     Fee,
     Location,
     Price,
@@ -141,6 +145,26 @@ class ExchangesResource(BaseResource):
     @use_kwargs(delete_schema, locations=('json',))
     def delete(self, name: str) -> Response:
         return self.rest_api.remove_exchange(name=name)
+
+
+class ExternalServicesResource(BaseResource):
+
+    put_schema = ExternalServicesResourceAddSchema()
+    delete_schema = ExternalServicesResourceDeleteSchema()
+
+    def get(self) -> Response:
+        return self.rest_api.get_external_services()
+
+    @use_kwargs(put_schema, locations=('json',))
+    def put(
+            self,
+            services: List[ExternalServiceApiCredentials],
+    ) -> Response:
+        return self.rest_api.add_external_services(services=services)
+
+    @use_kwargs(delete_schema, locations=('json',))
+    def delete(self, services: List[ExternalService]) -> Response:
+        return self.rest_api.delete_external_services(services=services)
 
 
 class AllBalancesResource(BaseResource):
