@@ -134,7 +134,7 @@ class Rotkehlchen():
 
         settings = self.data.db.get_settings()
         maybe_submit_usage_analytics(settings.submit_usage_analytics)
-        etherscan = Etherscan(database=self.data.db, msg_aggregator=self.msg_aggregator)
+        self.etherscan = Etherscan(database=self.data.db, msg_aggregator=self.msg_aggregator)
         historical_data_start = settings.historical_data_start
         eth_rpc_endpoint = settings.eth_rpc_endpoint
         self.trades_historian = TradesHistorian(
@@ -142,7 +142,7 @@ class Rotkehlchen():
             db=self.data.db,
             msg_aggregator=self.msg_aggregator,
             exchange_manager=self.exchange_manager,
-            etherscan=etherscan,
+            etherscan=self.etherscan,
         )
         # Initialize the price historian singleton
         PriceHistorian(
@@ -169,7 +169,7 @@ class Rotkehlchen():
         # Initialize blockchain querying modules
         ethchain = Ethchain(
             ethrpc_endpoint=eth_rpc_endpoint,
-            etherscan=etherscan,
+            etherscan=self.etherscan,
         )
         self.blockchain = Blockchain(
             blockchain_accounts=self.data.db.get_blockchain_accounts(),

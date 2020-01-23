@@ -67,6 +67,7 @@ TABLES_AT_INIT = [
     'timed_balances',
     'timed_location_data',
     'asset_movement_category',
+    'external_service_credentials',
     'user_credentials',
     'blockchain_accounts',
     'multisettings',

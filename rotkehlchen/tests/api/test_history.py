@@ -130,8 +130,10 @@ def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges):
     assert_proper_response(response)
     data = response.json()
     warnings = rotki.msg_aggregator.consume_warnings()
-    assert len(warnings) == 6
-    assert all("Invalid JSON returned from etherscan's query" in w for w in warnings)
+    assert len(warnings) == 0
+    errors = rotki.msg_aggregator.consume_errors()
+    assert len(errors) == 1
+    assert 'Etherscan returned invalid JSON response: [{' in errors[0]
 
     # The history processing is completely mocked away and omitted in this test.
     # because it is only for the history creation not its processing.

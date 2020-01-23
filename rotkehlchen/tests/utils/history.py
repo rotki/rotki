@@ -1,11 +1,10 @@
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 from unittest.mock import _patch, patch
 
-import requests
-
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.constants import (
@@ -686,11 +685,8 @@ def mock_history_processing(
     return accountant_patch
 
 
-def mock_etherscan_transaction_response(original_requests_get, remote_errors: bool):
+def mock_etherscan_transaction_response(etherscan: Etherscan, remote_errors: bool):
     def mocked_request_dict(url, *args, **kwargs):
-        if 'etherscan' not in url:
-            return original_requests_get(url, *args, **kwargs)
-
         if remote_errors:
             return MockResponse(200, "[{")
 
@@ -719,10 +715,7 @@ def mock_etherscan_transaction_response(original_requests_get, remote_errors: bo
             payload = f'{{"status":"1","message":"OK","result":[{tx_str}]}}'
         return MockResponse(200, payload)
 
-    return patch(
-        'rotkehlchen.utils.misc.requests.get',
-        side_effect=mocked_request_dict,
-    )
+    return patch.object(etherscan.session, 'get', wraps=mocked_request_dict)
 
 
 class TradesTestSetup(NamedTuple):
@@ -761,7 +754,7 @@ def mock_history_processing_and_exchanges(
         remote_errors,
     )
     etherscan_patch = mock_etherscan_transaction_response(
-        original_requests_get=requests.get,
+        etherscan=rotki.etherscan,
         remote_errors=remote_errors,
     )
     return TradesTestSetup(

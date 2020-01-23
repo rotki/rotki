@@ -34,7 +34,7 @@ def test_query_statistics_netvalue(
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
 
     # query balances and save data in DB to have data to test the statistics endpoint
-    with setup.poloniex_patch, setup.binance_patch, setup.blockchain_patch:
+    with setup.poloniex_patch, setup.binance_patch, setup.etherscan_patch, setup.bitcoin_patch:
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
@@ -85,7 +85,7 @@ def test_query_statistics_asset_balance(
     start_time = ts_now()
 
     # query balances and save data in DB to have data to test the statistics endpoint
-    with setup.poloniex_patch, setup.binance_patch, setup.blockchain_patch:
+    with setup.poloniex_patch, setup.binance_patch, setup.etherscan_patch, setup.bitcoin_patch:
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
@@ -240,7 +240,7 @@ def test_query_statistics_value_distribution(
     start_time = ts_now()
 
     # query balances and save data in DB to have data to test the statistics endpoint
-    with setup.poloniex_patch, setup.binance_patch, setup.blockchain_patch:
+    with setup.poloniex_patch, setup.binance_patch, setup.etherscan_patch, setup.bitcoin_patch:
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,

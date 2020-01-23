@@ -48,7 +48,7 @@ def test_query_blockchain_balances(
     setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=btc_accounts)
 
     # First query only ETH and token balances
-    with setup.blockchain_patch:
+    with setup.etherscan_patch:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "named_blockchain_balances_resource",
@@ -69,7 +69,7 @@ def test_query_blockchain_balances(
     )
 
     # Then query only BTC balances
-    with setup.blockchain_patch:
+    with setup.bitcoin_patch:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "named_blockchain_balances_resource",
@@ -86,7 +86,7 @@ def test_query_blockchain_balances(
     )
 
     # Finally query all balances
-    with setup.blockchain_patch:
+    with setup.etherscan_patch, setup.bitcoin_patch:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
@@ -146,7 +146,7 @@ def test_query_blockchain_balances_async(
     ), json={'async_query': True})
     task_id = assert_ok_async_response(response)
 
-    with setup.blockchain_patch:
+    with setup.etherscan_patch:
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
     assert_eth_balances_result(
         rotki=rotki,
@@ -165,7 +165,7 @@ def test_query_blockchain_balances_async(
     ), json={'async_query': True})
     task_id = assert_ok_async_response(response)
 
-    with setup.blockchain_patch:
+    with setup.bitcoin_patch:
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
     assert_btc_balances_result(
         json_data=outcome,
@@ -181,7 +181,7 @@ def test_query_blockchain_balances_async(
     ), json={'async_query': True})
     task_id = assert_ok_async_response(response)
 
-    with setup.blockchain_patch:
+    with setup.etherscan_patch, setup.bitcoin_patch:
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
     assert_eth_balances_result(
         rotki=rotki,
@@ -222,7 +222,7 @@ def test_query_blockchain_balances_ignore_cache(
         wraps=rotki.blockchain.query_ethereum_tokens,
     )
 
-    with setup.blockchain_patch, eth_query as eth_mock, tokens_query as tokens_mock:
+    with setup.etherscan_patch, setup.bitcoin_patch, eth_query as eth_mock, tokens_query as tokens_mock:  # noqa: E501
         # Query ETH and token balances once
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
@@ -325,7 +325,7 @@ def test_add_blockchain_accounts(
     )
 
     # The application has started only with 2 ethereum accounts. Let's add two more
-    with setup.blockchain_patch:
+    with setup.etherscan_patch:
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
@@ -345,7 +345,7 @@ def test_add_blockchain_accounts(
     )
 
     # Now try to query all balances to make sure the result is the stored
-    with setup.blockchain_patch:
+    with setup.etherscan_patch, setup.bitcoin_patch:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
@@ -373,7 +373,7 @@ def test_add_blockchain_accounts(
         btc_balances=['3000000', '5000000', '600000000'],
     )
     # add the new BTC account
-    with setup.blockchain_patch:
+    with setup.bitcoin_patch:
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
@@ -391,7 +391,7 @@ def test_add_blockchain_accounts(
     )
 
     # Now try to query all balances to make sure the result is also stored
-    with setup.blockchain_patch:
+    with setup.etherscan_patch, setup.bitcoin_patch:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
@@ -446,7 +446,7 @@ def test_add_blockchain_accounts_async(
     )
 
     # The application has started only with 2 ethereum accounts. Let's add two more
-    with setup.blockchain_patch:
+    with setup.etherscan_patch:
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
@@ -464,7 +464,7 @@ def test_add_blockchain_accounts_async(
     )
 
     # Now try to query all balances to make sure the result is the stored
-    with setup.blockchain_patch:
+    with setup.etherscan_patch, setup.bitcoin_patch:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
@@ -492,7 +492,7 @@ def test_add_blockchain_accounts_async(
         btc_balances=['3000000', '5000000', '600000000'],
     )
     # add the new BTC account
-    with setup.blockchain_patch:
+    with setup.bitcoin_patch:
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
@@ -508,7 +508,7 @@ def test_add_blockchain_accounts_async(
     )
 
     # Now try to query all balances to make sure the result is also stored
-    with setup.blockchain_patch:
+    with setup.etherscan_patch, setup.bitcoin_patch:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
@@ -704,7 +704,7 @@ def test_remove_blockchain_accounts(
             eth_balances=eth_balances,
             token_balances=token_balances,
         )
-        with setup.blockchain_patch:
+        with setup.etherscan_patch, setup.bitcoin_patch:
             response = requests.get(api_url_for(
                 rotkehlchen_api_server,
                 "blockchainbalancesresource",
@@ -724,7 +724,7 @@ def test_remove_blockchain_accounts(
     )
 
     # The application has started with 4 ethereum accounts. Remove two and see that balances match
-    with setup.blockchain_patch:
+    with setup.etherscan_patch:
         response = requests.delete(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
@@ -744,7 +744,7 @@ def test_remove_blockchain_accounts(
     )
 
     # Now try to query all balances to make sure the result is the stored
-    with setup.blockchain_patch:
+    with setup.etherscan_patch, setup.bitcoin_patch:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
@@ -772,7 +772,7 @@ def test_remove_blockchain_accounts(
         btc_balances=['600000000'],
     )
     # remove the new BTC account
-    with setup.blockchain_patch:
+    with setup.bitcoin_patch:
         response = requests.delete(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
@@ -790,7 +790,7 @@ def test_remove_blockchain_accounts(
     )
 
     # Now try to query all balances to make sure the result is also stored
-    with setup.blockchain_patch:
+    with setup.etherscan_patch, setup.bitcoin_patch:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
@@ -834,7 +834,7 @@ def test_remove_blockchain_accounts_async(
         eth_balances=eth_balances,
         token_balances=token_balances,
     )
-    with setup.blockchain_patch:
+    with setup.etherscan_patch, setup.bitcoin_patch:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
@@ -854,7 +854,7 @@ def test_remove_blockchain_accounts_async(
     )
 
     # The application has started with 4 ethereum accounts. Remove two and see that balances match
-    with setup.blockchain_patch:
+    with setup.etherscan_patch:
         response = requests.delete(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
@@ -872,7 +872,7 @@ def test_remove_blockchain_accounts_async(
     )
 
     # Now try to query all balances to make sure the result is the stored
-    with setup.blockchain_patch:
+    with setup.etherscan_patch, setup.bitcoin_patch:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
@@ -900,7 +900,7 @@ def test_remove_blockchain_accounts_async(
         btc_balances=['600000000'],
     )
     # remove the new BTC account
-    with setup.blockchain_patch:
+    with setup.bitcoin_patch:
         response = requests.delete(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
@@ -916,7 +916,7 @@ def test_remove_blockchain_accounts_async(
     )
 
     # Now try to query all balances to make sure the result is also stored
-    with setup.blockchain_patch:
+    with setup.etherscan_patch, setup.bitcoin_patch:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",

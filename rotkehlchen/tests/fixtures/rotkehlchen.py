@@ -82,6 +82,7 @@ def initialize_mock_rotkehlchen_instance(
         rotki.data.logged_in = True
         rotki.data_importer = DataImporter(db=rotki.data.db)
         rotki.password = db_password
+        rotki.etherscan = etherscan
         # Remember accountant fixture has a mocked accounting data dir
         # different to the usual user one. Accountant would normally be unlocked
         # during the normal unlock but due to mocking initialization has to be tweaked here

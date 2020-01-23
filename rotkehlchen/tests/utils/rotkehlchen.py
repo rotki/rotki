@@ -6,7 +6,10 @@ import requests
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.blockchain import mock_etherscan_balances_query
+from rotkehlchen.tests.utils.blockchain import (
+    mock_bitcoin_balances_query,
+    mock_etherscan_balances_query,
+)
 from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.tests.utils.exchanges import (
     patch_binance_balances_query,
@@ -24,7 +27,8 @@ class BalancesTestSetup(NamedTuple):
     poloniex_balances: Dict[str, FVal]
     poloniex_patch: _patch
     binance_patch: _patch
-    blockchain_patch: _patch
+    etherscan_patch: _patch
+    bitcoin_patch: _patch
 
 
 def setup_balances(
@@ -101,8 +105,12 @@ def setup_balances(
     binance_patch = patch_binance_balances_query(binance) if binance else None
     poloniex = rotki.exchange_manager.connected_exchanges.get('poloniex', None)
     poloniex_patch = patch_poloniex_balances_query(poloniex) if poloniex else None
-    blockchain_patch = mock_etherscan_balances_query(
+    etherscan_patch = mock_etherscan_balances_query(
         eth_map=eth_map,
+        etherscan=rotki.etherscan,
+        original_requests_get=requests.get,
+    )
+    bitcoin_patch = mock_bitcoin_balances_query(
         btc_map=btc_map,
         original_requests_get=requests.get,
     )
@@ -120,7 +128,8 @@ def setup_balances(
         poloniex_balances=poloniex_balances,
         poloniex_patch=poloniex_patch,
         binance_patch=binance_patch,
-        blockchain_patch=blockchain_patch,
+        etherscan_patch=etherscan_patch,
+        bitcoin_patch=bitcoin_patch,
     )
 
 
