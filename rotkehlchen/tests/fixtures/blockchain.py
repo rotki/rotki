@@ -10,6 +10,7 @@ from rotkehlchen.blockchain import Blockchain
 from rotkehlchen.crypto import address_encoder, privatekey_to_address, sha3
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.ethchain import Ethchain
+from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.tests.utils.blockchain import geth_create_blockchain
 from rotkehlchen.tests.utils.tests import cleanup_tasks
 from rotkehlchen.typing import BTCAddress, ChecksumEthAddress
@@ -78,9 +79,14 @@ def eth_p2p_port(port_generator):
 
 
 @pytest.fixture
-def ethchain_client(ethrpc_port):
+def etherscan(database, messages_aggregator):
+    return Etherscan(database=database, msg_aggregator=messages_aggregator)
+
+
+@pytest.fixture
+def ethchain_client(ethrpc_port, etherscan):
     ethrpc_endpoint = f'http://localhost:{ethrpc_port}'
-    return Ethchain(ethrpc_endpoint, attempt_connect=False)
+    return Ethchain(ethrpc_endpoint, etherscan=etherscan, attempt_connect=False)
 
 
 def _geth_blockchain(

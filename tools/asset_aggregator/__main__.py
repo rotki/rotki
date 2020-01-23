@@ -29,13 +29,14 @@ from rotkehlchen.constants.cryptocompare import (
     KNOWN_TO_MISS_FROM_CRYPTOCOMPARE,
     WORLD_TO_CRYPTOCOMPARE,
 )
-from rotkehlchen.externalapis import Coinmarketcap, CoinPaprika, Cryptocompare
-from rotkehlchen.externalapis.coinmarketcap import find_cmc_coin_data
+from rotkehlchen.externalapis.coinmarketcap import Coinmarketcap, find_cmc_coin_data
 from rotkehlchen.externalapis.coinpaprika import (
+    CoinPaprika,
     check_paprika_token_address,
     find_paprika_coin_id,
     get_paprika_data_eth_token_address,
 )
+from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.utils.serialization import rlk_jsonloads
 
 

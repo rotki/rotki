@@ -6,17 +6,18 @@ from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.exchanges.poloniex import process_polo_loans
+from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.transactions import query_etherscan_for_transactions
+from rotkehlchen.transactions import query_ethereum_transactions
 from rotkehlchen.typing import EthereumTransaction, FilePath, Location, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.accounting import action_get_timestamp
 from rotkehlchen.utils.misc import create_timestamp
 
 if TYPE_CHECKING:
-    from rotkehlchen.externalapis import Cryptocompare
+    from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -133,12 +134,14 @@ class TradesHistorian():
             db: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             exchange_manager: ExchangeManager,
+            etherscan: Etherscan,
     ) -> None:
 
         self.msg_aggregator = msg_aggregator
         self.user_directory = user_directory
         self.db = db
         self.exchange_manager = exchange_manager
+        self.etherscan = etherscan
 
     def create_history(self, start_ts: Timestamp, end_ts: Timestamp) -> HistoryResult:
         """Creates trades and loans history from start_ts to end_ts"""
@@ -188,18 +191,20 @@ class TradesHistorian():
                 fail_callback=fail_history_cb,
             )
 
-        # TODO: Also save those in the DB (?). We used to have a cache but if anything
-        # makes sense is to save them in the DB. Also realized the old cache broke
-        # if more accounts were added.
         try:
-            eth_transactions = query_etherscan_for_transactions(
-                db=self.db,
-                msg_aggregator=self.msg_aggregator,
+            eth_transactions = query_ethereum_transactions(
+                etherscan=self.etherscan,
                 from_ts=start_ts,
                 to_ts=end_ts,
             )
         except RemoteError as e:
-            empty_or_error += '\n' + str(e)
+            eth_transactions = []
+            msg = str(e)
+            self.msg_aggregator.add_error(
+                f'There was an error when querying etherscan for ethereum transactions: {msg}'
+                f'The final history result will not include ethereum transactions',
+            )
+            empty_or_error += '\n' + msg
 
         # We sort it here ... but when accounting runs through the entire actions list,
         # it resorts, so unless the fact that we sort is used somewhere else too, perhaps

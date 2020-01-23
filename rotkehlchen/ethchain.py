@@ -4,10 +4,10 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
 import requests
-from eth_utils.address import to_checksum_address
 from web3 import HTTPProvider, Web3
 
 from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress
@@ -24,12 +24,14 @@ class Ethchain():
     def __init__(
             self,
             ethrpc_endpoint: str,
+            etherscan: Etherscan,
             attempt_connect: bool = True,
             eth_rpc_timeout: int = DEFAULT_ETH_RPC_TIMEOUT,
     ) -> None:
         self.web3: Web3 = None
         self.rpc_endpoint = ethrpc_endpoint
         self.connected = False
+        self.etherscan = etherscan
         self.eth_rpc_timeout = eth_rpc_timeout
         if attempt_connect:
             self.attempt_connect(ethrpc_endpoint)
@@ -158,78 +160,39 @@ class Ethchain():
         return block_number
 
     def get_eth_balance(self, account: ChecksumEthAddress) -> FVal:
-        if not self.connected:
-            log.debug(
-                'Querying etherscan for account balance',
-                sensitive_log=True,
-                eth_address=account,
-            )
-            eth_resp = request_get_dict(
-                'https://api.etherscan.io/api?module=account&action=balance&address=%s'
-                % account,
-            )
-            if eth_resp['status'] != 1:
-                raise ValueError('Failed to query etherscan for accounts balance')
-            amount = FVal(eth_resp['result'])
+        """Gets the balance of the given account in ETH
 
-            log.debug(
-                'Etherscan account balance result',
-                sensitive_log=True,
-                eth_address=account,
-                wei_amount=amount,
-            )
-            return from_wei(amount)
+        May raise:
+        - RemoteError if Etherscan is used and there is a problem querying it or
+        parsing its response
+        """
+        if not self.connected:
+            wei_amount = self.etherscan.get_account_balance(account)
         else:
             wei_amount = self.web3.eth.getBalance(account)  # pylint: disable=no-member
-            log.debug(
-                'Ethereum node account balance result',
-                sensitive_log=True,
-                eth_address=account,
-                wei_amount=wei_amount,
-            )
-            return from_wei(wei_amount)
+
+        log.debug(
+            'Ethereum account balance result',
+            sensitive_log=True,
+            eth_address=account,
+            wei_amount=wei_amount,
+        )
+        return from_wei(wei_amount)
 
     def get_multieth_balance(
             self,
             accounts: List[ChecksumEthAddress],
     ) -> Dict[ChecksumEthAddress, FVal]:
-        """Returns a dict with keys being accounts and balances in ETH"""
-        balances = {}
+        """Returns a dict with keys being accounts and balances in ETH
+
+        May raise:
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem with its query.
+        """
+        balances: Dict[ChecksumEthAddress, FVal] = {}
 
         if not self.connected:
-            if len(accounts) > 20:
-                new_accounts = [accounts[x:x + 2] for x in range(0, len(accounts), 2)]
-            else:
-                new_accounts = [accounts]
-
-            for account_slice in new_accounts:
-                log.debug(
-                    'Querying etherscan for multiple accounts balance',
-                    sensitive_log=True,
-                    eth_accounts=account_slice,
-                )
-
-                eth_resp = request_get_dict(
-                    'https://api.etherscan.io/api?module=account&action=balancemulti&address=%s' %
-                    ','.join(account_slice),
-                )
-                if eth_resp['status'] != 1:
-                    raise ValueError('Failed to query etherscan for accounts balance')
-                eth_accounts = eth_resp['result']
-
-                for account_entry in eth_accounts:
-                    amount = FVal(account_entry['balance'])
-                    # Etherscan does not return accounts checksummed so make sure they
-                    # are converted properly here
-                    checksum_account = to_checksum_address(account_entry['account'])
-                    balances[checksum_account] = from_wei(amount)
-                    log.debug(
-                        'Etherscan account balance result',
-                        sensitive_log=True,
-                        eth_address=account_entry['account'],
-                        wei_amount=amount,
-                    )
-
+            balances = self.etherscan.get_accounts_balance(accounts)
         else:
             for account in accounts:
                 amount = FVal(self.web3.eth.getBalance(account))  # pylint: disable=no-member
@@ -250,6 +213,12 @@ class Ethchain():
     ) -> Dict[ChecksumEthAddress, FVal]:
         """Return a dictionary with keys being accounts and value balances of token
         Balance value is normalized through the token decimals.
+
+        May raise:
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem with its query.
+        - BadFunctionCallOutput if a local node is used and the contract for the
+          token has no code. That means the chain is not synced
         """
         balances = {}
         if self.connected:
@@ -279,35 +248,14 @@ class Ethchain():
                 )
         else:
             for account in accounts:
-                log.debug(
-                    'Querying Etherscan for token balance',
-                    sensitive_log=True,
-                    eth_address=account,
-                    token_address=token.ethereum_address,
-                    token_symbol=token.symbol,
-                )
-                resp = request_get_dict(
-                    'https://api.etherscan.io/api?module=account&action='
-                    'tokenbalance&contractaddress={}&address={}'.format(
-                        token.ethereum_address,
-                        account,
-                    ))
-                if resp['status'] != 1:
-                    raise ValueError(
-                        'Failed to query etherscan for {} token balance of {}'.format(
-                            token.symbol,
-                            account,
-                        ))
-                token_amount = FVal(resp['result'])
-                if token_amount != 0:
-                    balances[account] = token_amount / (FVal(10) ** FVal(token.decimals))
+                balances[account] = self.etherscan.get_token_balance(token, account)
                 log.debug(
                     'Etherscan result for token balance',
                     sensitive_log=True,
                     eth_address=account,
                     token_address=token.ethereum_address,
                     token_symbol=token.symbol,
-                    amount=token_amount,
+                    amount=balances[account],
                 )
 
         return balances
@@ -317,6 +265,15 @@ class Ethchain():
             token: EthereumToken,
             account: ChecksumEthAddress,
     ) -> FVal:
+        """Returns the balance of account in token.
+        Balance value is normalized through the token decimals.
+
+        May raise:
+        - RemoteError if an external service such as Etherscan is queried and
+        there is a problem with its query.
+        - BadFunctionCallOutput if a local node is used and the contract for the
+        token has no code. That means the chain is not synced
+        """
         res = self.get_multitoken_balance(token=token, accounts=[account])
         return res.get(account, FVal(0))
 

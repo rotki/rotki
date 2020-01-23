@@ -523,11 +523,22 @@ class RestAPI():
             blockchain: Optional[SupportedBlockchain],
             ignore_cache: bool,
     ) -> Dict[str, Any]:
-        result, msg = self.rotkehlchen.blockchain.query_balances(
-            blockchain=blockchain,
-            ignore_cache=ignore_cache,
-        )
-        return {'result': result, 'message': msg}
+        result = None
+        msg = ''
+        status_code = HTTPStatus.OK
+        try:
+            result = self.rotkehlchen.blockchain.query_balances(
+                blockchain=blockchain,
+                ignore_cache=ignore_cache,
+            )
+        except EthSyncError as e:
+            msg = str(e)
+            status_code = HTTPStatus.CONFLICT
+        except RemoteError as e:
+            msg = str(e)
+            status_code = HTTPStatus.BAD_GATEWAY
+
+        return {'result': result, 'message': msg, 'status_code': status_code}
 
     @require_loggedin_user()
     def query_blockchain_balances(
@@ -547,12 +558,8 @@ class RestAPI():
             blockchain=blockchain,
             ignore_cache=ignore_cache,
         )
-        balances = response['result']
-        msg = response['message']
-        if balances is None:
-            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
-
-        return api_response(_wrap_in_ok_result(process_result(balances)), HTTPStatus.OK)
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=response['status_code'])
 
     @require_loggedin_user()
     def query_fiat_balances(self) -> Response:
@@ -950,8 +957,22 @@ class RestAPI():
             self,
             tokens: List[EthereumToken],
     ) -> Dict[str, Any]:
-        result, msg = self.rotkehlchen.add_owned_eth_tokens(tokens=tokens)
-        return {'result': result, 'message': msg}
+        result = None
+        msg = ''
+        status_code = HTTPStatus.OK
+        try:
+            result = self.rotkehlchen.add_owned_eth_tokens(tokens=tokens)
+        except EthSyncError as e:
+            msg = str(e)
+            status_code = HTTPStatus.CONFLICT
+        except InputError as e:
+            msg = str(e)
+            status_code = HTTPStatus.BAD_REQUEST
+        except RemoteError as e:
+            msg = str(e)
+            status_code = HTTPStatus.BAD_GATEWAY
+
+        return {'result': result, 'message': msg, 'status_code': status_code}
 
     @require_loggedin_user()
     def add_owned_eth_tokens(self, tokens: List[EthereumToken], async_query: bool) -> Response:
@@ -959,18 +980,26 @@ class RestAPI():
             return self._query_async(command='_add_owned_eth_tokens', tokens=tokens)
 
         response = self._add_owned_eth_tokens(tokens=tokens)
-        result = response['result']
-        msg = response['message']
-        if not result:
-            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
-        return api_response(_wrap_in_ok_result(process_result(result)), status_code=HTTPStatus.OK)
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=response['status_code'])
 
     def _remove_owned_eth_tokens(
             self,
             tokens: List[EthereumToken],
     ) -> Dict[str, Any]:
-        result, msg = self.rotkehlchen.remove_owned_eth_tokens(tokens=tokens)
-        return {'result': result, 'message': msg}
+        result = None
+        msg = ''
+        status_code = HTTPStatus.OK
+        try:
+            result = self.rotkehlchen.remove_owned_eth_tokens(tokens=tokens)
+        except EthSyncError as e:
+            msg = str(e)
+            status_code = HTTPStatus.CONFLICT
+        except RemoteError as e:
+            msg = str(e)
+            status_code = HTTPStatus.BAD_GATEWAY
+
+        return {'result': result, 'message': msg, 'status_code': status_code}
 
     @require_loggedin_user()
     def remove_owned_eth_tokens(self, tokens: List[EthereumToken], async_query: bool) -> Response:
@@ -978,12 +1007,8 @@ class RestAPI():
             return self._query_async(command='_remove_owned_eth_tokens', tokens=tokens)
 
         response = self._remove_owned_eth_tokens(tokens=tokens)
-        result = response['result']
-        msg = response['message']
-        if not result:
-            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
-
-        return api_response(_wrap_in_ok_result(process_result(result)), status_code=HTTPStatus.OK)
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=response['status_code'])
 
     def _add_blockchain_accounts(
             self,
@@ -1003,6 +1028,8 @@ class RestAPI():
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code:': HTTPStatus.BAD_GATEWAY}
 
         # If no accounts were added, that means the only account/s given were invalid
         if len(added_accounts) == 0:
@@ -1054,6 +1081,8 @@ class RestAPI():
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code:': HTTPStatus.BAD_GATEWAY}
 
         # If no accounts were removed, that means the only account/s given were invalid
         if len(removed_accounts) == 0:
