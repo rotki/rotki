@@ -14,6 +14,7 @@ from web3.middleware import geth_poa_middleware
 
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.crypto import address_encoder, privatekey_to_address
+from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.eth_tokens import CONTRACT_ADDRESS_TO_TOKEN
@@ -323,10 +324,9 @@ def assert_eth_balances_result(
 
 def mock_etherscan_balances_query(
         eth_map: Dict[str, str],
-        btc_map: Dict[str, str],
+        etherscan: Etherscan,
         original_requests_get,
 ):
-
     def mock_requests_get(url, *args, **kwargs):
         if 'etherscan.io/api?module=account&action=balance&address' in url:
             addr = url[67:109]
@@ -359,9 +359,22 @@ def mock_etherscan_balances_query(
             value = eth_map[account].get(token.identifier, 0)
             response = f'{{"status":"1","message":"OK","result":"{value}"}}'
 
-        elif 'blockchain.info' in url:
+        else:
+            return original_requests_get(url, *args, **kwargs)
+
+        return MockResponse(200, response)
+
+    return patch.object(etherscan.session, 'get', wraps=mock_requests_get)
+
+
+def mock_bitcoin_balances_query(
+        btc_map: Dict[str, str],
+        original_requests_get,
+):
+
+    def mock_requests_get(url, *args, **kwargs):
+        if 'blockchain.info' in url:
             queried_addr = url.split('/')[-1]
-            msg = f'Queried BTC address {queried_addr} is not in the given btc map to mock'
             response = btc_map.get(queried_addr, '0')
 
         else:

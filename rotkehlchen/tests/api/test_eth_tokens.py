@@ -85,7 +85,7 @@ def test_adding_ethereum_tokens(
     )
 
     # Add RDN and MKR as tracked tokens and make sure that the rdn balance checks out
-    with setup.blockchain_patch:
+    with setup.etherscan_patch:
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
             "ethereumtokensresource",
@@ -125,7 +125,7 @@ def test_adding_ethereum_tokens_async(
     )
 
     # Add RDN and MKR as tracked tokens and make sure that the rdn balance checks out
-    with setup.blockchain_patch:
+    with setup.etherscan_patch:
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
             "ethereumtokensresource",
@@ -234,7 +234,7 @@ def test_removing_ethereum_tokens(
     )
 
     # Remove GNO and RDN as tracked tokens and make sure that the dai balance checks out
-    with setup.blockchain_patch:
+    with setup.etherscan_patch:
         response = requests.delete(api_url_for(
             rotkehlchen_api_server,
             "ethereumtokensresource",
@@ -273,7 +273,7 @@ def test_removing_ethereum_tokens_async(
     )
 
     # Remove GNO and RDN as tracked tokens and make sure that the dai balance checks out
-    with setup.blockchain_patch:
+    with setup.etherscan_patch:
         response = requests.delete(api_url_for(
             rotkehlchen_api_server,
             "ethereumtokensresource",

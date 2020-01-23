@@ -21,12 +21,11 @@ def test_eth_connection_initial_balances(
         ethereum_accounts,
         inquirer,  # pylint: disable=unused-argument
 ):
-    res, empty_or_error = blockchain.query_balances()
-    assert empty_or_error == ''
-    assert 'per_account' in res
-    assert 'totals' in res
+    result = blockchain.query_balances()
+    assert 'per_account' in result
+    assert 'totals' in result
 
-    per_eth_account = res['per_account']['ETH']
+    per_eth_account = result['per_account']['ETH']
     assert len(ethereum_accounts) == len(per_eth_account) == number_of_eth_accounts
 
     eth_default_balance = from_wei(DEFAULT_BALANCE)
@@ -35,7 +34,7 @@ def test_eth_connection_initial_balances(
         assert values['ETH'] == eth_default_balance
         assert 'usd_value' in values
 
-    totals_eth = res['totals']['ETH']
+    totals_eth = result['totals']['ETH']
     assert totals_eth['amount'] == number_of_eth_accounts * eth_default_balance
     assert 'usd_value' in totals_eth
 
