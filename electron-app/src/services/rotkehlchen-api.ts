@@ -156,7 +156,7 @@ export class RotkehlchenApi {
             eth_tokens: tokens
           },
           validateStatus: function(status) {
-            return status == 200 || status == 400 || status == 409;
+            return status == 200 || status == 400 || status == 409 || status == 502;
           }
         })
         .then(response => {
@@ -181,7 +181,7 @@ export class RotkehlchenApi {
           },
           {
             validateStatus: function(status) {
-              return status == 200 || status == 400 || status == 409;
+              return status == 200 || status == 400 || status == 409 || status == 502;
             }
           }
         )
@@ -391,7 +391,7 @@ export class RotkehlchenApi {
             ignore_cache: ignoreCache ? true : undefined
           },
           validateStatus: function(status) {
-            return status == 200 || status == 400 || status == 409;
+            return status == 200 || status == 400 || status == 409 || status == 502;
           }
         })
         .then(response => {
@@ -815,7 +815,7 @@ export class RotkehlchenApi {
             accounts: [account]
           },
           validateStatus: function(status) {
-            return status == 200 || status == 400 || status == 409;
+            return status == 200 || status == 400 || status == 409 || status == 502;
           }
         })
         .then(response => {
@@ -843,7 +843,7 @@ export class RotkehlchenApi {
           },
           {
             validateStatus: function(status) {
-              return status == 200 || status == 400 || status == 409;
+              return status == 200 || status == 400 || status == 409 || status == 502;
             }
           }
         )

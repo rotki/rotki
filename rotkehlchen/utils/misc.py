@@ -151,6 +151,8 @@ def retry_calls(
     If it fails with an acceptable error then we wait for a bit until the next try.
 
     Can also handle 429 errors with a specific backoff in seconds if required.
+
+    - Raises RemoteError if there is something wrong with contacting the remote
     """
     tries = times
     while True:
@@ -207,7 +209,7 @@ def request_get(
     try:
         result = rlk_jsonloads(response.text)
     except json.decoder.JSONDecodeError:
-        raise UnableToDecryptRemoteData('{} returned malformed json'.format(url))
+        raise UnableToDecryptRemoteData(f'{url} returned malformed json')
 
     return result
 

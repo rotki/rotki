@@ -4,13 +4,20 @@ from collections import defaultdict
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, cast, overload
 
+import requests
 from eth_utils.address import to_checksum_address
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.db.utils import BlockchainAccounts
-from rotkehlchen.errors import EthSyncError, InputError, InvalidBTCAddress
+from rotkehlchen.errors import (
+    EthSyncError,
+    InputError,
+    InvalidBTCAddress,
+    RemoteError,
+    UnableToDecryptRemoteData,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -83,23 +90,20 @@ class Blockchain(CacheableObject, LockableQueryObject):
             blockchain: Optional[SupportedBlockchain] = None,
             # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
             **kwargs: Any,
-    ) -> Tuple[Optional[Dict[str, Dict]], str]:
+    ) -> Dict[str, Dict]:
+        """Queries either all, or specific blockchain balances
+
+        May raise:
+        - RemoteError if an external service such as Etherscan or blockchain.info
+        is queried and there is a problem with its query.
+        - EthSyncError if querying the token balances through a provided ethereum
+        client and the chain is not synced
+        """
         should_query_eth = not blockchain or blockchain == SupportedBlockchain.ETHEREUM
         should_query_btc = not blockchain or blockchain == SupportedBlockchain.BITCOIN
 
         if should_query_eth:
-            try:
-                self.query_ethereum_balances()
-            except BadFunctionCallOutput as e:
-                log.error(
-                    'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
-                    'exception: {}'.format(str(e)),
-                )
-                msg = (
-                    'Tried to use the ethereum chain of a local client to query '
-                    'an eth account but the chain is not synced.'
-                )
-                return None, msg
+            self.query_ethereum_balances()
 
         if not blockchain or blockchain == SupportedBlockchain.BITCOIN:
             self.query_btc_balances()
@@ -114,10 +118,16 @@ class Blockchain(CacheableObject, LockableQueryObject):
             per_account.pop(A_BTC, None)
             totals.pop(A_BTC, None)
 
-        return {'per_account': per_account, 'totals': totals}, ''
+        return {'per_account': per_account, 'totals': totals}
 
     @staticmethod
     def query_btc_account_balance(account: BTCAddress) -> FVal:
+        """Queries blockchain.info for the balance of account
+
+        May raise:
+        - InputError if the given account is not a valid BTC address
+        - RemotError if there is a problem querying blockchain.info
+        """
         try:
             btc_resp = request_get_direct(
                 url='https://blockchain.info/q/addressbalance/%s' % account,
@@ -129,10 +139,17 @@ class Blockchain(CacheableObject, LockableQueryObject):
         except InvalidBTCAddress:
             # TODO: Move this validation into our own code and before the balance query
             raise InputError(f'The given string {account} is not a valid BTC address')
+        except (requests.exceptions.ConnectionError, UnableToDecryptRemoteData) as e:
+            raise RemoteError(f'blockchain.info API request failed due to {str(e)}')
 
         return satoshis_to_btc(FVal(btc_resp))  # result is in satoshis
 
     def query_btc_balances(self) -> None:
+        """Queries blockchain.info for the balance of all BTC accounts
+
+        May raise:
+        - RemotError if there is a problem querying blockchain.info
+        """
         if len(self.accounts.btc) == 0:
             return
 
@@ -140,7 +157,14 @@ class Blockchain(CacheableObject, LockableQueryObject):
         btc_usd_price = Inquirer().find_usd_price(A_BTC)
         total = FVal(0)
         for account in self.accounts.btc:
-            balance = self.query_btc_account_balance(account)
+            try:
+                balance = self.query_btc_account_balance(account)
+            except InputError:
+                # This should really never happen.
+                self.msg_aggregator.add_error(
+                    f'While querying BTC balances found invalid BTC account {account} in the DB',
+                )
+                continue
             total += balance
             self.balances[A_BTC][account] = {
                 'amount': balance,
@@ -188,6 +212,16 @@ class Blockchain(CacheableObject, LockableQueryObject):
         return result
 
     def track_new_tokens(self, new_tokens: List[EthereumToken]) -> BlockchainBalancesUpdate:
+        """
+        Adds new_tokens to the state and tracks their balance for each account.
+
+        May raise:
+        - InputError if some of the tokens already exist
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem with its query.
+        - EthSyncError if querying the token balances through a provided ethereum
+          client and the chain is not synced
+        """
 
         intersection = set(new_tokens).intersection(set(self.owned_eth_tokens))
         if intersection != set():
@@ -209,6 +243,16 @@ class Blockchain(CacheableObject, LockableQueryObject):
         return {'per_account': self.balances, 'totals': self.totals}
 
     def remove_eth_tokens(self, tokens: List[EthereumToken]) -> BlockchainBalancesUpdate:
+        """
+        Removes tokens from the state and stops their balance from being tracked
+        for each account
+
+        May raise:
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem with its query.
+        - EthSyncError if querying the token balances through a provided ethereum
+          client and the chain is not synced
+        """
         if self.balances[A_ETH] == {}:
             # if balances have not been yet queried then we should do the entire
             # balance query first in order to create the eth_balances mappings
@@ -246,6 +290,10 @@ class Blockchain(CacheableObject, LockableQueryObject):
 
         Call with 'append', operator.add to add the account
         Call with 'remove', operator.sub to remove the account
+
+        May raise:
+        - InputError if the given account is not a valid BTC address
+        - RemotError if there is a problem querying blockchain.info
         """
         btc_usd_price = Inquirer().find_usd_price(A_BTC)
         remove_with_populated_balance = (
@@ -292,7 +340,12 @@ class Blockchain(CacheableObject, LockableQueryObject):
         Call with 'append', operator.add to add the account
         Call with 'remove', operator.sub to remove the account
 
-        Raises Input error if the given_account is not a valid ETH address
+        May raise:
+        - Input error if the given_account is not a valid ETH address
+        - BadFunctionCallOutput if a token is queried from a local chain
+        and the chain is not synced
+        - RemoteError if there is a problem with a query to an external
+          service such as Etherscan
         """
         # Make sure account goes into web3.py as a properly checksummed address
         try:
@@ -384,6 +437,8 @@ class Blockchain(CacheableObject, LockableQueryObject):
         May Raise:
         - EthSyncError from modify_blockchain_account
         - InputError if the given accounts list is empty
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem
         """
         if len(accounts) == 0:
             raise InputError('Empty list of blockchain accounts to add was given')
@@ -425,6 +480,8 @@ class Blockchain(CacheableObject, LockableQueryObject):
         May Raise:
         - EthSyncError from modify_blockchain_account
         - InputError if the given accounts list is empty
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem
         """
         if len(accounts) == 0:
             raise InputError('Empty list of blockchain accounts to add was given')
@@ -471,6 +528,8 @@ class Blockchain(CacheableObject, LockableQueryObject):
         - InputError if accounts to remove do not exist or if the ethereum/BTC
           addresses are not valid.
         - EthSyncError if there is a problem querying the ethereum chain
+        - RemoteError if there is a problem querying an external service such
+          as etherscan or blockchain.info
         """
         if blockchain == SupportedBlockchain.BITCOIN:
             if append_or_remove == 'remove' and account not in self.accounts.btc:
@@ -511,6 +570,14 @@ class Blockchain(CacheableObject, LockableQueryObject):
             tokens: List[EthereumToken],
             eth_balances: EthBalances,
     ) -> None:
+        """Queries the ethereum token balances and populates the state
+
+        May raise:
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem with its query.
+        - EthSyncError if querying the token balances through a provided ethereum
+          client and the chain is not synced
+        """
         token_balances = {}
         token_usd_price = {}
         for token in tokens:
@@ -520,11 +587,21 @@ class Blockchain(CacheableObject, LockableQueryObject):
                 continue
             token_usd_price[token] = usd_price
 
-            token_balances[token] = Blockchain._query_token_balances(
-                token_asset=token,
-                query_callback=self.ethchain.get_multitoken_balance,
-                argument=self.accounts.eth,
-            )
+            try:
+                token_balances[token] = Blockchain._query_token_balances(
+                    token_asset=token,
+                    query_callback=self.ethchain.get_multitoken_balance,
+                    argument=self.accounts.eth,
+                )
+            except BadFunctionCallOutput as e:
+                log.error(
+                    'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
+                    'exception: {}'.format(str(e)),
+                )
+                raise EthSyncError(
+                    'Tried to use the ethereum chain of the provided client to query '
+                    'token balances but the chain is not synced.',
+                )
 
         for token, token_accounts in token_balances.items():
             token_total = FVal(0)
@@ -545,6 +622,14 @@ class Blockchain(CacheableObject, LockableQueryObject):
         )
 
     def query_ethereum_balances(self) -> None:
+        """Queries the ethereum balances and populates the state
+
+        May raise:
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem with its query.
+        - EthSyncError if querying the token balances through a provided ethereum
+          client and the chain is not synced
+        """
         if len(self.accounts.eth) == 0:
             return
 

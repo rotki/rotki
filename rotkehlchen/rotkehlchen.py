@@ -15,10 +15,11 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.errors import EthSyncError, InputError, PremiumAuthenticationError
+from rotkehlchen.errors import EthSyncError, PremiumAuthenticationError, RemoteError
 from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.exchanges.manager import ExchangeManager
-from rotkehlchen.externalapis import Cryptocompare
+from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian, TradesHistorian
 from rotkehlchen.inquirer import Inquirer
@@ -133,6 +134,7 @@ class Rotkehlchen():
 
         settings = self.data.db.get_settings()
         maybe_submit_usage_analytics(settings.submit_usage_analytics)
+        etherscan = Etherscan(database=self.data.db, msg_aggregator=self.msg_aggregator)
         historical_data_start = settings.historical_data_start
         eth_rpc_endpoint = settings.eth_rpc_endpoint
         self.trades_historian = TradesHistorian(
@@ -140,6 +142,7 @@ class Rotkehlchen():
             db=self.data.db,
             msg_aggregator=self.msg_aggregator,
             exchange_manager=self.exchange_manager,
+            etherscan=etherscan,
         )
         # Initialize the price historian singleton
         PriceHistorian(
@@ -163,7 +166,11 @@ class Rotkehlchen():
             database=self.data.db,
         )
 
-        ethchain = Ethchain(eth_rpc_endpoint)
+        # Initialize blockchain querying modules
+        ethchain = Ethchain(
+            ethrpc_endpoint=eth_rpc_endpoint,
+            etherscan=etherscan,
+        )
         self.blockchain = Blockchain(
             blockchain_accounts=self.data.db.get_blockchain_accounts(),
             owned_eth_tokens=self.data.db.get_owned_tokens(),
@@ -239,6 +246,10 @@ class Rotkehlchen():
 
         Adds the accounts to the blockchain instance and queries them to get the
         updated balances. Also adds the ones that were valid in the DB
+
+        May raise:
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem with its query.
         """
 
         new_data, added_accounts, msg = self.blockchain.add_blockchain_accounts(
@@ -259,6 +270,10 @@ class Rotkehlchen():
 
         Removes the accounts from the blockchain instance and queries them to get
         the updated balances. Also removes the ones that were valid from the DB
+
+        May raise:
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem with its query.
         """
         new_data, removed_accounts, msg = self.blockchain.remove_blockchain_accounts(
             blockchain=blockchain,
@@ -272,25 +287,37 @@ class Rotkehlchen():
     def add_owned_eth_tokens(
             self,
             tokens: List[EthereumToken],
-    ) -> Tuple[Optional[BlockchainBalancesUpdate], str]:
-        try:
-            new_data = self.blockchain.track_new_tokens(tokens)
-        except (InputError, EthSyncError) as e:
-            return None, str(e)
+    ) -> BlockchainBalancesUpdate:
+        """Adds tokens to the blockchain state and updates balance of all accounts
 
+        May raise:
+        - InputError if some of the tokens already exist
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem with its query.
+        - EthSyncError if querying the token balances through a provided ethereum
+          client and the chain is not synced
+        """
+        new_data = self.blockchain.track_new_tokens(tokens)
         self.data.write_owned_eth_tokens(self.blockchain.owned_eth_tokens)
-        return new_data, ''
+        return new_data
 
     def remove_owned_eth_tokens(
             self,
             tokens: List[EthereumToken],
-    ) -> Tuple[Optional[BlockchainBalancesUpdate], str]:
-        try:
-            new_data = self.blockchain.remove_eth_tokens(tokens)
-        except InputError as e:
-            return None, str(e)
+    ) -> BlockchainBalancesUpdate:
+        """
+        Removes tokens from the state and stops their balance from being tracked
+        for each account
+
+        May raise:
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem with its query.
+        - EthSyncError if querying the token balances through a provided ethereum
+          client and the chain is not synced
+        """
+        new_data = self.blockchain.remove_eth_tokens(tokens)
         self.data.write_owned_eth_tokens(self.blockchain.owned_eth_tokens)
-        return new_data, ''
+        return new_data
 
     def process_history(
             self,
@@ -359,14 +386,16 @@ class Rotkehlchen():
             else:
                 balances[exchange.name] = exchange_balances
 
-        blockchain_result, _ = self.blockchain.query_balances(
-            blockchain=None,
-            ignore_cache=ignore_cache,
-        )
-        if blockchain_result is not None:
-            balances['blockchain'] = blockchain_result['totals']
-        else:
+        try:
+            blockchain_result = self.blockchain.query_balances(
+                blockchain=None,
+                ignore_cache=ignore_cache,
+            )
+        except (RemoteError, EthSyncError) as e:
             problem_free = False
+            log.error(f'Querying blockchain balances failed due to: {str(e)}')
+
+        balances['blockchain'] = blockchain_result['totals']
 
         result = self.query_fiat_balances()
         if result != {}:

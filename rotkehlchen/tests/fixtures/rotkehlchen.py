@@ -66,6 +66,7 @@ def initialize_mock_rotkehlchen_instance(
         data_dir,
         database,
         username,
+        etherscan,
 ):
     if start_with_logged_in_user:
         # Rotkehlchen initializes its own messages aggregator normally but here we
@@ -91,6 +92,7 @@ def initialize_mock_rotkehlchen_instance(
             db=rotki.data.db,
             msg_aggregator=rotki.msg_aggregator,
             exchange_manager=rotki.exchange_manager,
+            etherscan=etherscan,
         )
         rotki.user_is_logged_in = True
         rotki.premium_sync_manager = PremiumSyncManager(
@@ -124,6 +126,7 @@ def rotkehlchen_api_server(
         rotki_premium_credentials,
         accounting_data_dir,
         username,
+        etherscan,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -141,6 +144,7 @@ def rotkehlchen_api_server(
         data_dir=accounting_data_dir,
         database=database,
         username=username,
+        etherscan=etherscan,
     )
     return api_server
 
@@ -158,6 +162,7 @@ def rotkehlchen_instance(
         rotki_premium_credentials,
         accounting_data_dir,
         username,
+        etherscan,
 ):
     """A partially mocked rotkehlchen instance"""
 
@@ -173,6 +178,7 @@ def rotkehlchen_instance(
         data_dir=accounting_data_dir,
         database=database,
         username=username,
+        etherscan=etherscan,
     )
     return uninitialized_rotkehlchen
 

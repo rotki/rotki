@@ -1031,6 +1031,7 @@ Querying onchain balances
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: User is not logged in. Invalid blockchain, or problems querying the given blockchain
    :statuscode 500: Internal Rotki error
+   :statuscode 502: An external service used in the query such as etherscan or blockchain.info could not be reached or returned unexpected response.
 
 Querying all balances
 ==========================
@@ -1999,8 +2000,9 @@ Adding owned ETH tokens
 
    :statuscode 200: Tokens succesfully added.
    :statuscode 400: Provided JSON or data is in some way malformed.
-   :statuscode 409: User is not logged in. Some error occured when re-querying the balances after addition. Check message for details.
+   :statuscode 409: User is not logged in. There was some problem with querying balances after token addition. Check the message.
    :statuscode 500: Internal Rotki error
+   :statuscode 502: Error occured with some external service query such as Etherscan. Check message for details.
 
 Removing owned ETH tokens
 =========================
@@ -2054,8 +2056,9 @@ Removing owned ETH tokens
 
    :statuscode 200: Tokens succesfully deleted.
    :statuscode 400: Provided JSON or data is in some way malformed.
-   :statuscode 409: User is not logged in. Some error occured when re-querying the balances after addition. Check message for details.
+   :statuscode 409: User is not logged in. There was some problem with querying balances after token deletion. Check the message.
    :statuscode 500: Internal Rotki error
+   :statuscode 502: Error occured with some external service query such as Etherscan. Check message for details.
 
 Adding blockchain accounts
 ===========================
@@ -2112,6 +2115,7 @@ Adding blockchain accounts
    :statuscode 400: Provided JSON or data is in some way malformed.
    :statuscode 409: User is not logged in. Some error occured when re-querying the balances after addition. Check message for details.
    :statuscode 500: Internal Rotki error
+   :statuscode 502: Error occured with some external service query such as Etherscan. Check message for details.
 
 Removing blockchain accounts
 ==============================
@@ -2165,6 +2169,7 @@ Removing blockchain accounts
    :statuscode 400: Provided JSON or data is in some way malformed.
    :statuscode 409: User is not logged in. Some error occured when re-querying the balances after addition. Check message for details.
    :statuscode 500: Internal Rotki error
+   :statuscode 502: Error occured with some external service query such as Etherscan. Check message for details.
 
 Dealing with ignored assets
 ===========================
