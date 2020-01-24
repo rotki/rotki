@@ -112,3 +112,10 @@ export interface SettingsPayload {
   include_crypto2crypto: boolean;
   taxfree_after_period: number;
 }
+
+export type ExternalServiceName = 'etherscan' | 'cryptocompare';
+
+export interface ExternalServiceKey {
+  readonly name: ExternalServiceName;
+  readonly api_key: string;
+}
