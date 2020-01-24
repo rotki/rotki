@@ -11,9 +11,15 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
-from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction
+from rotkehlchen.typing import (
+    ApiKey,
+    ChecksumEthAddress,
+    EthereumTransaction,
+    ExternalService,
+    Timestamp,
+)
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import convert_to_int, from_wei, hexstring_to_bytes
+from rotkehlchen.utils.misc import convert_to_int, from_wei, hexstring_to_bytes, ts_now
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
@@ -77,9 +83,35 @@ def deserialize_transaction_from_etherscan(
 class Etherscan():
     def __init__(self, database: DBHandler, msg_aggregator: MessagesAggregator) -> None:
         self.db = database
+        self.api_key: Optional[ApiKey] = None
+        self.api_key_saved_ts = Timestamp(0)
         self.msg_aggregator = msg_aggregator
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
+
+    def _get_api_key(self) -> Optional[ApiKey]:
+        """A function to get the API key from the DB
+
+        It's optimized to not query the DB every time we want to know the API
+        key, but to remember it and re-query only if the DB has been written to
+        again after the last time we queried it.
+        """
+        if self.api_key is None:
+            # If we don't have a key try to get one from the DB
+            credentials = self.db.get_external_service_credentials(ExternalService.ETHERSCAN)
+        else:
+            # If we have a key check the DB's last write time and if nothign new
+            # got written there return the already known key
+            if self.db.last_write_ts and self.db.last_write_ts <= self.api_key_saved_ts:
+                return self.api_key
+
+            # else query the DB
+            credentials = self.db.get_external_service_credentials(ExternalService.ETHERSCAN)
+
+        # If we get here it means the api key is modified/saved
+        self.api_key = credentials.api_key if credentials else None
+        self.api_key_saved_ts = ts_now()
+        return self.api_key
 
     @overload  # noqa: F811
     def _query(  # pylint: disable=no-self-use
@@ -116,6 +148,21 @@ class Etherscan():
             for name, value in options.items():
                 query_str += f'&{name}={value}'
 
+        # temporary check. In the future etherscan will always need an API key
+        api_key = self._get_api_key()
+        if api_key is None:
+            now = ts_now()
+            if now > 1581681600:  # > 14/02/2020 12:00 UTC
+                # https://medium.com/etherscan-blog/psa-for-developers-implementation-of-api-key-requirements-starting-from-february-15th-2020-b616870f3746
+                raise RemoteError(
+                    'Etherscan has introduced compulsory API keys from 15/02/2020.'
+                    'Please go to to https://etherscan.io/register, create an API '
+                    'key and then input it in the external service credentials setting of Rotki',
+                )
+            # else, until the deadline it's fine to not have an API key
+        else:
+            query_str += f'&apikey={api_key}'
+
         logger.debug(f'Querying etherscan: {query_str}')
 
         try:
@@ -135,9 +182,12 @@ class Etherscan():
         except JSONDecodeError:
             raise RemoteError(f'Etherscan returned invalid JSON response: {response.text}')
 
+        # TODO: Handle the errors mentioned here:
+        # https://medium.com/etherscan-blog/psa-for-developers-implementation-of-api-key-requirements-starting-from-february-15th-2020-b616870f3746
         try:
             result = json_ret['result']
             status = json_ret['status']
+
             if status != 1:
                 transaction_endpoint_and_none_found = (
                     status == 0 and
