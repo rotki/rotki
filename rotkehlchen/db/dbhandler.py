@@ -138,6 +138,7 @@ class DBHandler:
         self.msg_aggregator = msg_aggregator
         self.user_data_dir = user_data_dir
         self.sqlcipher_version = detect_sqlcipher_version()
+        self.last_write_ts: Optional[Timestamp] = None
         action = self.read_info_at_start()
         if action == DBStartupAction.UPGRADE_3_4:
             result, msg = self.upgrade_db_sqlcipher_3_to_4(password)
@@ -348,10 +349,12 @@ class DBHandler:
         os.remove(os.path.join(self.user_data_dir, 'rotkehlchen_temp_backup.db'))
 
     def update_last_write(self) -> None:
+        # Also keep it in memory for faster querying
+        self.last_write_ts = ts_now()
         cursor = self.conn.cursor()
         cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-            ('last_write_ts', str(ts_now())),
+            ('last_write_ts', str(self.last_write_ts)),
         )
         self.conn.commit()
 
@@ -375,6 +378,7 @@ class DBHandler:
             ('last_data_upload_ts', str(ts)),
         )
         self.conn.commit()
+        self.update_last_write()
 
     def get_last_data_upload_ts(self) -> Timestamp:
         cursor = self.conn.cursor()
@@ -396,6 +400,7 @@ class DBHandler:
             ('premium_should_sync', str(should_sync)),
         )
         self.conn.commit()
+        self.update_last_write()
 
     def get_premium_sync(self) -> bool:
         cursor = self.conn.cursor()
@@ -453,6 +458,7 @@ class DBHandler:
             [c.serialize_for_db() for c in credentials],
         )
         self.conn.commit()
+        self.update_last_write()
 
     def delete_external_service_credentials(self, services: List[ExternalService]) -> None:
         cursor = self.conn.cursor()
@@ -504,6 +510,7 @@ class DBHandler:
             ('ignored_asset', asset.identifier),
         )
         self.conn.commit()
+        self.update_last_write()
 
     def remove_from_ignored_assets(self, asset: Asset) -> None:
         cursor = self.conn.cursor()
