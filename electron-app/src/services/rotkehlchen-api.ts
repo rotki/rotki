@@ -3,7 +3,8 @@ import {
   ActionResult,
   DBSettings,
   AccountState,
-  AsyncQuery
+  AsyncQuery,
+  ExternalServiceKeys
 } from '@/model/action-result';
 import { DBAssetBalance } from '@/model/db-asset-balance';
 import { SingleAssetBalance } from '@/model/single-asset-balance';
@@ -23,7 +24,9 @@ import {
   TaskResult,
   SyncApproval,
   UnlockPayload,
-  SettingsUpdate
+  SettingsUpdate,
+  ExternalServiceKey,
+  ExternalServiceName
 } from '@/typing/types';
 import axios, { AxiosInstance } from 'axios';
 import { EthTokens } from '@/model/eth_token';
@@ -156,7 +159,9 @@ export class RotkehlchenApi {
             eth_tokens: tokens
           },
           validateStatus: function(status) {
-            return status == 200 || status == 400 || status == 409 || status == 502;
+            return (
+              status == 200 || status == 400 || status == 409 || status == 502
+            );
           }
         })
         .then(response => {
@@ -181,7 +186,9 @@ export class RotkehlchenApi {
           },
           {
             validateStatus: function(status) {
-              return status == 200 || status == 400 || status == 409 || status == 502;
+              return (
+                status == 200 || status == 400 || status == 409 || status == 502
+              );
             }
           }
         )
@@ -391,7 +398,9 @@ export class RotkehlchenApi {
             ignore_cache: ignoreCache ? true : undefined
           },
           validateStatus: function(status) {
-            return status == 200 || status == 400 || status == 409 || status == 502;
+            return (
+              status == 200 || status == 400 || status == 409 || status == 502
+            );
           }
         })
         .then(response => {
@@ -815,7 +824,9 @@ export class RotkehlchenApi {
             accounts: [account]
           },
           validateStatus: function(status) {
-            return status == 200 || status == 400 || status == 409 || status == 502;
+            return (
+              status == 200 || status == 400 || status == 409 || status == 502
+            );
           }
         })
         .then(response => {
@@ -843,7 +854,9 @@ export class RotkehlchenApi {
           },
           {
             validateStatus: function(status) {
-              return status == 200 || status == 400 || status == 409 || status == 502;
+              return (
+                status == 200 || status == 400 || status == 409 || status == 502
+              );
             }
           }
         )
@@ -1095,6 +1108,79 @@ export class RotkehlchenApi {
         .get<ActionResult<string[]>>('/exchanges', {
           validateStatus: function(status) {
             return status == 200 || status == 409;
+          }
+        })
+        .then(response => {
+          const { result, message } = response.data;
+          if (result) {
+            resolve(result);
+          } else {
+            reject(new Error(message));
+          }
+        })
+        .catch(error => reject(error));
+    });
+  }
+
+  queryExternalService(): Promise<ExternalServiceKeys> {
+    return new Promise<ExternalServiceKeys>((resolve, reject) => {
+      this.axios
+        .get<ActionResult<ExternalServiceKeys>>('/external_services/', {
+          validateStatus: function(status) {
+            return status == 200 || status == 409;
+          }
+        })
+        .then(response => {
+          const { result, message } = response.data;
+          if (result) {
+            resolve(result);
+          } else {
+            reject(new Error(message));
+          }
+        })
+        .catch(error => reject(error));
+    });
+  }
+
+  async setExternalServices(
+    keys: ExternalServiceKey[]
+  ): Promise<ExternalServiceKeys> {
+    return new Promise<ExternalServiceKeys>((resolve, reject) => {
+      this.axios
+        .put<ActionResult<ExternalServiceKeys>>(
+          '/external_services/',
+          {
+            services: keys
+          },
+          {
+            validateStatus: function(status) {
+              return status == 200 || status == 400 || status == 409;
+            }
+          }
+        )
+        .then(response => {
+          const { result, message } = response.data;
+          if (result) {
+            resolve(result);
+          } else {
+            reject(new Error(message));
+          }
+        })
+        .catch(error => reject(error));
+    });
+  }
+
+  async deleteExternalServices(
+    serviceToDelete: ExternalServiceName
+  ): Promise<ExternalServiceKeys> {
+    return new Promise<ExternalServiceKeys>((resolve, reject) => {
+      this.axios
+        .delete<ActionResult<ExternalServiceKeys>>('/external_services/', {
+          data: {
+            services: [serviceToDelete]
+          },
+          validateStatus: function(status) {
+            return status == 200 || status == 400 || status == 409;
           }
         })
         .then(response => {

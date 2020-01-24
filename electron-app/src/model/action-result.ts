@@ -31,3 +31,12 @@ export interface DBSettings {
 export interface AsyncQuery {
   readonly task_id: number;
 }
+
+export interface ApiKey {
+  api_key: string;
+}
+
+export interface ExternalServiceKeys {
+  etherscan?: ApiKey;
+  cryptocompare?: ApiKey;
+}

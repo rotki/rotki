@@ -7,6 +7,7 @@
     </v-row>
     <premium-settings></premium-settings>
     <exchange-settings></exchange-settings>
+    <external-services></external-services>
     <fiat-balances></fiat-balances>
     <blockchain-balances></blockchain-balances>
   </v-container>
@@ -18,12 +19,14 @@ import PremiumSettings from '@/components/settings/PremiumSettings.vue';
 import ExchangeSettings from '@/components/settings/ExchangeSettings.vue';
 import FiatBalances from '@/components/settings/FiatBalances.vue';
 import BlockchainBalances from '@/components/settings/BlockchainBalances.vue';
+import ExternalServices from '@/components/ExternalServices.vue';
 
 @Component({
   components: {
     BlockchainBalances,
     FiatBalances,
     ExchangeSettings,
+    ExternalServices,
     PremiumSettings
   }
 })
