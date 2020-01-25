@@ -192,7 +192,8 @@ class RestAPI():
         # also write an error for the task result if it's not the main greenlet
         if task_id is not None:
             result = {
-                'error': str(greenlet.exception),
+                'result': None,
+                'message': f'The backend query task died unexpectedly: {str(greenlet.exception)}',
             }
             self._write_task_result(task_id, result)
 

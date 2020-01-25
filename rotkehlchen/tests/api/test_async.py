@@ -80,6 +80,7 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
     # assert that there is an outcome
     assert json_data['result']['outcome'] is not None
     assert json_data['result']['outcome']['result'] is not None
+    assert json_data['result']['outcome']['message'] == ''
 
     # Finally try to query an unknown task id and check proper error is returned
     response = requests.get(
@@ -93,3 +94,56 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
     )
     json_data = response.json()
     assert json_data['result'] == {'status': 'not-found', 'outcome': None}
+
+
+@pytest.mark.parametrize('added_exchanges', [('binance')])
+def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges):
+    """If an async task dies with an exception check that it's properly handled"""
+
+    # async query balances of one specific exchange
+    server = rotkehlchen_api_server_with_exchanges
+    binance = server.rest_api.rotkehlchen.exchange_manager.connected_exchanges['binance']
+
+    def mock_binance_asset_return(url):  # pylint: disable=unused-argument
+        raise ValueError('BOOM!')
+
+    binance_patch = patch.object(binance.session, 'get', side_effect=mock_binance_asset_return)
+
+    # Create an async task
+    with binance_patch:
+        response = requests.get(api_url_for(
+            server,
+            "named_exchanges_balances_resource",
+            name='binance',
+        ), json={'async_query': True})
+    task_id = assert_ok_async_response(response)
+
+    # now check that there is a task
+    response = requests.get(api_url_for(server, "asynctasksresource"))
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == ''
+    assert json_data['result'] == [task_id]
+
+    while True:
+        # and now query for the task result and assert on it
+        response = requests.get(
+            api_url_for(server, "specific_async_tasks_resource", task_id=task_id),
+        )
+        assert_proper_response(response)
+        json_data = response.json()
+        if json_data['result']['status'] == 'pending':
+            # context switch so that the greenlet to query balances can operate
+            gevent.sleep(1)
+        elif json_data['result']['status'] == 'completed':
+            break
+        else:
+            raise AssertionError(f"Unexpected status: {json_data['result']['status']}")
+
+    assert json_data['message'] == ''
+    assert json_data['result']['status'] == 'completed'
+    # assert that the backend task query died and we detect it
+    assert json_data['result']['outcome'] is not None
+    assert json_data['result']['outcome']['result'] is None
+    msg = 'The backend query task died unexpectedly: BOOM!'
+    assert json_data['result']['outcome']['message'] == msg
