@@ -79,7 +79,9 @@ jobs:
   include:
     - stage: lint
       sudo: false
-      install: pip install -r requirements_lint.txt
+      install:
+        - pip install -r requirements_lint.txt
+        - pip install -e .
       script:
         - git rev-parse HEAD
         - make lint
