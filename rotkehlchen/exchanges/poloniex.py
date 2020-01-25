@@ -582,7 +582,7 @@ class Poloniex(ExchangeInterface):
         try:
             if from_csv:
                 return self.parse_loan_csv()
-        except (OSError, IOError, csv.Error):
+        except (OSError, csv.Error):
             pass
 
         loans_query_return_limit = 12000
