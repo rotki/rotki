@@ -10,6 +10,7 @@ from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
 from rotkehlchen.typing import (
     ApiKey,
@@ -23,6 +24,7 @@ from rotkehlchen.utils.misc import convert_to_int, from_wei, hexstring_to_bytes,
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def read_hash(data: Dict[str, Any], key: str) -> bytes:
@@ -256,7 +258,7 @@ class Etherscan():
                     # are converted properly here
                     checksum_account = to_checksum_address(account_entry['account'])
                     balances[checksum_account] = from_wei(amount)
-                    logger.debug(
+                    log.debug(
                         'Etherscan account balance result',
                         sensitive_log=True,
                         eth_address=account_entry['account'],
