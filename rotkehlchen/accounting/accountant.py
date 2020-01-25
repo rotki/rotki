@@ -13,6 +13,7 @@ from rotkehlchen.errors import (
     DeserializationError,
     NoPriceForGivenTimestamp,
     PriceQueryUnknownFromAsset,
+    RemoteError,
     UnknownAsset,
     UnsupportedAsset,
 )
@@ -92,30 +93,17 @@ class Accountant():
         self.events.profit_currency = settings.main_currency
         self.csvexporter.profit_currency = settings.main_currency
 
-    @staticmethod
-    def query_historical_price(
-            from_asset: Asset,
-            to_asset: Asset,
-            timestamp: Timestamp,
-    ) -> FVal:
-        price = PriceHistorian().query_historical_price(from_asset, to_asset, timestamp)
-        return price
-
-    def get_rate_in_profit_currency(self, asset: Asset, timestamp: Timestamp) -> FVal:
-        # TODO: Moved this to events.py too. Is it still needed here?
-        if asset == self.profit_currency:
-            rate = FVal(1)
-        else:
-            rate = self.query_historical_price(
-                asset,
-                self.profit_currency,
-                timestamp,
-            )
-        assert isinstance(rate, (FVal, int))  # TODO Remove. Is temporary assert
-        return rate
-
     def get_fee_in_profit_currency(self, trade: Trade) -> Fee:
-        fee_rate = self.query_historical_price(
+        """Get the profit_currency rate of the fee of the given trade
+
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from the price oracle
+        - RemoteError if there is a problem reaching the price oracle server
+        or with reading the response returned by the server
+        """
+        fee_rate = PriceHistorian().query_historical_price(
             from_asset=trade.fee_currency,
             to_asset=self.profit_currency,
             timestamp=trade.timestamp,
@@ -123,11 +111,21 @@ class Accountant():
         return Fee(fee_rate * trade.fee)
 
     def add_asset_movement_to_events(self, movement: AssetMovement) -> None:
+        """
+        Adds the given asset movement to the processed events
+
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from cryptocompare
+        - RemoteError if there is a problem reaching the price oracle server
+        or with reading the response returned by the server
+        """
         timestamp = movement.timestamp
         if timestamp < self.start_ts:
             return
 
-        fee_rate = self.get_rate_in_profit_currency(movement.fee_asset, timestamp)
+        fee_rate = self.events.get_rate_in_profit_currency(movement.fee_asset, timestamp)
         cost = movement.fee * fee_rate
         self.asset_movement_fees += cost
         log.debug(
@@ -154,6 +152,16 @@ class Accountant():
             transaction: EthereumTransaction,
             include_gas_costs: bool,
     ) -> None:
+        """
+        Accounts for the gas costs of the given ethereum transaction
+
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from cryptocompare
+        - RemoteError if there is a problem reaching the price oracle server
+        or with reading the response returned by the server
+        """
         if not include_gas_costs:
             return
         if transaction.timestamp < self.start_ts:
@@ -165,7 +173,7 @@ class Accountant():
             gas_price = transaction.gas_price
             self.last_gas_price = transaction.gas_price
 
-        rate = self.get_rate_in_profit_currency(A_ETH, transaction.timestamp)
+        rate = self.events.get_rate_in_profit_currency(A_ETH, transaction.timestamp)
         eth_burned_as_gas = (transaction.gas_used * gas_price) / FVal(10 ** 18)
         cost = eth_burned_as_gas * rate
         self.eth_transactions_gas_costs += cost
@@ -186,9 +194,19 @@ class Accountant():
         )
 
     def trade_add_to_sell_events(self, trade: Trade, loan_settlement: bool) -> None:
+        """
+        Adds the given trade to the sell events
+
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from cryptocompare
+        - RemoteError if there is a problem reaching the price oracle server
+        or with reading the response returned by the server
+        """
         selling_asset = trade.base_asset
         receiving_asset = trade.quote_asset
-        receiving_asset_rate = self.get_rate_in_profit_currency(
+        receiving_asset_rate = self.events.get_rate_in_profit_currency(
             receiving_asset,
             trade.timestamp,
         )
@@ -313,6 +331,19 @@ class Accountant():
                     f'inability to query a price at that time: {str(e)}',
                 )
                 continue
+            except RemoteError as e:
+                ts = action_get_timestamp(action)
+                self.msg_aggregator.add_error(
+                    f'Skipping action at '
+                    f' {timestamp_to_date(ts, formatstr="%d/%m/%Y, %H:%M:%S")} '
+                    f'during history processing due to inability to reach an external '
+                    f'service at that point in time: {str(e)}. Check the logs for more details',
+                )
+                log.error(
+                    f'Skipping action {str(action)} during history processing due to '
+                    f'inability to reach an external service at that time: {str(e)}',
+                )
+                continue
 
             if not should_continue:
                 break
@@ -355,7 +386,15 @@ class Accountant():
             db_settings: DBSettings,
     ) -> Tuple[bool, Timestamp, int]:
         """Processes each individual action and returns whether we should continue
-        looping through the rest of the actions or not"""
+        looping through the rest of the actions or not
+
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from cryptocompare
+        - RemoteError if there is a problem reaching the price oracle server
+        or with reading the response returned by the server
+        """
 
         # Hack to periodically yield back to the gevent IO loop to avoid getting
         # the losing remote after hearbeat error for the zerorpc client. (after 10s)
@@ -463,7 +502,7 @@ class Accountant():
             # in poloniex settlements you buy some asset with BTC to repay a loan
             # so in essense you sell BTC to repay the loan
             selling_asset = A_BTC
-            selling_asset_rate = self.get_rate_in_profit_currency(
+            selling_asset_rate = self.events.get_rate_in_profit_currency(
                 selling_asset,
                 trade.timestamp,
             )
@@ -487,7 +526,8 @@ class Accountant():
                 loan_settlement=True,
             )
         else:
-            raise ValueError(f'Unknown trade type "{trade.trade_type}" encountered')
+            # Should never happen
+            raise AssertionError(f'Unknown trade type "{trade.trade_type}" encountered')
 
         return True, prev_time, count
 

@@ -145,10 +145,11 @@ class Rotkehlchen():
             etherscan=self.etherscan,
         )
         # Initialize the price historian singleton
+        self.cryptocompare = Cryptocompare(data_directory=self.data_dir, database=self.data.db)
         PriceHistorian(
             data_directory=self.data_dir,
             history_date_start=historical_data_start,
-            cryptocompare=Cryptocompare(data_directory=self.data_dir),
+            cryptocompare=self.cryptocompare,
         )
         db_settings = self.data.db.get_settings()
         self.accountant = Accountant(
