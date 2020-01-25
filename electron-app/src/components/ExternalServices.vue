@@ -115,7 +115,7 @@ export default class ExternalServices extends Vue {
 
   async mounted() {
     this.loading = true;
-    this.updateKeys(await this.$api.queryExternalService());
+    this.updateKeys(await this.$api.queryExternalServices());
     this.loading = false;
   }
 
@@ -144,6 +144,7 @@ export default class ExternalServices extends Vue {
   }
 
   async confirmDelete() {
+    /* istanbul ignore if */
     if (!this.serviceToDelete) {
       return;
     }
