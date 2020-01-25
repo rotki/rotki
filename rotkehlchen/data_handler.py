@@ -151,7 +151,7 @@ class DataHandler():
         Each key is a user's name and the value is denoting whether that
         particular user is logged in or not
         """
-        users = dict()
+        users = {}
         data_dir = Path(self.data_directory)
         for x in data_dir.iterdir():
             if x.is_dir() and (x / 'rotkehlchen.db').exists():

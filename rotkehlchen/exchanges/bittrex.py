@@ -288,7 +288,7 @@ class Bittrex(ExchangeInterface):
             log.error(msg)
             return None, msg
 
-        returned_balances = dict()
+        returned_balances = {}
         for entry in resp:
             try:
                 asset = asset_from_bittrex(entry['Currency'])
@@ -313,7 +313,7 @@ class Bittrex(ExchangeInterface):
 
             usd_price = Inquirer().find_usd_price(asset=asset)
 
-            balance = dict()
+            balance = {}
             balance['amount'] = FVal(entry['Balance'])
             balance['usd_value'] = FVal(balance['amount']) * usd_price
             returned_balances[asset] = balance
@@ -336,7 +336,7 @@ class Bittrex(ExchangeInterface):
             count: Optional[int] = None,
     ) -> List[Trade]:
 
-        options: Dict[str, Union[str, int]] = dict()
+        options: Dict[str, Union[str, int]] = {}
         if market is not None:
             options['market'] = world_pair_to_bittrex(market)
         if count is not None:

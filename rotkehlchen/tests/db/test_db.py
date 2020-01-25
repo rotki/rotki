@@ -199,11 +199,10 @@ def test_writting_fetching_data(data_dir, username):
     assert isinstance(accounts, BlockchainAccounts)
     assert accounts.btc == ['1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS']
     # See that after addition the address has been checksummed
-    assert set(accounts.eth) == set([
+    assert set(accounts.eth) == {
         '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
         to_checksum_address('0x80b369799104a47e98a553f3329812a44a7facdc'),
-
-    ])
+    }
     # Add existing account should fail
     with pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
         data.db.add_blockchain_account(
@@ -232,8 +231,8 @@ def test_writting_fetching_data(data_dir, username):
     assert not result
 
     ignored_assets = data.db.get_ignored_assets()
-    assert all([isinstance(asset, Asset) for asset in ignored_assets])
-    assert set(ignored_assets) == set([A_DAO, A_DOGE])
+    assert all(isinstance(asset, Asset) for asset in ignored_assets)
+    assert set(ignored_assets) == {A_DAO, A_DOGE}
     # Test removing asset that is not in the list
     result, msg = data.remove_ignored_assets([A_RDN])
     assert 'not in ignored assets' in msg
@@ -575,7 +574,7 @@ def test_query_owned_assets(data_dir, username):
 
     assets_list = data.db.query_owned_assets()
     assert assets_list == [A_USD, A_ETH, A_BTC, A_XMR]
-    assert all([isinstance(x, Asset) for x in assets_list])
+    assert all(isinstance(x, Asset) for x in assets_list)
     warnings = data.db.msg_aggregator.consume_warnings()
     assert len(warnings) == 1
     assert 'Unknown/unsupported asset ADSADX' in warnings[0]

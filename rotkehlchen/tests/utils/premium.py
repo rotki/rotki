@@ -191,7 +191,7 @@ def assert_db_got_replaced(rotkehlchen_instance: Rotkehlchen, username: str):
     assert rotkehlchen_instance.data.db.get_main_currency() == A_GBP
     # Also check a copy of our old DB is kept around.
     directory = os.path.join(rotkehlchen_instance.data.data_directory, username)
-    files = list(os.path.join(directory, f) for f in os.listdir(directory))
+    files = [os.path.join(directory, f) for f in os.listdir(directory)]
     assert len(files) == 2
     # The order of the files is not guaranteed
     assert 'rotkehlchen.db' in files[0] or 'rotkehlchen.db' in files[1]

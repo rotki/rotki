@@ -75,7 +75,7 @@ class AssetResolver():
 
     @staticmethod
     def get_all_eth_tokens() -> List[EthTokenInfo]:
-        all_tokens = list()
+        all_tokens = []
 
         for _, asset_data in AssetResolver().assets.items():
             asset_type = asset_type_mapping[asset_data['type']]

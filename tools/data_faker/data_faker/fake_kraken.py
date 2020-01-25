@@ -61,7 +61,7 @@ class FakeKraken():
             price_query: Callable[[Asset, Asset, Timestamp], FVal],
     ) -> TradePair:
         """Choose a random pair to trade from the available pairs at the selected timestamp"""
-        choices = set(list(self.asset_pairs['result'].keys()))
+        choices = set(self.asset_pairs['result'].keys())
         found = False
         while len(choices) != 0:
             pair = random.choice(tuple(choices))

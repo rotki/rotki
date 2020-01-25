@@ -1,5 +1,6 @@
-from dataclasses import dataclass
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
+
+from dataclasses import dataclass
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.crypto import sha3
@@ -299,7 +300,7 @@ def trades_from_dictlist(
       - KeyError: If a trade dict does not have a key as we expect it
       - DeserializationError: If a trade dict entry is of an unexpected format
     """
-    returned_trades = list()
+    returned_trades = []
     for given_trade in given_trades:
         timestamp = deserialize_timestamp(given_trade['timestamp'])
         if timestamp < start_ts:

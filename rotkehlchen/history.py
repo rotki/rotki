@@ -52,7 +52,7 @@ def limit_trade_list_to_period(
             end_idx = idx if idx >= 1 else 0
             break
 
-    return trades_list[start_idx:end_idx] if start_idx is not None else list()
+    return trades_list[start_idx:end_idx] if start_idx is not None else []
 
 
 class PriceHistorian():
@@ -159,9 +159,9 @@ class TradesHistorian():
         )
 
         # start creating the all trades history list
-        history: List[Union[Trade, MarginPosition]] = list()
-        asset_movements = list()
-        polo_loans = list()
+        history: List[Union[Trade, MarginPosition]] = []
+        asset_movements = []
+        polo_loans = []
         empty_or_error = ''
 
         def populate_history_cb(

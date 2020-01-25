@@ -135,7 +135,7 @@ class Inquirer():
                 data = rlk_jsonloads_dict(f.read())
                 Inquirer.__instance._cached_forex_data = data
         except (OSError, JSONDecodeError):
-            Inquirer.__instance._cached_forex_data = dict()
+            Inquirer.__instance._cached_forex_data = {}
 
         return Inquirer.__instance
 
