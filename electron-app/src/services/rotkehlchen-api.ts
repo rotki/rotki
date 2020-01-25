@@ -1122,7 +1122,7 @@ export class RotkehlchenApi {
     });
   }
 
-  queryExternalService(): Promise<ExternalServiceKeys> {
+  queryExternalServices(): Promise<ExternalServiceKeys> {
     return new Promise<ExternalServiceKeys>((resolve, reject) => {
       this.axios
         .get<ActionResult<ExternalServiceKeys>>('/external_services/', {
