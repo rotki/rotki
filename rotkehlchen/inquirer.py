@@ -134,7 +134,7 @@ class Inquirer():
                 # we know price_history_forex contains a dict
                 data = rlk_jsonloads_dict(f.read())
                 Inquirer.__instance._cached_forex_data = data
-        except (OSError, IOError, JSONDecodeError):
+        except (OSError, JSONDecodeError):
             Inquirer.__instance._cached_forex_data = dict()
 
         return Inquirer.__instance

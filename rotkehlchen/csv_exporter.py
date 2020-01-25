@@ -447,7 +447,7 @@ class CSVExporter():
                 FilePath(os.path.join(dirpath, FILENAME_ALL_CSV)),
                 self.all_events_csv,
             )
-        except (PermissionError, OSError) as e:
+        except PermissionError as e:
             return False, str(e)
 
         return True, ''

@@ -219,7 +219,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
                     with open(self.price_history_file[cache_key], 'r') as f:
                         data = rlk_jsonloads_dict(f.read())
                         self.price_history[cache_key] = _dict_history_to_data(data)
-                except (OSError, IOError, JSONDecodeError):
+                except (OSError, JSONDecodeError):
                     return False
 
             in_range = (
