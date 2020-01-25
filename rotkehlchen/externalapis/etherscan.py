@@ -9,16 +9,11 @@ from typing_extensions import Literal
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import DeserializationError, RemoteError
+from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
-from rotkehlchen.typing import (
-    ApiKey,
-    ChecksumEthAddress,
-    EthereumTransaction,
-    ExternalService,
-    Timestamp,
-)
+from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import convert_to_int, from_wei, hexstring_to_bytes, ts_now
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
@@ -82,38 +77,12 @@ def deserialize_transaction_from_etherscan(
         raise DeserializationError(f'Etherscan ethereum transaction missing expected key {str(e)}')
 
 
-class Etherscan():
+class Etherscan(ExternalServiceWithApiKey):
     def __init__(self, database: DBHandler, msg_aggregator: MessagesAggregator) -> None:
-        self.db = database
-        self.api_key: Optional[ApiKey] = None
-        self.api_key_saved_ts = Timestamp(0)
+        super().__init__(database=database, service_name=ExternalService.ETHERSCAN)
         self.msg_aggregator = msg_aggregator
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
-
-    def _get_api_key(self) -> Optional[ApiKey]:
-        """A function to get the API key from the DB
-
-        It's optimized to not query the DB every time we want to know the API
-        key, but to remember it and re-query only if the DB has been written to
-        again after the last time we queried it.
-        """
-        if self.api_key is None:
-            # If we don't have a key try to get one from the DB
-            credentials = self.db.get_external_service_credentials(ExternalService.ETHERSCAN)
-        else:
-            # If we have a key check the DB's last write time and if nothign new
-            # got written there return the already known key
-            if self.db.last_write_ts and self.db.last_write_ts <= self.api_key_saved_ts:
-                return self.api_key
-
-            # else query the DB
-            credentials = self.db.get_external_service_credentials(ExternalService.ETHERSCAN)
-
-        # If we get here it means the api key is modified/saved
-        self.api_key = credentials.api_key if credentials else None
-        self.api_key_saved_ts = ts_now()
-        return self.api_key
 
     @overload  # noqa: F811
     def _query(  # pylint: disable=no-self-use

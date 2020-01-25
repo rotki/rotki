@@ -3,7 +3,7 @@ import logging
 import os
 import re
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, Iterable, Iterator, List, NamedTuple, NewType, Optional
+from typing import Any, Dict, Iterable, Iterator, List, NamedTuple, NewType
 
 import requests
 
@@ -13,10 +13,11 @@ from rotkehlchen.constants.assets import A_BTC, A_USD
 from rotkehlchen.constants.cryptocompare import KNOWN_TO_MISS_FROM_CRYPTOCOMPARE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnknownFromAsset, RemoteError
+from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ApiKey, ExternalService, FilePath, Price, Timestamp
+from rotkehlchen.typing import ExternalService, FilePath, Price, Timestamp
 from rotkehlchen.utils.misc import (
     convert_to_int,
     timestamp_to_date,
@@ -94,13 +95,11 @@ def _check_hourly_data_sanity(
         index += 2
 
 
-class Cryptocompare():
+class Cryptocompare(ExternalServiceWithApiKey):
 
     def __init__(self, data_directory: FilePath, database: DBHandler) -> None:
-        self.db = database
+        super().__init__(database=database, service_name=ExternalService.CRYPTOCOMPARE)
         self.data_directory = data_directory
-        self.api_key: Optional[ApiKey] = None
-        self.api_key_saved_ts = Timestamp(0)
         self.price_history: Dict[PairCacheKey, PriceHistoryData] = dict()
         self.price_history_file: Dict[PairCacheKey, FilePath] = dict()
         self.session = requests.session()
@@ -118,32 +117,6 @@ class Cryptocompare():
             assert match
             cache_key = PairCacheKey(match.group(1))
             self.price_history_file[cache_key] = file_
-
-    def _get_api_key(self) -> Optional[ApiKey]:
-        """A function to get the API key from the DB
-
-        It's optimized to not query the DB every time we want to know the API
-        key, but to remember it and re-query only if the DB has been written to
-        again after the last time we queried it.
-
-        TODO: Same here and in Etherscan. Factor out in a common parent class?
-        """
-        if self.api_key is None:
-            # If we don't have a key try to get one from the DB
-            credentials = self.db.get_external_service_credentials(ExternalService.CRYPTOCOMPARE)
-        else:
-            # If we have a key check the DB's last write time and if nothign new
-            # got written there return the already known key
-            if self.db.last_write_ts and self.db.last_write_ts <= self.api_key_saved_ts:
-                return self.api_key
-
-            # else query the DB
-            credentials = self.db.get_external_service_credentials(ExternalService.CRYPTOCOMPARE)
-
-        # If we get here it means the api key is modified/saved
-        self.api_key = credentials.api_key if credentials else None
-        self.api_key_saved_ts = ts_now()
-        return self.api_key
 
     def _api_query(self, path: str) -> Dict[str, Any]:
         """Queries cryptocompare
