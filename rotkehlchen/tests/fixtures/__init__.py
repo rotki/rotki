@@ -13,5 +13,6 @@ from rotkehlchen.tests.fixtures.exchanges.kraken import *
 from rotkehlchen.tests.fixtures.exchanges.poloniex import *
 from rotkehlchen.tests.fixtures.history import *
 from rotkehlchen.tests.fixtures.messages import *
+from rotkehlchen.tests.fixtures.pylint import *
 from rotkehlchen.tests.fixtures.rotkehlchen import *
 from rotkehlchen.tests.fixtures.variables import *
