@@ -3,20 +3,22 @@ import logging
 import os
 import re
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, Iterable, Iterator, List, NamedTuple, NewType
+from typing import Any, Dict, Iterable, Iterator, List, NamedTuple, NewType, Optional
+
+import requests
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_USD
 from rotkehlchen.constants.cryptocompare import KNOWN_TO_MISS_FROM_CRYPTOCOMPARE
-from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnknownFromAsset
+from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnknownFromAsset, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import FilePath, Price, Timestamp
+from rotkehlchen.typing import ApiKey, ExternalService, FilePath, Price, Timestamp
 from rotkehlchen.utils.misc import (
     convert_to_int,
-    request_get_dict,
     timestamp_to_date,
     ts_now,
     write_history_data_in_file,
@@ -73,31 +75,36 @@ def _check_hourly_data_sanity(
         data: List[Dict[str, Any]],
         from_asset: Asset,
         to_asset: Asset,
-) -> bool:
+) -> None:
     """Check that the hourly data is an array of objects having timestamps
     increasing by 1 hour.
+
+    If not then a RemoteError is raised
     """
     index = 0
     for n1, n2 in pairwise(data):
         diff = n2['time'] - n1['time']
         if diff != 3600:
-            print(
+            raise RemoteError(
+                'Unexpected fata format in cryptocompare query_endpoint_histohour. '
                 "Problem at indices {} and {} of {}_to_{} prices. Time difference is: {}".format(
                     index, index + 1, from_asset, to_asset, diff),
             )
-            return False
 
         index += 2
-    return True
 
 
 class Cryptocompare():
 
-    def __init__(self, data_directory: FilePath) -> None:
-        self.prefix = 'https://min-api.cryptocompare.com/data/'
+    def __init__(self, data_directory: FilePath, database: DBHandler) -> None:
+        self.db = database
         self.data_directory = data_directory
+        self.api_key: Optional[ApiKey] = None
+        self.api_key_saved_ts = Timestamp(0)
         self.price_history: Dict[PairCacheKey, PriceHistoryData] = dict()
         self.price_history_file: Dict[PairCacheKey, FilePath] = dict()
+        self.session = requests.session()
+        self.session.headers.update({'User-Agent': 'rotkehlchen'})
 
         # Check the data folder and remember the filenames of any cached history
         prefix = os.path.join(self.data_directory, 'price_history_')
@@ -112,25 +119,73 @@ class Cryptocompare():
             cache_key = PairCacheKey(match.group(1))
             self.price_history_file[cache_key] = file_
 
+    def _get_api_key(self) -> Optional[ApiKey]:
+        """A function to get the API key from the DB
+
+        It's optimized to not query the DB every time we want to know the API
+        key, but to remember it and re-query only if the DB has been written to
+        again after the last time we queried it.
+
+        TODO: Same here and in Etherscan. Factor out in a common parent class?
+        """
+        if self.api_key is None:
+            # If we don't have a key try to get one from the DB
+            credentials = self.db.get_external_service_credentials(ExternalService.CRYPTOCOMPARE)
+        else:
+            # If we have a key check the DB's last write time and if nothign new
+            # got written there return the already known key
+            if self.db.last_write_ts and self.db.last_write_ts <= self.api_key_saved_ts:
+                return self.api_key
+
+            # else query the DB
+            credentials = self.db.get_external_service_credentials(ExternalService.CRYPTOCOMPARE)
+
+        # If we get here it means the api key is modified/saved
+        self.api_key = credentials.api_key if credentials else None
+        self.api_key_saved_ts = ts_now()
+        return self.api_key
+
     def _api_query(self, path: str) -> Dict[str, Any]:
-        querystr = f'{self.prefix}{path}'
+        """Queries cryptocompare
+
+        - May raise RemoteError if there is a problem reaching the cryptocompare server
+        or with reading the response returned by the server
+        """
+        querystr = f'https://min-api.cryptocompare.com/data/{path}'
         log.debug('Querying cryptocompare', url=querystr)
-        resp = request_get_dict(querystr)
+        api_key = self._get_api_key()
+        if api_key:
+            querystr += f'&api_key={api_key}'
+
+        try:
+            response = self.session.get(querystr)
+        except requests.exceptions.ConnectionError as e:
+            raise RemoteError(f'Cryptocompare API request failed due to {str(e)}')
+
+        try:
+            json_ret = rlk_jsonloads_dict(response.text)
+        except JSONDecodeError:
+            raise RemoteError(f'Cryptocompare returned invalid JSON response: {response.text}')
+
         # These endpoints are wrapped in a response object
         wrapped_response = 'all/coinlist' in path or 'histohour' in path
-        log.debug(f'Wrapped response: {wrapped_response}')
-        if wrapped_response:
-            if 'Response' not in resp or resp['Response'] != 'Success':
-                error_message = 'Failed to query cryptocompare for: "{}"'.format(querystr)
-                if 'Message' in resp:
-                    error_message += ". Error: {}".format(resp['Message'])
+        try:
+            if wrapped_response:
+                if 'Response' not in json_ret or json_ret['Response'] != 'Success':
+                    error_message = 'Failed to query cryptocompare for: "{}"'.format(querystr)
+                    if 'Message' in json_ret:
+                        error_message += ". Error: {}".format(json_ret['Message'])
 
-                log.error('Cryptocompare query failure', url=querystr, error=error_message)
-                raise ValueError(error_message)
-            return resp['Data']
+                    log.error('Cryptocompare query failure', url=querystr, error=error_message)
+                    raise RemoteError(error_message)
+                return json_ret['Data']
+        except KeyError as e:
+            raise RemoteError(
+                f'Unexpected format of Cryptocompare json_retonse. Missing key entry for {str(e)}',
+            )
 
-        # else not a wrapped response
-        return resp
+        # else not a wrapped json_response
+        return json_ret
 
     def query_endpoint_histohour(
             self,
@@ -139,7 +194,11 @@ class Cryptocompare():
             limit: int,
             to_timestamp: Timestamp,
     ) -> Dict[str, Any]:
-        """Returns the full histohour response including TimeFrom and TimeTo"""
+        """Returns the full histohour response including TimeFrom and TimeTo
+
+        - May raise RemoteError if there is a problem reaching the cryptocompare server
+        or with reading the response returned by the server
+        """
         # These two can raise but them raising here is a bug
         cc_from_asset_symbol = from_asset.to_cryptocompare()
         cc_to_asset_symbol = to_asset.to_cryptocompare()
@@ -156,6 +215,11 @@ class Cryptocompare():
             to_asset: Asset,
             timestamp: Timestamp,
     ) -> Price:
+        """Queries the historical daily price of from_asset to to_asset for timestamp
+
+        - May raise RemoteError if there is a problem reaching the cryptocompare server
+        or with reading the response returned by the server
+        """
         log.debug(
             'Querying cryptocompare for daily historical price',
             from_asset=from_asset,
@@ -174,7 +238,7 @@ class Cryptocompare():
         result = self._api_query(query_path)
         return Price(FVal(result[cc_from_asset_symbol][cc_to_asset_symbol]))
 
-    def got_cached_price(self, cache_key: PairCacheKey, timestamp: Timestamp) -> bool:
+    def _got_cached_price(self, cache_key: PairCacheKey, timestamp: Timestamp) -> bool:
         """Check if we got a price history for the timestamp cached"""
         if cache_key in self.price_history_file:
             if cache_key not in self.price_history:
@@ -206,6 +270,9 @@ class Cryptocompare():
         Get historical price data from cryptocompare
 
         Returns a sorted list of price entries.
+
+        - May raise RemoteError if there is a problem reaching the cryptocompare server
+        or with reading the response returned by the server
         """
         log.debug(
             'Retrieving historical price data from cryptocompare',
@@ -215,7 +282,7 @@ class Cryptocompare():
         )
 
         cache_key = PairCacheKey(from_asset.identifier + '_' + to_asset.identifier)
-        got_cached_value = self.got_cached_price(cache_key, timestamp)
+        got_cached_value = self._got_cached_price(cache_key, timestamp)
         if got_cached_value:
             return self.price_history[cache_key].data
 
@@ -254,7 +321,8 @@ class Cryptocompare():
                 # end date then do nothing. If it has more skip all already included entries
                 if diff >= 3600:
                     if resp['Data'][diff // 3600]['time'] != pr_end_date:
-                        raise ValueError(
+                        raise RemoteError(
+                            'Unexpected fata format in cryptocompare query_endpoint_histohour. '
                             'Expected to find the previous date timestamp during '
                             'cryptocompare historical data fetching',
                         )
@@ -270,7 +338,10 @@ class Cryptocompare():
             )
             if end_dates_dont_match:
                 if resp['TimeTo'] - end_date >= 3600:
-                    raise ValueError('End dates do not match in a cryptocompare query')
+                    raise RemoteError(
+                        'Unexpected fata format in cryptocompare query_endpoint_histohour. '
+                        'End dates do not match.',
+                    )
                 else:
                     # but if it's just a drift within an hour just update the end_date so that
                     # it can be picked up by the next iterations in the loop
@@ -288,7 +359,7 @@ class Cryptocompare():
                 break
 
         # Let's always check for data sanity for the hourly prices.
-        assert _check_hourly_data_sanity(calculated_history, from_asset, to_asset)
+        _check_hourly_data_sanity(calculated_history, from_asset, to_asset)
         # and now since we actually queried the data let's also cache them
         filename = FilePath(
             os.path.join(self.data_directory, 'price_history_' + cache_key + '.json'),
@@ -324,6 +395,17 @@ class Cryptocompare():
             timestamp: Timestamp,
             historical_data_start: Timestamp,
     ) -> Price:
+        """
+        Query the historical price on `timestamp` for `from_asset` in `to_asset`.
+        So how much `to_asset` does 1 unit of `from_asset` cost.
+
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from cryptocompare
+        - RemoteError if there is a problem reaching the cryptocompare server
+        or with reading the response returned by the server
+        """
         if from_asset in KNOWN_TO_MISS_FROM_CRYPTOCOMPARE:
             raise PriceQueryUnknownFromAsset(from_asset)
 
@@ -425,6 +507,13 @@ class Cryptocompare():
         Note: Since 12/01/2019 this seems to no longer be happening, but I will
         keep the code around just in case a regression is introduced on the side
         of cryptocompare.
+
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from cryptocompare
+        - RemoteError if there is a problem reaching the cryptocompare server
+        or with reading the response returned by the server
         """
         from_asset_usd = PriceHistorian().query_historical_price(
             from_asset=from_asset,
@@ -454,8 +543,14 @@ class Cryptocompare():
         return price
 
     def all_coins(self) -> Dict[str, Any]:
-        """Gets the list of all the cryptocompare coins"""
-        # Get coin list of crypto compare
+        """
+        Gets the list of all the cryptocompare coins
+
+        May raise:
+        - RemoteError if there is a problem reaching the cryptocompare server
+        or with reading the response returned by the server
+        """
+        # Get coin list of cryptocompare
         invalidate_cache = True
         coinlist_cache_path = os.path.join(self.data_directory, 'cryptocompare_coinlist.json')
         if os.path.isfile(coinlist_cache_path):

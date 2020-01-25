@@ -95,6 +95,13 @@ class PriceHistorian():
             to_asset: The ticker symbol of the asset against which we want to
                       know the price.
             timestamp: The timestamp at which to query the price
+
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from the external service.
+        - RemoteError if there is a problem reaching the price oracle server
+        or with reading the response returned by the server
         """
         log.debug(
             'Querying historical price',

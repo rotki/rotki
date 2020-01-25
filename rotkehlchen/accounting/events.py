@@ -84,6 +84,15 @@ class TaxableEvents():
         return self.details
 
     def get_rate_in_profit_currency(self, asset: Asset, timestamp: Timestamp) -> FVal:
+        """Get the profit_currency price of asset in the given timestamp
+
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from the price oracle
+        - RemoteError if there is a problem reaching the price oracle server
+        or with reading the response returned by the server
+        """
         if asset == self.profit_currency:
             rate = FVal(1)
         else:
@@ -92,7 +101,6 @@ class TaxableEvents():
                 to_asset=self.profit_currency,
                 timestamp=timestamp,
             )
-        assert isinstance(rate, (FVal, int))  # TODO Remove. Is temporary assert
         return rate
 
     def reduce_asset_amount(self, asset: Asset, amount: FVal) -> bool:
@@ -197,6 +205,16 @@ class TaxableEvents():
             fee_currency: Asset,
             timestamp: Timestamp,
     ) -> None:
+        """
+        Account for the given buy and the corresponding sell if it's a crypto to crypto
+
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from cryptocompare
+        - RemoteError if there is a problem reaching the price oracle server
+        or with reading the response returned by the server
+        """
         self.add_buy(
             bought_asset=bought_asset,
             bought_amount=bought_amount,
@@ -273,6 +291,16 @@ class TaxableEvents():
             timestamp: Timestamp,
             is_virtual: bool = False,
     ) -> None:
+        """
+        Account for the given buy
+
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from cryptocompare
+        - RemoteError if there is a problem reaching the price oracle server
+        or with reading the response returned by the server
+        """
         paid_with_asset_rate = self.get_rate_in_profit_currency(paid_with_asset, timestamp)
         buy_rate = paid_with_asset_rate * trade_rate
 
@@ -338,7 +366,7 @@ class TaxableEvents():
             timestamp: Timestamp,
     ) -> None:
         """
-        Add and process a selling event to the events list
+        Account for the given sell and the corresponding buy if it's a crypto to crypto
 
         Args:
             selling_asset (str): The ticker representation of the asset we sell.
@@ -354,6 +382,13 @@ class TaxableEvents():
             trade_rate (FVal): How much does 1 unit of `receiving_asset` cost in `selling_asset`
             rate_in_profit_currency (FVal): The equivalent of `trade_rate` in `profit_currency`
             timestamp (int): The timestamp for the trade
+
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from cryptocompare
+        - RemoteError if there is a problem reaching the price oracle server
+        or with reading the response returned by the server
         """
         self.add_sell(
             selling_asset,
@@ -400,6 +435,15 @@ class TaxableEvents():
             loan_settlement: bool = False,
             is_virtual: bool = False,
     ) -> None:
+        """Account for the given sell action
+
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from cryptocompare
+        - RemoteError if there is a problem reaching the price oracle server
+        or with reading the response returned by the server
+        """
 
         if selling_asset not in self.events:
             self.events[selling_asset] = Events(list(), list())
@@ -673,6 +717,14 @@ class TaxableEvents():
             open_time: Timestamp,
             close_time: Timestamp,
     ) -> None:
+        """Account for gains from the given loan
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from the external service.
+        - RemoteError if there is a problem reaching the price oracle server
+        or with reading the response returned by the server
+        """
 
         timestamp = close_time
         rate = self.get_rate_in_profit_currency(gained_asset, timestamp)
@@ -715,6 +767,15 @@ class TaxableEvents():
             )
 
     def add_margin_position(self, margin: MarginPosition) -> None:
+        """Account for the given margin position
+
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from the external service.
+        - RemoteError if there is a problem reaching the price oracle server
+        or with reading the response returned by the server
+        """
         if margin.pl_currency not in self.events:
             self.events[margin.pl_currency] = Events(list(), list())
         if margin.fee_currency not in self.events:
