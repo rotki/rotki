@@ -3,6 +3,7 @@ Changelog
 =========
 
 
+* :feature:`626` Rotki now accepts addition of API keys for external services such as etherscan or cryptocompare.
 * :feature:`46` Coinbase Pro is now supported. Trades, deposits, withdrawals and balances in that exchange can now be queried.
 * :feature:`583` The UI's notifications can finally be copy pasted.
 * :feature:`168` Users can now force-refresh exchange/blockchain balances via the UI and ignore the cache.
