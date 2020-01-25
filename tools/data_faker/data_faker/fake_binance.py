@@ -37,7 +37,7 @@ DISALLOWED_ASSETS = (
 )
 
 
-class FakeBinance(object):
+class FakeBinance():
 
     def __init__(self) -> None:
         this_dir = os.path.dirname(os.path.abspath(__file__))
@@ -109,7 +109,12 @@ class FakeBinance(object):
         """Returns the balance of asset that's held in the exchance or None"""
         return self.balances_dict.get(asset.identifier)
 
-    def deposit(self, asset: Asset, amount: FVal, time: Timestamp) -> None:
+    def deposit(
+            self,
+            asset: Asset,
+            amount: FVal,
+            time: Timestamp,  # pylint: disable=unused-argument
+    ) -> None:
         self.increase_asset(asset, amount)
 
     def append_trade(self, trade: Trade):

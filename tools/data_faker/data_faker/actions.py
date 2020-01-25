@@ -26,7 +26,7 @@ MAX_FEE_USD_VALUE = 1
 logger = logging.getLogger(__name__)
 
 
-class ActionWriter(object):
+class ActionWriter():
 
     def __init__(
             self,
@@ -97,7 +97,8 @@ class ActionWriter(object):
             if save_balances:
                 self.maybe_save_balances(save_ts=current_ts)
 
-    def query_historical_price(self, from_asset: Asset, to_asset: Asset, timestamp: Timestamp):
+    @staticmethod
+    def query_historical_price(from_asset: Asset, to_asset: Asset, timestamp: Timestamp):
         return PriceHistorian().query_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,

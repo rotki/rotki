@@ -17,7 +17,7 @@ from rotkehlchen.typing import ApiKey, ApiSecret
 logger = logging.getLogger(__name__)
 
 
-class DataFaker(object):
+class DataFaker():
 
     def __init__(self, args: argparse.Namespace) -> None:
         args.logfile = 'data_faker.log'

@@ -51,7 +51,7 @@ def api_error(error, status_code):
     return response
 
 
-def endpoint_not_found(e):
+def endpoint_not_found(e):  # pylint: disable=unused-argument
     return api_error('invalid endpoint', HTTPStatus.NOT_FOUND)
 
 
@@ -64,7 +64,7 @@ def restapi_setup_urls(flask_api_context, rest_api, urls) -> None:
         )
 
 
-class APIServer(object):
+class APIServer():
 
     def __init__(self, rest_api) -> None:
         flask_app = Flask(__name__)
@@ -106,7 +106,7 @@ class APIServer(object):
             self.wsgiserver = None
 
 
-class RestAPI(object):
+class RestAPI():
     def __init__(self, fake_kraken, fake_binance) -> None:
         self.kraken = fake_kraken
         self.binance = fake_binance

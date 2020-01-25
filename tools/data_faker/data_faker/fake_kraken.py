@@ -15,7 +15,7 @@ from rotkehlchen.tests.fixtures.exchanges.kraken import create_kraken_trade
 from rotkehlchen.typing import Timestamp, TradePair
 
 
-class FakeKraken(object):
+class FakeKraken():
 
     def __init__(self) -> None:
 
