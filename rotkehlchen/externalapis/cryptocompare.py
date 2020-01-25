@@ -100,8 +100,8 @@ class Cryptocompare(ExternalServiceWithApiKey):
     def __init__(self, data_directory: FilePath, database: DBHandler) -> None:
         super().__init__(database=database, service_name=ExternalService.CRYPTOCOMPARE)
         self.data_directory = data_directory
-        self.price_history: Dict[PairCacheKey, PriceHistoryData] = dict()
-        self.price_history_file: Dict[PairCacheKey, FilePath] = dict()
+        self.price_history: Dict[PairCacheKey, PriceHistoryData] = {}
+        self.price_history_file: Dict[PairCacheKey, FilePath] = {}
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
 
@@ -261,7 +261,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
 
         now_ts = ts_now()
         cryptocompare_hourquerylimit = 2000
-        calculated_history: List[Dict[str, Any]] = list()
+        calculated_history: List[Dict[str, Any]] = []
 
         if historical_data_start <= timestamp:
             end_date = historical_data_start

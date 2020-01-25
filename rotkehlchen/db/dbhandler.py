@@ -443,7 +443,7 @@ class DBHandler:
         cursor = self.conn.cursor()
         cursor.executemany(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-            [setting for setting in list(settings_dict.items())],
+            list(settings_dict.items()),
         )
         self.conn.commit()
         self.update_last_write()
@@ -719,8 +719,8 @@ class DBHandler:
         )
         query = query.fetchall()
 
-        eth_list = list()
-        btc_list = list()
+        eth_list = []
+        btc_list = []
 
         for entry in query:
             if entry[0] == S_ETH:

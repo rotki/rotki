@@ -393,7 +393,7 @@ class Kraken(ExchangeInterface):
             log.error(msg)
             return None, msg
 
-        balances = dict()
+        balances = {}
         for k, v in old_balances.items():
             v = FVal(v)
             if v == FVal(0):
@@ -442,7 +442,7 @@ class Kraken(ExchangeInterface):
         you need to check the 'count' of the returned results and provide sufficient
         calls with enough offset to gather all the data of your query.
         """
-        result: List = list()
+        result: List = []
 
         log.debug(
             f'Querying Kraken {endpoint} from {start_ts} to '
@@ -542,7 +542,7 @@ class Kraken(ExchangeInterface):
             offset: Optional[int] = None,
             extra_dict: Optional[dict] = None,
     ) -> dict:
-        request: Dict[str, Union[Timestamp, int]] = dict()
+        request: Dict[str, Union[Timestamp, int]] = {}
         request['start'] = start_ts
         request['end'] = end_ts
         if offset is not None:
@@ -562,19 +562,19 @@ class Kraken(ExchangeInterface):
             keyname='ledger',
             start_ts=start_ts,
             end_ts=end_ts,
-            extra_dict=dict(type='deposit'),
+            extra_dict={'type': 'deposit'},
         )
         result.extend(self.query_until_finished(
             endpoint='Ledgers',
             keyname='ledger',
             start_ts=start_ts,
             end_ts=end_ts,
-            extra_dict=dict(type='withdrawal'),
+            extra_dict={'type': 'withdrawal'},
         ))
 
         log.debug('Kraken deposit/withdrawals query result', num_results=len(result))
 
-        movements = list()
+        movements = []
         for movement in result:
             try:
                 asset = asset_from_kraken(movement['asset'])

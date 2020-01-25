@@ -145,7 +145,7 @@ def process_polo_loans(
     """Takes in the list of loans from poloniex as returned by the return_lending_history
     api call, processes it and returns it into our loan format
     """
-    new_data = list()
+    new_data = []
 
     for loan in reversed(data):
         log.debug('processing poloniex loan', **make_sensitive(loan))
@@ -347,7 +347,7 @@ class Poloniex(ExchangeInterface):
 
         Also maximum limit seems to be 12660
         """
-        req: Dict[str, Union[int, Timestamp]] = dict()
+        req: Dict[str, Union[int, Timestamp]] = {}
         if start_ts is not None:
             req['start'] = start_ts
         if end_ts is not None:
@@ -420,7 +420,7 @@ class Poloniex(ExchangeInterface):
             log.error(msg)
             return None, msg
 
-        balances = dict()
+        balances = {}
         for poloniex_asset, v in resp.items():
             available = FVal(v['available'])
             on_orders = FVal(v['onOrders'])
@@ -541,7 +541,7 @@ class Poloniex(ExchangeInterface):
         the file is not proper CSV"""
         # the default filename, and should be (if at all) inside the data directory
         path = os.path.join(self.db.user_data_dir, "lendingHistory.csv")
-        lending_history = list()
+        lending_history = []
         with open(path, 'r') as csvfile:
             history = csv.reader(csvfile, delimiter=',', quotechar='|')
             next(history)  # skip header row
@@ -695,7 +695,7 @@ class Poloniex(ExchangeInterface):
             results_num=len(result['withdrawals']) + len(result['deposits']),
         )
 
-        movements = list()
+        movements = []
         for withdrawal in result['withdrawals']:
             asset_movement = self._deserialize_asset_movement(
                 movement_type=AssetMovementCategory.WITHDRAWAL,

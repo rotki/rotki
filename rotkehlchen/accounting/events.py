@@ -20,7 +20,7 @@ log = RotkehlchenLogsAdapter(logger)
 class TaxableEvents():
 
     def __init__(self, csv_exporter: CSVExporter, profit_currency: Asset) -> None:
-        self.events: Dict[Asset, Events] = dict()
+        self.events: Dict[Asset, Events] = {}
         self.csv_exporter = csv_exporter
         self.profit_currency = profit_currency
 
@@ -33,7 +33,7 @@ class TaxableEvents():
         self._include_crypto2crypto: Optional[bool] = None
 
     def reset(self, start_ts: Timestamp, end_ts: Timestamp) -> None:
-        self.events = dict()
+        self.events = {}
         self.query_start_ts = start_ts
         self.query_end_ts = end_ts
         self.general_trade_profit_loss = FVal(0)
@@ -63,7 +63,7 @@ class TaxableEvents():
     def calculate_asset_details(self) -> Dict[Asset, Tuple[FVal, FVal]]:
         """ Calculates what amount of all assets has been untouched for a year and
         is hence tax-free and also the average buy price for each asset"""
-        self.details: Dict[Asset, Tuple[FVal, FVal]] = dict()
+        self.details: Dict[Asset, Tuple[FVal, FVal]] = {}
         now = ts_now()
         for asset, events in self.events.items():
             tax_free_amount_left = ZERO
@@ -315,7 +315,7 @@ class TaxableEvents():
         )
 
         if bought_asset not in self.events:
-            self.events[bought_asset] = Events(list(), list())
+            self.events[bought_asset] = Events([], [])
 
         gross_cost = bought_amount * buy_rate
         cost_in_profit_currency = gross_cost + fee_in_profit_currency
@@ -446,7 +446,7 @@ class TaxableEvents():
         """
 
         if selling_asset not in self.events:
-            self.events[selling_asset] = Events(list(), list())
+            self.events[selling_asset] = Events([], [])
 
         self.events[selling_asset].sells.append(
             SellEvent(
@@ -730,7 +730,7 @@ class TaxableEvents():
         rate = self.get_rate_in_profit_currency(gained_asset, timestamp)
 
         if gained_asset not in self.events:
-            self.events[gained_asset] = Events(list(), list())
+            self.events[gained_asset] = Events([], [])
 
         net_gain_amount = gained_amount - fee_in_asset
         gain_in_profit_currency = net_gain_amount * rate
@@ -777,9 +777,9 @@ class TaxableEvents():
         or with reading the response returned by the server
         """
         if margin.pl_currency not in self.events:
-            self.events[margin.pl_currency] = Events(list(), list())
+            self.events[margin.pl_currency] = Events([], [])
         if margin.fee_currency not in self.events:
-            self.events[margin.fee_currency] = Events(list(), list())
+            self.events[margin.fee_currency] = Events([], [])
 
         pl_currency_rate = self.get_rate_in_profit_currency(margin.pl_currency, margin.close_time)
         fee_currency_rate = self.get_rate_in_profit_currency(margin.pl_currency, margin.close_time)

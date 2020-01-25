@@ -256,7 +256,7 @@ class Coinbasepro(ExchangeInterface):
             log.error(msg)
             return None, msg
 
-        returned_balances: Dict[Asset, Dict[str, Any]] = dict()
+        returned_balances: Dict[Asset, Dict[str, Any]] = {}
         for account in accounts:
             try:
                 amount = deserialize_asset_amount(account['balance'])

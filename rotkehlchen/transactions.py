@@ -21,7 +21,7 @@ def query_ethereum_transactions(
     - RemoteError if etherscan is used and there is a problem with reaching it or
     with parsing the response.
     """
-    transactions: List[EthereumTransaction] = list()
+    transactions: List[EthereumTransaction] = []
     db = etherscan.db
 
     accounts = db.get_blockchain_accounts()

@@ -67,20 +67,20 @@ class CSVExporter():
         self.user_directory = user_directory
         self.profit_currency = profit_currency
         self.create_csv = create_csv
-        self.all_events: List[Dict[str, Any]] = list()
+        self.all_events: List[Dict[str, Any]] = []
         self.reset_csv_lists()
 
     def reset_csv_lists(self) -> None:
         # TODO: Further specify the types here in more detail. Get rid of "Any"
         if self.create_csv:
-            self.trades_csv: List[Dict[str, Any]] = list()
-            self.loan_profits_csv: List[Dict[str, Any]] = list()
-            self.asset_movements_csv: List[Dict[str, Any]] = list()
-            self.tx_gas_costs_csv: List[Dict[str, Any]] = list()
-            self.margin_positions_csv: List[Dict[str, Any]] = list()
-            self.loan_settlements_csv: List[Dict[str, Any]] = list()
-            self.all_events_csv: List[Dict[str, Any]] = list()
-            self.all_events = list()
+            self.trades_csv: List[Dict[str, Any]] = []
+            self.loan_profits_csv: List[Dict[str, Any]] = []
+            self.asset_movements_csv: List[Dict[str, Any]] = []
+            self.tx_gas_costs_csv: List[Dict[str, Any]] = []
+            self.margin_positions_csv: List[Dict[str, Any]] = []
+            self.loan_settlements_csv: List[Dict[str, Any]] = []
+            self.all_events_csv: List[Dict[str, Any]] = []
+            self.all_events = []
 
     def add_to_allevents(
             self,

@@ -296,14 +296,14 @@ def get_system_spec() -> Dict[str, str]:
             platform.machine(),
         )
 
-    system_spec = dict(
+    system_spec = {
         # used to be require 'rotkehlchen.__name__' but as long as setup.py
         # target differs from package we need this
-        rotkehlchen=pkg_resources.require('rotkehlchen')[0].version,
-        python_implementation=platform.python_implementation(),
-        python_version=platform.python_version(),
-        system=system_info,
-    )
+        'rotkehlchen': pkg_resources.require('rotkehlchen')[0].version,
+        'python_implementation': platform.python_implementation(),
+        'python_version': platform.python_version(),
+        'system': system_info,
+    }
     return system_spec
 
 
@@ -320,7 +320,7 @@ def write_history_data_in_file(
         end_time=end_ts,
     )
     with open(filepath, 'w') as outfile:
-        history_dict: Dict[str, Any] = dict()
+        history_dict: Dict[str, Any] = {}
         history_dict['data'] = data
         history_dict['start_time'] = start_ts
         history_dict['end_time'] = end_ts

@@ -137,7 +137,7 @@ def trade_from_binance(
 def create_binance_symbols_to_pair(exchange_data: Dict[str, Any]) -> Dict[str, BinancePair]:
     """Parses the result of 'exchangeInfo' endpoint and creates the symbols_to_pair mapping
     """
-    symbols_to_pair: Dict[str, BinancePair] = dict()
+    symbols_to_pair: Dict[str, BinancePair] = {}
     for symbol in exchange_data['symbols']:
         symbol_str = symbol['symbol']
         if isinstance(symbol_str, FVal):
@@ -312,7 +312,7 @@ class Binance(ExchangeInterface):
             log.error(msg)
             return None, msg
 
-        returned_balances = dict()
+        returned_balances = {}
         for entry in account_data['balances']:
             amount = entry['free'] + entry['locked']
             if amount == FVal(0):
@@ -339,7 +339,7 @@ class Binance(ExchangeInterface):
                 continue
 
             usd_price = Inquirer().find_usd_price(asset)
-            balance = dict()
+            balance = {}
             balance['amount'] = amount
             balance['usd_value'] = FVal(amount * usd_price)
             returned_balances[asset] = balance
@@ -367,7 +367,7 @@ class Binance(ExchangeInterface):
         else:
             iter_markets = markets
 
-        raw_data = list()
+        raw_data = []
         # Limit of results to return. 1000 is max limit according to docs
         limit = 1000
         for symbol in iter_markets:
@@ -396,7 +396,7 @@ class Binance(ExchangeInterface):
 
             raw_data.sort(key=lambda x: x['time'])
 
-        trades = list()
+        trades = []
         for raw_trade in raw_data:
             try:
                 trade = trade_from_binance(raw_trade, self.symbols_to_pair)

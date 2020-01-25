@@ -44,7 +44,7 @@ ERROR_STATUS_CODES = [
 def api_error(error, status_code):
     assert status_code in ERROR_STATUS_CODES, 'Programming error, unexpected error status code'
     response = make_response((
-        json.dumps(dict(error=error)),
+        json.dumps({'error': error}),
         status_code,
         {'mimetype': 'application/json', 'Content-Type': 'application/json'},
     ))

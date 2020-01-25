@@ -14,12 +14,12 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
     if isinstance(entry, FVal):
         return str(entry)
     elif isinstance(entry, list):
-        new_list = list()
+        new_list = []
         for new_entry in entry:
             new_list.append(_process_entry(new_entry))
         return new_list
     elif isinstance(entry, dict):
-        new_dict = dict()
+        new_dict = {}
         for k, v in entry.items():
             if isinstance(k, Asset):
                 k = k.identifier

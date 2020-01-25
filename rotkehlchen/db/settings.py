@@ -56,7 +56,7 @@ class ModifiableDBSettings(NamedTuple):
     submit_usage_analytics: Optional[bool] = None
 
     def serialize(self) -> Dict[str, Any]:
-        settings_dict = dict()
+        settings_dict = {}
         for setting in ModifiableDBSettings._fields:
             value = getattr(self, setting)
             if value is not None:

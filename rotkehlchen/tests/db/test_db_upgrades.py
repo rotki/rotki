@@ -732,7 +732,7 @@ def test_upgrade_db_8_to_9(data_dir, username):
     results = cursor.execute(
         'SELECT name, api_key, api_secret, passphrase FROM user_credentials;',
     )
-    names = set(('coinbase', 'coinbasepro', 'binance', 'bittrex', 'kraken', 'bitmex'))
+    names = {'coinbase', 'coinbasepro', 'binance', 'bittrex', 'kraken', 'bitmex'}
     for result in results:
         assert result[0] in names
         names.remove(result[0])

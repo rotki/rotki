@@ -379,7 +379,7 @@ class RestAPI():
         return api_response(_wrap_in_result(result, message), status_code=status_code)
 
     def _query_all_exchange_balances(self, ignore_cache: bool) -> Dict[str, Any]:
-        final_balances = dict()
+        final_balances = {}
         error_msg = ''
         for name, exchange_obj in self.rotkehlchen.exchange_manager.connected_exchanges.items():
             balances, msg = exchange_obj.query_balances(ignore_cache=ignore_cache)
@@ -388,7 +388,7 @@ class RestAPI():
             else:
                 final_balances[name] = balances
 
-        if final_balances == dict():
+        if final_balances == {}:
             result = None
         else:
             result = final_balances
@@ -437,7 +437,7 @@ class RestAPI():
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> Dict[str, List[Trade]]:
-        trades: Dict[str, List[Trade]] = dict()
+        trades: Dict[str, List[Trade]] = {}
         for name, exchange_obj in self.rotkehlchen.exchange_manager.connected_exchanges.items():
             trades[name] = exchange_obj.query_trade_history(start_ts=from_ts, end_ts=to_ts)
 

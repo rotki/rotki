@@ -320,7 +320,7 @@ class Coinbase(ExchangeInterface):
             log.error(msg)
             return None, msg
 
-        returned_balances: Dict[Asset, Dict[str, Any]] = dict()
+        returned_balances: Dict[Asset, Dict[str, Any]] = {}
         for account in resp:
             try:
                 if not account['balance']:

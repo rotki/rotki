@@ -121,7 +121,7 @@ def retrieve_location_data() -> Optional[GeolocationData]:
 
 
 def create_usage_analytics() -> Dict[str, Any]:
-    analytics = dict()
+    analytics = {}
 
     analytics['system_os'] = platform.system()
     analytics['system_release'] = platform.release()
