@@ -98,3 +98,7 @@ class NoPriceForGivenTimestamp(Exception):
 
 class InvalidBTCAddress(Exception):
     pass
+
+
+class ConversionError(Exception):
+    pass

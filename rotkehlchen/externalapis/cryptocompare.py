@@ -392,6 +392,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
         # all data are sorted and timestamps are always increasing by 1 hour
         # find the closest entry to the provided timestamp
         if timestamp >= data[0].time:
+            # convert_to_int can't raise here due to its input
             index = convert_to_int((timestamp - data[0].time) / 3600, accept_only_exact=False)
             # print("timestamp: {} index: {} data_length: {}".format(timestamp, index, len(data)))
             diff = abs(data[index].time - timestamp)

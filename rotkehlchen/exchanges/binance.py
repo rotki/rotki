@@ -141,6 +141,7 @@ def create_binance_symbols_to_pair(exchange_data: Dict[str, Any]) -> Dict[str, B
     for symbol in exchange_data['symbols']:
         symbol_str = symbol['symbol']
         if isinstance(symbol_str, FVal):
+            # the to_int here may rase but should never due to the if check above
             symbol_str = str(symbol_str.to_int(exact=True))
 
         symbols_to_pair[symbol_str] = BinancePair(

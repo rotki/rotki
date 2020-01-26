@@ -1,6 +1,8 @@
 from decimal import Decimal, InvalidOperation
 from typing import Any, Union
 
+from rotkehlchen.errors import ConversionError
+
 # Here even though we got __future__ annotations using FVal does not seem to work
 AcceptableFValInitInput = Union[float, bytes, Decimal, int, str, 'FVal']
 AcceptableFValOtherInput = Union[int, 'FVal']
@@ -139,10 +141,15 @@ class FVal():
         return '{:.{}%}'.format(self.num, precision)
 
     def to_int(self, exact: bool) -> int:
-        """Tries to convert to int, If `exact` is true then it will convert only if
-        it is a whole decimal number; i.e.: if it has got nothing after the decimal point"""
+        """
+        Tries to convert to int, If `exact` is true then it will convert only if
+        it is a whole decimal number; i.e.: if it has got nothing after the decimal point
+
+        Raises:
+            ConversionError: If exact was True but the FVal is actually not an exact integer.
+        """
         if exact and self.num.to_integral_exact() != self.num:
-            raise ValueError('Tried to ask for exact int from {}'.format(self.num))
+            raise ConversionError(f'Tried to ask for exact int from {self.num}')
         return int(self.num)
 
     def is_close(self, other: AcceptableFValInitInput, max_diff: str = "1e-6") -> bool:
