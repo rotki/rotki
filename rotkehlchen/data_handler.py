@@ -17,14 +17,7 @@ from rotkehlchen.datatyping import BalancesData
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import AuthenticationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import (
-    AssetAmount,
-    B64EncodedBytes,
-    B64EncodedString,
-    ChecksumEthAddress,
-    FilePath,
-    Timestamp,
-)
+from rotkehlchen.typing import AssetAmount, B64EncodedBytes, B64EncodedString, FilePath, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
@@ -157,10 +150,6 @@ class DataHandler():
             if x.is_dir() and (x / 'rotkehlchen.db').exists():
                 users[x.stem] = 'loggedin' if x.stem == self.username else 'loggedout'
         return users
-
-    def get_eth_accounts(self) -> List[ChecksumEthAddress]:
-        blockchain_accounts = self.db.get_blockchain_accounts()
-        return blockchain_accounts.eth
 
     def set_fiat_balances(
             self,
