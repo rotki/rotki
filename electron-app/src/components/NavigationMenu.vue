@@ -4,6 +4,10 @@
       <v-list-item-action><v-icon>fa-dashboard</v-icon></v-list-item-action>
       <v-list-item-title>Dashboard</v-list-item-title>
     </v-list-item>
+    <v-list-item to="/blockchain-accounts">
+      <v-list-item-action><v-icon>fa-user</v-icon></v-list-item-action>
+      <v-list-item-title>Blockchain Accounts/<br />Balances</v-list-item-title>
+    </v-list-item>
     <v-list-item to="/import">
       <v-list-item-action><v-icon>fa-download</v-icon></v-list-item-action>
       <v-list-item-title>Import Data</v-list-item-title>

@@ -55,6 +55,11 @@ export default new Router({
       path: '/import',
       name: 'import',
       component: () => import('./views/ImportData.vue')
+    },
+    {
+      path: '/blockchain-accounts',
+      name: 'blockchain-accounts',
+      component: () => import('./views/BlockchainAccountsBalances.vue')
     }
   ]
 });

@@ -8,8 +8,6 @@
     <premium-settings></premium-settings>
     <exchange-settings></exchange-settings>
     <external-services></external-services>
-    <fiat-balances></fiat-balances>
-    <blockchain-balances></blockchain-balances>
   </v-container>
 </template>
 
