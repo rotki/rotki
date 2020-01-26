@@ -2,7 +2,12 @@ from typing import Tuple, Union
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import DeserializationError, UnknownAsset, UnprocessableTradePair
+from rotkehlchen.errors import (
+    ConversionError,
+    DeserializationError,
+    UnknownAsset,
+    UnprocessableTradePair,
+)
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
 from rotkehlchen.typing import (
     AssetAmount,
@@ -49,7 +54,7 @@ def deserialize_timestamp(timestamp: Union[int, str]) -> Timestamp:
     elif isinstance(timestamp, FVal):
         try:
             processed_timestamp = Timestamp(timestamp.to_int(exact=True))
-        except ValueError:
+        except ConversionError:
             # An fval was not representing an exact int
             raise DeserializationError(
                 f'Tried to deserialize a timestamp fron a non-exact int FVal entry',
@@ -143,12 +148,12 @@ def deserialize_timestamp_from_kraken(time: Union[str, FVal]) -> Timestamp:
     if isinstance(time, str):
         try:
             return Timestamp(convert_to_int(time, accept_only_exact=False))
-        except ValueError:
+        except ConversionError:
             raise DeserializationError(f'Failed to deserialize {time} kraken timestamp entry')
     elif isinstance(time, FVal):
         try:
             return Timestamp(time.to_int(exact=False))
-        except ValueError:
+        except ConversionError:
             raise DeserializationError(
                 f'Failed to deserialize {time} kraken timestamp entry from an FVal',
             )

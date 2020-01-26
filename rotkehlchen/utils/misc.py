@@ -16,6 +16,7 @@ from rlp.sedes import big_endian_int
 from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, ZERO
 from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.errors import (
+    ConversionError,
     DeserializationError,
     InvalidBTCAddress,
     RecoverableRequestError,
@@ -240,7 +241,12 @@ def convert_to_int(
         accept_only_exact: bool = True,
 ) -> int:
     """Try to convert to an int. Either from an FVal or a string. If it's a float
-    and it's not whole (like 42.0) and accept_only_exact is False then raise"""
+    and it's not whole (like 42.0) and accept_only_exact is False then raise
+
+    Raises:
+        ConversionError: If either the given value is not an exact number or its
+        type can not be converted
+    """
     if isinstance(val, FVal):
         return val.to_int(accept_only_exact)
     elif isinstance(val, (bytes, str)):
@@ -254,7 +260,7 @@ def convert_to_int(
         if val.is_integer() or accept_only_exact is False:
             return int(val)
 
-    raise ValueError('Can not convert {} which is of type {} to int.'.format(val, type(val)))
+    raise ConversionError(f'Can not convert {val} which is of type {type(val)} to int.')
 
 
 def taxable_gain_for_sell(

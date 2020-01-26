@@ -8,7 +8,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors import DeserializationError, RemoteError
+from rotkehlchen.errors import ConversionError, DeserializationError, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -35,7 +35,7 @@ def read_hash(data: Dict[str, Any], key: str) -> bytes:
 def read_integer(data: Dict[str, Any], key: str) -> int:
     try:
         result = convert_to_int(data[key])
-    except ValueError:
+    except ConversionError:
         raise DeserializationError(
             f'Failed to read {key} as an integer during etherscan transaction query',
         )
