@@ -547,6 +547,16 @@ class DBHandler:
 
         return Timestamp(int(query[0][0])), Timestamp(int(query[0][1]))
 
+    def delete_used_query_range_for_exchange(self, exchange_name: str) -> None:
+        """Delete the query ranges for the given exchange name"""
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
+            (f'{exchange_name}\\_%', '\\'),
+        )
+        self.conn.commit()
+        self.update_last_write()
+
     def update_used_query_range(self, name: str, start_ts: Timestamp, end_ts: Timestamp) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
