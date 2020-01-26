@@ -1,8 +1,8 @@
 <template>
-  <v-container class="user-settings">
+  <v-container class="api-keys">
     <v-row>
       <v-col>
-        <h1>User Settings</h1>
+        <h1>API Keys</h1>
       </v-col>
     </v-row>
     <premium-settings></premium-settings>
@@ -28,11 +28,11 @@ import ExternalServices from '@/components/ExternalServices.vue';
     PremiumSettings
   }
 })
-export default class User extends Vue {}
+export default class ApiKeys extends Vue {}
 </script>
 
 <style scoped lang="scss">
-.user-settings > * {
+.api-keys > * {
   margin-bottom: 16px;
 }
 </style>

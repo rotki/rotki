@@ -1,8 +1,8 @@
 import { Application, SpectronClient } from 'spectron';
 import {
   AccountType,
-  UserSettingsController
-} from './support/user_settings_controller';
+  BlockchainAccountBalancesController
+} from './support/blockchain-account-balances-controller';
 import { Guid } from './utils/guid';
 import {
   captureOnFailure,
@@ -14,13 +14,15 @@ import {
   selectFromUserMenu,
   setupTest
 } from './utils/common';
+import { ApiKeysController } from './support/api-keys-controller';
 const retry = require('promise-retry');
 
-describe('dashboard', () => {
+describe.skip('dashboard', () => {
   let application: Application;
   let stop: () => Promise<Application>;
   let client: SpectronClient;
-  let controller: UserSettingsController;
+  let controller: BlockchainAccountBalancesController;
+  let apiKeyController: ApiKeysController;
 
   let username: string;
   const password: string = process.env.PASSWORD as string;
@@ -36,7 +38,8 @@ describe('dashboard', () => {
     await setupTest(application, 'dashboard', async () => {
       await createAccount(application, username, password);
 
-      controller = new UserSettingsController(client);
+      controller = new BlockchainAccountBalancesController(client);
+      apiKeyController = new ApiKeysController(client);
       await client.waitUntilTextExists(
         '.page-header',
         'Dashboard',
@@ -81,7 +84,7 @@ describe('dashboard', () => {
         );
 
         await controller.addFiatValue();
-        await controller.addExchange(apiKey, apiSecret);
+        await apiKeyController.addExchange(apiKey, apiSecret);
 
         await navigateToDashboard(client);
 

@@ -14,7 +14,7 @@ const retry = require('promise-retry');
 
 jest.setTimeout(GLOBAL_TIMEOUT);
 
-describe('otc trades', () => {
+describe.skip('otc trades', () => {
   let application: Application;
   let stop: () => Promise<Application>;
   let client: SpectronClient;

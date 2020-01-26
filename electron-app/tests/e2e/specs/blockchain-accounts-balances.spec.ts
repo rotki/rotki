@@ -5,23 +5,23 @@ import {
   GLOBAL_TIMEOUT,
   initSpectron,
   METHOD_TIMEOUT,
-  selectFromUserMenu,
+  navigateTo,
   setupTest
 } from './utils/common';
 import { Guid } from './utils/guid';
 import {
   AccountType,
-  UserSettingsController
-} from './support/user_settings_controller';
+  BlockchainAccountBalancesController
+} from './support/blockchain-account-balances-controller';
 
 jest.setTimeout(GLOBAL_TIMEOUT);
 
-describe('user settings', () => {
+describe('blockchain accounts', () => {
   let application: Application;
   let stop: () => Promise<Application>;
   let client: SpectronClient;
 
-  let controller: UserSettingsController;
+  let controller: BlockchainAccountBalancesController;
 
   let username: string;
   const password: string = process.env.PASSWORD as string;
@@ -33,23 +33,17 @@ describe('user settings', () => {
     username = Guid.newGuid().toString();
     ({ application, stop } = await initSpectron());
     ({ client } = application);
-    await setupTest(application, 'user settings', async () => {
+    await setupTest(application, 'blockchain_accounts', async () => {
       await createAccount(application, username, password);
 
-      controller = new UserSettingsController(client);
+      controller = new BlockchainAccountBalancesController(client);
 
-      await selectFromUserMenu(client, '.user-dropdown__user-settings');
-      await client.waitForVisible('.user-settings', METHOD_TIMEOUT);
-      // navigate to accounting settings and then back to user settings to
-      // try and recreate https://github.com/rotki/rotki/issues/320
-      await selectFromUserMenu(client, '.user-dropdown__accounting-settings');
-      await client.waitUntilTextExists(
-        '.page-header',
-        'Accounting Settings',
+      await navigateTo(client, '.navigation__blockchain-accounts-balances');
+
+      await client.waitForVisible(
+        '.blockchain-accounts-balances',
         METHOD_TIMEOUT
       );
-      await selectFromUserMenu(client, '.user-dropdown__user-settings');
-      await client.waitForVisible('.user-settings', METHOD_TIMEOUT);
     });
   });
 
@@ -122,10 +116,13 @@ describe('user settings', () => {
   });
 
   test('should add a token and see that the tokens are updated', async () => {
-    await client.scroll('.token-track__search');
+    await client.scroll('.token-track__search', 0, -400);
 
-    await client.waitForEnabled('.token-track__search', METHOD_TIMEOUT);
-    await client.addValue('.token-track__search input', 'RDN');
+    await client.waitForEnabled(
+      '.token-track__search input[type="text"]',
+      METHOD_TIMEOUT
+    );
+    await client.addValue('.token-track__search input[type="text"]', 'RDN');
     await client.click('.v-list-item__title=RDN');
 
     await client.waitUntilTextExists(
@@ -161,40 +158,13 @@ describe('user settings', () => {
     await expect(usdValueColumn).resolves.toMatch('50');
   });
 
-  test('add an exchange key and and verify that it was added', async () => {
-    const apiKey = process.env.BITTREX_API_KEY as string;
-    const apiSecret = process.env.BITTREX_API_SECRET as string;
-
-    await controller.addExchange(apiKey, apiSecret);
-
-    await client.scroll('.exchange-settings', 0, 0);
-
-    client.click('.exchange-settings__fields__exchange');
-
-    await client.waitForVisible('.v-select-list', METHOD_TIMEOUT);
-    client.element(`.v-list-item__title=bittrex`).click();
-
-    await client.waitForVisible('.v-select-list', METHOD_TIMEOUT, false);
-
-    await client.waitForEnabled(
-      '.exchange-settings__fields__api-key input',
-      METHOD_TIMEOUT,
-      true
-    );
-    await expect(
-      client.element('.exchange-settings__fields__api-key input').isEnabled()
-    ).resolves.toBe(false);
-    await expect(
-      client.element('.exchange-settings__fields__api-secret input').isEnabled()
-    ).resolves.toBe(false);
-  });
-
   test('change the currency and verify that it changed in the tables', async () => {
     await client.waitForVisible('.currency-dropdown', METHOD_TIMEOUT);
-    client.click('.currency-dropdown');
+    await client.click('.currency-dropdown');
     await client.waitForVisible('#change-to-eur', METHOD_TIMEOUT);
-    client.click('#change-to-eur');
+    await client.click('#change-to-eur');
     await client.waitForVisible('#change-to-eur', METHOD_TIMEOUT, false);
+    await client.pause(400);
     await expect(
       client.getText('.fiat-balances thead > tr > th:last-child')
     ).resolves.toMatch('EUR');

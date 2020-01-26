@@ -28,7 +28,7 @@ async function dismissSuccessDialog(client: SpectronClient, message: string) {
 
 jest.setTimeout(GLOBAL_TIMEOUT);
 
-describe('accounting settings', () => {
+describe.skip('accounting settings', () => {
   let application: Application;
   let stop: () => Promise<Application>;
   let client: SpectronClient;
