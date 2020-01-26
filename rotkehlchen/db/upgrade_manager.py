@@ -61,6 +61,13 @@ def _eth_rpc_port_to_eth_rpc_endpoint(db: 'DBHandler') -> None:
     db.conn.commit()
 
 
+def _delete_used_query_range_entries(db: 'DBHandler') -> None:
+    """Delete all entries from the used_query_ranges table"""
+    cursor = db.conn.cursor()
+    cursor.execute('DELETE FROM used_query_ranges;')
+    db.conn.commit()
+
+
 UPGRADES_LIST = [
     UpgradeRecord(from_version=1, function=_checksum_eth_accounts),
     UpgradeRecord(
@@ -92,6 +99,10 @@ UPGRADES_LIST = [
     UpgradeRecord(
         from_version=8,
         function=upgrade_v8_to_v9,
+    ),
+    UpgradeRecord(
+        from_version=9,
+        function=_delete_used_query_range_entries,
     ),
 ]
 
