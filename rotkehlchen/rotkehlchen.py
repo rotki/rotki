@@ -516,6 +516,7 @@ class Rotkehlchen():
         self.exchange_manager.delete_exchange(name)
         # Success, remove it also from the DB
         self.data.db.remove_exchange(name)
+        self.data.db.delete_used_query_range_for_exchange(name)
         return True, ''
 
     def query_periodic_data(self) -> Dict[str, Union[bool, Timestamp]]:

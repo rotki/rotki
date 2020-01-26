@@ -34,6 +34,11 @@ API_KEYPAIR_COINBASEPRO_VALIDATION_PATCH = patch(
     return_value=(True, ''),
 )
 
+API_KEYPAIR_COINBASE_VALIDATION_PATCH = patch(
+    'rotkehlchen.exchanges.coinbase.Coinbase.validate_api_key',
+    return_value=(True, ''),
+)
+
 
 def test_setup_exchange(rotkehlchen_api_server):
     """Test that setting up an exchange via the api works"""
@@ -185,23 +190,33 @@ def test_setup_exchange_errors(rotkehlchen_api_server):
 
 def test_remove_exchange(rotkehlchen_api_server):
     """Test that removing a setup exchange via the api works"""
-    # Setup kraken exchange
-    data = {'name': 'kraken', 'api_key': 'ddddd', 'api_secret': 'fffffff'}
-    with API_KEYPAIR_VALIDATION_PATCH:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = rotki.data.db
+    # Setup coinbase exchange
+    data = {'name': 'coinbase', 'api_key': 'ddddd', 'api_secret': 'fffffff'}
+    with API_KEYPAIR_COINBASE_VALIDATION_PATCH:
         response = requests.put(
             api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data,
         )
     assert_simple_ok_response(response)
 
-    # and check that kraken is now registered
-    response = requests.get(api_url_for(rotkehlchen_api_server, "exchangesresource"))
-    assert_proper_response(response)
-    json_data = response.json()
-    assert json_data['message'] == ''
-    assert json_data['result'] == ['kraken']
+    # Add query ranges to see that they also get deleted when removing the exchange
+    cursor = db.conn.cursor()
+    cursor.executemany(
+        'INSERT OR REPLACE INTO used_query_ranges(name, start_ts, end_ts) VALUES (?, ?, ?)',
+        [('coinbasepro_trades', 0, 1579564096),
+         ('coinbasepro_margins', 0, 1579564096),
+         ('coinbasepro_asset_movements', 0, 1579564096),
+         ('coinbase_trades', 0, 1579564096),
+         ('coinbase_margins', 0, 1579564096),
+         ('coinbase_asset_movements', 0, 1579564096),
+         ('binance_trades', 0, 1579564096),
+         ('binance_margins', 0, 1579564096),
+         ('binance_asset_movements', 0, 1579564096)],
+    )
 
-    # Now remove the registered kraken exchange
-    data = {'name': 'kraken'}
+    # Now remove the registered coinbase exchange
+    data = {'name': 'coinbase'}
     response = requests.delete(api_url_for(rotkehlchen_api_server, "exchangesresource"), json=data)
     assert_simple_ok_response(response)
     # and check that it's not registered anymore
@@ -210,6 +225,15 @@ def test_remove_exchange(rotkehlchen_api_server):
     json_data = response.json()
     assert json_data['message'] == ''
     assert json_data['result'] == []
+    # Also check that the coinbase query ranges have been deleted but not the other ones
+    cursor = db.conn.cursor()
+    result = cursor.execute('SELECT name from used_query_ranges')
+    count = 0
+    for entry in result:
+        count += 1
+        msg = 'only binance or coinbasepro query ranges should remain'
+        assert 'binance' in entry[0] or 'coinbasepro' in entry[0], msg
+    assert count == 6, 'only 6 query ranges should remain in the DB'
 
     # now try to remove a non-registered exchange
     data = {'name': 'binance'}
