@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Good kraken and python resource:
 # https://github.com/zertrin/clikraken/tree/master/clikraken
 import base64

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import logging
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Tuple
 
