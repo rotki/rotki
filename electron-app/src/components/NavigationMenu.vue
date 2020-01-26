@@ -1,33 +1,40 @@
 <template>
   <v-list>
-    <v-list-item to="/">
+    <v-list-item to="/" class="navigation__dashboard">
       <v-list-item-action><v-icon>fa-dashboard</v-icon></v-list-item-action>
       <v-list-item-title>Dashboard</v-list-item-title>
     </v-list-item>
-    <v-list-item to="/blockchain-accounts">
+    <v-list-item
+      to="/blockchain-accounts"
+      class="navigation__blockchain-accounts-balances"
+    >
       <v-list-item-action><v-icon>fa-user</v-icon></v-list-item-action>
       <v-list-item-title>Blockchain Accounts/<br />Balances</v-list-item-title>
     </v-list-item>
-    <v-list-item to="/import">
+    <v-list-item to="/import" class="navigation__import">
       <v-list-item-action><v-icon>fa-download</v-icon></v-list-item-action>
       <v-list-item-title>Import Data</v-list-item-title>
     </v-list-item>
-    <v-list-group prepend-icon="fa-exchange" value="true">
+    <v-list-group
+      prepend-icon="fa-exchange"
+      value="true"
+      class="navigation__trades"
+    >
       <template #activator>
         <v-list-item>
           <v-list-item-title>Trade</v-list-item-title>
         </v-list-item>
       </template>
 
-      <v-list-item to="/otc-trades">
+      <v-list-item to="/otc-trades" class="navigation__otc-trades">
         <v-list-item-title>OTC Trades</v-list-item-title>
       </v-list-item>
     </v-list-group>
-    <v-list-item to="/statistics">
+    <v-list-item to="/statistics" class="navigation__statistics">
       <v-list-item-action><v-icon>fa-bar-chart</v-icon></v-list-item-action>
       <v-list-item-title>Statistics</v-list-item-title>
     </v-list-item>
-    <v-list-item to="/tax-report">
+    <v-list-item to="/tax-report" class="navigation__tax-report">
       <v-list-item-action><v-icon>fa-calculator</v-icon></v-list-item-action>
       <v-list-item-title>Tax Report</v-list-item-title>
     </v-list-item>

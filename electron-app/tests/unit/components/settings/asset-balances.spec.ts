@@ -1,5 +1,4 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import AccountBalances from '@/components/settings/AccountBalances.vue';
 import store from '@/store/store';
 import Vuetify from 'vuetify';
 import Vue from 'vue';
@@ -14,7 +13,7 @@ describe('AssetBalances.vue', () => {
 
   beforeEach(() => {
     vuetify = new Vuetify();
-    wrapper = mount(AccountBalances, {
+    wrapper = mount(AssetBalances, {
       store,
       vuetify,
       propsData: {

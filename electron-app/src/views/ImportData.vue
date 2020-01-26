@@ -37,8 +37,11 @@
               <li>
                 ETH/BTC Transactions are treated as deposits/withdrawals so they
                 are not imported in Rotkehlchen. To import ETH transactions
-                simply input your accounts in user settings and they will be
-                imported automatically for you.
+                simply input your accounts in
+                <router-link to="/blockchain-accounts">
+                  Blockchain Accounts/Balances
+                </router-link>
+                and they will be imported automatically for you.
               </li>
             </ul>
           </v-col>

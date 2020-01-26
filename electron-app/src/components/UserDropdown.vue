@@ -9,14 +9,14 @@
 
       <v-list>
         <v-list-item
-          key="user-settings"
-          class="user-dropdown__user-settings"
-          to="/settings/user"
+          key="api-keys"
+          class="user-dropdown__api-keys"
+          to="/settings/api-keys"
         >
           <v-list-item-avatar>
-            <v-icon color="primary">fa fa-user</v-icon>
+            <v-icon color="primary">fa-key</v-icon>
           </v-list-item-avatar>
-          <v-list-item-title>User Settings</v-list-item-title>
+          <v-list-item-title>API Keys</v-list-item-title>
         </v-list-item>
 
         <v-list-item

@@ -42,9 +42,9 @@ export default new Router({
       component: () => import('./views/settings/General.vue')
     },
     {
-      path: '/settings/user',
-      name: 'user-settings',
-      component: () => import('./views/settings/User.vue')
+      path: '/settings/api-keys',
+      name: 'api-keys',
+      component: () => import('./views/settings/ApiKeys.vue')
     },
     {
       path: '/exchange-balances/:exchange',

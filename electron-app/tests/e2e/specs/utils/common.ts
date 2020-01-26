@@ -239,3 +239,21 @@ export async function clearValue(
     element.focus();
   }, elementSelector);
 }
+
+export async function navigateTo(client: SpectronClient, selector: string) {
+  if (!(await client.isExisting('.v-navigation-drawer--open'))) {
+    await client.click('.v-app-bar__nav-icon');
+    await client.waitForVisible('.v-navigation-drawer--open', METHOD_TIMEOUT);
+  }
+
+  await client.element(selector).click();
+
+  if (await client.isExisting('.v-navigation-drawer--open')) {
+    await client.click('.v-app-bar__nav-icon');
+    await client.waitForVisible(
+      '.v-navigation-drawer--open',
+      METHOD_TIMEOUT,
+      false
+    );
+  }
+}
