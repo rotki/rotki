@@ -748,6 +748,31 @@ def test_upgrade_db_8_to_9(data_dir, username):
     assert db.get_version() == 9
 
 
+def test_upgrade_db_9_to_10(data_dir, username):
+    """Test upgrading the DB from version 9 to version 10.
+
+    Deleting all entries from used_query_ranges"""
+    msg_aggregator = MessagesAggregator()
+    userdata_dir = os.path.join(data_dir, username)
+    os.mkdir(userdata_dir)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    copyfile(
+        os.path.join(os.path.dirname(dir_path), 'data', 'v9_rotkehlchen.db'),
+        os.path.join(userdata_dir, 'rotkehlchen.db'),
+    )
+
+    with target_patch(target_version=10):
+        db = DBHandler(user_data_dir=userdata_dir, password='123', msg_aggregator=msg_aggregator)
+
+    cursor = db.conn.cursor()
+    results = cursor.execute(
+        'SELECT name, start_ts, end_ts FROM used_query_ranges;',
+    )
+    assert len(results.fetchall()) == 0
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 10
+
+
 def test_db_newer_than_software_raises_error(data_dir, username):
     """
     If the DB version is greater than the current known version in the
