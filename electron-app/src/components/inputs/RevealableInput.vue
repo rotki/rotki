@@ -7,6 +7,8 @@
     :type="revealed ? 'text' : 'password'"
     :rules="rules"
     :label="label"
+    :hint="hint"
+    :persistent-hint="!!hint"
     @input="input"
     @click:append="revealed = !revealed"
   ></v-text-field>
@@ -30,6 +32,9 @@ export default class RevealableInput extends Vue {
 
   @Prop({ required: false, default: 'fa-key' })
   icon!: string;
+
+  @Prop({ required: false, default: '' })
+  hint!: string;
 
   @Emit()
   input(_value: string) {}

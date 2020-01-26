@@ -2,7 +2,7 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import { mount, Wrapper } from '@vue/test-utils';
 import store from '@/store/store';
-import ExternalServices from '@/components/ExternalServices.vue';
+import ExternalServices from '@/components/settings/api-keys/ExternalServices.vue';
 import { ExternalServiceKeys } from '@/model/action-result';
 import flushPromises from 'flush-promises';
 
@@ -62,29 +62,43 @@ describe('ExternalServices.vue', () => {
       await flushPromises();
     });
 
-    test('save the values when save is pressed', async () => {
+    test('save the values when etherscan save is pressed', async () => {
       setExternalServices.mockResolvedValueOnce(mockReponse);
       wrapper.find('.external-services__etherscan-key input').setValue('123');
+      await wrapper.vm.$nextTick();
+      wrapper
+        .find('.external-services__etherscan-key .service-key__buttons__save')
+        .trigger('click');
+      await flushPromises();
+      expect(setExternalServices).toHaveBeenCalledWith([
+        { name: 'etherscan', api_key: '123' }
+      ]);
+    });
+
+    test('save the values when cryptocompare save is pressed', async () => {
+      setExternalServices.mockResolvedValueOnce(mockReponse);
       wrapper
         .find('.external-services__cryptocompare-key input')
         .setValue('123');
       await wrapper.vm.$nextTick();
-      wrapper.find('.external-services__buttons__save').trigger('click');
+      wrapper
+        .find(
+          '.external-services__cryptocompare-key .service-key__buttons__save'
+        )
+        .trigger('click');
       await flushPromises();
       expect(setExternalServices).toHaveBeenCalledWith([
-        { name: 'cryptocompare', api_key: '123' },
-        { name: 'etherscan', api_key: '123' }
+        { name: 'cryptocompare', api_key: '123' }
       ]);
     });
 
     test('save fails with an error', async () => {
       setExternalServices.mockRejectedValueOnce(new Error('mock failure'));
       wrapper.find('.external-services__etherscan-key input').setValue('123');
-      wrapper
-        .find('.external-services__cryptocompare-key input')
-        .setValue('123');
       await wrapper.vm.$nextTick();
-      wrapper.find('.external-services__buttons__save').trigger('click');
+      wrapper
+        .find('.external-services__etherscan-key .service-key__buttons__save')
+        .trigger('click');
       await flushPromises();
       expect(store.state.message.description).toMatch('mock failure');
     });
@@ -92,19 +106,25 @@ describe('ExternalServices.vue', () => {
     test('delete is disabled', async () => {
       expect(
         wrapper
-          .find('.external-services__buttons__delete-etherscan')
+          .find(
+            '.external-services__etherscan-key .service-key__content__delete'
+          )
           .attributes('disabled')
       ).toBe('disabled');
       expect(
         wrapper
-          .find('.external-services__buttons__delete-cryptocompare')
+          .find(
+            '.external-services__cryptocompare-key .service-key__content__delete'
+          )
           .attributes('disabled')
       ).toBe('disabled');
     });
 
     test('save is disabled', async () => {
       expect(
-        wrapper.find('.external-services__buttons__save').attributes('disabled')
+        wrapper
+          .find('.external-services__etherscan-key .service-key__buttons__save')
+          .attributes('disabled')
       ).toBe('disabled');
     });
   });
@@ -131,7 +151,7 @@ describe('ExternalServices.vue', () => {
     test('confirm and delete etherscan key', async () => {
       deleteExternalServices.mockResolvedValueOnce({});
       wrapper
-        .find('.external-services__buttons__delete-etherscan')
+        .find('.external-services__etherscan-key .service-key__content__delete')
         .trigger('click');
       await wrapper.vm.$nextTick();
 
@@ -151,7 +171,9 @@ describe('ExternalServices.vue', () => {
     test('delete cryptocompare fails', async () => {
       deleteExternalServices.mockRejectedValueOnce(new Error('mock failure'));
       wrapper
-        .find('.external-services__buttons__delete-cryptocompare')
+        .find(
+          '.external-services__cryptocompare-key .service-key__content__delete'
+        )
         .trigger('click');
       await wrapper.vm.$nextTick();
 
