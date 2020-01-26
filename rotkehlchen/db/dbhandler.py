@@ -24,7 +24,6 @@ from rotkehlchen.db.settings import (
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
     DB_SCRIPT_CREATE_TABLES,
-    DB_SCRIPT_REIMPORT_DATA,
     AssetBalance,
     BlockchainAccounts,
     DBStartupAction,
@@ -304,12 +303,6 @@ class DBHandler:
     def disconnect(self) -> None:
         self.conn.close()
         self.conn = None
-
-    def reimport_all_tables(self) -> None:
-        """Useful only when some table's column data type was modified and you
-        need to re-import all data. Should only be used if you know what you are
-        doing. For normal database upgrades the proper scripts should be used"""
-        self.conn.executescript(DB_SCRIPT_REIMPORT_DATA)
 
     def export_unencrypted(self, temppath: FilePath) -> None:
         self.conn.executescript(
