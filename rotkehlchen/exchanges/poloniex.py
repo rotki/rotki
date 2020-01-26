@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import csv
 import hashlib
 import hmac

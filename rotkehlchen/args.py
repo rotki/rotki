@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import argparse
 import sys
 from typing import Any, List, Sequence, Union
