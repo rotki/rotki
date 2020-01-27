@@ -11,8 +11,8 @@ import {
 import { Guid } from './utils/guid';
 import {
   AccountType,
-  BlockchainAccountBalancesController
-} from './support/blockchain-account-balances-controller';
+  AccountBalancesController
+} from './support/account-balances-controller';
 
 jest.setTimeout(GLOBAL_TIMEOUT);
 
@@ -21,7 +21,7 @@ describe('blockchain accounts', () => {
   let stop: () => Promise<Application>;
   let client: SpectronClient;
 
-  let controller: BlockchainAccountBalancesController;
+  let controller: AccountBalancesController;
 
   let username: string;
   const password: string = process.env.PASSWORD as string;
@@ -36,14 +36,11 @@ describe('blockchain accounts', () => {
     await setupTest(application, 'blockchain_accounts', async () => {
       await createAccount(application, username, password);
 
-      controller = new BlockchainAccountBalancesController(client);
+      controller = new AccountBalancesController(client);
 
-      await navigateTo(client, '.navigation__blockchain-accounts-balances');
+      await navigateTo(client, '.navigation__accounts-balances');
 
-      await client.waitForVisible(
-        '.blockchain-accounts-balances',
-        METHOD_TIMEOUT
-      );
+      await client.waitForVisible('.accounts-balances', METHOD_TIMEOUT);
     });
   });
 

@@ -5,6 +5,7 @@ import {
   GLOBAL_TIMEOUT,
   initSpectron,
   METHOD_TIMEOUT,
+  navigateTo,
   selectFromUserMenu,
   setupTest
 } from './utils/common';
@@ -32,7 +33,7 @@ describe('API Keys', () => {
 
       controller = new ApiKeysController(client);
 
-      await selectFromUserMenu(client, '.user-dropdown__api-keys');
+      await navigateTo(client, '.navigation__api-keys');
       await client.waitForVisible('.api-keys', METHOD_TIMEOUT);
       // navigate to accounting settings and then back to api keys to
       // try and recreate https://github.com/rotki/rotki/issues/320
@@ -42,7 +43,7 @@ describe('API Keys', () => {
         'Accounting Settings',
         METHOD_TIMEOUT
       );
-      await selectFromUserMenu(client, '.user-dropdown__api-keys');
+      await navigateTo(client, '.navigation__api-keys');
       await client.waitForVisible('.api-keys', METHOD_TIMEOUT);
     });
   });
