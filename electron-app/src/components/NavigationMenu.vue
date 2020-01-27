@@ -6,10 +6,14 @@
     </v-list-item>
     <v-list-item
       to="/blockchain-accounts"
-      class="navigation__blockchain-accounts-balances"
+      class="navigation__accounts-balances"
     >
       <v-list-item-action><v-icon>fa-user</v-icon></v-list-item-action>
-      <v-list-item-title>Blockchain Accounts/<br />Balances</v-list-item-title>
+      <v-list-item-title>Accounts & Balances</v-list-item-title>
+    </v-list-item>
+    <v-list-item to="/settings/api-keys" class="navigation__api-keys">
+      <v-list-item-action><v-icon>fa-key</v-icon></v-list-item-action>
+      <v-list-item-title>API Keys</v-list-item-title>
     </v-list-item>
     <v-list-item to="/import" class="navigation__import">
       <v-list-item-action><v-icon>fa-download</v-icon></v-list-item-action>

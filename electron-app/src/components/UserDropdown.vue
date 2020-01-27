@@ -9,17 +9,6 @@
 
       <v-list>
         <v-list-item
-          key="api-keys"
-          class="user-dropdown__api-keys"
-          to="/settings/api-keys"
-        >
-          <v-list-item-avatar>
-            <v-icon color="primary">fa-key</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-title>API Keys</v-list-item-title>
-        </v-list-item>
-
-        <v-list-item
           key="accounting-settings"
           class="user-dropdown__accounting-settings"
           to="/settings/accounting"

@@ -1,8 +1,8 @@
 <template>
-  <v-container class="blockchain-accounts-balances">
+  <v-container class="accounts-balances">
     <v-row>
       <v-col>
-        <h1>Blockchain Accounts/Balances</h1>
+        <h1>Accounts & Balances</h1>
       </v-col>
     </v-row>
     <blockchain-balances></blockchain-balances>
@@ -21,7 +21,7 @@ import BlockchainBalances from '@/components/settings/BlockchainBalances.vue';
     BlockchainBalances
   }
 })
-export default class BlockchainAccountsBalances extends Vue {}
+export default class AccountsBalances extends Vue {}
 </script>
 
 <style scoped></style>

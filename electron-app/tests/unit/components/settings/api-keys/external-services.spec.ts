@@ -87,6 +87,7 @@ describe('ExternalServices.vue', () => {
         )
         .trigger('click');
       await flushPromises();
+      expect(store.state.message.description).toMatch('cryptocompare');
       expect(setExternalServices).toHaveBeenCalledWith([
         { name: 'cryptocompare', api_key: '123' }
       ]);

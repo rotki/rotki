@@ -1,8 +1,8 @@
 import { Application, SpectronClient } from 'spectron';
 import {
   AccountType,
-  BlockchainAccountBalancesController
-} from './support/blockchain-account-balances-controller';
+  AccountBalancesController
+} from './support/account-balances-controller';
 import { Guid } from './utils/guid';
 import {
   captureOnFailure,
@@ -21,7 +21,7 @@ describe.skip('dashboard', () => {
   let application: Application;
   let stop: () => Promise<Application>;
   let client: SpectronClient;
-  let controller: BlockchainAccountBalancesController;
+  let controller: AccountBalancesController;
   let apiKeyController: ApiKeysController;
 
   let username: string;
@@ -38,7 +38,7 @@ describe.skip('dashboard', () => {
     await setupTest(application, 'dashboard', async () => {
       await createAccount(application, username, password);
 
-      controller = new BlockchainAccountBalancesController(client);
+      controller = new AccountBalancesController(client);
       apiKeyController = new ApiKeysController(client);
       await client.waitUntilTextExists(
         '.page-header',

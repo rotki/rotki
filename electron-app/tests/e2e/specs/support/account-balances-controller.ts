@@ -6,7 +6,7 @@ export enum AccountType {
   BTC = 'BTC'
 }
 
-export class BlockchainAccountBalancesController {
+export class AccountBalancesController {
   constructor(private client: SpectronClient) {}
 
   async addFiatValue(amount: number = 50) {

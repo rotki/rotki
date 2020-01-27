@@ -83,6 +83,11 @@ export default class ExternalServices extends Vue {
     try {
       this.loading = true;
       this.updateKeys(await this.$api.setExternalServices(keys));
+      this.$store.commit('setMessage', {
+        title: 'Success',
+        description: `Successfully updated the key for ${serviceName}`,
+        success: true
+      } as Message);
     } catch (e) {
       this.$store.commit('setMessage', {
         title: 'Error',
