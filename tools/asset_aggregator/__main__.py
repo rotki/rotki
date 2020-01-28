@@ -137,7 +137,7 @@ def main():
     arg_parser = aggregator_args()
     args = arg_parser.parse_args()
     msg_aggregator = MessagesAggregator()
-    user_data_dir = default_data_directory() / args.db_user
+    user_data_dir = Path(default_data_directory()) / args.db_user
     database = DBHandler(
         user_data_dir=user_data_dir,
         password=args.db_password,
