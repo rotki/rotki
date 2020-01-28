@@ -375,6 +375,10 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'NGN',  # https://www.binance.com/en/support/articles/360035511611
     '123',  # https://twitter.com/rotkiapp/status/1161977327078838272
     '456',  # https://twitter.com/rotkiapp/status/1161977327078838272
+    # the 3X long/short tokens are not yet listed anywhere else
+    # but they do exist in coinmarketcap. So perhaps can support them in the future
+    'BULL',  # https://www.binance.com/en/support/articles/360038933471
+    'BEAR',  # https://www.binance.com/en/support/articles/360038933471
 )
 
 CRYPTOCOMPARE_TO_WORLD = {v: k for k, v in WORLD_TO_CRYPTOCOMPARE.items()}

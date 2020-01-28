@@ -2711,6 +2711,14 @@
         "symbol": "DREAM",
         "type": "ethereum token"
     },
+    "DREP": {
+        "ethereum_address": "0x22dE9912cd3D74953B1cd1F250B825133cC2C1b3",
+        "ethereum_token_decimals": 18,
+        "name": "DREP",
+        "started": 1567641600,
+        "symbol": "DREP",
+        "type": "ethereum token"
+    },
     "DRGN": {
         "ethereum_address": "0x419c4dB4B9e25d6Db2AD9691ccb832C8D9fDA05E",
         "ethereum_token_decimals": 18,
