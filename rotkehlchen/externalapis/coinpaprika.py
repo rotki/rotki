@@ -101,6 +101,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'OAK',
     'OCC-2',
     'OXT',
+    'OGN',
     'REA',
     'REDC',
     'RIPT',
