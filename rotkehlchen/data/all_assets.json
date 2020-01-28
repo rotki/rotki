@@ -9706,6 +9706,15 @@
         "symbol": "XSI",
         "type": "own chain"
     },
+    "XSR": {
+        "ethereum_address": "0x6bC1F3A1ae56231DbB64d3E82E070857EAe86045",
+        "ethereum_token_decimals": 18,
+        "active": true,
+        "name": "Xensor",
+        "started": 1571636345,
+        "symbol": "XSR",
+        "type": "ethereum token"
+    },
     "XST": {
         "name": "StealthCoin",
         "started": 1403568000,
