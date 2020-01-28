@@ -76,7 +76,7 @@ Install electron and any other npm dependencies by::
     npm ci
     npm rebuild zeromq --runtime=electron --target=3.0.0
 
-Create a new `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ to install all the python dependencies. If you don't have ``mkvirtualenv`` then check how to get it depending on your distribution. `Here <http://exponential.io/blog/2015/02/10/install-virtualenv-and-virtualenvwrapper-on-ubuntu/>`_ is a guide for Ubuntu and `here <https://wiki.archlinux.org/index.php/Python/Virtual_environment>`__ is one for ArchLinux::
+Create a new `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ to install all the python dependencies. If you don't have ``mkvirtualenv`` then check how to get it depending on your distribution. `Here <http://exponential.io/blog/2015/02/10/install-virtualenv-and-virtualenvwrapper-on-ubuntu/>`__ is a guide for Ubuntu and `here <https://wiki.archlinux.org/index.php/Python/Virtual_environment>`__ is one for ArchLinux::
 
     mkvirtualenv rotki
 
@@ -198,7 +198,7 @@ Also make sure you have the Microsoft visual studio build tools. Check the troub
 Sqlcipher and pysqlcipher3
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-`Here <https://github.com/sqlitebrowser/sqlitebrowser/wiki/Win64-setup-%E2%80%94-Compiling-SQLCipher>`_ is a good guide on how to compile SQLCipher for windows.
+`Here <https://github.com/sqlitebrowser/sqlitebrowser/wiki/Win64-setup-%E2%80%94-Compiling-SQLCipher>`__ is a good guide on how to compile SQLCipher for windows.
 
 The guide also requires you to get ``OpenSSL``. You can do that from `here <https://slproweb.com/products/Win32OpenSSL.html>`__.
 Make sure it's for the same architecture as the rest. 32/64 bit. At the installer change the location to the bin directory as the tutorial says. Make sure that ``-IC:\dev\OpenSSL-Win64\include`` and all other relevant options point to the actual location where openssl was installed. Also pay attention to the rest of the stuff in the tutorial warns to change in ``Makefile.msc``.
