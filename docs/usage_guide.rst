@@ -5,7 +5,7 @@ Rotki Usage Guide
 
 
 Introduction
-============ 
+*************
 
 In this section we are going to see how to use various parts of the Rotki application.
 
@@ -14,48 +14,181 @@ Sign-in/Signup
 
 When you start Rotki you are greeted with a sign-in/signup prompt.
 
-If you have never created an account before press "Create New Account". Provide a username and a password. Don't forget this password. It will be used to encrypt all your local files. If you have purchased a premium subscription you can also add the API Key and secret here.
+.. image:: images/sc_newacc1.png
+   :alt: Creating a new account
+   :align: center
 
-If you already have an account just write the name and the password here.
+If you have never created an account before press "Create New Account". Provide a username and a password. Don't forget this password. It will be used to encrypt all your local files. The username is just an identifier for your database. It's a local user.
+
+.. image:: images/sc_newacc2.png
+   :alt: Creating a new account with a premium Rotki API key/secret pair
+   :align: center
+
+If you have purchased a premium subscription you can also add the API Key and the secret here. This will essentially populate the new account with the data saved in the server for your premium subscription. Important thing to note here is that the password of the new account must be the same as the data saved in the server. If not, opening the database will fail.
+
+If you already have an account just write the name and the password at the sign in prompt.
 
 All accounts are created in the rotki directory which is located in: ``$HOME/.rotkehlchen``. Each user has their own subdirectory.
+
+Customizing
+**************
+
+This section contains information about how to customize the application through the settings.
+
+
+.. _change_profit_currency:
 
 Changing the Profit Currency
 =============================
 
-Rotki calculates everything, including your profit/loss for your tax report into a given FIAT currency. This is what we call the ``profit_currency``. By default this is the US Dollar. You can easily change this setting by clicking on the currency icon the top right menu and changing it to the currency you are using.
+Rotki calculates everything, including your profit/loss for your tax report into a given FIAT currency. This is what we call the ``profit_currency``. By default this is USD. You can easily change this setting by clicking on the currency icon the top right menu and changing it to the currency you are using.
+
+.. image:: images/profit_currency.gif
+   :alt: Changing the profit currency
+   :align: center
+
+Customizing the application settings
+====================================
+
+By clicking on the user icon on the top right and choosing settings you can customize some basic settings for the application.
+
+.. image:: images/sc_settings.png
+   :alt: Customizing the app settings
+   :align: center
+
+Floating precision
+--------------------
+
+Set how many decimal points should be shown in the UI for floating point numbers.
+
+Anonymized logs
+------------------
+
+Specify whether logging functionality should be anonymized. That has a small cost in performance but makes sure that all logs that would otherwise contain sensitive tradeinformation have them anonymized with random values.
+
+Anonymous usage analytics
+-------------------------------
+
+Specify whether the application is allowed to submit anonymous usage analytics. As a local application Rotki has no other way to measure how many active users it has other than submitting some form of analytics. The data that are submitted are completely anonymized and contain no sensitive information.
+
+Date from when to count historical data
+-----------------------------------------
+
+A date before which historical data is not counted.
+
+Main currency
+----------------
+
+Same as `changing the profit currency <change_profit_currency_>`_.
+
 
 Connecting to an Ethereum Client
-==================================
+------------------------------------
 
-When Rotki begins it tries to connect to a local ethereum node running with an rpc port set at the default port ``8545``. If no client is running then all blockchain queries will use etherscan and this will be rather slower.
+When Rotki begins it tries to connect to a local ethereum node running with an rpc port set at the default port ``8545``. If no client is running then all blockchain queries will use an external service such as etherscan and this will be rather slower.
 
-If you want to connect to an ethereum client running in a non-default port you can set that through the settings. Click the person icon on the top right menu and select "Settings" from the drop down menu. This will take you to the settings page. Write the desired url/port port in ETH RPC endpoing textbox.
+If you want to connect to another ethereum client you can set the URL and port through the settings. Click the person icon on the top right menu and select "Settings" from the drop down menu. This will take you to the settings page. Write the desired url/port in the ETH RPC endpoing textbox.
 
-Adding an Exchange
+Balance data saving frequency
+---------------------------------
+
+Set how often (in hours) the data of all balances will be saved. This data is used to calculate statistics and other historical data to show to the user.
+
+Date display format
+---------------------
+
+Set the display format of the dates in the Rotki user interface.
+
+Customizing the accounting settings
+====================================
+
+By clicking on the user icon on the top right and choosing accounting settings you can customize some the settings that are used when calculating profit/loss for all your actions.
+
+You should understand what each setting does, consult with a tax accountant for your jurisdcition and then set them appropriately.
+
+The default settings are at the moment set for the German tax jurisdiction. For example all profit/loss calculation is done for trades on a first-in/first-out basis and profits from selling crypto assets after 1 year are non taxable. These settings can be adjusted.
+
+.. image:: images/sc_accounting_settings.png
+   :alt: Customizing the accounting settings
+   :align: center
+
+Crypto to crypto trades
+------------------------
+
+Specify whether crypto to crypto trades are taxable and should be taken into account. If yes then each crypto to crypto trade also creates a "virtual" trade that sells or buys the crypto asset for FIAT and then sells or buys the FIAT for the other crypto asset.
+
+Ethereum gas costs
+---------------------
+
+Specify whether ethereum transaction gas costs should be counted as loss. If this is set then all ETH spent on gas will be deducted from your profits and count as an expense.
+
+Tax free period
+-------------------
+
+Specify whether there is a period of time and if yes how many days, after which holding a crypto asset is considered not taxable.
+
+Ignored assets
+-----------------
+
+Specify which assets you own and would like to completely ignore from all calculations. Any actions that involve these assets are ignored.
+
+
+Importing data
+*******************
+
+In this section we will explain how you can import data by integrating with external services such as crypto exchanges
+
+Adding an exchange
 =====================
 
-You can integrate many different exchanges with Rotki. Currently supported exchanges are: Kraken, Poloniex, Bittrex, Bitmex and Binance.
+You can integrate many different exchanges with Rotki. Currently supported exchanges are: Kraken, Poloniex, Bittrex, Bitmex, Binance, Coinbase and Coinbase Pro.
 
 To do so you have to go to your exchange and create an API key. If the exchange allows it make sure that the API Key only has reading/querying permissions to your account and nothing else since that is all the permissions needed by Rotki.
 
-Click the Person Icon on the top right menu and then choose "User Settings". This will take you to your user settings page. Under the exchange settings sections, select your exchange from the dropdown menu. Then copy and paste the ``API Key`` and the ``API Secret`` in the respective text fields and press submit.
+Click on the "API keys" on the left sidebar. This will take you to the place where you can add new exchange API keys. Select your exchange from the dropdown menu. Then copy and paste the ``API Key`` and the ``API Secret`` in the respective text fields and press submit.
 
 If all went well, then you will get a confirmation that the connection was successful. If not please doublecheck that the key and secret are correct.
+
+Adding an external service API Key
+=====================================
+
+Rotki relies on various external services for data such as historical crypto prices or ethereum transactions. To get that data some of these services require API keys. So you should go to their webpage, create a free account and generate an API key. Once this is done you can enter the API key in the respective UI element.
+
+At the moment the only compulsory API key is etherscan. If you don't already have an account with them please create one `here <https://etherscan.io/register>`_ and then generate a free API key and set it in the app as explained above.
+
+Cointracking.info
+====================
+
+You can also import data from `cointracking.info <https://cointracking.info/>`_ into Rotki by clicking on "Import Data" on the left sidebard and then following the instructions.
+
+Rotki can import any trade CSV data exported from cointracking.info. But in general it's not recommended to utilize cointracking as their exported data are missing a lot of information.
+
+.. image:: images/sc_data_import.png
+   :alt: Importing data from cointracking.info
+   :align: center
+
+
+
+
+Tracking accounts and balances
+**********************************
+
+To track blockchain accounts and balances and also FIAT balances you need to visit the "Accounts/balances" section from the left sidebar.
+
 
 Adding Fiat Balances
 =====================
 
 Rotki is an asset analytics application. Thus you can track all your assets in one place including the FIAT balances you have.
 
-To add or modify the amount of an owned FIAT currency, go to the user settings page, scroll down to the "Fiat Balances" section and choose the currency from the dropdown menu. Input the modified balance in the text box and press the Modify button.
+To add or modify the amount of an owned FIAT currency scroll down to the "Fiat Balances" section and choose the currency from the dropdown menu. Input the modified balance in the text box and press the Modify button.
 
 Adding and Removing Blockchain Accounts
 ============================================
 
 Rotki allows to track balances of blockchain accounts.
 
-To track an account go to the user settings page, scroll down to the "Blockchain Balances" section and choose the blockchain from the dropdown menu. For now only Bitcoin and Ethereum chains are supported. Then type or paste the address in the "Account" textbox and press the "Add" Button.
+To track an account scroll down to the "Blockchain Balances" section and choose the blockchain from the dropdown menu. For now only Bitcoin and Ethereum chains are supported. Then type or paste the address in the "Account" textbox and press the "Add" Button.
 
 To stop tracking a particular account scroll down to the accounts tables and simply right click on the account you want to stop tracking and select "Delete" from the context menu.
 
@@ -64,7 +197,7 @@ Adding and Removing Ethereum Tokens
 
 Rotki will check all of your ethereum accounts for balances of a given list of tokens. This list can be provided and modified by you.
 
-To do so go to the user settings page, scroll down to the "Blockchain Balances" section and look at the "Select Eth Tokens to Track" multiselection widget.
+To do so scroll down to the "Blockchain Balances" section and look at the "Select Eth Tokens to Track" multiselection widget.
 
 In order to add a token to the tracked tokens find it on the left menu and click it so that it gets added to your tokens.
 
@@ -72,12 +205,14 @@ In order to stop tracking a tocken, find it on the right menu and click it to st
 
 All account balances will be updated at this point.
 
-Manually Adding Trades Or Taxable Events
-============================================
+
+
+Manually adding trades or other events
+*******************************************
 
 Rotki will pull all your trade history from the exchanges whenever it needs it. But most of us have probably also done some OTC trades or taxable events at some point. Such events could even just be mining tokens, depending on your jurisdiction, participating in an ICO or getting paid in crypto.
 
-On the left menu click on the trades button and select "OTC Trades" from the dropdown menu. This will take you to the OTC Trades page.
+On the left sidebar click on the trades button and select "OTC Trades" from the dropdown menu. This will take you to the OTC Trades page.
 
 To add a new trade or taxable event, fill in all the field and press the "Add Trade" button.
 
@@ -91,12 +226,10 @@ At the bottom of this page you can see a table of all your OTC trades.
 
 By right clicking on a trade you get a context menu allowing you to either edit or delete the trade entry.
 
-Creating a Tax Report
-======================
+Creating a tax report
+**********************
 
-Rotki creates a tax report for you based on your trades and some settings which you can configure at the user settings page. This is essentially a calculation of profit or loss for all your trades based on the given dates.
-
-The default settings are at the moment set for the German tax jurisdiction. For example all profit/loss calculation is done for trades on a first-in/first-out basis and profits from selling crypto assets after 1 year are non taxable. These settings can be adjusted.
+Rotki creates a tax report for you based on your trades and the provided accounting settings. This is essentially a calculation of profit or loss for all your trades based on the given dates.
 
 
 To create a tax report click on the "Tax Report" button from the left menu. Choose a start and an end date for the report and then click the "Generate Report" button.
@@ -109,7 +242,7 @@ Finally you can get a nice CSV export by pressing the "Export CSV" button. This 
 
 
 Analytics
-=========
+**********
 
 If you have a premium subscription you can get analytics on your all your assets and trades.
 
@@ -125,7 +258,7 @@ Finally you can see a piechart of the distribution of your netvalue across all o
 
 
 Set the backend's arguments
-=============================
+*******************************
 
 Rotki runs a python daemon on the backend. Most times you won't need to customize its arguments but if you need to do so, especially for debugging purposes this is how you can.
 
