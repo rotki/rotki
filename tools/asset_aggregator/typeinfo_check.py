@@ -83,6 +83,7 @@ MANUALLY_CHECKED_TYPES = {
     'ALGO': 'own chain',
     # For some reason the entry for KAVA does not have a platform entry in paprika
     'KAVA': 'own chain',
+    'XTP': 'ethereum token',
 }
 
 

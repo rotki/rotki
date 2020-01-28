@@ -102,6 +102,9 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     # eToken. No data found except from here:
     # https://coinmarketcap.com/currencies/etoken/
     'eTOK',
+    # ETHBNT. No data found outside of poloniex:
+    # https://poloniex.com/exchange#btc_ethbnt
+    'ETHBNT',
     # FoxCoin. No data found except from here:
     # https://coinmarketcap.com/currencies/foxcoin/
     'FOX',
