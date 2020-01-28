@@ -18,6 +18,7 @@ Changelog
   - `Origin Protocol (OGN) <https://coinmarketcap.com/currencies/origin-protocol/>`__
   - `Token Club (TCT) <https://coinmarketcap.com/currencies/tokenclub/>`__
   - `Tap (XTP) <https://coinmarketcap.com/currencies/tap/>`__
+  - `Xensor (XSR) <https://coinmarketcap.com/currencies/xensor/>`__
 
 * :release:`1.0.7 <2020-01-04>`
 * :bug:`605` Adding a premium API key via the front-end now works properly again.

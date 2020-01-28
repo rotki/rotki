@@ -320,6 +320,15 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # APIX, As of 19/12/2019 no data found outside of Bittrex
     # https://medium.com/apisplatform/apix-trading-open-on-bittrex-global-61653fa346fa
     'APIX',
+    # APM Coin. As of 16/11/2019 no data found outside of Bittrex for this token
+    # https://global.bittrex.com/Market/Index?MarketName=BTC-APM
+    'APM',
+    # Tether CNH. As of 30/09/2019 no data found outside of Bittrex for this token
+    # https://medium.com/bittrex/new-bittrex-international-listing-tether-cnh-cnht-c9ad966ac303
+    'CNHT',
+    # Credit coin. As of 29/01/2020 no data found outside of Bittrex for this token
+    # https://global.bittrex.com/Market/Index?MarketName=BTC-CTC
+    'CTC',
     # Foresting. As of 22/03/2019 no data found.
     # Only exists in bittrex. Perhaps it will soon be added to other APIs.
     # https://international.bittrex.com/Market/Index?MarketName=BTC-PTON
@@ -356,12 +365,6 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # TwelveShips. As of 23/08/2019 no data found outside of Bittrex for this token
     # https://twitter.com/BittrexIntl/status/1164689364997353472
     'TSHP',
-    # Tether CNH. As of 30/09/2019 no data found outside of Bittrex for this token
-    # https://medium.com/bittrex/new-bittrex-international-listing-tether-cnh-cnht-c9ad966ac303
-    'CNHT',
-    # APM Coin. As of 16/11/2019 no data found outside of Bittrex for this token
-    # https://global.bittrex.com/Market/Index?MarketName=BTC-APM
-    'APM',
     # BlockTV. As of 29/11/2019 no data found outside of Bittrex for this token
     # https://global.bittrex.com/Market/Index?MarketName=BTC-BLTV
     'BLTV',
