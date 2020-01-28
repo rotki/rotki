@@ -167,7 +167,7 @@ def test_bittrex_query_trade_history_unexpected_data(bittrex):
     ):
         patch_get = patch.object(bittrex.session, 'get', side_effect=mock_order_history)
         patch_response = patch(
-            'rotkehlchen.tests.test_bittrex.BITTREX_ORDER_HISTORY_RESPONSE',
+            'rotkehlchen.tests.exchanges.test_bittrex.BITTREX_ORDER_HISTORY_RESPONSE',
             new=input_trade_str,
         )
         with patch_get, patch_response:
