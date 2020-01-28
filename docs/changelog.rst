@@ -16,6 +16,7 @@ Changelog
   - `Orchid (OXT) <https://coinmarketcap.com/currencies/orchid/>`__
   - `DREP (DREP) <https://coinmarketcap.com/currencies/drep/>`__
   - `Origin Protocol (OGN) <https://coinmarketcap.com/currencies/origin-protocol/>`__
+  - `Token Club (TCT) <https://coinmarketcap.com/currencies/tokenclub/>`__
 
 * :release:`1.0.7 <2020-01-04>`
 * :bug:`605` Adding a premium API key via the front-end now works properly again.

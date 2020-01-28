@@ -8405,6 +8405,14 @@
         "symbol": "TCNX",
         "type": "ethereum token"
     },
+    "TCT": {
+        "ethereum_address": "0x4824A7b64E3966B0133f4f4FFB1b9D6bEb75FFF7",
+        "ethereum_token_decimals": 18,
+        "name": "TokenClub",
+        "started": 1513987200,
+        "symbol": "TCT",
+        "type": "ethereum token"
+    },
     "TEAM": {
         "ethereum_address": "0x1c79ab32C66aCAa1e9E81952B8AAa581B43e54E7",
         "ethereum_token_decimals": 4,
