@@ -9712,6 +9712,14 @@
         "symbol": "XST",
         "type": "own chain"
     },
+    "XTP": {
+        "ethereum_address": "0x6368e1E18c4C419DDFC608A0BEd1ccb87b9250fc",
+        "ethereum_token_decimals": 18,
+        "name": "Tap",
+        "started": 1576627200,
+        "symbol": "XTP",
+        "type": "ethereum token"
+    },
     "XTZ": {
         "name": "Tezos",
         "started": 1498867200,

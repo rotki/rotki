@@ -118,6 +118,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'VENUS',
     'WMK',
     'WLK',
+    'XTP',
     'ZIX',
 )
 
