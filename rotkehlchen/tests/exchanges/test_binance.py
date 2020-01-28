@@ -279,7 +279,7 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
     ):
         patch_get = patch.object(binance.session, 'get', side_effect=mock_my_trades)
         patch_response = patch(
-            'rotkehlchen.tests.test_binance.BINANCE_MYTRADES_RESPONSE',
+            'rotkehlchen.tests.exchanges.test_binance.BINANCE_MYTRADES_RESPONSE',
             new=input_trade_str,
         )
         with patch_get, patch_response:
