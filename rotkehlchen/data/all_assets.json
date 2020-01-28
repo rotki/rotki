@@ -6268,6 +6268,14 @@
         "symbol": "ODE",
         "type": "ethereum token"
     },
+    "OGN": {
+        "ethereum_address": "0x8207c1FfC5B6804F6024322CcF34F29c3541Ae26",
+        "ethereum_token_decimals": 18,
+        "name": "Origin Protocol",
+        "started": 1538352000,
+        "symbol": "OGN",
+        "type": "ethereum token"
+    },
     "OK": {
         "name": "OKCash",
         "started": 1416787200,

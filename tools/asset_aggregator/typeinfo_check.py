@@ -45,6 +45,7 @@ MANUALLY_CHECKED_TYPES = {
     'OAK': 'ethereum token',
     'OCC-2': 'ethereum token',
     'OXT': 'ethereum token',
+    'OGN': 'ethereum token',
     # In reality this is ethereum token and Waves token but got no way to
     # signify this with the current system apart from creating a new type.
     # So now I created a new generic type.
