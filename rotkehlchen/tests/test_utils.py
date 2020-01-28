@@ -4,13 +4,18 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.errors import UnprocessableTradePair
+from rotkehlchen.errors import ConversionError, UnprocessableTradePair
 from rotkehlchen.exchanges.data_structures import invert_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.utils.interfaces import CacheableObject, cache_response_timewise
-from rotkehlchen.utils.misc import combine_dicts, combine_stat_dicts, iso8601ts_to_timestamp
+from rotkehlchen.utils.misc import (
+    combine_dicts,
+    combine_stat_dicts,
+    convert_to_int,
+    iso8601ts_to_timestamp,
+)
 from rotkehlchen.utils.version_check import check_if_version_up_to_date
 
 
@@ -213,3 +218,27 @@ def test_cache_response_timewise_ignore_cache():
     assert instance.do_sum(1, 1) == 2
     assert instance.do_sum(1, 1, ignore_cache=True) == 2
     assert instance.do_sum_call_count == 2
+
+
+def test_convert_to_int():
+    assert convert_to_int('5') == 5
+    with pytest.raises(ConversionError):
+        assert convert_to_int(5.44, accept_only_exact=True) == 5
+    assert convert_to_int(5.44, accept_only_exact=False) == 5
+    assert convert_to_int(5.65, accept_only_exact=False) == 5
+    with pytest.raises(ConversionError):
+        assert convert_to_int(FVal('5.44'), accept_only_exact=True) == 5
+    assert convert_to_int(FVal('5.44'), accept_only_exact=False) == 5
+    assert convert_to_int(FVal('5.65'), accept_only_exact=False) == 5
+    assert convert_to_int(FVal('4'), accept_only_exact=True) == 4
+    assert convert_to_int(3) == 3
+    with pytest.raises(ConversionError):
+        assert convert_to_int('5.44', accept_only_exact=True) == 5
+    assert convert_to_int('5.44', accept_only_exact=False) == 5
+    assert convert_to_int('5.65', accept_only_exact=False) == 5
+    assert convert_to_int('4', accept_only_exact=False) == 4
+    with pytest.raises(ConversionError):
+        assert convert_to_int(b'5.44', accept_only_exact=True) == 5
+    assert convert_to_int(b'5.44', accept_only_exact=False) == 5
+    assert convert_to_int(b'5.65', accept_only_exact=False) == 5
+    assert convert_to_int(b'4', accept_only_exact=False) == 4

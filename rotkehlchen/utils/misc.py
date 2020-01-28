@@ -252,8 +252,12 @@ def convert_to_int(
     elif isinstance(val, (bytes, str)):
         # Since float string are not converted to int we have to first convert
         # to float and try to convert to int afterwards
-        val = float(val)
-        return int(val)
+        try:
+            val = float(val)
+        except ValueError:
+            raise ConversionError(f'Could not convert {val} to a float')
+        if val.is_integer() or accept_only_exact is False:
+            return int(val)
     elif isinstance(val, int):
         return val
     elif isinstance(val, float):
