@@ -131,8 +131,6 @@ export async function createAccount(
   );
 
   await client.click('.create-account__buttons__confirm');
-  await client.waitUntilTextExists('div', `Welcome to Rotki!`, METHOD_TIMEOUT);
-  await client.click('.message-overlay__buttons__cancel');
   await client.waitUntilTextExists('div', `Upgrade to Premium`, METHOD_TIMEOUT);
   await client.click('.message-overlay__buttons__cancel');
 }

@@ -30,7 +30,7 @@ describe('AccountManagement.vue', () => {
     test('non premium users should see the premium dialog', async () => {
       expect.assertions(3);
       // @ts-ignore
-      wrapper.vm.firstStep();
+      wrapper.vm.showPremiumDialog();
       await wrapper.vm.$nextTick();
 
       expect(wrapper.find('.account_management__premium').exists()).toBe(true);
@@ -45,7 +45,7 @@ describe('AccountManagement.vue', () => {
       expect.assertions(2);
       store.commit('session/premium', true);
       // @ts-ignore
-      wrapper.vm.firstStep();
+      wrapper.vm.showPremiumDialog();
       await wrapper.vm.$nextTick();
 
       expect(wrapper.emitted()['login-complete']).toBeTruthy();
@@ -55,14 +55,10 @@ describe('AccountManagement.vue', () => {
 
   describe('new account', () => {
     test('non premium users should see the premium dialog', async () => {
-      expect.assertions(4);
+      expect.assertions(3);
       store.commit('session/login', { username: 'test', newAccount: true });
       // @ts-ignore
-      wrapper.vm.firstStep();
-      await wrapper.vm.$nextTick();
-
-      expect(wrapper.find('.account_management__welcome').exists()).toBe(true);
-      wrapper.find('.message-overlay__buttons__cancel').trigger('click');
+      wrapper.vm.showPremiumDialog();
       await wrapper.vm.$nextTick();
 
       expect(wrapper.find('.account_management__premium').exists()).toBe(true);
@@ -74,16 +70,11 @@ describe('AccountManagement.vue', () => {
     });
 
     test('premium users should not see the premium dialog', async () => {
-      expect.assertions(3);
+      expect.assertions(2);
       store.commit('session/premium', true);
       store.commit('session/login', { username: 'test', newAccount: true });
       // @ts-ignore
-      wrapper.vm.firstStep();
-      await wrapper.vm.$nextTick();
-
-      expect(wrapper.find('.account_management__welcome').exists()).toBe(true);
-
-      wrapper.find('.message-overlay__buttons__cancel').trigger('click');
+      wrapper.vm.showPremiumDialog();
       await wrapper.vm.$nextTick();
 
       expect(wrapper.emitted()['login-complete']).toBeTruthy();
