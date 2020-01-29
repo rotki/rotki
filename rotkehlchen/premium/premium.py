@@ -182,7 +182,7 @@ class Premium():
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
-        except requests.ConnectionError:
+        except requests.exceptions.ConnectionError:
             raise RemoteError('Could not connect to rotkehlchen server')
 
         return _process_dict_response(response)
@@ -204,7 +204,7 @@ class Premium():
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
-        except requests.ConnectionError:
+        except requests.exceptions.ConnectionError:
             raise RemoteError('Could not connect to rotkehlchen server')
 
         return _process_dict_response(response)
@@ -227,7 +227,7 @@ class Premium():
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
-        except requests.ConnectionError:
+        except requests.exceptions.ConnectionError:
             raise RemoteError('Could not connect to rotkehlchen server')
 
         result = _process_dict_response(response)
@@ -256,7 +256,7 @@ class Premium():
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
-        except requests.ConnectionError:
+        except requests.exceptions.ConnectionError:
             raise RemoteError('Could not connect to rotkehlchen server')
 
         result = _process_dict_response(response)
