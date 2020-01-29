@@ -24,7 +24,7 @@ def test_coverage_of_kraken_balances(kraken):
     # Since 05/08/2019 Kraken removed all delisted assets from their public API
     # query except for BSV. No idea why or why this incosistency.
     got_assets = set(kraken.query_public('Assets').keys())
-    expected_assets = (set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED)).union(set(['BSV']))
+    expected_assets = (set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED)).union({'BSV'})
     # Ignore the staking assets from the got assets
     got_assets.remove('XTZ.S')
 

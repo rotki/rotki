@@ -6,7 +6,7 @@ import pytest
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.constants.assets import A_EUR, A_GBP
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.errors import IncorrectApiKeyFormat, UnableToDecryptRemoteData
+from rotkehlchen.errors import IncorrectApiKeyFormat, PremiumAuthenticationError
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -311,10 +311,10 @@ def test_try_premium_at_start_new_account_different_password_than_remote_db(
 ):
     """
     If we make a new account with api keys and provide a password different than
-    the one the remote DB is encrypted with then make sure that UnableToDecryptRemoteData
+    the one the remote DB is encrypted with then make sure that PremiumAuthenticationError
     is thrown and that it is shown to the user.
     """
-    with pytest.raises(UnableToDecryptRemoteData):
+    with pytest.raises(PremiumAuthenticationError):
         setup_starting_environment(
             rotkehlchen_instance=rotkehlchen_instance,
             username=username,
