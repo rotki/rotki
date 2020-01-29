@@ -31,18 +31,6 @@
     ></create-account>
 
     <message-overlay
-      class="account_management__welcome"
-      :visible="!message && welcomeVisible"
-      @close="closeWelcome()"
-    >
-      <template #title>
-        Welcome to Rotki!
-      </template>
-      It appears this is your first time using the program. Follow the
-      suggestions to integrate with some exchanges or manually input data.
-    </message-overlay>
-
-    <message-overlay
       class="account_management__premium"
       action="Upgrade"
       :visible="!premium && !message && premiumVisible"
@@ -80,21 +68,19 @@ const { mapState: mapSessionState } = createNamespacedHelpers('session');
     CreateAccount
   },
   computed: {
-    ...mapSessionState(['newAccount', 'syncConflict', 'premium']),
+    ...mapSessionState(['syncConflict', 'premium']),
     ...mapState(['version', 'message']),
     ...mapGetters(['updateNeeded', 'message'])
   }
 })
 export default class AccountManagement extends Vue {
   accountCreation: boolean = false;
-  newAccount!: boolean;
   premium!: boolean;
   loading: boolean = false;
   version!: Version;
   message!: boolean;
   syncConflict!: boolean;
 
-  private welcomeVisible = false;
   private premiumVisible = false;
 
   @Prop({ required: true, type: Boolean })
@@ -115,7 +101,7 @@ export default class AccountManagement extends Vue {
     } as UnlockPayload);
     this.loading = false;
     if (this.logged) {
-      this.firstStep();
+      this.showPremiumDialog();
     }
   }
 
@@ -132,7 +118,7 @@ export default class AccountManagement extends Vue {
     } as UnlockPayload);
     this.loading = false;
     if (this.logged) {
-      this.firstStep();
+      this.showPremiumDialog();
     }
   }
 
@@ -142,21 +128,7 @@ export default class AccountManagement extends Vue {
   }
 
   dismiss() {
-    this.welcomeVisible = false;
     this.premiumVisible = false;
-  }
-
-  private firstStep() {
-    if (this.newAccount) {
-      this.welcomeVisible = true;
-    } else {
-      this.showPremiumDialog();
-    }
-  }
-
-  closeWelcome() {
-    this.dismiss();
-    this.showPremiumDialog();
   }
 
   private showPremiumDialog() {
