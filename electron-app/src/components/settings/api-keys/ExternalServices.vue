@@ -15,7 +15,7 @@
           hint="Enter your Etherscan API key"
           :loading="loading"
           tooltip="Deletes the Etherscan API key"
-          @save="save('etherscan', etherscanKey)"
+          @save="save('etherscan', $event)"
           @delete-key="deleteKey('etherscan')"
         ></service-key>
       </v-col>
@@ -30,7 +30,7 @@
           hint="Enter your CryptoCompare API key"
           :loading="loading"
           tooltip="Deletes the CryptoCompare API key"
-          @save="save('cryptocompare', cryptocompareKey)"
+          @save="save('cryptocompare', $event)"
           @delete-key="deleteKey('cryptocompare')"
         ></service-key>
       </v-col>
