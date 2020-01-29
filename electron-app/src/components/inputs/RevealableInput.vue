@@ -8,6 +8,7 @@
     :rules="rules"
     :label="label"
     :hint="hint"
+    :disabled="disabled"
     :persistent-hint="!!hint"
     @input="input"
     @click:append="revealed = !revealed"
@@ -35,6 +36,9 @@ export default class RevealableInput extends Vue {
 
   @Prop({ required: false, default: '' })
   hint!: string;
+
+  @Prop({ required: false, default: false })
+  disabled!: boolean;
 
   @Emit()
   input(_value: string) {}
