@@ -9,12 +9,10 @@ python:
 
 stages:
   - name: lint
-  - name: ui-lint
   - name: test
     if: NOT commit_message =~ /\[no ci tests\]/ AND tag IS NOT present
   - name: ui-test
     if: commit_message =~ /\[ui tests\]/ AND tag IS NOT present
-  - name: ui-unit-test
   - name: deploy
     if: tag IS present
 
@@ -67,8 +65,17 @@ templates:
       - source terryfy/test_tools.sh
       - python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/
 
+    job-template-frontend: &job-template-frontend
+      os: linux
+      language: node_js
+      node_js:
+        - 12
+      before_install:
+        - cd ./electron-app
+
 cache:
   pip: true
+  npm: true
   directories:
     - $HOME/.cache/pip
     - $HOME/.cache/.rotkehlchen-test-dir
@@ -92,16 +99,15 @@ jobs:
     - stage: test
       <<: *job-template-osx
 
-    - stage: ui-lint
+    - stage: lint
+      <<: *job-template-frontend
       script:
-        - cd ./electron-app
-        - npm ci
-        - npm run lint:check
+        - npm run lint
+        - npm run build
 
-    - stage: ui-unit-test
+    - stage: test
+      <<: *job-template-frontend
       script:
-        - cd ./electron-app
-        - npm ci
         - npm run test:unit
 
     - stage: ui-test
@@ -114,10 +120,9 @@ jobs:
       <<: *job-template-osx
       script:
         - source terryfy/test_tools.sh
-        - npm install
-        - npm rebuild zeromq --runtime=electron --target=3.0.0
-        - PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild
-        - npm test
+        - cd ./electron-app
+        - npm ci
+        - npm run test:e2e
       after_failure:
         - ./tools/scripts/screenshot_upload.py ./failure-screenshots
 
