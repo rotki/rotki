@@ -84,7 +84,7 @@ def _init_database(
         for asset in ignored_assets:
             db.add_to_ignored_assets(asset)
 
-    # Make sure that the fixture provided accounts
+    # Make sure that the fixture provided accounts are in the blockchain
     db.add_blockchain_accounts(SupportedBlockchain.ETHEREUM, blockchain_accounts.eth)
     db.add_blockchain_accounts(SupportedBlockchain.BITCOIN, blockchain_accounts.btc)
 

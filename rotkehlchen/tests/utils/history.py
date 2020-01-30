@@ -20,14 +20,7 @@ from rotkehlchen.tests.utils.constants import (
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.transactions import EthereumTransaction
-from rotkehlchen.typing import (
-    AssetAmount,
-    AssetMovementCategory,
-    Location,
-    SupportedBlockchain,
-    Timestamp,
-    TradeType,
-)
+from rotkehlchen.typing import AssetAmount, AssetMovementCategory, Location, Timestamp, TradeType
 from rotkehlchen.utils.misc import hexstring_to_bytes
 
 TEST_END_TS = 1559427707
@@ -783,11 +776,6 @@ def prepare_rotki_for_history_processing_test(
     kraken.random_trade_data = False
     kraken.random_ledgers_data = False
     kraken.remote_errors = remote_errors
-    # Let's add 3 blockchain accounts
-    rotki.data.db.add_blockchain_accounts(
-        SupportedBlockchain.ETHEREUM,
-        [ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3],
-    )
     setup = mock_history_processing_and_exchanges(
         rotki=rotki,
         should_mock_history_processing=should_mock_history_processing,
