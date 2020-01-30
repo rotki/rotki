@@ -26,6 +26,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response,
     wait_for_async_task,
 )
+from rotkehlchen.tests.utils.constants import ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3
 from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test, prices
 from rotkehlchen.utils.misc import create_timestamp
 
@@ -34,6 +35,7 @@ from rotkehlchen.utils.misc import create_timestamp
     'added_exchanges',
     [('binance', 'poloniex', 'bittrex', 'bitmex', 'kraken')],
 )
+@pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_query_history(rotkehlchen_api_server_with_exchanges):
     """Test that the history processing REST API endpoint works. Similar to test_history.py"""
@@ -107,6 +109,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges):
     'added_exchanges',
     [('binance', 'poloniex', 'bittrex', 'bitmex', 'kraken')],
 )
+@pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges):
     """Test that the history processing REST API endpoint works. Similar to test_history.py"""
@@ -152,6 +155,7 @@ def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges):
     'added_exchanges',
     [('binance', 'poloniex', 'bittrex', 'bitmex', 'kraken')],
 )
+@pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_query_history_timerange(rotkehlchen_api_server_with_exchanges):
     """Same as test_query_history but on a limited timerange"""
@@ -212,6 +216,7 @@ def test_query_history_timerange(rotkehlchen_api_server_with_exchanges):
     'added_exchanges',
     [('binance', 'poloniex', 'bittrex', 'bitmex', 'kraken')],
 )
+@pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_query_history_async(rotkehlchen_api_server_with_exchanges):
     """Same as test_query_history but asynchronously"""
@@ -440,6 +445,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
     'added_exchanges',
     [('binance', 'poloniex', 'bittrex', 'bitmex', 'kraken')],
 )
+@pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_history_export_csv(
         rotkehlchen_api_server_with_exchanges,
@@ -484,6 +490,7 @@ def test_history_export_csv(
     'added_exchanges',
     [('binance', 'poloniex', 'bittrex', 'bitmex', 'kraken')],
 )
+@pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_history_export_csv_errors(
         rotkehlchen_api_server_with_exchanges,

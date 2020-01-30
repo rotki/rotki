@@ -186,7 +186,7 @@ def test_writting_fetching_data(data_dir, username):
         SupportedBlockchain.BITCOIN,
         ['1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS'],
     )
-    data.db.add_blockchain_account(
+    data.db.add_blockchain_accounts(
         SupportedBlockchain.ETHEREUM,
         [
             '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
@@ -204,9 +204,9 @@ def test_writting_fetching_data(data_dir, username):
     }
     # Add existing account should fail
     with pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
-        data.db.add_blockchain_account(
+        data.db.add_blockchain_accounts(
             SupportedBlockchain.ETHEREUM,
-            '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
+            ['0xd36029d76af6fE4A356528e4Dc66B2C18123597D'],
         )
     # Remove non-existing account
     with pytest.raises(InputError):
@@ -914,6 +914,7 @@ def test_add_ethereum_transactions(data_dir, username):
     assert returned_transactions == [tx1, tx2, tx3]
 
 
+@pytest.mark.parametrize('ethereum_accounts', [[]])
 def test_non_checksummed_eth_account_in_db(database):
     """
     Regression test for  https://github.com/rotki/rotki/issues/519
