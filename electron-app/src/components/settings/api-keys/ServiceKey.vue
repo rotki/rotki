@@ -97,6 +97,7 @@ export default class ServiceKey extends Vue {
       this.editMode = true;
     } else {
       this.cancellable = true;
+      this.editMode = false;
     }
     this.currentValue = this.value;
   }
