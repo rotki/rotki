@@ -141,6 +141,10 @@ In this section we will explain how you can import data by integrating with exte
 Adding an exchange
 =====================
 
+.. image:: images/add_exchange.gif
+   :alt: Add API keys for a new exchange
+   :align: center
+
 You can integrate many different exchanges with Rotki. Currently supported exchanges are: Kraken, Poloniex, Bittrex, Bitmex, Binance, Coinbase and Coinbase Pro.
 
 To do so you have to go to your exchange and create an API key. If the exchange allows it make sure that the API Key only has reading/querying permissions to your account and nothing else since that is all the permissions needed by Rotki.
@@ -153,6 +157,10 @@ Adding an external service API Key
 =====================================
 
 Rotki relies on various external services for data such as historical crypto prices or ethereum transactions. To get that data some of these services require API keys. So you should go to their webpage, create a free account and generate an API key. Once this is done you can enter the API key in the respective UI element.
+
+.. image:: images/add_external_service.gif
+   :alt: Add API keys for an external service
+   :align: center
 
 At the moment the only compulsory API key is etherscan. If you don't already have an account with them please create one `here <https://etherscan.io/register>`_ and then generate a free API key and set it in the app as explained above.
 
@@ -168,12 +176,10 @@ Rotki can import any trade CSV data exported from cointracking.info. But in gene
    :align: center
 
 
-
-
 Tracking accounts and balances
 **********************************
 
-To track blockchain accounts and balances and also FIAT balances you need to visit the "Accounts/balances" section from the left sidebar.
+To track blockchain accounts&balances and also FIAT balances you need to visit the "Accounts/balances" section from the left sidebar.
 
 
 Adding Fiat Balances
@@ -183,12 +189,20 @@ Rotki is an asset analytics application. Thus you can track all your assets in o
 
 To add or modify the amount of an owned FIAT currency scroll down to the "Fiat Balances" section and choose the currency from the dropdown menu. Input the modified balance in the text box and press the Modify button.
 
+.. image:: images/sc_fiat_balances.png
+   :alt: Manually adding fiat balances
+   :align: center
+
 Adding and Removing Blockchain Accounts
 ============================================
 
 Rotki allows to track balances of blockchain accounts.
 
 To track an account scroll down to the "Blockchain Balances" section and choose the blockchain from the dropdown menu. For now only Bitcoin and Ethereum chains are supported. Then type or paste the address in the "Account" textbox and press the "Add" Button.
+
+.. image:: images/sc_blockchain_balances.png
+   :alt: Add a blockchain account
+   :align: center
 
 To stop tracking a particular account scroll down to the accounts tables and simply right click on the account you want to stop tracking and select "Delete" from the context menu.
 
