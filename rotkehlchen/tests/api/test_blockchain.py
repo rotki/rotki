@@ -343,6 +343,12 @@ def test_add_blockchain_accounts(
         token_balances=setup.token_balances,
         also_btc=False,  # All blockchain assets have not been queried yet
     )
+    # Also make sure they are added in the DB
+    accounts = rotki.data.db.get_blockchain_accounts()
+    assert len(accounts.eth) == 4
+    assert all(acc in accounts.eth for acc in all_eth_accounts)
+    assert len(accounts.btc) == 2
+    assert all(acc in accounts.btc for acc in btc_accounts)
 
     # Now try to query all balances to make sure the result is the stored
     with setup.etherscan_patch, setup.bitcoin_patch:
@@ -389,6 +395,12 @@ def test_add_blockchain_accounts(
         btc_balances=setup.btc_balances,
         also_eth=True,
     )
+    # Also make sure it's added in the DB
+    accounts = rotki.data.db.get_blockchain_accounts()
+    assert len(accounts.eth) == 4
+    assert all(acc in accounts.eth for acc in all_eth_accounts)
+    assert len(accounts.btc) == 3
+    assert all(acc in accounts.btc for acc in all_btc_accounts)
 
     # Now try to query all balances to make sure the result is also stored
     with setup.etherscan_patch, setup.bitcoin_patch:
@@ -462,6 +474,12 @@ def test_add_blockchain_accounts_async(
         token_balances=setup.token_balances,
         also_btc=False,  # All blockchain assets have not been queried yet
     )
+    # Also make sure they are added in the DB
+    accounts = rotki.data.db.get_blockchain_accounts()
+    assert len(accounts.eth) == 4
+    assert all(acc in accounts.eth for acc in all_eth_accounts)
+    assert len(accounts.btc) == 2
+    assert all(acc in accounts.btc for acc in btc_accounts)
 
     # Now try to query all balances to make sure the result is the stored
     with setup.etherscan_patch, setup.bitcoin_patch:
@@ -506,6 +524,12 @@ def test_add_blockchain_accounts_async(
         btc_balances=setup.btc_balances,
         also_eth=True,
     )
+    # Also make sure it's added in the DB
+    accounts = rotki.data.db.get_blockchain_accounts()
+    assert len(accounts.eth) == 4
+    assert all(acc in accounts.eth for acc in all_eth_accounts)
+    assert len(accounts.btc) == 3
+    assert all(acc in accounts.btc for acc in all_btc_accounts)
 
     # Now try to query all balances to make sure the result is also stored
     with setup.etherscan_patch, setup.bitcoin_patch:
@@ -742,6 +766,12 @@ def test_remove_blockchain_accounts(
         token_balances=setup.token_balances,
         also_btc=False,  # All blockchain assets have not been queried yet
     )
+    # Also make sure they are removed from the DB
+    accounts = rotki.data.db.get_blockchain_accounts()
+    assert len(accounts.eth) == 2
+    assert all(acc in accounts.eth for acc in all_eth_accounts)
+    assert len(accounts.btc) == 2
+    assert all(acc in accounts.btc for acc in btc_accounts)
 
     # Now try to query all balances to make sure the result is the stored
     with setup.etherscan_patch, setup.bitcoin_patch:
@@ -788,6 +818,12 @@ def test_remove_blockchain_accounts(
         btc_balances=setup.btc_balances,
         also_eth=True,
     )
+    # Also make sure it's removed from the DB
+    accounts = rotki.data.db.get_blockchain_accounts()
+    assert len(accounts.eth) == 2
+    assert all(acc in accounts.eth for acc in all_eth_accounts)
+    assert len(accounts.btc) == 1
+    assert all(acc in accounts.btc for acc in all_btc_accounts)
 
     # Now try to query all balances to make sure the result is also stored
     with setup.etherscan_patch, setup.bitcoin_patch:
@@ -870,6 +906,12 @@ def test_remove_blockchain_accounts_async(
         token_balances=setup.token_balances,
         also_btc=False,  # All blockchain assets have not been queried yet
     )
+    # Also make sure they are removed from the DB
+    accounts = rotki.data.db.get_blockchain_accounts()
+    assert len(accounts.eth) == 2
+    assert all(acc in accounts.eth for acc in all_eth_accounts)
+    assert len(accounts.btc) == 2
+    assert all(acc in accounts.btc for acc in btc_accounts)
 
     # Now try to query all balances to make sure the result is the stored
     with setup.etherscan_patch, setup.bitcoin_patch:
@@ -914,6 +956,12 @@ def test_remove_blockchain_accounts_async(
         btc_balances=setup.btc_balances,
         also_eth=True,
     )
+    # Also make sure it's removed from the DB
+    accounts = rotki.data.db.get_blockchain_accounts()
+    assert len(accounts.eth) == 2
+    assert all(acc in accounts.eth for acc in all_eth_accounts)
+    assert len(accounts.btc) == 1
+    assert all(acc in accounts.btc for acc in all_btc_accounts)
 
     # Now try to query all balances to make sure the result is also stored
     with setup.etherscan_patch, setup.bitcoin_patch:

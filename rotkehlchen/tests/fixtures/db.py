@@ -6,8 +6,9 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
-from rotkehlchen.typing import FilePath
+from rotkehlchen.typing import FilePath, SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -65,6 +66,7 @@ def _init_database(
         msg_aggregator: MessagesAggregator,
         db_settings: Optional[Dict[str, Any]],
         ignored_assets: Optional[List[Asset]],
+        blockchain_accounts: BlockchainAccounts,
 ) -> DBHandler:
     db = DBHandler(data_dir, password, msg_aggregator)
     settings = {
@@ -82,6 +84,12 @@ def _init_database(
         for asset in ignored_assets:
             db.add_to_ignored_assets(asset)
 
+    # Make sure that the fixture provided accounts
+    for account in blockchain_accounts.eth:
+        db.add_blockchain_account(SupportedBlockchain.ETHEREUM, account)
+    for acc in blockchain_accounts.btc:
+        db.add_blockchain_account(SupportedBlockchain.BITCOIN, acc)
+
     return db
 
 
@@ -93,6 +101,7 @@ def database(
         db_settings,
         start_with_logged_in_user,
         ignored_assets,
+        blockchain_accounts,
 ) -> Optional[DBHandler]:
     if not start_with_logged_in_user:
         return None
@@ -103,6 +112,7 @@ def database(
         password=db_password,
         db_settings=db_settings,
         ignored_assets=ignored_assets,
+        blockchain_accounts=blockchain_accounts,
     )
 
 
@@ -118,12 +128,15 @@ def session_database(
     if not session_start_with_logged_in_user:
         return None
 
+    # No sessions blockchain accounts given
+    blockchain_accounts = BlockchainAccounts([], [])
     return _init_database(
         data_dir=session_user_data_dir,
         msg_aggregator=messages_aggregator,
         password=session_db_password,
         db_settings=session_db_settings,
         ignored_assets=session_ignored_assets,
+        blockchain_accounts=blockchain_accounts,
     )
 
 
