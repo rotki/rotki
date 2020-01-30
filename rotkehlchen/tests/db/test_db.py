@@ -182,18 +182,17 @@ def test_writting_fetching_data(data_dir, username):
     result = data.db.get_owned_tokens()
     assert set(tokens) == set(result)
 
-    data.db.add_blockchain_account(
+    data.db.add_blockchain_accounts(
         SupportedBlockchain.BITCOIN,
-        '1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS',
+        ['1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS'],
     )
     data.db.add_blockchain_account(
         SupportedBlockchain.ETHEREUM,
-        '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
-    )
-    # Add a non checksummed address
-    data.db.add_blockchain_account(
-        SupportedBlockchain.ETHEREUM,
-        '0x80b369799104a47e98a553f3329812a44a7facdc',
+        [
+            '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
+            # Add a non checksummed address
+            '0x80b369799104a47e98a553f3329812a44a7facdc',
+        ],
     )
     accounts = data.db.get_blockchain_accounts()
     assert isinstance(accounts, BlockchainAccounts)

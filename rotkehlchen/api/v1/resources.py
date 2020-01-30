@@ -40,10 +40,10 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    BlockchainAddress,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
+    ListOfBlockchainAddresses,
     Location,
     Price,
     SupportedBlockchain,
@@ -497,7 +497,7 @@ class BlockchainsAccountsResource(BaseResource):
     def put(
             self,
             blockchain: SupportedBlockchain,
-            accounts: List[BlockchainAddress],
+            accounts: ListOfBlockchainAddresses,
             async_query: bool,
     ) -> Response:
         return self.rest_api.add_blockchain_accounts(
@@ -510,7 +510,7 @@ class BlockchainsAccountsResource(BaseResource):
     def delete(
             self,
             blockchain: SupportedBlockchain,
-            accounts: List[BlockchainAddress],
+            accounts: ListOfBlockchainAddresses,
             async_query: bool,
     ) -> Response:
         return self.rest_api.remove_blockchain_accounts(

@@ -265,9 +265,9 @@ def test_upgrade_db_1_to_2(data_dir, username):
         data.unlock(username, '123', create_new=True)
     # Manually input a non checksummed account
     data.db.conn.commit()
-    data.db.add_blockchain_account(
+    data.db.add_blockchain_accounts(
         SupportedBlockchain.ETHEREUM,
-        '0xe3580c38b0106899f45845e361ea7f8a0062ef12',
+        ['0xe3580c38b0106899f45845e361ea7f8a0062ef12'],
     )
 
     # now relogin and check that the account has been re-saved as checksummed
