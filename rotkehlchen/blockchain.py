@@ -429,7 +429,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
             accounts: List[BlockchainAddress],
     ) -> Tuple[BlockchainBalancesUpdate, List[BlockchainAddress], str]:
         """Adds new blockchain accounts and requeries all balances after the addition.
-
+        The accounts are added in the blockchain object and not in the database.
         Returns the new total balances, the actually added accounts (some
         accounts may have been invalid) and also any errors that occured
         during the addition.
@@ -473,6 +473,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
     ) -> Tuple[BlockchainBalancesUpdate, List[BlockchainAddress], str]:
         """Removes blockchain accounts and requeries all balances after the removal.
 
+        The accounts are removed from the blockchain object and not from the database.
         Returns the new total balances, the actually removes accounts (some
         accounts may have been invalid) and also any errors that occured
         during the removal.

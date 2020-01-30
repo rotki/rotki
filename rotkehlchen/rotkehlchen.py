@@ -242,7 +242,7 @@ class Rotkehlchen():
             self,
             blockchain: SupportedBlockchain,
             accounts: List[BlockchainAddress],
-    ) -> Tuple[Optional[BlockchainBalancesUpdate], str]:
+    ) -> Tuple[BlockchainBalancesUpdate, List[BlockchainAddress], str]:
         """Adds new blockchain accounts
 
         Adds the accounts to the blockchain instance and queries them to get the
@@ -252,21 +252,21 @@ class Rotkehlchen():
         - RemoteError if an external service such as Etherscan is queried and
           there is a problem with its query.
         """
-
         new_data, added_accounts, msg = self.blockchain.add_blockchain_accounts(
             blockchain=blockchain,
             accounts=accounts,
         )
+
         for account in added_accounts:
             self.data.db.add_blockchain_account(blockchain, account)
 
-        return new_data, msg
+        return new_data, added_accounts, msg
 
     def remove_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
             accounts: List[BlockchainAddress],
-    ) -> Tuple[Optional[BlockchainBalancesUpdate], str]:
+    ) -> Tuple[BlockchainBalancesUpdate, List[BlockchainAddress], str]:
         """Removes blockchain accounts
 
         Removes the accounts from the blockchain instance and queries them to get
@@ -283,7 +283,7 @@ class Rotkehlchen():
         for account in removed_accounts:
             self.data.db.remove_blockchain_account(blockchain, account)
 
-        return new_data, msg
+        return new_data, removed_accounts, msg
 
     def add_owned_eth_tokens(
             self,

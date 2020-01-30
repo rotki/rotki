@@ -1021,7 +1021,7 @@ class RestAPI():
         extra status code argument for errors
         """
         try:
-            result, added_accounts, msg = self.rotkehlchen.blockchain.add_blockchain_accounts(
+            result, added_accounts, msg = self.rotkehlchen.add_blockchain_accounts(
                 blockchain=blockchain,
                 accounts=accounts,
             )
@@ -1074,7 +1074,7 @@ class RestAPI():
         extra status code argument for errors
         """
         try:
-            result, removed_accounts, msg = self.rotkehlchen.blockchain.remove_blockchain_accounts(
+            result, removed_accounts, msg = self.rotkehlchen.remove_blockchain_accounts(
                 blockchain=blockchain,
                 accounts=accounts,
             )
