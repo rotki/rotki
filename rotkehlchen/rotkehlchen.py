@@ -26,7 +26,13 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import DEFAULT_ANONYMIZED_LOGS, LoggingSettings, RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
-from rotkehlchen.typing import ApiKey, ApiSecret, BlockchainAddress, SupportedBlockchain, Timestamp
+from rotkehlchen.typing import (
+    ApiKey,
+    ApiSecret,
+    ListOfBlockchainAddresses,
+    SupportedBlockchain,
+    Timestamp,
+)
 from rotkehlchen.usage_analytics import maybe_submit_usage_analytics
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import combine_stat_dicts, dict_get_sumof, merge_dicts, ts_now
@@ -241,8 +247,9 @@ class Rotkehlchen():
     def add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            accounts: List[BlockchainAddress],
-    ) -> Tuple[BlockchainBalancesUpdate, List[BlockchainAddress], str]:
+            accounts: ListOfBlockchainAddresses,
+
+    ) -> Tuple[BlockchainBalancesUpdate, ListOfBlockchainAddresses, str]:
         """Adds new blockchain accounts
 
         Adds the accounts to the blockchain instance and queries them to get the
@@ -256,17 +263,15 @@ class Rotkehlchen():
             blockchain=blockchain,
             accounts=accounts,
         )
-
-        for account in added_accounts:
-            self.data.db.add_blockchain_account(blockchain, account)
+        self.data.db.add_blockchain_accounts(blockchain, added_accounts)
 
         return new_data, added_accounts, msg
 
     def remove_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            accounts: List[BlockchainAddress],
-    ) -> Tuple[BlockchainBalancesUpdate, List[BlockchainAddress], str]:
+            accounts: ListOfBlockchainAddresses,
+    ) -> Tuple[BlockchainBalancesUpdate, ListOfBlockchainAddresses, str]:
         """Removes blockchain accounts
 
         Removes the accounts from the blockchain instance and queries them to get

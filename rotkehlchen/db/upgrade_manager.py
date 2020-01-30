@@ -37,11 +37,10 @@ def _checksum_eth_accounts(db: 'DBHandler') -> None:
         'DELETE FROM blockchain_accounts WHERE blockchain=?;', ('ETH',),
     )
     db.conn.commit()
-    for account in accounts.eth:
-        db.add_blockchain_account(
-            blockchain=SupportedBlockchain.ETHEREUM,
-            account=to_checksum_address(account),
-        )
+    db.add_blockchain_accounts(
+        blockchain=SupportedBlockchain.ETHEREUM,
+        accounts=[to_checksum_address(account) for account in accounts.eth],
+    )
 
 
 def _eth_rpc_port_to_eth_rpc_endpoint(db: 'DBHandler') -> None:

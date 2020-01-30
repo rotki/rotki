@@ -26,6 +26,7 @@ from rotkehlchen.typing import (
     BTCAddress,
     ChecksumEthAddress,
     EthAddress,
+    ListOfBlockchainAddresses,
     SupportedBlockchain,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -426,8 +427,8 @@ class Blockchain(CacheableObject, LockableQueryObject):
     def add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            accounts: List[BlockchainAddress],
-    ) -> Tuple[BlockchainBalancesUpdate, List[BlockchainAddress], str]:
+            accounts: ListOfBlockchainAddresses,
+    ) -> Tuple[BlockchainBalancesUpdate, ListOfBlockchainAddresses, str]:
         """Adds new blockchain accounts and requeries all balances after the addition.
         The accounts are added in the blockchain object and not in the database.
         Returns the new total balances, the actually added accounts (some
@@ -464,13 +465,15 @@ class Blockchain(CacheableObject, LockableQueryObject):
                 full_msg += str(e)
                 result = {'per_account': self.balances, 'totals': self.totals}
 
-        return result, added_accounts, full_msg
+        # Ignore type checks here. added_accounts is the same type as accounts
+        # but not sure how to show that to mypy
+        return result, added_accounts, full_msg  # type: ignore
 
     def remove_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            accounts: List[BlockchainAddress],
-    ) -> Tuple[BlockchainBalancesUpdate, List[BlockchainAddress], str]:
+            accounts: ListOfBlockchainAddresses,
+    ) -> Tuple[BlockchainBalancesUpdate, ListOfBlockchainAddresses, str]:
         """Removes blockchain accounts and requeries all balances after the removal.
 
         The accounts are removed from the blockchain object and not from the database.
@@ -513,7 +516,9 @@ class Blockchain(CacheableObject, LockableQueryObject):
 
         result: BlockchainBalancesUpdate = {'per_account': self.balances, 'totals': self.totals}
 
-        return result, removed_accounts, full_msg
+        # Ignore type checks here. removed_accounts is the same type as accounts
+        # but not sure how to show that to mypy
+        return result, removed_accounts, full_msg  # type: ignore
 
     def modify_blockchain_account(
             self,

@@ -784,9 +784,10 @@ def prepare_rotki_for_history_processing_test(
     kraken.random_ledgers_data = False
     kraken.remote_errors = remote_errors
     # Let's add 3 blockchain accounts
-    rotki.data.db.add_blockchain_account(SupportedBlockchain.ETHEREUM, ETH_ADDRESS1)
-    rotki.data.db.add_blockchain_account(SupportedBlockchain.ETHEREUM, ETH_ADDRESS2)
-    rotki.data.db.add_blockchain_account(SupportedBlockchain.ETHEREUM, ETH_ADDRESS3)
+    rotki.data.db.add_blockchain_accounts(
+        SupportedBlockchain.ETHEREUM,
+        [ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3],
+    )
     setup = mock_history_processing_and_exchanges(
         rotki=rotki,
         should_mock_history_processing=should_mock_history_processing,

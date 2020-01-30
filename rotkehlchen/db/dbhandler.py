@@ -65,6 +65,7 @@ from rotkehlchen.typing import (
     ExternalService,
     ExternalServiceApiCredentials,
     FilePath,
+    ListOfBlockchainAddresses,
     Location,
     SupportedBlockchain,
     Timestamp,
@@ -618,18 +619,21 @@ class DBHandler:
 
         return result
 
-    def add_blockchain_account(
+    def add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            account: BlockchainAddress,
+            accounts: ListOfBlockchainAddresses,
     ) -> None:
-        # Make sure checksummed address makes it here
+        tuples: List[Tuple[str, BlockchainAddress]]
+        # Make sure checksummed addresses makes it here
         if blockchain == SupportedBlockchain.ETHEREUM:
-            account = to_checksum_address(account)
+            tuples = [(blockchain.value, to_checksum_address(account)) for account in accounts]
+        else:
+            tuples = [(blockchain.value, account) for account in accounts]
+
         cursor = self.conn.cursor()
-        cursor.execute(
-            'INSERT INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
-            (blockchain.value, account),
+        cursor.executemany(
+            'INSERT INTO blockchain_accounts(blockchain, account) VALUES (?, ?)', tuples,
         )
         self.conn.commit()
         self.update_last_write()
@@ -642,6 +646,7 @@ class DBHandler:
         # Make sure checksummed address makes it here
         if blockchain == SupportedBlockchain.ETHEREUM:
             account = to_checksum_address(account)
+
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT COUNT(*) from blockchain_accounts WHERE '

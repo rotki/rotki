@@ -35,10 +35,10 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    BlockchainAddress,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
+    ListOfBlockchainAddresses,
     Location,
     Price,
     SupportedBlockchain,
@@ -1014,7 +1014,7 @@ class RestAPI():
     def _add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            accounts: List[BlockchainAddress],
+            accounts: ListOfBlockchainAddresses,
     ) -> Dict[str, Any]:
         """
         This returns the typical async response dict but with the
@@ -1043,7 +1043,7 @@ class RestAPI():
     def add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            accounts: List[BlockchainAddress],
+            accounts: ListOfBlockchainAddresses,
             async_query: bool,
     ) -> Response:
         if async_query:
@@ -1067,7 +1067,7 @@ class RestAPI():
     def _remove_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            accounts: List[BlockchainAddress],
+            accounts: ListOfBlockchainAddresses,
     ) -> Dict[str, Any]:
         """
         This returns the typical async response dict but with the
@@ -1095,7 +1095,7 @@ class RestAPI():
     def remove_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            accounts: List[BlockchainAddress],
+            accounts: ListOfBlockchainAddresses,
             async_query: bool,
     ) -> Response:
         if async_query:

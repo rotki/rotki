@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, NamedTuple, NewType, Optional, Tuple, Union
+from typing import Dict, List, NamedTuple, NewType, Optional, Tuple, Union
 
 from eth_utils.typing import ChecksumAddress
 
@@ -88,6 +88,7 @@ T_BTCAddress = str
 BTCAddress = NewType('BTCAddress', T_BTCAddress)
 
 BlockchainAddress = Union[EthAddress, BTCAddress, ChecksumEthAddress]
+ListOfBlockchainAddresses = Union[List[BTCAddress], List[ChecksumEthAddress]]
 
 
 class EthTokenInfo(NamedTuple):

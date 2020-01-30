@@ -85,10 +85,8 @@ def _init_database(
             db.add_to_ignored_assets(asset)
 
     # Make sure that the fixture provided accounts
-    for account in blockchain_accounts.eth:
-        db.add_blockchain_account(SupportedBlockchain.ETHEREUM, account)
-    for acc in blockchain_accounts.btc:
-        db.add_blockchain_account(SupportedBlockchain.BITCOIN, acc)
+    db.add_blockchain_accounts(SupportedBlockchain.ETHEREUM, blockchain_accounts.eth)
+    db.add_blockchain_accounts(SupportedBlockchain.BITCOIN, blockchain_accounts.btc)
 
     return db
 
