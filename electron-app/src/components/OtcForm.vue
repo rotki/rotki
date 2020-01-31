@@ -20,7 +20,7 @@
               v-model="pair"
               label="Pair"
               persistent-hint
-              hint="Pair for the trade. BASECURRENCY_QUOTE_CURRENCY"
+              hint="Pair for the trade. BASECURRENCY_QUOTECURRENCY"
             ></v-text-field>
             <v-radio-group v-model="type" label="Trade type">
               <v-radio label="Buy" value="buy"></v-radio>
@@ -42,25 +42,25 @@
               v-model="fee"
               label="Fee"
               persistent-hint
-              hint="Fee if any that the trade occurred"
+              hint="Fee if any of the trade that occurred"
             ></v-text-field>
             <v-text-field
               v-model="feeCurrency"
               label="Fee currency"
               persistent-hint
-              hint="Currency the fee was payed in"
+              hint="Currency the fee was paid in"
             ></v-text-field>
             <v-text-field
               v-model="link"
               label="Link"
               persistent-hint
-              hint="A link t the trade. e.g. in an explorer"
+              hint="[Optional] A link to the trade. e.g. in an explorer"
             ></v-text-field>
             <v-textarea
               v-model="notes"
               label="Additional notes"
               persistent-hint
-              hint="Additional notes to store for the trade"
+              hint="[Optional] Additional notes to store for the trade"
             ></v-textarea>
           </v-card-text>
           <v-card-actions>

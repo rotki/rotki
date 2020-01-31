@@ -211,13 +211,17 @@ Adding and Removing Ethereum Tokens
 
 Rotki will check all of your ethereum accounts for balances of a given list of tokens. This list can be provided and modified by you.
 
-To do so scroll down to the "Blockchain Balances" section and look at the "Select Eth Tokens to Track" multiselection widget.
+To do so scroll down to the "Blockchain Balances" section and look for the "Owned Tokens" fields.
 
-In order to add a token to the tracked tokens find it on the left menu and click it so that it gets added to your tokens.
+.. image:: images/track_tokens.gif
+   :alt: Add a new owned ethereum token
+   :align: center
 
-In order to stop tracking a tocken, find it on the right menu and click it to stop tracking it.
+In order to add a token to the tracked tokens start typing its name and the auto-completion of the widget should show it to you. If it does not it may mean that it's not support by Rotki. Try to make an issue in our github repository to add it.
 
-All account balances will be updated at this point.
+In order to stop tracking a token simply click the [X] next to the token's name from the list of owned tokens.
+
+All account balances will be updated at after addition or removal of tokens.
 
 
 
@@ -228,17 +232,19 @@ Rotki will pull all your trade history from the exchanges whenever it needs it. 
 
 On the left sidebar click on the trades button and select "OTC Trades" from the dropdown menu. This will take you to the OTC Trades page.
 
-To add a new trade or taxable event, fill in all the field and press the "Add Trade" button.
+.. image:: images/sc_add_external_trade.png
+   :alt: Add an external trade
+   :align: center
+
+To add a new trade or taxable event, fill in all the fields and press the "Add Trade" button.
 
 Some very important things to note. All pairs should be in the form of ``BASECURRENCY_QUOTECURRENCY``. For a ``buy`` this means you are buying ``amount`` of the ``BASE`` currency at a price of ``rate`` ``QUOTE`` currency per ``BASE``. For a ``sell`` this means you are selling ``amount`` of the ``BASE`` currency at a price of ``rate`` ``QUOTE`` currency per ``BASE``.
 
 If there was a fee for the trade you should input it in the corresponding box and also enter the currency the fee was paid in. Fee can also be 0.
 
-You can provide additional notes or even links to blockchain explorers for each trade.
+You can optionally provide additional notes or even links to blockchain explorers for each trade.
 
-At the bottom of this page you can see a table of all your OTC trades.
-
-By right clicking on a trade you get a context menu allowing you to either edit or delete the trade entry.
+At the bottom of this page you can see a table of all your OTC trades. You can edit or delete a trade by clicking on the appropriate icon at the rightmost part of each trade under the "Actions" column.
 
 Creating a tax report
 **********************
@@ -248,9 +254,18 @@ Rotki creates a tax report for you based on your trades and the provided account
 
 To create a tax report click on the "Tax Report" button from the left menu. Choose a start and an end date for the report and then click the "Generate Report" button.
 
+.. image:: images/sc_tax_report1.png
+   :alt: Overview of the tax report
+   :align: center
+
 The calculation may take some time. Once done you have an overview of the profit/loss for the given period, how much of that is taxable, and how much each taxable event category contributes to the total.
 
 Additionally below the overview you get a table containing all of the taxable events that were taken into account in the calculation along with how much of the ``profit_currency`` you lost or gained through that event.
+
+.. image:: images/sc_tax_report2.png
+   :alt: Event list of the tax report
+   :align: center
+
 
 Finally you can get a nice CSV export by pressing the "Export CSV" button. This export is meant to be imported into google sheets. Press the button and then choose a directory to write the CSV files to. Once done you can import the CSV files into google sheets via its import menu.
 
@@ -264,12 +279,27 @@ Click on the analytics page on the left sidebar to go to your analytics page.
 
 Since Rotki is tracking all your assets over time the first thing you can see is a value/time graph of your entire net value.
 
+.. image:: images/sc_stats_netvalue.png
+   :alt: Netvalue over time graph
+   :align: center
+
 Following that you can see a graph of quantity of an asset superimposed on its USD value over time.
+
+.. image:: images/sc_stats_asset_amount_value.png
+   :alt: Asset amount and value over time
+   :align: center
 
 Furthermore you can see a piechart of the distribution of your netvalue across different locations. So you can determine how exposed you are to having a big part of your net value in exchanges, in banks e.t.c.
 
+.. image:: images/sc_stats_distribution_location.png
+   :alt: Distribution of networth by location
+   :align: center
+
 Finally you can see a piechart of the distribution of your netvalue across all of the assets you own. This is an important analytics tool as it can help you determine your exposure on each asset and if some rebalancing of your portfolio is in order.
 
+.. image:: images/sc_stats_distribution_asset.png
+   :alt: Distribution of networth by asset
+   :align: center
 
 Set the backend's arguments
 *******************************
