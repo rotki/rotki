@@ -5,8 +5,8 @@ class BaseOpts(SchemaOpts):
     """
     This allows for having the Object the Schema encodes to inside of the class Meta
     """
-    def __init__(self, meta):
-        SchemaOpts.__init__(self, meta)
+    def __init__(self, meta, ordered):
+        SchemaOpts.__init__(self, meta, ordered=ordered)
         self.decoding_class = getattr(meta, 'decoding_class', None)
 
 
