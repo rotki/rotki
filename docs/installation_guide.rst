@@ -18,14 +18,16 @@ Packaged Binaries
 Linux
 ==========
 
-Go to the `releases <https://github.com/rotki/rotki/releases>`_ page and download the linux-x64 package from the `latest release <https://github.com/rotki/rotki/releases/latest>`_.
+Go to the `releases <https://github.com/rotki/rotki/releases>`_ page and download the linux-x64 appimage from the `latest release <https://github.com/rotki/rotki/releases/latest>`_. Or the ``tar.xz`` file. Whichever you prefer.
 
-Unzip it in a directory of your choice. In the root directory of the unzipped archive there is a ``rotki`` executable. Run it via the terminal to start rotki.
+If you got the appimage you have to give it the executable permission. Do :code:`chmod +x rotki-linux_x86_64-vx.x.x.AppImage` replacing the ``x`` with the proper version. And then run it.
+
+If you got the tar, unzip it in a directory of your choice. In the root directory of the unzipped archive there is a ``rotki`` executable. Run it via the terminal to start rotki.
 
 Troubleshooting
 ------------------
 
-If you get a problem when starting the application or during its usage please open an issue in Github and include all logs that can be found in `~/.config/rotkehlchen/`.
+If you get a problem when starting the application or during its usage please open an issue in Github and include all logs that can be found in ``~/.config/rotkehlchen/``.
 
 OSX
 ========
@@ -37,7 +39,7 @@ Click on the dmg installer and when prompted drag the Rotki logo to your Applica
 Troubleshooting
 ----------------
 
-If you get a problem when starting the application or during its usage please open an issue in Github and include all logs that can be found in `~/Library/Logs/rotkehlchen`.
+If you get a problem when starting the application or during its usage please open an issue in Github and include all logs that can be found in ``~/Library/Logs/rotkehlchen``.
 
 
 Windows
@@ -52,7 +54,7 @@ Troubleshooting
 
 If you get "The python backend crushed" or any other error please run the executable via the Command Prompt. Then provide us with the output that is visible in the prompt and this will help us debug your issue.
 
-You should also include all logs that can be found in `%APPDATA%/rotki/`.
+You should also include all logs that can be found in ``%APPDATA%/rotki/``.
 
 
 Build from Source
@@ -87,15 +89,12 @@ then do::
 
     pip install -r requirements_dev.txt
 
-Now to start the application you need to type ``npm start``.
+Now to start the application you need to type ``npm run electron:serve``.
 
 If you get runtime errors about a Node version mismatch, you can try to rebuild the electron
-modules like this:::
+modules like this::
 
     ./node_modules/.bin/electron-rebuild
-
-To run the app locally do::
-    npm run electron:serve
 
 OSX
 =====
@@ -108,15 +107,15 @@ The tl;dr version is:
 
 The following recipe has been tested using `Anaconda <https://conda.io>`_. `VirtualEnv <https://virtualenv.pypa.io>`_ works as well, refer to the documentations of those projects to install and use them.
 
-Rotki uses an encrypted database called `SQLCipher <https://www.zetetic.net/sqlcipher/>`_. Before we can proceed, we need to install it. Homebrew makes it simple:::
+Rotki uses an encrypted database called `SQLCipher <https://www.zetetic.net/sqlcipher/>`_. Before we can proceed, we need to install it. Homebrew makes it simple::
 
     $ brew update && brew install sqlcipher
 
-Also these are some dependencies that may or may not be properly installed in your system so make sure you have them.::
+Also these are some dependencies that may or may not be properly installed in your system so make sure you have them. ::
 
     $ brew install gmp
 
-If you wish to use Conda, use the following commands:::
+If you wish to use Conda, use the following commands::
 
     $ brew cask install caskroom/cask/anaconda
     $ echo "export PATH=$PATH:/usr/local/anaconda3/bin" >> ~/.bash_profile
@@ -136,22 +135,22 @@ And add the following to your shell startup file, assuming virtualenvwrapper was
     export PROJECT_HOME=$HOME/Devel
     source /usr/local/bin/virtualenvwrapper.sh
 
-Before using `pip`, let´s ensure we have the latest version:::
+Before using `pip`, let´s ensure we have the latest version::
 
     $ pip install --upgrade pip
 
-Install all the requirements:::
+Install all the requirements::
 
     $ sudo pip install -r requirements.txt
 
 If you want to also have the developer requirements in order to develop rotki
-then do:::
+then do::
 
     $ pip install -r requirements_dev.txt
 
 .. NOTE::
-   Make sure that pysqlcipher3 is properly installed. If ``$ pip freeze | grep pysqlcipher3`` returns nothing for you then it was not installed. Try to manually install only that dependency with the verbose option to see where it fails. ``$ pip install pysqlcipher3 -v``. If it fails at the stage of finding the library for ``-lsqlcipher`` then ``brew install sqlciper`` did not place the installed lib directory to the ``LIBRARY_PATH`` and you will have to do it manually. For example if ``sqlcipher`` was installed at ``/usr/local/Cellar/sqlcipher/3.4.2/`` then use pip install this way::
-     $ LIBRARY_PATH=/usr/local/Cellar/sqlcipher/3.4.2/lib pip install pysqlcipher3.
+   Make sure that pysqlcipher3 is properly installed. If ``$ pip freeze | grep pysqlcipher3`` returns nothing for you then it was not installed. Try to manually install only that dependency with the verbose option to see where it fails. ``$ pip install pysqlcipher3 -v``. If it fails at the stage of finding the library for ``-lsqlcipher`` then ``brew install sqlciper`` did not place the installed lib directory to the ``LIBRARY_PATH`` and you will have to do it manually. For example if ``sqlcipher`` was installed at ``/usr/local/Cellar/sqlcipher/3.4.2/`` then use pip install this way:
+     ``$ LIBRARY_PATH=/usr/local/Cellar/sqlcipher/3.4.2/lib pip install pysqlcipher3``.
 
 Rotki uses electron, we need to install it. To do so you need ``node.js`` and ``npm``. If you don't have it use homebrew to install it::
 
@@ -161,7 +160,7 @@ Almost there, we can now install all the NodeJS dependencies. Using a recent Nod
 
     $ npm ci
 
-You can now start Rotki:::
+You can now start Rotki::
 
     $ npm run electron:serve
 
