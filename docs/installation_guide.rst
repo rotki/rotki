@@ -7,7 +7,7 @@ System Requirements and Installation Guide
 Introduction
 *************
 
-The easiest way to start Rotki is to download the packaged binary for your Operating system. For now only Linux and OSX is supported. To see how to do this go to the :ref:`next section <packaged_binaries>`.
+The easiest way to start Rotki is to download the packaged binary for your Operating system. Linux, OSX and Windows is supported. To see how to do this go to the :ref:`next section <packaged_binaries>`.
 
 
 .. _packaged_binaries:
@@ -30,7 +30,7 @@ If you get a problem when starting the application or during its usage please op
 OSX
 ========
 
-Go to the `releases <https://github.com/rotki/rotki/releases>`_ page and download the darwin-x64 package from the `latest release <https://github.com/rotki/rotki/releases/latest>`_.
+Go to the `releases <https://github.com/rotki/rotki/releases>`_ page and download the darwin-x64 dmg package from the `latest release <https://github.com/rotki/rotki/releases/latest>`_.
 
 Click on the dmg installer and when prompted drag the Rotki logo to your Applications. This will install the application and once finished you can select Rotki from your applications folder and launch it.
 
@@ -63,9 +63,7 @@ Linux
 
 Make sure you have `node.js <https://nodejs.org/en/>`_ and `npm <https://www.npmjs.com/>`_. If you don't, use your linux distro's package manager to get them.
 
-Get `zeromq <http://zeromq.org/>`_ using the package manager of your distro. For example here is the package in `Archlinux <https://www.archlinux.org/packages/community/x86_64/zeromq/>`_ and in `Ubuntu <https://packages.ubuntu.com/source/trusty/libs/zeromq>`_.
-
-Also get `sqlcipher <https://www.zetetic.net/sqlcipher/>`_:
+Get `sqlcipher <https://www.zetetic.net/sqlcipher/>`_:
 
 - If you're running Archlinux you can install the `package <https://www.archlinux.org/packages/community/x86_64/sqlcipher/>`_ with ``pacman``.
 
@@ -73,8 +71,8 @@ Also get `sqlcipher <https://www.zetetic.net/sqlcipher/>`_:
 
 Install electron and any other npm dependencies by::
 
+    cd electron-app
     npm ci
-    npm rebuild zeromq --runtime=electron --target=3.0.0
 
 Create a new `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ to install all the python dependencies. If you don't have ``mkvirtualenv`` then check how to get it depending on your distribution. `Here <http://exponential.io/blog/2015/02/10/install-virtualenv-and-virtualenvwrapper-on-ubuntu/>`__ is a guide for Ubuntu and `here <https://wiki.archlinux.org/index.php/Python/Virtual_environment>`__ is one for ArchLinux::
 
@@ -96,6 +94,9 @@ modules like this:::
 
     ./node_modules/.bin/electron-rebuild
 
+To run the app locally do::
+    npm run electron:serve
+
 OSX
 =====
 
@@ -113,7 +114,6 @@ Rotki uses an encrypted database called `SQLCipher <https://www.zetetic.net/sqlc
 
 Also these are some dependencies that may or may not be properly installed in your system so make sure you have them.::
 
-    $ brew install zmq
     $ brew install gmp
 
 If you wish to use Conda, use the following commands:::
@@ -159,13 +159,11 @@ Rotki uses electron, we need to install it. To do so you need ``node.js`` and ``
 
 Almost there, we can now install all the NodeJS dependencies. Using a recent NodeJS version such as 8.9.x, it should be smooth. Also since npm uses gyp and gyp requires python 2.7 make sure to set it up appropriately before invoking npm::
 
-    $ npm config set python python2.7
     $ npm ci
-    $ PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild
 
 You can now start Rotki:::
 
-    $ npm start
+    $ npm run electron:serve
 
 Windows
 ==========
