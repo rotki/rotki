@@ -145,16 +145,22 @@ class Cryptocompare(ExternalServiceWithApiKey):
         try:
             if wrapped_response:
                 if 'Response' not in json_ret or json_ret['Response'] != 'Success':
-                    error_message = 'Failed to query cryptocompare for: "{}"'.format(querystr)
+                    error_message = f'Failed to query cryptocompare for: "{querystr}"'
                     if 'Message' in json_ret:
-                        error_message += ". Error: {}".format(json_ret['Message'])
+                        error_message += f'. Error: {json_ret["Message"]}'
 
-                    log.error('Cryptocompare query failure', url=querystr, error=error_message)
+                    log.error(
+                        'Cryptocompare query failure',
+                        url=querystr,
+                        error=error_message,
+                        status_code=response.status_code,
+                    )
                     raise RemoteError(error_message)
                 return json_ret['Data']
         except KeyError as e:
             raise RemoteError(
-                f'Unexpected format of Cryptocompare json_retonse. Missing key entry for {str(e)}',
+                f'Unexpected format of Cryptocompare json_response. '
+                f'Missing key entry for {str(e)}',
             )
 
         # else not a wrapped json_response
