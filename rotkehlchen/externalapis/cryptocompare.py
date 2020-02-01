@@ -5,12 +5,14 @@ import re
 from json.decoder import JSONDecodeError
 from typing import Any, Dict, Iterable, Iterator, List, NamedTuple, NewType
 
+import gevent
 import requests
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_USD
 from rotkehlchen.constants.cryptocompare import KNOWN_TO_MISS_FROM_CRYPTOCOMPARE
+from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnknownFromAsset, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
@@ -32,6 +34,8 @@ log = RotkehlchenLogsAdapter(logger)
 
 T_PairCacheKey = str
 PairCacheKey = NewType('PairCacheKey', T_PairCacheKey)
+
+RATE_LIMIT_MSG = 'You are over your rate limit please upgrade your account!'
 
 
 class PriceHistoryEntry(NamedTuple):
@@ -130,21 +134,38 @@ class Cryptocompare(ExternalServiceWithApiKey):
         if api_key:
             querystr += f'&api_key={api_key}'
 
-        try:
-            response = self.session.get(querystr)
-        except requests.exceptions.ConnectionError as e:
-            raise RemoteError(f'Cryptocompare API request failed due to {str(e)}')
+        tries = QUERY_RETRY_TIMES
 
-        try:
-            json_ret = rlk_jsonloads_dict(response.text)
-        except JSONDecodeError:
-            raise RemoteError(f'Cryptocompare returned invalid JSON response: {response.text}')
+        while tries >= 0:
+            try:
+                response = self.session.get(querystr)
+            except requests.exceptions.ConnectionError as e:
+                raise RemoteError(f'Cryptocompare API request failed due to {str(e)}')
 
-        # These endpoints are wrapped in a response object
-        wrapped_response = 'all/coinlist' in path or 'histohour' in path
-        try:
-            if wrapped_response:
-                if 'Response' not in json_ret or json_ret['Response'] != 'Success':
+            try:
+                json_ret = rlk_jsonloads_dict(response.text)
+            except JSONDecodeError:
+                raise RemoteError(f'Cryptocompare returned invalid JSON response: {response.text}')
+
+            try:
+                if json_ret.get('Message', None) == RATE_LIMIT_MSG:
+                    if tries >= 1:
+                        backoff_seconds = 20 / tries
+                        log.debug(
+                            f'Got rate limited by cryptocompare. '
+                            f'Backing off for {backoff_seconds}',
+                        )
+                        gevent.sleep(backoff_seconds)
+                        tries -= 1
+                        continue
+                    else:
+                        log.debug(
+                            f'Got rate limited by cryptocompare and did not manage to get a '
+                            f'request through even after {QUERY_RETRY_TIMES} '
+                            f'incremental backoff retries',
+                        )
+
+                if json_ret.get('Response', 'Success') != 'Success':
                     error_message = f'Failed to query cryptocompare for: "{querystr}"'
                     if 'Message' in json_ret:
                         error_message += f'. Error: {json_ret["Message"]}'
@@ -156,15 +177,14 @@ class Cryptocompare(ExternalServiceWithApiKey):
                         status_code=response.status_code,
                     )
                     raise RemoteError(error_message)
-                return json_ret['Data']
-        except KeyError as e:
-            raise RemoteError(
-                f'Unexpected format of Cryptocompare json_response. '
-                f'Missing key entry for {str(e)}',
-            )
+                return json_ret['Data'] if 'Data' in json_ret else json_ret
+            except KeyError as e:
+                raise RemoteError(
+                    f'Unexpected format of Cryptocompare json_response. '
+                    f'Missing key entry for {str(e)}',
+                )
 
-        # else not a wrapped json_response
-        return json_ret
+        raise AssertionError('We should never get here')
 
     def query_endpoint_histohour(
             self,
