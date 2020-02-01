@@ -1,8 +1,6 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-import gevent
-
 from rotkehlchen.accounting.events import TaxableEvents
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH
@@ -37,7 +35,7 @@ from rotkehlchen.utils.accounting import (
     action_get_timestamp,
     action_get_type,
 )
-from rotkehlchen.utils.misc import timestamp_to_date, ts_now
+from rotkehlchen.utils.misc import timestamp_to_date
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -395,18 +393,7 @@ class Accountant():
         - RemoteError if there is a problem reaching the price oracle server
         or with reading the response returned by the server
         """
-
-        # Hack to periodically yield back to the gevent IO loop to avoid getting
-        # the losing remote after hearbeat error for the zerorpc client. (after 10s)
-        # https://github.com/0rpc/zerorpc-python/issues/37
-        # TODO: Find better way to do this. Perhaps enforce this only if method
-        # is a synced call, and if async don't do this yielding. In any case
-        # this calculation should definitely be async
-        now = ts_now()
         ignored_assets = self.db.get_ignored_assets()
-        if now - self.last_sleep_ts >= 7:  # choose 7 seconds to be safe
-            self.last_sleep_ts = now
-            gevent.sleep(0.01)  # context switch
 
         # Assert we are sorted in ascending time order.
         timestamp = action_get_timestamp(action)
