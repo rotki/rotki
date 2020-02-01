@@ -57,7 +57,7 @@
                   </v-row>
                   <v-row v-if="item.link">
                     <span class="font-weight-medium">Links:</span>
-                    {{ item.link }}}
+                    {{ item.link }}
                   </v-row>
                   <v-row v-if="item.fee">
                     <span class="font-weight-medium">Fee:</span>
