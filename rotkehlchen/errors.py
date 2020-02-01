@@ -4,14 +4,6 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
 
 
-class PoloniexError(Exception):
-    def __init__(self, err: str) -> None:
-        self.err = err
-
-    def __str__(self) -> str:
-        return self.err
-
-
 class RecoverableRequestError(Exception):
     def __init__(self, exchange: str, err: str) -> None:
         self.exchange = exchange
