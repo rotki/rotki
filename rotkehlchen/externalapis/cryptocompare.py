@@ -135,7 +135,6 @@ class Cryptocompare(ExternalServiceWithApiKey):
             querystr += f'&api_key={api_key}'
 
         tries = QUERY_RETRY_TIMES
-
         while tries >= 0:
             try:
                 response = self.session.get(querystr)
