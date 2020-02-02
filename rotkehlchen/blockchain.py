@@ -451,7 +451,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
 
         # If no blockchain query has happened before then we need to query the relevant
         # chain to populate the self.balances mapping.
-        if str(blockchain) not in self.balances:
+        if blockchain.value not in self.balances:
             self.query_balances(blockchain, ignore_cache=True)
 
         added_accounts = []
@@ -499,7 +499,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
         # chain to populate the self.balances mapping. But query has to happen after
         # account removal so as not to query unneeded accounts
         balances_queried_before = True
-        if str(blockchain) not in self.balances:
+        if blockchain.value not in self.balances:
             balances_queried_before = False
 
         removed_accounts = []
