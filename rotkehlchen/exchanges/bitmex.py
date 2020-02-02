@@ -202,10 +202,16 @@ class Bitmex(ExchangeInterface):
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[dict], str]:
 
-        resp = self._api_query_dict('get', 'user/wallet', {'currency': 'XBt'})
-        # Bitmex shows only BTC balance
-        returned_balances = {}
-        usd_price = Inquirer().find_usd_price(A_BTC)
+        try:
+            resp = self._api_query_dict('get', 'user/wallet', {'currency': 'XBt'})
+            # Bitmex shows only BTC balance
+            returned_balances = {}
+            usd_price = Inquirer().find_usd_price(A_BTC)
+        except RemoteError as e:
+            msg = f'Bitmex API request failed due to: {str(e)}'
+            log.error(msg)
+            return None, msg
+
         # result is in satoshis
         amount = satoshis_to_btc(FVal(resp['amount']))
         usd_value = amount * usd_price

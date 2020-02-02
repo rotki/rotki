@@ -31,7 +31,7 @@ def test_query_periodic(rotkehlchen_api_server_with_exchanges):
     data = response.json()
     assert data['message'] == ''
     assert len(data['result']) == 4
-    assert data['result']['last_balance_save'] > start_ts
+    assert data['result']['last_balance_save'] >= start_ts
     assert data['result']['eth_node_connection'] is False
     # Non -1 value tests for these exist in test_history.py::test_query_history_timerange
     assert data['result']['history_process_start_ts'] == -1

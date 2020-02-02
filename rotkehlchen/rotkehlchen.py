@@ -90,8 +90,9 @@ class Rotkehlchen():
         self.msg_aggregator = MessagesAggregator()
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
         self.data = DataHandler(self.data_dir, self.msg_aggregator)
+        self.cryptocompare = Cryptocompare(data_directory=self.data_dir, database=None)
         # Initialize the Inquirer singleton
-        Inquirer(data_dir=self.data_dir)
+        Inquirer(data_dir=self.data_dir, cryptocompare=self.cryptocompare)
 
         self.lock.release()
         self.shutdown_event = gevent.event.Event()
@@ -122,6 +123,8 @@ class Rotkehlchen():
         self.data_importer = DataImporter(db=self.data.db)
         self.last_data_upload_ts = self.data.db.get_last_data_upload_ts()
         self.premium_sync_manager = PremiumSyncManager(data=self.data, password=password)
+        # set the DB in the external services instances that need it
+        self.cryptocompare.set_database(self.data.db)
 
         try:
             self.premium = self.premium_sync_manager.try_premium_at_start(
@@ -151,7 +154,6 @@ class Rotkehlchen():
             etherscan=self.etherscan,
         )
         # Initialize the price historian singleton
-        self.cryptocompare = Cryptocompare(data_directory=self.data_dir, database=self.data.db)
         PriceHistorian(
             data_directory=self.data_dir,
             history_date_start=historical_data_start,
@@ -209,6 +211,7 @@ class Rotkehlchen():
             del self.premium
         self.data.logout()
         self.password = ''
+        self.cryptocompare.unset_database()
 
         # Make sure no messages leak to other user sessions
         self.msg_aggregator.consume_errors()

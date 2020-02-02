@@ -149,7 +149,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
         """Queries blockchain.info for the balance of all BTC accounts
 
         May raise:
-        - RemotError if there is a problem querying blockchain.info
+        - RemotError if there is a problem querying blockchain.info or cryptocompare
         """
         if len(self.accounts.btc) == 0:
             return
@@ -249,10 +249,10 @@ class Blockchain(CacheableObject, LockableQueryObject):
         for each account
 
         May raise:
-        - RemoteError if an external service such as Etherscan is queried and
-          there is a problem with its query.
+        - RemoteError if an external service such as Etherscan or cryptocompare
+        is queried and there is a problem with its query.
         - EthSyncError if querying the token balances through a provided ethereum
-          client and the chain is not synced
+        client and the chain is not synced
         """
         if self.balances[A_ETH] == {}:
             # if balances have not been yet queried then we should do the entire
@@ -294,7 +294,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
 
         May raise:
         - InputError if the given account is not a valid BTC address
-        - RemotError if there is a problem querying blockchain.info
+        - RemotError if there is a problem querying blockchain.info or cryptocompare
         """
         btc_usd_price = Inquirer().find_usd_price(A_BTC)
         remove_with_populated_balance = (
@@ -346,7 +346,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
         - BadFunctionCallOutput if a token is queried from a local chain
         and the chain is not synced
         - RemoteError if there is a problem with a query to an external
-          service such as Etherscan
+        service such as Etherscan or cryptocompare
         """
         # Make sure account goes into web3.py as a properly checksummed address
         try:
@@ -579,10 +579,10 @@ class Blockchain(CacheableObject, LockableQueryObject):
         """Queries the ethereum token balances and populates the state
 
         May raise:
-        - RemoteError if an external service such as Etherscan is queried and
-          there is a problem with its query.
+        - RemoteError if an external service such as Etherscan or cryptocompare
+        is queried and there is a problem with its query.
         - EthSyncError if querying the token balances through a provided ethereum
-          client and the chain is not synced
+        client and the chain is not synced
         """
         token_balances = {}
         token_usd_price = {}
@@ -631,10 +631,10 @@ class Blockchain(CacheableObject, LockableQueryObject):
         """Queries the ethereum balances and populates the state
 
         May raise:
-        - RemoteError if an external service such as Etherscan is queried and
-          there is a problem with its query.
+        - RemoteError if an external service such as Etherscan or cryptocompare
+        is queried and there is a problem with its query.
         - EthSyncError if querying the token balances through a provided ethereum
-          client and the chain is not synced
+        client and the chain is not synced
         """
         if len(self.accounts.eth) == 0:
             return

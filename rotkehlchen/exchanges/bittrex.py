@@ -311,7 +311,14 @@ class Bittrex(ExchangeInterface):
                 )
                 continue
 
-            usd_price = Inquirer().find_usd_price(asset=asset)
+            try:
+                usd_price = Inquirer().find_usd_price(asset=asset)
+            except RemoteError as e:
+                self.msg_aggregator.add_error(
+                    f'Error processing bittrex balance entry due to inability to '
+                    f'query USD price: {str(e)}. Skipping balance entry',
+                )
+                continue
 
             balance = {}
             balance['amount'] = FVal(entry['Balance'])

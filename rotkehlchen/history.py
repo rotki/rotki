@@ -200,6 +200,7 @@ class TradesHistorian():
 
         try:
             eth_transactions = query_ethereum_transactions(
+                database=self.db,
                 etherscan=self.etherscan,
                 from_ts=start_ts,
                 to_ts=end_ts,

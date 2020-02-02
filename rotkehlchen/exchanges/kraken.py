@@ -414,7 +414,14 @@ class Kraken(ExchangeInterface):
 
             entry = {}
             entry['amount'] = v
-            usd_price = Inquirer().find_usd_price(our_asset)
+            try:
+                usd_price = Inquirer().find_usd_price(our_asset)
+            except RemoteError as e:
+                self.msg_aggregator.add_error(
+                    f'Error processing kraken balance entry due to inability to '
+                    f'query USD price: {str(e)}. Skipping balance entry',
+                )
+                continue
             entry['usd_value'] = FVal(v * usd_price)
 
             balances[our_asset] = entry

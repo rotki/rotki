@@ -78,11 +78,11 @@ def test_query_statistics_asset_balance(
         start_with_valid_premium,
 ):
     """Test that using the statistics asset balance over time endpoint works"""
+    start_time = ts_now()
     # Disable caching of query results
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     rotki.blockchain.cache_ttl_secs = 0
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
-    start_time = ts_now()
 
     # query balances and save data in DB to have data to test the statistics endpoint
     with setup.poloniex_patch, setup.binance_patch, setup.etherscan_patch, setup.bitcoin_patch:
@@ -110,7 +110,7 @@ def test_query_statistics_asset_balance(
         entry = data['result'][0]
         assert len(entry) == 3
         assert FVal(entry['amount']) == get_asset_balance_total('ETH', setup)
-        assert entry['time'] > start_time
+        assert entry['time'] >= start_time
         assert entry['usd_value'] is not None
     else:
         assert_error_response(
@@ -135,7 +135,7 @@ def test_query_statistics_asset_balance(
         entry = data['result'][0]
         assert len(entry) == 3
         assert FVal(entry['amount']) == get_asset_balance_total('BTC', setup)
-        assert entry['time'] > start_time
+        assert entry['time'] >= start_time
         assert entry['usd_value'] is not None
     else:
         assert_error_response(
@@ -150,7 +150,7 @@ def test_query_statistics_asset_balance(
             rotkehlchen_api_server_with_exchanges,
             "statisticsassetbalanceresource",
             asset="BTC",
-        ), json={'from_timestamp': 0, 'to_timestamp': start_time},
+        ), json={'from_timestamp': 0, 'to_timestamp': start_time - 1},
     )
     if start_with_valid_premium:
         assert_proper_response(response)
@@ -233,11 +233,11 @@ def test_query_statistics_value_distribution(
         start_with_valid_premium,
 ):
     """Test that using the statistics value distribution endpoint works"""
+    start_time = ts_now()
     # Disable caching of query results
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     rotki.blockchain.cache_ttl_secs = 0
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
-    start_time = ts_now()
 
     # query balances and save data in DB to have data to test the statistics endpoint
     with setup.poloniex_patch, setup.binance_patch, setup.etherscan_patch, setup.bitcoin_patch:
@@ -259,7 +259,7 @@ def test_query_statistics_value_distribution(
             locations = {'poloniex', 'binance', 'banks', 'blockchain', 'total'}
             for entry in data['result']:
                 assert len(entry) == 3
-                assert entry['time'] > start_time
+                assert entry['time'] >= start_time
                 assert entry['usd_value'] is not None
                 assert entry['location'] in locations
                 locations.remove(entry['location'])
@@ -308,7 +308,7 @@ def test_query_statistics_value_distribution(
         }
         for entry in data['result']:
             assert len(entry) == 4
-            assert entry['time'] > start_time
+            assert entry['time'] >= start_time
             assert entry['usd_value'] is not None
             assert FVal(entry['amount']) == totals[entry['asset']]
     else:
