@@ -9,7 +9,7 @@
       :headers="headers"
       :items="balances"
       :loading="isLoading"
-      loading-text="Please wait while Rotki queries the blockchain......"
+      loading-text="Please wait while Rotki queries the blockchain..."
     >
       <template #header.usdValue> {{ currency.ticker_symbol }} value </template>
       <template #item.asset="{ item }">
