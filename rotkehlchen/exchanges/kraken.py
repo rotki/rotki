@@ -14,6 +14,7 @@ from requests import Response
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_DAI, A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import (
     DeserializationError,
     RecoverableRequestError,
@@ -414,15 +415,19 @@ class Kraken(ExchangeInterface):
 
             entry = {}
             entry['amount'] = v
-            try:
-                usd_price = Inquirer().find_usd_price(our_asset)
-            except RemoteError as e:
-                self.msg_aggregator.add_error(
-                    f'Error processing kraken balance entry due to inability to '
-                    f'query USD price: {str(e)}. Skipping balance entry',
-                )
-                continue
-            entry['usd_value'] = FVal(v * usd_price)
+            if k == 'KFEE':
+                # There is no price value for KFEE. TODO: Shouldn't we then just skip the balance?
+                entry['usd_value'] = ZERO
+            else:
+                try:
+                    usd_price = Inquirer().find_usd_price(our_asset)
+                except RemoteError as e:
+                    self.msg_aggregator.add_error(
+                        f'Error processing kraken balance entry due to inability to '
+                        f'query USD price: {str(e)}. Skipping balance entry',
+                    )
+                    continue
+                entry['usd_value'] = FVal(v * usd_price)
 
             balances[our_asset] = entry
             log.debug(
