@@ -362,7 +362,7 @@ export class RotkehlchenApi {
   queryBalancesAsync(): Promise<AsyncQuery> {
     return new Promise<AsyncQuery>((resolve, reject) => {
       this.axios
-        .get<ActionResult<AsyncQuery>>('/balances', {
+        .get<ActionResult<AsyncQuery>>('/balances/', {
           params: {
             async_query: true
           },
