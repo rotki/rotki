@@ -95,13 +95,13 @@ def accountant(
 
 
 @pytest.fixture
-def inquirer(accounting_data_dir):
+def inquirer(accounting_data_dir, cryptocompare):
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
     Inquirer._Inquirer__instance = None
-    return Inquirer(data_dir=accounting_data_dir)
+    return Inquirer(data_dir=accounting_data_dir, cryptocompare=cryptocompare)
 
 
 @pytest.fixture(scope='session')
-def session_inquirer(session_data_dir):
-    return Inquirer(data_dir=session_data_dir)
+def session_inquirer(session_data_dir, session_cryptocompare):
+    return Inquirer(data_dir=session_data_dir, cryptocompare=session_cryptocompare)

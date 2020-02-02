@@ -335,7 +335,15 @@ class Coinbase(ExchangeInterface):
 
                 asset = asset_from_coinbase(account['balance']['currency'])
 
-                usd_price = Inquirer().find_usd_price(asset=asset)
+                try:
+                    usd_price = Inquirer().find_usd_price(asset=asset)
+                except RemoteError as e:
+                    self.msg_aggregator.add_error(
+                        f'Error processing coinbase balance entry due to inability to '
+                        f'query USD price: {str(e)}. Skipping balance entry',
+                    )
+                    continue
+
                 if asset in returned_balances:
                     amount = returned_balances[asset]['amount'] + amount
                 else:

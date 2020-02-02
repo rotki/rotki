@@ -485,10 +485,19 @@ class Poloniex(ExchangeInterface):
                         'Found poloniex asset entry with non-string type. '
                         ' Ignoring its balance query.',
                     )
+                    continue
 
                 entry = {}
                 entry['amount'] = available + on_orders
-                usd_price = Inquirer().find_usd_price(asset=asset)
+                try:
+                    usd_price = Inquirer().find_usd_price(asset=asset)
+                except RemoteError as e:
+                    self.msg_aggregator.add_error(
+                        f'Error processing poloniex balance entry due to inability to '
+                        f'query USD price: {str(e)}. Skipping balance entry',
+                    )
+                    continue
+
                 usd_value = entry['amount'] * usd_price
                 entry['usd_value'] = usd_value
                 balances[asset] = entry

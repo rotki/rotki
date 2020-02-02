@@ -1,6 +1,7 @@
 import logging
 from typing import List, Optional
 
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import EthereumTransaction, Timestamp
@@ -10,6 +11,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 def query_ethereum_transactions(
+        database: DBHandler,
         etherscan: Etherscan,
         from_ts: Optional[Timestamp] = None,
         to_ts: Optional[Timestamp] = None,
@@ -22,18 +24,19 @@ def query_ethereum_transactions(
     with parsing the response.
     """
     transactions: List[EthereumTransaction] = []
-    db = etherscan.db
 
-    accounts = db.get_blockchain_accounts()
+    accounts = database.get_blockchain_accounts()
     for address in accounts.eth:
         # If we already have any transactions in the DB for this from_address
         # from to_ts and on then that means the range has already been queried
         if to_ts:
-            existing_txs = db.get_ethereum_transactions(from_ts=to_ts, address=address)
+            existing_txs = database.get_ethereum_transactions(from_ts=to_ts, address=address)
             if len(existing_txs) > 0:
                 # So just query the DB only here
                 transactions.extend(
-                    db.get_ethereum_transactions(from_ts=from_ts, to_ts=to_ts, address=address),
+                    database.get_ethereum_transactions(
+                        from_ts=from_ts, to_ts=to_ts, address=address,
+                    ),
                 )
                 continue
 
@@ -45,7 +48,10 @@ def query_ethereum_transactions(
         new_transactions.extend(etherscan.get_transactions(account=address, internal=True))
 
         # and finally also save the transactions in the DB
-        db.add_ethereum_transactions(ethereum_transactions=new_transactions, from_etherscan=True)
+        database.add_ethereum_transactions(
+            ethereum_transactions=new_transactions,
+            from_etherscan=True,
+        )
         transactions.extend(new_transactions)
 
     transactions.sort(key=lambda tx: tx.timestamp)

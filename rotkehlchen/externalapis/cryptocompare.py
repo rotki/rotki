@@ -3,7 +3,7 @@ import logging
 import os
 import re
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, Iterable, Iterator, List, NamedTuple, NewType
+from typing import Any, Dict, Iterable, Iterator, List, NamedTuple, NewType, Optional
 
 import gevent
 import requests
@@ -100,8 +100,7 @@ def _check_hourly_data_sanity(
 
 
 class Cryptocompare(ExternalServiceWithApiKey):
-
-    def __init__(self, data_directory: FilePath, database: DBHandler) -> None:
+    def __init__(self, data_directory: FilePath, database: Optional[DBHandler]) -> None:
         super().__init__(database=database, service_name=ExternalService.CRYPTOCOMPARE)
         self.data_directory = data_directory
         self.price_history: Dict[PairCacheKey, PriceHistoryData] = {}
@@ -121,6 +120,20 @@ class Cryptocompare(ExternalServiceWithApiKey):
             assert match
             cache_key = PairCacheKey(match.group(1))
             self.price_history_file[cache_key] = file_
+
+    def set_database(self, database: DBHandler) -> None:
+        """If the cryptocompare instance was initialized without a DB this sets its DB"""
+        msg = 'set_database was called on a cryptocompare instance that already has a DB'
+        assert self.db is None, msg
+        self.db = database
+
+    def unset_database(self) -> None:
+        """Remove the database connection from this cryptocompare instance
+
+        This should happen when a user logs out"""
+        msg = 'unset_database was called on a cryptocompare instance that has no DB'
+        assert self.db is not None, msg
+        self.db = None
 
     def _api_query(self, path: str) -> Dict[str, Any]:
         """Queries cryptocompare
@@ -204,6 +217,23 @@ class Cryptocompare(ExternalServiceWithApiKey):
             f'v2/histohour?fsym={cc_from_asset_symbol}&tsym={cc_to_asset_symbol}'
             f'&limit={limit}&toTs={to_timestamp}'
         )
+        result = self._api_query(path=query_path)
+        return result
+
+    def query_endpoint_price(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+    ) -> Dict[str, Any]:
+        """Returns the current price of an asset compared to another asset
+
+        - May raise RemoteError if there is a problem reaching the cryptocompare server
+        or with reading the response returned by the server
+        """
+        # These two can raise but them raising here is a bug
+        cc_from_asset_symbol = from_asset.to_cryptocompare()
+        cc_to_asset_symbol = to_asset.to_cryptocompare()
+        query_path = f'price?fsym={cc_from_asset_symbol}&tsyms={cc_to_asset_symbol}'
         result = self._api_query(path=query_path)
         return result
 

@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import logging
 import os
 from json.decoder import JSONDecodeError
-from typing import Dict, Iterable, Optional
+from typing import TYPE_CHECKING, Dict, Iterable, Optional
 
 import requests
 
@@ -17,48 +17,12 @@ from rotkehlchen.typing import FilePath, Price, Timestamp
 from rotkehlchen.utils.misc import request_get_dict, retry_calls, timestamp_to_date, ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads_dict
 
+if TYPE_CHECKING:
+    from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-def query_cryptocompare_for_fiat_price(asset: Asset) -> Price:
-    log.debug('Get usd price from cryptocompare', asset=asset)
-    cc_asset_str = asset.to_cryptocompare()
-    resp = retry_calls(
-        times=5,
-        location='find_usd_price',
-        handle_429=False,
-        backoff_in_seconds=0,
-        method_name='requests.get',
-        function=requests.get,
-        # function's arguments
-        url=(
-            u'https://min-api.cryptocompare.com/data/price?'
-            'fsym={}&tsyms=USD'.format(cc_asset_str)
-        ),
-    )
-
-    if resp.status_code != 200:
-        raise RemoteError('Cant reach cryptocompare to get USD value of {}'.format(asset))
-
-    resp = rlk_jsonloads_dict(resp.text)
-
-    # If there is an error in the response skip this token
-    if 'USD' not in resp:
-        error_message = ''
-        if resp.get('Response', None) == 'Error':
-            error_message = resp.get('Message', '')
-
-        log.error(
-            'Cryptocompare usd price query failed',
-            asset=asset,
-            error=error_message,
-        )
-        return Price(ZERO)
-
-    price = Price(FVal(resp['USD']))
-    log.debug('Got usd price from cryptocompare', asset=asset, price=price)
-    return price
 
 
 def _query_exchanges_rateapi(base: Asset, quote: Asset) -> Optional[Price]:
@@ -118,16 +82,23 @@ class Inquirer():
     __instance: Optional['Inquirer'] = None
     _cached_forex_data: Dict
     _data_directory: FilePath
+    _cryptocompare: 'Cryptocompare'
 
-    def __new__(cls, data_dir: FilePath = None) -> 'Inquirer':
+    def __new__(
+            cls,
+            data_dir: FilePath = None,
+            cryptocompare: 'Cryptocompare' = None,
+    ) -> 'Inquirer':
         if Inquirer.__instance is not None:
             return Inquirer.__instance
 
         assert data_dir, 'arguments should be given at the first instantiation'
+        assert cryptocompare, 'arguments should be given at the first instantiation'
 
         Inquirer.__instance = object.__new__(cls)
 
         Inquirer.__instance._data_directory = data_dir
+        Inquirer._cryptocompare = cryptocompare
         filename = os.path.join(data_dir, 'price_history_forex.json')
         try:
             with open(filename, 'r') as f:
@@ -141,7 +112,22 @@ class Inquirer():
 
     @staticmethod
     def find_usd_price(asset: Asset) -> Price:
-        return query_cryptocompare_for_fiat_price(asset)
+        """Returns the current USD price of the asset
+
+        May raise:
+        - RemoteError if the cryptocompare query has a problem
+        """
+        result = Inquirer()._cryptocompare.query_endpoint_price(
+            from_asset=asset,
+            to_asset=A_USD,
+        )
+        if 'USD' not in result:
+            log.error('Cryptocompare usd price query failed', asset=asset)
+            return Price(ZERO)
+
+        price = Price(FVal(result['USD']))
+        log.debug('Got usd price from cryptocompare', asset=asset, price=price)
+        return price
 
     @staticmethod
     def get_fiat_usd_exchange_rates(

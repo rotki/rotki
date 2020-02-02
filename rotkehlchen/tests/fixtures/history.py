@@ -14,6 +14,11 @@ def cryptocompare(accounting_data_dir, database):
     return Cryptocompare(data_directory=accounting_data_dir, database=database)
 
 
+@pytest.fixture(scope='session')
+def session_cryptocompare(session_data_dir, session_database):
+    return Cryptocompare(data_directory=session_data_dir, database=session_database)
+
+
 @pytest.fixture
 def price_historian(
         accounting_data_dir,
