@@ -10,6 +10,7 @@ from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.errors import (
     EthSyncError,
@@ -27,6 +28,7 @@ from rotkehlchen.typing import (
     ChecksumEthAddress,
     EthAddress,
     ListOfBlockchainAddresses,
+    Price,
     SupportedBlockchain,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -390,8 +392,11 @@ class Blockchain(CacheableObject, LockableQueryObject):
             )
 
         for token in self.owned_eth_tokens:
-            usd_price = Inquirer().find_usd_price(token)
-            if usd_price == 0:
+            try:
+                usd_price = Inquirer().find_usd_price(token)
+            except RemoteError:
+                usd_price = Price(ZERO)
+            if usd_price == ZERO:
                 # skip tokens that have no price
                 continue
 
@@ -415,11 +420,11 @@ class Blockchain(CacheableObject, LockableQueryObject):
 
             self.totals[token] = {
                 'amount': add_or_sub(
-                    self.totals[token].get('amount', FVal(0)),
+                    self.totals[token].get('amount', ZERO),
                     token_balance,
                 ),
                 'usd_value': add_or_sub(
-                    self.totals[token].get('usd_value', FVal(0)),
+                    self.totals[token].get('usd_value', ZERO),
                     usd_value,
                 ),
             }
@@ -587,8 +592,11 @@ class Blockchain(CacheableObject, LockableQueryObject):
         token_balances = {}
         token_usd_price = {}
         for token in tokens:
-            usd_price = Inquirer().find_usd_price(token)
-            if usd_price == 0:
+            try:
+                usd_price = Inquirer().find_usd_price(token)
+            except RemoteError:
+                usd_price = Price(ZERO)
+            if usd_price == ZERO:
                 # skip tokens that have no price
                 continue
             token_usd_price[token] = usd_price
