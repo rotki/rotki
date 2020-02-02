@@ -79,8 +79,6 @@ class Rotkehlchen():
         )
 
         if not args.logfromothermodules:
-            logging.getLogger('zerorpc').setLevel(logging.CRITICAL)
-            logging.getLogger('zerorpc.channel').setLevel(logging.CRITICAL)
             logging.getLogger('urllib3').setLevel(logging.CRITICAL)
             logging.getLogger('urllib3.connectionpool').setLevel(logging.CRITICAL)
 
