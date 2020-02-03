@@ -298,7 +298,10 @@ def assert_eth_balances_result(
                 assert FVal(per_account[account]['usd_value']) > ZERO
             for symbol, balances in token_balances.items():
                 token_balance = FVal(balances[idx])
-                if token_balance != ZERO:
+                if token_balance == ZERO:
+                    msg = f'{account} should have no entry for {symbol}'
+                    assert symbol not in per_account[account], msg
+                else:
                     assert FVal(per_account[account][symbol]) == from_wei(token_balance)
 
     if totals_only:
