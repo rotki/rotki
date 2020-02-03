@@ -311,7 +311,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
         if append_or_remove == 'append':
             self.balances[A_BTC][account] = {'amount': balance, 'usd_value': usd_balance}
         elif append_or_remove == 'remove':
-            if account in self.balances[A_BTC][account]:
+            if account in self.balances[A_BTC]:
                 del self.balances[A_BTC][account]
         else:
             raise AssertionError('Programmer error: Should be append or remove')
