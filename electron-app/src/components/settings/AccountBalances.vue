@@ -31,7 +31,7 @@
     <v-data-table
       :headers="headers"
       :items="balances"
-      :loading="deleting || isLoading"
+      :loading="accountOperation || isLoading"
       loading-text="Please wait while Rotki queries the blockchain..."
       single-expand
       item-key="account"
@@ -54,7 +54,7 @@
       <template #item.actions="{ item }">
         <v-icon
           small
-          :disabled="deleting"
+          :disabled="accountOperation"
           @click="toDeleteAccount = item.account"
         >
           fa-trash
@@ -160,7 +160,7 @@ export default class AccountBalances extends Vue {
   hasTokens!: (account: string) => boolean;
 
   toDeleteAccount: string = '';
-  deleting = false;
+  pending = false;
 
   headers = [
     { text: 'Account', value: 'account' },
@@ -170,17 +170,25 @@ export default class AccountBalances extends Vue {
     { text: '', value: 'expand', align: 'end' }
   ];
 
+  get accountOperation(): boolean {
+    return (
+      this.isTaskRunning(TaskType.ADD_ACCOUNT) ||
+      this.isTaskRunning(TaskType.REMOVE_ACCOUNT) ||
+      this.pending
+    );
+  }
+
   async deleteAccount() {
     const address = this.toDeleteAccount;
     const blockchain = this.blockchain;
     this.toDeleteAccount = '';
-    this.deleting = true;
+    this.pending = true;
 
     await this.$store.dispatch('balances/removeAccount', {
       address,
       blockchain
     });
-    this.deleting = false;
+    this.pending = false;
   }
 
   refresh() {
