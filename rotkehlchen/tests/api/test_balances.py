@@ -503,6 +503,20 @@ def test_settting_fiat_balances_errors(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
+    # Check that negative amount is properly handled
+    balances = {'EUR': '1500', 'CNY': '-5.5'}
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            "fiatbalancesresource",
+        ), json={'balances': balances},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Negative amount -5.5 given. Amount should be >= 0',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
     # Check that non-valid amount is properly handled
     balances = {'EUR': '1500', 'CNY': 'dasdsad'}
     response = requests.patch(

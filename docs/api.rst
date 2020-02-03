@@ -1215,7 +1215,7 @@ Setting FIAT balances
 
 .. http:patch:: /api/(version)/balances/fiat/
 
-   Doing a PATCH on the FIAT balances endpoint will edit the FIAT balances of the given currencies for the currently logged in user. If the balance for an asset is set to 0 then that asset is removed from the database.
+   Doing a PATCH on the FIAT balances endpoint will edit the FIAT balances of the given currencies for the currently logged in user. If the balance for an asset is set to 0 then that asset is removed from the database. Negative balance is an error.
 
 
    **Example Request**:

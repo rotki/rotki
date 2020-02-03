@@ -6,6 +6,7 @@ from marshmallow.exceptions import ValidationError
 from webargs import fields as webargs_fields, validate
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.serialization.deserialize import (
@@ -20,6 +21,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
+    AssetAmount,
     ExternalService,
     ExternalServiceApiCredentials,
     Location,
@@ -49,14 +51,52 @@ class TimestampField(fields.Field):
 class AmountField(fields.Field):
 
     @staticmethod
-    def _serialize(value, attr, obj, **kwargs):  # pylint: disable=unused-argument
+    def _serialize(value, attr, obj, **kwargs) -> str:  # pylint: disable=unused-argument
         return str(value)
 
-    def _deserialize(self, value, attr, data, **kwargs):  # pylint: disable=unused-argument
+    def _deserialize(  # pylint: disable=unused-argument
+            self,
+            value,
+            attr,
+            data,
+            **kwargs,
+    ) -> AssetAmount:
         try:
             amount = deserialize_asset_amount(value)
         except DeserializationError as e:
             raise ValidationError(str(e))
+
+        return amount
+
+
+class PositiveOrZeroAmountField(AmountField):
+
+    def _deserialize(  # pylint: disable=unused-argument
+            self,
+            value,
+            attr,
+            data,
+            **kwargs,
+    ) -> AssetAmount:
+        amount = super()._deserialize(value, attr, data, **kwargs)
+        if amount < ZERO:
+            raise ValidationError(f'Negative amount {value} given. Amount should be >= 0')
+
+        return amount
+
+
+class PositiveAmountField(AmountField):
+
+    def _deserialize(  # pylint: disable=unused-argument
+            self,
+            value,
+            attr,
+            data,
+            **kwargs,
+    ) -> AssetAmount:
+        amount = super()._deserialize(value, attr, data, **kwargs)
+        if amount <= ZERO:
+            raise ValidationError(f'Non-positive amount {value} given. Amount should be > 0')
 
         return amount
 
@@ -433,7 +473,7 @@ class TradeSchema(BaseSchema):
     location = LocationField(required=True)
     pair = TradePairField(required=True)
     trade_type = TradeTypeField(required=True)
-    amount = AmountField(required=True)
+    amount = PositiveAmountField(required=True)
     rate = PriceField(required=True)
     fee = FeeField(required=True)
     fee_currency = AssetField(required=True)
@@ -447,7 +487,11 @@ class TradeSchema(BaseSchema):
 
 
 class FiatBalancesSchema(BaseSchema):
-    balances = fields.Dict(keys=FiatAssetField(), values=AmountField(), required=True)
+    balances = fields.Dict(
+        keys=FiatAssetField(),
+        values=PositiveOrZeroAmountField(),
+        required=True,
+    )
 
     class Meta:
         strict = True

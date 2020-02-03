@@ -366,6 +366,34 @@ def test_add_trades_errors(rotkehlchen_api_server):
         contained_in_msg='Failed to deserialize an amount entry',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+    # Test that negative value for amount is handled
+    broken_trade = correct_trade.copy()
+    broken_trade['amount'] = '-6.1'
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            "tradesresource",
+        ), json=broken_trade,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Non-positive amount -6.1 given. Amount should be > 0',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    # Test that zero value for amount is handled
+    broken_trade = correct_trade.copy()
+    broken_trade['amount'] = '0.0'
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            "tradesresource",
+        ), json=broken_trade,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Non-positive amount 0.0 given. Amount should be > 0',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
     # Test that invalid value for rate is handled
     broken_trade = correct_trade.copy()
     broken_trade['rate'] = [55, 22]
