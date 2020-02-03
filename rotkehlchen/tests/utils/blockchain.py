@@ -246,10 +246,12 @@ def assert_btc_balances_result(
     msg = 'given balances and accounts should have same length'
     assert len(btc_accounts) == len(btc_balances), msg
     for idx, account in enumerate(btc_accounts):
-        assert FVal(per_account[account]['amount']) == satoshis_to_btc(
-            FVal(btc_balances[idx]),
-        )
-        assert FVal(per_account[account]['usd_value']) > ZERO
+        balance = satoshis_to_btc(FVal(btc_balances[idx]))
+        assert FVal(per_account[account]['amount']) == balance
+        if balance == ZERO:
+            assert FVal(per_account[account]['usd_value']) == ZERO
+        else:
+            assert FVal(per_account[account]['usd_value']) > ZERO
 
     totals = result['totals']
     if also_eth:
@@ -259,7 +261,10 @@ def assert_btc_balances_result(
 
     expected_btc_total = sum(satoshis_to_btc(FVal(balance)) for balance in btc_balances)
     assert FVal(totals['BTC']['amount']) == expected_btc_total
-    assert FVal(totals['BTC']['usd_value']) > ZERO
+    if expected_btc_total == ZERO:
+        assert FVal(totals['BTC']['usd_value']) == ZERO
+    else:
+        assert FVal(totals['BTC']['usd_value']) > ZERO
 
 
 def assert_eth_balances_result(
@@ -285,8 +290,12 @@ def assert_eth_balances_result(
         per_account = per_account['ETH']
         assert len(per_account) == len(eth_accounts)
         for idx, account in enumerate(eth_accounts):
-            assert FVal(per_account[account]['ETH']) == from_wei(FVal(eth_balances[idx]))
-            assert FVal(per_account[account]['usd_value']) > ZERO
+            balance = from_wei(FVal(eth_balances[idx]))
+            assert FVal(per_account[account]['ETH']) == balance
+            if balance == ZERO:
+                assert FVal(per_account[account]['usd_value']) == ZERO
+            else:
+                assert FVal(per_account[account]['usd_value']) > ZERO
             for symbol, balances in token_balances.items():
                 token_balance = FVal(balances[idx])
                 if token_balance != ZERO:
@@ -306,7 +315,11 @@ def assert_eth_balances_result(
 
     expected_total_eth = sum(from_wei(FVal(balance)) for balance in eth_balances)
     assert FVal(totals['ETH']['amount']) == expected_total_eth
-    assert FVal(totals['ETH']['usd_value']) > ZERO
+    if expected_total_eth == ZERO:
+        FVal(totals['ETH']['usd_value']) == ZERO
+    else:
+        assert FVal(totals['ETH']['usd_value']) > ZERO
+
     for symbol, balances in token_balances.items():
         if symbol not in rotki.blockchain.owned_eth_tokens:
             # If the token got removed from the owned tokens in the test make sure
