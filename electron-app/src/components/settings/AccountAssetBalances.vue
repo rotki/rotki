@@ -5,6 +5,8 @@
         :items="tokens"
         :headers="headers"
         class="account-asset-balances__table"
+        sort-by="usdValue"
+        sort-desc
       >
         <template #item.asset="{ item }">
           <span class="account-asset-balances__balance__asset">
