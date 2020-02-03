@@ -30,7 +30,12 @@
             {{ add ? 'Add Balance' : 'Modify Balance' }}
           </v-btn>
           <v-col cols="12">
-            <v-data-table :headers="headers" :items="fiatBalances">
+            <v-data-table
+              :headers="headers"
+              :items="fiatBalances"
+              sort-by="usdValue"
+              sort-desc
+            >
               <template #header.usdValue>
                 {{ currency.ticker_symbol }} value
               </template>

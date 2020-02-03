@@ -36,6 +36,8 @@
       single-expand
       item-key="account"
       :expanded.sync="expanded"
+      sort-by="usdValue"
+      sort-desc
     >
       <template #header.usdValue> {{ currency.ticker_symbol }} value </template>
       <template #item.account="{ item }">

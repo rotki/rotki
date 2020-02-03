@@ -10,6 +10,8 @@
       :items="balances"
       :loading="isLoading"
       loading-text="Please wait while Rotki queries the blockchain..."
+      sort-by="usdValue"
+      sort-desc
     >
       <template #header.usdValue> {{ currency.ticker_symbol }} value </template>
       <template #item.asset="{ item }">
