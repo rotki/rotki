@@ -718,10 +718,8 @@ def test_remove_blockchain_accounts(
     removed_eth_accounts = [ethereum_accounts[0], ethereum_accounts[2]]
     eth_accounts_after_removal = [ethereum_accounts[1], ethereum_accounts[3]]
     all_eth_balances = ['1000000', '2000000', '3000000', '4000000']
-    # token_balances = {'RDN': ['0', '250000000', '450000000', '0']}
     token_balances = {'RDN': ['0', '0', '450000000', '0']}
     eth_balances_after_removal = ['2000000', '4000000']
-    # token_balances_after_removal = {'RDN': ['250000000', '0']}
     token_balances_after_removal = {'RDN': ['0', '0']}
     if query_balances_before_first_modification:
         # Also test by having balances queried before removing an account

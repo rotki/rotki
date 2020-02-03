@@ -622,8 +622,11 @@ class Blockchain(CacheableObject, LockableQueryObject):
             for account, balance in token_accounts.items():
                 token_total += balance
                 usd_value = balance * token_usd_price[token]
-                eth_balances[account][token] = balance
-                eth_balances[account]['usd_value'] = eth_balances[account]['usd_value'] + usd_value
+                if balance != ZERO:
+                    eth_balances[account][token] = balance
+                    eth_balances[account]['usd_value'] = (
+                        eth_balances[account]['usd_value'] + usd_value
+                    )
 
             self.totals[token] = {
                 'amount': token_total,
