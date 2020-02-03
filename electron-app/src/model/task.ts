@@ -30,6 +30,8 @@ export const createTask: <T extends TaskMeta>(
 });
 
 export enum TaskType {
+  ADD_ACCOUNT = 'add_account',
+  REMOVE_ACCOUNT = 'remove_account',
   TRADE_HISTORY = 'process_trade_history',
   QUERY_BLOCKCHAIN_BALANCES = 'query_blockchain_balances_async',
   QUERY_EXCHANGE_BALANCES = 'query_exchange_balances_async',

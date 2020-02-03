@@ -1,4 +1,3 @@
-import { Severity } from "@/typing/types";
 <template>
   <v-row class="blockchain-balances">
     <v-col>
@@ -10,17 +9,20 @@ import { Severity } from "@/typing/types";
             class="blockchain-balances__chain"
             :items="items"
             label="Choose blockchain"
-            :disabled="loading"
+            :disabled="accountOperation"
           ></v-select>
           <v-text-field
             v-model="accountAddress"
             class="blockchain-balances__address"
             label="Account"
-            :disabled="loading"
+            :disabled="accountOperation"
           ></v-text-field>
 
           <div class="blockchain-balances--progress">
-            <v-progress-linear v-if="loading" indeterminate></v-progress-linear>
+            <v-progress-linear
+              v-if="accountOperation"
+              indeterminate
+            ></v-progress-linear>
           </div>
 
           <v-btn
@@ -28,7 +30,7 @@ import { Severity } from "@/typing/types";
             depressed
             color="primary"
             type="submit"
-            :disabled="!accountAddress || loading"
+            :disabled="!accountAddress || accountOperation"
             @click="addAccount()"
           >
             Add
@@ -69,12 +71,17 @@ import AccountBalances from '@/components/settings/AccountBalances.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
 import { notify } from '@/store/notifications/utils';
 import { Blockchain, Severity, SupportedBlockchains } from '@/typing/types';
+import { TaskType } from '@/model/task';
 
 const { mapGetters } = createNamespacedHelpers('balances');
+const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 
 @Component({
   components: { AccountBalances, AssetBalances, TokenTrack, MessageDialog },
-  computed: mapGetters(['ethAccounts', 'btcAccounts', 'totals'])
+  computed: {
+    ...mapGetters(['ethAccounts', 'btcAccounts', 'totals']),
+    ...mapTaskGetters(['isTaskRunning'])
+  }
 })
 export default class BlockchainBalances extends Vue {
   selected: Blockchain = 'ETH';
@@ -84,13 +91,21 @@ export default class BlockchainBalances extends Vue {
   ethAccounts!: AccountBalance[];
   btcAccounts!: AccountBalance[];
   totals!: AccountBalance[];
+  isTaskRunning!: (type: TaskType) => boolean;
+  pending: boolean = false;
 
-  loading: boolean = false;
+  get accountOperation(): boolean {
+    return (
+      this.isTaskRunning(TaskType.ADD_ACCOUNT) ||
+      this.isTaskRunning(TaskType.REMOVE_ACCOUNT) ||
+      this.pending
+    );
+  }
 
   async addAccount() {
     const address = this.accountAddress;
     const blockchain = this.selected;
-    this.loading = true;
+    this.pending = true;
     try {
       await this.$store.dispatch('balances/addAccount', {
         blockchain,
@@ -104,7 +119,7 @@ export default class BlockchainBalances extends Vue {
         Severity.ERROR
       );
     }
-    this.loading = false;
+    this.pending = false;
   }
 }
 </script>

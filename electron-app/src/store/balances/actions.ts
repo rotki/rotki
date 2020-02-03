@@ -12,7 +12,6 @@ import { Blockchain, Severity, UsdToFiatExchangeRates } from '@/typing/types';
 import { notify } from '@/store/notifications/utils';
 import { FiatBalance } from '@/model/blockchain-balances';
 import { bigNumberify } from '@/utils/bignumbers';
-import { convertBalances, convertEthBalances } from '@/utils/conversion';
 import { currencies } from '@/data/currencies';
 
 export const actions: ActionTree<BalanceState, RotkehlchenState> = {
@@ -173,33 +172,25 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async removeAccount({ commit }, payload: BlockchainAccountPayload) {
     const { address, blockchain } = payload;
-    const { per_account, totals } = await api.removeBlockchainAccount(
-      blockchain,
-      address
-    );
-    const { ETH, BTC } = per_account;
+    const { task_id } = await api.removeBlockchainAccount(blockchain, address);
 
-    if (blockchain === 'ETH') {
-      commit('updateEth', convertEthBalances(ETH));
-    } else {
-      commit('updateBtc', convertBalances(BTC));
-    }
-    commit('updateTotals', convertBalances(totals));
+    const task = createTask(task_id, TaskType.ADD_ACCOUNT, {
+      description: `Remove ${blockchain} account ${address}`,
+      blockchain
+    } as BlockchainMetadata);
+
+    commit('tasks/add', task, { root: true });
   },
 
   async addAccount({ commit }, payload: BlockchainAccountPayload) {
     const { address, blockchain } = payload;
-    const { per_account, totals } = await api.addBlockchainAccount(
-      blockchain,
-      address
-    );
-    const { ETH, BTC } = per_account;
-    if (blockchain === 'ETH') {
-      commit('updateEth', convertEthBalances(ETH));
-    } else {
-      commit('updateBtc', convertBalances(BTC));
-    }
-    commit('updateTotals', convertBalances(totals));
+    const { task_id } = await api.addBlockchainAccount(blockchain, address);
+    const task = createTask(task_id, TaskType.ADD_ACCOUNT, {
+      description: `Adding ${blockchain} account ${address}`,
+      blockchain
+    } as BlockchainMetadata);
+
+    commit('tasks/add', task, { root: true });
   }
 };
 

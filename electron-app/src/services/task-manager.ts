@@ -6,7 +6,12 @@ import {
   convertBalances,
   convertEthBalances
 } from '@/utils/conversion';
-import { ExchangeMeta, TaskMeta, TaskType } from '@/model/task';
+import {
+  BlockchainMetadata,
+  ExchangeMeta,
+  TaskMeta,
+  TaskType
+} from '@/model/task';
 import { notify } from '@/store/notifications/utils';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -55,6 +60,28 @@ export class TaskManager {
 
     store.commit('balances/updateEth', convertEthBalances(ETH));
     store.commit('balances/updateBtc', convertBalances(BTC));
+    store.commit('balances/updateTotals', convertBalances(totals));
+  }
+
+  onAccountOperation(
+    data: ActionResult<BlockchainBalances>,
+    meta: BlockchainMetadata
+  ) {
+    const { result, message } = data;
+    const { description, blockchain } = meta;
+
+    if (message) {
+      notify(`Operation failed due to ${message}`, description);
+      return;
+    }
+    const { per_account, totals } = result;
+    const { ETH, BTC } = per_account;
+
+    if (blockchain === 'ETH') {
+      store.commit('balances/updateEth', convertEthBalances(ETH));
+    } else {
+      store.commit('balances/updateBtc', convertBalances(BTC));
+    }
     store.commit('balances/updateTotals', convertBalances(totals));
   }
 
@@ -139,7 +166,9 @@ export class TaskManager {
   } = {
     [TaskType.QUERY_EXCHANGE_BALANCES]: TaskManager.onQueryExchangeBalances,
     [TaskType.QUERY_BLOCKCHAIN_BALANCES]: this.onQueryBlockchainBalances,
-    [TaskType.TRADE_HISTORY]: this.onTradeHistory
+    [TaskType.TRADE_HISTORY]: this.onTradeHistory,
+    [TaskType.ADD_ACCOUNT]: this.onAccountOperation,
+    [TaskType.REMOVE_ACCOUNT]: this.onAccountOperation
   };
 }
 

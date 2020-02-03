@@ -816,11 +816,12 @@ export class RotkehlchenApi {
   removeBlockchainAccount(
     blockchain: string,
     account: string
-  ): Promise<BlockchainAccount> {
-    return new Promise<BlockchainAccount>((resolve, reject) => {
+  ): Promise<AsyncQuery> {
+    return new Promise<AsyncQuery>((resolve, reject) => {
       this.axios
-        .delete<ActionResult<BlockchainAccount>>(`/blockchains/${blockchain}`, {
+        .delete<ActionResult<AsyncQuery>>(`/blockchains/${blockchain}`, {
           data: {
+            async_query: true,
             accounts: [account]
           },
           validateStatus: function(status) {
@@ -844,12 +845,13 @@ export class RotkehlchenApi {
   addBlockchainAccount(
     blockchain: string,
     account: string
-  ): Promise<BlockchainAccount> {
-    return new Promise<BlockchainAccount>((resolve, reject) => {
+  ): Promise<AsyncQuery> {
+    return new Promise<AsyncQuery>((resolve, reject) => {
       this.axios
-        .put<ActionResult<BlockchainAccount>>(
+        .put<ActionResult<AsyncQuery>>(
           `/blockchains/${blockchain}`,
           {
+            async_query: true,
             accounts: [account]
           },
           {
