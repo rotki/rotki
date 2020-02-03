@@ -715,17 +715,21 @@ def test_remove_blockchain_accounts(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     rotki.blockchain.cache_ttl_secs = 0
 
+    removed_eth_accounts = [ethereum_accounts[0], ethereum_accounts[2]]
+    eth_accounts_after_removal = [ethereum_accounts[1], ethereum_accounts[3]]
+    all_eth_balances = ['1000000', '2000000', '3000000', '4000000']
+    # token_balances = {'RDN': ['0', '250000000', '450000000', '0']}
+    token_balances = {'RDN': ['0', '0', '450000000', '0']}
+    eth_balances_after_removal = ['2000000', '4000000']
+    # token_balances_after_removal = {'RDN': ['250000000', '0']}
+    token_balances_after_removal = {'RDN': ['0', '0']}
     if query_balances_before_first_modification:
         # Also test by having balances queried before removing an account
-        removed_eth_accounts = [ethereum_accounts[0], ethereum_accounts[2]]
-        all_eth_accounts = [ethereum_accounts[1], ethereum_accounts[3]]
-        eth_balances = ['3000000', '4000000']
-        token_balances = {'RDN': ['0', '250000000']}
         setup = setup_balances(
             rotki,
-            ethereum_accounts=all_eth_accounts,
+            ethereum_accounts=ethereum_accounts,
             btc_accounts=btc_accounts,
-            eth_balances=eth_balances,
+            eth_balances=all_eth_balances,
             token_balances=token_balances,
         )
         with setup.etherscan_patch, setup.bitcoin_patch:
@@ -733,17 +737,11 @@ def test_remove_blockchain_accounts(
                 rotkehlchen_api_server,
                 "blockchainbalancesresource",
             ))
-
-    # Accounts to remove. Assure they are not in order to test that it does not affect anything
-    removed_eth_accounts = [ethereum_accounts[0], ethereum_accounts[2]]
-    all_eth_accounts = [ethereum_accounts[1], ethereum_accounts[3]]
-    eth_balances = ['3000000', '4000000']
-    token_balances = {'RDN': ['0', '250000000']}
     setup = setup_balances(
         rotki,
-        ethereum_accounts=all_eth_accounts,
+        ethereum_accounts=ethereum_accounts,
         btc_accounts=btc_accounts,
-        eth_balances=eth_balances,
+        eth_balances=all_eth_balances,
         token_balances=token_balances,
     )
 
@@ -761,15 +759,15 @@ def test_remove_blockchain_accounts(
     assert_eth_balances_result(
         rotki=rotki,
         json_data=json_data,
-        eth_accounts=all_eth_accounts,
-        eth_balances=setup.eth_balances,
-        token_balances=setup.token_balances,
-        also_btc=False,  # All blockchain assets have not been queried yet
+        eth_accounts=eth_accounts_after_removal,
+        eth_balances=eth_balances_after_removal,
+        token_balances=token_balances_after_removal,
+        also_btc=query_balances_before_first_modification,
     )
     # Also make sure they are removed from the DB
     accounts = rotki.data.db.get_blockchain_accounts()
     assert len(accounts.eth) == 2
-    assert all(acc in accounts.eth for acc in all_eth_accounts)
+    assert all(acc in accounts.eth for acc in eth_accounts_after_removal)
     assert len(accounts.btc) == 2
     assert all(acc in accounts.btc for acc in btc_accounts)
 
@@ -785,21 +783,22 @@ def test_remove_blockchain_accounts(
     assert_eth_balances_result(
         rotki=rotki,
         json_data=json_data,
-        eth_accounts=all_eth_accounts,
-        eth_balances=setup.eth_balances,
-        token_balances=setup.token_balances,
+        eth_accounts=eth_accounts_after_removal,
+        eth_balances=eth_balances_after_removal,
+        token_balances=token_balances_after_removal,
         also_btc=True,
     )
 
     # Now we will try to remove a BTC account. Setup the mocking infrastructure again
-    all_btc_accounts = [UNIT_BTC_ADDRESS2]
+    all_btc_accounts = [UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]
+    btc_accounts_after_removal = [UNIT_BTC_ADDRESS2]
     setup = setup_balances(
         rotki,
-        ethereum_accounts=all_eth_accounts,
+        ethereum_accounts=eth_accounts_after_removal,
         btc_accounts=all_btc_accounts,
-        eth_balances=eth_balances,
-        token_balances=token_balances,
-        btc_balances=['600000000'],
+        eth_balances=eth_balances_after_removal,
+        token_balances=token_balances_after_removal,
+        btc_balances=['3000000', '5000000'],
     )
     # remove the new BTC account
     with setup.bitcoin_patch:
@@ -814,16 +813,16 @@ def test_remove_blockchain_accounts(
     assert json_data['message'] == ''
     assert_btc_balances_result(
         json_data=json_data,
-        btc_accounts=all_btc_accounts,
-        btc_balances=setup.btc_balances,
+        btc_accounts=btc_accounts_after_removal,
+        btc_balances=['5000000'],
         also_eth=True,
     )
     # Also make sure it's removed from the DB
     accounts = rotki.data.db.get_blockchain_accounts()
     assert len(accounts.eth) == 2
-    assert all(acc in accounts.eth for acc in all_eth_accounts)
+    assert all(acc in accounts.eth for acc in eth_accounts_after_removal)
     assert len(accounts.btc) == 1
-    assert all(acc in accounts.btc for acc in all_btc_accounts)
+    assert all(acc in accounts.btc for acc in btc_accounts_after_removal)
 
     # Now try to query all balances to make sure the result is also stored
     with setup.etherscan_patch, setup.bitcoin_patch:
@@ -836,8 +835,8 @@ def test_remove_blockchain_accounts(
     assert json_data['message'] == ''
     assert_btc_balances_result(
         json_data=json_data,
-        btc_accounts=all_btc_accounts,
-        btc_balances=setup.btc_balances,
+        btc_accounts=btc_accounts_after_removal,
+        btc_balances=['5000000'],
         also_eth=True,
     )
 
@@ -860,14 +859,16 @@ def test_remove_blockchain_accounts_async(
 
     # Test by having balances queried before removing an account
     removed_eth_accounts = [ethereum_accounts[0], ethereum_accounts[2]]
-    all_eth_accounts = [ethereum_accounts[1], ethereum_accounts[3]]
-    eth_balances = ['3000000', '4000000']
-    token_balances = {'RDN': ['0', '250000000']}
+    eth_accounts_after_removal = [ethereum_accounts[1], ethereum_accounts[3]]
+    all_eth_balances = ['1000000', '2000000', '3000000', '4000000']
+    token_balances = {'RDN': ['0', '250000000', '450000000', '0']}
+    eth_balances_after_removal = ['2000000', '4000000']
+    token_balances_after_removal = {'RDN': ['250000000', '0']}
     setup = setup_balances(
         rotki,
-        ethereum_accounts=all_eth_accounts,
+        ethereum_accounts=ethereum_accounts,
         btc_accounts=btc_accounts,
-        eth_balances=eth_balances,
+        eth_balances=all_eth_balances,
         token_balances=token_balances,
     )
     with setup.etherscan_patch, setup.bitcoin_patch:
@@ -875,17 +876,11 @@ def test_remove_blockchain_accounts_async(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
         ))
-
-    # Accounts to remove. Assure they are not in order to test that it does not affect anything
-    removed_eth_accounts = [ethereum_accounts[0], ethereum_accounts[2]]
-    all_eth_accounts = [ethereum_accounts[1], ethereum_accounts[3]]
-    eth_balances = ['3000000', '4000000']
-    token_balances = {'RDN': ['0', '250000000']}
     setup = setup_balances(
         rotki,
-        ethereum_accounts=all_eth_accounts,
+        ethereum_accounts=ethereum_accounts,
         btc_accounts=btc_accounts,
-        eth_balances=eth_balances,
+        eth_balances=all_eth_balances,
         token_balances=token_balances,
     )
 
@@ -901,15 +896,15 @@ def test_remove_blockchain_accounts_async(
     assert_eth_balances_result(
         rotki=rotki,
         json_data=outcome,
-        eth_accounts=all_eth_accounts,
-        eth_balances=setup.eth_balances,
-        token_balances=setup.token_balances,
-        also_btc=False,  # All blockchain assets have not been queried yet
+        eth_accounts=eth_accounts_after_removal,
+        eth_balances=eth_balances_after_removal,
+        token_balances=token_balances_after_removal,
+        also_btc=True,  # We queried all balances at the start
     )
     # Also make sure they are removed from the DB
     accounts = rotki.data.db.get_blockchain_accounts()
     assert len(accounts.eth) == 2
-    assert all(acc in accounts.eth for acc in all_eth_accounts)
+    assert all(acc in accounts.eth for acc in eth_accounts_after_removal)
     assert len(accounts.btc) == 2
     assert all(acc in accounts.btc for acc in btc_accounts)
 
@@ -925,21 +920,22 @@ def test_remove_blockchain_accounts_async(
     assert_eth_balances_result(
         rotki=rotki,
         json_data=json_data,
-        eth_accounts=all_eth_accounts,
-        eth_balances=setup.eth_balances,
-        token_balances=setup.token_balances,
+        eth_accounts=eth_accounts_after_removal,
+        eth_balances=eth_balances_after_removal,
+        token_balances=token_balances_after_removal,
         also_btc=True,
     )
 
     # Now we will try to remove a BTC account. Setup the mocking infrastructure again
-    all_btc_accounts = [UNIT_BTC_ADDRESS2]
+    all_btc_accounts = [UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]
+    btc_accounts_after_removal = [UNIT_BTC_ADDRESS2]
     setup = setup_balances(
         rotki,
-        ethereum_accounts=all_eth_accounts,
+        ethereum_accounts=eth_accounts_after_removal,
         btc_accounts=all_btc_accounts,
-        eth_balances=eth_balances,
-        token_balances=token_balances,
-        btc_balances=['600000000'],
+        eth_balances=eth_balances_after_removal,
+        token_balances=token_balances_after_removal,
+        btc_balances=['3000000', '5000000'],
     )
     # remove the new BTC account
     with setup.bitcoin_patch:
@@ -952,16 +948,16 @@ def test_remove_blockchain_accounts_async(
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
     assert_btc_balances_result(
         json_data=outcome,
-        btc_accounts=all_btc_accounts,
-        btc_balances=setup.btc_balances,
+        btc_accounts=btc_accounts_after_removal,
+        btc_balances=['5000000'],
         also_eth=True,
     )
     # Also make sure it's removed from the DB
     accounts = rotki.data.db.get_blockchain_accounts()
     assert len(accounts.eth) == 2
-    assert all(acc in accounts.eth for acc in all_eth_accounts)
+    assert all(acc in accounts.eth for acc in eth_accounts_after_removal)
     assert len(accounts.btc) == 1
-    assert all(acc in accounts.btc for acc in all_btc_accounts)
+    assert all(acc in accounts.btc for acc in btc_accounts_after_removal)
 
     # Now try to query all balances to make sure the result is also stored
     with setup.etherscan_patch, setup.bitcoin_patch:
@@ -974,7 +970,7 @@ def test_remove_blockchain_accounts_async(
     assert json_data['message'] == ''
     assert_btc_balances_result(
         json_data=json_data,
-        btc_accounts=all_btc_accounts,
-        btc_balances=setup.btc_balances,
+        btc_accounts=btc_accounts_after_removal,
+        btc_balances=['5000000'],
         also_eth=True,
     )

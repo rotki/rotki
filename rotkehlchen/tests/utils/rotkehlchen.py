@@ -79,7 +79,7 @@ def setup_balances(
             'The btc balances should be a list with each '
             'element representing balance of an account'
         )
-        assert len(eth_balances) == len(ethereum_accounts)
+        assert len(btc_balances) == len(btc_accounts)
     else:
         # Default test values
         if len(btc_accounts) != 0:
