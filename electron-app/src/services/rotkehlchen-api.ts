@@ -124,16 +124,16 @@ export class RotkehlchenApi {
 
   setPremiumCredentials(
     username: string,
-    api_key: string,
-    api_secret: string
+    apiKey: string,
+    apiSecret: string
   ): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
       this.axios
         .patch<ActionResult<boolean>>(
           `/users/${username}`,
           {
-            api_key,
-            api_secret
+            premium_api_key: apiKey,
+            premium_api_secret: apiSecret
           },
           { validateStatus: this.validate_status_patch_username }
         )
