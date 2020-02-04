@@ -53,7 +53,7 @@ Balances = Dict[
 ]
 Totals = Dict[Asset, Dict[str, FVal]]
 BlockchainBalancesUpdate = Dict[str, Union[Balances, Totals]]
-EthBalances = Dict[ChecksumEthAddress, Dict[Union[Asset, str], FVal]]
+EthBalances = Dict[ChecksumEthAddress, Dict[Union[Asset, str], Union[Dict[str, Any], FVal]]]
 
 
 class Blockchain(CacheableObject, LockableQueryObject):
@@ -367,7 +367,10 @@ class Blockchain(CacheableObject, LockableQueryObject):
 
         if append_or_remove == 'append':
             self.accounts.eth.append(account)
-            self.balances[A_ETH][account] = {A_ETH: balance, 'usd_value': usd_balance}
+            self.balances[A_ETH][account] = {
+                A_ETH: {'amount': balance, 'usd_value': usd_balance},  # type: ignore
+                'total_usd_value': usd_balance,
+            }
         elif append_or_remove == 'remove':
             if account not in self.accounts.eth:
                 raise InputError('Tried to remove a non existing ETH account')
@@ -415,8 +418,8 @@ class Blockchain(CacheableObject, LockableQueryObject):
             usd_value = token_balance * usd_price
             if append_or_remove == 'append':
                 account_balance = self.balances[A_ETH][account]
-                account_balance[token] = token_balance
-                account_balance['usd_value'] = account_balance['usd_value'] + usd_value
+                account_balance[token] = {'amount': token_balance, 'usd_value': usd_value}  # type: ignore  # noqa: E501
+                account_balance['total_usd_value'] = account_balance['total_usd_value'] + usd_value
 
             self.totals[token] = {
                 'amount': add_or_sub(
@@ -623,9 +626,12 @@ class Blockchain(CacheableObject, LockableQueryObject):
                 token_total += balance
                 usd_value = balance * token_usd_price[token]
                 if balance != ZERO:
-                    eth_balances[account][token] = balance
-                    eth_balances[account]['usd_value'] = (
-                        eth_balances[account]['usd_value'] + usd_value
+                    eth_balances[account][token] = {
+                        'amount': balance,
+                        'usd_value': usd_value,
+                    }
+                    eth_balances[account]['total_usd_value'] = (
+                        eth_balances[account]['total_usd_value'] + usd_value  # type: ignore
                     )
 
             self.totals[token] = {
@@ -657,7 +663,11 @@ class Blockchain(CacheableObject, LockableQueryObject):
         eth_balances: EthBalances = {}
         for account, balance in balances.items():
             eth_total += balance
-            eth_balances[account] = {A_ETH: balance, 'usd_value': balance * eth_usd_price}
+            usd_value = balance * eth_usd_price
+            eth_balances[account] = {
+                A_ETH: {'amount': balance, 'usd_value': usd_value},
+                'total_usd_value': usd_value,
+            }
 
         self.totals[A_ETH] = {'amount': eth_total, 'usd_value': eth_total * eth_usd_price}
         # but they are not complete until token query
