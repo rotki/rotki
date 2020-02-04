@@ -206,6 +206,8 @@ To track an account scroll down to the "Blockchain Balances" section and choose 
 
 To stop tracking a particular account scroll down to the accounts tables and simply right click on the account you want to stop tracking and select "Delete" from the context menu.
 
+If an ethereum account also owns tracked tokens you can click on the arrow under "Actions" in order to expand its view and show the balance breakdown for the account over all assets it holds.
+
 Adding and Removing Ethereum Tokens
 =========================================
 

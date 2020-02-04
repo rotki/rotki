@@ -2156,7 +2156,7 @@ Removing owned ETH tokens
                    "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
 		       "assets": {
                            "ETH": {"amount": "10", "usd_value": "1755.53"}
-		       }.
+		       },
 		       "total_usd_value": "1755.53",
                   }}
               },
