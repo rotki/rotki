@@ -18,9 +18,8 @@ export interface ApiBalances {
 }
 
 export interface ApiEthBalance {
-  [asset: string]: string;
-  readonly ETH: string;
-  readonly usd_value: string;
+  readonly assets: ApiBalances;
+  readonly total_usd_value: string;
 }
 
 export interface ApiEthBalances {
@@ -28,9 +27,8 @@ export interface ApiEthBalances {
 }
 
 export interface EthBalance {
-  readonly eth: BigNumber;
-  readonly usdValue: BigNumber;
-  readonly tokens: AccountTokens;
+  readonly totalUsdValue: BigNumber;
+  readonly assets: Balances;
 }
 
 export interface EthBalances {
@@ -50,10 +48,6 @@ export interface AccountBalance {
   readonly account: string;
   readonly amount: BigNumber;
   readonly usdValue: BigNumber;
-}
-
-export interface AccountTokens {
-  [token: string]: BigNumber;
 }
 
 export interface AssetBalance {

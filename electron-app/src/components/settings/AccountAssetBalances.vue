@@ -8,6 +8,9 @@
         sort-by="usdValue"
         sort-desc
       >
+        <template #header.usdValue>
+          {{ currency.ticker_symbol }} value
+        </template>
         <template #item.asset="{ item }">
           <span class="account-asset-balances__balance__asset">
             <crypto-icon
@@ -21,6 +24,13 @@
         <template #item.amount="{ item }">
           {{ item.amount | formatPrice(floatingPrecision) }}
         </template>
+        <template #item.usdValue="{ item }">
+          {{
+            item.usdValue
+              | calculatePrice(exchangeRate(currency.ticker_symbol))
+              | formatPrice(floatingPrecision)
+          }}
+        </template>
       </v-data-table>
     </v-col>
   </v-row>
@@ -31,26 +41,32 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import CryptoIcon from '@/components/CryptoIcon.vue';
 import { AssetBalances } from '@/model/blockchain-balances';
 import { createNamespacedHelpers } from 'vuex';
+import { Currency } from '@/model/currency';
 
 const { mapGetters } = createNamespacedHelpers('balances');
 const { mapGetters: mapSessionGetters } = createNamespacedHelpers('session');
+const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 
 @Component({
   components: { CryptoIcon },
   computed: {
     ...mapGetters(['accountTokens']),
-    ...mapSessionGetters(['floatingPrecision'])
+    ...mapSessionGetters(['floatingPrecision', 'currency']),
+    ...mapBalancesGetters(['exchangeRate', 'hasTokens'])
   }
 })
 export default class AccountAssetBalances extends Vue {
   @Prop({ required: true })
   account!: string;
+  currency!: Currency;
   accountTokens!: (account: string) => AssetBalances[];
   floatingPrecision!: number;
+  exchangeRate!: (currency: string) => number;
 
   headers = [
     { text: 'Asset', value: 'asset' },
-    { text: 'Amount', value: 'amount' }
+    { text: 'Amount', value: 'amount' },
+    { text: 'USD Value', value: 'usdValue' }
   ];
 
   get tokens(): AssetBalances[] {

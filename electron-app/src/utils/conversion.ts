@@ -1,5 +1,5 @@
 import {
-  AccountTokens,
+  ApiBalance,
   ApiBalances,
   ApiEthBalances,
   AssetBalances,
@@ -8,7 +8,6 @@ import {
 } from '@/model/blockchain-balances';
 
 import { bigNumberify } from '@/utils/bignumbers';
-import omit from 'lodash/omit';
 import transform from 'lodash/transform';
 import { ApiAssetBalances } from '@/typing/types';
 
@@ -19,20 +18,21 @@ export function convertEthBalances(apiBalances: ApiEthBalances): EthBalances {
       continue;
     }
 
-    const balance = apiBalances[account];
-    const tokens = omit(balance, ['ETH', 'usd_value']);
-    const accountTokens = transform(
-      tokens,
-      (result: AccountTokens, value: string, key: string) => {
-        result[key] = bigNumberify(value);
+    const api_balance = apiBalances[account];
+    const accountAssets = transform(
+      api_balance.assets,
+      (result: Balances, value: ApiBalance, key: string) => {
+        result[key] = {
+          amount: bigNumberify(value.amount as string),
+          usdValue: bigNumberify(value.usd_value as string)
+        };
       },
       {}
     );
 
     balances[account] = {
-      eth: bigNumberify(balance.ETH as string),
-      usdValue: bigNumberify(balance.usd_value as string),
-      tokens: accountTokens
+      assets: accountAssets,
+      totalUsdValue: bigNumberify(api_balance.total_usd_value as string)
     };
   }
   return balances;
@@ -63,7 +63,6 @@ export function convertAssetBalances(
     }
 
     const data = assetBalances[asset];
-
     assets[asset] = {
       amount: bigNumberify(data.amount),
       usdValue: bigNumberify(data.usd_value)
