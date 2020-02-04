@@ -15,6 +15,11 @@ export const mutations: MutationTree<TaskState> = {
     const tasks = { ...state.tasks };
     delete tasks[taskId];
     state.tasks = tasks;
+
+    const processing = [...state.processingTasks];
+    const idIndex = processing.findIndex(value => value === taskId);
+    processing.splice(idIndex, 1);
+    state.processingTasks = processing;
   },
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   reset: (state: TaskState) => {
