@@ -33,8 +33,8 @@ def test_eth_connection_initial_balances(
     eth_default_balance = from_wei(DEFAULT_BALANCE)
     for acc, values in per_eth_account.items():
         assert acc in ethereum_accounts
-        assert values['ETH'] == eth_default_balance
-        assert 'usd_value' in values
+        assert values['assets']['ETH']['amount'] == eth_default_balance
+        assert 'usd_value' in values['assets']['ETH']
 
     totals_eth = result['totals']['ETH']
     assert totals_eth['amount'] == number_of_eth_accounts * eth_default_balance
