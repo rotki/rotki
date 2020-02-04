@@ -1,7 +1,7 @@
 import { ActionTree } from 'vuex';
-import { RotkehlchenState } from '@/store/store';
+import { Message, RotkehlchenState } from '@/store/store';
 import { TaxReportState } from '@/store/reports/state';
-import { Severity, TaxReportEvent } from '@/typing/types';
+import { TaxReportEvent } from '@/typing/types';
 import { api } from '@/services/rotkehlchen-api';
 import { notify } from '@/store/notifications/utils';
 import { createTask, TaskType } from '@/model/task';
@@ -22,18 +22,24 @@ export const actions: ActionTree<TaxReportState, RotkehlchenState> = {
     }
   },
 
-  async createCSV(_, path: string) {
-    api
-      .exportHistoryCSV(path)
-      .then(() => {
-        notify(
-          'History exported to CVS successfully',
-          'CSV Export',
-          Severity.INFO
-        );
-      })
-      .catch((reason: Error) => {
-        notify(reason.message, 'CSV Export', Severity.ERROR);
-      });
+  async createCSV({ commit }, path: string) {
+    let message: Message;
+    try {
+      const success = await api.exportHistoryCSV(path);
+      message = {
+        title: 'CSV Export',
+        description: success
+          ? 'History exported to CVS successfully'
+          : 'History export failed',
+        success
+      };
+    } catch (e) {
+      message = {
+        title: 'CSV Export',
+        description: e.message,
+        success: false
+      };
+    }
+    commit('setMessage', message, { root: true });
   }
 };

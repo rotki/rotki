@@ -939,8 +939,8 @@ export class RotkehlchenApi {
   exportHistoryCSV(directory: string): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
       this.axios
-        .get<ActionResult<boolean>>('/history/export', {
-          data: {
+        .get<ActionResult<boolean>>('/history/export/', {
+          params: {
             directory_path: directory
           },
           validateStatus: function(status) {
