@@ -11,29 +11,31 @@
           <v-card-title>Trade Settings</v-card-title>
           <v-card-text>
             <v-switch
-              id="crypto2crypto"
               v-model="crypto2CryptoTrades"
+              class="settings-accounting__crypto2crypto"
               label="Take into account crypto to crypto trades"
               color="primary"
               @change="onCrypto2CryptoChange($event)"
             ></v-switch>
             <v-switch
-              id="include_gas_costs"
               v-model="gasCosts"
+              class="settings-accounting__include-gas-costs"
               label="Take into account Ethereum gas costs"
               color="primary"
               @change="onGasCostChange($event)"
             ></v-switch>
             <v-switch
-              id="taxfree_period_exists"
               v-model="taxFreePeriod"
+              class="settings-accounting__taxfree-period"
               label="Is there a tax free period?"
               color="primary"
               @change="onTaxFreeChange($event)"
             ></v-switch>
             <v-text-field
               v-model="taxFreeAfterPeriod"
+              class="settings-accounting__taxfree-period-days"
               :disabled="!taxFreePeriod"
+              :rules="taxFreeRules"
               label="Tax free after how many days"
               type="number"
             >
@@ -41,7 +43,7 @@
           </v-card-text>
           <v-card-actions>
             <v-btn
-              id="modify_trade_settings"
+              class="settings-accounting__modify-trade-settings"
               depressed
               color="primary"
               type="submit"
@@ -62,12 +64,14 @@
               <v-col cols="10">
                 <v-text-field
                   v-model="assetToIgnore"
+                  class="settings-accounting__asset"
                   label="Asset To Ignore"
                   @keyup.enter="addAsset()"
                 ></v-text-field>
               </v-col>
               <v-col cols="2">
                 <v-btn
+                  class="settings-accounting__buttons__add"
                   text
                   color="primary"
                   :disabled="assetToIgnore === ''"
@@ -81,6 +85,7 @@
               <v-col cols="10">
                 <v-select
                   v-model="assetToRemove"
+                  class="settings-accounting__ignored-assets"
                   :items="ignoredAssets"
                   hint="Click to see all ignored assets and select one for removal"
                   label="Ignored Assets"
@@ -88,7 +93,11 @@
                   <div slot="append-outer">
                     <v-badge>
                       <template #badge>
-                        <span>{{ ignoredAssets.length }}</span>
+                        <span
+                          class="settings-accounting__ignored-assets__badge"
+                        >
+                          {{ ignoredAssets.length }}
+                        </span>
                       </template>
                     </v-badge>
                   </div>
@@ -96,6 +105,7 @@
               </v-col>
               <v-col cols="2">
                 <v-btn
+                  class="settings-accounting__buttons__remove"
                   text
                   color="primary"
                   :disabled="assetToRemove === ''"
@@ -109,7 +119,6 @@
         </v-card>
       </v-col>
     </v-row>
-    <div id="settings-accounting"></div>
   </v-container>
 </template>
 
@@ -139,6 +148,12 @@ export default class Accounting extends Vue {
   ignoredAssets: string[] = [];
   assetToIgnore: string = '';
   assetToRemove: string = '';
+
+  taxFreeRules = [
+    (v: string) => !!v || 'Please enter the number of days',
+    (v: string) =>
+      (v && parseInt(v) > 0) || 'The number of days cannot negative or zero'
+  ];
 
   created() {
     this.$api
@@ -179,7 +194,7 @@ export default class Accounting extends Vue {
 
     this.$api
       .setSettings({ taxfree_after_period: period })
-      .then(() => {
+      .then(settings => {
         commit('setMessage', {
           title: 'Success',
           description: 'Successfully set trade settings',
@@ -188,7 +203,7 @@ export default class Accounting extends Vue {
 
         commit('session/accountingSettings', {
           ...this.accountingSettings,
-          taxFreeAfterPeriod: period
+          taxFreeAfterPeriod: settings.taxfree_after_period
         });
       })
       .catch((reason: Error) => {
@@ -216,7 +231,7 @@ export default class Accounting extends Vue {
     const { commit } = this.$store;
     this.$api
       .setSettings({ include_crypto2crypto: enabled })
-      .then(() => {
+      .then(settings => {
         commit('setMessage', {
           title: 'Success',
           description: 'Successfully set crypto to crypto consideration value',
@@ -224,7 +239,7 @@ export default class Accounting extends Vue {
         } as Message);
         commit('session/accountingSettings', {
           ...this.accountingSettings,
-          includeCrypto2Crypto: enabled
+          includeCrypto2Crypto: settings.include_crypto2crypto
         });
       })
       .catch(reason => {
@@ -240,7 +255,7 @@ export default class Accounting extends Vue {
 
     this.$api
       .setSettings({ include_gas_costs: enabled })
-      .then(() => {
+      .then(settings => {
         commit('setMessage', {
           title: 'Success',
           description: 'Successfully set Ethereum gas costs value',
@@ -248,7 +263,7 @@ export default class Accounting extends Vue {
         } as Message);
         commit('session/accountingSettings', {
           ...this.accountingSettings,
-          includeGasCosts: enabled
+          includeGasCosts: settings.include_gas_costs
         });
       })
       .catch(reason => {
@@ -264,8 +279,8 @@ export default class Accounting extends Vue {
 
     this.$api
       .modifyAsset(true, this.assetToIgnore)
-      .then(() => {
-        this.ignoredAssets.push(this.assetToIgnore);
+      .then(ignoredAssets => {
+        this.ignoredAssets = ignoredAssets;
         this.assetToIgnore = '';
       })
       .catch((reason: Error) => {
@@ -279,13 +294,8 @@ export default class Accounting extends Vue {
   removeAsset() {
     this.$api
       .modifyAsset(false, this.assetToRemove)
-      .then(() => {
-        const index = this.ignoredAssets.findIndex(
-          value => value == this.assetToRemove
-        );
-        if (index >= 0) {
-          this.ignoredAssets.splice(index, 1);
-        }
+      .then(ignoredAssets => {
+        this.ignoredAssets = ignoredAssets;
         this.assetToRemove = '';
       })
       .catch((reason: Error) => {
