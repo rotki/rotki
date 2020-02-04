@@ -8,7 +8,6 @@ import {
   EthBalance
 } from '@/model/blockchain-balances';
 import map from 'lodash/map';
-import omit from 'lodash/omit';
 import BigNumber from 'bignumber.js';
 import { Zero } from '@/utils/bignumbers';
 import { assetSum } from '@/utils/calculation';
@@ -111,26 +110,10 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     }, Zero);
   },
 
-  blockchainTotal: (state: BalanceState, getters) => {
+  blockchainTotal: (_, getters) => {
     return getters.totals.reduce((sum: BigNumber, asset: AssetBalance) => {
       return sum.plus(asset.usdValue);
     }, Zero);
-  },
-
-  accountTokens: (state: BalanceState) => (account: string) => {
-    const ethAccount = state.eth[account];
-    if (!ethAccount || isEmpty(ethAccount)) {
-      return [];
-    }
-    const tokens = omit(ethAccount.assets, ['ETH']);
-    return Object.entries(tokens).map(
-      ([key, asset_data]) =>
-        ({
-          asset: key,
-          amount: asset_data.amount,
-          usdValue: asset_data.usdValue
-        } as AssetBalance)
-    );
   },
 
   accountAssets: (state: BalanceState) => (account: string) => {

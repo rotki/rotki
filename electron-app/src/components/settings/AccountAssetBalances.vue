@@ -52,7 +52,7 @@ const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
   computed: {
     ...mapGetters(['accountAssets']),
     ...mapSessionGetters(['floatingPrecision', 'currency']),
-    ...mapBalancesGetters(['exchangeRate', 'hasTokens'])
+    ...mapBalancesGetters(['exchangeRate'])
   }
 })
 export default class AccountAssetBalances extends Vue {
