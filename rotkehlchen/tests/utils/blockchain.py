@@ -290,19 +290,32 @@ def assert_eth_balances_result(
         per_account = per_account['ETH']
         assert len(per_account) == len(eth_accounts)
         for idx, account in enumerate(eth_accounts):
-            balance = from_wei(FVal(eth_balances[idx]))
-            assert FVal(per_account[account]['ETH']) == balance
-            if balance == ZERO:
-                assert FVal(per_account[account]['usd_value']) == ZERO
+            expected_amount = from_wei(FVal(eth_balances[idx]))
+            amount = FVal(per_account[account]['ETH']['amount'])
+            usd_value = FVal(per_account[account]['ETH']['usd_value'])
+            assert amount == expected_amount
+            if amount == ZERO:
+                assert usd_value == ZERO
             else:
-                assert FVal(per_account[account]['usd_value']) > ZERO
+                assert usd_value > ZERO
+            have_tokens = False
             for symbol, balances in token_balances.items():
-                token_balance = FVal(balances[idx])
-                if token_balance == ZERO:
+                expected_token_amount = FVal(balances[idx])
+                if expected_token_amount == ZERO:
                     msg = f'{account} should have no entry for {symbol}'
                     assert symbol not in per_account[account], msg
                 else:
-                    assert FVal(per_account[account][symbol]) == from_wei(token_balance)
+                    have_tokens = True
+                    token_amount = FVal(per_account[account][symbol]['amount'])
+                    usd_value = FVal(per_account[account][symbol]['usd_value'])
+                    assert token_amount == from_wei(expected_token_amount)
+                    assert usd_value > ZERO
+
+            account_total_usd_value = FVal(per_account[account]['total_usd_value'])
+            if amount != ZERO or have_tokens:
+                assert account_total_usd_value > ZERO
+            else:
+                assert account_total_usd_value == ZERO
 
     if totals_only:
         totals = result
