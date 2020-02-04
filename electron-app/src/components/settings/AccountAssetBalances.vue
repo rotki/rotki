@@ -2,7 +2,7 @@
   <v-row class="account-asset-balances" align="center" justify="center">
     <v-col cols="12">
       <v-data-table
-        :items="tokens"
+        :items="assets"
         :headers="headers"
         class="account-asset-balances__table"
         sort-by="usdValue"
@@ -50,7 +50,7 @@ const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 @Component({
   components: { CryptoIcon },
   computed: {
-    ...mapGetters(['accountTokens']),
+    ...mapGetters(['accountAssets']),
     ...mapSessionGetters(['floatingPrecision', 'currency']),
     ...mapBalancesGetters(['exchangeRate', 'hasTokens'])
   }
@@ -59,7 +59,7 @@ export default class AccountAssetBalances extends Vue {
   @Prop({ required: true })
   account!: string;
   currency!: Currency;
-  accountTokens!: (account: string) => AssetBalances[];
+  accountAssets!: (account: string) => AssetBalances[];
   floatingPrecision!: number;
   exchangeRate!: (currency: string) => number;
 
@@ -69,8 +69,8 @@ export default class AccountAssetBalances extends Vue {
     { text: 'USD Value', value: 'usdValue' }
   ];
 
-  get tokens(): AssetBalances[] {
-    return this.accountTokens(this.account);
+  get assets(): AssetBalances[] {
+    return this.accountAssets(this.account);
   }
 }
 </script>

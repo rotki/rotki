@@ -133,6 +133,22 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     );
   },
 
+  accountAssets: (state: BalanceState) => (account: string) => {
+    const ethAccount = state.eth[account];
+    if (!ethAccount || isEmpty(ethAccount)) {
+      return [];
+    }
+
+    return Object.entries(ethAccount.assets).map(
+      ([key, asset_data]) =>
+        ({
+          asset: key,
+          amount: asset_data.amount,
+          usdValue: asset_data.usdValue
+        } as AssetBalance)
+    );
+  },
+
   hasTokens: (state: BalanceState) => (account: string) => {
     const ethAccount = state.eth[account];
     if (!ethAccount || isEmpty(ethAccount)) {
