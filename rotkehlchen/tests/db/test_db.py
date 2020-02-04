@@ -712,12 +712,12 @@ def test_add_trades(data_dir, username):
     assert returned_trades == [trade1, trade2]
 
     # Add the last 2 trades. Since trade2 already exists in the DB it should be
-    # ignored and an error should be shown
+    # ignored and a warning should be shown
     data.db.add_trades([trade2, trade3])
     errors = msg_aggregator.consume_errors()
     warnings = msg_aggregator.consume_warnings()
-    assert len(errors) == 1
-    assert len(warnings) == 0
+    assert len(errors) == 0
+    assert len(warnings) == 1
     returned_trades = data.db.get_trades()
     assert returned_trades == [trade1, trade2, trade3]
 
@@ -775,12 +775,12 @@ def test_add_margin_positions(data_dir, username):
     assert returned_margins == [margin1, margin2]
 
     # Add the last 2 margins. Since margin2 already exists in the DB it should be
-    # ignored and an error should be shown
+    # ignored and a warning should be shown
     data.db.add_margin_positions([margin2, margin3])
     errors = msg_aggregator.consume_errors()
     warnings = msg_aggregator.consume_warnings()
-    assert len(errors) == 1
-    assert len(warnings) == 0
+    assert len(errors) == 0
+    assert len(warnings) == 1
     returned_margins = data.db.get_margin_positions()
     assert returned_margins == [margin1, margin2, margin3]
 
@@ -835,12 +835,12 @@ def test_add_asset_movements(data_dir, username):
     assert returned_movements == [movement1, movement2]
 
     # Add the last 2 movements. Since movement2 already exists in the DB it should be
-    # ignored and an error should be shown
+    # ignored and a warning should be shown
     data.db.add_asset_movements([movement2, movement3])
     errors = msg_aggregator.consume_errors()
     warnings = msg_aggregator.consume_warnings()
-    assert len(errors) == 1
-    assert len(warnings) == 0
+    assert len(errors) == 0
+    assert len(warnings) == 1
     returned_movements = data.db.get_asset_movements()
     assert returned_movements == [movement1, movement2, movement3]
 

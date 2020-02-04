@@ -155,7 +155,8 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
     order_type = deserialize_trade_type(kraken_trade['type'])
     rate = deserialize_price(kraken_trade['price'])
 
-    if not cost.is_close(amount * rate):
+    # pylint does not seem to see that Price is essentially FVal
+    if not cost.is_close(amount * rate):  # pylint: disable=no-member
         log.warning(f'cost ({cost}) != amount ({amount}) * rate ({rate}) for kraken trade')
 
     log.debug(
