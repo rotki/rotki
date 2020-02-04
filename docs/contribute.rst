@@ -120,12 +120,17 @@ Ethereum Accounts
 - Add an ethereum account and see it works
 - Add an invalid ethereum account and see it is handled properly
 - Remove an ethereum account and see it works
+- After adding tokens to an account that has it expand the account and see all tokens owned by it are shown.
 
 Ethereum Tokens
 -------------------
 
-- Track an ethereum token and see it works
-- Remove an ethereum token and see it works
+- Track an ethereum token and see it works. Works is defined as being added:
+    - In the dashboard
+    - In the owned tokens
+    - In total blockchain balances
+    - In the expanded asset details of ETH accounts that own it.
+- Remove an ethereum token and see it works. Works means being removed from all the above.
 
 Bitcoin accounts
 ----------------
