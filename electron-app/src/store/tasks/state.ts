@@ -2,7 +2,7 @@ import { Task, TaskMeta } from '@/model/task';
 
 export interface TaskState {
   tasks: TaskMap<TaskMeta>;
-  processingTasks: number[];
+  locked: number[];
 }
 
 export interface TaskMap<T extends TaskMeta> {
@@ -11,7 +11,7 @@ export interface TaskMap<T extends TaskMeta> {
 
 export const defaultState: () => TaskState = () => ({
   tasks: {},
-  processingTasks: []
+  locked: []
 });
 
 export const state: TaskState = defaultState();

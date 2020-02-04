@@ -9,6 +9,7 @@ import {
 import {
   BlockchainMetadata,
   ExchangeMeta,
+  Task,
   TaskMeta,
   TaskType
 } from '@/model/task';
@@ -109,7 +110,7 @@ export class TaskManager {
   monitor() {
     const state = store.state;
     const taskState = state.tasks!;
-    const { tasks: taskMap, processingTasks } = taskState;
+    const { tasks: taskMap, locked } = taskState;
 
     for (const id in taskMap) {
       if (!Object.prototype.hasOwnProperty.call(taskMap, id)) {
@@ -125,47 +126,53 @@ export class TaskManager {
         continue;
       }
 
-      if (processingTasks.indexOf(task.id) > -1) {
-        return;
+      if (locked.indexOf(task.id) > -1) {
+        continue;
       }
+
+      store.commit('tasks/lock', task.id);
 
       api
         .queryTaskResult(task.id)
-        .then(result => {
-          if (task.meta.ignoreResult) {
-            store.commit('tasks/remove', task.id);
-            return;
-          }
-
-          if (result == null) {
-            return;
-          }
-
-          const handler = this.handler[task.type];
-
-          if (!handler) {
-            notify(
-              `No handler found for task '${task.type}' with id ${task.id}`,
-              'Tasks',
-              Severity.INFO
-            );
-            return;
-          }
-
-          store.commit('tasks/processing', task.id);
-          try {
-            handler(result, task.meta);
-          } catch (e) {
-            notify(
-              `An error occurred while processing task [${task.id}] '${task.meta.description}': ${e}`,
-              'Task processing failed',
-              Severity.ERROR
-            );
-          }
-          store.commit('tasks/remove', task.id);
-        })
-        .catch(() => {});
+        .then(result => this.handleResult(result, task))
+        .catch(() => {
+          // When the request fails for any reason (pending or network error) then we unlock it
+          store.commit('tasks/unlock', task.id);
+        });
     }
+  }
+
+  private handleResult(result: ActionResult<any>, task: Task<TaskMeta>) {
+    if (task.meta.ignoreResult) {
+      store.commit('tasks/remove', task.id);
+      return;
+    }
+
+    if (result == null) {
+      return;
+    }
+
+    const handler = this.handler[task.type];
+
+    if (!handler) {
+      notify(
+        `No handler found for task '${task.type}' with id ${task.id}`,
+        'Tasks',
+        Severity.INFO
+      );
+      return;
+    }
+
+    try {
+      handler(result, task.meta);
+    } catch (e) {
+      notify(
+        `An error occurred while processing task [${task.id}] '${task.meta.description}': ${e}`,
+        'Task processing failed',
+        Severity.ERROR
+      );
+    }
+    store.commit('tasks/remove', task.id);
   }
 
   readonly handler: {
