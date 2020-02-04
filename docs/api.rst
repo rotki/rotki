@@ -1073,8 +1073,10 @@ Querying onchain balances
                        "amount": "0.5", "usd_value": "3770.075"
                    }},
                    "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
-		       "ETH": {"amount": "10", "usd_value": "1650.53"},
-		       "DAI": {"amount": "15", "usd_value": "15.21"},
+		       "assets": {
+		           "ETH": {"amount": "10", "usd_value": "1650.53"},
+		           "DAI": {"amount": "15", "usd_value": "15.21"}
+		       },
 		       "total_usd_value": "1665.74",
                   }}
               },
@@ -2088,9 +2090,11 @@ Adding owned ETH tokens
                        "amount": "0.5", "usd_value": "3770.075"
                    }},
                    "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
-		       "ETH": {"amount": "10", "usd_value": "1755.53"},
-		       "GNO": {"amount": "1", "usd_value": "50"},
-		       "RDN": {"amount": "1", "usd_value": "1.5"},
+		       "assets": {
+			   "ETH": {"amount": "10", "usd_value": "1755.53"},
+			   "GNO": {"amount": "1", "usd_value": "50"},
+			   "RDN": {"amount": "1", "usd_value": "1.5"}
+		       },
 		       "total_usd_value": "1807.03",
                   }}
               },
@@ -2150,7 +2154,9 @@ Removing owned ETH tokens
                        "amount": "0.5", "usd_value": "3770.075"
                    }},
                    "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
-                       "ETH": {"amount": "10", "usd_value": "1755.53"},
+		       "assets": {
+                           "ETH": {"amount": "10", "usd_value": "1755.53"}
+		       }.
 		       "total_usd_value": "1755.53",
                   }}
               },
@@ -2209,9 +2215,11 @@ Adding blockchain accounts
                        "amount": "0.5", "usd_value": "3770.075"
                    }},
                    "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
-		       "ETH": {"amount": "10", "usd_value": "1755.53"},
-		       "GNO": {"amount": "1", "usd_value": "50"},
-		       "RDN": {"amount": "1", "usd_value": "1.5"},
+		       "assets": {
+			   "ETH": {"amount": "10", "usd_value": "1755.53"},
+			   "GNO": {"amount": "1", "usd_value": "50"},
+			   "RDN": {"amount": "1", "usd_value": "1.5"}
+		       },
 		       "total_usd_value": "1807.03",
                   }}
               },

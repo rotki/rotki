@@ -53,7 +53,7 @@ Balances = Dict[
 ]
 Totals = Dict[Asset, Dict[str, FVal]]
 BlockchainBalancesUpdate = Dict[str, Union[Balances, Totals]]
-EthBalances = Dict[ChecksumEthAddress, Dict[Union[Asset, str], Union[Dict[str, Any], FVal]]]
+EthBalances = Dict[ChecksumEthAddress, Dict[str, Union[Dict[Asset, Dict[str, FVal]], FVal]]]
 
 
 class Blockchain(CacheableObject, LockableQueryObject):
@@ -264,18 +264,18 @@ class Blockchain(CacheableObject, LockableQueryObject):
         for token in tokens:
             usd_price = Inquirer().find_usd_price(token)
             for account, account_data in self.balances[A_ETH].items():
-                if token not in account_data:
+                if token not in account_data['assets']:  # type: ignore
                     continue
 
-                balance = account_data[token]
+                balance = account_data['assets'][token]['amount']  # type: ignore
                 deleting_usd_value = balance * usd_price
-                del self.balances[A_ETH][account][token]
-                self.balances[A_ETH][account]['usd_value'] = (
-                    self.balances[A_ETH][account]['usd_value'] -
+                del self.balances[A_ETH][account]['assets'][token]  # type: ignore
+                self.balances[A_ETH][account]['total_usd_value'] = (
+                    self.balances[A_ETH][account]['total_usd_value'] -
                     deleting_usd_value
                 )
             # Remove the token from the totals iff existing. May not exist
-            #  if the token price is 0 but is still tracked.
+            # if the token price is 0 but is still tracked.
             # See https://github.com/rotki/rotki/issues/467
             # for more details
             self.totals.pop(token, None)
@@ -368,7 +368,9 @@ class Blockchain(CacheableObject, LockableQueryObject):
         if append_or_remove == 'append':
             self.accounts.eth.append(account)
             self.balances[A_ETH][account] = {
-                A_ETH: {'amount': balance, 'usd_value': usd_balance},  # type: ignore
+                'assets': {  # type: ignore
+                    A_ETH: {'amount': balance, 'usd_value': usd_balance},
+                },
                 'total_usd_value': usd_balance,
             }
         elif append_or_remove == 'remove':
@@ -418,7 +420,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
             usd_value = token_balance * usd_price
             if append_or_remove == 'append':
                 account_balance = self.balances[A_ETH][account]
-                account_balance[token] = {'amount': token_balance, 'usd_value': usd_value}  # type: ignore  # noqa: E501
+                account_balance['assets'][token] = {'amount': token_balance, 'usd_value': usd_value}  # type: ignore  # noqa: E501
                 account_balance['total_usd_value'] = account_balance['total_usd_value'] + usd_value
 
             self.totals[token] = {
@@ -626,7 +628,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
                 token_total += balance
                 usd_value = balance * token_usd_price[token]
                 if balance != ZERO:
-                    eth_balances[account][token] = {
+                    eth_balances[account]['assets'][token] = {  # type: ignore
                         'amount': balance,
                         'usd_value': usd_value,
                     }
@@ -665,7 +667,9 @@ class Blockchain(CacheableObject, LockableQueryObject):
             eth_total += balance
             usd_value = balance * eth_usd_price
             eth_balances[account] = {
-                A_ETH: {'amount': balance, 'usd_value': usd_value},
+                'assets': {
+                    A_ETH: {'amount': balance, 'usd_value': usd_value},
+                },
                 'total_usd_value': usd_value,
             }
 
