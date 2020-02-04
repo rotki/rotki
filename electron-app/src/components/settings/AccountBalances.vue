@@ -39,7 +39,12 @@
       sort-by="usdValue"
       sort-desc
     >
-      <template #header.usdValue> {{ currency.ticker_symbol }} value </template>
+      <template v-if="blockchain === 'ETH'" #header.usdValue>
+        Total {{ currency.ticker_symbol }} value of account's assets
+      </template>
+      <template v-else #header.usdValue>
+        {{ currency.ticker_symbol }} value
+      </template>
       <template #item.account="{ item }">
         {{ item.account }}
       </template>
