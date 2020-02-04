@@ -291,8 +291,8 @@ def assert_eth_balances_result(
         assert len(per_account) == len(eth_accounts)
         for idx, account in enumerate(eth_accounts):
             expected_amount = from_wei(FVal(eth_balances[idx]))
-            amount = FVal(per_account[account]['ETH']['amount'])
-            usd_value = FVal(per_account[account]['ETH']['usd_value'])
+            amount = FVal(per_account[account]['assets']['ETH']['amount'])
+            usd_value = FVal(per_account[account]['assets']['ETH']['usd_value'])
             assert amount == expected_amount
             if amount == ZERO:
                 assert usd_value == ZERO
@@ -306,8 +306,8 @@ def assert_eth_balances_result(
                     assert symbol not in per_account[account], msg
                 else:
                     have_tokens = True
-                    token_amount = FVal(per_account[account][symbol]['amount'])
-                    usd_value = FVal(per_account[account][symbol]['usd_value'])
+                    token_amount = FVal(per_account[account]['assets'][symbol]['amount'])
+                    usd_value = FVal(per_account[account]['assets'][symbol]['usd_value'])
                     assert token_amount == from_wei(expected_token_amount)
                     assert usd_value > ZERO
 
