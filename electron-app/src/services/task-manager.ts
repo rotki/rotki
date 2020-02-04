@@ -153,8 +153,15 @@ export class TaskManager {
           }
 
           store.commit('tasks/processing', task.id);
-
-          handler(result, task.meta);
+          try {
+            handler(result, task.meta);
+          } catch (e) {
+            notify(
+              `An error occurred while processing task [${task.id}] '${task.meta.description}': ${e}`,
+              'Task processing failed',
+              Severity.ERROR
+            );
+          }
           store.commit('tasks/remove', task.id);
         })
         .catch(() => {});
