@@ -123,6 +123,11 @@ class Accountant():
         if timestamp < self.start_ts:
             return
 
+        if movement.asset.identifier == 'KFEE':
+            # There is no reason to process deposits of KFEE for kraken as it has only value
+            # internal to kraken and KFEE has no value and will error at cryptocompare price query
+            return
+
         fee_rate = self.events.get_rate_in_profit_currency(movement.fee_asset, timestamp)
         cost = movement.fee * fee_rate
         self.asset_movement_fees += cost
