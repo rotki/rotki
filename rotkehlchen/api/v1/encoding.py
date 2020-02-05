@@ -48,6 +48,30 @@ class TimestampField(fields.Field):
         return timestamp
 
 
+class TaxFreeAfterPeriodField(fields.Field):
+
+    @staticmethod
+    def _serialize(value, attr, obj, **kwargs) -> str:  # pylint: disable=unused-argument
+        return str(value)
+
+    def _deserialize(  # pylint: disable=unused-argument
+            self,
+            value,
+            attr,
+            data,
+            **kwargs,
+    ) -> int:
+        if value < -1:
+            raise ValidationError(
+                'The taxfree_after_period value can not be negative, except for '
+                'the value of -1 to disable the setting',
+            )
+        if value == 0:
+            raise ValidationError('The taxfree_after_period value can not be set to zero')
+
+        return value
+
+
 class AmountField(fields.Field):
 
     @staticmethod
@@ -527,17 +551,7 @@ class ModifiableSettingsSchema(BaseSchema):
         ),
         missing=None,
     )
-    taxfree_after_period = fields.Integer(
-        strict=True,
-        validate=validate.Range(
-            min=-1,
-            error=(
-                'Number of seconds after which taxfree period starts should not '
-                'be negative. Apart from the value of -1 to disable the setting'
-            ),
-        ),
-        missing=None,
-    )
+    taxfree_after_period = TaxFreeAfterPeriodField(missing=None)
     balance_save_frequency = fields.Integer(
         strict=True,
         validate=validate.Range(
