@@ -185,6 +185,26 @@ def test_user_creation_with_invalid_premium_credentials(rotkehlchen_api_server, 
     assert len(backups) == 1
     assert 'auto_backup_Anja_' in str(backups[0]), 'An automatic backup should have been made'
 
+    # But then try to create a normal-non premium user and see it works
+    username = 'hania2'
+    data = {
+        'name': username,
+        'password': '1234',
+    }
+    response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
+    assert_proper_response(response)
+    check_proper_unlock_result(response.json())
+
+    # Query users and make sure the new user is logged in
+    response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
+    assert_proper_response(response)
+    json = response.json()
+    assert json['result'][username] == 'loggedin'
+    assert len(json['result']) == 2
+
+    # Check that the directory was created
+    assert Path(data_dir / username / 'rotkehlchen.db').exists()
+
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
 def test_user_creation_errors(rotkehlchen_api_server, data_dir):
