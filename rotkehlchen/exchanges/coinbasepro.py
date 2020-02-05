@@ -43,11 +43,15 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
-from rotkehlchen.utils.misc import timestamp_to_iso8601
+from rotkehlchen.utils.misc import timestamp_to_iso8601, ts_now
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsonloads_list
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+SECS_TO_WAIT_FOR_REPORT = 300
+MINS_TO_WAIT_FOR_REPORT = SECS_TO_WAIT_FOR_REPORT / 60
 
 
 def coinbasepro_to_worldpair(product: str) -> TradePair:
@@ -489,15 +493,18 @@ class Coinbasepro(ExchangeInterface):
         # At this point all reports must have been queued for creation at the server
         # Now wait until they are ready and pull them one by one
         report_paths = []
+        last_change_ts = ts_now()
         while True:
             finished_ids_indices = []
             for idx, report_id in enumerate(report_ids):
                 get_result = self._api_query(f'reports/{report_id}', request_method='GET')
-                # Have tp add assert here for mypy since the endpoint string is
+                # Have to add assert here for mypy since the endpoint string is
                 # a variable string and can't be overloaded and type checked
                 assert isinstance(get_result, dict)
                 if get_result['status'] != 'ready':
                     continue
+                # a report is ready here so let's reset the timer
+                last_change_ts = ts_now()
                 file_url = get_result['file_url']
                 response = requests.get(file_url)
                 length = len(response.content)
@@ -513,6 +520,12 @@ class Coinbasepro(ExchangeInterface):
                     log.debug(f'Got report for id: {report_id} with length {length}. Skipping it')
 
                 finished_ids_indices.append(idx)
+
+            if ts_now() - last_change_ts > SECS_TO_WAIT_FOR_REPORT:
+                raise RemoteError(
+                    f'There has been no response from CoinbasePro reports for over '
+                    f' {MINS_TO_WAIT_FOR_REPORT} minutes. Bailing out.',
+                )
 
             # Delete the report ids that have been downloaded. Note: reverse order
             # so that we don't mess up the indices
