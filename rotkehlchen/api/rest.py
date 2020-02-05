@@ -723,6 +723,7 @@ class RestAPI():
         # not catching RotkehlchenPermissionError here as for new account with premium
         # syncing there is no way that permission needs to be asked by the user
         except (AuthenticationError, PremiumAuthenticationError) as e:
+            self.rotkehlchen.reset_after_failed_account_creation_or_login()
             result_dict['message'] = str(e)
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
@@ -761,9 +762,11 @@ class RestAPI():
         # We are not catching PremiumAuthenticationError here since it should not bubble
         # up until here. Even with non valid keys in the DB login should work fine
         except AuthenticationError as e:
+            self.rotkehlchen.reset_after_failed_account_creation_or_login()
             result_dict['message'] = str(e)
             return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
         except RotkehlchenPermissionError as e:
+            self.rotkehlchen.reset_after_failed_account_creation_or_login()
             result_dict['message'] = str(e)
             return api_response(result_dict, status_code=HTTPStatus.MULTIPLE_CHOICES)
         # Success!
