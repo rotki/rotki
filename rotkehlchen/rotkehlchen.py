@@ -10,37 +10,32 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.blockchain import Blockchain
+from rotkehlchen.blockchain import Blockchain, BlockchainBalancesUpdate
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
-from rotkehlchen.errors import (
-    AuthenticationError,
-    DeserializationError,
-    EthSyncError,
-    InputError,
-    UnknownAsset,
-)
+from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.errors import EthSyncError, PremiumAuthenticationError, RemoteError
 from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.exchanges.manager import ExchangeManager
-from rotkehlchen.externalapis import Cryptocompare
+from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian, TradesHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import DEFAULT_ANONYMIZED_LOGS, LoggingSettings, RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import PremiumCredentials, premium_create_and_verify
+from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
-from rotkehlchen.serialization.serialize import process_result
-from rotkehlchen.typing import BlockchainAddress, FiatAsset, SupportedBlockchain, Timestamp
+from rotkehlchen.typing import (
+    ApiKey,
+    ApiSecret,
+    ListOfBlockchainAddresses,
+    SupportedBlockchain,
+    Timestamp,
+)
 from rotkehlchen.usage_analytics import maybe_submit_usage_analytics
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import (
-    combine_stat_dicts,
-    dict_get_sumof,
-    merge_dicts,
-    simple_result,
-    ts_now,
-)
+from rotkehlchen.utils.misc import combine_stat_dicts, dict_get_sumof, merge_dicts, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -48,22 +43,14 @@ log = RotkehlchenLogsAdapter(logger)
 MAIN_LOOP_SECS_DELAY = 60
 
 
-def accounts_result(per_account: Dict[Asset, Any], totals: Dict[Asset, Any]) -> Dict:
-    result = {
-        'result': True,
-        'message': '',
-        'per_account': per_account,
-        'totals': totals,
-    }
-    return process_result(result)
-
-
 class Rotkehlchen():
     def __init__(self, args: argparse.Namespace) -> None:
         self.lock = Semaphore()
         self.lock.acquire()
 
-        self.premium = None
+        # Can also be None after unlock if premium credentials did not
+        # authenticate or premium server temporarily offline
+        self.premium: Optional[Premium] = None
         self.user_is_logged_in = False
 
         logfilename = None
@@ -81,7 +68,7 @@ class Rotkehlchen():
         elif args.loglevel == 'critical':
             loglevel = logging.CRITICAL
         else:
-            raise ValueError('Should never get here. Illegal log value')
+            raise AssertionError('Should never get here. Illegal log value')
 
         logging.basicConfig(
             filename=logfilename,
@@ -92,8 +79,6 @@ class Rotkehlchen():
         )
 
         if not args.logfromothermodules:
-            logging.getLogger('zerorpc').setLevel(logging.CRITICAL)
-            logging.getLogger('zerorpc.channel').setLevel(logging.CRITICAL)
             logging.getLogger('urllib3').setLevel(logging.CRITICAL)
             logging.getLogger('urllib3.connectionpool').setLevel(logging.CRITICAL)
 
@@ -103,8 +88,9 @@ class Rotkehlchen():
         self.msg_aggregator = MessagesAggregator()
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
         self.data = DataHandler(self.data_dir, self.msg_aggregator)
+        self.cryptocompare = Cryptocompare(data_directory=self.data_dir, database=None)
         # Initialize the Inquirer singleton
-        Inquirer(data_dir=self.data_dir)
+        Inquirer(data_dir=self.data_dir, cryptocompare=self.cryptocompare)
 
         self.lock.release()
         self.shutdown_event = gevent.event.Event()
@@ -117,7 +103,12 @@ class Rotkehlchen():
             sync_approval: str,
             premium_credentials: Optional[PremiumCredentials],
     ) -> None:
-        """Unlocks an existing user or creates a new one if `create_new` is True"""
+        """Unlocks an existing user or creates a new one if `create_new` is True
+
+        Can raise PremiumAuthenticationError if the password can't unlock the database.
+        Can raise AuthenticationError if premium_credentials are given and are invalid
+        or can't authenticate with the server
+        """
         log.info(
             'Unlocking user',
             user=user,
@@ -130,6 +121,8 @@ class Rotkehlchen():
         self.data_importer = DataImporter(db=self.data.db)
         self.last_data_upload_ts = self.data.db.get_last_data_upload_ts()
         self.premium_sync_manager = PremiumSyncManager(data=self.data, password=password)
+        # set the DB in the external services instances that need it
+        self.cryptocompare.set_database(self.data.db)
 
         try:
             self.premium = self.premium_sync_manager.try_premium_at_start(
@@ -138,38 +131,38 @@ class Rotkehlchen():
                 create_new=create_new,
                 sync_approval=sync_approval,
             )
-        except AuthenticationError:
-            # It means that our credentials were not accepted by the server
-            # or some other error happened
-            pass
+        except PremiumAuthenticationError:
+            # Reraise it only if this is during the creation of a new account where
+            # the premium credentials were given by the user
+            if create_new:
+                raise
+            # else let's just continue. User signed in succesfully, but he just
+            # has unauthenticable/invalid premium credentials remaining in his DB
 
         settings = self.data.db.get_settings()
         maybe_submit_usage_analytics(settings.submit_usage_analytics)
+        self.etherscan = Etherscan(database=self.data.db, msg_aggregator=self.msg_aggregator)
         historical_data_start = settings.historical_data_start
         eth_rpc_endpoint = settings.eth_rpc_endpoint
         self.trades_historian = TradesHistorian(
             user_directory=self.user_directory,
             db=self.data.db,
-            eth_accounts=self.data.get_eth_accounts(),
             msg_aggregator=self.msg_aggregator,
             exchange_manager=self.exchange_manager,
+            etherscan=self.etherscan,
         )
         # Initialize the price historian singleton
         PriceHistorian(
             data_directory=self.data_dir,
             history_date_start=historical_data_start,
-            cryptocompare=Cryptocompare(data_directory=self.data_dir),
+            cryptocompare=self.cryptocompare,
         )
         db_settings = self.data.db.get_settings()
         self.accountant = Accountant(
-            profit_currency=self.data.main_currency(),
+            db=self.data.db,
             user_directory=self.user_directory,
             msg_aggregator=self.msg_aggregator,
             create_csv=True,
-            ignored_assets=self.data.db.get_ignored_assets(),
-            include_crypto2crypto=db_settings.include_crypto2crypto,
-            taxfree_after_period=db_settings.taxfree_after_period,
-            include_gas_costs=db_settings.include_gas_costs,
         )
 
         # Initialize the rotkehlchen logger
@@ -180,7 +173,11 @@ class Rotkehlchen():
             database=self.data.db,
         )
 
-        ethchain = Ethchain(eth_rpc_endpoint)
+        # Initialize blockchain querying modules
+        ethchain = Ethchain(
+            ethrpc_endpoint=eth_rpc_endpoint,
+            etherscan=self.etherscan,
+        )
         self.blockchain = Blockchain(
             blockchain_accounts=self.data.db.get_blockchain_accounts(),
             owned_eth_tokens=self.data.db.get_owned_tokens(),
@@ -209,10 +206,14 @@ class Rotkehlchen():
         del self.data_importer
 
         if self.premium is not None:
-            # For some reason mypy does not see that self.premium is set
-            del self.premium  # type: ignore
+            del self.premium
         self.data.logout()
         self.password = ''
+        self.cryptocompare.unset_database()
+
+        # Make sure no messages leak to other user sessions
+        self.msg_aggregator.consume_errors()
+        self.msg_aggregator.consume_warnings()
 
         self.user_is_logged_in = False
         log.info(
@@ -224,12 +225,11 @@ class Rotkehlchen():
         """
         Sets the premium credentials for Rotki
 
-        Raises AuthenticationError if the given key is rejected by the Rotkehlchen server
+        Raises PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
         log.info('Setting new premium credentials')
         if self.premium is not None:
-            # For some reason mypy does not see that self.premium is set
-            self.premium.set_credentials(credentials)  # type: ignore
+            self.premium.set_credentials(credentials)
         else:
             self.premium = premium_create_and_verify(credentials)
 
@@ -245,52 +245,86 @@ class Rotkehlchen():
                 self.premium_sync_manager.maybe_upload_data_to_server()
                 log.debug('Main loop end')
 
-    def add_blockchain_account(
+    def add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            account: BlockchainAddress,
-    ) -> Dict:
-        try:
-            new_data = self.blockchain.add_blockchain_account(blockchain, account)
-        except (InputError, EthSyncError) as e:
-            return simple_result(False, str(e))
-        self.data.add_blockchain_account(blockchain, account)
-        return accounts_result(new_data['per_account'], new_data['totals'])
+            accounts: ListOfBlockchainAddresses,
 
-    def remove_blockchain_account(
+    ) -> Tuple[BlockchainBalancesUpdate, ListOfBlockchainAddresses, str]:
+        """Adds new blockchain accounts
+
+        Adds the accounts to the blockchain instance and queries them to get the
+        updated balances. Also adds the ones that were valid in the DB
+
+        May raise:
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem with its query.
+        """
+        new_data, added_accounts, msg = self.blockchain.add_blockchain_accounts(
+            blockchain=blockchain,
+            accounts=accounts,
+        )
+        self.data.db.add_blockchain_accounts(blockchain, added_accounts)
+
+        return new_data, added_accounts, msg
+
+    def remove_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            account: BlockchainAddress,
-    ) -> Dict[str, Any]:
-        try:
-            new_data = self.blockchain.remove_blockchain_account(blockchain, account)
-        except (InputError, EthSyncError) as e:
-            return simple_result(False, str(e))
-        self.data.remove_blockchain_account(blockchain, account)
-        return accounts_result(new_data['per_account'], new_data['totals'])
+            accounts: ListOfBlockchainAddresses,
+    ) -> Tuple[BlockchainBalancesUpdate, ListOfBlockchainAddresses, str]:
+        """Removes blockchain accounts
 
-    def add_owned_eth_tokens(self, tokens: List[str]) -> Dict[str, Any]:
-        ethereum_tokens = [
-            EthereumToken(identifier=identifier) for identifier in tokens
-        ]
-        try:
-            new_data = self.blockchain.track_new_tokens(ethereum_tokens)
-        except (InputError, EthSyncError) as e:
-            return simple_result(False, str(e))
+        Removes the accounts from the blockchain instance and queries them to get
+        the updated balances. Also removes the ones that were valid from the DB
 
+        May raise:
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem with its query.
+        """
+        new_data, removed_accounts, msg = self.blockchain.remove_blockchain_accounts(
+            blockchain=blockchain,
+            accounts=accounts,
+        )
+        for account in removed_accounts:
+            self.data.db.remove_blockchain_account(blockchain, account)
+
+        return new_data, removed_accounts, msg
+
+    def add_owned_eth_tokens(
+            self,
+            tokens: List[EthereumToken],
+    ) -> BlockchainBalancesUpdate:
+        """Adds tokens to the blockchain state and updates balance of all accounts
+
+        May raise:
+        - InputError if some of the tokens already exist
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem with its query.
+        - EthSyncError if querying the token balances through a provided ethereum
+          client and the chain is not synced
+        """
+        new_data = self.blockchain.track_new_tokens(tokens)
         self.data.write_owned_eth_tokens(self.blockchain.owned_eth_tokens)
-        return accounts_result(new_data['per_account'], new_data['totals'])
+        return new_data
 
-    def remove_owned_eth_tokens(self, tokens: List[str]) -> Dict[str, Any]:
-        ethereum_tokens = [
-            EthereumToken(identifier=identifier) for identifier in tokens
-        ]
-        try:
-            new_data = self.blockchain.remove_eth_tokens(ethereum_tokens)
-        except InputError as e:
-            return simple_result(False, str(e))
+    def remove_owned_eth_tokens(
+            self,
+            tokens: List[EthereumToken],
+    ) -> BlockchainBalancesUpdate:
+        """
+        Removes tokens from the state and stops their balance from being tracked
+        for each account
+
+        May raise:
+        - RemoteError if an external service such as Etherscan is queried and
+          there is a problem with its query.
+        - EthSyncError if querying the token balances through a provided ethereum
+          client and the chain is not synced
+        """
+        new_data = self.blockchain.remove_eth_tokens(tokens)
         self.data.write_owned_eth_tokens(self.blockchain.owned_eth_tokens)
-        return accounts_result(new_data['per_account'], new_data['totals'])
+        return new_data
 
     def process_history(
             self,
@@ -333,8 +367,9 @@ class Rotkehlchen():
 
     def query_balances(
             self,
-            requested_save_data: bool = False,
+            requested_save_data: bool = True,
             timestamp: Timestamp = None,
+            ignore_cache: bool = False,
     ) -> Dict[str, Any]:
         """Query all balances rotkehlchen can see.
 
@@ -342,6 +377,7 @@ class Rotkehlchen():
         If timestamp is None then the current timestamp is used.
         If a timestamp is given then that is the time that the balances are going
         to be saved in the DB
+        If ignore_cache is True then all underlying calls that have a cache ignore it
 
         Returns a dictionary with the queried balances.
         """
@@ -350,18 +386,23 @@ class Rotkehlchen():
         balances = {}
         problem_free = True
         for _, exchange in self.exchange_manager.connected_exchanges.items():
-            exchange_balances, _ = exchange.query_balances()
+            exchange_balances, _ = exchange.query_balances(ignore_cache=ignore_cache)
             # If we got an error, disregard that exchange but make sure we don't save data
             if not isinstance(exchange_balances, dict):
                 problem_free = False
             else:
                 balances[exchange.name] = exchange_balances
 
-        result, error_or_empty = self.blockchain.query_balances()
-        if error_or_empty == '':
-            balances['blockchain'] = result['totals']
-        else:
+        try:
+            blockchain_result = self.blockchain.query_balances(
+                blockchain=None,
+                ignore_cache=ignore_cache,
+            )
+        except (RemoteError, EthSyncError) as e:
             problem_free = False
+            log.error(f'Querying blockchain balances failed due to: {str(e)}')
+
+        balances['blockchain'] = blockchain_result['totals']
 
         result = self.query_fiat_balances()
         if result != {}:
@@ -401,7 +442,7 @@ class Rotkehlchen():
 
         result_dict = merge_dicts(combined, stats)
 
-        allowed_to_save = requested_save_data or self.data.should_save_balances()
+        allowed_to_save = requested_save_data and self.data.should_save_balances()
         if problem_free and allowed_to_save:
             if not timestamp:
                 timestamp = Timestamp(int(time.time()))
@@ -438,72 +479,23 @@ class Rotkehlchen():
 
         return result_dict
 
-    def set_main_currency(self, currency_string: str) -> Tuple[bool, str]:
-        """Takes a currency string from the API and sets it as the main currency for rotki
-
-        Returns True and empty string for success and False and error string for error
-        """
-        try:
-            currency = Asset(currency_string)
-        except UnknownAsset:
-            msg = f'An unknown asset {currency_string} was given for main currency'
-            log.critical(msg)
-            return False, msg
-
-        if not currency.is_fiat():
-            msg = f'A non-fiat asset {currency_string} was given for main currency'
-            log.critical(msg)
-            return False, msg
-
-        fiat_currency = FiatAsset(currency.identifier)
+    def set_settings(self, settings: ModifiableDBSettings) -> Tuple[bool, str]:
+        """Tries to set new settings. Returns True in success or False with message if error"""
         with self.lock:
-            self.data.set_main_currency(fiat_currency, self.accountant)
-
-        return True, ''
-
-    def set_settings(self, settings: Dict[str, Any]) -> Tuple[bool, str]:
-        log.info('Add new settings')
-
-        message = ''
-        with self.lock:
-            if 'eth_rpc_endpoint' in settings:
-                result, msg = self.blockchain.set_eth_rpc_endpoint(settings['eth_rpc_endpoint'])
+            if settings.eth_rpc_endpoint is not None:
+                result, msg = self.blockchain.set_eth_rpc_endpoint(settings.eth_rpc_endpoint)
                 if not result:
-                    # Don't save it in the DB
-                    del settings['eth_rpc_endpoint']
-                    message += "\nEthereum RPC endpoint not set: " + msg
-
-            if 'main_currency' in settings:
-                given_symbol = settings['main_currency']
-                try:
-                    main_currency = Asset(given_symbol)
-                except UnknownAsset:
-                    return False, f'Unknown fiat currency {given_symbol} provided'
-                except DeserializationError:
-                    return False, 'Non string type given for fiat currency'
-
-                if not main_currency.is_fiat():
-                    msg = (
-                        f'Provided symbol for main currency {given_symbol} is '
-                        f'not a fiat currency'
-                    )
                     return False, msg
 
-            res, msg = self.accountant.customize(settings)
-            if not res:
-                message += '\n' + msg
-                return False, message
-
-            self.data.set_settings(settings, self.accountant)
-
-            # Always return success here but with a message
-            return True, message
+            self.data.db.set_settings(settings)
+            return True, ''
 
     def setup_exchange(
             self,
             name: str,
-            api_key: str,
-            api_secret: str,
+            api_key: ApiKey,
+            api_secret: ApiSecret,
+            passphrase: Optional[str] = None,
     ) -> Tuple[bool, str]:
         """
         Setup a new exchange with an api key and an api secret
@@ -515,11 +507,12 @@ class Rotkehlchen():
             api_key=api_key,
             api_secret=api_secret,
             database=self.data.db,
+            passphrase=passphrase,
         )
 
         if is_success:
             # Success, save the result in the DB
-            self.data.db.add_exchange(name, api_key, api_secret)
+            self.data.db.add_exchange(name, api_key, api_secret, passphrase=passphrase)
         return is_success, msg
 
     def remove_exchange(self, name: str) -> Tuple[bool, str]:
@@ -529,6 +522,7 @@ class Rotkehlchen():
         self.exchange_manager.delete_exchange(name)
         # Success, remove it also from the DB
         self.data.db.remove_exchange(name)
+        self.data.db.delete_used_query_range_for_exchange(name)
         return True, ''
 
     def query_periodic_data(self) -> Dict[str, Union[bool, Timestamp]]:

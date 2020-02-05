@@ -1,16 +1,17 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-import gevent
-
 from rotkehlchen.accounting.events import TaxableEvents
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.csv_exporter import CSVExporter
+from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors import (
     DeserializationError,
     NoPriceForGivenTimestamp,
     PriceQueryUnknownFromAsset,
+    RemoteError,
     UnknownAsset,
     UnsupportedAsset,
 )
@@ -34,7 +35,7 @@ from rotkehlchen.utils.accounting import (
     action_get_timestamp,
     action_get_type,
 )
-from rotkehlchen.utils.misc import timestamp_to_date, ts_now
+from rotkehlchen.utils.misc import timestamp_to_date
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -44,31 +45,22 @@ class Accountant():
 
     def __init__(
             self,
-            profit_currency: Asset,
+            db: DBHandler,
             user_directory: FilePath,
             msg_aggregator: MessagesAggregator,
             create_csv: bool,
-            ignored_assets: List[Asset],
-            include_crypto2crypto: bool,
-            taxfree_after_period: int,
-            include_gas_costs: bool,
     ) -> None:
+        self.db = db
+        profit_currency = db.get_main_currency()
         self.msg_aggregator = msg_aggregator
         self.csvexporter = CSVExporter(profit_currency, user_directory, create_csv)
         self.events = TaxableEvents(self.csvexporter, profit_currency)
-        self.set_main_currency(profit_currency.identifier)
 
         self.asset_movement_fees = FVal(0)
         self.last_gas_price = FVal(0)
 
         self.started_processing_timestamp = Timestamp(-1)
         self.currently_processing_timestamp = Timestamp(-1)
-
-        # Customizable Options
-        self.ignored_assets = ignored_assets
-        self.include_gas_costs = include_gas_costs
-        self.events.include_crypto2crypto = include_crypto2crypto
-        self.events.taxfree_after_period = taxfree_after_period
 
     def __del__(self) -> None:
         del self.events
@@ -82,63 +74,34 @@ class Accountant():
     def taxable_trade_pl(self) -> FVal:
         return self.events.taxable_trade_profit_loss
 
-    def customize(self, settings: Dict[str, Any]) -> Tuple[bool, str]:
-        if 'include_crypto2crypto' in settings:
-            given_include_c2c = settings['include_crypto2crypto']
-            if not isinstance(given_include_c2c, bool):
-                return False, 'Value for include_crypto2crypto must be boolean'
+    def _customize(self, settings: DBSettings) -> None:
+        """Customize parameters after pulling DBSettings"""
+        if settings.include_crypto2crypto is not None:
+            self.events.include_crypto2crypto = settings.include_crypto2crypto
 
-            self.events.include_crypto2crypto = given_include_c2c
-
-        if 'taxfree_after_period' in settings:
-            given_taxfree_after_period = settings['taxfree_after_period']
-            if given_taxfree_after_period is not None:
-                if not isinstance(given_taxfree_after_period, int):
-                    return False, 'Value for taxfree_after_period must be an integer'
-
-                if given_taxfree_after_period == 0:
-                    return False, 'Value for taxfree_after_period can not be 0 days'
-
-                # turn to seconds
-                given_taxfree_after_period = given_taxfree_after_period * 86400
-                settings['taxfree_after_period'] = given_taxfree_after_period
+        if settings.taxfree_after_period is not None:
+            given_taxfree_after_period: Optional[int] = settings.taxfree_after_period
+            if given_taxfree_after_period == -1:
+                # That means user requested to disable taxfree_after_period
+                given_taxfree_after_period = None
 
             self.events.taxfree_after_period = given_taxfree_after_period
 
-        return True, ''
-
-    def set_main_currency(self, given_currency: str) -> None:
-        currency = Asset(given_currency)
-        msg = 'main currency checks should have happened at rotkehlchen.set_settings()'
-        assert currency.is_fiat(), msg
-
-        self.profit_currency = currency
-        self.events.profit_currency = currency
-
-    @staticmethod
-    def query_historical_price(
-            from_asset: Asset,
-            to_asset: Asset,
-            timestamp: Timestamp,
-    ) -> FVal:
-        price = PriceHistorian().query_historical_price(from_asset, to_asset, timestamp)
-        return price
-
-    def get_rate_in_profit_currency(self, asset: Asset, timestamp: Timestamp) -> FVal:
-        # TODO: Moved this to events.py too. Is it still needed here?
-        if asset == self.profit_currency:
-            rate = FVal(1)
-        else:
-            rate = self.query_historical_price(
-                asset,
-                self.profit_currency,
-                timestamp,
-            )
-        assert isinstance(rate, (FVal, int))  # TODO Remove. Is temporary assert
-        return rate
+        self.profit_currency = settings.main_currency
+        self.events.profit_currency = settings.main_currency
+        self.csvexporter.profit_currency = settings.main_currency
 
     def get_fee_in_profit_currency(self, trade: Trade) -> Fee:
-        fee_rate = self.query_historical_price(
+        """Get the profit_currency rate of the fee of the given trade
+
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from the price oracle
+        - RemoteError if there is a problem reaching the price oracle server
+        or with reading the response returned by the server
+        """
+        fee_rate = PriceHistorian().query_historical_price(
             from_asset=trade.fee_currency,
             to_asset=self.profit_currency,
             timestamp=trade.timestamp,
@@ -146,11 +109,26 @@ class Accountant():
         return Fee(fee_rate * trade.fee)
 
     def add_asset_movement_to_events(self, movement: AssetMovement) -> None:
+        """
+        Adds the given asset movement to the processed events
+
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from cryptocompare
+        - RemoteError if there is a problem reaching the price oracle server
+        or with reading the response returned by the server
+        """
         timestamp = movement.timestamp
         if timestamp < self.start_ts:
             return
 
-        fee_rate = self.get_rate_in_profit_currency(movement.fee_asset, timestamp)
+        if movement.asset.identifier == 'KFEE':
+            # There is no reason to process deposits of KFEE for kraken as it has only value
+            # internal to kraken and KFEE has no value and will error at cryptocompare price query
+            return
+
+        fee_rate = self.events.get_rate_in_profit_currency(movement.fee_asset, timestamp)
         cost = movement.fee * fee_rate
         self.asset_movement_fees += cost
         log.debug(
@@ -172,8 +150,22 @@ class Accountant():
             timestamp=timestamp,
         )
 
-    def account_for_gas_costs(self, transaction: EthereumTransaction) -> None:
-        if not self.include_gas_costs:
+    def account_for_gas_costs(
+            self,
+            transaction: EthereumTransaction,
+            include_gas_costs: bool,
+    ) -> None:
+        """
+        Accounts for the gas costs of the given ethereum transaction
+
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from cryptocompare
+        - RemoteError if there is a problem reaching the price oracle server
+        or with reading the response returned by the server
+        """
+        if not include_gas_costs:
             return
         if transaction.timestamp < self.start_ts:
             return
@@ -184,7 +176,7 @@ class Accountant():
             gas_price = transaction.gas_price
             self.last_gas_price = transaction.gas_price
 
-        rate = self.get_rate_in_profit_currency(A_ETH, transaction.timestamp)
+        rate = self.events.get_rate_in_profit_currency(A_ETH, transaction.timestamp)
         eth_burned_as_gas = (transaction.gas_used * gas_price) / FVal(10 ** 18)
         cost = eth_burned_as_gas * rate
         self.eth_transactions_gas_costs += cost
@@ -205,9 +197,19 @@ class Accountant():
         )
 
     def trade_add_to_sell_events(self, trade: Trade, loan_settlement: bool) -> None:
+        """
+        Adds the given trade to the sell events
+
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from cryptocompare
+        - RemoteError if there is a problem reaching the price oracle server
+        or with reading the response returned by the server
+        """
         selling_asset = trade.base_asset
         receiving_asset = trade.quote_asset
-        receiving_asset_rate = self.get_rate_in_profit_currency(
+        receiving_asset_rate = self.events.get_rate_in_profit_currency(
             receiving_asset,
             trade.timestamp,
         )
@@ -273,6 +275,11 @@ class Accountant():
         # Used only in the "avoid zerorpc remote lost after 10ms problem"
         self.last_sleep_ts = 0
 
+        # Ask the DB for the settings once at the start of processing so we got the
+        # same settings through the entire task
+        db_settings = self.db.get_settings()
+        self._customize(db_settings)
+
         actions: List[TaxableAction] = list(trade_history)
         # If we got loans, we need to interleave them with the full history and re-sort
         if len(loan_history) != 0:
@@ -300,7 +307,7 @@ class Accountant():
                     should_continue,
                     prev_time,
                     count,
-                ) = self.process_action(action, end_ts, prev_time, count)
+                ) = self.process_action(action, end_ts, prev_time, count, db_settings)
             except PriceQueryUnknownFromAsset as e:
                 ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
@@ -325,6 +332,19 @@ class Accountant():
                 log.error(
                     f'Skipping action {str(action)} during history processing due to '
                     f'inability to query a price at that time: {str(e)}',
+                )
+                continue
+            except RemoteError as e:
+                ts = action_get_timestamp(action)
+                self.msg_aggregator.add_error(
+                    f'Skipping action at '
+                    f' {timestamp_to_date(ts, formatstr="%d/%m/%Y, %H:%M:%S")} '
+                    f'during history processing due to inability to reach an external '
+                    f'service at that point in time: {str(e)}. Check the logs for more details',
+                )
+                log.error(
+                    f'Skipping action {str(action)} during history processing due to '
+                    f'inability to reach an external service at that time: {str(e)}',
                 )
                 continue
 
@@ -366,20 +386,19 @@ class Accountant():
             end_ts: Timestamp,
             prev_time: Timestamp,
             count: int,
+            db_settings: DBSettings,
     ) -> Tuple[bool, Timestamp, int]:
         """Processes each individual action and returns whether we should continue
-        looping through the rest of the actions or not"""
+        looping through the rest of the actions or not
 
-        # Hack to periodically yield back to the gevent IO loop to avoid getting
-        # the losing remote after hearbeat error for the zerorpc client. (after 10s)
-        # https://github.com/0rpc/zerorpc-python/issues/37
-        # TODO: Find better way to do this. Perhaps enforce this only if method
-        # is a synced call, and if async don't do this yielding. In any case
-        # this calculation should definitely be async
-        now = ts_now()
-        if now - self.last_sleep_ts >= 7:  # choose 7 seconds to be safe
-            self.last_sleep_ts = now
-            gevent.sleep(0.01)  # context switch
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from cryptocompare
+        - RemoteError if there is a problem reaching the price oracle server
+        or with reading the response returned by the server
+        """
+        ignored_assets = self.db.get_ignored_assets()
 
         # Assert we are sorted in ascending time order.
         timestamp = action_get_timestamp(action)
@@ -416,7 +435,7 @@ class Accountant():
             )
             return True, prev_time, count
 
-        if asset1 in self.ignored_assets or asset2 in self.ignored_assets:
+        if asset1 in ignored_assets or asset2 in ignored_assets:
             log.debug(
                 'Ignoring action with ignored asset',
                 action_type=action_type,
@@ -447,7 +466,7 @@ class Accountant():
             return True, prev_time, count
         elif action_type == 'ethereum_transaction':
             action = cast(EthereumTransaction, action)
-            self.account_for_gas_costs(action)
+            self.account_for_gas_costs(action, db_settings.include_gas_costs)
             return True, prev_time, count
 
         # if we get here it's a trade
@@ -475,7 +494,7 @@ class Accountant():
             # in poloniex settlements you buy some asset with BTC to repay a loan
             # so in essense you sell BTC to repay the loan
             selling_asset = A_BTC
-            selling_asset_rate = self.get_rate_in_profit_currency(
+            selling_asset_rate = self.events.get_rate_in_profit_currency(
                 selling_asset,
                 trade.timestamp,
             )
@@ -499,7 +518,8 @@ class Accountant():
                 loan_settlement=True,
             )
         else:
-            raise ValueError(f'Unknown trade type "{trade.trade_type}" encountered')
+            # Should never happen
+            raise AssertionError(f'Unknown trade type "{trade.trade_type}" encountered')
 
         return True, prev_time, count
 

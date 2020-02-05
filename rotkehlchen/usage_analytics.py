@@ -121,7 +121,7 @@ def retrieve_location_data() -> Optional[GeolocationData]:
 
 
 def create_usage_analytics() -> Dict[str, Any]:
-    analytics = dict()
+    analytics = {}
 
     analytics['system_os'] = platform.system()
     analytics['system_release'] = platform.release()
@@ -145,7 +145,7 @@ def maybe_submit_usage_analytics(should_submit: bool) -> None:
     analytics = create_usage_analytics()
     try:
         response = requests.put('https://rotki.com/api/1/usage_analytics', json=analytics)
-    except requests.ConnectionError:
+    except requests.exceptions.ConnectionError:
         return None
 
     if response.status_code == HTTPStatus.NO_CONTENT:

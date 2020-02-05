@@ -6,25 +6,18 @@ from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.exchanges.poloniex import process_polo_loans
+from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.transactions import query_etherscan_for_transactions
-from rotkehlchen.typing import (
-    ChecksumAddress,
-    EthereumTransaction,
-    FiatAsset,
-    FilePath,
-    Location,
-    Price,
-    Timestamp,
-)
+from rotkehlchen.transactions import query_ethereum_transactions
+from rotkehlchen.typing import EthereumTransaction, FilePath, Location, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.accounting import action_get_timestamp
 from rotkehlchen.utils.misc import create_timestamp
 
 if TYPE_CHECKING:
-    from rotkehlchen.externalapis import Cryptocompare
+    from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -59,7 +52,7 @@ def limit_trade_list_to_period(
             end_idx = idx if idx >= 1 else 0
             break
 
-    return trades_list[start_idx:end_idx] if start_idx is not None else list()
+    return trades_list[start_idx:end_idx] if start_idx is not None else []
 
 
 class PriceHistorian():
@@ -102,6 +95,13 @@ class PriceHistorian():
             to_asset: The ticker symbol of the asset against which we want to
                       know the price.
             timestamp: The timestamp at which to query the price
+
+        May raise:
+        - PriceQueryUnknownFromAsset if the from asset is known to miss from cryptocompare
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from the external service.
+        - RemoteError if there is a problem reaching the price oracle server
+        or with reading the response returned by the server
         """
         log.debug(
             'Querying historical price',
@@ -116,8 +116,8 @@ class PriceHistorian():
         if from_asset.is_fiat() and to_asset.is_fiat():
             # if we are querying historical forex data then try something other than cryptocompare
             price = Inquirer().query_historical_fiat_exchange_rates(
-                from_fiat_currency=FiatAsset(from_asset.identifier),
-                to_fiat_currency=FiatAsset(to_asset.identifier),
+                from_fiat_currency=from_asset,
+                to_fiat_currency=to_asset,
                 timestamp=timestamp,
             )
             if price is not None:
@@ -139,16 +139,16 @@ class TradesHistorian():
             self,
             user_directory: FilePath,
             db: 'DBHandler',
-            eth_accounts: List[ChecksumAddress],
             msg_aggregator: MessagesAggregator,
             exchange_manager: ExchangeManager,
+            etherscan: Etherscan,
     ) -> None:
 
         self.msg_aggregator = msg_aggregator
         self.user_directory = user_directory
         self.db = db
-        self.eth_accounts = eth_accounts
         self.exchange_manager = exchange_manager
+        self.etherscan = etherscan
 
     def create_history(self, start_ts: Timestamp, end_ts: Timestamp) -> HistoryResult:
         """Creates trades and loans history from start_ts to end_ts"""
@@ -159,9 +159,9 @@ class TradesHistorian():
         )
 
         # start creating the all trades history list
-        history: List[Union[Trade, MarginPosition]] = list()
-        asset_movements = list()
-        polo_loans = list()
+        history: List[Union[Trade, MarginPosition]] = []
+        asset_movements = []
+        polo_loans = []
         empty_or_error = ''
 
         def populate_history_cb(
@@ -198,18 +198,21 @@ class TradesHistorian():
                 fail_callback=fail_history_cb,
             )
 
-        # TODO: Also save those in the DB (?). We used to have a cache but if anything
-        # makes sense is to save them in the DB. Also realized the old cache broke
-        # if more accounts were added.
         try:
-            eth_transactions = query_etherscan_for_transactions(
-                db=self.db,
-                msg_aggregator=self.msg_aggregator,
+            eth_transactions = query_ethereum_transactions(
+                database=self.db,
+                etherscan=self.etherscan,
                 from_ts=start_ts,
                 to_ts=end_ts,
             )
         except RemoteError as e:
-            empty_or_error += '\n' + str(e)
+            eth_transactions = []
+            msg = str(e)
+            self.msg_aggregator.add_error(
+                f'There was an error when querying etherscan for ethereum transactions: {msg}'
+                f'The final history result will not include ethereum transactions',
+            )
+            empty_or_error += '\n' + msg
 
         # We sort it here ... but when accounting runs through the entire actions list,
         # it resorts, so unless the fact that we sort is used somewhere else too, perhaps

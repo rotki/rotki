@@ -2,6 +2,8 @@ import base64
 import random
 import string
 
+from eth_utils.address import to_checksum_address
+
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import ApiKey, ApiSecret
 from rotkehlchen.utils.misc import ts_now
@@ -35,3 +37,12 @@ def make_api_key() -> ApiKey:
 
 def make_api_secret() -> ApiSecret:
     return ApiSecret(base64.b64encode(make_random_b64bytes(128)))
+
+
+def make_ethereum_address():
+    return to_checksum_address('0x' + make_random_bytes(20).hex())
+
+
+UNIT_BTC_ADDRESS1 = '1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2'
+UNIT_BTC_ADDRESS2 = '1CounterpartyXXXXXXXXXXXXXXXUWLpVr'
+UNIT_BTC_ADDRESS3 = '18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2'

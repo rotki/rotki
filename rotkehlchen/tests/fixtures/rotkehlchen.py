@@ -1,7 +1,5 @@
-import argparse
 import base64
 from collections import namedtuple
-from unittest.mock import patch
 
 import pytest
 
@@ -10,12 +8,17 @@ from rotkehlchen.history import TradesHistorian
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.server import RotkehlchenServer
+from rotkehlchen.tests.utils.api import create_api_server
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 
 
 @pytest.fixture
 def start_with_logged_in_user():
+    return True
+
+
+@pytest.fixture(scope='session')
+def session_start_with_logged_in_user():
     return True
 
 
@@ -56,12 +59,14 @@ def initialize_mock_rotkehlchen_instance(
         start_with_logged_in_user,
         start_with_valid_premium,
         msg_aggregator,
-        username,
         accountant,
         blockchain,
         db_password,
         rotki_premium_credentials,
         data_dir,
+        database,
+        username,
+        etherscan,
 ):
     if start_with_logged_in_user:
         # Rotkehlchen initializes its own messages aggregator normally but here we
@@ -72,21 +77,24 @@ def initialize_mock_rotkehlchen_instance(
         rotki.data.msg_aggregator = rotki.msg_aggregator
         # Unlock must come after we have set the aggregator if we are to get the
         # messages caused by DB initialization
-        rotki.data.unlock(username, db_password, create_new=True)
-        # DO not submit usage analytics during tests
-        rotki.data.db.set_settings({'submit_usage_analytics': False})
+        rotki.data.db = database
+        rotki.data.username = username
+        rotki.data.logged_in = True
         rotki.data_importer = DataImporter(db=rotki.data.db)
         rotki.password = db_password
+        rotki.etherscan = etherscan
+        rotki.cryptocompare.set_database(rotki.data.db)
         # Remember accountant fixture has a mocked accounting data dir
-        # different to the usual user one
+        # different to the usual user one. Accountant would normally be unlocked
+        # during the normal unlock but due to mocking initialization has to be tweaked here
         rotki.accountant = accountant
         rotki.blockchain = blockchain
         rotki.trades_historian = TradesHistorian(
             user_directory=data_dir,
             db=rotki.data.db,
-            eth_accounts=rotki.data.get_eth_accounts(),
             msg_aggregator=rotki.msg_aggregator,
             exchange_manager=rotki.exchange_manager,
+            etherscan=etherscan,
         )
         rotki.user_is_logged_in = True
         rotki.premium_sync_manager = PremiumSyncManager(
@@ -107,9 +115,10 @@ def uninitialized_rotkehlchen(cli_args):
 
 
 @pytest.fixture()
-def rotkehlchen_server(
-        cli_args,
-        username,
+def rotkehlchen_api_server(
+        uninitialized_rotkehlchen,
+        database,
+        api_port,
         blockchain,
         accountant,
         start_with_logged_in_user,
@@ -118,30 +127,34 @@ def rotkehlchen_server(
         db_password,
         rotki_premium_credentials,
         accounting_data_dir,
+        username,
+        etherscan,
 ):
     """A partially mocked rotkehlchen server instance"""
-    with patch.object(argparse.ArgumentParser, 'parse_args', return_value=cli_args):
-        server = RotkehlchenServer()
+
+    api_server = create_api_server(rotki=uninitialized_rotkehlchen, port_number=api_port)
 
     initialize_mock_rotkehlchen_instance(
-        rotki=server.rotkehlchen,
+        rotki=api_server.rest_api.rotkehlchen,
         start_with_logged_in_user=start_with_logged_in_user,
         start_with_valid_premium=start_with_valid_premium,
         msg_aggregator=function_scope_messages_aggregator,
-        username=username,
         accountant=accountant,
         blockchain=blockchain,
         db_password=db_password,
         rotki_premium_credentials=rotki_premium_credentials,
         data_dir=accounting_data_dir,
+        database=database,
+        username=username,
+        etherscan=etherscan,
     )
-    return server
+    return api_server
 
 
 @pytest.fixture()
 def rotkehlchen_instance(
         uninitialized_rotkehlchen,
-        username,
+        database,
         blockchain,
         accountant,
         start_with_logged_in_user,
@@ -150,6 +163,8 @@ def rotkehlchen_instance(
         db_password,
         rotki_premium_credentials,
         accounting_data_dir,
+        username,
+        etherscan,
 ):
     """A partially mocked rotkehlchen instance"""
 
@@ -158,19 +173,22 @@ def rotkehlchen_instance(
         start_with_logged_in_user=start_with_logged_in_user,
         start_with_valid_premium=start_with_valid_premium,
         msg_aggregator=function_scope_messages_aggregator,
-        username=username,
         accountant=accountant,
         blockchain=blockchain,
         db_password=db_password,
         rotki_premium_credentials=rotki_premium_credentials,
         data_dir=accounting_data_dir,
+        database=database,
+        username=username,
+        etherscan=etherscan,
     )
     return uninitialized_rotkehlchen
 
 
 @pytest.fixture()
-def rotkehlchen_server_with_exchanges(
-        rotkehlchen_server,
+def rotkehlchen_api_server_with_exchanges(
+        rotkehlchen_api_server,
+        added_exchanges,
         function_scope_kraken,
         function_scope_poloniex,
         function_scope_bittrex,
@@ -178,10 +196,18 @@ def rotkehlchen_server_with_exchanges(
         mock_bitmex,
 ):
     """Adds mock exchange objects to the rotkehlchen_server fixture"""
-    exchanges = rotkehlchen_server.rotkehlchen.exchange_manager.connected_exchanges
-    exchanges['kraken'] = function_scope_kraken
-    exchanges['poloniex'] = function_scope_poloniex
-    exchanges['bittrex'] = function_scope_bittrex
-    exchanges['binance'] = function_scope_binance
-    exchanges['bitmex'] = mock_bitmex
-    return rotkehlchen_server
+    exchanges = rotkehlchen_api_server.rest_api.rotkehlchen.exchange_manager.connected_exchanges
+    if 'kraken' in added_exchanges:
+        exchanges['kraken'] = function_scope_kraken
+    if 'poloniex' in added_exchanges:
+        exchanges['poloniex'] = function_scope_poloniex
+    if 'bittrex' in added_exchanges:
+        exchanges['bittrex'] = function_scope_bittrex
+    if 'binance' in added_exchanges:
+        exchanges['binance'] = function_scope_binance
+    if 'bitmex' in added_exchanges:
+        exchanges['bitmex'] = mock_bitmex
+
+    # TODO: Also add coinbase and coinbasepro here and in the history tests and utils
+
+    return rotkehlchen_api_server

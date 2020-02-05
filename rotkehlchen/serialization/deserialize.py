@@ -1,7 +1,13 @@
-from typing import Union
+from typing import Tuple, Union
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import DeserializationError
+from rotkehlchen.errors import (
+    ConversionError,
+    DeserializationError,
+    UnknownAsset,
+    UnprocessableTradePair,
+)
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
 from rotkehlchen.typing import (
     AssetAmount,
@@ -11,6 +17,7 @@ from rotkehlchen.typing import (
     Optional,
     Price,
     Timestamp,
+    TradePair,
     TradeType,
 )
 from rotkehlchen.utils.misc import convert_to_int, create_timestamp, iso8601ts_to_timestamp
@@ -43,28 +50,35 @@ def deserialize_timestamp(timestamp: Union[int, str]) -> Timestamp:
         raise DeserializationError('Failed to deserialize a timestamp entry from a null entry')
 
     if isinstance(timestamp, int):
-        return Timestamp(timestamp)
+        processed_timestamp = Timestamp(timestamp)
     elif isinstance(timestamp, FVal):
         try:
-            return Timestamp(timestamp.to_int(exact=True))
-        except ValueError:
+            processed_timestamp = Timestamp(timestamp.to_int(exact=True))
+        except ConversionError:
             # An fval was not representing an exact int
             raise DeserializationError(
                 f'Tried to deserialize a timestamp fron a non-exact int FVal entry',
             )
     elif isinstance(timestamp, str):
         try:
-            return Timestamp(int(timestamp))
+            processed_timestamp = Timestamp(int(timestamp))
         except ValueError:
             # String could not be turned to an int
             raise DeserializationError(
                 f'Failed to deserialize a timestamp entry from string {timestamp}',
             )
+    else:
+        raise DeserializationError(
+            f'Failed to deserialize a timestamp entry. Unexpected type {type(timestamp)} given',
+        )
 
-    # else
-    raise DeserializationError(
-        f'Failed to deserialize a timestamp entry. Unexpected type {type(timestamp)} given',
-    )
+    if processed_timestamp < 0:
+        raise DeserializationError(
+            f'Failed to deserialize a timestamp entry. Timestamps can not have'
+            f' negative values. Given value was {processed_timestamp}',
+        )
+
+    return processed_timestamp
 
 
 def deserialize_timestamp_from_date(date: str, formatstr: str, location: str) -> Timestamp:
@@ -134,12 +148,12 @@ def deserialize_timestamp_from_kraken(time: Union[str, FVal]) -> Timestamp:
     if isinstance(time, str):
         try:
             return Timestamp(convert_to_int(time, accept_only_exact=False))
-        except ValueError:
+        except ConversionError:
             raise DeserializationError(f'Failed to deserialize {time} kraken timestamp entry')
     elif isinstance(time, FVal):
         try:
             return Timestamp(time.to_int(exact=False))
-        except ValueError:
+        except ConversionError:
             raise DeserializationError(
                 f'Failed to deserialize {time} kraken timestamp entry from an FVal',
             )
@@ -202,9 +216,9 @@ def deserialize_trade_type(symbol: str) -> TradeType:
             f'Failed to deserialize trade type symbol from {type(symbol)} entry',
         )
 
-    if symbol in ('buy', 'LIMIT_BUY'):
+    if symbol in ('buy', 'LIMIT_BUY', 'BUY'):
         return TradeType.BUY
-    elif symbol in ('sell', 'LIMIT_SELL'):
+    elif symbol in ('sell', 'LIMIT_SELL', 'SELL'):
         return TradeType.SELL
     elif symbol == 'settlement_buy':
         return TradeType.SETTLEMENT_BUY
@@ -271,10 +285,55 @@ def deserialize_location(symbol: str) -> Location:
         return Location.BANKS
     elif symbol == 'blockchain':
         return Location.BLOCKCHAIN
+    elif symbol == 'coinbasepro':
+        return Location.COINBASEPRO
     else:
         raise DeserializationError(
             f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',
         )
+
+
+def _split_pair(pair: TradePair) -> Tuple[str, str]:
+    assets = pair.split('_')
+    if len(assets) != 2:
+        # Could not split the pair
+        raise UnprocessableTradePair(pair)
+
+    if len(assets[0]) == 0 or len(assets[1]) == 0:
+        # no base or no quote asset
+        raise UnprocessableTradePair(pair)
+
+    return assets[0], assets[1]
+
+
+def pair_get_assets(pair: TradePair) -> Tuple[Asset, Asset]:
+    """Returns a tuple with the (base, quote) assets"""
+    base_str, quote_str = _split_pair(pair)
+
+    base_asset = Asset(base_str)
+    quote_asset = Asset(quote_str)
+    return base_asset, quote_asset
+
+
+def get_pair_position_str(pair: TradePair, position: str) -> str:
+    """Get the string representation of an asset of a trade pair"""
+    assert position == 'first' or position == 'second'
+    base_str, quote_str = _split_pair(pair)
+    return base_str if position == 'first' else quote_str
+
+
+def deserialize_trade_pair(pair: str) -> TradePair:
+    """Takes a trade pair string, makes sure it's valid, wraps it in proper type and returns it"""
+    try:
+        pair_get_assets(pair)
+    except UnprocessableTradePair as e:
+        raise DeserializationError(str(e))
+    except UnknownAsset as e:
+        raise DeserializationError(
+            f'Unknown asset {e.asset_name} found while processing trade pair',
+        )
+
+    return TradePair(pair)
 
 
 def deserialize_location_from_db(symbol: str) -> Location:
@@ -308,6 +367,8 @@ def deserialize_location_from_db(symbol: str) -> Location:
         return Location.BANKS
     elif symbol == 'J':
         return Location.BLOCKCHAIN
+    elif symbol == 'K':
+        return Location.COINBASEPRO
     else:
         raise DeserializationError(
             f'Failed to deserialize location symbol. Unknown symbol {symbol} for location',

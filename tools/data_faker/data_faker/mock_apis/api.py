@@ -44,14 +44,14 @@ ERROR_STATUS_CODES = [
 def api_error(error, status_code):
     assert status_code in ERROR_STATUS_CODES, 'Programming error, unexpected error status code'
     response = make_response((
-        json.dumps(dict(error=error)),
+        json.dumps({'error': error}),
         status_code,
         {'mimetype': 'application/json', 'Content-Type': 'application/json'},
     ))
     return response
 
 
-def endpoint_not_found(e):
+def endpoint_not_found(e):  # pylint: disable=unused-argument
     return api_error('invalid endpoint', HTTPStatus.NOT_FOUND)
 
 
@@ -64,7 +64,7 @@ def restapi_setup_urls(flask_api_context, rest_api, urls) -> None:
         )
 
 
-class APIServer(object):
+class APIServer():
 
     def __init__(self, rest_api) -> None:
         flask_app = Flask(__name__)
@@ -106,7 +106,7 @@ class APIServer(object):
             self.wsgiserver = None
 
 
-class RestAPI(object):
+class RestAPI():
     def __init__(self, fake_kraken, fake_binance) -> None:
         self.kraken = fake_kraken
         self.binance = fake_binance

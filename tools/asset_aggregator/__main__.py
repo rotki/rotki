@@ -24,18 +24,22 @@ from asset_aggregator.timerange_check import timerange_check
 from asset_aggregator.typeinfo_check import typeinfo_check
 
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.assets import FIAT_CURRENCIES
 from rotkehlchen.constants.cryptocompare import (
     KNOWN_TO_MISS_FROM_CRYPTOCOMPARE,
     WORLD_TO_CRYPTOCOMPARE,
 )
-from rotkehlchen.externalapis import Coinmarketcap, CoinPaprika, Cryptocompare
-from rotkehlchen.externalapis.coinmarketcap import find_cmc_coin_data
+from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.externalapis.coinmarketcap import Coinmarketcap, find_cmc_coin_data
 from rotkehlchen.externalapis.coinpaprika import (
+    CoinPaprika,
     check_paprika_token_address,
     find_paprika_coin_id,
     get_paprika_data_eth_token_address,
 )
+from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.serialization import rlk_jsonloads
 
 
@@ -132,6 +136,13 @@ def process_asset(
 def main():
     arg_parser = aggregator_args()
     args = arg_parser.parse_args()
+    msg_aggregator = MessagesAggregator()
+    user_data_dir = Path(default_data_directory()) / args.db_user
+    database = DBHandler(
+        user_data_dir=user_data_dir,
+        password=args.db_password,
+        msg_aggregator=msg_aggregator,
+    )
     our_data = AssetResolver().assets
     paprika = CoinPaprika()
     cmc = None
@@ -145,7 +156,7 @@ def main():
         )
         cmc_list = cmc.get_cryptocyrrency_map()
 
-    cryptocompare = Cryptocompare(data_directory=data_directory)
+    cryptocompare = Cryptocompare(data_directory=data_directory, database=database)
     paprika_coins_list = paprika.get_coins_list()
     cryptocompare_coins_map = cryptocompare.all_coins()
 

@@ -100,6 +100,8 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'MRV',
     'OAK',
     'OCC-2',
+    'OXT',
+    'OGN',
     'REA',
     'REDC',
     'RIPT',
@@ -116,6 +118,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'VENUS',
     'WMK',
     'WLK',
+    'XTP',
     'ZIX',
 )
 
@@ -408,6 +411,8 @@ WORLD_TO_PAPRIKA_ID = {
     'WIN-2': 'win-wcoin',
     # For Rotkehlchen XID is Sphre Air
     'XID': 'xid-sphre-air',
+    # For Rotkehlchen XSR is Xensor
+    'XSR': 'xsr-xensor',
     # For Paprika PHX has not been updated to PHB
     'PHB': 'phx-red-pulse-phoenix',
 }

@@ -3,6 +3,7 @@ jobs=4
 persistent=yes
 suggestion-mode=yes
 unsafe-load-any-extension=no
+load-plugins=tools.pylint.log_checker
 
 # Blacklist files or directories (basenames, not paths)
 ignore=
@@ -35,7 +36,6 @@ enable=
     unused-variable,
     no-self-use,
     import-self,
-    gevent-joinall,
     useless-object-inheritance,
     unused-argument,
     unexpected-keyword-arg,
@@ -44,7 +44,8 @@ enable=
     unused-import,
     inconsistent-return-statements,
     reimported,
-    too-many-function-args
+    too-many-function-args,
+    rotki-lognokwargs
 
 [REPORTS]
 

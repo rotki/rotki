@@ -1,13 +1,13 @@
 import errno
 import os
 from collections import defaultdict
+from typing import Optional
 
 import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
-from rotkehlchen.constants import YEAR_IN_SECONDS
-from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.typing import FilePath
 
 
 @pytest.fixture
@@ -17,11 +17,11 @@ def use_clean_caching_directory():
 
 
 @pytest.fixture
-def accounting_data_dir(use_clean_caching_directory, tmpdir_factory):
+def accounting_data_dir(use_clean_caching_directory, tmpdir_factory) -> FilePath:
     """For accounting we have a dedicated test data dir so that it's easy to
     cache the results of the historic price queries also in Travis"""
     if use_clean_caching_directory:
-        return tmpdir_factory.mktemp('accounting_data')
+        return FilePath(tmpdir_factory.mktemp('accounting_data'))
 
     home = os.path.expanduser("~")
     if 'TRAVIS' in os.environ:
@@ -35,7 +35,7 @@ def accounting_data_dir(use_clean_caching_directory, tmpdir_factory):
         if exception.errno != errno.EEXIST:
             raise
 
-    return data_directory
+    return FilePath(data_directory)
 
 
 @pytest.fixture
@@ -49,67 +49,59 @@ def mocked_price_queries():
 
 
 @pytest.fixture
-def profit_currency():
-    return A_EUR
-
-
-@pytest.fixture
 def accounting_create_csv():
+    # TODO: The whole create_csv argument should be deleted.
+    # Or renamed. Since it's not about actually creating the CSV
+    # but keeping the events in memory
+    return True
+
+
+@pytest.fixture
+def accounting_initialize_parameters():
+    """
+    If True initialize the DB parameters of the accountant and the events
+
+    Normally they are initialized at the start of process_history, but if the
+    test does not go there and is a unit test then we need to do it ourselves for the test
+    """
     return False
-
-
-@pytest.fixture
-def accounting_ignored_assets():
-    return []
-
-
-@pytest.fixture
-def accounting_include_crypto2crypto():
-    return True
-
-
-@pytest.fixture
-def accounting_taxfree_after_period():
-    return YEAR_IN_SECONDS
-
-
-@pytest.fixture
-def accounting_include_gas_costs():
-    return True
 
 
 @pytest.fixture
 def accountant(
         price_historian,  # pylint: disable=unused-argument
-        profit_currency,
+        database,
         accounting_data_dir,
         accounting_create_csv,
-        accounting_ignored_assets,
-        accounting_include_crypto2crypto,
-        accounting_taxfree_after_period,
-        accounting_include_gas_costs,
         messages_aggregator,
-):
-    return Accountant(
-        profit_currency=profit_currency,
+        start_with_logged_in_user,
+        accounting_initialize_parameters,
+) -> Optional[Accountant]:
+    if not start_with_logged_in_user:
+        return None
+
+    accountant = Accountant(
+        db=database,
         user_directory=accounting_data_dir,
         msg_aggregator=messages_aggregator,
         create_csv=accounting_create_csv,
-        ignored_assets=accounting_ignored_assets,
-        include_crypto2crypto=accounting_include_crypto2crypto,
-        taxfree_after_period=accounting_taxfree_after_period,
-        include_gas_costs=accounting_include_gas_costs,
     )
+
+    if accounting_initialize_parameters:
+        db_settings = accountant.db.get_settings()
+        accountant._customize(db_settings)
+
+    return accountant
 
 
 @pytest.fixture
-def inquirer(accounting_data_dir):
+def inquirer(accounting_data_dir, cryptocompare):
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
     Inquirer._Inquirer__instance = None
-    return Inquirer(data_dir=accounting_data_dir)
+    return Inquirer(data_dir=accounting_data_dir, cryptocompare=cryptocompare)
 
 
 @pytest.fixture(scope='session')
-def session_inquirer(session_data_dir):
-    return Inquirer(data_dir=session_data_dir)
+def session_inquirer(session_data_dir, session_cryptocompare):
+    return Inquirer(data_dir=session_data_dir, cryptocompare=session_cryptocompare)

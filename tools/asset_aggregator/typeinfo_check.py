@@ -44,6 +44,8 @@ MANUALLY_CHECKED_TYPES = {
     'NAC': 'ethereum token',
     'OAK': 'ethereum token',
     'OCC-2': 'ethereum token',
+    'OXT': 'ethereum token',
+    'OGN': 'ethereum token',
     # In reality this is ethereum token and Waves token but got no way to
     # signify this with the current system apart from creating a new type.
     # So now I created a new generic type.
@@ -81,6 +83,7 @@ MANUALLY_CHECKED_TYPES = {
     'ALGO': 'own chain',
     # For some reason the entry for KAVA does not have a platform entry in paprika
     'KAVA': 'own chain',
+    'XTP': 'ethereum token',
 }
 
 

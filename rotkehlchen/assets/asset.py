@@ -67,6 +67,7 @@ WORLD_TO_POLONIEX = {
 
 WORLD_TO_KRAKEN = {
     'ATOM': 'ATOM',
+    'ALGO': 'ALGO',
     'BAT': 'BAT',
     'LINK': 'LINK',
     'BSV': 'BSV',
@@ -93,6 +94,7 @@ WORLD_TO_KRAKEN = {
     'XLM': 'XXLM',
     'DASH': 'DASH',
     'EOS': 'EOS',
+    'USDC': 'USDC',
     'USDT': 'USDT',
     'KFEE': 'KFEE',
     'ADA': 'ADA',
@@ -147,7 +149,9 @@ class Asset():
         invalid data were given to us by the server if an API was queried.
         """
         if not isinstance(self.identifier, str):
-            raise DeserializationError('Non-string identifier ended up in asset initialization')
+            raise DeserializationError(
+                'Tried to initialize an asset out of a non-string identifier',
+            )
 
         if not AssetResolver().is_identifier_canonical(self.identifier):
             raise UnknownAsset(self.identifier)
@@ -236,7 +240,9 @@ class HasEthereumToken(Asset):
         data = AssetResolver().get_asset_data(self.identifier)  # pylint: disable=no-member
 
         if not data.ethereum_address:
-            raise ValueError('Tried to initialize a non Ethereum asset as Ethereum Token')
+            raise DeserializationError(
+                'Tried to initialize a non Ethereum asset as Ethereum Token',
+            )
 
         object.__setattr__(self, 'ethereum_address', data.ethereum_address)
         object.__setattr__(self, 'decimals', data.decimals)

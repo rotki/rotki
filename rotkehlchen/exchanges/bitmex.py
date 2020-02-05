@@ -17,7 +17,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_fee
 from rotkehlchen.typing import ApiKey, ApiSecret, AssetAmount, AssetMovementCategory, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import cache_response_timewise, iso8601ts_to_timestamp, satoshis_to_btc
+from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
+from rotkehlchen.utils.misc import iso8601ts_to_timestamp, satoshis_to_btc
 from rotkehlchen.utils.serialization import rlk_jsonloads
 
 if TYPE_CHECKING:
@@ -197,21 +198,28 @@ class Bitmex(ExchangeInterface):
         assert isinstance(result, List)
         return result
 
+    @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[dict], str]:
 
-        resp = self._api_query_dict('get', 'user/wallet', {'currency': 'XBt'})
-        # Bitmex shows only BTC balance
-        returned_balances = dict()
-        usd_price = Inquirer().find_usd_price(A_BTC)
+        try:
+            resp = self._api_query_dict('get', 'user/wallet', {'currency': 'XBt'})
+            # Bitmex shows only BTC balance
+            returned_balances = {}
+            usd_price = Inquirer().find_usd_price(A_BTC)
+        except RemoteError as e:
+            msg = f'Bitmex API request failed due to: {str(e)}'
+            log.error(msg)
+            return None, msg
+
         # result is in satoshis
         amount = satoshis_to_btc(FVal(resp['amount']))
         usd_value = amount * usd_price
 
-        returned_balances[A_BTC] = dict(
-            amount=amount,
-            usd_value=usd_value,
-        )
+        returned_balances[A_BTC] = {
+            'amount': amount,
+            'usd_value': usd_value,
+        }
         log.debug(
             'Bitmex balance query result',
             sensitive_log=True,
@@ -257,7 +265,7 @@ class Bitmex(ExchangeInterface):
 
         log.debug('Bitmex deposit/withdrawals query', results_num=len(resp))
 
-        movements = list()
+        movements = []
         for movement in resp:
             try:
                 transaction_type = movement['transactType']

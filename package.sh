@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# cleanup before starting to package stuff
+make clean
+
 # Perform sanity checks before pip install
 pip install packaging  # required for the following script
 # We use npm ci. That needs npm >= 5.7.0
@@ -50,6 +53,8 @@ fi
 rm -rf build rotkehlchen_py_dist
 pyinstaller --noconfirm --clean --distpath rotkehlchen_py_dist rotkehlchen.spec
 
+export ROTKEHLCHEN_VERSION=$(python setup.py --version)
+
 if [[ $? -ne 0 ]]; then
     echo "package.sh - ERROR: pyinstaller step failed"
     exit 1
@@ -64,118 +69,33 @@ if [[ $? -ne 0 ]]; then
 fi
 
 
-# Now use electron packager to bundle the entire app together with electron in a dir
+# From here and on we go into the electron-app directory
+cd electron-app
 
-# Let's make sure all npm dependencies are installed. Since we added electron tests
-# maybe this does not need to happen here?
-rm -rf ./node_modules
-npm config set python python2.7
-if [[ $PLATFORM == "darwin" ]]; then
-    # It seems that with node v12, v13 zmq fails to build
-    nvm install 11
-    nvm use 11
-    # If we add the specific electron runtime compile in OSX fails with an error
-    # that looks like this: https://www.npmjs.com/package/nan#compiling-against-nodejs-012-on-osx
-    npm ci
-else
-    npm ci
-    npm rebuild zeromq --runtime=electron --target=3.0.0
-fi
-
+# Let's make sure all npm dependencies are installed.
+npm ci
 if [[ $? -ne 0 ]]; then
     echo "package.sh - ERROR: npm ci step failed"
     exit 1
 fi
 
-PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild
+# Finally run the packaging
+echo "Packaging Rotki ${ROTKEHLCHEN_VERSION}"
+npm run electron:build
 if [[ $? -ne 0 ]]; then
-    echo "package.sh - ERROR: electron-rebuild step failed"
+    echo "package.sh - ERROR: electron builder step failed"
     exit 1
 fi
+echo "Packaging finished for Rotki ${ROTKEHLCHEN_VERSION}"
 
-npm run build
-
-ELECTRON_PACKAGER_EXTRA_ARGS=
-if [[ $PLATFORM == "darwin" ]]; then
-    ELECTRON_PACKAGER_EXTRA_ARGS="--icon=ui/images/rotki.icns"
-elif [[ $PLATFORM == "linux" ||  $PLATFORM == "freebsd" ]]; then
-    ELECTRON_PACKAGER_EXTRA_ARGS="--icon=ui/images/rotki_1024x1024.png"
-fi
-./node_modules/.bin/electron-packager . --overwrite \
-				      --ignore="rotkehlchen$" \
-				      --ignore="rotkehlchen.egg-info" \
-				      --ignore="^/tools$" \
-				      --ignore="^/docs$" \
-				      --ignore="^/build$" \
-				      --ignore="appveyor*" \
-				      --ignore="^/.eggs" \
-				      --ignore="^/.github" \
-				      --ignore="^/.gitignore" \
-				      --ignore="^/.ignore" \
-				      --ignore=".nvmrc" \
-				      --ignore="^/package-lock.json" \
-				      --ignore="requirements*" \
-				      --ignore="^/rotki_config.json" \
-				      --ignore="^/rotkehlchen.spec" \
-				      --ignore="setup.cfg" \
-				      --ignore="^/stubs" \
-				      --ignore="^/.mypy_cache" \
-				      --ignore=".travis*" \
-				      --ignore="tsconfig*" \
-				      --ignore="tsfmt.json" \
-				      --ignore="tslint.json" \
-				      --ignore="^/.bumpversion.cfg" \
-				      --ignore="^/.mypy_cache/" \
-				      --ignore="^/.coveragerc" \
-				      --ignore="^/.coverage" \
-				      --ignore="^/.env" \
-				      --ignore="^/README.md" \
-				      --ignore="rotkehlchen.log" \
-				      --ignore=".*\.sh" \
-				      --ignore=".*\.py" \
-				      --ignore=".*\.bat" \
-				      --ignore="^/CONTRIBUTING.md" \
-				      --ignore="^/Makefile" $ELECTRON_PACKAGER_EXTRA_ARGS
-
-if [[ $? -ne 0 ]]; then
-    echo "package.sh - ERROR: electron-packager step failed"
-    exit 1
-fi
-
-ROTKEHLCHEN_VERSION=$(python setup.py --version)
-if [[ $ROTKEHLCHEN_VERSION == *".dev"* ]]; then
-    # It's not a tagged release. Returned version
-    # looks similar to 0.6.1.dev12+ga5ed53d
-    DATE=$(date +%Y-%m-%dT%H-%M-%S)
-    export ARCHIVE_NAME="rotki-${PLATFORM}-${ARCH}-v${ROTKEHLCHEN_VERSION}"
-    EXEC_NAME="rotki-${DATE}-v${ROTKEHLCHEN_VERSION}"
-else
-    export ARCHIVE_NAME="rotki-${PLATFORM}-${ARCH}-v${ROTKEHLCHEN_VERSION}"
-    EXEC_NAME="rotki-v${ROTKEHLCHEN_VERSION}"
-fi
-
-GENERATED_ARCHIVE_NAME="rotki-${PLATFORM}-${ARCH}"
-
-if [[ $PLATFORM == "linux" ]]; then
-    mv $GENERATED_ARCHIVE_NAME/rotki $GENERATED_ARCHIVE_NAME/unwrapped_executable
-fi
-
-cp tools/scripts/wrapper_script.sh $GENERATED_ARCHIVE_NAME/$EXEC_NAME
-
-
-if [[ $PLATFORM == "darwin" ]]; then
-    # For OSX create a dmg
-    ./node_modules/.bin/electron-installer-dmg $GENERATED_ARCHIVE_NAME/rotki.app $ARCHIVE_NAME --icon=ui/images/rotki.icns --title=Rotki
-
-    rm -rf $GENERATED_ARCHIVE_NAME
-else
-    # Now try to zip the created bundle
-    mv $GENERATED_ARCHIVE_NAME $ARCHIVE_NAME
-    zip -r $ARCHIVE_NAME.zip "$ARCHIVE_NAME/"
-    if [[ $? -ne 0 ]]; then
-	echo "package.sh - ERROR: zipping of final bundle failed"
-	exit 1
-    fi
-
-    rm -rf $ARCHIVE_NAME
+# Now if in linux make the AppImage executable
+if [[ "$PLATFORM" == "linux" ]]; then
+    # Go back to root directory
+    cd ..
+    # Find the appImage, make it executable and remember its filename so
+    # travis can do the publishing
+    # They don't do it automatically. Long discussion here:
+    # https://github.com/electron-userland/electron-builder/issues/893
+    export GENERATED_APPIMAGE=$(ls electron-app/dist/*AppImage | head -n 1)
+    chmod +x $GENERATED_APPIMAGE
 fi

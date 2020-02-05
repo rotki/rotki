@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, 
 from urllib.parse import urlencode
 
 import gevent
+from gevent.lock import Semaphore
 
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import BINANCE_BASE_URL
@@ -30,7 +31,8 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, AssetMovementCategory, Fee, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import cache_response_timewise, ts_now
+from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
+from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import rlk_jsonloads
 
 if TYPE_CHECKING:
@@ -135,10 +137,11 @@ def trade_from_binance(
 def create_binance_symbols_to_pair(exchange_data: Dict[str, Any]) -> Dict[str, BinancePair]:
     """Parses the result of 'exchangeInfo' endpoint and creates the symbols_to_pair mapping
     """
-    symbols_to_pair: Dict[str, BinancePair] = dict()
+    symbols_to_pair: Dict[str, BinancePair] = {}
     for symbol in exchange_data['symbols']:
         symbol_str = symbol['symbol']
         if isinstance(symbol_str, FVal):
+            # the to_int here may rase but should never due to the if check above
             symbol_str = str(symbol_str.to_int(exact=True))
 
         symbols_to_pair[symbol_str] = BinancePair(
@@ -175,6 +178,7 @@ class Binance(ExchangeInterface):
         self.msg_aggregator = msg_aggregator
         self.initial_backoff = initial_backoff
         self.backoff_limit = backoff_limit
+        self.nonce_lock = Semaphore()
 
     def first_connection(self) -> None:
         if self.first_connection_made:
@@ -215,7 +219,7 @@ class Binance(ExchangeInterface):
         backoff = self.initial_backoff
 
         while True:
-            with self.lock:
+            with self.nonce_lock:
                 # Protect this region with a lock since binance will reject
                 # non-increasing nonces. So if two greenlets come in here at
                 # the same time one of them will fail
@@ -293,6 +297,7 @@ class Binance(ExchangeInterface):
         assert isinstance(result, List)
         return result
 
+    @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[dict], str]:
         self.first_connection()
@@ -308,7 +313,7 @@ class Binance(ExchangeInterface):
             log.error(msg)
             return None, msg
 
-        returned_balances = dict()
+        returned_balances = {}
         for entry in account_data['balances']:
             amount = entry['free'] + entry['locked']
             if amount == FVal(0):
@@ -334,8 +339,16 @@ class Binance(ExchangeInterface):
                 )
                 continue
 
-            usd_price = Inquirer().find_usd_price(asset)
-            balance = dict()
+            try:
+                usd_price = Inquirer().find_usd_price(asset)
+            except RemoteError as e:
+                self.msg_aggregator.add_error(
+                    f'Error processing binance balance entry due to inability to '
+                    f'query USD price: {str(e)}. Skipping balance entry',
+                )
+                continue
+
+            balance = {}
             balance['amount'] = amount
             balance['usd_value'] = FVal(amount * usd_price)
             returned_balances[asset] = balance
@@ -363,7 +376,7 @@ class Binance(ExchangeInterface):
         else:
             iter_markets = markets
 
-        raw_data = list()
+        raw_data = []
         # Limit of results to return. 1000 is max limit according to docs
         limit = 1000
         for symbol in iter_markets:
@@ -392,7 +405,7 @@ class Binance(ExchangeInterface):
 
             raw_data.sort(key=lambda x: x['time'])
 
-        trades = list()
+        trades = []
         for raw_trade in raw_data:
             try:
                 trade = trade_from_binance(raw_trade, self.symbols_to_pair)

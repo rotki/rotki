@@ -30,6 +30,7 @@ Contents
 
    installation_guide
    usage_guide
+   api
    contribute
    faq
    changelog

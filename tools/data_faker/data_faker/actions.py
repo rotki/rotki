@@ -4,10 +4,10 @@ from typing import Tuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_EUR, A_USD, FIAT_CURRENCIES
-from rotkehlchen.exchanges.data_structures import Trade, TradeType, pair_get_assets
+from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.history import PriceHistorian
-from rotkehlchen.serialization.deserialize import deserialize_location
+from rotkehlchen.serialization.deserialize import deserialize_location, pair_get_assets
 from rotkehlchen.typing import Timestamp, TradePair
 
 STARTING_TIMESTAMP = 1464739200  # 01/06/2016
@@ -26,7 +26,7 @@ MAX_FEE_USD_VALUE = 1
 logger = logging.getLogger(__name__)
 
 
-class ActionWriter(object):
+class ActionWriter():
 
     def __init__(
             self,
@@ -97,7 +97,8 @@ class ActionWriter(object):
             if save_balances:
                 self.maybe_save_balances(save_ts=current_ts)
 
-    def query_historical_price(self, from_asset: Asset, to_asset: Asset, timestamp: Timestamp):
+    @staticmethod
+    def query_historical_price(from_asset: Asset, to_asset: Asset, timestamp: Timestamp):
         return PriceHistorian().query_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,

@@ -13,7 +13,7 @@ from urllib.parse import urlencode
 import requests
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
-from rotkehlchen.errors import AuthenticationError, IncorrectApiKeyFormat, RemoteError
+from rotkehlchen.errors import IncorrectApiKeyFormat, PremiumAuthenticationError, RemoteError
 from rotkehlchen.typing import Timestamp
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
@@ -105,7 +105,7 @@ class Premium():
     def set_credentials(self, credentials: PremiumCredentials) -> None:
         """Try to set the credentials for a premium rotkehlchen subscription
 
-        Raises AuthenticationError if the given key is rejected by the Rotkehlchen server
+        Raises PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
         old_credentials = self.credentials
 
@@ -121,7 +121,7 @@ class Premium():
         active = self.is_active()
         if not active:
             self.reset_credentials(old_credentials)
-            raise AuthenticationError('Rotkehlchen API key was rejected by server')
+            raise PremiumAuthenticationError('Rotkehlchen API key was rejected by server')
 
     def is_active(self) -> bool:
         if self.status == SubscriptionStatus.ACTIVE:
@@ -182,7 +182,7 @@ class Premium():
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
-        except requests.ConnectionError:
+        except requests.exceptions.ConnectionError:
             raise RemoteError('Could not connect to rotkehlchen server')
 
         return _process_dict_response(response)
@@ -204,7 +204,7 @@ class Premium():
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
-        except requests.ConnectionError:
+        except requests.exceptions.ConnectionError:
             raise RemoteError('Could not connect to rotkehlchen server')
 
         return _process_dict_response(response)
@@ -227,7 +227,7 @@ class Premium():
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
-        except requests.ConnectionError:
+        except requests.exceptions.ConnectionError:
             raise RemoteError('Could not connect to rotkehlchen server')
 
         result = _process_dict_response(response)
@@ -245,18 +245,18 @@ class Premium():
         Raises RemoteError if there are problems reaching the server or if
         there is an error returned by the server
         """
-        signature, data = self.sign('statistics_renderer')
+        signature, data = self.sign('statistics_rendererv2')
         self.session.headers.update({  # type: ignore
             'API-SIGN': base64.b64encode(signature.digest()),
         })
 
         try:
             response = self.session.get(
-                self.uri + 'statistics_renderer',
+                self.uri + 'statistics_rendererv2',
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
-        except requests.ConnectionError:
+        except requests.exceptions.ConnectionError:
             raise RemoteError('Could not connect to rotkehlchen server')
 
         result = _process_dict_response(response)
@@ -268,11 +268,11 @@ def premium_create_and_verify(credentials: PremiumCredentials) -> Premium:
 
     Returns the created premium object
 
-    raises AuthenticationError if the given key is rejected by the server
+    raises PremiumAuthenticationError if the given key is rejected by the server
     """
     premium = Premium(credentials)
 
     if premium.is_active():
         return premium
 
-    raise AuthenticationError('Rotkehlchen API key was rejected by server')
+    raise PremiumAuthenticationError('Rotkehlchen API key was rejected by server')

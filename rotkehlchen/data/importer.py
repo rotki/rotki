@@ -1,4 +1,5 @@
 import csv
+from pathlib import Path
 from typing import List
 
 from rotkehlchen.assets.asset import Asset
@@ -35,6 +36,9 @@ def exchange_row_to_location(entry: str) -> Location:
         return Location.BITMEX
     elif entry == 'Coinbase':
         return Location.COINBASE
+    # TODO: Check if this is the correct string for CoinbasePro from cointracking
+    elif entry == 'CoinbasePro':
+        return Location.COINBASEPRO
     elif entry == 'ETH Transaction':
         raise UnsupportedCointrackingEntry(
             'Not importing ETH Transactions from Cointracking. Cointracking does not '
@@ -131,7 +135,7 @@ class DataImporter():
                 f'data import. Ignoring entry',
             )
 
-    def import_cointracking_csv(self, filepath: str) -> None:
+    def import_cointracking_csv(self, filepath: Path) -> None:
         with open(filepath, 'r') as csvfile:
             data = csv.reader(csvfile, delimiter=',', quotechar='"')
             next(data)  # skip header row

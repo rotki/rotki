@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import csv
 import hashlib
 import hmac
@@ -9,14 +8,17 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, overload
 from urllib.parse import urlencode
 
+import gevent
+import requests
+from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.errors import (
     DeserializationError,
-    PoloniexError,
     RemoteError,
     UnknownAsset,
     UnprocessableTradePair,
@@ -27,7 +29,6 @@ from rotkehlchen.exchanges.data_structures import (
     Loan,
     Trade,
     TradeType,
-    get_pair_position_str,
     invert_pair,
     trade_pair_from_assets,
 )
@@ -42,6 +43,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
     deserialize_timestamp_from_poloniex_date,
     deserialize_trade_type,
+    get_pair_position_str,
 )
 from rotkehlchen.typing import (
     ApiKey,
@@ -53,8 +55,9 @@ from rotkehlchen.typing import (
     TradePair,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import cache_response_timewise, create_timestamp, retry_calls
-from rotkehlchen.utils.serialization import rlk_jsonloads, rlk_jsonloads_dict, rlk_jsonloads_list
+from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
+from rotkehlchen.utils.misc import create_timestamp
+from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsonloads_list
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -143,7 +146,7 @@ def process_polo_loans(
     """Takes in the list of loans from poloniex as returned by the return_lending_history
     api call, processes it and returns it into our loan format
     """
-    new_data = list()
+    new_data = []
 
     for loan in reversed(data):
         log.debug('processing poloniex loan', **make_sensitive(loan))
@@ -230,13 +233,13 @@ class Poloniex(ExchangeInterface):
             'Key': self.api_key,
         })
         self.msg_aggregator = msg_aggregator
+        self.nonce_lock = Semaphore()
 
     def first_connection(self) -> None:
         if self.first_connection_made:
             return
 
-        with self.lock:
-            self.first_connection_made = True
+        self.first_connection_made = True
 
     def validate_api_key(self) -> Tuple[bool, str]:
         try:
@@ -249,81 +252,117 @@ class Poloniex(ExchangeInterface):
                 raise
         return True, ''
 
-    def api_query(self, command: str, req: Optional[Dict] = None) -> Union[Dict, List]:
-        result = retry_calls(
-            times=5,
-            location='poloniex',
-            handle_429=False,
-            backoff_in_seconds=0,
-            method_name=command,
-            function=self._api_query,
-            # function's arguments
-            command=command,
-            req=req,
-        )
-        if 'error' in result:
-            raise PoloniexError(
-                'Poloniex query for "{}" returned error: {}'.format(
-                    command,
-                    result['error'],
-                ))
-        return result
-
     def api_query_dict(self, command: str, req: Optional[Dict] = None) -> Dict:
-        result = self.api_query(command, req)
+        result = self._api_query(command, req)
         assert isinstance(result, Dict)
         return result
 
     def api_query_list(self, command: str, req: Optional[Dict] = None) -> List:
-        result = self.api_query(command, req)
+        result = self._api_query(command, req)
         assert isinstance(result, List)
         return result
 
-    def _api_query(self, command: str, req: Optional[Dict] = None) -> Union[Dict, List]:
-        if req is None:
-            req = {}
+    def _single_query(self, command: str, req: Dict[str, Any]) -> Optional[requests.Response]:
+        """A single api query for poloniex
 
+        Returns the response if all went well or None if a recoverable poloniex
+        error occured such as a 504.
+
+        Can raise:
+         - RemoteError if there is a problem with the response
+         - ConnectionError if there is a problem connecting to poloniex.
+        """
         if command == 'returnTicker' or command == 'returnCurrencies':
             log.debug(f'Querying poloniex for {command}')
-            ret = self.session.get(self.public_uri + command)
-            return rlk_jsonloads(ret.text)
+            response = self.session.get(self.public_uri + command)
+        else:
+            req['command'] = command
+            with self.nonce_lock:
+                # Protect this region with a lock since poloniex will reject
+                # non-increasing nonces. So if two greenlets come in here at
+                # the same time one of them will fail
+                req['nonce'] = int(time.time() * 1000)
+                post_data = str.encode(urlencode(req))
 
-        req['command'] = command
-        with self.lock:
-            # Protect this region with a lock since poloniex will reject
-            # non-increasing nonces. So if two greenlets come in here at
-            # the same time one of them will fail
-            req['nonce'] = int(time.time() * 1000)
-            post_data = str.encode(urlencode(req))
+                sign = hmac.new(self.secret, post_data, hashlib.sha512).hexdigest()
+                self.session.headers.update({'Sign': sign})
+                response = self.session.post('https://poloniex.com/tradingApi', req)
 
-            sign = hmac.new(self.secret, post_data, hashlib.sha512).hexdigest()
-            self.session.headers.update({'Sign': sign})
-
-            log.debug(
-                'Poloniex private API query',
-                command=command,
-                post_data=req,
-            )
-            ret = self.session.post('https://poloniex.com/tradingApi', req)
-
-        if ret.status_code != 200:
+        if response.status_code == 504:
+            # backoff and repeat
+            return None
+        elif response.status_code != 200:
             raise RemoteError(
-                f'Poloniex query responded with error status code: {ret.status_code}'
-                f' and text: {ret.text}',
+                f'Poloniex query responded with error status code: {response.status_code}'
+                f' and text: {response.text}',
             )
 
+        # else all is good
+        return response
+
+    def _api_query(self, command: str, req: Optional[Dict] = None) -> Union[Dict, List]:
+        """An api query to poloniex. May make multiple requests
+
+        Can raise:
+         - RemoteError if there is a problem reaching poloniex or with the returned response
+        """
+        if req is None:
+            req = {}
+        log.debug(
+            'Poloniex API query',
+            command=command,
+            post_data=req,
+        )
+
+        tries = QUERY_RETRY_TIMES
+        while tries >= 0:
+            try:
+                response = self._single_query(command, req)
+            except requests.exceptions.ConnectionError as e:
+                raise RemoteError(f'Poloniex API request failed due to {str(e)}')
+
+            if response is None:
+                if tries >= 1:
+                    backoff_seconds = 20 / tries
+                    log.debug(
+                        f'Got a recoverable poloniex error. '
+                        f'Backing off for {backoff_seconds}',
+                    )
+                    gevent.sleep(backoff_seconds)
+                    tries -= 1
+                    continue
+            else:
+                break
+
+        if response is None:
+            raise RemoteError(
+                f'Got a recoverable poloniex error and did not manage to get a '
+                f'request through even after {QUERY_RETRY_TIMES} '
+                f'incremental backoff retries',
+            )
+
+        result: Union[Dict, List]
         try:
             if command == 'returnLendingHistory':
-                return rlk_jsonloads_list(ret.text)
+                result = rlk_jsonloads_list(response.text)
             else:
                 # For some reason poloniex can also return [] for an empty trades result
-                if ret.text == '[]':
-                    return {}
+                if response.text == '[]':
+                    result = {}
                 else:
-                    result = rlk_jsonloads_dict(ret.text)
-                    return _post_process(result)
+                    result = rlk_jsonloads_dict(response.text)
+                    result = _post_process(result)
         except JSONDecodeError:
-            raise RemoteError(f'Poloniex returned invalid JSON response: {ret.text}')
+            raise RemoteError(f'Poloniex returned invalid JSON response: {response.text}')
+
+        if isinstance(result, dict) and 'error' in result:
+            raise RemoteError(
+                'Poloniex query for "{}" returned error: {}'.format(
+                    command,
+                    result['error'],
+                ))
+
+        return result
 
     def return_currencies(self) -> Dict:
         response = self.api_query_dict('returnCurrencies')
@@ -345,7 +384,7 @@ class Poloniex(ExchangeInterface):
 
         Also maximum limit seems to be 12660
         """
-        req: Dict[str, Union[int, Timestamp]] = dict()
+        req: Dict[str, Union[int, Timestamp]] = {}
         if start_ts is not None:
             req['start'] = start_ts
         if end_ts is not None:
@@ -386,7 +425,7 @@ class Poloniex(ExchangeInterface):
         """If `currency_pair` is all, then it returns a dictionary with each key
         being a pair and each value a list of trades. If `currency_pair` is a specific
         pair then a list is returned"""
-        return self.api_query('returnTradeHistory', {
+        return self._api_query('returnTradeHistory', {
             'currencyPair': currency_pair,
             'start': start,
             'end': end,
@@ -405,11 +444,12 @@ class Poloniex(ExchangeInterface):
         return response
 
     # ---- General exchanges interface ----
+    @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
         try:
             resp = self.api_query_dict('returnCompleteBalances', {"account": "all"})
-        except (RemoteError, PoloniexError) as e:
+        except RemoteError as e:
             msg = (
                 'Poloniex API request failed. Could not reach poloniex due '
                 'to {}'.format(e)
@@ -417,7 +457,7 @@ class Poloniex(ExchangeInterface):
             log.error(msg)
             return None, msg
 
-        balances = dict()
+        balances = {}
         for poloniex_asset, v in resp.items():
             available = FVal(v['available'])
             on_orders = FVal(v['onOrders'])
@@ -445,10 +485,19 @@ class Poloniex(ExchangeInterface):
                         'Found poloniex asset entry with non-string type. '
                         ' Ignoring its balance query.',
                     )
+                    continue
 
                 entry = {}
                 entry['amount'] = available + on_orders
-                usd_price = Inquirer().find_usd_price(asset=asset)
+                try:
+                    usd_price = Inquirer().find_usd_price(asset=asset)
+                except RemoteError as e:
+                    self.msg_aggregator.add_error(
+                        f'Error processing poloniex balance entry due to inability to '
+                        f'query USD price: {str(e)}. Skipping balance entry',
+                    )
+                    continue
+
                 usd_value = entry['amount'] * usd_price
                 entry['usd_value'] = usd_value
                 balances[asset] = entry
@@ -492,6 +541,9 @@ class Poloniex(ExchangeInterface):
                 category = trade.get('category', None)
                 try:
                     if category == 'exchange' or category == 'settlement':
+                        timestamp = deserialize_timestamp_from_poloniex_date(trade['date'])
+                        if timestamp < start_ts or timestamp > end_ts:
+                            continue
                         our_trades.append(trade_from_poloniex(trade, TradePair(pair)))
                     elif category == 'marginTrade':
                         # We don't take poloniex margin trades into account at the moment
@@ -535,7 +587,7 @@ class Poloniex(ExchangeInterface):
         the file is not proper CSV"""
         # the default filename, and should be (if at all) inside the data directory
         path = os.path.join(self.db.user_data_dir, "lendingHistory.csv")
-        lending_history = list()
+        lending_history = []
         with open(path, 'r') as csvfile:
             history = csv.reader(csvfile, delimiter=',', quotechar='|')
             next(history)  # skip header row
@@ -576,7 +628,7 @@ class Poloniex(ExchangeInterface):
         try:
             if from_csv:
                 return self.parse_loan_csv()
-        except (OSError, IOError, csv.Error):
+        except (OSError, csv.Error):
             pass
 
         loans_query_return_limit = 12000
@@ -689,7 +741,7 @@ class Poloniex(ExchangeInterface):
             results_num=len(result['withdrawals']) + len(result['deposits']),
         )
 
-        movements = list()
+        movements = []
         for withdrawal in result['withdrawals']:
             asset_movement = self._deserialize_asset_movement(
                 movement_type=AssetMovementCategory.WITHDRAWAL,

@@ -8,7 +8,12 @@ from typing import NamedTuple, Optional
 from typing_extensions import Literal
 
 from rotkehlchen.data_handler import DataHandler
-from rotkehlchen.errors import AuthenticationError, RemoteError, RotkehlchenPermissionError
+from rotkehlchen.errors import (
+    PremiumAuthenticationError,
+    RemoteError,
+    RotkehlchenPermissionError,
+    UnableToDecryptRemoteData,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
@@ -108,8 +113,9 @@ class PremiumSyncManager():
 
         Returns true for success and False for error/failure
 
-        Can raise UnableToDecryptRemoteData due to decompress_and_decrypt_db.
-        We let it bubble up so that it can be handled by the uper layer.
+        Can raise PremiumAuthenticationError due to an UnableToDecryptRemoteData
+        coming from  decompress_and_decrypt_db. This happens when the given password
+        does not match the one on the saved DB.
         """
         try:
             result = self.premium.pull_data()
@@ -117,7 +123,14 @@ class PremiumSyncManager():
             log.debug('sync from server -- pulling failed.', error=str(e))
             return False
 
-        self.data.decompress_and_decrypt_db(self.password, result['data'])
+        try:
+            self.data.decompress_and_decrypt_db(self.password, result['data'])
+        except UnableToDecryptRemoteData:
+            raise PremiumAuthenticationError(
+                'The given password can not unlock the database that was retrieved  from '
+                'the server. Make sure to use the same password as when the account was created.',
+            )
+
         return True
 
     def maybe_upload_data_to_server(self) -> None:
@@ -191,7 +204,7 @@ class PremiumSyncManager():
 
         Returns the created premium if user's premium credentials were fine.
 
-        If not it will raise AuthenticationError.
+        If not it will raise PremiumAuthenticationError.
         """
 
         if given_premium_credentials is not None:
@@ -199,21 +212,20 @@ class PremiumSyncManager():
 
             try:
                 self.premium = premium_create_and_verify(given_premium_credentials)
-            except AuthenticationError as e:
+            except PremiumAuthenticationError as e:
                 log.error('Given API key is invalid')
                 # At this point we are at a new user trying to create an account with
                 # premium API keys and we failed. But a directory was created. Remove it.
                 # But create a backup of it in case something went really wrong
                 # and the directory contained data we did not want to lose
                 shutil.move(
-                    self.data.user_directory,
+                    self.data.user_data_dir,
                     os.path.join(
                         self.data.data_directory,
                         f'auto_backup_{username}_{ts_now()}',
                     ),
                 )
-                shutil.rmtree(self.data.user_directory)
-                raise AuthenticationError(
+                raise PremiumAuthenticationError(
                     'Could not verify keys for the new account. '
                     '{}'.format(str(e)),
                 )
@@ -224,13 +236,13 @@ class PremiumSyncManager():
             assert not create_new, 'We should never get here for a new account'
             try:
                 self.premium = premium_create_and_verify(db_credentials)
-            except AuthenticationError as e:
+            except PremiumAuthenticationError as e:
                 message = (
                     f'Could not authenticate with the rotkehlchen server with '
                     f'the API keys found in the Database. Error: {str(e)}'
                 )
                 log.error(message)
-                raise AuthenticationError(message)
+                raise PremiumAuthenticationError(message)
 
         # From this point on we should have a self.premium with valid credentials
         result = self._can_sync_data_from_server(new_account=create_new)

@@ -8,15 +8,11 @@ from data_faker.utils import assets_exist_at_time
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
-from rotkehlchen.binance import create_binance_symbols_to_pair
 from rotkehlchen.errors import UnsupportedAsset
-from rotkehlchen.exchanges.data_structures import (
-    Trade,
-    TradeType,
-    pair_get_assets,
-    trade_pair_from_assets,
-)
+from rotkehlchen.exchanges.binance import create_binance_symbols_to_pair
+from rotkehlchen.exchanges.data_structures import Trade, TradeType, trade_pair_from_assets
 from rotkehlchen.fval import FVal
+from rotkehlchen.serialization.deserialize import pair_get_assets
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.typing import Timestamp, TradePair
 
@@ -41,7 +37,7 @@ DISALLOWED_ASSETS = (
 )
 
 
-class FakeBinance(object):
+class FakeBinance():
 
     def __init__(self) -> None:
         this_dir = os.path.dirname(os.path.abspath(__file__))
@@ -79,14 +75,14 @@ class FakeBinance(object):
             price_query: Callable[[Asset, Asset, Timestamp], FVal],
     ) -> TradePair:
         """Choose a random pair to trade from the available pairs at the selected timestamp"""
-        choices = set(list(self._symbols_to_pair.keys()))
+        choices = set(self._symbols_to_pair.keys())
         found = False
         while len(choices) != 0:
             pair = random.choice(tuple(choices))
             choices.remove(pair)
             binance_pair = self._symbols_to_pair[pair]
-            bbase = binance_pair.base_asset
-            bquote = binance_pair.quote_asset
+            bbase = binance_pair.binance_base_asset
+            bquote = binance_pair.binance_quote_asset
             try:
                 base = asset_from_binance(bbase)
                 quote = asset_from_binance(bquote)
@@ -113,7 +109,12 @@ class FakeBinance(object):
         """Returns the balance of asset that's held in the exchance or None"""
         return self.balances_dict.get(asset.identifier)
 
-    def deposit(self, asset: Asset, amount: FVal, time: Timestamp) -> None:
+    def deposit(
+            self,
+            asset: Asset,
+            amount: FVal,
+            time: Timestamp,  # pylint: disable=unused-argument
+    ) -> None:
         self.increase_asset(asset, amount)
 
     def append_trade(self, trade: Trade):

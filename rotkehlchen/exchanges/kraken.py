@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Good kraken and python resource:
 # https://github.com/zertrin/clikraken/tree/master/clikraken
 import base64
@@ -10,11 +8,13 @@ import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
 
+from gevent.lock import Semaphore
 from requests import Response
 
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_DAI, A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import (
     DeserializationError,
     RecoverableRequestError,
@@ -26,7 +26,6 @@ from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     Trade,
     get_pair_position_asset,
-    pair_get_assets,
     trade_pair_from_assets,
 )
 from rotkehlchen.exchanges.exchange import ExchangeInterface
@@ -40,10 +39,12 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_price,
     deserialize_timestamp_from_kraken,
     deserialize_trade_type,
+    pair_get_assets,
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, Location, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import cache_response_timewise, retry_calls
+from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
+from rotkehlchen.utils.misc import retry_calls
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 if TYPE_CHECKING:
@@ -154,7 +155,8 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
     order_type = deserialize_trade_type(kraken_trade['type'])
     rate = deserialize_price(kraken_trade['price'])
 
-    if cost != amount * rate:
+    # pylint does not seem to see that Price is essentially FVal
+    if not cost.is_close(amount * rate):  # pylint: disable=no-member
         log.warning(f'cost ({cost}) != amount ({amount}) * rate ({rate}) for kraken trade')
 
     log.debug(
@@ -243,6 +245,7 @@ class Kraken(ExchangeInterface):
         self.session.headers.update({
             'API-Key': self.api_key,
         })
+        self.nonce_lock = Semaphore()
 
     def validate_api_key(self) -> Tuple[bool, str]:
         """Validates that the Kraken API Key is good for usage in Rotkehlchen
@@ -278,7 +281,7 @@ class Kraken(ExchangeInterface):
             self.query_private(method_str, req)
         except (RemoteError, ValueError) as e:
             error = str(e)
-            if 'Error: Incorrect padding' in error:
+            if 'Incorrect padding' in error:
                 return False, 'Provided API Key or secret is in invalid Format'
             elif 'EAPI:Invalid key' in error:
                 return False, 'Provided API Key is invalid'
@@ -352,8 +355,8 @@ class Kraken(ExchangeInterface):
 
         urlpath = '/' + KRAKEN_API_VERSION + '/private/' + method
 
-        with self.lock:
-            # Protect this section, or else
+        with self.nonce_lock:
+            # Protect this section, or else, non increasing nonces will be rejected
             req['nonce'] = int(1000 * time.time())
             post_data = urlencode(req)
             # any unicode strings must be turned to bytes
@@ -376,6 +379,7 @@ class Kraken(ExchangeInterface):
         return _check_and_get_response(response, method)
 
     # ---- General exchanges interface ----
+    @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[dict], str]:
         try:
@@ -389,7 +393,7 @@ class Kraken(ExchangeInterface):
             log.error(msg)
             return None, msg
 
-        balances = dict()
+        balances = {}
         for k, v in old_balances.items():
             v = FVal(v)
             if v == FVal(0):
@@ -412,8 +416,19 @@ class Kraken(ExchangeInterface):
 
             entry = {}
             entry['amount'] = v
-            usd_price = Inquirer().find_usd_price(our_asset)
-            entry['usd_value'] = FVal(v * usd_price)
+            if k == 'KFEE':
+                # There is no price value for KFEE. TODO: Shouldn't we then just skip the balance?
+                entry['usd_value'] = ZERO
+            else:
+                try:
+                    usd_price = Inquirer().find_usd_price(our_asset)
+                except RemoteError as e:
+                    self.msg_aggregator.add_error(
+                        f'Error processing kraken balance entry due to inability to '
+                        f'query USD price: {str(e)}. Skipping balance entry',
+                    )
+                    continue
+                entry['usd_value'] = FVal(v * usd_price)
 
             balances[our_asset] = entry
             log.debug(
@@ -438,7 +453,7 @@ class Kraken(ExchangeInterface):
         you need to check the 'count' of the returned results and provide sufficient
         calls with enough offset to gather all the data of your query.
         """
-        result: List = list()
+        result: List = []
 
         log.debug(
             f'Querying Kraken {endpoint} from {start_ts} to '
@@ -538,7 +553,7 @@ class Kraken(ExchangeInterface):
             offset: Optional[int] = None,
             extra_dict: Optional[dict] = None,
     ) -> dict:
-        request: Dict[str, Union[Timestamp, int]] = dict()
+        request: Dict[str, Union[Timestamp, int]] = {}
         request['start'] = start_ts
         request['end'] = end_ts
         if offset is not None:
@@ -558,19 +573,19 @@ class Kraken(ExchangeInterface):
             keyname='ledger',
             start_ts=start_ts,
             end_ts=end_ts,
-            extra_dict=dict(type='deposit'),
+            extra_dict={'type': 'deposit'},
         )
         result.extend(self.query_until_finished(
             endpoint='Ledgers',
             keyname='ledger',
             start_ts=start_ts,
             end_ts=end_ts,
-            extra_dict=dict(type='withdrawal'),
+            extra_dict={'type': 'withdrawal'},
         ))
 
         log.debug('Kraken deposit/withdrawals query result', num_results=len(result))
 
-        movements = list()
+        movements = []
         for movement in result:
             try:
                 asset = asset_from_kraken(movement['asset'])

@@ -4,4 +4,4 @@ lint:
 	pylint --rcfile .pylint.rc rotkehlchen/ tools/data_faker
 
 clean:
-	rm -rf build/ rotkehlchen_py_dist/ htmlcov/ rotkehlchen.egg-info/ *.dmg
+	rm -rf build/ rotkehlchen_py_dist/ htmlcov/ rotkehlchen.egg-info/ *.dmg electron-app/dist/

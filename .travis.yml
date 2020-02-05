@@ -21,6 +21,7 @@ env:
   - GETH_URL_LINUX='https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.8.13-225171a4.tar.gz'
   - GETH_URL_MACOS='https://gethstore.blob.core.windows.net/builds/geth-darwin-amd64-1.8.13-225171a4.tar.gz'
   - GETH_VERSION='1.8.13'
+  - secure: GHP9nhN+M8aYU+XY7R2vzpIftCEv9J/rPnvtJZ8mcYT591Fpom8OvWFrJlHgDDVU0kGKNNE6kMcvZ4zKpOakiKzghONemclUSMotaJSTnWkdEUHi7oUFWtP/VQMv4/ywBbhrIY7R6kZzlJ0QAGh9Yl62Azlq2cal3XrURNP1ehOr5yENgg+rQwPoeqyv5lvcTbI8D5dq+7XqodKdh4toCb2BRbBzj8xPE+m71hzA3McwEBXa5Hn1A2U7HUWM74mOPV1JFoG8ED0qIHfprLWW2mwHZNYgwuLgSsyzNeqN2+jL6OIFoBSzugzfLojD9hmiAJTLI/QNR/7lXN7N/CjBlQos7aeWdaZhnVfj+ca2w0qJ1MLGz17fJWzko5UbWBWFqNF2IMBvI9VB0MXCMYVZEAns7r//ymPM4i6rVD8Tnh0vOkCoRdaM5MEGMfO8hYDKzrcava59CGJA5XjBIka3feb5fkYhUdqnvZCcbZu7upCKQXadTxFxHhKxWXjUD/yOw7o20gujVRnzcsJ51/rKy9gwbGjWh0t/6+2SgWdaM20TJDbrzTLSnI1GHwMphCHkl2vHY10uclauihdjruvh4fwIYhU+Ic1FXsvaKexCDgArOSdp5UxX/xiK/AlHu/8EKV4bg7efKxYTi+EK/sm815GaOi1AVHd/2tm7OLdkfJQ=
 
 templates:
   job-template-linux: &job-template-linux
@@ -62,10 +63,19 @@ templates:
       # inside ./run_tests.sh but need to have them all here so
       # that the environment is properly picked up
       - source terryfy/test_tools.sh
-      - python -m pytest $COVERAGE_ARGS rotkehlchen/
+      - python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/
+
+    job-template-frontend: &job-template-frontend
+      os: linux
+      language: node_js
+      node_js:
+        - 12
+      before_install:
+        - cd ./electron-app
 
 cache:
   pip: true
+  npm: true
   directories:
     - $HOME/.cache/pip
     - $HOME/.cache/.rotkehlchen-test-dir
@@ -76,7 +86,9 @@ jobs:
   include:
     - stage: lint
       sudo: false
-      install: pip install -r requirements_lint.txt
+      install:
+        - pip install -r requirements_lint.txt
+        - pip install -e .
       script:
         - git rev-parse HEAD
         - make lint
@@ -86,6 +98,17 @@ jobs:
 
     - stage: test
       <<: *job-template-osx
+
+    - stage: lint
+      <<: *job-template-frontend
+      script:
+        - npm run lint
+        - npm run build
+
+    - stage: test
+      <<: *job-template-frontend
+      script:
+        - npm run test:unit
 
     - stage: ui-test
       <<: *job-template-linux
@@ -97,10 +120,9 @@ jobs:
       <<: *job-template-osx
       script:
         - source terryfy/test_tools.sh
-        - npm install
-        - npm rebuild zeromq --runtime=electron --target=3.0.0
-        - PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild
-        - npm test
+        - cd ./electron-app
+        - npm ci
+        - npm run test:e2e
       after_failure:
         - ./tools/scripts/screenshot_upload.py ./failure-screenshots
 
@@ -113,31 +135,27 @@ jobs:
         - provider: releases
           api_key:
             secure: mz0Fe/4wADGg0xEMRahETd68jtFiNDUGHxv1K2cyt0pHE1fMR+eOXcCfM+CD2cIpTOaygCBS68G8t8zzHz54r3yf9ER2BuRrTOg4rVeER1xiYsfnVOVmVio2GMVbLpEf+OhFui7h7kNK+ftC8+uA8yipvXYTtt1CQQZfxfVxLg9MqQb/Hm5eNtY16rE8HpOX12Jx0CgRwE6d0hloWoe/c7TWDRDmDJQcvvB2dUhMdF4q1CT4AI3rg349fnJEMxvfyFSMNA5NPV647e9sEMC2yAo3E47CDdeGwPcx8NC0+IkVqsnwviAFj+rlmTVaAGNA2gYCwaGu45MA8JN+YXXj0sxkAbs83QSBVv3in4JBfzeI1Yvh6iJbq+F+61pCCiT7s19edfpinnGS0Tcs6sEEJw/7ugd256+Sep3ayZyQUabHDNX+hkA3bz+Ci7f1UK1rX4u4LYDoD6C1SzULjl/+PEdN0ah6gRqqdO1z5ZJDUSDzNFcpL2noWAUp7yGLlCKCV5TShoyyU36TpP+3b0MzOGw49et8w2uIZXlOdFjlJLN1TDQfq9eDhjPn2FhnbZ+Se38hvrJtiWqFz/84OnMsJ/MS5CLnsaqiBf3glvuCLW4gWNIyrR+5HQcft7oHk/gtZM8w/wtWGKGcGonTk4Hmf0aMbRDI4OCFB50HGR/DX4c=
-          file: $ARCHIVE_NAME.zip
+          file: $GENERATED_APPIMAGE
           skip_cleanup: true
           draft: true
           on:
             tags: true
             condition: $TRAVIS_OS_NAME = linux
             repo: rotki/rotki
-            branch: master
+            all_branch: true
+      on:
+        tags: true
+        condition: $TRAVIS_OS_NAME = linux
+        repo: rotki/rotki
+        all_branch: true
 
     - stage: deploy
       <<: *job-template-osx
       name: "Deploy Job"
       script:
         - source ./package.sh
-      deploy:
-        - provider: releases
-          api_key:
-            secure: mz0Fe/4wADGg0xEMRahETd68jtFiNDUGHxv1K2cyt0pHE1fMR+eOXcCfM+CD2cIpTOaygCBS68G8t8zzHz54r3yf9ER2BuRrTOg4rVeER1xiYsfnVOVmVio2GMVbLpEf+OhFui7h7kNK+ftC8+uA8yipvXYTtt1CQQZfxfVxLg9MqQb/Hm5eNtY16rE8HpOX12Jx0CgRwE6d0hloWoe/c7TWDRDmDJQcvvB2dUhMdF4q1CT4AI3rg349fnJEMxvfyFSMNA5NPV647e9sEMC2yAo3E47CDdeGwPcx8NC0+IkVqsnwviAFj+rlmTVaAGNA2gYCwaGu45MA8JN+YXXj0sxkAbs83QSBVv3in4JBfzeI1Yvh6iJbq+F+61pCCiT7s19edfpinnGS0Tcs6sEEJw/7ugd256+Sep3ayZyQUabHDNX+hkA3bz+Ci7f1UK1rX4u4LYDoD6C1SzULjl/+PEdN0ah6gRqqdO1z5ZJDUSDzNFcpL2noWAUp7yGLlCKCV5TShoyyU36TpP+3b0MzOGw49et8w2uIZXlOdFjlJLN1TDQfq9eDhjPn2FhnbZ+Se38hvrJtiWqFz/84OnMsJ/MS5CLnsaqiBf3glvuCLW4gWNIyrR+5HQcft7oHk/gtZM8w/wtWGKGcGonTk4Hmf0aMbRDI4OCFB50HGR/DX4c=
-          file: $ARCHIVE_NAME.dmg
-          skip_cleanup: true
-          draft: true
-          on:
-            tags: true
-            condition: $TRAVIS_OS_NAME = osx
-            repo: rotki/rotki
-            branch: master
-
-
+      on:
+        tags: true
+        condition: $TRAVIS_OS_NAME = osx
+        repo: rotki/rotki
+        all_branch: true

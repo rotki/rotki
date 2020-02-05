@@ -2711,6 +2711,14 @@
         "symbol": "DREAM",
         "type": "ethereum token"
     },
+    "DREP": {
+        "ethereum_address": "0x22dE9912cd3D74953B1cd1F250B825133cC2C1b3",
+        "ethereum_token_decimals": 18,
+        "name": "DREP",
+        "started": 1567641600,
+        "symbol": "DREP",
+        "type": "ethereum token"
+    },
     "DRGN": {
         "ethereum_address": "0x419c4dB4B9e25d6Db2AD9691ccb832C8D9fDA05E",
         "ethereum_token_decimals": 18,
@@ -6260,6 +6268,14 @@
         "symbol": "ODE",
         "type": "ethereum token"
     },
+    "OGN": {
+        "ethereum_address": "0x8207c1FfC5B6804F6024322CcF34F29c3541Ae26",
+        "ethereum_token_decimals": 18,
+        "name": "Origin Protocol",
+        "started": 1538352000,
+        "symbol": "OGN",
+        "type": "ethereum token"
+    },
     "OK": {
         "name": "OKCash",
         "started": 1416787200,
@@ -6433,6 +6449,14 @@
         "name": "OWNDATA",
         "started": 1528538549,
         "symbol": "OWN",
+        "type": "ethereum token"
+    },
+    "OXT": {
+        "ethereum_address": "0x4575f41308EC1483f3d399aa9a2826d74Da13Deb",
+        "ethereum_token_decimals": 18,
+        "name": "Orchid",
+        "started": 1575331200,
+        "symbol": "OXT",
         "type": "ethereum token"
     },
     "PAI": {
@@ -8381,6 +8405,14 @@
         "symbol": "TCNX",
         "type": "ethereum token"
     },
+    "TCT": {
+        "ethereum_address": "0x4824A7b64E3966B0133f4f4FFB1b9D6bEb75FFF7",
+        "ethereum_token_decimals": 18,
+        "name": "TokenClub",
+        "started": 1513987200,
+        "symbol": "TCT",
+        "type": "ethereum token"
+    },
     "TEAM": {
         "ethereum_address": "0x1c79ab32C66aCAa1e9E81952B8AAa581B43e54E7",
         "ethereum_token_decimals": 4,
@@ -9674,11 +9706,28 @@
         "symbol": "XSI",
         "type": "own chain"
     },
+    "XSR": {
+        "ethereum_address": "0x6bC1F3A1ae56231DbB64d3E82E070857EAe86045",
+        "ethereum_token_decimals": 18,
+        "active": true,
+        "name": "Xensor",
+        "started": 1571636345,
+        "symbol": "XSR",
+        "type": "ethereum token"
+    },
     "XST": {
         "name": "StealthCoin",
         "started": 1403568000,
         "symbol": "XST",
         "type": "own chain"
+    },
+    "XTP": {
+        "ethereum_address": "0x6368e1E18c4C419DDFC608A0BEd1ccb87b9250fc",
+        "ethereum_token_decimals": 18,
+        "name": "Tap",
+        "started": 1576627200,
+        "symbol": "XTP",
+        "type": "ethereum token"
     },
     "XTZ": {
         "name": "Tezos",

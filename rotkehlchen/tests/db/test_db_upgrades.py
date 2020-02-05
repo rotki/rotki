@@ -265,9 +265,9 @@ def test_upgrade_db_1_to_2(data_dir, username):
         data.unlock(username, '123', create_new=True)
     # Manually input a non checksummed account
     data.db.conn.commit()
-    data.db.add_blockchain_account(
+    data.db.add_blockchain_accounts(
         SupportedBlockchain.ETHEREUM,
-        '0xe3580c38b0106899f45845e361ea7f8a0062ef12',
+        ['0xe3580c38b0106899f45845e361ea7f8a0062ef12'],
     )
 
     # now relogin and check that the account has been re-saved as checksummed
@@ -710,6 +710,67 @@ def test_upgrade_broken_db_7_to_8(data_dir, username):
     with pytest.raises(DBUpgradeError):
         with target_patch(target_version=8):
             DBHandler(user_data_dir=userdata_dir, password='123', msg_aggregator=msg_aggregator)
+
+
+def test_upgrade_db_8_to_9(data_dir, username):
+    """Test upgrading the DB from version 8 to version 9.
+
+    Adding the passphrase column to user credentials"""
+    msg_aggregator = MessagesAggregator()
+    userdata_dir = os.path.join(data_dir, username)
+    os.mkdir(userdata_dir)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    copyfile(
+        os.path.join(os.path.dirname(dir_path), 'data', 'v8_rotkehlchen.db'),
+        os.path.join(userdata_dir, 'rotkehlchen.db'),
+    )
+
+    with target_patch(target_version=9):
+        db = DBHandler(user_data_dir=userdata_dir, password='123', msg_aggregator=msg_aggregator)
+
+    cursor = db.conn.cursor()
+    results = cursor.execute(
+        'SELECT name, api_key, api_secret, passphrase FROM user_credentials;',
+    )
+    names = {'coinbase', 'coinbasepro', 'binance', 'bittrex', 'kraken', 'bitmex'}
+    for result in results:
+        assert result[0] in names
+        names.remove(result[0])
+        assert result[1] == '9f07a6f548f3d0ddb68fb406353063ba'  # api key
+        assert result[2] == (
+            'auIO4FWI3HmL1AnhYaNoK0vr4tTaZyAU3/TI9M46V9IeeCPTxyWV'
+            '3JCVzHmcVV9+n+v4TbsIyRndaL9XbFkCuQ=='
+        )  # api secret
+        assert result[3] is None  # passphrase
+
+    assert len(names) == 0, 'not all exchanges were found in the new DB'
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 9
+
+
+def test_upgrade_db_9_to_10(data_dir, username):
+    """Test upgrading the DB from version 9 to version 10.
+
+    Deleting all entries from used_query_ranges"""
+    msg_aggregator = MessagesAggregator()
+    userdata_dir = os.path.join(data_dir, username)
+    os.mkdir(userdata_dir)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    copyfile(
+        os.path.join(os.path.dirname(dir_path), 'data', 'v9_rotkehlchen.db'),
+        os.path.join(userdata_dir, 'rotkehlchen.db'),
+    )
+
+    with target_patch(target_version=10):
+        db = DBHandler(user_data_dir=userdata_dir, password='123', msg_aggregator=msg_aggregator)
+
+    cursor = db.conn.cursor()
+    results = cursor.execute(
+        'SELECT name, start_ts, end_ts FROM used_query_ranges;',
+    )
+    assert len(results.fetchall()) == 0
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 10
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):

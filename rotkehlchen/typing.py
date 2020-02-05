@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, NamedTuple, NewType, Optional, TypeVar, Union
+from typing import Dict, List, NamedTuple, NewType, Optional, Tuple, Union
 
 from eth_utils.typing import ChecksumAddress
 
@@ -26,16 +26,51 @@ B64EncodedString = NewType('B64EncodedString', T_B64EncodedString)
 
 
 class ApiCredentials(NamedTuple):
-    """Represents Credentials for various APIs. Exchanges, Premium e.t.c."""
+    """Represents Credentials for various APIs. Exchanges, Premium e.t.c.
+
+    The Api in question must at least have an API key and an API secret.
+    """
     api_key: ApiKey
     api_secret: ApiSecret
+    passphrase: Optional[str] = None
 
     @staticmethod
-    def serialize(api_key: str, api_secret: str) -> 'ApiCredentials':
+    def serialize(
+            api_key: str,
+            api_secret: str,
+            passphrase: Optional[str] = None,
+    ) -> 'ApiCredentials':
         return ApiCredentials(
             api_key=ApiKey(api_key),
             api_secret=ApiSecret(str.encode(api_secret)),
+            passphrase=passphrase,
         )
+
+
+class ExternalService(Enum):
+    ETHERSCAN = 0
+    CRYPTOCOMPARE = 1
+
+    @staticmethod
+    def serialize(name: str) -> Optional['ExternalService']:
+        if name == 'etherscan':
+            return ExternalService.ETHERSCAN
+        elif name == 'cryptocompare':
+            return ExternalService.CRYPTOCOMPARE
+
+        return None
+
+
+class ExternalServiceApiCredentials(NamedTuple):
+    """Represents Credentials for various External APIs. Etherscan, Cryptocompare e.t.c.
+
+    The Api in question must at least have an API key.
+    """
+    service: ExternalService
+    api_key: ApiKey
+
+    def serialize_for_db(self) -> Tuple[str, str]:
+        return (self.service.name.lower(), self.api_key)
 
 
 T_FilePath = str
@@ -43,9 +78,6 @@ FilePath = NewType('FilePath', T_FilePath)
 
 T_TradePair = str
 TradePair = NewType('TradePair', T_TradePair)
-
-T_FiatAsset = str
-FiatAsset = NewType('FiatAsset', T_FiatAsset)
 
 T_EthAddres = str
 EthAddress = NewType('EthAddress', T_EthAddres)
@@ -56,6 +88,7 @@ T_BTCAddress = str
 BTCAddress = NewType('BTCAddress', T_BTCAddress)
 
 BlockchainAddress = Union[EthAddress, BTCAddress, ChecksumEthAddress]
+ListOfBlockchainAddresses = Union[List[BTCAddress], List[ChecksumEthAddress]]
 
 
 class EthTokenInfo(NamedTuple):
@@ -76,10 +109,6 @@ Price = NewType('Price', T_Price)
 
 T_AssetAmount = FVal
 AssetAmount = NewType('AssetAmount', T_AssetAmount)
-
-# Types that can go in functions that have
-# things that can be calculated such as amount, fees, price e.t.c.
-Numerical = TypeVar('Numerical', FVal, AssetAmount, Fee, Price)
 
 T_TradeID = str
 TradeID = NewType('TradeID', T_TradeID)
@@ -203,6 +232,7 @@ class Location(Enum):
     TOTAL = 8
     BANKS = 9
     BLOCKCHAIN = 10
+    COINBASEPRO = 11
 
     def __str__(self) -> str:
         if self == Location.EXTERNAL:
@@ -225,6 +255,8 @@ class Location(Enum):
             return 'banks'
         elif self == Location.BLOCKCHAIN:
             return 'blockchain'
+        elif self == Location.COINBASEPRO:
+            return 'coinbasepro'
 
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 
@@ -249,6 +281,8 @@ class Location(Enum):
             return 'I'
         elif self == Location.BLOCKCHAIN:
             return 'J'
+        elif self == Location.COINBASEPRO:
+            return 'K'
 
         raise RuntimeError(f'Corrupt value {self} for Location -- Should never happen')
 

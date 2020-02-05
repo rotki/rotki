@@ -22,8 +22,6 @@ from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     Trade,
     get_pair_position_asset,
-    get_pair_position_str,
-    pair_get_assets,
     trade_pair_from_assets,
 )
 from rotkehlchen.exchanges.exchange import ExchangeInterface
@@ -36,6 +34,8 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_price,
     deserialize_timestamp_from_bittrex_date,
     deserialize_trade_type,
+    get_pair_position_str,
+    pair_get_assets,
 )
 from rotkehlchen.typing import (
     ApiKey,
@@ -47,7 +47,7 @@ from rotkehlchen.typing import (
     TradePair,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import cache_response_timewise
+from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 if TYPE_CHECKING:
@@ -275,6 +275,7 @@ class Bittrex(ExchangeInterface):
         result = self.api_query('getcurrencies')
         return result
 
+    @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
         try:
@@ -287,7 +288,7 @@ class Bittrex(ExchangeInterface):
             log.error(msg)
             return None, msg
 
-        returned_balances = dict()
+        returned_balances = {}
         for entry in resp:
             try:
                 asset = asset_from_bittrex(entry['Currency'])
@@ -310,9 +311,16 @@ class Bittrex(ExchangeInterface):
                 )
                 continue
 
-            usd_price = Inquirer().find_usd_price(asset=asset)
+            try:
+                usd_price = Inquirer().find_usd_price(asset=asset)
+            except RemoteError as e:
+                self.msg_aggregator.add_error(
+                    f'Error processing bittrex balance entry due to inability to '
+                    f'query USD price: {str(e)}. Skipping balance entry',
+                )
+                continue
 
-            balance = dict()
+            balance = {}
             balance['amount'] = FVal(entry['Balance'])
             balance['usd_value'] = FVal(balance['amount']) * usd_price
             returned_balances[asset] = balance
@@ -335,7 +343,7 @@ class Bittrex(ExchangeInterface):
             count: Optional[int] = None,
     ) -> List[Trade]:
 
-        options: Dict[str, Union[str, int]] = dict()
+        options: Dict[str, Union[str, int]] = {}
         if market is not None:
             options['market'] = world_pair_to_bittrex(market)
         if count is not None:

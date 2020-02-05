@@ -1,11 +1,14 @@
+import pytest
+
 from rotkehlchen.exchanges.data_structures import BuyEvent, Events
 from rotkehlchen.fval import FVal
 
 
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
 def test_search_buys_calculate_profit_after_year(accountant):
     asset = 'BTC'
     events = accountant.events.events
-    events[asset] = Events(list(), list())
+    events[asset] = Events([], [])
     events[asset].buys.append(
         BuyEvent(
             amount=FVal(5),
@@ -57,7 +60,7 @@ def test_search_buys_calculate_profit_1_buy_consumed_by_1_sell(accountant):
     """
     asset = 'BTC'
     events = accountant.events.events
-    events[asset] = Events(list(), list())
+    events[asset] = Events([], [])
     events[asset].buys.append(
         BuyEvent(
             amount=FVal(5),
@@ -91,7 +94,7 @@ def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxable(accountant):
     """
     asset = 'BTC'
     events = accountant.events.events
-    events[asset] = Events(list(), list())
+    events[asset] = Events([], [])
     events[asset].buys.append(
         BuyEvent(
             amount=FVal(5),
@@ -135,6 +138,7 @@ def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxable(accountant):
     assert (len(accountant.events.events[asset].buys)) == 0, 'the buy should have been used'
 
 
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
 def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxfree(accountant):
     """ Make sure that when 1 buy is used by 2 sells bought cost is correct
 
@@ -143,7 +147,7 @@ def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxfree(accountant):
     """
     asset = 'BTC'
     events = accountant.events.events
-    events[asset] = Events(list(), list())
+    events[asset] = Events([], [])
     events[asset].buys.append(
         BuyEvent(
             amount=FVal(5),
@@ -187,10 +191,11 @@ def test_search_buys_calculate_profit_1_buy_used_by_2_sells_taxfree(accountant):
     assert (len(accountant.events.events[asset].buys)) == 0, 'the buy should have been used'
 
 
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
 def test_search_buys_calculate_profit_sell_more_than_bought_within_year(accountant):
     asset = 'BTC'
     events = accountant.events.events
-    events[asset] = Events(list(), list())
+    events[asset] = Events([], [])
     events[asset].buys.append(
         BuyEvent(
             amount=FVal(1),
@@ -225,10 +230,11 @@ def test_search_buys_calculate_profit_sell_more_than_bought_within_year(accounta
     assert (len(accountant.events.events[asset].buys)) == 0, 'only buy should have been used'
 
 
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
 def test_search_buys_calculate_profit_sell_more_than_bought_after_year(accountant):
     asset = 'BTC'
     events = accountant.events.events
-    events[asset] = Events(list(), list())
+    events[asset] = Events([], [])
     events[asset].buys.append(
         BuyEvent(
             amount=FVal(1),
@@ -266,7 +272,7 @@ def test_search_buys_calculate_profit_sell_more_than_bought_after_year(accountan
 def test_reduce_asset_amount(accountant):
     asset = 'BTC'
     events = accountant.events.events
-    events[asset] = Events(list(), list())
+    events[asset] = Events([], [])
     events[asset].buys.append(
         BuyEvent(
             amount=FVal(1),
@@ -301,7 +307,7 @@ def test_reduce_asset_amount(accountant):
 def test_reduce_asset_amount_exact(accountant):
     asset = 'BTC'
     events = accountant.events.events
-    events[asset] = Events(list(), list())
+    events[asset] = Events([], [])
     events[asset].buys.append(
         BuyEvent(
             amount=FVal(1),
@@ -331,7 +337,7 @@ def test_reduce_asset_amount_not_bought(accountant):
 def test_reduce_asset_amount_more_that_bought(accountant):
     asset = 'BTC'
     events = accountant.events.events
-    events[asset] = Events(list(), list())
+    events[asset] = Events([], [])
     events[asset].buys.append(
         BuyEvent(
             amount=FVal(1),

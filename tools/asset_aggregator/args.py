@@ -29,4 +29,12 @@ def aggregator_args() -> argparse.ArgumentParser:
             'of new assets to the assets list. Can not be combined with --process-eth-tokens',
         ),
     )
+    p.add_argument(
+        '--db-user',
+        help='The DB username to connect to'
+    )
+    p.add_argument(
+        '--db-password',
+        help='The password to use to connect to the DB'
+    )
     return p

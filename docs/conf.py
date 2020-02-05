@@ -20,13 +20,13 @@
 # -- Project information -----------------------------------------------------
 
 project = 'Rotki'
-copyright = '2018-2019, Lefteris Karapetsas'
+copyright = '2018-2020, Lefteris Karapetsas'
 author = 'Lefteris Karapetsas'
 
 # The short X.Y version
-version = '1.0.7'
+version = '1.1.0'
 # The full version, including alpha/beta/rc tags
-release = '1.0.7'
+release = '1.1.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -42,6 +42,8 @@ extensions = [
     'releases',
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
+    'sphinxcontrib.httpdomain',
+    'sphinxcontrib.httpexample',
 ]
 
 
@@ -108,7 +110,7 @@ html_static_path = ['_static']
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
 #
-html_logo = '../ui/images/rotkehlchen_no_text.png'
+html_logo = '../electron-app/src/assets/images/rotkehlchen_no_text.png'
 
 html_show_copyright = False
 

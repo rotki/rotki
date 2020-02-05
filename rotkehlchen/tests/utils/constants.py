@@ -1,4 +1,5 @@
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.typing import EthAddress
 
 A_RDN = EthereumToken('RDN')
@@ -10,12 +11,13 @@ A_DASH = Asset('DASH')
 A_IOTA = Asset('IOTA')
 A_BSV = Asset('BSV')
 A_BCH = Asset('BCH')
-A_GBP = Asset('GBP')
 A_SNGLS = Asset('SNGLS')
 A_BNB = Asset('BNB')
 A_USDT = Asset('USDT')
 A_CNY = Asset('CNY')
 A_JPY = Asset('JPY')
+A_MKR = Asset('MKR')
+A_BAT = Asset('BAT')
 
 ETH_ADDRESS1 = EthAddress('0x5153493bB1E1642A63A098A65dD3913daBB6AE24')
 ETH_ADDRESS2 = EthAddress('0x4FED1fC4144c223aE3C1553be203cDFcbD38C581')
@@ -27,3 +29,5 @@ TX_HASH_STR3 = '0x3c81144c29f60236f735cd0a8a2f2a7e3a6db52a713f8211b562fd15d3e0e1
 
 MOCK_INPUT_DATA = b'123'
 MOCK_INPUT_DATA_HEX = '0x313233'
+
+DEFAULT_TESTS_MAIN_CURRENCY = A_EUR

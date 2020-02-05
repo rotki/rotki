@@ -6,15 +6,16 @@ from typing import Any, Callable, Dict, List, Optional
 from data_faker.utils import assets_exist_at_time
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.exchanges.data_structures import Trade, pair_get_assets, trade_pair_from_assets
+from rotkehlchen.exchanges.data_structures import Trade, trade_pair_from_assets
+from rotkehlchen.exchanges.kraken import kraken_to_world_pair
 from rotkehlchen.fval import FVal
-from rotkehlchen.kraken import kraken_to_world_pair
+from rotkehlchen.serialization.deserialize import pair_get_assets
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.tests.fixtures.exchanges.kraken import create_kraken_trade
 from rotkehlchen.typing import Timestamp, TradePair
 
 
-class FakeKraken(object):
+class FakeKraken():
 
     def __init__(self) -> None:
 
@@ -60,7 +61,7 @@ class FakeKraken(object):
             price_query: Callable[[Asset, Asset, Timestamp], FVal],
     ) -> TradePair:
         """Choose a random pair to trade from the available pairs at the selected timestamp"""
-        choices = set(list(self.asset_pairs['result'].keys()))
+        choices = set(self.asset_pairs['result'].keys())
         found = False
         while len(choices) != 0:
             pair = random.choice(tuple(choices))

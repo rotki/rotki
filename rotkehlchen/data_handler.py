@@ -6,142 +6,25 @@ import shutil
 import tempfile
 import time
 import zlib
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
-
-from eth_utils.address import to_checksum_address
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.crypto import decrypt, encrypt
-from rotkehlchen.datatyping import BalancesData, ExternalTrade
-from rotkehlchen.db.dbhandler import DBHandler, DBSettings
-from rotkehlchen.db.settings import db_settings_from_dict
-from rotkehlchen.errors import AuthenticationError, DeserializationError, UnknownAsset
-from rotkehlchen.exchanges.data_structures import Trade, get_pair_position_asset
-from rotkehlchen.fval import FVal
-from rotkehlchen.inquirer import FIAT_CURRENCIES
+from rotkehlchen.datatyping import BalancesData
+from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.errors import AuthenticationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_fee,
-    deserialize_price,
-    deserialize_trade_type,
-)
-from rotkehlchen.typing import (
-    B64EncodedBytes,
-    B64EncodedString,
-    BlockchainAddress,
-    ChecksumEthAddress,
-    FiatAsset,
-    FilePath,
-    Location,
-    SupportedBlockchain,
-    Timestamp,
-    TradePair,
-)
+from rotkehlchen.typing import AssetAmount, B64EncodedBytes, B64EncodedString, FilePath, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import create_timestamp, is_number, timestamp_to_date, ts_now
-
-if TYPE_CHECKING:
-    from rotkehlchen.accounting.accountant import Accountant
+from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 DEFAULT_START_DATE = "01/08/2015"
-
-otc_fields = [
-    'otc_timestamp',
-    'otc_pair',
-    'otc_type',
-    'otc_amount',
-    'otc_rate',
-    'otc_fee',
-    'otc_fee_currency',
-    'otc_link',
-    'otc_notes',
-]
-otc_optional_fields = ['otc_fee', 'otc_link', 'otc_notes']
-otc_numerical_fields = ['otc_amount', 'otc_rate', 'otc_fee']
-
-
-def verify_otctrade_data(
-        data: ExternalTrade,
-) -> Tuple[Optional[Trade], str]:
-    """
-    Takes in the trade data dictionary, validates it and returns a trade instance
-
-    If there is an error it returns an error message in the second part of the tuple
-    """
-    for field in otc_fields:
-        if field not in data:
-            return None, f'{field} was not provided'
-
-        if data[field] in ('', None) and field not in otc_optional_fields:
-            return None, f'{field} was empty'
-
-        if field in otc_numerical_fields and not is_number(data[field]):
-            return None, f'{field} should be a number'
-
-    # Satisfy mypy typing
-    assert isinstance(data['otc_pair'], str)
-    assert isinstance(data['otc_fee_currency'], str)
-    assert isinstance(data['otc_fee'], str)
-
-    pair = TradePair(data['otc_pair'])
-    try:
-        first = get_pair_position_asset(pair, 'first')
-        second = get_pair_position_asset(pair, 'second')
-        fee_currency = Asset(data['otc_fee_currency'])
-    except UnknownAsset as e:
-        return None, f'Provided asset {e.asset_name} is not known to Rotkehlchen'
-    # Not catching DeserializationError here since we have asserts for the data
-    # being strings right above
-
-    try:
-        trade_type = deserialize_trade_type(str(data['otc_type']))
-        amount = deserialize_asset_amount(data['otc_amount'])
-        rate = deserialize_price(data['otc_rate'])
-        fee = deserialize_fee(data['otc_fee'])
-    except DeserializationError as e:
-        return None, f'Deserialization Error: {str(e)}'
-    try:
-        assert isinstance(data['otc_timestamp'], str)
-        timestamp = create_timestamp(data['otc_timestamp'], formatstr='%d/%m/%Y %H:%M')
-    except ValueError as e:
-        return None, f'Could not process the given datetime: {e}'
-
-    log.debug(
-        'Creating OTC trade data',
-        sensitive_log=True,
-        pair=pair,
-        trade_type=trade_type,
-        amount=amount,
-        rate=rate,
-        fee=fee,
-        fee_currency=fee_currency,
-    )
-
-    if data['otc_fee_currency'] not in (first, second):
-        return None, 'Trade fee currency should be one of the two in the currency pair'
-
-    if data['otc_type'] not in ('buy', 'sell'):
-        return None, 'Trade type can only be buy or sell'
-
-    trade = Trade(
-        timestamp=timestamp,
-        location=Location.EXTERNAL,
-        pair=pair,
-        trade_type=trade_type,
-        amount=amount,
-        rate=rate,
-        fee=fee,
-        fee_currency=fee_currency,
-        link=str(data['otc_link']),
-        notes=str(data['otc_notes']),
-    )
-
-    return trade, ''
 
 
 class DataHandler():
@@ -167,7 +50,6 @@ class DataHandler():
             password: str,
             create_new: bool,
     ) -> FilePath:
-        self.username = username
         user_data_dir = FilePath(os.path.join(self.data_directory, username))
         if create_new:
             if os.path.exists(user_data_dir):
@@ -199,6 +81,7 @@ class DataHandler():
         self.db: DBHandler = DBHandler(user_data_dir, password, self.msg_aggregator)
         self.user_data_dir = user_data_dir
         self.logged_in = True
+        self.username = username
         return user_data_dir
 
     def main_currency(self) -> Asset:
@@ -211,91 +94,39 @@ class DataHandler():
     def write_owned_eth_tokens(self, tokens: List[EthereumToken]) -> None:
         self.db.write_owned_tokens(tokens)
 
-    def add_blockchain_account(
-            self,
-            blockchain: SupportedBlockchain,
-            account: BlockchainAddress,
-    ) -> None:
-        if blockchain == SupportedBlockchain.ETHEREUM:
-            account = to_checksum_address(account)
-        self.db.add_blockchain_account(blockchain, account)
+    def add_ignored_assets(self, assets: List[Asset]) -> Tuple[Optional[List[Asset]], str]:
+        """Adds ignored assets to the DB.
 
-    def remove_blockchain_account(
-            self,
-            blockchain: SupportedBlockchain,
-            account: BlockchainAddress,
-    ) -> None:
-        if blockchain == SupportedBlockchain.ETHEREUM:
-            account = to_checksum_address(account)
-        self.db.remove_blockchain_account(blockchain, account)
-
-    def add_ignored_asset(self, given_asset: str) -> Tuple[bool, str]:
-        try:
-            asset = Asset(given_asset)
-        except UnknownAsset:
-            return False, f'Given asset {given_asset} for ignoring is not known/supported'
-        except DeserializationError:
-            return False, f'Given asset for ignoring is not a string'
-
+        If any of the given assets is already in the DB the function does nothing
+        and returns an error message.
+        """
         ignored_assets = self.db.get_ignored_assets()
-        if asset in ignored_assets:
-            return False, f'{asset.identifier} is already in ignored assets'
-        self.db.add_to_ignored_assets(asset)
-        return True, ''
+        for asset in assets:
+            if asset in ignored_assets:
+                msg = f'{asset.identifier} is already in ignored assets'
+                return None, msg
 
-    def remove_ignored_asset(self, given_asset: str) -> Tuple[bool, str]:
-        try:
-            asset = Asset(given_asset)
-        except UnknownAsset:
-            return False, f'Given asset {given_asset} for ignoring is not known/supported'
-        except DeserializationError:
-            return False, f'Given asset for ignoring is not a string'
+        for asset in assets:
+            self.db.add_to_ignored_assets(asset)
 
+        return self.db.get_ignored_assets(), ''
+
+    def remove_ignored_assets(self, assets: List[Asset]) -> Tuple[Optional[List[Asset]], str]:
+        """Removes ignored assets from the DB.
+
+        If any of the given assets is not in the DB the call function does nothing
+        and returns an error message.
+        """
         ignored_assets = self.db.get_ignored_assets()
-        if asset not in ignored_assets:
-            return False, f'{asset.identifier} is not in ignored assets'
-        self.db.remove_from_ignored_assets(asset)
-        return True, ''
+        for asset in assets:
+            if asset not in ignored_assets:
+                msg = f'{asset.identifier} is not in ignored assets'
+                return None, msg
 
-    def set_main_currency(
-            self,
-            currency: FiatAsset,
-            accountant: 'Accountant',
-    ) -> None:
-        log.info('Set main currency', currency=currency)
-        accountant.set_main_currency(currency)
-        self.db.set_main_currency(currency)
+        for asset in assets:
+            self.db.remove_from_ignored_assets(asset)
 
-    def set_settings(
-            self,
-            settings_dict: Dict[str, Any],
-            accountant: 'Accountant',
-    ) -> bool:
-        """Takes in a settings dict with setttings to change and dispatches change in the code"""
-        settings = db_settings_from_dict(settings_dict, self.msg_aggregator)
-        # ignore invalid settings
-        invalid = []
-        all_okay = True
-        for x in list(settings_dict):  # list() makes copy of the dict since we modify it in loop
-            if x not in DBSettings._fields:
-                invalid.append(x)
-                del settings_dict[x]
-                all_okay = False
-                continue
-
-            # We need to save booleans as strings in the DB
-            deserealized_value = getattr(settings, x)
-            if isinstance(deserealized_value, bool):
-                settings_dict[x] = str(deserealized_value)
-
-        if not all_okay:
-            log.warning(f'provided settings: {",".join(invalid)} are invalid')
-
-        if 'main_currency' in settings_dict:
-            accountant.set_main_currency(settings_dict['main_currency'])
-
-        self.db.set_settings(settings_dict)
-        return True
+        return self.db.get_ignored_assets(), ''
 
     def should_save_balances(self) -> bool:
         """ Returns whether or not we can save data to the database depending on
@@ -307,72 +138,38 @@ class DataHandler():
         now = Timestamp(int(time.time()))
         return now - last_save > period
 
-    def get_eth_accounts(self) -> List[ChecksumEthAddress]:
-        blockchain_accounts = self.db.get_blockchain_accounts()
-        return blockchain_accounts.eth
+    def get_users(self) -> Dict[str, str]:
+        """Returns a dict with all users in the system.
 
-    def set_fiat_balance(
+        Each key is a user's name and the value is denoting whether that
+        particular user is logged in or not
+        """
+        users = {}
+        data_dir = Path(self.data_directory)
+        for x in data_dir.iterdir():
+            if x.is_dir() and (x / 'rotkehlchen.db').exists():
+                users[x.stem] = 'loggedin' if x.stem == self.username else 'loggedout'
+        return users
+
+    def set_fiat_balances(
             self,
-            currency: str,
-            provided_balance: str,
-    ) -> Tuple[bool, str]:
-        if currency not in FIAT_CURRENCIES:
-            return False, 'Provided currency {} is unknown'
+            balances: Dict[Asset, AssetAmount],
+    ) -> None:
+        """Saves the given FIAT balances in the DB
 
-        currency_asset = Asset(currency)
+        The given assets should have been checked before calling this function
+        that they are FIAT currencies.
 
-        msg = 'Provided balance for set_fiat_balance should be a string'
-        assert isinstance(provided_balance, str), msg
-
-        if provided_balance == '':
-            self.db.remove_fiat_balance(currency_asset)
-        else:
-            try:
-                balance = FVal(provided_balance)
-            except ValueError:
-                return False, 'Provided amount is not a number'
-
-            self.db.add_fiat_balance(currency_asset, balance)
-
-        return True, ''
+        If the amount for an asset is 0 then that asset is removed from the DB.
+        """
+        for asset, balance in balances.items():
+            if balance == ZERO:
+                self.db.remove_fiat_balance(asset)
+            else:
+                self.db.add_fiat_balance(asset, balance)
 
     def get_fiat_balances(self) -> Dict[Asset, str]:
         return self.db.get_fiat_balances()
-
-    def get_external_trades(
-            self,
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-    ) -> List[Trade]:
-        return self.db.get_trades(from_ts=from_ts, to_ts=to_ts, location=Location.EXTERNAL)
-
-    def add_external_trade(
-            self,
-            data: ExternalTrade,
-    ) -> Tuple[bool, str]:
-        trade, message = verify_otctrade_data(data)
-        if not trade:
-            return False, message
-
-        self.db.add_trades([trade])
-
-        return True, ''
-
-    def edit_external_trade(self, data: ExternalTrade) -> Tuple[bool, str]:
-        trade, message = verify_otctrade_data(data)
-        if not trade:
-            return False, message
-
-        assert isinstance(data['otc_id'], str)
-        result, message = self.db.edit_trade(
-            old_trade_id=data['otc_id'],
-            trade=trade,
-        )
-
-        return result, message
-
-    def delete_external_trade(self, trade_id: str) -> Tuple[bool, str]:
-        return self.db.delete_external_trade(trade_id)
 
     def compress_and_encrypt_db(self, password: str) -> Tuple[B64EncodedBytes, str]:
         """Decrypt the DB, dump in temporary plaintextdb, compress it,

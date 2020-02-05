@@ -10,8 +10,9 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants import YEAR_IN_SECONDS
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD, FIAT_CURRENCIES, S_CNY, S_EUR
-from rotkehlchen.data_handler import DataHandler, verify_otctrade_data
+from rotkehlchen.constants.assets import A_BTC, A_CNY, A_ETH, A_EUR, A_USD, FIAT_CURRENCIES
+from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBINFO_FILENAME, DBHandler, detect_sqlcipher_version
 from rotkehlchen.db.settings import (
     DEFAULT_ANONYMIZED_LOGS,
@@ -23,6 +24,8 @@ from rotkehlchen.db.settings import (
     DEFAULT_START_DATE,
     DEFAULT_UI_FLOATING_PRECISION,
     ROTKEHLCHEN_DB_VERSION,
+    DBSettings,
+    ModifiableDBSettings,
 )
 from rotkehlchen.db.utils import AssetBalance, BlockchainAccounts, LocationData
 from rotkehlchen.errors import AuthenticationError, InputError
@@ -30,12 +33,12 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition,
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.tests.utils.constants import (
-    A_CNY,
     A_DAO,
     A_DOGE,
     A_GNO,
     A_RDN,
     A_XMR,
+    DEFAULT_TESTS_MAIN_CURRENCY,
     ETH_ADDRESS1,
     ETH_ADDRESS2,
     ETH_ADDRESS3,
@@ -43,8 +46,13 @@ from rotkehlchen.tests.utils.constants import (
 )
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
 from rotkehlchen.typing import (
+    ApiKey,
+    ApiSecret,
+    AssetAmount,
     AssetMovementCategory,
     EthereumTransaction,
+    ExternalService,
+    ExternalServiceApiCredentials,
     Fee,
     Location,
     SupportedBlockchain,
@@ -59,6 +67,7 @@ TABLES_AT_INIT = [
     'timed_balances',
     'timed_location_data',
     'asset_movement_category',
+    'external_service_credentials',
     'user_credentials',
     'blockchain_accounts',
     'multisettings',
@@ -124,16 +133,21 @@ def test_add_remove_exchange(data_dir, username):
     credentials = db.get_exchange_credentials()
     assert len(credentials) == 0
 
+    kraken_api_key = ApiKey('kraken_api_key')
+    kraken_api_secret = ApiSecret(b'kraken_api_secret')
+    binance_api_key = ApiKey('binance_api_key')
+    binance_api_secret = ApiSecret(b'binance_api_secret')
+
     # add mock kraken and binance
-    db.add_exchange('kraken', 'kraken_api_key', 'kraken_api_secret')
-    db.add_exchange('binance', 'binance_api_key', 'binance_api_secret')
+    db.add_exchange('kraken', kraken_api_key, kraken_api_secret)
+    db.add_exchange('binance', binance_api_key, binance_api_secret)
     # and check the credentials can be retrieved
     credentials = db.get_exchange_credentials()
     assert len(credentials) == 2
-    assert credentials['kraken'].api_key == 'kraken_api_key'
-    assert credentials['kraken'].api_secret == b'kraken_api_secret'
-    assert credentials['binance'].api_key == 'binance_api_key'
-    assert credentials['binance'].api_secret == b'binance_api_secret'
+    assert credentials['kraken'].api_key == kraken_api_key
+    assert credentials['kraken'].api_secret == kraken_api_secret
+    assert credentials['binance'].api_key == binance_api_key
+    assert credentials['binance'].api_secret == binance_api_secret
 
     # remove an exchange and see it works
     db.remove_exchange('kraken')
@@ -146,7 +160,7 @@ def test_export_import_db(data_dir, username):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
-    data.set_fiat_balance('EUR', '10')
+    data.set_fiat_balances({A_EUR: AssetAmount(FVal('10'))})
 
     encoded_data, _ = data.compress_and_encrypt_db('123')
 
@@ -158,7 +172,7 @@ def test_export_import_db(data_dir, username):
     assert int(fiat_balances[A_EUR]) == 10
 
 
-def test_writting_fetching_data(data_dir, username, accountant):
+def test_writting_fetching_data(data_dir, username):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
@@ -168,69 +182,63 @@ def test_writting_fetching_data(data_dir, username, accountant):
     result = data.db.get_owned_tokens()
     assert set(tokens) == set(result)
 
-    data.add_blockchain_account(SupportedBlockchain.BITCOIN, '1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS')
-    data.add_blockchain_account(
-        SupportedBlockchain.ETHEREUM,
-        '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
+    data.db.add_blockchain_accounts(
+        SupportedBlockchain.BITCOIN,
+        ['1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS'],
     )
-    # Add a non checksummed address
-    data.add_blockchain_account(
+    data.db.add_blockchain_accounts(
         SupportedBlockchain.ETHEREUM,
-        '0x80b369799104a47e98a553f3329812a44a7facdc',
+        [
+            '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
+            # Add a non checksummed address
+            '0x80b369799104a47e98a553f3329812a44a7facdc',
+        ],
     )
     accounts = data.db.get_blockchain_accounts()
     assert isinstance(accounts, BlockchainAccounts)
     assert accounts.btc == ['1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS']
     # See that after addition the address has been checksummed
-    assert set(accounts.eth) == set([
+    assert set(accounts.eth) == {
         '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
         to_checksum_address('0x80b369799104a47e98a553f3329812a44a7facdc'),
-
-    ])
+    }
     # Add existing account should fail
     with pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
-        data.add_blockchain_account(
+        data.db.add_blockchain_accounts(
             SupportedBlockchain.ETHEREUM,
-            '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
+            ['0xd36029d76af6fE4A356528e4Dc66B2C18123597D'],
         )
     # Remove non-existing account
     with pytest.raises(InputError):
-        data.remove_blockchain_account(
+        data.db.remove_blockchain_account(
             SupportedBlockchain.ETHEREUM,
             '0x136029d76af6fE4A356528e4Dc66B2C18123597D',
         )
     # Remove existing account
-    data.remove_blockchain_account(
+    data.db.remove_blockchain_account(
         SupportedBlockchain.ETHEREUM,
         '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
     )
     accounts = data.db.get_blockchain_accounts()
     assert accounts.eth == [to_checksum_address('0x80b369799104a47e98a553f3329812a44a7facdc')]
 
-    result, _ = data.add_ignored_asset('DAO')
+    result, _ = data.add_ignored_assets([A_DAO])
     assert result
-    result, _ = data.add_ignored_asset('DOGE')
+    result, _ = data.add_ignored_assets([A_DOGE])
     assert result
-    result, _ = data.add_ignored_asset('DOGE')
+    result, _ = data.add_ignored_assets([A_DOGE])
     assert not result
-    # Test adding non existing asset
-    result, msg = data.add_ignored_asset('dsajdhskajdad')
-    assert not result
-    assert 'for ignoring is not known/supported' in msg
 
     ignored_assets = data.db.get_ignored_assets()
-    assert all([isinstance(asset, Asset) for asset in ignored_assets])
-    assert set(ignored_assets) == set([A_DAO, A_DOGE])
+    assert all(isinstance(asset, Asset) for asset in ignored_assets)
+    assert set(ignored_assets) == {A_DAO, A_DOGE}
     # Test removing asset that is not in the list
-    result, msg = data.remove_ignored_asset('RDN')
+    result, msg = data.remove_ignored_assets([A_RDN])
     assert 'not in ignored assets' in msg
-    # Test removing non existing asset
-    result, msg = data.remove_ignored_asset('dshajdhsjkahdjssad')
-    assert 'is not known/supported' in msg
     assert not result
-    result, _ = data.remove_ignored_asset('DOGE')
+    result, _ = data.remove_ignored_assets([A_DOGE])
     assert result
-    assert data.db.get_ignored_assets() == ['DAO']
+    assert data.db.get_ignored_assets() == [A_DAO]
 
     # With nothing inserted in settings make sure default values are returned
     result = data.db.get_settings()
@@ -247,179 +255,46 @@ def test_writting_fetching_data(data_dir, username, accountant):
         'taxfree_after_period': YEAR_IN_SECONDS,
         'balance_save_frequency': DEFAULT_BALANCE_SAVE_FREQUENCY,
         'last_balance_save': 0,
-        'main_currency': DEFAULT_MAIN_CURRENCY,
+        'main_currency': DEFAULT_MAIN_CURRENCY.identifier,
         'anonymized_logs': DEFAULT_ANONYMIZED_LOGS,
         'date_display_format': DEFAULT_DATE_DISPLAY_FORMAT,
         'last_data_upload_ts': 0,
         'premium_should_sync': False,
+        'submit_usage_analytics': True,
+        'last_write_ts': 0,
     }
+    assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
+
     # Make sure that results are the same. Comparing like this since we ignore last
     # write ts check
     result_dict = result._asdict()
     for key, value in expected_dict.items():
         assert key in result_dict
-        assert value == result_dict[key]
-
-    # Check setting non-existing settings. Should be ignored
-    success = data.set_settings({'nonexisting_setting': 1}, accountant=accountant)
-    assert success
-    msg = data.db.msg_aggregator.consume_warnings()[0]
-    assert msg != '' and 'nonexisting_setting' in msg
-    success = data.set_settings({
-        'nonexisting_setting': 1,
-        'eth_rpc_endpoint': 'http://localhost:8555',
-        'ui_floating_precision': 3,
-    }, accountant=accountant)
-    assert success
-    msg = data.db.msg_aggregator.consume_warnings()[0]
-    assert msg != '' and 'nonexisting_setting' in msg
-
-    # Now check nothing funny made it in the db
-    result = data.db.get_settings()
-    assert result.eth_rpc_endpoint == 'http://localhost:8555'
-    assert result.ui_floating_precision == 3
+        if key != 'last_write_ts':
+            assert value == result_dict[key]
 
 
-def test_writting_fetching_external_trades(data_dir, username):
-    msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=True)
+def test_settings_entry_types(database):
+    database.set_settings(ModifiableDBSettings(
+        premium_should_sync=True,
+        include_crypto2crypto=True,
+        anonymized_logs=True,
+        ui_floating_precision=1,
+        taxfree_after_period=1,
+        include_gas_costs=True,
+        historical_data_start='01/08/2015',
+        eth_rpc_endpoint='http://localhost:8545',
+        balance_save_frequency=24,
+        date_display_format='%d/%m/%Y %H:%M:%S %z',
+        submit_usage_analytics=False,
+    ))
 
-    # add 2 trades and check they are in the DB
-    otc_trade1 = {
-        'otc_timestamp': '10/03/2018 23:30',
-        'otc_pair': 'ETH_EUR',
-        'otc_type': 'buy',
-        'otc_amount': '10',
-        'otc_rate': '100',
-        'otc_fee': '0.001',
-        'otc_fee_currency': 'ETH',
-        'otc_link': 'a link',
-        'otc_notes': 'a note',
-    }
-    otc_trade2 = {
-        'otc_timestamp': '15/03/2018 23:35',
-        'otc_pair': 'ETH_EUR',
-        'otc_type': 'buy',
-        'otc_amount': '5',
-        'otc_rate': '100',
-        'otc_fee': '0.001',
-        'otc_fee_currency': 'ETH',
-        'otc_link': 'a link 2',
-        'otc_notes': 'a note 2',
-    }
-    trade1, _ = verify_otctrade_data(otc_trade1)
-    trade2, _ = verify_otctrade_data(otc_trade2)
-
-    result, _, = data.add_external_trade(otc_trade1)
-    assert result
-    result, _ = data.add_external_trade(otc_trade2)
-    assert result
-    result = data.get_external_trades()
-    assert result[0] == trade1
-    assert result[1] == trade2
-
-    # query trades in period
-    result = data.get_external_trades(
-        from_ts=1520553600,  # 09/03/2018
-        to_ts=1520726400,  # 11/03/2018
-    )
-    assert len(result) == 1
-    # make sure id is there but do not compare it
-    assert result[0] == trade1
-
-    # query trades only with to_ts
-    result = data.get_external_trades(
-        to_ts=1520726400,  # 11/03/2018
-    )
-    assert len(result) == 1
-    # make sure id is there but do not compare it
-    assert result[0] == trade1
-
-    # edit a trade and check the edit made it in the DB
-    otc_trade1['otc_rate'] = '120'
-    trade1_id = trade1.identifier
-    otc_trade1['otc_id'] = trade1_id
-    result, _ = data.edit_external_trade(otc_trade1)
-    assert result
-    result = data.get_external_trades()
-    edited_trade1 = trade1._replace(rate=FVal(120))
-    assert result[0] == edited_trade1
-    assert result[1] == trade2
-
-    # edit a trade's time (or any other field which makes up the id) and see
-    # that the ID changes later
-    new_time_str = '10/03/2018 23:35'
-    new_timestamp = 1520724900
-    otc_trade1['otc_timestamp'] = new_time_str
-    otc_trade1['otc_id'] = edited_trade1.identifier
-
-    result, _ = data.edit_external_trade(otc_trade1)
-    assert result
-    result = data.get_external_trades()
-    edited_trade1 = trade1._replace(rate=FVal(120), timestamp=new_timestamp)
-    assert result[0] == edited_trade1
-    assert result[1] == trade2
-    # Here trade is edited succesfully but let's also look in the DB to see
-    # if the trade is indeed there with a new ID
-    cursor = data.db.conn.cursor()
-    results = cursor.execute(
-        f'SELECT id, time, pair, amount FROM trades where id="{edited_trade1.identifier}";',
-    )
-    results = results.fetchall()
-    assert len(results) == 1
-    result = results[0]
-    assert result[0] == edited_trade1.identifier
-    assert result[1] == new_timestamp
-    assert result[2] == otc_trade1['otc_pair']
-    assert result[3] == otc_trade1['otc_amount']
-
-    # try to edit a non-existing trade
-    otc_trade1['otc_rate'] = '160'
-    otc_trade1['otc_id'] = '5'
-    result, _ = data.edit_external_trade(otc_trade1)
-    assert not result
-    otc_trade1['otc_rate'] = '120'
-    otc_trade1['otc_id'] = trade1_id
-    result = data.get_external_trades()
-    assert result[0] == edited_trade1
-    assert result[1] == trade2
-
-    # try to delete non-existing trade
-    result, _ = data.delete_external_trade('dasdasd')
-    assert not result
-
-    # delete an external trade
-    result, _ = data.delete_external_trade(edited_trade1.identifier)
-    result = data.get_external_trades()
-    assert result[0] == trade2
-
-
-def test_settings_entry_types(data_dir, username, accountant):
-    msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=True)
-
-    success = data.set_settings({
-        'last_write_ts': 1,
-        'premium_should_sync': True,
-        'include_crypto2crypto': True,
-        'last_data_upload_ts': 1,
-        'ui_floating_precision': 1,
-        'taxfree_after_period': 1,
-        'historical_data_start': '01/08/2015',
-        'eth_rpc_endpoint': 'http://localhost:8545',
-        'balance_save_frequency': 24,
-        'anonymized_logs': True,
-        'date_display_format': '%d/%m/%Y %H:%M:%S %z',
-    }, accountant=accountant)
-    assert success
-
-    res = data.db.get_settings()
+    res = database.get_settings()
     assert isinstance(res.version, int)
     assert res.version == ROTKEHLCHEN_DB_VERSION
     assert isinstance(res.last_write_ts, int)
     assert isinstance(res.premium_should_sync, bool)
+    # assert res.premium_should_sync is DEFAULT_PREMIUM_SHOULD_SYNC
     assert res.premium_should_sync is True
     assert isinstance(res.include_crypto2crypto, bool)
     assert res.include_crypto2crypto is True
@@ -435,15 +310,17 @@ def test_settings_entry_types(data_dir, username, accountant):
     assert res.balance_save_frequency == 24
     assert isinstance(res.last_balance_save, int)
     assert res.last_balance_save == 0
-    assert isinstance(res.main_currency, str)
-    assert res.main_currency == 'USD'
+    assert isinstance(res.main_currency, Asset)
+    assert res.main_currency == DEFAULT_TESTS_MAIN_CURRENCY
     assert isinstance(res.anonymized_logs, bool)
     assert res.anonymized_logs is True
     assert isinstance(res.date_display_format, str)
     assert res.date_display_format == '%d/%m/%Y %H:%M:%S %z'
+    assert isinstance(res.submit_usage_analytics, bool)
+    assert res.submit_usage_analytics is False
 
 
-def test_balance_save_frequency_check(data_dir, username, accountant):
+def test_balance_save_frequency_check(data_dir, username):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
@@ -455,8 +332,7 @@ def test_balance_save_frequency_check(data_dir, username, accountant):
     )])
 
     assert not data.should_save_balances()
-    success = data.set_settings({'balance_save_frequency': 5}, accountant=accountant)
-    assert success
+    data.db.set_settings(ModifiableDBSettings(balance_save_frequency=5))
     assert data.should_save_balances()
 
     last_save_ts = data.db.get_last_balance_save_time()
@@ -550,33 +426,30 @@ def test_sqlcipher_detect_version():
             detect_sqlcipher_version()
 
 
-def test_data_set_fiat_balance(data_dir, username):
+def test_data_set_fiat_balances(data_dir, username):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
 
-    amount_eur = '100'
-    amount_cny = '500'
+    amount_eur = AssetAmount(FVal('100'))
+    amount_cny = AssetAmount(FVal('500'))
 
-    success, _ = data.set_fiat_balance(S_EUR, amount_eur)
-    assert success
-    success, _ = data.set_fiat_balance(S_CNY, amount_cny)
-    assert success
+    data.set_fiat_balances({A_EUR: amount_eur})
+    data.set_fiat_balances({A_CNY: amount_cny})
     balances = data.get_fiat_balances()
     assert len(balances) == 2
-    assert balances[A_EUR] == amount_eur
-    assert balances[A_CNY] == amount_cny
+    assert FVal(balances[A_EUR]) == amount_eur
+    assert FVal(balances[A_CNY]) == amount_cny
 
-    success, _ = data.set_fiat_balance(S_EUR, '')
+    data.set_fiat_balances({A_EUR: ZERO})
     balances = data.get_fiat_balances()
     assert len(balances) == 1
-    assert balances[A_CNY] == amount_cny
+    assert FVal(balances[A_CNY]) == amount_cny
 
     # also check that all the fiat assets in the fiat table are in
     # all_assets.json
-    for fiat in FIAT_CURRENCIES:
-        success, _ = data.set_fiat_balance(fiat, '1')
-        assert success
+    for fiat_asset in FIAT_CURRENCIES:
+        assert fiat_asset.is_fiat()
 
 
 asset_balances = [
@@ -700,7 +573,7 @@ def test_query_owned_assets(data_dir, username):
 
     assets_list = data.db.query_owned_assets()
     assert assets_list == [A_USD, A_ETH, A_BTC, A_XMR]
-    assert all([isinstance(x, Asset) for x in assets_list])
+    assert all(isinstance(x, Asset) for x in assets_list)
     warnings = data.db.msg_aggregator.consume_warnings()
     assert len(warnings) == 1
     assert 'Unknown/unsupported asset ADSADX' in warnings[0]
@@ -839,12 +712,12 @@ def test_add_trades(data_dir, username):
     assert returned_trades == [trade1, trade2]
 
     # Add the last 2 trades. Since trade2 already exists in the DB it should be
-    # ignored and an error should be shown
+    # ignored and a warning should be shown
     data.db.add_trades([trade2, trade3])
     errors = msg_aggregator.consume_errors()
     warnings = msg_aggregator.consume_warnings()
-    assert len(errors) == 1
-    assert len(warnings) == 0
+    assert len(errors) == 0
+    assert len(warnings) == 1
     returned_trades = data.db.get_trades()
     assert returned_trades == [trade1, trade2, trade3]
 
@@ -902,12 +775,12 @@ def test_add_margin_positions(data_dir, username):
     assert returned_margins == [margin1, margin2]
 
     # Add the last 2 margins. Since margin2 already exists in the DB it should be
-    # ignored and an error should be shown
+    # ignored and a warning should be shown
     data.db.add_margin_positions([margin2, margin3])
     errors = msg_aggregator.consume_errors()
     warnings = msg_aggregator.consume_warnings()
-    assert len(errors) == 1
-    assert len(warnings) == 0
+    assert len(errors) == 0
+    assert len(warnings) == 1
     returned_margins = data.db.get_margin_positions()
     assert returned_margins == [margin1, margin2, margin3]
 
@@ -962,12 +835,12 @@ def test_add_asset_movements(data_dir, username):
     assert returned_movements == [movement1, movement2]
 
     # Add the last 2 movements. Since movement2 already exists in the DB it should be
-    # ignored and an error should be shown
+    # ignored and a warning should be shown
     data.db.add_asset_movements([movement2, movement3])
     errors = msg_aggregator.consume_errors()
     warnings = msg_aggregator.consume_warnings()
-    assert len(errors) == 1
-    assert len(warnings) == 0
+    assert len(errors) == 0
+    assert len(warnings) == 1
     returned_movements = data.db.get_asset_movements()
     assert returned_movements == [movement1, movement2, movement3]
 
@@ -1041,6 +914,43 @@ def test_add_ethereum_transactions(data_dir, username):
     assert returned_transactions == [tx1, tx2, tx3]
 
 
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+def test_non_checksummed_eth_account_in_db(database):
+    """
+    Regression test for  https://github.com/rotki/rotki/issues/519
+
+    This is a test for an occasion that should not happen in a normal run.
+    Only if the user manually edits the DB and modifies a blockchain account
+    to be non-checksummed then this scenario will happen.
+
+    This test verifies that the user is warned and the address is skipped.
+    """
+    # Manually enter three blockchain ETH accounts one of which is only valid
+    cursor = database.conn.cursor()
+    valid_address = '0x9531C059098e3d194fF87FebB587aB07B30B1306'
+    non_checksummed_address = '0xe7302e6d805656cf37bd6839a977fe070184bf45'
+    invalid_address = 'dsads'
+    cursor.executemany(
+        'INSERT INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
+        (
+            ('ETH', non_checksummed_address),
+            ('ETH', valid_address),
+            ('ETH', invalid_address)),
+    )
+    database.conn.commit()
+
+    blockchain_accounts = database.get_blockchain_accounts()
+    eth_accounts = blockchain_accounts.eth
+    assert len(eth_accounts) == 1
+    assert eth_accounts[0] == valid_address
+    errors = database.msg_aggregator.consume_errors()
+    warnings = database.msg_aggregator.consume_warnings()
+    assert len(errors) == 0
+    assert len(warnings) == 2
+    assert f'Non-checksummed eth address {non_checksummed_address}' in warnings[0]
+    assert f'Non-checksummed eth address {invalid_address}' in warnings[1]
+
+
 def test_can_unlock_db_with_disabled_taxfree_after_period(data_dir, username):
     """Test that with taxfree_after_period being empty the DB can be opened
 
@@ -1050,7 +960,7 @@ def test_can_unlock_db_with_disabled_taxfree_after_period(data_dir, username):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
-    data.db.set_settings({'taxfree_after_period': None})
+    data.db.set_settings(ModifiableDBSettings(taxfree_after_period=-1))
 
     # now relogin and check that no exception is thrown
     del data
@@ -1103,6 +1013,7 @@ def test_unlock_with_invalid_premium_data(data_dir, username):
     del data
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=False)
+
     # and that an error is logged when trying to get premium
     assert not data.db.get_rotkehlchen_premium()
     warnings = msg_aggregator.consume_warnings()
@@ -1111,3 +1022,20 @@ def test_unlock_with_invalid_premium_data(data_dir, username):
     assert len(warnings) == 0
     assert len(errors) == 1
     assert 'Incorrect Rotki API Key/Secret format found in the DB' in errors[0]
+
+
+def test_get_external_service_credentials(database):
+    # Test that if the service is not in DB 'None' is returned
+    for service in ExternalService:
+        assert not database.get_external_service_credentials(service)
+
+    # add entries for all services
+    database.add_external_service_credentials(
+        [ExternalServiceApiCredentials(s, f'{s.name.lower()}_key') for s in ExternalService],
+    )
+
+    # now make sure that they are returned individually
+    for service in ExternalService:
+        credentials = database.get_external_service_credentials(service)
+        assert credentials.service == service
+        assert credentials.api_key == f'{service.name.lower()}_key'

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import calendar
 import datetime
 import json
@@ -7,21 +6,26 @@ import operator
 import re
 import sys
 import time
-from functools import wraps
 from http import HTTPStatus
 from typing import Any, Callable, Dict, List, Union
 
 import gevent
 import requests
-from gevent.lock import Semaphore
-from requests import Response
 from rlp.sedes import big_endian_int
 
-from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, CACHE_RESPONSE_FOR_SECS, ZERO
-from rotkehlchen.errors import DeserializationError, RecoverableRequestError, RemoteError
+from rotkehlchen.constants import ALL_REMOTES_TIMEOUT, ZERO
+from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
+from rotkehlchen.errors import (
+    ConversionError,
+    DeserializationError,
+    InvalidBTCAddress,
+    RecoverableRequestError,
+    RemoteError,
+    UnableToDecryptRemoteData,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Fee, FilePath, ResultCache, Timestamp
+from rotkehlchen.typing import Fee, FilePath, Timestamp
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads
 
 logger = logging.getLogger(__name__)
@@ -72,73 +76,17 @@ def iso8601ts_to_timestamp(datestr: str) -> Timestamp:
     return Timestamp(ts + 1) if add_a_second else ts
 
 
+def timestamp_to_iso8601(ts: Timestamp) -> str:
+    """Turns a timestamp to an iso8601 compliant string time"""
+    return datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc).isoformat()
+
+
 def satoshis_to_btc(satoshis: FVal) -> FVal:
     return satoshis * FVal('0.00000001')
 
 
 def timestamp_to_date(ts: Timestamp, formatstr: str = '%d/%m/%Y %H:%M:%S') -> str:
     return datetime.datetime.utcfromtimestamp(ts).strftime(formatstr)
-
-
-class CacheableObject():
-    """Interface for objects that can use timewise caches
-
-    Any object that adheres to this interface can have its functions
-    use the @cache_response_timewise decorator
-    """
-
-    def __init__(self) -> None:
-        self.lock = Semaphore()
-        self.results_cache: Dict[int, ResultCache] = {}
-        self.cache_ttl_secs = CACHE_RESPONSE_FOR_SECS
-
-
-def cache_response_timewise() -> Callable:
-    """ This is a decorator for caching results of functions of objects.
-    The objects must adhere to the interface of having:
-        - A results_cache dictionary attribute
-        - A semaphore attribute named lock
-        - A cache_ttl_secs attribute denoting how long the cache should live.
-          Can also be 0 which means cache is disabled.
-
-    Objects adhering to this interface are:
-        - all the exchanges
-        - the Rotkehlchen object
-        - the Blockchain object
-    """
-    def _cache_response_timewise(f: Callable) -> Callable:
-        @wraps(f)
-        def wrapper(wrappingobj: CacheableObject, *args: Any, **kwargs: Any) -> Any:
-            function_sig = f.__name__
-            for arg in args:
-                function_sig += str(arg)
-            for _, value in kwargs.items():
-                function_sig += str(value)
-            # TODO: Do I really need hash() here?
-            cache_key = hash(function_sig)
-
-            with wrappingobj.lock:
-                now = ts_now()
-                if cache_key in wrappingobj.results_cache:
-                    cache_life_secs = now - wrappingobj.results_cache[cache_key].timestamp
-
-                cache_miss = (
-                    cache_key not in wrappingobj.results_cache or
-                    cache_life_secs >= wrappingobj.cache_ttl_secs
-                )
-
-            if cache_miss:
-                result = f(wrappingobj, *args, **kwargs)
-                with wrappingobj.lock:
-                    wrappingobj.results_cache[cache_key] = ResultCache(result, now)
-                return result
-
-            # else hit the cache
-            with wrappingobj.lock:
-                return wrappingobj.results_cache[cache_key].result
-
-        return wrapper
-    return _cache_response_timewise
 
 
 def from_wei(wei_value: FVal) -> FVal:
@@ -203,6 +151,8 @@ def retry_calls(
     If it fails with an acceptable error then we wait for a bit until the next try.
 
     Can also handle 429 errors with a specific backoff in seconds if required.
+
+    - Raises RemoteError if there is something wrong with contacting the remote
     """
     tries = times
     while True:
@@ -210,12 +160,6 @@ def retry_calls(
             result = function(**kwargs)
 
             if handle_429:
-                if not isinstance(result, Response):
-                    raise AssertionError(
-                        'At retry calls with handle_429 got a non Response object '
-                        'as a result. Should never happen',
-                    )
-
                 if result.status_code == HTTPStatus.TOO_MANY_REQUESTS and tries != 0:
                     gevent.sleep(backoff_in_seconds)
                     continue
@@ -245,7 +189,7 @@ def request_get(
     # TODO make this a bit more smart. Perhaps conditional on the type of request.
     # Not all requests would need repeated attempts
     response = retry_calls(
-        times=5,
+        times=QUERY_RETRY_TIMES,
         location='',
         handle_429=handle_429,
         backoff_in_seconds=backoff_in_seconds,
@@ -257,12 +201,15 @@ def request_get(
     )
 
     if response.status_code != 200:
-        raise RemoteError('Get {} returned status code {}'.format(url, response.status_code))
+        if 'https://blockchain.info/q/addressbalance' in url and response.status_code == 500:
+            # For some weird reason blockchain.info returns
+            # 500 server error when giving invalid account
+            raise InvalidBTCAddress('Invalid BTC address given to blockchain.info')
 
     try:
         result = rlk_jsonloads(response.text)
     except json.decoder.JSONDecodeError:
-        raise ValueError('{} returned malformed json'.format(url))
+        raise UnableToDecryptRemoteData(f'{url} returned malformed json')
 
     return result
 
@@ -294,21 +241,30 @@ def convert_to_int(
         accept_only_exact: bool = True,
 ) -> int:
     """Try to convert to an int. Either from an FVal or a string. If it's a float
-    and it's not whole (like 42.0) and accept_only_exact is False then raise"""
+    and it's not whole (like 42.0) and accept_only_exact is False then raise
+
+    Raises:
+        ConversionError: If either the given value is not an exact number or its
+        type can not be converted
+    """
     if isinstance(val, FVal):
         return val.to_int(accept_only_exact)
     elif isinstance(val, (bytes, str)):
         # Since float string are not converted to int we have to first convert
         # to float and try to convert to int afterwards
-        val = float(val)
-        return int(val)
+        try:
+            val = float(val)
+        except ValueError:
+            raise ConversionError(f'Could not convert {val!r} to a float')
+        if val.is_integer() or accept_only_exact is False:
+            return int(val)
     elif isinstance(val, int):
         return val
     elif isinstance(val, float):
         if val.is_integer() or accept_only_exact is False:
             return int(val)
 
-    raise ValueError('Can not convert {} which is of type {} to int.'.format(val, type(val)))
+    raise ConversionError(f'Can not convert {val} which is of type {type(val)} to int.')
 
 
 def taxable_gain_for_sell(
@@ -321,14 +277,6 @@ def taxable_gain_for_sell(
         rate_in_profit_currency * taxable_amount -
         total_fee_in_profit_currency * (taxable_amount / selling_amount)
     )
-
-
-def is_number(s: Any) -> bool:
-    try:
-        float(s)
-        return True
-    except ValueError:
-        return False
 
 
 def int_to_big_endian(x: int) -> bytes:
@@ -357,19 +305,15 @@ def get_system_spec() -> Dict[str, str]:
             platform.machine(),
         )
 
-    system_spec = dict(
+    system_spec = {
         # used to be require 'rotkehlchen.__name__' but as long as setup.py
         # target differs from package we need this
-        rotkehlchen=pkg_resources.require('rotkehlchen')[0].version,
-        python_implementation=platform.python_implementation(),
-        python_version=platform.python_version(),
-        system=system_info,
-    )
+        'rotkehlchen': pkg_resources.require('rotkehlchen')[0].version,
+        'python_implementation': platform.python_implementation(),
+        'python_version': platform.python_version(),
+        'system': system_info,
+    }
     return system_spec
-
-
-def simple_result(v: Any, msg: str) -> Dict:
-    return {'result': v, 'message': msg}
 
 
 def write_history_data_in_file(
@@ -385,7 +329,7 @@ def write_history_data_in_file(
         end_time=end_ts,
     )
     with open(filepath, 'w') as outfile:
-        history_dict: Dict[str, Any] = dict()
+        history_dict: Dict[str, Any] = {}
         history_dict['data'] = data
         history_dict['start_time'] = start_ts
         history_dict['end_time'] = end_ts

@@ -11,6 +11,7 @@ from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.db.upgrades.v5_v6 import upgrade_v5_to_v6
 from rotkehlchen.db.upgrades.v6_v7 import upgrade_v6_to_v7
 from rotkehlchen.db.upgrades.v7_v8 import upgrade_v7_to_v8
+from rotkehlchen.db.upgrades.v8_v9 import upgrade_v8_to_v9
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import SupportedBlockchain
@@ -36,11 +37,10 @@ def _checksum_eth_accounts(db: 'DBHandler') -> None:
         'DELETE FROM blockchain_accounts WHERE blockchain=?;', ('ETH',),
     )
     db.conn.commit()
-    for account in accounts.eth:
-        db.add_blockchain_account(
-            blockchain=SupportedBlockchain.ETHEREUM,
-            account=to_checksum_address(account),
-        )
+    db.add_blockchain_accounts(
+        blockchain=SupportedBlockchain.ETHEREUM,
+        accounts=[to_checksum_address(account) for account in accounts.eth],
+    )
 
 
 def _eth_rpc_port_to_eth_rpc_endpoint(db: 'DBHandler') -> None:
@@ -58,6 +58,13 @@ def _eth_rpc_port_to_eth_rpc_endpoint(db: 'DBHandler') -> None:
         'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?);',
         ('eth_rpc_endpoint', f'http://localhost:{port}'),
     )
+    db.conn.commit()
+
+
+def _delete_used_query_range_entries(db: 'DBHandler') -> None:
+    """Delete all entries from the used_query_ranges table"""
+    cursor = db.conn.cursor()
+    cursor.execute('DELETE FROM used_query_ranges;')
     db.conn.commit()
 
 
@@ -88,6 +95,14 @@ UPGRADES_LIST = [
     UpgradeRecord(
         from_version=7,
         function=upgrade_v7_to_v8,
+    ),
+    UpgradeRecord(
+        from_version=8,
+        function=upgrade_v8_to_v9,
+    ),
+    UpgradeRecord(
+        from_version=9,
+        function=_delete_used_query_range_entries,
     ),
 ]
 

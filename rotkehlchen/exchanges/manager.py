@@ -1,10 +1,10 @@
 import logging
 from importlib import import_module
-from typing import TYPE_CHECKING, Dict, List, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ApiCredentials
+from rotkehlchen.typing import ApiCredentials, ApiKey, ApiSecret
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
@@ -13,7 +13,15 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-SUPPORTED_EXCHANGES = ['kraken', 'poloniex', 'bittrex', 'bitmex', 'binance', 'coinbase']
+SUPPORTED_EXCHANGES = [
+    'kraken',
+    'poloniex',
+    'bittrex',
+    'bitmex',
+    'binance',
+    'coinbase',
+    'coinbasepro',
+]
 
 
 class ExchangeManager():
@@ -37,12 +45,13 @@ class ExchangeManager():
     def setup_exchange(
             self,
             name: str,
-            api_key: str,
-            api_secret: str,
+            api_key: ApiKey,
+            api_secret: ApiSecret,
             database: 'DBHandler',
+            passphrase: Optional[str] = None,
     ) -> Tuple[bool, str]:
         """
-        Setup a new exchange with an api key and an api secret
+        Setup a new exchange with an api key, an api secret and for some exchanges a passphrase.
 
         By default the api keys are always validated unless validate is False.
         """
@@ -53,7 +62,11 @@ class ExchangeManager():
             return False, 'Exchange {} is already registered'.format(name)
 
         credentials_dict = {}
-        api_credentials = ApiCredentials.serialize(api_key=api_key, api_secret=api_secret)
+        api_credentials = ApiCredentials(
+            api_key=api_key,
+            api_secret=api_secret,
+            passphrase=passphrase,
+        )
         credentials_dict[name] = api_credentials
         self.initialize_exchanges(credentials_dict, database)
 
@@ -87,10 +100,14 @@ class ExchangeManager():
                     )
 
                 exchange_ctor = getattr(module, name.capitalize())
+                extra_args = {}
+                if credentials.passphrase is not None:
+                    extra_args['passphrase'] = credentials.passphrase
                 exchange_obj = exchange_ctor(
                     api_key=credentials.api_key,
                     secret=credentials.api_secret,
                     database=database,
                     msg_aggregator=self.msg_aggregator,
+                    **extra_args,
                 )
                 self.connected_exchanges[name] = exchange_obj

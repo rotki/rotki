@@ -51,43 +51,12 @@ history1 = [
     },
 ]
 
-history_unknown_assets = [
-    {
-        'timestamp': 1446979735,
-        'pair': 'UNKNOWNASSET_ETH',
-        'trade_type': 'buy',
-        'rate': 268.678317859,
-        'fee': 0,
-        'fee_currency': 'UNKNOWNASSET',
-        'amount': 82,
-        'location': 'kraken',
-    },
-]
-
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_simple_accounting(accountant):
     accounting_history_process(accountant, 1436979735, 1495751688, history1)
-    # assert accountant.general_trade_pl.is_close("557.528104903")
     assert accountant.general_trade_pl.is_close("557.5284549025")
     assert accountant.taxable_trade_pl.is_close("557.5284549025")
-
-
-@pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_simple_accounting_with_unknown_and_unsupported_assets(accountant):
-    """Make sure that if for some reason in the action processing we get an
-    unknown asset a warning is logged and we don't crash.
-
-    Note though that if this happens probably something wrong happened in the
-    history creation as the unknown/unsupported assets should have been filtered
-    out then"""
-    history = history1 + history_unknown_assets
-    accounting_history_process(accountant, 1436979735, 1495751688, history)
-    assert accountant.general_trade_pl.is_close('557.52845490257')
-    assert accountant.taxable_trade_pl.is_close('557.52845490257')
-    warnings = accountant.msg_aggregator.consume_warnings()
-    assert len(warnings) == 1
-    assert 'found a trade containing unknown asset UNKNOWNASSET. Ignoring it.' in warnings[0]
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -252,7 +221,9 @@ history5 = history1 + [{
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-@pytest.mark.parametrize('accounting_include_crypto2crypto', [False])
+@pytest.mark.parametrize('db_settings', [{
+    'include_crypto2crypto': False,
+}])
 def test_nocrypto2crypto(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
     assert accountant.general_trade_pl.is_close("264693.43364282")
@@ -260,7 +231,9 @@ def test_nocrypto2crypto(accountant):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-@pytest.mark.parametrize('accounting_taxfree_after_period', [None])
+@pytest.mark.parametrize('db_settings', [{
+    'taxfree_after_period': -1,
+}])
 def test_no_taxfree_period(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
     assert accountant.general_trade_pl.is_close('265250.9620977')
@@ -268,7 +241,9 @@ def test_no_taxfree_period(accountant):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-@pytest.mark.parametrize('accounting_taxfree_after_period', [86400])
+@pytest.mark.parametrize('db_settings', [{
+    'taxfree_after_period': 86400,
+}])
 def test_big_taxfree_period(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
     assert accountant.general_trade_pl.is_close('265250.9620977')
@@ -311,8 +286,10 @@ def test_buy_event_creation(accountant):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-@pytest.mark.parametrize('accounting_include_gas_costs', [False])
-@pytest.mark.parametrize('accounting_ignored_assets', [[A_DASH]])
+@pytest.mark.parametrize('ignored_assets', [[A_DASH]])
+@pytest.mark.parametrize('db_settings', [{
+    'include_gas_costs': False,
+}])
 def test_not_include_gas_costs(accountant):
     """
     Added ignored assets here only to have a test for
@@ -363,7 +340,7 @@ def test_not_include_gas_costs(accountant):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-@pytest.mark.parametrize('accounting_ignored_assets', [[A_DASH]])
+@pytest.mark.parametrize('ignored_assets', [[A_DASH]])
 def test_ignored_assets(accountant):
     history = history1 + [{
         'timestamp': 1476979735,

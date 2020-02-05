@@ -1,5 +1,6 @@
 import pytest
 
+from rotkehlchen.errors import ConversionError
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads
 
@@ -155,7 +156,7 @@ def test_conversion():
     d = FVal('3.0')
     assert a == c
     assert d.to_int(exact=True) == 3
-    with pytest.raises(ValueError):
+    with pytest.raises(ConversionError):
         b.to_int(exact=True)
 
 

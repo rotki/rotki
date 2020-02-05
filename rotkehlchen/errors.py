@@ -1,16 +1,7 @@
-#!/usr/bin/env python
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
-
-
-class PoloniexError(Exception):
-    def __init__(self, err: str) -> None:
-        self.err = err
-
-    def __str__(self) -> str:
-        return self.err
 
 
 class RecoverableRequestError(Exception):
@@ -31,6 +22,10 @@ class EthSyncError(Exception):
 
 
 class AuthenticationError(Exception):
+    pass
+
+
+class PremiumAuthenticationError(Exception):
     pass
 
 
@@ -91,3 +86,11 @@ class NoPriceForGivenTimestamp(Exception):
                 from_asset.identifier, to_asset.identifier, date,
             ),
         )
+
+
+class InvalidBTCAddress(Exception):
+    pass
+
+
+class ConversionError(Exception):
+    pass

@@ -33,7 +33,7 @@ from rotkehlchen.typing import (
     TradePair,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import cache_response_timewise
+from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
@@ -137,7 +137,7 @@ class Coinbase(ExchangeInterface):
                     f'Unexpected coinbase method {method_str} at API key validation',
                 )
             msg = (
-                f'Provided API key needs to have {permission} permission activated. '
+                f'Provided Coinbase API key needs to have {permission} permission activated. '
                 f'Please log into your coinbase account and set all required permissions: '
                 f'wallet:accounts:read, wallet:transactions:read, '
                 f'wallet:buys:read, wallet:sells:read, wallet:withdrawals:read, '
@@ -158,7 +158,7 @@ class Coinbase(ExchangeInterface):
         return result, ''
 
     def validate_api_key(self) -> Tuple[bool, str]:
-        """Validates that the Coinbase API key is good for usage in Rotkehlchen
+        """Validates that the Coinbase API key is good for usage in Rotki
 
         Makes sure that the following permissions are given to the key:
         wallet:accounts:read, wallet:transactions:read,
@@ -307,6 +307,7 @@ class Coinbase(ExchangeInterface):
 
         return final_data
 
+    @protect_with_lock()
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
         try:
@@ -319,7 +320,7 @@ class Coinbase(ExchangeInterface):
             log.error(msg)
             return None, msg
 
-        returned_balances: Dict[Asset, Dict[str, Any]] = dict()
+        returned_balances: Dict[Asset, Dict[str, Any]] = {}
         for account in resp:
             try:
                 if not account['balance']:
@@ -334,7 +335,15 @@ class Coinbase(ExchangeInterface):
 
                 asset = asset_from_coinbase(account['balance']['currency'])
 
-                usd_price = Inquirer().find_usd_price(asset=asset)
+                try:
+                    usd_price = Inquirer().find_usd_price(asset=asset)
+                except RemoteError as e:
+                    self.msg_aggregator.add_error(
+                        f'Error processing coinbase balance entry due to inability to '
+                        f'query USD price: {str(e)}. Skipping balance entry',
+                    )
+                    continue
+
                 if asset in returned_balances:
                     amount = returned_balances[asset]['amount'] + amount
                 else:

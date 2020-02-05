@@ -7,23 +7,26 @@ from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_location_from_db
 from rotkehlchen.typing import EthTokenInfo, Location, TradeType
+from rotkehlchen.utils.version_check import VersionCheckResult
 
 
 def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
     if isinstance(entry, FVal):
         return str(entry)
     elif isinstance(entry, list):
-        new_list = list()
+        new_list = []
         for new_entry in entry:
             new_list.append(_process_entry(new_entry))
         return new_list
     elif isinstance(entry, dict):
-        new_dict = dict()
+        new_dict = {}
         for k, v in entry.items():
             if isinstance(k, Asset):
                 k = k.identifier
             new_dict[k] = _process_entry(v)
         return new_dict
+    elif isinstance(entry, Location):
+        return str(entry)
     elif isinstance(entry, LocationData):
         return {
             'time': entry.time,
@@ -42,11 +45,15 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
     elif isinstance(entry, Trade):
         return entry.serialize()
     elif isinstance(entry, DBSettings):
-        return entry._asdict()
+        return process_result(entry._asdict())
     elif isinstance(entry, EthTokenInfo):
-        return entry._asdict()
+        return process_result(entry._asdict())
+    elif isinstance(entry, VersionCheckResult):
+        return process_result(entry._asdict())
+    elif isinstance(entry, DBSettings):
+        return process_result(entry._asdict())
     elif isinstance(entry, tuple):
-        raise ValueError('Query results should not contain tuples')
+        raise ValueError('Query results should not contain plain tuples')
     elif isinstance(entry, Asset):
         return entry.identifier
     elif isinstance(entry, (TradeType, Location)):
@@ -55,14 +62,16 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
         return entry
 
 
-def process_result(result: Dict[str, Any]) -> Dict[str, Any]:
-    """Before sending out a result a dictionary via the server we are turning:
+def process_result(result: Dict[Any, Any]) -> Dict[Any, Any]:
+    """Before sending out a result dictionary via the server we are serializing it.
+    Turning:
 
         - all Decimals to strings so that the serialization to float/big number
           is handled by the client application and we lose nothing in the transfer
 
         - if a dictionary has an Asset for a key use its identifier as the key value
         - all NamedTuples and Dataclasses must be serialized into dicts
+        - all enums and more
     """
     processed_result = _process_entry(result)
     assert isinstance(processed_result, Dict)
@@ -70,7 +79,7 @@ def process_result(result: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def process_result_list(result: List[Any]) -> List[Any]:
-    """Just lke process_result but for lists"""
+    """Just like process_result but for lists"""
     processed_result = _process_entry(result)
     assert isinstance(processed_result, List)
     return processed_result

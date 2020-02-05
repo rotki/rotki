@@ -2,6 +2,25 @@
 Changelog
 =========
 
+
+* :release:`1.1.0 <2020-02-05>`
+* :feature:`626` Rotki now accepts addition of API keys for external services such as etherscan or cryptocompare.
+* :feature:`46` Coinbase Pro is now supported. Trades, deposits, withdrawals and balances in that exchange can now be queried.
+* :feature:`583` The UI's notifications can finally be copy pasted.
+* :feature:`168` Users can now force-refresh exchange/blockchain balances via the UI and ignore the cache.
+* :feature:`354` Introduces a modern, easily extendable material design UI based on Vue.js and Vuetify.
+* :feature:`404` Removed ZMQ as the messaging layer between backend - frontend and introduced a full-fledged REST API instead.
+* :bug:`465` Asset icons and names show consistently in the UI after the vue.js rewrite.
+
+* :feature:`-` Added support for the following tokens
+
+  - `Orchid (OXT) <https://coinmarketcap.com/currencies/orchid/>`__
+  - `DREP (DREP) <https://coinmarketcap.com/currencies/drep/>`__
+  - `Origin Protocol (OGN) <https://coinmarketcap.com/currencies/origin-protocol/>`__
+  - `Token Club (TCT) <https://coinmarketcap.com/currencies/tokenclub/>`__
+  - `Tap (XTP) <https://coinmarketcap.com/currencies/tap/>`__
+  - `Xensor (XSR) <https://coinmarketcap.com/currencies/xensor/>`__
+
 * :release:`1.0.7 <2020-01-04>`
 * :bug:`605` Adding a premium API key via the front-end now works properly again.
 * :bug:`602` Fixed a bug that lead to the coinbase exchange integration not working.
@@ -18,7 +37,6 @@ Changelog
 
   - `Troy (TROY) <https://coinmarketcap.com/currencies/troy/>`__
   - `Hycon (HYC) <https://coinmarketcap.com/currencies/hycon/>`__
-
 
 * :release:`1.0.5 <2019-11-30>`
 * :feature:`547` Support Multicollateral DAI upgrade and Single Collateral DAI renaming to SAI.
@@ -41,7 +59,6 @@ Changelog
   - `FLETA (FLETA) <https://coinmarketcap.com/currencies/fleta/>`__
   - `PAX Gold (PAXG) <https://coinmarketcap.com/currencies/pax-gold/>`__
   - `Hdac (HDAC) <https://coinmarketcap.com/currencies/hdac/>`__
-
 
 * :release:`1.0.4 <2019-10-04>`
 * :feature:`498` Users can now import data from Cointracking into Rotki. Create a CSV export from Cointracking and import it from the Import Data menu.
@@ -90,7 +107,7 @@ Changelog
 * :bug:`443` Fix bug in deserialization of non-exact floating point kraken timestamp values which could lead to a crash during tax report generation.
 
 * :release:`1.0.1 <2019-08-02>`
-* :feature:`425` Users can now provide arguments to the backend via a config file. For more information check the `docs <https://rotkehlchen.readthedocs.io/en/latest/usage_guide.html#set-the-backend-s-arguments`__. 
+* :feature:`425` Users can now provide arguments to the backend via a config file. For more information check the `docs <https://rotkehlchen.readthedocs.io/en/latest/usage_guide.html#set-the-backend-s-arguments`__.
 * :feature:`-` Added support for the following tokens
 
   - `Luna Coin <https://coinmarketcap.com/currencies/luna-coin/>`__

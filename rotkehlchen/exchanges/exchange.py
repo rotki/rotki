@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import logging
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Tuple
 
@@ -9,7 +8,7 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition,
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_location
 from rotkehlchen.typing import ApiKey, ApiSecret, T_ApiKey, T_ApiSecret, Timestamp
-from rotkehlchen.utils.misc import CacheableObject
+from rotkehlchen.utils.interfaces import CacheableObject, LockableQueryObject
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -26,7 +25,7 @@ ExchangeHistorySuccessCallback = Callable[
 ExchangeHistoryFailCallback = Callable[[str], None]
 
 
-class ExchangeInterface(CacheableObject):
+class ExchangeInterface(CacheableObject, LockableQueryObject):
 
     def __init__(
             self,
@@ -41,6 +40,7 @@ class ExchangeInterface(CacheableObject):
         assert isinstance(secret, T_ApiSecret), (
             'secret for {} should be a bytestring'.format(name)
         )
+        super().__init__()
         self.name = name
         self.db = database
         self.api_key = api_key
@@ -48,11 +48,9 @@ class ExchangeInterface(CacheableObject):
         self.first_connection_made = False
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
-
-        super().__init__()
         log.info(f'Initialized {name} exchange')
 
-    def query_balances(self) -> Tuple[Optional[dict], str]:
+    def query_balances(self, **kwargs: Any) -> Tuple[Optional[dict], str]:
         """Returns the balances held in the exchange in the following format:
         {
             'name' : {'amount': 1337, 'usd_value': 42},
@@ -179,7 +177,7 @@ class ExchangeInterface(CacheableObject):
             to_ts=end_ts,
             location=deserialize_location(self.name),
         )
-        ranges_to_query = self.get_online_query_ranges('_trades', start_ts, end_ts)
+        ranges_to_query = self.get_online_query_ranges('_trades', start_ts=start_ts, end_ts=end_ts)
 
         new_trades = []
         for query_start_ts, query_end_ts in ranges_to_query:

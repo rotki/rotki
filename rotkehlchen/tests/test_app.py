@@ -14,12 +14,18 @@ def test_initializing_exchanges(uninitialized_rotkehlchen):
     rotki.data.unlock(username, db_password, create_new=True)
     database = rotki.data.db
     # Mock having user_credentials for all exchanges and for premium
-    cmd = 'INSERT OR REPLACE INTO user_credentials(name, api_key, api_secret) VALUES (?, ?, ?)'
+    cmd = (
+        'INSERT OR REPLACE INTO user_credentials '
+        '(name, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?)'
+    )
 
     credentials = []
     for name in SUPPORTED_EXCHANGES:
-        credentials.append((name, make_api_key(), make_api_secret()))
-    credentials.append(('rotkehlchen', make_api_key(), make_api_secret()))
+        passphrase = None
+        if name == 'coinbasepro':
+            passphrase = 'supersecretpassphrase'
+        credentials.append((name, make_api_key(), make_api_secret(), passphrase))
+    credentials.append(('rotkehlchen', make_api_key(), make_api_secret(), None))
     cursor = rotki.data.db.conn.cursor()
     for entry in credentials:
         cursor.execute(cmd, entry)

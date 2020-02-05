@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import argparse
 import sys
 from typing import Any, List, Sequence, Union
@@ -35,7 +34,7 @@ class CommandAction(argparse.Action):
 
 
 def app_args(prog: str, description: str) -> argparse.ArgumentParser:
-    """Add the Rotkehlchen arguments to the argument parser and return it"""
+    """Add the Rotki arguments to the argument parser and return it"""
     p = argparse.ArgumentParser(
         prog=prog,
         description=description,
@@ -53,9 +52,21 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
         default=default_data_directory(),
     )
     p.add_argument(
-        '--zerorpc-port',
-        help='The port on which to open a zerorpc server for communication with the UI',
-        default=4242,
+        '--api-host',
+        help='The host on which the rest API will run',
+        default='127.0.0.1',
+    )
+    p.add_argument(
+        '--api-port',
+        help='The port on which the rest API will run',
+        type=int,
+        default=5042,
+    )
+    p.add_argument(
+        '--api-cors',
+        help='Comma separated list of domains for the API to accept cross origin requests.',
+        default="http://localhost:*/*",
+        type=str,
     )
     p.add_argument(
         '--ethrpc-port',

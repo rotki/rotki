@@ -40,7 +40,10 @@ class KrakenTradesHistoryResource(BaseResource):
 
 class KrakenLedgersResource(BaseResource):
 
-    def post(self, **kwargs):
+    def post(
+            self,
+            **kwargs,  # pylint: disable=unused-argument
+    ):
         # Not using a marshmallow schema here because no schema worked with
         # the way rotkehlchen queries kraken. Not sure why yet. But one hacky way
         # is to inspect the flask request directly

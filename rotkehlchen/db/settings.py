@@ -1,13 +1,14 @@
-from typing import Any, Dict, NamedTuple, Union
+from typing import Any, Dict, NamedTuple, Optional, Union
 
-from rotkehlchen.constants.assets import S_USD
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.db.utils import str_to_bool
 from rotkehlchen.errors import DeserializationError
-from rotkehlchen.typing import FiatAsset, Timestamp
+from rotkehlchen.typing import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
-ROTKEHLCHEN_DB_VERSION = 8
+ROTKEHLCHEN_DB_VERSION = 10
 DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
 DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
 DEFAULT_INCLUDE_GAS_COSTS = True
@@ -16,7 +17,7 @@ DEFAULT_PREMIUM_SHOULD_SYNC = False
 DEFAULT_START_DATE = '01/08/2015'
 DEFAULT_UI_FLOATING_PRECISION = 2
 DEFAULT_BALANCE_SAVE_FREQUENCY = 24
-DEFAULT_MAIN_CURRENCY = S_USD
+DEFAULT_MAIN_CURRENCY = A_USD
 DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z'
 DEFAULT_SUBMIT_USAGE_ANALYTICS = True
 
@@ -29,15 +30,49 @@ class DBSettings(NamedTuple):
     anonymized_logs: bool = DEFAULT_ANONYMIZED_LOGS
     last_data_upload_ts: Timestamp = Timestamp(0)
     ui_floating_precision: int = DEFAULT_UI_FLOATING_PRECISION
-    taxfree_after_period: int = DEFAULT_TAXFREE_AFTER_PERIOD
+    taxfree_after_period: Optional[int] = DEFAULT_TAXFREE_AFTER_PERIOD
     balance_save_frequency: int = DEFAULT_BALANCE_SAVE_FREQUENCY
     include_gas_costs: bool = DEFAULT_INCLUDE_GAS_COSTS
     historical_data_start: str = DEFAULT_START_DATE
     eth_rpc_endpoint: str = 'http://localhost:8545'
-    main_currency: FiatAsset = DEFAULT_MAIN_CURRENCY
+    main_currency: Asset = DEFAULT_MAIN_CURRENCY
     date_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
     last_balance_save: Timestamp = Timestamp(0)
     submit_usage_analytics: bool = DEFAULT_SUBMIT_USAGE_ANALYTICS
+
+
+class ModifiableDBSettings(NamedTuple):
+    premium_should_sync: Optional[bool] = None
+    include_crypto2crypto: Optional[bool] = None
+    anonymized_logs: Optional[bool] = None
+    ui_floating_precision: Optional[int] = None
+    taxfree_after_period: Optional[int] = None
+    balance_save_frequency: Optional[int] = None
+    include_gas_costs: Optional[bool] = None
+    historical_data_start: Optional[str] = None
+    eth_rpc_endpoint: Optional[str] = None
+    main_currency: Optional[Asset] = None
+    date_display_format: Optional[str] = None
+    submit_usage_analytics: Optional[bool] = None
+
+    def serialize(self) -> Dict[str, Any]:
+        settings_dict = {}
+        for setting in ModifiableDBSettings._fields:
+            value = getattr(self, setting)
+            if value is not None:
+                # We need to save booleans as strings in the DB
+                if isinstance(value, bool):
+                    value = str(value)
+                # main currency needs to have only its identifier
+                if setting == 'main_currency':
+                    value = value.identifier  # pylint: disable=no-member
+                # taxfree_after_period of -1 by the user means disable the setting
+                if setting == 'taxfree_after_period' and value == -1:
+                    value = None
+
+                settings_dict[setting] = value
+
+        return settings_dict
 
 
 def read_boolean(value: Union[str, bool]) -> bool:
@@ -88,7 +123,7 @@ def db_settings_from_dict(
         elif key == 'balance_save_frequency':
             specified_args[key] = int(value)
         elif key == 'main_currency':
-            specified_args[key] = FiatAsset(str(value))
+            specified_args[key] = Asset(str(value))
         elif key == 'anonymized_logs':
             specified_args[key] = read_boolean(value)
         elif key == 'include_gas_costs':

@@ -1,7 +1,7 @@
 import pytest
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.errors import UnknownAsset
+from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.typing import AssetType
 
 
@@ -51,5 +51,5 @@ def test_ethereum_tokens():
     assert rdn_asset.decimals == 18
     assert rdn_asset.asset_type == AssetType.ETH_TOKEN
 
-    with pytest.raises(ValueError):
+    with pytest.raises(DeserializationError):
         EthereumToken('BTC')

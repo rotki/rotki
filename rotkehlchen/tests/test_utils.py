@@ -4,16 +4,16 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.errors import UnprocessableTradePair
+from rotkehlchen.errors import ConversionError, UnprocessableTradePair
 from rotkehlchen.exchanges.data_structures import invert_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.utils.interfaces import CacheableObject, cache_response_timewise
 from rotkehlchen.utils.misc import (
-    CacheableObject,
-    cache_response_timewise,
     combine_dicts,
     combine_stat_dicts,
+    convert_to_int,
     iso8601ts_to_timestamp,
 )
 from rotkehlchen.utils.version_check import check_if_version_up_to_date
@@ -121,7 +121,8 @@ def test_check_if_version_up_to_date():
     )
 
     with patch_our_version, patch_github:
-        assert check_if_version_up_to_date() is None, 'Same version should return none'
+        result = check_if_version_up_to_date()
+        assert result.download_url is None, 'Same version should return None as url'
 
     def mock_github_return(url):  # pylint: disable=unused-argument
         contents = '{"tag_name": "v99.99.99", "html_url": "https://foo"}'
@@ -131,8 +132,8 @@ def test_check_if_version_up_to_date():
         result = check_if_version_up_to_date()
     assert result
     assert result[0]
-    assert result[1] == 'v99.99.99'
-    assert result[2] == 'https://foo'
+    assert result.latest_version == 'v99.99.99'
+    assert result.download_url == 'https://foo'
 
     # Also test that bad responses are handled gracefully
     def mock_non_200_github_return(url):  # pylint: disable=unused-argument
@@ -141,7 +142,9 @@ def test_check_if_version_up_to_date():
 
     with patch('requests.get', side_effect=mock_non_200_github_return):
         result = check_if_version_up_to_date()
-        assert not result
+        assert result.our_version
+        assert not result.latest_version
+        assert not result.latest_version
 
     def mock_missing_fields_github_return(url):  # pylint: disable=unused-argument
         contents = '{"html_url": "https://foo"}'
@@ -149,7 +152,9 @@ def test_check_if_version_up_to_date():
 
     with patch('requests.get', side_effect=mock_missing_fields_github_return):
         result = check_if_version_up_to_date()
-        assert not result
+        assert result.our_version
+        assert not result.latest_version
+        assert not result.latest_version
 
     def mock_invalid_json_github_return(url):  # pylint: disable=unused-argument
         contents = '{html_url: "https://foo"}'
@@ -157,21 +162,25 @@ def test_check_if_version_up_to_date():
 
     with patch('requests.get', side_effect=mock_invalid_json_github_return):
         result = check_if_version_up_to_date()
-        assert not result
+        assert result.our_version
+        assert not result.latest_version
+        assert not result.latest_version
 
 
 class Foo(CacheableObject):
     def __init__(self):
         super().__init__()
 
+        self.do_sum_call_count = 0
         self.do_something_call_count = 0
 
     @cache_response_timewise()
-    def do_sum(self, arg1, arg2):  # pylint: disable=no-self-use
+    def do_sum(self, arg1, arg2, **kwargs):  # pylint: disable=no-self-use, unused-argument
+        self.do_sum_call_count += 1
         return arg1 + arg2
 
     @cache_response_timewise()
-    def do_something(self):
+    def do_something(self, **kwargs):  # pylint: disable=unused-argument
         self.do_something_call_count += 1
         return 5
 
@@ -194,3 +203,42 @@ def test_cache_response_timewise_different_args():
     instance = Foo()
     assert instance.do_sum(1, 1) == 2
     assert instance.do_sum(2, 2) == 4
+    assert instance.do_sum_call_count == 2
+
+
+def test_cache_response_timewise_ignore_cache():
+    """Test that if the magic keyword argument `ignore_cache=True` is given the cache is ignored"""
+    instance = Foo()
+
+    assert instance.do_something() == 5
+    assert instance.do_something(ignore_cache=True) == 5
+    assert instance.do_something_call_count == 2
+
+    assert instance.do_sum(1, 1) == 2
+    assert instance.do_sum(1, 1) == 2
+    assert instance.do_sum(1, 1, ignore_cache=True) == 2
+    assert instance.do_sum_call_count == 2
+
+
+def test_convert_to_int():
+    assert convert_to_int('5') == 5
+    with pytest.raises(ConversionError):
+        assert convert_to_int(5.44, accept_only_exact=True) == 5
+    assert convert_to_int(5.44, accept_only_exact=False) == 5
+    assert convert_to_int(5.65, accept_only_exact=False) == 5
+    with pytest.raises(ConversionError):
+        assert convert_to_int(FVal('5.44'), accept_only_exact=True) == 5
+    assert convert_to_int(FVal('5.44'), accept_only_exact=False) == 5
+    assert convert_to_int(FVal('5.65'), accept_only_exact=False) == 5
+    assert convert_to_int(FVal('4'), accept_only_exact=True) == 4
+    assert convert_to_int(3) == 3
+    with pytest.raises(ConversionError):
+        assert convert_to_int('5.44', accept_only_exact=True) == 5
+    assert convert_to_int('5.44', accept_only_exact=False) == 5
+    assert convert_to_int('5.65', accept_only_exact=False) == 5
+    assert convert_to_int('4', accept_only_exact=False) == 4
+    with pytest.raises(ConversionError):
+        assert convert_to_int(b'5.44', accept_only_exact=True) == 5
+    assert convert_to_int(b'5.44', accept_only_exact=False) == 5
+    assert convert_to_int(b'5.65', accept_only_exact=False) == 5
+    assert convert_to_int(b'4', accept_only_exact=False) == 4

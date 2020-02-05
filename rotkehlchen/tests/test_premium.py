@@ -4,13 +4,18 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
-from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.errors import IncorrectApiKeyFormat, UnableToDecryptRemoteData
+from rotkehlchen.constants.assets import A_EUR, A_GBP
+from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.errors import IncorrectApiKeyFormat, PremiumAuthenticationError
 from rotkehlchen.premium.premium import PremiumCredentials
+from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.premium import (
+    REMOTE_DATA_OLDER_DB,
+    VALID_PREMIUM_KEY,
+    VALID_PREMIUM_SECRET,
     assert_db_got_replaced,
-    create_patched_premium_session_get,
+    create_patched_requests_get_for_premium,
     setup_starting_environment,
 )
 from rotkehlchen.utils.misc import ts_now
@@ -23,7 +28,7 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
     assert last_ts == 0
 
     # Write anything in the DB to set a non-zero last_write_ts
-    rotkehlchen_instance.data.db.set_main_currency('EUR')
+    rotkehlchen_instance.data.db.set_settings(ModifiableDBSettings(main_currency=A_GBP))
     last_write_ts = rotkehlchen_instance.data.db.get_last_write_ts()
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
     remote_hash = 'a' + our_hash[1:]
@@ -51,7 +56,7 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password):
         'put',
         side_effect=mock_succesfull_upload_data_to_server,
     )
-    patched_get = create_patched_premium_session_get(
+    patched_get = create_patched_requests_get_for_premium(
         session=rotkehlchen_instance.premium.session,
         metadata_last_modify_ts=0,
         metadata_data_hash=remote_hash,
@@ -85,7 +90,7 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance, db_password):
     assert last_ts == 0
 
     # Write anything in the DB to set a non-zero last_write_ts
-    rotkehlchen_instance.data.db.set_main_currency('EUR')
+    rotkehlchen_instance.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
     remote_hash = our_hash
 
@@ -94,7 +99,7 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance, db_password):
         'put',
         return_value=None,
     )
-    patched_get = create_patched_premium_session_get(
+    patched_get = create_patched_requests_get_for_premium(
         session=rotkehlchen_instance.premium.session,
         metadata_last_modify_ts=0,
         metadata_data_hash=remote_hash,
@@ -116,7 +121,7 @@ def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_password):
     assert last_ts == 0
 
     # Write anything in the DB to set a non-zero last_write_ts
-    rotkehlchen_instance.data.db.set_main_currency('EUR')
+    rotkehlchen_instance.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(db_password)
     remote_hash = 'a' + our_hash[1:]
 
@@ -125,7 +130,7 @@ def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_password):
         'put',
         return_value=None,
     )
-    patched_get = create_patched_premium_session_get(
+    patched_get = create_patched_requests_get_for_premium(
         session=rotkehlchen_instance.premium.session,
         metadata_last_modify_ts=0,
         metadata_data_hash=remote_hash,
@@ -162,6 +167,32 @@ def test_try_premium_at_start_new_account_can_pull_data(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_try_premium_at_start_new_account_pull_old_data(
+        rotkehlchen_instance,
+        username,
+        db_password,
+        rotki_premium_credentials,
+):
+    """
+    Test that if the remote DB is of an old version its upgraded before replacing our current
+
+    For a new account
+    """
+    setup_starting_environment(
+        rotkehlchen_instance=rotkehlchen_instance,
+        username=username,
+        db_password=db_password,
+        premium_credentials=rotki_premium_credentials,
+        first_time=True,
+        same_hash_with_remote=False,
+        newer_remote_db=True,
+        db_can_sync_setting=False,
+        remote_data=REMOTE_DATA_OLDER_DB,
+    )
+    assert_db_got_replaced(rotkehlchen_instance=rotkehlchen_instance, username=username)
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_try_premium_at_start_old_account_can_pull_data(
         rotkehlchen_instance,
         username,
@@ -177,6 +208,32 @@ def test_try_premium_at_start_old_account_can_pull_data(
         same_hash_with_remote=False,
         newer_remote_db=True,
         db_can_sync_setting=True,
+    )
+    assert_db_got_replaced(rotkehlchen_instance=rotkehlchen_instance, username=username)
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_try_premium_at_start_old_account_can_pull_old_data(
+        rotkehlchen_instance,
+        username,
+        db_password,
+        rotki_premium_credentials,
+):
+    """
+    Test that if the remote DB is of an old version its upgraded before replacing our current
+
+    For an old account
+    """
+    setup_starting_environment(
+        rotkehlchen_instance=rotkehlchen_instance,
+        username=username,
+        db_password=db_password,
+        premium_credentials=rotki_premium_credentials,
+        first_time=False,
+        same_hash_with_remote=False,
+        newer_remote_db=True,
+        db_can_sync_setting=True,
+        remote_data=REMOTE_DATA_OLDER_DB,
     )
     assert_db_got_replaced(rotkehlchen_instance=rotkehlchen_instance, username=username)
 
@@ -199,7 +256,7 @@ def test_try_premium_at_start_old_account_doesnt_pull_data_with_no_premium_sync(
         db_can_sync_setting=False,
     )
     # DB should not have changed
-    assert rotkehlchen_instance.data.db.get_main_currency() == A_USD
+    assert rotkehlchen_instance.data.db.get_main_currency() == DEFAULT_TESTS_MAIN_CURRENCY
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -220,7 +277,7 @@ def test_try_premium_at_start_old_account_same_hash(
         db_can_sync_setting=True,
     )
     # DB should not have changed
-    assert rotkehlchen_instance.data.db.get_main_currency() == A_USD
+    assert rotkehlchen_instance.data.db.get_main_currency() == DEFAULT_TESTS_MAIN_CURRENCY
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -241,7 +298,7 @@ def test_try_premium_at_start_old_account_older_remote_ts(
         db_can_sync_setting=True,
     )
     # DB should not have changed
-    assert rotkehlchen_instance.data.db.get_main_currency() == A_USD
+    assert rotkehlchen_instance.data.db.get_main_currency() == DEFAULT_TESTS_MAIN_CURRENCY
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -254,10 +311,10 @@ def test_try_premium_at_start_new_account_different_password_than_remote_db(
 ):
     """
     If we make a new account with api keys and provide a password different than
-    the one the remote DB is encrypted with then make sure that UnableToDecryptRemoteData
+    the one the remote DB is encrypted with then make sure that PremiumAuthenticationError
     is thrown and that it is shown to the user.
     """
-    with pytest.raises(UnableToDecryptRemoteData):
+    with pytest.raises(PremiumAuthenticationError):
         setup_starting_environment(
             rotkehlchen_instance=rotkehlchen_instance,
             username=username,
@@ -276,13 +333,8 @@ def test_premium_credentials():
     with pytest.raises(IncorrectApiKeyFormat):
         credentials = PremiumCredentials('foo', 'boo')
 
-    api_key = (
-        'kWT/MaPHwM2W1KUEl2aXtkKG6wJfMW9KxI7SSerI6/QzchC45/GebPV9xYZy7f+VKBeh5nDRBJBCYn7WofMO4Q=='
-    )
-    secret = (
-        'TEF5dFFrOFcwSXNrM2p1aDdHZmlndFRoMTZQRWJhU2dacTdscUZSeHZTRmJLRm5ZaVRlV2NYU'
-        'llYR1lxMjlEdUtRdFptelpCYmlXSUZGRTVDNWx3NDNYbjIx'
-    )
+    api_key = VALID_PREMIUM_KEY
+    secret = VALID_PREMIUM_SECRET
     credentials = PremiumCredentials(
         given_api_key=api_key,
         given_api_secret=secret,

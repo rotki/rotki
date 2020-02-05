@@ -36,7 +36,7 @@ def accounting_history_process(
     if asset_movements_list:
         asset_movements = asset_movements_list
 
-    loan_history = list()
+    loan_history = []
     if loans_list:
         loan_history = process_polo_loans(
             msg_aggregator=accountant.msg_aggregator,
@@ -45,7 +45,7 @@ def accounting_history_process(
             end_ts=end_ts,
         )
 
-    eth_transactions = list()
+    eth_transactions = []
     if eth_transaction_list:
         eth_transactions = eth_transaction_list
 
