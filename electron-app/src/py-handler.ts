@@ -187,6 +187,7 @@ export default class PyHandler {
     if (this._corsURL) {
       args.push('--api-cors', this._corsURL);
     }
+    args.push('--logfile', path.join(this.logsPath, 'rotkehlchen.log'));
     this.childProcess = execFile(
       executable,
       ['--api-port', port.toString()].concat(args)

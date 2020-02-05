@@ -133,7 +133,7 @@ export default class App extends Vue {
     ipcRenderer.on('failed', () => {
       // get notified if the python subprocess dies
       this.startupError =
-        'The Python backend crushed. Check rotkehlchen.log or open an issue in Github.';
+        'The Python backend crashed. Check rotkehlchen.log or open an issue in Github.';
       // send ack to main.
       ipcRenderer.send('ack', 1);
     });
