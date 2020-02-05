@@ -144,6 +144,27 @@ def test_disable_taxfree_after_period(rotkehlchen_api_server):
     json_data = response.json()
     assert json_data['result']['taxfree_after_period'] is None
 
+    # Test that any other negative value is refused
+    data = {
+        'taxfree_after_period': -5,
+    }
+    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    assert_error_response(
+        response=response,
+        contained_in_msg='The taxfree_after_period value can not be negative',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    # Test that zero value is refused
+    data = {
+        'taxfree_after_period': 0,
+    }
+    response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
+    assert_error_response(
+        response=response,
+        contained_in_msg='The taxfree_after_period value can not be set to zero',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
 
 @pytest.mark.xfail(
     strict=True,
