@@ -12,6 +12,7 @@ import { assert } from '@/utils/assertions';
 export default class PyHandler {
   private static PY_DIST_FOLDER = 'rotkehlchen_py_dist';
   private rpcFailureNotifier?: any;
+  private rpcConnectedNotifier?: any;
   private childProcess?: ChildProcess;
   private _port?: number;
   private executable?: string;
@@ -54,9 +55,14 @@ export default class PyHandler {
 
   listenForMessages() {
     // Listen for ack messages from renderer process
-    ipcMain.on('ack', () => {
-      // when ack is received stop the pyproc fail notifier
-      clearInterval(this.rpcFailureNotifier);
+    ipcMain.on('ack', (event, ...args) => {
+      if (args[0] == 1) {
+        clearInterval(this.rpcFailureNotifier);
+      } else if (args[0] == 2) {
+        clearInterval(this.rpcConnectedNotifier);
+      } else {
+        this.logToFile(`Warning: unknown ack code ${args[0]}`);
+      }
     });
   }
 
@@ -93,7 +99,7 @@ export default class PyHandler {
       );
       if (code !== 0) {
         // Notify the main window every 2 seconds until it acks the notification
-        handler.setNotification(window);
+        handler.setFailureNotification(window);
       }
     });
 
@@ -101,6 +107,7 @@ export default class PyHandler {
       this.logToFile(
         `The Python sub-process started on port: ${port} (PID: ${childProcess.pid})`
       );
+      handler.setConnectedNotification(window);
       return;
     }
     this.logToFile('The Python sub-process was not successfully started');
@@ -139,9 +146,15 @@ export default class PyHandler {
     return this._port;
   }
 
-  private setNotification(window: Electron.BrowserWindow) {
+  private setFailureNotification(window: Electron.BrowserWindow) {
     this.rpcFailureNotifier = setInterval(function() {
       window.webContents.send('failed', 'failed');
+    }, 2000);
+  }
+
+  private setConnectedNotification(window: Electron.BrowserWindow) {
+    this.rpcConnectedNotifier = setInterval(function() {
+      window.webContents.send('connected', 'connected');
     }, 2000);
   }
 

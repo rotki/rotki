@@ -139,7 +139,7 @@ export default class App extends Vue {
     });
     ipcRenderer.on('connected', async () => {
       await this.$store.dispatch('version');
-      ipcRenderer.send('ack', 1);
+      ipcRenderer.send('ack', 2);
     });
   }
 }
