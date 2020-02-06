@@ -95,6 +95,14 @@ class Rotkehlchen():
         self.lock.release()
         self.shutdown_event = gevent.event.Event()
 
+    def reset_after_failed_account_creation_or_login(self) -> None:
+        """If the account creation or login failed make sure that the Rotki instance is clear
+
+        Tricky instances are when after either failed premium credentials or user refusal
+        to sync premium databases we relogged in.
+        """
+        self.cryptocompare.db = None
+
     def unlock_user(
             self,
             user: str,
@@ -124,6 +132,8 @@ class Rotkehlchen():
         # set the DB in the external services instances that need it
         self.cryptocompare.set_database(self.data.db)
 
+        # Anything that was set above here has to be cleaned in case of failure in the next step
+        # by reset_after_failed_account_creation_or_login()
         try:
             self.premium = self.premium_sync_manager.try_premium_at_start(
                 given_premium_credentials=premium_credentials,
