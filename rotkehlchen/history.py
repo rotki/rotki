@@ -150,10 +150,10 @@ class TradesHistorian():
         self.exchange_manager = exchange_manager
         self.etherscan = etherscan
 
-    def create_history(self, start_ts: Timestamp, end_ts: Timestamp) -> HistoryResult:
+    def get_history(self, start_ts: Timestamp, end_ts: Timestamp) -> HistoryResult:
         """Creates trades and loans history from start_ts to end_ts"""
         log.info(
-            'Starting trade history creation',
+            'Get/create trade history',
             start_ts=start_ts,
             end_ts=end_ts,
         )
@@ -236,17 +236,3 @@ class TradesHistorian():
             asset_movements,
             eth_transactions,
         )
-
-    def get_history(self, start_ts: Timestamp, end_ts: Timestamp) -> HistoryResult:
-        """Gets or creates trades and loans history from start_ts to end_ts or if
-        `end_at_least` is given and we have a cache history which satisfies it we
-        return the cache
-        """
-        log.info(
-            'Get or create trade history',
-            start_ts=start_ts,
-            end_ts=end_ts,
-        )
-        # TODO: Perhaps get rid of the extra function call since the caches
-        # are no longer used here?
-        return self.create_history(start_ts, end_ts)
