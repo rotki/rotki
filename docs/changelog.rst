@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :release:`1.1.1 <2020-02-06>`
+* :bug:`693` Fix crash in OSX .dmg package version that occured with v1.1.0
 
 * :release:`1.1.0 <2020-02-05>`
 * :feature:`626` Rotki now accepts addition of API keys for external services such as etherscan or cryptocompare.
