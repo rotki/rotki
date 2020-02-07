@@ -5,6 +5,4 @@ sphinx-autobuild==0.7.1
 sphinx_rtd_theme==0.4.3
 sphinxcontrib-httpdomain==1.7.0
 sphinxcontrib-httpexample==0.10.3
-releases==1.6.1
-# Needed by releases, but releases can't handle >= 2.8.0
-semantic-version==2.6.0
+releases==1.6.3
