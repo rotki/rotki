@@ -36,6 +36,8 @@ Go to the `releases <https://github.com/rotki/rotki/releases>`_ page and downloa
 
 Click on the dmg installer and when prompted drag the Rotki logo to your Applications. This will install the application and once finished you can select Rotki from your applications folder and launch it.
 
+If your OSX version does not allow you to open the application you will have to go to your OS settings and insert an exception for Rotki to let it run. `Here <https://ccm.net/faq/29619-mac-os-x-run-apps-downloaded-from-unknown-sources>`__ is a guide.
+
 Troubleshooting
 ----------------
 
