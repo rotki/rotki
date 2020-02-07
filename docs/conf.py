@@ -50,6 +50,10 @@ extensions = [
 # 'releases' (changelog) settings
 releases_issue_uri = "https://github.com/rotki/rotki/issues/%s"
 releases_release_uri = "https://github.com/rotki/rotki/releases/tag/v%s"
+# Enables 0.x.y releases to not be grouped into feature and bugfix releases
+# see: http://releases.readthedocs.io/en/latest/concepts.html#unstable-prehistory-mode
+# This needs to be kept enabled even once 1.0 has been reached!
+releases_unstable_prehistory = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -187,11 +191,3 @@ epub_title = project
 
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ['search.html']
-
-
-# -- Extension configuration -------------------------------------------------
-
-# Enables 0.x.y releases to not be grouped into feature and bugfix releases
-# see: http://releases.readthedocs.io/en/latest/concepts.html#unstable-prehistory-mode
-# This needs to be kept enabled even once 1.0 has been reached!
-releases_unstable_prehistory = True

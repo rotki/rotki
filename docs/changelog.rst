@@ -2,19 +2,18 @@
 Changelog
 =========
 
-* :release:`1.1.1 <2020-02-06>`
-* :bug:`693` Fix crash in OSX .dmg package version that occured with v1.1.0
+* :release:`1.1.1 <2020-02-06>` 693
+* :bug:`693 major` Fix crash in OSX .dmg package version that occured with v1.1.0
 
-* :release:`1.1.0 <2020-02-05>`
+* :release:`1.1.0 <2020-02-05>` 626, 46, 583, 168, 354, 404, 465, 99999
 * :feature:`626` Rotki now accepts addition of API keys for external services such as etherscan or cryptocompare.
 * :feature:`46` Coinbase Pro is now supported. Trades, deposits, withdrawals and balances in that exchange can now be queried.
 * :feature:`583` The UI's notifications can finally be copy pasted.
 * :feature:`168` Users can now force-refresh exchange/blockchain balances via the UI and ignore the cache.
 * :feature:`354` Introduces a modern, easily extendable material design UI based on Vue.js and Vuetify.
 * :feature:`404` Removed ZMQ as the messaging layer between backend - frontend and introduced a full-fledged REST API instead.
-* :bug:`465` Asset icons and names show consistently in the UI after the vue.js rewrite.
-
-* :feature:`-` Added support for the following tokens
+* :bug:`465 major` Asset icons and names show consistently in the UI after the vue.js rewrite.
+* :feature:`99999` Added support for the following tokens
 
   - `Orchid (OXT) <https://coinmarketcap.com/currencies/orchid/>`__
   - `DREP (DREP) <https://coinmarketcap.com/currencies/drep/>`__
@@ -27,29 +26,29 @@ Changelog
 * :bug:`605` Adding a premium API key via the front-end now works properly again.
 * :bug:`602` Fixed a bug that lead to the coinbase exchange integration not working.
 
-* :release:`1.0.6 <2019-12-31>`
+* :release:`1.0.6 <2019-12-31>` 589, 588, 587, 561, 99998, 99997, 99996, 99995
 * :bug:`589` If there is an error an unexpected error during sign-in properly catch it and add a log entry.
 * :bug:`588` The electron log is now written in the proper directory depending on the Operating system.
 * :bug:`587` If a user has a disabled taxfree period setting rotki no longer fails to sign the user in.
 * :bug:`561` Export unique asset symbols during CSV exporting and not long name descriptions.
-* :feature:`-` Add support for the Turkish Lyra  (TRY - ₺) as a fiat currency
-* :feature:`-` Add support for the Russian ruble (RUB - ‎₽) as a fiat currency
-* :feature:`-` Add support for the Swiss Franc (CHF - Fr.) as a fiat currency
-* :feature:`-` Added support for the following tokens
+* :feature:`99998` Add support for the Turkish Lyra  (TRY - ₺) as a fiat currency
+* :feature:`99997` Add support for the Russian ruble (RUB - ‎₽) as a fiat currency
+* :feature:`99996` Add support for the Swiss Franc (CHF - Fr.) as a fiat currency
+* :feature:`99995` Added support for the following tokens
 
   - `Troy (TROY) <https://coinmarketcap.com/currencies/troy/>`__
   - `Hycon (HYC) <https://coinmarketcap.com/currencies/hycon/>`__
 
-* :release:`1.0.5 <2019-11-30>`
+* :release:`1.0.5 <2019-11-30>` 547, 545, 543, 541, 99994, 99993, 534, 527
 * :feature:`547` Support Multicollateral DAI upgrade and Single Collateral DAI renaming to SAI.
 * :bug:`545` Trades from all Kraken pairs should now be processed properly again. For example all SC trade pairs should now work again.
 * :bug:`543` User will not get unexpected balance results in the same Rotki run due to same cache being used for different arguments.
 * :feature:`541` If the user allows anonymous usage analytics are submitted to a server for analysis of the application's active users.
-* :feature:`-` Rebranding Rotkehlchen to Rotki inside the application. All website and api links should now target rotki.com
+* :feature:`99994` Rebranding Rotkehlchen to Rotki inside the application. All website and api links should now target rotki.com
 * :bug:`534` Old external trades can now be edited/deleted properly again.
 * :bug:`527` If cryptocompare query returns an empty object Rotki client no longer crashes.
 
-* :feature:`-` Added support for the following tokens
+* :feature:`99993` Added support for the following tokens
 
   - `ArpaChain (ARPA) <https://coinmarketcap.com/currencies/arpa-chain/>`__
   - `Kava (KAVA) <https://coinmarketcap.com/currencies/kava/>`__
@@ -62,13 +61,13 @@ Changelog
   - `PAX Gold (PAXG) <https://coinmarketcap.com/currencies/pax-gold/>`__
   - `Hdac (HDAC) <https://coinmarketcap.com/currencies/hdac/>`__
 
-* :release:`1.0.4 <2019-10-04>`
+* :release:`1.0.4 <2019-10-04>` 498, 500, 505, 499, 99992, 99991
 * :feature:`498` Users can now import data from Cointracking into Rotki. Create a CSV export from Cointracking and import it from the Import Data menu.
 * :bug:`500` Fix cryptocompare price queries for LBRY credits.
 * :feature:`505` Support the new cryptocompare v2 historical price [API](https://blog.cryptocompare.com/historical-data-api-update-4ee44c549a8f).
 * :feature:`499` All actions (trades, deposits, withdrawals, ethereum transactions, margin positions) are now saved in the DB.
-* :feature:`-` Support WorldWideAssetExchange token for Bittrex after it got renamed to `WAXP <https://international.bittrex.com/Market/Index?MarketName=BTC-WAXP>`__ in that exchange.
-* :feature:`-` Added support for the following tokens
+* :feature:`99992` Support WorldWideAssetExchange token for Bittrex after it got renamed to `WAXP <https://international.bittrex.com/Market/Index?MarketName=BTC-WAXP>`__ in that exchange.
+* :feature:`99991` Added support for the following tokens
 
   - `Perling (PERL) <https://coinmarketcap.com/currencies/perlin/>`__
   - `HedgeTrade (HEDG) <https://coinmarketcap.com/currencies/hedgetrade/>`__
@@ -79,7 +78,7 @@ Changelog
   - `Band Protcol (BAND) <https://coinmarketcap.com/currencies/band-protocol/>`__
   - `Beam Token (BEAM) <https://coinmarketcap.com/currencies/beam/>`__
 
-* :release:`1.0.3 <2019-08-30>`
+* :release:`1.0.3 <2019-08-30>` 453, 487, 26, 426, 296, 480, 469, 463, 467, 458, 457, 451, 99990
 * :feature:`453` If a newer version exists the user is notified at the start of the application and is given a link to download it.
 * :feature:`487` USDT can now also be monitored as an ethereum token.
 * :feature:`26` Rotki is now available as a .dmg installer for OSX.
@@ -88,29 +87,28 @@ Changelog
 * :bug:`480` Calculating accounting with empty history no longer throws an exception.
 * :bug:`469` Fixes error with OTC trades.
 * :bug:`463` Converts tax report start and end time to local time.
-* :feature:`465` Update the cryptocurrency icons package to 0.16.0. This gives us a lot more icons, including but not limited to an icon for DAI.
 * :bug:`467` Removing ETH tokens for which a cryptocompare query failed to find a price now work properly.
 * :feature:`458` Binance users now also have their deposit/withdrawal history taken into account during profit/loss calculation.
 * :feature:`457` Bittrex users now also have their deposit/withdrawal history taken into account during profit/loss calculation.
 * :bug:`451` An assertion will no longer stop balances from being saved for some FIAT assets.
 
-* :feature:`-` Added support for the following tokens
+* :feature:`99990` Added support for the following tokens
 
   - `Pixel <https://coinmarketcap.com/currencies/pixel/>`__
   - `Bittrex Credit Tokens <https://bittrex.zendesk.com/hc/en-us/articles/360032214811/>`__
   - `Cocos-BCX <https://coinmarketcap.com/currencies/cocos-bcx/>`__
   - `Akropolis <https://coinmarketcap.com/currencies/akropolis/>`__
 
-* :release:`1.0.2 <2019-08-04>`
-* :feature:`-` Added support for the following tokens
+* :release:`1.0.2 <2019-08-04>` 99989, 442, 443
+* :feature:`99989` Added support for the following tokens
 
   - `Contentos <https://coinmarketcap.com/currencies/contentos/>`__
 * :feature:`442` If a user provides a Kraken API key with insufficient permissions we no longer accept it and also provide them with a proper error message.
 * :bug:`443` Fix bug in deserialization of non-exact floating point kraken timestamp values which could lead to a crash during tax report generation.
 
-* :release:`1.0.1 <2019-08-02>`
+* :release:`1.0.1 <2019-08-02>` 425, 99988, 428, 76, 432, 429
 * :feature:`425` Users can now provide arguments to the backend via a config file. For more information check the `docs <https://rotkehlchen.readthedocs.io/en/latest/usage_guide.html#set-the-backend-s-arguments`__.
-* :feature:`-` Added support for the following tokens
+* :feature:`99988` Added support for the following tokens
 
   - `Luna Coin <https://coinmarketcap.com/currencies/luna-coin/>`__
   - `Luna Terra <https://coinmarketcap.com/currencies/terra/>`__
@@ -118,12 +116,10 @@ Changelog
   - `Blockcloud <https://coinmarketcap.com/currencies/blockcloud/>`__
   - `Bloc.Money <https://coinmarketcap.com/currencies/bloc-money/>`__
   - `Chromia  <https://coinmarketcap.com/currencies/chromia/>`__
-
 * :feature:`428` Better handle unexpected data from external sources.
 * :bug:`76` Handle poloniex queries returning null for the fee field.
 * :bug:`432` If historical price for a trade is not found gracefully skip the trade. Also handle cryptocompare query edge case.
 * :bug:`429` Properly handle 429 http response from blockchain.info by backing off by the suggested number of seconds and then trying again.
-
 
 * :release:`1.0.0 <2019-07-22>`
 * :bug:`420` There are no more negative percentages at tax report generation progress
