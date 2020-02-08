@@ -2,26 +2,29 @@ import { Application, SpectronClient } from 'spectron';
 import {
   captureOnFailure,
   createAccount,
+  dismissSuccessDialog,
   GLOBAL_TIMEOUT,
   initSpectron,
   METHOD_TIMEOUT,
-  setupTest
+  navigateTo,
+  selectOption,
+  setupTest,
+  setValue
 } from './utils/common';
-import OtcController, { otcData } from './support/otc_controller';
 import { Guid } from './utils/guid';
+import moment from 'moment';
 
 const retry = require('promise-retry');
 
 jest.setTimeout(GLOBAL_TIMEOUT);
 
-describe.skip('otc trades', () => {
+describe('otc trades', () => {
   let application: Application;
   let stop: () => Promise<Application>;
   let client: SpectronClient;
 
   let username: string;
   const password: string = process.env.PASSWORD as string;
-  let controller: OtcController;
 
   beforeAll(async () => {
     username = Guid.newGuid().toString();
@@ -30,23 +33,9 @@ describe.skip('otc trades', () => {
 
     await setupTest(application, 'otc trades', async () => {
       await createAccount(application, username, password);
-      controller = new OtcController(client);
 
-      await retry(async () => {
-        await client.click('#side-menu>li:nth-child(2)');
-      });
-
-      await client.waitUntilTextExists('a', 'OTC Trades', METHOD_TIMEOUT);
-
-      await retry(async () => {
-        await client.click('#side-menu>li:nth-child(2)>.nav>li');
-      });
-
-      await client.waitUntilTextExists(
-        '.page-header',
-        'OTC Trades Management',
-        METHOD_TIMEOUT
-      );
+      await navigateTo(client, '.navigation__otc-trades');
+      await client.waitUntilTextExists('h1', 'OTC Trades List', METHOD_TIMEOUT);
     });
   });
 
@@ -58,72 +47,166 @@ describe.skip('otc trades', () => {
     await captureOnFailure(application);
   });
 
-  it('should add two OTC trades and show them on the table', async () => {
-    await controller.addTrade(otcData[0]);
-    await controller.addTrade(otcData[1]);
-    const matchedElements = (
-      await client.elements('#table_otctrades > tbody > tr')
-    ).value;
+  describe('adding external trades', () => {
+    const trade = {
+      timestamp: 1439196535,
+      pair: 'BTC_EUR',
+      rate: '268.678317859',
+      fee: '0',
+      fee_currency: 'BTC',
+      amount: '82',
+      link: '',
+      location: 'external',
+      notes: '',
+      trade_type: 'sell'
+    };
 
-    expect(matchedElements.length).toEqual(2);
+    test('set date', async () => {
+      await setValue(
+        client,
+        '.otc-form__date input',
+        moment(trade.timestamp * 1000).format('DD/MM/YYYY HH:mm')
+      );
+    });
 
-    await expect(
-      client.getText(
-        '#table_otctrades > tbody > tr:nth-child(1) > td:nth-child(2)'
-      )
-    ).resolves.toContain('BTC_EUR');
-    await expect(
-      client.getText(
-        '#table_otctrades > tbody > tr:nth-child(1) > td:nth-child(4)'
-      )
-    ).resolves.toContain('82');
-    await expect(
-      client.getText(
-        '#table_otctrades > tbody > tr:nth-child(1) > td:nth-child(5)'
-      )
-    ).resolves.toContain('268.678317859');
-    await expect(
-      client.getText(
-        '#table_otctrades > tbody > tr:nth-child(1) > td:nth-child(6)'
-      )
-    ).resolves.toContain('08/10/2015 10:48');
+    test('set pair', async () => {
+      await setValue(client, '.otc-form__pair input', trade.pair);
+    });
+
+    test('set type', async () => {
+      await selectOption(client, '.otc-form__type input', trade.trade_type);
+    });
+
+    test('set amount', async () => {
+      await setValue(client, '.otc-form__amount input', trade.amount);
+    });
+
+    test('set rate', async () => {
+      await setValue(client, '.otc-form__rate input', trade.rate);
+    });
+
+    test('set fee', async () => {
+      await setValue(client, '.otc-form__fee input', trade.fee);
+    });
+
+    test('set fee currency', async () => {
+      await setValue(
+        client,
+        '.otc-form__fee-currency input',
+        trade.fee_currency
+      );
+    });
+
+    test('save', async () => {
+      await retry(async () => {
+        await client.click('.otc-form__buttons__save');
+      });
+    });
+
+    test('dismiss dialog', async () => {
+      await dismissSuccessDialog(client, 'Trade was submitted successfully');
+    });
+
+    test('add second trade', async () => {
+      const trade = {
+        timestamp: 1439196535,
+        pair: 'ETH_EUR',
+        rate: '0.2315893',
+        fee: '0',
+        fee_currency: 'ETH',
+        amount: '1450',
+        link: '',
+        location: 'external',
+        notes: '',
+        trade_type: 'sell'
+      };
+      await setValue(
+        client,
+        '.otc-form__date input',
+        moment(trade.timestamp * 1000).format('DD/MM/YYYY HH:mm')
+      );
+      await setValue(client, '.otc-form__pair input', trade.pair);
+      await selectOption(client, '.otc-form__type input', trade.trade_type);
+      await setValue(client, '.otc-form__amount input', trade.amount);
+      await setValue(client, '.otc-form__rate input', trade.rate);
+      await setValue(client, '.otc-form__fee input', trade.fee);
+      await setValue(
+        client,
+        '.otc-form__fee-currency input',
+        trade.fee_currency
+      );
+
+      await retry(async () => {
+        await client.click('.otc-form__buttons__save');
+      });
+
+      await dismissSuccessDialog(client, 'Trade was submitted successfully');
+    });
+
+    test('two trades are displayed', async () => {
+      const matchedElements = (
+        await client.elements('.otc-trades__data tbody > tr')
+      ).value;
+
+      expect(matchedElements.length).toEqual(2);
+    });
+
+    test('the trade should display properly', async () => {
+      await expect(
+        client.getText(
+          '.otc-trades__data tbody > tr:nth-child(1) > td:nth-child(1)'
+        )
+      ).resolves.toContain('BTC_EUR');
+      await expect(
+        client.getText(
+          '.otc-trades__data tbody > tr:nth-child(1) > td:nth-child(3)'
+        )
+      ).resolves.toContain('82');
+      await expect(
+        client.getText(
+          '.otc-trades__data tbody > tr:nth-child(1) > td:nth-child(4)'
+        )
+      ).resolves.toContain('268.678317859');
+      await expect(
+        client.getText(
+          '.otc-trades__data tbody > tr:nth-child(1) > td:nth-child(5)'
+        )
+      ).resolves.toMatch('10/08/2015 10:48');
+    });
   });
 
-  it('should edit a trade and show the edit changes on the table', async () => {
-    await client
-      .element('#table_otctrades > tbody > tr:nth-child(1)')
-      .rightClick();
-    await client.click('.context-menu-list > li:first-child');
-    await retry(async () => {
-      await client.clearElement('#otc_amount');
+  describe('managing external trades', () => {
+    test('editing a trade', async () => {
+      await client
+        .element(
+          '.otc-trades__data tbody > tr:nth-child(1) > td:nth-child(6) > .v-icon'
+        )
+        .click();
+
+      await setValue(client, '.otc-form__amount input', '120');
+      await client.click('.otc-trades__buttons_save');
+      await dismissSuccessDialog(client, 'Trade was submitted successfully');
+
+      await expect(
+        client.getText(
+          '.otc-trades__data tbody > tr:nth-child(1) > td:nth-child(3)'
+        )
+      ).resolves.toContain('120');
     });
-    await retry(async () => {
-      await client.addValue('#otc_amount', 120);
+
+    test('deleting a trade', async () => {
+      await client
+        .element('.otc-trades__data tbody > tr:nth-child(1)')
+        .rightClick();
+      await client.click('.context-menu-list > li:nth-child(2)');
+
+      await dismissSuccessDialog(client, '');
+
+      const matchedElements = (
+        await client.elements('.otc-trades__data tbody > tr')
+      ).value;
+
+      await expect(matchedElements.length).resolves.toEqual(1);
     });
-    await retry(async () => {
-      await client.click('#otctradesubmit');
-    });
-    await controller.closeSuccessDialog();
-
-    await expect(
-      client.getText(
-        '#table_otctrades > tbody > tr:nth-child(1) > td:nth-child(4)'
-      )
-    ).resolves.toContain('120');
-  });
-
-  it('should delete an otc trade and the trade should be removed', async () => {
-    await client
-      .element('#table_otctrades > tbody > tr:nth-child(1)')
-      .rightClick();
-    await client.click('.context-menu-list > li:nth-child(2)');
-
-    await controller.closeSuccessDialog();
-
-    const matchedElements = (
-      await client.elements('#table_otctrades > tbody > tr')
-    ).value;
-
-    await expect(matchedElements.length).resolves.toEqual(1);
   });
 });

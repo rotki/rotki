@@ -255,3 +255,46 @@ export async function navigateTo(client: SpectronClient, selector: string) {
     );
   }
 }
+
+export async function dismissSuccessDialog(
+  client: SpectronClient,
+  message: string
+) {
+  await client.waitForVisible('.message-dialog__title', METHOD_TIMEOUT);
+
+  await expect(
+    client.element('.message-dialog__message').getText()
+  ).resolves.toMatch(message);
+
+  await client.click('.message-dialog__buttons__confirm');
+  await client.waitForVisible('.message-dialog__title', METHOD_TIMEOUT, true);
+}
+
+export async function setValue(
+  client: SpectronClient,
+  selector: string,
+  value: string
+) {
+  await clearValue(client, selector);
+  await client.setValue(selector, value);
+  await expect(client.getValue(selector)).resolves.toBe(value);
+}
+
+export async function selectOption(
+  client: SpectronClient,
+  selector: string,
+  value: string
+) {
+  const inputSelector = `${selector}[value='${value}']`;
+
+  const label = client
+    .element(inputSelector)
+    .$('..')
+    .$('..')
+    .$('label');
+  await label.click();
+
+  await expect(
+    client.getAttribute(inputSelector, 'aria-checked')
+  ).resolves.toBe('true');
+}

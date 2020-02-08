@@ -7,22 +7,12 @@ import {
   initSpectron,
   METHOD_TIMEOUT,
   selectFromUserMenu,
-  setupTest
+  setupTest,
+  dismissSuccessDialog
 } from './utils/common';
 import { Guid } from './utils/guid';
 
 const retry = require('promise-retry');
-
-async function dismissSuccessDialog(client: SpectronClient, message: string) {
-  await client.waitForVisible('.message-dialog__title', METHOD_TIMEOUT);
-
-  await expect(
-    client.element('.message-dialog__message').getText()
-  ).resolves.toMatch(message);
-
-  await client.click('.message-dialog__buttons__confirm');
-  await client.waitForVisible('.message-dialog__title', METHOD_TIMEOUT, true);
-}
 
 jest.setTimeout(GLOBAL_TIMEOUT);
 

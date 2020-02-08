@@ -15,6 +15,7 @@
       <v-col cols="12">
         <v-card>
           <v-data-table
+            class="otc-trades__data"
             :headers="headers"
             :items="otcTrades"
             :expanded.sync="expanded"
