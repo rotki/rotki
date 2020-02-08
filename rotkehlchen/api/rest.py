@@ -14,6 +14,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.errors import (
@@ -524,11 +525,11 @@ class RestAPI():
             blockchain: Optional[SupportedBlockchain],
             ignore_cache: bool,
     ) -> Dict[str, Any]:
-        result = None
         msg = ''
         status_code = HTTPStatus.OK
+        result = None
         try:
-            result = self.rotkehlchen.blockchain.query_balances(
+            balances = self.rotkehlchen.blockchain.query_balances(
                 blockchain=blockchain,
                 ignore_cache=ignore_cache,
             )
@@ -538,6 +539,16 @@ class RestAPI():
         except RemoteError as e:
             msg = str(e)
             status_code = HTTPStatus.BAD_GATEWAY
+        else:
+            # If only specific input blockchain was given ignore other results
+            if blockchain == SupportedBlockchain.ETHEREUM:
+                balances.per_account.btc = {}
+                balances.totals[A_BTC] = {}
+            elif blockchain == SupportedBlockchain.BITCOIN:
+                balances.per_account.eth = {}
+                balances.totals = {A_BTC: balances.totals[A_BTC]}
+
+            result = balances.serialize()
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
@@ -965,7 +976,7 @@ class RestAPI():
         msg = ''
         status_code = HTTPStatus.OK
         try:
-            result = self.rotkehlchen.add_owned_eth_tokens(tokens=tokens)
+            balances_update = self.rotkehlchen.add_owned_eth_tokens(tokens=tokens)
         except EthSyncError as e:
             msg = str(e)
             status_code = HTTPStatus.CONFLICT
@@ -975,6 +986,8 @@ class RestAPI():
         except RemoteError as e:
             msg = str(e)
             status_code = HTTPStatus.BAD_GATEWAY
+        else:
+            result = balances_update.serialize()
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
@@ -995,13 +1008,15 @@ class RestAPI():
         msg = ''
         status_code = HTTPStatus.OK
         try:
-            result = self.rotkehlchen.remove_owned_eth_tokens(tokens=tokens)
+            balances_update = self.rotkehlchen.remove_owned_eth_tokens(tokens=tokens)
         except EthSyncError as e:
             msg = str(e)
             status_code = HTTPStatus.CONFLICT
         except RemoteError as e:
             msg = str(e)
             status_code = HTTPStatus.BAD_GATEWAY
+        else:
+            result = balances_update.serialize()
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 

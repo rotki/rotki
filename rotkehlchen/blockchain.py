@@ -1,10 +1,10 @@
 import logging
 import operator
 from collections import defaultdict
-from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, overload
 
 import requests
+from dataclasses import dataclass
 from eth_utils.address import to_checksum_address
 from web3.exceptions import BadFunctionCallOutput
 
@@ -46,14 +46,76 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-# Type Aliases used in this module
-Balances = Dict[
-    Asset,
-    Dict[BlockchainAddress, Dict[Union[str, Asset], FVal]],
-]
-Totals = Dict[Asset, Dict[str, FVal]]
-BlockchainBalancesUpdate = Dict[str, Union[Balances, Totals]]
-EthBalances = Dict[ChecksumEthAddress, Dict[str, Union[Dict[Asset, Dict[str, FVal]], FVal]]]
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class Balance:
+    amount: FVal = ZERO
+    usd_value: FVal = ZERO
+
+    def serialize(self) -> Dict[str, str]:
+        return {'amount': str(self.amount), 'usd_value': str(self.usd_value)}
+
+
+Totals = Dict[Asset, Balance]
+
+
+@dataclass(init=False, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class EthereumAccountBalance:
+    asset_balances: Dict[Asset, Balance]
+    total_usd_value: FVal
+
+    def __init__(self, start_eth_amount: FVal, start_eth_usd_value: FVal):
+        self.asset_balances = {
+            A_ETH: Balance(amount=start_eth_amount, usd_value=start_eth_usd_value),
+        }
+        self.total_usd_value = start_eth_usd_value
+
+    def increase_total_usd_value(self, amount: FVal) -> None:
+        self.total_usd_value += amount
+
+    def decrease_total_usd_value(self, amount: FVal) -> None:
+        self.total_usd_value -= amount
+
+
+EthBalances = Dict[ChecksumEthAddress, EthereumAccountBalance]
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class BlockchainBalances:
+    eth: EthBalances = {}
+    btc: Dict[BTCAddress, Balance] = {}
+
+    def serialize(self) -> Dict[str, Dict]:
+        eth_balances: Dict[ChecksumEthAddress, Dict] = {}
+        for account, ethereum_balance in self.eth.items():
+            eth_balances[account] = {}
+            eth_balances[account]['assets'] = {}
+            for asset, balance_entry in ethereum_balance.asset_balances.items():
+                eth_balances[account]['assets'][asset.identifier] = balance_entry.serialize()
+            eth_balances[account]['total_usd_value'] = str(ethereum_balance.total_usd_value)
+
+        btc_balances: Dict[BTCAddress, Dict] = {}
+        for btc_account, balances in self.btc.items():
+            btc_balances[btc_account] = balances.serialize()
+
+        return {'ETH': eth_balances, 'BTC': btc_balances}
+
+    def is_queried(self, blockchain: SupportedBlockchain) -> bool:
+        if blockchain == SupportedBlockchain.ETHEREUM:
+            return self.eth == {}
+        elif blockchain == SupportedBlockchain.BITCOIN:
+            return self.btc == {}
+
+        raise AssertionError('Invalid blockchain value')
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class BlockchainBalancesUpdate:
+    per_account: BlockchainBalances
+    totals: Totals
+
+    def serialize(self) -> Dict[str, Dict]:
+        return {'per_account': self.per_account.serialize(), 'totals': self.totals}
 
 
 class Blockchain(CacheableObject, LockableQueryObject):
@@ -72,9 +134,9 @@ class Blockchain(CacheableObject, LockableQueryObject):
         self.accounts = blockchain_accounts
 
         # Per account balances
-        self.balances: Balances = defaultdict(dict)
+        self.balances = BlockchainBalances()
         # Per asset total balances
-        self.totals: Totals = defaultdict(dict)
+        self.totals: Totals = defaultdict(Balance)
 
     def __del__(self) -> None:
         del self.ethchain
@@ -86,6 +148,9 @@ class Blockchain(CacheableObject, LockableQueryObject):
     def eth_tokens(self) -> List[EthereumToken]:
         return self.owned_eth_tokens
 
+    def get_balances_update(self) -> BlockchainBalancesUpdate:
+        return BlockchainBalancesUpdate(per_account=self.balances, totals=self.totals)
+
     @protect_with_lock()
     @cache_response_timewise()
     def query_balances(
@@ -93,7 +158,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
             blockchain: Optional[SupportedBlockchain] = None,
             # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
             **kwargs: Any,
-    ) -> Dict[str, Dict]:
+    ) -> BlockchainBalancesUpdate:
         """Queries either all, or specific blockchain balances
 
         May raise:
@@ -107,21 +172,10 @@ class Blockchain(CacheableObject, LockableQueryObject):
 
         if should_query_eth:
             self.query_ethereum_balances()
-
-        if not blockchain or blockchain == SupportedBlockchain.BITCOIN:
+        if should_query_btc:
             self.query_btc_balances()
 
-        per_account = deepcopy(self.balances)
-        totals = deepcopy(self.totals)
-        if not should_query_eth:
-            per_account.pop(A_ETH, None)
-            # only keep BTC, remove ETH and any tokens that may be in the result
-            totals = {A_BTC: totals[A_BTC]}
-        if not should_query_btc:
-            per_account.pop(A_BTC, None)
-            totals.pop(A_BTC, None)
-
-        return {'per_account': per_account, 'totals': totals}
+        return self.get_balances_update()
 
     @staticmethod
     def query_btc_account_balance(account: BTCAddress) -> FVal:
@@ -156,7 +210,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
         if len(self.accounts.btc) == 0:
             return
 
-        self.balances[A_BTC] = {}
+        self.balances.btc = {}
         btc_usd_price = Inquirer().find_usd_price(A_BTC)
         total = FVal(0)
         for account in self.accounts.btc:
@@ -169,12 +223,12 @@ class Blockchain(CacheableObject, LockableQueryObject):
                 )
                 continue
             total += balance
-            self.balances[A_BTC][account] = {
-                'amount': balance,
-                'usd_value': balance * btc_usd_price,
-            }
+            self.balances.btc[account] = Balance(
+                amount=balance,
+                usd_value=balance * btc_usd_price,
+            )
 
-        self.totals[A_BTC] = {'amount': total, 'usd_value': total * btc_usd_price}
+        self.totals[A_BTC] = Balance(amount=total, usd_value=total * btc_usd_price)
 
     @overload
     @staticmethod
@@ -231,9 +285,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
             raise InputError('Some of the new provided tokens to track already exist')
 
         self.owned_eth_tokens.extend(new_tokens)
-        eth_balances = cast(EthBalances, self.balances[A_ETH])
-
-        if eth_balances == {}:
+        if self.balances.eth == {}:
             # if balances have not been yet queried then we should do the entire
             # balance query first in order to create the eth_balances mappings
             self.query_ethereum_balances()
@@ -241,9 +293,8 @@ class Blockchain(CacheableObject, LockableQueryObject):
             # simply update all accounts with any changes adding the token may have
             self.query_ethereum_tokens(
                 tokens=new_tokens,
-                eth_balances=eth_balances,
             )
-        return {'per_account': self.balances, 'totals': self.totals}
+        return self.get_balances_update()
 
     def remove_eth_tokens(self, tokens: List[EthereumToken]) -> BlockchainBalancesUpdate:
         """
@@ -256,24 +307,22 @@ class Blockchain(CacheableObject, LockableQueryObject):
         - EthSyncError if querying the token balances through a provided ethereum
         client and the chain is not synced
         """
-        if self.balances[A_ETH] == {}:
+        if self.balances.eth == {}:
             # if balances have not been yet queried then we should do the entire
             # balance query first in order to create the eth_balances mappings
             self.query_ethereum_balances()
 
         for token in tokens:
             usd_price = Inquirer().find_usd_price(token)
-            for account, account_data in self.balances[A_ETH].items():
-                if token not in account_data['assets']:  # type: ignore
+            for account, account_data in self.balances.eth.items():
+                if token not in account_data.asset_balances:
                     continue
 
-                balance = account_data['assets'][token]['amount']  # type: ignore
-                deleting_usd_value = balance * usd_price
-                del self.balances[A_ETH][account]['assets'][token]  # type: ignore
-                self.balances[A_ETH][account]['total_usd_value'] = (
-                    self.balances[A_ETH][account]['total_usd_value'] -
-                    deleting_usd_value
-                )
+                amount = account_data.asset_balances[token].amount
+                deleting_usd_value = amount * usd_price
+                del self.balances.eth[account].asset_balances[token]
+                self.balances.eth[account].decrease_total_usd_value(deleting_usd_value)
+
             # Remove the token from the totals iff existing. May not exist
             # if the token price is 0 but is still tracked.
             # See https://github.com/rotki/rotki/issues/467
@@ -281,7 +330,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
             self.totals.pop(token, None)
             self.owned_eth_tokens.remove(token)
 
-        return {'per_account': self.balances, 'totals': self.totals}
+        return self.get_balances_update()
 
     def modify_btc_account(
             self,
@@ -300,7 +349,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
         """
         btc_usd_price = Inquirer().find_usd_price(A_BTC)
         remove_with_populated_balance = (
-            append_or_remove == 'remove' and len(self.balances[A_BTC]) != 0
+            append_or_remove == 'remove' and len(self.balances.btc) != 0
         )
         # Query the balance of the account except for the case when it's removed
         # and there is no other account in the balances
@@ -309,26 +358,21 @@ class Blockchain(CacheableObject, LockableQueryObject):
             usd_balance = balance * btc_usd_price
 
         if append_or_remove == 'append':
-            self.balances[A_BTC][account] = {'amount': balance, 'usd_value': usd_balance}
+            self.balances.btc[account] = Balance(amount=balance, usd_value=usd_balance)
         elif append_or_remove == 'remove':
-            if account in self.balances[A_BTC]:
-                del self.balances[A_BTC][account]
+            if account in self.balances.btc:
+                del self.balances.btc[account]
         else:
             raise AssertionError('Programmer error: Should be append or remove')
 
-        if len(self.balances[A_BTC]) == 0:
+        if len(self.balances.btc) == 0:
             # If the last account was removed balance should be 0
-            self.totals[A_BTC]['amount'] = FVal(0)
-            self.totals[A_BTC]['usd_value'] = FVal(0)
+            self.totals[A_BTC].amount = ZERO
+            self.totals[A_BTC].usd_value = ZERO
         else:
-            self.totals[A_BTC]['amount'] = add_or_sub(
-                self.totals[A_BTC].get('amount', FVal(0)),
-                balance,
-            )
-            self.totals[A_BTC]['usd_value'] = add_or_sub(
-                self.totals[A_BTC].get('usd_value', FVal(0)),
-                usd_balance,
-            )
+            self.totals[A_BTC].amount = add_or_sub(self.totals[A_BTC].amount, balance)
+            self.totals[A_BTC].usd_value = add_or_sub(self.totals[A_BTC].usd_value, usd_balance)
+
         # At the very end add/remove it from the accounts
         getattr(self.accounts.btc, append_or_remove)(account)
 
@@ -357,44 +401,36 @@ class Blockchain(CacheableObject, LockableQueryObject):
             raise InputError(f'The given string {given_account} is not a valid ETH address')
         eth_usd_price = Inquirer().find_usd_price(A_ETH)
         remove_with_populated_balance = (
-            append_or_remove == 'remove' and len(self.balances[A_ETH]) != 0
+            append_or_remove == 'remove' and len(self.balances.eth) != 0
         )
         # Query the balance of the account except for the case when it's removed
         # and there is no other account in the balances
         if append_or_remove == 'append' or remove_with_populated_balance:
-            balance = self.ethchain.get_eth_balance(account)
-            usd_balance = balance * eth_usd_price
+            amount = self.ethchain.get_eth_balance(account)
+            usd_value = amount * eth_usd_price
 
         if append_or_remove == 'append':
             self.accounts.eth.append(account)
-            self.balances[A_ETH][account] = {
-                'assets': {  # type: ignore
-                    A_ETH: {'amount': balance, 'usd_value': usd_balance},
-                },
-                'total_usd_value': usd_balance,
-            }
+            self.balances.eth[account] = EthereumAccountBalance(
+                start_eth_amount=amount,
+                start_eth_usd_value=usd_value,
+            )
         elif append_or_remove == 'remove':
             if account not in self.accounts.eth:
                 raise InputError('Tried to remove a non existing ETH account')
             self.accounts.eth.remove(account)
-            if account in self.balances[A_ETH]:
-                del self.balances[A_ETH][account]
+            if account in self.balances.eth:
+                del self.balances.eth[account]
         else:
             raise AssertionError('Programmer error: Should be append or remove')
 
-        if len(self.balances[A_ETH]) == 0:
+        if len(self.balances.eth) == 0:
             # If the last account was removed balance should be 0
-            self.totals[A_ETH]['amount'] = FVal(0)
-            self.totals[A_ETH]['usd_value'] = FVal(0)
+            self.totals[A_ETH].amount = ZERO
+            self.totals[A_ETH].usd_value = ZERO
         else:
-            self.totals[A_ETH]['amount'] = add_or_sub(
-                self.totals[A_ETH].get('amount', FVal(0)),
-                balance,
-            )
-            self.totals[A_ETH]['usd_value'] = add_or_sub(
-                self.totals[A_ETH].get('usd_value', FVal(0)),
-                usd_balance,
-            )
+            self.totals[A_ETH].amount = add_or_sub(self.totals[A_ETH].amount, amount)
+            self.totals[A_ETH].usd_value = add_or_sub(self.totals[A_ETH].usd_value, usd_value)
 
         for token in self.owned_eth_tokens:
             try:
@@ -419,20 +455,14 @@ class Blockchain(CacheableObject, LockableQueryObject):
 
             usd_value = token_balance * usd_price
             if append_or_remove == 'append':
-                account_balance = self.balances[A_ETH][account]
-                account_balance['assets'][token] = {'amount': token_balance, 'usd_value': usd_value}  # type: ignore  # noqa: E501
-                account_balance['total_usd_value'] = account_balance['total_usd_value'] + usd_value
+                eth_acc = self.balances.eth[account]
+                eth_acc.asset_balances[token] = Balance(amount=token_balance, usd_value=usd_value)
+                eth_acc.increase_total_usd_value(usd_value)
 
-            self.totals[token] = {
-                'amount': add_or_sub(
-                    self.totals[token].get('amount', ZERO),
-                    token_balance,
-                ),
-                'usd_value': add_or_sub(
-                    self.totals[token].get('usd_value', ZERO),
-                    usd_value,
-                ),
-            }
+            self.totals[token] = Balance(
+                amount=add_or_sub(self.totals[token].amount, token_balance),
+                usd_value=add_or_sub(self.totals[token].usd_value, usd_value),
+            )
 
     def add_blockchain_accounts(
             self,
@@ -456,7 +486,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
 
         # If no blockchain query has happened before then we need to query the relevant
         # chain to populate the self.balances mapping.
-        if blockchain.value not in self.balances:
+        if not self.balances.is_queried(blockchain):
             self.query_balances(blockchain, ignore_cache=True)
 
         added_accounts = []
@@ -473,7 +503,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
                 added_accounts.append(account)
             except InputError as e:
                 full_msg += str(e)
-                result = {'per_account': self.balances, 'totals': self.totals}
+                result = self.get_balances_update()
 
         # Ignore type checks here. added_accounts is the same type as accounts
         # but not sure how to show that to mypy
@@ -504,7 +534,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
         # chain to populate the self.balances mapping. But query has to happen after
         # account removal so as not to query unneeded accounts
         balances_queried_before = True
-        if blockchain.value not in self.balances:
+        if not self.balances.is_queried(blockchain):
             balances_queried_before = False
 
         removed_accounts = []
@@ -524,8 +554,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
         if not balances_queried_before:
             self.query_balances(blockchain, ignore_cache=True)
 
-        result: BlockchainBalancesUpdate = {'per_account': self.balances, 'totals': self.totals}
-
+        result = self.get_balances_update()
         # Ignore type checks here. removed_accounts is the same type as accounts
         # but not sure how to show that to mypy
         return result, removed_accounts, full_msg  # type: ignore
@@ -579,12 +608,11 @@ class Blockchain(CacheableObject, LockableQueryObject):
                     blockchain),
             )
 
-        return {'per_account': self.balances, 'totals': self.totals}
+        return self.get_balances_update()
 
     def query_ethereum_tokens(
             self,
             tokens: List[EthereumToken],
-            eth_balances: EthBalances,
     ) -> None:
         """Queries the ethereum token balances and populates the state
 
@@ -622,29 +650,23 @@ class Blockchain(CacheableObject, LockableQueryObject):
                     'token balances but the chain is not synced.',
                 )
 
+        eth_balances = self.balances.eth
         for token, token_accounts in token_balances.items():
-            token_total = FVal(0)
+            token_total = ZERO
             for account, balance in token_accounts.items():
                 token_total += balance
                 usd_value = balance * token_usd_price[token]
                 if balance != ZERO:
-                    eth_balances[account]['assets'][token] = {  # type: ignore
-                        'amount': balance,
-                        'usd_value': usd_value,
-                    }
-                    eth_balances[account]['total_usd_value'] = (
-                        eth_balances[account]['total_usd_value'] + usd_value  # type: ignore
+                    eth_balances[account].asset_balances[token] = Balance(
+                        amount=balance,
+                        usd_value=usd_value,
                     )
+                    eth_balances[account].increase_total_usd_value(usd_value)
 
-            self.totals[token] = {
-                'amount': token_total,
-                'usd_value': token_total * token_usd_price[token],
-            }
-
-        self.balances[A_ETH] = cast(
-            Dict[BlockchainAddress, Dict[Union[str, Asset], FVal]],
-            eth_balances,
-        )
+            self.totals[token] = Balance(
+                amount=token_total,
+                usd_value=token_total * token_usd_price[token],
+            )
 
     def query_ethereum_balances(self) -> None:
         """Queries the ethereum balances and populates the state
@@ -662,23 +684,14 @@ class Blockchain(CacheableObject, LockableQueryObject):
         eth_usd_price = Inquirer().find_usd_price(A_ETH)
         balances = self.ethchain.get_multieth_balance(eth_accounts)
         eth_total = FVal(0)
-        eth_balances: EthBalances = {}
         for account, balance in balances.items():
             eth_total += balance
             usd_value = balance * eth_usd_price
-            eth_balances[account] = {
-                'assets': {
-                    A_ETH: {'amount': balance, 'usd_value': usd_value},
-                },
-                'total_usd_value': usd_value,
-            }
+            self.balances.eth[account] = EthereumAccountBalance(
+                start_eth_amount=balance,
+                start_eth_usd_value=usd_value,
+            )
 
-        self.totals[A_ETH] = {'amount': eth_total, 'usd_value': eth_total * eth_usd_price}
-        # but they are not complete until token query
-        self.balances[A_ETH] = cast(
-            Dict[BlockchainAddress, Dict[Union[str, Asset], FVal]],
-            eth_balances,
-        )
-
-        # And now for tokens
-        self.query_ethereum_tokens(self.owned_eth_tokens, eth_balances)
+        self.totals[A_ETH] = Balance(amount=eth_total, usd_value=eth_total * eth_usd_price)
+        # And now also query tokens to complete the picture
+        self.query_ethereum_tokens(self.owned_eth_tokens)
