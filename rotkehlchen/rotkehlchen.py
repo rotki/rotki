@@ -412,7 +412,7 @@ class Rotkehlchen():
             problem_free = False
             log.error(f'Querying blockchain balances failed due to: {str(e)}')
 
-        balances['blockchain'] = blockchain_result['totals']
+        balances['blockchain'] = blockchain_result.totals
 
         result = self.query_fiat_balances()
         if result != {}:

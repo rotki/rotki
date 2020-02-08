@@ -6,6 +6,7 @@ import pytest
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.constants.assets import A_BTC
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.tests.utils.blockchain import DEFAULT_BALANCE
 from rotkehlchen.tests.utils.constants import A_GNO
 from rotkehlchen.typing import SupportedBlockchain
@@ -24,21 +25,20 @@ def test_eth_connection_initial_balances(
         inquirer,  # pylint: disable=unused-argument
 ):
     result = blockchain.query_balances()
-    assert 'per_account' in result
-    assert 'totals' in result
 
-    per_eth_account = result['per_account']['ETH']
+    per_eth_account = result.per_account['ETH']
     assert len(ethereum_accounts) == len(per_eth_account) == number_of_eth_accounts
 
     eth_default_balance = from_wei(DEFAULT_BALANCE)
     for acc, values in per_eth_account.items():
         assert acc in ethereum_accounts
-        assert values['assets']['ETH']['amount'] == eth_default_balance
-        assert 'usd_value' in values['assets']['ETH']
+        assert values.asset_balances['ETH'].amount == eth_default_balance
+        assert values.asset_balances['ETH'].usd_value > ZERO
+        assert values.totalusd_value > ZERO
 
-    totals_eth = result['totals']['ETH']
-    assert totals_eth['amount'] == number_of_eth_accounts * eth_default_balance
-    assert 'usd_value' in totals_eth
+    totals_eth = result.totals['ETH']
+    assert totals_eth.amount == number_of_eth_accounts * eth_default_balance
+    assert totals_eth.usd_value > ZERO
 
 
 def test_query_btc_balances(blockchain):
