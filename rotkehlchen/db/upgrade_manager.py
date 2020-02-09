@@ -12,6 +12,7 @@ from rotkehlchen.db.upgrades.v5_v6 import upgrade_v5_to_v6
 from rotkehlchen.db.upgrades.v6_v7 import upgrade_v6_to_v7
 from rotkehlchen.db.upgrades.v7_v8 import upgrade_v7_to_v8
 from rotkehlchen.db.upgrades.v8_v9 import upgrade_v8_to_v9
+from rotkehlchen.db.upgrades.v10_v11 import upgrade_v10_to_v11
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import SupportedBlockchain
@@ -103,6 +104,10 @@ UPGRADES_LIST = [
     UpgradeRecord(
         from_version=9,
         function=_delete_used_query_range_entries,
+    ),
+    UpgradeRecord(
+        from_version=10,
+        function=upgrade_v10_to_v11,
     ),
 ]
 
