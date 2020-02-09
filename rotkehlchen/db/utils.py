@@ -162,10 +162,24 @@ CREATE TABLE IF NOT EXISTS external_service_credentials (
 );
 """
 
+DB_CREATE_TAGS_TABLE = """
+CREATE TABLE IF NOT EXISTS tags (name TEXT NOT NULL PRIMARY KEY, description TEXT);
+"""
+
 DB_CREATE_BLOCKCHAIN_ACCOUNTS = """
 CREATE TABLE IF NOT EXISTS blockchain_accounts (
     blockchain VARCHAR[24],
-    account TEXT NOT NULL PRIMARY KEY
+    account TEXT NOT NULL PRIMARY KEY,
+    label TEXT
+);
+"""
+
+# DELETE Link, is only for temporary reference
+# https://stackoverflow.com/questions/51128832/what-is-the-best-way-to-design-a-tag-based-data-table-with-sqlite
+DB_CREATE_TAG_MAPPINGS = """
+CREATE TABLE IF NOT EXISTS tag_mappings (
+    account_address TEXT,
+    tag_name TEXT
 );
 """
 
@@ -266,7 +280,7 @@ CREATE TABLE IF NOT EXISTS settings (
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
@@ -286,4 +300,6 @@ PRAGMA foreign_keys=on;
     DB_CREATE_ASSET_MOVEMENTS,
     DB_CREATE_USED_QUERY_RANGES,
     DB_CREATE_SETTINGS,
+    DB_CREATE_TAGS_TABLE,
+    DB_CREATE_TAG_MAPPINGS,
 )

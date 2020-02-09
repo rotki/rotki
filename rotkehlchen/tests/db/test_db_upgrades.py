@@ -773,6 +773,39 @@ def test_upgrade_db_9_to_10(data_dir, username):
     assert db.get_version() == 10
 
 
+def test_upgrade_db_10_to_11(data_dir, username):
+    """Test upgrading the DB from version 10 to version 11.
+
+    Deleting all entries from used_query_ranges"""
+    msg_aggregator = MessagesAggregator()
+    userdata_dir = os.path.join(data_dir, username)
+    os.mkdir(userdata_dir)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    copyfile(
+        os.path.join(os.path.dirname(dir_path), 'data', 'v10_rotkehlchen.db'),
+        os.path.join(userdata_dir, 'rotkehlchen.db'),
+    )
+
+    with target_patch(target_version=11):
+        db = DBHandler(user_data_dir=userdata_dir, password='123', msg_aggregator=msg_aggregator)
+
+    # Make sure that the blockchain accounts table is upgraded
+    expected_results = [
+        ('ETH', '0xB2CEB220df2e4a5ec6A0aC93d79655895E9886Bc', None),
+        ('ETH', '0x926cbe37d3487a881F9EB18F4746Ee09557D79cB', None),
+        ('BTC', '37SQZzaCPbDno9aFBjaVKhA9KkzTbt94x2', None),
+    ]
+    cursor = db.conn.cursor()
+    results = cursor.execute(
+        'SELECT blockchain, account, label FROM blockchain_accounts;',
+    )
+    for idx, entry in enumerate(results):
+        assert entry == expected_results[idx]
+
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 11
+
+
 def test_db_newer_than_software_raises_error(data_dir, username):
     """
     If the DB version is greater than the current known version in the
