@@ -2,6 +2,10 @@
 Changelog
 =========
 
+* :feature:`99987` Added support for the following tokens
+
+  - `LTO Network (LTO) <https://coinmarketcap.com/currencies/lto-network/>`__
+
 * :release:`1.1.1 <2020-02-06>` 693
 * :bug:`693 major` Fix crash in OSX .dmg package version that occured with v1.1.0
 
