@@ -163,7 +163,12 @@ CREATE TABLE IF NOT EXISTS external_service_credentials (
 """
 
 DB_CREATE_TAGS_TABLE = """
-CREATE TABLE IF NOT EXISTS tags (name TEXT NOT NULL PRIMARY KEY, description TEXT);
+CREATE TABLE IF NOT EXISTS tags (
+    name TEXT NOT NULL PRIMARY KEY,
+    description TEXT,
+    background_color TEXT,
+    foreground_color TEXT
+);
 """
 
 DB_CREATE_BLOCKCHAIN_ACCOUNTS = """
