@@ -19,15 +19,19 @@ def test_query_version(rotkehlchen_api_server):
     assert_proper_response(response)
 
     our_version = get_system_spec()['rotkehlchen']
+    cmd = ['git', 'describe', '--abbrev=0', '--tags']
+    expected_latest = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+    expected_latest = expected_latest[:-1].decode()
+    expected_download_url = None
+    if 'dev' in our_version:
+        expected_download_url = f'https://github.com/rotki/rotki/releases/tag/{expected_latest}'
+
     data = response.json()
     assert data['message'] == ''
     assert len(data['result']) == 3
     assert data['result']['our_version'] == our_version
-    cmd = ['git', 'describe', '--abbrev=0', '--tags']
-    expected_latest = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-    expected_latest = expected_latest[:-1].decode()
     assert data['result']['latest_version'] == expected_latest
-    assert data['result']['download_url'] is None
+    assert data['result']['download_url'] == expected_download_url
 
     # Test for the case that a newer version exists
     def patched_get_latest_release(_klass):

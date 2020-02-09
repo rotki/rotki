@@ -284,7 +284,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
         response=response,
-        contained_in_msg='Number of seconds after which taxfree period starts should not be negat',
+        contained_in_msg='The taxfree_after_period value can not be negative, except',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -295,7 +295,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
         response=response,
-        contained_in_msg='Not a valid integer',
+        contained_in_msg='dsad is not a valid integer',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

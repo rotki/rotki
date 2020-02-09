@@ -311,6 +311,11 @@ def test_add_blockchain_accounts(
             eth_balances=eth_balances,
             token_balances=token_balances,
         )
+        with setup.etherscan_patch, setup.bitcoin_patch:
+            response = requests.get(api_url_for(
+                rotkehlchen_api_server,
+                "blockchainbalancesresource",
+            ))
 
     new_eth_accounts = [make_ethereum_address(), make_ethereum_address()]
     all_eth_accounts = ethereum_accounts + new_eth_accounts
@@ -341,7 +346,7 @@ def test_add_blockchain_accounts(
         eth_accounts=all_eth_accounts,
         eth_balances=setup.eth_balances,
         token_balances=setup.token_balances,
-        also_btc=False,  # All blockchain assets have not been queried yet
+        also_btc=query_balances_before_first_modification,
     )
     # Also make sure they are added in the DB
     accounts = rotki.data.db.get_blockchain_accounts()

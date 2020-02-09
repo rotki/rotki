@@ -1,10 +1,10 @@
 import logging
 import operator
 from collections import defaultdict
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, overload
 
 import requests
-from dataclasses import dataclass
 from eth_utils.address import to_checksum_address
 from web3.exceptions import BadFunctionCallOutput
 
@@ -55,6 +55,9 @@ class Balance:
     def serialize(self) -> Dict[str, str]:
         return {'amount': str(self.amount), 'usd_value': str(self.usd_value)}
 
+    def to_dict(self) -> Dict[str, FVal]:
+        return {'amount': self.amount, 'usd_value': self.usd_value}
+
 
 Totals = Dict[Asset, Balance]
 
@@ -82,8 +85,8 @@ EthBalances = Dict[ChecksumEthAddress, EthereumAccountBalance]
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class BlockchainBalances:
-    eth: EthBalances = {}
-    btc: Dict[BTCAddress, Balance] = {}
+    eth: EthBalances = field(default_factory=dict)
+    btc: Dict[BTCAddress, Balance] = field(default_factory=dict)
 
     def serialize(self) -> Dict[str, Dict]:
         eth_balances: Dict[ChecksumEthAddress, Dict] = {}
@@ -98,13 +101,18 @@ class BlockchainBalances:
         for btc_account, balances in self.btc.items():
             btc_balances[btc_account] = balances.serialize()
 
-        return {'ETH': eth_balances, 'BTC': btc_balances}
+        blockchain_balances: Dict[str, Dict] = {}
+        if eth_balances != {}:
+            blockchain_balances['ETH'] = eth_balances
+        if btc_balances != {}:
+            blockchain_balances['BTC'] = btc_balances
+        return blockchain_balances
 
     def is_queried(self, blockchain: SupportedBlockchain) -> bool:
         if blockchain == SupportedBlockchain.ETHEREUM:
-            return self.eth == {}
+            return self.eth != {}
         elif blockchain == SupportedBlockchain.BITCOIN:
-            return self.btc == {}
+            return self.btc != {}
 
         raise AssertionError('Invalid blockchain value')
 
@@ -115,7 +123,13 @@ class BlockchainBalancesUpdate:
     totals: Totals
 
     def serialize(self) -> Dict[str, Dict]:
-        return {'per_account': self.per_account.serialize(), 'totals': self.totals}
+        return {
+            'per_account': self.per_account.serialize(),
+            'totals': {
+                asset: balance.serialize()
+                for asset, balance in self.totals.items() if balance != {}
+            },
+        }
 
 
 class Blockchain(CacheableObject, LockableQueryObject):
