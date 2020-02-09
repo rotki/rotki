@@ -61,6 +61,11 @@ class TaxFreeAfterPeriodField(fields.Field):
             data,
             **kwargs,
     ) -> int:
+        try:
+            value = int(value)
+        except ValueError:
+            raise ValidationError(f'{value} is not a valid integer')
+
         if value < -1:
             raise ValidationError(
                 'The taxfree_after_period value can not be negative, except for '
