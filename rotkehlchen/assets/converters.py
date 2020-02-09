@@ -387,6 +387,7 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'BEAR',  # https://www.binance.com/en/support/articles/360038933471
     'ETHBULL',  # https://www.binance.com/en/support/articles/360038933471
     'ETHBEAR',  # https://www.binance.com/en/support/articles/360038933471
+    'WRX',  # https://info.binance.com/en/currencies/WRX - not listed anywhere else
 )
 
 CRYPTOCOMPARE_TO_WORLD = {v: k for k, v in WORLD_TO_CRYPTOCOMPARE.items()}
