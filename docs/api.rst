@@ -863,6 +863,7 @@ Querying the balances of exchanges
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :param bool async_query: Boolean denoting whether this is an asynchronous query or not
 
+   .. _balances_result:
    **Example Response**:
 
    .. sourcecode:: http
@@ -882,8 +883,6 @@ Querying the balances of exchanges
           },
           "message": ""
       }
-
-.. _balances_result:
 
    :resjson object result: If succesful contains the balances of each asset held in the exchange. Each key of the object is an asset's symbol. Then the value is another object.  In the ``"amount"`` key of that object is the amount held in the asset. And in the ``"usd_value"`` key is the equivalent $ value as of this moment.
    :statuscode 200: Balances succesfully queried.
@@ -1030,6 +1029,230 @@ Querying the trades history of exchanges
    :statuscode 200: Trades succesfully queried.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: User is not logged in. Some exchange query error. Check error message for details.
+   :statuscode 500: Internal Rotki error
+
+Querying tags
+=================
+
+.. http:get:: /api/(version)/tags
+
+   Doing a GET on the tags endpoint will query information about all the tags that are stored in the app
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/tags/ HTTP/1.1
+      Host: localhost:5042
+
+   .. _tags_response:
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+	      "name": "hw",
+	      "description": "Accounts that are stored in hardware wallets",
+	      "background_color": "fafafa",
+	      "foreground_color": "ffffff"
+	  }, {
+	      "name": "mobile",
+	      "description": "Accounts that are stored in mobile devices",
+	      "background_color": "ffffff",
+	      "foreground_color": "fafafa"
+	  }],
+          "message": ""
+      }
+
+   :reqjson list result: A list of the tags Rotki knows about.
+   :reqjsonarr string name: The tag's name. Is always lowercase.
+   :reqjsonarr string description: A description of what the tag is for.
+   :resjson string background_color: The background color to render the tag in the frontend with.
+   :resjson string foreground_color: The foreground color to render the tag in the frontend with.
+
+   :statuscode 200: Tags succesfully queried.
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal Rotki error
+
+Adding new tags
+===================
+
+.. http:put:: /api/(version)/tags
+
+   Doing a PUT on the tags endpoint will add a new tag to the application
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/tags/ HTTP/1.1
+      Host: localhost:5042
+      Accept: application/json, text/javascript
+
+      {
+            "name": "not public",
+            "description": "Accounts that are not publically associated with me",
+            "background_color": "f8f8f8",
+            "foreground_color": "f1f1f1"
+      }
+
+   :reqjson string name: The name to give to the new tag. If it's not lowercase it will be saved as such.
+   :reqjson string description: The description for the new tag you are creating.
+   :reqjson string background_color: The color with which the tag's background will be rendered. Format is RGB hexstring.
+   :reqjson string foreground_color: The color with which the tag's foreground will be rendered. Format is RGB hexstring.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+	      "name": "hw",
+	      "description": "Accounts that are stored in hardware wallets",
+	      "background_color": "fafafa",
+	      "foreground_color": "ffffff"
+	  }, {
+	      "name": "mobile",
+	      "description": "Accounts that are stored in mobile devices",
+	      "background_color": "ffffff",
+	      "foreground_color": "fafafa"
+	  }, {
+              "name": "not public",
+              "description": "Accounts that are not publically associated with me",
+              "background_color": "f8f8f8",
+              "foreground_color": "f1f1f1"
+	  }],
+          "message": ""
+      }
+
+   :reqjson list result: A list of the tags Rotki knows about including our newly added tag. Explanation of the response format is seen `here <tags_response_>`_
+
+   :statuscode 200: Tag successfully created.
+   :statuscode 400: Provided request JSON is in some way malformed.
+   :statuscode 409: User is not logged in. Tag with the same name already exists.
+   :statuscode 500: Internal Rotki error
+
+Editing a tag
+==============
+
+.. http:patch:: /api/(version)/tags
+
+   Doing a PATCH on the tags endpoint will edit an already existing tag
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/tags/ HTTP/1.1
+      Host: localhost:5042
+      Accept: application/json, text/javascript
+
+      {
+            "name": "not public",
+            "description": "Accounts that are private",
+            "background_color": "f9f9f9",
+            "foreground_color": "f2f2f2",
+      }
+
+   :reqjson string name: The name of the already existing tag. If it's not lowercase it will be looked up as such.
+   :reqjson string[optional] description: If given replaces the tag's description.
+   :reqjson string[optional] background_color: If given replaces the tag's background color. Format is RGB hexstring.
+   :reqjson string[optional foreground_color: If given replaces the tag's background color. Format is RGB hexstring.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+	      "name": "hw",
+	      "description": "Accounts that are stored in hardware wallets",
+	      "background_color": "fafafa",
+	      "foreground_color": "ffffff"
+	  }, {
+	      "name": "mobile",
+	      "description": "Accounts that are stored in mobile devices",
+	      "background_color": "ffffff",
+	      "foreground_color": "fafafa"
+	  }, {
+              "name": "not public",
+              "description": "Accounts that are private",
+              "background_color": "f9f9f9",
+              "foreground_color": "f2f2f2"
+	  }],
+          "message": ""
+      }
+
+   :reqjson list result: A list of the tags Rotki knows about including our newley edited tag. Explanation of the response format is seen `here <tags_response_>`_
+
+   :statuscode 200: Tag successfully created.
+   :statuscode 400: Provided request JSON is in some way malformed.
+   :statuscode 409: User is not logged in. Tag with the given name does not exist.
+   :statuscode 500: Internal Rotki error
+
+Deleting a tag
+==============
+
+.. http:delete:: /api/(version)/tags
+
+   Doing a DELETE on the tags endpoint will remove an existing tag
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/tags/ HTTP/1.1
+      Host: localhost:5042
+      Accept: application/json, text/javascript
+
+      {
+            "name": "not public",
+      }
+
+   :reqjson string name: The name of the existing tag to remove. If it's not lowercase it will be looked up as such.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [{
+	      "name": "hw",
+	      "description": "Accounts that are stored in hardware wallets",
+	      "background_color": "fafafa",
+	      "foreground_color": "ffffff"
+	  }, {
+	      "name": "mobile",
+	      "description": "Accounts that are stored in mobile devices",
+	      "background_color": "ffffff",
+	      "foreground_color": "fafafa"
+	  }],
+          "message": ""
+      }
+
+   :reqjson list result: A list of the tags Rotki knows about, now without the tag we just deleted. Explanation of the response format is seen `here <tags_response_>`_
+
+   :statuscode 200: Tag successfully removed.
+   :statuscode 400: Provided request JSON is in some way malformed.
+   :statuscode 409: User is not logged in. Tag with the given name does not exist.
    :statuscode 500: Internal Rotki error
 
 Querying onchain balances
