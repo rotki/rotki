@@ -26,7 +26,7 @@ def test_eth_connection_initial_balances(
 ):
     result = blockchain.query_balances()
 
-    per_eth_account = result.per_account['ETH']
+    per_eth_account = result.per_account.eth
     assert len(ethereum_accounts) == len(per_eth_account) == number_of_eth_accounts
 
     eth_default_balance = from_wei(DEFAULT_BALANCE)
@@ -34,7 +34,7 @@ def test_eth_connection_initial_balances(
         assert acc in ethereum_accounts
         assert values.asset_balances['ETH'].amount == eth_default_balance
         assert values.asset_balances['ETH'].usd_value > ZERO
-        assert values.totalusd_value > ZERO
+        assert values.total_usd_value > ZERO
 
     totals_eth = result.totals['ETH']
     assert totals_eth.amount == number_of_eth_accounts * eth_default_balance
@@ -43,15 +43,14 @@ def test_eth_connection_initial_balances(
 
 def test_query_btc_balances(blockchain):
     blockchain.query_btc_balances()
-    assert blockchain.totals[A_BTC] == {}
-    assert blockchain.balances[A_BTC] == {}
+    assert 'BTC' not in blockchain.totals
 
     account = '3BZU33iFcAiyVyu2M2GhEpLNuh81GymzJ7'
     blockchain.modify_btc_account(account, 'append', operator.add)
 
     blockchain.query_btc_balances()
-    assert 'usd_value' in blockchain.totals[A_BTC]
-    assert 'amount' in blockchain.totals[A_BTC]
+    assert blockchain.totals[A_BTC].usd_value is not None
+    assert blockchain.totals[A_BTC].amount is not None
 
 
 def test_add_remove_ethereum_account_saved_as_checksummed(blockchain):

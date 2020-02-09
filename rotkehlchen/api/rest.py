@@ -14,7 +14,6 @@ from typing_extensions import Literal
 
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.errors import (
@@ -540,15 +539,15 @@ class RestAPI():
             msg = str(e)
             status_code = HTTPStatus.BAD_GATEWAY
         else:
+            result = balances.serialize()
             # If only specific input blockchain was given ignore other results
             if blockchain == SupportedBlockchain.ETHEREUM:
-                balances.per_account.btc = {}
-                balances.totals[A_BTC] = {}
+                result['per_account'].pop('BTC', None)
+                result['totals'].pop('BTC', None)
             elif blockchain == SupportedBlockchain.BITCOIN:
-                balances.per_account.eth = {}
-                balances.totals = {A_BTC: balances.totals[A_BTC]}
-
-            result = balances.serialize()
+                per_account = {'BTC': result['per_account']['BTC']}
+                totals = {'BTC': result['totals']['BTC']}
+                result = {'per_account': per_account, 'totals': totals}
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
@@ -1055,7 +1054,7 @@ class RestAPI():
             return {'result': None, 'message': msg, 'status_code': HTTPStatus.BAD_REQUEST}
 
         # success
-        return {'result': result, 'message': msg}
+        return {'result': result.serialize(), 'message': msg}
 
     @require_loggedin_user()
     def add_blockchain_accounts(
@@ -1107,7 +1106,7 @@ class RestAPI():
         if len(removed_accounts) == 0:
             return {'result': None, 'message': msg, 'status_code': HTTPStatus.BAD_REQUEST}
 
-        return {'result': result, 'message': msg}
+        return {'result': result.serialize(), 'message': msg}
 
     @require_loggedin_user()
     def remove_blockchain_accounts(
