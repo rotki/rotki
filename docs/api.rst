@@ -1056,23 +1056,25 @@ Querying tags
       Content-Type: application/json
 
       {
-          "result": [{
-	      "name": "hw",
-	      "description": "Accounts that are stored in hardware wallets",
-	      "background_color": "fafafa",
-	      "foreground_color": "ffffff"
-	  }, {
-	      "name": "mobile",
-	      "description": "Accounts that are stored in mobile devices",
-	      "background_color": "ffffff",
-	      "foreground_color": "fafafa"
-	  }],
+          "result": {
+	      "hw": {
+                  "name": "hw",
+                  "description": "Accounts that are stored in hardware wallets",
+                  "background_color": "fafafa",
+                  "foreground_color": "ffffff"
+              },
+	      "mobile": {
+	          "name": "mobile",
+	          "description": "Accounts that are stored in mobile devices",
+	          "background_color": "ffffff",
+	          "foreground_color": "fafafa"
+	     }},
           "message": ""
       }
 
-   :reqjson list result: A list of the tags Rotki knows about.
-   :reqjsonarr string name: The tag's name. Is always lowercase.
-   :reqjsonarr string description: A description of what the tag is for.
+   :reqjson object result: A mapping of tag names to tag data.
+   :reqjson string name: The tag's name. Is always lowercase.
+   :reqjson string description: A description of what the tag is for.
    :resjson string background_color: The background color to render the tag in the frontend with.
    :resjson string foreground_color: The foreground color to render the tag in the frontend with.
 
@@ -1103,7 +1105,7 @@ Adding new tags
             "foreground_color": "f1f1f1"
       }
 
-   :reqjson string name: The name to give to the new tag. If it's not lowercase it will be saved as such.
+   :reqjson string name: The name to give to the new tag. The name of the tag (case insensitive check) must not already exist.
    :reqjson string description: The description for the new tag you are creating.
    :reqjson string background_color: The color with which the tag's background will be rendered. Format is RGB hexstring.
    :reqjson string foreground_color: The color with which the tag's foreground will be rendered. Format is RGB hexstring.
@@ -1116,26 +1118,30 @@ Adding new tags
       Content-Type: application/json
 
       {
-          "result": [{
-	      "name": "hw",
-	      "description": "Accounts that are stored in hardware wallets",
-	      "background_color": "fafafa",
-	      "foreground_color": "ffffff"
-	  }, {
-	      "name": "mobile",
-	      "description": "Accounts that are stored in mobile devices",
-	      "background_color": "ffffff",
-	      "foreground_color": "fafafa"
-	  }, {
-              "name": "not public",
-              "description": "Accounts that are not publically associated with me",
-              "background_color": "f8f8f8",
-              "foreground_color": "f1f1f1"
-	  }],
+          "result": {
+	      "hw": {
+                  "name": "hw",
+                  "description": "Accounts that are stored in hardware wallets",
+                  "background_color": "fafafa",
+                  "foreground_color": "ffffff"
+              },
+	      "mobile": {
+	          "name": "mobile",
+	          "description": "Accounts that are stored in mobile devices",
+	          "background_color": "ffffff",
+	          "foreground_color": "fafafa"
+	     },
+	      "not public": {
+	          "name": "not public",
+	          "description": "Accounts that are not publically associated with me",
+	          "background_color": "f8f8f8",
+	          "foreground_color": "f1f1f1"
+	     }
+	  },
           "message": ""
       }
 
-   :reqjson list result: A list of the tags Rotki knows about including our newly added tag. Explanation of the response format is seen `here <tags_response_>`_
+   :reqjson object result: A mapping of the tags Rotki knows about including our newly added tag. Explanation of the response format is seen `here <tags_response_>`_
 
    :statuscode 200: Tag successfully created.
    :statuscode 400: Provided request JSON is in some way malformed.
@@ -1165,7 +1171,7 @@ Editing a tag
             "foreground_color": "f2f2f2",
       }
 
-   :reqjson string name: The name of the already existing tag. If it's not lowercase it will be looked up as such.
+   :reqjson string name: The name of the already existing tag. The name lookup will be a case-insensitive check.
    :reqjson string[optional] description: If given replaces the tag's description.
    :reqjson string[optional] background_color: If given replaces the tag's background color. Format is RGB hexstring.
    :reqjson string[optional foreground_color: If given replaces the tag's background color. Format is RGB hexstring.
@@ -1178,26 +1184,30 @@ Editing a tag
       Content-Type: application/json
 
       {
-          "result": [{
-	      "name": "hw",
-	      "description": "Accounts that are stored in hardware wallets",
-	      "background_color": "fafafa",
-	      "foreground_color": "ffffff"
-	  }, {
-	      "name": "mobile",
-	      "description": "Accounts that are stored in mobile devices",
-	      "background_color": "ffffff",
-	      "foreground_color": "fafafa"
-	  }, {
-              "name": "not public",
-              "description": "Accounts that are private",
-              "background_color": "f9f9f9",
-              "foreground_color": "f2f2f2"
-	  }],
+          "result": {
+	      "hw": {
+                  "name": "hw",
+                  "description": "Accounts that are stored in hardware wallets",
+                  "background_color": "fafafa",
+                  "foreground_color": "ffffff"
+              },
+	      "mobile": {
+	          "name": "mobile",
+	          "description": "Accounts that are stored in mobile devices",
+	          "background_color": "ffffff",
+	          "foreground_color": "fafafa"
+	     },
+	      "not public": {
+	          "name": "not public",
+	          "description": "Accounts that are private",
+	          "background_color": "f9f9f9",
+	          "foreground_color": "f2f2f2"
+	     }
+	  },
           "message": ""
       }
 
-   :reqjson list result: A list of the tags Rotki knows about including our newley edited tag. Explanation of the response format is seen `here <tags_response_>`_
+   :reqjson object result: A mapping of the tags Rotki knows about including our newley edited tag. Explanation of the response format is seen `here <tags_response_>`_
 
    :statuscode 200: Tag successfully created.
    :statuscode 400: Provided request JSON is in some way malformed.
@@ -1224,7 +1234,7 @@ Deleting a tag
             "name": "not public",
       }
 
-   :reqjson string name: The name of the existing tag to remove. If it's not lowercase it will be looked up as such.
+   :reqjson string name: The name of the existing tag to remove. The name lookup will be a case-insensitive check.
 
    **Example Response**:
 
@@ -1234,21 +1244,24 @@ Deleting a tag
       Content-Type: application/json
 
       {
-          "result": [{
-	      "name": "hw",
-	      "description": "Accounts that are stored in hardware wallets",
-	      "background_color": "fafafa",
-	      "foreground_color": "ffffff"
-	  }, {
-	      "name": "mobile",
-	      "description": "Accounts that are stored in mobile devices",
-	      "background_color": "ffffff",
-	      "foreground_color": "fafafa"
-	  }],
+          "result": {
+	      "hw": {
+                  "name": "hw",
+                  "description": "Accounts that are stored in hardware wallets",
+                  "background_color": "fafafa",
+                  "foreground_color": "ffffff"
+              },
+	      "mobile": {
+	          "name": "mobile",
+	          "description": "Accounts that are stored in mobile devices",
+	          "background_color": "ffffff",
+	          "foreground_color": "fafafa"
+	     }
+	  },
           "message": ""
       }
 
-   :reqjson list result: A list of the tags Rotki knows about, now without the tag we just deleted. Explanation of the response format is seen `here <tags_response_>`_
+   :reqjson list result: A mapping of the tags Rotki knows about, now without the tag we just deleted. Explanation of the response format is seen `here <tags_response_>`_
 
    :statuscode 200: Tag successfully removed.
    :statuscode 400: Provided request JSON is in some way malformed.
