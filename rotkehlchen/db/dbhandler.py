@@ -29,12 +29,14 @@ from rotkehlchen.db.utils import (
     DBStartupAction,
     LocationData,
     SingleAssetBalance,
+    Tag,
     form_query_to_filter_timestamps,
     str_to_bool,
 )
 from rotkehlchen.errors import (
     AuthenticationError,
     DeserializationError,
+    ExistingTagError,
     IncorrectApiKeyFormat,
     InputError,
     UnknownAsset,
@@ -49,6 +51,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_movement_category_from_db,
     deserialize_fee,
     deserialize_fval,
+    deserialize_hex_color_code,
     deserialize_location,
     deserialize_location_from_db,
     deserialize_price,
@@ -65,6 +68,7 @@ from rotkehlchen.typing import (
     ExternalService,
     ExternalServiceApiCredentials,
     FilePath,
+    HexColorCode,
     ListOfBlockchainAddresses,
     Location,
     SupportedBlockchain,
@@ -1514,3 +1518,63 @@ class DBHandler:
             )
 
         return assets
+
+    def get_tags(self) -> Dict[str, Tag]:
+        cursor = self.conn.cursor()
+        results = cursor.execute(
+            'SELECT name, description, background_color, foreground_color FROM tags;',
+        )
+        tags_mapping: Dict[str, Tag] = {}
+        for result in results:
+            name = result[0]
+            description = result[1]
+
+            if description is not None and not isinstance(description, str):
+                self.msg_aggregator.add_warning(
+                    f'Tag {name} with invalid description found in the DB. Skipping tag',
+                )
+                continue
+
+            try:
+                background_color = deserialize_hex_color_code(result[2])
+                foreground_color = deserialize_hex_color_code(result[3])
+            except DeserializationError as e:
+                self.msg_aggregator.add_warning(
+                    f'Tag {name} with invalid color code found in the DB. {str(e)}. Skipping tag',
+                )
+                continue
+
+            tags_mapping[name] = Tag(
+                name=name,
+                description=description,
+                background_color=background_color,
+                foreground_color=foreground_color,
+            )
+
+        return tags_mapping
+
+    def add_tag(
+            self,
+            name: str,
+            description: Optional[str],
+            background_color: HexColorCode,
+            foreground_color: HexColorCode,
+    ) -> None:
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute(
+                'INSERT INTO tags'
+                '(name, description, background_color, foreground_color) VALUES (?, ?, ?, ?)',
+                (name, description, background_color, foreground_color),
+            )
+            self.conn.commit()
+        except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+            msg = str(e)
+            if 'UNIQUE constraint failed: tags.name' in msg:
+                raise ExistingTagError(
+                    f'Tag with name {name} already exists. Tag name matching is case insensitive.',
+                )
+
+            # else something really bad happened
+            log.error('Unexpected DB error: {msg} while adding a tag')
+            raise

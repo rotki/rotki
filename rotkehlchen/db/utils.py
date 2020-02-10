@@ -1,8 +1,8 @@
 from enum import Enum
-from typing import List, NamedTuple, Optional, Tuple, Union
+from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.typing import BTCAddress, ChecksumEthAddress, Timestamp
+from rotkehlchen.typing import BTCAddress, ChecksumEthAddress, HexColorCode, Timestamp
 
 
 class BlockchainAccounts(NamedTuple):
@@ -27,6 +27,16 @@ class LocationData(NamedTuple):
     time: Timestamp
     location: str  # Location serialized in a DB enum
     usd_value: str
+
+
+class Tag(NamedTuple):
+    name: str
+    description: Optional[str]
+    background_color: HexColorCode
+    foreground_color: HexColorCode
+
+    def serialize(self) -> Dict[str, str]:
+        return self._asdict()  # pylint: disable=no-member
 
 
 class DBStartupAction(Enum):
@@ -164,7 +174,7 @@ CREATE TABLE IF NOT EXISTS external_service_credentials (
 
 DB_CREATE_TAGS_TABLE = """
 CREATE TABLE IF NOT EXISTS tags (
-    name TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL PRIMARY KEY COLLATE NOCASE,
     description TEXT,
     background_color TEXT,
     foreground_color TEXT
