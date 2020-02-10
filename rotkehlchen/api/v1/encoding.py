@@ -12,6 +12,7 @@ from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
+    deserialize_hex_color_code,
     deserialize_location,
     deserialize_price,
     deserialize_timestamp,
@@ -24,6 +25,7 @@ from rotkehlchen.typing import (
     AssetAmount,
     ExternalService,
     ExternalServiceApiCredentials,
+    HexColorCode,
     Location,
     SupportedBlockchain,
     Timestamp,
@@ -46,6 +48,21 @@ class TimestampField(fields.Field):
             raise ValidationError(str(e))
 
         return timestamp
+
+
+class ColorField(fields.Field):
+
+    @staticmethod
+    def _serialize(value, attr, obj, **kwargs):  # pylint: disable=unused-argument
+        return value
+
+    def _deserialize(self, value, attr, data, **kwargs) -> HexColorCode:
+        try:
+            color_code = deserialize_hex_color_code(value)
+        except DeserializationError as e:
+            raise ValidationError(str(e))
+
+        return color_code
 
 
 class TaxFreeAfterPeriodField(fields.Field):
@@ -534,6 +551,39 @@ class TradePatchSchema(TradeSchema):
 
 class TradeDeleteSchema(BaseSchema):
     trade_id = fields.String(required=True)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
+class TagSchema(BaseSchema):
+    name = fields.String(required=True)
+    description = fields.String(missing=None)
+    background_color = ColorField(required=True)
+    foreground_color = ColorField(required=True)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
+class TagEditSchema(BaseSchema):
+    name = fields.String(required=True)
+    description = fields.String(missing=None)
+    background_color = ColorField(missing=None)
+    foreground_color = ColorField(missing=None)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
+class TagDeleteSchema(BaseSchema):
+    name = fields.String(required=True)
 
     class Meta:
         strict = True

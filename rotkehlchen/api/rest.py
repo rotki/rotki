@@ -19,6 +19,7 @@ from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.errors import (
     AuthenticationError,
     EthSyncError,
+    ExistingTagError,
     IncorrectApiKeyFormat,
     InputError,
     PremiumAuthenticationError,
@@ -38,6 +39,7 @@ from rotkehlchen.typing import (
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
+    HexColorCode,
     ListOfBlockchainAddresses,
     Location,
     Price,
@@ -679,6 +681,33 @@ class RestAPI():
             return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def get_tags(self) -> Response:
+        result = self.rotkehlchen.data.db.get_tags()
+        response = {name: data.serialize() for name, data in result.items()}
+        return api_response(_wrap_in_ok_result(response), status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def add_tag(
+            self,
+            name: str,
+            description: Optional[str],
+            background_color: HexColorCode,
+            foreground_color: HexColorCode,
+    ) -> Response:
+
+        try:
+            self.rotkehlchen.data.db.add_tag(
+                name=name,
+                description=description,
+                background_color=background_color,
+                foreground_color=foreground_color,
+            )
+        except ExistingTagError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        return self.get_tags()
 
     def get_users(self) -> Response:
         result = self.rotkehlchen.data.get_users()

@@ -28,6 +28,9 @@ from rotkehlchen.api.v1.encoding import (
     NewUserSchema,
     StatisticsAssetBalanceSchema,
     StatisticsValueDistributionSchema,
+    TagDeleteSchema,
+    TagEditSchema,
+    TagSchema,
     TradeDeleteSchema,
     TradePatchSchema,
     TradeSchema,
@@ -329,6 +332,50 @@ class TradesResource(BaseResource):
     @use_kwargs(delete_schema, locations=('json',))
     def delete(self, trade_id: str) -> Response:
         return self.rest_api.delete_trade(trade_id=trade_id)
+
+
+class TagsResource(BaseResource):
+
+    put_schema = TagSchema()
+    patch_schema = TagEditSchema()
+    delete_schema = TagDeleteSchema()
+
+    def get(self) -> Response:
+        return self.rest_api.get_tags()
+
+    @use_kwargs(put_schema, locations=('json',))
+    def put(
+            self,
+            name: str,
+            description: str,
+            background_color: str,
+            foreground_color: str,
+    ) -> Response:
+        return self.rest_api.add_tag(
+            name=name,
+            description=description,
+            background_color=background_color,
+            foreground_color=foreground_color,
+        )
+
+    @use_kwargs(patch_schema, locations=('json',))
+    def patch(
+            self,
+            name: str,
+            description: str,
+            background_color: str,
+            foreground_color: str,
+    ) -> Response:
+        return self.rest_api.edit_tag(
+            name=name,
+            description=description,
+            background_color=background_color,
+            foreground_color=foreground_color,
+        )
+
+    @use_kwargs(delete_schema, locations=('json',))
+    def delete(self, name: str) -> Response:
+        return self.rest_api.delete_tag(name=name)
 
 
 class UsersResource(BaseResource):

@@ -24,6 +24,9 @@ B64EncodedBytes = NewType('B64EncodedBytes', T_B64EncodedBytes)
 T_B64EncodedString = str
 B64EncodedString = NewType('B64EncodedString', T_B64EncodedString)
 
+T_HexColorCode = str
+HexColorCode = NewType('HexColorCode', T_HexColorCode)
+
 
 class ApiCredentials(NamedTuple):
     """Represents Credentials for various APIs. Exchanges, Premium e.t.c.
