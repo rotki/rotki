@@ -428,19 +428,24 @@ def deserialize_hex_color_code(symbol: str) -> TradeType:
     """
     if not isinstance(symbol, str):
         raise DeserializationError(
-            f'Failed to deserialize color code from {type(symbol)} entry',
+            f'Failed to deserialize color code from {type(symbol).__name__} entry',
         )
 
     try:
         color_value = int(symbol, 16)
     except ValueError:
         raise DeserializationError(
-            f'The given color code value {symbol} could not be processed as a hex color value',
+            f'The given color code value "{symbol}" could not be processed as a hex color value',
         )
 
     if color_value < 0 or color_value > 16777215:
         raise DeserializationError(
-            f'The given color code value {symbol} is out of range for a normal color field',
+            f'The given color code value "{symbol}" is out of range for a normal color field',
+        )
+
+    if len(symbol) != 6:
+        raise DeserializationError(
+            f'The given color code value "{symbol}" does not have 6 hexadecimal digits',
         )
 
     return HexColorCode(symbol)
