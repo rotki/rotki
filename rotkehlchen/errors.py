@@ -94,3 +94,7 @@ class InvalidBTCAddress(Exception):
 
 class ConversionError(Exception):
     pass
+
+
+class ExistingTagError(Exception):
+    pass

@@ -13,6 +13,7 @@ from rotkehlchen.typing import (
     AssetAmount,
     AssetMovementCategory,
     Fee,
+    HexColorCode,
     Location,
     Optional,
     Price,
@@ -417,3 +418,29 @@ def deserialize_asset_movement_category_from_db(symbol: str) -> AssetMovementCat
         f'Failed to deserialize asset movement category symbol from DB enum entry.'
         f'Unknown symbol {symbol}',
     )
+
+
+def deserialize_hex_color_code(symbol: str) -> TradeType:
+    """Takes a string either from the API or the DB and deserializes it into
+    a hexadecimal color code.
+
+    Can throw DeserializationError if the symbol is not as expected
+    """
+    if not isinstance(symbol, str):
+        raise DeserializationError(
+            f'Failed to deserialize color code from {type(symbol)} entry',
+        )
+
+    try:
+        color_value = int(symbol, 16)
+    except ValueError:
+        raise DeserializationError(
+            f'The given color code value {symbol} could not be processed as a hex color value',
+        )
+
+    if color_value < 0 or color_value > 16777215:
+        raise DeserializationError(
+            f'The given color code value {symbol} is out of range for a normal color field',
+        )
+
+    return HexColorCode(symbol)
