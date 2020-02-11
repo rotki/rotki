@@ -457,3 +457,131 @@ def test_edit_tags(
     assert len(db_response) == 2
     assert db_response['Public'].serialize() == tag1
     assert db_response['private'].serialize() == tag2
+
+
+def test_delete_tags(
+        rotkehlchen_api_server_with_exchanges,
+):
+    """Test that deleting a tag via the REST API works fine"""
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+
+    # Add two tags
+    tag1 = {
+        'name': 'Public',
+        'description': 'My public accounts',
+        'background_color': 'ffffff',
+        'foreground_color': '000000',
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "tagsresource",
+        ), json=tag1,
+    )
+    assert_proper_response(response)
+    tag2 = {
+        'name': 'private',
+        'description': 'My private accounts',
+        'background_color': '000000',
+        'foreground_color': 'ffffff',
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "tagsresource",
+        ), json=tag2,
+    )
+    assert_proper_response(response)
+    data = response.json()
+    assert len(data['result']) == 2
+    assert data['result']['Public'] == tag1
+    assert data['result']['private'] == tag2
+    # Query tags and see that both added tags are in the response
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "tagsresource",
+        ),
+    )
+    assert_proper_response(response)
+    data = response.json()
+    assert len(data['result']) == 2
+    assert data['result']['Public'] == tag1
+    assert data['result']['private'] == tag2
+
+    # Now delete the first tag
+    delete_tag_data = {
+        'name': 'pUbLiC',  # notice that name should match case insensitive
+    }
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "tagsresource",
+        ), json=delete_tag_data,
+    )
+    assert_proper_response(response)
+    data = response.json()
+    assert len(data['result']) == 1
+
+    # Now try to delete a non existing tag
+    delete_tag_data = {'name': 'hello'}
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "tagsresource",
+        ), json=delete_tag_data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Tried to delete tag with name "hello" which does not exist',
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # Query tags and see that the deleted tag is not in the response
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "tagsresource",
+        ),
+    )
+    assert_proper_response(response)
+    data = response.json()
+    assert len(data['result']) == 1
+    assert data['result']['private'] == tag2
+
+    # And finally also check the DB to be certain
+    db_response = rotki.data.db.get_tags()
+    assert len(db_response) == 1
+    assert db_response['private'].serialize() == tag2
+
+
+def test_delete_tag_errors(
+        rotkehlchen_api_server_with_exchanges,
+):
+    """Test that errors in input data while deleting a tag are handled correctly"""
+    # Name missing
+    data = {}
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "tagsresource",
+        ), json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="name': ['Missing data for required field",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    # Invalid type for name
+    data = {'name': 55.52}
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "tagsresource",
+        ), json=data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg="name': ['Not a valid string",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
