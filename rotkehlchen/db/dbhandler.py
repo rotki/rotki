@@ -36,9 +36,9 @@ from rotkehlchen.db.utils import (
 from rotkehlchen.errors import (
     AuthenticationError,
     DeserializationError,
-    ExistingTagError,
     IncorrectApiKeyFormat,
     InputError,
+    TagConstraintError,
     UnknownAsset,
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
@@ -1560,6 +1560,11 @@ class DBHandler:
             background_color: HexColorCode,
             foreground_color: HexColorCode,
     ) -> None:
+        """Adds a new tag to the DB
+
+        Raises:
+        - TagConstraintError: If the tag with the given name already exists
+        """
         cursor = self.conn.cursor()
         try:
             cursor.execute(
@@ -1571,10 +1576,48 @@ class DBHandler:
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
             msg = str(e)
             if 'UNIQUE constraint failed: tags.name' in msg:
-                raise ExistingTagError(
+                raise TagConstraintError(
                     f'Tag with name {name} already exists. Tag name matching is case insensitive.',
                 )
 
             # else something really bad happened
             log.error('Unexpected DB error: {msg} while adding a tag')
             raise
+
+    def edit_tag(
+            self,
+            name: str,
+            description: Optional[str],
+            background_color: Optional[HexColorCode],
+            foreground_color: Optional[HexColorCode],
+    ) -> None:
+        """Edits a tag already existing in the DB
+
+        Raises:
+        - TagConstraintError: If the tag name to edit does not exist in the DB
+        - InputError: If no field to edit was given.
+        """
+        query_values = []
+        querystr = 'UPDATE tags SET '
+        if description is not None:
+            querystr += 'description = ?,'
+            query_values.append(description)
+        if background_color is not None:
+            querystr += 'background_color = ?,'
+            query_values.append(background_color)
+        if foreground_color is not None:
+            querystr += 'foreground_color = ?,'
+            query_values.append(foreground_color)
+
+        if len(query_values) == 0:
+            raise InputError(f'No field was given to edit for tag "{name}"')
+
+        querystr = querystr[:-1] + 'WHERE name = ?;'
+        query_values.append(name)
+        cursor = self.conn.cursor()
+        cursor.execute(querystr, query_values)
+        if cursor.rowcount < 1:
+            raise TagConstraintError(
+                f'Tried to edit tag with name "{name}" which does not exist',
+            )
+        self.conn.commit()

@@ -1210,7 +1210,7 @@ Editing a tag
    :reqjson object result: A mapping of the tags Rotki knows about including our newley edited tag. Explanation of the response format is seen `here <tags_response_>`_
 
    :statuscode 200: Tag successfully created.
-   :statuscode 400: Provided request JSON is in some way malformed.
+   :statuscode 400: Provided request JSON is in some way malformed. Or no field to edit was given.
    :statuscode 409: User is not logged in. Tag with the given name does not exist.
    :statuscode 500: Internal Rotki error
 

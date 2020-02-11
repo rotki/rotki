@@ -96,5 +96,5 @@ class ConversionError(Exception):
     pass
 
 
-class ExistingTagError(Exception):
+class TagConstraintError(Exception):
     pass
