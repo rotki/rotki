@@ -1621,3 +1621,17 @@ class DBHandler:
                 f'Tried to edit tag with name "{name}" which does not exist',
             )
         self.conn.commit()
+
+    def delete_tag(self, name: str) -> None:
+        """Deletes a tag already existing in the DB
+
+        Raises:
+        - TagConstraintError: If the tag name to delete does not exist in the DB
+        """
+        cursor = self.conn.cursor()
+        cursor.execute('DELETE from tags WHERE name = ?;', (name,))
+        if cursor.rowcount < 1:
+            raise TagConstraintError(
+                f'Tried to delete tag with name "{name}" which does not exist',
+            )
+        self.conn.commit()
