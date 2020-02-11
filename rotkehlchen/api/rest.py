@@ -732,6 +732,16 @@ class RestAPI():
 
         return self.get_tags()
 
+    @require_loggedin_user()
+    def delete_tag(self, name: str) -> Response:
+
+        try:
+            self.rotkehlchen.data.db.delete_tag(name=name)
+        except TagConstraintError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        return self.get_tags()
+
     def get_users(self) -> Response:
         result = self.rotkehlchen.data.get_users()
         result_dict = _wrap_in_ok_result(result)
