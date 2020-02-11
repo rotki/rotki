@@ -2413,6 +2413,49 @@ Removing owned ETH tokens
    :statuscode 500: Internal Rotki error
    :statuscode 502: Error occured with some external service query such as Etherscan. Check message for details.
 
+
+Getting blockchain account data
+===============================
+.. http:get:: /api/(version)/blockchains/(name)/
+
+   Doing a GET on the blokchcains endpoint with a specific blockchain queries account data information for that blockchain.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/ HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result" : [{
+              "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
+              "label": "my new metamask",
+              "tags": ["public", metamask"]
+           }, {
+              "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b",
+              "label": null,
+              "tags": ["private"]
+           }],
+           "message": "",
+      }
+
+   :resjson list result: A list with the account data details
+   :resjsonarr string address: The address, which is the unique identifier of each account
+   :resjsonarr string label: The label to describe the account. Can also be null.
+   :resjsonarr list tags: A list of tags associated with the account. Can also be null.
+
+   :statuscode 200: Account data succesfully queried.
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal Rotki error
+
 Adding blockchain accounts
 ===========================
 
@@ -2421,7 +2464,7 @@ Adding blockchain accounts
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a PUT on the the blockchains endpoint with a specific blockchain URL and a list of accounts in the json data will add these accounts to the tracked accounts for the given blockchain and the current user. The updated balances after the account additions are returned.
+   Doing a PUT on the the blockchains endpoint with a specific blockchain URL and a list of account data in the json data will add these accounts to the tracked accounts for the given blockchain and the current user. The updated balances after the account additions are returned.
    Note that the message may even be populated for succesful queries, giving us information about what happened. For example one of the given accounts may have been invalid.
 
 
@@ -2432,9 +2475,20 @@ Adding blockchain accounts
       PUT /api/1/blockchains/ETH/ HTTP/1.1
       Host: localhost:5042
 
-      {"accounts": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B"]}
+      {
+          "accounts": [{
+              "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
+              "label": "my new metamask",
+              "tags": ["public", metamask"]
+              }, {
+              "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b
+              }]
+      }
 
-   :reqjson list[string] accounts: A list of accounts to add for the given blockchain
+   :reqjson list[object] accounts: A list of account data to add for the given blockchain
+   :reqjsonarr string address: The address of the account to add
+   :reqjsonarr string[optional] label: An optional label to describe the new account
+   :reqjsonarr list[optional] tags: An optional list of tags to attach to the new account
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
 
    **Example Response**:
@@ -2473,7 +2527,7 @@ Adding blockchain accounts
    :resjson object result: An object containing the ``"per_account"`` and ``"totals"`` keys as also defined `here <blockchain_balances_result_>`_.
    :statuscode 200: Accounts succesfully added
    :statuscode 400: Provided JSON or data is in some way malformed.
-   :statuscode 409: User is not logged in. Some error occured when re-querying the balances after addition. Check message for details.
+   :statuscode 409: User is not logged in. Some error occured when re-querying the balances after addition. Provided tags do not exist. Check message for details.
    :statuscode 500: Internal Rotki error
    :statuscode 502: Error occured with some external service query such as Etherscan. Check message for details.
 
