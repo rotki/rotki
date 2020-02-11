@@ -46,6 +46,7 @@ from rotkehlchen.typing import (
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
+    HexColorCode,
     ListOfBlockchainAddresses,
     Location,
     Price,
@@ -347,9 +348,9 @@ class TagsResource(BaseResource):
     def put(
             self,
             name: str,
-            description: str,
-            background_color: str,
-            foreground_color: str,
+            description: Optional[str],
+            background_color: HexColorCode,
+            foreground_color: HexColorCode,
     ) -> Response:
         return self.rest_api.add_tag(
             name=name,
@@ -362,9 +363,9 @@ class TagsResource(BaseResource):
     def patch(
             self,
             name: str,
-            description: str,
-            background_color: str,
-            foreground_color: str,
+            description: Optional[str],
+            background_color: Optional[HexColorCode],
+            foreground_color: Optional[HexColorCode],
     ) -> Response:
         return self.rest_api.edit_tag(
             name=name,

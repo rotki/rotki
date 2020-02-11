@@ -19,12 +19,12 @@ from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.errors import (
     AuthenticationError,
     EthSyncError,
-    ExistingTagError,
     IncorrectApiKeyFormat,
     InputError,
     PremiumAuthenticationError,
     RemoteError,
     RotkehlchenPermissionError,
+    TagConstraintError,
 )
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.inquirer import Inquirer
@@ -704,7 +704,30 @@ class RestAPI():
                 background_color=background_color,
                 foreground_color=foreground_color,
             )
-        except ExistingTagError as e:
+        except TagConstraintError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        return self.get_tags()
+
+    @require_loggedin_user()
+    def edit_tag(
+            self,
+            name: str,
+            description: Optional[str],
+            background_color: Optional[HexColorCode],
+            foreground_color: Optional[HexColorCode],
+    ) -> Response:
+
+        try:
+            self.rotkehlchen.data.db.edit_tag(
+                name=name,
+                description=description,
+                background_color=background_color,
+                foreground_color=foreground_color,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+        except TagConstraintError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         return self.get_tags()
