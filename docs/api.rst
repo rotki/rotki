@@ -2427,6 +2427,7 @@ Getting blockchain account data
       GET /api/1/blockchains/ETH/ HTTP/1.1
       Host: localhost:5042
 
+   .. _blockchain_accounts_result:
    **Example Response**:
 
    .. sourcecode:: http
@@ -2530,6 +2531,65 @@ Adding blockchain accounts
    :statuscode 409: User is not logged in. Some error occured when re-querying the balances after addition. Provided tags do not exist. Check message for details.
    :statuscode 500: Internal Rotki error
    :statuscode 502: Error occured with some external service query such as Etherscan. Check message for details.
+
+Editing blockchain accounts
+===========================
+
+.. http:patch:: /api/(version)/blockchains/(name)/
+
+
+   Doing a PATCH on the the blockchains endpoint with a specific blockchain URL and a list of accounts to edit will edit the label and tags for those accounts.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/blockchains/ETH/ HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "accounts": [{
+              "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
+              "label": "my new metamask",
+              "tags": ["public", metamask"]
+              }, {
+              "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b,
+	      "label": "my hardware wallet"
+              }]
+      }
+
+   :reqjson list[object] accounts: A list of account data to edit for the given blockchain
+   :reqjsonarr string address: The address of the account to add
+   :reqjsonarr string[optional] label: An optional label to edit for the account
+   :reqjsonarr list[optional] tags: An optional list of tags to attach to the account
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result" : [{
+              "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
+              "label": "my new metamask",
+              "tags": ["public", metamask"]
+           }, {
+              "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b",
+              "label": "my hardware wallet",
+              "tags": null
+           }],
+           "message": "",
+      }
+
+   :resjson list result: A list containing the blockchain account data as also defined `here <blockchain_accounts_result_>`_.
+
+   :statuscode 200: Accounts succesfully edited
+   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 409: User is not logged in. An account given to edit does not exist or a given tag does not exist.
+   :statuscode 500: Internal Rotki error
 
 Removing blockchain accounts
 ==============================
