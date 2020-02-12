@@ -265,11 +265,11 @@ class Rotkehlchen():
             self,
             blockchain: SupportedBlockchain,
             account_data: List[BlockchainAccountData],
-    ) -> Tuple[BlockchainBalancesUpdate, ListOfBlockchainAddresses, str]:
+    ) -> BlockchainBalancesUpdate:
         """Adds new blockchain accounts
 
         Adds the accounts to the blockchain instance and queries them to get the
-        updated balances. Also adds the ones that were valid in the DB
+        updated balances. Also adds them in the DB
 
         May raise:
         - EthSyncError from modify_blockchain_account
@@ -292,39 +292,38 @@ class Rotkehlchen():
                 f'{", ".join(unknown_tags)} were found',
             )
 
-        new_data, added_accounts, msg = self.blockchain.add_blockchain_accounts(
+        updated_balances = self.blockchain.add_blockchain_accounts(
             blockchain=blockchain,
             accounts=[entry.address for entry in account_data],  # type: ignore
         )
         self.data.db.add_blockchain_accounts(
             blockchain=blockchain,
-            account_data=[x for x in account_data if x.address in added_accounts],
+            account_data=account_data,
         )
 
-        return new_data, added_accounts, msg
+        return updated_balances
 
     def remove_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
-    ) -> Tuple[BlockchainBalancesUpdate, ListOfBlockchainAddresses, str]:
+    ) -> BlockchainBalancesUpdate:
         """Removes blockchain accounts
 
         Removes the accounts from the blockchain instance and queries them to get
-        the updated balances. Also removes the ones that were valid from the DB
+        the updated balances. Also removes them from the DB
 
         May raise:
         - RemoteError if an external service such as Etherscan is queried and
           there is a problem with its query.
         - InputError if a non-existing account was given to remove
         """
-        new_data, removed_accounts, msg = self.blockchain.remove_blockchain_accounts(
+        balances_update = self.blockchain.remove_blockchain_accounts(
             blockchain=blockchain,
             accounts=accounts,
         )
-        self.data.db.remove_blockchain_accounts(blockchain, removed_accounts)
-
-        return new_data, removed_accounts, msg
+        self.data.db.remove_blockchain_accounts(blockchain, accounts)
+        return balances_update
 
     def add_owned_eth_tokens(
             self,

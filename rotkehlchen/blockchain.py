@@ -23,10 +23,8 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
-    BlockchainAddress,
     BTCAddress,
     ChecksumEthAddress,
-    EthAddress,
     ListOfBlockchainAddresses,
     Price,
     SupportedBlockchain,
@@ -392,7 +390,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
 
     def modify_eth_account(
             self,
-            given_account: EthAddress,
+            account: ChecksumEthAddress,
             append_or_remove: str,
             add_or_sub: Callable[[FVal, FVal], FVal],
     ) -> None:
@@ -408,11 +406,6 @@ class Blockchain(CacheableObject, LockableQueryObject):
         - RemoteError if there is a problem with a query to an external
         service such as Etherscan or cryptocompare
         """
-        # Make sure account goes into web3.py as a properly checksummed address
-        try:
-            account = to_checksum_address(given_account)
-        except ValueError:
-            raise InputError(f'The given string {given_account} is not a valid ETH address')
         eth_usd_price = Inquirer().find_usd_price(A_ETH)
         remove_with_populated_balance = (
             append_or_remove == 'remove' and len(self.balances.eth) != 0
@@ -482,7 +475,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
             self,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
-    ) -> Tuple[BlockchainBalancesUpdate, ListOfBlockchainAddresses, str]:
+    ) -> BlockchainBalancesUpdate:
         """Adds new blockchain accounts and requeries all balances after the addition.
         The accounts are added in the blockchain object and not in the database.
         Returns the new total balances, the actually added accounts (some
@@ -490,8 +483,8 @@ class Blockchain(CacheableObject, LockableQueryObject):
         during the addition.
 
         May Raise:
-        - EthSyncError from modify_blockchain_account
-        - InputError if the given accounts list is empty
+        - EthSyncError from modify_blockchain_accounts
+        - InputError if the given accounts list is empty, or if it contains invalid accounts
         - RemoteError if an external service such as Etherscan is queried and
           there is a problem
         """
@@ -503,31 +496,20 @@ class Blockchain(CacheableObject, LockableQueryObject):
         if not self.balances.is_queried(blockchain):
             self.query_balances(blockchain, ignore_cache=True)
 
-        added_accounts = []
-        full_msg = ''
+        result = self.modify_blockchain_accounts(
+            blockchain=blockchain,
+            accounts=accounts,
+            append_or_remove='append',
+            add_or_sub=operator.add,
+        )
 
-        for account in accounts:
-            try:
-                result = self.modify_blockchain_account(
-                    blockchain=blockchain,
-                    account=account,
-                    append_or_remove='append',
-                    add_or_sub=operator.add,
-                )
-                added_accounts.append(account)
-            except InputError as e:
-                full_msg += str(e)
-                result = self.get_balances_update()
-
-        # Ignore type checks here. added_accounts is the same type as accounts
-        # but not sure how to show that to mypy
-        return result, added_accounts, full_msg  # type: ignore
+        return result
 
     def remove_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
-    ) -> Tuple[BlockchainBalancesUpdate, ListOfBlockchainAddresses, str]:
+    ) -> BlockchainBalancesUpdate:
         """Removes blockchain accounts and requeries all balances after the removal.
 
         The accounts are removed from the blockchain object and not from the database.
@@ -540,7 +522,8 @@ class Blockchain(CacheableObject, LockableQueryObject):
 
         May Raise:
         - EthSyncError from modify_blockchain_account
-        - InputError if the given accounts list is empty, or if it contains an unknown account
+        - InputError if the given accounts list is empty, or if
+        it contains an unknown account or invalid account
         - RemoteError if an external service such as Etherscan is queried and
           there is a problem
         """
@@ -561,36 +544,27 @@ class Blockchain(CacheableObject, LockableQueryObject):
         if not self.balances.is_queried(blockchain):
             balances_queried_before = False
 
-        removed_accounts = []
-        full_msg = ''
-        for account in accounts:
-            try:
-                self.modify_blockchain_account(
-                    blockchain=blockchain,
-                    account=account,
-                    append_or_remove='remove',
-                    add_or_sub=operator.sub,
-                )
-                removed_accounts.append(account)
-            except InputError as e:
-                full_msg += '. ' + str(e)
+        self.modify_blockchain_accounts(
+            blockchain=blockchain,
+            accounts=accounts,
+            append_or_remove='remove',
+            add_or_sub=operator.sub,
+        )
 
         if not balances_queried_before:
             self.query_balances(blockchain, ignore_cache=True)
 
         result = self.get_balances_update()
-        # Ignore type checks here. removed_accounts is the same type as accounts
-        # but not sure how to show that to mypy
-        return result, removed_accounts, full_msg  # type: ignore
+        return result
 
-    def modify_blockchain_account(
+    def modify_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            account: BlockchainAddress,
+            accounts: ListOfBlockchainAddresses,
             append_or_remove: str,
             add_or_sub: Callable[[FVal, FVal], FVal],
     ) -> BlockchainBalancesUpdate:
-        """Add or remove a blockchain account
+        """Add or remove a list of blockchain account
 
         May raise:
 
@@ -601,29 +575,43 @@ class Blockchain(CacheableObject, LockableQueryObject):
           as etherscan or blockchain.info
         """
         if blockchain == SupportedBlockchain.BITCOIN:
-            if append_or_remove == 'remove' and account not in self.accounts.btc:
-                raise InputError('Tried to remove a non existing BTC account')
+            # Iterate through all accounts and see if they are valid by asking
+            # a remote. TODO: Have own way of verifying a BTC account
+            for account in accounts:
+                self.query_btc_account_balance(BTCAddress(account))
 
-            # above we check that account is a BTC account
-            self.modify_btc_account(
-                BTCAddress(account),
-                append_or_remove,
-                add_or_sub,
-            )
+            # From here and on we know that the accounts are valid BTC accounts
+            for account in accounts:
+                self.modify_btc_account(
+                    BTCAddress(account),
+                    append_or_remove,
+                    add_or_sub,
+                )
 
         elif blockchain == SupportedBlockchain.ETHEREUM:
+            # First make sure that all given addresses are valid ETH addresses
             try:
-                # above we check that account is an ETH account
-                self.modify_eth_account(EthAddress(account), append_or_remove, add_or_sub)
-            except BadFunctionCallOutput as e:
-                log.error(
-                    'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
-                    'exception: {}'.format(str(e)),
-                )
-                raise EthSyncError(
-                    'Tried to use the ethereum chain of a local client to edit '
-                    'an eth account but the chain is not synced.',
-                )
+                for account in accounts:
+                    account = to_checksum_address(account)
+            except ValueError:
+                raise InputError(f'The given string {account} is not a valid ETH address')
+
+            for account in accounts:
+                try:
+                    self.modify_eth_account(
+                        account=ChecksumEthAddress(account),  # type: ignore
+                        append_or_remove=append_or_remove,
+                        add_or_sub=add_or_sub,
+                    )
+                except BadFunctionCallOutput as e:
+                    log.error(
+                        'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
+                        'exception: {}'.format(str(e)),
+                    )
+                    raise EthSyncError(
+                        'Tried to use the ethereum chain of a local client to edit '
+                        'an eth account but the chain is not synced.',
+                    )
 
         else:
             # That should not happen. Should be checked by marshmallow

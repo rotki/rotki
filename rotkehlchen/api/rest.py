@@ -1105,7 +1105,7 @@ class RestAPI():
         extra status code argument for errors
         """
         try:
-            result, added_accounts, msg = self.rotkehlchen.add_blockchain_accounts(
+            result = self.rotkehlchen.add_blockchain_accounts(
                 blockchain=blockchain,
                 account_data=account_data,
             )
@@ -1118,12 +1118,8 @@ class RestAPI():
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code:': HTTPStatus.BAD_GATEWAY}
 
-        # If no accounts were added, that means the only account/s given were invalid
-        if len(added_accounts) == 0:
-            return {'result': None, 'message': msg, 'status_code': HTTPStatus.BAD_REQUEST}
-
         # success
-        return {'result': result.serialize(), 'message': msg}
+        return {'result': result.serialize(), 'message': ''}
 
     @require_loggedin_user()
     def add_blockchain_accounts(
@@ -1160,7 +1156,7 @@ class RestAPI():
         extra status code argument for errors
         """
         try:
-            result, removed_accounts, msg = self.rotkehlchen.remove_blockchain_accounts(
+            result = self.rotkehlchen.remove_blockchain_accounts(
                 blockchain=blockchain,
                 accounts=accounts,
             )
@@ -1171,11 +1167,7 @@ class RestAPI():
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code:': HTTPStatus.BAD_GATEWAY}
 
-        # If no accounts were removed, that means the only account/s given were invalid
-        if len(removed_accounts) == 0:
-            return {'result': None, 'message': msg, 'status_code': HTTPStatus.BAD_REQUEST}
-
-        return {'result': result.serialize(), 'message': msg}
+        return {'result': result.serialize(), 'message': ''}
 
     @require_loggedin_user()
     def remove_blockchain_accounts(

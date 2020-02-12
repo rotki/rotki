@@ -2466,7 +2466,7 @@ Adding blockchain accounts
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    Doing a PUT on the the blockchains endpoint with a specific blockchain URL and a list of account data in the json data will add these accounts to the tracked accounts for the given blockchain and the current user. The updated balances after the account additions are returned.
-   Note that the message may even be populated for succesful queries, giving us information about what happened. For example one of the given accounts may have been invalid.
+   If one of the given accounts to add is invalid the entire request will fail.
 
 
    **Example Request**:
@@ -2527,7 +2527,7 @@ Adding blockchain accounts
 
    :resjson object result: An object containing the ``"per_account"`` and ``"totals"`` keys as also defined `here <blockchain_balances_result_>`_.
    :statuscode 200: Accounts succesfully added
-   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
    :statuscode 409: User is not logged in. Some error occured when re-querying the balances after addition. Provided tags do not exist. Check message for details.
    :statuscode 500: Internal Rotki error
    :statuscode 502: Error occured with some external service query such as Etherscan. Check message for details.
@@ -2600,8 +2600,7 @@ Removing blockchain accounts
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    Doing a DELETE on the the blockchains endpoint with a specific blockchain URL and a list of accounts in the json data will remove these accounts from the tracked accounts for the given blockchain and the current user. The updated balances after the account deletions are returned.
-
-   Note that the message may even be populated for succesful queries, giving us information about what happened. For example one of the given accounts may have been invalid.
+    If one of the given accounts to add is invalid the entire request will fail.
 
 
    **Example Request**:
@@ -2641,7 +2640,7 @@ Removing blockchain accounts
 
    :resjson object result: An object containing the ``"per_account"`` and ``"totals"`` keys as also defined `here <blockchain_balances_result_>`_.
    :statuscode 200: Accounts succesfully deleted
-   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 400: Provided JSON or data is in some way malformed. The accounts to remove contained invalid addresses or were an empty list.
    :statuscode 409: User is not logged in. Some error occured when re-querying the balances after addition. Check message for details.
    :statuscode 500: Internal Rotki error
    :statuscode 502: Error occured with some external service query such as Etherscan. Check message for details.
