@@ -743,7 +743,7 @@ class DBHandler:
         return result
 
     def get_blockchain_accounts(self) -> BlockchainAccounts:
-        """Returns a Blockchain accounts instance"""
+        """Returns a Blockchain accounts instance containing all blockchain account addresses"""
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT blockchain, account FROM blockchain_accounts;',
@@ -759,8 +759,8 @@ class DBHandler:
                     self.msg_aggregator.add_warning(
                         f'Non-checksummed eth address {entry[1]} detected in the DB. This '
                         f'should not happen unless the DB was manually modified. '
-                        f' Skipping entry. This needs to be fixed manually. If you '
-                        f' can not do that alone ask for help in the issue tracker',
+                        f'Skipping entry. This needs to be fixed manually. If you '
+                        f'can not do that alone ask for help in the issue tracker',
                     )
                     continue
                 eth_list.append(entry[1])
@@ -772,6 +772,40 @@ class DBHandler:
                 )
 
         return BlockchainAccounts(eth=eth_list, btc=btc_list)
+
+    def get_blockchain_account_data(
+            self,
+            blockchain: SupportedBlockchain,
+    ) -> List[BlockchainAccountData]:
+        """Returns account data for a particular blockchain.
+
+        Each account entry contains address and potentially label and tags
+        """
+        cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT A.account, A.label, group_concat(B.tag_name,",") '
+            'FROM blockchain_accounts AS A '
+            'LEFT OUTER JOIN tag_mappings AS B ON B.object_reference = A.account '
+            'WHERE A.blockchain=? GROUP BY account;',
+            (blockchain.value,),
+        )
+
+        data = []
+        for entry in query:
+            if entry[2] is None:
+                tags = None
+            else:
+                tags = entry[2].split(',')
+                if len(tags) == 1 and tags[0] == '':
+                    tags = None
+
+            data.append(BlockchainAccountData(
+                address=entry[0],
+                label=entry[1],
+                tags=tags,
+            ))
+
+        return data
 
     def remove(self) -> None:
         cursor = self.conn.cursor()

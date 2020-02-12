@@ -728,6 +728,124 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, m
     )
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
+def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+        number_of_eth_accounts,
+):
+    """Test that adding account with labels and tags works correctly"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    # Add three tags
+    tag1 = {
+        'name': 'public',
+        'description': 'My public accounts',
+        'background_color': 'ffffff',
+        'foreground_color': '000000',
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'tagsresource',
+        ), json=tag1,
+    )
+    assert_proper_response(response)
+    tag2 = {
+        'name': 'desktop',
+        'description': 'Accounts that are stored in the desktop PC',
+        'background_color': '000000',
+        'foreground_color': 'ffffff',
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'tagsresource',
+        ), json=tag2,
+    )
+    assert_proper_response(response)
+    tag3 = {
+        'name': 'hardware',
+        'description': 'hardware wallets',
+        'background_color': '000000',
+        'foreground_color': 'ffffff',
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'tagsresource',
+        ), json=tag3,
+    )
+    assert_proper_response(response)
+
+    # Now add 3 accounts. Some of them  use these tags, some dont
+    new_eth_accounts = [make_ethereum_address(), make_ethereum_address(), make_ethereum_address()]
+    eth_balances = ['1000000', '4000000', '2000000']
+    token_balances = {'RDN': ['100000', '350000', '2223']}
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=new_eth_accounts,
+        btc_accounts=None,
+        eth_balances=eth_balances,
+        token_balances=token_balances,
+    )
+    accounts_data = [{
+        "address": new_eth_accounts[0],
+        "label": 'my metamask',
+        'tags': ['public', 'desktop'],
+    }, {
+        "address": new_eth_accounts[1],
+        "label": 'geth account',
+    }, {
+        "address": new_eth_accounts[2],
+        'tags': ['public', 'hardware'],
+    }]
+    # Make sure that even adding accounts with label and tags, balance query works fine
+    with setup.etherscan_patch:
+        response = requests.put(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainsaccountsresource",
+            blockchain='ETH',
+        ), json={'accounts': accounts_data})
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == ''
+    assert_eth_balances_result(
+        rotki=rotki,
+        json_data=json_data,
+        eth_accounts=new_eth_accounts,
+        eth_balances=setup.eth_balances,
+        token_balances=setup.token_balances,
+        also_btc=False,
+    )
+
+    # Now query the ethereum account data to see that tags and labels are added
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='ETH',
+    ))
+    assert_proper_response(response)
+    response_data = response.json()['result']
+    assert len(response_data) == len(accounts_data)
+    for entry in response_data:
+        # find the corresponding account in accounts data
+        compare_account = None
+        for account in accounts_data:
+            if entry['address'] == account['address']:
+                compare_account = account
+                break
+        assert compare_account, 'Found unexpected address {entry["address"]} in response'
+
+        assert entry['address'] == compare_account['address']
+        assert entry['label'] == compare_account.get('label', None)
+        if entry['tags'] is not None:
+            assert set(entry['tags']) == set(compare_account['tags'])
+        else:
+            assert 'tags' not in compare_account
+
+
 @pytest.mark.parametrize('number_of_eth_accounts', [4])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
