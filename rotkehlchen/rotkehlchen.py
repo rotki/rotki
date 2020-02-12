@@ -3,7 +3,7 @@
 import argparse
 import logging
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import gevent
 from gevent.lock import Semaphore
@@ -15,7 +15,12 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
-from rotkehlchen.errors import EthSyncError, PremiumAuthenticationError, RemoteError
+from rotkehlchen.errors import (
+    EthSyncError,
+    PremiumAuthenticationError,
+    RemoteError,
+    TagConstraintError,
+)
 from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -29,6 +34,7 @@ from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
+    BlockchainAccountData,
     ListOfBlockchainAddresses,
     SupportedBlockchain,
     Timestamp,
@@ -258,8 +264,7 @@ class Rotkehlchen():
     def add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            accounts: ListOfBlockchainAddresses,
-
+            account_data: List[BlockchainAccountData],
     ) -> Tuple[BlockchainBalancesUpdate, ListOfBlockchainAddresses, str]:
         """Adds new blockchain accounts
 
@@ -267,14 +272,34 @@ class Rotkehlchen():
         updated balances. Also adds the ones that were valid in the DB
 
         May raise:
+        - EthSyncError from modify_blockchain_account
+        - InputError if the given accounts list is empty.
+        - TagConstraintError if any of the given account data contain unknown tags.
         - RemoteError if an external service such as Etherscan is queried and
           there is a problem with its query.
         """
+        # First see if any of the given tags for the accounts do not exist in the DB
+        existing_tags = self.data.db.get_tags()
+        existing_tag_keys = existing_tags.keys()
+        unknown_tags: Set[str] = set()
+        for entry in account_data:
+            if entry.tags is not None:
+                unknown_tags.update(set(entry.tags).difference(existing_tag_keys))
+
+        if len(unknown_tags) != 0:
+            raise TagConstraintError(
+                f'When adding blockchain accounts, unknown tags '
+                f'{", ".join(unknown_tags)} were found',
+            )
+
         new_data, added_accounts, msg = self.blockchain.add_blockchain_accounts(
             blockchain=blockchain,
-            accounts=accounts,
+            accounts=[entry.address for entry in account_data],  # type: ignore
         )
-        self.data.db.add_blockchain_accounts(blockchain, added_accounts)
+        self.data.db.add_blockchain_accounts(
+            blockchain=blockchain,
+            account_data=[x for x in account_data if x.address in added_accounts],
+        )
 
         return new_data, added_accounts, msg
 

@@ -825,7 +825,24 @@ class EthTokensSchema(BaseSchema):
         decoding_class = dict
 
 
-class BlockchainsAccountsSchema(BaseSchema):
+class BlockchainAccountDataSchema(Schema):
+    address = fields.String(required=True)
+    label = fields.String(missing=None)
+    tags = fields.List(fields.String(), missing=None)
+
+
+class BlockchainAccountsPutSchema(BaseSchema):
+    blockchain = BlockchainField(required=True)
+    accounts = fields.List(fields.Nested(BlockchainAccountDataSchema), required=True)
+    async_query = fields.Boolean(missing=False)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
+class BlockchainAccountsDeleteSchema(BaseSchema):
     blockchain = BlockchainField(required=True)
     accounts = fields.List(fields.String(), required=True)
     async_query = fields.Boolean(missing=False)

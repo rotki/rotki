@@ -314,3 +314,9 @@ class AssetMovementCategory(Enum):
         raise RuntimeError(
             f'Corrupt value {self} for AssetMovementCategory -- Should never happen',
         )
+
+
+class BlockchainAccountData(NamedTuple):
+    address: BlockchainAddress
+    label: Optional[str] = None
+    tags: Optional[List[str]] = None

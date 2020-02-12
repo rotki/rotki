@@ -62,6 +62,7 @@ from rotkehlchen.typing import (
     ApiCredentials,
     ApiKey,
     ApiSecret,
+    BlockchainAccountData,
     BlockchainAddress,
     ChecksumAddress,
     EthereumTransaction,
@@ -69,7 +70,6 @@ from rotkehlchen.typing import (
     ExternalServiceApiCredentials,
     FilePath,
     HexColorCode,
-    ListOfBlockchainAddresses,
     Location,
     SupportedBlockchain,
     Timestamp,
@@ -640,19 +640,34 @@ class DBHandler:
     def add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            accounts: ListOfBlockchainAddresses,
+            account_data: List[BlockchainAccountData],
     ) -> None:
-        tuples: List[Tuple[str, BlockchainAddress]]
-        # Make sure checksummed addresses makes it here
-        if blockchain == SupportedBlockchain.ETHEREUM:
-            tuples = [(blockchain.value, to_checksum_address(account)) for account in accounts]
-        else:
-            tuples = [(blockchain.value, account) for account in accounts]
-
+        # Insert the blockchain account addresses and labels to the DB
+        tuples = [(
+            blockchain.value,
+            to_checksum_address(entry.address)
+            if blockchain == SupportedBlockchain.ETHEREUM else entry.address,
+            entry.label,
+        ) for entry in account_data]
         cursor = self.conn.cursor()
         cursor.executemany(
-            'INSERT INTO blockchain_accounts(blockchain, account) VALUES (?, ?)', tuples,
+            'INSERT INTO blockchain_accounts(blockchain, account, label) VALUES (?, ?, ?)', tuples,
         )
+
+        # And now insert the tag mappings
+        mapping_tuples = []
+        for entry in account_data:
+            address = (
+                to_checksum_address(entry.address)
+                if blockchain == SupportedBlockchain.ETHEREUM
+                else entry.address
+            )
+            if entry.tags is not None:
+                mapping_tuples.extend([(address, tag) for tag in entry.tags])
+        cursor.executemany(
+            'INSERT INTO tag_mappings(object_reference, tag_name) VALUES (?, ?)', mapping_tuples,
+        )
+
         self.conn.commit()
         self.update_last_write()
 
@@ -1572,7 +1587,6 @@ class DBHandler:
                 '(name, description, background_color, foreground_color) VALUES (?, ?, ?, ?)',
                 (name, description, background_color, foreground_color),
             )
-            self.conn.commit()
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
             msg = str(e)
             if 'UNIQUE constraint failed: tags.name' in msg:
@@ -1583,6 +1597,9 @@ class DBHandler:
             # else something really bad happened
             log.error('Unexpected DB error: {msg} while adding a tag')
             raise
+
+        self.conn.commit()
+        self.update_last_write()
 
     def edit_tag(
             self,
@@ -1621,6 +1638,7 @@ class DBHandler:
                 f'Tried to edit tag with name "{name}" which does not exist',
             )
         self.conn.commit()
+        self.update_last_write()
 
     def delete_tag(self, name: str) -> None:
         """Deletes a tag already existing in the DB
@@ -1635,3 +1653,4 @@ class DBHandler:
                 f'Tried to delete tag with name "{name}" which does not exist',
             )
         self.conn.commit()
+        self.update_last_write()
