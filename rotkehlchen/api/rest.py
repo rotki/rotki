@@ -1089,6 +1089,12 @@ class RestAPI():
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=response['status_code'])
 
+    @require_loggedin_user()
+    def get_blockchain_accounts(self, blockchain: SupportedBlockchain) -> Response:
+        data = self.rotkehlchen.data.db.get_blockchain_account_data(blockchain)
+        result_dict = _wrap_in_result([entry._asdict() for entry in data], '')
+        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+
     def _add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,

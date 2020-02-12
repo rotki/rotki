@@ -7,13 +7,13 @@ from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, asse
 
 
 def test_add_and_query_tags(
-        rotkehlchen_api_server_with_exchanges,
+        rotkehlchen_api_server,
 ):
     """Test that adding and querying tags via the API works fine"""
-    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     response = requests.get(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ),
     )
@@ -30,7 +30,7 @@ def test_add_and_query_tags(
     }
     response = requests.put(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=tag1,
     )
@@ -48,7 +48,7 @@ def test_add_and_query_tags(
     }
     response = requests.put(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=tag2,
     )
@@ -67,7 +67,7 @@ def test_add_and_query_tags(
     }
     response = requests.put(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=tag3,
     )
@@ -80,7 +80,7 @@ def test_add_and_query_tags(
     # Query tags and see that both added tags are in the response
     response = requests.get(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ),
     )
@@ -98,10 +98,10 @@ def test_add_and_query_tags(
 
 
 def test_add_tag_without_description(
-        rotkehlchen_api_server_with_exchanges,
+        rotkehlchen_api_server,
 ):
     """Test that adding a tag without a description works"""
-    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     tag1 = {
         'name': 'Public',
         'background_color': 'ffffff',
@@ -109,7 +109,7 @@ def test_add_tag_without_description(
     }
     response = requests.put(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=tag1,
     )
@@ -122,7 +122,7 @@ def test_add_tag_without_description(
     # Query tags and see that the added tag is there
     response = requests.get(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ),
     )
@@ -139,7 +139,7 @@ def test_add_tag_without_description(
 
 @pytest.mark.parametrize('verb', ('PUT', 'PATCH'))
 def test_add_edit_tag_errors(
-        rotkehlchen_api_server_with_exchanges,
+        rotkehlchen_api_server,
         verb,
 ):
     """Test that errors in input data while adding/editing a tag are handled correctly"""
@@ -152,7 +152,7 @@ def test_add_edit_tag_errors(
     response = requests.request(
         verb,
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=tag,
     )
@@ -172,7 +172,7 @@ def test_add_edit_tag_errors(
     response = requests.request(
         verb,
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=tag,
     )
@@ -191,7 +191,7 @@ def test_add_edit_tag_errors(
     response = requests.request(
         verb,
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=tag,
     )
@@ -216,7 +216,7 @@ def test_add_edit_tag_errors(
             response = requests.request(
                 verb,
                 api_url_for(
-                    rotkehlchen_api_server_with_exchanges,
+                    rotkehlchen_api_server,
                     "tagsresource",
                 ), json=tag,
             )
@@ -231,7 +231,7 @@ def test_add_edit_tag_errors(
         response = requests.request(
             verb,
             api_url_for(
-                rotkehlchen_api_server_with_exchanges,
+                rotkehlchen_api_server,
                 "tagsresource",
             ), json=tag,
         )
@@ -246,7 +246,7 @@ def test_add_edit_tag_errors(
         response = requests.request(
             verb,
             api_url_for(
-                rotkehlchen_api_server_with_exchanges,
+                rotkehlchen_api_server,
                 "tagsresource",
             ), json=tag,
         )
@@ -264,7 +264,7 @@ def test_add_edit_tag_errors(
         response = requests.request(
             verb,
             api_url_for(
-                rotkehlchen_api_server_with_exchanges,
+                rotkehlchen_api_server,
                 "tagsresource",
             ), json=tag,
         )
@@ -282,7 +282,7 @@ def test_add_edit_tag_errors(
         response = requests.request(
             verb,
             api_url_for(
-                rotkehlchen_api_server_with_exchanges,
+                rotkehlchen_api_server,
                 "tagsresource",
             ), json=tag,
         )
@@ -297,10 +297,10 @@ def test_add_edit_tag_errors(
 
 
 def test_edit_tags(
-        rotkehlchen_api_server_with_exchanges,
+        rotkehlchen_api_server,
 ):
     """Test that editing a tag via the REST API works fine"""
-    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     # Add two tags
     tag1 = {
@@ -311,7 +311,7 @@ def test_edit_tags(
     }
     response = requests.put(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=tag1,
     )
@@ -324,7 +324,7 @@ def test_edit_tags(
     }
     response = requests.put(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=tag2,
     )
@@ -339,7 +339,7 @@ def test_edit_tags(
     }
     response = requests.patch(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=edit_tag_data,
     )
@@ -359,7 +359,7 @@ def test_edit_tags(
     }
     response = requests.patch(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=edit_tag_data,
     )
@@ -378,7 +378,7 @@ def test_edit_tags(
     }
     response = requests.patch(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=edit_tag_data,
     )
@@ -397,7 +397,7 @@ def test_edit_tags(
     }
     response = requests.patch(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=edit_tag_data,
     )
@@ -412,7 +412,7 @@ def test_edit_tags(
     edit_tag_data = {'name': 'private'}
     response = requests.patch(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=edit_tag_data,
     )
@@ -429,7 +429,7 @@ def test_edit_tags(
     }
     response = requests.patch(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=edit_tag_data,
     )
@@ -442,7 +442,7 @@ def test_edit_tags(
     # Query tags and see that both added/edited tags are in the response
     response = requests.get(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ),
     )
@@ -460,10 +460,10 @@ def test_edit_tags(
 
 
 def test_delete_tags(
-        rotkehlchen_api_server_with_exchanges,
+        rotkehlchen_api_server,
 ):
     """Test that deleting a tag via the REST API works fine"""
-    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     # Add two tags
     tag1 = {
@@ -474,7 +474,7 @@ def test_delete_tags(
     }
     response = requests.put(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=tag1,
     )
@@ -487,7 +487,7 @@ def test_delete_tags(
     }
     response = requests.put(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=tag2,
     )
@@ -499,7 +499,7 @@ def test_delete_tags(
     # Query tags and see that both added tags are in the response
     response = requests.get(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ),
     )
@@ -515,7 +515,7 @@ def test_delete_tags(
     }
     response = requests.delete(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=delete_tag_data,
     )
@@ -527,7 +527,7 @@ def test_delete_tags(
     delete_tag_data = {'name': 'hello'}
     response = requests.delete(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=delete_tag_data,
     )
@@ -540,7 +540,7 @@ def test_delete_tags(
     # Query tags and see that the deleted tag is not in the response
     response = requests.get(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ),
     )
@@ -556,14 +556,14 @@ def test_delete_tags(
 
 
 def test_delete_tag_errors(
-        rotkehlchen_api_server_with_exchanges,
+        rotkehlchen_api_server,
 ):
     """Test that errors in input data while deleting a tag are handled correctly"""
     # Name missing
     data = {}
     response = requests.delete(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=data,
     )
@@ -576,7 +576,7 @@ def test_delete_tag_errors(
     data = {'name': 55.52}
     response = requests.delete(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             "tagsresource",
         ), json=data,
     )

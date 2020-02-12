@@ -10,6 +10,7 @@ from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
     AsyncTasksQuerySchema,
     BlockchainAccountsDeleteSchema,
+    BlockchainAccountsGetSchema,
     BlockchainAccountsPutSchema,
     BlockchainBalanceQuerySchema,
     DataImportSchema,
@@ -541,10 +542,15 @@ class EthereumTokensResource(BaseResource):
 
 class BlockchainsAccountsResource(BaseResource):
 
+    get_schema = BlockchainAccountsGetSchema()
     put_schema = BlockchainAccountsPutSchema()
     delete_schema = BlockchainAccountsDeleteSchema()
 
-    @use_kwargs(BlockchainAccountsPutSchema, locations=('json', 'view_args'))
+    @use_kwargs(get_schema, locations=('view_args',))
+    def get(self, blockchain: SupportedBlockchain) -> Response:
+        return self.rest_api.get_blockchain_accounts(blockchain)
+
+    @use_kwargs(put_schema, locations=('json', 'view_args'))
     def put(
             self,
             blockchain: SupportedBlockchain,
@@ -564,7 +570,7 @@ class BlockchainsAccountsResource(BaseResource):
             async_query=async_query,
         )
 
-    @use_kwargs(BlockchainAccountsDeleteSchema, locations=('json', 'view_args'))
+    @use_kwargs(delete_schema, locations=('json', 'view_args'))
     def delete(
             self,
             blockchain: SupportedBlockchain,
