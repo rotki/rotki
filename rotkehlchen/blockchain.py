@@ -1,10 +1,10 @@
 import logging
 import operator
 from collections import defaultdict
-from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, overload
 
 import requests
+from dataclasses import dataclass, field
 from eth_utils.address import to_checksum_address
 from web3.exceptions import BadFunctionCallOutput
 

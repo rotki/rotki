@@ -193,8 +193,9 @@ CREATE TABLE IF NOT EXISTS blockchain_accounts (
 # https://stackoverflow.com/questions/51128832/what-is-the-best-way-to-design-a-tag-based-data-table-with-sqlite
 DB_CREATE_TAG_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS tag_mappings (
-    account_address TEXT,
-    tag_name TEXT
+    object_reference TEXT,
+    tag_name TEXT,
+    PRIMARY KEY (object_reference, tag_name)
 );
 """
 

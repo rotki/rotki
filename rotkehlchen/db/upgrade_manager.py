@@ -15,7 +15,6 @@ from rotkehlchen.db.upgrades.v8_v9 import upgrade_v8_to_v9
 from rotkehlchen.db.upgrades.v10_v11 import upgrade_v10_to_v11
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -30,7 +29,7 @@ class UpgradeRecord(NamedTuple):
     kwargs: Optional[Dict[str, Any]] = None
 
 
-def _checksum_eth_accounts(db: 'DBHandler') -> None:
+def _checksum_eth_accounts_v1_to_v2(db: 'DBHandler') -> None:
     """Make sure all eth accounts are checksummed when saved in the DB"""
     accounts = db.get_blockchain_accounts()
     cursor = db.conn.cursor()
@@ -38,10 +37,9 @@ def _checksum_eth_accounts(db: 'DBHandler') -> None:
         'DELETE FROM blockchain_accounts WHERE blockchain=?;', ('ETH',),
     )
     db.conn.commit()
-    db.add_blockchain_accounts(
-        blockchain=SupportedBlockchain.ETHEREUM,
-        accounts=[to_checksum_address(account) for account in accounts.eth],
-    )
+    tuples = [('ETH', to_checksum_address(account)) for account in accounts.eth]
+    cursor.executemany('INSERT INTO blockchain_accounts(blockchain, account) VALUES(?, ?)', tuples)
+    db.conn.commit()
 
 
 def _eth_rpc_port_to_eth_rpc_endpoint(db: 'DBHandler') -> None:
@@ -70,7 +68,7 @@ def _delete_used_query_range_entries(db: 'DBHandler') -> None:
 
 
 UPGRADES_LIST = [
-    UpgradeRecord(from_version=1, function=_checksum_eth_accounts),
+    UpgradeRecord(from_version=1, function=_checksum_eth_accounts_v1_to_v2),
     UpgradeRecord(
         from_version=2,
         function=rename_assets_in_db,

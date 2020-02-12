@@ -36,6 +36,7 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
+    BlockchainAccountData,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
@@ -1091,7 +1092,7 @@ class RestAPI():
     def _add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            accounts: ListOfBlockchainAddresses,
+            account_data: List[BlockchainAccountData],
     ) -> Dict[str, Any]:
         """
         This returns the typical async response dict but with the
@@ -1100,12 +1101,14 @@ class RestAPI():
         try:
             result, added_accounts, msg = self.rotkehlchen.add_blockchain_accounts(
                 blockchain=blockchain,
-                accounts=accounts,
+                account_data=account_data,
             )
         except EthSyncError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
+        except TagConstraintError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code:': HTTPStatus.BAD_GATEWAY}
 
@@ -1120,17 +1123,17 @@ class RestAPI():
     def add_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            accounts: ListOfBlockchainAddresses,
+            account_data: List[BlockchainAccountData],
             async_query: bool,
     ) -> Response:
         if async_query:
             return self._query_async(
                 command='_add_blockchain_accounts',
                 blockchain=blockchain,
-                accounts=accounts,
+                account_data=account_data,
             )
 
-        response = self._add_blockchain_accounts(blockchain=blockchain, accounts=accounts)
+        response = self._add_blockchain_accounts(blockchain=blockchain, account_data=account_data)
         result = response['result']
         msg = response['message']
 
