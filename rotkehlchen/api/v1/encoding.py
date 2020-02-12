@@ -831,6 +831,15 @@ class BlockchainAccountDataSchema(Schema):
     tags = fields.List(fields.String(), missing=None)
 
 
+class BlockchainAccountsGetSchema(BaseSchema):
+    blockchain = BlockchainField(required=True)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
 class BlockchainAccountsPutSchema(BaseSchema):
     blockchain = BlockchainField(required=True)
     accounts = fields.List(fields.Nested(BlockchainAccountDataSchema), required=True)
