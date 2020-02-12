@@ -316,13 +316,13 @@ class Rotkehlchen():
         May raise:
         - RemoteError if an external service such as Etherscan is queried and
           there is a problem with its query.
+        - InputError if a non-existing account was given to remove
         """
         new_data, removed_accounts, msg = self.blockchain.remove_blockchain_accounts(
             blockchain=blockchain,
             accounts=accounts,
         )
-        for account in removed_accounts:
-            self.data.db.remove_blockchain_account(blockchain, account)
+        self.data.db.remove_blockchain_accounts(blockchain, removed_accounts)
 
         return new_data, removed_accounts, msg
 

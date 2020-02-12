@@ -2,12 +2,25 @@ from enum import Enum
 from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.typing import BTCAddress, ChecksumEthAddress, HexColorCode, Timestamp
+from rotkehlchen.typing import (
+    BTCAddress,
+    ChecksumEthAddress,
+    HexColorCode,
+    ListOfBlockchainAddresses,
+    SupportedBlockchain,
+    Timestamp,
+)
 
 
 class BlockchainAccounts(NamedTuple):
     eth: List[ChecksumEthAddress]
     btc: List[BTCAddress]
+
+    def get(self, blockchain: SupportedBlockchain) -> ListOfBlockchainAddresses:
+        if blockchain == SupportedBlockchain.ETHEREUM:
+            return self.eth
+
+        return self.btc
 
 
 class AssetBalance(NamedTuple):

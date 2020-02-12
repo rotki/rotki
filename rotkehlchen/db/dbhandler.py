@@ -63,13 +63,13 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     BlockchainAccountData,
-    BlockchainAddress,
     ChecksumAddress,
     EthereumTransaction,
     ExternalService,
     ExternalServiceApiCredentials,
     FilePath,
     HexColorCode,
+    ListOfBlockchainAddresses,
     Location,
     SupportedBlockchain,
     Timestamp,
@@ -671,30 +671,28 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
-    def remove_blockchain_account(
+    def remove_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
-            account: BlockchainAddress,
+            accounts: ListOfBlockchainAddresses,
     ) -> None:
         # Make sure checksummed address makes it here
-        if blockchain == SupportedBlockchain.ETHEREUM:
-            account = to_checksum_address(account)
+        tuples = [
+            (blockchain.value,
+             to_checksum_address(x) if blockchain == SupportedBlockchain.ETHEREUM else x)
+            for x in accounts]
 
         cursor = self.conn.cursor()
-        query = cursor.execute(
-            'SELECT COUNT(*) from blockchain_accounts WHERE '
-            'blockchain = ? and account = ?;', (blockchain.value, account),
-        )
-        query = query.fetchall()
-        if query[0][0] == 0:
-            raise InputError(
-                'Tried to remove non-existing {} account {}'.format(blockchain, account),
-            )
-
-        cursor.execute(
+        cursor.executemany(
             'DELETE FROM blockchain_accounts WHERE '
-            'blockchain = ? and account = ?;', (blockchain.value, account),
+            'blockchain = ? and account = ?;', tuples,
         )
+        affected_rows = cursor.rowcount
+        if affected_rows != len(accounts):
+            raise InputError(
+                f'Tried to remove {len(accounts) - affected_rows} '
+                f'f{blockchain.value} accounts that do not exist',
+            )
         self.conn.commit()
         self.update_last_write()
 

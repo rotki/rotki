@@ -1119,3 +1119,39 @@ def test_remove_blockchain_accounts_async(
         btc_balances=['5000000'],
         also_eth=True,
     )
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+def test_remove_nonexisting_blockchain_account_along_with_existing(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+        number_of_eth_accounts,
+):
+    """Test that if an existing and a non-existing account are given to remove, nothing is"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    eth_balances = ['11110', '22222']
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=None,
+        eth_balances=eth_balances,
+        token_balances=None,
+    )
+    unknown_account = make_ethereum_address()
+    with setup.etherscan_patch:
+        response = requests.delete(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainsaccountsresource",
+            blockchain='ETH',
+        ), json={'accounts': [ethereum_accounts[0], unknown_account]})
+    assert_error_response(
+        response=response,
+        contained_in_msg=f'Tried to remove unknown ETH accounts {unknown_account}',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    # Also make sure that no account was removed from the DB
+    accounts = rotki.data.db.get_blockchain_accounts()
+    assert len(accounts.eth) == 2
+    assert all(acc in accounts.eth for acc in ethereum_accounts)
+
+
