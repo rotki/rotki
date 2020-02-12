@@ -202,12 +202,13 @@ CREATE TABLE IF NOT EXISTS blockchain_accounts (
 );
 """
 
-# DELETE Link, is only for temporary reference
-# https://stackoverflow.com/questions/51128832/what-is-the-best-way-to-design-a-tag-based-data-table-with-sqlite
+# Not putting object_reference as a foreign key since multiple objects, not only
+# blockchain accounts can have tag mappings (future-proof thinking here)
 DB_CREATE_TAG_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS tag_mappings (
     object_reference TEXT,
     tag_name TEXT,
+    FOREIGN KEY(tag_name) REFERENCES tags(name)
     PRIMARY KEY (object_reference, tag_name)
 );
 """
