@@ -684,6 +684,10 @@ class DBHandler:
 
         cursor = self.conn.cursor()
         cursor.executemany(
+            'DELETE FROM tag_mappings WHERE '
+            'object_reference = ?;', [(x,) for x in accounts],
+        )
+        cursor.executemany(
             'DELETE FROM blockchain_accounts WHERE '
             'blockchain = ? and account = ?;', tuples,
         )
@@ -693,6 +697,7 @@ class DBHandler:
                 f'Tried to remove {len(accounts) - affected_rows} '
                 f'f{blockchain.value} accounts that do not exist',
             )
+
         self.conn.commit()
         self.update_last_write()
 
