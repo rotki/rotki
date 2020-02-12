@@ -610,7 +610,7 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, m
     if method == 'PUT':
         message = 'Invalid input type'
     else:
-        message = 'is not a valid ETH address'
+        message = 'Tried to remove unknown ETH accounts foo'
     assert_error_response(
         response=response,
         contained_in_msg=message,
@@ -624,93 +624,98 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, m
         api_url_for(rotkehlchen_api_server, "blockchainsaccountsresource", blockchain='ETH'),
         json=data,
     )
+    verb = 'add' if method == 'PUT' else 'remove'
     assert_error_response(
         response=response,
-        contained_in_msg='Empty list of blockchain accounts to add was given',
+        contained_in_msg=f'Empty list of blockchain accounts to {verb} was given',
     )
 
     # Provide invalid ETH account (more bytes)
     if method == 'PUT':
         data = {'accounts': [{'address': '0x554FFc77f4251a9fB3c0E3590a6a205f8d4e067d01'}]}
+        msg = 'string 0x554FFc77f4251a9fB3c0E3590a6a205f8d4e067d01 is not a valid ETH address'
     else:
         data = {'accounts': ['0x554FFc77f4251a9fB3c0E3590a6a205f8d4e067d01']}
+        msg = 'Tried to remove unknown ETH accounts 0x554FFc77f4251a9fB3c0E3590a6a205f8d4e067d01'
     response = requests.request(
         method,
         api_url_for(rotkehlchen_api_server, "blockchainsaccountsresource", blockchain='ETH'),
         json=data,
     )
-    msg = 'string 0x554FFc77f4251a9fB3c0E3590a6a205f8d4e067d01 is not a valid ETH address'
     assert_error_response(
         response=response,
         contained_in_msg=msg,
     )
 
     # Provide invalid BTC account
+    invalid_btc_account = '18ddjB7HWTaxzvTbLp1nWvaixU3U2oTZ1'
     if method == 'PUT':
-        data = {'accounts': [{'address': '18ddjB7HWTaxzvTbLp1nWvaixU3U2oTZ1'}]}
+        data = {'accounts': [{'address': invalid_btc_account}]}
     else:
-        data = {'accounts': ['18ddjB7HWTaxzvTbLp1nWvaixU3U2oTZ1']}
+        data = {'accounts': [invalid_btc_account]}
     response = requests.request(
         method,
         api_url_for(rotkehlchen_api_server, "blockchainsaccountsresource", blockchain='BTC'),
         json=data,
     )
-    # Since validation depends on the querying of the balance for BTC the error only
-    # is seen at addition and at removal another error is seen. But that's okay
+
     if method == 'PUT':
-        msg = 'string 18ddjB7HWTaxzvTbLp1nWvaixU3U2oTZ1 is not a valid BTC address'
+        msg = f'string {invalid_btc_account} is not a valid BTC address'
     else:
-        msg = 'Tried to remove a non existing BTC account'
+        msg = f'Tried to remove unknown BTC accounts {invalid_btc_account}'
     assert_error_response(
         response=response,
         contained_in_msg=msg,
     )
     assert_msg = 'Invalid BTC account should not have been added'
-    assert '18ddjB7HWTaxzvTbLp1nWvaixU3U2oTZ1' not in rotki.blockchain.accounts.btc, assert_msg
+    assert invalid_btc_account not in rotki.blockchain.accounts.btc, assert_msg
 
     # Provide not existing but valid ETH account for removal
-    data = {'accounts': [make_ethereum_address()]}
+    unknown_account = make_ethereum_address()
+    data = {'accounts': [unknown_account]}
     response = requests.delete(
         api_url_for(rotkehlchen_api_server, "blockchainsaccountsresource", blockchain='ETH'),
         json=data,
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Tried to remove a non existing ETH account',
+        contained_in_msg=f'Tried to remove unknown ETH accounts {unknown_account}',
     )
 
     # Provide not existing but valid BTC account for removal
-    data = {'accounts': ['18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2']}
+    unknown_btc_account = '18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2'
+    data = {'accounts': [unknown_btc_account]}
     response = requests.delete(
         api_url_for(rotkehlchen_api_server, "blockchainsaccountsresource", blockchain='BTC'),
         json=data,
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Tried to remove a non existing BTC account',
+        contained_in_msg=f'Tried to remove unknown BTC accounts {unknown_btc_account}',
     )
 
-    # Provide list with one valid and one invalid account and make sure that the
-    # valid one is added/removed but we get an error for the invalid one
+    # Provide list with one valid and one invalid account and make sure that nothing
+    # is added / removed and the valid one is skipped
     if method == 'DELETE':
         # Account should be an existing account
         account = rotki.blockchain.accounts.eth[0]
         data = {'accounts': ['142', account]}
+        msg = 'Tried to remove unknown ETH accounts 142'
     else:
         # else keep the new account to add
         data = {'accounts': [{'address': '142'}, {'address': account}]}
+        msg = 'The given string 142 is not a valid ETH address'
 
     response = requests.request(
         method,
         api_url_for(rotkehlchen_api_server, "blockchainsaccountsresource", blockchain='ETH'),
         json=data,
     )
-    assert_proper_response(response=response)
-    assert '142 is not a valid ETH address' in response.json()['message']
-    if method == 'PUT':
-        assert checksummed_account in rotki.blockchain.accounts.eth
-    else:
-        assert checksummed_account not in rotki.blockchain.accounts.eth
+    assert_error_response(
+        response=response,
+        contained_in_msg=msg,
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
 
     # Provide invalid type for accounts
     if method == 'PUT':
@@ -1129,6 +1134,24 @@ def test_remove_nonexisting_blockchain_account_along_with_existing(
 ):
     """Test that if an existing and a non-existing account are given to remove, nothing is"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    # Add a tag
+    tag1 = {
+        'name': 'public',
+        'description': 'My public accounts',
+        'background_color': 'ffffff',
+        'foreground_color': '000000',
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'tagsresource',
+        ), json=tag1,
+    )
+    assert_proper_response(response)
+    # TODO: Edit the first ethereum account which we will attempt to delete
+    # to have this tag so that we see the mapping is still there afterwards
+
     eth_balances = ['11110', '22222']
     setup = setup_balances(
         rotki,
