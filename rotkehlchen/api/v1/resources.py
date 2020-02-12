@@ -9,8 +9,9 @@ from webargs.flaskparser import use_kwargs
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
     AsyncTasksQuerySchema,
+    BlockchainAccountsDeleteSchema,
+    BlockchainAccountsPutSchema,
     BlockchainBalanceQuerySchema,
-    BlockchainsAccountsSchema,
     DataImportSchema,
     EthTokensSchema,
     ExchangeBalanceQuerySchema,
@@ -43,6 +44,7 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
+    BlockchainAccountData,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
@@ -539,22 +541,30 @@ class EthereumTokensResource(BaseResource):
 
 class BlockchainsAccountsResource(BaseResource):
 
-    modify_schema = BlockchainsAccountsSchema()
+    put_schema = BlockchainAccountsPutSchema()
+    delete_schema = BlockchainAccountsDeleteSchema()
 
-    @use_kwargs(modify_schema, locations=('json', 'view_args'))
+    @use_kwargs(BlockchainAccountsPutSchema, locations=('json', 'view_args'))
     def put(
             self,
             blockchain: SupportedBlockchain,
-            accounts: ListOfBlockchainAddresses,
+            accounts: List[Dict[str, str]],
             async_query: bool,
     ) -> Response:
+        account_data = [
+            BlockchainAccountData(
+                address=entry['address'],
+                label=entry['label'],
+                tags=entry['tags'],
+            ) for entry in accounts
+        ]
         return self.rest_api.add_blockchain_accounts(
             blockchain=blockchain,
-            accounts=accounts,
+            account_data=account_data,
             async_query=async_query,
         )
 
-    @use_kwargs(modify_schema, locations=('json', 'view_args'))
+    @use_kwargs(BlockchainAccountsDeleteSchema, locations=('json', 'view_args'))
     def delete(
             self,
             blockchain: SupportedBlockchain,

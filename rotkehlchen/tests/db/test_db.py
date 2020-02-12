@@ -80,6 +80,8 @@ TABLES_AT_INIT = [
     'used_query_ranges',
     'margin_positions',
     'asset_movements',
+    'tag_mappings',
+    'tags',
 ]
 
 

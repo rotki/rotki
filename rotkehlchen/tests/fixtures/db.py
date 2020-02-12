@@ -10,6 +10,7 @@ from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.typing import (
     ApiKey,
+    BlockchainAccountData,
     ExternalService,
     ExternalServiceApiCredentials,
     FilePath,
@@ -102,8 +103,14 @@ def _init_database(
             db.add_to_ignored_assets(asset)
 
     # Make sure that the fixture provided accounts are in the blockchain
-    db.add_blockchain_accounts(SupportedBlockchain.ETHEREUM, blockchain_accounts.eth)
-    db.add_blockchain_accounts(SupportedBlockchain.BITCOIN, blockchain_accounts.btc)
+    db.add_blockchain_accounts(
+        SupportedBlockchain.ETHEREUM,
+        [BlockchainAccountData(address=x) for x in blockchain_accounts.eth],
+    )
+    db.add_blockchain_accounts(
+        SupportedBlockchain.BITCOIN,
+        [BlockchainAccountData(address=x) for x in blockchain_accounts.btc],
+    )
     if include_etherscan_key:
         # Add the tests only etherscan API key
         db.add_external_service_credentials([ExternalServiceApiCredentials(
