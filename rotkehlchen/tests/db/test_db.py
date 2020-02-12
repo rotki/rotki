@@ -214,12 +214,12 @@ def test_writting_fetching_data(data_dir, username):
     with pytest.raises(InputError):
         data.db.remove_blockchain_account(
             SupportedBlockchain.ETHEREUM,
-            '0x136029d76af6fE4A356528e4Dc66B2C18123597D',
+            ['0x136029d76af6fE4A356528e4Dc66B2C18123597D'],
         )
     # Remove existing account
     data.db.remove_blockchain_account(
         SupportedBlockchain.ETHEREUM,
-        '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
+        ['0xd36029d76af6fE4A356528e4Dc66B2C18123597D'],
     )
     accounts = data.db.get_blockchain_accounts()
     assert accounts.eth == [to_checksum_address('0x80b369799104a47e98a553f3329812a44a7facdc')]

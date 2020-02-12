@@ -33,7 +33,7 @@ class BalancesTestSetup(NamedTuple):
 
 def setup_balances(
         rotki,
-        ethereum_accounts: List[ChecksumEthAddress],
+        ethereum_accounts: Optional[List[ChecksumEthAddress]],
         btc_accounts: Optional[List[BTCAddress]],
         eth_balances: Optional[List[str]] = None,
         token_balances: Optional[Dict[str, List[str]]] = None,
@@ -44,6 +44,8 @@ def setup_balances(
     When eth_balances, token_balances and btc_balances are not provided some
     default values are provided.
     """
+    if ethereum_accounts is None:
+        ethereum_accounts = []
     if btc_accounts is None:
         btc_accounts = []
 

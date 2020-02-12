@@ -535,14 +535,24 @@ class Blockchain(CacheableObject, LockableQueryObject):
         accounts may have been invalid) and also any errors that occured
         during the removal.
 
+        If any of the given accounts are not known an inputError is raised and
+        no account is modified.
+
         May Raise:
         - EthSyncError from modify_blockchain_account
-        - InputError if the given accounts list is empty
+        - InputError if the given accounts list is empty, or if it contains an unknown account
         - RemoteError if an external service such as Etherscan is queried and
           there is a problem
         """
         if len(accounts) == 0:
-            raise InputError('Empty list of blockchain accounts to add was given')
+            raise InputError('Empty list of blockchain accounts to remove was given')
+
+        unknown_accounts = set(accounts).difference(self.accounts.get(blockchain))
+        if len(unknown_accounts) != 0:
+            raise InputError(
+                f'Tried to remove unknown {blockchain.value} '
+                f'accounts {",".join(unknown_accounts)}',
+            )
 
         # If no blockchain query has happened before then we need to query the relevant
         # chain to populate the self.balances mapping. But query has to happen after
