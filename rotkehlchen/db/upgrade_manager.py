@@ -31,13 +31,14 @@ class UpgradeRecord(NamedTuple):
 
 def _checksum_eth_accounts_v1_to_v2(db: 'DBHandler') -> None:
     """Make sure all eth accounts are checksummed when saved in the DB"""
-    accounts = db.get_blockchain_accounts()
     cursor = db.conn.cursor()
+    query = cursor.execute('SELECT account FROM blockchain_accounts where blockchain=?;', ('ETH',))
+    accounts = [x[0] for x in query]
     cursor.execute(
         'DELETE FROM blockchain_accounts WHERE blockchain=?;', ('ETH',),
     )
     db.conn.commit()
-    tuples = [('ETH', to_checksum_address(account)) for account in accounts.eth]
+    tuples = [('ETH', to_checksum_address(account)) for account in accounts]
     cursor.executemany('INSERT INTO blockchain_accounts(blockchain, account) VALUES(?, ?)', tuples)
     db.conn.commit()
 
