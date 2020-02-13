@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 import pytest
 import requests
-from eth_utils.address import to_checksum_address
 
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -15,6 +14,7 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.blockchain import (
     assert_btc_balances_result,
     assert_eth_balances_result,
+    compare_account_data,
 )
 from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.factories import (
@@ -565,7 +565,6 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, m
 
     # Provide unsupported blockchain name
     account = '0x00d74c25bbf93df8b2a41d82b0076843b4db0349'
-    checksummed_account = to_checksum_address(account)
     data = {'accounts': [account]}
     response = requests.request(
         method,
@@ -849,6 +848,282 @@ def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(
             assert set(entry['tags']) == set(compare_account['tags'])
         else:
             assert 'tags' not in compare_account
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [3])
+def test_edit_blockchain_accounts(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+        number_of_eth_accounts,
+):
+    """Test that the endpoint editing blockchain accounts works properly"""
+    # Add two tags
+    tag1 = {
+        'name': 'public',
+        'description': 'My public accounts',
+        'background_color': 'ffffff',
+        'foreground_color': '000000',
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'tagsresource',
+        ), json=tag1,
+    )
+    assert_proper_response(response)
+    tag2 = {
+        'name': 'desktop',
+        'description': 'Accounts that are stored in the desktop PC',
+        'background_color': '000000',
+        'foreground_color': 'ffffff',
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'tagsresource',
+        ), json=tag2,
+    )
+    assert_proper_response(response)
+
+    # Edit 2 out of the 3 accounts so that they have tags
+    request_data = {'accounts': [{
+        'address': ethereum_accounts[1],
+        'label': 'Second account in the array',
+        'tags': ['public'],
+    }, {
+        'address': ethereum_accounts[2],
+        'label': 'Thirds account in the array',
+        'tags': ['public', 'desktop'],
+    }]}
+    response = requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='ETH',
+    ), json=request_data)
+
+    assert_proper_response(response)
+    json_data = response.json()
+    assert json_data['message'] == ''
+    expected_result = request_data['accounts'] + [
+        {'address': ethereum_accounts[0]},
+    ]
+    compare_account_data(json_data['result'], expected_result)
+
+    # Also make sure that when querying the endpoint we get the edited account data
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='ETH',
+    ))
+    assert_proper_response(response)
+    json_data = response.json()
+    compare_account_data(json_data['result'], expected_result)
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+def test_edit_blockchain_account_errors(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+):
+    """Test that errors are handled properly in the edit accounts endpoint"""
+    # Add two tags
+    tag1 = {
+        'name': 'public',
+        'description': 'My public accounts',
+        'background_color': 'ffffff',
+        'foreground_color': '000000',
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'tagsresource',
+        ), json=tag1,
+    )
+    assert_proper_response(response)
+    tag2 = {
+        'name': 'desktop',
+        'description': 'Accounts that are stored in the desktop PC',
+        'background_color': '000000',
+        'foreground_color': 'ffffff',
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'tagsresource',
+        ), json=tag2,
+    )
+    assert_proper_response(response)
+
+    request_data = {'accounts': [{
+        'address': ethereum_accounts[0],
+        'label': 'Second account in the array',
+        'tags': ['public'],
+    }, {
+        'address': ethereum_accounts[1],
+        'label': 'Thirds account in the array',
+        'tags': ['public', 'desktop'],
+    }]}
+
+    # Missing accounts
+    request_data = {'foo': ['a']}
+    response = requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='ETH',
+    ), json=request_data)
+    assert_error_response(
+        response=response,
+        contained_in_msg="accounts': ['Missing data for required field",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Invalid type for accounts
+    request_data = {'accounts': 142}
+    response = requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='ETH',
+    ), json=request_data)
+    assert_error_response(
+        response=response,
+        contained_in_msg="accounts': {0: {'_schema': ['Invalid input type",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Missing address for an account
+    request_data = {'accounts': [{
+        'label': 'Second account in the array',
+        'tags': ['public'],
+    }]}
+    response = requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='ETH',
+    ), json=request_data)
+    assert_error_response(
+        response=response,
+        contained_in_msg="address': ['Missing data for required field",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Invalid type for an account's address
+    request_data = {'accounts': [{
+        'address': 55,
+        'label': 'Second account in the array',
+        'tags': ['public'],
+    }]}
+    response = requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='ETH',
+    ), json=request_data)
+    assert_error_response(
+        response=response,
+        contained_in_msg="address': ['Not a valid string",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Invalid address for an account's address
+    request_data = {'accounts': [{
+        'address': 'dsadsd',
+        'label': 'Second account in the array',
+        'tags': ['public'],
+    }]}
+    response = requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='ETH',
+    ), json=request_data)
+    assert_error_response(
+        response=response,
+        contained_in_msg="Tried to edit unknown ETH accounts dsadsd",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Invalid type for label
+    request_data = {'accounts': [{
+        'address': ethereum_accounts[1],
+        'label': 55,
+        'tags': ['public'],
+    }]}
+    response = requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='ETH',
+    ), json=request_data)
+    assert_error_response(
+        response=response,
+        contained_in_msg="label': ['Not a valid string",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Invalid type for tags
+    request_data = {'accounts': [{
+        'address': ethereum_accounts[1],
+        'label': 'a label',
+        'tags': 231,
+    }]}
+    response = requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='ETH',
+    ), json=request_data)
+    assert_error_response(
+        response=response,
+        contained_in_msg="tags': ['Not a valid list",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Invalid type for tags list entry
+    request_data = {'accounts': [{
+        'address': ethereum_accounts[1],
+        'label': 'a label',
+        'tags': [55.221],
+    }]}
+    response = requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='ETH',
+    ), json=request_data)
+    assert_error_response(
+        response=response,
+        contained_in_msg="tags': {0: ['Not a valid string",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # One non existing tag
+    request_data = {'accounts': [{
+        'address': ethereum_accounts[1],
+        'label': 'a label',
+        'tags': ['nonexistant'],
+    }]}
+    response = requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='ETH',
+    ), json=request_data)
+    assert_error_response(
+        response=response,
+        contained_in_msg='When editing blockchain accounts, unknown tags nonexistant were found',
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # Mix of existing and non-existing tags
+    request_data = {'accounts': [{
+        'address': ethereum_accounts[1],
+        'label': 'a label',
+        'tags': ['a', 'public', 'b', 'desktop', 'c'],
+    }]}
+    response = requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='ETH',
+    ), json=request_data)
+    assert_error_response(
+        response=response,
+        contained_in_msg='When editing blockchain accounts, unknown tags ',
+        status_code=HTTPStatus.CONFLICT,
+    )
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [4])
@@ -1149,8 +1424,19 @@ def test_remove_nonexisting_blockchain_account_along_with_existing(
         ), json=tag1,
     )
     assert_proper_response(response)
-    # TODO: Edit the first ethereum account which we will attempt to delete
+    # Edit the first ethereum account which we will attempt to delete
     # to have this tag so that we see the mapping is still there afterwards
+    request_data = {'accounts': [{'address': ethereum_accounts[0], 'tags': ['public']}]}
+    response = requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='ETH',
+    ), json=request_data)
+    assert_proper_response(response)
+    expected_data = request_data['accounts'] + [
+        {'address': ethereum_accounts[1]},
+    ]
+    compare_account_data(response.json()['result'], expected_data)
 
     eth_balances = ['11110', '22222']
     setup = setup_balances(
@@ -1176,6 +1462,12 @@ def test_remove_nonexisting_blockchain_account_along_with_existing(
     accounts = rotki.data.db.get_blockchain_accounts()
     assert len(accounts.eth) == 2
     assert all(acc in accounts.eth for acc in ethereum_accounts)
+    # Also make sure no tag mappings were removed
+    cursor = rotki.data.db.conn.cursor()
+    query = cursor.execute('SELECT object_reference, tag_name FROM tag_mappings;').fetchall()
+    assert len(query) == 1
+    assert query[0][0] == ethereum_accounts[0]
+    assert query[0][1] == 'public'
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
