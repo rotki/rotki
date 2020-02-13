@@ -553,6 +553,36 @@ def test_add_blockchain_accounts_async(
     )
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_addding_non_checksummed_eth_account_is_error(
+        rotkehlchen_api_server,
+):
+    """Test that adding a non checksummed eth account leads to an error"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    account = '0x7bd904a3db59fa3879bd4c246303e6ef3ac3a4c6'
+    new_eth_accounts = [account]
+    eth_balances = ['1000000']
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=new_eth_accounts,
+        btc_accounts=None,
+        eth_balances=eth_balances,
+        token_balances=None,
+    )
+    request_data = {'accounts': [{'address': account}]}
+    with setup.etherscan_patch:
+        response = requests.put(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainsaccountsresource",
+            blockchain='ETH',
+        ), json=request_data)
+    assert_error_response(
+        response=response,
+        contained_in_msg=f'Given value {account} is not a checksummed ethereum address',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+
 @pytest.mark.parametrize('method', ['PUT', 'DELETE'])
 def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, method):
     """
@@ -609,7 +639,7 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, m
     if method == 'PUT':
         message = 'Invalid input type'
     else:
-        message = 'Tried to remove unknown ETH accounts foo'
+        message = 'Given value foo is not a checksummed ethereum address'
     assert_error_response(
         response=response,
         contained_in_msg=message,
@@ -630,12 +660,12 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, m
     )
 
     # Provide invalid ETH account (more bytes)
+    invalid_eth_account = '0x554FFc77f4251a9fB3c0E3590a6a205f8d4e067d01'
+    msg = f'Given value {invalid_eth_account} is not a checksummed ethereum address'
     if method == 'PUT':
-        data = {'accounts': [{'address': '0x554FFc77f4251a9fB3c0E3590a6a205f8d4e067d01'}]}
-        msg = 'string 0x554FFc77f4251a9fB3c0E3590a6a205f8d4e067d01 is not a valid ETH address'
+        data = {'accounts': [{'address': invalid_eth_account}]}
     else:
-        data = {'accounts': ['0x554FFc77f4251a9fB3c0E3590a6a205f8d4e067d01']}
-        msg = 'Tried to remove unknown ETH accounts 0x554FFc77f4251a9fB3c0E3590a6a205f8d4e067d01'
+        data = {'accounts': [invalid_eth_account]}
     response = requests.request(
         method,
         api_url_for(rotkehlchen_api_server, "blockchainsaccountsresource", blockchain='ETH'),
@@ -695,15 +725,14 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, m
 
     # Provide list with one valid and one invalid account and make sure that nothing
     # is added / removed and the valid one is skipped
+    msg = 'Given value 142 is not a checksummed ethereum address'
     if method == 'DELETE':
         # Account should be an existing account
         account = rotki.blockchain.accounts.eth[0]
         data = {'accounts': ['142', account]}
-        msg = 'Tried to remove unknown ETH accounts 142'
     else:
         # else keep the new account to add
         data = {'accounts': [{'address': '142'}, {'address': account}]}
-        msg = 'The given string 142 is not a valid ETH address'
 
     response = requests.request(
         method,
@@ -1036,7 +1065,7 @@ def test_edit_blockchain_account_errors(
     ), json=request_data)
     assert_error_response(
         response=response,
-        contained_in_msg="Tried to edit unknown ETH accounts dsadsd",
+        contained_in_msg='Given value dsadsd is not a checksummed ethereum address',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

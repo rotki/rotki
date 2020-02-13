@@ -5,7 +5,6 @@ from shutil import copyfile
 from unittest.mock import patch
 
 import pytest
-from eth_utils.address import to_checksum_address
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
@@ -50,6 +49,7 @@ from rotkehlchen.typing import (
     ApiSecret,
     AssetAmount,
     AssetMovementCategory,
+    BlockchainAccountData,
     EthereumTransaction,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -186,14 +186,13 @@ def test_writting_fetching_data(data_dir, username):
 
     data.db.add_blockchain_accounts(
         SupportedBlockchain.BITCOIN,
-        ['1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS'],
+        [BlockchainAccountData(address='1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS')],
     )
     data.db.add_blockchain_accounts(
         SupportedBlockchain.ETHEREUM,
         [
-            '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
-            # Add a non checksummed address
-            '0x80b369799104a47e98a553f3329812a44a7facdc',
+            BlockchainAccountData(address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),
+            BlockchainAccountData(address='0x80B369799104a47e98A553f3329812a44A7FaCDc'),
         ],
     )
     accounts = data.db.get_blockchain_accounts()
@@ -202,27 +201,27 @@ def test_writting_fetching_data(data_dir, username):
     # See that after addition the address has been checksummed
     assert set(accounts.eth) == {
         '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
-        to_checksum_address('0x80b369799104a47e98a553f3329812a44a7facdc'),
+        '0x80B369799104a47e98A553f3329812a44A7FaCDc',
     }
     # Add existing account should fail
     with pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
         data.db.add_blockchain_accounts(
             SupportedBlockchain.ETHEREUM,
-            ['0xd36029d76af6fE4A356528e4Dc66B2C18123597D'],
+            [BlockchainAccountData(address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D')],
         )
     # Remove non-existing account
     with pytest.raises(InputError):
-        data.db.remove_blockchain_account(
+        data.db.remove_blockchain_accounts(
             SupportedBlockchain.ETHEREUM,
             ['0x136029d76af6fE4A356528e4Dc66B2C18123597D'],
         )
     # Remove existing account
-    data.db.remove_blockchain_account(
+    data.db.remove_blockchain_accounts(
         SupportedBlockchain.ETHEREUM,
         ['0xd36029d76af6fE4A356528e4Dc66B2C18123597D'],
     )
     accounts = data.db.get_blockchain_accounts()
-    assert accounts.eth == [to_checksum_address('0x80b369799104a47e98a553f3329812a44a7facdc')]
+    assert accounts.eth == ['0x80B369799104a47e98A553f3329812a44A7FaCDc']
 
     result, _ = data.add_ignored_assets([A_DAO])
     assert result
