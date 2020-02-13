@@ -840,9 +840,17 @@ class BlockchainAccountsGetSchema(BaseSchema):
         decoding_class = dict
 
 
-class BlockchainAccountsPutSchema(BaseSchema):
+class BlockchainAccountsPatchSchema(BaseSchema):
     blockchain = BlockchainField(required=True)
     accounts = fields.List(fields.Nested(BlockchainAccountDataSchema), required=True)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict
+
+
+class BlockchainAccountsPutSchema(BlockchainAccountsPatchSchema):
     async_query = fields.Boolean(missing=False)
 
     class Meta:
