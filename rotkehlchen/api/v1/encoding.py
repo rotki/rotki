@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Dict
 
+from eth_utils import is_checksum_address
 from marshmallow import Schema, SchemaOpts, fields, post_load, validates_schema
 from marshmallow.exceptions import ValidationError
 from webargs import fields as webargs_fields, validate
@@ -844,6 +845,16 @@ class BlockchainAccountsPatchSchema(BaseSchema):
     blockchain = BlockchainField(required=True)
     accounts = fields.List(fields.Nested(BlockchainAccountDataSchema), required=True)
 
+    @validates_schema
+    def validate_blockchain_accounts_patch_schema(self, data, **kwargs):
+        if data['blockchain'] == SupportedBlockchain.ETHEREUM:
+            for account_data in data['accounts']:
+                if not is_checksum_address(account_data['address']):
+                    raise ValidationError(
+                        f'Given value {account_data["address"]} is not '
+                        f'a checksummed ethereum address',
+                    )
+
     class Meta:
         strict = True
         # decoding to a dict is required by the @use_kwargs decorator from webargs
@@ -863,6 +874,16 @@ class BlockchainAccountsDeleteSchema(BaseSchema):
     blockchain = BlockchainField(required=True)
     accounts = fields.List(fields.String(), required=True)
     async_query = fields.Boolean(missing=False)
+
+    @validates_schema
+    def validate_blockchain_accounts_patch_schema(self, data, **kwargs):
+        if data['blockchain'] == SupportedBlockchain.ETHEREUM:
+            for account in data['accounts']:
+                if not is_checksum_address(account):
+                    raise ValidationError(
+                        f'Given value {account} is not '
+                        f'a checksummed ethereum address',
+                    )
 
     class Meta:
         strict = True

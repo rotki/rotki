@@ -26,7 +26,7 @@ from rotkehlchen.db.upgrades.v7_v8 import (
 )
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.tests.utils.constants import A_BCH, A_BSV, A_RDN
-from rotkehlchen.typing import FilePath, SupportedBlockchain
+from rotkehlchen.typing import FilePath
 from rotkehlchen.user_messages import MessagesAggregator
 
 creation_patch = patch(
@@ -265,10 +265,12 @@ def test_upgrade_db_1_to_2(data_dir, username):
         data.unlock(username, '123', create_new=True)
     # Manually input a non checksummed account
     data.db.conn.commit()
-    data.db.add_blockchain_accounts(
-        SupportedBlockchain.ETHEREUM,
-        ['0xe3580c38b0106899f45845e361ea7f8a0062ef12'],
+    cursor = data.db.conn.cursor()
+    cursor.execute(
+        'INSERT OR REPLACE INTO blockchain_accounts(blockchain, account) VALUES(?, ?)',
+        ('ETH', '0xe3580c38b0106899f45845e361ea7f8a0062ef12'),
     )
+    data.db.conn.commit()
 
     # now relogin and check that the account has been re-saved as checksummed
     del data

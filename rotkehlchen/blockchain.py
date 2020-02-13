@@ -1,11 +1,10 @@
 import logging
 import operator
 from collections import defaultdict
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, overload
 
 import requests
-from dataclasses import dataclass, field
-from eth_utils.address import to_checksum_address
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
@@ -207,6 +206,8 @@ class Blockchain(CacheableObject, LockableQueryObject):
             )
         except InvalidBTCAddress:
             # TODO: Move this validation into our own code and before the balance query
+            # The place to move this would be the marshmallow schema
+            # validation for blockchain accounts
             raise InputError(f'The given string {account} is not a valid BTC address')
         except (requests.exceptions.ConnectionError, UnableToDecryptRemoteData) as e:
             raise RemoteError(f'blockchain.info API request failed due to {str(e)}')
@@ -589,13 +590,6 @@ class Blockchain(CacheableObject, LockableQueryObject):
                 )
 
         elif blockchain == SupportedBlockchain.ETHEREUM:
-            # First make sure that all given addresses are valid ETH addresses
-            try:
-                for account in accounts:
-                    account = to_checksum_address(account)
-            except ValueError:
-                raise InputError(f'The given string {account} is not a valid ETH address')
-
             for account in accounts:
                 try:
                     self.modify_eth_account(

@@ -7,7 +7,7 @@ import tempfile
 from json.decoder import JSONDecodeError
 from typing import Any, Dict, List, Optional, Set, Tuple, cast
 
-from eth_utils import is_checksum_address, to_checksum_address
+from eth_utils import is_checksum_address
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
@@ -645,8 +645,7 @@ class DBHandler:
         # Insert the blockchain account addresses and labels to the DB
         tuples = [(
             blockchain.value,
-            to_checksum_address(entry.address)
-            if blockchain == SupportedBlockchain.ETHEREUM else entry.address,
+            entry.address,
             entry.label,
         ) for entry in account_data]
         cursor = self.conn.cursor()
@@ -657,13 +656,8 @@ class DBHandler:
         # And now insert the tag mappings
         mapping_tuples = []
         for entry in account_data:
-            address = (
-                to_checksum_address(entry.address)
-                if blockchain == SupportedBlockchain.ETHEREUM
-                else entry.address
-            )
             if entry.tags is not None:
-                mapping_tuples.extend([(address, tag) for tag in entry.tags])
+                mapping_tuples.extend([(entry.address, tag) for tag in entry.tags])
         cursor.executemany(
             'INSERT INTO tag_mappings(object_reference, tag_name) VALUES (?, ?)', mapping_tuples,
         )
@@ -692,8 +686,7 @@ class DBHandler:
         # Update the blockchain account labels in the DB
         tuples = [(
             entry.label,
-            to_checksum_address(entry.address)
-            if blockchain == SupportedBlockchain.ETHEREUM else entry.address,
+            entry.address,
             blockchain.value,
         ) for entry in account_data]
         cursor.executemany(
@@ -710,13 +703,8 @@ class DBHandler:
         # And now insert the tag mappings
         mapping_tuples = []
         for entry in account_data:
-            address = (
-                to_checksum_address(entry.address)
-                if blockchain == SupportedBlockchain.ETHEREUM
-                else entry.address
-            )
             if entry.tags is not None:
-                mapping_tuples.extend([(address, tag) for tag in entry.tags])
+                mapping_tuples.extend([(entry.address, tag) for tag in entry.tags])
         cursor.executemany(
             'INSERT INTO tag_mappings(object_reference, tag_name) VALUES (?, ?)', mapping_tuples,
         )
@@ -729,11 +717,7 @@ class DBHandler:
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
     ) -> None:
-        # Make sure checksummed address makes it here
-        tuples = [
-            (blockchain.value,
-             to_checksum_address(x) if blockchain == SupportedBlockchain.ETHEREUM else x)
-            for x in accounts]
+        tuples = [(blockchain.value, x) for x in accounts]
 
         cursor = self.conn.cursor()
         cursor.executemany(

@@ -3,7 +3,6 @@ import os
 from unittest.mock import patch
 
 import pytest
-from eth_utils.address import to_checksum_address
 
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
@@ -51,25 +50,6 @@ def test_query_btc_balances(blockchain):
     blockchain.query_btc_balances()
     assert blockchain.totals[A_BTC].usd_value is not None
     assert blockchain.totals[A_BTC].amount is not None
-
-
-def test_add_remove_ethereum_account_saved_as_checksummed(blockchain):
-    """Provide a non-checksummed ethereum account and make sure it's saved as checksummed
-    And then try to remove it as non checksummed and make sure removal also works
-    """
-    blockchain.add_blockchain_accounts(
-        blockchain=SupportedBlockchain.ETHEREUM,
-        accounts=['0xe188c6bebb81b96a65aa20ddb9e2aef62627fa4c'],
-    )
-    checksummed_addr = to_checksum_address('0xe188c6bebb81b96a65aa20ddb9e2aef62627fa4c')
-    assert checksummed_addr in blockchain.accounts.eth
-
-    blockchain.remove_blockchain_accounts(
-        blockchain=SupportedBlockchain.ETHEREUM,
-        accounts=['0xe188c6bebb81b96a65aa20ddb9e2aef62627fa4c'],
-    )
-
-    assert checksummed_addr not in blockchain.accounts.eth
 
 
 def test_add_remove_account_assure_all_balances_not_always_queried(blockchain):
