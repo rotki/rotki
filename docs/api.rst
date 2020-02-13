@@ -2532,8 +2532,8 @@ Adding blockchain accounts
    :statuscode 500: Internal Rotki error
    :statuscode 502: Error occured with some external service query such as Etherscan. Check message for details.
 
-Editing blockchain accounts
-===========================
+Editing blockchain account data
+=================================
 
 .. http:patch:: /api/(version)/blockchains/(name)/
 
@@ -2587,7 +2587,7 @@ Editing blockchain accounts
    :resjson list result: A list containing the blockchain account data as also defined `here <blockchain_accounts_result_>`_.
 
    :statuscode 200: Accounts succesfully edited
-   :statuscode 400: Provided JSON or data is in some way malformed.
+   :statuscode 400: Provided JSON or data is in some way malformed. Given list to edit is empty.
    :statuscode 409: User is not logged in. An account given to edit does not exist or a given tag does not exist.
    :statuscode 500: Internal Rotki error
 

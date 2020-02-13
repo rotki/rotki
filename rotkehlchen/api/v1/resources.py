@@ -11,6 +11,7 @@ from rotkehlchen.api.v1.encoding import (
     AsyncTasksQuerySchema,
     BlockchainAccountsDeleteSchema,
     BlockchainAccountsGetSchema,
+    BlockchainAccountsPatchSchema,
     BlockchainAccountsPutSchema,
     BlockchainBalanceQuerySchema,
     DataImportSchema,
@@ -544,6 +545,7 @@ class BlockchainsAccountsResource(BaseResource):
 
     get_schema = BlockchainAccountsGetSchema()
     put_schema = BlockchainAccountsPutSchema()
+    patch_schema = BlockchainAccountsPatchSchema()
     delete_schema = BlockchainAccountsDeleteSchema()
 
     @use_kwargs(get_schema, locations=('view_args',))
@@ -568,6 +570,24 @@ class BlockchainsAccountsResource(BaseResource):
             blockchain=blockchain,
             account_data=account_data,
             async_query=async_query,
+        )
+
+    @use_kwargs(patch_schema, locations=('json', 'view_args'))
+    def patch(
+            self,
+            blockchain: SupportedBlockchain,
+            accounts: List[Dict[str, str]],
+    ) -> Response:
+        account_data = [
+            BlockchainAccountData(
+                address=entry['address'],
+                label=entry['label'],
+                tags=entry['tags'],
+            ) for entry in accounts
+        ]
+        return self.rest_api.edit_blockchain_accounts(
+            blockchain=blockchain,
+            account_data=account_data,
         )
 
     @use_kwargs(delete_schema, locations=('json', 'view_args'))

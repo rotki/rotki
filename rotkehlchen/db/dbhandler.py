@@ -671,6 +671,59 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
+    def edit_blockchain_accounts(
+            self,
+            blockchain: SupportedBlockchain,
+            account_data: List[BlockchainAccountData],
+    ) -> None:
+        """Edit the given blockchain accounts
+
+        At this point in the calling chain we should already know that:
+        - All tags exist in the DB
+        - All accounts exist in the DB
+        """
+        cursor = self.conn.cursor()
+        # Delete the current tag mappings for all affected accounts
+        cursor.executemany(
+            'DELETE FROM tag_mappings WHERE '
+            'object_reference = ?;', [(x.address,) for x in account_data],
+        )
+
+        # Update the blockchain account labels in the DB
+        tuples = [(
+            entry.label,
+            to_checksum_address(entry.address)
+            if blockchain == SupportedBlockchain.ETHEREUM else entry.address,
+            blockchain.value,
+        ) for entry in account_data]
+        cursor.executemany(
+            'UPDATE blockchain_accounts SET label=? WHERE account=? AND blockchain=?;', tuples,
+        )
+        if cursor.rowcount != len(account_data):
+            msg = (
+                f'When updating blockchain accounts {len(account_data)} entries should '
+                f'have been edited but only {cursor.rowcount} were. Should not happen.'
+            )
+            log.error(msg)
+            raise AssertionError(msg)
+
+        # And now insert the tag mappings
+        mapping_tuples = []
+        for entry in account_data:
+            address = (
+                to_checksum_address(entry.address)
+                if blockchain == SupportedBlockchain.ETHEREUM
+                else entry.address
+            )
+            if entry.tags is not None:
+                mapping_tuples.extend([(address, tag) for tag in entry.tags])
+        cursor.executemany(
+            'INSERT INTO tag_mappings(object_reference, tag_name) VALUES (?, ?)', mapping_tuples,
+        )
+
+        self.conn.commit()
+        self.update_last_write()
+
     def remove_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,

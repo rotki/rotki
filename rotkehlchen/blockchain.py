@@ -521,7 +521,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
         no account is modified.
 
         May Raise:
-        - EthSyncError from modify_blockchain_account
+        - EthSyncError from modify_blockchain_accounts
         - InputError if the given accounts list is empty, or if
         it contains an unknown account or invalid account
         - RemoteError if an external service such as Etherscan is queried and

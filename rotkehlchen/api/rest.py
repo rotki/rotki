@@ -1146,6 +1146,27 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
 
+    @require_loggedin_user()
+    def edit_blockchain_accounts(
+            self,
+            blockchain: SupportedBlockchain,
+            account_data: List[BlockchainAccountData],
+    ) -> Response:
+        try:
+            self.rotkehlchen.edit_blockchain_accounts(
+                blockchain=blockchain,
+                account_data=account_data,
+            )
+        except TagConstraintError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+
+        # success
+        data = self.rotkehlchen.data.db.get_blockchain_account_data(blockchain)
+        result_dict = _wrap_in_result([entry._asdict() for entry in data], '')
+        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+
     def _remove_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,

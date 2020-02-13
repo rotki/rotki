@@ -17,6 +17,7 @@ from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
 from rotkehlchen.errors import (
     EthSyncError,
+    InputError,
     PremiumAuthenticationError,
     RemoteError,
     TagConstraintError,
@@ -302,6 +303,53 @@ class Rotkehlchen():
         )
 
         return updated_balances
+
+    def edit_blockchain_accounts(
+            self,
+            blockchain: SupportedBlockchain,
+            account_data: List[BlockchainAccountData],
+    ) -> None:
+        """Edits blockchain accounts
+
+        Edits blockchain account data for the given accounts
+
+        May raise:
+        - InputError if the given accounts list is empty or if
+        any of the accounts to edit do not exist.
+        - TagConstraintError if any of the given account data contain unknown tags.
+        """
+        # First check for validity of account data addresses
+        if len(account_data) == 0:
+            raise InputError('Empty list of blockchain account data to edit was given')
+        accounts = [x.address for x in account_data]
+        unknown_accounts = set(accounts).difference(self.blockchain.accounts.get(blockchain))
+        if len(unknown_accounts) != 0:
+            raise InputError(
+                f'Tried to edit unknown {blockchain.value} '
+                f'accounts {",".join(unknown_accounts)}',
+            )
+
+        # Then See if any of the given tags for the accounts do not exist in the DB
+        existing_tags = self.data.db.get_tags()
+        existing_tag_keys = existing_tags.keys()
+        unknown_tags: Set[str] = set()
+        for entry in account_data:
+            if entry.tags is not None:
+                unknown_tags.update(set(entry.tags).difference(existing_tag_keys))
+
+        if len(unknown_tags) != 0:
+            raise TagConstraintError(
+                f'When editing blockchain accounts, unknown tags '
+                f'{", ".join(unknown_tags)} were found',
+            )
+
+        # Finally edit the accounts
+        self.data.db.edit_blockchain_accounts(
+            blockchain=blockchain,
+            account_data=account_data,
+        )
+
+        return None
 
     def remove_blockchain_accounts(
             self,
