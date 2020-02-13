@@ -416,3 +416,40 @@ def mock_bitcoin_balances_query(
         return MockResponse(200, response)
 
     return patch('rotkehlchen.utils.misc.requests.get', wraps=mock_requests_get)
+
+
+def compare_account_data(expected: List[Dict], got: List[Dict]) -> None:
+    """Compare two lists of account data dictionaries for equality"""
+
+    for got_entry in got:
+        found = False
+        got_address = got_entry['address']
+        for expected_entry in expected:
+            if got_address == expected_entry['address']:
+                found = True
+
+                got_label = got_entry.get('label', None)
+                expected_label = expected_entry.get('label', None)
+                msg = (
+                    f'Comparing account data for {got_address} got label {got_label} '
+                    f'but expected label {expected_label}'
+                )
+                assert got_label == expected_label, msg
+
+                got_tags = got_entry.get('tags', None)
+                got_tags_str = 'no tags' if not got_tags else ','.join(got_tags)
+                expected_tags = expected_entry.get('tags', None)
+                expected_tags_str = 'no tags' if not expected_tags else ','.join(expected_tags)
+                got_set = set(got_tags) if got_tags else None
+                expected_set = set(expected_tags) if expected_tags else None
+                msg = (
+                    f'Comparing account data for {got_address} got tags [{got_tags_str}] '
+                    f'but expected tags [{expected_tags_str}]'
+                )
+                assert got_set == expected_set, msg
+
+        msg = (
+            f'Comparing account data could not find entry for address '
+            f'{got_address} in expected data'
+        )
+        assert found, msg
