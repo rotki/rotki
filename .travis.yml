@@ -49,6 +49,8 @@ templates:
     osx_image: xcode10
     env: INSTALL_TYPE=macpython VERSION=3.7.0 VENV=venv
     before_install:
+      # Travis has very low openfiles limit and fails often for OSX. Change that here.
+      - ulimit -n 1024;
       # export PATH needs to be here and can't be inside before_install.sh
       - mkdir -p $HOME/.bin
       - export PATH=$PATH:$HOME/.bin
