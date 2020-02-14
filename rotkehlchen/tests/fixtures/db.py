@@ -66,6 +66,16 @@ def session_user_data_dir(session_data_dir, session_username):
     return user_data_dir
 
 
+@pytest.fixture
+def include_etherscan_key() -> bool:
+    return True
+
+
+@pytest.fixture(scope='session')
+def session_include_etherscan_key() -> bool:
+    return True
+
+
 def _init_database(
         data_dir: FilePath,
         password: str,
@@ -73,6 +83,7 @@ def _init_database(
         db_settings: Optional[Dict[str, Any]],
         ignored_assets: Optional[List[Asset]],
         blockchain_accounts: BlockchainAccounts,
+        include_etherscan_key: bool,
 ) -> DBHandler:
     db = DBHandler(data_dir, password, msg_aggregator)
     settings = {
@@ -93,11 +104,12 @@ def _init_database(
     # Make sure that the fixture provided accounts are in the blockchain
     db.add_blockchain_accounts(SupportedBlockchain.ETHEREUM, blockchain_accounts.eth)
     db.add_blockchain_accounts(SupportedBlockchain.BITCOIN, blockchain_accounts.btc)
-    # Add the tests only etherscan API key
-    db.add_external_service_credentials([ExternalServiceApiCredentials(
-        service=ExternalService.ETHERSCAN,
-        api_key=ApiKey('8JT7WQBB2VQP5C3416Y8X3S8GBA3CVZKP4'),
-    )])
+    if include_etherscan_key:
+        # Add the tests only etherscan API key
+        db.add_external_service_credentials([ExternalServiceApiCredentials(
+            service=ExternalService.ETHERSCAN,
+            api_key=ApiKey('8JT7WQBB2VQP5C3416Y8X3S8GBA3CVZKP4'),
+        )])
 
     return db
 
@@ -111,6 +123,7 @@ def database(
         start_with_logged_in_user,
         ignored_assets,
         blockchain_accounts,
+        include_etherscan_key,
 ) -> Optional[DBHandler]:
     if not start_with_logged_in_user:
         return None
@@ -122,6 +135,7 @@ def database(
         db_settings=db_settings,
         ignored_assets=ignored_assets,
         blockchain_accounts=blockchain_accounts,
+        include_etherscan_key=include_etherscan_key,
     )
 
 
@@ -133,6 +147,7 @@ def session_database(
         session_db_settings,
         session_start_with_logged_in_user,
         session_ignored_assets,
+        session_include_etherscan_key,
 ) -> Optional[DBHandler]:
     if not session_start_with_logged_in_user:
         return None
@@ -146,6 +161,7 @@ def session_database(
         db_settings=session_db_settings,
         ignored_assets=session_ignored_assets,
         blockchain_accounts=blockchain_accounts,
+        include_etherscan_key=session_include_etherscan_key,
     )
 
 
