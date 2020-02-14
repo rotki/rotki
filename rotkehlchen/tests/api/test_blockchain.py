@@ -688,16 +688,13 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, m
         json=data,
     )
 
-    if method == 'PUT':
-        msg = f'string {invalid_btc_account} is not a valid BTC address'
-    else:
-        msg = f'Tried to remove unknown BTC accounts {invalid_btc_account}'
+    msg = f'Given value {invalid_btc_account} is not a valid bitcoin address'
     assert_error_response(
         response=response,
         contained_in_msg=msg,
     )
     assert_msg = 'Invalid BTC account should not have been added'
-    assert invalid_btc_account not in rotki.blockchain.accounts.btc, assert_msg
+    assert invalid_btc_account not in rotki.chain_manager.accounts.btc, assert_msg
 
     # Provide not existing but valid ETH account for removal
     unknown_account = make_ethereum_address()

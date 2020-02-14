@@ -18,7 +18,6 @@ from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.errors import (
     ConversionError,
     DeserializationError,
-    InvalidBTCAddress,
     RecoverableRequestError,
     RemoteError,
     UnableToDecryptRemoteData,
@@ -204,12 +203,6 @@ def request_get(
         url=url,
         timeout=timeout,
     )
-
-    if response.status_code != 200:
-        if 'https://blockchain.info/q/addressbalance' in url and response.status_code == 500:
-            # For some weird reason blockchain.info returns
-            # 500 server error when giving invalid account
-            raise InvalidBTCAddress('Invalid BTC address given to blockchain.info')
 
     try:
         result = rlk_jsonloads(response.text)

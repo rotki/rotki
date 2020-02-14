@@ -4,10 +4,16 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.chain.bitcoin import is_valid_btc_address
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.tests.utils.blockchain import DEFAULT_BALANCE
 from rotkehlchen.tests.utils.constants import A_GNO
+from rotkehlchen.tests.utils.factories import (
+    UNIT_BTC_ADDRESS1,
+    UNIT_BTC_ADDRESS2,
+    UNIT_BTC_ADDRESS3,
+)
 from rotkehlchen.typing import SupportedBlockchain
 from rotkehlchen.utils.misc import from_wei
 
@@ -96,3 +102,13 @@ def test_add_remove_account_assure_all_balances_not_always_queried(blockchain):
 
     assert A_GNO not in blockchain.owned_eth_tokens
     assert mock.call_count == 0, 'blockchain.query_balances() should not have been called'
+
+
+def test_is_valid_btc_address():
+    assert is_valid_btc_address(UNIT_BTC_ADDRESS1)
+    assert is_valid_btc_address(UNIT_BTC_ADDRESS2)
+    assert is_valid_btc_address(UNIT_BTC_ADDRESS3)
+    assert is_valid_btc_address('18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2')
+
+    assert not is_valid_btc_address('foo')
+    assert not is_valid_btc_address('18ddjB7HWTaxzvTbLp1nWvaixU3U2oTZ1')

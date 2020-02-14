@@ -295,7 +295,7 @@ class Rotkehlchen():
 
         updated_balances = self.chain_manager.add_blockchain_accounts(
             blockchain=blockchain,
-            accounts=[entry.address for entry in account_data],  # type: ignore
+            accounts=[entry.address for entry in account_data],
         )
         self.data.db.add_blockchain_accounts(
             blockchain=blockchain,
