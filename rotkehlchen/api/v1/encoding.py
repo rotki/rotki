@@ -7,6 +7,7 @@ from marshmallow.exceptions import ValidationError
 from webargs import fields as webargs_fields, validate
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.chain.bitcoin import is_valid_btc_address
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
@@ -855,6 +856,13 @@ class BlockchainAccountsPatchSchema(BaseSchema):
                         f'a checksummed ethereum address',
                     )
 
+        elif data['blockchain'] == SupportedBlockchain.BITCOIN:
+            for account_data in data['accounts']:
+                if not is_valid_btc_address(account_data['address']):
+                    raise ValidationError(
+                        f'Given value {account_data["address"]} is not a valid bitcoin address',
+                    )
+
     class Meta:
         strict = True
         # decoding to a dict is required by the @use_kwargs decorator from webargs
@@ -883,6 +891,13 @@ class BlockchainAccountsDeleteSchema(BaseSchema):
                     raise ValidationError(
                         f'Given value {account} is not '
                         f'a checksummed ethereum address',
+                    )
+
+        elif data['blockchain'] == SupportedBlockchain.BITCOIN:
+            for account in data['accounts']:
+                if not is_valid_btc_address(account):
+                    raise ValidationError(
+                        f'Given value {account} is not a valid bitcoin address',
                     )
 
     class Meta:

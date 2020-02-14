@@ -86,7 +86,7 @@ def test_set_settings(rotkehlchen_api_server):
         'rotkehlchen.chain.ethereum.Ethchain.query_eth_highest_block',
         return_value=0,
     )
-    mock_web3 = patch('rotkehlchen.ethchain.Web3', MockWeb3)
+    mock_web3 = patch('rotkehlchen.chain.ethereum.Web3', MockWeb3)
     with block_query, mock_web3:
         response = requests.put(
             api_url_for(rotkehlchen_api_server, "settingsresource"),
