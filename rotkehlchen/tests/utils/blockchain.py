@@ -369,7 +369,10 @@ def mock_etherscan_balances_query(
             while True:
                 if len(url) < length:
                     break
-                queried_accounts.append(url[length:length + 42])
+                potential_address = url[length:length + 42]
+                if 'apikey=' in potential_address:
+                    break
+                queried_accounts.append(potential_address)
                 length += 43
 
             accounts = []

@@ -8,7 +8,13 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
-from rotkehlchen.typing import FilePath, SupportedBlockchain
+from rotkehlchen.typing import (
+    ApiKey,
+    ExternalService,
+    ExternalServiceApiCredentials,
+    FilePath,
+    SupportedBlockchain,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -87,6 +93,11 @@ def _init_database(
     # Make sure that the fixture provided accounts are in the blockchain
     db.add_blockchain_accounts(SupportedBlockchain.ETHEREUM, blockchain_accounts.eth)
     db.add_blockchain_accounts(SupportedBlockchain.BITCOIN, blockchain_accounts.btc)
+    # Add the tests only etherscan API key
+    db.add_external_service_credentials([ExternalServiceApiCredentials(
+        service=ExternalService.ETHERSCAN,
+        api_key=ApiKey('8JT7WQBB2VQP5C3416Y8X3S8GBA3CVZKP4'),
+    )])
 
     return db
 
