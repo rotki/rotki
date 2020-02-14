@@ -43,7 +43,7 @@ def test_query_blockchain_balances(
     """
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    rotki.blockchain.cache_ttl_secs = 0
+    rotki.chain_manager.cache_ttl_secs = 0
 
     setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=btc_accounts)
 
@@ -134,7 +134,7 @@ def test_query_blockchain_balances_async(
     """
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    rotki.blockchain.cache_ttl_secs = 0
+    rotki.chain_manager.cache_ttl_secs = 0
 
     setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=btc_accounts)
 
@@ -212,14 +212,14 @@ def test_query_blockchain_balances_ignore_cache(
 
     setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=btc_accounts)
     eth_query = patch.object(
-        rotki.blockchain,
+        rotki.chain_manager,
         'query_ethereum_balances',
-        wraps=rotki.blockchain.query_ethereum_balances,
+        wraps=rotki.chain_manager.query_ethereum_balances,
     )
     tokens_query = patch.object(
-        rotki.blockchain,
+        rotki.chain_manager,
         'query_ethereum_tokens',
-        wraps=rotki.blockchain.query_ethereum_tokens,
+        wraps=rotki.chain_manager.query_ethereum_tokens,
     )
 
     with setup.etherscan_patch, setup.bitcoin_patch, eth_query as eth_mock, tokens_query as tokens_mock:  # noqa: E501
@@ -298,7 +298,7 @@ def test_add_blockchain_accounts(
     """Test that the endpoint adding blockchain accounts works properly"""
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    rotki.blockchain.cache_ttl_secs = 0
+    rotki.chain_manager.cache_ttl_secs = 0
 
     if query_balances_before_first_modification:
         # Also test by having balances queried before adding an account
@@ -438,7 +438,7 @@ def test_add_blockchain_accounts_async(
     The main purpose of this test is to see that querying the endpoint asynchronously also works"""
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    rotki.blockchain.cache_ttl_secs = 0
+    rotki.chain_manager.cache_ttl_secs = 0
     # Test by having balances queried before adding an account
     eth_balances = ['1000000', '2000000']
     token_balances = {'RDN': ['0', '4000000']}
@@ -591,7 +591,7 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, m
     Test for errors when both adding and removing a blockhain account. Both put/delete
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    rotki.blockchain.cache_ttl_secs = 0
+    rotki.chain_manager.cache_ttl_secs = 0
 
     # Provide unsupported blockchain name
     account = '0x00d74c25bbf93df8b2a41d82b0076843b4db0349'
@@ -644,7 +644,7 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, m
         response=response,
         contained_in_msg=message,
     )
-    assert 'foo' not in rotki.blockchain.accounts.eth
+    assert 'foo' not in rotki.chain_manager.accounts.eth
 
     # Provide empty list
     data = {'accounts': []}
@@ -728,7 +728,7 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, m
     msg = 'Given value 142 is not a checksummed ethereum address'
     if method == 'DELETE':
         # Account should be an existing account
-        account = rotki.blockchain.accounts.eth[0]
+        account = rotki.chain_manager.accounts.eth[0]
         data = {'accounts': ['142', account]}
     else:
         # else keep the new account to add
@@ -1169,7 +1169,7 @@ def test_remove_blockchain_accounts(
     """Test that the endpoint removing blockchain accounts works properly"""
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    rotki.blockchain.cache_ttl_secs = 0
+    rotki.chain_manager.cache_ttl_secs = 0
 
     removed_eth_accounts = [ethereum_accounts[0], ethereum_accounts[2]]
     eth_accounts_after_removal = [ethereum_accounts[1], ethereum_accounts[3]]
@@ -1309,7 +1309,7 @@ def test_remove_blockchain_accounts_async(
     The main purpose of this test is to see that querying the endpoint asynchronously also works"""
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    rotki.blockchain.cache_ttl_secs = 0
+    rotki.chain_manager.cache_ttl_secs = 0
 
     # Test by having balances queried before removing an account
     removed_eth_accounts = [ethereum_accounts[0], ethereum_accounts[2]]

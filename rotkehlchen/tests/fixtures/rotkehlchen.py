@@ -88,7 +88,7 @@ def initialize_mock_rotkehlchen_instance(
         # different to the usual user one. Accountant would normally be unlocked
         # during the normal unlock but due to mocking initialization has to be tweaked here
         rotki.accountant = accountant
-        rotki.blockchain = blockchain
+        rotki.chain_manager = blockchain
         rotki.trades_historian = TradesHistorian(
             user_directory=data_dir,
             db=rotki.data.db,

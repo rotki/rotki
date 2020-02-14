@@ -30,7 +30,7 @@ def test_query_statistics_netvalue(
     """Test that using the statistics netvalue over time endpoint works"""
     # Disable caching of query results
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    rotki.blockchain.cache_ttl_secs = 0
+    rotki.chain_manager.cache_ttl_secs = 0
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
 
     # query balances and save data in DB to have data to test the statistics endpoint
@@ -81,7 +81,7 @@ def test_query_statistics_asset_balance(
     start_time = ts_now()
     # Disable caching of query results
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    rotki.blockchain.cache_ttl_secs = 0
+    rotki.chain_manager.cache_ttl_secs = 0
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
 
     # query balances and save data in DB to have data to test the statistics endpoint
@@ -236,7 +236,7 @@ def test_query_statistics_value_distribution(
     start_time = ts_now()
     # Disable caching of query results
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    rotki.blockchain.cache_ttl_secs = 0
+    rotki.chain_manager.cache_ttl_secs = 0
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
 
     # query balances and save data in DB to have data to test the statistics endpoint

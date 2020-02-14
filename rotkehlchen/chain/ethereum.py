@@ -72,7 +72,7 @@ class Ethchain():
             return False, f'Failed to connect to ethereum node at endpoint {ethrpc_endpoint}'
 
         if self.web3.isConnected():
-            dir_path = os.path.dirname(os.path.realpath(__file__))
+            dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
             with open(os.path.join(dir_path, 'data', 'token_abi.json'), 'r') as f:
                 self.token_abi = rlk_jsonloads(f.read())
 
