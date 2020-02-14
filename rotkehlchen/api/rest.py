@@ -531,7 +531,7 @@ class RestAPI():
         status_code = HTTPStatus.OK
         result = None
         try:
-            balances = self.rotkehlchen.blockchain.query_balances(
+            balances = self.rotkehlchen.chain_manager.query_balances(
                 blockchain=blockchain,
                 ignore_cache=ignore_cache,
             )
@@ -1021,7 +1021,7 @@ class RestAPI():
     def get_eth_tokens(self) -> Response:
         result_dict = process_result({
             'all_eth_tokens': self.rotkehlchen.data.eth_tokens,
-            'owned_eth_tokens': self.rotkehlchen.blockchain.eth_tokens,
+            'owned_eth_tokens': self.rotkehlchen.chain_manager.eth_tokens,
         })
         return api_response(
             _wrap_in_ok_result(result_dict),

@@ -22,7 +22,7 @@ def test_query_owned_assets(
     """Test that using the query all owned assets endpoint works"""
     # Disable caching of query results
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    rotki.blockchain.cache_ttl_secs = 0
+    rotki.chain_manager.cache_ttl_secs = 0
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
 
     # Get all our mocked balances and save them in the DB

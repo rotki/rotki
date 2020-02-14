@@ -10,7 +10,8 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.blockchain import Blockchain, BlockchainBalancesUpdate
+from rotkehlchen.chain.ethereum import Ethchain
+from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
@@ -22,7 +23,6 @@ from rotkehlchen.errors import (
     RemoteError,
     TagConstraintError,
 )
-from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.etherscan import Etherscan
@@ -195,7 +195,7 @@ class Rotkehlchen():
             etherscan=self.etherscan,
             msg_aggregator=self.msg_aggregator,
         )
-        self.blockchain = Blockchain(
+        self.chain_manager = ChainManager(
             blockchain_accounts=self.data.db.get_blockchain_accounts(),
             owned_eth_tokens=self.data.db.get_owned_tokens(),
             ethchain=ethchain,
@@ -212,7 +212,7 @@ class Rotkehlchen():
             'Logging out user',
             user=user,
         )
-        del self.blockchain
+        del self.chain_manager
         self.exchange_manager.delete_all_exchanges()
 
         # Reset rotkehlchen logger to default
@@ -293,7 +293,7 @@ class Rotkehlchen():
                 f'{", ".join(unknown_tags)} were found',
             )
 
-        updated_balances = self.blockchain.add_blockchain_accounts(
+        updated_balances = self.chain_manager.add_blockchain_accounts(
             blockchain=blockchain,
             accounts=[entry.address for entry in account_data],  # type: ignore
         )
@@ -322,7 +322,7 @@ class Rotkehlchen():
         if len(account_data) == 0:
             raise InputError('Empty list of blockchain account data to edit was given')
         accounts = [x.address for x in account_data]
-        unknown_accounts = set(accounts).difference(self.blockchain.accounts.get(blockchain))
+        unknown_accounts = set(accounts).difference(self.chain_manager.accounts.get(blockchain))
         if len(unknown_accounts) != 0:
             raise InputError(
                 f'Tried to edit unknown {blockchain.value} '
@@ -366,7 +366,7 @@ class Rotkehlchen():
           there is a problem with its query.
         - InputError if a non-existing account was given to remove
         """
-        balances_update = self.blockchain.remove_blockchain_accounts(
+        balances_update = self.chain_manager.remove_blockchain_accounts(
             blockchain=blockchain,
             accounts=accounts,
         )
@@ -386,8 +386,8 @@ class Rotkehlchen():
         - EthSyncError if querying the token balances through a provided ethereum
           client and the chain is not synced
         """
-        new_data = self.blockchain.track_new_tokens(tokens)
-        self.data.write_owned_eth_tokens(self.blockchain.owned_eth_tokens)
+        new_data = self.chain_manager.track_new_tokens(tokens)
+        self.data.write_owned_eth_tokens(self.chain_manager.owned_eth_tokens)
         return new_data
 
     def remove_owned_eth_tokens(
@@ -404,8 +404,8 @@ class Rotkehlchen():
         - EthSyncError if querying the token balances through a provided ethereum
           client and the chain is not synced
         """
-        new_data = self.blockchain.remove_eth_tokens(tokens)
-        self.data.write_owned_eth_tokens(self.blockchain.owned_eth_tokens)
+        new_data = self.chain_manager.remove_eth_tokens(tokens)
+        self.data.write_owned_eth_tokens(self.chain_manager.owned_eth_tokens)
         return new_data
 
     def process_history(
@@ -476,7 +476,7 @@ class Rotkehlchen():
                 balances[exchange.name] = exchange_balances
 
         try:
-            blockchain_result = self.blockchain.query_balances(
+            blockchain_result = self.chain_manager.query_balances(
                 blockchain=None,
                 ignore_cache=ignore_cache,
             )
@@ -566,7 +566,7 @@ class Rotkehlchen():
         """Tries to set new settings. Returns True in success or False with message if error"""
         with self.lock:
             if settings.eth_rpc_endpoint is not None:
-                result, msg = self.blockchain.set_eth_rpc_endpoint(settings.eth_rpc_endpoint)
+                result, msg = self.chain_manager.set_eth_rpc_endpoint(settings.eth_rpc_endpoint)
                 if not result:
                     return False, msg
 
@@ -619,7 +619,7 @@ class Rotkehlchen():
 
         if self.user_is_logged_in:
             result['last_balance_save'] = self.data.db.get_last_balance_save_time()
-            result['eth_node_connection'] = self.blockchain.ethchain.connected
+            result['eth_node_connection'] = self.chain_manager.ethchain.connected
             result['history_process_start_ts'] = self.accountant.started_processing_timestamp
             result['history_process_current_ts'] = self.accountant.currently_processing_timestamp
         return result
