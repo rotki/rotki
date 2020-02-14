@@ -387,6 +387,10 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'BEAR',  # https://www.binance.com/en/support/articles/360038933471
     'ETHBULL',  # https://www.binance.com/en/support/articles/360038933471
     'ETHBEAR',  # https://www.binance.com/en/support/articles/360038933471
+    'EOSBULL',  # https://www.binance.com/en/support/articles/360039712431
+    'EOSBEAR',  # https://www.binance.com/en/support/articles/360039712431
+    'XRPBULL',  # https://www.binance.com/en/support/articles/360039712431
+    'XRPBEAR',  # https://www.binance.com/en/support/articles/360039712431
     'WRX',  # https://info.binance.com/en/currencies/WRX - not listed anywhere else
 )
 
