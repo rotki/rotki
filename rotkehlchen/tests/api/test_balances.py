@@ -117,7 +117,7 @@ def test_query_all_balances(
     blockchain and FIAT"""
     # Disable caching of query results
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    rotki.blockchain.cache_ttl_secs = 0
+    rotki.chain_manager.cache_ttl_secs = 0
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
 
     # Test all balances request by requesting to not save the data
@@ -170,7 +170,7 @@ def test_query_all_balances_async(
     """Test that using the query all balances endpoint works with async call"""
     # Disable caching of query results
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    rotki.blockchain.cache_ttl_secs = 0
+    rotki.chain_manager.cache_ttl_secs = 0
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
 
     # Test all balances request by requesting to not save the data
@@ -208,19 +208,19 @@ def test_query_all_balances_ignore_cache(
     binance = rotki.exchange_manager.connected_exchanges['binance']
     poloniex = rotki.exchange_manager.connected_exchanges['poloniex']
     eth_query_patch = patch.object(
-        rotki.blockchain,
+        rotki.chain_manager,
         'query_ethereum_balances',
-        wraps=rotki.blockchain.query_ethereum_balances,
+        wraps=rotki.chain_manager.query_ethereum_balances,
     )
     btc_query_patch = patch.object(
-        rotki.blockchain,
+        rotki.chain_manager,
         'query_btc_balances',
-        wraps=rotki.blockchain.query_btc_balances,
+        wraps=rotki.chain_manager.query_btc_balances,
     )
     tokens_query_patch = patch.object(
-        rotki.blockchain,
+        rotki.chain_manager,
         'query_ethereum_tokens',
-        wraps=rotki.blockchain.query_ethereum_tokens,
+        wraps=rotki.chain_manager.query_ethereum_tokens,
     )
     binance_query_patch = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
     poloniex_query_patch = patch.object(poloniex, 'api_query_dict', wraps=poloniex.api_query_dict)
@@ -338,9 +338,9 @@ def test_multiple_balance_queries_not_concurrent(
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
 
     e = patch.object(
-        rotki.blockchain.ethchain,
+        rotki.chain_manager.ethchain,
         'get_multieth_balance',
-        wraps=rotki.blockchain.ethchain.get_multieth_balance,
+        wraps=rotki.chain_manager.ethchain.get_multieth_balance,
     )
     binance = rotki.exchange_manager.connected_exchanges['binance']
     b = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)

@@ -11,13 +11,7 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.utils import BlockchainAccounts
-from rotkehlchen.errors import (
-    EthSyncError,
-    InputError,
-    InvalidBTCAddress,
-    RemoteError,
-    UnableToDecryptRemoteData,
-)
+from rotkehlchen.errors import EthSyncError, InputError, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -38,7 +32,7 @@ from rotkehlchen.utils.interfaces import (
 from rotkehlchen.utils.misc import request_get_direct, satoshis_to_btc
 
 if TYPE_CHECKING:
-    from rotkehlchen.ethchain import Ethchain
+    from rotkehlchen.chain.ethereum import Ethchain
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -129,7 +123,7 @@ class BlockchainBalancesUpdate:
         }
 
 
-class Blockchain(CacheableObject, LockableQueryObject):
+class ChainManager(CacheableObject, LockableQueryObject):
 
     def __init__(
             self,
@@ -193,7 +187,6 @@ class Blockchain(CacheableObject, LockableQueryObject):
         """Queries blockchain.info for the balance of account
 
         May raise:
-        - InputError if the given account is not a valid BTC address
         - RemotError if there is a problem querying blockchain.info
         """
         try:
@@ -204,11 +197,6 @@ class Blockchain(CacheableObject, LockableQueryObject):
                 # https://blockchain.info/q
                 backoff_in_seconds=10,
             )
-        except InvalidBTCAddress:
-            # TODO: Move this validation into our own code and before the balance query
-            # The place to move this would be the marshmallow schema
-            # validation for blockchain accounts
-            raise InputError(f'The given string {account} is not a valid BTC address')
         except (requests.exceptions.ConnectionError, UnableToDecryptRemoteData) as e:
             raise RemoteError(f'blockchain.info API request failed due to {str(e)}')
 
@@ -227,14 +215,8 @@ class Blockchain(CacheableObject, LockableQueryObject):
         btc_usd_price = Inquirer().find_usd_price(A_BTC)
         total = FVal(0)
         for account in self.accounts.btc:
-            try:
-                balance = self.query_btc_account_balance(account)
-            except InputError:
-                # This should really never happen.
-                self.msg_aggregator.add_error(
-                    f'While querying BTC balances found invalid BTC account {account} in the DB',
-                )
-                continue
+            balance = self.query_btc_account_balance(account)
+
             total += balance
             self.balances.btc[account] = Balance(
                 amount=balance,
@@ -357,7 +339,6 @@ class Blockchain(CacheableObject, LockableQueryObject):
         Call with 'remove', operator.sub to remove the account
 
         May raise:
-        - InputError if the given account is not a valid BTC address
         - RemotError if there is a problem querying blockchain.info or cryptocompare
         """
         btc_usd_price = Inquirer().find_usd_price(A_BTC)
@@ -453,7 +434,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
                 # If we remove an account, and the token has no totals entry skip
                 continue
 
-            token_balance = Blockchain._query_token_balances(
+            token_balance = ChainManager._query_token_balances(
                 token_asset=token,
                 query_callback=self.ethchain.get_token_balance,
                 argument=account,
@@ -569,19 +550,12 @@ class Blockchain(CacheableObject, LockableQueryObject):
 
         May raise:
 
-        - InputError if accounts to remove do not exist or if the ethereum/BTC
-          addresses are not valid.
+        - InputError if accounts to remove do not exist.
         - EthSyncError if there is a problem querying the ethereum chain
         - RemoteError if there is a problem querying an external service such
           as etherscan or blockchain.info
         """
         if blockchain == SupportedBlockchain.BITCOIN:
-            # Iterate through all accounts and see if they are valid by asking
-            # a remote. TODO: Have own way of verifying a BTC account
-            for account in accounts:
-                self.query_btc_account_balance(BTCAddress(account))
-
-            # From here and on we know that the accounts are valid BTC accounts
             for account in accounts:
                 self.modify_btc_account(
                     BTCAddress(account),
@@ -641,7 +615,7 @@ class Blockchain(CacheableObject, LockableQueryObject):
             token_usd_price[token] = usd_price
 
             try:
-                token_balances[token] = Blockchain._query_token_balances(
+                token_balances[token] = ChainManager._query_token_balances(
                     token_asset=token,
                     query_callback=self.ethchain.get_multitoken_balance,
                     argument=self.accounts.eth,

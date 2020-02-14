@@ -6,10 +6,10 @@ import pytest
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.blockchain import Blockchain
+from rotkehlchen.chain.ethereum import Ethchain
+from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.crypto import address_encoder, privatekey_to_address, sha3
 from rotkehlchen.db.utils import BlockchainAccounts
-from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.tests.utils.blockchain import geth_create_blockchain
 from rotkehlchen.tests.utils.tests import cleanup_tasks
@@ -188,7 +188,7 @@ def blockchain(
         messages_aggregator,
         owned_eth_tokens,
 ):
-    return Blockchain(
+    return ChainManager(
         blockchain_accounts=blockchain_accounts,
         owned_eth_tokens=owned_eth_tokens,
         ethchain=ethchain_client,
