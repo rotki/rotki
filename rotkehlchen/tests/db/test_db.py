@@ -1024,6 +1024,7 @@ def test_unlock_with_invalid_premium_data(data_dir, username):
     assert 'Incorrect Rotki API Key/Secret format found in the DB' in errors[0]
 
 
+@pytest.mark.parametrize('include_etherscan_key', [False])
 def test_get_external_service_credentials(database):
     # Test that if the service is not in DB 'None' is returned
     for service in ExternalService:
