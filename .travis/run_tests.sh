@@ -16,7 +16,7 @@ if [[ "$TESTS_TYPE" == "UI" ]]; then
     PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild
     npm test
 else
-    python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/
+    python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/tests
 fi
 
 set +e

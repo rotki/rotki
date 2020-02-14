@@ -346,7 +346,8 @@ def assert_eth_balances_result(
         expected_total_token = sum(from_wei(FVal(balance)) for balance in balances)
         assert FVal(totals[symbol]['amount']) == expected_total_token
         if expected_total_token == ZERO:
-            assert FVal(totals[symbol]['usd_value']) == ZERO
+            msg = f"{FVal(totals[symbol]['usd_value'])} is not ZERO"
+            assert FVal(totals[symbol]['usd_value']) == ZERO, msg
         else:
             assert FVal(totals[symbol]['usd_value']) > ZERO
 
