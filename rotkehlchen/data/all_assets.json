@@ -1798,6 +1798,14 @@
         "symbol": "CGA",
         "type": "own chain"
     },
+    "CHAI": {
+        "ethereum_address": "0x06af07097c9eeb7fd685c692751d5c66db49c215",
+        "ethereum_token_decimals": 18,
+        "name": "CHAI",
+        "started": 1575037777,
+        "symbol": "CHAI",
+        "type": "ethereum token"
+    },
     "CHAT": {
         "name": "ChatCoin",
         "started": 1489449600,
