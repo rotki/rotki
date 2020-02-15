@@ -757,6 +757,23 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, m
         contained_in_msg='Not a valid string',
     )
 
+    # Test that providing an account more than once in request data is an error
+    account = '0x7BD904A3Db59fA3879BD4c246303E6Ef3aC3A4C6'
+    if method == 'PUT':
+        data = {'accounts': [{'address': account}, {'address': account}]}
+    else:
+        data = {'accounts': [account, account]}
+    response = requests.request(method, api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='ETH',
+    ), json=data)
+    assert_error_response(
+        response=response,
+        contained_in_msg=f'Address {account} appears multiple times in the request data',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
@@ -1149,6 +1166,28 @@ def test_edit_blockchain_account_errors(
         response=response,
         contained_in_msg='When editing blockchain accounts, unknown tags ',
         status_code=HTTPStatus.CONFLICT,
+    )
+
+    # Provide same account multiple times in request data
+    request_data = {'accounts': [{
+        'address': ethereum_accounts[1],
+        'label': 'a label',
+        'tags': ['a', 'public', 'b', 'desktop', 'c'],
+    }, {
+        'address': ethereum_accounts[1],
+        'label': 'a label',
+        'tags': ['a', 'public', 'b', 'desktop', 'c'],
+    }]}
+    msg = f'Address {ethereum_accounts[1]} appears multiple times in the request data'
+    response = requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainsaccountsresource",
+        blockchain='ETH',
+    ), json=request_data)
+    assert_error_response(
+        response=response,
+        contained_in_msg=msg,
+        status_code=HTTPStatus.BAD_REQUEST,
     )
 
 
