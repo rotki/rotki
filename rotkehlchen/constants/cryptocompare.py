@@ -1,4 +1,5 @@
 WORLD_TO_CRYPTOCOMPARE = {
+    'CHAI': 'DAI',
     'LBRY': 'LBC',
     'DATAcoin': 'DATA',
     'IOTA': 'MIOTA',
