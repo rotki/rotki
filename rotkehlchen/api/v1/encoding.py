@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict
+from typing import Any, Callable, Dict
 
 from eth_utils import is_checksum_address
 from marshmallow import Schema, SchemaOpts, fields, post_load, validates_schema
@@ -842,26 +842,49 @@ class BlockchainAccountsGetSchema(BaseSchema):
         decoding_class = dict
 
 
+def _validate_blockchain_account_schemas(
+        data: Dict[str, Any],
+        address_getter: Callable,
+) -> None:
+    """Validates schema input for the PUT/PATCH/DELETE on blockchain account data"""
+    # Make sure no duplicates addresses are given
+    given_addresses = set()
+    # Make sure ethereum addresses are checksummed
+    if data['blockchain'] == SupportedBlockchain.ETHEREUM:
+        for account_data in data['accounts']:
+            address = address_getter(account_data)
+            if not is_checksum_address(address):
+                raise ValidationError(
+                    f'Given value {address} is not a checksummed ethereum address',
+                )
+            if address in given_addresses:
+                raise ValidationError(
+                    f'Address {address} appears multiple times in the request data',
+                )
+            given_addresses.add(address)
+
+    # Make sure bitcoin addresses are valid
+    elif data['blockchain'] == SupportedBlockchain.BITCOIN:
+        for account_data in data['accounts']:
+            address = address_getter(account_data)
+            if not is_valid_btc_address(address):
+                raise ValidationError(
+                    f'Given value {address} is not a valid bitcoin address',
+                )
+            if address in given_addresses:
+                raise ValidationError(
+                    f'Address {address} appears multiple times in the request data',
+                )
+            given_addresses.add(address)
+
+
 class BlockchainAccountsPatchSchema(BaseSchema):
     blockchain = BlockchainField(required=True)
     accounts = fields.List(fields.Nested(BlockchainAccountDataSchema), required=True)
 
     @validates_schema
-    def validate_blockchain_accounts_patch_schema(self, data, **kwargs):
-        if data['blockchain'] == SupportedBlockchain.ETHEREUM:
-            for account_data in data['accounts']:
-                if not is_checksum_address(account_data['address']):
-                    raise ValidationError(
-                        f'Given value {account_data["address"]} is not '
-                        f'a checksummed ethereum address',
-                    )
-
-        elif data['blockchain'] == SupportedBlockchain.BITCOIN:
-            for account_data in data['accounts']:
-                if not is_valid_btc_address(account_data['address']):
-                    raise ValidationError(
-                        f'Given value {account_data["address"]} is not a valid bitcoin address',
-                    )
+    def validate_schema(self, data, **kwargs):
+        _validate_blockchain_account_schemas(data, lambda x: x['address'])
 
     class Meta:
         strict = True
@@ -885,20 +908,7 @@ class BlockchainAccountsDeleteSchema(BaseSchema):
 
     @validates_schema
     def validate_blockchain_accounts_patch_schema(self, data, **kwargs):
-        if data['blockchain'] == SupportedBlockchain.ETHEREUM:
-            for account in data['accounts']:
-                if not is_checksum_address(account):
-                    raise ValidationError(
-                        f'Given value {account} is not '
-                        f'a checksummed ethereum address',
-                    )
-
-        elif data['blockchain'] == SupportedBlockchain.BITCOIN:
-            for account in data['accounts']:
-                if not is_valid_btc_address(account):
-                    raise ValidationError(
-                        f'Given value {account} is not a valid bitcoin address',
-                    )
+        _validate_blockchain_account_schemas(data, lambda x: x)
 
     class Meta:
         strict = True
