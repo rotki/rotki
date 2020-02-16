@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 
 import requests
 from web3 import HTTPProvider, Web3
+from web3._utils.abi import get_abi_output_types
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.errors import RemoteError, UnableToDecryptRemoteData
@@ -304,3 +305,43 @@ class Ethchain():
             return None
 
         return self.web3.eth.getBlock(num)  # pylint: disable=no-member
+
+    def get_code(self, account: ChecksumEthAddress) -> str:
+        """Gets the deployment bytecode at the given address
+
+        May raise:
+        - RemoteError if Etherscan is used and there is a problem querying it or
+        parsing its response
+        """
+        if self.connected:
+            result = self.web3.eth.getCode(account)
+        else:
+            result = self.etherscan.get_code(account)
+
+        return result
+
+    def check_contract(
+            self,
+            contract_address: ChecksumEthAddress,
+            abi: List,
+            method_name: str,
+            arguments: Optional[List[Any]] = None,
+    ):
+        if self.connected:
+            contract = self.web3.eth.contract(address=contract_address, abi=abi)
+            method = getattr(contract.caller, method_name)
+            return method(*arguments if arguments else [])
+        else:
+            web3 = Web3()
+            contract = web3.eth.contract(address=contract_address, abi=abi)
+            input_data = contract.encodeABI(method_name, args=arguments if arguments else [])
+            result = self.etherscan.eth_call(to_address=contract_address, input_data=input_data)
+            fn_abi = contract._find_matching_fn_abi(
+                fn_identifier=method_name,
+                args=arguments,
+            )
+            output_types = get_abi_output_types(fn_abi)
+            output_data = web3.codec.decode_abi(output_types, bytes.fromhex(result[2:]))
+            if len(output_data) != 1:
+                log.error('Unexpected call with multiple output data. Can not handle properly')
+            return output_data[0]

@@ -170,11 +170,13 @@ class Etherscan(ExternalServiceWithApiKey):
                     'txlist' in action
                 )
                 if transaction_endpoint_and_none_found:
-                    # Can't realize that result is always a list here so we ignnore mypy warning
+                    # Can't realize that result is always a list here so we ignore mypy warning
                     return []  # type: ignore
                 # else
                 raise RemoteError(f'Etherscan returned error response: {json_ret}')
         except KeyError as e:
+            __import__("pdb").set_trace()
+
             raise RemoteError(
                 f'Unexpected format of Etherscan response. Missing key entry for {str(e)}',
             )
@@ -315,3 +317,27 @@ class Etherscan(ExternalServiceWithApiKey):
             action='eth_blockNumber',
         )
         return int(result, 16)
+
+    def get_code(self, account: ChecksumEthAddress) -> str:
+        """Gets the deployment bytecode at the given address
+
+        May raise:
+        - RemoteError if there are any problems with reaching Etherscan or if
+        an unexpected response is returned
+        """
+        result = self._query(module='proxy', action='eth_getCode', options={'address': account})
+        return result
+
+    def eth_call(self, to_address: ChecksumEthAddress, input_data: str) -> str:
+        """Gets the deployment bytecode at the given address
+
+        May raise:
+        - RemoteError if there are any problems with reaching Etherscan or if
+        an unexpected response is returned
+        """
+        result = self._query(
+            module='proxy',
+            action='eth_call',
+            options={'to': to_address, 'data': input_data},
+        )
+        return result
