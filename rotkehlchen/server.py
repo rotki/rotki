@@ -47,4 +47,6 @@ class RotkehlchenServer():
         gevent.hub.signal(signal.SIGINT, self.shutdown)
         gevent.hub.signal(signal.SIGTERM, self.shutdown)
         self.api_server.start(host=self.args.api_host, port=self.args.api_port)
+        # Start rotki's main loop
+        self.rotkehlchen.start()
         self.stop_event.wait()
