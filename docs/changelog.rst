@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`724 major` If latest block remote query fails do not revert to etherscan but persist with using the provided ethereum node after warning the user.
 * :feature:`99987` Added support for the following tokens
 
   - `LTO Network (LTO) <https://coinmarketcap.com/currencies/lto-network/>`__
