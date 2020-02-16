@@ -234,13 +234,13 @@ class RestAPI():
         if not success:
             return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.CONFLICT)
 
-        new_settings = process_result(self.rotkehlchen.data.db.get_settings())
+        new_settings = process_result(self.rotkehlchen.get_settings())
         result_dict = {'result': new_settings, 'message': ''}
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
     def get_settings(self) -> Response:
-        result_dict = _wrap_in_ok_result(process_result(self.rotkehlchen.data.db.get_settings()))
+        result_dict = _wrap_in_ok_result(process_result(self.rotkehlchen.get_settings()))
         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
@@ -740,8 +740,7 @@ class RestAPI():
         # Success!
         result_dict['result'] = {
             'exchanges': self.rotkehlchen.exchange_manager.get_connected_exchange_names(),
-            'premium': self.rotkehlchen.premium is not None,
-            'settings': process_result(self.rotkehlchen.data.db.get_settings()),
+            'settings': process_result(self.rotkehlchen.get_settings()),
         }
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
@@ -782,8 +781,7 @@ class RestAPI():
         # Success!
         result_dict['result'] = {
             'exchanges': self.rotkehlchen.exchange_manager.get_connected_exchange_names(),
-            'premium': self.rotkehlchen.premium is not None,
-            'settings': process_result(self.rotkehlchen.data.db.get_settings()),
+            'settings': process_result(self.rotkehlchen.get_settings()),
         }
         return api_response(result_dict, status_code=HTTPStatus.OK)
 

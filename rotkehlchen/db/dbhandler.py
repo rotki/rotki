@@ -407,7 +407,8 @@ class DBHandler:
             return DEFAULT_PREMIUM_SHOULD_SYNC
         return str_to_bool(query[0][0])
 
-    def get_settings(self) -> DBSettings:
+    def get_settings(self, have_premium: bool = False) -> DBSettings:
+        """Aggregates settings from DB and from the given args and returns the settings object"""
         cursor = self.conn.cursor()
         query = cursor.execute(
             'SELECT name, value FROM settings;',
@@ -417,6 +418,9 @@ class DBHandler:
         settings_dict = {}
         for q in query:
             settings_dict[q[0]] = q[1]
+
+        # Also add the non-DB saved settings
+        settings_dict['have_premium'] = have_premium
 
         return db_settings_from_dict(settings_dict, self.msg_aggregator)
 
@@ -1350,7 +1354,7 @@ class DBHandler:
     def set_rotkehlchen_premium(self, credentials: PremiumCredentials) -> None:
         """Save the rotki premium credentials in the DB"""
         cursor = self.conn.cursor()
-        # We don't care about previous value so this simple insert or replace should work
+        # We don't care about previous value so simple insert or replace should work
         cursor.execute(
             'INSERT OR REPLACE INTO user_credentials'
             '(name, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?)',

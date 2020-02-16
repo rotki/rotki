@@ -121,8 +121,8 @@ Handling user creation, sign-in, log-out and querying
       {
           "result": {
               "exchanges": ["kraken", "poloniex", "binance"],
-              "premium": true,
               "settings": {
+                  "have_premium": true,
                   "version": "6",
                   "last_write_ts": 1571552172,
                   "premium_should_sync": true,
@@ -143,7 +143,7 @@ Handling user creation, sign-in, log-out and querying
           "message": ""
       }
 
-   :resjson object result: For succesful requests, result contains the currently connected exchanges, whethere the user has premium activated and the user's settings. For details on the user settings refer to the `Getting or modifying settings`_ section.
+   :resjson object result: For succesful requests, result contains the currently connected exchanges, and the user's settings. For details on the user settings refer to the `Getting or modifying settings`_ section.
    :statuscode 200: Adding the new user was succesful
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: User already exists. Another user is already logged in. Given Premium API credentials are invalid.
@@ -180,8 +180,8 @@ Handling user creation, sign-in, log-out and querying
       {
           "result": {
               "exchanges": ["kraken", "poloniex", "binance"],
-              "premium": true,
               "settings": {
+                  "have_premium": true,
                   "version": "6",
                   "last_write_ts": 1571552172,
                   "premium_should_sync": true,
@@ -202,7 +202,7 @@ Handling user creation, sign-in, log-out and querying
           "message": ""
       }
 
-   :resjson object result: For succesful requests, result contains the currently connected exchanges, whethere the user has premium activated and the user's settings. For details on the user settings refer to the `Getting or modifying settings`_ section.
+   :resjson object result: For succesful requests, result contains the currently connected exchanges,and the user's settings. For details on the user settings refer to the `Getting or modifying settings`_ section.
    :statuscode 200: Logged in succesfully
    :statuscode 300: Possibility of syncing exists and the login was sent with sync_approval set to ``"unknown"``. Consumer of api must resend with ``"yes"`` or ``"no"``.
    :statuscode 400: Provided JSON is in some way malformed
@@ -436,6 +436,7 @@ Getting or modifying settings
 
       {
           "result": {
+              "have_premium": false,
               "version": "6",
               "last_write_ts": 1571552172,
               "premium_should_sync": true,
@@ -516,6 +517,7 @@ Getting or modifying settings
 
       {
           "result": {
+              "have_premium": false,
               "version": "6",
               "last_write_ts": 1571552172,
               "premium_should_sync": true,
