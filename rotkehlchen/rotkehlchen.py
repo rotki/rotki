@@ -32,6 +32,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import DEFAULT_ANONYMIZED_LOGS, LoggingSettings, RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
+from rotkehlchen.transactions import EthereumAnalyzer
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -204,6 +205,10 @@ class Rotkehlchen():
             ethchain=ethchain,
             msg_aggregator=self.msg_aggregator,
         )
+        self.ethereum_analyzer = EthereumAnalyzer(
+            ethchain=ethchain,
+            database=self.data.db,
+        )
         self.user_is_logged_in = True
 
     def logout(self) -> None:
@@ -268,6 +273,7 @@ class Rotkehlchen():
             if self.user_is_logged_in:
                 log.debug('Main loop start')
                 self.premium_sync_manager.maybe_upload_data_to_server()
+                self.ethereum_analyzer.analyze_ethereum_transactions()
                 log.debug('Main loop end')
 
     def add_blockchain_accounts(
