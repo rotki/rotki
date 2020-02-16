@@ -47,7 +47,7 @@ from rotkehlchen.utils.misc import combine_stat_dicts, dict_get_sumof, merge_dic
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-MAIN_LOOP_SECS_DELAY = 60
+MAIN_LOOP_SECS_DELAY = 15
 
 
 class Rotkehlchen():
@@ -259,6 +259,11 @@ class Rotkehlchen():
         return gevent.spawn(self.main_loop)
 
     def main_loop(self) -> None:
+        """Rotki main loop that fires often and manages many different tasks
+
+        Each task remembers the last time it run sucesfully and know how often it
+        should run. So each task manages itself.
+        """
         while self.shutdown_event.wait(MAIN_LOOP_SECS_DELAY) is not True:
             if self.user_is_logged_in:
                 log.debug('Main loop start')
