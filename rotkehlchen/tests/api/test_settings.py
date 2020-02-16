@@ -59,6 +59,7 @@ def test_set_settings(rotkehlchen_api_server):
         'last_write_ts',
         'last_data_upload_ts',
         'last_balance_save',
+        'have_premium',
     )
     for setting, value in original_settings.items():
         if setting in unmodifiable_settings:

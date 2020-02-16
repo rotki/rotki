@@ -246,6 +246,7 @@ def test_writting_fetching_data(data_dir, username):
     # make sure last_write was within 3 secs
     assert last_write_diff >= 0 and last_write_diff < 3
     expected_dict = {
+        'have_premium': False,
         'historical_data_start': DEFAULT_START_DATE,
         'eth_rpc_endpoint': 'http://localhost:8545',
         'ui_floating_precision': DEFAULT_UI_FLOATING_PRECISION,

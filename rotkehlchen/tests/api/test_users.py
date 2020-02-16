@@ -26,7 +26,6 @@ def check_proper_unlock_result(response_data: Dict[str, Any]) -> None:
     result = response_data['result']
 
     assert isinstance(result['exchanges'], list)
-    assert 'premium' in result
     assert result['settings']['version'] == ROTKEHLCHEN_DB_VERSION
     for setting in DBSettings._fields:
         assert setting in result['settings']
