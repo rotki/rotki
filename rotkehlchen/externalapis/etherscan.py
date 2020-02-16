@@ -89,7 +89,7 @@ class Etherscan(ExternalServiceWithApiKey):
             self,
             module: str,
             action: Literal['balancemulti', 'txlist', 'txlistinternal'],
-            options: Optional[Dict[str, str]],
+            options: Optional[Dict[str, str]] = None,
     ) -> List[Dict[str, Any]]:
         ...
 
@@ -97,8 +97,8 @@ class Etherscan(ExternalServiceWithApiKey):
     def _query(  # noqa: F811 pylint: disable=no-self-use
             self,
             module: str,
-            action: Literal['balance', 'tokenbalance'],
-            options: Optional[Dict[str, str]],
+            action: Literal['balance', 'tokenbalance', 'eth_blockNumber'],
+            options: Optional[Dict[str, str]] = None,
     ) -> str:
         ...
 
@@ -106,7 +106,7 @@ class Etherscan(ExternalServiceWithApiKey):
             self,
             module: str,
             action: str,
-            options: Optional[Dict[str, str]],
+            options: Optional[Dict[str, str]] = None,
     ) -> Union[List[Dict[str, Any]], str, List[EthereumTransaction]]:
         """Queries etherscan
 
@@ -157,7 +157,11 @@ class Etherscan(ExternalServiceWithApiKey):
         # https://medium.com/etherscan-blog/psa-for-developers-implementation-of-api-key-requirements-starting-from-february-15th-2020-b616870f3746
         try:
             result = json_ret['result']
-            status = json_ret['status']
+            if module == 'proxy':
+                # proxy calls do not include a status
+                status = 1
+            else:
+                status = json_ret['status']
 
             if status != 1:
                 transaction_endpoint_and_none_found = (
@@ -299,3 +303,15 @@ class Etherscan(ExternalServiceWithApiKey):
             transactions.append(tx)
 
         return transactions
+
+    def get_latest_block_number(self) -> int:
+        """Gets the latest block number
+
+        May raise:
+        - RemoteError due to self._query().
+        """
+        result = self._query(
+            module='proxy',
+            action='eth_blockNumber',
+        )
+        return int(result, 16)
