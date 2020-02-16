@@ -13,35 +13,32 @@ import { SyncConflictError } from '@/typing/types';
 import { UnlockPayload } from '@/typing/types';
 
 export const actions: ActionTree<SessionState, RotkehlchenState> = {
-  start({ commit }, payload: { premium: boolean; settings: DBSettings }) {
-    const { premium, settings } = payload;
+  start({ commit }, payload: { settings: DBSettings }) {
+    const { settings } = payload;
 
-    commit('premium', premium);
+    commit('premium', settings.have_premium);
     commit('premiumSync', settings.premium_should_sync);
     commit('settings', convertToGeneralSettings(settings));
     commit('accountingSettings', convertToAccountingSettings(settings));
   },
   async unlock({ commit, dispatch, state }, payload: UnlockPayload) {
     let settings: DBSettings;
-    let premium: boolean;
     let exchanges: string[];
 
     try {
       const { username, create } = payload;
       const isLogged = await api.checkIfLogged(username);
       if (isLogged && !state.syncConflict) {
-        [settings, premium, exchanges] = await Promise.all([
+        [settings, exchanges] = await Promise.all([
           api.getSettings(),
-          Promise.resolve(false),
           api.getExchanges()
         ]);
       } else {
         commit('syncConflict', '');
-        ({ settings, premium, exchanges } = await api.unlockUser(payload));
+        ({ settings, exchanges } = await api.unlockUser(payload));
       }
 
       await dispatch('start', {
-        premium,
         settings
       });
 
