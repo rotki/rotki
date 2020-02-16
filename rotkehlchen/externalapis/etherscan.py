@@ -175,8 +175,6 @@ class Etherscan(ExternalServiceWithApiKey):
                 # else
                 raise RemoteError(f'Etherscan returned error response: {json_ret}')
         except KeyError as e:
-            __import__("pdb").set_trace()
-
             raise RemoteError(
                 f'Unexpected format of Etherscan response. Missing key entry for {str(e)}',
             )
