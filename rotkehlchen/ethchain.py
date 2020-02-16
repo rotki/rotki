@@ -7,6 +7,7 @@ import requests
 from web3 import HTTPProvider, Web3
 
 from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.errors import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -95,7 +96,9 @@ class Ethchain():
                     current_block = self.web3.eth.blockNumber  # pylint: disable=no-member
                     latest_block = self.query_eth_highest_block()
                     if latest_block is None:
-                        return False, 'Could not query latest block from blockcypher.'
+                        msg = 'Could not query latest block'
+                        log.warning(msg)
+                        return False, msg
                     synchronized, msg = self.is_synchronized(current_block, latest_block)
 
             if not synchronized:
@@ -122,7 +125,8 @@ class Ethchain():
         message = ''
         if current_block < (latest_block - 20):
             message = (
-                'Found ethereum node but it is out of sync. Will use etherscan.'
+                f'Found ethereum node but it is out of sync. {current_block} / '
+                f'{latest_block}. Will use etherscan.'
             )
             log.warning(message)
             self.connected = False
@@ -143,20 +147,29 @@ class Ethchain():
             self.ethrpc_endpoint = endpoint
         return result, message
 
-    @staticmethod
-    def query_eth_highest_block() -> Optional[int]:
-        """ Attempts to query blockcypher for the block height
+    def query_eth_highest_block(self) -> Optional[int]:
+        """ Attempts to query an external service for the block height
 
         Returns the highest blockNumber"""
 
         url = 'https://api.blockcypher.com/v1/eth/main'
-        log.debug('Querying ETH highest block', url=url)
-        eth_resp = request_get_dict(url)
+        log.debug('Querying blockcypher for ETH highest block', url=url)
+        try:
+            eth_resp = request_get_dict(url)
+        except (RemoteError, UnableToDecryptRemoteData):
+            eth_resp = None
 
-        if 'height' not in eth_resp:
-            return None
-        block_number = int(eth_resp['height'])
-        log.debug('ETH highest block result', block=block_number)
+        block_number: Optional[int]
+        if eth_resp and 'height' in eth_resp:
+            block_number = int(eth_resp['height'])
+            log.debug('ETH highest block result', block=block_number)
+        else:
+            try:
+                block_number = self.etherscan.get_latest_block_number()
+                log.debug('ETH highest block result', block=block_number)
+            except RemoteError:
+                block_number = None
+
         return block_number
 
     def get_eth_balance(self, account: ChecksumEthAddress) -> FVal:
