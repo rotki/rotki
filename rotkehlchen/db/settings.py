@@ -23,6 +23,7 @@ DEFAULT_SUBMIT_USAGE_ANALYTICS = True
 
 
 class DBSettings(NamedTuple):
+    have_premium: bool = False
     version: int = ROTKEHLCHEN_DB_VERSION
     last_write_ts: Timestamp = Timestamp(0)
     premium_should_sync: bool = DEFAULT_PREMIUM_SHOULD_SYNC
@@ -92,7 +93,9 @@ def db_settings_from_dict(
 ) -> DBSettings:
     specified_args: Dict[str, Any] = {}
     for key, value in settings_dict.items():
-        if key == 'version':
+        if key == 'have_premium':
+            specified_args[key] = read_boolean(value)
+        elif key == 'version':
             specified_args[key] = int(value)
         elif key == 'historical_data_start':
             specified_args[key] = str(value)

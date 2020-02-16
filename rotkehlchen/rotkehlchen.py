@@ -14,7 +14,7 @@ from rotkehlchen.blockchain import Blockchain, BlockchainBalancesUpdate
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
-from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
 from rotkehlchen.errors import EthSyncError, PremiumAuthenticationError, RemoteError
 from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.exchanges.manager import ExchangeManager
@@ -149,7 +149,7 @@ class Rotkehlchen():
             # else let's just continue. User signed in succesfully, but he just
             # has unauthenticable/invalid premium credentials remaining in his DB
 
-        settings = self.data.db.get_settings()
+        settings = self.get_settings()
         maybe_submit_usage_analytics(settings.submit_usage_analytics)
         self.etherscan = Etherscan(database=self.data.db, msg_aggregator=self.msg_aggregator)
         historical_data_start = settings.historical_data_start
@@ -167,7 +167,6 @@ class Rotkehlchen():
             history_date_start=historical_data_start,
             cryptocompare=self.cryptocompare,
         )
-        db_settings = self.data.db.get_settings()
         self.accountant = Accountant(
             db=self.data.db,
             user_directory=self.user_directory,
@@ -176,7 +175,7 @@ class Rotkehlchen():
         )
 
         # Initialize the rotkehlchen logger
-        LoggingSettings(anonymized_logs=db_settings.anonymized_logs)
+        LoggingSettings(anonymized_logs=settings.anonymized_logs)
         exchange_credentials = self.data.db.get_exchange_credentials()
         self.exchange_manager.initialize_exchanges(
             exchange_credentials=exchange_credentials,
@@ -502,6 +501,11 @@ class Rotkehlchen():
 
             self.data.db.set_settings(settings)
             return True, ''
+
+    def get_settings(self) -> DBSettings:
+        """Returns the db settings with a check whether premium is active or not"""
+        db_settings = self.data.db.get_settings(have_premium=self.premium is not None)
+        return db_settings
 
     def setup_exchange(
             self,
