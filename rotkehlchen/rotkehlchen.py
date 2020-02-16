@@ -187,6 +187,7 @@ class Rotkehlchen():
         ethchain = Ethchain(
             ethrpc_endpoint=eth_rpc_endpoint,
             etherscan=self.etherscan,
+            msg_aggregator=self.msg_aggregator,
         )
         self.blockchain = Blockchain(
             blockchain_accounts=self.data.db.get_blockchain_accounts(),

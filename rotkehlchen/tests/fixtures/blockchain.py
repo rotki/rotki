@@ -84,9 +84,14 @@ def etherscan(database, messages_aggregator):
 
 
 @pytest.fixture
-def ethchain_client(ethrpc_port, etherscan):
+def ethchain_client(ethrpc_port, etherscan, messages_aggregator):
     ethrpc_endpoint = f'http://localhost:{ethrpc_port}'
-    return Ethchain(ethrpc_endpoint, etherscan=etherscan, attempt_connect=False)
+    return Ethchain(
+        ethrpc_endpoint=ethrpc_endpoint,
+        etherscan=etherscan,
+        msg_aggregator=messages_aggregator,
+        attempt_connect=False,
+    )
 
 
 def _geth_blockchain(
