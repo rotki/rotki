@@ -409,13 +409,12 @@ class Rotkehlchen():
                 blockchain=None,
                 ignore_cache=ignore_cache,
             )
+            balances['blockchain'] = {
+                asset: balance.to_dict() for asset, balance in blockchain_result.totals.items()
+            }
         except (RemoteError, EthSyncError) as e:
             problem_free = False
             log.error(f'Querying blockchain balances failed due to: {str(e)}')
-
-        balances['blockchain'] = {
-            asset: balance.to_dict() for asset, balance in blockchain_result.totals.items()
-        }
 
         result = self.query_fiat_balances()
         if result != {}:
