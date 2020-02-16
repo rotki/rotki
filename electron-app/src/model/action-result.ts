@@ -10,6 +10,7 @@ export interface AccountState {
 }
 
 export interface DBSettings {
+  readonly have_premium: boolean;
   readonly version: number;
   readonly last_write_ts: number;
   readonly premium_should_sync?: boolean;
