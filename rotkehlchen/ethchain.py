@@ -12,6 +12,7 @@ from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, request_get_dict
 from rotkehlchen.utils.serialization import rlk_jsonloads
 
@@ -26,6 +27,7 @@ class Ethchain():
             self,
             ethrpc_endpoint: str,
             etherscan: Etherscan,
+            msg_aggregator: MessagesAggregator,
             attempt_connect: bool = True,
             eth_rpc_timeout: int = DEFAULT_ETH_RPC_TIMEOUT,
     ) -> None:
@@ -33,6 +35,7 @@ class Ethchain():
         self.rpc_endpoint = ethrpc_endpoint
         self.connected = False
         self.etherscan = etherscan
+        self.msg_aggregator = msg_aggregator
         self.eth_rpc_timeout = eth_rpc_timeout
         if attempt_connect:
             self.attempt_connect(ethrpc_endpoint)
@@ -98,11 +101,16 @@ class Ethchain():
                     if latest_block is None:
                         msg = 'Could not query latest block'
                         log.warning(msg)
-                        return False, msg
-                    synchronized, msg = self.is_synchronized(current_block, latest_block)
+                        synchronized = False
+                    else:
+                        synchronized, msg = self.is_synchronized(current_block, latest_block)
 
             if not synchronized:
-                return False, msg
+                self.msg_aggregator.add_warning(
+                    'You are using an ethereum node but we could not verify that it is '
+                    'synchronized in the ethereum mainnet. Balances and other queries '
+                    'may be incorrect.',
+                )
 
             self.connected = True
             log.info(f'Connected to ethereum node at {ethrpc_endpoint}')
@@ -154,6 +162,7 @@ class Ethchain():
 
         url = 'https://api.blockcypher.com/v1/eth/main'
         log.debug('Querying blockcypher for ETH highest block', url=url)
+        eth_resp: Optional[Dict[str, str]]
         try:
             eth_resp = request_get_dict(url)
         except (RemoteError, UnableToDecryptRemoteData):
