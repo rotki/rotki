@@ -1,5 +1,5 @@
 import { defaultAccountingSettings, defaultSettings } from '@/data/factories';
-import { AccountingSettings, GeneralSettings } from '@/typing/types';
+import { AccountingSettings, GeneralSettings, Tags } from '@/typing/types';
 
 export interface SessionState {
   newAccount: boolean;
@@ -11,6 +11,7 @@ export interface SessionState {
   premiumSync: boolean;
   nodeConnection: boolean;
   syncConflict: string;
+  tags: Tags;
 }
 
 export const defaultState: () => SessionState = () => ({
@@ -22,7 +23,8 @@ export const defaultState: () => SessionState = () => ({
   premium: false,
   premiumSync: false,
   nodeConnection: false,
-  syncConflict: ''
+  syncConflict: '',
+  tags: {}
 });
 
 export const state: SessionState = defaultState();

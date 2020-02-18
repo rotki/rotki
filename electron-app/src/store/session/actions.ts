@@ -9,8 +9,7 @@ import { DBSettings } from '@/model/action-result';
 import { api } from '@/services/rotkehlchen-api';
 import { monitor } from '@/services/monitoring';
 import { notify } from '@/store/notifications/utils';
-import { SyncConflictError } from '@/typing/types';
-import { UnlockPayload } from '@/typing/types';
+import { SyncConflictError, Tag, UnlockPayload } from '@/typing/types';
 
 export const actions: ActionTree<SessionState, RotkehlchenState> = {
   start({ commit }, payload: { settings: DBSettings }) {
@@ -55,6 +54,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         }
       );
 
+      commit('tags', await api.getTags());
       commit('login', { username, newAccount: create });
     } catch (e) {
       if (e instanceof SyncConflictError) {
@@ -114,6 +114,51 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         'setMessage',
         {
           title: 'Logout failed',
+          description: e.message || ''
+        } as Message,
+        { root: true }
+      );
+    }
+  },
+
+  async addTag({ commit }, tag: Tag) {
+    try {
+      commit('tags', await api.addTag(tag));
+    } catch (e) {
+      commit(
+        'setMessage',
+        {
+          title: 'Adding tag',
+          description: e.message || ''
+        } as Message,
+        { root: true }
+      );
+    }
+  },
+
+  async editTag({ commit }, tag: Tag) {
+    try {
+      commit('tags', await api.editTag(tag));
+    } catch (e) {
+      commit(
+        'setMessage',
+        {
+          title: 'Editing tag',
+          description: e.message || ''
+        } as Message,
+        { root: true }
+      );
+    }
+  },
+
+  async deleteTag({ commit }, tagName: string) {
+    try {
+      commit('tags', await api.deleteTag(tagName));
+    } catch (e) {
+      commit(
+        'setMessage',
+        {
+          title: 'Deleting tag',
           description: e.message || ''
         } as Message,
         { root: true }

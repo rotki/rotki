@@ -17,5 +17,9 @@ export const getters: GetterTree<SessionState, RotkehlchenState> = {
 
   currency: (state: SessionState) => {
     return state.settings.selectedCurrency;
+  },
+
+  tags: (state: SessionState) => {
+    return Object.values(state.tags);
   }
 };
