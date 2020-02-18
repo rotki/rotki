@@ -12,8 +12,8 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import FiatBalances from '@/components/settings/FiatBalances.vue';
-import BlockchainBalances from '@/components/settings/BlockchainBalances.vue';
+import FiatBalances from '@/components/accounts/FiatBalances.vue';
+import BlockchainBalances from '@/components/accounts/BlockchainBalances.vue';
 
 @Component({
   components: {

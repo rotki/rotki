@@ -1,9 +1,9 @@
 import { VersionCheck } from '@/model/version-check';
 import {
-  ActionResult,
-  DBSettings,
   AccountState,
+  ActionResult,
   AsyncQuery,
+  DBSettings,
   ExternalServiceKeys
 } from '@/model/action-result';
 import { DBAssetBalance } from '@/model/db-asset-balance';
@@ -19,17 +19,20 @@ import {
   AccountSession,
   ApiAssetBalances,
   Blockchain,
+  ExternalServiceKey,
+  ExternalServiceName,
   FiatExchangeRates,
+  SettingsUpdate,
+  SyncApproval,
   SyncConflictError,
   TaskResult,
-  SyncApproval,
   UnlockPayload,
-  SettingsUpdate,
-  ExternalServiceKey,
-  ExternalServiceName
+  Tags,
+  Tag
 } from '@/typing/types';
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { EthTokens } from '@/model/eth_token';
+import { BlockchainAccountPayload } from '@/store/balances/actions';
 
 export class RotkehlchenApi {
   private _axios?: AxiosInstance;
@@ -39,6 +42,14 @@ export class RotkehlchenApi {
       throw new Error('Axios is not initialized');
     }
     return this._axios;
+  }
+
+  private handleResponse<T>(response: AxiosResponse<ActionResult<T>>): T {
+    const { result, message } = response.data;
+    if (result) {
+      return result;
+    }
+    throw new Error(message);
   }
 
   connect(port: number): void {
@@ -842,36 +853,33 @@ export class RotkehlchenApi {
     });
   }
 
-  addBlockchainAccount(
-    blockchain: string,
-    account: string
-  ): Promise<AsyncQuery> {
-    return new Promise<AsyncQuery>((resolve, reject) => {
-      this.axios
-        .put<ActionResult<AsyncQuery>>(
-          `/blockchains/${blockchain}`,
-          {
-            async_query: true,
-            accounts: [account]
-          },
-          {
-            validateStatus: function(status) {
-              return (
-                status == 200 || status == 400 || status == 409 || status == 502
-              );
+  addBlockchainAccount(payload: BlockchainAccountPayload): Promise<AsyncQuery> {
+    const { blockchain, address, label, tags } = payload;
+    return this.axios
+      .put<ActionResult<AsyncQuery>>(
+        `/blockchains/${blockchain}`,
+        {
+          async_query: true,
+          accounts: [
+            {
+              address,
+              label,
+              tags
             }
-          }
-        )
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+          ]
+        },
+        {
+          validateStatus: status =>
+            status == 200 || status == 400 || status == 409 || status == 502
+        }
+      )
+      .then(response => {
+        const { result, message } = response.data;
+        if (result) {
+          return result;
+        }
+        throw new Error(message);
+      });
   }
 
   setFiatBalance(currency: string, balance: string): Promise<boolean> {
@@ -1195,6 +1203,57 @@ export class RotkehlchenApi {
         })
         .catch(error => reject(error));
     });
+  }
+
+  async getTags(): Promise<Tags> {
+    return this.axios
+      .get<ActionResult<Tags>>('/tags', {
+        validateStatus: function(status: number) {
+          return status === 200 || status === 409;
+        }
+      })
+      .then(this.handleResponse);
+  }
+
+  async addTag(tag: Tag): Promise<Tags> {
+    return this.axios
+      .put<ActionResult<Tags>>(
+        '/tags',
+        { ...tag },
+        {
+          validateStatus: function(status: number) {
+            return status === 200 || status === 400 || status === 409;
+          }
+        }
+      )
+      .then(this.handleResponse);
+  }
+
+  async editTag(tag: Tag): Promise<Tags> {
+    return this.axios
+      .patch<ActionResult<Tags>>(
+        '/tags',
+        { ...tag },
+        {
+          validateStatus: function(status: number) {
+            return status === 200 || status === 400 || status === 409;
+          }
+        }
+      )
+      .then(this.handleResponse);
+  }
+
+  async deleteTag(tagName: string): Promise<Tags> {
+    return this.axios
+      .delete<ActionResult<Tags>>('/tags', {
+        data: {
+          name: tagName
+        },
+        validateStatus: function(status: number) {
+          return status === 200 || status === 400 || status === 409;
+        }
+      })
+      .then(this.handleResponse);
   }
 }
 

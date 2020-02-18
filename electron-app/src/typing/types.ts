@@ -119,3 +119,14 @@ export interface ExternalServiceKey {
   readonly name: ExternalServiceName;
   readonly api_key: string;
 }
+
+export interface Tag {
+  readonly name: string;
+  readonly description: string;
+  readonly background_color: string;
+  readonly foreground_color: string;
+}
+
+export interface Tags {
+  [tag: string]: Tag;
+}
