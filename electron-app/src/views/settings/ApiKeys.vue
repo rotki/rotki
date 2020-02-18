@@ -15,8 +15,8 @@
 import { Component, Vue } from 'vue-property-decorator';
 import PremiumSettings from '@/components/settings/PremiumSettings.vue';
 import ExchangeSettings from '@/components/settings/api-keys/ExchangeSettings.vue';
-import FiatBalances from '@/components/settings/FiatBalances.vue';
-import BlockchainBalances from '@/components/settings/BlockchainBalances.vue';
+import FiatBalances from '@/components/accounts/FiatBalances.vue';
+import BlockchainBalances from '@/components/accounts/BlockchainBalances.vue';
 import ExternalServices from '@/components/settings/api-keys/ExternalServices.vue';
 
 @Component({

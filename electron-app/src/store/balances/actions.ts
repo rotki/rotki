@@ -184,7 +184,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async addAccount({ commit }, payload: BlockchainAccountPayload) {
     const { address, blockchain } = payload;
-    const { task_id } = await api.addBlockchainAccount(blockchain, address);
+    const { task_id } = await api.addBlockchainAccount(payload);
     const task = createTask(task_id, TaskType.ADD_ACCOUNT, {
       description: `Adding ${blockchain} account ${address}`,
       blockchain
@@ -197,6 +197,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 export interface BlockchainAccountPayload {
   readonly address: string;
   readonly blockchain: Blockchain;
+  readonly label?: string;
+  readonly tags: string[];
 }
 
 export interface ExchangeBalancePayload {

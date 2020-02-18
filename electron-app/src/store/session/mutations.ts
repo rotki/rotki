@@ -4,7 +4,8 @@ import { Currency } from '@/model/currency';
 import {
   AccountingSettings,
   AccountingSettingsUpdate,
-  GeneralSettings
+  GeneralSettings,
+  Tags
 } from '@/typing/types';
 
 export const mutations: MutationTree<SessionState> = {
@@ -52,5 +53,8 @@ export const mutations: MutationTree<SessionState> = {
   },
   syncConflict(state: SessionState, syncConflict: string) {
     state.syncConflict = syncConflict;
+  },
+  tags(state: SessionState, tags: Tags) {
+    state.tags = { ...tags };
   }
 };

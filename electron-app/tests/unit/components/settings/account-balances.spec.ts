@@ -1,5 +1,5 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import AccountBalances from '@/components/settings/AccountBalances.vue';
+import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import store from '@/store/store';
 import Vuetify from 'vuetify';
 import Vue from 'vue';
