@@ -137,9 +137,11 @@ export default class TagCreator extends Vue {
   }
 
   @Emit()
-  save() {
+  save(): Tag {
+    const tag = this.tag;
     // @ts-ignore
     this.$refs.form?.reset();
+    return tag;
   }
 
   @Emit()
