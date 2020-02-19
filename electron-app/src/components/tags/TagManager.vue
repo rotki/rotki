@@ -36,13 +36,7 @@
         :search="search"
       >
         <template #item.name="{ item }">
-          <v-chip
-            label
-            :color="`#${item.background_color}`"
-            :text-color="`#${item.foreground_color}`"
-          >
-            {{ item.name }}
-          </v-chip>
+          <tag-icon :tag="item"></tag-icon>
         </template>
         <template #item.action="{ item }">
           <v-icon small class="mr-2" @click="editItem(item)">
@@ -71,11 +65,12 @@ import { defaultTag } from '@/components/tags/types';
 import { createNamespacedHelpers } from 'vuex';
 import { Tag } from '@/typing/types';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import TagIcon from '@/components/tags/TagIcon.vue';
 
 const { mapGetters } = createNamespacedHelpers('session');
 
 @Component({
-  components: { ConfirmDialog, TagCreator },
+  components: { TagIcon, ConfirmDialog, TagCreator },
   computed: {
     ...mapGetters(['tags'])
   }
@@ -104,8 +99,7 @@ export default class TagManager extends Vue {
     this.tag = tag;
   }
 
-  async save() {
-    const tag = this.tag;
+  async save(tag: Tag) {
     this.tag = defaultTag();
     if (this.editMode) {
       this.editMode = false;
