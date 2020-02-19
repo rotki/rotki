@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`731` Fixed cointracking file import.
 * :bug:`726 major` Fail gracefully and don't throw a 500 server error if blockchain balance query fails.
 * :bug:`724 major` If latest block remote query fails do not revert to etherscan but persist with using the provided ethereum node after warning the user.
 * :feature:`99987` Added support for the following tokens
