@@ -6,6 +6,7 @@ import {
   FiatBalance
 } from '@/model/blockchain-balances';
 import {
+  AccountDataMap,
   ExchangeData,
   ExchangeInfo,
   UsdToFiatExchangeRates
@@ -50,6 +51,12 @@ export const mutations: MutationTree<BalanceState> = {
   },
   fiatBalances(state: BalanceState, fiatBalances: FiatBalance[]) {
     state.fiatBalances = [...fiatBalances];
+  },
+  ethAccounts(state: BalanceState, accounts: AccountDataMap) {
+    state.ethAccounts = accounts;
+  },
+  btcAccounts(state: BalanceState, accounts: AccountDataMap) {
+    state.btcAccounts = accounts;
   },
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   reset(state: BalanceState) {
