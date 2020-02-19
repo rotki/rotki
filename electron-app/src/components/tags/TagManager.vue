@@ -18,7 +18,10 @@
 
       <v-divider></v-divider>
 
-      <v-row no-gutters justify="end">
+      <v-row no-gutters justify="space-between" align="end">
+        <v-col cols="8">
+          <h3>My Tags</h3>
+        </v-col>
         <v-col cols="4">
           <v-text-field
             v-model="search"
