@@ -1,17 +1,17 @@
 <template>
   <div
-    class="balance-table"
-    :class="`${blockchain.toLocaleLowerCase()}-balance-table`"
+    class="account-balances"
+    :class="`${blockchain.toLocaleLowerCase()}-account-balances`"
   >
     <v-row>
       <v-col cols="11">
-        <h3 class="text-center balance-table__title">{{ title }}</h3>
+        <h3 class="text-center account-balances__title">{{ title }}</h3>
       </v-col>
       <v-col cols="1">
         <v-tooltip bottom>
           <template #activator="{ on }">
             <v-btn
-              class="balance-table__refresh"
+              class="account-balances__refresh"
               color="primary"
               text
               icon
@@ -46,7 +46,26 @@
         {{ currency.ticker_symbol }} value
       </template>
       <template #item.account="{ item }">
-        {{ item.account }}
+        <v-row v-if="accountLabel(blockchain, item.account)">
+          <v-col cols="12" class="font-weight-medium">
+            {{ accountLabel(blockchain, item.account) }}
+          </v-col>
+        </v-row>
+        <v-row no-gutters>
+          <v-col cols="12">
+            {{ item.account }}
+          </v-col>
+        </v-row>
+        <v-row v-if="accountTags(blockchain, item.account)">
+          <v-col cols="12">
+            <tag-icon
+              v-for="tag in accountTags(blockchain, item.account)"
+              :key="tag"
+              class="account-balances__tag"
+              :tag="tags[tag]"
+            ></tag-icon>
+          </v-col>
+        </v-row>
       </template>
       <template #item.amount="{ item }">
         {{ item.amount | formatPrice(floatingPrecision) }}
@@ -68,7 +87,7 @@
         </v-icon>
       </template>
       <template v-if="balances.length > 0" #body.append>
-        <tr class="balance-table__totals">
+        <tr class="account-balances__totals">
           <td>Totals</td>
           <td>
             {{
@@ -88,7 +107,7 @@
         </tr>
       </template>
       <template #expanded-item="{ headers, item }">
-        <td :colspan="headers.length" class="asset-balances__expanded">
+        <td :colspan="headers.length" class="account-balances__expanded">
           <account-asset-balances
             :account="item.account"
           ></account-asset-balances>
@@ -121,16 +140,18 @@ import { Currency } from '@/model/currency';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
 import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
-import { Blockchain } from '@/typing/types';
+import { Blockchain, Tags } from '@/typing/types';
 import { BlockchainBalancePayload } from '@/store/balances/actions';
 import { TaskType } from '@/model/task';
+import TagIcon from '@/components/tags/TagIcon.vue';
 
 const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
-const { mapGetters } = createNamespacedHelpers('session');
+const { mapGetters, mapState } = createNamespacedHelpers('session');
 const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 
 @Component({
   components: {
+    TagIcon,
     AccountAssetBalances,
     AssetBalances,
     ConfirmDialog
@@ -138,7 +159,13 @@ const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
   computed: {
     ...mapTaskGetters(['isTaskRunning']),
     ...mapGetters(['floatingPrecision', 'currency']),
-    ...mapBalancesGetters(['exchangeRate', 'hasTokens'])
+    ...mapState(['tags']),
+    ...mapBalancesGetters([
+      'exchangeRate',
+      'hasTokens',
+      'accountTags',
+      'accountLabel'
+    ])
   }
 })
 export default class AccountBalances extends Vue {
@@ -150,6 +177,9 @@ export default class AccountBalances extends Vue {
   title!: string;
 
   isTaskRunning!: (type: TaskType) => boolean;
+  accountTags!: (blockchain: Blockchain, address: string) => string[];
+  accountLabel!: (blockchain: Blockchain, address: string) => string;
+  tags!: Tags;
 
   get isLoading(): boolean {
     return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
@@ -208,16 +238,20 @@ export default class AccountBalances extends Vue {
 </script>
 
 <style scoped lang="scss">
-.balance-table {
+.account-balances {
   margin-top: 16px;
   margin-bottom: 16px;
-}
 
-.balance-table__totals {
-  font-weight: 500;
-}
+  &__totals {
+    font-weight: 500;
+  }
 
-.asset-balances__expanded {
-  padding: 0 !important;
+  &__expanded {
+    padding: 0 !important;
+  }
+
+  &__tag {
+    margin-right: 8px;
+  }
 }
 </style>

@@ -13,34 +13,47 @@ import { notify } from '@/store/notifications/utils';
 import { FiatBalance } from '@/model/blockchain-balances';
 import { bigNumberify } from '@/utils/bignumbers';
 import { currencies } from '@/data/currencies';
+import { toMap } from '@/utils/conversion';
 
 export const actions: ActionTree<BalanceState, RotkehlchenState> = {
-  fetchBalances({ commit, rootGetters }): void {
+  async fetchBalances({ commit, rootGetters }) {
     const isTaskRunning = rootGetters['tasks/isTaskRunning'];
     if (isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES)) {
       return;
     }
-    api
-      .queryBalancesAsync()
-      .then(result => {
-        const task = createTask(
-          result.task_id,
-          TaskType.QUERY_EXCHANGE_BALANCES,
-          {
-            description: `Query All Balances`,
-            ignoreResult: true
-          }
-        );
+    try {
+      const result = await api.queryBalancesAsync();
+      const task = createTask(
+        result.task_id,
+        TaskType.QUERY_EXCHANGE_BALANCES,
+        {
+          description: `Query All Balances`,
+          ignoreResult: true
+        }
+      );
 
-        commit('tasks/add', task, { root: true });
-      })
-      .catch(reason => {
-        notify(
-          `Failed to fetch all balances: ${reason}`,
-          'Querying all Balances',
-          Severity.ERROR
-        );
-      });
+      commit('tasks/add', task, { root: true });
+    } catch (e) {
+      notify(
+        `Failed to fetch all balances: ${e}`,
+        'Querying all Balances',
+        Severity.ERROR
+      );
+    }
+
+    try {
+      const [ethAccounts, btcAccounts] = await Promise.all([
+        api.accounts('ETH'),
+        api.accounts('BTC')
+      ]);
+
+      const ethMap = toMap(ethAccounts, 'address');
+      const btcMap = toMap(btcAccounts, 'address');
+      commit('ethAccounts', ethMap);
+      commit('btcAccounts', btcMap);
+    } catch (e) {
+      notify(`Failed to accounts: ${e}`, 'Querying accounts', Severity.ERROR);
+    }
   },
   fetchExchangeBalances(
     { commit, rootGetters },

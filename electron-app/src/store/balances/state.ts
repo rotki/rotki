@@ -4,7 +4,11 @@ import {
   EthBalances,
   FiatBalance
 } from '@/model/blockchain-balances';
-import { ExchangeData, UsdToFiatExchangeRates } from '@/typing/types';
+import {
+  AccountDataMap,
+  ExchangeData,
+  UsdToFiatExchangeRates
+} from '@/typing/types';
 
 export interface BalanceState {
   eth: EthBalances;
@@ -14,6 +18,8 @@ export interface BalanceState {
   connectedExchanges: string[];
   exchangeBalances: ExchangeData;
   fiatBalances: FiatBalance[];
+  ethAccounts: AccountDataMap;
+  btcAccounts: AccountDataMap;
 }
 
 export const defaultState = (): BalanceState => ({
@@ -23,7 +29,9 @@ export const defaultState = (): BalanceState => ({
   usdToFiatExchangeRates: {},
   connectedExchanges: [],
   exchangeBalances: {},
-  fiatBalances: []
+  fiatBalances: [],
+  ethAccounts: {},
+  btcAccounts: {}
 });
 
 export const state: BalanceState = defaultState();
