@@ -88,7 +88,7 @@ export default class ImportData extends Vue {
 
         const file = filePaths[0];
         this.$api
-          .importDataFrom('cointracking_info', file)
+          .importDataFrom('cointracking.info', file)
           .then(() => {
             this.$store.commit('setMessage', {
               success: true,
