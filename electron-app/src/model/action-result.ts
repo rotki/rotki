@@ -41,3 +41,9 @@ export interface ExternalServiceKeys {
   etherscan?: ApiKey;
   cryptocompare?: ApiKey;
 }
+
+export interface ApiAccountData {
+  readonly address: string;
+  readonly label: string | null;
+  readonly tags: string[] | null;
+}

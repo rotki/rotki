@@ -12,6 +12,7 @@ import BigNumber from 'bignumber.js';
 import { Zero } from '@/utils/bignumbers';
 import { assetSum } from '@/utils/calculation';
 import isEmpty from 'lodash/isEmpty';
+import { Blockchain } from '@/typing/types';
 
 export const getters: GetterTree<BalanceState, RotkehlchenState> = {
   ethAccounts(state: BalanceState): AccountBalance[] {
@@ -139,5 +140,21 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
     }
 
     return Object.entries(ethAccount.assets).length > 1;
+  },
+
+  accountTags: (state: BalanceState) => (
+    blockchain: Blockchain,
+    address: string
+  ): string[] => {
+    const data = blockchain === 'ETH' ? state.ethAccounts : state.btcAccounts;
+    return data[address]?.tags ?? [];
+  },
+
+  accountLabel: (state: BalanceState) => (
+    blockchain: Blockchain,
+    address: string
+  ): string => {
+    const data = blockchain === 'ETH' ? state.ethAccounts : state.btcAccounts;
+    return data[address]?.label ?? '';
   }
 };

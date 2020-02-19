@@ -2,6 +2,7 @@ import { VersionCheck } from '@/model/version-check';
 import {
   AccountState,
   ActionResult,
+  ApiAccountData,
   AsyncQuery,
   DBSettings,
   ExternalServiceKeys
@@ -28,11 +29,13 @@ import {
   TaskResult,
   UnlockPayload,
   Tags,
-  Tag
+  Tag,
+  AccountData
 } from '@/typing/types';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { EthTokens } from '@/model/eth_token';
 import { BlockchainAccountPayload } from '@/store/balances/actions';
+import { convertAccountData } from '@/utils/conversion';
 
 export class RotkehlchenApi {
   private _axios?: AxiosInstance;
@@ -1254,6 +1257,17 @@ export class RotkehlchenApi {
         }
       })
       .then(this.handleResponse);
+  }
+
+  async accounts(blockchain: Blockchain): Promise<AccountData[]> {
+    return this.axios
+      .get<ActionResult<ApiAccountData[]>>(`/blockchains/${blockchain}`, {
+        validateStatus: function(status: number) {
+          return status === 200 || status === 409;
+        }
+      })
+      .then(this.handleResponse)
+      .then(accounts => accounts.map(convertAccountData));
   }
 }
 

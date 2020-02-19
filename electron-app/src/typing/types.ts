@@ -130,3 +130,11 @@ export interface Tag {
 export interface Tags {
   [tag: string]: Tag;
 }
+
+export interface AccountData {
+  readonly address: string;
+  readonly label: string;
+  readonly tags: string[];
+}
+
+export type AccountDataMap = { [address: string]: AccountData };
