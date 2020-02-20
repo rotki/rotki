@@ -326,16 +326,34 @@ class Etherscan(ExternalServiceWithApiKey):
         result = self._query(module='proxy', action='eth_getCode', options={'address': account})
         return result
 
-    def eth_call(self, to_address: ChecksumEthAddress, input_data: str) -> str:
-        """Gets the deployment bytecode at the given address
+    def eth_call(
+            self,
+            to_address: ChecksumEthAddress,
+            input_data: str,
+    ) -> str:
+        """Performs an eth_call on the given address and the given input data.
 
         May raise:
         - RemoteError if there are any problems with reaching Etherscan or if
         an unexpected response is returned
         """
+        options = {'to': to_address, 'data': input_data}
         result = self._query(
             module='proxy',
             action='eth_call',
-            options={'to': to_address, 'data': input_data},
+            options=options,
+        )
+        return result
+
+    def get_token_transfers(
+            self,
+            from_address: ChecksumEthAddress,
+            token_address: ChecksumEthAddress,
+    ) -> List[Dict[str, Any]]:
+        options = {'address': from_address, 'contractaddress': token_address, 'sort': 'asc'}
+        result = self._query(
+            module='account',
+            action='tokentx',
+            options=options,
         )
         return result
