@@ -320,6 +320,31 @@ class Ethchain():
 
         return result
 
+    def _check_contract_etherscan(
+            self,
+            contract_address: ChecksumEthAddress,
+            abi: List,
+            method_name: str,
+            arguments: Optional[List[Any]] = None,
+    ):
+        web3 = Web3()
+        contract = web3.eth.contract(address=contract_address, abi=abi)
+        input_data = contract.encodeABI(method_name, args=arguments if arguments else [])
+        result = self.etherscan.eth_call(
+            to_address=contract_address,
+            input_data=input_data,
+        )
+        fn_abi = contract._find_matching_fn_abi(
+            fn_identifier=method_name,
+            args=arguments,
+        )
+        output_types = get_abi_output_types(fn_abi)
+        output_data = web3.codec.decode_abi(output_types, bytes.fromhex(result[2:]))
+
+        if len(output_data) != 1:
+            log.error('Unexpected call with multiple output data. Can not handle properly')
+        return output_data[0]
+
     def check_contract(
             self,
             contract_address: ChecksumEthAddress,
