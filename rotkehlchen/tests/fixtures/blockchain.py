@@ -186,6 +186,7 @@ def blockchain(
         blockchain_accounts,
         inquirer,  # pylint: disable=unused-argument
         messages_aggregator,
+        greenlet_manager,
         owned_eth_tokens,
 ):
     return ChainManager(
@@ -193,4 +194,5 @@ def blockchain(
         owned_eth_tokens=owned_eth_tokens,
         ethchain=ethchain_client,
         msg_aggregator=messages_aggregator,
+        greenlet_manager=greenlet_manager,
     )
