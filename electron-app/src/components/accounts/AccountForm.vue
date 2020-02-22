@@ -6,24 +6,23 @@
         class="blockchain-balances__chain"
         :items="items"
         label="Choose blockchain"
-        :disabled="accountOperation"
+        :disabled="accountOperation || loading || !!edit"
       ></v-select>
       <v-text-field
-        v-model="accountAddress"
+        v-model="address"
         class="blockchain-balances__address"
         label="Account"
-        :disabled="accountOperation"
+        :disabled="accountOperation || loading || !!edit"
       ></v-text-field>
       <v-text-field
-        v-model="accountLabel"
+        v-model="label"
         class="blockchain-balances__label"
         label="Label"
-        :disabled="accountOperation"
+        :disabled="accountOperation || loading"
       ></v-text-field>
       <tag-input
         v-model="tags"
-        :disabled="accountOperation"
-        @remove="removeTag($event)"
+        :disabled="accountOperation || loading"
       ></tag-input>
       <div class="blockchain-balances--progress">
         <v-progress-linear
@@ -31,38 +30,50 @@
           indeterminate
         ></v-progress-linear>
       </div>
-      <v-btn
-        class="blockchain-balances__buttons__add"
-        depressed
-        color="primary"
-        type="submit"
-        :disabled="!accountAddress || accountOperation"
-        @click="addAccount"
-      >
-        Add
-      </v-btn>
+      <div>
+        <v-btn
+          class="blockchain-balances__buttons__add"
+          depressed
+          color="primary"
+          type="submit"
+          :disabled="!address || accountOperation || loading"
+          @click="addAccount"
+        >
+          {{ !!edit ? 'Save' : 'Add' }}
+        </v-btn>
+        <v-btn
+          v-if="!!edit"
+          class="blockchain-balances__buttons__cancel"
+          depressed
+          @click="editComplete"
+        >
+          Cancel
+        </v-btn>
+      </div>
     </v-col>
   </v-row>
 </template>
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import {
   Blockchain,
   Severity,
-  SupportedBlockchains,
-  Tag
+  SupportedBlockchains
 } from '@/typing/types';
 import { TaskType } from '@/model/task';
 import { notify } from '@/store/notifications/utils';
 import { createNamespacedHelpers } from 'vuex';
 import TagInput from '@/components/inputs/TagInput.vue';
 import TagManager from '@/components/tags/TagManager.vue';
+import { BlockchainAccountPayload } from '@/store/balances/actions';
 
 const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
+const { mapGetters } = createNamespacedHelpers('balances');
 @Component({
   components: { TagManager, TagInput },
   computed: {
-    ...mapTaskGetters(['isTaskRunning'])
+    ...mapTaskGetters(['isTaskRunning']),
+    ...mapGetters(['accountTags', 'accountLabel'])
   }
 })
 export default class AccountForm extends Vue {
@@ -70,9 +81,34 @@ export default class AccountForm extends Vue {
   isTaskRunning!: (type: TaskType) => boolean;
   selected: Blockchain = 'ETH';
   pending: boolean = false;
-  accountAddress: string = '';
-  accountLabel: string = '';
+  address: string = '';
+  label: string = '';
   tags: string[] = [];
+
+  accountTags!: (blockchain: Blockchain, address: string) => string[];
+  accountLabel!: (blockchain: Blockchain, address: string) => string;
+
+  @Prop({ required: false, default: '' })
+  edit!: string;
+
+  @Watch('edit')
+  onEdit() {
+    const address = this.edit;
+    if (!address) {
+      return;
+    }
+
+    this.address = address;
+    this.label = this.accountLabel(this.selected, address);
+    this.tags = this.accountTags(this.selected, address);
+  }
+
+  @Emit()
+  editComplete() {
+    this.address = '';
+    this.label = '';
+    this.tags = [];
+  }
 
   get accountOperation(): boolean {
     return (
@@ -82,27 +118,28 @@ export default class AccountForm extends Vue {
     );
   }
 
-  removeTag(tag: Tag) {
-    const index = this.tags.findIndex(tagName => tagName === tag.name);
-    if (index > -1) {
-      const tags = [...this.tags];
-      tags.splice(index, 1);
-      this.tags = tags;
-    }
+  get loading(): boolean {
+    return (
+      this.isTaskRunning(TaskType.QUERY_BALANCES) ||
+      this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES)
+    );
   }
 
   async addAccount() {
     this.pending = true;
     try {
-      await this.$store.dispatch('balances/addAccount', {
+      const payload: BlockchainAccountPayload = {
         blockchain: this.selected,
-        address: this.accountAddress,
-        label: this.accountLabel,
+        address: this.address,
+        label: this.label,
         tags: this.tags
-      });
-      this.accountAddress = '';
-      this.accountLabel = '';
-      this.tags = [];
+      };
+
+      await this.$store.dispatch(
+        this.edit ? 'balances/editAccount' : 'balances/addAccount',
+        payload
+      );
+      this.editComplete();
     } catch (e) {
       notify(
         `Error while adding account: ${e}`,
@@ -115,7 +152,15 @@ export default class AccountForm extends Vue {
 }
 </script>
 <style scoped lang="scss">
-.blockchain-balances--progress {
-  height: 15px;
+.blockchain-balances {
+  &__buttons {
+    &__cancel {
+      margin-left: 8px;
+    }
+  }
+
+  &--progress {
+    height: 15px;
+  }
 }
 </style>

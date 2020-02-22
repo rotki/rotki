@@ -45,7 +45,7 @@
           <v-icon small class="mr-2" @click="editItem(item)">
             fa-edit
           </v-icon>
-          <v-icon small @click="deleteItem(item)">
+          <v-icon small class="mr-2" @click="deleteItem(item)">
             fa-trash
           </v-icon>
         </template>
