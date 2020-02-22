@@ -84,6 +84,8 @@ export class TaskManager {
       store.commit('balances/updateBtc', convertBalances(BTC));
     }
     store.commit('balances/updateTotals', convertBalances(totals));
+
+    store.dispatch('balances/accounts').then();
   }
 
   onTradeHistory(data: ActionResult<TradeHistory>, _meta: TaskMeta) {

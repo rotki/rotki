@@ -21,7 +21,7 @@
           :color="`#${item.background_color}`"
           :text-color="`#${item.foreground_color}`"
           close
-          @click:close="remove(item)"
+          @click:close="remove(item.name)"
           @click="select"
         >
           {{ item.name }}
@@ -94,11 +94,14 @@ export default class TagInput extends Vue {
     );
   }
 
-  @Emit()
-  input(_value: string) {}
+  remove(tag: string) {
+    const tags = this.value;
+    const index = tags.indexOf(tag);
+    this.input([...tags.slice(0, index), ...tags.slice(index + 1)]);
+  }
 
   @Emit()
-  remove(_tag: Tag) {}
+  input(_value: string[]) {}
 }
 </script>
 

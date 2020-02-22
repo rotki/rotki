@@ -831,29 +831,19 @@ export class RotkehlchenApi {
     blockchain: string,
     account: string
   ): Promise<AsyncQuery> {
-    return new Promise<AsyncQuery>((resolve, reject) => {
-      this.axios
-        .delete<ActionResult<AsyncQuery>>(`/blockchains/${blockchain}`, {
-          data: {
-            async_query: true,
-            accounts: [account]
-          },
-          validateStatus: function(status) {
-            return (
-              status == 200 || status == 400 || status == 409 || status == 502
-            );
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .delete<ActionResult<AsyncQuery>>(`/blockchains/${blockchain}`, {
+        data: {
+          async_query: true,
+          accounts: [account]
+        },
+        validateStatus: function(status) {
+          return (
+            status == 200 || status == 400 || status == 409 || status == 502
+          );
+        }
+      })
+      .then(this.handleResponse);
   }
 
   addBlockchainAccount(payload: BlockchainAccountPayload): Promise<AsyncQuery> {
@@ -876,13 +866,32 @@ export class RotkehlchenApi {
             status == 200 || status == 400 || status == 409 || status == 502
         }
       )
-      .then(response => {
-        const { result, message } = response.data;
-        if (result) {
-          return result;
+      .then(this.handleResponse);
+  }
+
+  async editBlockchainAccount(
+    payload: BlockchainAccountPayload
+  ): Promise<AccountData[]> {
+    const { blockchain, address, label, tags } = payload;
+    return this.axios
+      .patch<ActionResult<ApiAccountData[]>>(
+        `/blockchains/${blockchain}`,
+        {
+          accounts: [
+            {
+              address,
+              label,
+              tags
+            }
+          ]
+        },
+        {
+          validateStatus: status =>
+            status == 200 || status == 400 || status == 409 || status == 502
         }
-        throw new Error(message);
-      });
+      )
+      .then(this.handleResponse)
+      .then(accounts => accounts.map(convertAccountData));
   }
 
   setFiatBalance(currency: string, balance: string): Promise<boolean> {

@@ -28,9 +28,14 @@
         </v-tooltip>
       </v-col>
     </v-row>
+    <v-row>
+      <v-col cols="6" offset="6">
+        <tag-filter v-model="onlyTags"></tag-filter>
+      </v-col>
+    </v-row>
     <v-data-table
       :headers="headers"
-      :items="balances"
+      :items="visibleBalances"
       :loading="accountOperation || isLoading"
       loading-text="Please wait while Rotki queries the blockchain..."
       single-expand
@@ -46,24 +51,22 @@
         {{ currency.ticker_symbol }} value
       </template>
       <template #item.account="{ item }">
-        <v-row v-if="accountLabel(blockchain, item.account)">
-          <v-col cols="12" class="font-weight-medium">
-            {{ accountLabel(blockchain, item.account) }}
-          </v-col>
-        </v-row>
-        <v-row no-gutters>
-          <v-col cols="12">
-            {{ item.account }}
-          </v-col>
-        </v-row>
-        <v-row v-if="accountTags(blockchain, item.account)">
-          <v-col cols="12">
-            <tag-icon
-              v-for="tag in accountTags(blockchain, item.account)"
-              :key="tag"
-              class="account-balances__tag"
-              :tag="tags[tag]"
-            ></tag-icon>
+        <v-row>
+          <v-col cols="12" class="account-balances__account">
+            <span class="font-weight-medium">
+              {{ accountLabel(blockchain, item.account) }}
+            </span>
+            <span class="account-balances__account__address">
+              {{ item.account }}
+            </span>
+            <span v-if="accountTags(blockchain, item.account)">
+              <tag-icon
+                v-for="tag in accountTags(blockchain, item.account)"
+                :key="tag"
+                class="account-balances__tag"
+                :tag="tags[tag]"
+              ></tag-icon>
+            </span>
           </v-col>
         </v-row>
       </template>
@@ -78,13 +81,24 @@
         }}
       </template>
       <template #item.actions="{ item }">
-        <v-icon
-          small
-          :disabled="accountOperation"
-          @click="toDeleteAccount = item.account"
-        >
-          fa-trash
-        </v-icon>
+        <span class="account-balances__actions">
+          <v-icon
+            small
+            class="mr-2"
+            :disabled="accountOperation"
+            @click="edit(item.account)"
+          >
+            fa-edit
+          </v-icon>
+          <v-icon
+            small
+            class="mr-2"
+            :disabled="accountOperation"
+            @click="toDeleteAccount = item.account"
+          >
+            fa-trash
+          </v-icon>
+        </span>
       </template>
       <template v-if="balances.length > 0" #body.append>
         <tr class="account-balances__totals">
@@ -133,7 +147,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { AccountBalance } from '@/model/blockchain-balances';
 import { createNamespacedHelpers } from 'vuex';
 import { Currency } from '@/model/currency';
@@ -144,6 +158,7 @@ import { Blockchain, Tags } from '@/typing/types';
 import { BlockchainBalancePayload } from '@/store/balances/actions';
 import { TaskType } from '@/model/task';
 import TagIcon from '@/components/tags/TagIcon.vue';
+import TagFilter from '@/components/inputs/TagFilter.vue';
 
 const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 const { mapGetters, mapState } = createNamespacedHelpers('session');
@@ -151,6 +166,7 @@ const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 
 @Component({
   components: {
+    TagFilter,
     TagIcon,
     AccountAssetBalances,
     AssetBalances,
@@ -175,6 +191,11 @@ export default class AccountBalances extends Vue {
   blockchain!: Blockchain;
   @Prop({ required: true })
   title!: string;
+
+  @Emit()
+  edit(_account: string) {}
+
+  onlyTags: string[] = [];
 
   isTaskRunning!: (type: TaskType) => boolean;
   accountTags!: (blockchain: Blockchain, address: string) => string[];
@@ -206,6 +227,20 @@ export default class AccountBalances extends Vue {
     { text: 'Actions', value: 'actions', sortable: false, width: '50' },
     { text: '', value: 'expand', align: 'end' }
   ];
+
+  get visibleBalances(): AccountBalance[] {
+    if (this.onlyTags.length === 0) {
+      return this.balances;
+    }
+
+    const blockchain = this.blockchain;
+    const accountTags = this.accountTags;
+    const filteredTags = this.onlyTags;
+    return this.balances.filter(({ account }) => {
+      const tags = accountTags(blockchain, account);
+      return filteredTags.every(tag => tags.includes(tag));
+    });
+  }
 
   get accountOperation(): boolean {
     return (
@@ -242,6 +277,20 @@ export default class AccountBalances extends Vue {
   margin-top: 16px;
   margin-bottom: 16px;
 
+  &__account {
+    display: flex;
+    flex-direction: column;
+    &__address {
+      padding-top: 6px;
+      padding-bottom: 6px;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: row;
+  }
+
   &__totals {
     font-weight: 500;
   }
@@ -252,6 +301,7 @@ export default class AccountBalances extends Vue {
 
   &__tag {
     margin-right: 8px;
+    margin-bottom: 2px;
   }
 }
 </style>

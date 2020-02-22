@@ -4,7 +4,10 @@
       <v-card>
         <v-card-title>Blockchain Balances</v-card-title>
         <v-card-text>
-          <account-form></account-form>
+          <account-form
+            :edit="editedAccount"
+            @edit-complete="editedAccount = ''"
+          ></account-form>
           <token-track></token-track>
           <v-divider></v-divider>
           <asset-balances
@@ -17,12 +20,14 @@
             title="ETH per account balances"
             blockchain="ETH"
             :balances="ethAccounts"
+            @edit="editedAccount = $event"
           ></account-balances>
           <v-divider></v-divider>
           <account-balances
             title="BTC per account balances"
             blockchain="BTC"
             :balances="btcAccounts"
+            @edit="editedAccount = $event"
           ></account-balances>
         </v-card-text>
       </v-card>
@@ -56,5 +61,7 @@ export default class BlockchainBalances extends Vue {
   ethAccounts!: AccountBalance[];
   btcAccounts!: AccountBalance[];
   totals!: AccountBalance[];
+
+  editedAccount: string = '';
 }
 </script>
