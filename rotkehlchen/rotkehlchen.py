@@ -27,6 +27,7 @@ from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
+from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.history import PriceHistorian, TradesHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import DEFAULT_ANONYMIZED_LOGS, LoggingSettings, RotkehlchenLogsAdapter
@@ -94,6 +95,7 @@ class Rotkehlchen():
         self.data_dir = args.data_dir
         self.args = args
         self.msg_aggregator = MessagesAggregator()
+        self.greenlet_manager = GreenletManager(msg_aggregator=self.msg_aggregator)
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
         self.data = DataHandler(self.data_dir, self.msg_aggregator)
         self.cryptocompare = Cryptocompare(data_directory=self.data_dir, database=None)
@@ -204,6 +206,7 @@ class Rotkehlchen():
             owned_eth_tokens=self.data.db.get_owned_tokens(),
             ethchain=ethchain,
             msg_aggregator=self.msg_aggregator,
+            greenlet_manager=self.greenlet_manager,
         )
         self.ethereum_analyzer = EthereumAnalyzer(
             ethchain=ethchain,
