@@ -1,8 +1,9 @@
 import logging
-from dataclasses import dataclass, field
 from typing import Dict, List, NamedTuple
 
+from dataclasses import dataclass, field
 from eth_utils.address import to_checksum_address
+from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.constants.ethereum import (
@@ -17,6 +18,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.ethchain import Ethchain, address_to_bytes32
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.utils.interfaces import EthereumModule
 
 log = logging.getLogger(__name__)
 
@@ -36,47 +38,56 @@ class DSRAccountReport(NamedTuple):
     gain_so_far: int
 
 
-class MakerDAO():
+class MakerDAO(EthereumModule):
     """Class to manage MakerDAO related stuff such as DSR and CDPs/Vaults"""
 
     def __init__(self, ethchain: Ethchain, database: DBHandler) -> None:
         self.ethchain = ethchain
         self.database = database
+        self.lock = Semaphore()
+
+    def _get_account_proxy(self, address: ChecksumEthAddress) -> ChecksumEthAddress:
+        """Checks if a DSR proxy exists for the given address and returns it if it does"""
+        result = self.ethchain.check_contract(
+            contract_address=MAKERDAO_PROXY_REGISTRY_ADDRESS,
+            abi=MAKERDAO_PROXY_REGISTRY_ABI,
+            method_name='proxies',
+            arguments=[address],
+        )
+        if int(result, 16) != 0:
+            return to_checksum_address(result)
+        return None
 
     def get_accounts_having_maker_proxy(self) -> Dict[ChecksumEthAddress, ChecksumEthAddress]:
         mapping = {}
         accounts = self.database.get_blockchain_accounts()
         for account in accounts.eth:
-            result = self.ethchain.check_contract(
-                contract_address=MAKERDAO_PROXY_REGISTRY_ADDRESS,
-                abi=MAKERDAO_PROXY_REGISTRY_ABI,
-                method_name='proxies',
-                arguments=[account],
-            )
-            if int(result, 16) != 0:
-                mapping[account] = to_checksum_address(result)
+            proxy_result = self._get_account_proxy(account)
+            if proxy_result:
+                mapping[account] = proxy_result
 
         return mapping
 
-    def get_current_dsr(self) -> FVal:
-        proxy_mappings = self.get_accounts_having_maker_proxy()
-        for account, proxy in proxy_mappings.items():
-            guy_slice = self.ethchain.check_contract(
-                contract_address=MAKERDAO_POT_ADDRESS,
-                abi=MAKERDAO_POT_ABI,
-                method_name='pie',
-                arguments=[proxy],
-            )
-            chi = self.ethchain.check_contract(
-                contract_address=MAKERDAO_POT_ADDRESS,
-                abi=MAKERDAO_POT_ABI,
-                method_name='chi',
-            )
-            balance = FVal((guy_slice * chi) / (1e27) / (1e18))
-            msg = f'DSR balance of {account} is {balance}'
-            print(msg)
-            log.debug(msg)
-            return balance
+    def get_current_dsr(self) -> Dict[ChecksumEthAddress, FVal]:
+        with self.lock:
+            proxy_mappings = self.get_accounts_having_maker_proxy()
+            balances = {}
+            for account, proxy in proxy_mappings.items():
+                guy_slice = self.ethchain.check_contract(
+                    contract_address=MAKERDAO_POT_ADDRESS,
+                    abi=MAKERDAO_POT_ABI,
+                    method_name='pie',
+                    arguments=[proxy],
+                )
+                chi = self.ethchain.check_contract(
+                    contract_address=MAKERDAO_POT_ADDRESS,
+                    abi=MAKERDAO_POT_ABI,
+                    method_name='chi',
+                )
+                balance = FVal((guy_slice * chi) / (1e27) / (1e18))
+                balances[account] = balance
+
+        return balances
 
     def _get_vat_move_event_value(
             self,
@@ -211,10 +222,27 @@ class MakerDAO():
         return DSRAccountReport(movements=movements, gain_so_far=gain)
 
     def get_historical_dsr(self) -> Dict[ChecksumEthAddress, DSRAccountReport]:
-        proxy_mappings = self.get_accounts_having_maker_proxy()
-        reports = {}
-        for account, proxy in proxy_mappings.items():
-            report = self._historical_dsr_for_account(account, proxy)
-            reports[account] = report
+        with self.lock:
+            log.debug('historical dsr 1')
+            proxy_mappings = self.get_accounts_having_maker_proxy()
+            reports = {}
+            for account, proxy in proxy_mappings.items():
+                log.debug('historical dsr 2')
+                report = self._historical_dsr_for_account(account, proxy)
+                reports[account] = report
 
-        return report
+        return reports
+
+    # -- Methods following the EthereumModule interface -- #
+    def on_startup(self) -> None:
+        self.get_historical_dsr()
+
+    def on_account_addition(self, address: ChecksumEthAddress) -> None:
+        with self.lock:
+            proxy = self._get_account_proxy(address)
+            if not proxy:
+                return
+            report = self._historical_dsr_for_account(address, proxy)
+
+    def on_account_removal(self, address: ChecksumEthAddress) -> None:
+        pass
