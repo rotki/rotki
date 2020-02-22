@@ -1,11 +1,13 @@
 import logging
 import os
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
 import requests
 from web3 import HTTPProvider, Web3
 from web3._utils.abi import get_abi_output_types
+from web3._utils.contracts import find_matching_event_abi
+from web3._utils.filters import construct_event_filter_params
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.errors import RemoteError, UnableToDecryptRemoteData
@@ -21,6 +23,10 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 DEFAULT_ETH_RPC_TIMEOUT = 10
+
+
+def address_to_bytes32(address: ChecksumEthAddress) -> str:
+    return '0x' + 24 * '0' + address[2:]
 
 
 class Ethchain():
@@ -357,16 +363,57 @@ class Ethchain():
             method = getattr(contract.caller, method_name)
             return method(*arguments if arguments else [])
         else:
-            web3 = Web3()
-            contract = web3.eth.contract(address=contract_address, abi=abi)
-            input_data = contract.encodeABI(method_name, args=arguments if arguments else [])
-            result = self.etherscan.eth_call(to_address=contract_address, input_data=input_data)
-            fn_abi = contract._find_matching_fn_abi(
-                fn_identifier=method_name,
-                args=arguments,
+            return self._check_contract_etherscan(
+                contract_address=contract_address,
+                abi=abi,
+                method_name=method_name,
+                arguments=arguments,
             )
-            output_types = get_abi_output_types(fn_abi)
-            output_data = web3.codec.decode_abi(output_types, bytes.fromhex(result[2:]))
-            if len(output_data) != 1:
-                log.error('Unexpected call with multiple output data. Can not handle properly')
-            return output_data[0]
+
+    def get_logs(
+            self,
+            contract_address: ChecksumEthAddress,
+            abi: List,
+            event_name: str,
+            argument_filters: Dict[str, str],
+            from_block: Union[int, str],
+            to_block: Union[int, str] = 'latest',
+    ) -> List[Dict[str, Any]]:
+        if self.connected:
+            event_abi = find_matching_event_abi(abi=abi, event_name=event_name)
+            _, filter_args = construct_event_filter_params(
+                event_abi=event_abi,
+                abi_codec=self.web3.codec,
+                contract_address=contract_address,
+                argument_filters=argument_filters,
+                fromBlock=from_block,
+                toBlock=to_block,
+            )
+            if event_abi['anonymous']:
+                # web3.py does not handle the anonymous events correctly and adds the first topic
+                filter_args['topics'] = filter_args['topics'][1:]
+
+            until_block = self.web3.eth.blockNumber if to_block == 'latest' else to_block
+            events = []
+            start_block = from_block
+            while start_block <= until_block:
+                filter_args['fromBlock'] = start_block
+                end_block = min(start_block + 250000, until_block)
+                filter_args['toBlock'] = end_block
+                log.debug(
+                    'Querying contract event',
+                    contract_address=contract_address,
+                    event_name=event_name,
+                    argument_filters=argument_filters,
+                    from_block=filter_args['fromBlock'],
+                    to_block=filter_args['toBlock'],
+                )
+                # WTF: for some reason the first time we get in here the loop resets
+                # to the start without querying eth_getLogs and ends up with double logging
+                new_events = self.web3.eth.getLogs(filter_args)
+                start_block = end_block + 1
+                events.extend(new_events)
+        else:
+            pass
+
+        return events
