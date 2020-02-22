@@ -1,10 +1,10 @@
 import logging
 import operator
 from collections import defaultdict
-from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, overload
 
 import requests
+from dataclasses import dataclass, field
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
@@ -13,6 +13,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.errors import EthSyncError, InputError, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.fval import FVal
+from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
@@ -25,6 +26,7 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import (
     CacheableObject,
+    EthereumModule,
     LockableQueryObject,
     cache_response_timewise,
     protect_with_lock,
@@ -131,6 +133,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
             owned_eth_tokens: List[EthereumToken],
             ethchain: 'Ethchain',
             msg_aggregator: MessagesAggregator,
+            greenlet_manager: GreenletManager,
+            eth_modules: Optional[Dict[str, EthereumModule]] = None,
     ):
         super().__init__()
         self.ethchain = ethchain
@@ -142,6 +146,14 @@ class ChainManager(CacheableObject, LockableQueryObject):
         self.balances = BlockchainBalances()
         # Per asset total balances
         self.totals: Totals = defaultdict(Balance)
+        self.eth_modules = {} if not eth_modules else eth_modules
+        self.greenlet_manager = greenlet_manager
+
+        for name, module in self.eth_modules.items():
+            self.greenlet_manager.spawn_and_track(
+                task_name=f'startup of {name}',
+                method=module.on_startup,
+            )
 
     def __del__(self) -> None:
         del self.ethchain
@@ -564,22 +576,27 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 )
 
         elif blockchain == SupportedBlockchain.ETHEREUM:
-            for account in accounts:
-                try:
-                    self.modify_eth_account(
-                        account=ChecksumEthAddress(account),  # type: ignore
-                        append_or_remove=append_or_remove,
-                        add_or_sub=add_or_sub,
-                    )
-                except BadFunctionCallOutput as e:
-                    log.error(
-                        'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
-                        'exception: {}'.format(str(e)),
-                    )
-                    raise EthSyncError(
-                        'Tried to use the ethereum chain of a local client to edit '
-                        'an eth account but the chain is not synced.',
-                    )
+            address = ChecksumEthAddress(account)
+            try:
+                self.modify_eth_account(
+                    account=address,
+                    append_or_remove=append_or_remove,
+                    add_or_sub=add_or_sub,
+                )
+            except BadFunctionCallOutput as e:
+                log.error(
+                    'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
+                    'exception: {}'.format(str(e)),
+                )
+                raise EthSyncError(
+                    'Tried to use the ethereum chain of a local client to edit '
+                    'an eth account but the chain is not synced.',
+                )
+            for _, module in self.eth_modules.items():
+                if append_or_remove == 'append':
+                    module.on_account_addition(address)
+                else:  # remove
+                    module.on_account_removal(address)
 
         else:
             # That should not happen. Should be checked by marshmallow
