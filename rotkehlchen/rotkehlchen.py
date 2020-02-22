@@ -31,6 +31,7 @@ from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.history import PriceHistorian, TradesHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import DEFAULT_ANONYMIZED_LOGS, LoggingSettings, RotkehlchenLogsAdapter
+from rotkehlchen.makerdao import MakerDAO
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.transactions import EthereumAnalyzer
@@ -201,12 +202,14 @@ class Rotkehlchen():
             etherscan=self.etherscan,
             msg_aggregator=self.msg_aggregator,
         )
+        makerdao = MakerDAO(ethchain=ethchain, database=self.data.db)
         self.chain_manager = ChainManager(
             blockchain_accounts=self.data.db.get_blockchain_accounts(),
             owned_eth_tokens=self.data.db.get_owned_tokens(),
             ethchain=ethchain,
             msg_aggregator=self.msg_aggregator,
             greenlet_manager=self.greenlet_manager,
+            eth_modules={'makerdao': makerdao},
         )
         self.ethereum_analyzer = EthereumAnalyzer(
             ethchain=ethchain,
