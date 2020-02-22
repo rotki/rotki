@@ -16,7 +16,7 @@ import { currencies } from '@/data/currencies';
 import { toMap } from '@/utils/conversion';
 
 export const actions: ActionTree<BalanceState, RotkehlchenState> = {
-  async fetchBalances({ commit, rootGetters }) {
+  async fetchBalances({ commit, rootGetters, dispatch }) {
     const isTaskRunning = rootGetters['tasks/isTaskRunning'];
     if (isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES)) {
       return;
@@ -40,20 +40,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         Severity.ERROR
       );
     }
-
-    try {
-      const [ethAccounts, btcAccounts] = await Promise.all([
-        api.accounts('ETH'),
-        api.accounts('BTC')
-      ]);
-
-      const ethMap = toMap(ethAccounts, 'address');
-      const btcMap = toMap(btcAccounts, 'address');
-      commit('ethAccounts', ethMap);
-      commit('btcAccounts', btcMap);
-    } catch (e) {
-      notify(`Failed to accounts: ${e}`, 'Querying accounts', Severity.ERROR);
-    }
+    await dispatch('accounts');
   },
   fetchExchangeBalances(
     { commit, rootGetters },
@@ -204,6 +191,29 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     } as BlockchainMetadata);
 
     commit('tasks/add', task, { root: true });
+  },
+
+  async editAccount({ commit }, payload: BlockchainAccountPayload) {
+    const { blockchain } = payload;
+    const accountData = await api.editBlockchainAccount(payload);
+    const accountMap = toMap(accountData, 'address');
+    commit(blockchain === 'ETH' ? 'ethAccounts' : 'btcAccounts', accountMap);
+  },
+
+  async accounts({ commit }) {
+    try {
+      const [ethAccounts, btcAccounts] = await Promise.all([
+        api.accounts('ETH'),
+        api.accounts('BTC')
+      ]);
+
+      const ethMap = toMap(ethAccounts, 'address');
+      const btcMap = toMap(btcAccounts, 'address');
+      commit('ethAccounts', ethMap);
+      commit('btcAccounts', btcMap);
+    } catch (e) {
+      notify(`Failed to accounts: ${e}`, 'Querying accounts', Severity.ERROR);
+    }
   }
 };
 
