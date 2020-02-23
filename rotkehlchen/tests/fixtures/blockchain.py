@@ -11,6 +11,7 @@ from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.crypto import address_encoder, privatekey_to_address, sha3
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.externalapis.etherscan import Etherscan
+from rotkehlchen.makerdao import MakerDAO
 from rotkehlchen.tests.utils.blockchain import geth_create_blockchain
 from rotkehlchen.tests.utils.tests import cleanup_tasks
 from rotkehlchen.typing import BTCAddress, ChecksumEthAddress
@@ -180,6 +181,11 @@ def owned_eth_tokens() -> List[EthereumToken]:
 
 
 @pytest.fixture
+def ethereum_modules() -> List[str]:
+    return []
+
+
+@pytest.fixture
 def blockchain(
         blockchain_backend,  # pylint: disable=unused-argument
         ethchain_client,
@@ -188,11 +194,25 @@ def blockchain(
         messages_aggregator,
         greenlet_manager,
         owned_eth_tokens,
+        ethereum_modules,
+        database,
 ):
+    modules = {}
+    for given_module in ethereum_modules:
+        if given_module == 'makerdao':
+            modules['makerdao'] = MakerDAO(
+                ethchain=ethchain_client,
+                database=database,
+                msg_aggregator=messages_aggregator,
+            )
+        else:
+            raise AssertionError(f'Unrecognized ethereum module {given_module} in test setup')
+
     return ChainManager(
         blockchain_accounts=blockchain_accounts,
         owned_eth_tokens=owned_eth_tokens,
         ethchain=ethchain_client,
         msg_aggregator=messages_aggregator,
         greenlet_manager=greenlet_manager,
+        eth_modules=modules,
     )

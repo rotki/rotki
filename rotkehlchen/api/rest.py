@@ -1264,7 +1264,7 @@ class RestAPI():
         except RemoteError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_GATEWAY)
 
-        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+        return api_response(process_result(_wrap_in_ok_result(result)), status_code=HTTPStatus.OK)
 
     @require_premium_user(active_check=False)
     def get_makerdao_dsr_history(self) -> Response:
