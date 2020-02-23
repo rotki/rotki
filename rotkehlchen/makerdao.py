@@ -15,10 +15,14 @@ from rotkehlchen.constants.ethereum import (
     MAKERDAO_VAT_ADDRESS,
 )
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.errors import ConversionError, DeserializationError
 from rotkehlchen.ethchain import Ethchain, address_to_bytes32
 from rotkehlchen.fval import FVal
+from rotkehlchen.serialization.deserialize import deserialize_blocknumber
 from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
+from rotkehlchen.utils.misc import hex_or_bytes_to_int
 
 log = logging.getLogger(__name__)
 
@@ -41,9 +45,15 @@ class DSRAccountReport(NamedTuple):
 class MakerDAO(EthereumModule):
     """Class to manage MakerDAO related stuff such as DSR and CDPs/Vaults"""
 
-    def __init__(self, ethchain: Ethchain, database: DBHandler) -> None:
+    def __init__(
+            self,
+            ethchain: Ethchain,
+            database: DBHandler,
+            msg_aggregator: MessagesAggregator,
+    ) -> None:
         self.ethchain = ethchain
         self.database = database
+        self.msg_aggregator = msg_aggregator
         self.lock = Semaphore()
 
     def _get_account_proxy(self, address: ChecksumEthAddress) -> Optional[ChecksumEthAddress]:
@@ -96,7 +106,10 @@ class MakerDAO(EthereumModule):
             block_number: int,
             transaction_index: int,
     ) -> Optional[int]:
-        """Returns values in DAI that were moved from to address at a block number and tx index"""
+        """Returns values in DAI that were moved from to address at a block number and tx index
+
+        Returns None if no value was found of if there was an error.
+        """
         arg1 = address_to_bytes32(from_address)
         arg2 = address_to_bytes32(to_address)
         argument_filters = {
@@ -120,8 +133,10 @@ class MakerDAO(EthereumModule):
                         'Mistaken assumption: There is multiple vat.move events for '
                         'the same transaction',
                     )
-                bytes_val = event['topics'][3]
-                value = int.from_bytes(bytes_val, byteorder='big', signed=False)
+                try:
+                    value = hex_or_bytes_to_int(event['topics'][3])
+                except ConversionError:
+                    value = None
         return value
 
     def _historical_dsr_for_account(
@@ -144,19 +159,31 @@ class MakerDAO(EthereumModule):
             from_block=8928160,  # POT creation block
         )
         for join_event in join_events:
-            bytes_val = join_event['topics'][2]
-            wad_val = int.from_bytes(bytes_val, byteorder='big', signed=False)
+            try:
+                wad_val = hex_or_bytes_to_int(join_event['topics'][2])
+            except ConversionError as e:
+                msg = f'Error at reading DSR join event topics. {str(e)}. Skipping event...'
+                self.msg_aggregator.add_error(msg)
+                continue
             join_normalized_balances.append(wad_val)
 
             # and now get the deposit amount
+            try:
+                block_number = deserialize_blocknumber(join_event['blockNumber'])
+            except DeserializationError as e:
+                msg = f'Error at reading DSR join event block number. {str(e)}. Skipping event...'
+                self.msg_aggregator.add_error(msg)
+                continue
             dai_value = self._get_vat_move_event_value(
                 from_address=proxy,
                 to_address=MAKERDAO_POT_ADDRESS,
-                block_number=join_event['blockNumber'],
+                block_number=block_number,
                 transaction_index=join_event['transactionIndex'],
             )
             if not dai_value:
-                log.error('Did not find corresponding vat.move event for pot join. Skipping ...')
+                self.msg_aggregator.add_error(
+                    'Did not find corresponding vat.move event for pot join. Skipping ...',
+                )
                 continue
 
             movements.append(
@@ -171,7 +198,7 @@ class MakerDAO(EthereumModule):
 
         argument_filters = {
             'sig': '0x7f8661a1',  # exit
-            'usr': proxy,  # join
+            'usr': proxy,
         }
         exit_events = self.ethchain.get_logs(
             contract_address=MAKERDAO_POT_ADDRESS,
@@ -181,20 +208,32 @@ class MakerDAO(EthereumModule):
             from_block=8928160,  # POT creation block
         )
         for exit_event in exit_events:
-            bytes_val = exit_event['topics'][2]
-
-            wad_val = int.from_bytes(bytes_val, byteorder='big', signed=False)
+            try:
+                wad_val = hex_or_bytes_to_int(exit_event['topics'][2])
+            except ConversionError as e:
+                msg = f'Error at reading DSR exit event topics. {str(e)}. Skipping event...'
+                self.msg_aggregator.add_error(msg)
+                continue
             exit_normalized_balances.append(wad_val)
 
-            # and now get the withdrawals amounts
+            try:
+                block_number = deserialize_blocknumber(exit_event['blockNumber'])
+            except DeserializationError as e:
+                msg = f'Error at reading DSR exit event block number. {str(e)}. Skipping event...'
+                self.msg_aggregator.add_error(msg)
+                continue
+
+            # and now get the withdrawal amount
             dai_value = self._get_vat_move_event_value(
                 from_address=MAKERDAO_POT_ADDRESS,
                 to_address=proxy,
-                block_number=exit_event['blockNumber'],
+                block_number=block_number,
                 transaction_index=exit_event['transactionIndex'],
             )
             if not dai_value:
-                log.error('Did not find corresponding vat.move event for pot exit. Skipping ...')
+                self.msg_aggregator.add_error(
+                    'Did not find corresponding vat.move event for pot exit. Skipping ...',
+                )
                 continue
 
             movements.append(
@@ -235,11 +274,9 @@ class MakerDAO(EthereumModule):
 
     def get_historical_dsr(self) -> Dict[ChecksumEthAddress, DSRAccountReport]:
         with self.lock:
-            log.debug('historical dsr 1')
             proxy_mappings = self.get_accounts_having_maker_proxy()
             reports = {}
             for account, proxy in proxy_mappings.items():
-                log.debug('historical dsr 2')
                 report = self._historical_dsr_for_account(account, proxy)
                 reports[account] = report
 

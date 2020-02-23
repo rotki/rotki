@@ -456,3 +456,27 @@ def deserialize_hex_color_code(symbol: str) -> TradeType:
 
 def deserialize_ethereum_address(symbol: str) -> ChecksumEthAddress:
     return ChecksumEthAddress(HexAddress(symbol))
+
+
+def deserialize_blocknumber(symbol: Union[str, int]) -> int:
+    """Takes a block number value which can either be an int or a hex string and
+    turns it into an integer block number value
+
+    May Raise:
+    - DeserializationError if the given data are in an unexpected format.
+    """
+    if isinstance(symbol, int):
+        block_number = symbol
+    elif isinstance(symbol, str):
+        try:
+            block_number = int(symbol, 16)
+        except ValueError:
+            raise DeserializationError(
+                f'Could not turn string "{symbol}" into an integer block number',
+            )
+    else:
+        raise DeserializationError(
+            f'Unexpected type {type(symbol)} given to deserialize_blocknumber()',
+        )
+
+    return block_number
