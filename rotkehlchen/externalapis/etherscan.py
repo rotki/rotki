@@ -88,7 +88,7 @@ class Etherscan(ExternalServiceWithApiKey):
     def _query(  # pylint: disable=no-self-use
             self,
             module: str,
-            action: Literal['balancemulti', 'txlist', 'txlistinternal'],
+            action: Literal['balancemulti', 'txlist', 'txlistinternal', 'tokentx'],
             options: Optional[Dict[str, str]] = None,
     ) -> List[Dict[str, Any]]:
         ...
@@ -97,7 +97,13 @@ class Etherscan(ExternalServiceWithApiKey):
     def _query(  # noqa: F811 pylint: disable=no-self-use
             self,
             module: str,
-            action: Literal['balance', 'tokenbalance', 'eth_blockNumber'],
+            action: Literal[
+                'balance',
+                'tokenbalance',
+                'eth_blockNumber',
+                'eth_getCode',
+                'eth_call',
+            ],
             options: Optional[Dict[str, str]] = None,
     ) -> str:
         ...
