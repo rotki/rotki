@@ -4,7 +4,7 @@ import traceback
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 import gevent
 from flask import Response, make_response
@@ -30,6 +30,7 @@ from rotkehlchen.errors import (
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.makerdao import MakerDAO, serialize_dsr_reports
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
@@ -1254,3 +1255,24 @@ class RestAPI():
     ) -> Response:
         self.rotkehlchen.data_importer.import_cointracking_csv(filepath)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def get_makerdao_dsr_balance(self) -> Response:
+        makerdao = cast(MakerDAO, self.rotkehlchen.blockchain.eth_modules['makerdao'])
+        try:
+            result = makerdao.get_current_dsr()
+        except RemoteError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_GATEWAY)
+
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    @require_premium_user(active_check=False)
+    def get_makerdao_dsr_history(self) -> Response:
+        makerdao = cast(MakerDAO, self.rotkehlchen.blockchain.eth_modules['makerdao'])
+        try:
+            result = makerdao.get_historical_dsr()
+        except RemoteError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_GATEWAY)
+
+        serialized_result = serialize_dsr_reports(result)
+        return api_response(_wrap_in_ok_result(serialized_result), status_code=HTTPStatus.OK)

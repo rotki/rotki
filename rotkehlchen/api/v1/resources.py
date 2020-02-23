@@ -633,3 +633,15 @@ class DataImportResource(BaseResource):
     @use_kwargs(put_schema, locations=('json',))
     def put(self, source: Literal['cointracking.info'], filepath: Path) -> None:
         return self.rest_api.import_data(source=source, filepath=filepath)
+
+
+class MakerDAODSRBalanceResource(BaseResource):
+
+    def get(self) -> Response:
+        return self.rest_api.get_makerdao_dsr_balance()
+
+
+class MakerDAODSRHistoryResource(BaseResource):
+
+    def get(self) -> Response:
+        return self.rest_api.get_makerdao_dsr_history()

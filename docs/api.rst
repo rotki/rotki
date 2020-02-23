@@ -2413,7 +2413,6 @@ Removing owned ETH tokens
    :statuscode 500: Internal Rotki error
    :statuscode 502: Error occured with some external service query such as Etherscan. Check message for details.
 
-
 Getting blockchain account data
 ===============================
 .. http:get:: /api/(version)/blockchains/(name)/
@@ -2456,6 +2455,116 @@ Getting blockchain account data
    :statuscode 200: Account data succesfully queried.
    :statuscode 409: User is not logged in.
    :statuscode 500: Internal Rotki error
+
+
+Getting current ethereum MakerDAO DSR balance
+=================================================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/makerdao/dsrbalance
+
+   Doing a GET on the makerdao dsrbalance resource will return the current balance held in DSR by any of the user's accounts.
+>>>>>>> Add Rest API endpoints for makerdao DSR querying
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/makerdao/dsrbalance HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": "125.24423",
+	      "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": "346.43433"
+          },
+          "message": ""
+      }
+
+   :resjson object result: A mapping of accounts to the number of DAI they have locked in DSR. If an account is not in the mapping Rotki does not see anything locked in DSR for it.
+
+   :statuscode 200: DSR succesfully queried.
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal Rotki error.
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
+Getting ethereum MakerDAO DSR historical report
+=================================================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/makerdao/dsrhistory
+
+   .. note::
+      This endpoint is only available for premium users
+
+   Doing a GET on the makerdao dsrhistory resource will return the history of deposits and withdrawals of each account to the DSR along with the amount of DAI gained at each step and other information
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/makerdao/dsrhistory HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
+	          "movements": [{
+		      "movement_type": "deposit",
+		      "gain_so_far": "0",
+		      "amount": "350",
+		      "block_number": 9128160
+		  }, {
+		      "movement_type": "deposit",
+		      "gain_so_far": "0.875232",
+		      "amount": "50",
+		      "block_number": 9129165
+		  }, {
+		      "movement_type": "withdrawal",
+		      "gain_so_far": "1.12875932",
+		      "amount": "350",
+		      "block_number": 9149160
+		  }, {
+		  }],
+		  "gain_so_far": "1.14875932"
+	      },
+	      "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
+	          "movements": [{
+		      "movement_type": "deposit",
+		      "gain_so_far": "0",
+		      "amount": "550",
+		      "block_number": 9128174
+		  }],
+		  "gain_so_far": "0.953423"
+	      }
+          },
+          "message": ""
+      }
+
+   :resjson object result: A mapping of accounts to the DSR history report of each account. If an account is not in the mapping Rotki does not see anything locked in DSR for it.
+   :resjson object movements: A list of deposits/withdrawals to/from the DSR for each account.
+   :resjson string gain_so_far: The total gain so far from the DSR for this account.
+   :resjsonarr string movement_type: The type of movement involving the DSR. Can be either "deposit" or "withdrawal".
+   :resjsonarr string gain_so_far: The amount of DAI gained for this account in the DSR up until the moment of the given deposit/withdrawal.
+   :resjsonarr string amount: The amount of DAI deposited or withdrawn from the DSR.
+   :resjsonarr int block_number: The block number at which the deposit or withdrawal occured.
+
+   :statuscode 200: DSR history succesfully queried.
+   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 Adding blockchain accounts
 ===========================
