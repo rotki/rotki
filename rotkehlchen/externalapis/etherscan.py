@@ -88,8 +88,8 @@ class Etherscan(ExternalServiceWithApiKey):
     def _query(  # pylint: disable=no-self-use
             self,
             module: str,
-            action: Literal['balancemulti', 'txlist', 'txlistinternal', 'tokentx'],
-            options: Optional[Dict[str, str]] = None,
+            action: Literal['balancemulti', 'txlist', 'txlistinternal', 'tokentx', 'getLogs'],
+            options: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         ...
 
@@ -104,7 +104,7 @@ class Etherscan(ExternalServiceWithApiKey):
                 'eth_getCode',
                 'eth_call',
             ],
-            options: Optional[Dict[str, str]] = None,
+            options: Optional[Dict[str, Any]] = None,
     ) -> str:
         ...
 
@@ -112,7 +112,7 @@ class Etherscan(ExternalServiceWithApiKey):
             self,
             module: str,
             action: str,
-            options: Optional[Dict[str, str]] = None,
+            options: Optional[Dict[str, Any]] = None,
     ) -> Union[List[Dict[str, Any]], str, List[EthereumTransaction]]:
         """Queries etherscan
 
@@ -175,9 +175,15 @@ class Etherscan(ExternalServiceWithApiKey):
                     json_ret['message'] == 'No transactions found' and
                     'txlist' in action
                 )
-                if transaction_endpoint_and_none_found:
+                logs_endpoint_and_none_found = (
+                    status == 0 and
+                    json_ret['message'] == 'No records found' and
+                    'getLogs' in action
+                )
+                if transaction_endpoint_and_none_found or logs_endpoint_and_none_found:
                     # Can't realize that result is always a list here so we ignore mypy warning
                     return []  # type: ignore
+
                 # else
                 raise RemoteError(f'Etherscan returned error response: {json_ret}')
         except KeyError as e:
@@ -356,10 +362,42 @@ class Etherscan(ExternalServiceWithApiKey):
             from_address: ChecksumEthAddress,
             token_address: ChecksumEthAddress,
     ) -> List[Dict[str, Any]]:
+        """Gets the token transfers associated with from_address
+
+        May raise:
+        - RemoteError if there are any problems with reaching Etherscan or if
+        an unexpected response is returned
+        """
         options = {'address': from_address, 'contractaddress': token_address, 'sort': 'asc'}
         result = self._query(
             module='account',
             action='tokentx',
+            options=options,
+        )
+        return result
+
+    def get_logs(
+            self,
+            contract_address: ChecksumEthAddress,
+            topics: List[str],
+            from_block: int,
+            to_block: Union[int, str] = 'latest',
+    ) -> List[Dict[str, Any]]:
+        """Performs the etherscan style of eth_getLogs as explained here:
+        https://etherscan.io/apis#logs
+
+        May raise:
+        - RemoteError if there are any problems with reaching Etherscan or if
+        an unexpected response is returned
+        """
+        options = {'fromBlock': from_block, 'toBlock': to_block, 'address': contract_address}
+        for idx, topic in enumerate(topics):
+            options[f'topic{idx}'] = topic
+            options[f'topic{idx}_{idx + 1}opr'] = 'and'
+
+        result = self._query(
+            module='logs',
+            action='getLogs',
             options=options,
         )
         return result
