@@ -10,6 +10,7 @@ from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.api import create_api_server
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
+from rotkehlchen.transactions import EthereumAnalyzer
 
 
 @pytest.fixture
@@ -95,6 +96,10 @@ def initialize_mock_rotkehlchen_instance(
             msg_aggregator=rotki.msg_aggregator,
             exchange_manager=rotki.exchange_manager,
             etherscan=etherscan,
+        )
+        rotki.ethereum_analyzer = EthereumAnalyzer(
+            ethchain=blockchain.ethchain,
+            database=database,
         )
         rotki.user_is_logged_in = True
         rotki.premium_sync_manager = PremiumSyncManager(

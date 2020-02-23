@@ -57,7 +57,6 @@ def test_query_blockchain_balances(
 
     assert_proper_response(response)
     json_data = response.json()
-
     assert json_data['message'] == ''
     assert_eth_balances_result(
         rotki=rotki,
