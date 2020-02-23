@@ -400,7 +400,7 @@ class Ethchain():
         event_abi = find_matching_event_abi(abi=abi, event_name=event_name)
         _, filter_args = construct_event_filter_params(
             event_abi=event_abi,
-            abi_codec=self.web3.codec,
+            abi_codec=Web3().codec,
             contract_address=contract_address,
             argument_filters=argument_filters,
             fromBlock=from_block,

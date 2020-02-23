@@ -144,6 +144,7 @@ class MakerDAO(EthereumModule):
                     method_name='chi',
                 )
                 balance = _dsrdai_to_dai(guy_slice * chi)
+
                 balances[account] = balance
 
         return balances
