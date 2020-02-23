@@ -332,7 +332,7 @@ class Ethchain():
             abi: List,
             method_name: str,
             arguments: Optional[List[Any]] = None,
-    ):
+    ) -> Any:
         web3 = Web3()
         contract = web3.eth.contract(address=contract_address, abi=abi)
         input_data = contract.encodeABI(method_name, args=arguments if arguments else [])
@@ -357,7 +357,7 @@ class Ethchain():
             abi: List,
             method_name: str,
             arguments: Optional[List[Any]] = None,
-    ):
+    ) -> Any:
         if self.connected:
             contract = self.web3.eth.contract(address=contract_address, abi=abi)
             method = getattr(contract.caller, method_name)
@@ -376,7 +376,7 @@ class Ethchain():
             abi: List,
             event_name: str,
             argument_filters: Dict[str, str],
-            from_block: Union[int, str],
+            from_block: int,
             to_block: Union[int, str] = 'latest',
     ) -> List[Dict[str, Any]]:
         if self.connected:
@@ -394,7 +394,7 @@ class Ethchain():
                 filter_args['topics'] = filter_args['topics'][1:]
 
             until_block = self.web3.eth.blockNumber if to_block == 'latest' else to_block
-            events = []
+            events: List[Dict[str, Any]] = []
             start_block = from_block
             while start_block <= until_block:
                 filter_args['fromBlock'] = start_block

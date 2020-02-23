@@ -16,6 +16,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import (
     BTCAddress,
     ChecksumEthAddress,
@@ -576,7 +577,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 )
 
         elif blockchain == SupportedBlockchain.ETHEREUM:
-            address = ChecksumEthAddress(account)
+            address = deserialize_ethereum_address(account)
             try:
                 self.modify_eth_account(
                     account=address,

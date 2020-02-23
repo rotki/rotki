@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, NamedTuple
+from typing import Dict, List, NamedTuple, Optional
 
 from dataclasses import dataclass, field
 from eth_utils.address import to_checksum_address
@@ -46,7 +46,7 @@ class MakerDAO(EthereumModule):
         self.database = database
         self.lock = Semaphore()
 
-    def _get_account_proxy(self, address: ChecksumEthAddress) -> ChecksumEthAddress:
+    def _get_account_proxy(self, address: ChecksumEthAddress) -> Optional[ChecksumEthAddress]:
         """Checks if a DSR proxy exists for the given address and returns it if it does"""
         result = self.ethchain.check_contract(
             contract_address=MAKERDAO_PROXY_REGISTRY_ADDRESS,
@@ -94,8 +94,8 @@ class MakerDAO(EthereumModule):
             from_address: ChecksumEthAddress,
             to_address: ChecksumEthAddress,
             block_number: int,
-            transaction_index: int
-    ) -> int:
+            transaction_index: int,
+    ) -> Optional[int]:
         """Returns values in DAI that were moved from to address at a block number and tx index"""
         arg1 = address_to_bytes32(from_address)
         arg2 = address_to_bytes32(to_address)
@@ -116,15 +116,19 @@ class MakerDAO(EthereumModule):
         for event in events:
             if event['transactionIndex'] == transaction_index:
                 if value is not None:
-                    log.error(
+                    log.error(  # type: ignore
                         'Mistaken assumption: There is multiple vat.move events for '
-                        'the same transaction'
+                        'the same transaction',
                     )
                 bytes_val = event['topics'][3]
                 value = int.from_bytes(bytes_val, byteorder='big', signed=False)
         return value
 
-    def _historical_dsr_for_account(self, account, proxy) -> DSRAccountReport:
+    def _historical_dsr_for_account(
+            self,
+            account: ChecksumEthAddress,
+            proxy: ChecksumEthAddress,
+    ) -> DSRAccountReport:
         movements = []
         join_normalized_balances = []
         exit_normalized_balances = []
@@ -151,6 +155,10 @@ class MakerDAO(EthereumModule):
                 block_number=join_event['blockNumber'],
                 transaction_index=join_event['transactionIndex'],
             )
+            if not dai_value:
+                log.error('Did not find corresponding vat.move event for pot join. Skipping ...')
+                continue
+
             movements.append(
                 DSRMovement(
                     movement_type='deposit',
@@ -158,7 +166,7 @@ class MakerDAO(EthereumModule):
                     normalized_balance=wad_val,
                     amount=dai_value,
                     block_number=join_event['blockNumber'],
-                )
+                ),
             )
 
         argument_filters = {
@@ -185,6 +193,10 @@ class MakerDAO(EthereumModule):
                 block_number=exit_event['blockNumber'],
                 transaction_index=exit_event['transactionIndex'],
             )
+            if not dai_value:
+                log.error('Did not find corresponding vat.move event for pot exit. Skipping ...')
+                continue
+
             movements.append(
                 DSRMovement(
                     movement_type='withdrawal',
@@ -192,7 +204,7 @@ class MakerDAO(EthereumModule):
                     normalized_balance=wad_val,
                     amount=dai_value,
                     block_number=exit_event['blockNumber'],
-                )
+                ),
             )
 
         normalized_balance = 0
@@ -202,7 +214,7 @@ class MakerDAO(EthereumModule):
         for m in movements:
             current_chi = FVal(m.amount) / FVal(m.normalized_balance)
             gain_so_far = normalized_balance * current_chi - amount_in_dsr
-            m.gain_so_far = gain_so_far
+            m.gain_so_far = gain_so_far.to_int(exact=False)
             if m.movement_type == 'deposit':
                 normalized_balance += m.normalized_balance
                 amount_in_dsr += m.amount
@@ -242,7 +254,7 @@ class MakerDAO(EthereumModule):
             proxy = self._get_account_proxy(address)
             if not proxy:
                 return
-            report = self._historical_dsr_for_account(address, proxy)
+            self._historical_dsr_for_account(address, proxy)
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
         pass
