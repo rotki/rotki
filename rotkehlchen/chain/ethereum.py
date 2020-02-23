@@ -326,13 +326,19 @@ class Ethchain():
 
         return result
 
-    def _check_contract_etherscan(
+    def _call_contract_etherscan(
             self,
             contract_address: ChecksumEthAddress,
             abi: List,
             method_name: str,
             arguments: Optional[List[Any]] = None,
     ) -> Any:
+        """Performs an eth_call to an ethereum contract via etherscan
+
+        May raise:
+        - RemoteError if there is a problem with
+        reaching etherscan or with the returned result
+        """
         web3 = Web3()
         contract = web3.eth.contract(address=contract_address, abi=abi)
         input_data = contract.encodeABI(method_name, args=arguments if arguments else [])
@@ -351,19 +357,25 @@ class Ethchain():
             log.error('Unexpected call with multiple output data. Can not handle properly')
         return output_data[0]
 
-    def check_contract(
+    def call_contract(
             self,
             contract_address: ChecksumEthAddress,
             abi: List,
             method_name: str,
             arguments: Optional[List[Any]] = None,
     ) -> Any:
+        """Performs an eth_call to an ethereum contract
+
+        May raise:
+        - RemoteError if etherscan is used and there is a problem with
+        reaching it or with the returned result
+        """
         if self.connected:
             contract = self.web3.eth.contract(address=contract_address, abi=abi)
             method = getattr(contract.caller, method_name)
             return method(*arguments if arguments else [])
         else:
-            return self._check_contract_etherscan(
+            return self._call_contract_etherscan(
                 contract_address=contract_address,
                 abi=abi,
                 method_name=method_name,
@@ -379,6 +391,12 @@ class Ethchain():
             from_block: int,
             to_block: Union[int, str] = 'latest',
     ) -> List[Dict[str, Any]]:
+        """Queries logs of an ethereum contract
+
+        May raise:
+        - RemoteError if etherscan is used and there is a problem with
+        reaching it or with the returned result
+        """
         event_abi = find_matching_event_abi(abi=abi, event_name=event_name)
         _, filter_args = construct_event_filter_params(
             event_abi=event_abi,

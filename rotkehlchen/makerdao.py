@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional
 
 from dataclasses import dataclass, field
 from eth_utils.address import to_checksum_address
@@ -42,6 +42,37 @@ class DSRAccountReport(NamedTuple):
     gain_so_far: int
 
 
+def _dsrdai_to_dai(value: int) -> FVal:
+    """Turns a big integer that is the value of DAI in DSR into a proper DAI decimal FVal"""
+    return FVal(value / 1e27 / 1e18)
+
+
+def serialize_dsr_reports(
+        reports: Dict[ChecksumEthAddress, DSRAccountReport],
+) -> Dict[ChecksumEthAddress, Dict[str, Any]]:
+    """Serializes a DSR Report into a dict.
+
+    Turns DAI into proper decimals and omits fields we don't need to export
+    """
+    result = {}
+    for account, report in reports.items():
+        serialized_report = {
+            'gain_so_far': str(_dsrdai_to_dai(report.gain_so_far)),
+            'movements': [],
+        }
+        for movement in report.movements:
+            serialized_movement = {
+                'movement_type': movement.movement_type,
+                'gain_so_far': str(_dsrdai_to_dai(movement.gain_so_far)),
+                'amount': str(_dsrdai_to_dai(movement.amount)),
+                'block_number': movement.block_number,
+            }
+            serialized_report['movements'].append(serialized_movement)  # type: ignore
+        result[account] = serialized_report
+
+    return result
+
+
 class MakerDAO(EthereumModule):
     """Class to manage MakerDAO related stuff such as DSR and CDPs/Vaults"""
 
@@ -55,10 +86,16 @@ class MakerDAO(EthereumModule):
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.lock = Semaphore()
+        self.historical_dsr_reports: Dict[ChecksumEthAddress, DSRAccountReport] = {}
 
     def _get_account_proxy(self, address: ChecksumEthAddress) -> Optional[ChecksumEthAddress]:
-        """Checks if a DSR proxy exists for the given address and returns it if it does"""
-        result = self.ethchain.check_contract(
+        """Checks if a DSR proxy exists for the given address and returns it if it does
+
+        May raise:
+        - RemoteError if etherscan is used and there is a problem with
+        reaching it or with the returned result.
+        """
+        result = self.ethchain.call_contract(
             contract_address=MAKERDAO_PROXY_REGISTRY_ADDRESS,
             abi=MAKERDAO_PROXY_REGISTRY_ABI,
             method_name='proxies',
@@ -69,6 +106,12 @@ class MakerDAO(EthereumModule):
         return None
 
     def get_accounts_having_maker_proxy(self) -> Dict[ChecksumEthAddress, ChecksumEthAddress]:
+        """Returns a mapping of accounts that have DSR proxies to their proxies
+
+        May raise:
+        - RemoteError if etherscan is used and there is a problem with
+        reaching it or with the returned result.
+        """
         mapping = {}
         accounts = self.database.get_blockchain_accounts()
         for account in accounts.eth:
@@ -79,22 +122,28 @@ class MakerDAO(EthereumModule):
         return mapping
 
     def get_current_dsr(self) -> Dict[ChecksumEthAddress, FVal]:
+        """Gets the current DSR balance for all accounts that have DAI in DSR
+
+        May raise:
+        - RemoteError if etherscan is used and there is a problem with
+        reaching it or with the returned result.
+        """
         with self.lock:
             proxy_mappings = self.get_accounts_having_maker_proxy()
             balances = {}
             for account, proxy in proxy_mappings.items():
-                guy_slice = self.ethchain.check_contract(
+                guy_slice = self.ethchain.call_contract(
                     contract_address=MAKERDAO_POT_ADDRESS,
                     abi=MAKERDAO_POT_ABI,
                     method_name='pie',
                     arguments=[proxy],
                 )
-                chi = self.ethchain.check_contract(
+                chi = self.ethchain.call_contract(
                     contract_address=MAKERDAO_POT_ADDRESS,
                     abi=MAKERDAO_POT_ABI,
                     method_name='chi',
                 )
-                balance = FVal((guy_slice * chi) / (1e27) / (1e18))
+                balance = _dsrdai_to_dai(guy_slice * chi)
                 balances[account] = balance
 
         return balances
@@ -108,7 +157,11 @@ class MakerDAO(EthereumModule):
     ) -> Optional[int]:
         """Returns values in DAI that were moved from to address at a block number and tx index
 
-        Returns None if no value was found of if there was an error.
+        Returns None if no value was found of if there was an error with conversion.
+
+        May raise:
+        - RemoteError if etherscan is used and there is a problem with
+        reaching it or with the returned result.
         """
         arg1 = address_to_bytes32(from_address)
         arg2 = address_to_bytes32(to_address)
@@ -144,6 +197,12 @@ class MakerDAO(EthereumModule):
             account: ChecksumEthAddress,
             proxy: ChecksumEthAddress,
     ) -> DSRAccountReport:
+        """Creates a historical DSR report for a single account
+
+        May raise:
+        - RemoteError if etherscan is used and there is a problem with
+        reaching it or with the returned result.
+        """
         movements = []
         join_normalized_balances = []
         exit_normalized_balances = []
@@ -261,7 +320,7 @@ class MakerDAO(EthereumModule):
                 amount_in_dsr -= m.amount
                 normalized_balance -= m.normalized_balance
 
-        chi = self.ethchain.check_contract(
+        chi = self.ethchain.call_contract(
             contract_address=MAKERDAO_POT_ADDRESS,
             abi=MAKERDAO_POT_ABI,
             method_name='chi',
@@ -284,14 +343,16 @@ class MakerDAO(EthereumModule):
 
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:
-        self.get_historical_dsr()
+        self.historical_dsr_reports = self.get_historical_dsr()
 
     def on_account_addition(self, address: ChecksumEthAddress) -> None:
         with self.lock:
             proxy = self._get_account_proxy(address)
             if not proxy:
                 return
-            self._historical_dsr_for_account(address, proxy)
+            report = self._historical_dsr_for_account(address, proxy)
+            self.historical_dsr_reports[address] = report
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
-        pass
+        with self.lock:
+            self.historical_dsr_reports.pop(address, 'None')
