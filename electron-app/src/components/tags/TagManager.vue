@@ -7,6 +7,9 @@
         <v-icon>fa-close</v-icon>
       </v-btn>
     </v-card-title>
+    <v-card-subtitle>
+      Create new tags or modify existing
+    </v-card-subtitle>
     <v-card-text>
       <tag-creator
         :tag="tag"
