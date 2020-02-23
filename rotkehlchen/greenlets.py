@@ -1,6 +1,6 @@
 import logging
 import traceback
-from typing import Callable, List
+from typing import Any, Callable, List
 
 import gevent
 
@@ -21,7 +21,7 @@ class GreenletManager():
         greenlet.task_name = task_name
         self.greenlets.append(greenlet)
 
-    def spawn_and_track(self, task_name: str, method: Callable, **kwargs) -> None:
+    def spawn_and_track(self, task_name: str, method: Callable, **kwargs: Any) -> None:
         greenlet = gevent.spawn(method, **kwargs)
         self.add(task_name, greenlet)
 

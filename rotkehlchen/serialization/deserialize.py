@@ -1,5 +1,7 @@
 from typing import Tuple, Union
 
+from eth_utils.typing import HexAddress
+
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import (
@@ -12,6 +14,7 @@ from rotkehlchen.fval import AcceptableFValInitInput, FVal
 from rotkehlchen.typing import (
     AssetAmount,
     AssetMovementCategory,
+    ChecksumEthAddress,
     Fee,
     HexColorCode,
     Location,
@@ -449,3 +452,7 @@ def deserialize_hex_color_code(symbol: str) -> TradeType:
         )
 
     return HexColorCode(symbol)
+
+
+def deserialize_ethereum_address(symbol: str) -> ChecksumEthAddress:
+    return ChecksumEthAddress(HexAddress(symbol))

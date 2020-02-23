@@ -1,15 +1,11 @@
 import logging
-from typing import Dict, List, Optional
+from typing import List, Optional
 
-from rotkehlchen.constants.ethereum import (
-    MAKERDAO_PROXY_REGISTRY_ABI,
-    MAKERDAO_PROXY_REGISTRY_ADDRESS,
-)
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, Timestamp
+from rotkehlchen.typing import EthereumTransaction, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
@@ -72,27 +68,12 @@ class EthereumAnalyzer():
         self.last_run_ts = 0
         self.running = False
 
-    def get_accounts_having_maker_proxy(self) -> Dict[ChecksumEthAddress, ChecksumEthAddress]:
-        mapping = {}
-        accounts = self.database.get_blockchain_accounts()
-        for account in accounts.eth:
-            result = self.ethchain.check_contract(
-                contract_address=MAKERDAO_PROXY_REGISTRY_ADDRESS,
-                abi=MAKERDAO_PROXY_REGISTRY_ABI,
-                method_name='proxies',
-                arguments=[account],
-            )
-            if int(result, 16) != 0:
-                mapping[account] = result
-
-        return mapping
-
     def _analyze_all_transactions(self) -> None:
         transactions = query_ethereum_transactions(
             database=self.database,
             etherscan=self.ethchain.etherscan,
-            from_ts=0,
-            to_ts=1581806659,  # 15/02/2020 23:44
+            from_ts=Timestamp(0),
+            to_ts=Timestamp(1581806659),  # 15/02/2020 23:44
         )
 
         for transaction in transactions:
@@ -108,11 +89,6 @@ class EthereumAnalyzer():
 
         if ts_now() - self.last_run_ts < 3600:
             return
-
-        log.debug('Starting analysis')
-        self.running = True
-        mapping = self.get_accounts_having_maker_proxy()
-        log.debug(f'----->{mapping}')
 
         self.running = False
         self.last_run_ts = ts_now()
