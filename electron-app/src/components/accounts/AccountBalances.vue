@@ -86,7 +86,7 @@
             small
             class="mr-2"
             :disabled="accountOperation"
-            @click="edit(item.account)"
+            @click="editedAccount = item.account"
           >
             fa-edit
           </v-icon>
@@ -143,11 +143,32 @@
       @cancel="toDeleteAccount = ''"
       @confirm="deleteAccount()"
     ></confirm-dialog>
+    <v-dialog
+      max-width="600"
+      persistent
+      :value="!!editedAccount"
+      @input="editedAccount = ''"
+    >
+      <v-card>
+        <v-card-title>
+          Edit Account
+        </v-card-title>
+        <v-card-subtitle>
+          Modify labels and tags for the account
+        </v-card-subtitle>
+        <v-card-text>
+          <account-form
+            :edit="editedAccount"
+            @edit-complete="editedAccount = ''"
+          ></account-form>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { Component, Prop, Vue } from 'vue-property-decorator';
 import { AccountBalance } from '@/model/blockchain-balances';
 import { createNamespacedHelpers } from 'vuex';
 import { Currency } from '@/model/currency';
@@ -159,6 +180,7 @@ import { BlockchainBalancePayload } from '@/store/balances/actions';
 import { TaskType } from '@/model/task';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
+import AccountForm from '@/components/accounts/AccountForm.vue';
 
 const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 const { mapGetters, mapState } = createNamespacedHelpers('session');
@@ -166,6 +188,7 @@ const { mapGetters: mapBalancesGetters } = createNamespacedHelpers('balances');
 
 @Component({
   components: {
+    AccountForm,
     TagFilter,
     TagIcon,
     AccountAssetBalances,
@@ -192,10 +215,9 @@ export default class AccountBalances extends Vue {
   @Prop({ required: true })
   title!: string;
 
-  @Emit()
-  edit(_account: string) {}
-
+  editedAccount = '';
   onlyTags: string[] = [];
+  expanded = [];
 
   isTaskRunning!: (type: TaskType) => boolean;
   accountTags!: (blockchain: Blockchain, address: string) => string[];
@@ -205,8 +227,6 @@ export default class AccountBalances extends Vue {
   get isLoading(): boolean {
     return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
   }
-
-  expanded = [];
 
   get expandable(): boolean {
     return this.blockchain === 'ETH';
