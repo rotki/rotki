@@ -379,29 +379,28 @@ class Ethchain():
             from_block: int,
             to_block: Union[int, str] = 'latest',
     ) -> List[Dict[str, Any]]:
+        event_abi = find_matching_event_abi(abi=abi, event_name=event_name)
+        _, filter_args = construct_event_filter_params(
+            event_abi=event_abi,
+            abi_codec=self.web3.codec,
+            contract_address=contract_address,
+            argument_filters=argument_filters,
+            fromBlock=from_block,
+            toBlock=to_block,
+        )
+        if event_abi['anonymous']:
+            # web3.py does not handle the anonymous events correctly and adds the first topic
+            filter_args['topics'] = filter_args['topics'][1:]
+        events: List[Dict[str, Any]] = []
+        start_block = from_block
         if self.connected:
-            event_abi = find_matching_event_abi(abi=abi, event_name=event_name)
-            _, filter_args = construct_event_filter_params(
-                event_abi=event_abi,
-                abi_codec=self.web3.codec,
-                contract_address=contract_address,
-                argument_filters=argument_filters,
-                fromBlock=from_block,
-                toBlock=to_block,
-            )
-            if event_abi['anonymous']:
-                # web3.py does not handle the anonymous events correctly and adds the first topic
-                filter_args['topics'] = filter_args['topics'][1:]
-
             until_block = self.web3.eth.blockNumber if to_block == 'latest' else to_block
-            events: List[Dict[str, Any]] = []
-            start_block = from_block
             while start_block <= until_block:
                 filter_args['fromBlock'] = start_block
                 end_block = min(start_block + 250000, until_block)
                 filter_args['toBlock'] = end_block
                 log.debug(
-                    'Querying contract event',
+                    'Querying node for contract event',
                     contract_address=contract_address,
                     event_name=event_name,
                     argument_filters=argument_filters,
@@ -414,6 +413,18 @@ class Ethchain():
                 start_block = end_block + 1
                 events.extend(new_events)
         else:
-            pass
+            until_block = (
+                self.etherscan.get_latest_block_number() if to_block == 'latest' else to_block
+            )
+            while start_block <= until_block:
+                end_block = min(start_block + 300000, until_block)
+                new_events = self.etherscan.get_logs(
+                    contract_address=contract_address,
+                    topics=filter_args['topics'],
+                    from_block=start_block,
+                    to_block=end_block,
+                )
+                start_block = end_block + 1
+                events.extend(new_events)
 
         return events

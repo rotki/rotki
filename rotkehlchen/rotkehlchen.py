@@ -202,7 +202,11 @@ class Rotkehlchen():
             etherscan=self.etherscan,
             msg_aggregator=self.msg_aggregator,
         )
-        makerdao = MakerDAO(ethchain=ethchain, database=self.data.db)
+        makerdao = MakerDAO(
+            ethchain=ethchain,
+            database=self.data.db,
+            msg_aggregator=self.msg_aggregator,
+        )
         self.chain_manager = ChainManager(
             blockchain_accounts=self.data.db.get_blockchain_accounts(),
             owned_eth_tokens=self.data.db.get_owned_tokens(),
