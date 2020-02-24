@@ -25,6 +25,10 @@ def test_query_realtime_price_apis(inquirer):
     assert result == FVal('6.1371932033')
 
 
+@pytest.mark.skipif(
+    'TRAVIS' in os.environ,
+    reason='some of these APIs frequently become unavailable',
+)
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_switching_to_backup_api(inquirer):
     count = 0
