@@ -4,6 +4,9 @@ import pytest
 import requests
 
 from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
+from rotkehlchen.tests.utils.blockchain import assert_btc_balances_result
+from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
+from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 
 
 def test_add_and_query_tags(
@@ -585,3 +588,98 @@ def test_delete_tag_errors(
         contained_in_msg="name': ['Not a valid string",
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_delete_utilized_tag(
+        rotkehlchen_api_server,
+        number_of_eth_accounts,
+):
+    """
+    Test that deleting a tag that is already utilized by an account
+    also removes it from the account"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    # Add two tags
+    tag1 = {
+        'name': 'public',
+        'description': 'My public accounts',
+        'background_color': 'ffffff',
+        'foreground_color': '000000',
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'tagsresource',
+        ), json=tag1,
+    )
+    assert_proper_response(response)
+    tag2 = {
+        'name': 'desktop',
+        'description': 'Accounts that are stored in the desktop PC',
+        'background_color': '000000',
+        'foreground_color': 'ffffff',
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'tagsresource',
+        ), json=tag2,
+    )
+    assert_proper_response(response)
+
+    # Now add 2 accounts both of them using the above tags
+    new_btc_accounts = [UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]
+    btc_balances = ['10000', '500500000']
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=None,
+        btc_accounts=new_btc_accounts,
+        eth_balances=None,
+        token_balances=None,
+        btc_balances=btc_balances,
+    )
+    accounts_data = [{
+        "address": new_btc_accounts[0],
+        "label": 'my btc miner',
+        'tags': ['public', 'desktop'],
+    }, {
+        "address": new_btc_accounts[1],
+        'label': 'other account',
+        'tags': ['desktop'],
+    }]
+    with setup.bitcoin_patch:
+        response = requests.put(api_url_for(
+            rotkehlchen_api_server,
+            "blockchainsaccountsresource",
+            blockchain='BTC',
+        ), json={'accounts': accounts_data})
+    assert_proper_response(response)
+    assert_btc_balances_result(
+        json_data=response.json(),
+        btc_accounts=new_btc_accounts,
+        btc_balances=btc_balances,
+        also_eth=False,
+    )
+
+    # Now delete the tag used by both accounts
+    delete_tag_data = {
+        'name': 'desktop',
+    }
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            "tagsresource",
+        ), json=delete_tag_data,
+    )
+    assert_proper_response(response)
+    data = response.json()
+    assert len(data['result']) == 1
+    assert data['result']['public'] is not None
+
+    # Now check the DB directly and see that tag mappings of the deleted tag are gone
+    cursor = rotki.data.db.conn.cursor()
+    query = cursor.execute('SELECT object_reference, tag_name FROM tag_mappings;').fetchall()
+    assert len(query) == 1
+    assert query[0][0] == UNIT_BTC_ADDRESS1
+    assert query[0][1] == 'public'
