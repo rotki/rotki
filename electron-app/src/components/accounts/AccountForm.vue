@@ -55,7 +55,12 @@
 </template>
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import { Blockchain, Severity, SupportedBlockchains } from '@/typing/types';
+import {
+  Account,
+  Blockchain,
+  Severity,
+  SupportedBlockchains
+} from '@/typing/types';
 import { TaskType } from '@/model/task';
 import { notify } from '@/store/notifications/utils';
 import { createNamespacedHelpers } from 'vuex';
@@ -84,15 +89,17 @@ export default class AccountForm extends Vue {
   accountTags!: (blockchain: Blockchain, address: string) => string[];
   accountLabel!: (blockchain: Blockchain, address: string) => string;
 
-  @Prop({ required: false, default: '' })
-  edit!: string;
+  @Prop({ required: false, default: null })
+  edit!: Account | null;
 
   private setEditMode() {
-    const address = this.edit;
-    this.address = address;
-    if (!address) {
+    if (!this.edit) {
+      this.address = '';
       return;
     }
+    const { address, chain } = this.edit;
+    this.address = address;
+    this.selected = chain;
     this.label = this.accountLabel(this.selected, address);
     this.tags = this.accountTags(this.selected, address);
   }
