@@ -196,7 +196,10 @@ class DataHandler():
 
         If successful then replace our local Database
 
-        Can raise UnableToDecryptRemoteData due to decrypt().
+        May Raise:
+        - UnableToDecryptRemoteData due to decrypt()
+        - DBUpgradeError if the rotki DB version is newer than the software or
+        there is a DB upgrade and there is an error.
         """
         log.info('Decompress and decrypt DB')
 

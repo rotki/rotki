@@ -120,9 +120,12 @@ class Rotkehlchen():
     ) -> None:
         """Unlocks an existing user or creates a new one if `create_new` is True
 
-        Can raise PremiumAuthenticationError if the password can't unlock the database.
-        Can raise AuthenticationError if premium_credentials are given and are invalid
+        May raise:
+        - PremiumAuthenticationError if the password can't unlock the database.
+        - AuthenticationError if premium_credentials are given and are invalid
         or can't authenticate with the server
+        - DBUpgradeError if the rotki DB version is newer than the software or
+        there is a DB upgrade and there is an error.
         """
         log.info(
             'Unlocking user',
