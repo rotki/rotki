@@ -166,7 +166,7 @@
         </v-card-subtitle>
         <v-card-text>
           <account-form
-            :edit="editedAccount"
+            :edit="edited"
             @edit-complete="editedAccount = ''"
           ></account-form>
         </v-card-text>
@@ -183,7 +183,7 @@ import { Currency } from '@/model/currency';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
 import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
-import { Blockchain, Tags } from '@/typing/types';
+import { Account, Blockchain, Tags } from '@/typing/types';
 import { BlockchainBalancePayload } from '@/store/balances/actions';
 import { TaskType } from '@/model/task';
 import TagIcon from '@/components/tags/TagIcon.vue';
@@ -231,6 +231,12 @@ export default class AccountBalances extends Vue {
   accountTags!: (blockchain: Blockchain, address: string) => string[];
   accountLabel!: (blockchain: Blockchain, address: string) => string;
   tags!: Tags;
+
+  get edited(): Account | null {
+    return this.editedAccount
+      ? { address: this.editedAccount, chain: this.blockchain }
+      : null;
+  }
 
   get isLoading(): boolean {
     return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
