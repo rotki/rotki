@@ -1,11 +1,12 @@
 import logging
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, NamedTuple, Optional
 
-from dataclasses import dataclass, field
 from eth_utils.address import to_checksum_address
 from gevent.lock import Semaphore
 from typing_extensions import Literal
 
+from rotkehlchen.chain.ethereum import Ethchain, address_to_bytes32
 from rotkehlchen.constants.ethereum import (
     MAKERDAO_POT_ABI,
     MAKERDAO_POT_ADDRESS,
@@ -16,7 +17,6 @@ from rotkehlchen.constants.ethereum import (
 )
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import ConversionError, DeserializationError
-from rotkehlchen.ethchain import Ethchain, address_to_bytes32
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_blocknumber
 from rotkehlchen.typing import ChecksumEthAddress
