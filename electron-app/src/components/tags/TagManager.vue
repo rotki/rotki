@@ -55,7 +55,9 @@
       </v-data-table>
       <confirm-dialog
         title="Confirm tag deletion"
-        :message="`Are you sure you want to delete ${tagToDelete}? This will also remove all mappings of this tag.`"
+        :message="
+          `Are you sure you want to delete ${tagToDelete}? This will also remove all mappings of this tag.`
+        "
         :display="!!tagToDelete"
         @confirm="confirmDelete"
         @cancel="tagToDelete = ''"

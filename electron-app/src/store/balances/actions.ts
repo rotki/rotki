@@ -212,6 +212,35 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     } catch (e) {
       notify(`Failed to accounts: ${e}`, 'Querying accounts', Severity.ERROR);
     }
+  },
+  /* Remove a tag from all accounts of the state */
+  async removeTag({ commit, state }, tagName: string) {
+    const updateEth = { ...state.ethAccounts };
+    for (const key in updateEth) {
+      const tags = updateEth[key].tags;
+      const index = tags.indexOf(tagName);
+      updateEth[key] = {
+        ...updateEth[key],
+        tags:
+          index === -1
+            ? tags
+            : [...tags.slice(0, index), ...tags.slice(index + 1)]
+      };
+    }
+    const updateBtc = { ...state.btcAccounts };
+    for (const key in updateBtc) {
+      const tags = updateBtc[key].tags;
+      const index = tags.indexOf(tagName);
+      updateBtc[key] = {
+        ...updateBtc[key],
+        tags:
+          index === -1
+            ? tags
+            : [...tags.slice(0, index), ...tags.slice(index + 1)]
+      };
+    }
+    commit('ethAccounts', updateEth);
+    commit('btcAccounts', updateBtc);
   }
 };
 
