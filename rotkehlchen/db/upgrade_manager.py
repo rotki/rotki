@@ -118,6 +118,12 @@ class DBUpgradeManager():
         self.db = db
 
     def run_upgrades(self) -> None:
+        """Run all required database upgrades
+
+        May raise:
+        - DBUpgradeError if the user uses a newer version than the one we
+        upgrade to or if there is a problem during upgrade.
+        """
         our_version = self.db.get_version()
         if our_version > ROTKEHLCHEN_DB_VERSION:
             raise DBUpgradeError(
