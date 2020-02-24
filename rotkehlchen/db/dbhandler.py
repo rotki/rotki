@@ -139,6 +139,13 @@ def db_tuple_to_str(
 # http://www.sql-join.com/sql-join-types
 class DBHandler:
     def __init__(self, user_data_dir: FilePath, password: str, msg_aggregator: MessagesAggregator):
+        """Database constructor
+
+        May raise:
+        - DBUpgradeError if the rotki DB version is newer than the software or
+        there is a DB upgrade and there is an error.
+        - AuthenticationError if SQLCipher version problems are detected
+        """
         self.msg_aggregator = msg_aggregator
         self.user_data_dir = user_data_dir
         self.sqlcipher_version = detect_sqlcipher_version()
@@ -179,6 +186,10 @@ class DBHandler:
         Such as:
             - Create tables that are missing
             - DB Upgrades
+
+        May raise:
+        - AuthenticationError if a wrong password is given or if the DB is corrupt
+        - DBUpgradeError if there is a problem with DB upgrading
         """
         try:
             self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
@@ -317,6 +328,12 @@ class DBHandler:
         )
 
     def import_unencrypted(self, unencrypted_db_data: bytes, password: str) -> None:
+        """Imports an unencrypted DB from raw data
+
+        May raise:
+        - DBUpgradeError if the rotki DB version is newer than the software or
+        there is a DB upgrade and there is an error.
+        """
         self.disconnect()
         rdbpath = os.path.join(self.user_data_dir, 'rotkehlchen.db')
         # Make copy of existing encrypted DB before removing it

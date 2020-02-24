@@ -18,6 +18,7 @@ from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.errors import (
     AuthenticationError,
+    DBUpgradeError,
     EthSyncError,
     IncorrectApiKeyFormat,
     InputError,
@@ -841,6 +842,10 @@ class RestAPI():
             self.rotkehlchen.reset_after_failed_account_creation_or_login()
             result_dict['message'] = str(e)
             return api_response(result_dict, status_code=HTTPStatus.MULTIPLE_CHOICES)
+        except DBUpgradeError as e:
+            self.rotkehlchen.reset_after_failed_account_creation_or_login()
+            result_dict['message'] = str(e)
+            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
         # Success!
         result_dict['result'] = {
             'exchanges': self.rotkehlchen.exchange_manager.get_connected_exchange_names(),
