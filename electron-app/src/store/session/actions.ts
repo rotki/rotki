@@ -151,7 +151,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     }
   },
 
-  async deleteTag({ commit }, tagName: string) {
+  async deleteTag({ commit, dispatch }, tagName: string) {
     try {
       commit('tags', await api.deleteTag(tagName));
     } catch (e) {
@@ -164,5 +164,6 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         { root: true }
       );
     }
+    dispatch('balances/removeTag', tagName, { root: true });
   }
 };
