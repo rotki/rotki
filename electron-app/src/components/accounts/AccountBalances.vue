@@ -53,12 +53,20 @@
       <template #item.account="{ item }">
         <v-row>
           <v-col cols="12" class="account-balances__account">
-            <span class="font-weight-medium">
-              {{ accountLabel(blockchain, item.account) }}
-            </span>
-            <span class="account-balances__account__address">
+            <span
+              v-if="!accountLabel(blockchain, item.account)"
+              class="account-balances__account__address"
+            >
               {{ item.account }}
             </span>
+            <v-tooltip v-else top>
+              <template #activator="{ on }">
+                <span class="account-balances__account__address" v-on="on">
+                  {{ accountLabel(blockchain, item.account) }}
+                </span>
+              </template>
+              <span> {{ item.account }} </span>
+            </v-tooltip>
             <span v-if="accountTags(blockchain, item.account)">
               <tag-icon
                 v-for="tag in accountTags(blockchain, item.account)"
@@ -301,6 +309,7 @@ export default class AccountBalances extends Vue {
     display: flex;
     flex-direction: column;
     &__address {
+      font-weight: 500;
       padding-top: 6px;
       padding-bottom: 6px;
     }
