@@ -1,8 +1,8 @@
 import logging
 from typing import List, Optional
 
+from rotkehlchen.chain.ethereum import Ethchain
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.ethchain import Ethchain
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import EthereumTransaction, Timestamp

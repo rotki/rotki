@@ -1,10 +1,10 @@
 import logging
 import operator
 from collections import defaultdict
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, overload
 
 import requests
-from dataclasses import dataclass, field
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
@@ -577,22 +577,24 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 )
 
         elif blockchain == SupportedBlockchain.ETHEREUM:
-            address = deserialize_ethereum_address(account)
-            try:
-                self.modify_eth_account(
-                    account=address,
-                    append_or_remove=append_or_remove,
-                    add_or_sub=add_or_sub,
-                )
-            except BadFunctionCallOutput as e:
-                log.error(
-                    'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
-                    'exception: {}'.format(str(e)),
-                )
-                raise EthSyncError(
-                    'Tried to use the ethereum chain of a local client to edit '
-                    'an eth account but the chain is not synced.',
-                )
+            for account in accounts:
+                address = deserialize_ethereum_address(account)
+                try:
+                    self.modify_eth_account(
+                        account=address,
+                        append_or_remove=append_or_remove,
+                        add_or_sub=add_or_sub,
+                    )
+                except BadFunctionCallOutput as e:
+                    log.error(
+                        'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
+                        'exception: {}'.format(str(e)),
+                    )
+                    raise EthSyncError(
+                        'Tried to use the ethereum chain of a local client to edit '
+                        'an eth account but the chain is not synced.',
+                    )
+
             for _, module in self.eth_modules.items():
                 if append_or_remove == 'append':
                     module.on_account_addition(address)

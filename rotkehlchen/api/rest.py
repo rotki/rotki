@@ -1258,7 +1258,7 @@ class RestAPI():
 
     @require_loggedin_user()
     def get_makerdao_dsr_balance(self) -> Response:
-        makerdao = cast(MakerDAO, self.rotkehlchen.blockchain.eth_modules['makerdao'])
+        makerdao = cast(MakerDAO, self.rotkehlchen.chain_manager.eth_modules['makerdao'])
         try:
             result = makerdao.get_current_dsr()
         except RemoteError as e:
@@ -1268,7 +1268,7 @@ class RestAPI():
 
     @require_premium_user(active_check=False)
     def get_makerdao_dsr_history(self) -> Response:
-        makerdao = cast(MakerDAO, self.rotkehlchen.blockchain.eth_modules['makerdao'])
+        makerdao = cast(MakerDAO, self.rotkehlchen.chain_manager.eth_modules['makerdao'])
         try:
             result = makerdao.get_historical_dsr()
         except RemoteError as e:
