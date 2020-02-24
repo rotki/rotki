@@ -350,27 +350,17 @@ export class RotkehlchenApi {
     name: string,
     ignoreCache: boolean = false
   ): Promise<AsyncQuery> {
-    return new Promise<AsyncQuery>((resolve, reject) => {
-      this.axios
-        .get<ActionResult<AsyncQuery>>(`/exchanges/balances/${name}`, {
-          params: {
-            async_query: true,
-            ignore_cache: ignoreCache ? true : undefined
-          },
-          validateStatus: function(status) {
-            return status == 200 || status == 400 || status == 409;
-          }
-        })
-        .then(response => {
-          const { result, message } = response.data;
-          if (result) {
-            resolve(result);
-          } else {
-            reject(new Error(message));
-          }
-        })
-        .catch(error => reject(error));
-    });
+    return this.axios
+      .get<ActionResult<AsyncQuery>>(`/exchanges/balances/${name}`, {
+        params: {
+          async_query: true,
+          ignore_cache: ignoreCache ? true : undefined
+        },
+        validateStatus: function(status) {
+          return status == 200 || status == 400 || status == 409;
+        }
+      })
+      .then(this.handleResponse);
   }
 
   queryBalancesAsync(): Promise<AsyncQuery> {
