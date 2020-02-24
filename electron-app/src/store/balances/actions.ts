@@ -18,19 +18,15 @@ import { toMap } from '@/utils/conversion';
 export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   async fetchBalances({ commit, rootGetters, dispatch }) {
     const isTaskRunning = rootGetters['tasks/isTaskRunning'];
-    if (isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES)) {
+    if (isTaskRunning(TaskType.QUERY_BALANCES)) {
       return;
     }
     try {
       const result = await api.queryBalancesAsync();
-      const task = createTask(
-        result.task_id,
-        TaskType.QUERY_EXCHANGE_BALANCES,
-        {
-          description: `Query All Balances`,
-          ignoreResult: true
-        }
-      );
+      const task = createTask(result.task_id, TaskType.QUERY_BALANCES, {
+        description: `Query All Balances`,
+        ignoreResult: true
+      });
 
       commit('tasks/add', task, { root: true });
     } catch (e) {
@@ -48,7 +44,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   ): void {
     const { name, ignoreCache } = payload;
     const isTaskRunning = rootGetters['tasks/isTaskRunning'];
-    if (isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES)) {
+    const taskMetadata = rootGetters['tasks/metadata'];
+    const meta: ExchangeMeta = taskMetadata(TaskType.QUERY_EXCHANGE_BALANCES);
+    if (isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES) && meta.name === name) {
       return;
     }
     api
