@@ -40,9 +40,9 @@ describe('AccountBalances.vue', () => {
     store.commit('tasks/add', payload);
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find('.balance-table__refresh').attributes('disabled')).toBe(
-      'disabled'
-    );
+    expect(
+      wrapper.find('.account-balances__refresh').attributes('disabled')
+    ).toBe('disabled');
 
     expect(wrapper.find('.v-data-table__progress').exists()).toBeTruthy();
     expect(wrapper.find('.v-data-table__empty-wrapper td').text()).toMatch(
@@ -53,7 +53,7 @@ describe('AccountBalances.vue', () => {
     await wrapper.vm.$nextTick();
 
     expect(
-      wrapper.find('.balance-table__refresh').attributes('disabled')
+      wrapper.find('.account-balances__refresh').attributes('disabled')
     ).toBeUndefined();
     expect(wrapper.find('.v-data-table__progress').exists()).toBeFalsy();
     expect(wrapper.find('.v-data-table__empty-wrapper td').text()).toMatch(
