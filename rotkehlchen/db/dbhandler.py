@@ -1721,6 +1721,11 @@ class DBHandler:
         - TagConstraintError: If the tag name to delete does not exist in the DB
         """
         cursor = self.conn.cursor()
+        # Delete the tag mappings for all affected accounts
+        cursor.execute(
+            'DELETE FROM tag_mappings WHERE '
+            'tag_name = ?;', (name,),
+        )
         cursor.execute('DELETE from tags WHERE name = ?;', (name,))
         if cursor.rowcount < 1:
             raise TagConstraintError(
