@@ -252,7 +252,7 @@ class MakerDAO(EthereumModule):
                     address=account,
                     normalized_balance=wad_val,
                     amount=dai_value,
-                    block_number=join_event['blockNumber'],
+                    block_number=deserialize_blocknumber(join_event['blockNumber']),
                 ),
             )
 
@@ -302,7 +302,7 @@ class MakerDAO(EthereumModule):
                     address=account,
                     normalized_balance=wad_val,
                     amount=dai_value,
-                    block_number=exit_event['blockNumber'],
+                    block_number=deserialize_blocknumber(exit_event['blockNumber']),
                 ),
             )
 
