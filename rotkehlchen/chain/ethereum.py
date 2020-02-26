@@ -14,7 +14,7 @@ from rotkehlchen.errors import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, request_get_dict
 from rotkehlchen.utils.serialization import rlk_jsonloads
@@ -306,9 +306,15 @@ class Ethchain():
         res = self.get_multitoken_balance(token=token, accounts=[account])
         return res.get(account, FVal(0))
 
-    def get_block_by_number(self, num: int) -> Optional[Dict[str, Any]]:
+    def get_block_by_number(self, num: int) -> Dict[str, Any]:
+        """Returns the block object corresponding to the given block number
+
+        May raise:
+        - RemoteError if an external service such as Etherscan is queried and
+        there is a problem with its query.
+        """
         if not self.connected:
-            return None
+            return self.etherscan.get_block_by_number(num)
 
         return self.web3.eth.getBlock(num)  # pylint: disable=no-member
 
@@ -446,3 +452,18 @@ class Ethchain():
                 events.extend(new_events)
 
         return events
+
+    def get_event_timestamp(self, event: Dict[str, Any]) -> Timestamp:
+        """Reads an event returned either by etherscan or web3 and gets its timestamp
+
+        Etherscan events contain a timestamp. Normal web3 events don't so it needs to
+        be queried from the block number
+        """
+        if 'timeStamp' in event:
+            # event from etherscan
+            return Timestamp(int(event['timeStamp'], 16))
+
+        # event from web3
+        block_number = event['blockNumber']
+        block_data = self.get_block_by_number(block_number)
+        return Timestamp(block_data['timestamp'])

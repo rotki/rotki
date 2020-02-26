@@ -19,7 +19,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_blocknumber
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import hex_or_bytes_to_int
@@ -35,6 +35,7 @@ class DSRMovement:
     gain_so_far: int = field(init=False)
     amount: int
     block_number: int
+    timestamp: Timestamp
 
 
 class DSRAccountReport(NamedTuple):
@@ -66,6 +67,7 @@ def serialize_dsr_reports(
                 'gain_so_far': str(_dsrdai_to_dai(movement.gain_so_far)),
                 'amount': str(_dsrdai_to_dai(movement.amount)),
                 'block_number': movement.block_number,
+                'timestamp': movement.timestamp,
             }
             serialized_report['movements'].append(serialized_movement)  # type: ignore
         result[account] = serialized_report
@@ -253,6 +255,7 @@ class MakerDAO(EthereumModule):
                     normalized_balance=wad_val,
                     amount=dai_value,
                     block_number=deserialize_blocknumber(join_event['blockNumber']),
+                    timestamp=self.ethchain.get_event_timestamp(join_event),
                 ),
             )
 
@@ -303,6 +306,7 @@ class MakerDAO(EthereumModule):
                     normalized_balance=wad_val,
                     amount=dai_value,
                     block_number=deserialize_blocknumber(exit_event['blockNumber']),
+                    timestamp=self.ethchain.get_event_timestamp(exit_event),
                 ),
             )
 
