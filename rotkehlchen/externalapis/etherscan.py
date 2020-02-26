@@ -328,6 +328,17 @@ class Etherscan(ExternalServiceWithApiKey):
         )
         return int(result, 16)
 
+    def get_block_by_number(self, block_number: int) -> Dict[str, Any]:
+        """
+        Gets a block object by block number
+
+        May raise:
+        - RemoteError due to self._query().
+        """
+        options = {'tag': hex(block_number), 'boolean': 'true'}
+        result = self._query(module='proxy', action='eth_getBlockByNumber', options=options)
+        return result
+
     def get_code(self, account: ChecksumEthAddress) -> str:
         """Gets the deployment bytecode at the given address
 

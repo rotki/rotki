@@ -2525,17 +2525,20 @@ Getting ethereum MakerDAO DSR historical report
 		      "movement_type": "deposit",
 		      "gain_so_far": "0",
 		      "amount": "350",
-		      "block_number": 9128160
+		      "block_number": 9128160,
+		      "timestamp": 1582706553
 		  }, {
 		      "movement_type": "deposit",
 		      "gain_so_far": "0.875232",
 		      "amount": "50",
-		      "block_number": 9129165
+		      "block_number": 9129165,
+		      "timestamp": 1582806553
 		  }, {
 		      "movement_type": "withdrawal",
 		      "gain_so_far": "1.12875932",
 		      "amount": "350",
-		      "block_number": 9149160
+		      "block_number": 9149160,
+		      "timestamp": 1592706553
 		  }, {
 		  }],
 		  "gain_so_far": "1.14875932"
@@ -2545,7 +2548,8 @@ Getting ethereum MakerDAO DSR historical report
 		      "movement_type": "deposit",
 		      "gain_so_far": "0",
 		      "amount": "550",
-		      "block_number": 9128174
+		      "block_number": 9128174,
+		      "timestamp": 1583706553
 		  }],
 		  "gain_so_far": "0.953423"
 	      }
@@ -2560,6 +2564,7 @@ Getting ethereum MakerDAO DSR historical report
    :resjsonarr string gain_so_far: The amount of DAI gained for this account in the DSR up until the moment of the given deposit/withdrawal.
    :resjsonarr string amount: The amount of DAI deposited or withdrawn from the DSR.
    :resjsonarr int block_number: The block number at which the deposit or withdrawal occured.
+   :resjsonarr int block_number: The timestamp of the block number at which the deposit or withdrawal occured.
 
    :statuscode 200: DSR history succesfully queried.
    :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
