@@ -88,9 +88,24 @@ class Etherscan(ExternalServiceWithApiKey):
     def _query(  # pylint: disable=no-self-use
             self,
             module: str,
-            action: Literal['balancemulti', 'txlist', 'txlistinternal', 'tokentx', 'getLogs'],
+            action: Literal[
+                'balancemulti',
+                'txlist',
+                'txlistinternal',
+                'tokentx',
+                'getLogs',
+            ],
             options: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
+        ...
+
+    @overload  # noqa: F811
+    def _query(  # pylint: disable=no-self-use
+            self,
+            module: str,
+            action: Literal['eth_getBlockByNumber'],
+            options: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         ...
 
     @overload  # noqa: F811
@@ -113,7 +128,7 @@ class Etherscan(ExternalServiceWithApiKey):
             module: str,
             action: str,
             options: Optional[Dict[str, Any]] = None,
-    ) -> Union[List[Dict[str, Any]], str, List[EthereumTransaction]]:
+    ) -> Union[List[Dict[str, Any]], str, List[EthereumTransaction], Dict[str, Any]]:
         """Queries etherscan
 
         May raise:
