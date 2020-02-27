@@ -54,7 +54,7 @@ Unzip it in a folder of your choice. In the root directory of the unzipped archi
 Troubleshooting
 ---------------
 
-If you get "The python backend crushed" or any other error please run the executable via the Command Prompt. Then provide us with the output that is visible in the prompt and this will help us debug your issue.
+If you get "The python backend crashed" or any other error please run the executable via the Command Prompt. Then provide us with the output that is visible in the prompt and this will help us debug your issue.
 
 You should also include all logs that can be found in ``%APPDATA%/rotki/``.
 
@@ -169,58 +169,143 @@ You can now start Rotki::
 Windows
 ==========
 
-This is the guide on how to manually build rotki binaries in Windows from source.
+This is a guide on how to set up a rotki development environment in Windows from source.
 
 Dependencies
 -------------
 
-Python and git
+Node & npm
+^^^^^^^^^^^^^^^^^^^^
+Install `node (includes npm) <https://nodejs.org/en/download/>`_.
+
+Python
 ^^^^^^^^^^^^^^^^^^^^
 
-Get `python 3.7 <https://www.python.org/downloads/release/python-374/>`_.
+1. Get `python 3.7 <https://www.python.org/downloads/release/python-374/>`_ (3.7 is recommended due to some rotki dependencies). Make sure to download the 64-bit version of python if your version of Windows is 64-bit! If you're unsure of what Windows version you have, you can check in Control Panel -> System and Security -> System.
+2. For some reason python does not always install to the Path variable in Windows. To ensure you have the necessary python directories referenced, go to Control Panel -> System -> Advanced system settings -> Advanced (tab) -> Environment Variables... In the Environment Variables... dialog under "System Varaiables" open the "Path" variable and ensure that both the root python directory as well as the ``\Scripts\`` subdirectory are included. If they are not, add them one by one by clicking "New" and then "Browse" and locating the correct directories. NOTE: By default the Windows MSI installer place python in the ``C:\Users\<username>\AppData\Local\Programs\`` directory.
+3. To test if you have entered python correctly into the Path variable, open a command prompt and type in ``python`` then hit Enter. The python cli should run and you should see the python version you installed depicted above the prompt. Press CTRL+Z, then Enter to exit.
 
-Make sure it's 64 bit if you are in 64-bit windows!!!!!
+    .. NOTE::
+        For some reason in newer versions of Windows typing "python" will actual open the Windows Store -- you can fix this by opening "App execution aliases" (search for it via the Windows Search) and toggling off the aliases for python.exe and python3.exe.
 
-If it's not in the Path `add both directories to the path <https://docs.alfresco.com/4.2/tasks/fot-addpath.html>`_:
+4. Make sure you have `pip installed <https://pip.pypa.io/en/stable/installing/#do-i-need-to-install-pip>`_. If your Path environment variable is correctly set up, you can type ``pip -V`` into a command prompt to check (it should return the version of the installed pip).
+5. Make sure you have the latest version of pip installed by executing::
 
-``C:\Users\lefteris\AppData\Local\Programs\Python\Python37;C:\Users\lefteris\AppData\Local\Programs\Python\Python37\Scripts``
+    pip install --upgrade pip
 
+6. Using pip, install virtualenvironment and the virtualenvwrapper-win. `See instructions here for installing them on Windows <http://timmyreilly.azurewebsites.net/python-pip-virtualenv-installation-on-windows/>`_. You can choose to follow the rest of the guide as an example or just read the instructions.
+7. Lastly, make sure you have the Microsoft Visual Studio build tools. Check the troubleshooting guide's relevant section :ref:`microsoft_visual_studio_build_tools_required`.
+
+Git
+^^^^^^^^^^^^^^^^^^^^
 Get `latest git <https://gitforwindows.org/>`_.
-
-Setup a python virtualenvironment. If you don't know how to do it in windows `here <http://timmyreilly.azurewebsites.net/python-pip-virtualenv-installation-on-windows/>`__ is a good guide.
-
-Make sure you have `pip installed <https://pip.pypa.io/en/stable/installing/#do-i-need-to-install-pip>`_.
-
-Also make sure you have the Microsoft visual studio build tools. Check the troubleshooting guide's relevant section :ref:`microsoft_visual_studio_build_tools_required`.
-
 
 Sqlcipher and pysqlcipher3
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-`Here <https://github.com/sqlitebrowser/sqlitebrowser/wiki/Win64-setup-%E2%80%94-Compiling-SQLCipher>`__ is a good guide on how to compile SQLCipher for windows.
+In order to build rotki on Windows, you will need to have installed and built pysqlcipher3 (instructions on this further down) which needs sqlcipher.
 
-The guide also requires you to get ``OpenSSL``. You can do that from `here <https://slproweb.com/products/Win32OpenSSL.html>`__.
-Make sure it's for the same architecture as the rest. 32/64 bit. At the installer change the location to the bin directory as the tutorial says. Make sure that ``-IC:\dev\OpenSSL-Win64\include`` and all other relevant options point to the actual location where openssl was installed. Also pay attention to the rest of the stuff in the tutorial warns to change in ``Makefile.msc``.
+1. As no pre-compiled Windows binaries and dlls are readily available for sqlcipher, you will need to build it from source. `Here <https://github.com/sqlitebrowser/sqlitebrowser/wiki/Win64-setup-%E2%80%94-Compiling-SQLCipher>`__ is a good guide on how to compile SQLCipher for Windows. 
+2. The guide also requires you to get ``OpenSSL``. You can do that from `here <https://slproweb.com/products/Win32OpenSSL.html>`__.
 
+    .. NOTE::
+        a) Because of some pysqlcipher3 dependencies, and because it most closely matches the version used in the sqlcipher build guide, you should get OpenSSL 1.0.2 and not 1.1.1 (the naming of libs and dlls has changed between versions and the building of some dependencies will fail). 
 
-Then you can go to ``pysqlcipher3`` and edit the ``setup.py`` file to include the location of the headers and the libraries you just compiled. Add the following to the extension that is being built.::
+        b) Get the version of OpenSSL that matches the architecture of your Windows and python installs (i.e. 32- or 64-bit)
 
+        c) When prompted for an install directory for OpenSSL, choose one that does not have spaces in it (i.e. avoid \Program Files\) as installing it in a directory with spaces will cause you numerous headaches when trying to edit the Makefile mentioned in the sqlcipher build instructions. 
 
-    library_dirs=[r'C:\Users\yourusername\w\sqlcipher'],
-    include_dirs=[r'C:\Users\yourusername\w'],
+        d) Follow the instructions in the sqlcipher build guide regarding changes to ``Makefile.msc`` very closely, ensuring that variables that point to the directory where you have actually installed OpenSSL. 
 
-Obviously replace ``yourusername`` with whatever you are using. And then do ``python setup.py build`` and ``python setup.py install``.
+3. Once you have completed up to and including Step 6 in the sqlcipher build guide (you can ignore Step 7), you will have compiled sqlcipher and built the necessary headers and libraries that pysqlcipher3 depends on. In the directory you should now see ``sqlcipher.dll``, copy and paste this file to your ``<Windows>\System32`` directory. These files will be used later; you can now move on to setting up your rotki dev environment.
 
+Set up rotki dev environment
+----------------------------
 
-Nodejs
-^^^^^^^^
+Downloading source and installing python dependencies
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Get node.js from `here <https://nodejs.org/en/download/>`__.
+This guide will assume that you want to use git to clone the project into a development directory; if you wish to just download the source from Github as a zip you can do that instead (the zip file has everything in a folder in the format of ``<project>-<branch>``, so if you download rotki/develop you will get a folder ``rotki-develop``; you can of course rename this). If you download the source as a zip you can skip to Step 4 below.
 
-Installation
-------------
+1. Fork the relevant rotki branch into your own account in github.
 
-Inside rotki install normally like you would in linux  ... but you got to either copy ``slqcipher.dll`` in the rotki directory or put it in the directory where windows searches for DLLs.
+2. Open a terminal (command prompt / PowerShell prompt / etc.) in your root development directory (the parent directory of where you will place your rotki development directory).
+
+3. Clone your forked project into the local directory where you want to build rotki (e.g. if you forked the rokti/develop branch you might clone into ``c:\dev\rotki-develop``).
+
+At this point in your local rotki development directory you should have all the same files as they appear in the github page for the rotki branch you chose to download/clone.
+
+Going back to your open terminal, it's time to set up your python virtual environment (virtualenv).
+
+4. Recalling the instructions above on how to set up the virtualenv, set one up for rotki (you don't have to use the name ``rotki-develop``)::
+
+    mkvirtualenv rotki-develop
+
+5. Ensure that you're in the directory where you downloaded/cloned the rotki source and bind the virtualenv to the directory::
+
+    setprojectdir .
+
+If at any time you want to dissasociate with the virtual env, you can use the command ``deactivate``. Whenever you open a new terminal you can now use ``workon rotki-develop`` (if you named your virtualenv something else then use that instead of ``rotki-develop``) and it should establish the link to the python virtualenv you created and set your working directory to the directory you were in in Step 5. Following the example above, if you open a brand new terminal and type in ``workon rotki-deveop`` your terminal prompt should look something like::
+
+    (rotki-develop) c:\dev\rotki-develop>
+
+6. Now it's time to install all the python requirements. In the open terminal with your virtualenv activated, execute::
+
+    install -r requirements_dev.txt
+
+Pay close attention to the results of the command. Sometimes modules are reported as successfully installed but in reality the build has failed. You should carefully scroll through the buffer to ensure everything has been built & installed correct. 
+
+At this point, it's likely that pysqlcipher3 has not been built and installed correctly, and you will need to install it manually. If pysqlcipher3 installed successfully, you can skip Steps 7 - 9 and move on to the next section.
+
+7. Go back to your development directory and download / clone (if you want to use git but don't want to clone the whole project, check out `degit <https://www.npmjs.com/package/degit>`_) the source for `pysqlcipher3 <https://github.com/rigglemania/pysqlcipher3>`_.
+
+8. With your code editor of choice, edit the ``setup.py`` file in ``\pysqlcipher3\``, make the following changes and save the file::
+
+    Lines 165 - 169 Before
+            ext_modules=[Extension(
+            name=PACKAGE_NAME + EXTENSION_MODULE_NAME,
+            sources=sources,
+            define_macros=define_macros)
+        ],
+    Lines 165 ... AFTER
+            ext_modules=[Extension(
+            name=PACKAGE_NAME + EXTENSION_MODULE_NAME,
+            sources=sources,
+            library_dirs=[r'<DIRECTORY WHERE YOU BUILT SQLCIPHER TO (i.e. where the compiled sqlcipher.exe and sqlcipher.dll are)>'],
+	        include_dirs=[r'<THE PARENT DIRECTORY OF THE ABOVE DIRECTORY>'],
+            define_macros=define_macros)
+        ],
+
+9. Going back to the open terminal that you have, and ensuring that you are still in the rotki virtualenv that you created, navigate to the directory where you have downloaded the ``pysqlcipher3`` source.
+
+In the terminal execute the two following commands in succession::
+
+    python setup.py build
+    python setup.py install
+
+If all went well, pysqlcipher3 should have successfuly built and installed. If it didn't, try going back and ensuring that you have properly built sqlcipher and pointed to the right directories in the setup.py file, or consult the troubleshooting section.
+
+Installing Electron and Running Rotki
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+1. In your terminal, navigate to your rotki development directory and enter the following commands to install electron and its dependencies::
+
+    cd electron-app
+    npm ci
+
+2. At this point, your terminal's cwd should be ``<rotki development directory>\electron-app\`` and the rotki virtualenv should be activated. You should now be able to start rotki in development mode by executing::
+
+    npm run electron:serve
+
+After the app is built, if everything went well you should see the below text in your terminal and a new electron window that has opened with the rotki app running. ::
+
+    INFO  Starting development server...
+    ...
+    INFO  Launching Electron...
+    2020-XX-XXXX:XX:XX.XXXX: The Python sub-process started on port: XXXX (PID: YYYY)
+
+If you get any errors about missing dependencies, try to install them via npm and run again; consult the troubleshooting section for other errors.
+
 
 Troubleshooting
 ---------------
