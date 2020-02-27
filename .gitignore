@@ -22,3 +22,4 @@ docs/_build
 .idea
 failure-screenshots/
 chromedriverlog.txt
+.vscode/settings.json
