@@ -945,3 +945,13 @@ class FiatExchangeRatesSchema(BaseSchema):
         strict = True
         # decoding to a dict is required by the @use_kwargs decorator from webargs
         decoding_class = dict
+
+
+class AsyncQueryArgumentSchema(BaseSchema):
+    """A schema for getters that only have one argument enabling async query"""
+    async_query = fields.Boolean(missing=False)
+
+    class Meta:
+        strict = True
+        # decoding to a dict is required by the @use_kwargs decorator from webargs
+        decoding_class = dict

@@ -2463,7 +2463,12 @@ Getting current ethereum MakerDAO DSR balance
 .. http:get:: /api/(version)/blockchains/ETH/modules/makerdao/dsrbalance
 
    Doing a GET on the makerdao dsrbalance resource will return the current balance held in DSR by any of the user's accounts.
->>>>>>> Add Rest API endpoints for makerdao DSR querying
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
 
    **Example Request**:
 
@@ -2471,6 +2476,8 @@ Getting current ethereum MakerDAO DSR balance
 
       GET /api/1/blockchains/ETH/modules/makerdao/dsrbalance HTTP/1.1
       Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
 
    **Example Response**:
 
@@ -2504,12 +2511,20 @@ Getting ethereum MakerDAO DSR historical report
 
    Doing a GET on the makerdao dsrhistory resource will return the history of deposits and withdrawals of each account to the DSR along with the amount of DAI gained at each step and other information
 
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
       GET /api/1/blockchains/ETH/modules/makerdao/dsrhistory HTTP/1.1
       Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
 
    **Example Response**:
 
