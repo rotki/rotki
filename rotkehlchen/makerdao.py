@@ -38,6 +38,12 @@ class DSRMovement:
     timestamp: Timestamp
 
 
+class DSRCurrentBalances(NamedTuple):
+    balances: Dict[ChecksumEthAddress, FVal]
+    # The percentage of the current DSR. e.g. 8% would be 8.00
+    current_dsr: FVal
+
+
 class DSRAccountReport(NamedTuple):
     movements: List[DSRMovement]
     gain_so_far: int
@@ -123,8 +129,9 @@ class MakerDAO(EthereumModule):
 
         return mapping
 
-    def get_current_dsr(self) -> Dict[ChecksumEthAddress, FVal]:
+    def get_current_dsr(self) -> DSRCurrentBalances:
         """Gets the current DSR balance for all accounts that have DAI in DSR
+        and the current DSR percentage
 
         May raise:
         - RemoteError if etherscan is used and there is a problem with
@@ -149,7 +156,18 @@ class MakerDAO(EthereumModule):
 
                 balances[account] = balance
 
-        return balances
+            current_dsr = self.ethchain.call_contract(
+                contract_address=MAKERDAO_POT_ADDRESS,
+                abi=MAKERDAO_POT_ABI,
+                method_name='dsr',
+            )
+
+            # Calculation is from here:
+            # https://docs.makerdao.com/smart-contract-modules/rates-module#a-note-on-setting-rates
+            current_dsr_percentage = ((FVal(current_dsr / 1e27) ** 31622400) % 1) * 100
+            result = DSRCurrentBalances(balances=balances, current_dsr=current_dsr_percentage)
+
+        return result
 
     def _get_vat_move_event_value(
             self,
