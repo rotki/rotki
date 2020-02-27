@@ -225,6 +225,28 @@ In order to stop tracking a token simply click the [X] next to the token's name 
 
 All account balances will be updated at after addition or removal of tokens.
 
+Adding/Editing Labels and tags
+==============================
+
+You can edit any of your blockchain accounts and add a label. The label is unique to the account and will show up in the accounts tables instead of the address. You will still be able to see the address if you hover over the label in the tables.
+
+.. image:: images/add_tag_label.gif
+   :alt: Add a label and create a tag
+   :align: center
+
+By pressing the edit button for the account you can also add tags to the blockchain account. If you want to create a new tag or edit an existing one you can open the tag manager and choose the name, description and colors of the tag.
+
+
+Filtering by tags
+=====================
+
+You can filter the tables by a combination of tags.
+
+.. image:: images/filter_by_tag.gif
+   :alt: Filter the accounts by tag
+   :align: center
+
+Simply add the tags you wish to filter by in the filter textbox above the tables.
 
 
 Manually adding trades or other events
