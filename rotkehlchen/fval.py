@@ -115,6 +115,14 @@ class FVal():
         evaluated_other = evaluate_input(other)
         return FVal(self.num.__rfloordiv__(evaluated_other))
 
+    def __mod__(self, other: AcceptableFValOtherInput) -> 'FVal':
+        evaluated_other = evaluate_input(other)
+        return FVal(self.num.__mod__(evaluated_other))
+
+    def __rmod__(self, other: AcceptableFValOtherInput) -> 'FVal':
+        evaluated_other = evaluate_input(other)
+        return FVal(self.num.__rmod__(evaluated_other))
+
     def __float__(self) -> float:
         return float(self.num)
 
