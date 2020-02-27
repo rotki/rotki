@@ -1,10 +1,10 @@
+from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Any, Dict, NamedTuple
 from unittest.mock import _patch, patch
 
 import pytest
 import requests
-from dataclasses import dataclass
 
 from rotkehlchen.constants.ethereum import (
     MAKERDAO_POT_ADDRESS,
@@ -39,12 +39,13 @@ def address_to_32byteshexstr(address: ChecksumEthAddress) -> str:
 
 class DSRTestSetup(NamedTuple):
     etherscan_patch: _patch
-    dsr_balance_response: Dict[ChecksumEthAddress, str]
-    dsr_history_response: Dict[ChecksumEthAddress, Dict]
+    dsr_balance_response: Dict[str, Any]
+    dsr_history_response: Dict[str, Any]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DSRMockParameters():
+    current_dsr: int
     current_chi: int
     account1_current_normalized_balance: int
     account2_current_normalized_balance: int
@@ -129,6 +130,8 @@ def mock_etherscan_for_dsr(
                         raise AssertionError('Pie call for unexpected account during tests')
                 elif input_data.startswith('0xc92aecc4'):  # chi
                     result = int_to_32byteshexstr(params.current_chi)
+                elif input_data.startswith('0x487bf082'):  # dsr
+                    result = int_to_32byteshexstr(params.current_dsr)
                 else:
                     raise AssertionError(
                         'Call to unexpected method of MakerDAO pot during tests',
@@ -217,12 +220,14 @@ def setup_tests_for_dsr(
         original_requests_get,
 ) -> DSRTestSetup:
 
+    current_dsr = 1000000002440418608258400030
     current_chi = 1123323222211111111111001249911111
     chi_distance = 1010020050000000000050000000000
     params = DSRMockParameters(
         account1_current_normalized_balance=123232334324234324,
         account2_current_normalized_balance=5323213213123534234,
         current_chi=current_chi,
+        current_dsr=current_dsr,
         account1_join1_normalized_balance=1321333211111121,
         account1_join2_normalized_balance=421333211111121,
         account1_exit1_normalized_balance=221333211131121,
@@ -245,8 +250,11 @@ def setup_tests_for_dsr(
     )
 
     dsr_balance_response = {
-        account1: _dsrdai_to_dai(params.account1_current_normalized_balance * current_chi),
-        account2: _dsrdai_to_dai(params.account2_current_normalized_balance * current_chi),
+        'current_dsr': '8.022774065220581075333120100',
+        'balances': {
+            account1: _dsrdai_to_dai(params.account1_current_normalized_balance * current_chi),
+            account2: _dsrdai_to_dai(params.account2_current_normalized_balance * current_chi),
+        },
     }
     account1_deposit1 = params.account1_join1_normalized_balance * params.account1_join1_chi
     account1_deposit2 = params.account1_join2_normalized_balance * params.account1_join2_chi
@@ -310,6 +318,17 @@ def setup_tests_for_dsr(
     )
 
 
+def assert_dsr_current_result_is_correct(result: Dict[str, Any], setup: DSRTestSetup) -> None:
+    assert len(result) == len(setup.dsr_balance_response)
+    for key, val in setup.dsr_balance_response.items():
+        if key == 'balances':
+            assert len(val) == len(result['balances'])
+            for account, balance_val in setup.dsr_balance_response['balances'].items():
+                assert FVal(balance_val) == FVal(result['balances'][account])
+        else:
+            assert FVal(val) == FVal(result[key])
+
+
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao']])
 def test_query_current_dsr_balance(
@@ -335,10 +354,7 @@ def test_query_current_dsr_balance(
     assert_proper_response(response)
     json_data = response.json()
     assert json_data['message'] == ''
-    result = json_data['result']
-    assert len(result) == 2
-    assert FVal(result[account1]) == setup.dsr_balance_response[account1]
-    assert FVal(result[account2]) == setup.dsr_balance_response[account2]
+    assert_dsr_current_result_is_correct(json_data['result'], setup)
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
@@ -366,10 +382,7 @@ def test_query_current_dsr_balance_async(
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
 
     assert outcome['message'] == ''
-    result = outcome['result']
-    assert len(result) == 2
-    assert FVal(result[account1]) == setup.dsr_balance_response[account1]
-    assert FVal(result[account2]) == setup.dsr_balance_response[account2]
+    assert_dsr_current_result_is_correct(outcome['result'], setup)
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
