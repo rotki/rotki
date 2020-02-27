@@ -5,6 +5,7 @@ from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData, SingleAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.makerdao import DSRCurrentBalances
 from rotkehlchen.serialization.deserialize import deserialize_location_from_db
 from rotkehlchen.typing import EthTokenInfo, Location, TradeType
 from rotkehlchen.utils.version_check import VersionCheckResult
@@ -49,6 +50,8 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
     elif isinstance(entry, EthTokenInfo):
         return process_result(entry._asdict())
     elif isinstance(entry, VersionCheckResult):
+        return process_result(entry._asdict())
+    elif isinstance(entry, DSRCurrentBalances):
         return process_result(entry._asdict())
     elif isinstance(entry, DBSettings):
         return process_result(entry._asdict())

@@ -2462,7 +2462,7 @@ Getting current ethereum MakerDAO DSR balance
 
 .. http:get:: /api/(version)/blockchains/ETH/modules/makerdao/dsrbalance
 
-   Doing a GET on the makerdao dsrbalance resource will return the current balance held in DSR by any of the user's accounts.
+   Doing a GET on the makerdao dsrbalance resource will return the current balance held in DSR by any of the user's accounts and also the current DSR percentage.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -2488,8 +2488,11 @@ Getting current ethereum MakerDAO DSR balance
 
       {
           "result": {
-              "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": "125.24423",
-	      "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": "346.43433"
+              "current_dsr": "8.022774065220581075333120100",
+              "balances": {
+                  "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": "125.24423",
+                  "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": "346.43433"
+                }
           },
           "message": ""
       }
@@ -2536,38 +2539,38 @@ Getting ethereum MakerDAO DSR historical report
       {
           "result": {
               "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
-	          "movements": [{
-		      "movement_type": "deposit",
-		      "gain_so_far": "0",
-		      "amount": "350",
-		      "block_number": 9128160,
-		      "timestamp": 1582706553
-		  }, {
-		      "movement_type": "deposit",
-		      "gain_so_far": "0.875232",
-		      "amount": "50",
-		      "block_number": 9129165,
-		      "timestamp": 1582806553
-		  }, {
-		      "movement_type": "withdrawal",
-		      "gain_so_far": "1.12875932",
-		      "amount": "350",
-		      "block_number": 9149160,
-		      "timestamp": 1592706553
-		  }, {
-		  }],
-		  "gain_so_far": "1.14875932"
-	      },
-	      "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
-	          "movements": [{
-		      "movement_type": "deposit",
-		      "gain_so_far": "0",
-		      "amount": "550",
-		      "block_number": 9128174,
-		      "timestamp": 1583706553
-		  }],
-		  "gain_so_far": "0.953423"
-	      }
+                  "movements": [{
+                      "movement_type": "deposit",
+                      "gain_so_far": "0",
+                      "amount": "350",
+                      "block_number": 9128160,
+                      "timestamp": 1582706553
+                  }, {
+                      "movement_type": "deposit",
+                      "gain_so_far": "0.875232",
+                      "amount": "50",
+                      "block_number": 9129165,
+                      "timestamp": 1582806553
+                  }, {
+                      "movement_type": "withdrawal",
+                      "gain_so_far": "1.12875932",
+                      "amount": "350",
+                      "block_number": 9149160,
+                      "timestamp": 1592706553
+                  }, {
+                  }],
+                  "gain_so_far": "1.14875932"
+              },
+              "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
+                  "movements": [{
+                      "movement_type": "deposit",
+                      "gain_so_far": "0",
+                      "amount": "550",
+                      "block_number": 9128174,
+                      "timestamp": 1583706553
+                  }],
+                  "gain_so_far": "0.953423"
+              }
           },
           "message": ""
       }
