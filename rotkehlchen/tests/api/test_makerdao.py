@@ -1,10 +1,10 @@
-from dataclasses import dataclass
 from http import HTTPStatus
-from typing import Dict, NamedTuple
+from typing import Any, Dict, NamedTuple
 from unittest.mock import _patch, patch
 
 import pytest
 import requests
+from dataclasses import dataclass
 
 from rotkehlchen.constants.ethereum import (
     MAKERDAO_POT_ADDRESS,
@@ -14,7 +14,13 @@ from rotkehlchen.constants.ethereum import (
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.makerdao import _dsrdai_to_dai
-from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
+from rotkehlchen.tests.utils.api import (
+    api_url_for,
+    assert_error_response,
+    assert_ok_async_response,
+    assert_proper_response,
+    wait_for_async_task,
+)
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import ChecksumEthAddress
@@ -115,9 +121,9 @@ def mock_etherscan_for_dsr(
             elif to_address == MAKERDAO_POT_ADDRESS:
                 if input_data.startswith('0x0bebac86'):  # pie
                     if proxy1[2:].lower() in input_data:
-                        result = int_to_32byteshexstr(params.account1_normalized_balance)
+                        result = int_to_32byteshexstr(params.account1_current_normalized_balance)
                     elif proxy2[2:].lower() in input_data:
-                        result = int_to_32byteshexstr(params.account2_normalized_balance)
+                        result = int_to_32byteshexstr(params.account2_current_normalized_balance)
                     else:
                         # result = int_to_32byteshexstr(0)
                         raise AssertionError('Pie call for unexpected account during tests')
@@ -267,7 +273,7 @@ def setup_tests_for_dsr(
                 'movement_type': 'deposit',
                 'gain_so_far': _dsrdai_to_dai(
                     params.account1_join1_normalized_balance * params.account1_join2_chi -
-                    account1_deposit1
+                    account1_deposit1,
                 ),
                 'amount': _dsrdai_to_dai(account1_deposit2),
                 'block_number': params.account1_join2_blocknumber,
@@ -331,7 +337,37 @@ def test_query_current_dsr_balance(
     assert json_data['message'] == ''
     result = json_data['result']
     assert len(result) == 2
+    assert FVal(result[account1]) == setup.dsr_balance_response[account1]
+    assert FVal(result[account2]) == setup.dsr_balance_response[account2]
 
+
+@pytest.mark.parametrize('number_of_eth_accounts', [3])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+def test_query_current_dsr_balance_async(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+        number_of_eth_accounts,
+):
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    account1 = ethereum_accounts[0]
+    account2 = ethereum_accounts[2]
+    setup = setup_tests_for_dsr(
+        etherscan=rotki.etherscan,
+        account1=account1,
+        account2=account2,
+        original_requests_get=requests.get,
+    )
+    with setup.etherscan_patch:
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "makerdaodsrbalanceresource",
+        ), json={'async_query': True})
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+
+    assert outcome['message'] == ''
+    result = outcome['result']
+    assert len(result) == 2
     assert FVal(result[account1]) == setup.dsr_balance_response[account1]
     assert FVal(result[account2]) == setup.dsr_balance_response[account2]
 
@@ -365,6 +401,26 @@ def test_query_historical_dsr_non_premium(
     )
 
 
+def assert_dsr_history_result_is_correct(result: Dict[str, Any], setup: DSRTestSetup) -> None:
+    assert len(result) == 2
+    for account, entry in setup.dsr_history_response.items():
+        assert len(entry) == len(result[account])
+        for key, val in entry.items():
+            if key == 'movements':
+                assert len(val) == len(result[account]['movements'])
+                for idx, movement in enumerate(val):
+                    for mov_key, mov_val in movement.items():
+                        if mov_key == 'movement_type':
+                            assert mov_val == result[account]['movements'][idx][mov_key]
+                        else:
+                            assert FVal(mov_val) == FVal(
+                                result[account]['movements'][idx][mov_key],
+                            )
+
+            else:
+                assert FVal(result[account][key]) == FVal(val)
+
+
 @pytest.mark.parametrize('number_of_eth_accounts', [3])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -392,20 +448,34 @@ def test_query_historical_dsr(
     json_data = response.json()
     assert json_data['message'] == ''
     result = json_data['result']
-    assert len(result) == 2
-    for account, entry in setup.dsr_history_response.items():
-        assert len(entry) == len(result[account])
-        for key, val in entry.items():
-            if key == 'movements':
-                assert len(val) == len(result[account]['movements'])
-                for idx, movement in enumerate(val):
-                    for mov_key, mov_val in movement.items():
-                        if mov_key == 'movement_type':
-                            assert mov_val == result[account]['movements'][idx][mov_key]
-                        else:
-                            assert FVal(mov_val) == FVal(
-                                result[account]['movements'][idx][mov_key]
-                            )
+    assert_dsr_history_result_is_correct(result, setup)
 
-            else:
-                assert FVal(result[account][key]) == FVal(val)
+
+@pytest.mark.parametrize('number_of_eth_accounts', [3])
+@pytest.mark.parametrize('ethereum_modules', [['makerdao']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_query_historical_dsr_async(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+        number_of_eth_accounts,
+):
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    account1 = ethereum_accounts[0]
+    account2 = ethereum_accounts[2]
+    setup = setup_tests_for_dsr(
+        etherscan=rotki.etherscan,
+        account1=account1,
+        account2=account2,
+        original_requests_get=requests.get,
+    )
+    with setup.etherscan_patch:
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            "makerdaodsrhistoryresource",
+        ), json={'async_query': True})
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+
+    assert outcome['message'] == ''
+    result = outcome['result']
+    assert_dsr_history_result_is_correct(result, setup)

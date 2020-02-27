@@ -1256,23 +1256,48 @@ class RestAPI():
         self.rotkehlchen.data_importer.import_cointracking_csv(filepath)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    @require_loggedin_user()
-    def get_makerdao_dsr_balance(self) -> Response:
+    def _get_makerdao_dsr_balance(self) -> Dict[str, Any]:
         makerdao = cast(MakerDAO, self.rotkehlchen.chain_manager.eth_modules['makerdao'])
+        result = None
+        msg = ''
+        status_code = HTTPStatus.OK
         try:
             result = makerdao.get_current_dsr()
         except RemoteError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_GATEWAY)
+            msg = str(e)
+            status_code = HTTPStatus.BAD_GATEWAY
 
-        return api_response(process_result(_wrap_in_ok_result(result)), status_code=HTTPStatus.OK)
+        return {'result': result, 'message': msg, 'status_code': status_code}
 
-    @require_premium_user(active_check=False)
-    def get_makerdao_dsr_history(self) -> Response:
+    @require_loggedin_user()
+    def get_makerdao_dsr_balance(self, async_query: bool) -> Response:
+        if async_query:
+            return self._query_async(command='_get_makerdao_dsr_balance')
+
+        response = self._get_makerdao_dsr_balance()
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=response['status_code'])
+
+    def _get_makerdao_dsr_history(self) -> Dict[str, Any]:
         makerdao = cast(MakerDAO, self.rotkehlchen.chain_manager.eth_modules['makerdao'])
+        serialized_result = None
+        msg = ''
+        status_code = HTTPStatus.OK
         try:
             result = makerdao.get_historical_dsr()
+            serialized_result = serialize_dsr_reports(result)
         except RemoteError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_GATEWAY)
+            msg = str(e)
+            status_code = HTTPStatus.BAD_GATEWAY
 
-        serialized_result = serialize_dsr_reports(result)
-        return api_response(_wrap_in_ok_result(serialized_result), status_code=HTTPStatus.OK)
+        return {'result': serialized_result, 'message': msg, 'status_code': status_code}
+
+    @require_premium_user(active_check=False)
+    def get_makerdao_dsr_history(self, async_query: bool) -> Response:
+        if async_query:
+            return self._query_async(command='_get_makerdao_dsr_history')
+
+        response = self._get_makerdao_dsr_history()
+        result_dict = {'result': response['result'], 'message': response['message']}
+
+        return api_response(process_result(result_dict), status_code=response['status_code'])

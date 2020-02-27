@@ -8,6 +8,7 @@ from webargs.flaskparser import use_kwargs
 
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
+    AsyncQueryArgumentSchema,
     AsyncTasksQuerySchema,
     BlockchainAccountsDeleteSchema,
     BlockchainAccountsGetSchema,
@@ -637,11 +638,17 @@ class DataImportResource(BaseResource):
 
 class MakerDAODSRBalanceResource(BaseResource):
 
-    def get(self) -> Response:
-        return self.rest_api.get_makerdao_dsr_balance()
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, locations=('json', 'query'))
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_makerdao_dsr_balance(async_query)
 
 
 class MakerDAODSRHistoryResource(BaseResource):
 
-    def get(self) -> Response:
-        return self.rest_api.get_makerdao_dsr_history()
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, locations=('json', 'query'))
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_makerdao_dsr_history(async_query)
