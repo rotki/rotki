@@ -186,7 +186,7 @@ Python
 3. To test if you have entered python correctly into the Path variable, open a command prompt and type in ``python`` then hit Enter. The python cli should run and you should see the python version you installed depicted above the prompt. Press CTRL+Z, then Enter to exit.
 
     .. NOTE::
-        For some reason in newer versions of Windows typing "python" will actual open the Windows Store -- you can fix this by opening "App execution aliases" (search for it via the Windows Search) and toggling off the aliases for python.exe and python3.exe.
+        For some reason in newer versions of Windows typing "python" will actually open the Windows Store -- you can fix this by opening "App execution aliases" (search for it via the Windows Search) and toggling off the aliases for python.exe and python3.exe.
 
 4. Make sure you have `pip installed <https://pip.pypa.io/en/stable/installing/#do-i-need-to-install-pip>`_. If your Path environment variable is correctly set up, you can type ``pip -V`` into a command prompt to check (it should return the version of the installed pip).
 5. Make sure you have the latest version of pip installed by executing::
@@ -245,13 +245,13 @@ Going back to your open terminal, it's time to set up your python virtual enviro
 
     setprojectdir .
 
-If at any time you want to dissasociate with the virtual env, you can use the command ``deactivate``. Whenever you open a new terminal you can now use ``workon rotki-develop`` (if you named your virtualenv something else then use that instead of ``rotki-develop``) and it should establish the link to the python virtualenv you created and set your working directory to the directory you were in in Step 5. Following the example above, if you open a brand new terminal and type in ``workon rotki-deveop`` your terminal prompt should look something like::
+If at any time you want to dissasociate with the virtual env, you can use the command ``deactivate``. Whenever you open a new terminal you can now use ``workon rotki-develop`` (if you named your virtualenv something else then use that instead of ``rotki-develop``) and it should establish the link to the python virtualenv you created and set your working directory to the directory you were in in Step 5. Following the example above, if you open a brand new terminal and type in ``workon rotki-develop`` your terminal prompt should look something like::
 
     (rotki-develop) c:\dev\rotki-develop>
 
 6. Now it's time to install all the python requirements. In the open terminal with your virtualenv activated, execute::
 
-    install -r requirements_dev.txt
+    pip install -r requirements_dev.txt
 
 Pay close attention to the results of the command. Sometimes modules are reported as successfully installed but in reality the build has failed. You should carefully scroll through the buffer to ensure everything has been built & installed correct. 
 
@@ -272,7 +272,7 @@ At this point, it's likely that pysqlcipher3 has not been built and installed co
             name=PACKAGE_NAME + EXTENSION_MODULE_NAME,
             sources=sources,
             library_dirs=[r'<DIRECTORY WHERE YOU BUILT SQLCIPHER TO (i.e. where the compiled sqlcipher.exe and sqlcipher.dll are)>'],
-	        include_dirs=[r'<THE PARENT DIRECTORY OF THE ABOVE DIRECTORY>'],
+            include_dirs=[r'<THE PARENT DIRECTORY OF THE ABOVE DIRECTORY>'],
             define_macros=define_macros)
         ],
 
