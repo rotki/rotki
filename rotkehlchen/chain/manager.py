@@ -8,7 +8,7 @@ import requests
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_DAI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.errors import EthSyncError, InputError, RemoteError, UnableToDecryptRemoteData
@@ -666,6 +666,36 @@ class ChainManager(CacheableObject, LockableQueryObject):
             self.totals[token] = Balance(
                 amount=token_total,
                 usd_value=token_total * token_usd_price[token],
+            )
+
+        # If we have anything in DSR also count it towards total blockchain balances
+        makerdao = self.eth_modules.get('makerdao', None)
+        if makerdao:
+            additional_total_dai = FVal(0)
+            try:
+                usd_price = Inquirer().find_usd_price(A_DAI)
+            except RemoteError:
+                usd_price = Price(1)  # Let's try to continue with a usd/dai price of 1 if error
+            current_dsr_report = makerdao.get_current_dsr()
+            for dsr_account, dai_value in current_dsr_report.balances.items():
+
+                usd_value = dai_value * usd_price
+                old_balance = eth_balances[dsr_account].asset_balances.get(
+                    A_DAI,
+                    Balance(amount=ZERO, usd_value=ZERO),
+                )
+                eth_balances[dsr_account].asset_balances[A_DAI] = Balance(
+                    amount=old_balance.amount + dai_value,
+                    usd_value=old_balance.usd_value + usd_value,
+                )
+                eth_balances[dsr_account].increase_total_usd_value(usd_value)
+                additional_total_dai += dai_value
+
+            old_total = self.totals.get(A_DAI, Balance(amount=ZERO, usd_value=ZERO))
+            new_total_amount = old_total.amount + additional_total_dai
+            self.totals[A_DAI] = Balance(
+                amount=new_total_amount,
+                usd_value=new_total_amount * usd_price,
             )
 
     def query_ethereum_balances(self) -> None:
