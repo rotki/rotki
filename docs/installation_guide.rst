@@ -27,7 +27,7 @@ If you got the tar, unzip it in a directory of your choice. In the root director
 Troubleshooting
 ------------------
 
-If you get a problem when starting the application or during its usage please open an issue in Github and include all logs that can be found in ``~/.config/rotkehlchen/``.
+If you get a problem when starting the application or during its usage please open an issue in Github and include all logs that can be found in ``~/.config/rotki/logs``.
 
 OSX
 ========
@@ -41,7 +41,7 @@ If your OSX version does not allow you to open the application you will have to 
 Troubleshooting
 ----------------
 
-If you get a problem when starting the application or during its usage please open an issue in Github and include all logs that can be found in ``~/Library/Logs/rotkehlchen``.
+If you get a problem when starting the application or during its usage please open an issue in Github and include all logs that can be found in ``~/Library/Logs/rotki``.
 
 
 Windows
