@@ -241,6 +241,22 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
     commit('ethAccounts', updateEth);
     commit('btcAccounts', updateBtc);
+  },
+  async fetchDSRBalances({ commit }) {
+    const { task_id } = await api.dsrBalance();
+    const task = createTask(task_id, TaskType.DSR_BALANCE, {
+      description: `Fetching DSR Balances`,
+      ignoreResult: false
+    });
+    commit('tasks/add', task, { root: true });
+  },
+  async fetchDSRHistory({ commit }) {
+    const { task_id } = await api.dsrHistory();
+    const task = createTask(task_id, TaskType.DSR_HISTORY, {
+      description: `Fetching DSR History`,
+      ignoreResult: false
+    });
+    commit('tasks/add', task, { root: true });
   }
 };
 
