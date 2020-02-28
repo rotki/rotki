@@ -27,7 +27,8 @@ export default class PyHandler {
 
   constructor(private app: App) {
     if (process.platform === 'linux') {
-      this.logsPath = app.getPath('appData');
+      app.setAppLogsPath(path.join(app.getPath('appData'), 'rotki', 'logs'));
+      this.logsPath = app.getPath('logs');
     } else {
       app.setAppLogsPath();
       this.logsPath = app.getPath('logs');
