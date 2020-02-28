@@ -50,14 +50,17 @@ const store: StoreOptions<RotkehlchenState> = {
   },
   actions: {
     async version({ commit }): Promise<void> {
-      try {
-        const version = await api.checkVersion();
-        if (version) {
-          commit('versions', version);
+      const timerId = setInterval(async function() {
+        try {
+          const version = await api.checkVersion();
+          if (version) {
+            commit('versions', version);
+            clearInterval(timerId);
+          }
+        } catch (e) {
+          console.error(e);
         }
-      } catch (e) {
-        console.error(e);
-      }
+      }, 1000);
     }
   },
   getters: {
