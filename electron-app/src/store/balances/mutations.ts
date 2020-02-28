@@ -11,6 +11,7 @@ import {
   ExchangeInfo,
   UsdToFiatExchangeRates
 } from '@/typing/types';
+import { DSRBalances, DSRHistory } from '@/services/types-model';
 
 export const mutations: MutationTree<BalanceState> = {
   updateEth(state: BalanceState, payload: EthBalances) {
@@ -57,6 +58,12 @@ export const mutations: MutationTree<BalanceState> = {
   },
   btcAccounts(state: BalanceState, accounts: AccountDataMap) {
     state.btcAccounts = accounts;
+  },
+  dsrHistory(state: BalanceState, history: DSRHistory) {
+    state.dsrHistory = history;
+  },
+  dsrBalances(state: BalanceState, balances: DSRBalances) {
+    state.dsrBalances = balances;
   },
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   reset(state: BalanceState) {

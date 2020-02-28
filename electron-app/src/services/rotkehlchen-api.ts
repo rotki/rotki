@@ -1268,6 +1268,38 @@ export class RotkehlchenApi {
       .then(this.handleResponse)
       .then(accounts => accounts.map(convertAccountData));
   }
+
+  async dsrBalance(): Promise<AsyncQuery> {
+    return this.axios
+      .get<ActionResult<AsyncQuery>>(
+        'blockchains/ETH/modules/makerdao/dsrbalance',
+        {
+          params: {
+            async_query: true
+          },
+          validateStatus: function(status: number) {
+            return status === 200 || status === 409 || status == 502;
+          }
+        }
+      )
+      .then(this.handleResponse);
+  }
+
+  async dsrHistory(): Promise<AsyncQuery> {
+    return this.axios
+      .get<ActionResult<AsyncQuery>>(
+        'blockchains/ETH/modules/makerdao/dsrhistory',
+        {
+          params: {
+            async_query: true
+          },
+          validateStatus: function(status: number) {
+            return status === 200 || status === 409 || status == 502;
+          }
+        }
+      )
+      .then(this.handleResponse);
+  }
 }
 
 export const api = new RotkehlchenApi();
