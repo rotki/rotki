@@ -1,7 +1,8 @@
 import { DSRMovementType } from '@/services/types-common';
 
 export interface ApiDSRBalances {
-  [account: string]: string;
+  readonly current_dsr: string;
+  readonly balances: { [account: string]: string };
 }
 
 export interface ApiDSRMovement {
@@ -9,8 +10,9 @@ export interface ApiDSRMovement {
   readonly gain_so_far: string;
   readonly amount: string;
   readonly block_number: number;
+  readonly timestamp: number;
 }
 
 export interface ApiDSRHistory {
-  [address: string]: ApiDSRMovement;
+  readonly [address: string]: ApiDSRMovement;
 }

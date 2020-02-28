@@ -10,6 +10,7 @@ import {
   UsdToFiatExchangeRates
 } from '@/typing/types';
 import { DSRBalances, DSRHistory } from '@/services/types-model';
+import { Zero } from '@/utils/bignumbers';
 
 export interface BalanceState {
   eth: EthBalances;
@@ -36,7 +37,10 @@ export const defaultState = (): BalanceState => ({
   ethAccounts: {},
   btcAccounts: {},
   dsrHistory: {},
-  dsrBalances: {}
+  dsrBalances: {
+    currentDSR: Zero,
+    balances: {}
+  }
 });
 
 export const state: BalanceState = defaultState();
