@@ -188,8 +188,15 @@ export default class PyHandler {
       this.logToFile('Setting path');
       process.env.PATH = process.env.VIRTUAL_ENV + '/bin:' + process.env.PATH;
       this.logToFile('Path is now:' + process.env.PATH);
+    } else {
+      this.logAndQuit(
+        'ERROR: Running in development mode and not inside a python virtual environment'
+      );
     }
 
+    this.logToFile(
+      'Starting non-packaged python subprocess: python ' + defaultArgs.join(' ')
+    );
     this.childProcess = spawn('python', defaultArgs.concat(args));
   }
 
@@ -197,14 +204,14 @@ export default class PyHandler {
     let dist_dir = PyHandler.packagedBackendPath();
     let files = fs.readdirSync(dist_dir);
     if (files.length === 0) {
-      this.logAndQuit('No files found in the dist directory');
+      this.logAndQuit('ERROR: No files found in the dist directory');
     } else if (files.length !== 1) {
-      this.logAndQuit('Found more than one file in the dist directory');
+      this.logAndQuit('ERROR: Found more than one file in the dist directory');
     }
     let executable = files[0];
     if (!executable.startsWith('rotkehlchen-')) {
       this.logAndQuit(
-        `Unexpected executable name "${executable}" in the dist directory`
+        `ERROR: Unexpected executable name "${executable}" in the dist directory`
       );
     }
     this.executable = executable;
@@ -213,6 +220,13 @@ export default class PyHandler {
       args.push('--api-cors', this._corsURL);
     }
     args.push('--logfile', path.join(this.logsPath, 'rotkehlchen.log'));
+    args = ['--api-port', port.toString()].concat(args);
+    this.logToFile(
+      'Starting packaged python subprocess: ' +
+        executable +
+        ' ' +
+        args.join(' ')
+    );
     this.childProcess = execFile(
       executable,
       ['--api-port', port.toString()].concat(args)
