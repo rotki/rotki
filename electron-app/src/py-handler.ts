@@ -190,9 +190,8 @@ export default class PyHandler {
     // To mitigate this if a virtualenv is detected we add its bin directory to the start
     // start of the path
     if (process.env.VIRTUAL_ENV) {
-      this.logToFile('Setting path');
-      process.env.PATH = process.env.VIRTUAL_ENV + '/bin:' + process.env.PATH;
-      this.logToFile('Path is now:' + process.env.PATH);
+      process.env.PATH =
+        process.env.VIRTUAL_ENV + path.sep + 'bin:' + process.env.PATH;
     } else {
       this.logAndQuit(
         'ERROR: Running in development mode and not inside a python virtual environment'
@@ -200,7 +199,7 @@ export default class PyHandler {
     }
 
     this.logToFile(
-      'Starting non-packaged python subprocess: python ' + defaultArgs.join(' ')
+      `Starting non-packaged python subprocess: python ${defaultArgs.join(' ')}`
     );
     this.childProcess = spawn('python', defaultArgs.concat(args));
   }
@@ -227,15 +226,9 @@ export default class PyHandler {
     args.push('--logfile', path.join(this.logsPath, 'rotkehlchen.log'));
     args = ['--api-port', port.toString()].concat(args);
     this.logToFile(
-      'Starting packaged python subprocess: ' +
-        executable +
-        ' ' +
-        args.join(' ')
+      `Starting packaged python subprocess: ${executable} ${args.join(' ')}`
     );
-    this.childProcess = execFile(
-      executable,
-      ['--api-port', port.toString()].concat(args)
-    );
+    this.childProcess = execFile(executable, args);
   }
 
   private async terminateWindowsProcesses() {
