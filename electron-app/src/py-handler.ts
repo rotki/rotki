@@ -178,6 +178,17 @@ export default class PyHandler {
       }
       defaultArgs.push('--data-dir', tempPath);
     }
+    // in some systems the virtualenv's python is not detected from inside electron and the
+    // system python is used. Electron/node seemed to add /usr/bin to the path before the
+    // virtualenv directory and as such system's python is used. Not sure why this happens only
+    // in some systems. Check again in the future if this happens in Lefteris laptop Archlinux.
+    // To mitigate this if a virtualenv is detected we add its bin directory to the start
+    // start of the path
+    if (process.env.VIRTUAL_ENV) {
+      this.logToFile('Setting path');
+      process.env.PATH = process.env.VIRTUAL_ENV + '/bin:' + process.env.PATH;
+      this.logToFile('Path is now:' + process.env.PATH);
+    }
 
     this.childProcess = spawn('python', defaultArgs.concat(args));
   }
