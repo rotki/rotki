@@ -2,11 +2,12 @@ import BigNumber from 'bignumber.js';
 import { DSRMovementType } from '@/services/types-common';
 
 export interface DSRBalances {
-  [account: string]: BigNumber;
+  readonly currentDSR: BigNumber;
+  readonly balances: { [account: string]: BigNumber };
 }
 
 export interface DSRHistory {
-  [address: string]: DSRMovement;
+  readonly [address: string]: DSRMovement;
 }
 
 export interface DSRMovement {
@@ -14,4 +15,5 @@ export interface DSRMovement {
   readonly gainSoFar: BigNumber;
   readonly amount: BigNumber;
   readonly blockNumber: number;
+  readonly timestamp: number;
 }

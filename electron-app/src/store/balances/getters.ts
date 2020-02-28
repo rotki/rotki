@@ -12,7 +12,7 @@ import BigNumber from 'bignumber.js';
 import { Zero } from '@/utils/bignumbers';
 import { assetSum } from '@/utils/calculation';
 import isEmpty from 'lodash/isEmpty';
-import { Blockchain } from '@/typing/types';
+import { Blockchain, DSRBalance } from '@/typing/types';
 
 export const getters: GetterTree<BalanceState, RotkehlchenState> = {
   ethAccounts(state: BalanceState): AccountBalance[] {
@@ -156,5 +156,17 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
   ): string => {
     const data = blockchain === 'ETH' ? state.ethAccounts : state.btcAccounts;
     return data[address]?.label ?? '';
+  },
+
+  dsrBalances: ({ dsrBalances }: BalanceState): DSRBalance[] => {
+    const { balances } = dsrBalances;
+    return Object.keys(balances).map(address => ({
+      address,
+      balance: balances[address]
+    }));
+  },
+
+  currentDSR: ({ dsrBalances }: BalanceState): BigNumber => {
+    return dsrBalances.currentDSR;
   }
 };

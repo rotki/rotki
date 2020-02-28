@@ -1,5 +1,6 @@
 import { ApiAssetBalance, AssetBalances } from '@/model/blockchain-balances';
 import { Currency } from '@/model/currency';
+import BigNumber from 'bignumber.js';
 
 export interface GeneralSettings {
   readonly floatingPrecision: number;
@@ -142,4 +143,9 @@ export type AccountDataMap = { [address: string]: AccountData };
 export interface Account {
   readonly chain: Blockchain;
   readonly address: string;
+}
+
+export interface DSRBalance {
+  readonly address: string;
+  readonly balance: BigNumber;
 }
