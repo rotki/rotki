@@ -116,7 +116,12 @@ export default class PyHandler {
 
   async exitPyProc() {
     this.logToFile('Exiting the application');
-
+    if (this.rpcFailureNotifier) {
+      clearInterval(this.rpcFailureNotifier);
+    }
+    if (this.rpcConnectedNotifier) {
+      clearInterval(this.rpcConnectedNotifier);
+    }
     if (process.platform === 'win32') {
       await this.terminateWindowsProcesses();
     } else {
