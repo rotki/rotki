@@ -13,7 +13,14 @@ class Github():
         self.prefix = 'https://api.github.com/'
 
     def _query(self, path: str) -> Dict:
-        response = requests.get(f'{self.prefix}{path}')
+        """
+        May raise:
+        - RemoteError if there is a problem querying Github
+        """
+        try:
+            response = requests.get(f'{self.prefix}{path}')
+        except requests.exceptions.ConnectionError as e:
+            raise RemoteError(f'Failed to query Github: {str(e)}')
 
         if response.status_code != 200:
             raise RemoteError(
