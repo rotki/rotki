@@ -1,1 +1,1 @@
-export type DSRMovementType = 'withdraw' | 'deposit';
+export type DSRMovementType = 'withdrawal' | 'deposit';

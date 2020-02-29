@@ -18,21 +18,31 @@ export function convertDSRBalances({
 }
 
 export function convertDSRHistory(history: ApiDSRHistory): DSRHistory {
-  const data: { [address: string]: DSRMovement } = {};
+  const data: {
+    [address: string]: {
+      movements: DSRMovement[];
+      gainSoFar: BigNumber;
+    };
+  } = {};
   for (const account of Object.keys(history)) {
-    const {
-      movement_type,
-      gain_so_far,
-      amount,
-      block_number,
-      timestamp
-    } = history[account];
+    const { gain_so_far: accountGain, movements } = history[account];
     data[account] = {
-      movementType: movement_type,
-      gainSoFar: bigNumberify(gain_so_far),
-      amount: bigNumberify(amount),
-      blockNumber: block_number,
-      timestamp
+      gainSoFar: bigNumberify(accountGain),
+      movements: movements.map(
+        ({
+          amount,
+          block_number,
+          gain_so_far: gain_so_far,
+          movement_type,
+          timestamp
+        }) => ({
+          movementType: movement_type,
+          gainSoFar: bigNumberify(gain_so_far),
+          amount: bigNumberify(amount),
+          blockNumber: block_number,
+          timestamp
+        })
+      )
     };
   }
   return data;
