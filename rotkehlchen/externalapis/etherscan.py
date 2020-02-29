@@ -13,7 +13,7 @@ from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
-from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, ExternalService
+from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, ExternalService, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import convert_to_int, from_wei, hexstring_to_bytes, ts_now
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
@@ -427,3 +427,18 @@ class Etherscan(ExternalServiceWithApiKey):
             options=options,
         )
         return result
+
+    def get_blocknumber_by_time(self, ts: Timestamp) -> int:
+        """Performs the etherscan api call to get the blocknumber by a specific timestamp
+
+        May raise:
+        - RemoteError if there are any problems with reaching Etherscan or if
+        an unexpected response is returned
+        """
+        options = {'timestamp': ts, 'closest': 'before'}
+        result = self._query(
+            module='block',
+            action='getblocknobytime',
+            options=options,
+        )
+        return result.to_int(exact=True)

@@ -1,12 +1,13 @@
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional, Union
 
 from eth_utils.address import to_checksum_address
 from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.chain.ethereum import Ethchain, address_to_bytes32
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.ethereum import (
     MAKERDAO_POT_ABI,
     MAKERDAO_POT_ADDRESS,
@@ -25,6 +26,29 @@ from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import hex_or_bytes_to_int
 
 log = logging.getLogger(__name__)
+
+POT_CREATION_BLOCK = 8928160
+POT_CREATION_TIMESTAMP = 1573672721
+CHI_BLOCKS_SEARCH_DISTANCE = 50
+
+
+class ChiRetrievalError(Exception):
+    pass
+
+
+def hex_or_bytes_to_address(value: Union[bytes, str]) -> ChecksumEthAddress:
+    """Turns a 32bit bytes/HexBytes or a hexstring into an address
+
+    May raise:
+    - ConversionError if it can't convert a value to an int or if an unexpected
+    type is given.
+    """
+    if isinstance(value, bytes):
+        hexstr = value.hex()
+    else:
+        hexstr = value
+
+    return '0x' + hexstr[26:]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -51,7 +75,7 @@ class DSRAccountReport(NamedTuple):
 
 def _dsrdai_to_dai(value: int) -> FVal:
     """Turns a big integer that is the value of DAI in DSR into a proper DAI decimal FVal"""
-    return FVal(value / 1e27 / 1e18)
+    return FVal(value / FVal(1e27) / FVal(1e18))
 
 
 def serialize_dsr_reports(
@@ -209,6 +233,7 @@ class MakerDAO(EthereumModule):
                     )
                 try:
                     value = hex_or_bytes_to_int(event['topics'][3])
+                    break
                 except ConversionError:
                     value = None
         return value
@@ -236,7 +261,7 @@ class MakerDAO(EthereumModule):
             abi=MAKERDAO_POT_ABI,
             event_name='LogNote',
             argument_filters=argument_filters,
-            from_block=8928160,  # POT creation block
+            from_block=POT_CREATION_BLOCK,
         )
         for join_event in join_events:
             try:
@@ -286,7 +311,7 @@ class MakerDAO(EthereumModule):
             abi=MAKERDAO_POT_ABI,
             event_name='LogNote',
             argument_filters=argument_filters,
-            from_block=8928160,  # POT creation block
+            from_block=POT_CREATION_BLOCK,
         )
         for exit_event in exit_events:
             try:
@@ -363,6 +388,150 @@ class MakerDAO(EthereumModule):
                 reports[account] = report
 
         return reports
+
+    def _try_get_chi_close_to(self, time: Timestamp):
+        """Best effort attempt to get a chi value close to the given timestamp
+
+        It can't be 100% accurate since we use the logs of join() or exit()
+        in order to find the closest time chi was changed. It also may not work
+        if for some reason there is no logs in the block range we are looking for.
+
+        Better solution would have been an archive node's query.
+
+        May raise:
+        - RemoteError if there are problems with querying etherscan
+        - ChiRetrievalError if we are unable to query chi at the given timestamp
+        """
+        block_number = self.ethchain.etherscan.get_blocknumber_by_time(time)
+        from_block = max(POT_CREATION_BLOCK, block_number - CHI_BLOCKS_SEARCH_DISTANCE)
+        if self.ethchain.connected:
+            latest_block = self.ethchain.web3.eth.blockNumber
+        else:
+            latest_block = self.ethchain.query_eth_highest_block()
+        to_block = min(latest_block, block_number + CHI_BLOCKS_SEARCH_DISTANCE)
+        join_events = self.ethchain.get_logs(
+            contract_address=MAKERDAO_POT_ADDRESS,
+            abi=MAKERDAO_POT_ABI,
+            event_name='LogNote',
+            argument_filters={'sig': '0x049878f3'},  # join
+            from_block=from_block,
+            to_block=to_block,
+        )
+        exit_events = self.ethchain.get_logs(
+            contract_address=MAKERDAO_POT_ADDRESS,
+            abi=MAKERDAO_POT_ABI,
+            event_name='LogNote',
+            argument_filters={'sig': '0x7f8661a1'},  # exit
+            from_block=from_block,
+            to_block=to_block,
+        )
+        events = join_events + exit_events
+
+        # Find the closest event to the block number
+        found_idx = -1
+        min_distance = 99999999
+        for idx, event in enumerate(events):
+            try:
+                event_block_number = deserialize_blocknumber(event['blockNumber'])
+            except DeserializationError as e:
+                msg = f'Error at reading DSR drip event block number. {str(e)}'
+                raise ChiRetrievalError(msg)
+
+            this_distance = abs(event_block_number - block_number)
+            if this_distance < min_distance:
+                min_distance = this_distance
+                found_idx = idx
+
+        if found_idx == -1:
+            raise ChiRetrievalError(
+                f'Found no DSR events around timestamp {time}. Cant query chi.'
+            )
+
+        found_event = events[found_idx]
+        event_block_number = deserialize_blocknumber(found_event['blockNumber'])
+        first_topic = found_event['topics'][0]
+        if isinstance(first_topic, bytes):
+            first_topic = first_topic.hex()
+
+        if first_topic.startswith('0x049878f3'):  # join
+            from_address = hex_or_bytes_to_address(found_event['topics'][1])
+            to_address = MAKERDAO_POT_ADDRESS
+        else:
+            from_address = MAKERDAO_POT_ADDRESS
+            to_address = hex_or_bytes_to_address(found_event['topics'][1])
+
+        amount = self._get_vat_move_event_value(
+            from_address=from_address,
+            to_address=to_address,
+            block_number=event_block_number,
+            transaction_index=found_event['transactionIndex']
+        )
+        if not amount:
+            raise ChiRetrievalError(
+                f'Found no VAT.move events around timestamp {time}. Cant query chi.'
+            )
+
+        wad_val = hex_or_bytes_to_int(found_event['topics'][2])
+        chi = FVal(amount) / FVal(wad_val)
+        return chi
+
+    def _get_dsr_account_gain_in_period(
+            self,
+            account: ChecksumEthAddress,
+            movements: List[DSRMovement],
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+    ):
+        # TODO: Handle ChiRetrievalError
+        if from_ts < POT_CREATION_BLOCK:
+            from_ts = POT_CREATION_TIMESTAMP + 43200 * 10
+
+        if to_ts < POT_CREATION_BLOCK:
+            to_ts = POT_CREATION_TIMESTAMP + 43200 * 10
+
+        from_chi = self._try_get_chi_close_to(from_ts)
+        to_chi = self._try_get_chi_close_to(to_ts)
+        normalized_balance = 0
+        amount_in_dsr = 0
+        gain_at_from_ts = 0
+        gain_at_to_ts = 0
+        gain_at_from_ts_found = False
+        gain_at_to_ts_found = False
+        for m in movements:
+            if not gain_at_from_ts_found and m.timestamp >= from_ts:
+                gain_at_from_ts = normalized_balance * from_chi - amount_in_dsr
+                gain_at_from_ts_found = True
+
+            if not gain_at_to_ts_found and m.timestamp >= to_ts:
+                gain_at_to_ts = normalized_balance * to_chi - amount_in_dsr
+                gain_at_to_ts_found = True
+
+            if m.movement_type == 'deposit':
+                normalized_balance += m.normalized_balance
+                amount_in_dsr += m.amount
+            else:  # withdrawal
+                amount_in_dsr -= m.amount
+                normalized_balance -= m.normalized_balance
+
+        __import__("pdb").set_trace()
+
+        if not gain_at_from_ts_found:
+            return ZERO
+        if not gain_at_to_ts_found:
+            gain_at_to_ts = normalized_balance * to_chi - amount_in_dsr
+
+        return _dsrdai_to_dai(gain_at_to_ts - gain_at_from_ts)
+
+    def get_dsr_gains_in_period(self, from_ts: Timestamp, to_ts: Timestamp):
+        history = self.get_historical_dsr()
+        gain = ZERO
+        for account, report in history.items():
+            gain += self._get_dsr_account_gain_in_period(
+                account=account,
+                movements=report.movements,
+                from_ts=from_ts,
+                to_ts=to_ts,
+            )
 
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:
