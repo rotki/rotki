@@ -9,10 +9,13 @@ import 'font-awesome/css/font-awesome.css';
 import vuetify from '@/plugins/vuetify';
 import '@babel/polyfill';
 import { setupPremium } from '@/utils/premium';
+import { Interop } from '@/plugins/interop';
 
 Vue.config.productionTip = false;
 
 Vue.use(Api);
+Vue.use(Interop);
+
 setupPremium();
 
 new Vue({

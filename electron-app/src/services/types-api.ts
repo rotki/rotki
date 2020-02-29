@@ -14,5 +14,8 @@ export interface ApiDSRMovement {
 }
 
 export interface ApiDSRHistory {
-  readonly [address: string]: ApiDSRMovement;
+  readonly [address: string]: {
+    gain_so_far: string;
+    movements: ApiDSRMovement[];
+  };
 }

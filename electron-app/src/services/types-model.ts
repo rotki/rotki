@@ -7,7 +7,10 @@ export interface DSRBalances {
 }
 
 export interface DSRHistory {
-  readonly [address: string]: DSRMovement;
+  readonly [address: string]: {
+    gainSoFar: BigNumber;
+    movements: DSRMovement[];
+  };
 }
 
 export interface DSRMovement {
