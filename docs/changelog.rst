@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.2.0 <2020-03-01>` 705, 502, 698, 709, 716, 461, 739, 731, 726, 724, 99987
 * :feature:`705` Support MakerDAO's DAI Savings Rate (DSR)
 * :bug:`502 major` The OSX rotki app icon should no longer be blurry.
 * :bug:`698 major` Rotki should now also display the version in the UI for Windows and OSX.
