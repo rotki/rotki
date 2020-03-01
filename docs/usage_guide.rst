@@ -270,6 +270,43 @@ You can optionally provide additional notes or even links to blockchain explorer
 
 At the bottom of this page you can see a table of all your OTC trades. You can edit or delete a trade by clicking on the appropriate icon at the rightmost part of each trade under the "Actions" column.
 
+Decentralized Finance
+**********************
+
+To track and analyze your DeFi actions use the Decentralized Finance tab from the left side menu. You can choose from the different types of DeFi actions presented in the submenu.
+
+
+Loans
+=======
+
+In the loans section you can see the status of your DAI in the DAI Savings Rate (DSR). The accounts that use DSR are auto-detected from your given blockchain accounts. You can see how much DAI you have locked over all of your accounts and how much DAI is locked for each account in the DSR.
+
+.. image:: images/sc_dsr_premium_all.png
+   :alt: DSR with premium
+   :align: center
+
+If you have a premium subscription you can also see how much DAI you have gained in total or over each account. You can also see your deposits/withdrawals and how much DAI was earned until that point.
+
+.. image:: images/sc_dsr_premium_account.png
+   :alt: DSR with premium per account
+   :align: center
+
+You can also filter by account and see how much DAI is locked in the DSR for each account or how much DAI was earned for each account.
+
+.. image:: images/sc_dsr_nonpremium_all.png
+   :alt: DSR without premium
+   :align: center
+
+If you don't have a premium subscription you can't see how much DAI was earned and you also can't see the history of deposits/withdrawals.
+
+.. image:: images/sc_dsr_nonpremium_account.png
+   :alt: DSR without premium per account
+   :align: center
+
+Without a premium subscription you also can't see the amount of DAI earned per account.
+
+Finally you need to have premium in order for the total amount of DAI earned in a given time period to be counted in the profit/loss statements of the tax report.
+
 Creating a tax report
 **********************
 
