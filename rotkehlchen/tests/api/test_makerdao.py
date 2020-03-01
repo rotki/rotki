@@ -426,9 +426,9 @@ def assert_dsr_history_result_is_correct(result: Dict[str, Any], setup: DSRTestS
                         if mov_key == 'movement_type':
                             assert mov_val == result[account]['movements'][idx][mov_key]
                         else:
-                            assert FVal(mov_val) == FVal(
+                            assert FVal(mov_val).is_close(FVal(
                                 result[account]['movements'][idx][mov_key],
-                            )
+                            ), max_diff=1e-8)
 
             else:
                 assert FVal(result[account][key]) == FVal(val)
