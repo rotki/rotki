@@ -18,53 +18,14 @@
       <tax-report-overview class="tax-report__section"></tax-report-overview>
       <tax-report-events class="tax-report__section"></tax-report-events>
     </div>
-    <v-col v-if="isRunning" cols="12" class="tax-report__progress">
-      <v-row
-        align="center"
-        justify="center"
-        class="font-weight-light tax-report__progress__percentage"
-      >
-        {{ progress }} %
-      </v-row>
-      <v-row
-        align="center"
-        justify="center"
-        class="tax-report__progress__progress"
-      >
-        <v-col cols="10">
-          <v-progress-linear
-            class="text-center"
-            rounded
-            height="16"
-            color="primary"
-            :value="progress"
-          >
-          </v-progress-linear>
-        </v-col>
-      </v-row>
-      <v-row align="center" justify="center">
-        <p
-          class="text-center font-weight-light tax-report__progress__description"
-        >
-          Please wait while your report is generated...
-        </p>
-      </v-row>
-      <v-row align="center" justify="center">
-        <v-col cols="4">
-          <v-divider></v-divider>
-        </v-col>
-      </v-row>
-      <v-row
-        align="center"
-        justify="center"
-        class="tax-report__progress__warning"
-      >
-        <div class="font-weight-light subtitle-2">
-          Your report generation might take a while depending on the amount of
-          trades and actions you performed during the selected period.
-        </div>
-      </v-row>
-    </v-col>
+    <progress-screen v-if="isRunning" :progress="progress">
+      <template #message>
+        Please wait while your report is generated...
+      </template>
+
+      Your report generation might take a while depending on the amount of
+      trades and actions you performed during the selected period.
+    </progress-screen>
   </v-container>
 </template>
 
@@ -79,13 +40,20 @@ import { remote } from 'electron';
 import TaxReportOverview from '@/components/taxreport/TaxReportOverview.vue';
 import TaxReportEvents from '@/components/taxreport/TaxReportEvents.vue';
 import { Currency } from '@/model/currency';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 
 const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 const { mapState, mapGetters } = createNamespacedHelpers('reports');
 const { mapGetters: mapSessionGetters } = createNamespacedHelpers('session');
 
 @Component({
-  components: { TaxReportEvents, TaxReportOverview, MessageDialog, Generate },
+  components: {
+    ProgressScreen,
+    TaxReportEvents,
+    TaxReportOverview,
+    MessageDialog,
+    Generate
+  },
   computed: {
     ...mapTaskGetters(['isTaskRunning']),
     ...mapGetters(['progress']),
@@ -132,27 +100,5 @@ export default class TaxReport extends Vue {
 
 .tax-report__export-csv {
   margin-top: 20px;
-}
-
-.tax-report__progress {
-  margin-top: 140px;
-  height: 100%;
-  min-height: 300px;
-}
-
-.tax-report__progress__progress {
-  min-height: 80px;
-}
-
-.tax-report__progress__percentage {
-  font-size: 46px;
-}
-
-.tax-report__progress__description {
-  font-size: 16px;
-}
-
-.tax-report__progress__warning {
-  margin-top: 30px;
 }
 </style>
