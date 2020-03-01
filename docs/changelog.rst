@@ -18,6 +18,7 @@ Changelog
   - `Chai (CHAI) <https://etherscan.io/token/0x06af07097c9eeb7fd685c692751d5c66db49c215/>`__
   - `Coti (COTI) <https://coinmarketcap.com/currencies/coti/>`__
   - `MovieBloc (MBL) <https://coinmarketcap.com/currencies/moviebloc/>`__
+  - `Alibaba Coin (ABBC) <https://coinmarketcap.com/currencies/abbc-coin/>`__
     
 * :release:`1.1.1 <2020-02-06>` 693
 * :bug:`693 major` Fix crash in OSX .dmg package version that occured with v1.1.0
