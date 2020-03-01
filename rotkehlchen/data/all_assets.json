@@ -2045,6 +2045,12 @@
         "symbol": "COSS",
         "type": "ethereum token"
     },
+    "COTI": {
+        "name": "COTI",
+        "started": 1518393600,
+        "symbol": "COTI",
+        "type": "own chain"
+    },
     "COV": {
         "ethereum_address": "0xE2FB6529EF566a080e6d23dE0bd351311087D567",
         "ethereum_token_decimals": 18,
