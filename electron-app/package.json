@@ -1,6 +1,6 @@
 {
   "name": "rotki",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "author": "Lefteris Karapetsas",
   "description": "A portfolio tracking, asset analytics and tax reporting application specializing in Cryptoassets",
   "repository": "https://github.com/rotki/rotki",
@@ -66,7 +66,7 @@
     "jest": "24.9.0",
     "jest-junit": "^10.0.0",
     "prettier": "1.19.1",
-    "promise-retry": "1.1.1",
+    "promise-retry": "1.2.0",
     "sass": "1.23.7",
     "sass-loader": "7.3.1",
     "spectron": "8.0.0",
