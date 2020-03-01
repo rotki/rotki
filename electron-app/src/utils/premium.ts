@@ -19,7 +19,8 @@ async function loadComponents(): Promise<string[]> {
   return new Promise(async (resolve, reject) => {
     let components = findComponents();
     if (components.length > 0) {
-      return components;
+      resolve(components);
+      return;
     }
 
     const result = await api.queryStatisticsRenderer();
