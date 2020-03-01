@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`698 major` Rotki should now also display the version in the UI for Windows and OSX.
+* :bug:`709 major` Rotki no longer crashes after second time of opening the application in Windows.
 * :bug:`716 major` The rotki logs for linux now go into a proper directory: ``~/.config/rotki/logs``
 * :feature:`461` You can now label your blockchain accounts and tag them with any numer of custom tags to group them into categories. Tags can be customized.
 * :bug:`739 major` If there is an error during DBUpgrade or if the user uses old software to run a new DB we don't crash and burn with a 500 error but instead show a proper message.
