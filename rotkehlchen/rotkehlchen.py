@@ -45,7 +45,7 @@ from rotkehlchen.typing import (
 )
 from rotkehlchen.usage_analytics import maybe_submit_usage_analytics
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import combine_stat_dicts, dict_get_sumof, merge_dicts, ts_now
+from rotkehlchen.utils.misc import combine_stat_dicts, dict_get_sumof, merge_dicts
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -168,13 +168,6 @@ class Rotkehlchen():
         self.etherscan = Etherscan(database=self.data.db, msg_aggregator=self.msg_aggregator)
         historical_data_start = settings.historical_data_start
         eth_rpc_endpoint = settings.eth_rpc_endpoint
-        self.trades_historian = TradesHistorian(
-            user_directory=self.user_directory,
-            db=self.data.db,
-            msg_aggregator=self.msg_aggregator,
-            exchange_manager=self.exchange_manager,
-            etherscan=self.etherscan,
-        )
         # Initialize the price historian singleton
         PriceHistorian(
             data_directory=self.data_dir,
@@ -218,6 +211,13 @@ class Rotkehlchen():
         self.ethereum_analyzer = EthereumAnalyzer(
             ethchain=ethchain,
             database=self.data.db,
+        )
+        self.trades_historian = TradesHistorian(
+            user_directory=self.user_directory,
+            db=self.data.db,
+            msg_aggregator=self.msg_aggregator,
+            exchange_manager=self.exchange_manager,
+            chain_manager=self.chain_manager,
         )
         self.user_is_logged_in = True
 
@@ -444,9 +444,9 @@ class Rotkehlchen():
             asset_movements,
             eth_transactions,
         ) = self.trades_historian.get_history(
-            # For entire history processing we need to have full history available
-            start_ts=Timestamp(0),
-            end_ts=ts_now(),
+            start_ts=start_ts,
+            end_ts=end_ts,
+            has_premium=self.premium is not None,
         )
         result = self.accountant.process_history(
             start_ts=start_ts,

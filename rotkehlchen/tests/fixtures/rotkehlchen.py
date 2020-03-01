@@ -95,7 +95,7 @@ def initialize_mock_rotkehlchen_instance(
             db=rotki.data.db,
             msg_aggregator=rotki.msg_aggregator,
             exchange_manager=rotki.exchange_manager,
-            etherscan=etherscan,
+            chain_manager=rotki.chain_manager,
         )
         rotki.ethereum_analyzer = EthereumAnalyzer(
             ethchain=blockchain.ethchain,
