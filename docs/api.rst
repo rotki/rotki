@@ -2462,7 +2462,7 @@ Getting current ethereum MakerDAO DSR balance
 
 .. http:get:: /api/(version)/blockchains/ETH/modules/makerdao/dsrbalance
 
-   Doing a GET on the makerdao dsrbalance resource will return the current balance held in DSR by any of the user's accounts and also the current DSR percentage.
+   Doing a GET on the makerdao dsrbalance resource will return the current balance held in DSR by any of the user's accounts that ever had DAI deposited in the DSR and also the current DSR percentage.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
