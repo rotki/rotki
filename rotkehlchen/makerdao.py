@@ -1,7 +1,7 @@
 import logging
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, NamedTuple, Optional, Union
 
-from dataclasses import dataclass, field
 from eth_utils.address import to_checksum_address
 from gevent.lock import Semaphore
 from typing_extensions import Literal
@@ -488,10 +488,10 @@ class MakerDAO(EthereumModule):
         - RemoteError if etherscan is queried and there is a problem with the query
         """
         # First events show up ~432000 seconds after deployment
-        if from_ts < POT_CREATION_BLOCK:
+        if from_ts < POT_CREATION_TIMESTAMP:
             from_ts = Timestamp(POT_CREATION_TIMESTAMP + 432000)
 
-        if to_ts < POT_CREATION_BLOCK:
+        if to_ts < POT_CREATION_TIMESTAMP:
             to_ts = Timestamp(POT_CREATION_TIMESTAMP + 432000)
 
         from_chi = self._try_get_chi_close_to(from_ts)
