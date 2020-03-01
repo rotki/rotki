@@ -864,6 +864,7 @@ Querying the balances of exchanges
    :param bool async_query: Boolean denoting whether this is an asynchronous query or not
 
    .. _balances_result:
+
    **Example Response**:
 
    .. sourcecode:: http
@@ -2427,6 +2428,7 @@ Getting blockchain account data
       Host: localhost:5042
 
    .. _blockchain_accounts_result:
+
    **Example Response**:
 
    .. sourcecode:: http
@@ -2438,7 +2440,7 @@ Getting blockchain account data
           "result" : [{
               "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
               "label": "my new metamask",
-              "tags": ["public", metamask"]
+              "tags": ["public", "metamask"]
            }, {
               "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b",
               "label": null,
@@ -2612,7 +2614,7 @@ Adding blockchain accounts
           "accounts": [{
                   "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
                   "label": "my new metamask",
-                  "tags": ["public", metamask"]
+                  "tags": ["public", "metamask"]
               }, {
                   "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b
               }]
@@ -2707,7 +2709,7 @@ Editing blockchain account data
           "result" : [{
               "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
               "label": "my new metamask",
-              "tags": ["public", metamask"]
+              "tags": ["public", "metamask"]
            }, {
               "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b",
               "label": "my hardware wallet",
