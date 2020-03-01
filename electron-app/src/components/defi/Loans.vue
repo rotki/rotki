@@ -147,9 +147,8 @@ export default class Loans extends Vue {
 
   get loading(): boolean {
     return (
-      this.dsrBalances.length === 0 &&
-      (this.isTaskRunning(TaskType.DSR_HISTORY) ||
-        this.isTaskRunning(TaskType.DSR_BALANCE))
+      this.isTaskRunning(TaskType.DSR_HISTORY) ||
+      this.isTaskRunning(TaskType.DSR_BALANCE)
     );
   }
 
