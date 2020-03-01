@@ -123,12 +123,21 @@ class Etherscan(ExternalServiceWithApiKey):
     ) -> str:
         ...
 
+    @overload  # noqa: F811
+    def _query(  # noqa: F811 pylint: disable=no-self-use
+            self,
+            module: str,
+            action: Literal['getblocknobytime'],
+            options: Optional[Dict[str, Any]] = None,
+    ) -> FVal:
+        ...
+
     def _query(  # noqa: F811
             self,
             module: str,
             action: str,
             options: Optional[Dict[str, Any]] = None,
-    ) -> Union[List[Dict[str, Any]], str, List[EthereumTransaction], Dict[str, Any]]:
+    ) -> Union[List[Dict[str, Any]], str, FVal, List[EthereumTransaction], Dict[str, Any]]:
         """Queries etherscan
 
         May raise:

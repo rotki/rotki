@@ -2,19 +2,29 @@ import logging
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.manager import ChainManager
+from rotkehlchen.constants.assets import A_DAI
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.exchanges.poloniex import process_polo_loans
-from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.transactions import query_ethereum_transactions
-from rotkehlchen.typing import EthereumTransaction, FilePath, Location, Price, Timestamp
+from rotkehlchen.typing import (
+    AssetAmount,
+    EthereumTransaction,
+    Fee,
+    FilePath,
+    Location,
+    Price,
+    Timestamp,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.accounting import action_get_timestamp
-from rotkehlchen.utils.misc import create_timestamp
+from rotkehlchen.utils.misc import create_timestamp, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -141,27 +151,32 @@ class TradesHistorian():
             db: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             exchange_manager: ExchangeManager,
-            etherscan: Etherscan,
+            chain_manager: ChainManager,
     ) -> None:
 
         self.msg_aggregator = msg_aggregator
         self.user_directory = user_directory
         self.db = db
         self.exchange_manager = exchange_manager
-        self.etherscan = etherscan
+        self.chain_manager = chain_manager
 
-    def get_history(self, start_ts: Timestamp, end_ts: Timestamp) -> HistoryResult:
+    def get_history(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            has_premium: bool,
+    ) -> HistoryResult:
         """Creates trades and loans history from start_ts to end_ts"""
         log.info(
             'Get/create trade history',
             start_ts=start_ts,
             end_ts=end_ts,
         )
-
+        now = ts_now()
         # start creating the all trades history list
         history: List[Union[Trade, MarginPosition]] = []
         asset_movements = []
-        polo_loans = []
+        loans = []
         empty_or_error = ''
 
         def populate_history_cb(
@@ -178,11 +193,12 @@ class TradesHistorian():
             if exchange_specific_data:
                 # This can only be poloniex at the moment
                 polo_loans_data = exchange_specific_data
-                polo_loans.extend(process_polo_loans(
+                loans.extend(process_polo_loans(
                     msg_aggregator=self.msg_aggregator,
                     data=polo_loans_data,
-                    start_ts=start_ts,
-                    end_ts=end_ts,
+                    # We need to have full history of loans available
+                    start_ts=Timestamp(0),
+                    end_ts=now,
                 ))
 
         def fail_history_cb(error_msg: str) -> None:
@@ -192,8 +208,9 @@ class TradesHistorian():
 
         for _, exchange in self.exchange_manager.connected_exchanges.items():
             exchange.query_history_with_callbacks(
-                start_ts=start_ts,
-                end_ts=end_ts,
+                # We need to have full history of exchanges available
+                start_ts=Timestamp(0),
+                end_ts=now,
                 success_callback=populate_history_cb,
                 fail_callback=fail_history_cb,
             )
@@ -201,9 +218,10 @@ class TradesHistorian():
         try:
             eth_transactions = query_ethereum_transactions(
                 database=self.db,
-                etherscan=self.etherscan,
-                from_ts=start_ts,
-                to_ts=end_ts,
+                etherscan=self.chain_manager.ethchain.etherscan,
+                # We need to have full history of transactions available
+                from_ts=Timestamp(0),
+                to_ts=now,
             )
         except RemoteError as e:
             eth_transactions = []
@@ -214,25 +232,36 @@ class TradesHistorian():
             )
             empty_or_error += '\n' + msg
 
-        # We sort it here ... but when accounting runs through the entire actions list,
-        # it resorts, so unless the fact that we sort is used somewhere else too, perhaps
-        # we can skip it?
-        history.sort(key=lambda trade: action_get_timestamp(trade))
-        history = limit_trade_list_to_period(history, start_ts, end_ts)
-
         # Include the external trades in the history
         external_trades = self.db.get_trades(
-            from_ts=start_ts,
-            to_ts=end_ts,
+            # We need to have full history of trades available
+            from_ts=Timestamp(0),
+            to_ts=now,
             location=Location.EXTERNAL,
         )
         history.extend(external_trades)
-        history.sort(key=lambda trade: action_get_timestamp(trade))
 
+        # Include makerdao DSR gains as a simple gains only blockchain loan entry for the given
+        # time period
+        makerdao = self.chain_manager.eth_modules.get('makerdao', None)
+        if makerdao and has_premium:
+            gain = makerdao.get_dsr_gains_in_period(from_ts=start_ts, to_ts=end_ts)
+            if gain > ZERO:
+                loans.append(Loan(
+                    location=Location.BLOCKCHAIN,
+                    open_time=start_ts,
+                    close_time=end_ts,
+                    currency=A_DAI,
+                    fee=Fee(ZERO),
+                    earned=gain,
+                    amount_lent=AssetAmount(ZERO),
+                ))
+
+        history.sort(key=lambda trade: action_get_timestamp(trade))
         return (
             empty_or_error,
             history,
-            polo_loans,
+            loans,
             asset_movements,
             eth_transactions,
         )
