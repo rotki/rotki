@@ -15,18 +15,23 @@
         </v-card>
         <v-card>
           <v-card-title>
-            Total DAI
+            Total DAI locked
           </v-card-title>
           <v-card-text>
-            {{ totalDai.dp(floatingPrecision) }}
+            {{ totalDai.dp(decimals) }}
           </v-card-text>
         </v-card>
-        <v-card v-if="premium">
+        <v-card>
           <v-card-title>
             Total DAI earned
+            <v-spacer v-if="!premium"></v-spacer>
+            <premium-lock v-if="!premium"></premium-lock>
           </v-card-title>
           <v-card-text>
-            {{ totalGain.dp(floatingPrecision) }}
+            <span v-if="premium">
+              {{ totalGain.dp(decimals) }}
+            </span>
+            <span v-else> </span>
           </v-card-text>
         </v-card>
       </v-col>
@@ -43,22 +48,27 @@
         ></v-select>
       </v-col>
     </v-row>
-    <v-row v-if="!!selection" class="loans__cards">
-      <v-col cols="12">
+    <v-row v-if="!!selection">
+      <v-col cols="12" class="loans__cards">
         <v-card>
           <v-card-title>
             DAI locked
           </v-card-title>
           <v-card-text>
-            {{ selection.balance.dp(floatingPrecision) }}
+            {{ selection.balance.dp(decimals) }}
           </v-card-text>
         </v-card>
-        <v-card v-if="premium">
+        <v-card>
           <v-card-title>
             DAI earned
+            <v-spacer v-if="!premium"></v-spacer>
+            <premium-lock v-if="!premium"></premium-lock>
           </v-card-title>
           <v-card-text>
-            {{ accountGain(selection.address).dp(floatingPrecision) }}
+            <span v-if="premium">
+              {{ accountGain(selection.address).dp(decimals) }}
+            </span>
+            <span v-else> </span>
           </v-card-text>
         </v-card>
       </v-col>
@@ -69,24 +79,7 @@
           <v-card-title>
             History
             <v-spacer></v-spacer>
-            <v-tooltip top>
-              <template #activator="{ on }">
-                <v-btn
-                  text
-                  icon
-                  :href="$interop.isPackaged ? undefined : $interop.premiumURL"
-                  v-on="on"
-                  @click="
-                    $interop.isPackaged ? $interop.upgradePremium() : undefined
-                  "
-                >
-                  <v-icon>fa-lock</v-icon>
-                </v-btn>
-              </template>
-              <span>
-                DSR History is only supported under a premium subscription
-              </span>
-            </v-tooltip>
+            <premium-lock></premium-lock>
           </v-card-title>
         </v-card>
         <dsr-movement-history
@@ -107,6 +100,7 @@ import BigNumber from 'bignumber.js';
 import { AccountDSRMovement, DSRBalance } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 import { DsrMovementHistory } from '@/utils/premium';
+import PremiumLock from '@/components/defi/PremiumLock.vue';
 
 const { mapState, mapGetters: mapSessionGetters } = createNamespacedHelpers(
   'session'
@@ -115,6 +109,7 @@ const { mapGetters } = createNamespacedHelpers('balances');
 
 @Component({
   components: {
+    PremiumLock,
     DsrMovementHistory
   },
   computed: {
@@ -138,6 +133,8 @@ export default class Loans extends Vue {
   totalGain!: BigNumber;
   accountGain!: (address: string) => BigNumber;
   dsrHistory!: AccountDSRMovement[];
+
+  readonly decimals: number = 8;
 
   get totalDai(): BigNumber {
     return this.dsrBalances.reduce(
