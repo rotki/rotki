@@ -368,6 +368,9 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # BlockTV. As of 29/11/2019 no data found outside of Bittrex for this token
     # https://global.bittrex.com/Market/Index?MarketName=BTC-BLTV
     'BLTV',
+    # Forkspot. As for 01/03/2020 no data found outside of Bittrex for this token
+    # https://global.bittrex.com/Market/Index?MarketName=BTC-FRSP
+    'FRSP',
 )
 
 
