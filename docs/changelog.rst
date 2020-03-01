@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature: `705` Support MakerDAO's DAI Savings Rate (DSR)
 * :bug:`502 major` The OSX rotki app icon should no longer be blurry.
 * :bug:`698 major` Rotki should now also display the version in the UI for Windows and OSX.
 * :bug:`709 major` Rotki no longer crashes after second time of opening the application in Windows.
@@ -20,7 +21,7 @@ Changelog
   - `MovieBloc (MBL) <https://coinmarketcap.com/currencies/moviebloc/>`__
   - `Alibaba Coin (ABBC) <https://coinmarketcap.com/currencies/abbc-coin/>`__
   - `WaykiChain (WICC) <https://coinmarketcap.com/currencies/waykichain/>`__
-    
+
 * :release:`1.1.1 <2020-02-06>` 693
 * :bug:`693 major` Fix crash in OSX .dmg package version that occured with v1.1.0
 
