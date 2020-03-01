@@ -9362,6 +9362,12 @@
         "symbol": "WIC",
         "type": "ethereum token"
     },
+    "WICC": {
+        "name": "WaykiChain",
+        "started": 1514592000,
+        "symbol": "WICC",
+        "type": "own chain"
+    },
     "WIKI": {
         "ethereum_address": "0x66BaD545596fb17a0B4ebDC003a85dEF10E8F6Ae",
         "ethereum_token_decimals": 18,
