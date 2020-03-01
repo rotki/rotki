@@ -2,6 +2,7 @@
   <v-app id="rotki">
     <v-navigation-drawer
       v-model="drawer"
+      width="300"
       fixed
       :clipped="$vuetify.breakpoint.mdAndUp"
       class="grey lighten-4"
