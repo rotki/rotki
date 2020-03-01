@@ -1,5 +1,10 @@
 <template>
-  <v-container>
+  <progress-screen v-if="loading">
+    <template #message>
+      Please wait while your balances are getting loaded...
+    </template>
+  </progress-screen>
+  <v-container v-else>
     <v-row>
       <v-col cols="12">
         <h2>MakerDAO DSR</h2>
@@ -100,19 +105,24 @@ import BigNumber from 'bignumber.js';
 import { AccountDSRMovement, DSRBalance } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 import { DsrMovementHistory } from '@/utils/premium';
-import PremiumLock from '@/components/defi/PremiumLock.vue';
+import PremiumLock from '@/components/helper/PremiumLock.vue';
+import { TaskType } from '@/model/task';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 
 const { mapState, mapGetters: mapSessionGetters } = createNamespacedHelpers(
   'session'
 );
 const { mapGetters } = createNamespacedHelpers('balances');
+const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 
 @Component({
   components: {
+    ProgressScreen,
     PremiumLock,
     DsrMovementHistory
   },
   computed: {
+    ...mapTaskGetters(['isTaskRunning']),
     ...mapState(['premium']),
     ...mapSessionGetters(['floatingPrecision']),
     ...mapGetters([
@@ -133,6 +143,15 @@ export default class Loans extends Vue {
   totalGain!: BigNumber;
   accountGain!: (address: string) => BigNumber;
   dsrHistory!: AccountDSRMovement[];
+  isTaskRunning!: (type: TaskType) => boolean;
+
+  get loading(): boolean {
+    return (
+      this.dsrBalances.length === 0 &&
+      (this.isTaskRunning(TaskType.DSR_HISTORY) ||
+        this.isTaskRunning(TaskType.DSR_BALANCE))
+    );
+  }
 
   readonly decimals: number = 8;
 
