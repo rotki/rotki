@@ -19,6 +19,7 @@ Changelog
   - `Coti (COTI) <https://coinmarketcap.com/currencies/coti/>`__
   - `MovieBloc (MBL) <https://coinmarketcap.com/currencies/moviebloc/>`__
   - `Alibaba Coin (ABBC) <https://coinmarketcap.com/currencies/abbc-coin/>`__
+  - `WaykiChain (WICC) <https://coinmarketcap.com/currencies/waykichain/>`__
     
 * :release:`1.1.1 <2020-02-06>` 693
 * :bug:`693 major` Fix crash in OSX .dmg package version that occured with v1.1.0
