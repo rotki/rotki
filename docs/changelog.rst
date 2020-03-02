@@ -10,7 +10,7 @@ Changelog
 * :bug:`716 major` The rotki logs for linux now go into a proper directory: ``~/.config/rotki/logs``
 * :feature:`461` You can now label your blockchain accounts and tag them with any numer of custom tags to group them into categories. Tags can be customized.
 * :bug:`739 major` If there is an error during DBUpgrade or if the user uses old software to run a new DB we don't crash and burn with a 500 error but instead show a proper message.
-* :bug:`731` Fixed cointracking file import.
+* :bug:`731 major` Fixed cointracking file import.
 * :bug:`726 major` Fail gracefully and don't throw a 500 server error if blockchain balance query fails.
 * :bug:`724 major` If latest block remote query fails do not revert to etherscan but persist with using the provided ethereum node after warning the user.
 * :feature:`99987` Added support for the following tokens
