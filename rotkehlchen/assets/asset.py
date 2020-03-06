@@ -111,6 +111,7 @@ WORLD_TO_KRAKEN = {
     'SC': 'SC',
     'PAXG': 'PAXG',
     'LSK': 'LSK',
+    'TRX': 'TRX',
 }
 
 WORLD_TO_BINANCE = {
