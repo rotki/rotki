@@ -184,7 +184,7 @@ Install `node (includes npm) <https://nodejs.org/en/download/>`_.
 Python
 ^^^^^^^^^^^^^^^^^^^^
 
-1. Get `python 3.7 <https://www.python.org/downloads/release/python-374/>`_ (3.7 is recommended due to some rotki dependencies). Make sure to download the 64-bit version of python if your version of Windows is 64-bit! If you're unsure of what Windows version you have, you can check in Control Panel -> System and Security -> System.
+1. Get `python 3.7 <https://www.python.org/downloads/release/python-374/>`_ (3.7 is required due to some rotki dependencies). Make sure to download the 64-bit version of python if your version of Windows is 64-bit! If you're unsure of what Windows version you have, you can check in Control Panel -> System and Security -> System.
 2. For some reason python does not always install to the Path variable in Windows. To ensure you have the necessary python directories referenced, go to Control Panel -> System -> Advanced system settings -> Advanced (tab) -> Environment Variables... In the Environment Variables... dialog under "System Varaiables" open the "Path" variable and ensure that both the root python directory as well as the ``\Scripts\`` subdirectory are included. If they are not, add them one by one by clicking "New" and then "Browse" and locating the correct directories. NOTE: By default the Windows MSI installer place python in the ``C:\Users\<username>\AppData\Local\Programs\`` directory.
 3. To test if you have entered python correctly into the Path variable, open a command prompt and type in ``python`` then hit Enter. The python cli should run and you should see the python version you installed depicted above the prompt. Press CTRL+Z, then Enter to exit.
 
@@ -260,7 +260,7 @@ Pay close attention to the results of the command. Sometimes modules are reporte
 
 At this point, it's likely that pysqlcipher3 has not been built and installed correctly, and you will need to install it manually. If pysqlcipher3 installed successfully, you can skip Steps 7 - 9 and move on to the next section.
 
-Since the electron application is located in a different directory you also need to do::
+Since the electron application is located in a different directory you also need to do (NOTE: execute this only after pysqlcipher3 has successfully installed)::
 
     pip install -e .
 
@@ -313,6 +313,7 @@ After the app is built, if everything went well you should see the below text in
 
 If you get any errors about missing dependencies, try to install them via npm and run again; consult the troubleshooting section for other errors.
 
+3. Alternatively, you can also choose to build the application. In order to do so, navigate to your rotki development directory and execute the ``package.bat`` file. NOTE: You will need to edit the directory in Line 30 to the name of your rotki development directory.
 
 Troubleshooting
 ---------------
