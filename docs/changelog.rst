@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`772 major` Getting a rate limit error from Etherscan should be now handled properly.
 * :feature:`-` Support TRX in kraken, since it got listed.
 
 * :release:`1.2.0 <2020-03-01>` 705, 502, 698, 709, 716, 461, 739, 731, 726, 724, 99987
