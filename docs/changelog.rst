@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`770 major` Adds loading screen while waiting for the backend to start.
 * :bug:`772 major` Getting a rate limit error from Etherscan should be now handled properly.
 * :feature:`-` Support TRX in kraken, since it got listed.
 
