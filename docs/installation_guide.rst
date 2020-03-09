@@ -313,16 +313,8 @@ After the app is built, if everything went well you should see the below text in
 
 If you get any errors about missing dependencies, try to install them via npm and run again; consult the troubleshooting section for other errors.
 
-3. Alternatively, you can also choose to build the application. In order to do so, navigate to your rotki development directory and execute the ``package.bat`` file. NOTE: You will need to edit the directories in the batch file to point to where you built pysqlcipher3 and your rotki development directory. The relevant section of the script (`example <https://github.com/isidorosp/rotki/blob/47c92cdb0b48115fb668efe59219783efeb075ce/package.bat#L27-L30>`_) is::
-
-    Rem also for Windows we expect a pysqlcipher3 project to exist to properly
-    Rem build and install that into the venv since pip install pysqlcipher3 without
-    Rem having manually compiled sqlcipher will not work.
-    Rem Reference: https://rotki.readthedocs.io/en/latest/installation_guide.html#sqlcipher-and-pysqlcipher3
-    cd ../pysqlcipher3
-    python setup.py build
-    python setup.py install
-    cd ../rotkehlchen
+3. Alternatively, you can also choose to build the application. In order to do so, navigate to your rotki development directory and execute the ``package.bat`` file. 
+NOTE: You will need to edit the directories in the batch file to point to where you built pysqlcipher3 and your rotki development directory (`see here <https://github.com/rotki/rotki/blob/5f55522efc8faa1992b64e8b27c96ce8c844d70c/package.bat#L27-L30>`_).
 
 Troubleshooting
 ---------------
