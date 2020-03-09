@@ -12,7 +12,6 @@ import { assert } from '@/utils/assertions';
 export default class PyHandler {
   private static PY_DIST_FOLDER = 'rotkehlchen_py_dist';
   private rpcFailureNotifier?: any;
-  private rpcConnectedNotifier?: any;
   private childProcess?: ChildProcess;
   private _port?: number;
   private executable?: string;
@@ -59,8 +58,6 @@ export default class PyHandler {
     ipcMain.on('ack', (event, ...args) => {
       if (args[0] == 1) {
         clearInterval(this.rpcFailureNotifier);
-      } else if (args[0] == 2) {
-        clearInterval(this.rpcConnectedNotifier);
       } else {
         this.logToFile(`Warning: unknown ack code ${args[0]}`);
       }
@@ -108,7 +105,6 @@ export default class PyHandler {
       this.logToFile(
         `The Python sub-process started on port: ${port} (PID: ${childProcess.pid})`
       );
-      handler.setConnectedNotification(window);
       return;
     }
     this.logToFile('The Python sub-process was not successfully started');
@@ -118,9 +114,6 @@ export default class PyHandler {
     this.logToFile('Exiting the application');
     if (this.rpcFailureNotifier) {
       clearInterval(this.rpcFailureNotifier);
-    }
-    if (this.rpcConnectedNotifier) {
-      clearInterval(this.rpcConnectedNotifier);
     }
     if (process.platform === 'win32') {
       await this.terminateWindowsProcesses();
@@ -155,12 +148,6 @@ export default class PyHandler {
   private setFailureNotification(window: Electron.BrowserWindow) {
     this.rpcFailureNotifier = setInterval(function() {
       window.webContents.send('failed', 'failed');
-    }, 2000);
-  }
-
-  private setConnectedNotification(window: Electron.BrowserWindow) {
-    this.rpcConnectedNotifier = setInterval(function() {
-      window.webContents.send('connected', 'connected');
     }, 2000);
   }
 

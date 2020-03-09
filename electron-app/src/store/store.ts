@@ -31,7 +31,8 @@ const defaultVersion = () =>
 const store: StoreOptions<RotkehlchenState> = {
   state: {
     message: emptyMessage(),
-    version: defaultVersion()
+    version: defaultVersion(),
+    connected: false
   },
   mutations: {
     setMessage: (state: RotkehlchenState, message: Message) => {
@@ -46,6 +47,7 @@ const store: StoreOptions<RotkehlchenState> = {
         latestVersion: version.latest_version || '',
         url: version.url || ''
       };
+      state.connected = true;
     }
   },
   actions: {
@@ -96,6 +98,7 @@ export interface Version {
 export interface RotkehlchenState {
   message: Message;
   version: Version;
+  connected: boolean;
   session?: SessionState;
   tasks?: TaskState;
   notifications?: NotificationState;

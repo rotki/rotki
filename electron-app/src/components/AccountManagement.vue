@@ -1,5 +1,15 @@
 <template>
   <div>
+    <v-overlay v-if="!connected" class="account_management__loading">
+      <v-row align="center" justify="center">
+        <v-col cols="12" class="account_management__loading__content">
+          <v-progress-circular indeterminate size="72"></v-progress-circular>
+          <span class="account_management__loading__content__text">
+            Please wait...
+          </span>
+        </v-col>
+      </v-row>
+    </v-overlay>
     <div class="account_management__privacy_notice">
       <v-alert
         id="privacy_notice__message"
@@ -16,6 +26,7 @@
       </v-alert>
     </div>
     <login
+      v-if="connected"
       :displayed="!message && !logged && !accountCreation"
       :loading="loading"
       :sync-conflict="syncConflict"
@@ -69,7 +80,7 @@ const { mapState: mapSessionState } = createNamespacedHelpers('session');
   },
   computed: {
     ...mapSessionState(['syncConflict', 'premium']),
-    ...mapState(['version', 'message']),
+    ...mapState(['version', 'message', 'connected']),
     ...mapGetters(['updateNeeded', 'message'])
   }
 })
@@ -79,6 +90,7 @@ export default class AccountManagement extends Vue {
   loading: boolean = false;
   version!: Version;
   message!: boolean;
+  connected!: boolean;
   syncConflict!: boolean;
 
   private premiumVisible = false;
@@ -147,19 +159,34 @@ export default class AccountManagement extends Vue {
 </script>
 
 <style lang="scss">
-.account_management__privacy_notice {
-  width: 100%;
-  position: absolute;
-  bottom: 20px;
-  z-index: 9999;
-  align-items: center;
-  display: flex;
-  flex-direction: column;
+.account_management {
+  &__loading {
+    &__content {
+      align-items: center;
+      justify-content: center;
+      display: flex;
+      flex-direction: column;
+      &__text {
+        margin-top: 48px;
+        font-weight: 400;
+        font-size: 26px;
+      }
+    }
+  }
+  &__privacy_notice {
+    width: 100%;
+    position: absolute;
+    bottom: 20px;
+    z-index: 9999;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
 
-  &__message {
-    text-align: center;
-    max-width: 650px;
-    font-size: 14px !important;
+    &__message {
+      text-align: center;
+      max-width: 650px;
+      font-size: 14px !important;
+    }
   }
 }
 
