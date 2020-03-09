@@ -131,16 +131,14 @@ export default class App extends Vue {
 
   async created(): Promise<void> {
     this.$api.connect(4242);
+    await this.$store.dispatch('version');
+
     ipcRenderer.on('failed', () => {
       // get notified if the python subprocess dies
       this.startupError =
         'The Python backend crashed. Check rotkehlchen.log or open an issue in Github.';
       // send ack to main.
       ipcRenderer.send('ack', 1);
-    });
-    ipcRenderer.on('connected', async () => {
-      await this.$store.dispatch('version');
-      ipcRenderer.send('ack', 2);
     });
   }
 }
