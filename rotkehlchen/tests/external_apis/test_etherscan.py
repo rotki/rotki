@@ -44,7 +44,7 @@ def _handle_killed_greenlets(greenlet: gevent.Greenlet) -> None:
 
 @pytest.mark.skipif(
     'TRAVIS' in os.environ,
-    reason='no real etherscan tests in Travis yet due to API key'
+    reason='no real etherscan tests in Travis yet due to API key',
 )
 def test_maximum_rate_limit_reached(temp_etherscan):
     """
