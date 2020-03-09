@@ -2,6 +2,7 @@ import logging
 from json.decoder import JSONDecodeError
 from typing import Any, Dict, List, Optional, Union, overload
 
+import gevent
 import requests
 from eth_utils.address import to_checksum_address
 from typing_extensions import Literal
@@ -166,54 +167,86 @@ class Etherscan(ExternalServiceWithApiKey):
 
         logger.debug(f'Querying etherscan: {query_str}')
 
-        try:
-            response = self.session.get(query_str)
-        except requests.exceptions.ConnectionError as e:
-            raise RemoteError(f'Etherscan API request failed due to {str(e)}')
+        backoff = 1
+        backoff_limit = 13
+        while backoff < backoff_limit:
+            try:
+                response = self.session.get(query_str)
+            except requests.exceptions.ConnectionError as e:
+                if 'Max retries exceeded with url' in str(e):
+                    log.debug(
+                        f'Got max retries exceeded from etherscan. Will '
+                        f'backoff for {backoff} seconds.',
+                    )
+                    gevent.sleep(backoff)
+                    backoff = backoff * 2
+                    if backoff >= backoff_limit:
+                        raise RemoteError(
+                            'Getting Etherscan max connections error even '
+                            'after we incrementally backed off',
+                        )
+                    continue
 
-        if response.status_code != 200:
-            raise RemoteError(
-                f'Etherscan API request {response.url} failed '
-                f'with HTTP status code {response.status_code} and text '
-                f'{response.text}',
-            )
+                raise RemoteError(f'Etherscan API request failed due to {str(e)}')
 
-        try:
-            json_ret = rlk_jsonloads_dict(response.text)
-        except JSONDecodeError:
-            raise RemoteError(f'Etherscan returned invalid JSON response: {response.text}')
-
-        # TODO: Handle the errors mentioned here:
-        # https://medium.com/etherscan-blog/psa-for-developers-implementation-of-api-key-requirements-starting-from-february-15th-2020-b616870f3746
-        try:
-            result = json_ret['result']
-            if module == 'proxy':
-                # proxy calls do not include a status
-                status = 1
-            else:
-                status = json_ret['status']
-
-            if status != 1:
-                transaction_endpoint_and_none_found = (
-                    status == 0 and
-                    json_ret['message'] == 'No transactions found' and
-                    'txlist' in action
+            if response.status_code != 200:
+                raise RemoteError(
+                    f'Etherscan API request {response.url} failed '
+                    f'with HTTP status code {response.status_code} and text '
+                    f'{response.text}',
                 )
-                logs_endpoint_and_none_found = (
-                    status == 0 and
-                    json_ret['message'] == 'No records found' and
-                    'getLogs' in action
-                )
-                if transaction_endpoint_and_none_found or logs_endpoint_and_none_found:
-                    # Can't realize that result is always a list here so we ignore mypy warning
-                    return []  # type: ignore
 
-                # else
-                raise RemoteError(f'Etherscan returned error response: {json_ret}')
-        except KeyError as e:
-            raise RemoteError(
-                f'Unexpected format of Etherscan response. Missing key entry for {str(e)}',
-            )
+            try:
+                json_ret = rlk_jsonloads_dict(response.text)
+            except JSONDecodeError:
+                raise RemoteError(f'Etherscan returned invalid JSON response: {response.text}')
+
+            try:
+                result = json_ret['result']
+                if 'status' not in json_ret:
+                    # sucessful proxy calls do not include a status
+                    status = 1
+                else:
+                    status = json_ret['status'].to_int(exact=True)
+
+                if status != 1:
+                    if status == 0 and result == 'Maximum rate limit reached':
+                        log.debug(
+                            f'Got response: {response.text} from etherscan. Will '
+                            f'backoff for {backoff} seconds.',
+                        )
+                        gevent.sleep(backoff)
+                        backoff = backoff * 2
+                        if backoff >= backoff_limit:
+                            raise RemoteError(
+                                'Etherscan keeps returning rate limit errors even '
+                                'after we incrementally backed off',
+                            )
+                        continue
+
+                    transaction_endpoint_and_none_found = (
+                        status == 0 and
+                        json_ret['message'] == 'No transactions found' and
+                        'txlist' in action
+                    )
+                    logs_endpoint_and_none_found = (
+                        status == 0 and
+                        json_ret['message'] == 'No records found' and
+                        'getLogs' in action
+                    )
+                    if transaction_endpoint_and_none_found or logs_endpoint_and_none_found:
+                        # Can't realize that result is always a list here so we ignore mypy warning
+                        return []  # type: ignore
+
+                    # else
+                    raise RemoteError(f'Etherscan returned error response: {json_ret}')
+            except KeyError as e:
+                raise RemoteError(
+                    f'Unexpected format of Etherscan response. Missing key entry for {str(e)}',
+                )
+
+            # success, break out of the loop and return result
+            return result
 
         return result
 
