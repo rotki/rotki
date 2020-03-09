@@ -88,7 +88,7 @@ a = Entrypoint(
         ('rotkehlchen/data/token_abi.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/all_assets.json', 'rotkehlchen/data'),
     ],
-    excludes=['FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter'],
+    excludes=['FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter', 'packaging'],
 )
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=None)

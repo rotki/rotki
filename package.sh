@@ -11,8 +11,6 @@ if [[ $? -ne 0 ]]; then
     echo "package.sh - ERROR: The system's npm version is not >= 5.7.0 which is required for npm ci"
     exit 1
 fi
-# uninstall packaging package since it's no longer required
-pip uninstall -y packaging
 
 # Install the rotki package and pyinstaller. Needed by the pyinstaller
 pip install -e .
