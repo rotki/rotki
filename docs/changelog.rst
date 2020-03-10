@@ -2,9 +2,10 @@
 Changelog
 =========
 
+* :release:`1.2.1 <2020-03-10>` 770, 772, 99986
 * :bug:`770 major` Adds loading screen while waiting for the backend to start.
 * :bug:`772 major` Getting a rate limit error from Etherscan should be now handled properly.
-* :feature:`-` Support TRX in kraken, since it got listed.
+* :feature:`99986` Support TRX in kraken, since it got listed.
 
 * :release:`1.2.0 <2020-03-01>` 705, 502, 698, 709, 716, 461, 739, 731, 726, 724, 99987
 * :feature:`705` Support MakerDAO's DAI Savings Rate (DSR)
