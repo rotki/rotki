@@ -140,8 +140,8 @@ def handle_request_parsing_error(
         err: ValidationError,
         _request: werkzeug.local.LocalProxy,
         _schema: Schema,
-        _err_status_code: Optional[int],
-        _err_headers: Optional[Dict],
+        error_status_code: Optional[int],  # pylint: disable=unused-argument
+        error_headers: Optional[Dict],  # pylint: disable=unused-argument
 ) -> None:
     """ This handles request parsing errors generated for example by schema
     field validation failing."""
