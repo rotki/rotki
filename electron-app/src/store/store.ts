@@ -25,7 +25,7 @@ const defaultVersion = () =>
   ({
     version: '',
     latestVersion: '',
-    url: ''
+    downloadUrl: ''
   } as Version);
 
 const store: StoreOptions<RotkehlchenState> = {
@@ -45,7 +45,7 @@ const store: StoreOptions<RotkehlchenState> = {
       state.version = {
         version: version.our_version || '',
         latestVersion: version.latest_version || '',
-        url: version.url || ''
+        downloadUrl: version.download_url || ''
       };
       state.connected = true;
     }
@@ -67,8 +67,8 @@ const store: StoreOptions<RotkehlchenState> = {
   },
   getters: {
     updateNeeded: (state: RotkehlchenState) => {
-      const { version, url } = state.version;
-      return version.indexOf('dev') >= 0 ? false : !!url;
+      const { version, downloadUrl } = state.version;
+      return version.indexOf('dev') >= 0 ? false : !!downloadUrl;
     },
     version: (state: RotkehlchenState) => {
       const { version } = state.version;
@@ -92,7 +92,7 @@ export default new Vuex.Store(store);
 export interface Version {
   readonly version: string;
   readonly latestVersion: string;
-  readonly url: string;
+  readonly downloadUrl: string;
 }
 
 export interface RotkehlchenState {
