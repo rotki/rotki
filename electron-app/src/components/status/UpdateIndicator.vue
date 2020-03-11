@@ -30,7 +30,7 @@ export default class UpdateIndicator extends Vue {
   version!: Version;
 
   openLink() {
-    shell.openExternal(this.version.url);
+    shell.openExternal(this.version.downloadUrl);
   }
 }
 </script>
