@@ -292,7 +292,7 @@ class RestAPI():
     def get_fiat_exchange_rates(currencies: Optional[List[Asset]]) -> Response:
         if currencies is not None and len(currencies) == 0:
             return api_response(
-                wrap_in_fail_result('Empy list of currencies provided'),
+                wrap_in_fail_result('Empty list of currencies provided'),
                 status_code=HTTPStatus.BAD_REQUEST,
             )
         rates = Inquirer().get_fiat_usd_exchange_rates(currencies)
