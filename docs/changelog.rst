@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`783 major` Fixes the update indicator to indicate to users if their client is out of date.
+
 * :release:`1.2.1 <2020-03-10>` 770, 772, 99986
 * :bug:`770 major` Adds loading screen while waiting for the backend to start.
 * :bug:`772 major` Getting a rate limit error from Etherscan should be now handled properly.
