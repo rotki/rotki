@@ -163,7 +163,7 @@ def check_modifying_eth_tokens_error_responses(
     ), json={'eth_tokens': {}})
     assert_error_response(
         response=response,
-        contained_in_msg='Tried to initialize an asset out of a non-string identifier',
+        contained_in_msg="'eth_tokens': ['Not a valid list.'",
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # See that providing invalid type for eth_tokens is an error
@@ -173,7 +173,7 @@ def check_modifying_eth_tokens_error_responses(
     ), json={'eth_tokens': {}})
     assert_error_response(
         response=response,
-        contained_in_msg='Tried to initialize an asset out of a non-string identifier',
+        contained_in_msg="'eth_tokens': ['Not a valid list.'",
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # See that providing invalid type for a single eth token is an error
