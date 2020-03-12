@@ -676,7 +676,7 @@ Query the current fiat currencies exchange rate
 
       {"currencies": ["EUR", "CNY", "GBP"]}
 
-   :query strings-list currencies: A comma separated list of fiat currencies to query.
+   :query strings-list currencies: A comma separated list of fiat currencies to query. e.g.: /api/1/fiat_exchange_rates?currencies=EUR,CNY,GBP
    :reqjson list currencies: A list of fiat currencies to query
 
    **Example Response**:
