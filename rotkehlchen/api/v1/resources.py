@@ -64,6 +64,18 @@ from rotkehlchen.typing import (
 )
 
 
+def _combine_data_and_view_args(data, view_args, schema) -> MultiDictProxy:
+    if view_args is not missing:
+        if data == {}:
+            data = MultiDictProxy(view_args, schema)
+        else:
+            all_data = data.to_dict() if isinstance(data, MultiDictProxy) else data
+            for key, value in view_args.items():
+                all_data[key] = value
+            data = MultiDictProxy(all_data, schema)
+    return data
+
+
 @parser.location_loader('json_and_view_args')
 def load_json_viewargs_data(request, schema):
     """Load data from a request accepting either json or view_args encoded data"""
@@ -72,14 +84,7 @@ def load_json_viewargs_data(request, schema):
     if data is missing:
         return data
 
-    # If we had any viewargs append them to the data
-    if view_args is not missing:
-        if data == {}:
-            data = MultiDictProxy(view_args, schema)
-        else:
-            for key, value in view_args.items():
-                data[key] = value
-
+    data = _combine_data_and_view_args(data, view_args, schema)
     return data
 
 
@@ -101,18 +106,10 @@ def load_json_query_viewargs_data(request, schema):
     if data is missing:
         data = parser.load_querystring(request, schema)
 
-    # if not data exists return missing
     if data is missing:
         return data
 
-    # If we had any viewargs append them to the data
-    if view_args is not missing:
-        if data == {}:
-            data = MultiDictProxy(view_args, schema)
-        else:
-            for key, value in view_args.items():
-                data[key] = value
-
+    data = _combine_data_and_view_args(data, view_args, schema)
     return data
 
 
