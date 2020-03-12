@@ -649,7 +649,7 @@ export class RotkehlchenApi {
       this.axios
         .get<ActionResult<FiatExchangeRates>>('/fiat_exchange_rates', {
           params: {
-            currencies
+            currencies: currencies.join(',')
           },
           validateStatus: function(status) {
             return status == 200 || status == 400;
