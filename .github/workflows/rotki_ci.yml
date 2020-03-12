@@ -1,0 +1,99 @@
+name: Rotki CI
+
+on: [push, pull_request]
+
+jobs:
+  lint-frontend:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node-version: [12.x]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+      - name: Install dependencies
+        working-directory: ./electron-app
+        run: npm ci
+      - name: Lint
+        working-directory: ./electron-app
+        run: npm run lint:check
+      - name: Build
+        working-directory: ./electron-app
+        run: npm run build
+      - name: Run unit tests
+        working-directory: ./electron-app
+        run: npm run test:unit
+  lint-backend:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [3.7]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Install dependencies
+        run: |
+          pip install -r requirements_lint.txt
+          pip install -e .
+          git rev-parse HEAD
+      - name: Lint
+        run: make lint
+
+  test-backend:
+    env:
+      CI: true
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: [3.7]
+        node-version: [12.x]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download Geth
+        run: |
+          .travis/download_geth.sh ${{ matrix.os }}
+          echo "::add-path::$HOME/.bin"
+        env:
+          GETH_URL_LINUX: https://gethstore.blob.core.windows.net/builds/geth-linux-amd64-1.8.13-225171a4.tar.gz
+          GETH_URL_MACOS: https://gethstore.blob.core.windows.net/builds/geth-darwin-amd64-1.8.13-225171a4.tar.gz
+          GETH_VERSION: 1.8.13
+      - name: Setup SQLCipher
+        run: |
+          if [ ${{ matrix.os }} == 'ubuntu-latest' ];
+          then
+            sudo apt-get install libxml2-utils
+            ./install_deps.sh
+            sudo ldconfig
+          fi
+          if [ ${{ matrix.os }} == 'macos-latest' ];
+          then
+            brew install sqlcipher
+          fi
+      - name: Set up python
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Install dependencies
+        run: |
+          pip install --upgrade "pip<19.0.0" wheel
+          pip install pytest-travis-fold codecov pytest-cov
+          pip install -r requirements_dev.txt
+          pip install -e .
+      - name: Run Test
+        run: |
+          COVERAGE_ARGS='--cov=./ --travis-fold=always'
+          if [ ${{ matrix.os }} == 'macos-latest' ];
+          then
+            COVERAGE_ARGS=''
+          fi
+          python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/tests
+
