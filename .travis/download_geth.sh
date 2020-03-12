@@ -40,7 +40,17 @@ warn() {
     fi
 }
 
-if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
+if [[ "${GITHUB_ACTIONS}" == "true" ]]; then
+    if [[ "$1" == "macos-latest" ]]; then
+        OS_NAME="osx"
+    else
+        OS_NAME=""
+    fi
+else
+    OS_NAME=${TRAVIS_OS_NAME}
+fi
+
+if [[ "${OS_NAME}" == "osx" ]]; then
     GETH_URL=${GETH_URL_MACOS}
 else
     GETH_URL=${GETH_URL_LINUX}
@@ -49,7 +59,7 @@ fi
 [ -z "${GETH_URL}" ] && fail 'missing GETH_URL'
 [ -z "${GETH_VERSION}" ] && fail 'missing GETH_VERSION'
 
-if [ ! -x $HOME/.bin/geth-${GETH_VERSION}-${TRAVIS_OS_NAME} ]; then
+if [ ! -x $HOME/.bin/geth-${GETH_VERSION}-${OS_NAME} ]; then
     mkdir -p $HOME/.bin
 
     TEMP=$(mktemp -d 2>/dev/null || mktemp -d -t 'gethtmp')
@@ -58,7 +68,7 @@ if [ ! -x $HOME/.bin/geth-${GETH_VERSION}-${TRAVIS_OS_NAME} ]; then
     tar xzf geth.tar.gz
 
     cd geth*/
-    install -m 755 geth $HOME/.bin/geth-${GETH_VERSION}-${TRAVIS_OS_NAME}
+    install -m 755 geth $HOME/.bin/geth-${GETH_VERSION}-${OS_NAME}
 
     success "geth ${GETH_VERSION} installed"
 else
@@ -68,4 +78,4 @@ fi
 # always recreate the symlink since we dont know if it's pointing to a different
 # version
 [ -h $HOME/.bin/geth ] && unlink $HOME/.bin/geth
-ln -s $HOME/.bin/geth-${GETH_VERSION}-${TRAVIS_OS_NAME} $HOME/.bin/geth
+ln -s $HOME/.bin/geth-${GETH_VERSION}-${OS_NAME} $HOME/.bin/geth
