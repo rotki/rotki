@@ -327,10 +327,21 @@ def test_exchange_query_balances_async(rotkehlchen_api_server_with_exchanges):
         outcome = wait_for_async_task(server, task_id)
     assert_binance_balances_result(outcome['result'])
 
-    # async query balances of all setup exchanges
+    # async query of one exchange with querystring parameters
     poloniex = server.rest_api.rotkehlchen.exchange_manager.connected_exchanges['poloniex']
 
     poloniex_patch = patch_poloniex_balances_query(poloniex)
+    with binance_patch:
+        response = requests.get(api_url_for(
+            server,
+            "named_exchanges_balances_resource",
+            name='binance',
+        ) + '?async_query=true')
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(server, task_id)
+    assert_poloniex_balances_result(outcome['result'])
+
+    # async query balances of all setup exchanges
     with binance_patch, poloniex_patch:
         response = requests.get(
             api_url_for(server, "exchangebalancesresource"),
