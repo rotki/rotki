@@ -10,6 +10,7 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.ethereum import Ethchain
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.constants.assets import A_USD
@@ -24,6 +25,7 @@ from rotkehlchen.errors import (
     TagConstraintError,
 )
 from rotkehlchen.exchanges.manager import ExchangeManager
+from rotkehlchen.externalapis.alethio import Alethio
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
@@ -98,6 +100,7 @@ class Rotkehlchen():
         self.msg_aggregator = MessagesAggregator()
         self.greenlet_manager = GreenletManager(msg_aggregator=self.msg_aggregator)
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
+        self.all_eth_tokens = AssetResolver().get_all_eth_tokens()
         self.data = DataHandler(self.data_dir, self.msg_aggregator)
         self.cryptocompare = Cryptocompare(data_directory=self.data_dir, database=None)
         # Initialize the Inquirer singleton
@@ -166,6 +169,11 @@ class Rotkehlchen():
         settings = self.get_settings()
         maybe_submit_usage_analytics(settings.submit_usage_analytics)
         self.etherscan = Etherscan(database=self.data.db, msg_aggregator=self.msg_aggregator)
+        alethio = Alethio(
+            database=self.data.db,
+            msg_aggregator=self.msg_aggregator,
+            all_eth_tokens=self.all_eth_tokens,
+        )
         historical_data_start = settings.historical_data_start
         eth_rpc_endpoint = settings.eth_rpc_endpoint
         # Initialize the price historian singleton

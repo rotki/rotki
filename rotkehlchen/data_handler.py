@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.datatyping import BalancesData
@@ -33,7 +32,6 @@ class DataHandler():
 
         self.logged_in = False
         self.data_directory = data_directory
-        self.eth_tokens = AssetResolver().get_all_eth_tokens()
         self.username = 'no_user'
         self.msg_aggregator = msg_aggregator
 
