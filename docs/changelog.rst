@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Rotki should now remember your window size, position, and maximized state after closing the app.
 * :bug:`783 major` Fixes the update indicator to indicate to users if their client is out of date.
 
 * :release:`1.2.1 <2020-03-10>` 770, 772, 99986
