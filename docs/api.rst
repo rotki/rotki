@@ -676,7 +676,7 @@ Query the current fiat currencies exchange rate
 
       {"currencies": ["EUR", "CNY", "GBP"]}
 
-   :query strings-list currencies: A comma separated list of fiat currencies to query.
+   :query strings-list currencies: A comma separated list of fiat currencies to query. e.g.: /api/1/fiat_exchange_rates?currencies=EUR,CNY,GBP
    :reqjson list currencies: A list of fiat currencies to query
 
    **Example Response**:
@@ -864,6 +864,7 @@ Querying the balances of exchanges
    :param bool async_query: Boolean denoting whether this is an asynchronous query or not
 
    .. _balances_result:
+
    **Example Response**:
 
    .. sourcecode:: http
@@ -2427,6 +2428,7 @@ Getting blockchain account data
       Host: localhost:5042
 
    .. _blockchain_accounts_result:
+
    **Example Response**:
 
    .. sourcecode:: http
@@ -2438,7 +2440,7 @@ Getting blockchain account data
           "result" : [{
               "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
               "label": "my new metamask",
-              "tags": ["public", metamask"]
+              "tags": ["public", "metamask"]
            }, {
               "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b",
               "label": null,
@@ -2462,7 +2464,7 @@ Getting current ethereum MakerDAO DSR balance
 
 .. http:get:: /api/(version)/blockchains/ETH/modules/makerdao/dsrbalance
 
-   Doing a GET on the makerdao dsrbalance resource will return the current balance held in DSR by any of the user's accounts and also the current DSR percentage.
+   Doing a GET on the makerdao dsrbalance resource will return the current balance held in DSR by any of the user's accounts that ever had DAI deposited in the DSR and also the current DSR percentage.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -2612,7 +2614,7 @@ Adding blockchain accounts
           "accounts": [{
                   "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
                   "label": "my new metamask",
-                  "tags": ["public", metamask"]
+                  "tags": ["public", "metamask"]
               }, {
                   "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b
               }]
@@ -2707,7 +2709,7 @@ Editing blockchain account data
           "result" : [{
               "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
               "label": "my new metamask",
-              "tags": ["public", metamask"]
+              "tags": ["public", "metamask"]
            }, {
               "address": "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b",
               "label": "my hardware wallet",

@@ -9,7 +9,7 @@ from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, asse
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-def test_qerying_fiat_exchange_rates(rotkehlchen_api_server):
+def test_querying_fiat_exchange_rates(rotkehlchen_api_server):
     """Make sure that querying fiat exchange rates works also without logging in"""
     # Test with empty list of currencies
     data = {'currencies': []}
@@ -18,7 +18,7 @@ def test_qerying_fiat_exchange_rates(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Empy list of currencies provided',
+        contained_in_msg='Empty list of currencies provided',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -58,7 +58,7 @@ def test_qerying_fiat_exchange_rates(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-def test_qerying_fiat_exchange_rates_errors(rotkehlchen_api_server):
+def test_querying_fiat_exchange_rates_errors(rotkehlchen_api_server):
     """Make sure that querying fiat exchange rates with wrong input is handled"""
 
     # Test with invalid type for currency

@@ -9,6 +9,8 @@ import {
   ExchangeData,
   UsdToFiatExchangeRates
 } from '@/typing/types';
+import { DSRBalances, DSRHistory } from '@/services/types-model';
+import { Zero } from '@/utils/bignumbers';
 
 export interface BalanceState {
   eth: EthBalances;
@@ -20,6 +22,8 @@ export interface BalanceState {
   fiatBalances: FiatBalance[];
   ethAccounts: AccountDataMap;
   btcAccounts: AccountDataMap;
+  dsrHistory: DSRHistory;
+  dsrBalances: DSRBalances;
 }
 
 export const defaultState = (): BalanceState => ({
@@ -31,7 +35,12 @@ export const defaultState = (): BalanceState => ({
   exchangeBalances: {},
   fiatBalances: [],
   ethAccounts: {},
-  btcAccounts: {}
+  btcAccounts: {},
+  dsrHistory: {},
+  dsrBalances: {
+    currentDSR: Zero,
+    balances: {}
+  }
 });
 
 export const state: BalanceState = defaultState();

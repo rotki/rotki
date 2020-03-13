@@ -118,7 +118,9 @@ app.on('ready', async () => {
 app.on('will-quit', async e => {
   e.preventDefault();
   await pyHandler.exitPyProc();
-  app.exit();
+  if (process.platform !== 'win32') {
+    app.exit();
+  }
 });
 
 // Exit cleanly on request from parent process in development mode.

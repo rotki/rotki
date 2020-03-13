@@ -649,7 +649,7 @@ export class RotkehlchenApi {
       this.axios
         .get<ActionResult<FiatExchangeRates>>('/fiat_exchange_rates', {
           params: {
-            currencies
+            currencies: currencies.join(',')
           },
           validateStatus: function(status) {
             return status == 200 || status == 400;
@@ -1267,6 +1267,38 @@ export class RotkehlchenApi {
       })
       .then(this.handleResponse)
       .then(accounts => accounts.map(convertAccountData));
+  }
+
+  async dsrBalance(): Promise<AsyncQuery> {
+    return this.axios
+      .get<ActionResult<AsyncQuery>>(
+        'blockchains/ETH/modules/makerdao/dsrbalance',
+        {
+          params: {
+            async_query: true
+          },
+          validateStatus: function(status: number) {
+            return status === 200 || status === 409 || status == 502;
+          }
+        }
+      )
+      .then(this.handleResponse);
+  }
+
+  async dsrHistory(): Promise<AsyncQuery> {
+    return this.axios
+      .get<ActionResult<AsyncQuery>>(
+        'blockchains/ETH/modules/makerdao/dsrhistory',
+        {
+          params: {
+            async_query: true
+          },
+          validateStatus: function(status: number) {
+            return status === 200 || status === 409 || status == 502;
+          }
+        }
+      )
+      .then(this.handleResponse);
   }
 }
 

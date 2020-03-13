@@ -60,6 +60,11 @@ export default new Router({
       path: '/blockchain-accounts',
       name: 'blockchain-accounts',
       component: () => import('./views/AccountsBalances.vue')
+    },
+    {
+      path: '/defi/loans',
+      name: 'defi-loans',
+      component: () => import('./views/defi/DecentralizedLoans.vue')
     }
   ]
 });

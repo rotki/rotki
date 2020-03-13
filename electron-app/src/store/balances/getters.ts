@@ -12,7 +12,7 @@ import BigNumber from 'bignumber.js';
 import { Zero } from '@/utils/bignumbers';
 import { assetSum } from '@/utils/calculation';
 import isEmpty from 'lodash/isEmpty';
-import { Blockchain } from '@/typing/types';
+import { AccountDSRMovement, Blockchain, DSRBalance } from '@/typing/types';
 
 export const getters: GetterTree<BalanceState, RotkehlchenState> = {
   ethAccounts(state: BalanceState): AccountBalance[] {
@@ -156,5 +156,42 @@ export const getters: GetterTree<BalanceState, RotkehlchenState> = {
   ): string => {
     const data = blockchain === 'ETH' ? state.ethAccounts : state.btcAccounts;
     return data[address]?.label ?? '';
+  },
+
+  dsrBalances: ({ dsrBalances }: BalanceState): DSRBalance[] => {
+    const { balances } = dsrBalances;
+    return Object.keys(balances).map(address => ({
+      address,
+      balance: balances[address]
+    }));
+  },
+
+  currentDSR: ({ dsrBalances }: BalanceState): BigNumber => {
+    return dsrBalances.currentDSR;
+  },
+
+  totalGain: ({ dsrHistory }: BalanceState): BigNumber => {
+    return Object.keys(dsrHistory)
+      .map(account => dsrHistory[account])
+      .reduce((sum, account) => sum.plus(account.gainSoFar), Zero);
+  },
+
+  accountGain: ({ dsrHistory }: BalanceState) => (
+    account: string
+  ): BigNumber => {
+    return dsrHistory[account]?.gainSoFar ?? Zero;
+  },
+
+  dsrHistory: ({ dsrHistory }: BalanceState): AccountDSRMovement[] => {
+    return Object.keys(dsrHistory).reduce((acc, address) => {
+      const { movements } = dsrHistory[address];
+      acc.push(
+        ...movements.map(movement => ({
+          address,
+          ...movement
+        }))
+      );
+      return acc;
+    }, new Array<AccountDSRMovement>());
   }
 };

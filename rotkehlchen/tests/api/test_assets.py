@@ -145,7 +145,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Unknown asset foo provided',
+        contained_in_msg="'assets': ['Not a valid list.'",
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

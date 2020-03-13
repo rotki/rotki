@@ -25,13 +25,14 @@ const defaultVersion = () =>
   ({
     version: '',
     latestVersion: '',
-    url: ''
+    downloadUrl: ''
   } as Version);
 
 const store: StoreOptions<RotkehlchenState> = {
   state: {
     message: emptyMessage(),
-    version: defaultVersion()
+    version: defaultVersion(),
+    connected: false
   },
   mutations: {
     setMessage: (state: RotkehlchenState, message: Message) => {
@@ -44,26 +45,30 @@ const store: StoreOptions<RotkehlchenState> = {
       state.version = {
         version: version.our_version || '',
         latestVersion: version.latest_version || '',
-        url: version.url || ''
+        downloadUrl: version.download_url || ''
       };
+      state.connected = true;
     }
   },
   actions: {
     async version({ commit }): Promise<void> {
-      try {
-        const version = await api.checkVersion();
-        if (version) {
-          commit('versions', version);
+      const timerId = setInterval(async function() {
+        try {
+          const version = await api.checkVersion();
+          if (version) {
+            commit('versions', version);
+            clearInterval(timerId);
+          }
+        } catch (e) {
+          console.error(e);
         }
-      } catch (e) {
-        console.error(e);
-      }
+      }, 1000);
     }
   },
   getters: {
     updateNeeded: (state: RotkehlchenState) => {
-      const { version, url } = state.version;
-      return version.indexOf('dev') >= 0 ? false : !!url;
+      const { version, downloadUrl } = state.version;
+      return version.indexOf('dev') >= 0 ? false : !!downloadUrl;
     },
     version: (state: RotkehlchenState) => {
       const { version } = state.version;
@@ -87,12 +92,13 @@ export default new Vuex.Store(store);
 export interface Version {
   readonly version: string;
   readonly latestVersion: string;
-  readonly url: string;
+  readonly downloadUrl: string;
 }
 
 export interface RotkehlchenState {
   message: Message;
   version: Version;
+  connected: boolean;
   session?: SessionState;
   tasks?: TaskState;
   notifications?: NotificationState;

@@ -55,6 +55,12 @@
         "symbol": "300",
         "type": "ethereum token"
     },
+    "ABBC": {
+        "name": "ABBC Coin",
+        "started": 1520208000,
+        "symbol": "ABBC",
+        "type": "own chain"
+    },
     "ABT": {
         "ethereum_address": "0xB98d4C97425d9908E66E53A6fDf673ACcA0BE986",
         "ethereum_token_decimals": 18,
@@ -2044,6 +2050,12 @@
         "started": 1520148691,
         "symbol": "COSS",
         "type": "ethereum token"
+    },
+    "COTI": {
+        "name": "COTI",
+        "started": 1518393600,
+        "symbol": "COTI",
+        "type": "own chain"
     },
     "COV": {
         "ethereum_address": "0xE2FB6529EF566a080e6d23dE0bd351311087D567",
@@ -5351,6 +5363,14 @@
         "started": 1393200000,
         "symbol": "MAZA",
         "type": "own chain"
+    },
+    "MBL": {
+        "ethereum_address": "0xB879DA8b24c9b8685dE8526cF492E954f165D74b",
+        "ethereum_token_decimals": 18,
+        "name": "MovieBloc",
+        "started": 1552435200,
+        "symbol": "MBL",
+        "type": "ethereum token"
     },
     "MBRS": {
         "active": false,
@@ -9341,6 +9361,12 @@
         "started": 1502110282,
         "symbol": "WIC",
         "type": "ethereum token"
+    },
+    "WICC": {
+        "name": "WaykiChain",
+        "started": 1514592000,
+        "symbol": "WICC",
+        "type": "own chain"
     },
     "WIKI": {
         "ethereum_address": "0x66BaD545596fb17a0B4ebDC003a85dEF10E8F6Ae",

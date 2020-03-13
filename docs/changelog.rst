@@ -2,10 +2,22 @@
 Changelog
 =========
 
+* :bug:`783 major` Fixes the update indicator to indicate to users if their client is out of date.
+
+* :release:`1.2.1 <2020-03-10>` 770, 772, 99986
+* :bug:`770 major` Adds loading screen while waiting for the backend to start.
+* :bug:`772 major` Getting a rate limit error from Etherscan should be now handled properly.
+* :feature:`99986` Support TRX in kraken, since it got listed.
+
+* :release:`1.2.0 <2020-03-01>` 705, 502, 698, 709, 716, 461, 739, 731, 726, 724, 99987
+* :feature:`705` Support MakerDAO's DAI Savings Rate (DSR)
+* :bug:`502 major` The OSX rotki app icon should no longer be blurry.
+* :bug:`698 major` Rotki should now also display the version in the UI for Windows and OSX.
+* :bug:`709 major` Rotki no longer crashes after second time of opening the application in Windows.
 * :bug:`716 major` The rotki logs for linux now go into a proper directory: ``~/.config/rotki/logs``
 * :feature:`461` You can now label your blockchain accounts and tag them with any numer of custom tags to group them into categories. Tags can be customized.
 * :bug:`739 major` If there is an error during DBUpgrade or if the user uses old software to run a new DB we don't crash and burn with a 500 error but instead show a proper message.
-* :bug:`731` Fixed cointracking file import.
+* :bug:`731 major` Fixed cointracking file import.
 * :bug:`726 major` Fail gracefully and don't throw a 500 server error if blockchain balance query fails.
 * :bug:`724 major` If latest block remote query fails do not revert to etherscan but persist with using the provided ethereum node after warning the user.
 * :feature:`99987` Added support for the following tokens
@@ -13,7 +25,11 @@ Changelog
   - `LTO Network (LTO) <https://coinmarketcap.com/currencies/lto-network/>`__
   - `Verasity (VRA) <https://coinmarketcap.com/currencies/verasity/>`__
   - `Chai (CHAI) <https://etherscan.io/token/0x06af07097c9eeb7fd685c692751d5c66db49c215/>`__
-    
+  - `Coti (COTI) <https://coinmarketcap.com/currencies/coti/>`__
+  - `MovieBloc (MBL) <https://coinmarketcap.com/currencies/moviebloc/>`__
+  - `Alibaba Coin (ABBC) <https://coinmarketcap.com/currencies/abbc-coin/>`__
+  - `WaykiChain (WICC) <https://coinmarketcap.com/currencies/waykichain/>`__
+
 * :release:`1.1.1 <2020-02-06>` 693
 * :bug:`693 major` Fix crash in OSX .dmg package version that occured with v1.1.0
 

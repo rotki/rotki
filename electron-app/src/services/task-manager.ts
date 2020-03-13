@@ -23,6 +23,8 @@ import {
 } from '@/model/trade-history-types';
 import map from 'lodash/map';
 import { ApiAssetBalances, Severity } from '@/typing/types';
+import { convertDSRBalances, convertDSRHistory } from '@/services/converters';
+import { ApiDSRBalances, ApiDSRHistory } from '@/services/types-api';
 
 export class TaskManager {
   private static onQueryExchangeBalances(
@@ -109,6 +111,40 @@ export class TaskManager {
     store.commit('reports/set', payload);
   }
 
+  private static dsrBalance(
+    data: ActionResult<ApiDSRBalances>,
+    _meta: TaskMeta
+  ) {
+    const { message, result } = data;
+    if (message) {
+      notify(
+        `There was an issue while fetching DSR Balances: ${message}`,
+        'DSR Balances',
+        Severity.ERROR
+      );
+
+      return;
+    }
+    store.commit('balances/dsrBalances', convertDSRBalances(result));
+  }
+
+  private static dsrHistory(
+    data: ActionResult<ApiDSRHistory>,
+    _meta: TaskMeta
+  ) {
+    const { message, result } = data;
+    if (message) {
+      notify(
+        `There was an issue while fetching DSR History: ${message}`,
+        'DSR History',
+        Severity.ERROR
+      );
+
+      return;
+    }
+    store.commit('balances/dsrHistory', convertDSRHistory(result));
+  }
+
   monitor() {
     const state = store.state;
     const taskState = state.tasks!;
@@ -184,7 +220,9 @@ export class TaskManager {
     [TaskType.QUERY_BLOCKCHAIN_BALANCES]: this.onQueryBlockchainBalances,
     [TaskType.TRADE_HISTORY]: this.onTradeHistory,
     [TaskType.ADD_ACCOUNT]: this.onAccountOperation,
-    [TaskType.REMOVE_ACCOUNT]: this.onAccountOperation
+    [TaskType.REMOVE_ACCOUNT]: this.onAccountOperation,
+    [TaskType.DSR_BALANCE]: TaskManager.dsrBalance,
+    [TaskType.DSR_HISTORY]: TaskManager.dsrHistory
   };
 }
 

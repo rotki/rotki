@@ -10,7 +10,7 @@ Questions on the application
 What is Rotki?
 =======================
 
-Rotki is an opensource asset analytics, management and tax reporting application. It is focused on Crypto assets but will also slowly facilitate tracking of more traditional assets.
+Rotki is an opensource portfolio tracking, analytics, and tax reporting application that respects your privacy. It is focused on Crypto assets but will also slowly facilitate tracking of more traditional assets.
 
 Why should I use it?
 =====================
@@ -27,7 +27,7 @@ Rotki offers tracking of all your crypto assets no matter where they are. Either
 
 You can also manually input information on your Fiat assets (iow: how much EUR, USD e.t.c. you own) so that the analytics also take them into account. Manual input of action that you did and would like to be tracked is also possible by adding an "external trade"
 
-It also allows you to get a tax report, essentially calculating all trades in a given period and determining your profit or loss depending on your given settings.
+It also allows you to get a tax report, essentially calculating all trades in a given period and determining your profit or loss depending on your given settings. For more details on what is offered and how to use it check the :doc:`Usage Guide<usage_guide>`.
 
 
 Will it remain free to use?
@@ -43,27 +43,7 @@ What is Rotki Premium?
 
 Rotki is an opensource and free application. In order to fund development we also have a paid tier which offers more features and for which many new awesome features will be developed.
 
-If you like Rotki you can support us with a premium subscription and you not only get to fund opensource but also get extra analytics and other features in your daily usage of the app. To get a Rotki subscription register in `our website <https://rotki.com/products.html>`__.
-
-What does Rotki Premium offer me?
-==========================================
-
-At the moment of writting you can get:
-
-- Synchronization of your data between different devices thanks to using our servers. Remember we never see your data. It's encrypted with a password of your choice.
-- Faster data queries thanks to using our server
-- Analytics, statistics and graphs on the application
-- Premium support and priority in feature requests at Github.
-
-Why should I subscribe? What's planned for the future in Premium?
-===========================================================================
-
-From here and on Rotki premium will be getting a lot of features. In no particular order:
-
-- More statistic and analytics on the app
-- Special overlays in the app over existing data providing more information. For example when you have broken even with an asset, if you are on the red, if you are on the green e.t.c.
-- An android companion app which will both allow you to check your data from your phone but also to track your day to day expenses with Rotki.
-- A lot more ...
+If you like Rotki you can support us with a premium subscription and you not only get to fund opensource but also get additional features. To get a Rotki subscription register in `our website <https://rotki.com/products.html>`__. There you can also see what exactly is offered in premium.
 
 
 Questions on Roadmap and Features
@@ -87,5 +67,3 @@ Where does the name come from?
 =================================
 
 Rotki is an abbreviation for Rotkehlchen. That is the german word for the bird known in English as the `European Robin <https://en.wikipedia.org/wiki/European_robin>`__. For pronounciation check `here <https://upload.wikimedia.org/wikipedia/commons/4/42/De-Rotkehlchen2.ogg>`__.
-
-

@@ -635,10 +635,12 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, m
         api_url_for(rotkehlchen_api_server, "blockchainsaccountsresource", blockchain='ETH'),
         json=data,
     )
-    if method == 'PUT':
-        message = 'Invalid input type'
-    else:
+    if method == 'GET':
+        message = "'accounts': ['Not a valid list.'"
+    elif method == 'DELETE':
         message = 'Given value foo is not a checksummed ethereum address'
+    else:
+        message = "'accounts': {0: {'_schema': ['Invalid input type.'"
     assert_error_response(
         response=response,
         contained_in_msg=message,
@@ -1028,7 +1030,7 @@ def test_edit_blockchain_account_errors(
     ), json=request_data)
     assert_error_response(
         response=response,
-        contained_in_msg="accounts': {0: {'_schema': ['Invalid input type",
+        contained_in_msg='Invalid input type',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

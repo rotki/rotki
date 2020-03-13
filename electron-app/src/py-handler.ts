@@ -12,7 +12,6 @@ import { assert } from '@/utils/assertions';
 export default class PyHandler {
   private static PY_DIST_FOLDER = 'rotkehlchen_py_dist';
   private rpcFailureNotifier?: any;
-  private rpcConnectedNotifier?: any;
   private childProcess?: ChildProcess;
   private _port?: number;
   private executable?: string;
@@ -59,8 +58,6 @@ export default class PyHandler {
     ipcMain.on('ack', (event, ...args) => {
       if (args[0] == 1) {
         clearInterval(this.rpcFailureNotifier);
-      } else if (args[0] == 2) {
-        clearInterval(this.rpcConnectedNotifier);
       } else {
         this.logToFile(`Warning: unknown ack code ${args[0]}`);
       }
@@ -108,7 +105,6 @@ export default class PyHandler {
       this.logToFile(
         `The Python sub-process started on port: ${port} (PID: ${childProcess.pid})`
       );
-      handler.setConnectedNotification(window);
       return;
     }
     this.logToFile('The Python sub-process was not successfully started');
@@ -116,7 +112,9 @@ export default class PyHandler {
 
   async exitPyProc() {
     this.logToFile('Exiting the application');
-
+    if (this.rpcFailureNotifier) {
+      clearInterval(this.rpcFailureNotifier);
+    }
     if (process.platform === 'win32') {
       await this.terminateWindowsProcesses();
     } else {
@@ -153,12 +151,6 @@ export default class PyHandler {
     }, 2000);
   }
 
-  private setConnectedNotification(window: Electron.BrowserWindow) {
-    this.rpcConnectedNotifier = setInterval(function() {
-      window.webContents.send('connected', 'connected');
-    }, 2000);
-  }
-
   private startProcess(port: number, args: string[]) {
     let defaultArgs: string[] = [
       '-m',
@@ -178,7 +170,24 @@ export default class PyHandler {
       }
       defaultArgs.push('--data-dir', tempPath);
     }
+    // in some systems the virtualenv's python is not detected from inside electron and the
+    // system python is used. Electron/node seemed to add /usr/bin to the path before the
+    // virtualenv directory and as such system's python is used. Not sure why this happens only
+    // in some systems. Check again in the future if this happens in Lefteris laptop Archlinux.
+    // To mitigate this if a virtualenv is detected we add its bin directory to the start
+    // start of the path
+    if (process.env.VIRTUAL_ENV) {
+      process.env.PATH =
+        process.env.VIRTUAL_ENV + path.sep + 'bin:' + process.env.PATH;
+    } else {
+      this.logAndQuit(
+        'ERROR: Running in development mode and not inside a python virtual environment'
+      );
+    }
 
+    this.logToFile(
+      `Starting non-packaged python subprocess: python ${defaultArgs.join(' ')}`
+    );
     this.childProcess = spawn('python', defaultArgs.concat(args));
   }
 
@@ -186,14 +195,14 @@ export default class PyHandler {
     let dist_dir = PyHandler.packagedBackendPath();
     let files = fs.readdirSync(dist_dir);
     if (files.length === 0) {
-      this.logAndQuit('No files found in the dist directory');
+      this.logAndQuit('ERROR: No files found in the dist directory');
     } else if (files.length !== 1) {
-      this.logAndQuit('Found more than one file in the dist directory');
+      this.logAndQuit('ERROR: Found more than one file in the dist directory');
     }
     let executable = files[0];
     if (!executable.startsWith('rotkehlchen-')) {
       this.logAndQuit(
-        `Unexpected executable name "${executable}" in the dist directory`
+        `ERROR: Unexpected executable name "${executable}" in the dist directory`
       );
     }
     this.executable = executable;
@@ -202,10 +211,11 @@ export default class PyHandler {
       args.push('--api-cors', this._corsURL);
     }
     args.push('--logfile', path.join(this.logsPath, 'rotkehlchen.log'));
-    this.childProcess = execFile(
-      executable,
-      ['--api-port', port.toString()].concat(args)
+    args = ['--api-port', port.toString()].concat(args);
+    this.logToFile(
+      `Starting packaged python subprocess: ${executable} ${args.join(' ')}`
     );
+    this.childProcess = execFile(executable, args);
   }
 
   private async terminateWindowsProcesses() {
