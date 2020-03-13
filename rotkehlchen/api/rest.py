@@ -1026,7 +1026,7 @@ class RestAPI():
     @require_loggedin_user()
     def get_eth_tokens(self) -> Response:
         result_dict = process_result({
-            'all_eth_tokens': self.rotkehlchen.data.eth_tokens,
+            'all_eth_tokens': self.rotkehlchen.all_eth_tokens,
             'owned_eth_tokens': self.rotkehlchen.chain_manager.eth_tokens,
         })
         return api_response(
