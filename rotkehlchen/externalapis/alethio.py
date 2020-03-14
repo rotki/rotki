@@ -58,7 +58,7 @@ class Alethio(ExternalServiceWithApiKey):
 
                 raise RemoteError(f'Alethio API request failed due to {str(e)}')
 
-            if response.status_codes == 429:
+            if response.status_code == 429:
                 log.debug(
                     f'Got response: {response.text} from alethio. Will '
                     f'backoff for {backoff} seconds.',
@@ -95,11 +95,11 @@ class Alethio(ExternalServiceWithApiKey):
 
             return data
 
-    def token_address_to_identifier(self, address: ChecksumEthAddress) -> Optional[str]:
+    def token_address_to_identifier(self, address: ChecksumEthAddress) -> Optional[EthTokenInfo]:
         # TODO: Cache these stuff in a mapping
         for token in self.all_tokens:
             if token.address == address:
-                return token.symbol
+                return token
 
         return None
 
@@ -114,14 +114,18 @@ class Alethio(ExternalServiceWithApiKey):
         for entry in data:
             entry_type = entry.get('type', None)
             if entry_type == 'TokenBalance':
-                attributes = entry.get('attributes')
+
+                attributes = entry.get('attributes', None)
                 balance = None
                 if attributes:
                     balance = attributes.get('balance', None)
                 if not balance:
                     continue
 
-                token = entry.get('token', None)
+                relationships = entry.get('relationships', None)
+                if not relationships:
+                    continue
+                token = relationships.get('token', None)
                 if not token:
                     continue
                 if 'data' not in token:
@@ -130,10 +134,10 @@ class Alethio(ExternalServiceWithApiKey):
                     continue
 
                 token_address = to_checksum_address(token['data']['id'])
-                symbol = self.token_address_to_identifier(token_address)
-                if not symbol:
+                token_info = self.token_address_to_identifier(token_address)
+                if not token_info:
                     continue
-                amount = FVal(balance) / (FVal(10) ** FVal(token.decimals))
-                balances[symbol] = amount
+                amount = FVal(balance) / (FVal(10) ** FVal(token_info.decimal))
+                balances[token_info.symbol] = amount
 
         return balances
