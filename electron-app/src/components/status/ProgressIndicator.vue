@@ -1,16 +1,14 @@
 <template>
   <v-menu id="notification-indicator" transition="slide-y-transition" bottom>
     <template #activator="{ on }">
-      <v-badge>
-        <v-btn color="primary" dark icon text v-on="on">
-          <v-icon v-if="hasRunningTasks" class="top-loading-icon">
-            fa fa-circle-o-notch fa-spin
-          </v-icon>
-          <v-icon v-else>
-            fa fa-check-circle
-          </v-icon>
-        </v-btn>
-      </v-badge>
+      <v-btn color="primary" dark icon text v-on="on">
+        <v-icon v-if="hasRunningTasks" class="top-loading-icon">
+          fa fa-circle-o-notch fa-spin
+        </v-icon>
+        <v-icon v-else>
+          fa fa-check-circle
+        </v-icon>
+      </v-btn>
     </template>
     <v-row class="progress-indicator__details">
       <v-col v-if="tasks.length > 0">
