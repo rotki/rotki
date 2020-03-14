@@ -3,6 +3,7 @@ import Vue from 'vue';
 import { mount, Wrapper } from '@vue/test-utils';
 import store from '@/store/store';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
+import flushPromises from 'flush-promises';
 
 Vue.use(Vuetify);
 
@@ -44,6 +45,7 @@ describe('RevealableInput.vue', () => {
     await wrapper.vm.$nextTick();
     input.setValue('123');
     await wrapper.vm.$nextTick();
-    expect(wrapper.emitted()['input'][0][0]).toBe('123');
+    await flushPromises();
+    expect(wrapper.emitted('input')?.[0]?.[0]).toBe('123');
   });
 });

@@ -14,57 +14,57 @@ export default new Router({
     {
       path: '/',
       name: 'dashboard',
-      component: () => import('./views/Dashboard.vue')
+      component: () => import('../views/Dashboard.vue')
     },
     {
       path: '/statistics',
       name: 'statistics',
-      component: () => import('./views/Statistics.vue')
+      component: () => import('../views/Statistics.vue')
     },
     {
       path: '/tax-report',
       name: 'tax-report',
-      component: () => import('./views/TaxReport.vue')
+      component: () => import('../views/TaxReport.vue')
     },
     {
       path: '/otc-trades',
       name: 'otc-trades',
-      component: () => import('./views/OtcTrades.vue')
+      component: () => import('../views/OtcTrades.vue')
     },
     {
       path: '/settings/accounting',
       name: 'accounting-settings',
-      component: () => import('./views/settings/Accounting.vue')
+      component: () => import('../views/settings/Accounting.vue')
     },
     {
       path: '/settings/general',
       name: 'general-settings',
-      component: () => import('./views/settings/General.vue')
+      component: () => import('../views/settings/General.vue')
     },
     {
       path: '/settings/api-keys',
       name: 'api-keys',
-      component: () => import('./views/settings/ApiKeys.vue')
+      component: () => import('../views/settings/ApiKeys.vue')
     },
     {
       path: '/exchange-balances/:exchange',
       name: 'exchange-balances',
-      component: () => import('./views/ExchangeBalances.vue')
+      component: () => import('../views/ExchangeBalances.vue')
     },
     {
       path: '/import',
       name: 'import',
-      component: () => import('./views/ImportData.vue')
+      component: () => import('../views/ImportData.vue')
     },
     {
       path: '/blockchain-accounts',
       name: 'blockchain-accounts',
-      component: () => import('./views/AccountsBalances.vue')
+      component: () => import('../views/AccountsBalances.vue')
     },
     {
       path: '/defi/loans',
       name: 'defi-loans',
-      component: () => import('./views/defi/DecentralizedLoans.vue')
+      component: () => import('../views/defi/DecentralizedLoans.vue')
     }
   ]
 });
