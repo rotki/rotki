@@ -1,5 +1,13 @@
 'use strict';
-import { app, protocol, BrowserWindow, Menu } from 'electron';
+import {
+  app,
+  protocol,
+  BrowserWindow,
+  Menu,
+  ipcMain,
+  shell,
+  dialog
+} from 'electron';
 import {
   createProtocol,
   installVueDevtools
@@ -7,8 +15,24 @@ import {
 import PyHandler from './py-handler';
 import MenuItemConstructorOptions = Electron.MenuItemConstructorOptions;
 import windowStateKeeper from 'electron-window-state';
+import path from 'path';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
+
+async function select(
+  title: string,
+  prop: 'openFile' | 'openDirectory'
+): Promise<string | undefined> {
+  const value = await dialog.showOpenDialog({
+    title,
+    properties: [prop]
+  });
+
+  if (value.canceled) {
+    return undefined;
+  }
+  return value.filePaths?.[0];
+}
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -37,7 +61,11 @@ function createWindow() {
     width: mainWindowState.width,
     height: mainWindowState.height,
     webPreferences: {
-      nodeIntegration: true
+      nodeIntegration: false,
+      sandbox: true,
+      enableRemoteModule: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js')
     }
   });
 
@@ -84,7 +112,6 @@ function createWindow() {
 
   pyHandler.createPyProc(win);
   pyHandler.listenForMessages();
-  win.webContents.send('connected');
 }
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
@@ -109,14 +136,29 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString());
     }
   }
+  ipcMain.on('CLOSE_APP', async () => await closeApp());
+  ipcMain.on('OPEN_URL', (event, args) => shell.openExternal(args));
+  ipcMain.on('OPEN_FILE', async (event, args) => {
+    const file = await select(args, 'openFile');
+    event.sender.send('OPEN_FILE', file);
+  });
+  ipcMain.on('OPEN_DIRECTORY', async (event, args) => {
+    const directory = await select(args, 'openDirectory');
+    event.sender.send('OPEN_DIRECTORY', directory);
+  });
   createWindow();
 });
-app.on('will-quit', async e => {
-  e.preventDefault();
+
+async function closeApp() {
   await pyHandler.exitPyProc();
   if (process.platform !== 'win32') {
     app.exit();
   }
+}
+
+app.on('will-quit', async e => {
+  e.preventDefault();
+  await closeApp();
 });
 
 // Exit cleanly on request from parent process in development mode.

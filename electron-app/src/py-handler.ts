@@ -1,12 +1,8 @@
-import * as Electron from 'electron';
-import { app } from 'electron';
+import { app, App, BrowserWindow, ipcMain } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { ChildProcess, execFile, spawn } from 'child_process';
 import tasklist from 'tasklist';
-import ipcMain = Electron.ipcMain;
-import App = Electron.App;
-import BrowserWindow = Electron.BrowserWindow;
 import { assert } from '@/utils/assertions';
 
 export default class PyHandler {
@@ -145,9 +141,9 @@ export default class PyHandler {
     return this._port;
   }
 
-  private setFailureNotification(window: Electron.BrowserWindow) {
+  private setFailureNotification(window: Electron.BrowserWindow | null) {
     this.rpcFailureNotifier = setInterval(function() {
-      window.webContents.send('failed', 'failed');
+      window?.webContents.send('failed', 'failed');
     }, 2000);
   }
 
