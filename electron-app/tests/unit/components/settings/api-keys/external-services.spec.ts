@@ -15,7 +15,7 @@ describe('ExternalServices.vue', () => {
   let setExternalServices: jest.Mock;
   let deleteExternalServices: jest.Mock;
 
-  const mockReponse: ExternalServiceKeys = {
+  const mockResponse: ExternalServiceKeys = {
     etherscan: {
       api_key: '123'
     },
@@ -30,6 +30,7 @@ describe('ExternalServices.vue', () => {
       store,
       vuetify,
       attachToDocument: true,
+      stubs: ['v-dialog'],
       propsData: {
         value: ''
       },
@@ -63,7 +64,7 @@ describe('ExternalServices.vue', () => {
     });
 
     test('save the values when etherscan save is pressed', async () => {
-      setExternalServices.mockResolvedValueOnce(mockReponse);
+      setExternalServices.mockResolvedValueOnce(mockResponse);
       wrapper.find('.external-services__etherscan-key input').setValue('123');
       await wrapper.vm.$nextTick();
       wrapper
@@ -76,7 +77,7 @@ describe('ExternalServices.vue', () => {
     });
 
     test('save the values when cryptocompare save is pressed', async () => {
-      setExternalServices.mockResolvedValueOnce(mockReponse);
+      setExternalServices.mockResolvedValueOnce(mockResponse);
       wrapper
         .find('.external-services__cryptocompare-key input')
         .setValue('123');
@@ -132,7 +133,7 @@ describe('ExternalServices.vue', () => {
 
   describe('the api returns value', () => {
     beforeEach(async () => {
-      queryExternalServices.mockResolvedValueOnce(mockReponse);
+      queryExternalServices.mockResolvedValueOnce(mockResponse);
       wrapper = createWrapper();
       await wrapper.vm.$nextTick();
       await flushPromises();

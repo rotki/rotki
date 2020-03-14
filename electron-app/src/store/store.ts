@@ -59,9 +59,7 @@ const store: StoreOptions<RotkehlchenState> = {
             commit('versions', version);
             clearInterval(timerId);
           }
-        } catch (e) {
-          console.error(e);
-        }
+        } catch (e) {}
       }, 1000);
     }
   },
