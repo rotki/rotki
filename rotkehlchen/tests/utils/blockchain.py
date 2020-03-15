@@ -14,6 +14,7 @@ from web3.middleware import geth_poa_middleware
 
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.crypto import address_encoder, privatekey_to_address
+from rotkehlchen.externalapis.alethio import Alethio
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -398,6 +399,22 @@ def mock_etherscan_balances_query(
         return MockResponse(200, response)
 
     return patch.object(etherscan.session, 'get', wraps=mock_requests_get)
+
+
+def mock_alethio_balances_query(
+        eth_map: Dict[str, str],
+        alethio: Alethio,
+        use_alethio: bool,
+        original_requests_get,
+):
+    def mock_requests_get(url, *args, **kwargs):
+        if not use_alethio:
+            response = '{"message": "fail so that test switches to etherscan"}'
+            return MockResponse(400, response)
+
+        raise NotImplementedError('Shouldnt get here yet')
+
+    return patch.object(alethio.session, 'get', wraps=mock_requests_get)
 
 
 def mock_bitcoin_balances_query(
