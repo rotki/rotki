@@ -70,41 +70,29 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { remote } from 'electron';
 import { Message } from '@/store/store';
 
 @Component({})
 export default class ImportData extends Vue {
   async coinTrackingInfoImport() {
-    remote.dialog.showOpenDialog(
-      {
-        title: 'Select a file',
-        properties: ['openFile']
-      },
-      async (filePaths: string[] | undefined) => {
-        if (!filePaths) {
-          return;
-        }
-
-        const file = filePaths[0];
-        this.$api
-          .importDataFrom('cointracking.info', file)
-          .then(() => {
-            this.$store.commit('setMessage', {
-              success: true,
-              title: 'Import successful',
-              description:
-                'Data imported from cointracking.info export file succesfuly'
-            } as Message);
-          })
-          .catch((reason: Error) => {
-            this.$store.commit('setMessage', {
-              title: 'Import failed',
-              description: reason.message
-            } as Message);
-          });
+    try {
+      const file = await this.$interop.openFile('Select a file');
+      if (!file) {
+        return;
       }
-    );
+      await this.$api.importDataFrom('cointracking.info', file);
+      this.$store.commit('setMessage', {
+        success: true,
+        title: 'Import successful',
+        description:
+          'Data imported from cointracking.info export file successfully'
+      } as Message);
+    } catch (e) {
+      this.$store.commit('setMessage', {
+        title: 'Import failed',
+        description: e.message
+      } as Message);
+    }
   }
 }
 </script>

@@ -36,11 +36,11 @@ import { TaxReportEvent } from '@/typing/types';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import { TaskType } from '@/model/task';
 import { createNamespacedHelpers } from 'vuex';
-import { remote } from 'electron';
 import TaxReportOverview from '@/components/taxreport/TaxReportOverview.vue';
 import TaxReportEvents from '@/components/taxreport/TaxReportEvents.vue';
 import { Currency } from '@/model/currency';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import { Message } from '@/store/store';
 
 const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 const { mapState, mapGetters } = createNamespacedHelpers('reports');
@@ -76,19 +76,19 @@ export default class TaxReport extends Vue {
     this.$store.dispatch('reports/generate', event);
   }
 
-  exportCSV() {
-    remote.dialog.showOpenDialog(
-      {
-        title: 'Select a directory',
-        properties: ['openDirectory']
-      },
-      async (filePaths: string[] | undefined) => {
-        if (!filePaths) {
-          return;
-        }
-        await this.$store.dispatch('reports/createCSV', filePaths[0]);
+  async exportCSV() {
+    try {
+      const directory = await this.$interop.openDirectory('Select a directory');
+      if (!directory) {
+        return;
       }
-    );
+      await this.$store.dispatch('reports/createCSV', directory);
+    } catch (e) {
+      this.$store.commit('setMessage', {
+        title: 'There was an error with Export',
+        description: e.message
+      } as Message);
+    }
   }
 }
 </script>

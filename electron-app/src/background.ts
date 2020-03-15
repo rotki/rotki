@@ -137,7 +137,18 @@ app.on('ready', async () => {
     }
   }
   ipcMain.on('CLOSE_APP', async () => await closeApp());
-  ipcMain.on('OPEN_URL', (event, args) => shell.openExternal(args));
+  ipcMain.on('OPEN_URL', (event, args) => {
+    if (
+      !(
+        args.indexOf('https://rotki.com') > -1 ||
+        args.indexOf('https://github.com/rotki/rotki/') > -1
+      )
+    ) {
+      console.error(`Error: Requested to open untrusted URL: ${args} `);
+      return;
+    }
+    shell.openExternal(args);
+  });
   ipcMain.on('OPEN_FILE', async (event, args) => {
     const file = await select(args, 'openFile');
     event.sender.send('OPEN_FILE', file);

@@ -6,7 +6,7 @@
         icon
         :href="$interop.isPackaged ? undefined : $interop.premiumURL"
         v-on="on"
-        @click="$interop.isPackaged ? $interop.upgradePremium() : undefined"
+        @click="$interop.isPackaged ? $interop.navigateToPremium() : undefined"
       >
         <v-icon>fa-lock</v-icon>
       </v-btn>
