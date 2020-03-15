@@ -68,7 +68,6 @@ import CreateAccount from './CreateAccount.vue';
 import { Credentials, UnlockPayload } from '@/typing/types';
 import MessageOverlay from '@/components/MessageOverlay.vue';
 import { Version } from '@/store/store';
-import { shell } from 'electron';
 
 const { mapState: mapSessionState } = createNamespacedHelpers('session');
 
@@ -135,7 +134,7 @@ export default class AccountManagement extends Vue {
   }
 
   upgrade() {
-    shell.openExternal('https://rotki.com/products/');
+    this.$interop.navigateToPremium();
     this.loginComplete();
   }
 

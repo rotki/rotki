@@ -17,7 +17,6 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import { Version } from '@/store/store';
-import { shell } from 'electron';
 
 @Component({
   computed: {
@@ -30,7 +29,7 @@ export default class UpdateIndicator extends Vue {
   version!: Version;
 
   openLink() {
-    shell.openExternal(this.version.downloadUrl);
+    this.$interop.openUrl(this.version.downloadUrl);
   }
 }
 </script>

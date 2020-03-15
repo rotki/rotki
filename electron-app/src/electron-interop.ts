@@ -1,19 +1,38 @@
-import { shell } from 'electron';
-
 export class ElectronInterop {
-  private packagedApp: boolean = true;
-  private _premiumURL: string = 'https://rotki.com/products/';
-
-  get premiumURL(): string {
-    return this._premiumURL;
-  }
+  private packagedApp: boolean = !!window.interop;
+  readonly baseUrl = 'https://rotki.com';
+  readonly premiumURL: string = `${this.baseUrl}/products/`;
 
   get isPackaged(): boolean {
     return this.packagedApp;
   }
 
-  upgradePremium() {
-    shell.openExternal(this._premiumURL);
+  navigateToPremium() {
+    window.interop?.openUrl(this.premiumURL);
+  }
+
+  navigateToRotki() {
+    window.interop?.openUrl(this.baseUrl);
+  }
+
+  onError(callback: () => void) {
+    window.interop?.listenForErrors(callback);
+  }
+
+  async openDirectory(title: string): Promise<string | undefined> {
+    return (await window.interop?.openDirectory(title)) ?? undefined;
+  }
+
+  async openFile(title: string): Promise<string | undefined> {
+    return (await window.interop?.openFile(title)) ?? undefined;
+  }
+
+  openUrl(url: string) {
+    window.interop?.openUrl(url);
+  }
+
+  closeApp() {
+    window.interop?.closeApp();
   }
 }
 
