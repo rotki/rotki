@@ -1,11 +1,13 @@
 import logging
 from json.decoder import JSONDecodeError
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Union, overload
 
 import gevent
 import requests
 from eth_utils.address import to_checksum_address
+from typing_extensions import Literal
 
+from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
@@ -33,8 +35,25 @@ class Alethio(ExternalServiceWithApiKey):
         self.all_tokens = all_eth_tokens
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
 
-    def _query(self, path: str):
-        query_str = f'https://api.aleth.io/v1/{path}'
+    @overload  # noqa: F811
+    def _query(  # pylint: disable=no-self-use
+            self,
+            root_endpoint: Literal['accounts'],
+            path: str,
+    ) -> List[Dict[str, Any]]:
+        ...
+
+    @overload  # noqa: F811
+    def _query(  # pylint: disable=no-self-use
+            self,
+            root_endpoint: Literal['foo'],
+            path: str,
+    ) -> Dict[str, Any]:
+        ...
+
+    def _query(self, root_endpoint: str, path: str) -> Union[Dict[str, Any], List]:  # noqa: F811
+        query_str = f'https://api.aleth.io/v1/{root_endpoint}/{path}'
+        log.debug(f'Querying alethio for {query_str}')
 
         backoff = 1
         backoff_limit = 13
@@ -85,15 +104,18 @@ class Alethio(ExternalServiceWithApiKey):
                 raise RemoteError(f'alethio returned invalid JSON response: {response.text}')
 
             data = json_ret.get('data', None)
-            if not data:
+            if data is None:
                 errors = json_ret.get('errors', None)
-                if not errors:
-                    msg = 'Unexpected alethio response. Neither data nor errors in the response'
+                if errors is None:
+                    msg = f'Unexpected alethio response: {response.text}'
                 else:
                     msg = str(errors)
                 raise RemoteError(f'alethio response error: {msg}')
 
-            return data
+            # if we got here we should return
+            break
+
+        return data
 
     def token_address_to_identifier(self, address: ChecksumEthAddress) -> Optional[EthTokenInfo]:
         # TODO: Cache these stuff in a mapping
@@ -103,30 +125,32 @@ class Alethio(ExternalServiceWithApiKey):
 
         return None
 
-    def get_token_balances(self, account: ChecksumEthAddress):
+    def get_token_balances(self, account: ChecksumEthAddress) -> Dict[EthereumToken, FVal]:
         """Auto-detect which tokens are owned and get token balances for the account
+
+        The returned balance is already normalized for the token's decimals.
 
         May raise:
         - RemoteError if there is a problem contacting aleth.io
         """
         balances = {}
-        data = self._query(path=f'accounts/{account}/tokenBalances')
+        data = self._query(root_endpoint='accounts', path=f'{account}/tokenBalances')
         for entry in data:
             entry_type = entry.get('type', None)
             if entry_type == 'TokenBalance':
 
                 attributes = entry.get('attributes', None)
                 balance = None
-                if attributes:
+                if attributes is not None:
                     balance = attributes.get('balance', None)
-                if not balance:
+                if balance is None:
                     continue
 
                 relationships = entry.get('relationships', None)
-                if not relationships:
+                if relationships is None:
                     continue
                 token = relationships.get('token', None)
-                if not token:
+                if token is None:
                     continue
                 if 'data' not in token:
                     continue
@@ -135,9 +159,10 @@ class Alethio(ExternalServiceWithApiKey):
 
                 token_address = to_checksum_address(token['data']['id'])
                 token_info = self.token_address_to_identifier(token_address)
-                if not token_info:
+                if token_info is None:
                     continue
+
                 amount = FVal(balance) / (FVal(10) ** FVal(token_info.decimal))
-                balances[token_info.symbol] = amount
+                balances[EthereumToken(token_info.symbol)] = amount
 
         return balances

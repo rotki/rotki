@@ -213,6 +213,7 @@ class Rotkehlchen():
             owned_eth_tokens=self.data.db.get_owned_tokens(),
             ethchain=ethchain,
             msg_aggregator=self.msg_aggregator,
+            alethio=alethio,
             greenlet_manager=self.greenlet_manager,
             eth_modules={'makerdao': makerdao},
         )

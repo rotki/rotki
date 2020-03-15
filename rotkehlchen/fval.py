@@ -20,7 +20,7 @@ class FVal():
 
     __slots__ = ('num',)
 
-    def __init__(self, data: AcceptableFValInitInput):
+    def __init__(self, data: AcceptableFValInitInput = 0):
 
         try:
             if isinstance(data, float):
