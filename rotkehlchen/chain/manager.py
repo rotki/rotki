@@ -1,17 +1,18 @@
 import logging
 import operator
 from collections import defaultdict
-from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, overload
 
 import requests
+from dataclasses import dataclass, field
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_DAI
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.errors import EthSyncError, InputError, RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.externalapis.alethio import Alethio
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.inquirer import Inquirer
@@ -134,11 +135,13 @@ class ChainManager(CacheableObject, LockableQueryObject):
             owned_eth_tokens: List[EthereumToken],
             ethchain: 'Ethchain',
             msg_aggregator: MessagesAggregator,
+            alethio: Alethio,
             greenlet_manager: GreenletManager,
             eth_modules: Optional[Dict[str, EthereumModule]] = None,
     ):
         super().__init__()
         self.ethchain = ethchain
+        self.alethio = alethio
         self.msg_aggregator = msg_aggregator
         self.owned_eth_tokens = owned_eth_tokens
         self.accounts = blockchain_accounts
@@ -610,11 +613,49 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         return self.get_balances_update()
 
-    def query_ethereum_tokens(
-            self,
-            tokens: List[EthereumToken],
-    ) -> None:
-        """Queries the ethereum token balances and populates the state
+    def _query_ethereum_tokens_alethio(self):
+        """Queries ethereum tokens via Alethio which autodetects which tokens an account owns
+
+        May raise:
+        - RemoteError if there is a problem with querying alethio
+        """
+        token_usd_price = {}
+        token_totals = defaultdict(FVal)
+        eth_balances = self.balances.eth
+
+        for account in self.accounts.eth:
+            balances = self.alethio.get_token_balances(account)
+            for token, balance in balances.items():
+                if balance != ZERO:
+                    try:
+                        usd_price = token_usd_price.get(
+                            token,
+                            Inquirer().find_usd_price(token),
+                        )
+                    except RemoteError:
+                        usd_price = Price(ZERO)
+
+                    token_usd_price[token] = usd_price
+                    if usd_price == ZERO:
+                        # skip tokens that have no price
+                        continue
+                    usd_value = balance * usd_price
+                    eth_balances[account].asset_balances[token] = Balance(
+                        amount=balance,
+                        usd_value=usd_value,
+                    )
+                    eth_balances[account].increase_total_usd_value(usd_value)
+                    token_totals[token] = token_totals[token] + balance
+
+        for token, balance in token_totals.items():
+            if balance != ZERO:
+                self.totals[token] = Balance(
+                    amount=balance,
+                    usd_value=balance * token_usd_price[token],
+                )
+
+    def _query_ethereum_tokens_normal(self, tokens: List[EthereumToken]):
+        """Queries ethereum token balance via either etherscan or ethereum node
 
         May raise:
         - RemoteError if an external service such as Etherscan or cryptocompare
@@ -668,7 +709,29 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 usd_value=token_total * token_usd_price[token],
             )
 
+    def query_ethereum_tokens(
+            self,
+            tokens: List[EthereumToken],
+    ) -> None:
+        """Queries the ethereum token balances and populates the state
+
+        May raise:
+        - RemoteError if an external service such as Etherscan or cryptocompare
+        is queried and there is a problem with its query.
+        - EthSyncError if querying the token balances through a provided ethereum
+        client and the chain is not synced
+        """
+        try:
+            self._query_ethereum_tokens_alethio()
+        except RemoteError as e:
+            log.debug(
+                f'Alethio accounts token balances query failed: {str(e)}. '
+                f'Switching to etherscan/own node query.',
+            )
+            self._query_ethereum_tokens_normal(tokens)
+
         # If we have anything in DSR also count it towards total blockchain balances
+        eth_balances = self.balances.eth
         makerdao = self.eth_modules.get('makerdao', None)
         if makerdao:
             additional_total_dai = FVal(0)

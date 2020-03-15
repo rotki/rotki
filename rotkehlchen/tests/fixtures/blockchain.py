@@ -87,7 +87,7 @@ def all_eth_tokens() -> List[EthTokenInfo]:
 
 
 @pytest.fixture
-def etherscan(database, messages_aggregator, all_eth_tokens):
+def etherscan(database, messages_aggregator):
     return Etherscan(database=database, msg_aggregator=messages_aggregator)
 
 
@@ -211,6 +211,7 @@ def blockchain(
         greenlet_manager,
         owned_eth_tokens,
         ethereum_modules,
+        alethio,
         database,
 ):
     modules = {}
@@ -229,6 +230,7 @@ def blockchain(
         owned_eth_tokens=owned_eth_tokens,
         ethchain=ethchain_client,
         msg_aggregator=messages_aggregator,
+        alethio=alethio,
         greenlet_manager=greenlet_manager,
         eth_modules=modules,
     )
