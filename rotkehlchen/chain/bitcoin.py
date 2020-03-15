@@ -14,7 +14,7 @@ def is_valid_bech32_address(value: str) -> bool:
     """
 
     (hrp, _) = bech32.bech32_decode(value)
-    return hrp is not None and hrp == "bc"
+    return hrp is not None and hrp == 'bc'
 
 
 def is_valid_base58_address(value: str) -> bool:
