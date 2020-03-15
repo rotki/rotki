@@ -35,7 +35,7 @@ from rotkehlchen.utils.interfaces import (
     cache_response_timewise,
     protect_with_lock,
 )
-from rotkehlchen.utils.misc import request_get_direct, satoshis_to_btc
+from rotkehlchen.utils.misc import request_get_direct, request_get, satoshis_to_btc
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum import Ethchain
