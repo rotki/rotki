@@ -4,7 +4,6 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, overload
-from bech32 import bech32_decode
 
 import requests
 from web3.exceptions import BadFunctionCallOutput
