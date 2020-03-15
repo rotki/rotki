@@ -4,6 +4,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, overload
+from bech32 import bech32_decode
 
 import requests
 from web3.exceptions import BadFunctionCallOutput
@@ -213,13 +214,18 @@ class ChainManager(CacheableObject, LockableQueryObject):
         - RemotError if there is a problem querying blockchain.info
         """
         try:
-            btc_resp = request_get_direct(
-                url='https://blockchain.info/q/addressbalance/%s' % account,
-                handle_429=True,
-                # If we get a 429 then their docs suggest 10 seconds
-                # https://blockchain.info/q
-                backoff_in_seconds=10,
-            )
+            if account[0:3] == 'bc1':
+                btc_resp = request_get(
+                    url='https://api.blockcypher.com/v1/btc/main/addrs/%s/balance' % account,
+                )['balance']
+            else:
+                btc_resp = request_get_direct(
+                    url='https://blockchain.info/q/addressbalance/%s' % account,
+                    handle_429=True,
+                    # If we get a 429 then their docs suggest 10 seconds
+                    # https://blockchain.info/q
+                    backoff_in_seconds=10,
+                )
         except (requests.exceptions.ConnectionError, UnableToDecryptRemoteData) as e:
             raise RemoteError(f'blockchain.info API request failed due to {str(e)}')
 
