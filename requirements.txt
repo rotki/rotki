@@ -7,6 +7,7 @@ pycryptodomex==3.6.6
 coincurve==13.0.0
 typing-extensions==3.7.4
 base58check==1.0.2
+bech32==1.2.0
 
 # For the rest api
 flask-cors==3.0.8
