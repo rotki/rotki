@@ -115,5 +115,6 @@ def test_is_valid_btc_address():
 
     assert not is_valid_btc_address('foo')
     assert not is_valid_btc_address('18ddjB7HWTaxzvTbLp1nWvaixU3U2oTZ1')
-    assert not is_valid_btc_address('tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3')
+    assert not is_valid_btc_address(
+        'tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3')
     assert not is_valid_btc_address('bc1qr')
