@@ -27,7 +27,11 @@ def is_valid_base58_address(value: str) -> bool:
     if 25 > len(value) > 35:
         return False
 
-    abytes = base58check.b58decode(value)
+    try:
+        abytes = base58check.b58decode(value)
+    except (ValueError):
+        return False
+
     if not abytes[0] in (0x00, 0x05):
         return False
 
