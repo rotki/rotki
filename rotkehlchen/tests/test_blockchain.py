@@ -109,6 +109,11 @@ def test_is_valid_btc_address():
     assert is_valid_btc_address(UNIT_BTC_ADDRESS2)
     assert is_valid_btc_address(UNIT_BTC_ADDRESS3)
     assert is_valid_btc_address('18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2')
+    assert is_valid_btc_address('bc1qhkje0xfvhmgk6mvanxwy09n45df03tj3h3jtnf')
+    assert is_valid_btc_address('bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4')
+    assert is_valid_btc_address('bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3')
 
     assert not is_valid_btc_address('foo')
     assert not is_valid_btc_address('18ddjB7HWTaxzvTbLp1nWvaixU3U2oTZ1')
+    assert not is_valid_btc_address('tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3')
+    assert not is_valid_btc_address('bc1qr')
