@@ -6,6 +6,13 @@ module.exports = {
   pluginOptions: {
     electronBuilder: {
       outputDir: 'dist',
+      chainWebpackMainProcess: config => {
+        // This makes sure that preload.ts is compiled along background.ts
+        config
+          .entry('preload')
+          .add('./src/preload.ts')
+          .end();
+      },
       builderOptions: {
         appId: 'com.rotki',
         publish: {
