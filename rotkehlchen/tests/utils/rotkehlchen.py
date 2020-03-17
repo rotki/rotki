@@ -41,6 +41,13 @@ class BalancesTestSetup(NamedTuple):
         stack.enter_context(self.bitcoin_patch)
         return stack
 
+    def enter_blockchain_patches(self, stack: ExitStack):
+        stack.enter_context(self.etherscan_patch)
+        stack.enter_context(self.alethio_patch)
+        stack.enter_context(self.bitcoin_patch)
+        return stack
+
+
 def setup_balances(
         rotki,
         ethereum_accounts: Optional[List[ChecksumEthAddress]],

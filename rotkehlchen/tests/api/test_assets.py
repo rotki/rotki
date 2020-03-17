@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 from http import HTTPStatus
 
 import pytest
@@ -26,7 +27,8 @@ def test_query_owned_assets(
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
 
     # Get all our mocked balances and save them in the DB
-    with setup.poloniex_patch, setup.binance_patch, setup.etherscan_patch, setup.bitcoin_patch:
+    with ExitStack() as stack:
+        setup.enter_all_patches(stack)
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
@@ -36,7 +38,8 @@ def test_query_owned_assets(
     assert_proper_response(response)
 
     # And now check that the query owned assets endpoint works
-    with setup.poloniex_patch, setup.binance_patch, setup.etherscan_patch, setup.bitcoin_patch:
+    with ExitStack() as stack:
+        setup.enter_all_patches(stack)
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
