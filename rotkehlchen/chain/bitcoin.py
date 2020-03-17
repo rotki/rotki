@@ -9,7 +9,7 @@ def is_valid_btc_address(value: str) -> bool:
 
 
 def is_valid_bech32_address(value: str) -> bool:
-    """Validates a bitcoin base58 address for the mainnet
+    """Validates a bitcoin Bech32 address for the mainnet
 
     """
 
