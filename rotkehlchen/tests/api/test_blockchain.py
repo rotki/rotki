@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 from http import HTTPStatus
 from unittest.mock import patch
 
@@ -48,7 +49,7 @@ def test_query_blockchain_balances(
     setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=btc_accounts)
 
     # First query only ETH and token balances
-    with setup.etherscan_patch:
+    with setup.etherscan_patch, setup.alethio_patch:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "named_blockchain_balances_resource",
@@ -85,7 +86,8 @@ def test_query_blockchain_balances(
     )
 
     # Finally query all balances
-    with setup.etherscan_patch, setup.bitcoin_patch:
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
@@ -145,7 +147,7 @@ def test_query_blockchain_balances_async(
     ), json={'async_query': True})
     task_id = assert_ok_async_response(response)
 
-    with setup.etherscan_patch:
+    with setup.etherscan_patch, setup.alethio_patch:
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
     assert_eth_balances_result(
         rotki=rotki,
@@ -180,7 +182,8 @@ def test_query_blockchain_balances_async(
     ), json={'async_query': True})
     task_id = assert_ok_async_response(response)
 
-    with setup.etherscan_patch, setup.bitcoin_patch:
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
     assert_eth_balances_result(
         rotki=rotki,
@@ -221,7 +224,7 @@ def test_query_blockchain_balances_ignore_cache(
         wraps=rotki.chain_manager.query_ethereum_tokens,
     )
 
-    with setup.etherscan_patch, setup.bitcoin_patch, eth_query as eth_mock, tokens_query as tokens_mock:  # noqa: E501
+    with setup.etherscan_patch, setup.alethio_patch, setup.bitcoin_patch, eth_query as eth_mock, tokens_query as tokens_mock:  # noqa: E501
         # Query ETH and token balances once
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
@@ -310,7 +313,8 @@ def test_add_blockchain_accounts(
             eth_balances=eth_balances,
             token_balances=token_balances,
         )
-        with setup.etherscan_patch, setup.bitcoin_patch:
+        with ExitStack() as stack:
+            setup.enter_blockchain_patches(stack)
             response = requests.get(api_url_for(
                 rotkehlchen_api_server,
                 "blockchainbalancesresource",
@@ -329,7 +333,7 @@ def test_add_blockchain_accounts(
     )
 
     # The application has started only with 2 ethereum accounts. Let's add two more
-    with setup.etherscan_patch:
+    with setup.etherscan_patch, setup.alethio_patch:
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
@@ -355,7 +359,8 @@ def test_add_blockchain_accounts(
     assert all(acc in accounts.btc for acc in btc_accounts)
 
     # Now try to query all balances to make sure the result is the stored
-    with setup.etherscan_patch, setup.bitcoin_patch:
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
@@ -407,7 +412,8 @@ def test_add_blockchain_accounts(
     assert all(acc in accounts.btc for acc in all_btc_accounts)
 
     # Now try to query all balances to make sure the result is also stored
-    with setup.etherscan_patch, setup.bitcoin_patch:
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
@@ -462,7 +468,7 @@ def test_add_blockchain_accounts_async(
     )
 
     # The application has started only with 2 ethereum accounts. Let's add two more
-    with setup.etherscan_patch:
+    with setup.etherscan_patch, setup.alethio_patch:
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
@@ -486,7 +492,8 @@ def test_add_blockchain_accounts_async(
     assert all(acc in accounts.btc for acc in btc_accounts)
 
     # Now try to query all balances to make sure the result is the stored
-    with setup.etherscan_patch, setup.bitcoin_patch:
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
@@ -536,7 +543,8 @@ def test_add_blockchain_accounts_async(
     assert all(acc in accounts.btc for acc in all_btc_accounts)
 
     # Now try to query all balances to make sure the result is also stored
-    with setup.etherscan_patch, setup.bitcoin_patch:
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
@@ -569,7 +577,7 @@ def test_addding_non_checksummed_eth_account_is_error(
         token_balances=None,
     )
     request_data = {'accounts': [{'address': account}]}
-    with setup.etherscan_patch:
+    with setup.etherscan_patch, setup.alethio_patch:
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
@@ -850,7 +858,7 @@ def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(
         'tags': ['public', 'hardware'],
     }]
     # Make sure that even adding accounts with label and tags, balance query works fine
-    with setup.etherscan_patch:
+    with setup.etherscan_patch, setup.alethio_patch:
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
@@ -1223,7 +1231,8 @@ def test_remove_blockchain_accounts(
             eth_balances=all_eth_balances,
             token_balances=token_balances,
         )
-        with setup.etherscan_patch, setup.bitcoin_patch:
+        with ExitStack() as stack:
+            setup.enter_blockchain_patches(stack)
             response = requests.get(api_url_for(
                 rotkehlchen_api_server,
                 "blockchainbalancesresource",
@@ -1237,7 +1246,7 @@ def test_remove_blockchain_accounts(
     )
 
     # The application has started with 4 ethereum accounts. Remove two and see that balances match
-    with setup.etherscan_patch:
+    with setup.etherscan_patch, setup.alethio_patch:
         response = requests.delete(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
@@ -1263,7 +1272,8 @@ def test_remove_blockchain_accounts(
     assert all(acc in accounts.btc for acc in btc_accounts)
 
     # Now try to query all balances to make sure the result is the stored
-    with setup.etherscan_patch, setup.bitcoin_patch:
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
@@ -1316,7 +1326,8 @@ def test_remove_blockchain_accounts(
     assert all(acc in accounts.btc for acc in btc_accounts_after_removal)
 
     # Now try to query all balances to make sure the result is also stored
-    with setup.etherscan_patch, setup.bitcoin_patch:
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
@@ -1362,7 +1373,8 @@ def test_remove_blockchain_accounts_async(
         eth_balances=all_eth_balances,
         token_balances=token_balances,
     )
-    with setup.etherscan_patch, setup.bitcoin_patch:
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
@@ -1376,7 +1388,7 @@ def test_remove_blockchain_accounts_async(
     )
 
     # The application has started with 4 ethereum accounts. Remove two and see that balances match
-    with setup.etherscan_patch:
+    with setup.etherscan_patch, setup.alethio_patch:
         response = requests.delete(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
@@ -1400,7 +1412,8 @@ def test_remove_blockchain_accounts_async(
     assert all(acc in accounts.btc for acc in btc_accounts)
 
     # Now try to query all balances to make sure the result is the stored
-    with setup.etherscan_patch, setup.bitcoin_patch:
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
@@ -1451,7 +1464,8 @@ def test_remove_blockchain_accounts_async(
     assert all(acc in accounts.btc for acc in btc_accounts_after_removal)
 
     # Now try to query all balances to make sure the result is also stored
-    with setup.etherscan_patch, setup.bitcoin_patch:
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             "blockchainbalancesresource",
@@ -1513,7 +1527,7 @@ def test_remove_nonexisting_blockchain_account_along_with_existing(
         token_balances=None,
     )
     unknown_account = make_ethereum_address()
-    with setup.etherscan_patch:
+    with setup.etherscan_patch, setup.alethio_patch:
         response = requests.delete(api_url_for(
             rotkehlchen_api_server,
             "blockchainsaccountsresource",
