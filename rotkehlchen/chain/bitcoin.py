@@ -9,12 +9,11 @@ def is_valid_btc_address(value: str) -> bool:
 
 
 def is_valid_bech32_address(value: str) -> bool:
-    """Validates a bitcoin Bech32 address for the mainnet
-
+    """Validates a bitcoin SegWit address for the mainnet
     """
 
-    (hrp, _) = bech32.bech32_decode(value)
-    return hrp is not None and hrp == 'bc'
+    decoded = bech32.decode('bc', value)
+    return decoded != (None, None)
 
 
 def is_valid_base58_address(value: str) -> bool:
