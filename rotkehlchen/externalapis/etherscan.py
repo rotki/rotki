@@ -16,7 +16,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, ExternalService, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import convert_to_int, from_wei, hexstring_to_bytes, ts_now
+from rotkehlchen.utils.misc import convert_to_int, from_wei, hexstring_to_bytes
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
@@ -150,23 +150,15 @@ class Etherscan(ExternalServiceWithApiKey):
             for name, value in options.items():
                 query_str += f'&{name}={value}'
 
-        # temporary check. In the future etherscan will always need an API key
         api_key = self._get_api_key()
         if api_key is None:
-            now = ts_now()
-            if now > 1581681600:  # > 14/02/2020 12:00 UTC
-                # https://medium.com/etherscan-blog/psa-for-developers-implementation-of-api-key-requirements-starting-from-february-15th-2020-b616870f3746
-                raise RemoteError(
-                    'Etherscan has introduced compulsory API keys from 15/02/2020.'
-                    'Please go to to https://etherscan.io/register, create an API '
-                    'key and then input it in the external service credentials setting of Rotki',
-                )
-            # else, until the deadline it's fine to not have an API key
-        else:
-            query_str += f'&apikey={api_key}'
+            raise RemoteError(
+                'Etherscan has introduced compulsory API keys.'
+                'Please go to to https://etherscan.io/register, create an API '
+                'key and then input it in the external service credentials setting of Rotki',
+            )
 
         logger.debug(f'Querying etherscan: {query_str}')
-
         backoff = 1
         backoff_limit = 13
         while backoff < backoff_limit:
