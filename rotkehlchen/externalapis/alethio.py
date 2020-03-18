@@ -29,7 +29,7 @@ class Alethio(ExternalServiceWithApiKey):
             msg_aggregator: MessagesAggregator,
             all_eth_tokens: List[EthTokenInfo],
     ) -> None:
-        super().__init__(database=database, service_name=ExternalService.ETHERSCAN)
+        super().__init__(database=database, service_name=ExternalService.ALETHIO)
         self.msg_aggregator = msg_aggregator
         self.session = requests.session()
         self.all_tokens = all_eth_tokens
@@ -54,6 +54,10 @@ class Alethio(ExternalServiceWithApiKey):
     def _query(self, root_endpoint: str, path: str) -> Union[Dict[str, Any], List]:  # noqa: F811
         query_str = f'https://api.aleth.io/v1/{root_endpoint}/{path}'
         log.debug(f'Querying alethio for {query_str}')
+
+        api_key = self._get_api_key()
+        if api_key:
+            self.session.headers.update({'Authorization': f'Bearer {api_key}'})
 
         backoff = 1
         backoff_limit = 13
