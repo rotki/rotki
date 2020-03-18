@@ -122,6 +122,11 @@ def test_is_valid_btc_address():
     assert is_valid_btc_address('BC1SW50QA3JX3S')
     assert is_valid_btc_address('bc1zw508d6qejxtdg4y5r3zarvaryvg6kdaj')
 
+    assert not is_valid_btc_address('foo')
+    assert not is_valid_btc_address('18ddjB7HWTaxzvTbLp1nWvaixU3U2oTZ1')
+    assert not is_valid_btc_address(
+        'tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3')
+    assert not is_valid_btc_address('bc1qr')
     assert not is_valid_btc_address(
         'tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3q0sl5k7')
     assert not is_valid_btc_address(
@@ -139,8 +144,3 @@ def test_is_valid_btc_address():
     assert not is_valid_btc_address(
         'tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3pjxtptv')
     assert not is_valid_btc_address('bc1gmk9yu')
-    assert not is_valid_btc_address('foo')
-    assert not is_valid_btc_address('18ddjB7HWTaxzvTbLp1nWvaixU3U2oTZ1')
-    assert not is_valid_btc_address(
-        'tb1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3')
-    assert not is_valid_btc_address('bc1qr')
