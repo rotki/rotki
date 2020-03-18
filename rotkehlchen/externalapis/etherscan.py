@@ -210,7 +210,7 @@ class Etherscan(ExternalServiceWithApiKey):
                     status = json_ret['status'].to_int(exact=True)
 
                 if status != 1:
-                    if status == 0 and result == 'Maximum rate limit reached':
+                    if status == 0 and 'rate limit reached' in result:
                         log.debug(
                             f'Got response: {response.text} from etherscan. Will '
                             f'backoff for {backoff} seconds.',
