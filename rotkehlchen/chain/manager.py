@@ -213,9 +213,9 @@ class ChainManager(CacheableObject, LockableQueryObject):
         - RemotError if there is a problem querying blockchain.info
         """
         try:
-            if account[0:3] == 'bc1':
+            if account.lower()[0:3] == 'bc1':
                 btc_resp = request_get(
-                    url='https://api.blockcypher.com/v1/btc/main/addrs/%s/balance' % account,
+                    url='https://api.blockcypher.com/v1/btc/main/addrs/%s/balance' % account.lower(),
                 )['balance']
             else:
                 btc_resp = request_get_direct(
