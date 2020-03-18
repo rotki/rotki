@@ -82,7 +82,11 @@ export default class ExternalServices extends Vue {
 
   loading: boolean = false;
 
-  private updateKeys({ cryptocompare, etherscan, alethio }: ExternalServiceKeys) {
+  private updateKeys({
+    cryptocompare,
+    etherscan,
+    alethio
+  }: ExternalServiceKeys) {
     this.cryptocompareKey = cryptocompare?.api_key || '';
     this.etherscanKey = etherscan?.api_key || '';
     this.alethioKey = alethio?.api_key || '';
