@@ -2,8 +2,10 @@
 Changelog
 =========
 
+
 * :bug:`794` If etherscan rate limits the user it should now be handled correctly after their new changes ... again
 * :feature:`643` Rotki will now autodetect the tokens owned by each of your ethereum accounts. Integration with alethio is possible, and you can add an Alethio API key.
+* :bug:`790 major` SegWit addresses (Bech32) can now be added to BTC balances.
 * :feature:`-` Rotki should now remember your window size, position, and maximized state after closing the app.
 * :bug:`783 major` Fixes the update indicator to indicate to users if their client is out of date.
 
