@@ -1193,6 +1193,14 @@
         "symbol": "BNTY",
         "type": "ethereum token"
     },
+    "BOA": {
+        "ethereum_address": "0x746DdA2ea243400D5a63e0700F190aB79f06489e",
+        "ethereum_token_decimals": 7,
+        "name": "BOSAGORA",
+        "started": 1557993540,
+        "symbol": "BOA",
+        "type": "ethereum token"
+    },
     "BOB": {
         "ethereum_address": "0xDF347911910b6c9A4286bA8E2EE5ea4a39eB2134",
         "ethereum_token_decimals": 18,
