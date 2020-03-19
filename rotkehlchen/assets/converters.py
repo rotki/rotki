@@ -371,7 +371,10 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # Forkspot. As for 01/03/2020 no data found outside of Bittrex for this token
     # https://global.bittrex.com/Market/Index?MarketName=BTC-FRSP
     'FRSP',
-    # Vanywhere As of 19/03/2020 no data found outside of Bittrex for this token.
+    # Universal Protocol Token. As of 19/03/2020 no data found outside of Bittrex for this token.
+    # https://global.bittrex.com/Market/Index?MarketName=BTC-UPT
+    'UPT',
+    # Vanywhere. As of 19/03/2020 no data found outside of Bittrex for this token.
     # https://global.bittrex.com/Market/Index?MarketName=BTC-VANY
     'VANY',
 )
