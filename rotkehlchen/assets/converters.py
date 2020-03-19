@@ -374,6 +374,10 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # Universal Protocol Token. As of 19/03/2020 no data found outside of Bittrex for this token.
     # https://global.bittrex.com/Market/Index?MarketName=BTC-UPT
     'UPT',
+    # Universal USD and EUR. As of 19/03/2020 no data found outside of Bittrex for this token.
+    # https://global.bittrex.com/Market/Index?MarketName=BTC-UPUSD
+    'UPEUR',
+    'UPUSD',
     # Vanywhere. As of 19/03/2020 no data found outside of Bittrex for this token.
     # https://global.bittrex.com/Market/Index?MarketName=BTC-VANY
     'VANY',
