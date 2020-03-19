@@ -1887,6 +1887,12 @@
         "symbol": "CJT",
         "type": "ethereum token"
     },
+    "CKB": {
+        "name": "Nervos Network",
+        "started": 1562112000,
+        "symbol": "CKB",
+        "type": "own chain"
+    },
     "CL": {
         "ethereum_address": "0xe81D72D14B1516e68ac3190a46C93302Cc8eD60f",
         "ethereum_token_decimals": 18,
