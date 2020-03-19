@@ -211,7 +211,7 @@ If an ethereum account also owns tracked tokens you can click on the arrow under
 Adding and Removing Ethereum Tokens
 =========================================
 
-Rotki will check all of your ethereum accounts for balances of a given list of tokens. This list can be provided and modified by you.
+Rotki will autodetect what tokens you have in your ethereum accounts thanks to Alethio. If the query to alethio fails for some reason then you can provide a list of tokens to be tracked and whose balances to query your ethereum node or etherscan for. This list can be provided and modified by you.
 
 To do so scroll down to the "Blockchain Balances" section and look for the "Owned Tokens" fields.
 
@@ -219,11 +219,11 @@ To do so scroll down to the "Blockchain Balances" section and look for the "Owne
    :alt: Add a new owned ethereum token
    :align: center
 
-In order to add a token to the tracked tokens start typing its name and the auto-completion of the widget should show it to you. If it does not it may mean that it's not support by Rotki. Try to make an issue in our github repository to add it.
+In order to add a token to the tracked tokens start typing its name and the auto-completion of the widget should show it to you. If it does not it may mean that it's not supported by Rotki. Try to make an issue in our github repository to add it.
 
 In order to stop tracking a token simply click the [X] next to the token's name from the list of owned tokens.
 
-All account balances will be updated at after addition or removal of tokens.
+All account balances will be updated after addition or removal of tokens.
 
 Adding/Editing Labels and tags
 ==============================
