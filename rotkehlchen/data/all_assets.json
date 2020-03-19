@@ -5685,6 +5685,14 @@
         "symbol": "MOD",
         "type": "ethereum token"
     },
+    "MOF": {
+        "ethereum_address": "0x653430560bE843C4a3D143d0110e896c2Ab8ac0D",
+        "ethereum_token_decimals": 16,
+        "name": "Molecular Future",
+        "started": 1513669377,
+        "symbol": "MOF",
+        "type": "ethereum token"
+    },
     "MONA": {
         "name": "MonaCoin",
         "started": 1388534400,
