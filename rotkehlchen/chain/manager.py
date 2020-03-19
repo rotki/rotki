@@ -34,7 +34,7 @@ from rotkehlchen.utils.interfaces import (
     cache_response_timewise,
     protect_with_lock,
 )
-from rotkehlchen.utils.misc import request_get_direct, request_get, satoshis_to_btc
+from rotkehlchen.utils.misc import request_get, request_get_direct, satoshis_to_btc
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum import Ethchain
@@ -210,13 +210,15 @@ class ChainManager(CacheableObject, LockableQueryObject):
         """Queries blockchain.info for the balance of account
 
         May raise:
-        - RemotError if there is a problem querying blockchain.info
+        - RemotError if there is a problem querying blockchain.info or blockcypher
         """
         try:
             if account.lower()[0:3] == 'bc1':
-                btc_resp = request_get(
-                    url='https://api.blockcypher.com/v1/btc/main/addrs/%s/balance' % account.lower(),
-                )['balance']
+                url = f'https://api.blockcypher.com/v1/btc/main/addrs/{account.lower()}/balance'
+                response_data = request_get(url=url)
+                if 'balance' not in response_data:
+                    raise RemoteError(f'Unexpected blockcypher balance response: {response_data}')
+                btc_resp = response_data['balance']
             else:
                 btc_resp = request_get_direct(
                     url='https://blockchain.info/q/addressbalance/%s' % account,
@@ -226,7 +228,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
                     backoff_in_seconds=10,
                 )
         except (requests.exceptions.ConnectionError, UnableToDecryptRemoteData) as e:
-            raise RemoteError(f'blockchain.info API request failed due to {str(e)}')
+            raise RemoteError(f'bitcoin external API request failed due to {str(e)}')
 
         return satoshis_to_btc(FVal(btc_resp))  # result is in satoshis
 
