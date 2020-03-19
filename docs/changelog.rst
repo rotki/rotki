@@ -2,7 +2,7 @@
 Changelog
 =========
 
-
+* :feature:`779` OSX: User can now exit the application by simply pressing [X]
 * :bug:`794` If etherscan rate limits the user it should now be handled correctly after their new changes ... again
 * :feature:`643` Rotki will now autodetect the tokens owned by each of your ethereum accounts. Integration with alethio is possible, and you can add an Alethio API key.
 * :bug:`790 major` SegWit addresses (Bech32) can now be added to BTC balances.
