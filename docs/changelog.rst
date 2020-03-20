@@ -9,6 +9,11 @@ Changelog
 * :bug:`790` SegWit addresses (Bech32) can now be added to BTC balances.
 * :feature:`-` Rotki should now remember your window size, position, and maximized state after closing the app.
 * :bug:`783` Fixes the update indicator to indicate to users if their client is out of date.
+* :feature:`-` Added support for the following tokens
+  - `Bosagora (BOA) <https://coinmarketcap.com/currencies/bosagora/>`__
+  - `Nervos Network (CKB) <https://coinmarketcap.com/currencies/nervos-network/>`__
+  - `Molecular Future Token (MOF) <https://coinmarketcap.com/currencies/molecular-future/>`__
+* :feature:`-` Add support for the newly added kraken FX trade pairs
 
 * :release:`1.2.1 <2020-03-10>`
 * :bug:`770` Adds loading screen while waiting for the backend to start.
