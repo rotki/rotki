@@ -115,7 +115,7 @@ function createWindow() {
 }
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
-    app.quit();
+  app.quit();
 });
 app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
