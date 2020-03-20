@@ -1,4 +1,5 @@
 import contextlib
+from contextlib import ExitStack
 from http import HTTPStatus
 from unittest.mock import patch
 
@@ -34,7 +35,8 @@ def test_query_statistics_netvalue(
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
 
     # query balances and save data in DB to have data to test the statistics endpoint
-    with setup.poloniex_patch, setup.binance_patch, setup.etherscan_patch, setup.bitcoin_patch:
+    with ExitStack() as stack:
+        setup.enter_all_patches(stack)
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
@@ -85,7 +87,8 @@ def test_query_statistics_asset_balance(
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
 
     # query balances and save data in DB to have data to test the statistics endpoint
-    with setup.poloniex_patch, setup.binance_patch, setup.etherscan_patch, setup.bitcoin_patch:
+    with ExitStack() as stack:
+        setup.enter_all_patches(stack)
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
@@ -240,7 +243,8 @@ def test_query_statistics_value_distribution(
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
 
     # query balances and save data in DB to have data to test the statistics endpoint
-    with setup.poloniex_patch, setup.binance_patch, setup.etherscan_patch, setup.bitcoin_patch:
+    with ExitStack() as stack:
+        setup.enter_all_patches(stack)
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,

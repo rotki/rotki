@@ -35,6 +35,21 @@
         ></service-key>
       </v-col>
     </v-row>
+    <v-row>
+      <v-col cols="12">
+        <service-key
+          v-model="alethioKey"
+          class="external-services__alethio-key"
+          title="Alethio"
+          label="API key"
+          hint="Enter your Alethio API key"
+          :loading="loading"
+          tooltip="Deletes the Alethio API key"
+          @save="save('alethio', $event)"
+          @delete-key="deleteKey('alethio')"
+        ></service-key>
+      </v-col>
+    </v-row>
     <confirm-dialog
       title="Delete API Key"
       message="Are you sure you want to delete this API Key?"
@@ -61,14 +76,20 @@ import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 export default class ExternalServices extends Vue {
   etherscanKey: string = '';
   cryptocompareKey: string = '';
+  alethioKey: string = '';
 
   serviceToDelete: ExternalServiceName | '' = '';
 
   loading: boolean = false;
 
-  private updateKeys({ cryptocompare, etherscan }: ExternalServiceKeys) {
+  private updateKeys({
+    cryptocompare,
+    etherscan,
+    alethio
+  }: ExternalServiceKeys) {
     this.cryptocompareKey = cryptocompare?.api_key || '';
     this.etherscanKey = etherscan?.api_key || '';
+    this.alethioKey = alethio?.api_key || '';
   }
 
   async mounted() {

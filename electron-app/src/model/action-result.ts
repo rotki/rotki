@@ -40,6 +40,7 @@ export interface ApiKey {
 export interface ExternalServiceKeys {
   etherscan?: ApiKey;
   cryptocompare?: ApiKey;
+  alethio?: ApiKey;
 }
 
 export interface ApiAccountData {

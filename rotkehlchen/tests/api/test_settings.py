@@ -1,7 +1,6 @@
 from http import HTTPStatus
 from unittest.mock import patch
 
-import pytest
 import requests
 
 from rotkehlchen.constants.assets import A_JPY
@@ -170,13 +169,11 @@ def test_disable_taxfree_after_period(rotkehlchen_api_server):
     )
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason='webargs does not yet handle UNKNOWN=RAISE properly. Check: '
-    ' https://github.com/marshmallow-code/webargs/issues/435',
-)
 def test_set_unknown_settings(rotkehlchen_api_server):
-    """Test that setting an unknown setting """
+    """Test that setting an unknown setting results in an error
+
+    This is the only test for unknown arguments in marshmallow schemas after
+    https://github.com/rotki/rotki/issues/532 was implemented"""
     # Unknown setting
     data = {
         'invalid_setting': 5555,
@@ -184,7 +181,7 @@ def test_set_unknown_settings(rotkehlchen_api_server):
     response = requests.put(api_url_for(rotkehlchen_api_server, "settingsresource"), json=data)
     assert_error_response(
         response=response,
-        contained_in_msg='todo',
+        contained_in_msg="{'invalid_setting': ['Unknown field.'",
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

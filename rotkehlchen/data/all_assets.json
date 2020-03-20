@@ -1193,6 +1193,14 @@
         "symbol": "BNTY",
         "type": "ethereum token"
     },
+    "BOA": {
+        "ethereum_address": "0x746DdA2ea243400D5a63e0700F190aB79f06489e",
+        "ethereum_token_decimals": 7,
+        "name": "BOSAGORA",
+        "started": 1557993540,
+        "symbol": "BOA",
+        "type": "ethereum token"
+    },
     "BOB": {
         "ethereum_address": "0xDF347911910b6c9A4286bA8E2EE5ea4a39eB2134",
         "ethereum_token_decimals": 18,
@@ -1878,6 +1886,12 @@
         "started": 1518623183,
         "symbol": "CJT",
         "type": "ethereum token"
+    },
+    "CKB": {
+        "name": "Nervos Network",
+        "started": 1562112000,
+        "symbol": "CKB",
+        "type": "own chain"
     },
     "CL": {
         "ethereum_address": "0xe81D72D14B1516e68ac3190a46C93302Cc8eD60f",
@@ -5669,6 +5683,14 @@
         "name": "Modum",
         "started": 1502755200,
         "symbol": "MOD",
+        "type": "ethereum token"
+    },
+    "MOF": {
+        "ethereum_address": "0x653430560bE843C4a3D143d0110e896c2Ab8ac0D",
+        "ethereum_token_decimals": 16,
+        "name": "Molecular Future",
+        "started": 1513669377,
+        "symbol": "MOF",
         "type": "ethereum token"
     },
     "MONA": {

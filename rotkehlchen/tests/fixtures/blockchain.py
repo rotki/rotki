@@ -6,15 +6,17 @@ import pytest
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.ethereum import Ethchain
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.crypto import address_encoder, privatekey_to_address, sha3
 from rotkehlchen.db.utils import BlockchainAccounts
+from rotkehlchen.externalapis.alethio import Alethio
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.makerdao import MakerDAO
 from rotkehlchen.tests.utils.blockchain import geth_create_blockchain
 from rotkehlchen.tests.utils.tests import cleanup_tasks
-from rotkehlchen.typing import BTCAddress, ChecksumEthAddress
+from rotkehlchen.typing import BTCAddress, ChecksumEthAddress, EthTokenInfo
 
 
 @pytest.fixture
@@ -80,8 +82,22 @@ def eth_p2p_port(port_generator):
 
 
 @pytest.fixture
+def all_eth_tokens() -> List[EthTokenInfo]:
+    return AssetResolver().get_all_eth_tokens()
+
+
+@pytest.fixture
 def etherscan(database, messages_aggregator):
     return Etherscan(database=database, msg_aggregator=messages_aggregator)
+
+
+@pytest.fixture
+def alethio(database, messages_aggregator, all_eth_tokens):
+    return Alethio(
+        database=database,
+        msg_aggregator=messages_aggregator,
+        all_eth_tokens=all_eth_tokens,
+    )
 
 
 @pytest.fixture
@@ -195,6 +211,7 @@ def blockchain(
         greenlet_manager,
         owned_eth_tokens,
         ethereum_modules,
+        alethio,
         database,
 ):
     modules = {}
@@ -213,6 +230,7 @@ def blockchain(
         owned_eth_tokens=owned_eth_tokens,
         ethchain=ethchain_client,
         msg_aggregator=messages_aggregator,
+        alethio=alethio,
         greenlet_manager=greenlet_manager,
         eth_modules=modules,
     )

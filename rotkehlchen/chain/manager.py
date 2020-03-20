@@ -2,16 +2,18 @@ import logging
 import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, overload
 
 import requests
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_DAI
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.errors import EthSyncError, InputError, RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.externalapis.alethio import Alethio
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.inquirer import Inquirer
@@ -32,13 +34,19 @@ from rotkehlchen.utils.interfaces import (
     cache_response_timewise,
     protect_with_lock,
 )
-from rotkehlchen.utils.misc import request_get_direct, satoshis_to_btc
+from rotkehlchen.utils.misc import request_get, request_get_direct, satoshis_to_btc
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum import Ethchain
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+class AccountAction(Enum):
+    QUERY = 1
+    APPEND = 2
+    REMOVE = 3
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -134,11 +142,13 @@ class ChainManager(CacheableObject, LockableQueryObject):
             owned_eth_tokens: List[EthereumToken],
             ethchain: 'Ethchain',
             msg_aggregator: MessagesAggregator,
+            alethio: Alethio,
             greenlet_manager: GreenletManager,
             eth_modules: Optional[Dict[str, EthereumModule]] = None,
     ):
         super().__init__()
         self.ethchain = ethchain
+        self.alethio = alethio
         self.msg_aggregator = msg_aggregator
         self.owned_eth_tokens = owned_eth_tokens
         self.accounts = blockchain_accounts
@@ -200,18 +210,25 @@ class ChainManager(CacheableObject, LockableQueryObject):
         """Queries blockchain.info for the balance of account
 
         May raise:
-        - RemotError if there is a problem querying blockchain.info
+        - RemotError if there is a problem querying blockchain.info or blockcypher
         """
         try:
-            btc_resp = request_get_direct(
-                url='https://blockchain.info/q/addressbalance/%s' % account,
-                handle_429=True,
-                # If we get a 429 then their docs suggest 10 seconds
-                # https://blockchain.info/q
-                backoff_in_seconds=10,
-            )
+            if account.lower()[0:3] == 'bc1':
+                url = f'https://api.blockcypher.com/v1/btc/main/addrs/{account.lower()}/balance'
+                response_data = request_get(url=url)
+                if 'balance' not in response_data:
+                    raise RemoteError(f'Unexpected blockcypher balance response: {response_data}')
+                btc_resp = response_data['balance']
+            else:
+                btc_resp = request_get_direct(
+                    url='https://blockchain.info/q/addressbalance/%s' % account,
+                    handle_429=True,
+                    # If we get a 429 then their docs suggest 10 seconds
+                    # https://blockchain.info/q
+                    backoff_in_seconds=10,
+                )
         except (requests.exceptions.ConnectionError, UnableToDecryptRemoteData) as e:
-            raise RemoteError(f'blockchain.info API request failed due to {str(e)}')
+            raise RemoteError(f'bitcoin external API request failed due to {str(e)}')
 
         return satoshis_to_btc(FVal(btc_resp))  # result is in satoshis
 
@@ -434,36 +451,14 @@ class ChainManager(CacheableObject, LockableQueryObject):
             self.totals[A_ETH].amount = add_or_sub(self.totals[A_ETH].amount, amount)
             self.totals[A_ETH].usd_value = add_or_sub(self.totals[A_ETH].usd_value, usd_value)
 
-        for token in self.owned_eth_tokens:
-            try:
-                usd_price = Inquirer().find_usd_price(token)
-            except RemoteError:
-                usd_price = Price(ZERO)
-            if usd_price == ZERO:
-                # skip tokens that have no price
-                continue
-
-            if append_or_remove == 'remove' and token not in self.totals:
-                # If we remove an account, and the token has no totals entry skip
-                continue
-
-            token_balance = ChainManager._query_token_balances(
-                token_asset=token,
-                query_callback=self.ethchain.get_token_balance,
-                argument=account,
-            )
-            if token_balance == 0:
-                continue
-
-            usd_value = token_balance * usd_price
-            if append_or_remove == 'append':
-                eth_acc = self.balances.eth[account]
-                eth_acc.asset_balances[token] = Balance(amount=token_balance, usd_value=usd_value)
-                eth_acc.increase_total_usd_value(usd_value)
-
-            self.totals[token] = Balance(
-                amount=add_or_sub(self.totals[token].amount, token_balance),
-                usd_value=add_or_sub(self.totals[token].usd_value, usd_value),
+        action = AccountAction.APPEND if append_or_remove == 'append' else AccountAction.REMOVE
+        try:
+            self._query_ethereum_tokens_alethio(action=action, given_accounts=[account])
+        except RemoteError:
+            self._query_ethereum_tokens_normal(
+                tokens=self.owned_eth_tokens,
+                action=action,
+                given_accounts=[account],
             )
 
     def add_blockchain_accounts(
@@ -610,11 +605,85 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         return self.get_balances_update()
 
-    def query_ethereum_tokens(
+    def _query_ethereum_tokens_alethio(
+            self,
+            action: AccountAction,
+            given_accounts: Optional[List[ChecksumEthAddress]] = None,
+    ):
+        """Queries ethereum tokens via Alethio which autodetects which tokens an account owns
+
+        By default queries all accounts but can also be given a specific list of
+        accounts to query.
+
+        May raise:
+        - RemoteError if there is a problem with querying alethio
+        """
+        token_usd_price = {}
+        token_totals = defaultdict(FVal)
+        eth_balances = self.balances.eth
+
+        accounts = given_accounts
+        if given_accounts is None:
+            accounts = self.accounts.eth
+
+        if action == AccountAction.APPEND:
+            add_or_sub = operator.add
+        elif action == AccountAction.REMOVE:
+            add_or_sub = operator.sub
+        else:
+            add_or_sub = None
+
+        for account in accounts:
+            balances = self.alethio.get_token_balances(account)
+            for token, balance in balances.items():
+                if balance != ZERO:
+                    try:
+                        usd_price = token_usd_price.get(
+                            token,
+                            Inquirer().find_usd_price(token),
+                        )
+                    except RemoteError:
+                        usd_price = Price(ZERO)
+
+                    token_usd_price[token] = usd_price
+                    if usd_price == ZERO:
+                        # skip tokens that have no price
+                        continue
+                    usd_value = balance * usd_price
+                    if action == AccountAction.QUERY or action == AccountAction.APPEND:
+                        eth_balances[account].asset_balances[token] = Balance(
+                            amount=balance,
+                            usd_value=usd_value,
+                        )
+                        eth_balances[account].increase_total_usd_value(usd_value)
+                    token_totals[token] = token_totals[token] + balance
+
+        for token, balance in token_totals.items():
+            if balance != ZERO:
+                if action == AccountAction.QUERY:
+                    self.totals[token] = Balance(
+                        amount=balance,
+                        usd_value=balance * token_usd_price[token],
+                    )
+                else:
+                    self.totals[token] = Balance(
+                        amount=add_or_sub(self.totals[token].amount, balance),
+                        usd_value=add_or_sub(
+                            self.totals[token].usd_value,
+                            balance * token_usd_price[token],
+                        ),
+                    )
+
+    def _query_ethereum_tokens_normal(
             self,
             tokens: List[EthereumToken],
-    ) -> None:
-        """Queries the ethereum token balances and populates the state
+            action: AccountAction,
+            given_accounts: Optional[List[ChecksumEthAddress]] = None,
+    ):
+        """Queries ethereum token balance via either etherscan or ethereum node
+
+        By default queries all accounts but can also be given a specific list of
+        accounts to query.
 
         May raise:
         - RemoteError if an external service such as Etherscan or cryptocompare
@@ -624,6 +693,17 @@ class ChainManager(CacheableObject, LockableQueryObject):
         """
         token_balances = {}
         token_usd_price = {}
+        accounts = given_accounts
+        if given_accounts is None:
+            accounts = self.accounts.eth
+
+        if action == AccountAction.APPEND:
+            add_or_sub = operator.add
+        elif action == AccountAction.REMOVE:
+            add_or_sub = operator.sub
+        else:
+            add_or_sub = None
+
         for token in tokens:
             try:
                 usd_price = Inquirer().find_usd_price(token)
@@ -634,11 +714,16 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 continue
             token_usd_price[token] = usd_price
 
+            if action == AccountAction.REMOVE and token not in self.totals:
+                # If we remove an account, and the token has no totals entry skip
+                token_balances[token] = {}
+                continue
+
             try:
                 token_balances[token] = ChainManager._query_token_balances(
                     token_asset=token,
                     query_callback=self.ethchain.get_multitoken_balance,
-                    argument=self.accounts.eth,
+                    argument=accounts,
                 )
             except BadFunctionCallOutput as e:
                 log.error(
@@ -657,18 +742,54 @@ class ChainManager(CacheableObject, LockableQueryObject):
                 token_total += balance
                 usd_value = balance * token_usd_price[token]
                 if balance != ZERO:
-                    eth_balances[account].asset_balances[token] = Balance(
-                        amount=balance,
-                        usd_value=usd_value,
-                    )
-                    eth_balances[account].increase_total_usd_value(usd_value)
+                    if action == AccountAction.QUERY or action == AccountAction.APPEND:
+                        eth_balances[account].asset_balances[token] = Balance(
+                            amount=balance,
+                            usd_value=usd_value,
+                        )
+                        eth_balances[account].increase_total_usd_value(usd_value)
 
-            self.totals[token] = Balance(
-                amount=token_total,
-                usd_value=token_total * token_usd_price[token],
+            if action == AccountAction.QUERY:
+                self.totals[token] = Balance(
+                    amount=token_total,
+                    usd_value=token_total * token_usd_price[token],
+                )
+            else:
+                if action == AccountAction.REMOVE and token not in self.totals:
+                    # Removing the only account that holds this token
+                    self.totals[token] = Balance(amount=ZERO, usd_value=ZERO)
+                else:
+                    self.totals[token] = Balance(
+                        amount=add_or_sub(self.totals[token].amount, token_total),
+                        usd_value=add_or_sub(
+                            self.totals[token].usd_value,
+                            token_total * token_usd_price[token],
+                        ),
+                    )
+
+    def query_ethereum_tokens(
+            self,
+            tokens: List[EthereumToken],
+    ) -> None:
+        """Queries the ethereum token balances and populates the state
+
+        May raise:
+        - RemoteError if an external service such as Etherscan or cryptocompare
+        is queried and there is a problem with its query.
+        - EthSyncError if querying the token balances through a provided ethereum
+        client and the chain is not synced
+        """
+        try:
+            self._query_ethereum_tokens_alethio(action=AccountAction.QUERY)
+        except RemoteError as e:
+            log.debug(
+                f'Alethio accounts token balances query failed: {str(e)}. '
+                f'Switching to etherscan/own node query.',
             )
+            self._query_ethereum_tokens_normal(tokens, action=AccountAction.QUERY)
 
         # If we have anything in DSR also count it towards total blockchain balances
+        eth_balances = self.balances.eth
         makerdao = self.eth_modules.get('makerdao', None)
         if makerdao:
             additional_total_dai = FVal(0)

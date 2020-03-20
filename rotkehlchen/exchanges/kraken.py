@@ -70,7 +70,11 @@ def kraken_to_world_pair(pair: str) -> TradePair:
     if pair[-2:] == '.d':
         pair = pair[:-2]
 
-    if pair == 'ETHDAI':
+    if len(pair) == 6 and pair[0:3] in ('EUR', 'USD'):
+        # This is for the FIAT to FIAT pairs that kraken introduced
+        base_asset_str = pair[0:3]
+        quote_asset_str = pair[3:]
+    elif pair == 'ETHDAI':
         return trade_pair_from_assets(base=A_ETH, quote=A_DAI)
     elif pair[0:2] in KRAKEN_TO_WORLD:
         base_asset_str = pair[0:2]

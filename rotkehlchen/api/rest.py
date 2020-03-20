@@ -292,7 +292,7 @@ class RestAPI():
     def get_fiat_exchange_rates(currencies: Optional[List[Asset]]) -> Response:
         if currencies is not None and len(currencies) == 0:
             return api_response(
-                wrap_in_fail_result('Empy list of currencies provided'),
+                wrap_in_fail_result('Empty list of currencies provided'),
                 status_code=HTTPStatus.BAD_REQUEST,
             )
         rates = Inquirer().get_fiat_usd_exchange_rates(currencies)
@@ -1026,7 +1026,7 @@ class RestAPI():
     @require_loggedin_user()
     def get_eth_tokens(self) -> Response:
         result_dict = process_result({
-            'all_eth_tokens': self.rotkehlchen.data.eth_tokens,
+            'all_eth_tokens': self.rotkehlchen.all_eth_tokens,
             'owned_eth_tokens': self.rotkehlchen.chain_manager.eth_tokens,
         })
         return api_response(

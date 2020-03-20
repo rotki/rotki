@@ -6,6 +6,7 @@ import {
 } from 'vue-cli-plugin-electron-builder/lib';
 import PyHandler from './py-handler';
 import MenuItemConstructorOptions = Electron.MenuItemConstructorOptions;
+import windowStateKeeper from 'electron-window-state';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
@@ -23,14 +24,23 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 function createWindow() {
+  // set default window Width and Height in case not specific
+  let mainWindowState = windowStateKeeper({
+    defaultWidth: 1200,
+    defaultHeight: 800
+  });
+
   // Create the browser window.
   win = new BrowserWindow({
-    width: 800,
-    height: 600,
+    x: mainWindowState.x, // defaults to middle of the screen if not specified
+    y: mainWindowState.y, // defaults to middle of the screen if not specified
+    width: mainWindowState.width,
+    height: mainWindowState.height,
     webPreferences: {
       nodeIntegration: true
     }
   });
+
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     pyHandler.setCorsURL(process.env.WEBPACK_DEV_SERVER_URL);
     // Load the url of the dev server if in development mode
@@ -65,6 +75,9 @@ function createWindow() {
     Menu.setApplicationMenu(Menu.buildFromTemplate(template));
   }
 
+  // Register and deregister listeners to window events (resize, move, close) so that window state is saved
+  mainWindowState.manage(win);
+
   win.on('closed', async () => {
     win = null;
   });
@@ -75,11 +88,7 @@ function createWindow() {
 }
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
-  // On macOS it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
     app.quit();
-  }
 });
 app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
@@ -109,6 +118,7 @@ app.on('will-quit', async e => {
     app.exit();
   }
 });
+
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
   if (process.platform === 'win32') {

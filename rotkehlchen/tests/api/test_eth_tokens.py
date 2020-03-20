@@ -85,7 +85,7 @@ def test_adding_ethereum_tokens(
     )
 
     # Add RDN and MKR as tracked tokens and make sure that the rdn balance checks out
-    with setup.etherscan_patch:
+    with setup.etherscan_patch, setup.alethio_patch:
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
             "ethereumtokensresource",
@@ -125,7 +125,7 @@ def test_adding_ethereum_tokens_async(
     )
 
     # Add RDN and MKR as tracked tokens and make sure that the rdn balance checks out
-    with setup.etherscan_patch:
+    with setup.etherscan_patch, setup.alethio_patch:
         response = requests.put(api_url_for(
             rotkehlchen_api_server,
             "ethereumtokensresource",
@@ -163,7 +163,7 @@ def check_modifying_eth_tokens_error_responses(
     ), json={'eth_tokens': {}})
     assert_error_response(
         response=response,
-        contained_in_msg='Tried to initialize an asset out of a non-string identifier',
+        contained_in_msg="'eth_tokens': ['Not a valid list.'",
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # See that providing invalid type for eth_tokens is an error
@@ -173,7 +173,7 @@ def check_modifying_eth_tokens_error_responses(
     ), json={'eth_tokens': {}})
     assert_error_response(
         response=response,
-        contained_in_msg='Tried to initialize an asset out of a non-string identifier',
+        contained_in_msg="'eth_tokens': ['Not a valid list.'",
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # See that providing invalid type for a single eth token is an error
@@ -234,7 +234,7 @@ def test_removing_ethereum_tokens(
     )
 
     # Remove GNO and RDN as tracked tokens and make sure that the dai balance checks out
-    with setup.etherscan_patch:
+    with setup.etherscan_patch, setup.alethio_patch:
         response = requests.delete(api_url_for(
             rotkehlchen_api_server,
             "ethereumtokensresource",
@@ -273,7 +273,7 @@ def test_removing_ethereum_tokens_async(
     )
 
     # Remove GNO and RDN as tracked tokens and make sure that the dai balance checks out
-    with setup.etherscan_patch:
+    with setup.etherscan_patch, setup.alethio_patch:
         response = requests.delete(api_url_for(
             rotkehlchen_api_server,
             "ethereumtokensresource",

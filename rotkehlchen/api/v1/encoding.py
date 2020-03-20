@@ -1,10 +1,12 @@
 from pathlib import Path
 from typing import Any, Callable, Dict
 
+import marshmallow
+import webargs
 from eth_utils import is_checksum_address
 from marshmallow import Schema, SchemaOpts, fields, post_load, validates_schema
 from marshmallow.exceptions import ValidationError
-from webargs import fields as webargs_fields, validate
+from webargs.compat import MARSHMALLOW_VERSION_INFO
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.bitcoin import is_valid_btc_address
@@ -35,6 +37,40 @@ from rotkehlchen.typing import (
     TradeType,
 )
 from rotkehlchen.utils.misc import ts_now
+
+
+class DelimitedOrNormalList(webargs.fields.DelimitedList):
+    """This is equal to DelimitedList in webargs v5.6.0
+
+    Essentially accepting either a delimited string or a list-like object
+
+    We introduce it due to them implementing https://github.com/marshmallow-code/webargs/issues/423
+    """
+
+    def __init__(self, cls_or_instance, *, delimiter=None, **kwargs):
+        super().__init__(cls_or_instance, **kwargs)
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        """Adjusting code for _deserialize so that it also works for list-like objects
+
+        Adjusting code from
+        https://github.com/marshmallow-code/webargs/blob/dev/src/webargs/fields.py#L71
+        so that it uses the list-like detection seen in
+        https://github.com/marshmallow-code/webargs/blob/f1ae764973b6492e3c69109060c95240b7cc3d41/src/webargs/fields.py#L69
+        which was removed as part of https://github.com/marshmallow-code/webargs/issues/423
+        """
+        try:
+            ret = (
+                value
+                if marshmallow.utils.is_iterable_but_not_string(value)
+                else value.split(self.delimiter)
+            )
+        except AttributeError:
+            if MARSHMALLOW_VERSION_INFO[0] < 3:
+                self.fail("invalid")
+            else:
+                raise self.make_error("invalid")
+        return super(webargs.fields.DelimitedList, self)._deserialize(ret, attr, data, **kwargs)
 
 
 class TimestampField(fields.Field):
@@ -601,7 +637,7 @@ class ModifiableSettingsSchema(BaseSchema):
     submit_usage_analytics = fields.Bool(missing=None)
     ui_floating_precision = fields.Integer(
         strict=True,
-        validate=validate.Range(
+        validate=webargs.validate.Range(
             min=0,
             max=8,
             error='Floating numbers precision in the UI must be between 0 and 8',
@@ -611,7 +647,7 @@ class ModifiableSettingsSchema(BaseSchema):
     taxfree_after_period = TaxFreeAfterPeriodField(missing=None)
     balance_save_frequency = fields.Integer(
         strict=True,
-        validate=validate.Range(
+        validate=webargs.validate.Range(
             min=1,
             error='The number of hours after which balances should be saved should be >= 1',
         ),
@@ -649,10 +685,10 @@ class UserActionSchema(BaseSchema):
     password = fields.String(missing=None)
     sync_approval = fields.String(
         missing='unknown',
-        validate=validate.OneOf(choices=('unknown', 'yes', 'no')),
+        validate=webargs.validate.OneOf(choices=('unknown', 'yes', 'no')),
     )
     action = fields.String(
-        validate=validate.OneOf(choices=('login', 'logout')),
+        validate=webargs.validate.OneOf(choices=('login', 'logout')),
         missing=None,
     )
     premium_api_key = fields.String(missing='')
@@ -788,7 +824,7 @@ class StatisticsAssetBalanceSchema(BaseSchema):
 class StatisticsValueDistributionSchema(BaseSchema):
     distribution_by = fields.String(
         required=True,
-        validate=validate.OneOf(choices=('location', 'asset')),
+        validate=webargs.validate.OneOf(choices=('location', 'asset')),
     )
 
     class Meta:
@@ -928,7 +964,7 @@ class IgnoredAssetsSchema(BaseSchema):
 class DataImportSchema(BaseSchema):
     source = fields.String(
         required=True,
-        validate=validate.OneOf(choices=('cointracking.info',)),
+        validate=webargs.validate.OneOf(choices=('cointracking.info',)),
     )
     filepath = FileField(required=True)
 
@@ -939,7 +975,7 @@ class DataImportSchema(BaseSchema):
 
 
 class FiatExchangeRatesSchema(BaseSchema):
-    currencies = webargs_fields.DelimitedList(FiatAssetField(), missing=None)
+    currencies = DelimitedOrNormalList(FiatAssetField(), missing=None)
 
     class Meta:
         strict = True

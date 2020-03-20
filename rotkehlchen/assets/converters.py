@@ -371,6 +371,16 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # Forkspot. As for 01/03/2020 no data found outside of Bittrex for this token
     # https://global.bittrex.com/Market/Index?MarketName=BTC-FRSP
     'FRSP',
+    # Universal Protocol Token. As of 19/03/2020 no data found outside of Bittrex for this token.
+    # https://global.bittrex.com/Market/Index?MarketName=BTC-UPT
+    'UPT',
+    # Universal USD and EUR. As of 19/03/2020 no data found outside of Bittrex for this token.
+    # https://global.bittrex.com/Market/Index?MarketName=BTC-UPUSD
+    'UPEUR',
+    'UPUSD',
+    # Vanywhere. As of 19/03/2020 no data found outside of Bittrex for this token.
+    # https://global.bittrex.com/Market/Index?MarketName=BTC-VANY
+    'VANY',
 )
 
 
@@ -394,6 +404,8 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'EOSBEAR',  # https://www.binance.com/en/support/articles/360039712431
     'XRPBULL',  # https://www.binance.com/en/support/articles/360039712431
     'XRPBEAR',  # https://www.binance.com/en/support/articles/360039712431
+    'BNBBULL',  # https://www.binance.com/en/support/articles/360040821111
+    'BNBBEAR',  # https://www.binance.com/en/support/articles/360040821111
     'WRX',  # https://info.binance.com/en/currencies/WRX - not listed anywhere else
 )
 

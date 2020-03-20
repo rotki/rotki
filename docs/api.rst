@@ -312,7 +312,8 @@ Getting or modifying external services API credentials
       {
           "result": {
               "etherscan": {"api_key": "foooooookey"},
-              "cryptocompare": {"api_key": "boooookey"}
+              "cryptocompare": {"api_key": "boooookey"},
+              "alethio": {"api_key": "goooookey"}
           },
           "message": ""
       }
@@ -343,7 +344,7 @@ Getting or modifying external services API credentials
       }
 
    :reqjson list services: The services parameter is a list of services along with their api keys.
-   :reqjsonarr string name: Each entry in the list should have a name for the service. Valid ones are ``"etherscan"`` and ``"cryptocompare"``.
+   :reqjsonarr string name: Each entry in the list should have a name for the service. Valid ones are ``"etherscan"``, ``"cryptocompare"`` and ``"alethio"``.
    :reqjsonarr string api_key: Each entry in the list should have an api_key entry
 
    **Example Response**:
@@ -389,7 +390,7 @@ Getting or modifying external services API credentials
           "services": ["etherscan"]
       }
 
-   :reqjson list services: A list of service names to delete. The only possible names at the moment are ``"etherscan"`` and ``"cryptocompare"``.
+   :reqjson list services: A list of service names to delete. The only possible names at the moment are ``"etherscan"``, ``"cryptocompare"`` and ``"alethio"``.
 
    **Example Response**:
 
@@ -676,7 +677,7 @@ Query the current fiat currencies exchange rate
 
       {"currencies": ["EUR", "CNY", "GBP"]}
 
-   :query strings-list currencies: A comma separated list of fiat currencies to query.
+   :query strings-list currencies: A comma separated list of fiat currencies to query. e.g.: /api/1/fiat_exchange_rates?currencies=EUR,CNY,GBP
    :reqjson list currencies: A list of fiat currencies to query
 
    **Example Response**:
