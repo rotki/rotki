@@ -15,5 +15,6 @@ export const exchanges = [
   'bitmex',
   'binance',
   'coinbase',
-  'coinbasepro'
+  'coinbasepro',
+  'gemini'
 ];
