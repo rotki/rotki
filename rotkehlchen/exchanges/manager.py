@@ -21,6 +21,7 @@ SUPPORTED_EXCHANGES = [
     'binance',
     'coinbase',
     'coinbasepro',
+    'gemini',
 ]
 
 
