@@ -160,7 +160,7 @@ class Etherscan(ExternalServiceWithApiKey):
 
         logger.debug(f'Querying etherscan: {query_str}')
         backoff = 1
-        backoff_limit = 13
+        backoff_limit = 65
         while backoff < backoff_limit:
             try:
                 response = self.session.get(query_str)
@@ -211,8 +211,8 @@ class Etherscan(ExternalServiceWithApiKey):
                         backoff = backoff * 2
                         if backoff >= backoff_limit:
                             raise RemoteError(
-                                'Etherscan keeps returning rate limit errors even '
-                                'after we incrementally backed off',
+                                f'Etherscan keeps returning rate limit errors even '
+                                f'after we incrementally backed off: {response.text}',
                             )
                         continue
 
