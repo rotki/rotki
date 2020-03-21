@@ -28,7 +28,7 @@ class FVal():
             elif isinstance(data, bytes):
                 # assume it's an ascii string and try to decode the bytes to one
                 self.num = Decimal(data.decode())
-            elif isinstance(data, bool):
+            elif isinstance(data, bool):  # type: ignore
                 # This elif has to come before the isinstance(int) check due to
                 # https://stackoverflow.com/questions/37888620/comparing-boolean-and-int-using-isinstance
                 raise ValueError(f'Invalid type bool for data given to FVal constructor')
