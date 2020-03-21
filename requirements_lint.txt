@@ -3,13 +3,13 @@ mypy-extensions==0.4.3
 pylint==2.4.4
 flake8==3.7.9
 flake8-commas==2.0.0
-flake8-bugbear==20.1.2
+flake8-bugbear==20.1.4
 flake8-tuple==0.4.1
 flake8-comprehensions==3.2.2
 flake8-debugger==3.2.1
 flake8-executable==2.0.3
 flake8-mutable==1.2.0
-pep8-naming==0.9.1
-isort==4.3.4
+pep8-naming==0.10.0
+isort==4.3.21
 # Required for the ethereum related typing
 eth-utils==1.8.0
