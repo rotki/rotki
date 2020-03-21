@@ -31,13 +31,14 @@ def mock_gemini(
         database,
         inquirer,  # pylint: disable=unused-argument
         function_scope_messages_aggregator,
+        base_uri,
 ):
     gemini = _make_test_gemini(
         api_key='account-1aIn3XkiCdSZH2jiooMg',
         secret=b'361FMLZrVWf2TrHPtVEmRFmBovyq',
         database=database,
         msg_aggregator=function_scope_messages_aggregator,
-        base_uri='https://api.sandbox.gemini.com',
+        base_uri=base_uri,
     )
     gemini.first_connection_made = True
     return gemini
@@ -54,18 +55,24 @@ def gemini_sandbox_api_secret():
 
 
 @pytest.fixture
+def gemini_test_base_uri():
+    return 'https://api.sandbox.gemini.com'
+
+
+@pytest.fixture
 def sandbox_gemini(
         database,
         inquirer,  # pylint: disable=unused-argument
         function_scope_messages_aggregator,
         gemini_sandbox_api_key,
         gemini_sandbox_api_secret,
+        gemini_test_base_uri,
 ):
     gemini = Gemini(
         api_key=gemini_sandbox_api_key,
         secret=gemini_sandbox_api_secret,
         database=database,
         msg_aggregator=function_scope_messages_aggregator,
-        base_uri='https://api.sandbox.gemini.com',
+        base_uri=gemini_test_base_uri,
     )
     return gemini

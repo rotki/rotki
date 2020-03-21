@@ -51,6 +51,21 @@ class GeminiPermissionError(Exception):
     pass
 
 
+def gemini_symbol_to_pair(symbol: str) -> TradePair:
+    """Turns a gemini symbol product into our trade pair format
+
+    - Can raise UnprocessableTradePair if symbol is in unexpected format
+    - Case raise UnknownAsset if any of the pair assets are not known to Rotki
+    """
+    if len(symbol) != 6:
+        raise UnprocessableTradePair(symbol)
+
+    base_asset = Asset(symbol[:3].upper())
+    quote_asset = Asset(symbol[3:6].upper())
+
+    return TradePair(f'{base_asset.identifier}_{quote_asset.identifier}')
+
+
 class Gemini(ExchangeInterface):
 
     def __init__(
@@ -79,7 +94,7 @@ class Gemini(ExchangeInterface):
         - Auditor
         """
         try:
-            self._api_query('balances')
+            self._private_api_query('balances')
         except GeminiPermissionError:
             msg = (
                 f'Provided Gemini API key needs to have "Auditor" permission activated. '
@@ -93,13 +108,66 @@ class Gemini(ExchangeInterface):
 
         return True, ''
 
-    def _api_query(  # noqa: F811
+    def _query_continuously(self, method: Literal['get', 'post'], url: str):
+        """Queries endpoint until anything but 429 is returned
+
+        May raise:
+        - RemoteError if something is wrong connecting to the exchange
+        """
+        retries_left = QUERY_RETRY_TIMES
+        while retries_left > 0:
+            try:
+                response = self.session.request(method=method, url=url)
+            except requests.exceptions.ConnectionError as e:
+                raise RemoteError(f'Gemini {method} query at {url} connection error: {str(e)}')
+
+            if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+                # Backoff a bit by sleeping. Sleep more, the more retries have been made
+                gevent.sleep(QUERY_RETRY_TIMES / retries_left)
+                retries_left -= 1
+            else:
+                # get out of the retry loop, we did not get 429 complaint
+                break
+
+        return response
+
+    def _public_api_query(
+            self,
+            endpoint: str,
+    ) -> List[Any]:
+        """Performs a Gemini API Query for a public endpoint
+
+        You can optionally provide extra arguments to the endpoint via the options argument.
+
+        Raises RemoteError if something went wrong with connecting or reading from the exchange
+        """
+        endpoint = f'/v1/{endpoint}'
+        url = f'{self.base_uri}/{endpoint}'
+
+        response = self._query_continuously(method='get', url=url)
+        if response.status_code != HTTPStatus.OK:
+            raise RemoteError(
+                f'Gemini query at {url} responded with error '
+                f'status code: {response.status_code} and text: {response.text}',
+            )
+
+        try:
+            json_ret = rlk_jsonloads_list(response.text)
+        except JSONDecodeError:
+            raise RemoteError(
+                f'Gemini  query at {url} '
+                f'returned invalid JSON response: {response.text}',
+            )
+
+        return json_ret
+
+    def _private_api_query(
             self,
             endpoint: str,
             request_method: Literal['GET', 'POST'] = 'GET',
             options: Optional[Dict[str, Any]] = None,
-    ) -> Union[List[Any], Dict[str, Any]]:
-        """Performs a Gemini API Query for endpoint
+    ) -> List[Any]:
+        """Performs a Gemini API Query for a private endpoint
 
         You can optionally provide extra arguments to the endpoint via the options argument.
 
@@ -120,23 +188,8 @@ class Gemini(ExchangeInterface):
             'X-GEMINI-PAYLOAD': b64,
             'X-GEMINI-SIGNATURE': signature,
         })
-        response = requests.post(url)
 
-        retries_left = QUERY_RETRY_TIMES
-        while retries_left > 0:
-            try:
-                response = self.session.post(url)
-            except requests.exceptions.ConnectionError as e:
-                raise RemoteError(f'Gemini query at {url} connection error: {str(e)}')
-
-            if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
-                # Backoff a bit by sleeping. Sleep more, the more retries have been made
-                gevent.sleep(QUERY_RETRY_TIMES / retries_left)
-                retries_left -= 1
-            else:
-                # get out of the retry loop, we did not get 429 complaint
-                break
-
+        response = self._query_continuously(method='post', url=url)
         json_ret: Union[List[Any], Dict[str, Any]]
         if response.status_code == HTTPStatus.FORBIDDEN:
             raise GeminiPermissionError(
@@ -167,7 +220,7 @@ class Gemini(ExchangeInterface):
     @cache_response_timewise()
     def query_balances(self) -> Tuple[Optional[Dict[Asset, Dict[str, Any]]], str]:
         try:
-            balances = self._api_query('balances')
+            balances = self._private_api_query('balances')
         except (GeminiPermissionError, RemoteError) as e:
             msg = f'Gemini API request failed. {str(e)}'
             log.error(msg)
