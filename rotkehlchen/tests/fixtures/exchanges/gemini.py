@@ -5,6 +5,10 @@ from rotkehlchen.exchanges.gemini import Gemini
 SANDBOX_GEMINI_API_KEY = 'account-1eIn3XjiCdSZH2jizoNg'
 SANDBOX_GEMINI_API_SECRET = b'26NFMLWrVWf1TrHQtVExRFmBovnq'
 
+# Key with wrong permissions (Trader instead of auditor)
+SANDBOX_GEMINI_WP_API_KEY = 'account-TDwgWRVnQqvsHDphwCUD'
+SANDBOX_GEMINI_WP_API_SECRET = b'2ohngowRpWc2qnXpFj1TEur9xoww'
+
 
 def _make_test_gemini(
         api_key,
@@ -41,12 +45,12 @@ def mock_gemini(
 
 @pytest.fixture
 def gemini_sandbox_api_key():
-    return 'account-1eIn3XjiCdSZH2jizoNg'
+    return SANDBOX_GEMINI_API_KEY
 
 
 @pytest.fixture
 def gemini_sandbox_api_secret():
-    return b'26NFMLWrVWf1TrHQtVExRFmBovnq'
+    return SANDBOX_GEMINI_API_SECRET
 
 
 @pytest.fixture

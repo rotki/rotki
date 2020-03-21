@@ -1,7 +1,35 @@
+import pytest
+
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_LTC, A_ZEC
+
+
+@pytest.mark.parametrize('gemini_sandbox_api_secret', [b'16NFMLWrVWf1TrHQtVExRFmBovnq'])
+def test_gemini_wrong_secret(sandbox_gemini):
+    """Test that giving wrong api secret is detected
+
+    Uses the Gemini sandbox
+    """
+    result, _ = sandbox_gemini.validate_api_key()
+    assert not result
+    balances, msg = sandbox_gemini.query_balances()
+    assert balances is None
+    assert 'Invalid API Key or API secret' in msg
+
+
+@pytest.mark.parametrize('gemini_sandbox_api_key', ['fddad'])
+def test_gemini_wrong_key(sandbox_gemini):
+    """Test that giving wrong api key is detected
+
+    Uses the Gemini sandbox
+    """
+    result, _ = sandbox_gemini.validate_api_key()
+    assert not result
+    balances, msg = sandbox_gemini.query_balances()
+    assert balances is None
+    assert 'Invalid API Key or API secret' in msg
 
 
 def test_gemini_query_balances(sandbox_gemini):
@@ -9,7 +37,8 @@ def test_gemini_query_balances(sandbox_gemini):
 
     Uses the Gemini sandbox
     """
-    balances = sandbox_gemini.query_balances()
+    balances, msg = sandbox_gemini.query_balances()
+    assert msg == ''
     assert len(balances) == 6
     assert balances[A_USD]['amount'] == FVal('96675.37185')
     assert balances[A_USD]['usd_value'] == balances[A_USD]['amount']
