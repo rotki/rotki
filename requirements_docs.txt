@@ -1,6 +1,4 @@
-# This is the last release supported by releases. When
-# releases supports higher sphinx versions switch to them
-sphinx==1.8
+sphinx==2.4.4
 sphinx-autobuild==0.7.1
 sphinx_rtd_theme==0.4.3
 sphinxcontrib-httpdomain==1.7.0
