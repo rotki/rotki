@@ -2,6 +2,7 @@ import pytest
 
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_USD
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.exchanges.gemini import gemini_symbol_to_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_LTC, A_ZEC
 
@@ -30,6 +31,18 @@ def test_gemini_wrong_key(sandbox_gemini):
     balances, msg = sandbox_gemini.query_balances()
     assert balances is None
     assert 'Invalid API Key or API secret' in msg
+
+
+@pytest.mark.parametrize('gemini_test_base_uri', ['https://api.gemini.com'])
+def test_gemini_all_symbols_are_known(sandbox_gemini):
+    """Test that the gemini trade pairs are all supported by Rotki
+
+    Use the real gemini API
+    """
+    symbols = sandbox_gemini._public_api_query('symbols')
+    for symbol in symbols:
+        pair = gemini_symbol_to_pair(symbol)
+        assert pair is not None
 
 
 def test_gemini_query_balances(sandbox_gemini):
