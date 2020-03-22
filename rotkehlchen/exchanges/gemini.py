@@ -2,7 +2,6 @@ import hashlib
 import hmac
 import json
 import logging
-import time
 from base64 import b64encode
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
@@ -13,7 +12,6 @@ import requests
 from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.db.dbhandler import DBHandler
@@ -24,23 +22,21 @@ from rotkehlchen.errors import (
     UnprocessableTradePair,
     UnsupportedAsset,
 )
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
-from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
-    deserialize_asset_movement_category,
     deserialize_fee,
     deserialize_price,
-    deserialize_timestamp_from_date,
+    deserialize_timestamp,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Location, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
-from rotkehlchen.utils.misc import timestamp_to_iso8601, ts_now
+from rotkehlchen.utils.misc import ts_now_in_ms
 from rotkehlchen.utils.serialization import rlk_jsonloads_list
 
 logger = logging.getLogger(__name__)
@@ -87,6 +83,14 @@ class Gemini(ExchangeInterface):
             'Content-Length': '0',
         })
 
+    def first_connection(self) -> None:
+        if self.first_connection_made:
+            return
+
+        # If it's the first time, populate the gemini trade symbols
+        self._symbols = self._public_api_query('symbols')
+        self.first_connection_made = True
+
     def validate_api_key(self) -> Tuple[bool, str]:
         """Validates that the Gemini API key is good for usage in Rotki
 
@@ -108,14 +112,39 @@ class Gemini(ExchangeInterface):
 
         return True, ''
 
-    def _query_continuously(self, method: Literal['get', 'post'], url: str):
+    @property
+    def symbols(self) -> List[str]:
+        self.first_connection()
+        return self._symbols
+
+    def _query_continuously(
+            self,
+            method: Literal['get', 'post'],
+            endpoint: str,
+            options: Optional[Dict[str, Any]] = None):
         """Queries endpoint until anything but 429 is returned
 
         May raise:
         - RemoteError if something is wrong connecting to the exchange
         """
+        v_endpoint = f'/v1/{endpoint}'
+        url = f'{self.base_uri}{v_endpoint}'
         retries_left = QUERY_RETRY_TIMES
         while retries_left > 0:
+            if endpoint in ('mytrades', 'balances', 'transfers'):
+                # private endpoints
+                timestamp = str(ts_now_in_ms())
+                payload = {'request': v_endpoint, 'nonce': timestamp}
+                if options is not None:
+                    payload.update(options)
+                encoded_payload = json.dumps(payload).encode()
+                b64 = b64encode(encoded_payload)
+                signature = hmac.new(self.secret, b64, hashlib.sha384).hexdigest()
+                self.session.headers.update({
+                    'X-GEMINI-PAYLOAD': b64,
+                    'X-GEMINI-SIGNATURE': signature,
+                })
+
             try:
                 response = self.session.request(method=method, url=url)
             except requests.exceptions.ConnectionError as e:
@@ -141,13 +170,10 @@ class Gemini(ExchangeInterface):
 
         Raises RemoteError if something went wrong with connecting or reading from the exchange
         """
-        endpoint = f'/v1/{endpoint}'
-        url = f'{self.base_uri}/{endpoint}'
-
-        response = self._query_continuously(method='get', url=url)
+        response = self._query_continuously(method='get', endpoint=endpoint)
         if response.status_code != HTTPStatus.OK:
             raise RemoteError(
-                f'Gemini query at {url} responded with error '
+                f'Gemini query at {response.url} responded with error '
                 f'status code: {response.status_code} and text: {response.text}',
             )
 
@@ -155,7 +181,7 @@ class Gemini(ExchangeInterface):
             json_ret = rlk_jsonloads_list(response.text)
         except JSONDecodeError:
             raise RemoteError(
-                f'Gemini  query at {url} '
+                f'Gemini  query at {response.url} '
                 f'returned invalid JSON response: {response.text}',
             )
 
@@ -164,7 +190,6 @@ class Gemini(ExchangeInterface):
     def _private_api_query(
             self,
             endpoint: str,
-            request_method: Literal['GET', 'POST'] = 'GET',
             options: Optional[Dict[str, Any]] = None,
     ) -> List[Any]:
         """Performs a Gemini API Query for a private endpoint
@@ -175,21 +200,7 @@ class Gemini(ExchangeInterface):
         Raises GeminiPermissionError if the API Key does not have sufficient
         permissions for the endpoint
         """
-
-        endpoint = f'/v1/{endpoint}'
-        url = f'{self.base_uri}/{endpoint}'
-
-        timestamp = str(int(time.time()) * 1000)
-        payload = {'request': endpoint, 'nonce': timestamp}
-        encoded_payload = json.dumps(payload).encode()
-        b64 = b64encode(encoded_payload)
-        signature = hmac.new(self.secret, b64, hashlib.sha384).hexdigest()
-        self.session.headers.update({
-            'X-GEMINI-PAYLOAD': b64,
-            'X-GEMINI-SIGNATURE': signature,
-        })
-
-        response = self._query_continuously(method='post', url=url)
+        response = self._query_continuously(method='post', endpoint=endpoint, options=options)
         json_ret: Union[List[Any], Dict[str, Any]]
         if response.status_code == HTTPStatus.FORBIDDEN:
             raise GeminiPermissionError(
@@ -202,7 +213,7 @@ class Gemini(ExchangeInterface):
 
         if response.status_code != HTTPStatus.OK:
             raise RemoteError(
-                f'Gemini query at {url} responded with error '
+                f'Gemini query at {response.url} responded with error '
                 f'status code: {response.status_code} and text: {response.text}',
             )
 
@@ -210,7 +221,7 @@ class Gemini(ExchangeInterface):
             json_ret = rlk_jsonloads_list(response.text)
         except JSONDecodeError:
             raise RemoteError(
-                f'Gemini {request_method} query at {url} '
+                f'Gemini query at {response.url} '
                 f'returned invalid JSON response: {response.text}',
             )
 
@@ -234,7 +245,7 @@ class Gemini(ExchangeInterface):
                 if amount == ZERO:
                     continue
 
-                asset = asset_from_coinbase(entry['currency'])
+                asset = Asset(entry['currency'])
                 try:
                     usd_price = Inquirer().find_usd_price(asset=asset)
                 except RemoteError as e:
@@ -275,3 +286,88 @@ class Gemini(ExchangeInterface):
                 continue
 
         return returned_balances, ''
+
+    def _get_trades_for_symbol(
+            self,
+            symbol: str,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> List[Dict]:
+        try:
+            trades = self._private_api_query(
+                endpoint='mytrades',
+                options={'symbol': symbol, 'timestamp': start_ts},
+            )
+        except GeminiPermissionError as e:
+            self.msg_aggregator.add_error(
+                f'Got permission error while querying Gemini for trades: {str(e)}',
+            )
+            return []
+        except RemoteError as e:
+            self.msg_aggregator.add_error(
+                f'Got remote error while querying Gemini for trades: {str(e)}',
+            )
+            return []
+        return trades
+
+    def query_online_trade_history(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> List[Trade]:
+        """Queries gemini for trades
+        """
+        log.debug('Query gemini trade history', start_ts=start_ts, end_ts=end_ts)
+        trades = []
+        gemini_trades = []
+        for symbol in self.symbols:
+            gemini_trades = self._get_trades_for_symbol(
+                symbol=symbol,
+                start_ts=start_ts,
+                end_ts=end_ts,
+            )
+            for entry in gemini_trades:
+                try:
+                    timestamp = deserialize_timestamp(entry['timestamp'])
+                    if timestamp > end_ts:
+                        break
+
+                    trades.append(Trade(
+                        timestamp=timestamp,
+                        location=Location.GEMINI,
+                        pair=gemini_symbol_to_pair(symbol),
+                        trade_type=deserialize_trade_type(entry['type']),
+                        amount=deserialize_asset_amount(entry['amount']),
+                        rate=deserialize_price(entry['price']),
+                        fee=deserialize_fee(entry['fee_amount']),
+                        fee_currency=Asset(entry['fee_currency']),
+                        link=str(entry['tid']),
+                        notes='',
+                    ))
+                except UnprocessableTradePair as e:
+                    self.msg_aggregator.add_warning(
+                        f'Found unprocessable Gemini pair {e.pair}. Ignoring the trade.',
+                    )
+                    continue
+                except UnknownAsset as e:
+                    self.msg_aggregator.add_warning(
+                        f'Found unknown Gemini asset {e.asset_name}. '
+                        f'Ignoring the trade.',
+                    )
+                    continue
+                except (DeserializationError, KeyError) as e:
+                    msg = str(e)
+                    if isinstance(e, KeyError):
+                        msg = f'Missing key entry for {msg}.'
+                    self.msg_aggregator.add_error(
+                        'Failed to deserialize a gemini trade. '
+                        'Check logs for details. Ignoring it.',
+                    )
+                    log.error(
+                        'Error processing a gemini trade.',
+                        raw_trade=entry,
+                        error=msg,
+                    )
+                    continue
+
+        return trades

@@ -2,9 +2,12 @@ import pytest
 
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_USD
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
 from rotkehlchen.exchanges.gemini import gemini_symbol_to_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_LTC, A_ZEC
+from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp, TradePair
+from rotkehlchen.utils.misc import ts_now
 
 
 @pytest.mark.parametrize('gemini_sandbox_api_secret', [b'16NFMLWrVWf1TrHQtVExRFmBovnq'])
@@ -65,3 +68,36 @@ def test_gemini_query_balances(sandbox_gemini):
     assert balances[A_ZEC]['usd_value'] > ZERO
     assert balances[A_BCH]['amount'] == FVal('20000')
     assert balances[A_BCH]['usd_value'] > ZERO
+
+
+def test_gemini_query_trades(sandbox_gemini):
+    """Test that querying the trades endpoint works correctly
+
+    Uses the Gemini sandbox
+    """
+    trades = sandbox_gemini.query_trade_history(start_ts=0, end_ts=Timestamp(1584881354))
+    assert len(trades) == 2
+    assert trades[0] == Trade(
+        timestamp=Timestamp(1584720549),
+        location=Location.GEMINI,
+        pair='BTC_USD',
+        trade_type=TradeType.BUY,
+        amount=FVal('0.5'),
+        rate=FVal('6622.63'),
+        fee=FVal('33.11315'),
+        fee_currency=A_USD,
+        link='560627330',
+        notes='',
+    )
+    assert trades[1] == Trade(
+        timestamp=Timestamp(1584721109),
+        location=Location.GEMINI,
+        pair='ETH_USD',
+        trade_type=TradeType.SELL,
+        amount=FVal('1.0'),
+        rate=FVal('20.0'),
+        fee=FVal('0.2'),
+        fee_currency=A_USD,
+        link='560628883',
+        notes='',
+    )
