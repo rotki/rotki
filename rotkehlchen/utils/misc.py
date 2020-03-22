@@ -24,7 +24,7 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Fee, FilePath, Timestamp
+from rotkehlchen.typing import Fee, FilePath, Timestamp, TimestampMS
 from rotkehlchen.utils.serialization import rlk_jsondumps, rlk_jsonloads
 
 logger = logging.getLogger(__name__)
@@ -33,6 +33,10 @@ log = RotkehlchenLogsAdapter(logger)
 
 def ts_now() -> Timestamp:
     return Timestamp(int(time.time()))
+
+
+def ts_now_in_ms() -> TimestampMS:
+    return TimestampMS(int(time.time() * 1000))
 
 
 def create_timestamp(datestr: str, formatstr: str = '%Y-%m-%d %H:%M:%S') -> Timestamp:

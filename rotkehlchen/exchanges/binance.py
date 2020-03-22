@@ -32,7 +32,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import ApiKey, ApiSecret, AssetMovementCategory, Fee, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import ts_now, ts_now_in_ms
 from rotkehlchen.utils.serialization import rlk_jsonloads
 
 if TYPE_CHECKING:
@@ -227,7 +227,7 @@ class Binance(ExchangeInterface):
                     api_version = 3
                     # Recommended recvWindows is 5000 but we get timeouts with it
                     options['recvWindow'] = 10000
-                    options['timestamp'] = str(int(time.time() * 1000))
+                    options['timestamp'] = str(ts_now_in_ms())
                     signature = hmac.new(
                         self.secret,
                         urlencode(options).encode('utf-8'),
@@ -510,16 +510,15 @@ class Binance(ExchangeInterface):
         # in the deposit/withdrawal binance api? Can't see anything in the docs:
         # https://github.com/binance-exchange/binance-official-api-docs/blob/master/wapi-api.md#deposit-history-user_data
         #
-        # Note that all timestamps should be in milliseconds so since rotki timestamps
-        # are in seconds we have to multiply by 1k
+        # Note that all timestamps should be in milliseconds, so we multiply by 1k
         options = {
-            'timestamp': ts_now() * 1000,
+            'timestamp': ts_now_in_ms(),
             'startTime': start_ts * 1000,
             'endTime': end_ts * 1000,
         }
         result = self.api_query_dict('depositHistory.html', options=options)
         raw_data = result.get('depositList', [])
-        options['timestamp'] = ts_now() * 1000
+        options['timestamp'] = ts_now_in_ms()
         result = self.api_query_dict('withdrawHistory.html', options=options)
         raw_data.extend(result.get('withdrawList', []))
         log.debug('binance deposit/withdrawal history result', results_num=len(raw_data))

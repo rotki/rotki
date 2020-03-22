@@ -1,7 +1,6 @@
 import hashlib
 import hmac
 import logging
-import time
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, overload
 from urllib.parse import urlencode
@@ -48,6 +47,7 @@ from rotkehlchen.typing import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
+from rotkehlchen.utils.misc import ts_now_in_ms
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 if TYPE_CHECKING:
@@ -229,7 +229,7 @@ class Bittrex(ExchangeInterface):
         """
         if not options:
             options = {}
-        nonce = str(int(time.time() * 1000))
+        nonce = str(ts_now_in_ms())
         method_type = 'public'
 
         if method in BITTREX_MARKET_METHODS:
