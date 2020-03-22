@@ -2,7 +2,7 @@
 node_modules
 /dist
 
-/tests/e2e/reports/
+/tests/spectron/reports/
 selenium-debug.log
 
 # local env files
