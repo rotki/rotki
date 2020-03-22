@@ -12,6 +12,9 @@ BinaryEthAddress = NewType('BinaryEthAddress', T_BinaryEthAddress)
 T_Timestamp = int
 Timestamp = NewType('Timestamp', T_Timestamp)
 
+T_TimestampMS = int
+TimestampMS = NewType('TimestampMS', T_TimestampMS)
+
 T_ApiKey = str
 ApiKey = NewType('ApiKey', T_ApiKey)
 

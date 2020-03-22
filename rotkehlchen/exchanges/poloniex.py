@@ -3,7 +3,6 @@ import hashlib
 import hmac
 import logging
 import os
-import time
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, overload
 from urllib.parse import urlencode
@@ -56,7 +55,7 @@ from rotkehlchen.typing import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
-from rotkehlchen.utils.misc import create_timestamp
+from rotkehlchen.utils.misc import create_timestamp, ts_now_in_ms
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsonloads_list
 
 if TYPE_CHECKING:
@@ -281,7 +280,7 @@ class Poloniex(ExchangeInterface):
                 # Protect this region with a lock since poloniex will reject
                 # non-increasing nonces. So if two greenlets come in here at
                 # the same time one of them will fail
-                req['nonce'] = int(time.time() * 1000)
+                req['nonce'] = ts_now_in_ms()
                 post_data = str.encode(urlencode(req))
 
                 sign = hmac.new(self.secret, post_data, hashlib.sha512).hexdigest()
