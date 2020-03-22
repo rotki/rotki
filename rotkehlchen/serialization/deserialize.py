@@ -220,9 +220,9 @@ def deserialize_trade_type(symbol: str) -> TradeType:
             f'Failed to deserialize trade type symbol from {type(symbol)} entry',
         )
 
-    if symbol in ('buy', 'LIMIT_BUY', 'BUY'):
+    if symbol in ('buy', 'LIMIT_BUY', 'BUY', 'Buy'):
         return TradeType.BUY
-    elif symbol in ('sell', 'LIMIT_SELL', 'SELL'):
+    elif symbol in ('sell', 'LIMIT_SELL', 'SELL', 'Sell'):
         return TradeType.SELL
     elif symbol == 'settlement_buy':
         return TradeType.SETTLEMENT_BUY
