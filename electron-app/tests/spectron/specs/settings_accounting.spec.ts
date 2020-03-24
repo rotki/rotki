@@ -9,7 +9,7 @@ import {
   selectFromUserMenu,
   setupTest
 } from './utils/common';
-import { Guid } from './utils/guid';
+import { Guid } from '../../common/guid';
 
 const retry = require('promise-retry');
 

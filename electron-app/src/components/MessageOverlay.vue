@@ -1,7 +1,7 @@
 <template>
   <v-overlay v-if="visible" class="message-overlay">
     <v-card light max-width="500" class="mx-auto">
-      <v-card-title>
+      <v-card-title class="message-overlay__title">
         <slot name="title"></slot>
       </v-card-title>
       <v-card-text>

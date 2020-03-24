@@ -34,7 +34,8 @@
   },
   "exclude": [
     "node_modules",
-    "node_modules/vuetify"
+    "node_modules/vuetify",
+    "tests/e2e"
   ],
   "include": [
     "src/**/*.ts",
