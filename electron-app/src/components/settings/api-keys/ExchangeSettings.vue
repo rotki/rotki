@@ -16,7 +16,17 @@
             class="exchange-settings__fields__exchange"
             :items="availableExchanges"
             label="Exchange"
-          ></v-select>
+          >
+            <template #item="{ item, attrs, on }">
+              <v-list-item
+                :class="`exchange__${item}`"
+                v-bind="attrs"
+                v-on="on"
+              >
+                {{ item }}
+              </v-list-item>
+            </template>
+          </v-select>
           <v-text-field
             v-model="apiKey"
             class="exchange-settings__fields__api-key"

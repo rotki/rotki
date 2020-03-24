@@ -8,7 +8,7 @@ import {
   navigateTo,
   setupTest
 } from './utils/common';
-import { Guid } from './utils/guid';
+import { Guid } from '../../common/guid';
 import {
   AccountType,
   AccountBalancesController

@@ -3,7 +3,7 @@ import {
   AccountType,
   AccountBalancesController
 } from './support/account-balances-controller';
-import { Guid } from './utils/guid';
+import { Guid } from '../../common/guid';
 import {
   captureOnFailure,
   createAccount,

@@ -6,7 +6,7 @@ import {
   initSpectron,
   logout
 } from './utils/common';
-import { Guid } from './utils/guid';
+import { Guid } from '../../common/guid';
 
 jest.setTimeout(GLOBAL_TIMEOUT);
 

@@ -8,7 +8,7 @@ import {
   setupTest
 } from './utils/common';
 import OtcController, { otcData } from './support/otc_controller';
-import { Guid } from './utils/guid';
+import { Guid } from '../../common/guid';
 
 const retry = require('promise-retry');
 

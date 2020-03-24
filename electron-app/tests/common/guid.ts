@@ -1,5 +1,5 @@
 export class Guid {
-  private value: string = this.empty;
+  private readonly value: string = this.empty;
 
   public static newGuid(): Guid {
     return new Guid(
