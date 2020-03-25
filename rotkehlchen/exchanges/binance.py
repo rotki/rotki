@@ -1,7 +1,6 @@
 import hashlib
 import hmac
 import logging
-import time
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, Union
 from urllib.parse import urlencode
@@ -32,7 +31,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import ApiKey, ApiSecret, AssetMovementCategory, Fee, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
-from rotkehlchen.utils.misc import ts_now, ts_now_in_ms
+from rotkehlchen.utils.misc import ts_now_in_ms
 from rotkehlchen.utils.serialization import rlk_jsonloads
 
 if TYPE_CHECKING:

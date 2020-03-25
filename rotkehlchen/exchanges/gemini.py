@@ -22,18 +22,19 @@ from rotkehlchen.errors import (
     UnprocessableTradePair,
     UnsupportedAsset,
 )
-from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
+    deserialize_asset_movement_category,
     deserialize_fee,
     deserialize_price,
     deserialize_timestamp,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Location, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import ts_now_in_ms
@@ -201,7 +202,7 @@ class Gemini(ExchangeInterface):
     @overload  # noqa: F811
     def _private_api_query(
             self,
-            endpoint: Literal['balances', 'mytrades'],
+            endpoint: Literal['balances', 'mytrades', 'transfers'],
             options: Optional[Dict[str, Any]] = None,
     ) -> List[Any]:
         ...
@@ -390,3 +391,61 @@ class Gemini(ExchangeInterface):
                     continue
 
         return trades
+
+    def query_online_deposits_withdrawals(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> List[AssetMovement]:
+        result = self._private_api_query(
+            endpoint='transfers',
+            options={'timestamp': start_ts},
+        )
+        movements = []
+
+        for entry in result:
+            try:
+                timestamp = deserialize_timestamp(entry['timestampms'])
+                timestamp = int(timestamp / 1000)
+                asset = Asset(entry['currency'])
+                movement = AssetMovement(
+                    location=Location.GEMINI,
+                    category=deserialize_asset_movement_category(entry['type']),
+                    timestamp=timestamp,
+                    asset=asset,
+                    amount=deserialize_asset_amount(entry['amount']),
+                    fee_asset=asset,
+                    # Gemini does not include withdrawal fees neither in the API nor in their UI
+                    fee=Fee(ZERO),
+                    link=str(entry['eid']),
+                )
+            except UnknownAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found gemini deposit/withdrawal with unknown asset '
+                    f'{e.asset_name}. Ignoring it.',
+                )
+                continue
+            except UnsupportedAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Found gemini deposit/withdrawal with unsupported asset '
+                    f'{e.asset_name}. Ignoring it.',
+                )
+                continue
+            except (DeserializationError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}.'
+                self.msg_aggregator.add_error(
+                    'Error processing a gemini deposit/withdrawal. Check logs '
+                    'for details. Ignoring it.',
+                )
+                log.error(
+                    'Error processing a gemini deposit_withdrawal',
+                    asset_movement=entry,
+                    error=msg,
+                )
+                continue
+
+            movements.append(movement)
+
+        return movements
