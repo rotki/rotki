@@ -393,9 +393,9 @@ def deserialize_asset_movement_category(symbol: str) -> AssetMovementCategory:
             f'Failed to deserialize asset movement category symbol from {type(symbol)} entry',
         )
 
-    if symbol == 'deposit':
+    if symbol.lower() == 'deposit':
         return AssetMovementCategory.DEPOSIT
-    elif symbol == 'withdrawal':
+    elif symbol.lower() == 'withdrawal':
         return AssetMovementCategory.WITHDRAWAL
 
     # else
