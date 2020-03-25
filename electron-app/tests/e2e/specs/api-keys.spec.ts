@@ -2,7 +2,7 @@ import { Guid } from '../../common/guid';
 import { RotkiApp } from '../pages/rotki-app';
 import { ApiKeysPage } from '../pages/api-keys-page';
 
-describe('Accounts', () => {
+describe('API keys', () => {
   let username: string;
   let app: RotkiApp;
   let page: ApiKeysPage;
@@ -21,9 +21,10 @@ describe('Accounts', () => {
   });
 
   it('add exchange key', () => {
-    const apiKey = process.env.BITTREX_API_KEY as string;
-    const apiSecret = process.env.BITTREX_API_SECRET as string;
+    const apiKey = Cypress.env('BITTREX_API_KEY');
+    const apiSecret = Cypress.env('BITTREX_API_SECRET');
     page.visit();
     page.addExchange(apiKey, apiSecret, 'bittrex');
+    page.exchangeIsAdded('bittrex');
   });
 });
