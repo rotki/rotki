@@ -5,7 +5,7 @@ import logging
 from base64 import b64encode
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, overload
 
 import gevent
 import requests
@@ -97,18 +97,21 @@ class Gemini(ExchangeInterface):
         Makes sure that the following permissions are given to the key:
         - Auditor
         """
+        msg = (
+            f'Provided Gemini API key needs to have "Auditor" permission activated. '
+            f'Please log into your gemini account and create a key with '
+            f'the required permissions.'
+        )
         try:
-            self._private_api_query('balances')
+            roles = self._private_api_query(endpoint='roles')
         except GeminiPermissionError:
-            msg = (
-                f'Provided Gemini API key needs to have "Auditor" permission activated. '
-                f'Please log into your gemini account and create a key with '
-                f'the required permissions.'
-            )
             return False, msg
         except RemoteError as e:
             error = str(e)
             return False, error
+
+        if roles.get('isAuditor', False) is False:
+            return False, msg
 
         return True, ''
 
@@ -187,11 +190,27 @@ class Gemini(ExchangeInterface):
 
         return json_ret
 
+    @overload  # noqa: F811
     def _private_api_query(
+            self,
+            endpoint: Literal['roles'],
+            options: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        ...
+
+    @overload  # noqa: F811
+    def _private_api_query(
+            self,
+            endpoint: Literal['balances', 'mytrades'],
+            options: Optional[Dict[str, Any]] = None,
+    ) -> List[Any]:
+        ...
+
+    def _private_api_query(  # noqa: F811
             self,
             endpoint: str,
             options: Optional[Dict[str, Any]] = None,
-    ) -> List[Any]:
+    ) -> Union[Dict[str, Any], List[Any]]:
         """Performs a Gemini API Query for a private endpoint
 
         You can optionally provide extra arguments to the endpoint via the options argument.

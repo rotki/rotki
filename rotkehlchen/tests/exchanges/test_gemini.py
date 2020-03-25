@@ -5,6 +5,10 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
 from rotkehlchen.exchanges.gemini import gemini_symbol_to_pair
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.fixtures.exchanges.gemini import (
+    SANDBOX_GEMINI_WP_API_KEY,
+    SANDBOX_GEMINI_WP_API_SECRET,
+)
 from rotkehlchen.tests.utils.constants import A_LTC, A_ZEC
 from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp, TradePair
 from rotkehlchen.utils.misc import ts_now
@@ -46,6 +50,14 @@ def test_gemini_all_symbols_are_known(sandbox_gemini):
     for symbol in symbols:
         pair = gemini_symbol_to_pair(symbol)
         assert pair is not None
+
+
+@pytest.mark.parametrize('gemini_sandbox_api_key', [SANDBOX_GEMINI_WP_API_KEY])
+@pytest.mark.parametrize('gemini_sandbox_api_secret', [SANDBOX_GEMINI_WP_API_SECRET])
+def test_gemini_wrong_key_permissions(sandbox_gemini):
+    """Test that using a gemini key that does not have the auditor permission is detected"""
+    result, _ = sandbox_gemini.validate_api_key()
+    assert not result
 
 
 def test_gemini_query_balances(sandbox_gemini):
