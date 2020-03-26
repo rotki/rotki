@@ -71,7 +71,7 @@ class Gemini(ExchangeInterface):
             secret: ApiSecret,
             database: DBHandler,
             msg_aggregator: MessagesAggregator,
-            base_uri='https://api.gemini.com',
+            base_uri: str = 'https://api.gemini.com',
     ):
         super(Gemini, self).__init__('gemini', api_key, secret, database)
         self.base_uri = base_uri
@@ -125,7 +125,8 @@ class Gemini(ExchangeInterface):
             self,
             method: Literal['get', 'post'],
             endpoint: str,
-            options: Optional[Dict[str, Any]] = None):
+            options: Optional[Dict[str, Any]] = None,
+    ) -> requests.Response:
         """Queries endpoint until anything but 429 is returned
 
         May raise:
@@ -144,8 +145,9 @@ class Gemini(ExchangeInterface):
                 encoded_payload = json.dumps(payload).encode()
                 b64 = b64encode(encoded_payload)
                 signature = hmac.new(self.secret, b64, hashlib.sha384).hexdigest()
+
                 self.session.headers.update({
-                    'X-GEMINI-PAYLOAD': b64,
+                    'X-GEMINI-PAYLOAD': b64.decode(),
                     'X-GEMINI-SIGNATURE': signature,
                 })
 
@@ -192,7 +194,7 @@ class Gemini(ExchangeInterface):
         return json_ret
 
     @overload  # noqa: F811
-    def _private_api_query(
+    def _private_api_query(  # pylint: disable=no-self-use
             self,
             endpoint: Literal['roles'],
             options: Optional[Dict[str, Any]] = None,
@@ -200,7 +202,7 @@ class Gemini(ExchangeInterface):
         ...
 
     @overload  # noqa: F811
-    def _private_api_query(
+    def _private_api_query(  # pylint: disable=no-self-use
             self,
             endpoint: Literal['balances', 'mytrades', 'transfers'],
             options: Optional[Dict[str, Any]] = None,
@@ -307,6 +309,55 @@ class Gemini(ExchangeInterface):
 
         return returned_balances, ''
 
+    def _get_paginated_query(
+            self,
+            endpoint: Literal['mytrades', 'transfers'],
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            **kwargs: Any,
+    ) -> List[Dict]:
+        """Gets all possible results of a paginated gemini query"""
+        options: Dict[str, Any] = {'timestamp': start_ts, **kwargs}
+        # set maximum limits per endpoint as per API docs
+        if endpoint == 'mytrades':
+            # https://docs.gemini.com/rest-api/?python#get-past-trades
+            limit = 500
+            options['limit_trades'] = limit
+        elif endpoint == 'transfers':
+            # https://docs.gemini.com/rest-api/?python#transfers
+            limit = 50
+            options['limit_trades'] = limit
+        else:
+            raise AssertionError('_get_paginated_query() used with invalid endpoint')
+        result = []
+
+        while True:
+            single_result = self._private_api_query(
+                endpoint=endpoint,
+                options=options,
+            )
+            result.extend(single_result)
+            if len(single_result) < limit:
+                break
+            # Use millisecond timestamp as pagination mechanism for lack of better option
+            # Most recent entry is first
+            last_ts_ms = single_result[0]['timestampms']
+            # also if we are already over the end timestamp stop
+            if int(last_ts_ms / 1000) > end_ts:
+                break
+            options['timestamp'] = last_ts_ms + 1
+
+        # Gemini results have the most recent first, but we want the oldest first.
+        result.reverse()
+        # If any entry falls outside the end_ts skip it
+        checked_result = []
+        for entry in result:
+            if (entry['timestampms'] / 1000) > end_ts:
+                break
+            checked_result.append(entry)
+
+        return checked_result
+
     def _get_trades_for_symbol(
             self,
             symbol: str,
@@ -314,9 +365,11 @@ class Gemini(ExchangeInterface):
             end_ts: Timestamp,
     ) -> List[Dict]:
         try:
-            trades = self._private_api_query(
+            trades = self._get_paginated_query(
                 endpoint='mytrades',
-                options={'symbol': symbol, 'timestamp': start_ts},
+                start_ts=start_ts,
+                end_ts=end_ts,
+                symbol=symbol,
             )
         except GeminiPermissionError as e:
             self.msg_aggregator.add_error(
@@ -397,9 +450,10 @@ class Gemini(ExchangeInterface):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[AssetMovement]:
-        result = self._private_api_query(
+        result = self._get_paginated_query(
             endpoint='transfers',
-            options={'timestamp': start_ts},
+            start_ts=start_ts,
+            end_ts=end_ts,
         )
         movements = []
 
