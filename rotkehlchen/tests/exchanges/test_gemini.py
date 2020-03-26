@@ -72,13 +72,14 @@ def test_gemini_query_balances(sandbox_gemini):
     balances, msg = sandbox_gemini.query_balances()
     assert msg == ''
     assert len(balances) == 6
-    assert balances[A_USD]['amount'] == FVal('96675.37185')
+
+    assert balances[A_USD]['amount'] == FVal('523384.71365986584')
     assert balances[A_USD]['usd_value'] == balances[A_USD]['amount']
-    assert balances[A_ETH]['amount'] == FVal('19999')
+    assert balances[A_ETH]['amount'] == FVal('19985.07921584')
     assert balances[A_ETH]['usd_value'] > ZERO
     assert balances[A_LTC]['amount'] == FVal('20000')
     assert balances[A_LTC]['usd_value'] > ZERO
-    assert balances[A_BTC]['amount'] == FVal('1000.5')
+    assert balances[A_BTC]['amount'] == FVal('888.7177526197')
     assert balances[A_BTC]['usd_value'] > ZERO
     assert balances[A_ZEC]['amount'] == FVal('20000')
     assert balances[A_ZEC]['usd_value'] > ZERO
@@ -220,7 +221,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         )
 
     assert len(movements) == 6
-    assert movements == [AssetMovement(
+    expected_movements = [AssetMovement(
         location=Location.GEMINI,
         category=AssetMovementCategory.DEPOSIT,
         timestamp=Timestamp(1507913541),
@@ -275,3 +276,5 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         fee=ZERO,
         link='341167014',
     )]
+    # The deposits should be returned with the oldest first (so given list is reversed)
+    assert movements == expected_movements[::-1]
