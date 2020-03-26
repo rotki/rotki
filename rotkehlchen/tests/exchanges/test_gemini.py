@@ -15,6 +15,7 @@ from rotkehlchen.tests.fixtures.exchanges.gemini import (
 from rotkehlchen.tests.utils.constants import A_LTC, A_ZEC
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import AssetMovementCategory, Location, Timestamp
+from rotkehlchen.utils.misc import ts_now
 
 
 @pytest.mark.parametrize('gemini_sandbox_api_secret', [b'16NFMLWrVWf1TrHQtVExRFmBovnq'])
@@ -116,6 +117,20 @@ def test_gemini_query_trades(sandbox_gemini):
         link='560628883',
         notes='',
     )
+
+
+def test_gemini_query_all_trades_pagination(sandbox_gemini):
+    """Test that querying the trades endpoint works correctly including
+    combining results from multiple requests
+
+    Uses the Gemini sandbox at which we've made quite a few test trades
+    """
+    trades = sandbox_gemini.query_trade_history(start_ts=0, end_ts=ts_now())
+    identifiers = set()
+    for trade in trades:
+        assert trade.link not in identifiers, 'trade included multiple times in the results'
+        identifiers.add(trade.link)
+    assert len(trades) == 591
 
 
 # Taken from the API docs
