@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`805` Rotki can now accept passwords containing the " character
 * :feature:`764` Gemini exchange is now supported. Trades, deposits, withdrawals and balances from that exchange can now be queried.
 
 * :release:`1.3.0 <2020-03-20>`
