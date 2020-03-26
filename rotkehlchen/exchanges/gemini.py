@@ -38,7 +38,7 @@ from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp, Trad
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import ts_now_in_ms
-from rotkehlchen.utils.serialization import rlk_jsonloads_list
+from rotkehlchen.utils.serialization import rlk_jsonloads_dict, rlk_jsonloads_list
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -71,7 +71,8 @@ class Gemini(ExchangeInterface):
             secret: ApiSecret,
             database: DBHandler,
             msg_aggregator: MessagesAggregator,
-            base_uri: str = 'https://api.gemini.com',
+            # base_uri: str = 'https://api.gemini.com',
+            base_uri: str = 'https://api.sandbox.gemini.com',
     ):
         super(Gemini, self).__init__('gemini', api_key, secret, database)
         self.base_uri = base_uri
@@ -136,7 +137,7 @@ class Gemini(ExchangeInterface):
         url = f'{self.base_uri}{v_endpoint}'
         retries_left = QUERY_RETRY_TIMES
         while retries_left > 0:
-            if endpoint in ('mytrades', 'balances', 'transfers'):
+            if endpoint in ('mytrades', 'balances', 'transfers', 'roles'):
                 # private endpoints
                 timestamp = str(ts_now_in_ms())
                 payload = {'request': v_endpoint, 'nonce': timestamp}
@@ -239,8 +240,10 @@ class Gemini(ExchangeInterface):
                 f'status code: {response.status_code} and text: {response.text}',
             )
 
+        deserialization_fn = rlk_jsonloads_dict if endpoint == 'roles' else rlk_jsonloads_list
+
         try:
-            json_ret = rlk_jsonloads_list(response.text)
+            json_ret = deserialization_fn(response.text)
         except JSONDecodeError:
             raise RemoteError(
                 f'Gemini query at {response.url} '

@@ -18,6 +18,16 @@ from rotkehlchen.typing import AssetMovementCategory, Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 
+def test_gemini_validate_key(sandbox_gemini):
+    """Test that validate api key works for a correct api key
+
+    Uses the Gemini sandbox
+    """
+    result, msg = sandbox_gemini.validate_api_key()
+    assert result is True
+    assert msg == ''
+
+
 @pytest.mark.parametrize('gemini_sandbox_api_secret', [b'16NFMLWrVWf1TrHQtVExRFmBovnq'])
 def test_gemini_wrong_secret(sandbox_gemini):
     """Test that giving wrong api secret is detected
