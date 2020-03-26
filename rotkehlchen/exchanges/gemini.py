@@ -5,7 +5,7 @@ import logging
 from base64 import b64encode
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Tuple, Union, overload
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, overload
 
 import gevent
 import requests
@@ -239,6 +239,7 @@ class Gemini(ExchangeInterface):
                 f'status code: {response.status_code} and text: {response.text}',
             )
 
+        deserialization_fn: Union[Callable[[str], Dict[str, Any]], Callable[[str], List[Any]]]
         deserialization_fn = rlk_jsonloads_dict if endpoint == 'roles' else rlk_jsonloads_list
 
         try:
