@@ -87,6 +87,14 @@ DBINFO_FILENAME = 'dbinfo.json'
 DBTupleType = Literal['trade', 'asset_movement', 'margin_position', 'ethereum_transaction']
 
 
+def _protect_password_sqlcipher(password: str) -> str:
+    """A double quote in the password would close the string. To escape it double it
+
+    source: https://stackoverflow.com/a/603579/110395
+"""
+    return password.replace(r'"', r'""')
+
+
 def detect_sqlcipher_version() -> int:
     """Returns the major part of the version of the system's sqlcipher package"""
     conn = sqlcipher.connect(':memory:')  # pylint: disable=no-member
@@ -291,9 +299,12 @@ class DBHandler:
             os.path.join(self.user_data_dir, 'rotkehlchen.db'),
         )
         self.conn.text_factory = str
-        self.conn.executescript('PRAGMA key="{}";'.format(password))
+        password_for_sqlcipher = _protect_password_sqlcipher(password)
+        # __import__("pdb").set_trace()
+
+        self.conn.executescript(f'PRAGMA key="{password_for_sqlcipher}";')
         if self.sqlcipher_version == 3:
-            script = f'PRAGMA key="{password}"; PRAGMA kdf_iter={KDF_ITER};'
+            script = f'PRAGMA key="{password_for_sqlcipher}"; PRAGMA kdf_iter={KDF_ITER};'
             self.conn.executescript(script)
         self.conn.execute('PRAGMA foreign_keys=ON')
 
@@ -306,7 +317,8 @@ class DBHandler:
         success = True
         msg = ''
         self.conn.text_factory = str
-        script = f'PRAGMA KEY="{password}";PRAGMA cipher_migrate;'
+        password_for_sqlcipher = _protect_password_sqlcipher(password)
+        script = f'PRAGMA KEY="{password_for_sqlcipher}";PRAGMA cipher_migrate;'
         try:
             self.conn.executescript(script)
             self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
@@ -351,7 +363,8 @@ class DBHandler:
 
             # Now attach to the unencrypted DB and copy it to our DB and encrypt it
             self.conn = sqlcipher.connect(tempdbpath)  # pylint: disable=no-member
-            script = f'ATTACH DATABASE "{rdbpath}" AS encrypted KEY "{password}";'
+            password_for_sqlcipher = _protect_password_sqlcipher(password)
+            script = f'ATTACH DATABASE "{rdbpath}" AS encrypted KEY "{password_for_sqlcipher}";'
             if self.sqlcipher_version == 3:
                 script += f'PRAGMA encrypted.kdf_iter={KDF_ITER};'
             script += 'SELECT sqlcipher_export("encrypted");DETACH DATABASE encrypted;'
