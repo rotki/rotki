@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`764` Gemini exchange is now supported. Trades, deposits, withdrawals and balances from that exchange can now be queried.
+
 * :release:`1.3.0 <2020-03-20>`
 * :feature:`779` OSX: User can now exit the application by simply pressing [X]
 * :bug:`794` If etherscan rate limits the user it should now be handled correctly after their new changes ... again

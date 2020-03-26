@@ -71,8 +71,7 @@ class Gemini(ExchangeInterface):
             secret: ApiSecret,
             database: DBHandler,
             msg_aggregator: MessagesAggregator,
-            # base_uri: str = 'https://api.gemini.com',
-            base_uri: str = 'https://api.sandbox.gemini.com',
+            base_uri: str = 'https://api.gemini.com',
     ):
         super(Gemini, self).__init__('gemini', api_key, secret, database)
         self.base_uri = base_uri
