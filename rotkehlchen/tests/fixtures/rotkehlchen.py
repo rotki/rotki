@@ -98,7 +98,7 @@ def initialize_mock_rotkehlchen_instance(
             chain_manager=rotki.chain_manager,
         )
         rotki.ethereum_analyzer = EthereumAnalyzer(
-            ethchain=blockchain.ethchain,
+            ethereum_manager=blockchain.ethereum,
             database=database,
         )
         rotki.user_is_logged_in = True

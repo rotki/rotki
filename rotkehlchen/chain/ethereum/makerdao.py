@@ -6,7 +6,7 @@ from eth_utils.address import to_checksum_address
 from gevent.lock import Semaphore
 from typing_extensions import Literal
 
-from rotkehlchen.chain.ethereum import Ethchain, address_to_bytes32
+from rotkehlchen.chain.ethereum.manager import EthereumManager, address_to_bytes32
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.ethereum import (
     MAKERDAO_POT_ABI,
@@ -110,11 +110,11 @@ class MakerDAO(EthereumModule):
 
     def __init__(
             self,
-            ethchain: Ethchain,
+            ethereum_manager: EthereumManager,
             database: DBHandler,
             msg_aggregator: MessagesAggregator,
     ) -> None:
-        self.ethchain = ethchain
+        self.ethereum = ethereum_manager
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.lock = Semaphore()
@@ -127,7 +127,7 @@ class MakerDAO(EthereumModule):
         - RemoteError if etherscan is used and there is a problem with
         reaching it or with the returned result.
         """
-        result = self.ethchain.call_contract(
+        result = self.ethereum.call_contract(
             contract_address=MAKERDAO_PROXY_REGISTRY_ADDRESS,
             abi=MAKERDAO_PROXY_REGISTRY_ABI,
             method_name='proxies',
@@ -165,13 +165,13 @@ class MakerDAO(EthereumModule):
             proxy_mappings = self.get_accounts_having_maker_proxy()
             balances = {}
             for account, proxy in proxy_mappings.items():
-                guy_slice = self.ethchain.call_contract(
+                guy_slice = self.ethereum.call_contract(
                     contract_address=MAKERDAO_POT_ADDRESS,
                     abi=MAKERDAO_POT_ABI,
                     method_name='pie',
                     arguments=[proxy],
                 )
-                chi = self.ethchain.call_contract(
+                chi = self.ethereum.call_contract(
                     contract_address=MAKERDAO_POT_ADDRESS,
                     abi=MAKERDAO_POT_ABI,
                     method_name='chi',
@@ -180,7 +180,7 @@ class MakerDAO(EthereumModule):
 
                 balances[account] = balance
 
-            current_dsr = self.ethchain.call_contract(
+            current_dsr = self.ethereum.call_contract(
                 contract_address=MAKERDAO_POT_ADDRESS,
                 abi=MAKERDAO_POT_ABI,
                 method_name='dsr',
@@ -215,7 +215,7 @@ class MakerDAO(EthereumModule):
             'arg1': arg1,  # src
             'arg2': arg2,  # dst
         }
-        events = self.ethchain.get_logs(
+        events = self.ethereum.get_logs(
             contract_address=MAKERDAO_VAT_ADDRESS,
             abi=MAKERDAO_VAT_ABI,
             event_name='LogNote',
@@ -256,7 +256,7 @@ class MakerDAO(EthereumModule):
             'sig': '0x049878f3',  # join
             'usr': proxy,
         }
-        join_events = self.ethchain.get_logs(
+        join_events = self.ethereum.get_logs(
             contract_address=MAKERDAO_POT_ADDRESS,
             abi=MAKERDAO_POT_ABI,
             event_name='LogNote',
@@ -298,7 +298,7 @@ class MakerDAO(EthereumModule):
                     normalized_balance=wad_val,
                     amount=dai_value,
                     block_number=deserialize_blocknumber(join_event['blockNumber']),
-                    timestamp=self.ethchain.get_event_timestamp(join_event),
+                    timestamp=self.ethereum.get_event_timestamp(join_event),
                 ),
             )
 
@@ -306,7 +306,7 @@ class MakerDAO(EthereumModule):
             'sig': '0x7f8661a1',  # exit
             'usr': proxy,
         }
-        exit_events = self.ethchain.get_logs(
+        exit_events = self.ethereum.get_logs(
             contract_address=MAKERDAO_POT_ADDRESS,
             abi=MAKERDAO_POT_ABI,
             event_name='LogNote',
@@ -349,7 +349,7 @@ class MakerDAO(EthereumModule):
                     normalized_balance=wad_val,
                     amount=dai_value,
                     block_number=deserialize_blocknumber(exit_event['blockNumber']),
-                    timestamp=self.ethchain.get_event_timestamp(exit_event),
+                    timestamp=self.ethereum.get_event_timestamp(exit_event),
                 ),
             )
 
@@ -368,7 +368,7 @@ class MakerDAO(EthereumModule):
                 amount_in_dsr -= m.amount
                 normalized_balance -= m.normalized_balance
 
-        chi = self.ethchain.call_contract(
+        chi = self.ethereum.call_contract(
             contract_address=MAKERDAO_POT_ADDRESS,
             abi=MAKERDAO_POT_ABI,
             method_name='chi',
@@ -402,14 +402,14 @@ class MakerDAO(EthereumModule):
         - RemoteError if there are problems with querying etherscan
         - ChiRetrievalError if we are unable to query chi at the given timestamp
         """
-        block_number = self.ethchain.etherscan.get_blocknumber_by_time(time)
+        block_number = self.ethereum.etherscan.get_blocknumber_by_time(time)
         from_block = max(POT_CREATION_BLOCK, block_number - CHI_BLOCKS_SEARCH_DISTANCE)
-        if self.ethchain.connected:
-            latest_block = self.ethchain.web3.eth.blockNumber
+        if self.ethereum.connected:
+            latest_block = self.ethereum.web3.eth.blockNumber
         else:
-            latest_block = self.ethchain.query_eth_highest_block()
+            latest_block = self.ethereum.query_eth_highest_block()
         to_block = min(latest_block, block_number + CHI_BLOCKS_SEARCH_DISTANCE)
-        join_events = self.ethchain.get_logs(
+        join_events = self.ethereum.get_logs(
             contract_address=MAKERDAO_POT_ADDRESS,
             abi=MAKERDAO_POT_ABI,
             event_name='LogNote',
@@ -417,7 +417,7 @@ class MakerDAO(EthereumModule):
             from_block=from_block,
             to_block=to_block,
         )
-        exit_events = self.ethchain.get_logs(
+        exit_events = self.ethereum.get_logs(
             contract_address=MAKERDAO_POT_ADDRESS,
             abi=MAKERDAO_POT_ABI,
             event_name='LogNote',

@@ -82,10 +82,10 @@ def test_set_settings(rotkehlchen_api_server):
 
     # modify the settings
     block_query = patch(
-        'rotkehlchen.chain.ethereum.Ethchain.query_eth_highest_block',
+        'rotkehlchen.chain.ethereum.manager.EthereumManager.query_eth_highest_block',
         return_value=0,
     )
-    mock_web3 = patch('rotkehlchen.chain.ethereum.Web3', MockWeb3)
+    mock_web3 = patch('rotkehlchen.chain.ethereum.manager.Web3', MockWeb3)
     with block_query, mock_web3:
         response = requests.put(
             api_url_for(rotkehlchen_api_server, "settingsresource"),
@@ -190,7 +190,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
     """set settings errors and edge cases test"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     # set timeout to 1 second to timeout faster
-    rotki.chain_manager.ethchain.eth_rpc_timeout = 1
+    rotki.chain_manager.ethereum.eth_rpc_timeout = 1
 
     # Eth rpc endpoint to which we can't connect
     data = {

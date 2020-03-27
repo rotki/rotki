@@ -29,7 +29,7 @@ def address_to_bytes32(address: ChecksumEthAddress) -> str:
     return '0x' + 24 * '0' + address[2:]
 
 
-class Ethchain():
+class EthereumManager():
     def __init__(
             self,
             ethrpc_endpoint: str,
@@ -79,7 +79,9 @@ class Ethchain():
             return False, f'Failed to connect to ethereum node at endpoint {ethrpc_endpoint}'
 
         if self.web3.isConnected():
-            dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+            dir_path = os.path.dirname(
+                os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
+            )
             with open(os.path.join(dir_path, 'data', 'token_abi.json'), 'r') as f:
                 self.token_abi = rlk_jsonloads(f.read())
 

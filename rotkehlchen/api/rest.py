@@ -4,7 +4,7 @@ import traceback
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import gevent
 from flask import Response, make_response
@@ -14,6 +14,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.chain.ethereum.makerdao import serialize_dsr_reports
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.errors import (
@@ -30,7 +31,6 @@ from rotkehlchen.errors import (
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.makerdao import MakerDAO, serialize_dsr_reports
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
@@ -1257,7 +1257,7 @@ class RestAPI():
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def _get_makerdao_dsr_balance(self) -> Dict[str, Any]:
-        makerdao = cast(MakerDAO, self.rotkehlchen.chain_manager.eth_modules['makerdao'])
+        makerdao = self.rotkehlchen.chain_manager.eth_modules['makerdao']
         result = None
         msg = ''
         status_code = HTTPStatus.OK
@@ -1279,7 +1279,7 @@ class RestAPI():
         return api_response(process_result(result_dict), status_code=response['status_code'])
 
     def _get_makerdao_dsr_history(self) -> Dict[str, Any]:
-        makerdao = cast(MakerDAO, self.rotkehlchen.chain_manager.eth_modules['makerdao'])
+        makerdao = self.rotkehlchen.chain_manager.eth_modules['makerdao']
         serialized_result = None
         msg = ''
         status_code = HTTPStatus.OK

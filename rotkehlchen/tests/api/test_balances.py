@@ -341,9 +341,9 @@ def test_multiple_balance_queries_not_concurrent(
     setup = setup_balances(rotki, ethereum_accounts, btc_accounts)
 
     e = patch.object(
-        rotki.chain_manager.ethchain,
+        rotki.chain_manager.ethereum,
         'get_multieth_balance',
-        wraps=rotki.chain_manager.ethchain.get_multieth_balance,
+        wraps=rotki.chain_manager.ethereum.get_multieth_balance,
     )
     binance = rotki.exchange_manager.connected_exchanges['binance']
     b = patch.object(binance, 'api_query_dict', wraps=binance.api_query_dict)
