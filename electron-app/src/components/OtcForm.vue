@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="otc-form">
     <v-row>
       <v-col>
         <h1 class="page-header">OTC Trades Management</h1>
@@ -12,52 +12,64 @@
           <v-card-text>
             <date-time-picker
               v-model="datetime"
+              class="otc-form__date"
               label="Time"
               persistent-hint
-              hint="Time that the trade took place"
+              hint="Time the trade took place"
             ></date-time-picker>
             <v-text-field
               v-model="pair"
+              class="otc-form__pair"
               label="Pair"
               persistent-hint
               hint="Pair for the trade. BASECURRENCY_QUOTECURRENCY"
             ></v-text-field>
-            <v-radio-group v-model="type" label="Trade type">
+            <v-radio-group
+              v-model="type"
+              label="Trade type"
+              class="otc-form__type"
+            >
               <v-radio label="Buy" value="buy"></v-radio>
               <v-radio label="Sell" value="sell"></v-radio>
             </v-radio-group>
             <v-text-field
               v-model="amount"
+              class="otc-form__amount"
               label="Amount"
               persistent-hint
               hint="Amount bought/sold"
             ></v-text-field>
             <v-text-field
               v-model="rate"
+              class="otc-form__rate"
               label="Rate"
               persistent-hint
               hint="Rate of the trade"
             ></v-text-field>
             <v-text-field
               v-model="fee"
+              class="otc-form__fee"
               label="Fee"
               persistent-hint
               hint="Fee if any of the trade that occurred"
             ></v-text-field>
             <v-text-field
               v-model="feeCurrency"
+              class="otc-form__fee-currency"
               label="Fee currency"
               persistent-hint
               hint="Currency the fee was paid in"
             ></v-text-field>
             <v-text-field
               v-model="link"
+              class="otc-form__link"
               label="Link"
               persistent-hint
               hint="[Optional] A link to the trade. e.g. in an explorer"
             ></v-text-field>
             <v-textarea
               v-model="notes"
+              class="otc-form__notes"
               label="Additional notes"
               persistent-hint
               hint="[Optional] Additional notes to store for the trade"
@@ -65,7 +77,7 @@
           </v-card-text>
           <v-card-actions>
             <v-btn
-              id="modify_trade_settings"
+              class="otc-form__buttons__save"
               depressed
               color="primary"
               type="submit"
@@ -75,7 +87,7 @@
             </v-btn>
             <v-btn
               v-if="editMode"
-              id="modify_cancel"
+              class="otc-form__buttons__edit"
               depressed=""
               color="primary"
               @click="cancel"
@@ -91,7 +103,7 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import { StoredTrade, TradePayload } from '@/model/stored-trade';
+import { TradePayload } from '@/model/stored-trade';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
 import moment from 'moment';
 
@@ -104,7 +116,7 @@ export default class OtcForm extends Vue {
   @Prop({ required: true })
   editMode!: boolean;
   @Prop({ required: false })
-  otcTrade: StoredTrade | null = null;
+  otcTrade: TradePayload | null = null;
 
   id: string = '';
   pair: string = '';
@@ -126,7 +138,7 @@ export default class OtcForm extends Vue {
     }
   }
 
-  private updateFields(trade: StoredTrade) {
+  private updateFields(trade: TradePayload) {
     this.pair = trade.pair;
     this.datetime = moment(trade.timestamp * 1000).format(OtcForm.format);
     this.amount = trade.amount;
@@ -136,7 +148,7 @@ export default class OtcForm extends Vue {
     this.link = trade.link;
     this.notes = trade.notes;
     this.type = trade.trade_type;
-    this.id = trade.trade_id;
+    this.id = trade.trade_id ?? '';
   }
 
   private resetFields() {
@@ -168,6 +180,7 @@ export default class OtcForm extends Vue {
     };
 
     this.$emit('save', trade);
+    this.resetFields();
   }
 
   @Emit()

@@ -1,3 +1,6 @@
+import { ActionResult } from '../../../src/model/action-result';
+import axios from 'axios';
+
 export class RotkiApp {
   visit() {
     cy.visit('/');
@@ -29,5 +32,18 @@ export class RotkiApp {
     cy.get('.user-dropdown').click();
     cy.get('.user-dropdown__logout').click();
     cy.get('.confirm-dialog__buttons__confirm').click();
+  }
+
+  logoutApi(username: string, cb: () => void) {
+    axios
+      .create({
+        baseURL: `http://localhost:4242/api/1/`,
+        timeout: 30000
+      })
+      .patch<ActionResult<boolean>>(`/users/${username}`, {
+        action: 'logout'
+      })
+      .then(() => cb())
+      .catch(() => cb());
   }
 }

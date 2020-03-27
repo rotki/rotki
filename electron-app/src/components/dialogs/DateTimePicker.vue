@@ -1,32 +1,34 @@
 <template>
-  <v-menu
-    ref="menu"
-    v-model="menu"
-    :close-on-content-click="false"
-    transition="scale-transition"
-    offset-y
-    max-width="580px"
-    class="date-time-picker"
-  >
-    <template #activator="{ on }">
-      <v-text-field
-        :value="value"
-        :label="label"
-        :hint="hint"
-        :persistent-hint="persistentHint"
-        :rules="allRules"
-        append-icon="fa-clock-o"
-        @input="input($event)"
-        @click:append="setNow()"
-        v-on="on"
-      ></v-text-field>
-    </template>
+  <div>
+    <v-menu
+      ref="menu"
+      v-model="menu"
+      :close-on-content-click="false"
+      transition="scale-transition"
+      offset-y
+      max-width="580px"
+      class="date-time-picker"
+    >
+      <template #activator="{ on }">
+        <v-text-field
+          :value="value"
+          :label="label"
+          :hint="hint"
+          :persistent-hint="persistentHint"
+          :rules="allRules"
+          append-icon="fa-clock-o"
+          @input="input($event)"
+          @click:append="setNow()"
+          v-on="on"
+        ></v-text-field>
+      </template>
 
-    <div class="menu-body">
-      <v-date-picker v-model="dateModel" :max="maxDate"></v-date-picker>
-      <v-time-picker v-model="timeModel" :max="maxTime"></v-time-picker>
-    </div>
-  </v-menu>
+      <div class="menu-body">
+        <v-date-picker v-model="dateModel" :max="maxDate"></v-date-picker>
+        <v-time-picker v-model="timeModel" :max="maxTime"></v-time-picker>
+      </div>
+    </v-menu>
+  </div>
 </template>
 
 <script lang="ts">
@@ -109,7 +111,7 @@ export default class DateTimePicker extends Vue {
   onValueChange() {
     if (!this.value) {
       this.dateModel = '';
-      this.timeModel = moment().format(DateTimePicker.timeFormat);
+      this.timeModel = '';
     } else if (this.date.test(this.value)) {
       const [date, time] = this.value.split(' ');
       const [day, month, year] = date.split('/');

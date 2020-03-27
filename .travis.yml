@@ -124,7 +124,7 @@ jobs:
         - source terryfy/test_tools.sh
         - cd ./electron-app
         - npm ci
-        - npm run test:e2e
+        - npm run test:integration-ci
       after_failure:
         - ./tools/scripts/screenshot_upload.py ./failure-screenshots
 
