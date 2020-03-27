@@ -37,7 +37,7 @@ from rotkehlchen.utils.interfaces import (
 from rotkehlchen.utils.misc import request_get, request_get_direct, satoshis_to_btc
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum import Ethchain
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -140,14 +140,14 @@ class ChainManager(CacheableObject, LockableQueryObject):
             self,
             blockchain_accounts: BlockchainAccounts,
             owned_eth_tokens: List[EthereumToken],
-            ethchain: 'Ethchain',
+            ethereum_manager: 'EthereumManager',
             msg_aggregator: MessagesAggregator,
             alethio: Alethio,
             greenlet_manager: GreenletManager,
             eth_modules: Optional[Dict[str, EthereumModule]] = None,
     ):
         super().__init__()
-        self.ethchain = ethchain
+        self.ethereum = ethereum_manager
         self.alethio = alethio
         self.msg_aggregator = msg_aggregator
         self.owned_eth_tokens = owned_eth_tokens
@@ -167,10 +167,10 @@ class ChainManager(CacheableObject, LockableQueryObject):
             )
 
     def __del__(self) -> None:
-        del self.ethchain
+        del self.ethereum
 
     def set_eth_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
-        return self.ethchain.set_rpc_endpoint(endpoint)
+        return self.ethereum.set_rpc_endpoint(endpoint)
 
     @property
     def eth_tokens(self) -> List[EthereumToken]:
@@ -284,8 +284,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
     ) -> Union[FVal, Dict[ChecksumEthAddress, FVal]]:
         """Query tokens by checking the eth_tokens mapping and using the respective query callback.
 
-        The callback is either self.ethchain.get_multitoken_balance or
-        self.ethchain.get_token_balance"""
+        The callback is either self.ethereum.get_multitoken_balance or
+        self.ethereum.get_token_balance"""
         result = query_callback(
             token_asset,
             argument,
@@ -425,7 +425,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         # Query the balance of the account except for the case when it's removed
         # and there is no other account in the balances
         if append_or_remove == 'append' or remove_with_populated_balance:
-            amount = self.ethchain.get_eth_balance(account)
+            amount = self.ethereum.get_eth_balance(account)
             usd_value = amount * eth_usd_price
 
         if append_or_remove == 'append':
@@ -722,7 +722,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             try:
                 token_balances[token] = ChainManager._query_token_balances(
                     token_asset=token,
-                    query_callback=self.ethchain.get_multitoken_balance,
+                    query_callback=self.ethereum.get_multitoken_balance,
                     argument=accounts,
                 )
             except BadFunctionCallOutput as e:
@@ -833,7 +833,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         eth_accounts = self.accounts.eth
         eth_usd_price = Inquirer().find_usd_price(A_ETH)
-        balances = self.ethchain.get_multieth_balance(eth_accounts)
+        balances = self.ethereum.get_multieth_balance(eth_accounts)
         eth_total = FVal(0)
         for account, balance in balances.items():
             eth_total += balance

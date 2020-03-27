@@ -11,7 +11,8 @@ from gevent.lock import Semaphore
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.chain.ethereum import Ethchain
+from rotkehlchen.chain.ethereum.makerdao import MakerDAO
+from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data.importer import DataImporter
@@ -33,7 +34,6 @@ from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.history import PriceHistorian, TradesHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import DEFAULT_ANONYMIZED_LOGS, LoggingSettings, RotkehlchenLogsAdapter
-from rotkehlchen.makerdao import MakerDAO
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.transactions import EthereumAnalyzer
@@ -198,27 +198,27 @@ class Rotkehlchen():
         )
 
         # Initialize blockchain querying modules
-        ethchain = Ethchain(
+        ethereum_manager = EthereumManager(
             ethrpc_endpoint=eth_rpc_endpoint,
             etherscan=self.etherscan,
             msg_aggregator=self.msg_aggregator,
         )
         makerdao = MakerDAO(
-            ethchain=ethchain,
+            ethereum_manager=ethereum_manager,
             database=self.data.db,
             msg_aggregator=self.msg_aggregator,
         )
         self.chain_manager = ChainManager(
             blockchain_accounts=self.data.db.get_blockchain_accounts(),
             owned_eth_tokens=self.data.db.get_owned_tokens(),
-            ethchain=ethchain,
+            ethereum_manager=ethereum_manager,
             msg_aggregator=self.msg_aggregator,
             alethio=alethio,
             greenlet_manager=self.greenlet_manager,
             eth_modules={'makerdao': makerdao},
         )
         self.ethereum_analyzer = EthereumAnalyzer(
-            ethchain=ethchain,
+            ethereum_manager=ethereum_manager,
             database=self.data.db,
         )
         self.trades_historian = TradesHistorian(
@@ -652,7 +652,7 @@ class Rotkehlchen():
 
         if self.user_is_logged_in:
             result['last_balance_save'] = self.data.db.get_last_balance_save_time()
-            result['eth_node_connection'] = self.chain_manager.ethchain.connected
+            result['eth_node_connection'] = self.chain_manager.ethereum.connected
             result['history_process_start_ts'] = self.accountant.started_processing_timestamp
             result['history_process_current_ts'] = self.accountant.currently_processing_timestamp
         return result

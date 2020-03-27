@@ -6,6 +6,7 @@ from unittest.mock import _patch, patch
 import pytest
 import requests
 
+from rotkehlchen.chain.ethereum.makerdao import _dsrdai_to_dai
 from rotkehlchen.constants.ethereum import (
     MAKERDAO_POT_ADDRESS,
     MAKERDAO_PROXY_REGISTRY_ADDRESS,
@@ -13,7 +14,6 @@ from rotkehlchen.constants.ethereum import (
 )
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
-from rotkehlchen.makerdao import _dsrdai_to_dai
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,

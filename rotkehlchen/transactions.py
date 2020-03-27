@@ -1,7 +1,7 @@
 import logging
 from typing import List, Optional
 
-from rotkehlchen.chain.ethereum import Ethchain
+from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -62,8 +62,8 @@ def query_ethereum_transactions(
 
 class EthereumAnalyzer():
     """Analyzes ethereum chain data, like transactions, contract queries e.t.c."""
-    def __init__(self, ethchain: Ethchain, database: DBHandler):
-        self.ethchain = ethchain
+    def __init__(self, ethereum_manager: EthereumManager, database: DBHandler):
+        self.ethereum = ethereum_manager
         self.database = database
         self.last_run_ts = 0
         self.running = False
@@ -71,7 +71,7 @@ class EthereumAnalyzer():
     def _analyze_all_transactions(self) -> None:
         transactions = query_ethereum_transactions(
             database=self.database,
-            etherscan=self.ethchain.etherscan,
+            etherscan=self.ethereum.etherscan,
             from_ts=Timestamp(0),
             to_ts=Timestamp(1581806659),  # 15/02/2020 23:44
         )

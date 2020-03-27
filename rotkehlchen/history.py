@@ -218,7 +218,7 @@ class TradesHistorian():
         try:
             eth_transactions = query_ethereum_transactions(
                 database=self.db,
-                etherscan=self.chain_manager.ethchain.etherscan,
+                etherscan=self.chain_manager.ethereum.etherscan,
                 # We need to have full history of transactions available
                 from_ts=Timestamp(0),
                 to_ts=now,

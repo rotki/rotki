@@ -1,11 +1,11 @@
 from typing import Any, Dict, List, Union
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.makerdao import DSRCurrentBalances
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import AssetBalance, LocationData, SingleAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
-from rotkehlchen.makerdao import DSRCurrentBalances
 from rotkehlchen.serialization.deserialize import deserialize_location_from_db
 from rotkehlchen.typing import EthTokenInfo, Location, TradeType
 from rotkehlchen.utils.version_check import VersionCheckResult
