@@ -14,7 +14,6 @@ import {
   selectFromUserMenu,
   setupTest
 } from './utils/common';
-import { ApiKeysController } from './support/api-keys-controller';
 const retry = require('promise-retry');
 
 describe.skip('dashboard', () => {
@@ -22,7 +21,6 @@ describe.skip('dashboard', () => {
   let stop: () => Promise<Application>;
   let client: SpectronClient;
   let controller: AccountBalancesController;
-  let apiKeyController: ApiKeysController;
 
   let username: string;
   const password: string = process.env.PASSWORD as string;
@@ -39,7 +37,6 @@ describe.skip('dashboard', () => {
       await createAccount(application, username, password);
 
       controller = new AccountBalancesController(client);
-      apiKeyController = new ApiKeysController(client);
       await client.waitUntilTextExists(
         '.page-header',
         'Dashboard',
@@ -61,9 +58,6 @@ describe.skip('dashboard', () => {
   });
 
   describe('after adding the accounts', () => {
-    const apiKey = process.env.BITTREX_API_KEY as string;
-    const apiSecret = process.env.BITTREX_API_SECRET as string;
-
     beforeAll(async () => {
       await setupTest(application, `dashboard_after_adding`, async () => {
         await retry(async () => {
@@ -84,7 +78,6 @@ describe.skip('dashboard', () => {
         );
 
         await controller.addFiatValue();
-        await apiKeyController.addExchange(apiKey, apiSecret);
 
         await navigateToDashboard(client);
 

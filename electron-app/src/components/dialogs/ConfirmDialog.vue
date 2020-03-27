@@ -1,7 +1,7 @@
 <template>
   <v-dialog :value="display" persistent max-width="500" class="confirm-dialog">
     <v-card>
-      <v-card-title class="headline">
+      <v-card-title class="headline confirm-dialog__title">
         {{ title }}
       </v-card-title>
       <v-row align="center" class="mx-0 confirm-dialog__body">

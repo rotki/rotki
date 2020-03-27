@@ -15,6 +15,7 @@
       <v-col cols="12">
         <v-card>
           <v-data-table
+            class="otc-trades"
             :headers="headers"
             :items="otcTrades"
             :expanded.sync="expanded"
@@ -22,28 +23,40 @@
             show-expand
             item-key="trade_id"
           >
-            <template #item.pair="{ item }">
-              {{ item.pair }}
+            <template #item.pair="{ item }" class="trade">
+              <span class="otc-trades__trade__pair">{{ item.pair }}</span>
             </template>
-            <template #item.type="{ item }">
-              {{ item.type }}
+            <template #item.trade_type="{ item }">
+              <span class="otc-trades__trade__type">{{ item.trade_type }}</span>
             </template>
             <template #item.amount="{ item }">
-              {{ item.amount }}
+              <span class="otc-trades__trade__amount">{{ item.amount }}</span>
             </template>
             <template #item.rate="{ item }">
-              {{ item.rate }}
+              <span class="otc-trades__trade__rate">{{ item.rate }}</span>
             </template>
             <template #item.timestamp="{ item }">
-              {{ item.timestamp | formatDate(dateDisplayFormat) }}
+              <span class="otc-trades__trade__time">
+                {{ item.timestamp | formatDate(dateDisplayFormat) }}
+              </span>
             </template>
             <template #item.actions="{ item }">
-              <v-icon small class="mr-2" @click="editItem(item)">
-                fa-edit
-              </v-icon>
-              <v-icon small @click="askForDeleteConfirmation(item)">
-                fa-trash
-              </v-icon>
+              <span class="otc-trades__trade__actions">
+                <v-icon
+                  small
+                  class="mr-2 otc-trades__trade__actions__edit"
+                  @click="editItem(item)"
+                >
+                  fa-edit
+                </v-icon>
+                <v-icon
+                  class="otc-trades__trade__actions__delete"
+                  small
+                  @click="askForDeleteConfirmation(item)"
+                >
+                  fa-trash
+                </v-icon>
+              </span>
             </template>
             <template #expanded-item="{ headers, item }">
               <td :colspan="headers.length">
@@ -71,9 +84,10 @@
       </v-col>
     </v-row>
     <confirm-dialog
+      v-if="displayConfirmation"
       message="Are you sure you want to delete the trade"
       title="Delete OTC Trade"
-      :display="displayConfirmation"
+      display
       @cancel="cancelConfirmation()"
       @confirm="deleteItem()"
     ></confirm-dialog>
@@ -102,7 +116,7 @@ export default class OtcTrades extends Vue {
   displayConfirmation: boolean = false;
 
   deleteId: string = '';
-  editableItem: StoredTrade | null = null;
+  editableItem: TradePayload | null = null;
 
   otcTrades: StoredTrade[] = [];
 
@@ -117,7 +131,7 @@ export default class OtcTrades extends Vue {
   ];
 
   saveItem(trade: TradePayload) {
-    const onfulfilled = () => {
+    const onFulfilled = () => {
       this.$store.commit('setMessage', {
         title: 'Success',
         description: 'Trade was submitted successfully',
@@ -125,7 +139,8 @@ export default class OtcTrades extends Vue {
       } as Message);
       this.fetchData();
     };
-    const onrejected = (reason: Error) => {
+    const onRejected = (reason: Error) => {
+      this.editableItem = trade;
       this.$store.commit('setMessage', {
         title: 'Failure',
         description: `Trade Addition Error: ${reason.message}`
@@ -141,8 +156,8 @@ export default class OtcTrades extends Vue {
     }
 
     promise
-      .then(onfulfilled)
-      .catch(onrejected)
+      .then(onFulfilled)
+      .catch(onRejected)
       .finally(() => this.cancelEdit());
   }
 

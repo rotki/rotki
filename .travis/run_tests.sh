@@ -11,10 +11,9 @@ fi
 
 
 if [[ "$TESTS_TYPE" == "UI" ]]; then
-    npm install
-    npm rebuild zeromq --runtime=electron --target=3.0.0
-    PYTHON=/usr/bin/python2.7 ./node_modules/.bin/electron-rebuild
-    npm test
+    cd electron-app
+    npm ci
+    npm run test:integration-ci
 else
     python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/tests
 fi
