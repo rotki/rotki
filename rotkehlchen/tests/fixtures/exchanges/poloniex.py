@@ -9,7 +9,11 @@ class MockPoloniex(Poloniex):
 
 
 @pytest.fixture(scope='session')
-def poloniex(session_database, session_inquirer, messages_aggregator):
+def poloniex(
+        session_database,
+        session_inquirer,  # pylint: disable=unused-argument
+        messages_aggregator,
+):
     mock = MockPoloniex(
         api_key=make_api_key(),
         secret=make_api_secret(),
@@ -20,7 +24,11 @@ def poloniex(session_database, session_inquirer, messages_aggregator):
 
 
 @pytest.fixture(scope='function')
-def function_scope_poloniex(database, inquirer, function_scope_messages_aggregator):
+def function_scope_poloniex(
+        database,
+        inquirer,  # pylint: disable=unused-argument
+        function_scope_messages_aggregator,
+):
     mock = MockPoloniex(
         api_key=make_api_key(),
         secret=make_api_secret(),

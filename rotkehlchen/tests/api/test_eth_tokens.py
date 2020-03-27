@@ -68,7 +68,6 @@ def assert_modifying_ethereum_tokens(server, data, ethereum_accounts, setup, exp
 def test_adding_ethereum_tokens(
         rotkehlchen_api_server,
         ethereum_accounts,
-        number_of_eth_accounts,
 ):
     """Test that the rest api endpoint to add new ethereum tokens works properly"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -108,7 +107,6 @@ def test_adding_ethereum_tokens(
 def test_adding_ethereum_tokens_async(
         rotkehlchen_api_server,
         ethereum_accounts,
-        number_of_eth_accounts,
 ):
     """Test calling the rest api endpoint to add new ethereum tokens works asynchronously"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -218,7 +216,6 @@ def test_adding_ethereum_tokens_errors(rotkehlchen_api_server):
 def test_removing_ethereum_tokens(
         rotkehlchen_api_server,
         ethereum_accounts,
-        number_of_eth_accounts,
 ):
     """Test that the rest api endpoint to add new ethereum tokens works properly"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -257,7 +254,6 @@ def test_removing_ethereum_tokens(
 def test_removing_ethereum_tokens_async(
         rotkehlchen_api_server,
         ethereum_accounts,
-        number_of_eth_accounts,
 ):
     """Test that the rest api endpoint to add new ethereum tokens works properly"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen

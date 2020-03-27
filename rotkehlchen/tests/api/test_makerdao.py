@@ -40,7 +40,7 @@ def address_to_32byteshexstr(address: ChecksumEthAddress) -> str:
 class DSRTestSetup(NamedTuple):
     etherscan_patch: _patch
     dsr_balance_response: Dict[str, Any]
-    dsr_history_response: Dict[str, Any]
+    dsr_history_response: Dict[ChecksumEthAddress, Dict[str, Any]]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -334,7 +334,6 @@ def assert_dsr_current_result_is_correct(result: Dict[str, Any], setup: DSRTestS
 def test_query_current_dsr_balance(
         rotkehlchen_api_server,
         ethereum_accounts,
-        number_of_eth_accounts,
 ):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     account1 = ethereum_accounts[0]
@@ -362,7 +361,6 @@ def test_query_current_dsr_balance(
 def test_query_current_dsr_balance_async(
         rotkehlchen_api_server,
         ethereum_accounts,
-        number_of_eth_accounts,
 ):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     account1 = ethereum_accounts[0]
@@ -390,7 +388,6 @@ def test_query_current_dsr_balance_async(
 def test_query_historical_dsr_non_premium(
         rotkehlchen_api_server,
         ethereum_accounts,
-        number_of_eth_accounts,
 ):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     account1 = ethereum_accounts[0]
@@ -428,7 +425,7 @@ def assert_dsr_history_result_is_correct(result: Dict[str, Any], setup: DSRTestS
                         else:
                             assert FVal(mov_val).is_close(FVal(
                                 result[account]['movements'][idx][mov_key],
-                            ), max_diff=1e-8)
+                            ), max_diff='1e-8')
 
             else:
                 assert FVal(result[account][key]) == FVal(val)
@@ -440,7 +437,6 @@ def assert_dsr_history_result_is_correct(result: Dict[str, Any], setup: DSRTestS
 def test_query_historical_dsr(
         rotkehlchen_api_server,
         ethereum_accounts,
-        number_of_eth_accounts,
 ):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     account1 = ethereum_accounts[0]
@@ -470,7 +466,6 @@ def test_query_historical_dsr(
 def test_query_historical_dsr_async(
         rotkehlchen_api_server,
         ethereum_accounts,
-        number_of_eth_accounts,
 ):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     account1 = ethereum_accounts[0]

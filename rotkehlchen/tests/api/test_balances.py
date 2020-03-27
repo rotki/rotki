@@ -109,7 +109,6 @@ def test_query_all_balances(
         rotkehlchen_api_server_with_exchanges,
         ethereum_accounts,
         btc_accounts,
-        number_of_eth_accounts,
 ):
     """Test that using the query all balances endpoint works
 
@@ -166,7 +165,6 @@ def test_query_all_balances_async(
         rotkehlchen_api_server_with_exchanges,
         ethereum_accounts,
         btc_accounts,
-        number_of_eth_accounts,
 ):
     """Test that using the query all balances endpoint works with async call"""
     # Disable caching of query results
@@ -202,7 +200,6 @@ def test_query_all_balances_ignore_cache(
         rotkehlchen_api_server_with_exchanges,
         ethereum_accounts,
         btc_accounts,
-        number_of_eth_accounts,
 ):
     """Test that using the query all balances endpoint can ignore the cache"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
@@ -330,7 +327,6 @@ def test_multiple_balance_queries_not_concurrent(
         rotkehlchen_api_server_with_exchanges,
         ethereum_accounts,
         btc_accounts,
-        number_of_eth_accounts,
 ):
     """Test multiple different balance query requests happening concurrently
 

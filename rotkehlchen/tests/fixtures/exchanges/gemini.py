@@ -35,7 +35,7 @@ def mock_gemini(
 ):
     gemini = _make_test_gemini(
         api_key='account-1aIn3XkiCdSZH2jiooMg',
-        secret=b'361FMLZrVWf2TrHPtVEmRFmBovyq',
+        api_secret=b'361FMLZrVWf2TrHPtVEmRFmBovyq',
         database=database,
         msg_aggregator=function_scope_messages_aggregator,
         base_uri=base_uri,

@@ -4,7 +4,6 @@ from typing import Dict, List, Optional
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import RemoteError
@@ -25,15 +24,15 @@ from rotkehlchen.tests.utils.factories import (
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.serialization import rlk_jsonloads
+from rotkehlchen.utils.serialization import rlk_jsonloads, rlk_jsonloads_dict
 
 
-def get_random_kraken_asset() -> Asset:
+def get_random_kraken_asset() -> str:
     kraken_assets = set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED)
     return random.choice(list(kraken_assets))
 
 
-def generate_random_kraken_balance_response():
+def generate_random_kraken_balance_response() -> Dict[str, FVal]:
     kraken_assets = set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED)
     number_of_assets = random.randrange(0, len(kraken_assets))
     chosen_assets = random.sample(kraken_assets, number_of_assets)
@@ -206,6 +205,7 @@ class MockKraken(Kraken):
             # else
             return self.balance_data_return
         elif method == 'TradesHistory':
+            assert req, 'Should have given arguments for kraken TradesHistory endpoint call'
             if self.random_trade_data:
                 return generate_random_kraken_trades_data(
                     start=req['start'],
@@ -213,8 +213,9 @@ class MockKraken(Kraken):
                     tradeable_pairs=list(self.tradeable_pairs.keys()),
                 )
             # else
-            return rlk_jsonloads(KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE)
+            return rlk_jsonloads_dict(KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE)
         elif method == 'Ledgers':
+            assert req, 'Should have given arguments for kraken Ledgers endpoint call'
             ledger_type = req['type']
             if self.random_ledgers_data:
                 return generate_random_kraken_ledger_data(
@@ -231,13 +232,17 @@ class MockKraken(Kraken):
             else:
                 raise AssertionError('Unknown ledger type at kraken ledgers mock query')
 
-            return rlk_jsonloads(response)
+            return rlk_jsonloads_dict(response)
 
         return super().query_private(method, req)
 
 
 @pytest.fixture(scope='session')
-def kraken(session_inquirer, messages_aggregator, session_database):
+def kraken(
+        session_inquirer,  # pylint: disable=unused-argument
+        messages_aggregator,
+        session_database,
+):
     mock = MockKraken(
         api_key=make_api_key(),
         secret=make_api_secret(),
@@ -248,7 +253,11 @@ def kraken(session_inquirer, messages_aggregator, session_database):
 
 
 @pytest.fixture(scope='function')
-def function_scope_kraken(inquirer, function_scope_messages_aggregator, database):
+def function_scope_kraken(
+        inquirer,  # pylint: disable=unused-argument
+        function_scope_messages_aggregator,
+        database,
+):
     mock = MockKraken(
         api_key=make_api_key(),
         secret=make_api_secret(),

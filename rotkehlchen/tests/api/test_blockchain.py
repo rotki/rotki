@@ -34,7 +34,6 @@ def test_query_blockchain_balances(
         rotkehlchen_api_server,
         ethereum_accounts,
         btc_accounts,
-        number_of_eth_accounts,
 ):
     """Test that the query blockchain balances endpoint works correctly. That is:
 
@@ -129,7 +128,6 @@ def test_query_blockchain_balances_async(
         rotkehlchen_api_server,
         ethereum_accounts,
         btc_accounts,
-        number_of_eth_accounts,
 ):
     """Test that the query blockchain balances endpoint works when queried asynchronously
     """
@@ -207,7 +205,6 @@ def test_query_blockchain_balances_ignore_cache(
         rotkehlchen_api_server,
         ethereum_accounts,
         btc_accounts,
-        number_of_eth_accounts,
 ):
     """Test that the query blockchain balances endpoint can ignore the cache"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -293,7 +290,6 @@ def test_query_blockchain_balances_alethio(
         rotkehlchen_api_server,
         ethereum_accounts,
         btc_accounts,
-        number_of_eth_accounts,
 ):
     """Test that the query blockchain balances endpoint works correctly when used with alethio
     """
@@ -443,7 +439,6 @@ def test_add_blockchain_accounts(
         rotkehlchen_api_server,
         ethereum_accounts,
         btc_accounts,
-        number_of_eth_accounts,
         query_balances_before_first_modification,
 ):
     """Test that the endpoint adding blockchain accounts works properly"""
@@ -516,7 +511,6 @@ def test_add_blockchain_accounts_async(
         rotkehlchen_api_server,
         ethereum_accounts,
         btc_accounts,
-        number_of_eth_accounts,
 ):
     """A simpler version of the above test for adding blockchain accounts for async
 
@@ -589,7 +583,6 @@ def test_add_blockchain_accounts_alethio(
         rotkehlchen_api_server,
         ethereum_accounts,
         btc_accounts,
-        number_of_eth_accounts,
         query_balances_before_first_modification,
 ):
     """Test that the endpoint adding blockchain accounts works properly when using alethio"""
@@ -829,11 +822,7 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, api_port, m
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
-def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-        number_of_eth_accounts,
-):
+def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(rotkehlchen_api_server):
     """Test that adding account with labels and tags works correctly"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -949,7 +938,6 @@ def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(
 def test_edit_blockchain_accounts(
         rotkehlchen_api_server,
         ethereum_accounts,
-        number_of_eth_accounts,
 ):
     """Test that the endpoint editing blockchain accounts works properly"""
     # Add two tags
@@ -1268,6 +1256,7 @@ def _remove_blockchain_accounts_test_start(
             btc_accounts=btc_accounts,
             eth_balances=all_eth_balances,
             token_balances=token_balances,
+            use_alethio=use_alethio,
         )
         with ExitStack() as stack:
             setup.enter_blockchain_patches(stack)
@@ -1281,6 +1270,7 @@ def _remove_blockchain_accounts_test_start(
         btc_accounts=btc_accounts,
         eth_balances=all_eth_balances,
         token_balances=token_balances,
+        use_alethio=use_alethio,
     )
 
     # The application has started with 4 ethereum accounts. Remove two and see that balances match
@@ -1343,7 +1333,6 @@ def test_remove_blockchain_accounts(
         rotkehlchen_api_server,
         ethereum_accounts,
         btc_accounts,
-        number_of_eth_accounts,
         query_balances_before_first_modification,
 ):
     """Test that the endpoint removing blockchain accounts works properly"""
@@ -1422,7 +1411,6 @@ def test_remove_blockchain_accounts_async(
         rotkehlchen_api_server,
         ethereum_accounts,
         btc_accounts,
-        number_of_eth_accounts,
 ):
     """A simpler version of the above test for removing blockchain accounts for async
 
@@ -1499,7 +1487,6 @@ def test_remove_blockchain_accounts_alethio(
         rotkehlchen_api_server,
         ethereum_accounts,
         btc_accounts,
-        number_of_eth_accounts,
         query_balances_before_first_modification,
 ):
     """Test that the endpoint removing blockchain accounts works properly when using alethio"""
@@ -1517,7 +1504,6 @@ def test_remove_blockchain_accounts_alethio(
 def test_remove_nonexisting_blockchain_account_along_with_existing(
         rotkehlchen_api_server,
         ethereum_accounts,
-        number_of_eth_accounts,
 ):
     """Test that if an existing and a non-existing account are given to remove, nothing is"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -1583,10 +1569,7 @@ def test_remove_nonexisting_blockchain_account_along_with_existing(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_remove_blockchain_account_with_tags_removes_mapping(
-        rotkehlchen_api_server,
-        number_of_eth_accounts,
-):
+def test_remove_blockchain_account_with_tags_removes_mapping(rotkehlchen_api_server):
     """Test that removing an account with tags remove the mappings"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 

@@ -167,7 +167,7 @@ def test_export_import_db(data_dir, username):
     encoded_data, _ = data.compress_and_encrypt_db('123')
 
     # The server would return them decoded
-    encoded_data = encoded_data.decode()
+    encoded_data = encoded_data.decode()  # pylint: disable=no-member
     data.decompress_and_decrypt_db('123', encoded_data)
     fiat_balances = data.get_fiat_balances()
     assert len(fiat_balances) == 1

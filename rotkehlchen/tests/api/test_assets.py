@@ -18,7 +18,6 @@ def test_query_owned_assets(
         rotkehlchen_api_server_with_exchanges,
         ethereum_accounts,
         btc_accounts,
-        number_of_eth_accounts,
 ):
     """Test that using the query all owned assets endpoint works"""
     # Disable caching of query results
