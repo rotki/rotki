@@ -26,7 +26,7 @@ from rotkehlchen.db.upgrades.v7_v8 import (
 )
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.tests.utils.constants import A_BCH, A_BSV, A_RDN
-from rotkehlchen.typing import FilePath
+from rotkehlchen.typing import FilePath, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 creation_patch = patch(
@@ -206,7 +206,11 @@ def populate_db_and_check_for_asset_renaming(
     assert renamed_asset in owned_assets
 
     # Make sure that the merging of both new and old name entry in same timestamp works
-    timed_balances = data.db.query_timed_balances(from_ts=0, to_ts=2556392121, asset=renamed_asset)
+    timed_balances = data.db.query_timed_balances(
+        from_ts=Timestamp(0),
+        to_ts=Timestamp(2556392121),
+        asset=renamed_asset,
+    )
     assert len(timed_balances) == 2
     assert timed_balances[0].time == 1557499129
     assert timed_balances[0].amount == '10.1'

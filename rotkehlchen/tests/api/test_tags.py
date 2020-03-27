@@ -591,10 +591,7 @@ def test_delete_tag_errors(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_delete_utilized_tag(
-        rotkehlchen_api_server,
-        number_of_eth_accounts,
-):
+def test_delete_utilized_tag(rotkehlchen_api_server):
     """
     Test that deleting a tag that is already utilized by an account
     also removes it from the account"""

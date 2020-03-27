@@ -14,12 +14,18 @@ def coinbasepro_passphrase():
 
 
 @pytest.fixture(scope='session')
-def coinbasepro(session_database, session_inquirer, messages_aggregator):
+def coinbasepro(
+        session_database,
+        session_inquirer,  # pylint: disable=unused-argument
+        messages_aggregator,
+        coinbasepro_passphrase,
+):
     mock = MockCoinbasepro(
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=session_database,
         msg_aggregator=messages_aggregator,
+        passphrase=coinbasepro_passphrase,
     )
     return mock
 

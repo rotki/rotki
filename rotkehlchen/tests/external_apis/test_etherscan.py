@@ -8,21 +8,23 @@ import pytest
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.typing import ExternalService, ExternalServiceApiCredentials
-from rotkehlchen.user_messages import MessagesAggregator
 
 
 @pytest.fixture(scope='function')
-def temp_etherscan(database, inquirer, function_scope_messages_aggregator, tmpdir_factory):
+def temp_etherscan(function_scope_messages_aggregator, tmpdir_factory):
     api_key = os.environ.get('ETHERSCAN_API_KEY', None)
     if not api_key:
         pytest.fail('No ETHERSCAN_API_KEY environment variable found.')
     directory = tmpdir_factory.mktemp('data')
-    msg_aggregator = MessagesAggregator()
-    db = DBHandler(user_data_dir=directory, password='123', msg_aggregator=msg_aggregator)
+    db = DBHandler(
+        user_data_dir=directory,
+        password='123',
+        msg_aggregator=function_scope_messages_aggregator,
+    )
     db.add_external_service_credentials(credentials=[
         ExternalServiceApiCredentials(service=ExternalService.ETHERSCAN, api_key=api_key),
     ])
-    etherscan = Etherscan(database=db, msg_aggregator=msg_aggregator)
+    etherscan = Etherscan(database=db, msg_aggregator=function_scope_messages_aggregator)
     return etherscan
 
 

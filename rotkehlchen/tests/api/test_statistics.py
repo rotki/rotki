@@ -25,7 +25,6 @@ def test_query_statistics_netvalue(
         rotkehlchen_api_server_with_exchanges,
         ethereum_accounts,
         btc_accounts,
-        number_of_eth_accounts,
         start_with_valid_premium,
 ):
     """Test that using the statistics netvalue over time endpoint works"""
@@ -76,7 +75,6 @@ def test_query_statistics_asset_balance(
         rotkehlchen_api_server_with_exchanges,
         ethereum_accounts,
         btc_accounts,
-        number_of_eth_accounts,
         start_with_valid_premium,
 ):
     """Test that using the statistics asset balance over time endpoint works"""
@@ -232,7 +230,6 @@ def test_query_statistics_value_distribution(
         rotkehlchen_api_server_with_exchanges,
         ethereum_accounts,
         btc_accounts,
-        number_of_eth_accounts,
         start_with_valid_premium,
 ):
     """Test that using the statistics value distribution endpoint works"""
@@ -359,7 +356,7 @@ def test_query_statistics_renderer(rotkehlchen_api_server, start_with_valid_prem
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     if start_with_valid_premium:
-        def mock_premium_get(url, *args, **kwargs):
+        def mock_premium_get(url, *_args, **_kwargs):
             if 'last_data_metadata' in url:
                 response = (
                     '{"upload_ts": 0, "last_modify_ts": 0, "data_hash": "0x0", "data_size": 0}'
