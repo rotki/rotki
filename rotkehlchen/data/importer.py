@@ -13,7 +13,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_movement_category,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.typing import Fee, Location, TradePair, TradeType
+from rotkehlchen.typing import AssetAmount, Fee, Location, Price, TradePair, TradeType
 
 
 class UnsupportedCointrackingEntry(Exception):
@@ -96,8 +96,8 @@ class DataImporter():
             if csv_row[4] != '-':
                 quote_amount_sold = deserialize_asset_amount(csv_row[4])
             else:
-                quote_amount_sold = ZERO
-            rate = quote_amount_sold / base_amount_bought
+                quote_amount_sold = AssetAmount(ZERO)
+            rate = Price(quote_amount_sold / base_amount_bought)
 
             trade = Trade(
                 timestamp=timestamp,
