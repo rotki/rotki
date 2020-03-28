@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 import marshmallow
 import webargs
@@ -13,6 +13,7 @@ from rotkehlchen.chain.bitcoin import is_valid_btc_address
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
+from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
@@ -29,8 +30,10 @@ from rotkehlchen.typing import (
     AssetAmount,
     ExternalService,
     ExternalServiceApiCredentials,
+    Fee,
     HexColorCode,
     Location,
+    Price,
     SupportedBlockchain,
     Timestamp,
     TradePair,
@@ -47,10 +50,22 @@ class DelimitedOrNormalList(webargs.fields.DelimitedList):
     We introduce it due to them implementing https://github.com/marshmallow-code/webargs/issues/423
     """
 
-    def __init__(self, cls_or_instance, *, delimiter=None, **kwargs):
+    def __init__(
+            self,
+            cls_or_instance: Any,
+            *,
+            delimiter: Optional[str] = None,
+            **kwargs: Any,
+    ) -> None:
         super().__init__(cls_or_instance, **kwargs)
 
-    def _deserialize(self, value, attr, data, **kwargs):
+    def _deserialize(
+            self,
+            value: Union[List[str], str],
+            attr: str,
+            data: Dict[str, Any],
+            **kwargs: Any,
+    ) -> List[Any]:
         """Adjusting code for _deserialize so that it also works for list-like objects
 
         Adjusting code from
@@ -63,7 +78,7 @@ class DelimitedOrNormalList(webargs.fields.DelimitedList):
             ret = (
                 value
                 if marshmallow.utils.is_iterable_but_not_string(value)
-                else value.split(self.delimiter)
+                else value.split(self.delimiter)  # type: ignore
             )
         except AttributeError:
             if MARSHMALLOW_VERSION_INFO[0] < 3:
@@ -75,11 +90,13 @@ class DelimitedOrNormalList(webargs.fields.DelimitedList):
 
 class TimestampField(fields.Field):
 
-    @staticmethod
-    def _serialize(value, attr, obj, **kwargs):  # pylint: disable=unused-argument
-        return value
-
-    def _deserialize(self, value, attr, data, **kwargs):  # pylint: disable=unused-argument
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> Timestamp:
         try:
             timestamp = deserialize_timestamp(value)
         except DeserializationError as e:
@@ -90,11 +107,13 @@ class TimestampField(fields.Field):
 
 class ColorField(fields.Field):
 
-    @staticmethod
-    def _serialize(value, attr, obj, **kwargs):  # pylint: disable=unused-argument
-        return value
-
-    def _deserialize(self, value, attr, data, **kwargs) -> HexColorCode:
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> HexColorCode:
         try:
             color_code = deserialize_hex_color_code(value)
         except DeserializationError as e:
@@ -105,16 +124,12 @@ class ColorField(fields.Field):
 
 class TaxFreeAfterPeriodField(fields.Field):
 
-    @staticmethod
-    def _serialize(value, attr, obj, **kwargs) -> str:  # pylint: disable=unused-argument
-        return str(value)
-
-    def _deserialize(  # pylint: disable=unused-argument
+    def _deserialize(
             self,
-            value,
-            attr,
-            data,
-            **kwargs,
+            value: int,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
     ) -> int:
         try:
             value = int(value)
@@ -135,15 +150,20 @@ class TaxFreeAfterPeriodField(fields.Field):
 class AmountField(fields.Field):
 
     @staticmethod
-    def _serialize(value, attr, obj, **kwargs) -> str:  # pylint: disable=unused-argument
+    def _serialize(
+            value: AssetAmount,
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> str:
         return str(value)
 
-    def _deserialize(  # pylint: disable=unused-argument
+    def _deserialize(
             self,
-            value,
-            attr,
-            data,
-            **kwargs,
+            value: Union[str, int],
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
     ) -> AssetAmount:
         try:
             amount = deserialize_asset_amount(value)
@@ -155,12 +175,12 @@ class AmountField(fields.Field):
 
 class PositiveOrZeroAmountField(AmountField):
 
-    def _deserialize(  # pylint: disable=unused-argument
+    def _deserialize(
             self,
-            value,
-            attr,
-            data,
-            **kwargs,
+            value: Union[str, int],
+            attr: Optional[str],
+            data: Optional[Mapping[str, Any]],
+            **kwargs: Any,
     ) -> AssetAmount:
         amount = super()._deserialize(value, attr, data, **kwargs)
         if amount < ZERO:
@@ -171,12 +191,12 @@ class PositiveOrZeroAmountField(AmountField):
 
 class PositiveAmountField(AmountField):
 
-    def _deserialize(  # pylint: disable=unused-argument
+    def _deserialize(
             self,
-            value,
-            attr,
-            data,
-            **kwargs,
+            value: Union[str, int],
+            attr: Optional[str],
+            data: Optional[Mapping[str, Any]],
+            **kwargs: Any,
     ) -> AssetAmount:
         amount = super()._deserialize(value, attr, data, **kwargs)
         if amount <= ZERO:
@@ -188,10 +208,21 @@ class PositiveAmountField(AmountField):
 class PriceField(fields.Field):
 
     @staticmethod
-    def _serialize(value, attr, obj, **kwargs):  # pylint: disable=unused-argument
+    def _serialize(
+            value: FVal,
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> str:
         return str(value)
 
-    def _deserialize(self, value, attr, data, **kwargs):  # pylint: disable=unused-argument
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> Price:
         try:
             price = deserialize_price(value)
         except DeserializationError as e:
@@ -203,10 +234,21 @@ class PriceField(fields.Field):
 class FeeField(fields.Field):
 
     @staticmethod
-    def _serialize(value, attr, obj, **kwargs):  # pylint: disable=unused-argument
+    def _serialize(
+            value: Fee,
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> str:
         return str(value)
 
-    def _deserialize(self, value, attr, data, **kwargs):  # pylint: disable=unused-argument
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> Fee:
         try:
             fee = deserialize_fee(value)
         except DeserializationError as e:
@@ -217,11 +259,13 @@ class FeeField(fields.Field):
 
 class BlockchainField(fields.Field):
 
-    @staticmethod
-    def _serialize(value, attr, obj, **kwargs):  # pylint: disable=unused-argument
-        return str(value)
-
-    def _deserialize(self, value, attr, data, **kwargs):  # pylint: disable=unused-argument
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> SupportedBlockchain:
         if value in ('btc', 'BTC'):
             blockchain = SupportedBlockchain.BITCOIN
         elif value in ('eth', 'ETH'):
@@ -235,15 +279,20 @@ class BlockchainField(fields.Field):
 class AssetField(fields.Field):
 
     @staticmethod
-    def _serialize(value: Asset, attr, obj, **kwargs) -> str:  # pylint: disable=unused-argument
+    def _serialize(
+            value: Asset,
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> str:
         return str(value.identifier)
 
-    def _deserialize(  # pylint: disable=unused-argument
+    def _deserialize(
             self,
             value: str,
-            attr,
-            data,
-            **kwargs,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
     ) -> Asset:
         try:
             asset = Asset(value)
@@ -255,12 +304,12 @@ class AssetField(fields.Field):
 
 class FiatAssetField(AssetField):
 
-    def _deserialize(  # pylint: disable=unused-argument
+    def _deserialize(
             self,
             value: str,
-            attr,
-            data,
-            **kwargs,
+            attr: Optional[str],
+            data: Optional[Mapping[str, Any]],
+            **kwargs: Any,
     ) -> Asset:
         asset = super()._deserialize(value, attr, data, **kwargs)
         if not asset.is_fiat():
@@ -272,20 +321,20 @@ class FiatAssetField(AssetField):
 class EthereumTokenAssetField(AssetField):
 
     @staticmethod
-    def _serialize(  # pylint: disable=unused-argument
+    def _serialize(  # type: ignore
             value: EthereumToken,
-            attr,
-            obj,
-            **kwargs,
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
     ) -> str:
         return str(value.identifier)
 
-    def _deserialize(  # pylint: disable=unused-argument
+    def _deserialize(
             self,
             value: str,
-            attr,
-            data,
-            **kwargs,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
     ) -> Asset:
         try:
             token = EthereumToken(value)
@@ -300,18 +349,18 @@ class TradeTypeField(fields.Field):
     @staticmethod
     def _serialize(
             value: TradeType,
-            attr,  # pylint: disable=unused-argument
-            obj,  # pylint: disable=unused-argument
-            **kwargs,  # pylint: disable=unused-argument
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
     ) -> str:
         return str(value)
 
     def _deserialize(
             self,
             value: str,
-            attr,  # pylint: disable=unused-argument
-            data,  # pylint: disable=unused-argument
-            **kwargs,  # pylint: disable=unused-argument
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
     ) -> TradeType:
         try:
             trade_type = deserialize_trade_type(value)
@@ -323,21 +372,12 @@ class TradeTypeField(fields.Field):
 
 class TradePairField(fields.Field):
 
-    @staticmethod
-    def _serialize(
-            value: str,
-            attr,  # pylint: disable=unused-argument
-            obj,  # pylint: disable=unused-argument
-            **kwargs,  # pylint: disable=unused-argument
-    ) -> str:
-        return str(value)
-
     def _deserialize(
             self,
             value: str,
-            attr,  # pylint: disable=unused-argument
-            data,  # pylint: disable=unused-argument
-            **kwargs,  # pylint: disable=unused-argument
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
     ) -> TradePair:
         if not isinstance(value, str):
             raise ValidationError(f'Provided non-string trade pair value {value}')
@@ -354,18 +394,18 @@ class LocationField(fields.Field):
     @staticmethod
     def _serialize(
             value: Location,
-            attr,  # pylint: disable=unused-argument
-            obj,  # pylint: disable=unused-argument
-            **kwargs,  # pylint: disable=unused-argument
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
     ) -> str:
         return str(value)
 
     def _deserialize(
             self,
             value: str,
-            attr,  # pylint: disable=unused-argument
-            data,  # pylint: disable=unused-argument
-            **kwargs,  # pylint: disable=unused-argument
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
     ) -> Location:
         try:
             location = deserialize_location(value)
@@ -377,21 +417,12 @@ class LocationField(fields.Field):
 
 class ExternalServiceNameField(fields.Field):
 
-    @staticmethod
-    def _serialize(
-            value: str,
-            attr,  # pylint: disable=unused-argument
-            obj,  # pylint: disable=unused-argument
-            **kwargs,  # pylint: disable=unused-argument
-    ) -> str:
-        return value
-
     def _deserialize(
             self,
             value: str,
-            attr,  # pylint: disable=unused-argument
-            data,  # pylint: disable=unused-argument
-            **kwargs,  # pylint: disable=unused-argument
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
     ) -> ExternalService:
         if not isinstance(value, str):
             raise ValidationError('External service name should be a string')
@@ -404,21 +435,12 @@ class ExternalServiceNameField(fields.Field):
 
 class ExchangeNameField(fields.Field):
 
-    @staticmethod
-    def _serialize(
-            value: str,
-            attr,  # pylint: disable=unused-argument
-            obj,  # pylint: disable=unused-argument
-            **kwargs,  # pylint: disable=unused-argument
-    ) -> str:
-        return value
-
     def _deserialize(
             self,
             value: str,
-            attr,  # pylint: disable=unused-argument
-            data,  # pylint: disable=unused-argument
-            **kwargs,  # pylint: disable=unused-argument
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
     ) -> str:
         if not isinstance(value, str):
             raise ValidationError('Exchange name should be a string')
@@ -430,21 +452,12 @@ class ExchangeNameField(fields.Field):
 
 class ApiKeyField(fields.Field):
 
-    @staticmethod
-    def _serialize(
-            value: ApiKey,
-            attr,  # pylint: disable=unused-argument
-            obj,  # pylint: disable=unused-argument
-            **kwargs,  # pylint: disable=unused-argument
-    ) -> str:
-        return str(value)
-
     def _deserialize(
             self,
             value: str,
-            attr,  # pylint: disable=unused-argument
-            data,  # pylint: disable=unused-argument
-            **kwargs,  # pylint: disable=unused-argument
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
     ) -> ApiKey:
         if not isinstance(value, str):
             raise ValidationError('Given API Key should be a string')
@@ -456,18 +469,18 @@ class ApiSecretField(fields.Field):
     @staticmethod
     def _serialize(
             value: ApiSecret,
-            attr,  # pylint: disable=unused-argument
-            obj,  # pylint: disable=unused-argument
-            **kwargs,  # pylint: disable=unused-argument
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
     ) -> str:
         return str(value.decode())
 
     def _deserialize(
             self,
             value: str,
-            attr,  # pylint: disable=unused-argument
-            data,  # pylint: disable=unused-argument
-            **kwargs,  # pylint: disable=unused-argument
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
     ) -> ApiSecret:
         if not isinstance(value, str):
             raise ValidationError('Given API Secret should be a string')
@@ -476,11 +489,13 @@ class ApiSecretField(fields.Field):
 
 class DirectoryField(fields.Field):
 
-    @staticmethod
-    def _serialize(value, attr, obj, **kwargs):  # pylint: disable=unused-argument
-        return str(value)
-
-    def _deserialize(self, value: str, attr, data, **kwargs):  # pylint: disable=unused-argument
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> Path:
         path = Path(value)
         if not path.exists():
             raise ValidationError(f'Given path {value} does not exist')
@@ -493,11 +508,13 @@ class DirectoryField(fields.Field):
 
 class FileField(fields.Field):
 
-    @staticmethod
-    def _serialize(value, attr, obj, **kwargs):  # pylint: disable=unused-argument
-        return str(value)
-
-    def _deserialize(self, value: str, attr, data, **kwargs):  # pylint: disable=unused-argument
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> Path:
         if not isinstance(value, str):
             raise ValidationError('Provided non string type for filepath')
 
@@ -516,7 +533,7 @@ class BaseOpts(SchemaOpts):
     This allows for having the Object the Schema encodes to inside of the class Meta
     """
 
-    def __init__(self, meta, ordered):
+    def __init__(self, meta: Schema.Meta, ordered: bool) -> None:
         SchemaOpts.__init__(self, meta, ordered=ordered)
         self.decoding_class = getattr(meta, "decoding_class", None)
 
@@ -524,11 +541,12 @@ class BaseOpts(SchemaOpts):
 class BaseSchema(Schema):
     OPTIONS_CLASS = BaseOpts
 
-    @post_load
-    def make_object(self, data, **kwargs):  # pylint: disable=unused-argument
+    @post_load  # type: ignore
+    def make_object(self, data: Dict[str, Any], **_kwargs: Any) -> Any:
         # this will depend on the Schema used, which has its object class in
         # the class Meta attributes
-        decoding_class = self.opts.decoding_class  # pylint: disable=no-member
+        # TODO: This hits both mypy and pylint. Is it really a needed construct any more?
+        decoding_class = self.opts.decoding_class  # type: ignore # pylint: disable=no-member
         return decoding_class(**data)
 
 
@@ -694,8 +712,8 @@ class UserActionSchema(BaseSchema):
     premium_api_key = fields.String(missing='')
     premium_api_secret = fields.String(missing='')
 
-    @validates_schema
-    def validate_user_action_schema(self, data, **kwargs):
+    @validates_schema  # type: ignore
+    def validate_user_action_schema(self, data: Dict[str, Any], **_kwargs: Any) -> None:
         if data['action'] == 'login':
             if data['password'] is None:
                 raise ValidationError('Missing password field for login')
@@ -731,8 +749,12 @@ class ExternalServiceSchema(Schema):
     name = ExternalServiceNameField(required=True)
     api_key = fields.String(required=True)
 
-    @post_load
-    def make_external_service(self, data: Dict, **kwargs) -> ExternalServiceApiCredentials:
+    @post_load  # type: ignore
+    def make_external_service(
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> ExternalServiceApiCredentials:
         """Used when encoding an external resource given in via the API"""
         return ExternalServiceApiCredentials(service=data['name'], api_key=data['api_key'])
 
@@ -918,8 +940,8 @@ class BlockchainAccountsPatchSchema(BaseSchema):
     blockchain = BlockchainField(required=True)
     accounts = fields.List(fields.Nested(BlockchainAccountDataSchema), required=True)
 
-    @validates_schema
-    def validate_schema(self, data, **kwargs):
+    @validates_schema  # type: ignore
+    def validate_schema(self, data: Dict[str, Any], **_kwargs: Any) -> None:
         _validate_blockchain_account_schemas(data, lambda x: x['address'])
 
     class Meta:
@@ -942,8 +964,12 @@ class BlockchainAccountsDeleteSchema(BaseSchema):
     accounts = fields.List(fields.String(), required=True)
     async_query = fields.Boolean(missing=False)
 
-    @validates_schema
-    def validate_blockchain_accounts_patch_schema(self, data, **kwargs):
+    @validates_schema  # type: ignore
+    def validate_blockchain_accounts_patch_schema(
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
         _validate_blockchain_account_schemas(data, lambda x: x)
 
     class Meta:

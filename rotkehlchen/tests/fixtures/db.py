@@ -96,7 +96,7 @@ def _init_database(
     if db_settings is not None:
         for key, value in db_settings.items():
             settings[key] = value
-    db.set_settings(ModifiableDBSettings(**settings))
+    db.set_settings(ModifiableDBSettings(**settings))  # type: ignore
 
     if ignored_assets:
         for asset in ignored_assets:

@@ -1,6 +1,6 @@
 from typing import Tuple, Union
 
-from eth_utils.typing import HexAddress
+from eth_utils.typing import HexAddress, HexStr
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
@@ -44,7 +44,7 @@ def deserialize_fee(fee: Optional[str]) -> Fee:
     return result
 
 
-def deserialize_timestamp(timestamp: Union[int, str]) -> Timestamp:
+def deserialize_timestamp(timestamp: Union[int, str, FVal]) -> Timestamp:
     """Deserializes a timestamp from a json entry. Given entry can either be a
     string or an int.
 
@@ -331,7 +331,7 @@ def get_pair_position_str(pair: TradePair, position: str) -> str:
 def deserialize_trade_pair(pair: str) -> TradePair:
     """Takes a trade pair string, makes sure it's valid, wraps it in proper type and returns it"""
     try:
-        pair_get_assets(pair)
+        pair_get_assets(TradePair(pair))
     except UnprocessableTradePair as e:
         raise DeserializationError(str(e))
     except UnknownAsset as e:
@@ -427,7 +427,7 @@ def deserialize_asset_movement_category_from_db(symbol: str) -> AssetMovementCat
     )
 
 
-def deserialize_hex_color_code(symbol: str) -> TradeType:
+def deserialize_hex_color_code(symbol: str) -> HexColorCode:
     """Takes a string either from the API or the DB and deserializes it into
     a hexadecimal color code.
 
@@ -459,7 +459,7 @@ def deserialize_hex_color_code(symbol: str) -> TradeType:
 
 
 def deserialize_ethereum_address(symbol: str) -> ChecksumEthAddress:
-    return ChecksumEthAddress(HexAddress(symbol))
+    return ChecksumEthAddress(HexAddress(HexStr(symbol)))
 
 
 def deserialize_blocknumber(symbol: Union[str, int]) -> int:

@@ -148,6 +148,8 @@ def _location_to_enum_location(location: str) -> str:
     elif location == 'blockchain':
         return 'J'
 
+    raise DBUpgradeError(f'Invalid location {location} encountered during DB v5->v6 upgrade')
+
 
 def _upgrade_timed_location_data(db: 'DBHandler') -> None:
     cursor = db.conn.cursor()
