@@ -1,34 +1,40 @@
 import base64
 import random
 import string
+from typing import Optional
 
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import ApiKey, ApiSecret
+from rotkehlchen.typing import ApiKey, ApiSecret, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
+DEFAULT_START_TS = Timestamp(1451606400)
 
-def make_random_bytes(size):
+
+def make_random_bytes(size: int) -> bytes:
     return bytes(bytearray(random.getrandbits(8) for _ in range(size)))
 
 
-def make_random_b64bytes(size):
+def make_random_b64bytes(size: int) -> bytes:
     return base64.b64encode(make_random_bytes(size))
 
 
-def make_random_uppercasenumeric_string(size):
+def make_random_uppercasenumeric_string(size: int) -> str:
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=size))
 
 
-def make_random_positive_fval(max_num=1000000):
+def make_random_positive_fval(max_num: int = 1000000) -> FVal:
     return FVal(random.uniform(0, max_num))
 
 
-def make_random_timestamp(start=1451606400, end=None):
+def make_random_timestamp(
+        start: Timestamp = DEFAULT_START_TS,
+        end: Optional[Timestamp] = None,
+) -> Timestamp:
     if end is None:
         end = ts_now()
-    return random.randint(start, end)
+    return Timestamp(random.randint(start, end))
 
 
 def make_api_key() -> ApiKey:

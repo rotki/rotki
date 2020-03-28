@@ -1,6 +1,7 @@
-import psutil
-from typing import Iterator
 from itertools import count
+from typing import Iterator
+
+import psutil
 
 
 def get_free_port(address: str, initial_port: int) -> Iterator[int]:
@@ -22,7 +23,7 @@ def get_free_port(address: str, initial_port: int) -> Iterator[int]:
     except psutil.AccessDenied:
         return count(initial_port)
 
-    def _unused_ports():
+    def _unused_ports() -> Iterator[int]:
         for port in count(initial_port):
             # check if the port is being used
             connect_using_port = (

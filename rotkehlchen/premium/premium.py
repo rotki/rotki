@@ -7,14 +7,15 @@ from base64 import b64decode, b64encode
 from binascii import Error as BinasciiError
 from enum import Enum
 from http import HTTPStatus
-from typing import Dict, NamedTuple, Tuple
+from typing import Any, Dict, NamedTuple, Tuple
 from urllib.parse import urlencode
 
 import requests
+from typing_extensions import Literal
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.errors import IncorrectApiKeyFormat, PremiumAuthenticationError, RemoteError
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.typing import B64EncodedBytes, Timestamp
 from rotkehlchen.utils.serialization import rlk_jsonloads_dict
 
 logger = logging.getLogger(__name__)
@@ -98,7 +99,7 @@ class Premium():
 
     def reset_credentials(self, credentials: PremiumCredentials) -> None:
         self.credentials = credentials
-        self.session.headers.update({  # type: ignore
+        self.session.headers.update({
             'API-KEY': self.credentials.serialize_key(),
         })
 
@@ -135,7 +136,7 @@ class Premium():
             self.status = SubscriptionStatus.INACTIVE
             return False
 
-    def sign(self, method: str, **kwargs) -> Tuple[hmac.HMAC, Dict]:
+    def sign(self, method: str, **kwargs: Any) -> Tuple[hmac.HMAC, Dict]:
         urlpath = '/api/' + self.apiversion + '/' + method
 
         req = kwargs
@@ -153,10 +154,10 @@ class Premium():
 
     def upload_data(
             self,
-            data_blob,
-            our_hash,
-            last_modify_ts,
-            compression_type,
+            data_blob: B64EncodedBytes,
+            our_hash: str,
+            last_modify_ts: Timestamp,
+            compression_type: Literal['zlib'],
     ) -> Dict:
         """Uploads data to the server and returns the response dict
 
@@ -172,8 +173,8 @@ class Premium():
             length=len(data_blob),
             compression=compression_type,
         )
-        self.session.headers.update({  # type: ignore
-            'API-SIGN': base64.b64encode(signature.digest()),
+        self.session.headers.update({
+            'API-SIGN': base64.b64encode(signature.digest()),  # type: ignore
         })
 
         try:
@@ -194,8 +195,8 @@ class Premium():
         there is an error returned by the server
         """
         signature, data = self.sign('get_saved_data')
-        self.session.headers.update({  # type: ignore
-            'API-SIGN': base64.b64encode(signature.digest()),
+        self.session.headers.update({
+            'API-SIGN': base64.b64encode(signature.digest()),  # type: ignore
         })
 
         try:
@@ -217,8 +218,8 @@ class Premium():
         there is an error returned by the server
         """
         signature, data = self.sign('last_data_metadata')
-        self.session.headers.update({  # type: ignore
-            'API-SIGN': base64.b64encode(signature.digest()),
+        self.session.headers.update({
+            'API-SIGN': base64.b64encode(signature.digest()),  # type: ignore
         })
 
         try:
@@ -246,8 +247,8 @@ class Premium():
         there is an error returned by the server
         """
         signature, data = self.sign('statistics_rendererv2')
-        self.session.headers.update({  # type: ignore
-            'API-SIGN': base64.b64encode(signature.digest()),
+        self.session.headers.update({
+            'API-SIGN': base64.b64encode(signature.digest()),  # type: ignore
         })
 
         try:
