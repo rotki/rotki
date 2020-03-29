@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 import marshmallow
 import webargs
 from eth_utils import is_checksum_address
-from marshmallow import Schema, SchemaOpts, fields, post_load, validates_schema
+from marshmallow import Schema, fields, post_load, validates_schema
 from marshmallow.exceptions import ValidationError
 from webargs.compat import MARSHMALLOW_VERSION_INFO
 
@@ -528,49 +528,17 @@ class FileField(fields.Field):
         return path
 
 
-class BaseOpts(SchemaOpts):
-    """
-    This allows for having the Object the Schema encodes to inside of the class Meta
-    """
-
-    def __init__(self, meta: Schema.Meta, ordered: bool) -> None:
-        SchemaOpts.__init__(self, meta, ordered=ordered)
-        self.decoding_class = getattr(meta, "decoding_class", None)
-
-
-class BaseSchema(Schema):
-    OPTIONS_CLASS = BaseOpts
-
-    @post_load  # type: ignore
-    def make_object(self, data: Dict[str, Any], **_kwargs: Any) -> Any:
-        # this will depend on the Schema used, which has its object class in
-        # the class Meta attributes
-        # TODO: This hits both mypy and pylint. Is it really a needed construct any more?
-        decoding_class = self.opts.decoding_class  # type: ignore # pylint: disable=no-member
-        return decoding_class(**data)
-
-
-class AsyncTasksQuerySchema(BaseSchema):
+class AsyncTasksQuerySchema(Schema):
     task_id = fields.Integer(strict=True, missing=None)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class TradesQuerySchema(BaseSchema):
+class TradesQuerySchema(Schema):
     from_timestamp = TimestampField(missing=Timestamp(0))
     to_timestamp = TimestampField(missing=ts_now)
     location = LocationField(missing=None)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class TradeSchema(BaseSchema):
+class TradeSchema(Schema):
     timestamp = TimestampField(required=True)
     location = LocationField(required=True)
     pair = TradePairField(required=True)
@@ -582,72 +550,42 @@ class TradeSchema(BaseSchema):
     link = fields.String(missing='')
     notes = fields.String(missing='')
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class FiatBalancesSchema(BaseSchema):
+class FiatBalancesSchema(Schema):
     balances = fields.Dict(
         keys=FiatAssetField(),
         values=PositiveOrZeroAmountField(),
         required=True,
     )
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
-
 
 class TradePatchSchema(TradeSchema):
     trade_id = fields.String(required=True)
 
 
-class TradeDeleteSchema(BaseSchema):
+class TradeDeleteSchema(Schema):
     trade_id = fields.String(required=True)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class TagSchema(BaseSchema):
+class TagSchema(Schema):
     name = fields.String(required=True)
     description = fields.String(missing=None)
     background_color = ColorField(required=True)
     foreground_color = ColorField(required=True)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class TagEditSchema(BaseSchema):
+class TagEditSchema(Schema):
     name = fields.String(required=True)
     description = fields.String(missing=None)
     background_color = ColorField(missing=None)
     foreground_color = ColorField(missing=None)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class TagDeleteSchema(BaseSchema):
+class TagDeleteSchema(Schema):
     name = fields.String(required=True)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class ModifiableSettingsSchema(BaseSchema):
+class ModifiableSettingsSchema(Schema):
     """This is the Schema for the settings that can be modified via the API"""
     premium_should_sync = fields.Bool(missing=None)
     include_crypto2crypto = fields.Bool(missing=None)
@@ -681,23 +619,13 @@ class ModifiableSettingsSchema(BaseSchema):
     # TODO: Add some validation to this field
     date_display_format = fields.String(missing=None)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class BaseUserSchema(BaseSchema):
+class BaseUserSchema(Schema):
     name = fields.String(required=True)
     password = fields.String(required=True)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class UserActionSchema(BaseSchema):
+class UserActionSchema(Schema):
     name = fields.String(required=True)
     # All the fields below are not needed for logout/modification so are not required=True
     password = fields.String(missing=None)
@@ -727,26 +655,16 @@ class UserActionSchema(BaseSchema):
                     'Without an action premium api key and secret must be provided',
                 )
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
-
 
 class NewUserSchema(BaseUserSchema):
     premium_api_key = fields.String(missing='')
     premium_api_secret = fields.String(missing='')
 
 
-class AllBalancesQuerySchema(BaseSchema):
+class AllBalancesQuerySchema(Schema):
     async_query = fields.Boolean(missing=False)
     save_data = fields.Boolean(missing=True)
     ignore_cache = fields.Boolean(missing=False)
-
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
 
 class ExternalServiceSchema(Schema):
@@ -763,130 +681,70 @@ class ExternalServiceSchema(Schema):
         return ExternalServiceApiCredentials(service=data['name'], api_key=data['api_key'])
 
 
-class ExternalServicesResourceAddSchema(BaseSchema):
+class ExternalServicesResourceAddSchema(Schema):
     services = fields.List(fields.Nested(ExternalServiceSchema), required=True)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class ExternalServicesResourceDeleteSchema(BaseSchema):
+class ExternalServicesResourceDeleteSchema(Schema):
     services = fields.List(ExternalServiceNameField(), required=True)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class ExchangesResourceAddSchema(BaseSchema):
+class ExchangesResourceAddSchema(Schema):
     name = ExchangeNameField(required=True)
     api_key = ApiKeyField(required=True)
     api_secret = ApiSecretField(required=True)
     passphrase = fields.String(missing=None)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class ExchangesResourceRemoveSchema(BaseSchema):
+class ExchangesResourceRemoveSchema(Schema):
     name = ExchangeNameField(required=True)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class ExchangeBalanceQuerySchema(BaseSchema):
+class ExchangeBalanceQuerySchema(Schema):
     name = ExchangeNameField(missing=None)
     async_query = fields.Boolean(missing=False)
     ignore_cache = fields.Boolean(missing=False)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class ExchangeTradesQuerySchema(BaseSchema):
+class ExchangeTradesQuerySchema(Schema):
     name = ExchangeNameField(missing=None)
     from_timestamp = TimestampField(missing=Timestamp(0))
     to_timestamp = TimestampField(missing=ts_now)
     async_query = fields.Boolean(missing=False)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class BlockchainBalanceQuerySchema(BaseSchema):
+class BlockchainBalanceQuerySchema(Schema):
     blockchain = BlockchainField(missing=None)
     async_query = fields.Boolean(missing=False)
     ignore_cache = fields.Boolean(missing=False)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class StatisticsAssetBalanceSchema(BaseSchema):
+class StatisticsAssetBalanceSchema(Schema):
     asset = AssetField(required=True)
     from_timestamp = TimestampField(missing=Timestamp(0))
     to_timestamp = TimestampField(missing=ts_now)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class StatisticsValueDistributionSchema(BaseSchema):
+class StatisticsValueDistributionSchema(Schema):
     distribution_by = fields.String(
         required=True,
         validate=webargs.validate.OneOf(choices=('location', 'asset')),
     )
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class HistoryProcessingSchema(BaseSchema):
+class HistoryProcessingSchema(Schema):
     from_timestamp = TimestampField(missing=Timestamp(0))
     to_timestamp = TimestampField(missing=ts_now)
     async_query = fields.Boolean(missing=False)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class HistoryExportingSchema(BaseSchema):
+class HistoryExportingSchema(Schema):
     directory_path = DirectoryField(required=True)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class EthTokensSchema(BaseSchema):
+class EthTokensSchema(Schema):
     eth_tokens = fields.List(EthereumTokenAssetField(), required=True)
     async_query = fields.Boolean(missing=False)
-
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
 
 class BlockchainAccountDataSchema(Schema):
@@ -895,13 +753,8 @@ class BlockchainAccountDataSchema(Schema):
     tags = fields.List(fields.String(), missing=None)
 
 
-class BlockchainAccountsGetSchema(BaseSchema):
+class BlockchainAccountsGetSchema(Schema):
     blockchain = BlockchainField(required=True)
-
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
 
 def _validate_blockchain_account_schemas(
@@ -940,7 +793,7 @@ def _validate_blockchain_account_schemas(
             given_addresses.add(address)
 
 
-class BlockchainAccountsPatchSchema(BaseSchema):
+class BlockchainAccountsPatchSchema(Schema):
     blockchain = BlockchainField(required=True)
     accounts = fields.List(fields.Nested(BlockchainAccountDataSchema), required=True)
 
@@ -952,22 +805,12 @@ class BlockchainAccountsPatchSchema(BaseSchema):
     ) -> None:
         _validate_blockchain_account_schemas(data, lambda x: x['address'])
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
-
 
 class BlockchainAccountsPutSchema(BlockchainAccountsPatchSchema):
     async_query = fields.Boolean(missing=False)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class BlockchainAccountsDeleteSchema(BaseSchema):
+class BlockchainAccountsDeleteSchema(Schema):
     blockchain = BlockchainField(required=True)
     accounts = fields.List(fields.String(), required=True)
     async_query = fields.Boolean(missing=False)
@@ -980,48 +823,23 @@ class BlockchainAccountsDeleteSchema(BaseSchema):
     ) -> None:
         _validate_blockchain_account_schemas(data, lambda x: x)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class IgnoredAssetsSchema(BaseSchema):
+class IgnoredAssetsSchema(Schema):
     assets = fields.List(AssetField(), required=True)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class DataImportSchema(BaseSchema):
+class DataImportSchema(Schema):
     source = fields.String(
         required=True,
         validate=webargs.validate.OneOf(choices=('cointracking.info',)),
     )
     filepath = FileField(required=True)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class FiatExchangeRatesSchema(BaseSchema):
+class FiatExchangeRatesSchema(Schema):
     currencies = DelimitedOrNormalList(FiatAssetField(), missing=None)
 
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
 
-
-class AsyncQueryArgumentSchema(BaseSchema):
+class AsyncQueryArgumentSchema(Schema):
     """A schema for getters that only have one argument enabling async query"""
     async_query = fields.Boolean(missing=False)
-
-    class Meta:
-        strict = True
-        # decoding to a dict is required by the @use_kwargs decorator from webargs
-        decoding_class = dict
