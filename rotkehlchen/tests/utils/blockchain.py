@@ -3,7 +3,6 @@ import logging
 import os
 import shutil
 import subprocess
-import sys
 from binascii import hexlify
 from typing import Any, Dict, List
 from unittest.mock import patch
@@ -23,11 +22,6 @@ from rotkehlchen.tests.utils.genesis import GENESIS_STUB
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import BTCAddress, ChecksumEthAddress
 from rotkehlchen.utils.misc import from_wei, satoshis_to_btc
-
-if os.name != 'nt':
-    # termios does not exist in windows
-    import termios
-
 
 logger = logging.getLogger(__name__)
 
@@ -188,11 +182,6 @@ def geth_create_blockchain(
 
     cmd = geth_to_cmd(gethport, gethrpcport, nodedir, verbosity)
 
-    # save current term settings before running geth
-    # check that the test is running on non-capture mode
-    if os.name != 'nt':
-        term_settings = termios.tcgetattr(sys.stdin)
-
     stdout = None
     stderr = None
 
@@ -216,10 +205,6 @@ def geth_create_blockchain(
         # process before quitting the tests
         process.terminate()
         raise e
-    finally:
-        # reenter echo mode (disabled by geth pasphrase prompt)
-        if os.name != 'nt':
-            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, term_settings)
 
     process.poll()
 
