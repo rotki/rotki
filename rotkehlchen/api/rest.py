@@ -1257,10 +1257,18 @@ class RestAPI():
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def _get_makerdao_dsr_balance(self) -> Dict[str, Any]:
-        makerdao = self.rotkehlchen.chain_manager.eth_modules['makerdao']
         result = None
         msg = ''
         status_code = HTTPStatus.OK
+
+        makerdao = self.rotkehlchen.chain_manager.makerdao
+        if not makerdao:
+            return {
+                'result': None,
+                'status_code': HTTPStatus.CONFLICT,
+                'message': 'MakerDAO module is not activated',
+            }
+
         try:
             result = makerdao.get_current_dsr()
         except RemoteError as e:
@@ -1279,10 +1287,18 @@ class RestAPI():
         return api_response(process_result(result_dict), status_code=response['status_code'])
 
     def _get_makerdao_dsr_history(self) -> Dict[str, Any]:
-        makerdao = self.rotkehlchen.chain_manager.eth_modules['makerdao']
         serialized_result = None
         msg = ''
         status_code = HTTPStatus.OK
+
+        makerdao = self.rotkehlchen.chain_manager.makerdao
+        if not makerdao:
+            return {
+                'result': None,
+                'status_code': HTTPStatus.CONFLICT,
+                'message': 'MakerDAO module is not activated',
+            }
+
         try:
             result = makerdao.get_historical_dsr()
             serialized_result = serialize_dsr_reports(result)
