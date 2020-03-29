@@ -4,7 +4,8 @@ from unittest.mock import patch
 from rotkehlchen.tests.utils.mock import MockResponse
 
 if TYPE_CHECKING:
-    from rotkehlchen.exchanges.binance import Binance, Poloniex
+    from rotkehlchen.exchanges.binance import Binance
+    from rotkehlchen.exchanges.poloniex import Poloniex
 
 POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE = """{
   "withdrawals": [

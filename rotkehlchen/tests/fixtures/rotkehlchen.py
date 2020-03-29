@@ -31,8 +31,8 @@ def start_with_valid_premium():
 @pytest.fixture
 def rotki_premium_credentials() -> PremiumCredentials:
     return PremiumCredentials(
-        given_api_key=base64.b64encode(make_random_b64bytes(128)),
-        given_api_secret=base64.b64encode(make_random_b64bytes(128)),
+        given_api_key=base64.b64encode(make_random_b64bytes(128)).decode(),
+        given_api_secret=base64.b64encode(make_random_b64bytes(128)).decode(),
     )
 
 

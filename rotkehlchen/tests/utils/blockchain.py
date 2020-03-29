@@ -1,4 +1,3 @@
-import io
 import json
 import logging
 import os
@@ -22,6 +21,7 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.eth_tokens import CONTRACT_ADDRESS_TO_TOKEN
 from rotkehlchen.tests.utils.genesis import GENESIS_STUB
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.typing import BTCAddress, ChecksumEthAddress
 from rotkehlchen.utils.misc import from_wei, satoshis_to_btc
 
 if os.name != 'nt':
@@ -190,7 +190,7 @@ def geth_create_blockchain(
 
     # save current term settings before running geth
     # check that the test is running on non-capture mode
-    if os.name != 'nt' and isinstance(sys.stdin, io.IOBase):
+    if os.name != 'nt':
         term_settings = termios.tcgetattr(sys.stdin)
 
     stdout = None
@@ -218,7 +218,7 @@ def geth_create_blockchain(
         raise e
     finally:
         # reenter echo mode (disabled by geth pasphrase prompt)
-        if os.name != 'nt' and isinstance(sys.stdin, io.IOBase):
+        if os.name != 'nt':
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, term_settings)
 
     process.poll()
@@ -355,7 +355,7 @@ def assert_eth_balances_result(
 
 
 def mock_etherscan_balances_query(
-        eth_map: Dict[str, str],
+        eth_map: Dict[ChecksumEthAddress, Dict[str, Any]],
         etherscan: Etherscan,
         original_requests_get,
 ):
@@ -403,7 +403,7 @@ def mock_etherscan_balances_query(
 
 
 def mock_alethio_balances_query(
-        eth_map: Dict[str, str],
+        eth_map: Dict[ChecksumEthAddress, Dict[str, Any]],
         alethio: Alethio,
         use_alethio: bool,
         original_requests_get,
@@ -437,7 +437,7 @@ def mock_alethio_balances_query(
 
 
 def mock_bitcoin_balances_query(
-        btc_map: Dict[str, str],
+        btc_map: Dict[BTCAddress, str],
         original_requests_get,
 ):
 

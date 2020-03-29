@@ -1,9 +1,10 @@
 from contextlib import ExitStack
-from typing import Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional
 from unittest.mock import _patch
 
 import requests
 
+# from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.utils import AssetBalance, LocationData
 from rotkehlchen.fval import FVal
@@ -113,16 +114,16 @@ def setup_balances(
         else:
             btc_balances = []
 
-    eth_map = {}
+    eth_map: Dict[ChecksumEthAddress, Dict[str, Any]] = {}
     for idx, acc in enumerate(ethereum_accounts):
         eth_map[acc] = {}
         eth_map[acc]['ETH'] = eth_balances[idx]
         for symbol in token_balances:
             eth_map[acc][symbol] = token_balances[symbol][idx]
 
-    btc_map = {}
-    for idx, acc in enumerate(btc_accounts):
-        btc_map[acc] = btc_balances[idx]
+    btc_map: Dict[BTCAddress, str] = {}
+    for idx, btc_acc in enumerate(btc_accounts):
+        btc_map[btc_acc] = btc_balances[idx]
 
     eur_balance = FVal('1550')
 
@@ -155,7 +156,7 @@ def setup_balances(
         eth_balances=eth_balances,
         btc_balances=btc_balances,
         token_balances=token_balances,
-        fiat_balances={A_EUR: eur_balance},
+        fiat_balances={'EUR': eur_balance},
         binance_balances=binance_balances,
         poloniex_balances=poloniex_balances,
         poloniex_patch=poloniex_patch,
