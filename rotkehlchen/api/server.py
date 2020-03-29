@@ -135,7 +135,7 @@ def endpoint_not_found(e: NotFound) -> Response:
     return api_response(wrap_in_fail_result(msg), HTTPStatus.NOT_FOUND)
 
 
-@parser.error_handler
+@parser.error_handler  # type: ignore
 def handle_request_parsing_error(
         err: ValidationError,
         _request: werkzeug.local.LocalProxy,

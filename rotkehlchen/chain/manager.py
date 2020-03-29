@@ -661,12 +661,13 @@ class ChainManager(CacheableObject, LockableQueryObject):
                         eth_balances[account].increase_total_usd_value(usd_value)
                     token_totals[token] = token_totals[token] + balance
 
+        add_or_sub: Optional[Callable[[Any, Any], Any]]
         if action == AccountAction.APPEND:
             add_or_sub = operator.add
         elif action == AccountAction.REMOVE:
             add_or_sub = operator.sub
         else:
-            raise AssertionError('Should never happen')
+            add_or_sub = None
 
         for token, balance in token_totals.items():
             if balance != ZERO:
@@ -677,8 +678,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
                     )
                 else:
                     self.totals[token] = Balance(
-                        amount=add_or_sub(self.totals[token].amount, balance),
-                        usd_value=add_or_sub(
+                        amount=add_or_sub(self.totals[token].amount, balance),  # type: ignore
+                        usd_value=add_or_sub(  # type: ignore
                             self.totals[token].usd_value,
                             balance * token_usd_price[token],
                         ),
@@ -740,12 +741,13 @@ class ChainManager(CacheableObject, LockableQueryObject):
                     'token balances but the chain is not synced.',
                 )
 
+        add_or_sub: Optional[Callable[[Any, Any], Any]]
         if action == AccountAction.APPEND:
             add_or_sub = operator.add
         elif action == AccountAction.REMOVE:
             add_or_sub = operator.sub
         else:
-            raise AssertionError('Should never happen')
+            add_or_sub = None
 
         eth_balances = self.balances.eth
         for token, token_accounts in token_balances.items():
@@ -772,8 +774,8 @@ class ChainManager(CacheableObject, LockableQueryObject):
                     self.totals[token] = Balance(amount=ZERO, usd_value=ZERO)
                 else:
                     self.totals[token] = Balance(
-                        amount=add_or_sub(self.totals[token].amount, token_total),
-                        usd_value=add_or_sub(
+                        amount=add_or_sub(self.totals[token].amount, token_total),  # type: ignore
+                        usd_value=add_or_sub(  # type: ignore
                             self.totals[token].usd_value,
                             token_total * token_usd_price[token],
                         ),

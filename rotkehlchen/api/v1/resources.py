@@ -1,13 +1,15 @@
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-from flask import Blueprint, Response
+from flask import Blueprint, Request, Response
 from flask_restful import Resource
+from marshmallow import Schema
 from marshmallow.utils import missing
 from typing_extensions import Literal
 from webargs.flaskparser import parser, use_kwargs
 from webargs.multidictproxy import MultiDictProxy
 
+from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
     AsyncQueryArgumentSchema,
@@ -64,7 +66,11 @@ from rotkehlchen.typing import (
 )
 
 
-def _combine_data_and_view_args(data, view_args, schema) -> MultiDictProxy:
+def _combine_data_and_view_args(
+        data: Dict[str, Any],
+        view_args: Dict[str, Any],
+        schema: Schema,
+) -> MultiDictProxy:
     if view_args is not missing:
         if data == {}:
             data = MultiDictProxy(view_args, schema)
@@ -76,8 +82,8 @@ def _combine_data_and_view_args(data, view_args, schema) -> MultiDictProxy:
     return data
 
 
-@parser.location_loader('json_and_view_args')
-def load_json_viewargs_data(request, schema):
+@parser.location_loader('json_and_view_args')  # type: ignore
+def load_json_viewargs_data(request: Request, schema: Schema) -> Dict[str, Any]:
     """Load data from a request accepting either json or view_args encoded data"""
     view_args = parser.load_view_args(request, schema)
     data = parser.load_json(request, schema)
@@ -88,8 +94,8 @@ def load_json_viewargs_data(request, schema):
     return data
 
 
-@parser.location_loader('json_and_query')
-def load_json_query_data(request, schema):
+@parser.location_loader('json_and_query')  # type: ignore
+def load_json_query_data(request: Request, schema: Schema) -> Dict[str, Any]:
     """Load data from a request accepting either json or query encoded data"""
     data = parser.load_json(request, schema)
     if data is not missing:
@@ -97,8 +103,8 @@ def load_json_query_data(request, schema):
     return parser.load_querystring(request, schema)
 
 
-@parser.location_loader('json_and_query_and_view_args')
-def load_json_query_viewargs_data(request, schema):
+@parser.location_loader('json_and_query_and_view_args')  # type: ignore
+def load_json_query_viewargs_data(request: Request, schema: Schema) -> Dict[str, Any]:
     """Load data from a request accepting either json or querystring or view_args encoded data"""
     view_args = parser.load_view_args(request, schema)
     # Get data either from json or from querystring
@@ -113,7 +119,7 @@ def load_json_query_viewargs_data(request, schema):
     return data
 
 
-def create_blueprint():
+def create_blueprint() -> Blueprint:
     # Take a look at this SO question on hints how to organize versioned
     # API with flask:
     # http://stackoverflow.com/questions/28795561/support-multiple-api-versions-in-flask#28797512
@@ -121,7 +127,7 @@ def create_blueprint():
 
 
 class BaseResource(Resource):
-    def __init__(self, rest_api_object, **kwargs):
+    def __init__(self, rest_api_object: RestAPI, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.rest_api = rest_api_object
 
@@ -130,7 +136,7 @@ class SettingsResource(BaseResource):
 
     put_schema = ModifiableSettingsSchema()
 
-    @use_kwargs(put_schema, location='json')
+    @use_kwargs(put_schema, location='json')  # type: ignore
     def put(
             self,
             premium_should_sync: Optional[bool],
@@ -170,7 +176,7 @@ class AsyncTasksResource(BaseResource):
 
     get_schema = AsyncTasksQuerySchema()
 
-    @use_kwargs(get_schema, location='view_args')
+    @use_kwargs(get_schema, location='view_args')  # type: ignore
     def get(self, task_id: Optional[int]) -> Response:
         return self.rest_api.query_tasks_outcome(task_id=task_id)
 
@@ -179,7 +185,7 @@ class FiatExchangeRatesResource(BaseResource):
 
     get_schema = FiatExchangeRatesSchema()
 
-    @use_kwargs(get_schema, location='json_and_query')
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
     def get(self, currencies: Optional[List[Asset]]) -> Response:
         return self.rest_api.get_fiat_exchange_rates(currencies=currencies)
 
@@ -192,7 +198,7 @@ class ExchangesResource(BaseResource):
     def get(self) -> Response:
         return self.rest_api.get_exchanges()
 
-    @use_kwargs(put_schema, location='json')
+    @use_kwargs(put_schema, location='json')  # type: ignore
     def put(
             self,
             name: str,
@@ -202,7 +208,7 @@ class ExchangesResource(BaseResource):
     ) -> Response:
         return self.rest_api.setup_exchange(name, api_key, api_secret, passphrase)
 
-    @use_kwargs(delete_schema, location='json')
+    @use_kwargs(delete_schema, location='json')  # type: ignore
     def delete(self, name: str) -> Response:
         return self.rest_api.remove_exchange(name=name)
 
@@ -215,14 +221,14 @@ class ExternalServicesResource(BaseResource):
     def get(self) -> Response:
         return self.rest_api.get_external_services()
 
-    @use_kwargs(put_schema, location='json')
+    @use_kwargs(put_schema, location='json')  # type: ignore
     def put(
             self,
             services: List[ExternalServiceApiCredentials],
     ) -> Response:
         return self.rest_api.add_external_services(services=services)
 
-    @use_kwargs(delete_schema, location='json')
+    @use_kwargs(delete_schema, location='json')  # type: ignore
     def delete(self, services: List[ExternalService]) -> Response:
         return self.rest_api.delete_external_services(services=services)
 
@@ -231,7 +237,7 @@ class AllBalancesResource(BaseResource):
 
     get_schema = AllBalancesQuerySchema()
 
-    @use_kwargs(get_schema, location='json_and_query')
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
     def get(self, save_data: bool, async_query: bool, ignore_cache: bool) -> Response:
         return self.rest_api.query_all_balances(
             save_data=save_data,
@@ -244,7 +250,7 @@ class ExchangeBalancesResource(BaseResource):
 
     get_schema = ExchangeBalanceQuerySchema()
 
-    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    @use_kwargs(get_schema, location='json_and_query_and_view_args')  # type: ignore
     def get(self, name: Optional[str], async_query: bool, ignore_cache: bool) -> Response:
         return self.rest_api.query_exchange_balances(
             name=name,
@@ -263,7 +269,7 @@ class ExchangeTradesResource(BaseResource):
 
     get_schema = ExchangeTradesQuerySchema()
 
-    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    @use_kwargs(get_schema, location='json_and_query_and_view_args')  # type: ignore
     def get(
             self,
             name: Optional[str],
@@ -283,7 +289,7 @@ class BlockchainBalancesResource(BaseResource):
 
     get_schema = BlockchainBalanceQuerySchema()
 
-    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    @use_kwargs(get_schema, location='json_and_query_and_view_args')  # type: ignore
     def get(
             self,
             blockchain: Optional[SupportedBlockchain],
@@ -304,7 +310,7 @@ class FiatBalancesResource(BaseResource):
     def get(self) -> Response:
         return self.rest_api.query_fiat_balances()
 
-    @use_kwargs(patch_schema, location='json')
+    @use_kwargs(patch_schema, location='json')  # type: ignore
     def patch(self, balances: Dict[Asset, AssetAmount]) -> Response:
         # The passsed assets are guaranteed to be FIAT assets thanks to marshmallow
         return self.rest_api.set_fiat_balances(balances)
@@ -317,7 +323,7 @@ class TradesResource(BaseResource):
     patch_schema = TradePatchSchema()
     delete_schema = TradeDeleteSchema()
 
-    @use_kwargs(get_schema, location='json_and_query')
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
     def get(
             self,
             from_timestamp: Timestamp,
@@ -330,7 +336,7 @@ class TradesResource(BaseResource):
             location=location,
         )
 
-    @use_kwargs(put_schema, location='json')
+    @use_kwargs(put_schema, location='json')  # type: ignore
     def put(
             self,
             timestamp: Timestamp,
@@ -357,7 +363,7 @@ class TradesResource(BaseResource):
             notes=notes,
         )
 
-    @use_kwargs(patch_schema, location='json')
+    @use_kwargs(patch_schema, location='json')  # type: ignore
     def patch(
             self,
             trade_id: str,
@@ -386,7 +392,7 @@ class TradesResource(BaseResource):
             notes=notes,
         )
 
-    @use_kwargs(delete_schema, location='json')
+    @use_kwargs(delete_schema, location='json')  # type: ignore
     def delete(self, trade_id: str) -> Response:
         return self.rest_api.delete_trade(trade_id=trade_id)
 
@@ -400,7 +406,7 @@ class TagsResource(BaseResource):
     def get(self) -> Response:
         return self.rest_api.get_tags()
 
-    @use_kwargs(put_schema, location='json')
+    @use_kwargs(put_schema, location='json')  # type: ignore
     def put(
             self,
             name: str,
@@ -415,7 +421,7 @@ class TagsResource(BaseResource):
             foreground_color=foreground_color,
         )
 
-    @use_kwargs(patch_schema, location='json')
+    @use_kwargs(patch_schema, location='json')  # type: ignore
     def patch(
             self,
             name: str,
@@ -430,7 +436,7 @@ class TagsResource(BaseResource):
             foreground_color=foreground_color,
         )
 
-    @use_kwargs(delete_schema, location='json')
+    @use_kwargs(delete_schema, location='json')  # type: ignore
     def delete(self, name: str) -> Response:
         return self.rest_api.delete_tag(name=name)
 
@@ -442,7 +448,7 @@ class UsersResource(BaseResource):
     def get(self) -> Response:
         return self.rest_api.get_users()
 
-    @use_kwargs(put_schema, location='json')
+    @use_kwargs(put_schema, location='json')  # type: ignore
     def put(
             self,
             name: str,
@@ -461,13 +467,13 @@ class UsersResource(BaseResource):
 class UsersByNameResource(BaseResource):
     patch_schema = UserActionSchema()
 
-    @use_kwargs(patch_schema, location='json_and_view_args')
+    @use_kwargs(patch_schema, location='json_and_view_args')  # type: ignore
     def patch(
             self,
             action: Optional[str],
             name: str,
             password: Optional[str],
-            sync_approval: str,
+            sync_approval: Literal['yes', 'no', 'unknown'],
             premium_api_key: str,
             premium_api_secret: str,
     ) -> Response:
@@ -499,7 +505,7 @@ class StatisticsAssetBalanceResource(BaseResource):
 
     get_schema = StatisticsAssetBalanceSchema()
 
-    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    @use_kwargs(get_schema, location='json_and_query_and_view_args')  # type: ignore
     def get(
             self,
             asset: Asset,
@@ -517,7 +523,7 @@ class StatisticsValueDistributionResource(BaseResource):
 
     get_schema = StatisticsValueDistributionSchema()
 
-    @use_kwargs(get_schema, location='json_and_query')
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
     def get(self, distribution_by: str) -> Response:
         return self.rest_api.query_value_distribution_data(
             distribution_by=distribution_by,
@@ -540,7 +546,7 @@ class HistoryProcessingResource(BaseResource):
 
     get_schema = HistoryProcessingSchema()
 
-    @use_kwargs(get_schema, location='json_and_query')
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
     def get(
             self,
             from_timestamp: Timestamp,
@@ -558,7 +564,7 @@ class HistoryExportingResource(BaseResource):
 
     get_schema = HistoryExportingSchema()
 
-    @use_kwargs(get_schema, location='json_and_query')
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
     def get(self, directory_path: Path) -> Response:
         return self.rest_api.export_processed_history_csv(directory_path=directory_path)
 
@@ -576,7 +582,7 @@ class EthereumTokensResource(BaseResource):
     def get(self) -> Response:
         return self.rest_api.get_eth_tokens()
 
-    @use_kwargs(modify_schema, location='json')
+    @use_kwargs(modify_schema, location='json')  # type: ignore
     def put(
             self,
             eth_tokens: List[EthereumToken],
@@ -584,7 +590,7 @@ class EthereumTokensResource(BaseResource):
     ) -> Response:
         return self.rest_api.add_owned_eth_tokens(tokens=eth_tokens, async_query=async_query)
 
-    @use_kwargs(modify_schema, location='json')
+    @use_kwargs(modify_schema, location='json')  # type: ignore
     def delete(
             self,
             eth_tokens: List[EthereumToken],
@@ -600,15 +606,15 @@ class BlockchainsAccountsResource(BaseResource):
     patch_schema = BlockchainAccountsPatchSchema()
     delete_schema = BlockchainAccountsDeleteSchema()
 
-    @use_kwargs(get_schema, location='view_args')
+    @use_kwargs(get_schema, location='view_args')  # type: ignore
     def get(self, blockchain: SupportedBlockchain) -> Response:
         return self.rest_api.get_blockchain_accounts(blockchain)
 
-    @use_kwargs(put_schema, location='json_and_view_args')
+    @use_kwargs(put_schema, location='json_and_view_args')  # type: ignore
     def put(
             self,
             blockchain: SupportedBlockchain,
-            accounts: List[Dict[str, str]],
+            accounts: List[Dict[str, Any]],
             async_query: bool,
     ) -> Response:
         account_data = [
@@ -624,11 +630,11 @@ class BlockchainsAccountsResource(BaseResource):
             async_query=async_query,
         )
 
-    @use_kwargs(patch_schema, location='json_and_view_args')
+    @use_kwargs(patch_schema, location='json_and_view_args')  # type: ignore
     def patch(
             self,
             blockchain: SupportedBlockchain,
-            accounts: List[Dict[str, str]],
+            accounts: List[Dict[str, Any]],
     ) -> Response:
         account_data = [
             BlockchainAccountData(
@@ -642,7 +648,7 @@ class BlockchainsAccountsResource(BaseResource):
             account_data=account_data,
         )
 
-    @use_kwargs(delete_schema, location='json_and_view_args')
+    @use_kwargs(delete_schema, location='json_and_view_args')  # type: ignore
     def delete(
             self,
             blockchain: SupportedBlockchain,
@@ -663,11 +669,11 @@ class IgnoredAssetsResource(BaseResource):
     def get(self) -> Response:
         return self.rest_api.get_ignored_assets()
 
-    @use_kwargs(modify_schema, location='json')
+    @use_kwargs(modify_schema, location='json')  # type: ignore
     def put(self, assets: List[Asset]) -> Response:
         return self.rest_api.add_ignored_assets(assets=assets)
 
-    @use_kwargs(modify_schema, location='json')
+    @use_kwargs(modify_schema, location='json')  # type: ignore
     def delete(self, assets: List[Asset]) -> Response:
         return self.rest_api.remove_ignored_assets(assets=assets)
 
@@ -682,7 +688,7 @@ class DataImportResource(BaseResource):
 
     put_schema = DataImportSchema()
 
-    @use_kwargs(put_schema, location='json')
+    @use_kwargs(put_schema, location='json')  # type: ignore
     def put(self, source: Literal['cointracking.info'], filepath: Path) -> None:
         return self.rest_api.import_data(source=source, filepath=filepath)
 
@@ -691,7 +697,7 @@ class MakerDAODSRBalanceResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()
 
-    @use_kwargs(get_schema, location='json_and_query')
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_makerdao_dsr_balance(async_query)
 
@@ -700,6 +706,6 @@ class MakerDAODSRHistoryResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()
 
-    @use_kwargs(get_schema, location='json_and_query')
+    @use_kwargs(get_schema, location='json_and_query')  # type: ignore
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_makerdao_dsr_history(async_query)

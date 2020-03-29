@@ -65,7 +65,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
         return entry
 
 
-def process_result(result: Dict[Any, Any]) -> Dict[Any, Any]:
+def process_result(result: Any) -> Dict[Any, Any]:
     """Before sending out a result dictionary via the server we are serializing it.
     Turning:
 

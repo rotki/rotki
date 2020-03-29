@@ -1,6 +1,6 @@
 
 from enum import Enum
-from typing import Dict, List, NamedTuple, NewType, Optional, Tuple, Union
+from typing import Callable, Dict, List, NamedTuple, NewType, Optional, Tuple, Union
 
 from eth_utils.typing import ChecksumAddress
 
@@ -156,6 +156,14 @@ class SupportedBlockchain(Enum):
     """These are the blockchains for which account tracking is supported """
     ETHEREUM = 'ETH'
     BITCOIN = 'BTC'
+
+    def get_address_type(self) -> Callable:
+        if self == SupportedBlockchain.ETHEREUM:
+            return ChecksumEthAddress
+        elif self == SupportedBlockchain.BITCOIN:
+            return BTCAddress
+
+        raise AssertionError('Invalid SupportedBlockchain value')
 
 
 class AssetType(Enum):
