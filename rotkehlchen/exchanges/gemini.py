@@ -463,7 +463,7 @@ class Gemini(ExchangeInterface):
         for entry in result:
             try:
                 timestamp = deserialize_timestamp(entry['timestampms'])
-                timestamp = int(timestamp / 1000)
+                timestamp = Timestamp(int(timestamp / 1000))
                 asset = Asset(entry['currency'])
                 movement = AssetMovement(
                     location=Location.GEMINI,

@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import gevent
 from gevent.lock import Semaphore
+from typing_extensions import Literal
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.assets.asset import Asset, EthereumToken
@@ -122,7 +123,7 @@ class Rotkehlchen():
             user: str,
             password: str,
             create_new: bool,
-            sync_approval: str,
+            sync_approval: Literal['yes', 'no', 'unknown'],
             premium_credentials: Optional[PremiumCredentials],
     ) -> None:
         """Unlocks an existing user or creates a new one if `create_new` is True

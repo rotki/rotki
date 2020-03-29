@@ -26,9 +26,11 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
+    AssetAmount,
     AssetMovementCategory,
     Fee,
     Location,
+    Price,
     Timestamp,
     TradePair,
 )
@@ -70,7 +72,7 @@ def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Optional[Trade]:
     pair = TradePair(f'{tx_asset.identifier}_{native_asset.identifier}')
     amount = tx_amount
     # The rate is how much you get/give in quotecurrency if you buy/sell 1 unit of base currency
-    rate = native_amount / tx_amount
+    rate = Price(native_amount / tx_amount)
     fee_amount = deserialize_fee(raw_trade['fee']['amount'])
     fee_asset = asset_from_coinbase(raw_trade['fee']['currency'], time=timestamp)
 
@@ -469,7 +471,7 @@ class Coinbase(ExchangeInterface):
 
                 amount = deserialize_asset_amount(raw_data['amount']['amount'])
                 # For sends the amount is always returned negative so we have to fix this here
-                amount *= FVal('-1')
+                amount = AssetAmount(amount * FVal('-1'))
                 asset = asset_from_coinbase(raw_data['amount']['currency'], time=timestamp)
                 # Fees dont appear in the docs but from an experiment of sending ETH
                 # to an address from coinbase there is the network fee in the response

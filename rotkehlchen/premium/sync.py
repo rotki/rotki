@@ -41,7 +41,7 @@ class PremiumSyncManager():
         self.last_data_upload_ts = 0
         self.data = data
         self.password = password
-        self.premium = None
+        self.premium: Optional[Premium] = None
 
     def _can_sync_data_from_server(self, new_account: bool) -> SyncCheckResult:
         """
@@ -117,6 +117,7 @@ class PremiumSyncManager():
         coming from  decompress_and_decrypt_db. This happens when the given password
         does not match the one on the saved DB.
         """
+        assert self.premium, 'This function has to be called with a not None premium'
         try:
             result = self.premium.pull_data()
         except RemoteError as e:
@@ -219,7 +220,7 @@ class PremiumSyncManager():
                 # But create a backup of it in case something went really wrong
                 # and the directory contained data we did not want to lose
                 shutil.move(
-                    self.data.user_data_dir,
+                    self.data.user_data_dir,  # type: ignore
                     os.path.join(
                         self.data.data_directory,
                         f'auto_backup_{username}_{ts_now()}',
@@ -244,7 +245,7 @@ class PremiumSyncManager():
                 log.error(message)
                 raise PremiumAuthenticationError(message)
 
-        # From this point on we should have a self.premium with valid credentials
+        assert self.premium, 'From this point on premium should exist with valid credentials'
         result = self._can_sync_data_from_server(new_account=create_new)
         if result.can_sync == CanSync.ASK_USER:
             if sync_approval == 'unknown':

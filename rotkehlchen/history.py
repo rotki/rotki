@@ -243,9 +243,11 @@ class TradesHistorian():
 
         # Include makerdao DSR gains as a simple gains only blockchain loan entry for the given
         # time period
-        makerdao = self.chain_manager.eth_modules.get('makerdao', None)
-        if makerdao and has_premium:
-            gain = makerdao.get_dsr_gains_in_period(from_ts=start_ts, to_ts=end_ts)
+        if self.chain_manager.makerdao and has_premium:
+            gain = self.chain_manager.makerdao.get_dsr_gains_in_period(
+                from_ts=start_ts,
+                to_ts=end_ts,
+            )
             if gain > ZERO:
                 loans.append(Loan(
                     location=Location.BLOCKCHAIN,
@@ -253,7 +255,7 @@ class TradesHistorian():
                     close_time=end_ts,
                     currency=A_DAI,
                     fee=Fee(ZERO),
-                    earned=gain,
+                    earned=AssetAmount(gain),
                     amount_lent=AssetAmount(ZERO),
                 ))
 

@@ -40,7 +40,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_date,
     deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp, TradePair
+from rotkehlchen.typing import ApiKey, ApiSecret, AssetAmount, Fee, Location, Timestamp, TradePair
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import timestamp_to_iso8601, ts_now
@@ -351,7 +351,7 @@ class Coinbasepro(ExchangeInterface):
                         amount = deserialize_asset_amount(row['amount'])
                         if row['type'] == 'withdrawal':
                             # For withdrawals the withdraw amount is negative
-                            amount *= FVal('-1')
+                            amount = AssetAmount(amount * FVal('-1'))
                         asset = Asset(row['amount/balance unit'])
                         movements.append(AssetMovement(
                             location=Location.COINBASEPRO,
