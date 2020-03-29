@@ -39,6 +39,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
+    AssetAmount,
     AssetMovementCategory,
     Fee,
     Location,
@@ -129,9 +130,9 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
         - DeserializationError due to unexpected format of dict entries
         - KeyError due to dict entries missing an expected entry
     """
-    amount = (
+    amount = AssetAmount(
         deserialize_asset_amount(bittrex_trade['Quantity']) -
-        deserialize_asset_amount(bittrex_trade['QuantityRemaining'])
+        deserialize_asset_amount(bittrex_trade['QuantityRemaining']),
     )
     timestamp = deserialize_timestamp_from_bittrex_date(bittrex_trade['TimeStamp'])
     rate = deserialize_price(bittrex_trade['PricePerUnit'])

@@ -15,7 +15,14 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_fee
-from rotkehlchen.typing import ApiKey, ApiSecret, AssetAmount, AssetMovementCategory, Timestamp
+from rotkehlchen.typing import (
+    ApiKey,
+    ApiSecret,
+    AssetAmount,
+    AssetMovementCategory,
+    Fee,
+    Timestamp,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import cache_response_timewise, protect_with_lock
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, satoshis_to_btc
@@ -287,12 +294,12 @@ class Bitmex(ExchangeInterface):
                 fee = deserialize_fee(movement['fee'])
                 # bitmex has negative numbers for withdrawals
                 if amount < 0:
-                    amount *= -1
+                    amount = AssetAmount(amount * -1)
 
                 if asset == A_BTC:
                     # bitmex stores amounts in satoshis
-                    amount = satoshis_to_btc(amount)
-                    fee = satoshis_to_btc(fee)
+                    amount = AssetAmount(satoshis_to_btc(amount))
+                    fee = Fee(satoshis_to_btc(fee))
 
                 movements.append(AssetMovement(
                     location=Location.BITMEX,

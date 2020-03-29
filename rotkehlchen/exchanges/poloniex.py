@@ -90,10 +90,10 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
 
     cost = rate * amount
     if trade_type == TradeType.BUY:
-        fee = amount * perc_fee
+        fee = Fee(amount * perc_fee)
         fee_currency = quote_currency
     elif trade_type == TradeType.SELL:
-        fee = cost * perc_fee
+        fee = Fee(cost * perc_fee)
         fee_currency = base_currency
     else:
         raise DeserializationError(f'Got unexpected trade type "{trade_type}" for poloniex trade')

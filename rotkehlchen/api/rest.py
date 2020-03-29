@@ -813,7 +813,7 @@ class RestAPI():
             self,
             name: str,
             password: str,
-            sync_approval: str,
+            sync_approval: Literal['yes', 'no', 'unknown'],
     ) -> Response:
 
         result_dict: Dict[str, Any] = {'result': None, 'message': ''}

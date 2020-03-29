@@ -3,12 +3,13 @@ import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, cast, overload
 
 import requests
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.chain.ethereum.makerdao import MakerDAO
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.utils import BlockchainAccounts
@@ -34,7 +35,7 @@ from rotkehlchen.utils.interfaces import (
     cache_response_timewise,
     protect_with_lock,
 )
-from rotkehlchen.utils.misc import request_get, request_get_direct, satoshis_to_btc
+from rotkehlchen.utils.misc import request_get_dict, request_get_direct, satoshis_to_btc
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -173,6 +174,14 @@ class ChainManager(CacheableObject, LockableQueryObject):
         return self.ethereum.set_rpc_endpoint(endpoint)
 
     @property
+    def makerdao(self) -> Optional[MakerDAO]:
+        module = self.eth_modules.get('makerdao', None)
+        if not module:
+            return None
+
+        return cast(MakerDAO, module)
+
+    @property
     def eth_tokens(self) -> List[EthereumToken]:
         return self.owned_eth_tokens
 
@@ -215,7 +224,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         try:
             if account.lower()[0:3] == 'bc1':
                 url = f'https://api.blockcypher.com/v1/btc/main/addrs/{account.lower()}/balance'
-                response_data = request_get(url=url)
+                response_data = request_get_dict(url=url)
                 if 'balance' not in response_data:
                     raise RemoteError(f'Unexpected blockcypher balance response: {response_data}')
                 btc_resp = response_data['balance']
@@ -609,7 +618,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             self,
             action: AccountAction,
             given_accounts: Optional[List[ChecksumEthAddress]] = None,
-    ):
+    ) -> None:
         """Queries ethereum tokens via Alethio which autodetects which tokens an account owns
 
         By default queries all accounts but can also be given a specific list of
@@ -618,20 +627,14 @@ class ChainManager(CacheableObject, LockableQueryObject):
         May raise:
         - RemoteError if there is a problem with querying alethio
         """
-        token_usd_price = {}
-        token_totals = defaultdict(FVal)
+        token_usd_price: Dict[EthereumToken, Price] = {}
+        token_totals: Dict[EthereumToken, FVal] = defaultdict(FVal)
         eth_balances = self.balances.eth
 
-        accounts = given_accounts
         if given_accounts is None:
             accounts = self.accounts.eth
-
-        if action == AccountAction.APPEND:
-            add_or_sub = operator.add
-        elif action == AccountAction.REMOVE:
-            add_or_sub = operator.sub
         else:
-            add_or_sub = None
+            accounts = given_accounts
 
         for account in accounts:
             balances = self.alethio.get_token_balances(account)
@@ -658,6 +661,13 @@ class ChainManager(CacheableObject, LockableQueryObject):
                         eth_balances[account].increase_total_usd_value(usd_value)
                     token_totals[token] = token_totals[token] + balance
 
+        if action == AccountAction.APPEND:
+            add_or_sub = operator.add
+        elif action == AccountAction.REMOVE:
+            add_or_sub = operator.sub
+        else:
+            raise AssertionError('Should never happen')
+
         for token, balance in token_totals.items():
             if balance != ZERO:
                 if action == AccountAction.QUERY:
@@ -679,7 +689,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             tokens: List[EthereumToken],
             action: AccountAction,
             given_accounts: Optional[List[ChecksumEthAddress]] = None,
-    ):
+    ) -> None:
         """Queries ethereum token balance via either etherscan or ethereum node
 
         By default queries all accounts but can also be given a specific list of
@@ -691,18 +701,13 @@ class ChainManager(CacheableObject, LockableQueryObject):
         - EthSyncError if querying the token balances through a provided ethereum
         client and the chain is not synced
         """
-        token_balances = {}
+        token_balances: Dict[EthereumToken, Dict[ChecksumEthAddress, FVal]] = {}
         token_usd_price = {}
-        accounts = given_accounts
+
         if given_accounts is None:
             accounts = self.accounts.eth
-
-        if action == AccountAction.APPEND:
-            add_or_sub = operator.add
-        elif action == AccountAction.REMOVE:
-            add_or_sub = operator.sub
         else:
-            add_or_sub = None
+            accounts = given_accounts
 
         for token in tokens:
             try:
@@ -734,6 +739,13 @@ class ChainManager(CacheableObject, LockableQueryObject):
                     'Tried to use the ethereum chain of the provided client to query '
                     'token balances but the chain is not synced.',
                 )
+
+        if action == AccountAction.APPEND:
+            add_or_sub = operator.add
+        elif action == AccountAction.REMOVE:
+            add_or_sub = operator.sub
+        else:
+            raise AssertionError('Should never happen')
 
         eth_balances = self.balances.eth
         for token, token_accounts in token_balances.items():
@@ -790,14 +802,14 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
         # If we have anything in DSR also count it towards total blockchain balances
         eth_balances = self.balances.eth
-        makerdao = self.eth_modules.get('makerdao', None)
-        if makerdao:
+        if self.makerdao:
             additional_total_dai = FVal(0)
             try:
                 usd_price = Inquirer().find_usd_price(A_DAI)
             except RemoteError:
-                usd_price = Price(1)  # Let's try to continue with a usd/dai price of 1 if error
-            current_dsr_report = makerdao.get_current_dsr()
+                # Let's try to continue with a usd/dai price of 1 if error
+                usd_price = Price(FVal('1'))
+            current_dsr_report = self.makerdao.get_current_dsr()
             for dsr_account, dai_value in current_dsr_report.balances.items():
 
                 usd_value = dai_value * usd_price
