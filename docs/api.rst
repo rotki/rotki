@@ -2503,7 +2503,7 @@ Getting current ethereum MakerDAO DSR balance
    :resjson object result: A mapping of accounts to the number of DAI they have locked in DSR. If an account is not in the mapping Rotki does not see anything locked in DSR for it.
 
    :statuscode 200: DSR succesfully queried.
-   :statuscode 409: User is not logged in.
+   :statuscode 409: User is not logged in. Or makerdao module is not activated.
    :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
@@ -2588,7 +2588,7 @@ Getting ethereum MakerDAO DSR historical report
    :resjsonarr int block_number: The timestamp of the block number at which the deposit or withdrawal occured.
 
    :statuscode 200: DSR history succesfully queried.
-   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
+   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription. Or makerdao module is not activated.
    :statuscode 500: Internal Rotki error
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
