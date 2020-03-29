@@ -123,8 +123,8 @@ prices = {
 
 
 def check_result_of_history_creation_for_remote_errors(
-        start_ts: Timestamp,
-        end_ts: Timestamp,
+        start_ts: Timestamp,  # pylint: disable=unused-argument
+        end_ts: Timestamp,  # pylint: disable=unused-argument
         trade_history: List[Union[Trade, MarginPosition]],
         loan_history: List[Loan],
         asset_movements: List[AssetMovement],
@@ -389,7 +389,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
 
         return MockResponse(200, payload)
 
-    def mock_bitmex_api_queries(url, data):
+    def mock_bitmex_api_queries(url, data):  # pylint: disable=unused-argument
         if remote_errors:
             payload = invalid_payload
         elif 'user/walletHistory' in url:
@@ -689,7 +689,7 @@ def mock_history_processing(
 
 
 def mock_etherscan_transaction_response(etherscan: Etherscan, remote_errors: bool):
-    def mocked_request_dict(url, *args, **kwargs):
+    def mocked_request_dict(url, *_args, **_kwargs):
         if remote_errors:
             return MockResponse(200, "[{")
 
