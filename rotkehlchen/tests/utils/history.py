@@ -1,12 +1,13 @@
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 from unittest.mock import _patch, patch
 
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
+from rotkehlchen.tests.fixtures.exchanges.kraken import MockKraken
 from rotkehlchen.tests.utils.constants import (
     ETH_ADDRESS1,
     ETH_ADDRESS2,
@@ -124,8 +125,8 @@ prices = {
 def check_result_of_history_creation_for_remote_errors(
         start_ts: Timestamp,
         end_ts: Timestamp,
-        trade_history: List[Trade],
-        loan_history: Dict,
+        trade_history: List[Union[Trade, MarginPosition]],
+        loan_history: List[Loan],
         asset_movements: List[AssetMovement],
         eth_transactions: List[EthereumTransaction],
 ) -> Dict[str, Any]:
@@ -521,7 +522,7 @@ def mock_history_processing(
             start_ts: Timestamp,
             end_ts: Timestamp,
             trade_history: List[Union[Trade, MarginPosition]],
-            loan_history: Dict,
+            loan_history: List[Loan],
             asset_movements: List[AssetMovement],
             eth_transactions: List[EthereumTransaction],
     ) -> Dict[str, Any]:
@@ -539,32 +540,41 @@ def mock_history_processing(
         # OR instead do it in tests for conversion of actions(trades, loans, deposits e.t.c.)
         # from exchange to our format for each exchange
         assert len(trade_history) == 11
+        assert isinstance(trade_history[0], Trade)
         assert trade_history[0].location == Location.KRAKEN
         assert trade_history[0].pair == 'ETH_EUR'
         assert trade_history[0].trade_type == TradeType.BUY
+        assert isinstance(trade_history[1], Trade)
         assert trade_history[1].location == Location.KRAKEN
         assert trade_history[1].pair == 'BTC_EUR'
         assert trade_history[1].trade_type == TradeType.BUY
+        assert isinstance(trade_history[2], Trade)
         assert trade_history[2].location == Location.BITTREX
         assert trade_history[2].pair == 'LTC_BTC'
         assert trade_history[2].trade_type == TradeType.BUY
+        assert isinstance(trade_history[3], Trade)
         assert trade_history[3].location == Location.BITTREX
         assert trade_history[3].pair == 'LTC_ETH'
         assert trade_history[3].trade_type == TradeType.SELL
         assert isinstance(trade_history[4], MarginPosition)
         assert trade_history[4].profit_loss == FVal('0.05')
+        assert isinstance(trade_history[5], Trade)
         assert trade_history[5].location == Location.BINANCE
         assert trade_history[5].pair == 'ETH_BTC'
         assert trade_history[5].trade_type == TradeType.BUY
+        assert isinstance(trade_history[6], Trade)
         assert trade_history[6].location == Location.BINANCE
         assert trade_history[6].pair == 'RDN_ETH'
         assert trade_history[6].trade_type == TradeType.SELL
+        assert isinstance(trade_history[7], Trade)
         assert trade_history[7].location == Location.POLONIEX
         assert trade_history[7].pair == 'ETH_BTC'
         assert trade_history[7].trade_type == TradeType.SELL
+        assert isinstance(trade_history[8], Trade)
         assert trade_history[8].location == Location.POLONIEX
         assert trade_history[8].pair == 'ETH_BTC'
         assert trade_history[8].trade_type == TradeType.BUY
+        assert isinstance(trade_history[9], Trade)
         assert trade_history[9].location == Location.POLONIEX
         assert trade_history[9].pair == 'XMR_ETH'
         assert trade_history[9].trade_type == TradeType.BUY
@@ -641,7 +651,7 @@ def mock_history_processing(
             start_ts: Timestamp,
             end_ts: Timestamp,
             trade_history: List[Union[Trade, MarginPosition]],
-            loan_history: Dict,
+            loan_history: List[Loan],
             asset_movements: List[AssetMovement],
             eth_transactions: List[EthereumTransaction],
     ) -> Dict[str, Any]:
@@ -655,12 +665,12 @@ def mock_history_processing(
             eth_transactions=eth_transactions,
         )
         return original_history_processing_function(
-            start_ts,
-            end_ts,
-            trade_history,
-            loan_history,
-            asset_movements,
-            eth_transactions,
+            start_ts=start_ts,
+            end_ts=end_ts,
+            trade_history=trade_history,
+            loan_history=loan_history,
+            asset_movements=asset_movements,
+            eth_transactions=eth_transactions,
         )
 
     if should_mock_history_processing is True:
@@ -772,7 +782,7 @@ def prepare_rotki_for_history_processing_test(
     Makes sure blockchain accounts are loaded, kraken does not generate random trades
     and that all mocks are ready.
     """
-    kraken = rotki.exchange_manager.connected_exchanges['kraken']
+    kraken = cast(MockKraken, rotki.exchange_manager.connected_exchanges['kraken'])
     kraken.random_trade_data = False
     kraken.random_ledgers_data = False
     kraken.remote_errors = remote_errors
@@ -788,7 +798,7 @@ def prepare_rotki_for_history_processing_test(
 
 def assert_binance_trades_result(
         trades: List[Dict[str, Any]],
-        trades_to_check: Optional[Tuple[int]] = None,
+        trades_to_check: Optional[Tuple[int, ...]] = None,
 ) -> None:
     """Convenience function to assert on the trades returned by binance's mock
 
@@ -839,7 +849,7 @@ def assert_binance_trades_result(
 
 def assert_poloniex_trades_result(
         trades: List[Dict[str, Any]],
-        trades_to_check: Optional[Tuple[int]] = None,
+        trades_to_check: Optional[Tuple[int, ...]] = None,
 ) -> None:
     """Convenience function to assert on the trades returned by poloniex's mock
 

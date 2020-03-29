@@ -4,7 +4,16 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.constants import A_XMR
-from rotkehlchen.typing import AssetMovementCategory, Location, TradeType
+from rotkehlchen.typing import (
+    AssetAmount,
+    AssetMovementCategory,
+    Fee,
+    Location,
+    Price,
+    Timestamp,
+    TradePair,
+    TradeType,
+)
 
 
 def assert_cointracking_import_results(rotki: Rotkehlchen):
@@ -17,24 +26,24 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
     assert len(warnings) == 3
 
     expected_trades = [Trade(
-        timestamp=1566687660,
+        timestamp=Timestamp(1566687660),
         location=Location.COINBASE,
-        pair='ETH_EUR',
+        pair=TradePair('ETH_EUR'),
         trade_type=TradeType.BUY,
-        amount=FVal('0.05772716'),
-        rate=FVal('190.3783245183029963712055123'),
-        fee=ZERO,
+        amount=AssetAmount(FVal('0.05772716')),
+        rate=Price(FVal('190.3783245183029963712055123')),
+        fee=Fee(ZERO),
         fee_currency=A_ETH,
         link='',
         notes='',
     ), Trade(
-        timestamp=1567418400,
+        timestamp=Timestamp(1567418400),
         location=Location.EXTERNAL,
-        pair='BTC_USD',
+        pair=TradePair('BTC_USD'),
         trade_type=TradeType.BUY,
-        amount=FVal('0.00100000'),
-        rate=ZERO,
-        fee=ZERO,
+        amount=AssetAmount(FVal('0.00100000')),
+        rate=Price(ZERO),
+        fee=Fee(ZERO),
         fee_currency=A_BTC,
         link='',
         notes='Just a small gift from someone',
@@ -44,20 +53,20 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
     expected_movements = [AssetMovement(
         location=Location.POLONIEX,
         category=AssetMovementCategory.DEPOSIT,
-        timestamp=1565848620,
+        timestamp=Timestamp(1565848620),
         asset=A_XMR,
-        amount=FVal('5'),
+        amount=AssetAmount(FVal('5')),
         fee_asset=A_XMR,
-        fee=ZERO,
+        fee=Fee(ZERO),
         link='',
     ), AssetMovement(
         location=Location.COINBASE,
         category=AssetMovementCategory.WITHDRAWAL,
-        timestamp=1566726120,
+        timestamp=Timestamp(1566726120),
         asset=A_ETH,
-        amount=FVal('0.05770427'),
+        amount=AssetAmount(FVal('0.05770427')),
         fee_asset=A_ETH,
-        fee=ZERO,
+        fee=Fee(ZERO),
         link='',
     )]
     assert expected_movements == asset_movements

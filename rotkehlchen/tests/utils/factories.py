@@ -6,7 +6,7 @@ from typing import Optional
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import ApiKey, ApiSecret, Timestamp
+from rotkehlchen.typing import ApiKey, ApiSecret, ChecksumEthAddress, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 DEFAULT_START_TS = Timestamp(1451606400)
@@ -29,11 +29,13 @@ def make_random_positive_fval(max_num: int = 1000000) -> FVal:
 
 
 def make_random_timestamp(
-        start: Timestamp = DEFAULT_START_TS,
+        start: Optional[Timestamp] = DEFAULT_START_TS,
         end: Optional[Timestamp] = None,
 ) -> Timestamp:
     if end is None:
         end = ts_now()
+    if start is None:
+        start = DEFAULT_START_TS
     return Timestamp(random.randint(start, end))
 
 
@@ -45,7 +47,7 @@ def make_api_secret() -> ApiSecret:
     return ApiSecret(base64.b64encode(make_random_b64bytes(128)))
 
 
-def make_ethereum_address():
+def make_ethereum_address() -> ChecksumEthAddress:
     return to_checksum_address('0x' + make_random_bytes(20).hex())
 
 

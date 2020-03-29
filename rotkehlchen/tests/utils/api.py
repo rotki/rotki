@@ -43,11 +43,14 @@ def create_api_server(rotki: Rotkehlchen, port_number: int) -> APIServer:
 
 
 def api_url_for(api_server: APIServer, endpoint: str, **kwargs) -> str:
-    with api_server.flask_app.app_context():
+    with api_server.flask_app.app_context():  # type: ignore
         return url_for(f"v1_resources.{endpoint}", **kwargs)
 
 
-def assert_proper_response(response: requests.Response, status_code=HTTPStatus.OK) -> None:
+def assert_proper_response(
+        response: Optional[requests.Response],
+        status_code=HTTPStatus.OK,
+) -> None:
     assert (
         response is not None and
         response.status_code == status_code and
@@ -63,7 +66,7 @@ def assert_simple_ok_response(response: requests.Response) -> None:
 
 
 def assert_error_response(
-        response: requests.Response,
+        response: Optional[requests.Response],
         contained_in_msg: Optional[str] = None,
         status_code: HTTPStatus = HTTPStatus.BAD_REQUEST,
         result_exists: bool = False,

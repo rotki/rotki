@@ -199,13 +199,15 @@ class PremiumSyncManager():
             username: str,
             create_new: bool,
             sync_approval: Literal['yes', 'no', 'unknown'],
-    ) -> Premium:
+    ) -> Optional[Premium]:
         """
         Check if new user provided api pair or we already got one in the DB
 
         Returns the created premium if user's premium credentials were fine.
 
         If not it will raise PremiumAuthenticationError.
+
+        If no credentials were given it returns None
         """
 
         if given_premium_credentials is not None:
@@ -245,7 +247,9 @@ class PremiumSyncManager():
                 log.error(message)
                 raise PremiumAuthenticationError(message)
 
-        assert self.premium, 'From this point on premium should exist with valid credentials'
+        if not self.premium:
+            return None
+
         result = self._can_sync_data_from_server(new_account=create_new)
         if result.can_sync == CanSync.ASK_USER:
             if sync_approval == 'unknown':

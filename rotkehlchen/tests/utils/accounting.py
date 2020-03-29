@@ -1,8 +1,9 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence, Union
 
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     MarginPosition,
+    Trade,
     trades_from_dictlist,
 )
 from rotkehlchen.exchanges.poloniex import process_polo_loans
@@ -19,18 +20,19 @@ def accounting_history_process(
         asset_movements_list: List[AssetMovement] = None,
         eth_transaction_list: List[Dict] = None,
 ) -> Dict[str, Any]:
+    trade_history: Sequence[Union[Trade, MarginPosition]]
     # For filtering the taxable actions list we start with 0 ts so that we have the
     # full history available
     trade_history = trades_from_dictlist(
         given_trades=history_list,
-        start_ts=0,
+        start_ts=Timestamp(0),
         end_ts=end_ts,
         location='accounting_history_process for tests',
         msg_aggregator=accountant.msg_aggregator,
     )
     # if present, append margin positions to trade history
     if margin_list:
-        trade_history.extend(margin_list)
+        trade_history.extend(margin_list)  # type: ignore
 
     asset_movements = []
     if asset_movements_list:
@@ -41,7 +43,7 @@ def accounting_history_process(
         loan_history = process_polo_loans(
             msg_aggregator=accountant.msg_aggregator,
             data=loans_list,
-            start_ts=0,
+            start_ts=Timestamp(0),
             end_ts=end_ts,
         )
 

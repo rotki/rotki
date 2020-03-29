@@ -1,6 +1,7 @@
 import base64
 import os
 from http import HTTPStatus
+from typing import Optional
 from unittest.mock import patch
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
@@ -165,6 +166,7 @@ def setup_starting_environment(
         saved_data=remote_data,
     )
 
+    given_premium_credentials: Optional[PremiumCredentials]
     if first_time:
         given_premium_credentials = premium_credentials
         create_new = True
