@@ -54,7 +54,7 @@ class DelimitedOrNormalList(webargs.fields.DelimitedList):
             self,
             cls_or_instance: Any,
             *,
-            delimiter: Optional[str] = None,
+            _delimiter: Optional[str] = None,
             **kwargs: Any,
     ) -> None:
         super().__init__(cls_or_instance, **kwargs)
@@ -713,7 +713,11 @@ class UserActionSchema(BaseSchema):
     premium_api_secret = fields.String(missing='')
 
     @validates_schema  # type: ignore
-    def validate_user_action_schema(self, data: Dict[str, Any], **_kwargs: Any) -> None:
+    def validate_user_action_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
         if data['action'] == 'login':
             if data['password'] is None:
                 raise ValidationError('Missing password field for login')
@@ -750,7 +754,7 @@ class ExternalServiceSchema(Schema):
     api_key = fields.String(required=True)
 
     @post_load  # type: ignore
-    def make_external_service(
+    def make_external_service(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
             **_kwargs: Any,
@@ -941,7 +945,11 @@ class BlockchainAccountsPatchSchema(BaseSchema):
     accounts = fields.List(fields.Nested(BlockchainAccountDataSchema), required=True)
 
     @validates_schema  # type: ignore
-    def validate_schema(self, data: Dict[str, Any], **_kwargs: Any) -> None:
+    def validate_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
         _validate_blockchain_account_schemas(data, lambda x: x['address'])
 
     class Meta:
@@ -965,7 +973,7 @@ class BlockchainAccountsDeleteSchema(BaseSchema):
     async_query = fields.Boolean(missing=False)
 
     @validates_schema  # type: ignore
-    def validate_blockchain_accounts_patch_schema(
+    def validate_blockchain_accounts_patch_schema(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
             **_kwargs: Any,

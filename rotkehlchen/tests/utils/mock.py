@@ -19,7 +19,10 @@ class MockEth():
         self.blockNumber = block_number
         self.chainId = 1
 
-    def getBlock(self, number: int) -> Dict[str, HexBytes]:  # noqa: N802
+    def getBlock(  # noqa: N802 pylint: disable=no-self-use
+            self,
+            _number: int,
+    ) -> Dict[str, HexBytes]:
         """Always return genesis block since this is what we care about in the tests"""
         genesis = (
             b'\xd4\xe5g@\xf8v\xae\xf8\xc0\x10\xb8j@\xd5\xf5gE\xa1\x18\xd0\x90j4'
@@ -30,8 +33,8 @@ class MockEth():
 
 class MockWeb3():
 
-    def __init__(self, providers=None, middlewares=None):
+    def __init__(self, _providers=None, _middlewares=None):
         self.eth = MockEth(0)
 
-    def isConnected(self):  # noqa: N802
+    def isConnected(self) -> bool:  # noqa: N802 pylint: disable=no-self-use
         return True

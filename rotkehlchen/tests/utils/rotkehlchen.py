@@ -141,7 +141,6 @@ def setup_balances(
         eth_map=eth_map,
         alethio=rotki.chain_manager.alethio,
         use_alethio=use_alethio,
-        original_requests_get=requests.get,
     )
     bitcoin_patch = mock_bitcoin_balances_query(
         btc_map=btc_map,

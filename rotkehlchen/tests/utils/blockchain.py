@@ -334,7 +334,7 @@ def assert_eth_balances_result(
     expected_total_eth = sum(from_wei(FVal(balance)) for balance in eth_balances)
     assert FVal(totals['ETH']['amount']) == expected_total_eth
     if expected_total_eth == ZERO:
-        FVal(totals['ETH']['usd_value']) == ZERO
+        assert FVal(totals['ETH']['usd_value']) == ZERO
     else:
         assert FVal(totals['ETH']['usd_value']) > ZERO
 
@@ -406,9 +406,8 @@ def mock_alethio_balances_query(
         eth_map: Dict[ChecksumEthAddress, Dict[str, Any]],
         alethio: Alethio,
         use_alethio: bool,
-        original_requests_get,
 ):
-    def mock_requests_get(url, *args, **kwargs):
+    def mock_requests_get(url, *_args, **_kwargs):
         if not use_alethio:
             response = '{"message": "fail so that test switches to etherscan"}'
             return MockResponse(400, response)
