@@ -327,9 +327,10 @@ class Rotkehlchen():
                 f'{", ".join(unknown_tags)} were found',
             )
 
+        address_type = blockchain.get_address_type()
         updated_balances = self.chain_manager.add_blockchain_accounts(
             blockchain=blockchain,
-            accounts=[entry.address for entry in account_data],
+            accounts=[address_type(entry.address) for entry in account_data],
         )
         self.data.db.add_blockchain_accounts(
             blockchain=blockchain,
