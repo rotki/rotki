@@ -958,7 +958,7 @@ Querying the trades history of exchanges
           "message": ""
       }
 
-   :resjsonarr trades: Each element of the result array is a JSON Object as defined in the `this section <trades_schema_section_>`_.
+   :resjsonarr trades: Each element of the result array is a JSON Object as defined in the `this section <trades_schema_section_>`__.
    :statuscode 200: Trades succesfully queried.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: User is not logged in.Exchange is not registered or some other exchange query error. Check error message for details.
@@ -2695,7 +2695,7 @@ Editing blockchain account data
       }
 
    :reqjson list[object] accounts: A list of account data to edit for the given blockchain
-   :reqjsonarr string address: The address of the account to add
+   :reqjsonarr string address: The address of the account to edit
    :reqjsonarr string[optional] label: An optional label to edit for the account
    :reqjsonarr list[optional] tags: An optional list of tags to attach to the account
 
@@ -2779,6 +2779,251 @@ Removing blockchain accounts
    :statuscode 409: User is not logged in. Some error occured when re-querying the balances after addition. Check message for details.
    :statuscode 500: Internal Rotki error
    :statuscode 502: Error occured with some external service query such as Etherscan. Check message for details.
+
+Getting manually tracked balances
+====================================
+.. http:get:: /api/(version)/manual_balances/
+
+   Doing a GET on the manually tracked balances endpoint will return all the manually tracked balance accounts from the database.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/manual_balances HTTP/1.1
+      Host: localhost:5042
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+          "balances": [{
+                  "asset": "XMR",
+                  "label": "My monero wallet",
+		  "amount": "50.315",
+		  "usd_value": "2370.13839",
+                  "tags": ["public"]
+              }, {
+                  "asset": "BTC",
+                  "label": "My XPUB BTC wallet",
+		  "amount": "1.425",
+		  "usd_value": "9087.22",
+              }, {
+	          "asset": "ZEC",
+		  "label" "My favorite wallet",
+		  "amount": "76.2"
+		  "usd_value": "6067.77",
+		  "tags": ["private", "inheritance"]
+	      }]
+          "message": ""
+      }
+
+   :resjson object result: An object containing all the manually tracked balances as defined `here <manually_tracked_balances_section_>`__ with additionally a current usd equivalent value per account.
+   :statuscode 200: Balances succesfully queried
+   :statuscode 409: User is not logged in.
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: Error occured with some external service query such as Cryptocompare. Check message for details.
+
+Adding manually tracked balances
+====================================
+
+.. http:put:: /api/(version)/manual_balances/
+
+
+   Doing a PUT on the the manually tracked balances endpoint you can add a balance for an asset that Rotki can't automatically detect, along with a label identifying it for you and any number of tags.
+
+   .. _manually_tracked_balances_section:
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/manual_balances/ HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "balances": [{
+                  "asset": "XMR",
+                  "label": "My monero wallet",
+		  "amount": "50.315",
+                  "tags": ["public"]
+              }, {
+                  "asset": "BTC",
+                  "label": "My XPUB BTC wallet",
+		  "amount": "1.425"
+              }]
+      }
+
+   :reqjson list[object] balances: A list of manually tracked balances to add to Rotki
+   :reqjsonarr string asset: The asset that is being tracked
+   :reqjsonarr string label: A label to describe where is this balance stored. Must be unique between all manually tracked balance labels.
+   :reqjsonarr string amount: The amount of asset that is stored.
+   :reqjsonarr list[optional] tags: An optional list of tags to attach to the this manually tracked balance.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+          "balances": [{
+                  "asset": "XMR",
+                  "label": "My monero wallet",
+		  "amount": "50.315",
+		  "usd_value": "2370.13839",
+                  "tags": ["public"]
+              }, {
+                  "asset": "BTC",
+                  "label": "My XPUB BTC wallet",
+		  "amount": "1.425",
+		  "usd_value": "9087.22",
+              }, {
+	          "asset": "ZEC",
+		  "label" "My favorite wallet",
+		  "amount": "76.2"
+		  "usd_value": "6067.77",
+		  "tags": ["private", "inheritance"]
+	      }]
+          "message": ""
+      }
+
+   :resjson object result: An object containing all the manually tracked balances as defined `here <manually_tracked_balances_section_>`__ with additionally a current usd equivalent value per account.
+   :statuscode 200: Balances succesfully added
+   :statuscode 400: Provided JSON or data is in some way malformed. The balances to add contained invalid assets or were an empty list.
+   :statuscode 409: User is not logged in. Provided tags do not exist. Check message for details.
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: Error occured with some external service query such as Cryptocompare. Check message for details.
+
+Editing manually tracked balances
+====================================
+
+.. http:patch:: /api/(version)/manual_balances
+
+   Doing a PATCH on the the manual balances endpoint allows you to edit a number of manually tracked balances by label.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/manual_balances/ HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "balances": [{
+                  "asset": "XMR",
+                  "label": "My monero wallet",
+		  "amount": "4.5",
+		  },{
+	          "asset": "ETH",
+		  "label" "My favorite wallet",
+		  "amount": "10",
+		  "tags": []
+	      }]
+      }
+
+   :reqjson list[object] accounts: A list of manual balances to edit. As defined `here <manually_tracked_balances_section_>`__.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+          "balances": [{
+                  "asset": "XMR",
+                  "label": "My monero wallet",
+		  "amount": "4.5",
+		  "usd_value": "210.548",
+                  "tags": ["public"]
+              }, {
+                  "asset": "BTC",
+                  "label": "My XPUB BTC wallet",
+		  "amount": "1.425",
+		  "usd_value": "9087.22",
+              }, {
+	          "asset": "ZEC",
+		  "label" "My favorite wallet",
+		  "amount": "10"
+		  "usd_value": "1330.85"
+	      }]
+          "message": ""
+      }
+
+   :resjson object result: An object containing all the manually tracked balances as defined `here <manually_tracked_balances_section_>`__ with additionally a current usd equivalent value per account.
+   :statuscode 200: Balances succesfully edited
+   :statuscode 400: Provided JSON or data is in some way malformed. The balances to add contained invalid assets or were an empty list.
+   :statuscode 409: User is not logged in. Provided tags do not exist. Check message for details.
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: Error occured with some external service query such as Cryptocompare. Check message for details.
+
+Deleting manually tracked balances
+======================================
+
+.. http:delete:: /api/(version)/manual_balances/
+
+   Doing a DELETE on the the manual balances endpoint with a list of labels to of manually tracked balances will remove these balances from the database for the current user.
+    If one of the given labels to remove is invalid the entire request will fail.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/manual_balances HTTP/1.1
+      Host: localhost:5042
+
+      {"balances": ["My monero wallet", "My favorite wallet"]}
+
+   :reqjson list[string] balances: A list of labels of manually tracked balances to delete
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+          "balances": [{
+                  "asset": "XMR",
+                  "label": "My monero wallet",
+		  "amount": "4.5",
+		  "usd_value": "210.548",
+                  "tags": ["public"]
+              }, {
+                  "asset": "BTC",
+                  "label": "My XPUB BTC wallet",
+		  "amount": "1.425",
+		  "usd_value": "9087.22",
+              }, {
+	          "asset": "ZEC",
+		  "label" "My favorite wallet",
+		  "amount": "10"
+		  "usd_value": "1330.85"
+	      }]
+          "message": ""
+      }
+
+   :resjson object result: An object containing all the manually tracked balances as defined `here <manually_tracked_balances_section_>`__ with additionally a current usd equivalent value per account.
+   :statuscode 200: Balances succesfully delete
+   :statuscode 400: Provided JSON or data is in some way malformed. One of the labels to remove did not exist.
+   :statuscode 409: User is not logged in. Check message for details.
+   :statuscode 500: Internal Rotki error
+   :statuscode 502: Error occured with some external service query such as Cryptocompare. Check message for details.
 
 Dealing with ignored assets
 ===========================
