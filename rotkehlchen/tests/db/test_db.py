@@ -74,6 +74,7 @@ TABLES_AT_INIT = [
     'current_balances',
     'trades',
     'ethereum_transactions',
+    'manually_tracked_balances',
     'trade_type',
     'location',
     'settings',

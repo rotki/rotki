@@ -204,6 +204,14 @@ CREATE TABLE IF NOT EXISTS blockchain_accounts (
 );
 """
 
+DB_CREATE_MANUALLY_TRACKED_BALANCES = """
+CREATE TABLE IF NOT EXISTS manually_tracked_balances (
+    asset VARCHAR[24] NOT NULL,
+    label TEXT NOT NULL PRIMARY KEY,
+    amount TEXT
+);
+"""
+
 # Not putting object_reference as a foreign key since multiple objects, not only
 # blockchain accounts can have tag mappings (future-proof thinking here)
 DB_CREATE_TAG_MAPPINGS = """
@@ -325,6 +333,7 @@ PRAGMA foreign_keys=on;
     DB_CREATE_EXTERNAL_SERVICE_CREDENTIALS,
     DB_CREATE_BLOCKCHAIN_ACCOUNTS,
     DB_CREATE_MULTISETTINGS,
+    DB_CREATE_MANUALLY_TRACKED_BALANCES,
     DB_CREATE_CURRENT_BALANCES,
     DB_CREATE_TRADES,
     DB_CREATE_ETHEREUM_TRANSACTIONS,
