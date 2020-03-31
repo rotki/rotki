@@ -208,7 +208,8 @@ DB_CREATE_MANUALLY_TRACKED_BALANCES = """
 CREATE TABLE IF NOT EXISTS manually_tracked_balances (
     asset VARCHAR[24] NOT NULL,
     label TEXT NOT NULL PRIMARY KEY,
-    amount TEXT
+    amount TEXT,
+    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location)
 );
 """
 

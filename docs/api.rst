@@ -2808,18 +2808,21 @@ Getting manually tracked balances
                   "label": "My monero wallet",
 		  "amount": "50.315",
 		  "usd_value": "2370.13839",
-                  "tags": ["public"]
+                  "tags": ["public"],
+		  "location": "blockchain"
               }, {
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
 		  "amount": "1.425",
 		  "usd_value": "9087.22",
+		  "location": "blockchain"
               }, {
 	          "asset": "ZEC",
 		  "label" "My favorite wallet",
 		  "amount": "76.2"
 		  "usd_value": "6067.77",
-		  "tags": ["private", "inheritance"]
+		  "tags": ["private", "inheritance"],
+		  "location": "blockchain"
 	      }]
           "message": ""
       }
@@ -2854,10 +2857,12 @@ Adding manually tracked balances
                   "label": "My monero wallet",
 		  "amount": "50.315",
                   "tags": ["public"]
+		  "location": "blockchain"
               }, {
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
 		  "amount": "1.425"
+		  "location": "blockchain"
               }]
       }
 
@@ -2866,6 +2871,7 @@ Adding manually tracked balances
    :reqjsonarr string label: A label to describe where is this balance stored. Must be unique between all manually tracked balance labels.
    :reqjsonarr string amount: The amount of asset that is stored.
    :reqjsonarr list[optional] tags: An optional list of tags to attach to the this manually tracked balance.
+   :reqjsonarr string location: The location where the balance is saved. Can be one of: ["external", "kraken", "poloniex", "bittrex", "binance", "bitmex", "coinbase", "banks", "blockchain", "coinbasepro", "gemini"]
 
    **Example Response**:
 
@@ -2887,12 +2893,14 @@ Adding manually tracked balances
                   "label": "My XPUB BTC wallet",
 		  "amount": "1.425",
 		  "usd_value": "9087.22",
+		  "location": "blockchain"
               }, {
 	          "asset": "ZEC",
 		  "label" "My favorite wallet",
 		  "amount": "76.2"
 		  "usd_value": "6067.77",
 		  "tags": ["private", "inheritance"]
+		  "location": "blockchain"
 	      }]
           "message": ""
       }
@@ -2923,11 +2931,13 @@ Editing manually tracked balances
                   "asset": "XMR",
                   "label": "My monero wallet",
 		  "amount": "4.5",
+		  "location": "blockchain"
 		  },{
 	          "asset": "ETH",
 		  "label" "My favorite wallet",
 		  "amount": "10",
-		  "tags": []
+		  "tags": [],
+		  "location": "kraken"
 	      }]
       }
 
@@ -2947,17 +2957,20 @@ Editing manually tracked balances
                   "label": "My monero wallet",
 		  "amount": "4.5",
 		  "usd_value": "210.548",
-                  "tags": ["public"]
+                  "tags": ["public"],
+		  "location": "blockchain"
               }, {
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
 		  "amount": "1.425",
 		  "usd_value": "9087.22",
+		  "location": "blockchain"
               }, {
 	          "asset": "ZEC",
 		  "label" "My favorite wallet",
 		  "amount": "10"
 		  "usd_value": "1330.85"
+		  "location": "kraken"
 	      }]
           "message": ""
       }
@@ -3004,16 +3017,19 @@ Deleting manually tracked balances
 		  "amount": "4.5",
 		  "usd_value": "210.548",
                   "tags": ["public"]
+		  "location": "blockchain"
               }, {
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
 		  "amount": "1.425",
 		  "usd_value": "9087.22",
+		  "location": "blockchain"
               }, {
 	          "asset": "ZEC",
 		  "label" "My favorite wallet",
 		  "amount": "10"
 		  "usd_value": "1330.85"
+		  "location": "blockchain"
 	      }]
           "message": ""
       }
