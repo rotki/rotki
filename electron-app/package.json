@@ -5,7 +5,7 @@
   "author": "Lefteris Karapetsas",
   "scripts": {
     "serve": "vue-cli-service serve",
-    "serve:backend": "python -m rotkehlchen --api-port 4242 --api-cors http://localhost:8080",
+    "serve:backend": "node start-backend.js",
     "build": "vue-cli-service build",
     "test:unit": "vue-cli-service test:unit",
     "test:e2e": "vue-cli-service test:e2e",
