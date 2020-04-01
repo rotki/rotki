@@ -217,7 +217,7 @@ In order to build rotki on Windows, you will need to have installed and built py
 
         c) When prompted for an install directory for OpenSSL, choose one that does not have spaces in it (i.e. avoid \Program Files\) as installing it in a directory with spaces will cause you numerous headaches when trying to edit the Makefile mentioned in the sqlcipher build instructions.
 
-        d) Verify that the OpenSSL\bin directory is on your path after installation, pysqlcipher3 will not build/install correctly if it is missing
+        d) Verify that the ``<OpenSSL Install Dir>\bin`` directory is on your path after installation, pysqlcipher3 will not build/install correctly if it is missing
 
 2. As no pre-compiled Windows binaries and dlls are readily available for sqlcipher, you will need to build it from source. `Here <https://github.com/sqlitebrowser/sqlitebrowser/wiki/Win64-setup-%E2%80%94-Compiling-SQLCipher>`__ is a good guide on how to compile SQLCipher for Windows.
 
