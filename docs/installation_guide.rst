@@ -204,11 +204,12 @@ Git
 Get `latest git <https://gitforwindows.org/>`_.
 
 OpenSSL, Sqlcipher and pysqlcipher3
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In order to build rotki on Windows, you will need to have installed and built pysqlcipher3 (instructions on this further down) which needs sqlcipher which needs OpenSSL.
 
 1. The guide requires you to get ``OpenSSL``. You can do that from `here <https://slproweb.com/products/Win32OpenSSL.html>`__.
+
     .. NOTE::
         a) Because of some pysqlcipher3 dependencies, and because it most closely matches the version used in the sqlcipher build guide, you should get OpenSSL 1.0.2 and not 1.1.1 (the naming of libs and dlls has changed between versions and the building of some dependencies will fail).
 
@@ -221,8 +222,7 @@ In order to build rotki on Windows, you will need to have installed and built py
 2. As no pre-compiled Windows binaries and dlls are readily available for sqlcipher, you will need to build it from source. `Here <https://github.com/sqlitebrowser/sqlitebrowser/wiki/Win64-setup-%E2%80%94-Compiling-SQLCipher>`__ is a good guide on how to compile SQLCipher for Windows.
 
     .. NOTE::
-
-        1) Follow the instructions in the sqlcipher build guide regarding changes to ``Makefile.msc`` very closely, ensuring that variables that point to the directory where you have actually installed OpenSSL.
+        a) Follow the instructions in the sqlcipher build guide regarding changes to ``Makefile.msc`` very closely, ensuring that variables that point to the directory where you have actually installed OpenSSL.
 
 
 3. Once you have completed up to and including Step 6 in the sqlcipher build guide (you can ignore Step 7), you will have compiled sqlcipher and built the necessary headers and libraries that pysqlcipher3 depends on. In the directory you should now see ``sqlcipher.dll``, copy and paste this file to your ``<Windows>\System32`` directory. These files will be used later; you can now move on to setting up your rotki dev environment.
