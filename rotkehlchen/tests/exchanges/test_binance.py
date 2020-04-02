@@ -262,7 +262,7 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
     binance.cache_ttl_secs = 0
 
     def mock_my_trades(url):  # pylint: disable=unused-argument
-        if 'symbol=BNBBTC' in url or 'symbol=BTCBBTC' in url:
+        if 'symbol=BNBBTC' in url or 'symbol=doesnotexist' in url:
             text = BINANCE_MYTRADES_RESPONSE
         else:
             text = '[]'
@@ -319,7 +319,7 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
         input_str,
         expected_warnings_num=0,
         expected_errors_num=1,
-        query_specific_markets=['BTCBBTC'],
+        query_specific_markets=['doesnotexist'],
     )
 
     input_str = BINANCE_MYTRADES_RESPONSE.replace(
