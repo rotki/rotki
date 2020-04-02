@@ -42,7 +42,7 @@ def test_bitmex_api_signature(mock_bitmex):
     assert sig == '1749cd2ccae4aa49048ae09f0b95110cee706e0944e6a14ad0b3a8cb45bd336b'
 
 
-def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(test_bitmex):
+def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(sandbox_bitmex):
     """Test the happy case of bitmex withdrawals deposit query
 
     This test also tests an important case where a subquery for a an in-between
@@ -50,7 +50,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(test_bitmex):
     we test that the full query, queries the remaining timestamp ranges.
     """
     # This is an initial subquery of a small range where no deposit happened.
-    result = test_bitmex.query_deposits_withdrawals(
+    result = sandbox_bitmex.query_deposits_withdrawals(
         start_ts=1536492800,
         end_ts=1536492976,
     )
@@ -59,7 +59,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(test_bitmex):
     # Now after the subquery we test that the exchange engine logic properly
     # queries the required start/end timestamp ranges
     now = ts_now()
-    result = test_bitmex.query_deposits_withdrawals(
+    result = sandbox_bitmex.query_deposits_withdrawals(
         start_ts=0,
         end_ts=now,
     )
@@ -111,7 +111,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(test_bitmex):
         assert isinstance(movement.asset, Asset)
 
 
-def test_bitmex_api_withdrawals_deposit_unexpected_data(test_bitmex):
+def test_bitmex_api_withdrawals_deposit_unexpected_data(sandbox_bitmex):
     """Test getting unexpected data in bitmex withdrawals deposit query is handled gracefully"""
 
     original_input = """[{
@@ -125,8 +125,8 @@ def test_bitmex_api_withdrawals_deposit_unexpected_data(test_bitmex):
     def query_bitmex_and_test(input_str, expected_warnings_num, expected_errors_num):
         def mock_get_deposit_withdrawal(url, data):  # pylint: disable=unused-argument
             return MockResponse(200, input_str)
-        with patch.object(test_bitmex.session, 'get', side_effect=mock_get_deposit_withdrawal):
-            movements = test_bitmex.query_online_deposits_withdrawals(
+        with patch.object(sandbox_bitmex.session, 'get', side_effect=mock_get_deposit_withdrawal):
+            movements = sandbox_bitmex.query_online_deposits_withdrawals(
                 start_ts=0,
                 end_ts=now,
             )
@@ -135,8 +135,8 @@ def test_bitmex_api_withdrawals_deposit_unexpected_data(test_bitmex):
             assert len(movements) == 1
         else:
             assert len(movements) == 0
-            errors = test_bitmex.msg_aggregator.consume_errors()
-            warnings = test_bitmex.msg_aggregator.consume_warnings()
+            errors = sandbox_bitmex.msg_aggregator.consume_errors()
+            warnings = sandbox_bitmex.msg_aggregator.consume_warnings()
             assert len(errors) == expected_errors_num
             assert len(warnings) == expected_warnings_num
 
@@ -177,15 +177,15 @@ def test_bitmex_api_withdrawals_deposit_unexpected_data(test_bitmex):
     query_bitmex_and_test(given_input, expected_warnings_num=0, expected_errors_num=1)
 
 
-def test_bitmex_margin_history(test_bitmex):
-    result = test_bitmex.query_margin_history(
+def test_bitmex_margin_history(sandbox_bitmex):
+    result = sandbox_bitmex.query_margin_history(
         start_ts=1536492800,
         end_ts=1536492976,
     )
     assert len(result) == 0
 
     until_9_results_ts = 1536615593
-    result = test_bitmex.query_margin_history(
+    result = sandbox_bitmex.query_margin_history(
         start_ts=0,
         end_ts=until_9_results_ts,
     )

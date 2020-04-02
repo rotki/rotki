@@ -59,6 +59,7 @@ def test_not_loggedin_user_querying(rotkehlchen_api_server, username, data_dir):
     """Start without logged in user and make sure we can query all users"""
     Path(data_dir / 'another_user').mkdir()
     Path(data_dir / 'another_user' / 'rotkehlchen.db').touch()
+    Path(data_dir / username).mkdir()
     Path(data_dir / username / 'rotkehlchen.db').touch()
 
     response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))

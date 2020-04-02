@@ -11,7 +11,7 @@ from rotkehlchen.exchanges.kraken import kraken_to_world_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import pair_get_assets
 from rotkehlchen.serialization.serialize import process_result
-from rotkehlchen.tests.fixtures.exchanges.kraken import create_kraken_trade
+from rotkehlchen.tests.utils.kraken import create_kraken_trade
 from rotkehlchen.typing import Timestamp, TradePair
 
 

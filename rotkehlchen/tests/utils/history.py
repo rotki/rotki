@@ -7,7 +7,6 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPos
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.tests.fixtures.exchanges.kraken import MockKraken
 from rotkehlchen.tests.utils.constants import (
     ETH_ADDRESS1,
     ETH_ADDRESS2,
@@ -19,6 +18,7 @@ from rotkehlchen.tests.utils.constants import (
     TX_HASH_STR3,
 )
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
+from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.transactions import EthereumTransaction
 from rotkehlchen.typing import AssetAmount, AssetMovementCategory, Location, Timestamp, TradeType
@@ -578,7 +578,6 @@ def mock_history_processing(
         assert trade_history[9].location == Location.POLONIEX
         assert trade_history[9].pair == 'XMR_ETH'
         assert trade_history[9].trade_type == TradeType.BUY
-        # TODO: investigate why this new bitmex position popped up
         assert isinstance(trade_history[10], MarginPosition)
         assert trade_history[10].profit_loss == FVal('5E-9')
 
@@ -589,40 +588,39 @@ def mock_history_processing(
         assert loan_history[1].earned == AssetAmount(FVal('0.00000005'))
 
         assert len(asset_movements) == 11
-        assert asset_movements[0].location == Location.KRAKEN
-        assert asset_movements[0].category == AssetMovementCategory.DEPOSIT
+        assert asset_movements[0].location == Location.POLONIEX
+        assert asset_movements[0].category == AssetMovementCategory.WITHDRAWAL
         assert asset_movements[0].asset == A_BTC
-        assert asset_movements[1].location == Location.KRAKEN
-        assert asset_movements[1].category == AssetMovementCategory.DEPOSIT
+        assert asset_movements[1].location == Location.POLONIEX
+        assert asset_movements[1].category == AssetMovementCategory.WITHDRAWAL
         assert asset_movements[1].asset == A_ETH
-        assert asset_movements[2].location == Location.KRAKEN
-        assert asset_movements[2].category == AssetMovementCategory.WITHDRAWAL
+        assert asset_movements[2].location == Location.POLONIEX
+        assert asset_movements[2].category == AssetMovementCategory.DEPOSIT
         assert asset_movements[2].asset == A_BTC
-        assert asset_movements[3].location == Location.KRAKEN
-        assert asset_movements[3].category == AssetMovementCategory.WITHDRAWAL
+        assert asset_movements[3].location == Location.POLONIEX
+        assert asset_movements[3].category == AssetMovementCategory.DEPOSIT
         assert asset_movements[3].asset == A_ETH
-        assert asset_movements[4].location == Location.POLONIEX
-        assert asset_movements[4].category == AssetMovementCategory.WITHDRAWAL
+        assert asset_movements[4].location == Location.BITMEX
+        assert asset_movements[4].category == AssetMovementCategory.DEPOSIT
         assert asset_movements[4].asset == A_BTC
-        assert asset_movements[5].location == Location.POLONIEX
+        assert asset_movements[5].location == Location.BITMEX
         assert asset_movements[5].category == AssetMovementCategory.WITHDRAWAL
-        assert asset_movements[5].asset == A_ETH
-        assert asset_movements[6].location == Location.POLONIEX
-        assert asset_movements[6].category == AssetMovementCategory.DEPOSIT
+        assert asset_movements[5].asset == A_BTC
+        assert asset_movements[6].location == Location.BITMEX
+        assert asset_movements[6].category == AssetMovementCategory.WITHDRAWAL
         assert asset_movements[6].asset == A_BTC
-        assert asset_movements[7].location == Location.POLONIEX
+        assert asset_movements[7].location == Location.KRAKEN
         assert asset_movements[7].category == AssetMovementCategory.DEPOSIT
-        assert asset_movements[7].asset == A_ETH
-        assert asset_movements[8].location == Location.BITMEX
+        assert asset_movements[7].asset == A_BTC
+        assert asset_movements[8].location == Location.KRAKEN
         assert asset_movements[8].category == AssetMovementCategory.DEPOSIT
-        assert asset_movements[8].asset == A_BTC
-        assert asset_movements[9].location == Location.BITMEX
+        assert asset_movements[8].asset == A_ETH
+        assert asset_movements[9].location == Location.KRAKEN
         assert asset_movements[9].category == AssetMovementCategory.WITHDRAWAL
         assert asset_movements[9].asset == A_BTC
-        # TODO: investigate why this new bitmex withdrawal popped up
-        assert asset_movements[10].location == Location.BITMEX
+        assert asset_movements[10].location == Location.KRAKEN
         assert asset_movements[10].category == AssetMovementCategory.WITHDRAWAL
-        assert asset_movements[10].asset == A_BTC
+        assert asset_movements[10].asset == A_ETH
 
         # The history creation for these is not yet tested
         assert len(eth_transactions) == 3
@@ -908,3 +906,25 @@ def assert_poloniex_trades_result(
             assert trade['notes'] == ''
         else:
             raise AssertionError('index out of range')
+
+
+def maybe_mock_price_queries(historian, should_mock_price_queries: bool, mocked_price_queries):
+    """If needed will make sure the historian's price queries are mocked"""
+    if not should_mock_price_queries:
+        return
+
+    def mock_historical_price_query(from_asset, to_asset, timestamp):
+        if from_asset == to_asset:
+            return FVal(1)
+
+        try:
+            price = mocked_price_queries[from_asset.identifier][to_asset.identifier][timestamp]
+        except KeyError:
+            raise AssertionError(
+                f'No mocked price found from {from_asset.identifier} to '
+                f'{to_asset.identifier} at {timestamp}',
+            )
+
+        return price
+
+    historian.query_historical_price = mock_historical_price_query

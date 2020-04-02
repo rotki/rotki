@@ -96,7 +96,7 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
     assert json_data['result'] == {'status': 'not-found', 'outcome': None}
 
 
-@pytest.mark.parametrize('added_exchanges', [('binance')])
+@pytest.mark.parametrize('added_exchanges', [('binance',)])
 def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges):
     """If an async task dies with an exception check that it's properly handled"""
 

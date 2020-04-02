@@ -83,26 +83,26 @@ def test_query_history(rotkehlchen_api_server_with_exchanges):
     # the unsupported/unknown assets
     warnings = rotki.msg_aggregator.consume_warnings()
     assert len(warnings) == 13
-    assert 'kraken trade with unknown asset IDONTEXISTTOO' in warnings[0]
-    assert 'unknown kraken asset IDONTEXIST. Ignoring its deposit/withdrawals query' in warnings[1]
+    assert 'poloniex trade with unknown asset NOEXISTINGASSET' in warnings[0]
+    assert 'poloniex trade with unsupported asset BALLS' in warnings[1]
+    assert 'withdrawal of unknown poloniex asset IDONTEXIST' in warnings[2]
+    assert 'withdrawal of unsupported poloniex asset DIS' in warnings[3]
+    assert 'deposit of unknown poloniex asset IDONTEXIST' in warnings[4]
+    assert 'deposit of unsupported poloniex asset EBT' in warnings[5]
+    assert 'poloniex loan with unsupported asset BDC' in warnings[6]
+    assert 'poloniex loan with unknown asset NOTEXISTINGASSET' in warnings[7]
+    assert 'bittrex trade with unsupported asset PTON' in warnings[8]
+    assert 'bittrex trade with unknown asset IDONTEXIST' in warnings[9]
+    assert 'kraken trade with unknown asset IDONTEXISTTOO' in warnings[10]
+    assert 'unknown kraken asset IDONTEXIST. Ignoring its deposit/withdrawals' in warnings[11]
     msg = 'unknown kraken asset IDONTEXISTEITHER. Ignoring its deposit/withdrawals query'
-    assert msg in warnings[2]
-    assert 'poloniex trade with unknown asset NOEXISTINGASSET' in warnings[3]
-    assert 'poloniex trade with unsupported asset BALLS' in warnings[4]
-    assert 'withdrawal of unknown poloniex asset IDONTEXIST' in warnings[5]
-    assert 'withdrawal of unsupported poloniex asset DIS' in warnings[6]
-    assert 'deposit of unknown poloniex asset IDONTEXIST' in warnings[7]
-    assert 'deposit of unsupported poloniex asset EBT' in warnings[8]
-    assert 'poloniex loan with unsupported asset BDC' in warnings[9]
-    assert 'poloniex loan with unknown asset NOTEXISTINGASSET' in warnings[10]
-    assert 'bittrex trade with unsupported asset PTON' in warnings[11]
-    assert 'bittrex trade with unknown asset IDONTEXIST' in warnings[12]
+    assert msg in warnings[12]
 
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 3
-    assert 'kraken trade with unprocessable pair IDONTEXISTZEUR' in errors[0]
-    assert 'kraken trade with unprocessable pair %$#%$#%$#%$#%$#%' in errors[1]
-    assert 'bittrex trade with unprocessable pair %$#%$#%#$%' in errors[2]
+    assert 'bittrex trade with unprocessable pair %$#%$#%#$%' in errors[0]
+    assert 'kraken trade with unprocessable pair IDONTEXISTZEUR' in errors[1]
+    assert 'kraken trade with unprocessable pair %$#%$#%$#%$#%$#%' in errors[2]
 
 
 @pytest.mark.parametrize(

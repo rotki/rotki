@@ -7,7 +7,6 @@ from eth_utils.address import to_checksum_address
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.chain.ethereum.makerdao import MakerDAO
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.crypto import address_encoder, privatekey_to_address, sha3
@@ -212,19 +211,7 @@ def blockchain(
         owned_eth_tokens,
         ethereum_modules,
         alethio,
-        database,
 ):
-    modules = {}
-    for given_module in ethereum_modules:
-        if given_module == 'makerdao':
-            modules['makerdao'] = MakerDAO(
-                ethereum_manager=ethereum_manager,
-                database=database,
-                msg_aggregator=messages_aggregator,
-            )
-        else:
-            raise AssertionError(f'Unrecognized ethereum module {given_module} in test setup')
-
     return ChainManager(
         blockchain_accounts=blockchain_accounts,
         owned_eth_tokens=owned_eth_tokens,
@@ -232,5 +219,5 @@ def blockchain(
         msg_aggregator=messages_aggregator,
         alethio=alethio,
         greenlet_manager=greenlet_manager,
-        eth_modules=modules,
+        eth_modules=ethereum_modules,
     )

@@ -1,13 +1,14 @@
 import errno
 import os
+import shutil
 from collections import defaultdict
+from pathlib import Path
 from typing import Optional
 
 import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.typing import FilePath
 
 
 @pytest.fixture
@@ -17,11 +18,11 @@ def use_clean_caching_directory():
 
 
 @pytest.fixture
-def accounting_data_dir(use_clean_caching_directory, tmpdir_factory) -> FilePath:
-    """For accounting we have a dedicated test data dir so that it's easy to
-    cache the results of the historic price queries also in Travis"""
+def data_dir(use_clean_caching_directory, tmpdir_factory) -> Path:
+    """The tests data dir is peristent so that we can cache price queries between
+    tests. If use_clean_caching_directory is True then a completely fresh dir is returned"""
     if use_clean_caching_directory:
-        return FilePath(tmpdir_factory.mktemp('accounting_data'))
+        return Path(tmpdir_factory.mktemp('test_data_dir'))
 
     home = os.path.expanduser("~")
     if 'TRAVIS' in os.environ:
@@ -35,7 +36,14 @@ def accounting_data_dir(use_clean_caching_directory, tmpdir_factory) -> FilePath
         if exception.errno != errno.EEXIST:
             raise
 
-    return FilePath(data_directory)
+    # Remove any old accounts. The only reason we keep this directory around is for
+    # cached price queries, not for user DBs
+    data_dir = Path(data_directory)
+    for x in data_dir.iterdir():
+        if x.is_dir() and (x / 'rotkehlchen.db').exists():
+            shutil.rmtree(x)
+
+    return data_dir
 
 
 @pytest.fixture
@@ -71,7 +79,7 @@ def accounting_initialize_parameters():
 def accountant(
         price_historian,  # pylint: disable=unused-argument
         database,
-        accounting_data_dir,
+        data_dir,
         accounting_create_csv,
         messages_aggregator,
         start_with_logged_in_user,
@@ -82,7 +90,7 @@ def accountant(
 
     accountant = Accountant(
         db=database,
-        user_directory=accounting_data_dir,
+        user_directory=data_dir,
         msg_aggregator=messages_aggregator,
         create_csv=accounting_create_csv,
     )
@@ -95,11 +103,11 @@ def accountant(
 
 
 @pytest.fixture
-def inquirer(accounting_data_dir, cryptocompare):
+def inquirer(data_dir, cryptocompare):
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
     Inquirer._Inquirer__instance = None
-    return Inquirer(data_dir=accounting_data_dir, cryptocompare=cryptocompare)
+    return Inquirer(data_dir=data_dir, cryptocompare=cryptocompare)
 
 
 @pytest.fixture(scope='session')
