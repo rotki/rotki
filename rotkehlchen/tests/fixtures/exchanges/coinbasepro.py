@@ -1,11 +1,6 @@
 import pytest
 
-from rotkehlchen.exchanges.coinbasepro import Coinbasepro
-from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
-
-
-class MockCoinbasepro(Coinbasepro):
-    pass
+from rotkehlchen.tests.utils.exchanges import create_test_coinbasepro
 
 
 @pytest.fixture(scope='session')
@@ -20,14 +15,11 @@ def coinbasepro(
         messages_aggregator,
         coinbasepro_passphrase,
 ):
-    mock = MockCoinbasepro(
-        api_key=make_api_key(),
-        secret=make_api_secret(),
+    return create_test_coinbasepro(
         database=session_database,
         msg_aggregator=messages_aggregator,
         passphrase=coinbasepro_passphrase,
     )
-    return mock
 
 
 @pytest.fixture(scope='function')
@@ -37,11 +29,8 @@ def function_scope_coinbasepro(
         function_scope_messages_aggregator,
         coinbasepro_passphrase,
 ):
-    mock = MockCoinbasepro(
-        api_key=make_api_key(),
-        secret=make_api_secret(),
+    return create_test_coinbasepro(
         database=database,
         msg_aggregator=function_scope_messages_aggregator,
         passphrase=coinbasepro_passphrase,
     )
-    return mock

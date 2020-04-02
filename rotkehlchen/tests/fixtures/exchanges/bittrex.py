@@ -1,11 +1,6 @@
 import pytest
 
-from rotkehlchen.exchanges.bittrex import Bittrex
-from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
-
-
-class MockBittrex(Bittrex):
-    pass
+from rotkehlchen.tests.utils.exchanges import create_test_bittrex
 
 
 @pytest.fixture(scope='session')
@@ -14,21 +9,12 @@ def bittrex(
         session_inquirer,  # pylint: disable=unused-argument
         messages_aggregator,
 ):
-    mock = MockBittrex(
-        api_key=make_api_key(),
-        secret=make_api_secret(),
-        database=session_database,
-        msg_aggregator=messages_aggregator,
-    )
-    return mock
+    return create_test_bittrex(database=session_database, msg_aggregator=messages_aggregator)
 
 
 @pytest.fixture(scope='function')
 def function_scope_bittrex(database, function_scope_messages_aggregator):
-    mock = MockBittrex(
-        api_key=make_api_key(),
-        secret=make_api_secret(),
+    return create_test_bittrex(
         database=database,
         msg_aggregator=function_scope_messages_aggregator,
     )
-    return mock

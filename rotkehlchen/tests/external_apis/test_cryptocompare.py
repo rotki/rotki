@@ -23,17 +23,17 @@ def test_cryptocompare_query_pricehistorical(cryptocompare):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_cryptocompare_historical_data_use_cached_price(accounting_data_dir, database):
+def test_cryptocompare_historical_data_use_cached_price(data_dir, database):
     """Test that the cryptocompare cache is used and also properly deserialized"""
     # Create a cache file for SNGLS_BTC
     contents = """{"start_time": 0, "end_time": 1439390800,
     "data": [{"time": 1438387200, "close": 10, "high": 10, "low": 10, "open": 10,
     "volumefrom": 10, "volumeto": 10}, {"time": 1438390800, "close": 20, "high": 20,
     "low": 20, "open": 20, "volumefrom": 20, "volumeto": 20}]}"""
-    with open(os.path.join(accounting_data_dir, 'price_history_SNGLS_BTC.json'), 'w') as f:
+    with open(os.path.join(data_dir, 'price_history_SNGLS_BTC.json'), 'w') as f:
         f.write(contents)
 
-    cc = Cryptocompare(data_directory=accounting_data_dir, database=database)
+    cc = Cryptocompare(data_directory=data_dir, database=database)
     with patch.object(cc, 'query_endpoint_histohour') as histohour_mock:
         result = cc.get_historical_data(
             from_asset=A_SNGLS,

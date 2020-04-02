@@ -186,7 +186,7 @@ def test_kraken_query_deposit_withdrawals_unexpected_data(function_scope_kraken)
     "count": 1
     }"""
 
-    withdraws = 'rotkehlchen.tests.fixtures.exchanges.kraken.KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE'
+    withdraws = 'rotkehlchen.tests.utils.kraken.KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE'
     zero_withdraws = patch(withdraws, new='{"count": 0, "ledger":{}}')
 
     def query_kraken_and_test(input_ledger, expected_warnings_num, expected_errors_num):
@@ -208,7 +208,7 @@ def test_kraken_query_deposit_withdrawals_unexpected_data(function_scope_kraken)
         assert len(warnings) == expected_warnings_num
 
     # first normal deposit should have no problem
-    target = 'rotkehlchen.tests.fixtures.exchanges.kraken.KRAKEN_SPECIFIC_DEPOSITS_RESPONSE'
+    target = 'rotkehlchen.tests.utils.kraken.KRAKEN_SPECIFIC_DEPOSITS_RESPONSE'
     query_kraken_and_test(test_deposits, expected_warnings_num=0, expected_errors_num=0)
 
     # From here and on let's make sure we react correctly to unexpected data
@@ -296,7 +296,7 @@ def test_trade_from_kraken_unexpected_data(function_scope_kraken):
         assert len(warnings) == expected_warnings_num
 
     # First a normal trade should have no problems
-    target = 'rotkehlchen.tests.fixtures.exchanges.kraken.KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE'
+    target = 'rotkehlchen.tests.utils.kraken.KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE'
     query_kraken_and_test(test_trades, expected_warnings_num=0, expected_errors_num=0)
 
     # From here and on let's check trades with unexpected data

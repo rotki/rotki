@@ -12,7 +12,6 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.chain.ethereum.makerdao import MakerDAO
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.constants.assets import A_USD
@@ -125,6 +124,7 @@ class Rotkehlchen():
             create_new: bool,
             sync_approval: Literal['yes', 'no', 'unknown'],
             premium_credentials: Optional[PremiumCredentials],
+            given_ethereum_modules: Optional[List[str]] = None,
     ) -> None:
         """Unlocks an existing user or creates a new one if `create_new` is True
 
@@ -141,6 +141,11 @@ class Rotkehlchen():
             create_new=create_new,
             sync_approval=sync_approval,
         )
+        if given_ethereum_modules is None:
+            ethereum_modules = ['makerdao']  # Default: ALL
+        else:
+            ethereum_modules = given_ethereum_modules
+
         # unlock or create the DB
         self.password = password
         self.user_directory = self.data.unlock(user, password, create_new)
@@ -204,11 +209,6 @@ class Rotkehlchen():
             etherscan=self.etherscan,
             msg_aggregator=self.msg_aggregator,
         )
-        makerdao = MakerDAO(
-            ethereum_manager=ethereum_manager,
-            database=self.data.db,
-            msg_aggregator=self.msg_aggregator,
-        )
         self.chain_manager = ChainManager(
             blockchain_accounts=self.data.db.get_blockchain_accounts(),
             owned_eth_tokens=self.data.db.get_owned_tokens(),
@@ -216,7 +216,7 @@ class Rotkehlchen():
             msg_aggregator=self.msg_aggregator,
             alethio=alethio,
             greenlet_manager=self.greenlet_manager,
-            eth_modules={'makerdao': makerdao},
+            eth_modules=ethereum_modules,
         )
         self.ethereum_analyzer = EthereumAnalyzer(
             ethereum_manager=ethereum_manager,

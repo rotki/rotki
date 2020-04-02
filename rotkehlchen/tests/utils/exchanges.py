@@ -1,11 +1,22 @@
-from typing import TYPE_CHECKING, Any, Dict
+import json
+import os
+from pathlib import Path
+from typing import Any, Dict
 from unittest.mock import patch
 
+from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.exchanges.binance import Binance, create_binance_symbols_to_pair
+from rotkehlchen.exchanges.bitmex import Bitmex
+from rotkehlchen.exchanges.bittrex import Bittrex
+from rotkehlchen.exchanges.coinbase import Coinbase
+from rotkehlchen.exchanges.coinbasepro import Coinbasepro
+from rotkehlchen.exchanges.gemini import Gemini
+from rotkehlchen.exchanges.poloniex import Poloniex
+from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
+from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
-
-if TYPE_CHECKING:
-    from rotkehlchen.exchanges.binance import Binance
-    from rotkehlchen.exchanges.poloniex import Poloniex
+from rotkehlchen.typing import ApiKey, ApiSecret
+from rotkehlchen.user_messages import MessagesAggregator
 
 POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE = """{
   "withdrawals": [
@@ -90,155 +101,6 @@ POLONIEX_TRADES_RESPONSE = """{ "BTC_BCH":
         "type": "buy",
         "category": "exchange"}]}"""
 
-
-KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE = """{
-    "trades": {
-        "1": {
-            "ordertxid": "1",
-            "postxid": 1,
-            "pair": "XXBTZEUR",
-            "time": "1458994442.0000",
-            "type": "buy",
-            "ordertype": "market",
-            "price": "100",
-            "vol": "1",
-            "fee": "0.1",
-            "cost": "100",
-            "margin": "0.0",
-            "misc": ""},
-        "2": {
-            "ordertxid": "2",
-            "postxid": 2,
-            "pair": "XETHZEUR",
-            "time": "1456994442.0000",
-            "type": "buy",
-            "ordertype": "market",
-            "price": "100",
-            "vol": "1",
-            "fee": "0.1",
-            "cost": "100",
-            "margin": "0.0",
-            "misc": ""},
-        "3": {
-            "ordertxid": "3",
-            "postxid": 3,
-            "pair": "IDONTEXISTZEUR",
-            "time": "1458994442.0000",
-            "type": "buy",
-            "ordertype": "market",
-            "price": "100",
-            "vol": "1",
-            "fee": "0.1",
-            "cost": "100",
-            "margin": "0.0",
-            "misc": ""
-        },
-        "4": {
-            "ordertxid": "4",
-            "postxid": 4,
-            "pair": "XETHIDONTEXISTTOO",
-            "time": "1458994442.0000",
-            "type": "buy",
-            "ordertype": "market",
-            "price": "100",
-            "vol": "1",
-            "fee": "0.1",
-            "cost": "100",
-            "margin": "0.0",
-            "misc": ""
-        },
-        "5": {
-            "ordertxid": "5",
-            "postxid": 5,
-            "pair": "%$#%$#%$#%$#%$#%",
-            "time": "1458994442.0000",
-            "type": "buy",
-            "ordertype": "market",
-            "price": "100",
-            "vol": "1",
-            "fee": "0.1",
-            "cost": "100",
-            "margin": "0.0",
-            "misc": ""
-        }},
-    "count": 5
-}"""
-
-KRAKEN_SPECIFIC_DEPOSITS_RESPONSE = """
-      {
-            "ledger": {
-                "1": {
-                    "refid": "1",
-                    "time": "1458994442",
-                    "type": "deposit",
-                    "aclass": "currency",
-                    "asset": "BTC",
-                    "amount": "5.0",
-                    "balance": "10.0",
-                    "fee": "0.1"
-                },
-                "2": {
-                    "refid": "2",
-                    "time": "1448994442",
-                    "type": "deposit",
-                    "aclass": "currency",
-                    "asset": "ETH",
-                    "amount": "10.0",
-                    "balance": "100.0",
-                    "fee": "0.11"
-                },
-                "3": {
-                    "refid": "3",
-                    "time": "1438994442",
-                    "type": "deposit",
-                    "aclass": "currency",
-                    "asset": "IDONTEXIST",
-                    "amount": "10.0",
-                    "balance": "100.0",
-                    "fee": "0.11"
-                }
-            },
-            "count": 3
-}"""
-
-KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE = """
-{
-            "ledger": {
-                "4": {
-                    "refid": "4",
-                    "time": "1428994442",
-                    "type": "withdrawal",
-                    "aclass": "currency",
-                    "asset": "BTC",
-                    "amount": "5.0",
-                    "balance": "10.0",
-                    "fee": "0.1"
-                },
-                "5": {
-                    "refid": "5",
-                    "time": "1439994442",
-                    "type": "withdrawal",
-                    "aclass": "currency",
-                    "asset": "ETH",
-                    "amount": "10.0",
-                    "balance": "100.0",
-                    "fee": "0.11"
-                },
-                "6": {
-                    "refid": "6",
-                    "time": "1408994442",
-                    "type": "withdrawal",
-                    "aclass": "currency",
-                    "asset": "IDONTEXISTEITHER",
-                    "amount": "10.0",
-                    "balance": "100.0",
-                    "fee": "0.11"
-                }
-            },
-            "count": 3
-}"""
-
-
 BINANCE_BALANCES_RESPONSE = """
 {
   "makerCommission": 15,
@@ -314,3 +176,121 @@ def patch_poloniex_balances_query(poloniex: 'Poloniex'):
 
     poloniex_patch = patch.object(poloniex.session, 'post', side_effect=mock_poloniex_asset_return)
     return poloniex_patch
+
+# # -- Test Exchange Objects creation --
+
+
+def create_test_coinbase(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+) -> Coinbase:
+    mock = Coinbase(
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+    return mock
+
+
+def create_test_binance(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+) -> Binance:
+    binance = Binance(
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    json_path = Path(this_dir) / 'data' / 'binance_exchange_info.json'
+    with json_path.open('r') as f:
+        json_data = json.loads(f.read())
+
+    binance._symbols_to_pair = create_binance_symbols_to_pair(json_data)
+    binance.first_connection_made = True
+    return binance
+
+
+def create_test_bitmex(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+) -> Bitmex:
+    # API key/secret from tests cases here: https://www.bitmex.com/app/apiKeysUsage
+    bitmex = Bitmex(
+        api_key=ApiKey('LAqUlngMIQkIUjXMUreyu3qn'),
+        secret=ApiSecret(b'chNOOS4KvNXR_Xq4k4c9qsfoKWvnDecLATCRlcBwyKDYnWgO'),
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+    bitmex.first_connection_made = True
+    return bitmex
+
+
+def create_test_bittrex(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+) -> Bittrex:
+    bittrex = Bittrex(
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+    return bittrex
+
+
+def create_test_coinbasepro(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+        passphrase: str,
+) -> Coinbasepro:
+    coinbasepro = Coinbasepro(
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        database=database,
+        msg_aggregator=msg_aggregator,
+        passphrase=passphrase,
+    )
+    return coinbasepro
+
+
+def create_test_gemini(
+        api_key,
+        api_secret,
+        database,
+        msg_aggregator,
+        base_uri,
+):
+    return Gemini(
+        api_key=api_key,
+        secret=api_secret,
+        database=database,
+        msg_aggregator=msg_aggregator,
+        base_uri=base_uri,
+    )
+
+
+def create_test_kraken(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+) -> MockKraken:
+    return MockKraken(
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+
+
+def create_test_poloniex(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+) -> Poloniex:
+    return Poloniex(
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )

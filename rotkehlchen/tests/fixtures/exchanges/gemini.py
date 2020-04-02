@@ -1,6 +1,7 @@
 import pytest
 
 from rotkehlchen.exchanges.gemini import Gemini
+from rotkehlchen.tests.utils.exchanges import create_test_gemini
 
 SANDBOX_GEMINI_API_KEY = 'account-1eIn3XjiCdSZH2jizoNg'
 SANDBOX_GEMINI_API_SECRET = b'26NFMLWrVWf1TrHQtVExRFmBovnq'
@@ -10,22 +11,6 @@ SANDBOX_GEMINI_WP_API_KEY = 'account-TDwgWRVnQqvsHDphwCUD'
 SANDBOX_GEMINI_WP_API_SECRET = b'2ohngowRpWc2qnXpFj1TEur9xoww'
 
 
-def _make_test_gemini(
-        api_key,
-        api_secret,
-        database,
-        msg_aggregator,
-        base_uri,
-):
-    return Gemini(
-        api_key=api_key,
-        secret=api_secret,
-        database=database,
-        msg_aggregator=msg_aggregator,
-        base_uri=base_uri,
-    )
-
-
 @pytest.fixture
 def mock_gemini(
         database,
@@ -33,7 +18,7 @@ def mock_gemini(
         function_scope_messages_aggregator,
         base_uri,
 ):
-    gemini = _make_test_gemini(
+    gemini = create_test_gemini(
         api_key='account-1aIn3XkiCdSZH2jiooMg',
         api_secret=b'361FMLZrVWf2TrHPtVEmRFmBovyq',
         database=database,

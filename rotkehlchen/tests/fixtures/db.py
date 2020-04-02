@@ -5,17 +5,13 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import BlockchainAccounts
-from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
-from rotkehlchen.typing import (
-    ApiKey,
-    BlockchainAccountData,
-    ExternalService,
-    ExternalServiceApiCredentials,
-    FilePath,
-    SupportedBlockchain,
+from rotkehlchen.tests.utils.database import (
+    add_blockchain_accounts_to_db,
+    add_settings_to_test_db,
+    maybe_include_etherscan_key,
 )
+from rotkehlchen.typing import FilePath
 from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -37,11 +33,6 @@ def ignored_assets() -> Optional[List[Asset]]:
 @pytest.fixture(scope='session')
 def session_username():
     return 'session_test_user'
-
-
-@pytest.fixture
-def data_dir(tmpdir_factory) -> FilePath:
-    return FilePath(tmpdir_factory.mktemp('data'))
 
 
 @pytest.fixture(scope='session')
@@ -87,36 +78,10 @@ def _init_database(
         include_etherscan_key: bool,
 ) -> DBHandler:
     db = DBHandler(data_dir, password, msg_aggregator)
-    settings = {
-        # DO not submit usage analytics during tests
-        'submit_usage_analytics': False,
-        'main_currency': DEFAULT_TESTS_MAIN_CURRENCY,
-    }
-    # Set the given db_settings. The pre-set values have priority unless overriden here
-    if db_settings is not None:
-        for key, value in db_settings.items():
-            settings[key] = value
-    db.set_settings(ModifiableDBSettings(**settings))  # type: ignore
-
-    if ignored_assets:
-        for asset in ignored_assets:
-            db.add_to_ignored_assets(asset)
-
-    # Make sure that the fixture provided accounts are in the blockchain
-    db.add_blockchain_accounts(
-        SupportedBlockchain.ETHEREUM,
-        [BlockchainAccountData(address=x) for x in blockchain_accounts.eth],
-    )
-    db.add_blockchain_accounts(
-        SupportedBlockchain.BITCOIN,
-        [BlockchainAccountData(address=x) for x in blockchain_accounts.btc],
-    )
-    if include_etherscan_key:
-        # Add the tests only etherscan API key
-        db.add_external_service_credentials([ExternalServiceApiCredentials(
-            service=ExternalService.ETHERSCAN,
-            api_key=ApiKey('8JT7WQBB2VQP5C3416Y8X3S8GBA3CVZKP4'),
-        )])
+    # Make sure that the fixture provided data are included in the DB
+    add_settings_to_test_db(db, db_settings, ignored_assets)
+    add_blockchain_accounts_to_db(db, blockchain_accounts)
+    maybe_include_etherscan_key(db, include_etherscan_key)
 
     return db
 

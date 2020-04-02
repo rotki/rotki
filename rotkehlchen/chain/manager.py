@@ -3,7 +3,7 @@ import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, overload
 
 import requests
 from web3.exceptions import BadFunctionCallOutput
@@ -30,7 +30,6 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import (
     CacheableObject,
-    EthereumModule,
     LockableQueryObject,
     cache_response_timewise,
     protect_with_lock,
@@ -145,7 +144,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
             msg_aggregator: MessagesAggregator,
             alethio: Alethio,
             greenlet_manager: GreenletManager,
-            eth_modules: Optional[Dict[str, EthereumModule]] = None,
+            eth_modules: Optional[List[str]] = None,
     ):
         super().__init__()
         self.ethereum = ethereum_manager
@@ -158,7 +157,16 @@ class ChainManager(CacheableObject, LockableQueryObject):
         self.balances = BlockchainBalances()
         # Per asset total balances
         self.totals: Totals = defaultdict(Balance)
-        self.eth_modules = {} if not eth_modules else eth_modules
+        self.eth_modules = {}
+        if eth_modules:
+            for given_module in eth_modules:
+                if given_module == 'makerdao':
+                    assert self.alethio.db, 'Alethio should have an instantiated DB'
+                    self.eth_modules['makerdao'] = MakerDAO(
+                        ethereum_manager=ethereum_manager,
+                        database=self.alethio.db,
+                        msg_aggregator=msg_aggregator,
+                    )
         self.greenlet_manager = greenlet_manager
 
         for name, module in self.eth_modules.items():
@@ -179,7 +187,7 @@ class ChainManager(CacheableObject, LockableQueryObject):
         if not module:
             return None
 
-        return cast(MakerDAO, module)
+        return module
 
     @property
     def eth_tokens(self) -> List[EthereumToken]:
@@ -814,6 +822,9 @@ class ChainManager(CacheableObject, LockableQueryObject):
             current_dsr_report = self.makerdao.get_current_dsr()
             for dsr_account, dai_value in current_dsr_report.balances.items():
 
+                if dai_value == ZERO:
+                    continue
+
                 usd_value = dai_value * usd_price
                 old_balance = eth_balances[dsr_account].asset_balances.get(
                     A_DAI,
@@ -828,10 +839,11 @@ class ChainManager(CacheableObject, LockableQueryObject):
 
             old_total = self.totals.get(A_DAI, Balance(amount=ZERO, usd_value=ZERO))
             new_total_amount = old_total.amount + additional_total_dai
-            self.totals[A_DAI] = Balance(
-                amount=new_total_amount,
-                usd_value=new_total_amount * usd_price,
-            )
+            if new_total_amount != ZERO:
+                self.totals[A_DAI] = Balance(
+                    amount=new_total_amount,
+                    usd_value=new_total_amount * usd_price,
+                )
 
     def query_ethereum_balances(self) -> None:
         """Queries the ethereum balances and populates the state

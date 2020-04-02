@@ -1,11 +1,6 @@
 import pytest
 
-from rotkehlchen.exchanges.coinbase import Coinbase
-from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
-
-
-class MockCoinbase(Coinbase):
-    pass
+from rotkehlchen.tests.utils.exchanges import create_test_coinbase
 
 
 @pytest.fixture(scope='function')
@@ -14,9 +9,7 @@ def function_scope_coinbase(
         inquirer,  # pylint: disable=unused-argument,
         function_scope_messages_aggregator,
 ):
-    mock = MockCoinbase(
-        api_key=make_api_key(),
-        secret=make_api_secret(),
+    mock = create_test_coinbase(
         database=database,
         msg_aggregator=function_scope_messages_aggregator,
     )
