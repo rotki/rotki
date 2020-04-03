@@ -8380,6 +8380,14 @@
         "symbol": "SXDT",
         "type": "ethereum token"
     },
+    "SXP": {
+        "ethereum_address": "0x8CE9137d39326AD0cD6491fb5CC0CbA0e089b6A9",
+        "ethereum_token_decimals": 18,
+        "name": "Swipe",
+        "started": 1565913600,
+        "symbol": "SXP",
+        "type": "ethereum token"
+    },
     "SXUT": {
         "ethereum_address": "0x2C82c73d5B34AA015989462b2948cd616a37641F",
         "ethereum_token_decimals": 18,
