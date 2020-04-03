@@ -25,7 +25,7 @@ def data_dir(use_clean_caching_directory, tmpdir_factory) -> Path:
         return Path(tmpdir_factory.mktemp('test_data_dir'))
 
     home = os.path.expanduser("~")
-    if 'TRAVIS' in os.environ:
+    if 'CI' in os.environ:
         data_directory = os.path.join(home, '.cache', '.rotkehlchen-test-dir')
     else:
         data_directory = os.path.join(home, '.rotkehlchen', 'tests_data_directory')
