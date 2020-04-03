@@ -25,6 +25,8 @@ MANUALLY_CHECKED_TYPES = {
     'DUSK': 'ethereum token',
     'EMT': 'ethereum token',
     'ENTRP': 'ethereum token',
+    'ETHBEAR': 'ethereum token',
+    'ETHBULL': 'ethereum token',
     'EOSDAC': 'ethereum token',
     'ERD': 'binance token',
     'ELAMA': 'ethereum token',

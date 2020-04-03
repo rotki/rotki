@@ -3308,6 +3308,22 @@
         "symbol": "ETHB",
         "type": "ethereum token"
     },
+    "ETHBEAR": {
+        "ethereum_address": "0x2f5e2c9002C058c063d21A06B6cabb50950130c8",
+        "ethereum_token_decimals": 18,
+        "name": "3X Short Ethereum Token",
+        "started": 1552867200,
+        "symbol": "ETHBEAR",
+        "type": "ethereum token"
+    },
+    "ETHBULL": {
+        "ethereum_address": "0x871baeD4088b863fd6407159f3672D70CD34837d",
+        "ethereum_token_decimals": 18,
+        "name": "3X Long Ethereum Token",
+        "started": 1552867200,
+        "symbol": "ETHBULL",
+        "type": "ethereum token"
+    },
     "ETHD": {
         "active": false,
         "ended": 1549411200,
