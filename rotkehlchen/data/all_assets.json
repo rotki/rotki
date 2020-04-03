@@ -4703,6 +4703,12 @@
         "symbol": "IQN",
         "type": "ethereum token"
     },
+    "IRIS": {
+        "name": "IRISnet",
+        "started": 1527724800,
+        "symbol": "IRIS",
+        "type": "own chain"
+    },
     "ITC": {
         "ethereum_address": "0x5E6b6d9aBAd9093fdc861Ea1600eBa1b355Cd940",
         "ethereum_token_decimals": 18,
