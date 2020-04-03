@@ -4327,6 +4327,12 @@
         "symbol": "HGT",
         "type": "ethereum token"
     },
+    "HIVE": {
+        "name": "Hive",
+        "started": 1584662400,
+        "symbol": "HIVE",
+        "type": "own chain"
+    },
     "HKG": {
         "ethereum_address": "0x14F37B574242D366558dB61f3335289a5035c506",
         "ethereum_token_decimals": 3,

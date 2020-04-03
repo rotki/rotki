@@ -8,6 +8,7 @@ Changelog
 * :feature:`-` Added support for the following tokens
   - `Standard Tokenization Protocol (STPT) <https://coinmarketcap.com/currencies/standard-tokenization-protocol/>`__
   - `IRISnet (IRIS) <https://coinmarketcap.com/currencies/irisnet/>`__
+  - `Hive (HIVE) <https://coinmarketcap.com/currencies/hive-blockchain/>`__
 
 
 * :release:`1.3.0 <2020-03-20>`

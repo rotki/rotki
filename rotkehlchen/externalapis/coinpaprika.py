@@ -37,6 +37,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'GEMZ',
     'GPUC',
     'GUE',
+    'HIVE',
     'HUGE',
     'HVC',
     'HZ',
