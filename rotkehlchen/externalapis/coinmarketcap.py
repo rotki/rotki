@@ -662,6 +662,8 @@ WORLD_TO_CMC_ID = {
     'BTM': 543,
     # Bytom
     'BTM-2': 1866,
+    # 3x Long Bitcoin
+    'BULL': 5157,
     # FairCoin
     'FAIR': 224,
     # FairGame

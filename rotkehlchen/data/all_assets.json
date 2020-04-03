@@ -887,6 +887,14 @@
         "symbol": "BEAM",
         "type": "own chain"
     },
+    "BEAR": {
+        "ethereum_address": "0x016ee7373248a80BDe1fD6bAA001311d233b3CFa",
+        "ethereum_token_decimals": 18,
+        "name": "3X Short Bitcoin Token",
+        "started": 1552867200,
+        "symbol": "BEAR",
+        "type": "ethereum token"
+    },
     "BEE": {
         "ethereum_address": "0x4D8fc1453a0F359e99c9675954e656D80d996FbF",
         "ethereum_token_decimals": 18,
@@ -1490,6 +1498,14 @@
         "name": "Bittrex Credits",
         "symbol": "BTXCRD",
         "type": "exchange specific"
+    },
+    "BULL": {
+        "ethereum_address": "0x016ee7373248a80BDe1fD6bAA001311d233b3CFa",
+        "ethereum_token_decimals": 18,
+        "name": "3X Long Bitcoin Token",
+        "started": 1552867200,
+        "symbol": "BULL",
+        "type": "ethereum token"
     },
     "BURST": {
         "name": "Burst",
