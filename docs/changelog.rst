@@ -4,6 +4,9 @@ Changelog
 
 * :bug:`805` Rotki can now accept passwords containing the " character
 * :feature:`764` Gemini exchange is now supported. Trades, deposits, withdrawals and balances from that exchange can now be queried.
+* :feature:`-` Added support for the following tokens
+  - `Standard Tokenization Protocol (STPT) <https://coinmarketcap.com/currencies/standard-tokenization-protocol/>`__
+
 
 * :release:`1.3.0 <2020-03-20>`
 * :feature:`779` OSX: User can now exit the application by simply pressing [X]
