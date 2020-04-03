@@ -124,11 +124,81 @@ jobs:
             COVERAGE_ARGS=''
           fi
           python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/tests
-      - id: log
-        run: echo "::set-output name=message::$(git log --no-merges -1 --oneline)"
-      - name: integration tests
-        if: "!contains(steps.log.outputs.message, '[ui tests]')"
+  test-integration:
+    if: "contains(github.event.head_commit.message, '[ui tests]')"
+    env:
+      CI: true
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: [3.7]
+        node-version: [12.x]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up python
+        uses: actions/setup-python@v1
+      - uses: actions/cache@v1
+        if: startsWith(runner.os, 'Linux')
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - uses: actions/cache@v1
+        if: startsWith(runner.os, 'macOS')
+        with:
+          path: ~/Library/Caches/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - uses: actions/cache@v1
+        if: startsWith(runner.os, 'Linux')
+        with:
+          path: ~/.cache/Cypress
+          key: ${{ runner.os }}-cypress-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-cypress-
+      - uses: actions/cache@v1
+        if: startsWith(runner.os, 'macOS')
+        with:
+          path: ~/Library/Caches/Cypress
+          key: ${{ runner.os }}-cypress-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-cypress-
+      - uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - name: Setup SQLCipher
+        run: |
+          if [ ${{ matrix.os }} == 'ubuntu-latest' ];
+          then
+            sudo apt-get install libxml2-utils
+            ./install_deps.sh
+            sudo ldconfig
+          fi
+          if [ ${{ matrix.os }} == 'macos-latest' ];
+          then
+            brew install sqlcipher
+          fi
+      - name: Setup backend
+        run: |
+          pip install -r requirements.txt
+      - name: Run integration tests
         working-directory: ./electron-app
         run: |
           npm ci
           npm run test:integration-ci
+      - uses: actions/upload-artifact@v1
+        if: failure()
+        with:
+          name: screenshots-${{ runner.os }}
+          path: ./electron-app/tests/e2e/screenshots
+      - uses: actions/upload-artifact@v1
+        if: always()
+        with:
+          name: videos-${{ runner.os }}
+          path: ./electron-app/tests/e2e/videos
