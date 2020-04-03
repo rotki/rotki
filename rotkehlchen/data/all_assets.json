@@ -8865,6 +8865,22 @@
         "symbol": "TRX",
         "type": "ethereum token and more"
     },
+    "TRXBEAR": {
+        "ethereum_address": "0x86807Da5B92d31F67E128771CAcb85F3579646eA",
+        "ethereum_token_decimals": 18,
+        "name": " 3X Short TRX Token",
+        "started": 1558051200,
+        "symbol": "TRXBEAR",
+        "type": "ethereum token"
+    },
+    "TRXBULL": {
+        "ethereum_address": "0xc175E77b04F2341517334Ea3Ed0b198A01A97383",
+        "ethereum_token_decimals": 18,
+        "name": " 3X Long TRX Token",
+        "started": 1558051200,
+        "symbol": "TRXBULL",
+        "type": "ethereum token"
+    },
     "TRY": {
         "name": "Turkish Lyra",
         "symbol": "TRY",

@@ -603,6 +603,11 @@ KNOWN_TO_MISS_FROM_CMC = (
     # CryptoInsight is missing from API but is in
     # https://coinmarketcap.com/currencies/trackr/
     'TKR',
+    # Missing from API but are both in:
+    # https://coinmarketcap.com/currencies/3x-short-trx-token/
+    # https://coinmarketcap.com/currencies/3x-long-trx-token/
+    'TRXBEAR',
+    'TRXBULL',
     # TaTaTu is missing from API but is in
     # https://coinmarketcap.com/currencies/tatatu/
     'TTU',

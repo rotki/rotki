@@ -77,6 +77,8 @@ MANUALLY_CHECKED_TYPES = {
     'TEMCO': 'ethereum token',
     'TOMO': 'ethereum token',
     'TROY': 'own chain',
+    'TRXBEAR': 'ethereum token',
+    'TRXBULL': 'ethereum token',
     'URB': 'ethereum token',
     'VENUS': 'ethereum token',
     'VIN': 'ethereum token',
