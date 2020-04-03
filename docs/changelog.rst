@@ -19,6 +19,8 @@ Changelog
   - `3X Long Ethereum Token (ETHBULL) <https://coinmarketcap.com/currencies/3x-long-ethereum-token/>`__
   - `3X Short TRX Token (TRXBEAR) <https://coinmarketcap.com/currencies/3x-short-trx-token/>`__
   - `3X Long TRX Token (TRXBULL) <https://coinmarketcap.com/currencies/3x-long-trx-token/>`__
+  - `3X Short EOS Token (EOSBEAR) <https://www.cryptocompare.com/coins/eosbear/overview>`__
+  - `3X Long EOS Token (EOSBULL) <https://www.cryptocompare.com/coins/eosbull/overview>`__
 
 
 * :release:`1.3.0 <2020-03-20>`
