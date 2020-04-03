@@ -33,6 +33,8 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'DRKC',
     'DUSK',
     'ELAMA',
+    'ETHBEAR',  # The 3x ETH short
+    'ETHBULL',  # The 3x ETH long
     'EXE',
     'ERD',
     'FIBRE',

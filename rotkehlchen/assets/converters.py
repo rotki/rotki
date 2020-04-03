@@ -396,10 +396,6 @@ UNSUPPORTED_BINANCE_ASSETS = (
     '456',  # https://twitter.com/rotkiapp/status/1161977327078838272
     # the 3X long/short tokens are not yet listed anywhere else
     # but they do exist in coinmarketcap. So perhaps can support them in the future
-    'BULL',  # https://www.binance.com/en/support/articles/360038933471
-    'BEAR',  # https://www.binance.com/en/support/articles/360038933471
-    'ETHBULL',  # https://www.binance.com/en/support/articles/360038933471
-    'ETHBEAR',  # https://www.binance.com/en/support/articles/360038933471
     'EOSBULL',  # https://www.binance.com/en/support/articles/360039712431
     'EOSBEAR',  # https://www.binance.com/en/support/articles/360039712431
     'XRPBULL',  # https://www.binance.com/en/support/articles/360039712431

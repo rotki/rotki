@@ -15,6 +15,8 @@ Changelog
   - `Starchain (STC) <https://coinmarketcap.com/currencies/starchain/>`__
   - `3X Short Bitcoin Token (BEAR) <https://coinmarketcap.com/currencies/3x-short-bitcoin-token/>`__
   - `3X Long Bitcoin Token (BULL) <https://coinmarketcap.com/currencies/3x-long-bitcoin-token/>`__
+  - `3X Short Ethereum Token (ETHBEAR) <https://coinmarketcap.com/currencies/3x-short-ethereum-token/>`__
+  - `3X Long Ethereum Token (ETHBULL) <https://coinmarketcap.com/currencies/3x-long-ethereum-token/>`__
   - `3X Short TRX Token (TRXBEAR) <https://coinmarketcap.com/currencies/3x-short-trx-token/>`__
   - `3X Long TRX Token (TRXBULL) <https://coinmarketcap.com/currencies/3x-long-trx-token/>`__
 
