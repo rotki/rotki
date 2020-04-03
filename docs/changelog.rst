@@ -10,6 +10,7 @@ Changelog
   - `IRISnet (IRIS) <https://coinmarketcap.com/currencies/irisnet/>`__
   - `Hive (HIVE) <https://coinmarketcap.com/currencies/hive-blockchain/>`__
   - `Hive dollar (HBD) <https://coinmarketcap.com/currencies/hive-dollar/>`__
+  - `Swipe (SXP) <https://coinmarketcap.com/currencies/swipe/>`__
 
 
 * :release:`1.3.0 <2020-03-20>`
