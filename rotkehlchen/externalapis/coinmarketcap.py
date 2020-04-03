@@ -614,6 +614,9 @@ KNOWN_TO_MISS_FROM_CMC = (
     # Urbit (https://www.cryptocompare.com/coins/urb/overview)
     # is not in coinmarketcap but is in cryptocompare
     'URB',
+    # USDJ is missing from coinmarketcap but is in cryptocompare
+    # https://www.cryptocompare.com/coins/usdj/overview
+    'USDJ',
     # Bitcoin Card (https://etherscan.io/address/0x9a9bB9b4b11BF8eccff84B58a6CCCCD4058A7f0D)
     # is not in coinmarketcap but is in paprika
     'VD',

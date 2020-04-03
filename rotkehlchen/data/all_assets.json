@@ -9061,6 +9061,12 @@
         "symbol": "USDE",
         "type": "own chain"
     },
+    "USDJ": {
+        "name": "USDJ",
+        "started": 1585872000,
+        "symbol": "USDJ",
+        "type": "tron token"
+    },
     "USDS": {
         "ethereum_address": "0xA4Bdb11dc0a2bEC88d24A3aa1E6Bb17201112eBe",
         "ethereum_token_decimals": 6,

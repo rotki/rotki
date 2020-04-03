@@ -80,6 +80,7 @@ MANUALLY_CHECKED_TYPES = {
     'TRXBEAR': 'ethereum token',
     'TRXBULL': 'ethereum token',
     'URB': 'ethereum token',
+    'USDJ': 'tron token',
     'VENUS': 'ethereum token',
     'VIN': 'ethereum token',
     'WMK': 'ethereum token',

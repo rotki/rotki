@@ -53,6 +53,7 @@ MANUALLY_CHECKED_NAMES = {
     'TRXBEAR': ' 3X Short TRX Token',
     'TRXBULL': ' 3X Long TRX Token',
     'URB': 'Urbit Data',
+    'USDJ': 'USDJ',
     'VENUS': 'VenusEnergy',
     'WMK': 'WeMark',
     'WLK': 'Wolk',
