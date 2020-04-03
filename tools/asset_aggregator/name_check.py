@@ -50,6 +50,8 @@ MANUALLY_CHECKED_NAMES = {
     'STP': 'StashPay',
     'TAN': 'Taklimakan',
     'TBT': 'T-Bot',
+    'TRXBEAR': ' 3X Short TRX Token',
+    'TRXBULL': ' 3X Long TRX Token',
     'URB': 'Urbit Data',
     'VENUS': 'VenusEnergy',
     'WMK': 'WeMark',
