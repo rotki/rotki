@@ -8,6 +8,8 @@ MANUALLY_CHECKED_TYPES = {
     'BEAR': 'ethereum token',
     'BULL': 'ethereum token',
     'BITCAR': 'ethereum token',
+    'BNBBEAR': 'ethereum token',
+    'BNBBULL': 'ethereum token',
     'BMT': 'ethereum token',
     'BOU': 'ethereum token',
     'BTCE': 'ethereum token',

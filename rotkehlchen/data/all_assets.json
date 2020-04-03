@@ -1168,6 +1168,22 @@
         "symbol": "BNB",
         "type": "ethereum token"
     },
+    "BNBBEAR": {
+        "ethereum_address": "0x6FeBdFC0A9d9502C45343fCE0dF08828dEF44795",
+        "ethereum_token_decimals": 18,
+        "name": "3X Short BNB Token",
+        "started": 1558051200,
+        "symbol": "BNBBEAR",
+        "type": "ethereum token"
+    },
+    "BNBBULL": {
+        "ethereum_address": "0x9D1a62c2AD99019768b9126fdA004a9952853F6E",
+        "ethereum_token_decimals": 18,
+        "name": "3X Long BNB Token",
+        "started": 1558051200,
+        "symbol": "BNBBULL",
+        "type": "ethereum token"
+    },
     "BNC": {
         "ethereum_address": "0xEf51c9377FeB29856E61625cAf9390bD0B67eA18",
         "ethereum_token_decimals": 8,

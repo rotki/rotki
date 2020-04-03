@@ -23,6 +23,8 @@ Changelog
   - `3X Long EOS Token (EOSBULL) <https://www.cryptocompare.com/coins/eosbull/overview>`__
   - `3X Short XRP Token (XRPBEAR) <https://www.cryptocompare.com/coins/xrpbear/overview>`__
   - `3X Long XRP Token (XRPBULL) <https://www.cryptocompare.com/coins/xrpbull/overview>`__
+  - `3X Short BNB Token (BNBBEAR) <https://coinmarketcap.com/currencies/3x-short-bnb-token/>`__
+  - `3X Long BNB Token (BNBBULL) <https://coinmarketcap.com/currencies/3x-long-bnb-token/>`__
 
 
 * :release:`1.3.0 <2020-03-20>`
