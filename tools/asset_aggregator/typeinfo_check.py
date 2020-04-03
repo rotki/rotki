@@ -25,6 +25,7 @@ MANUALLY_CHECKED_TYPES = {
     'ENTRP': 'ethereum token',
     'EOSDAC': 'ethereum token',
     'ERD': 'binance token',
+    'ELAMA': 'ethereum token',
     'ETHB': 'ethereum token',
     'ETHD': 'ethereum token',
     'FIH': 'ethereum token',

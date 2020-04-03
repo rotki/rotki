@@ -3076,6 +3076,14 @@
         "symbol": "EKT",
         "type": "ethereum token"
     },
+    "ELAMA": {
+        "ethereum_address": "0xFb444c1f2B718dDfC385cB8Fd9f2D1D776b24668",
+        "ethereum_token_decimals": 18,
+        "name": "Elamachain",
+        "started": 1580256000,
+        "symbol": "ELAMA",
+        "type": "ethereum token"
+    },
     "ELEC": {
         "ethereum_address": "0xD49ff13661451313cA1553fd6954BD1d9b6E02b9",
         "ethereum_token_decimals": 18,
