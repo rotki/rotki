@@ -4,6 +4,7 @@ Changelog
 
 * :bug:`805` Rotki can now accept passwords containing the " character
 * :feature:`764` Gemini exchange is now supported. Trades, deposits, withdrawals and balances from that exchange can now be queried.
+* :feature:`-` Add support for the South African Rand  (ZAR - R) as a fiat currency
 * :feature:`-` Added support for the following tokens
   - `Standard Tokenization Protocol (STPT) <https://coinmarketcap.com/currencies/standard-tokenization-protocol/>`__
 

@@ -10,7 +10,8 @@ A_KRW = Asset('KRW')
 A_RUB = Asset('RUB')
 A_CHF = Asset('CHF')
 A_TRY = Asset('TRY')
-FIAT_CURRENCIES = (A_USD, A_EUR, A_GBP, A_JPY, A_CNY, A_CAD, A_KRW, A_RUB, A_CHF, A_TRY)
+A_ZAR = Asset('ZAR')
+FIAT_CURRENCIES = (A_USD, A_EUR, A_GBP, A_JPY, A_CNY, A_CAD, A_KRW, A_RUB, A_CHF, A_TRY, A_ZAR)
 
 S_BTC = 'BTC'
 S_ETH = 'ETH'
