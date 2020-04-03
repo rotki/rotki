@@ -9898,6 +9898,11 @@
         "symbol": "ZAP",
         "type": "ethereum token"
     },
+    "ZAR": {
+        "name": "South African Rand",
+        "symbol": "ZAR",
+        "type": "fiat"
+    },
     "ZCL": {
         "name": "ZClassic",
         "started": 1478390400,
