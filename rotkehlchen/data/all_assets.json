@@ -8216,6 +8216,14 @@
         "symbol": "STAR",
         "type": "ethereum token"
     },
+    "STC": {
+        "ethereum_address": "0x8f136Cc8bEf1fEA4A7b71aa2301ff1A52F084384",
+        "ethereum_token_decimals": 8,
+        "name": "StarChain",
+        "started": 1515283200,
+        "symbol": "STC",
+        "type": "ethereum token"
+    },
     "STEEM": {
         "name": "Steem",
         "started": 1458777600,
