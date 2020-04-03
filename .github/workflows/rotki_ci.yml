@@ -15,6 +15,19 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: '12.x'
+      - uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - uses: actions/cache@v1
+        if: startsWith(runner.os, 'Linux')
+        with:
+          path: ~/.cache/Cypress
+          key: ${{ runner.os }}-cypress-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-cypress-
       - name: Install dependencies
         working-directory: ./electron-app
         run: npm ci
@@ -82,6 +95,21 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: '3.7'
+      - uses: actions/cache@v1
+        if: startsWith(runner.os, 'Linux')
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - uses: actions/cache@v1
+        if: startsWith(runner.os, 'macOS')
+        with:
+          path: ~/Library/Caches/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
       - name: Install dependencies
         run: |
           pip install --upgrade "pip<19.0.0" wheel
@@ -96,4 +124,11 @@ jobs:
             COVERAGE_ARGS=''
           fi
           python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/tests
-
+      - id: log
+        run: echo "::set-output name=message::$(git log --no-merges -1 --oneline)"
+      - name: integration tests
+        if: "!contains(steps.log.outputs.message, '[ui tests]')"
+        working-directory: ./electron-app
+        run: |
+          npm ci
+          npm run test:integration-ci
