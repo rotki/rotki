@@ -3216,6 +3216,22 @@
         "symbol": "EOS",
         "type": "ethereum token and own chain"
     },
+    "EOSBEAR": {
+        "ethereum_address": "0x3d3dd61b0F9A558759a21dA42166042B114E12D5",
+        "ethereum_token_decimals": 18,
+        "name": "3X Short EOS Token",
+        "started": 1552867200,
+        "symbol": "EOSBEAR",
+        "type": "ethereum token"
+    },
+    "EOSBULL": {
+        "ethereum_address": "0xeaD7F3ae4e0Bb0D8785852Cc37CC9d0B5e75c06a",
+        "ethereum_token_decimals": 18,
+        "name": "3X Long EOS Token",
+        "started": 1552867200,
+        "symbol": "EOSBULL",
+        "type": "ethereum token"
+    },
     "EOSDAC": {
         "ethereum_address": "0x7e9e431a0B8c4D532C745B1043c7FA29a48D4fBa",
         "ethereum_token_decimals": 18,
