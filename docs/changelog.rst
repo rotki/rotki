@@ -12,6 +12,7 @@ Changelog
   - `Hive dollar (HBD) <https://coinmarketcap.com/currencies/hive-dollar/>`__
   - `Swipe (SXP) <https://coinmarketcap.com/currencies/swipe/>`__
   - `Elamachain (ELAMA) <https://coinmarketcap.com/currencies/elamachain/>`__
+  - `Starchain (STC) <https://coinmarketcap.com/currencies/starchain/>`__
 
 
 * :release:`1.3.0 <2020-03-20>`
