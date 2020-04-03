@@ -12,7 +12,7 @@ from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 
 @pytest.mark.skipif(
-    'TRAVIS' in os.environ,
+    'CI' in os.environ,
     reason='some of these APIs frequently become unavailable',
 )
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -26,7 +26,7 @@ def test_query_realtime_price_apis(inquirer):
 
 
 @pytest.mark.skipif(
-    'TRAVIS' in os.environ,
+    'CI' in os.environ,
     reason='some of these APIs frequently become unavailable',
 )
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
