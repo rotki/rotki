@@ -9890,6 +9890,22 @@
         "symbol": "XRP",
         "type": "own chain"
     },
+    "XRPBEAR": {
+        "ethereum_address": "0x94FC5934cF5970E944a67de806eEB5a4b493c6E6",
+        "ethereum_token_decimals": 18,
+        "name": "3X Short XRP Token",
+        "started": 1552867200,
+        "symbol": "XRPBEAR",
+        "type": "ethereum token"
+    },
+    "XRPBULL": {
+        "ethereum_address": "0x27c1bA4F85b8dC1c150157816623A6Ce80b7F187",
+        "ethereum_token_decimals": 18,
+        "name": "3X Long XRP Token",
+        "started": 1552867200,
+        "symbol": "XRPBULL",
+        "type": "ethereum token"
+    },
     "XSI": {
         "active": false,
         "ended": 1514764800,
