@@ -8228,6 +8228,14 @@
         "symbol": "STP",
         "type": "ethereum token"
     },
+    "STPT": {
+        "ethereum_address": "0xDe7D85157d9714EADf595045CC12Ca4A5f3E2aDb",
+        "ethereum_token_decimals": 18,
+        "name": "Standard Tokenization Protocol",
+        "started": 1559692800,
+        "symbol": "STPT",
+        "type": "ethereum token"
+    },
     "STQ": {
         "ethereum_address": "0x5c3a228510D246b78a3765C20221Cbf3082b44a4",
         "ethereum_token_decimals": 18,
