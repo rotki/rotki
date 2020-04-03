@@ -30,6 +30,7 @@ MANUALLY_CHECKED_TYPES = {
     'FIH': 'ethereum token',
     'FLX': 'ethereum token',
     'FORK-2': 'ethereum token',
+    'HIVE': 'own chain',
     'HKG': 'ethereum token',
     'ITM': 'ethereum token',
     'JOY': 'ethereum token',
