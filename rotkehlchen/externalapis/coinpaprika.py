@@ -30,6 +30,7 @@ KNOWN_TO_MISS_FROM_PAPRIKA = (
     'DIEM',
     'DRKC',
     'DUSK',
+    'ELAMA',
     'EXE',
     'ERD',
     'FIBRE',
