@@ -88,6 +88,8 @@ KNOWN_TO_MISS_FROM_CMC = (
     'GPUC',
     # Missing from API, is in https://coinmarketcap.com/currencies/guerillacoin/
     'GUE',
+    # Missing from API, is in https://coinmarketcap.com/currencies/hive-dollar/
+    'HBD',
     # Missing from API, is in https://coinmarketcap.com/currencies/hive-blockchain/
     'HIVE',
     # Missing from API, is in https://coinmarketcap.com/currencies/bigcoin/

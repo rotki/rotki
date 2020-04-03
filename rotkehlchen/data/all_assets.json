@@ -4259,6 +4259,12 @@
         "symbol": "HBAR",
         "type": "own chain"
     },
+    "HBD": {
+        "name": "Hive dollar",
+        "started": 1585267200,
+        "symbol": "HBD",
+        "type": "own chain"
+    },
     "HBT": {
         "ethereum_address": "0xDd6C68bb32462e01705011a4e2Ad1a60740f217F",
         "ethereum_token_decimals": 15,
