@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`830` If using alethio detecting tokens from an address that contains more than 10 tokens should now work properly
 * :bug:`805` Rotki can now accept passwords containing the " character
 * :feature:`764` Gemini exchange is now supported. Trades, deposits, withdrawals and balances from that exchange can now be queried.
 * :feature:`-` Add support for the South African Rand  (ZAR - R) as a fiat currency
