@@ -23,6 +23,7 @@ def test_eth_connection_initial_balances(
         ethereum_accounts,
         inquirer,  # pylint: disable=unused-argument
 ):
+    assert blockchain.ethereum.connected is True, 'Should be connected to ethereum node'
     result = blockchain.query_balances()
 
     per_eth_account = result.per_account.eth
