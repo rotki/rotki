@@ -26,7 +26,8 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
-import { mapState } from 'vuex';
+import { createNamespacedHelpers } from 'vuex';
+const { mapState } = createNamespacedHelpers('session');
 
 @Component({
   computed: mapState(['nodeConnection'])
