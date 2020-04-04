@@ -68,7 +68,7 @@ export default class PyHandler {
   createPyProc(window: BrowserWindow) {
     if (process.env.SKIP_PYTHON_BACKEND) {
       this.logToFile('Skipped starting python sub-process');
-      return
+      return;
     }
 
     let port = this.selectPort();
@@ -179,7 +179,10 @@ export default class PyHandler {
     // start of the path
     if (process.env.VIRTUAL_ENV) {
       process.env.PATH =
-        process.env.VIRTUAL_ENV + path.sep + (process.platform === 'win32' ? 'Scripts;' : 'bin:') + process.env.PATH;
+        process.env.VIRTUAL_ENV +
+        path.sep +
+        (process.platform === 'win32' ? 'Scripts;' : 'bin:') +
+        process.env.PATH;
     } else {
       this.logAndQuit(
         'ERROR: Running in development mode and not inside a python virtual environment'
