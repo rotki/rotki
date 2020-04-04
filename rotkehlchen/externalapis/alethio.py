@@ -63,7 +63,7 @@ class Alethio(ExternalServiceWithApiKey):
             # If this is a pagination call
             query_str = full_query_str
         else:
-            query_str = f'https://api.aleth.io/v1/{root_endpoint}/{path}'
+            query_str = f'https://api.aleth.io/v1/{root_endpoint}/{path}?page[limit]=100'
         log.debug(f'Querying alethio for {query_str}')
 
         api_key = self._get_api_key()
