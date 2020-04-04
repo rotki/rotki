@@ -4397,6 +4397,14 @@
         "symbol": "HER",
         "type": "ethereum token"
     },
+    "HEX": {
+        "ethereum_address": "0x2b591e99afe9f32eaa6214f7b7629768c40eeb39",
+        "ethereum_token_decimals": 8,
+        "name": "HEX",
+        "started": 1575331200,
+        "symbol": "HEX",
+        "type": "ethereum token"
+    },
     "HGT": {
         "ethereum_address": "0xba2184520A1cC49a6159c57e61E1844E085615B6",
         "ethereum_token_decimals": 8,
