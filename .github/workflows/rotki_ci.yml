@@ -61,6 +61,7 @@ jobs:
         run: make lint
 
   test-backend:
+    needs: lint-backend
     env:
       CI: true
     strategy:
@@ -126,11 +127,12 @@ jobs:
           python pytestgeventwrapper.py $COVERAGE_ARGS rotkehlchen/tests
   test-integration:
     if: "contains(github.event.head_commit.message, '[ui tests]')"
+    needs: [lint-frontend, test-backend]
     env:
       CI: true
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         python-version: [3.7]
         node-version: [12.x]
     runs-on: ${{ matrix.os }}
@@ -138,6 +140,8 @@ jobs:
       - uses: actions/checkout@v2
       - name: Set up python
         uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
       - uses: actions/cache@v1
         if: startsWith(runner.os, 'Linux')
         with:
@@ -187,6 +191,7 @@ jobs:
       - name: Setup backend
         run: |
           pip install -r requirements.txt
+          pip install -e .
       - name: Run integration tests
         working-directory: ./electron-app
         run: |
@@ -202,3 +207,59 @@ jobs:
         with:
           name: videos-${{ runner.os }}
           path: ./electron-app/tests/e2e/videos
+  package:
+    needs: test-backend
+    if: startsWith(github.event.ref, 'refs/tags')
+    env:
+      CI: true
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: [3.7]
+        node-version: [12.x]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up python
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+      - uses: actions/cache@v1
+        if: startsWith(runner.os, 'Linux')
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - uses: actions/cache@v1
+        if: startsWith(runner.os, 'macOS')
+        with:
+          path: ~/Library/Caches/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - name: Setup SQLCipher
+        run: |
+          if [ ${{ matrix.os }} == 'ubuntu-latest' ];
+          then
+            sudo apt-get install libxml2-utils
+            ./install_deps.sh
+            sudo ldconfig
+          fi
+          if [ ${{ matrix.os }} == 'macos-latest' ];
+          then
+            brew install sqlcipher
+          fi
+      - name: Package
+        run: ./package.sh
