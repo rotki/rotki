@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`837` If connected to an ethereum node, the connection status indicator should now properly show that to the user.
 * :bug:`830` If using alethio detecting tokens from an address that contains more than 10 tokens should now work properly
 * :bug:`805` Rotki can now accept passwords containing the " character
 * :feature:`764` Gemini exchange is now supported. Trades, deposits, withdrawals and balances from that exchange can now be queried.
