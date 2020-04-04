@@ -27,6 +27,7 @@ Changelog
   - `3X Long XRP Token (XRPBULL) <https://www.cryptocompare.com/coins/xrpbull/overview>`__
   - `3X Short BNB Token (BNBBEAR) <https://coinmarketcap.com/currencies/3x-short-bnb-token/>`__
   - `3X Long BNB Token (BNBBULL) <https://coinmarketcap.com/currencies/3x-long-bnb-token/>`__
+  - `HEX (HEX) <https://www.coingecko.com/en/coins/hex>`__
 
 
 * :release:`1.3.0 <2020-03-20>`
