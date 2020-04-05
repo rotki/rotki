@@ -5,7 +5,7 @@ import re
 import shutil
 import tempfile
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Set, Tuple, cast
+from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
 
 from eth_utils import is_checksum_address
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -28,9 +28,12 @@ from rotkehlchen.db.utils import (
     BlockchainAccounts,
     DBStartupAction,
     LocationData,
+    ManuallyTrackedBalance,
     SingleAssetBalance,
     Tag,
+    deserialize_tags_from_db,
     form_query_to_filter_timestamps,
+    insert_tag_mappings,
     str_to_bool,
 )
 from rotkehlchen.errors import (
@@ -40,6 +43,7 @@ from rotkehlchen.errors import (
     InputError,
     TagConstraintError,
     UnknownAsset,
+    UnsupportedAsset,
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
@@ -682,15 +686,7 @@ class DBHandler:
         cursor.executemany(
             'INSERT INTO blockchain_accounts(blockchain, account, label) VALUES (?, ?, ?)', tuples,
         )
-
-        # And now insert the tag mappings
-        mapping_tuples = []
-        for entry in account_data:
-            if entry.tags is not None:
-                mapping_tuples.extend([(entry.address, tag) for tag in entry.tags])
-        cursor.executemany(
-            'INSERT INTO tag_mappings(object_reference, tag_name) VALUES (?, ?)', mapping_tuples,
-        )
+        insert_tag_mappings(cursor=cursor, data=account_data, object_reference_key='address')
 
         self.conn.commit()
         self.update_last_write()
@@ -729,15 +725,7 @@ class DBHandler:
             )
             log.error(msg)
             raise AssertionError(msg)
-
-        # And now insert the tag mappings
-        mapping_tuples = []
-        for entry in account_data:
-            if entry.tags is not None:
-                mapping_tuples.extend([(entry.address, tag) for tag in entry.tags])
-        cursor.executemany(
-            'INSERT INTO tag_mappings(object_reference, tag_name) VALUES (?, ?)', mapping_tuples,
-        )
+        insert_tag_mappings(cursor=cursor, data=account_data, object_reference_key='address')
 
         self.conn.commit()
         self.update_last_write()
@@ -747,6 +735,11 @@ class DBHandler:
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
     ) -> None:
+        """Removes the given blockchain accounts from the DB
+
+        May raise:
+        - InputError if any of the given accounts to delete did not exist
+        """
         tuples = [(blockchain.value, x) for x in accounts]
 
         cursor = self.conn.cursor()
@@ -862,13 +855,7 @@ class DBHandler:
 
         data = []
         for entry in query:
-            if entry[2] is None:
-                tags = None
-            else:
-                tags = entry[2].split(',')
-                if len(tags) == 1 and tags[0] == '':
-                    tags = None
-
+            tags = deserialize_tags_from_db(entry[2])
             data.append(BlockchainAccountData(
                 address=entry[0],
                 label=entry[1],
@@ -876,6 +863,126 @@ class DBHandler:
             ))
 
         return data
+
+    def get_manually_tracked_balances(self) -> List[ManuallyTrackedBalance]:
+        """Returns the manually tracked balances from the DB"""
+        cursor = self.conn.cursor()
+        query = cursor.execute(
+            'SELECT A.asset, A.label, A.amount, A.location, group_concat(B.tag_name,",") '
+            'FROM manually_tracked_balances as A '
+            'LEFT OUTER JOIN tag_mappings as B on B.object_reference = A.label;',
+        )
+
+        data = []
+        for entry in query:
+            tags = deserialize_tags_from_db(entry[4])
+            try:
+                data.append(ManuallyTrackedBalance(
+                    asset=Asset(entry[0]),
+                    label=entry[1],
+                    amount=FVal(entry[2]),
+                    location=deserialize_location(entry[3]),
+                    tags=tags,
+                ))
+            except (DeserializationError, UnknownAsset, UnsupportedAsset, ValueError) as e:
+                # ValueError is due to FVal failing
+                self.msg_aggregator.add_warning(
+                    f'Unexpected data in a ManuallyTrackedBalance entry in the DB: {str(e)}',
+                )
+
+        return data
+
+    def add_manually_tracked_balances(self, data: List[ManuallyTrackedBalance]) -> None:
+        """Adds manually tracked balances in the DB
+
+        May raise:
+        - InputError if one of the given balance entries already exist in the DB
+        """
+        # Insert the manually tracked balances in the DB
+        tuples = [(
+            entry.asset.identifier,
+            entry.label,
+            str(entry.amount),
+            entry.location.serialize_for_db(),
+        ) for entry in data]
+        cursor = self.conn.cursor()
+        try:
+            cursor.executemany(
+                'INSERT INTO manually_tracked_balances(asset, label, amount, location) '
+                'VALUES (?, ?, ?, ?)', tuples,
+            )
+        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+            raise InputError(
+                f'One of the manually tracked balance entries already exists in the DB. {str(e)}',
+            )
+        insert_tag_mappings(cursor=cursor, data=data, object_reference_key='label')
+
+        self.conn.commit()
+        self.update_last_write()
+
+    def edit_manually_tracked_balances(self, data: List[ManuallyTrackedBalance]) -> None:
+        """Edits manually tracked balances
+
+        Edits the manually tracked balances for each of the given balance labels.
+
+        At this point in the calling chain we should already know that:
+        - All tags exist in the DB
+
+        May raise:
+        - InputError if any of the manually tracked balance labels to edit do not
+        exist in the DB
+        """
+        cursor = self.conn.cursor()
+        # Delete the current tag mappings for all affected balance entries
+        cursor.executemany(
+            'DELETE FROM tag_mappings WHERE '
+            'object_reference = ?;', [(x.label,) for x in data],
+        )
+
+        # Update the manually tracked balance entries in the DB
+        tuples = [(
+            entry.asset.identifier,
+            str(entry.amount),
+            entry.location.serialize_for_db(),
+            entry.label,
+        ) for entry in data]
+        cursor.executemany(
+            'UPDATE manually_tracked_balances SET asset=? amount=? location=? '
+            'WHERE label=?;', tuples,
+        )
+        if cursor.rowcount != len(data):
+            msg = 'Tried to edit manually tracked balance entry that did not exist in the DB'
+            raise InputError(msg)
+        insert_tag_mappings(cursor=cursor, data=data, object_reference_key='label')
+
+        self.conn.commit()
+        self.update_last_write()
+
+    def remove_manually_tracked_balances(self, labels: List[str]) -> None:
+        """
+        Removes manually tracked balances for the given labels
+
+        May raise:
+        - InputError if any of the given manually tracked balance labels
+        to delete did not exist
+        """
+        cursor = self.conn.cursor()
+        cursor.executemany(
+            'DELETE FROM tag_mappings WHERE '
+            'object_reference = ?;', labels,
+        )
+        cursor.executemany(
+            'DELETE FROM manually_tracked_balances WHERE label = ?;', labels,
+        )
+        affected_rows = cursor.rowcount
+        if affected_rows != len(labels):
+            raise InputError(
+                f'Tried to remove {len(labels) - affected_rows} '
+                f'manually tracked balance labels that do not exist',
+            )
+
+        self.conn.commit()
+        self.update_last_write()
 
     def remove(self) -> None:
         cursor = self.conn.cursor()
@@ -1763,3 +1870,27 @@ class DBHandler:
             )
         self.conn.commit()
         self.update_last_write()
+
+    def ensure_tags_exist(
+            self,
+            given_data: Union[List[BlockchainAccountData], List[ManuallyTrackedBalance]],
+            action: Literal['adding', 'editing'],
+            data_type: Literal['blockchain accounts', 'manually tracked balances'],
+    ) -> None:
+        """Make sure that tags included in the data exist in the DB
+
+        May Raise:
+        - TagConstraintError if the tags don't exist in the DB
+        """
+        existing_tags = self.get_tags()
+        existing_tag_keys = existing_tags.keys()
+        unknown_tags: Set[str] = set()
+        for entry in given_data:
+            if entry.tags is not None:
+                unknown_tags.update(set(entry.tags).difference(existing_tag_keys))
+
+        if len(unknown_tags) != 0:
+            raise TagConstraintError(
+                f'When {action} {data_type}, unknown tags '
+                f'{", ".join(unknown_tags)} were found',
+            )

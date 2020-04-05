@@ -2887,7 +2887,8 @@ Adding manually tracked balances
                   "label": "My monero wallet",
 		  "amount": "50.315",
 		  "usd_value": "2370.13839",
-                  "tags": ["public"]
+                  "tags": ["public"],
+		  "location": "blockchain"
               }, {
                   "asset": "BTC",
                   "label": "My XPUB BTC wallet",
@@ -2907,7 +2908,7 @@ Adding manually tracked balances
 
    :resjson object result: An object containing all the manually tracked balances as defined `here <manually_tracked_balances_section_>`__ with additionally a current usd equivalent value per account.
    :statuscode 200: Balances succesfully added
-   :statuscode 400: Provided JSON or data is in some way malformed. The balances to add contained invalid assets or were an empty list.
+   :statuscode 400: Provided JSON or data is in some way malformed. The balances to add contained invalid assets or were an empty list. One of the balance labels already exist.
    :statuscode 409: User is not logged in. Provided tags do not exist. Check message for details.
    :statuscode 500: Internal Rotki error
    :statuscode 502: Error occured with some external service query such as Cryptocompare. Check message for details.
