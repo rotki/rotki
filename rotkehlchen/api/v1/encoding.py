@@ -11,6 +11,7 @@ from webargs.compat import MARSHMALLOW_VERSION_INFO
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.bitcoin import is_valid_btc_address
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.utils import ManuallyTrackedBalance
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
@@ -557,6 +558,30 @@ class FiatBalancesSchema(Schema):
         values=PositiveOrZeroAmountField(),
         required=True,
     )
+
+
+class ManuallyTrackedBalanceSchema(Schema):
+    asset = AssetField(required=True)
+    label = fields.String(required=True)
+    amount = PositiveAmountField(required=True)
+    location = LocationField(required=True)
+    tags = fields.List(fields.String(), missing=None)
+
+    @post_load  # type: ignore
+    def make_manually_tracked_balances(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> ManuallyTrackedBalance:
+        return ManuallyTrackedBalance(**data)
+
+
+class ManuallyTrackedBalancesSchema(Schema):
+    balances = fields.List(fields.Nested(ManuallyTrackedBalanceSchema), required=True)
+
+
+class ManuallyTrackedBalancesDeleteSchema(Schema):
+    balances = fields.List(fields.String(required=True))
 
 
 class TradePatchSchema(TradeSchema):

@@ -2782,7 +2782,7 @@ Removing blockchain accounts
 
 Getting manually tracked balances
 ====================================
-.. http:get:: /api/(version)/manual_balances/
+.. http:get:: /api/(version)/balances/manual/
 
    Doing a GET on the manually tracked balances endpoint will return all the manually tracked balance accounts from the database.
 
@@ -2790,7 +2790,7 @@ Getting manually tracked balances
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/manual_balances HTTP/1.1
+      GET /api/1/balances/manual HTTP/1.1
       Host: localhost:5042
 
 
@@ -2836,7 +2836,7 @@ Getting manually tracked balances
 Adding manually tracked balances
 ====================================
 
-.. http:put:: /api/(version)/manual_balances/
+.. http:put:: /api/(version)/balances/manual/
 
 
    Doing a PUT on the the manually tracked balances endpoint you can add a balance for an asset that Rotki can't automatically detect, along with a label identifying it for you and any number of tags.
@@ -2848,7 +2848,7 @@ Adding manually tracked balances
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/manual_balances/ HTTP/1.1
+      PUT /api/1/balances/manual/ HTTP/1.1
       Host: localhost:5042
 
       {
@@ -2916,7 +2916,7 @@ Adding manually tracked balances
 Editing manually tracked balances
 ====================================
 
-.. http:patch:: /api/(version)/manual_balances
+.. http:patch:: /api/(version)/balances/manual
 
    Doing a PATCH on the the manual balances endpoint allows you to edit a number of manually tracked balances by label.
 
@@ -2924,7 +2924,7 @@ Editing manually tracked balances
 
    .. http:example:: curl wget httpie python-requests
 
-      PATCH /api/1/manual_balances/ HTTP/1.1
+      PATCH /api/1/balances/manual/ HTTP/1.1
       Host: localhost:5042
 
       {
@@ -2986,7 +2986,7 @@ Editing manually tracked balances
 Deleting manually tracked balances
 ======================================
 
-.. http:delete:: /api/(version)/manual_balances/
+.. http:delete:: /api/(version)/balances/manual/
 
    Doing a DELETE on the the manual balances endpoint with a list of labels to of manually tracked balances will remove these balances from the database for the current user.
     If one of the given labels to remove is invalid the entire request will fail.
@@ -2996,7 +2996,7 @@ Deleting manually tracked balances
 
    .. http:example:: curl wget httpie python-requests
 
-      DELETE /api/1/manual_balances HTTP/1.1
+      DELETE /api/1/balances/manual HTTP/1.1
       Host: localhost:5042
 
       {"balances": ["My monero wallet", "My favorite wallet"]}
