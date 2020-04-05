@@ -25,9 +25,9 @@
               | formatPrice(floatingPrecision)
           }}
         </span>
-        <v-icon color="white" class="exchange-box__amount__currency">
-          fa {{ currency.icon }}
-        </v-icon>
+        <span class="exchange-box__currency__symbol">
+          {{ currency.unicode_symbol }}
+        </span>
       </v-col>
     </v-row>
     <v-row align="center" class="exchange-box__footer">
@@ -101,6 +101,10 @@ export default class ExchangeBox extends Vue {
 }
 </script>
 <style scoped lang="scss">
+.exchange-box__currency__symbol {
+  font-size: 2em;
+}
+
 .exchange-box__icon {
   margin-left: 8px;
   width: 45px;

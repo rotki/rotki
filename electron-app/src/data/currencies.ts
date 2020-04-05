@@ -1,14 +1,14 @@
 import { Currency } from '@/model/currency';
 
 export const currencies: Currency[] = [
-  new Currency('United States Dollar', 'fa-usd', 'USD', '$'),
-  new Currency('Euro', 'fa-eur', 'EUR', '€'),
-  new Currency('British Pound', 'fa-gbp', 'GBP', '£'),
-  new Currency('Japanese Yen', 'fa-jpy', 'JPY', '¥'),
-  new Currency('Chinese Yuan', 'fa-jpy', 'CNY', '¥'),
-  new Currency('Korean Won', 'fa-krw', 'KRW', '₩'),
-  new Currency('Canadian Dollar', 'fa-cad', 'CAD', '$'),
-  new Currency('Russian Ruble', 'fa-rub', 'RUB', '₽'),
-  new Currency('South African Rand', 'fa-money', 'ZAR', 'R'),
-  new Currency('Turkish Lira', 'fa-try', 'TRY', '₺')
+  new Currency('United States Dollar', 'USD', '$'),
+  new Currency('Euro', 'EUR', '€'),
+  new Currency('British Pound', 'GBP', '£'),
+  new Currency('Japanese Yen', 'JPY', '¥'),
+  new Currency('Chinese Yuan', 'CNY', '¥'),
+  new Currency('Korean Won', 'KRW', '₩'),
+  new Currency('Canadian Dollar', 'CAD', '$'),
+  new Currency('Russian Ruble', 'RUB', '₽'),
+  new Currency('South African Rand', 'ZAR', 'R'),
+  new Currency('Turkish Lira', 'TRY', '₺')
 ];

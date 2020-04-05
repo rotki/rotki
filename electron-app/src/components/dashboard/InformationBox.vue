@@ -18,9 +18,9 @@
               | formatPrice(floatingPrecision)
           }}
         </span>
-        <v-icon color="white" class="information-box__amount__currency">
-          fa {{ currency.icon }}
-        </v-icon>
+        <span class="information-box__currency__symbol">
+          {{ currency.unicode_symbol }}
+        </span>
       </v-col>
     </v-row>
     <v-row
@@ -91,6 +91,10 @@ export default class InformationBox extends Vue {
 </script>
 
 <style scoped lang="scss">
+.information-box__currency__symbol {
+  font-size: 2em;
+}
+
 .information-box {
   min-height: 72px;
 }
