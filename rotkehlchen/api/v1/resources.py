@@ -32,6 +32,8 @@ from rotkehlchen.api.v1.encoding import (
     HistoryExportingSchema,
     HistoryProcessingSchema,
     IgnoredAssetsSchema,
+    ManuallyTrackedBalancesDeleteSchema,
+    ManuallyTrackedBalancesSchema,
     ModifiableSettingsSchema,
     NewUserSchema,
     StatisticsAssetBalanceSchema,
@@ -47,6 +49,7 @@ from rotkehlchen.api.v1.encoding import (
 )
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.db.utils import ManuallyTrackedBalance
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -301,6 +304,27 @@ class BlockchainBalancesResource(BaseResource):
             async_query=async_query,
             ignore_cache=ignore_cache,
         )
+
+
+class ManuallyTrackedBalancesResource(BaseResource):
+
+    edit_schema = ManuallyTrackedBalancesSchema()
+    delete_schema = ManuallyTrackedBalancesDeleteSchema()
+
+    def get(self) -> Response:
+        return self.rest_api.get_manually_tracked_balances()
+
+    @use_kwargs(edit_schema, location='json')  # type: ignore
+    def put(self, balances: List[ManuallyTrackedBalance]) -> Response:
+        return self.rest_api.add_manually_tracked_balances(data=balances)
+
+    @use_kwargs(edit_schema, location='json')  # type: ignore
+    def patch(self, balances: List[ManuallyTrackedBalance]) -> Response:
+        return self.rest_api.edit_manually_tracked_balances(data=balances)
+
+    @use_kwargs(delete_schema, location='json')  # type: ignore
+    def delete(self, labels: List[str]) -> Response:
+        return self.rest_api.remove_manually_tracked_balances(labels=labels)
 
 
 class FiatBalancesResource(BaseResource):
