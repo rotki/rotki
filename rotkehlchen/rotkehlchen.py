@@ -3,7 +3,7 @@
 import argparse
 import logging
 import time
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import gevent
 from gevent.lock import Semaphore
@@ -18,13 +18,8 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
-from rotkehlchen.errors import (
-    EthSyncError,
-    InputError,
-    PremiumAuthenticationError,
-    RemoteError,
-    TagConstraintError,
-)
+from rotkehlchen.db.utils import ManuallyTrackedBalance, ManuallyTrackedBalanceWithValue
+from rotkehlchen.errors import EthSyncError, InputError, PremiumAuthenticationError, RemoteError
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.alethio import Alethio
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -313,20 +308,11 @@ class Rotkehlchen():
         - RemoteError if an external service such as Etherscan is queried and
           there is a problem with its query.
         """
-        # First see if any of the given tags for the accounts do not exist in the DB
-        existing_tags = self.data.db.get_tags()
-        existing_tag_keys = existing_tags.keys()
-        unknown_tags: Set[str] = set()
-        for entry in account_data:
-            if entry.tags is not None:
-                unknown_tags.update(set(entry.tags).difference(existing_tag_keys))
-
-        if len(unknown_tags) != 0:
-            raise TagConstraintError(
-                f'When adding blockchain accounts, unknown tags '
-                f'{", ".join(unknown_tags)} were found',
-            )
-
+        self.data.db.ensure_tags_exist(
+            given_data=account_data,
+            action='adding',
+            data_type='blockchain accounts',
+        )
         address_type = blockchain.get_address_type()
         updated_balances = self.chain_manager.add_blockchain_accounts(
             blockchain=blockchain,
@@ -364,19 +350,11 @@ class Rotkehlchen():
                 f'accounts {",".join(unknown_accounts)}',
             )
 
-        # Then See if any of the given tags for the accounts do not exist in the DB
-        existing_tags = self.data.db.get_tags()
-        existing_tag_keys = existing_tags.keys()
-        unknown_tags: Set[str] = set()
-        for entry in account_data:
-            if entry.tags is not None:
-                unknown_tags.update(set(entry.tags).difference(existing_tag_keys))
-
-        if len(unknown_tags) != 0:
-            raise TagConstraintError(
-                f'When editing blockchain accounts, unknown tags '
-                f'{", ".join(unknown_tags)} were found',
-            )
+        self.data.db.ensure_tags_exist(
+            given_data=account_data,
+            action='editing',
+            data_type='blockchain accounts',
+        )
 
         # Finally edit the accounts
         self.data.db.edit_blockchain_accounts(
@@ -407,6 +385,58 @@ class Rotkehlchen():
         )
         self.data.db.remove_blockchain_accounts(blockchain, accounts)
         return balances_update
+
+    def get_manually_tracked_balances(self) -> List[ManuallyTrackedBalanceWithValue]:
+        """Gets the manually tracked balances
+
+        May raise:
+        - RemoteError if there is a problem querying for the current price of an asset
+        """
+        balances = self.data.db.get_manually_tracked_balances()
+        balances_with_value = []
+        for entry in balances:
+            price = Inquirer().find_usd_price(entry.asset)
+            # https://github.com/python/mypy/issues/2582 --> for the type ignore below
+            balances_with_value.append(ManuallyTrackedBalanceWithValue(  # type: ignore
+                **entry._asdict(),
+                usd_value=price * entry.amount,
+            ))
+
+        return balances_with_value
+
+    def add_manually_tracked_balances(self, data: List[ManuallyTrackedBalance]) -> None:
+        """Adds manually tracked balances
+
+        May raise:
+        - InputError if any of the given balance entry labels already exist in the DB
+        - TagConstraintError if any of the given manually tracked balances contain unknown tags.
+        """
+        if len(data) == 0:
+            raise InputError('Empty list of manually tracked balances to add was given')
+        self.data.db.ensure_tags_exist(
+            given_data=data,
+            action='adding',
+            data_type='manually tracked balances',
+        )
+        self.data.db.add_manually_tracked_balances(data=data)
+
+    def edit_manually_tracked_balances(self, data: List[ManuallyTrackedBalance]) -> None:
+        """Edits manually tracked balances
+
+        May raise:
+        - InputError if the given balances list is empty or if
+        any of the balance entry labels to edit do not exist in the DB.
+        - TagConstraintError if any of the given balance data contain unknown tags.
+        """
+        if len(data) == 0:
+            raise InputError('Empty list of manually tracked balances to edit was given')
+        self.data.db.ensure_tags_exist(
+            given_data=data,
+            action='editing',
+            data_type='manually tracked balances',
+        )
+        self.data.db.edit_manually_tracked_balances(data)
+        return None
 
     def add_owned_eth_tokens(
             self,

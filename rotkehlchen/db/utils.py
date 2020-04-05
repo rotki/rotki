@@ -1,12 +1,18 @@
 from enum import Enum
+from sqlite3 import Cursor
 from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 
+from typing_extensions import Literal
+
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.fval import FVal
 from rotkehlchen.typing import (
+    BlockchainAccountData,
     BTCAddress,
     ChecksumEthAddress,
     HexColorCode,
     ListOfBlockchainAddresses,
+    Location,
     SupportedBlockchain,
     Timestamp,
 )
@@ -52,6 +58,25 @@ class Tag(NamedTuple):
         return self._asdict()  # pylint: disable=no-member
 
 
+class ManuallyTrackedBalance(NamedTuple):
+    asset: Asset
+    label: str
+    amount: FVal
+    location: Location
+    tags: Optional[List[str]]
+
+
+class ManuallyTrackedBalanceWithValue(NamedTuple):
+    # NamedTuples can't use inheritance. Make sure this has same fields as
+    # ManuallyTrackedBalance until usd_value
+    asset: Asset
+    label: str
+    amount: FVal
+    location: Location
+    tags: Optional[List[str]]
+    usd_value: FVal
+
+
 class DBStartupAction(Enum):
     NOTHING = 1
     UPGRADE_3_4 = 2
@@ -90,6 +115,34 @@ def form_query_to_filter_timestamps(
 
     query += f'ORDER BY {timestamp_attribute} ASC;'
     return query, bindings
+
+
+def deserialize_tags_from_db(val: Optional[str]) -> Optional[List[str]]:
+    """Read tags from the DB and turn it into a List of tags"""
+    if val is None:
+        tags = None
+    else:
+        tags = val.split(',')
+        if len(tags) == 1 and tags[0] == '':
+            tags = None
+
+    return tags
+
+
+def insert_tag_mappings(
+        cursor: Cursor,
+        data: Union[List[ManuallyTrackedBalance], List[BlockchainAccountData]],
+        object_reference_key: Literal['label', 'address'],
+) -> None:
+    """Inserts the tag mappings from a list of potential data entries"""
+    mapping_tuples = []
+    for entry in data:
+        if entry.tags is not None:
+            reference = getattr(entry, object_reference_key)
+            mapping_tuples.extend([(reference, tag) for tag in entry.tags])
+    cursor.executemany(
+        'INSERT INTO tag_mappings(object_reference, tag_name) VALUES (?, ?)', mapping_tuples,
+    )
 
 
 # Custom enum table for trade types
@@ -321,7 +374,7 @@ CREATE TABLE IF NOT EXISTS settings (
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
