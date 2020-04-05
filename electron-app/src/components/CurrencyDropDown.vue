@@ -2,7 +2,7 @@
   <v-menu transition="slide-y-transition" bottom>
     <template #activator="{ on }">
       <v-btn class="currency-dropdown" color="primary" dark icon text v-on="on">
-        <v-icon :class="currency.icon"> fa {{ currency.icon }} </v-icon>
+        {{ currency.unicode_symbol }}
       </v-btn>
     </template>
     <v-list>
@@ -12,8 +12,8 @@
         :key="currency.ticker_symbol"
         @click="onSelected(currency)"
       >
-        <v-list-item-avatar>
-          <v-icon color="primary">fa {{ currency.icon }}</v-icon>
+        <v-list-item-avatar class="currency-list primary--text">
+          {{ currency.unicode_symbol }}
         </v-list-item-avatar>
         <v-list-item-content>
           <v-list-item-title>
@@ -69,12 +69,12 @@ export default class CurrencyDropDown extends Vue {
 </script>
 
 <style scoped lang="scss">
-.fa-cad:before,
-.fa-aud:before,
-.fa-nzd:before,
-.fa-hkd:before,
-.fa-ars:before,
-.fa-mxn:before {
-  content: '\f155';
+.currency-dropdown {
+  font-size: 1.6em;
+  font-weight: bold;
+}
+.currency-list {
+  font-size: 2em;
+  font-weight: bold;
 }
 </style>
