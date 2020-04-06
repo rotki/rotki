@@ -1238,7 +1238,6 @@ class RestAPI():
             self,
             data: List[ManuallyTrackedBalance],
     ) -> Response:
-
         try:
             self.rotkehlchen.add_manually_tracked_balances(data)
         except InputError as e:
