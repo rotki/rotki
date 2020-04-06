@@ -870,7 +870,7 @@ class DBHandler:
         query = cursor.execute(
             'SELECT A.asset, A.label, A.amount, A.location, group_concat(B.tag_name,",") '
             'FROM manually_tracked_balances as A '
-            'LEFT OUTER JOIN tag_mappings as B on B.object_reference = A.label;',
+            'LEFT OUTER JOIN tag_mappings as B on B.object_reference = A.label GROUP BY label;',
         )
 
         data = []
@@ -881,11 +881,11 @@ class DBHandler:
                     asset=Asset(entry[0]),
                     label=entry[1],
                     amount=FVal(entry[2]),
-                    location=deserialize_location(entry[3]),
+                    location=deserialize_location_from_db(entry[3]),
                     tags=tags,
                 ))
             except (DeserializationError, UnknownAsset, UnsupportedAsset, ValueError) as e:
-                # ValueError is due to FVal failing
+                # ValueError would be due to FVal failing
                 self.msg_aggregator.add_warning(
                     f'Unexpected data in a ManuallyTrackedBalance entry in the DB: {str(e)}',
                 )
@@ -1883,11 +1883,16 @@ class DBHandler:
         - TagConstraintError if the tags don't exist in the DB
         """
         existing_tags = self.get_tags()
-        existing_tag_keys = existing_tags.keys()
+        # tag comparison is case-insensitive
+        existing_tag_keys = [key.lower() for key in existing_tags.keys()]
+
         unknown_tags: Set[str] = set()
         for entry in given_data:
             if entry.tags is not None:
-                unknown_tags.update(set(entry.tags).difference(existing_tag_keys))
+                unknown_tags.update(
+                    # tag comparison is case-insensitive
+                    set(t.lower() for t in entry.tags).difference(existing_tag_keys)
+                )
 
         if len(unknown_tags) != 0:
             raise TagConstraintError(
