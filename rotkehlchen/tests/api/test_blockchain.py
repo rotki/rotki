@@ -27,6 +27,46 @@ from rotkehlchen.tests.utils.factories import (
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_query_empty_blockchain_balances(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+        btc_accounts,
+):
+    """Make sure that querying balances for all blockchains works when no accounts are tracked
+
+    Regression test for https://github.com/rotki/rotki/issues/848
+    """
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "named_blockchain_balances_resource",
+        blockchain='ETH',
+    ))
+    assert_proper_response(response)
+    data = response.json()
+    assert data['message'] == ''
+    assert data['result'] == {'per_account': {}, 'totals': {}}
+
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "named_blockchain_balances_resource",
+        blockchain='BTC',
+    ))
+    assert_proper_response(response)
+    data = response.json()
+    assert data['message'] == ''
+    assert data['result'] == {'per_account': {}, 'totals': {}}
+
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        "blockchainbalancesresource",
+    ))
+    assert_proper_response(response)
+    data = response.json()
+    assert data['message'] == ''
+    assert data['result'] == {'per_account': {}, 'totals': {}}
+
+
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('owned_eth_tokens', [[A_RDN]])
