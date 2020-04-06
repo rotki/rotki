@@ -550,8 +550,10 @@ class RestAPI():
                 result['per_account'].pop('BTC', None)
                 result['totals'].pop('BTC', None)
             elif blockchain == SupportedBlockchain.BITCOIN:
-                per_account = {'BTC': result['per_account']['BTC']}
-                totals = {'BTC': result['totals']['BTC']}
+                val = result['per_account'].get('BTC', None)
+                per_account = {'BTC': val} if val else {}
+                val = result['totals'].get('BTC', None)
+                totals = {'BTC': val} if val else {}
                 result = {'per_account': per_account, 'totals': totals}
 
         return {'result': result, 'message': msg, 'status_code': status_code}
