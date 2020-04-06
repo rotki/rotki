@@ -65,6 +65,17 @@ def assert_simple_ok_response(response: requests.Response) -> None:
     assert data['message'] == ''
 
 
+def assert_proper_response_with_result(
+        response: Optional[requests.Response],
+        status_code=HTTPStatus.OK,
+) -> Any:
+    assert_proper_response(response)
+    data = response.json()
+    assert data['result'] is not None
+    assert data['message'] == ''
+    return data['result']
+
+
 def assert_error_response(
         response: Optional[requests.Response],
         contained_in_msg: Optional[str] = None,

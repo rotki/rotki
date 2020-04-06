@@ -946,8 +946,9 @@ class DBHandler:
             entry.location.serialize_for_db(),
             entry.label,
         ) for entry in data]
+
         cursor.executemany(
-            'UPDATE manually_tracked_balances SET asset=? amount=? location=? '
+            'UPDATE manually_tracked_balances SET asset=?, amount=?, location=? '
             'WHERE label=?;', tuples,
         )
         if cursor.rowcount != len(data):
