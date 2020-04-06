@@ -28,11 +28,7 @@ from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_query_empty_blockchain_balances(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-        btc_accounts,
-):
+def test_query_empty_blockchain_balances(rotkehlchen_api_server):
     """Make sure that querying balances for all blockchains works when no accounts are tracked
 
     Regression test for https://github.com/rotki/rotki/issues/848
