@@ -1,5 +1,5 @@
-import store from '@/store/store';
 import { taskManager } from '@/services/task-manager';
+import store from '@/store/store';
 
 class Monitoring {
   private monitoring?: NodeJS.Timer;

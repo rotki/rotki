@@ -117,11 +117,11 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
-import { NotificationData, Severity } from '@/typing/types';
-import { createNamespacedHelpers } from 'vuex';
 import orderBy from 'lodash/orderBy';
+import { Component, Vue } from 'vue-property-decorator';
+import { createNamespacedHelpers } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import { NotificationData, Severity } from '@/typing/types';
 
 const { mapState, mapGetters } = createNamespacedHelpers('notifications');
 

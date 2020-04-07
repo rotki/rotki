@@ -1,9 +1,9 @@
-import { GetterTree } from 'vuex';
-import { RotkehlchenState } from '@/store/store';
-import { TaskState } from '@/store/tasks/state';
-import { Task, TaskMeta, TaskType } from '@/model/task';
 import find from 'lodash/find';
 import toArray from 'lodash/toArray';
+import { GetterTree } from 'vuex';
+import { Task, TaskMeta, TaskType } from '@/model/task';
+import { RotkehlchenState } from '@/store/store';
+import { TaskState } from '@/store/tasks/state';
 
 export const getters: GetterTree<TaskState, RotkehlchenState> = {
   isTaskRunning: (state: TaskState) => (type: TaskType): boolean => {

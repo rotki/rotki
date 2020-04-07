@@ -50,10 +50,10 @@
 </template>
 
 <script lang="ts">
+import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import { Currency } from '@/model/currency';
-import BigNumber from 'bignumber.js';
 import { BlockchainBalancePayload } from '@/store/balances/actions';
 
 const { mapGetters } = createNamespacedHelpers('session');

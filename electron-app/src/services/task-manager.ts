@@ -1,11 +1,6 @@
+import map from 'lodash/map';
 import { ActionResult } from '@/model/action-result';
 import { BlockchainBalances } from '@/model/blockchain-balances';
-import store from '@/store/store';
-import {
-  convertAssetBalances,
-  convertBalances,
-  convertEthBalances
-} from '@/utils/conversion';
 import {
   BlockchainMetadata,
   ExchangeMeta,
@@ -13,18 +8,23 @@ import {
   TaskMeta,
   TaskType
 } from '@/model/task';
-import { notify } from '@/store/notifications/utils';
-import { api } from '@/services/rotkehlchen-api';
 import {
   ApiEventEntry,
   convertEventEntry,
   convertTradeHistoryOverview,
   TradeHistory
 } from '@/model/trade-history-types';
-import map from 'lodash/map';
-import { ApiAssetBalances, Severity } from '@/typing/types';
 import { convertDSRBalances, convertDSRHistory } from '@/services/converters';
+import { api } from '@/services/rotkehlchen-api';
 import { ApiDSRBalances, ApiDSRHistory } from '@/services/types-api';
+import { notify } from '@/store/notifications/utils';
+import store from '@/store/store';
+import { ApiAssetBalances, Severity } from '@/typing/types';
+import {
+  convertAssetBalances,
+  convertBalances,
+  convertEthBalances
+} from '@/utils/conversion';
 
 export class TaskManager {
   private static onQueryExchangeBalances(

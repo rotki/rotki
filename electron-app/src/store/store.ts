@@ -1,17 +1,17 @@
 import Vue from 'vue';
 import Vuex, { StoreOptions } from 'vuex';
-import { notifications } from '@/store/notifications';
-import { balances } from '@/store/balances';
-import { tasks } from '@/store/tasks';
-import { session } from '@/store/session';
-import { reports } from '@/store/reports';
-import { api } from '@/services/rotkehlchen-api';
 import { VersionCheck } from '@/model/version-check';
-import { SessionState } from '@/store/session/state';
-import { TaskState } from '@/store/tasks/state';
-import { NotificationState } from '@/store/notifications/state';
-import { TaxReportState } from '@/store/reports/state';
+import { api } from '@/services/rotkehlchen-api';
+import { balances } from '@/store/balances';
 import { BalanceState } from '@/store/balances/state';
+import { notifications } from '@/store/notifications';
+import { NotificationState } from '@/store/notifications/state';
+import { reports } from '@/store/reports';
+import { TaxReportState } from '@/store/reports/state';
+import { session } from '@/store/session';
+import { SessionState } from '@/store/session/state';
+import { tasks } from '@/store/tasks';
+import { TaskState } from '@/store/tasks/state';
 
 Vue.use(Vuex);
 

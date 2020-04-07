@@ -1,4 +1,5 @@
 import { Application, SpectronClient } from 'spectron';
+import { Guid } from '../../common/guid';
 import {
   captureOnFailure,
   createAccount,
@@ -6,7 +7,6 @@ import {
   initSpectron,
   logout
 } from './utils/common';
-import { Guid } from '../../common/guid';
 
 jest.setTimeout(GLOBAL_TIMEOUT);
 

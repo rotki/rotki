@@ -63,11 +63,11 @@
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers, mapGetters, mapState } from 'vuex';
-import Login from './Login.vue';
-import CreateAccount from './CreateAccount.vue';
-import { Credentials, UnlockPayload } from '@/typing/types';
 import MessageOverlay from '@/components/MessageOverlay.vue';
 import { Version } from '@/store/store';
+import { Credentials, UnlockPayload } from '@/typing/types';
+import CreateAccount from './CreateAccount.vue';
+import Login from './Login.vue';
 
 const { mapState: mapSessionState } = createNamespacedHelpers('session');
 

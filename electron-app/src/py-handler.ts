@@ -1,7 +1,7 @@
-import { app, App, BrowserWindow, ipcMain } from 'electron';
-import * as path from 'path';
-import * as fs from 'fs';
 import { ChildProcess, execFile, spawn } from 'child_process';
+import * as fs from 'fs';
+import * as path from 'path';
+import { app, App, BrowserWindow, ipcMain } from 'electron';
 import tasklist from 'tasklist';
 import { assert } from '@/utils/assertions';
 

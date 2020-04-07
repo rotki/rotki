@@ -1,10 +1,10 @@
 import { ActionTree } from 'vuex';
-import { Message, RotkehlchenState } from '@/store/store';
-import { TaxReportState } from '@/store/reports/state';
-import { TaxReportEvent } from '@/typing/types';
+import { createTask, TaskType } from '@/model/task';
 import { api } from '@/services/rotkehlchen-api';
 import { notify } from '@/store/notifications/utils';
-import { createTask, TaskType } from '@/model/task';
+import { TaxReportState } from '@/store/reports/state';
+import { Message, RotkehlchenState } from '@/store/store';
+import { TaxReportEvent } from '@/typing/types';
 
 export const actions: ActionTree<TaxReportState, RotkehlchenState> = {
   async generate({ commit }, payload: TaxReportEvent) {

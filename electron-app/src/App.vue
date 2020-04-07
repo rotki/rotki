@@ -59,21 +59,21 @@
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import UserDropdown from '@/components/UserDropdown.vue';
-import NavigationMenu from '@/components/NavigationMenu.vue';
-import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
 import { createNamespacedHelpers, mapGetters, mapState } from 'vuex';
+import AccountManagement from '@/components/AccountManagement.vue';
+import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
+import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
-import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
+import NavigationMenu from '@/components/NavigationMenu.vue';
 import BalanceSavedIndicator from '@/components/status/BalanceSavedIndicator.vue';
+import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
 import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
 import ProgressIndicator from '@/components/status/ProgressIndicator.vue';
-import './services/task-manager';
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import { Message } from '@/store/store';
-import UpdateIndicator from './components/status/UpdateIndicator.vue';
-import AccountManagement from './components/AccountManagement.vue';
+import '@/services/task-manager';
+import UpdateIndicator from '@/components/status/UpdateIndicator.vue';
+import UserDropdown from '@/components/UserDropdown.vue';
 import ErrorScreen from '@/ErrorScreen.vue';
+import { Message } from '@/store/store';
 
 const { mapState: mapSessionState } = createNamespacedHelpers('session');
 

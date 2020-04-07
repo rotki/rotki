@@ -1,8 +1,8 @@
-import AccountManagement from '@/components/AccountManagement.vue';
 import { mount, Wrapper } from '@vue/test-utils';
-import store from '@/store/store';
-import Vuetify from 'vuetify';
 import Vue from 'vue';
+import Vuetify from 'vuetify';
+import AccountManagement from '@/components/AccountManagement.vue';
+import store from '@/store/store';
 
 Vue.use(Vuetify);
 

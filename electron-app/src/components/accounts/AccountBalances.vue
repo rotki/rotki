@@ -177,18 +177,18 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { AccountBalance } from '@/model/blockchain-balances';
 import { createNamespacedHelpers } from 'vuex';
-import { Currency } from '@/model/currency';
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import AssetBalances from '@/components/settings/AssetBalances.vue';
-import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
-import { Account, Blockchain, Tags } from '@/typing/types';
-import { BlockchainBalancePayload } from '@/store/balances/actions';
-import { TaskType } from '@/model/task';
-import TagIcon from '@/components/tags/TagIcon.vue';
-import TagFilter from '@/components/inputs/TagFilter.vue';
 import AccountForm from '@/components/accounts/AccountForm.vue';
+import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import TagFilter from '@/components/inputs/TagFilter.vue';
+import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
+import AssetBalances from '@/components/settings/AssetBalances.vue';
+import TagIcon from '@/components/tags/TagIcon.vue';
+import { AccountBalance } from '@/model/blockchain-balances';
+import { Currency } from '@/model/currency';
+import { TaskType } from '@/model/task';
+import { BlockchainBalancePayload } from '@/store/balances/actions';
+import { Account, Blockchain, Tags } from '@/typing/types';
 
 const { mapGetters: mapTaskGetters } = createNamespacedHelpers('tasks');
 const { mapGetters, mapState } = createNamespacedHelpers('session');

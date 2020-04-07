@@ -111,13 +111,13 @@
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import { currencies } from '@/data/currencies';
-import { GeneralSettings, SettingsUpdate } from '@/typing/types';
-import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import { createNamespacedHelpers } from 'vuex';
+import MessageDialog from '@/components/dialogs/MessageDialog.vue';
+import { convertToGeneralSettings } from '@/data/converters';
+import { currencies } from '@/data/currencies';
 import { Currency } from '@/model/currency';
 import { Message } from '@/store/store';
-import { convertToGeneralSettings } from '@/data/converters';
+import { GeneralSettings, SettingsUpdate } from '@/typing/types';
 
 const { mapState, mapGetters } = createNamespacedHelpers('session');
 

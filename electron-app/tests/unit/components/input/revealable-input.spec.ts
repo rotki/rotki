@@ -1,9 +1,9 @@
-import Vuetify from 'vuetify';
-import Vue from 'vue';
 import { mount, Wrapper } from '@vue/test-utils';
-import store from '@/store/store';
-import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import flushPromises from 'flush-promises';
+import Vue from 'vue';
+import Vuetify from 'vuetify';
+import RevealableInput from '@/components/inputs/RevealableInput.vue';
+import store from '@/store/store';
 
 Vue.use(Vuetify);
 

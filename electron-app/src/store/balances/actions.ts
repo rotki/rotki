@@ -1,18 +1,18 @@
 import { ActionTree } from 'vuex';
-import { RotkehlchenState } from '@/store/store';
-import { BalanceState } from '@/store/balances/state';
-import { api } from '@/services/rotkehlchen-api';
+import { currencies } from '@/data/currencies';
+import { FiatBalance } from '@/model/blockchain-balances';
 import {
   BlockchainMetadata,
   createTask,
   ExchangeMeta,
   TaskType
 } from '@/model/task';
-import { Blockchain, Severity, UsdToFiatExchangeRates } from '@/typing/types';
+import { api } from '@/services/rotkehlchen-api';
+import { BalanceState } from '@/store/balances/state';
 import { notify } from '@/store/notifications/utils';
-import { FiatBalance } from '@/model/blockchain-balances';
+import { RotkehlchenState } from '@/store/store';
+import { Blockchain, Severity, UsdToFiatExchangeRates } from '@/typing/types';
 import { bigNumberify } from '@/utils/bignumbers';
-import { currencies } from '@/data/currencies';
 import { toMap } from '@/utils/conversion';
 
 export const actions: ActionTree<BalanceState, RotkehlchenState> = {

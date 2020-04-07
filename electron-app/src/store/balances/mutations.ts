@@ -1,17 +1,17 @@
 import { MutationTree } from 'vuex';
-import { BalanceState, defaultState } from '@/store/balances/state';
 import {
   Balances,
   EthBalances,
   FiatBalance
 } from '@/model/blockchain-balances';
+import { DSRBalances, DSRHistory } from '@/services/types-model';
+import { BalanceState, defaultState } from '@/store/balances/state';
 import {
   AccountDataMap,
   ExchangeData,
   ExchangeInfo,
   UsdToFiatExchangeRates
 } from '@/typing/types';
-import { DSRBalances, DSRHistory } from '@/services/types-model';
 
 export const mutations: MutationTree<BalanceState> = {
   updateEth(state: BalanceState, payload: EthBalances) {

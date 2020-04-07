@@ -1,6 +1,6 @@
 import { GetterTree } from 'vuex';
-import { RotkehlchenState } from '@/store/store';
 import { SessionState } from '@/store/session/state';
+import { RotkehlchenState } from '@/store/store';
 
 export const getters: GetterTree<SessionState, RotkehlchenState> = {
   floatingPrecision: (state: SessionState) => {

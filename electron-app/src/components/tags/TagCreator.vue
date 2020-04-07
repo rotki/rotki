@@ -105,9 +105,9 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import TagIcon from '@/components/tags/TagIcon.vue';
 import { TagEvent } from '@/components/tags/types';
 import { Tag } from '@/typing/types';
-import TagIcon from '@/components/tags/TagIcon.vue';
 import { invertColor, randomColor } from '@/utils/Color';
 
 @Component({

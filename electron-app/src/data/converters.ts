@@ -1,7 +1,7 @@
-import { DBSettings } from '@/model/action-result';
-import { AccountingSettings, GeneralSettings } from '@/typing/types';
 import { currencies } from '@/data/currencies';
+import { DBSettings } from '@/model/action-result';
 import { Currency } from '@/model/currency';
+import { AccountingSettings, GeneralSettings } from '@/typing/types';
 
 const findCurrency = (currencySymbol: string) => {
   const currency: Currency | undefined = currencies.find(

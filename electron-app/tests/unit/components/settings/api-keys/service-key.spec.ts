@@ -1,8 +1,8 @@
+import { mount, Wrapper } from '@vue/test-utils';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
-import { mount, Wrapper } from '@vue/test-utils';
-import store from '@/store/store';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
+import store from '@/store/store';
 
 Vue.use(Vuetify);
 

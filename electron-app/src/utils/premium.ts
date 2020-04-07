@@ -1,7 +1,7 @@
-import Vue, { VueConstructor } from 'vue';
-import { api } from '@/services/rotkehlchen-api';
 import Chart from 'chart.js';
 import moment from 'moment';
+import Vue, { VueConstructor } from 'vue';
+import { api } from '@/services/rotkehlchen-api';
 
 export const setupPremium = () => {
   window.Vue = Vue;

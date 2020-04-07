@@ -1,3 +1,5 @@
+const path = require('path');
+
 module.exports = {
   root: true,
 
@@ -13,7 +15,10 @@ module.exports = {
     'eslint:recommended',
     '@vue/prettier',
     '@vue/prettier/@typescript-eslint',
-    '@vue/typescript'
+    '@vue/typescript',
+    'plugin:import/errors',
+    'plugin:import/warnings',
+    'plugin:import/typescript'
   ],
 
   rules: {
@@ -58,10 +63,36 @@ module.exports = {
         ignores: []
       }
     ],
-    'no-else-return': 'error'
+    'no-else-return': 'error',
+    'import/order': [
+      'error',
+      {
+        groups: ['builtin', 'external', 'parent', 'sibling', 'index'],
+        alphabetize: {
+          order: 'asc',
+          caseInsensitive: true
+        },
+        pathGroups: [
+          {
+            pattern: '@/**',
+            group: 'external',
+            position: 'after'
+          }
+        ]
+      }
+    ]
   },
 
   parserOptions: {
     parser: '@typescript-eslint/parser'
+  },
+
+  settings: {
+    'import/resolver': {
+      alias: {
+        map: [['@', path.resolve('src')]],
+        extensions: ['.vue', '.ts', '.d.ts']
+      }
+    }
   }
 };

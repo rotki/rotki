@@ -1,14 +1,14 @@
 import Vue from 'vue';
-import App from './App.vue';
-import router from './router';
-import store from './store/store';
-import './filters';
+import App from '@/App.vue';
+import '@/filters';
 import { Api } from '@/plugins/api';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'font-awesome/css/font-awesome.css';
+import { Interop } from '@/plugins/interop';
 import vuetify from '@/plugins/vuetify';
 import { setupPremium } from '@/utils/premium';
-import { Interop } from '@/plugins/interop';
+import router from './router';
+import store from './store/store';
 
 Vue.config.productionTip = false;
 

@@ -1,5 +1,5 @@
-import { NotificationData, Severity } from '@/typing/types';
 import store from '@/store/store';
+import { NotificationData, Severity } from '@/typing/types';
 
 export const toNotification = (
   message: string,

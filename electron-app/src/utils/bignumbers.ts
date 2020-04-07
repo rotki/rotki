@@ -1,4 +1,4 @@
-import BigNumber from 'bignumber.js';
+import { default as BigNumber } from 'bignumber.js';
 
 export function bigNumberify(value: string | number) {
   return new BigNumber(value);

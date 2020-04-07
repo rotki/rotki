@@ -1,9 +1,9 @@
 import { Application, SpectronClient } from 'spectron';
+import { Guid } from '../../common/guid';
 import {
   AccountType,
   AccountBalancesController
 } from './support/account-balances-controller';
-import { Guid } from '../../common/guid';
 import {
   captureOnFailure,
   createAccount,

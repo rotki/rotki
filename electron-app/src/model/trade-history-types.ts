@@ -1,4 +1,4 @@
-import BigNumber from 'bignumber.js';
+import { default as BigNumber } from 'bignumber.js';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 
 export interface ApiEventEntry {

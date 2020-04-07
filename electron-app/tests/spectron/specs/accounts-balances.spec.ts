@@ -1,4 +1,9 @@
 import { Application, SpectronClient } from 'spectron';
+import { Guid } from '../../common/guid';
+import {
+  AccountType,
+  AccountBalancesController
+} from './support/account-balances-controller';
 import {
   captureOnFailure,
   createAccount,
@@ -8,11 +13,6 @@ import {
   navigateTo,
   setupTest
 } from './utils/common';
-import { Guid } from '../../common/guid';
-import {
-  AccountType,
-  AccountBalancesController
-} from './support/account-balances-controller';
 
 jest.setTimeout(GLOBAL_TIMEOUT);
 

@@ -1,6 +1,6 @@
-import { bigNumberify } from '@/utils/bignumbers';
 import { AssetBalance } from '@/model/blockchain-balances';
 import { getters } from '@/store/balances/getters';
+import { bigNumberify } from '@/utils/bignumbers';
 
 describe('balances:getters', () => {
   test('aggregatedBalances', () => {

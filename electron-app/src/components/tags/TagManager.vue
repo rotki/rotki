@@ -66,12 +66,12 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
-import TagCreator from '@/components/tags/TagCreator.vue';
-import { defaultTag } from '@/components/tags/types';
 import { createNamespacedHelpers } from 'vuex';
-import { Tag } from '@/typing/types';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import TagCreator from '@/components/tags/TagCreator.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
+import { defaultTag } from '@/components/tags/types';
+import { Tag } from '@/typing/types';
 
 const { mapGetters } = createNamespacedHelpers('session');
 

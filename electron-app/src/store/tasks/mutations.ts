@@ -1,6 +1,6 @@
 import { MutationTree } from 'vuex';
-import { defaultState, TaskMap, TaskState } from '@/store/tasks/state';
 import { Task, TaskMeta } from '@/model/task';
+import { defaultState, TaskMap, TaskState } from '@/store/tasks/state';
 
 const unlockTask = (state: TaskState, taskId: number) => {
   const locked = [...state.locked];

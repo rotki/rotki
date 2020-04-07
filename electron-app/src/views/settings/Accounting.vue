@@ -125,9 +125,9 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
-import { AccountingSettings } from '@/typing/types';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import { Message } from '@/store/store';
+import { AccountingSettings } from '@/typing/types';
 
 const { mapState } = createNamespacedHelpers('session');
 

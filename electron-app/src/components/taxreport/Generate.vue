@@ -42,9 +42,9 @@
 </template>
 
 <script lang="ts">
+import moment from 'moment';
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
-import moment from 'moment';
 
 @Component({
   components: {

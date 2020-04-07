@@ -1,7 +1,7 @@
+import { default as BigNumber } from 'bignumber.js';
 import { ApiDSRBalances, ApiDSRHistory } from '@/services/types-api';
 import { DSRBalances, DSRHistory, DSRMovement } from '@/services/types-model';
 import { bigNumberify } from '@/utils/bignumbers';
-import BigNumber from 'bignumber.js';
 
 export function convertDSRBalances({
   balances,

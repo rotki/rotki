@@ -70,6 +70,8 @@
     "electron": "^8.2.1",
     "eslint": "6.8.0",
     "eslint-config-prettier": "^6.10.1",
+    "eslint-import-resolver-alias": "^1.1.2",
+    "eslint-plugin-import": "^2.20.2",
     "eslint-plugin-prettier": "3.1.2",
     "eslint-plugin-vue": "6.2.2",
     "eslint-plugin-vuetify": "1.0.0-beta.6",
