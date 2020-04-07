@@ -7,9 +7,7 @@ export class OtcPage {
   }
 
   addTrade(otcData: OTCTrade) {
-    cy.get('.otc-form__date')
-      .type(otcData.time)
-      .click(); // Click is needed to hide the popup
+    cy.get('.otc-form__date').type(otcData.time).click(); // Click is needed to hide the popup
     cy.get('.otc-form__pair').type(otcData.pair);
     cy.get('.otc-form__type input').check(otcData.trade_type, { force: true });
     cy.get('.otc-form__amount').type(otcData.amount);
@@ -32,16 +30,11 @@ export class OtcPage {
   }
 
   visibleEntries(visible: number) {
-    cy.get('.otc-trades tbody')
-      .find('tr')
-      .its('length')
-      .should('eq', visible);
+    cy.get('.otc-trades tbody').find('tr').its('length').should('eq', visible);
   }
 
   tradeIsVisible(position: number, otcTrade: OTCTrade) {
-    cy.get('.otc-trades tbody > tr')
-      .eq(position)
-      .as('row');
+    cy.get('.otc-trades tbody > tr').eq(position).as('row');
 
     cy.get('@row')
       .find('.otc-trades__trade__pair')

@@ -3,11 +3,9 @@
     <template #activator="{ on }">
       <v-btn color="primary" dark icon text v-on="on">
         <v-icon
-          :class="
-            `node-status-indicator__icon--${
-              nodeConnection ? 'connected' : 'disconnected'
-            }`
-          "
+          :class="`node-status-indicator__icon--${
+            nodeConnection ? 'connected' : 'disconnected'
+          }`"
         >
           fa {{ nodeConnection ? 'fa-link' : 'fa-unlink' }}
         </v-icon>

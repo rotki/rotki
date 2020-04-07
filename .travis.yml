@@ -36,6 +36,7 @@ templates:
       - .travis/before_install.sh
       - export DISPLAY=:99.0;
       - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+      - nvm install 12
     install:
       - .travis/install.sh
     script:
@@ -83,6 +84,7 @@ cache:
     - $HOME/.cache/.rotkehlchen-test-dir
     - $HOME/.ethash
     - $HOME/.bin
+    - $HOME/.cache/Cypress
 
 jobs:
   include:

@@ -5,7 +5,7 @@ import { getters } from '@/store/balances/getters';
 describe('balances:getters', () => {
   test('aggregatedBalances', () => {
     const mockGetters = {
-      exchangeBalances: function(): AssetBalance[] {
+      exchangeBalances: function (): AssetBalance[] {
         return [
           {
             asset: 'DAI',

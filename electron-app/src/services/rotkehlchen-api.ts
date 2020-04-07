@@ -118,7 +118,7 @@ export class RotkehlchenApi {
     return new Promise<PeriodicClientQueryResult>((resolve, reject) => {
       this.axios
         .get<ActionResult<PeriodicClientQueryResult>>('/periodic/', {
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return status == 200 || status == 409;
           }
         })
@@ -172,7 +172,7 @@ export class RotkehlchenApi {
           data: {
             eth_tokens: tokens
           },
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return (
               status == 200 || status == 400 || status == 409 || status == 502
             );
@@ -199,7 +199,7 @@ export class RotkehlchenApi {
             eth_tokens: tokens
           },
           {
-            validateStatus: function(status) {
+            validateStatus: function (status) {
               return (
                 status == 200 || status == 400 || status == 409 || status == 502
               );
@@ -225,7 +225,7 @@ export class RotkehlchenApi {
           data: {
             trade_id: id
           },
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return status == 200 || status == 400 || status == 409;
           }
         })
@@ -246,7 +246,7 @@ export class RotkehlchenApi {
       this.axios
         .get<ActionResult<StoredTrade[]>>('/trades', {
           params: { location: 'external' },
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return status == 200 || status == 400 || status == 409;
           }
         })
@@ -266,7 +266,7 @@ export class RotkehlchenApi {
     return new Promise<string[]>((resolve, reject) => {
       this.axios
         .get<ActionResult<string[]>>('/assets/ignored', {
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return status == 200 || status == 400 || status == 409;
           }
         })
@@ -356,7 +356,7 @@ export class RotkehlchenApi {
           async_query: true,
           ignore_cache: ignoreCache ? true : undefined
         },
-        validateStatus: function(status) {
+        validateStatus: function (status) {
           return status == 200 || status == 400 || status == 409;
         }
       })
@@ -370,7 +370,7 @@ export class RotkehlchenApi {
           params: {
             async_query: true
           },
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return status == 200 || status == 400 || status == 409;
           }
         })
@@ -401,7 +401,7 @@ export class RotkehlchenApi {
             async_query: true,
             ignore_cache: ignoreCache ? true : undefined
           },
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return (
               status == 200 || status == 400 || status == 409 || status == 502
             );
@@ -423,7 +423,7 @@ export class RotkehlchenApi {
     return new Promise<ApiAssetBalances>((resolve, reject) => {
       this.axios
         .get<ActionResult<ApiAssetBalances>>('/balances/fiat', {
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return status == 200 || status == 400 || status == 409;
           }
         })
@@ -443,7 +443,7 @@ export class RotkehlchenApi {
     return new Promise<any>((resolve, reject) => {
       this.axios
         .get<ActionResult<TaskResult<ActionResult<T>>>>(`/tasks/${id}`, {
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return (
               status == 200 || status == 400 || status == 404 || status == 409
             );
@@ -465,7 +465,7 @@ export class RotkehlchenApi {
     return new Promise<NetvalueDataResult>((resolve, reject) => {
       this.axios
         .get<ActionResult<NetvalueDataResult>>('/statistics/netvalue', {
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return status == 200 || status == 400 || status == 409;
           }
         })
@@ -485,7 +485,7 @@ export class RotkehlchenApi {
     return new Promise<string[]>((resolve, reject) => {
       this.axios
         .get<ActionResult<string[]>>('/assets', {
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return status == 200 || status == 400 || status == 409;
           }
         })
@@ -515,7 +515,7 @@ export class RotkehlchenApi {
               from_timestamp: start_ts,
               to_timestamp: end_ts
             },
-            validateStatus: function(status) {
+            validateStatus: function (status) {
               return status == 200 || status == 400 || status == 409;
             }
           }
@@ -578,7 +578,7 @@ export class RotkehlchenApi {
     return new Promise<string>((resolve, reject) => {
       this.axios
         .get<ActionResult<string>>('/statistics/renderer', {
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return status == 200 || status == 400 || status == 409;
           }
         })
@@ -606,7 +606,7 @@ export class RotkehlchenApi {
             from_timestamp: start_ts,
             to_timestamp: end_ts
           },
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return status == 200 || status == 400 || status == 409;
           }
         })
@@ -651,7 +651,7 @@ export class RotkehlchenApi {
           params: {
             currencies: currencies.join(',')
           },
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return status == 200 || status == 400;
           }
         })
@@ -678,9 +678,8 @@ export class RotkehlchenApi {
     } = payload;
     if (create) {
       return this.registerUser(username, password, apiKey, apiSecret);
-    } else {
-      return this.login(username, password, syncApproval);
     }
+    return this.login(username, password, syncApproval);
   }
 
   registerUser(
@@ -700,7 +699,7 @@ export class RotkehlchenApi {
             premium_api_secret: apiSecret
           },
           {
-            validateStatus: function(status) {
+            validateStatus: function (status) {
               return status == 200 || status == 400 || status == 409;
             }
           }
@@ -754,7 +753,7 @@ export class RotkehlchenApi {
           data: {
             name
           },
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return status == 200 || status == 400 || status == 409;
           }
         })
@@ -774,7 +773,7 @@ export class RotkehlchenApi {
     return new Promise<EthTokens>((resolve, reject) => {
       this.axios
         .get<ActionResult<EthTokens>>('/blockchains/ETH/tokens', {
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return status == 200 || status == 409;
           }
         })
@@ -800,7 +799,7 @@ export class RotkehlchenApi {
             filepath
           },
           {
-            validateStatus: function(status) {
+            validateStatus: function (status) {
               return status == 200 || status == 400 || status == 409;
             }
           }
@@ -827,7 +826,7 @@ export class RotkehlchenApi {
           async_query: true,
           accounts: [account]
         },
-        validateStatus: function(status) {
+        validateStatus: function (status) {
           return (
             status == 200 || status == 400 || status == 409 || status == 502
           );
@@ -895,7 +894,7 @@ export class RotkehlchenApi {
             }
           },
           {
-            validateStatus: function(status) {
+            validateStatus: function (status) {
               return status == 200 || status == 400 || status == 409;
             }
           }
@@ -929,7 +928,7 @@ export class RotkehlchenApi {
             passphrase
           },
           {
-            validateStatus: function(status) {
+            validateStatus: function (status) {
               return status == 200 || status == 400 || status == 409;
             }
           }
@@ -953,7 +952,7 @@ export class RotkehlchenApi {
           params: {
             directory_path: directory
           },
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return status == 200 || status == 400 || status == 409;
           }
         })
@@ -972,9 +971,8 @@ export class RotkehlchenApi {
   modifyAsset(add: boolean, asset: string): Promise<string[]> {
     if (add) {
       return this.addIgnoredAsset(asset);
-    } else {
-      return this.removeIgnoredAsset(asset);
     }
+    return this.removeIgnoredAsset(asset);
   }
 
   addIgnoredAsset(asset: string): Promise<string[]> {
@@ -986,7 +984,7 @@ export class RotkehlchenApi {
             assets: [asset]
           },
           {
-            validateStatus: function(status) {
+            validateStatus: function (status) {
               return status == 200 || status == 400 || status == 409;
             }
           }
@@ -1010,7 +1008,7 @@ export class RotkehlchenApi {
           data: {
             assets: [asset]
           },
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return status == 200 || status == 400 || status == 409;
           }
         })
@@ -1035,7 +1033,7 @@ export class RotkehlchenApi {
             ...trade
           },
           {
-            validateStatus: function(status) {
+            validateStatus: function (status) {
               return status == 200 || status == 400 || status == 409;
             }
           }
@@ -1061,7 +1059,7 @@ export class RotkehlchenApi {
             ...trade
           },
           {
-            validateStatus: function(status) {
+            validateStatus: function (status) {
               return status == 200 || status == 400 || status == 409;
             }
           }
@@ -1098,7 +1096,7 @@ export class RotkehlchenApi {
     return new Promise<DBSettings>((resolve, reject) => {
       this.axios
         .get<ActionResult<DBSettings>>('/settings', {
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return status == 200 || status == 409;
           }
         })
@@ -1118,7 +1116,7 @@ export class RotkehlchenApi {
     return new Promise<string[]>((resolve, reject) => {
       this.axios
         .get<ActionResult<string[]>>('/exchanges', {
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return status == 200 || status == 409;
           }
         })
@@ -1138,7 +1136,7 @@ export class RotkehlchenApi {
     return new Promise<ExternalServiceKeys>((resolve, reject) => {
       this.axios
         .get<ActionResult<ExternalServiceKeys>>('/external_services/', {
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return status == 200 || status == 409;
           }
         })
@@ -1165,7 +1163,7 @@ export class RotkehlchenApi {
             services: keys
           },
           {
-            validateStatus: function(status) {
+            validateStatus: function (status) {
               return status == 200 || status == 400 || status == 409;
             }
           }
@@ -1191,7 +1189,7 @@ export class RotkehlchenApi {
           data: {
             services: [serviceToDelete]
           },
-          validateStatus: function(status) {
+          validateStatus: function (status) {
             return status == 200 || status == 400 || status == 409;
           }
         })
@@ -1210,7 +1208,7 @@ export class RotkehlchenApi {
   async getTags(): Promise<Tags> {
     return this.axios
       .get<ActionResult<Tags>>('/tags', {
-        validateStatus: function(status: number) {
+        validateStatus: function (status: number) {
           return status === 200 || status === 409;
         }
       })
@@ -1223,7 +1221,7 @@ export class RotkehlchenApi {
         '/tags',
         { ...tag },
         {
-          validateStatus: function(status: number) {
+          validateStatus: function (status: number) {
             return status === 200 || status === 400 || status === 409;
           }
         }
@@ -1237,7 +1235,7 @@ export class RotkehlchenApi {
         '/tags',
         { ...tag },
         {
-          validateStatus: function(status: number) {
+          validateStatus: function (status: number) {
             return status === 200 || status === 400 || status === 409;
           }
         }
@@ -1251,7 +1249,7 @@ export class RotkehlchenApi {
         data: {
           name: tagName
         },
-        validateStatus: function(status: number) {
+        validateStatus: function (status: number) {
           return status === 200 || status === 400 || status === 409;
         }
       })
@@ -1261,7 +1259,7 @@ export class RotkehlchenApi {
   async accounts(blockchain: Blockchain): Promise<AccountData[]> {
     return this.axios
       .get<ActionResult<ApiAccountData[]>>(`/blockchains/${blockchain}`, {
-        validateStatus: function(status: number) {
+        validateStatus: function (status: number) {
           return status === 200 || status === 409;
         }
       })
@@ -1277,7 +1275,7 @@ export class RotkehlchenApi {
           params: {
             async_query: true
           },
-          validateStatus: function(status: number) {
+          validateStatus: function (status: number) {
             return status === 200 || status === 409 || status == 502;
           }
         }
@@ -1293,7 +1291,7 @@ export class RotkehlchenApi {
           params: {
             async_query: true
           },
-          validateStatus: function(status: number) {
+          validateStatus: function (status: number) {
             return status === 200 || status === 409 || status == 502;
           }
         }
